@@ -67,7 +67,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             if (animEvent == "transform_roof_jump_end")
             {
-                if(_hamsterState.Value == HamsterStateEnum.RoofJumpDamage)
+                if(_hamsterState.Value == HamsterStateEnum.RoofJumpDamage ||
+                   _hamsterState.Value == HamsterStateEnum.SuperRoofJumpDamage)
                     _damageEvent?.Invoke();
 
                 _hamsterState.Value = HamsterStateEnum.RoofRun;

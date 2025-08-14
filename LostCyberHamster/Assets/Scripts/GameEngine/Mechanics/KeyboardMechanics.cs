@@ -108,6 +108,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private void OnSuperJump()
         {
             if(_characterHamsterState.Value == HamsterStateEnum.RoofJump ||
+                _characterHamsterState.Value == HamsterStateEnum.RoofJumpDamage ||
                 _characterHamsterState.Value == HamsterStateEnum.JumpFromRoof ||
                 _characterHamsterState.Value == HamsterStateEnum.JumpFromRoofDamage ||
                 _characterHamsterState.Value == HamsterStateEnum.JumpOnObstacleFromRoof
