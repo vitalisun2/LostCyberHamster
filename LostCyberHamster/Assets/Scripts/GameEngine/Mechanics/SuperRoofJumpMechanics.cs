@@ -132,7 +132,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 if (obs.transform.position.x <= hamsterX) continue;
 
                 float dx = obs.transform.position.x - hamsterX;
-                if (dx > hamsterHalf + _jumpFromRoofShift) break;
+                if (dx > hamsterHalf + Mathf.Max(_jumpFromRoofShift, _roofSuperJumpShift)) break;
 
                 if (_handlers.TryGetValue(obs.ObstacleType.ObstacleTypeEnum, out var handler))
                 {
