@@ -1,0 +1,8 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:Template name="Modal" src="project://database/Assets/Content/ui/uxml/Modal.uxml?fileID=9197481963319205126&amp;guid=9367e5d328f414c1baaca52819b3231c&amp;type=3#Modal" />
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement name="background" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/Content/ui/textures/HomeScreen.png?fileID=2800000&amp;guid=ef1cd1ccf849b4bf69426b63be69aea5&amp;type=3#HomeScreen&quot;);">
+        <engine:VisualElement name="content" style="flex-grow: 1;" />
+    </engine:VisualElement>
+    <engine:Instance template="Modal" name="modal" style="position: absolute; bottom: 0; right: 0; top: 0; left: 0;" />
+</engine:UXML>

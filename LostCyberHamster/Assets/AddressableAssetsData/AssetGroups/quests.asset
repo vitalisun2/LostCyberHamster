@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: quests
+  m_EditorClassIdentifier: 
+  m_GroupName: quests
+  m_GUID: 778a69bdf2972421bab1a38f3046a4a1
+  m_SerializeEntries:
+  - m_GUID: 11883244e327d4886b3a2a8ae21252e9
+    m_Address: quest-001
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2f10fbc6fca2348d1ab1fd9a5af3b1b6
+    m_Address: quest-003
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6389548ad61b94773876edceda3e9438
+    m_Address: questData
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8c77fdb7a4fe84591a39202b6dfa20f6
+    m_Address: quest-002
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 4305d784238064a01915f164dabfebe4, type: 2}
+    - {fileID: 11400000, guid: 168a8aa7027f24cbcab50af62957d4a7, type: 2}

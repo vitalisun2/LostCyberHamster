@@ -1,0 +1,49 @@
+.bar-background {
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgb(0, 0, 0);
+    background-color: rgb(0, 0, 0);
+}
+
+#energybar{
+    width: 460px;
+    height: 64px;
+}
+#energybar > #background{
+    width: 460px;
+    overflow: hidden;
+    background-color: rgb(137, 137, 137);
+}
+
+#energybar > #background > #foreground{
+    width: 460px;
+    overflow: hidden;
+    background-color: rgb(119, 194, 220);
+}
+
+#jumpButton{
+
+}
+
+
+#foreground{
+    transition-property: scale;
+    transition-duration: 1s;
+    transition-timing-function: ease-in;
+}
+
+.control-button{
+    width: 80px;
+    height: 80px;
+    border-radius: 40px;
+}
+.invisible{
+    opacity: 0;
+}
+
+#tap{
+    position: absolute;
+    bottom: 0;
+    width: 60%;
+    height: 70%;
+}

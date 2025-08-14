@@ -1,0 +1,53 @@
+﻿{
+    "obstacle_sprite_to_type_mappings": [
+        {
+            "type": 10,
+            "sprites": [
+                "decor_tree_1",
+                "decor_bush_1"
+            ]
+        },
+        {
+            "type": 1,
+            "sprites": [
+                "obstacle_paris_businessman"
+            ]
+        },
+        {
+            "type": 4,
+            "sprites": [
+                "obstacle_paris_car"
+            ]
+        },
+        {
+            "type": 9,
+            "sprites": [
+                "coin"
+            ]
+        },
+        {
+            "type": 7,
+            "sprites": [
+                "crystal"
+            ]
+        },
+        {
+            "type": 5,
+            "sprites": [
+                "energetic"
+            ]
+        },
+        {
+            "type": 6,
+            "sprites": [
+                "pizza"
+            ]
+        },
+        {
+            "type": 8,
+            "sprites": [
+                "life"
+            ]
+        }
+    ]
+}

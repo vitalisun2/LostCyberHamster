@@ -1,0 +1,8 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:Template name="ShopItem" src="project://database/Assets/Content/ui/uxml/ShopItem.uxml?fileID=9197481963319205126&amp;guid=a16e77b5f631c47dab9aaa44fca17fc5&amp;type=3#ShopItem" />
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement name="shop-modal__content" style="flex-grow: 1; flex-direction: row; flex-wrap: wrap-reverse; align-self: center; justify-content: center; align-items: center; min-width: 95%;">
+        <engine:Instance template="ShopItem" />
+        <engine:Instance template="ShopItem" />
+    </engine:VisualElement>
+</engine:UXML>

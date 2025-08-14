@@ -1,0 +1,10 @@
+﻿{
+    "backgroundTexture": "bg_paris_night",
+    "decorationPatterns": [],
+    "patterns": [
+        {
+            "name": "Pattern 1",
+            "obstacles": []
+        }
+    ]
+}

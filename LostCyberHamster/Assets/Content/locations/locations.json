@@ -1,0 +1,12 @@
+{
+	"locations":[
+		{
+			"name":"New York",
+			"image": "new_york_preview"
+		},
+		{
+			"name":"Paris",
+			"image": "paris_preview"
+		}
+	]
+}

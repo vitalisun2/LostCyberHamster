@@ -1,0 +1,67 @@
+﻿{
+    "obstacle_sprite_to_type_mappings": [
+        {
+            "type": 1,
+            "sprites": [
+                "obstacle_new_york_businessman",
+                "obstacle_new_york_granny",
+                "obstacle_new_york_hipster"
+            ]
+        },
+        {
+            "type": 4,
+            "sprites": [
+                "obstacle_new_york_car"
+            ]
+        },
+        {
+            "type": 0,
+            "sprites": [
+                "obstacle_new_york_dog",
+                "obstacle_new_york_homeless"
+            ]
+        },
+        {
+            "type": 2,
+            "sprites": [
+                "obstacle_new_york_manhole"
+            ]
+        },
+        {
+            "type": 3,
+            "sprites": [
+                "obstacle_new_york_opened_box"
+            ]
+        },
+        {
+            "type": 9,
+            "sprites": [
+                "coin"
+            ]
+        },
+        {
+            "type": 7,
+            "sprites": [
+                "crystal"
+            ]
+        },
+        {
+            "type": 5,
+            "sprites": [
+                "energetic"
+            ]
+        },
+        {
+            "type": 6,
+            "sprites": [
+                "pizza"
+            ]
+        },
+        {
+            "type": 8,
+            "sprites": [
+                "life"
+            ]
+        }
+    ]
+}

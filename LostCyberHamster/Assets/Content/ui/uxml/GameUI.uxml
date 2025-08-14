@@ -1,0 +1,26 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Content/ui/styles/GameUI.uss?fileID=7433441132597879392&amp;guid=a20d46e6c8b184b25ae75eafcb4cc6f7&amp;type=3#GameUI" />
+    <ui:VisualElement name="content" style="flex-grow: 1;">
+        <ui:VisualElement style="flex-grow: 1; justify-content: space-between; padding-top: 20px; padding-right: 20px; padding-bottom: 20px; padding-left: 20px;">
+            <ui:VisualElement name="topGameGrp" style="flex-grow: 0; flex-direction: row; justify-content: space-between; align-items: center;">
+                <ui:VisualElement name="container-energybar" height="30" width="200" style="flex-direction: row; width: 560px; height: 96px; overflow: visible; align-items: center;">
+                    <LostCyberHamster.UI.Energybar usage-hints="None" tabindex="0" focusable="false" value="100" name="energybar" width="460" />
+                </ui:VisualElement>
+                <ui:VisualElement name="container-healthbar" height="30" width="200" style="flex-direction: row;">
+                    <LostCyberHamster.UI.Healthbar style="flex-direction: row;" />
+                </ui:VisualElement>
+                <ui:Button text="Pause" display-tooltip-when-elided="true" name="pauseButton" style="height: 96px; width: 200px;" />
+            </ui:VisualElement>
+            <ui:GroupBox name="pauseGrp">
+                <Vues.GameCore.LocalizedButton name="toMainMenuButton" key="btn_main_menu" style="margin-top: 4px; margin-right: 30%; margin-left: 30%;" />
+                <Vues.GameCore.LocalizedButton name="resumeButton" key="btn_resume" style="margin-top: 4px; margin-right: 30%; margin-left: 30%;" />
+            </ui:GroupBox>
+            <ui:GroupBox name="bottomGameGrp" style="flex-direction: row; justify-content: space-between; align-items: flex-end;">
+                <ui:VisualElement />
+                <ui:Label text="HamsterState" display-tooltip-when-elided="true" name="hamsterStateText" style="-unity-text-align: upper-center; width: 254px; font-size: 57px;" />
+                <ui:Button text="JUMP" display-tooltip-when-elided="true" name="jumpButton" class="control-button" style="width: 200px; height: 200px; border-top-left-radius: 200px; border-top-right-radius: 200px; border-bottom-right-radius: 200px; border-bottom-left-radius: 200px;" />
+            </ui:GroupBox>
+        </ui:VisualElement>
+        <ui:VisualElement name="tap" style="position: absolute; left: 0; bottom: 1px;" />
+    </ui:VisualElement>
+</ui:UXML>

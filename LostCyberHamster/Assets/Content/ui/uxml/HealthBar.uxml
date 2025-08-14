@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Template name="HealthItem" src="project://database/Assets/Content/ui/uxml/HealthItem.uxml?fileID=9197481963319205126&amp;guid=8a2c8921584e242f384dbd4ae5efad38&amp;type=3#HealthItem" />
+    <ui:VisualElement name="healthbar" style="flex-direction: row; width: 150px; height: 50px;">
+        <ui:Instance template="HealthItem" />
+        <ui:Instance template="HealthItem" />
+        <ui:Instance template="HealthItem" />
+    </ui:VisualElement>
+</ui:UXML>

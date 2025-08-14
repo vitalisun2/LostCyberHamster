@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14360870cf1af114f9345845caafcaec, type: 3}
+  m_Name: LoadingTaskPipeline
+  m_EditorClassIdentifier: 
+  rootTask:
+    rid: 6570499326113218619
+  references:
+    version: 2
+    RefIds:
+    - rid: 1442725433635242043
+      type: {class: InitObstaclesPoolLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []
+    - rid: 2706311562664083607
+      type: {class: InitIntroAssetsLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []
+    - rid: 6421078045922951243
+      type: {class: InitCurrentLevelAssetsLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []
+    - rid: 6570499326113218619
+      type: {class: RootTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children:
+        - rid: 2706311562664083607
+        - rid: 6421078045922951243
+        - rid: 6570499326113218622
+        - rid: 6570499326113218621
+        - rid: 6570499326113218624
+        - rid: 6570499326113218625
+        - rid: 1442725433635242043
+    - rid: 6570499326113218621
+      type: {class: InitCameraLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []
+    - rid: 6570499326113218622
+      type: {class: InitBackgroundLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []
+    - rid: 6570499326113218624
+      type: {class: InitCharacterLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []
+    - rid: 6570499326113218625
+      type: {class: InitGameUiLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []

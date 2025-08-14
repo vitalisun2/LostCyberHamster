@@ -1,0 +1,33 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement name="VisualElement" style="flex-grow: 1; align-items: flex-start; justify-content: center; align-self: auto; margin-top: 24px;">
+        <engine:VisualElement class="mb-12" style="flex-grow: 0; flex-direction: row; align-self: auto;">
+            <Vues.GameCore.LocalizedLabel key="lbl_language" class="lcs-text w-px-320" />
+            <engine:DropdownField name="settings__dd-languages" choices="ENGLISH,РУССКИЙ" index="0" class="w-px-480" style="flex-grow: 0;" />
+        </engine:VisualElement>
+        <engine:VisualElement class="mb-12" style="flex-grow: 0; flex-direction: row;">
+            <Vues.GameCore.LocalizedLabel key="lbl_music" class="lcs-text w-px-320" />
+            <engine:Toggle name="settings__cbx-music" />
+        </engine:VisualElement>
+        <engine:VisualElement class="mb-12" style="flex-grow: 0; flex-direction: row;">
+            <Vues.GameCore.LocalizedLabel key="lbl_sound" class="lcs-text w-px-320" />
+            <engine:Toggle name="settings__cbx-sound" />
+        </engine:VisualElement>
+        <engine:VisualElement class="mb-12" style="flex-grow: 0; flex-direction: row; display: none;">
+            <Vues.GameCore.LocalizedLabel key="lbl_vibrate" class="lcs-text w-px-320" />
+            <engine:Toggle name="settings__cbx-vibrate" />
+        </engine:VisualElement>
+        <engine:VisualElement class="mb-12" style="flex-grow: 0; flex-direction: row; display: none;">
+            <Vues.GameCore.LocalizedLabel key="lbl_id" class="lcs-text w-px-320" />
+            <engine:Label name="settings__lbl-id" class="lcs-text w-px-480" />
+        </engine:VisualElement>
+        <engine:VisualElement class="mb-12" style="flex-grow: 0; flex-direction: row;">
+            <Vues.GameCore.LocalizedLabel key="lbl_version" class="lcs-text w-px-320" />
+            <engine:Label name="settings__lbl-version" class="lcs-text w-px-480" />
+        </engine:VisualElement>
+        <engine:VisualElement style="flex-grow: 1; flex-direction: row; justify-content: center; align-items: flex-end;">
+            <Vues.GameCore.LocalizedButton key="btn_cancel" name="settings__btn-cancel" class="lcs_btn bg-danger w-px-380" />
+            <Vues.GameCore.LocalizedButton key="btn_save" name="settings__btn-save" class="lcs_btn bg-primary w-px-380" />
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

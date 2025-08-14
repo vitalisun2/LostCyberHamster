@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: background_sprites
+  m_EditorClassIdentifier: 
+  m_GroupName: background_sprites
+  m_Data:
+    m_SerializedData: []
+  m_GUID: d185aa73523a09a4c8b6d27909c0676f
+  m_SerializeEntries:
+  - m_GUID: 54076f9c5d22bc04f8c2d4ae919f321e
+    m_Address: bg_new_york_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ae5c2b8061fce1c4588f8a7781e2ecc1
+    m_Address: bg_new_york_afternoon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4bfa9fb94f6301142a6b08f90e205d2a
+    m_Address: bg_new_york_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e0ed4ac07f5fefd42b1921be183085c5
+    m_Address: bg_new_york_night
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1fad66f80338e614abfb214ed36acf7a
+    m_Address: BackgroundPrefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d1cfb1c6f7e502648a9b1d8f354b6e47
+    m_Address: bg_paris_afternoon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d7b742fa556548142a366cacbcf7a289
+    m_Address: bg_paris_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7a7fac89b4a52ec4b871878833ace958
+    m_Address: bg_paris_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0d488935399af9a429f6c0d306570021
+    m_Address: bg_paris_night
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 7cc8a9c435557c64997e0d98dfb48a15, type: 2}
+    - {fileID: 11400000, guid: 2020def4339c97346bc93814a3da5fea, type: 2}

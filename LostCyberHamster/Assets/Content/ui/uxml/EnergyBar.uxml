@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="energybar" style="height: 64px; width: 460px; border-top-width: 4px; border-right-width: 4px; border-bottom-width: 4px; border-left-width: 4px;">
+        <ui:VisualElement name="background" style="border-top-width: 6px; border-right-width: 6px; border-bottom-width: 6px; border-left-width: 6px; background-color: rgb(137, 137, 137); flex-direction: row;">
+            <ui:VisualElement name="foreground" style="flex-grow: 0.7; flex-direction: row; flex-shrink: 1; margin-top: 4px; margin-right: 4px; margin-bottom: 4px; margin-left: 4px;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

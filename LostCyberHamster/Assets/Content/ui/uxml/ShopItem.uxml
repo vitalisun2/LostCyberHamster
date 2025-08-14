@@ -1,0 +1,13 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement name="shop-item" class="border bg-yellow shop-item" style="height: 406px;">
+        <engine:VisualElement name="shop-item__image" style="flex-grow: 0; flex-direction: row; align-self: center; align-items: center; background-image: url(&quot;project://database/Assets/Content/shop/coins_pack_1.png?fileID=2800000&amp;guid=4c1411b5b88e14c58b5c33c8162de0c2&amp;type=3#coins_pack_1&quot;); width: 200px; height: 200px; margin-top: 8px; justify-content: center; max-width: none; max-height: none; min-width: auto; min-height: auto;" />
+        <engine:VisualElement style="flex-grow: 1; flex-direction: row; align-self: center; align-items: center; max-height: 50px; margin-top: 10px; margin-bottom: 10px;">
+            <engine:Label text="10" name="shop-item__price-label" class="lcs-text" style="font-size: 32px; -unity-text-align: middle-center;" />
+            <engine:VisualElement name="shop-item__price-image" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/shop/watchad.png?fileID=2800000&amp;guid=c1c4ec069be1646b88b2cafee0e2ec86&amp;type=3#watchad&quot;); width: 40px; height: 40px; margin-left: 0;" />
+        </engine:VisualElement>
+        <engine:VisualElement style="flex-grow: 0; align-items: center; justify-content: flex-end;">
+            <engine:Button text="BUY" name="shop-item__btn-get" class="shop-item__btn-get" />
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

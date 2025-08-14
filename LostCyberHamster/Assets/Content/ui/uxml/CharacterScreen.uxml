@@ -1,0 +1,19 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement name="characterscreen" style="flex-grow: 1;">
+        <engine:Instance template="Toolbar" name="toolbar" />
+        <engine:VisualElement style="flex-grow: 1; justify-content: center; align-items: center; min-width: 10%; flex-direction: row;">
+            <engine:VisualElement style="flex-grow: 1; position: absolute; flex-direction: row; width: 1920px; justify-content: space-between;">
+                <engine:Button name="btn-skin-prev" class="block arrow-btn-left" style="rotate: 0; width: 300px; height: 300px; -unity-background-scale-mode: stretch-to-fill; background-image: none; border-top-right-radius: 0;" />
+                <engine:Button name="btn-skin-next" class="arrow-btn-right" />
+            </engine:VisualElement>
+            <engine:VisualElement style="flex-grow: 0; align-items: center; width: 1200px;">
+                <engine:Label text="Label" name="skin-name" class="lcs-text" />
+                <engine:VisualElement name="skin-image" style="flex-grow: 0; width: 600px; height: 300px; background-image: none; margin-bottom: 60px; margin-right: 120px; margin-left: 120px; margin-top: 60px;" />
+                <engine:Label text="Label" name="skin--put-on" class="lcs-text" style="display: none; height: 120px; margin-top: 24px; margin-bottom: 24px; margin-right: 24px; margin-left: 24px;" />
+                <engine:Button text="Button" name="skin-btn-change" class="lcs_btn" style="width: 450px; height: 120px; margin-bottom: 24px;" />
+            </engine:VisualElement>
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

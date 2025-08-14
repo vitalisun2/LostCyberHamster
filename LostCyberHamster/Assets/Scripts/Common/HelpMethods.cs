@@ -1,0 +1,169 @@
+﻿using Assets.Scripts.GameEngine.Controllers;
+using Assets.Scripts.Gameplay;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using GameManagement;
+using Assets.Scripts.Common.Models;
+using Assets.Scripts.Installers.Roots;
+
+namespace Assets.Scripts.Common
+{
+    public static class HelpMethods
+    {
+        public static bool IsOnSameLine(bool isHamsterOnBottomLine, Obstacle obstacle)
+        {
+            bool isTopObstacle = obstacle.ObstacleType.IsTop;
+            bool isHamsterOnTopLine = !isHamsterOnBottomLine;
+
+            return (isTopObstacle && isHamsterOnTopLine) ||
+                   (!isTopObstacle && !isHamsterOnTopLine);
+        }
+
+        public static void ApplyOverrideController(Hamster hamster)
+        {
+            var spriteAnimatorController = hamster.GetComponentInChildren<SpriteAnimatorController>();
+            var animator = spriteAnimatorController.gameObject.GetComponent<Animator>();
+
+            if(SkinManager.CurrentSkin.HamsterOverrideController == null)
+            {
+                Debug.LogWarning("Hamster override controller is null, default skin applied");
+                GameDataManager.PlayerData.AppliedSkinId = 0;
+            }
+
+            animator.runtimeAnimatorController = SkinManager.CurrentSkin.HamsterOverrideController;
+            animator.enabled = true;
+        }
+
+        public static GameObject CreateUltaEffect(GameObject ultaPrefab, Hamster hamster)
+        {
+            GameObject ultaEffect = null;
+
+            if (ultaPrefab != null)
+            {
+                ultaEffect = GameObject.Instantiate(ultaPrefab, hamster.EffectsSlot);
+            }
+
+            return ultaEffect;
+        }
+
+        /// <summary>
+        /// Gets the list of level names for a specified location number.
+        /// Each location has 4 levels in the sequence: morning, afternoon, evening, and night.
+        /// The level names follow the format "level_XX" where "XX" is the sequential level number.
+        /// </summary>
+        /// <param name="locationNumber">The number of the location (starting from 1).</param>
+        /// <returns>A list of level names for the specified location.</returns>
+        /// <exception cref="ArgumentException">Thrown when the location number is less than or equal to zero.</exception>
+        public static IEnumerable<string> GetLevelNames(int locationNumber)
+        {
+            if (locationNumber <= 0)
+            {
+                throw new ArgumentException("Location number must be a positive integer.");
+            }
+
+            int levelsPerLocation = 4;
+
+            int startLevel = (locationNumber - 1) * levelsPerLocation + 1;
+
+            return Enumerable.Range(startLevel, levelsPerLocation)
+                .Select(level => $"level_{level:D2}");
+        }
+
+        /// <summary>
+        /// Logs an error and stops the game. In Editor: exits Play Mode. In a build: quits the application.
+        /// </summary>
+        public static void LogAndStopGame(string message)
+        {
+            Debug.LogError(message);
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+        }
+
+        /// <summary>
+        /// Ищет препятствие типа bigNotAlive «под хомяком»,
+        /// если тот стоит на верхней или нижней линии в соответствующей координате X.
+        /// Возвращает <see cref="Obstacle"/> или null, если препятствие не найдено.
+        /// </summary>
+        /// <param name="hamsterTransform">Transform хомяка.</param>
+        /// <param name="environmentRoot">Ссылка на EnvironmentRoot, чтобы получить препятствия.</param>
+        /// <param name="isOnBottomLine">Признак того, что хомяк находится на нижней линии.</param>
+        /// <returns>Найденное препятствие или null.</returns>
+        public static Obstacle FindBigNotAliveUnderHamster(
+            Transform hamsterTransform,
+            EnvironmentRoot environmentRoot,
+            bool isOnBottomLine)
+        {
+            var hamsterX = hamsterTransform.position.x;
+
+            // Берём все препятствия, которые уже "spawned"
+            var obstacles = environmentRoot.ObstaclesSpawnedContainer
+                .GetComponentsInChildren<Obstacle>();
+
+            foreach (var obstacle in obstacles)
+            {
+                // Нас интересуют только большие неживые препятствия
+                if (obstacle.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.bigNotAlive)
+                    continue;
+
+                // Проверяем, совпадает ли линия (верх/низ) с нашей позицией
+                if (!IsOnSameLine(isOnBottomLine, obstacle))
+                    continue;
+
+                // Смотрим, пересекается ли хомяк по X с этим препятствием
+                float distX = Mathf.Abs(hamsterX - obstacle.transform.position.x);
+
+                // Если хомяк находится в пределах допустимого расстояния от препятствия, возвращаем препятствие
+                float extendedEdge = Consts.BIG_NOTALIVE_WIDTH_UNITS / 2 + Consts.BigNotAliveEdgeTolerance;
+                if (distX <= extendedEdge)
+                {
+                    return obstacle;
+                }
+            }
+
+            // Если подходящего bigNotAlive не нашли, возвращаем null
+            return null;
+        }
+
+        /// <summary>
+        /// Преобразует ширину в пикселях в ширину в Unity-юнитах,
+        /// используя фиксированный коэффициент PIXELS_TO_UNITS_RATIO.
+        /// </summary>
+        /// <param name="pixelWidth">Ширина объекта в пикселях (как в оригинальном спрайте).</param>
+        /// <returns>Ширина объекта в юнитах Unity.</returns>
+        public static float FromPixelsToUnitsWidth(int pixelWidth)
+        {
+            return pixelWidth * Consts.PIXELS_TO_UNITS_RATIO;
+        }
+
+        /// <summary>
+        /// Вычисляет, на какое расстояние сместится мир 
+        /// при заданной длительности анимации (в кадрах).
+        /// По умолчанию считается, что FPS = 60.
+        /// Скорость берём из Consts.GameSpeed.
+        /// </summary>
+        /// <param name="frames">Длительность анимации в кадрах (напр. 78).</param>
+        /// <param name="fps">Частота кадров (обычно 60).</param>
+        /// <returns>Расстояние в юнитах, на которое сместится мир.</returns>
+        private static float CalculateWorldShiftDistance(int frames, int fps = Consts.FPS)
+        {
+            float timeSec = frames / (float)fps;
+            // Используем константу скорости:
+            return Consts.GameSpeedBase * timeSec;
+        }
+
+        /// <summary>
+        /// Возвращает горизонтальное смещение мира за время клипа <paramref name="clipName"/>.
+        /// </summary>
+        public static float GetWorldShiftForClip(TransformAnimatorController animController, string clipName)
+        {
+            int frames = animController.GetClipFrameCount(clipName);
+            return CalculateWorldShiftDistance(frames);
+        }
+
+    }
+}

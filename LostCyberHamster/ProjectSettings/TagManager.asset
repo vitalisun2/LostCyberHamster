@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - Hamster
+  - EnvironmentRoot
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 1476321343
+    locked: 0
+  - name: Road
+    uniqueID: 3612175869
+    locked: 0
+  - name: UpperSprites
+    uniqueID: 3490192917
+    locked: 0
+  - name: Hamster
+    uniqueID: 851019927
+    locked: 0
+  - name: LowerSprites
+    uniqueID: 1468897671
+    locked: 0
+  - name: UI
+    uniqueID: 1400237755
+    locked: 0
+  - name: SpecialEffects
+    uniqueID: 147307293
+    locked: 0

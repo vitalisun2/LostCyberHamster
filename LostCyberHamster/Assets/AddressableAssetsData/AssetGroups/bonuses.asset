@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: bonuses
+  m_EditorClassIdentifier: 
+  m_GroupName: bonuses
+  m_Data:
+    m_SerializedData: []
+  m_GUID: f374bdf51d2e99f4d8c5de6ada8058ae
+  m_SerializeEntries:
+  - m_GUID: d3640349c348fa2419be0f7b4a3e77b1
+    m_Address: CoinOnePrefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4811c37297afc4040b2bed170c20de62
+    m_Address: coin
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - collectable sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 54311debb4987364288ee22af703c442
+    m_Address: CrystalBonusPrefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c9c1fe1fcfbe7c64298dbb05b863d98e
+    m_Address: EnergeticBonusPrefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4b90629f76cde4b468077f31f32f2db1
+    m_Address: LifeBonusPrefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e310b869f8ad80a479f99bccd9627b9a
+    m_Address: PizzaBonusPrefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c5099b8524758ff4eb0a9e924369df2d
+    m_Address: life
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - collectable sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bc8e474cc4f7fbf47bf6ffb09e049600
+    m_Address: pizza
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - collectable sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a80d749c001622c41afdd6b949f74dc2
+    m_Address: energetic
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - collectable sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 852d4d7596890d8488987aaedff704e6
+    m_Address: crystal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - collectable sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 8f1e74edbc9b0884fbb2eff4a3b897d2, type: 2}
+    - {fileID: 11400000, guid: 4f5a3592825f388448131ef5b155c695, type: 2}

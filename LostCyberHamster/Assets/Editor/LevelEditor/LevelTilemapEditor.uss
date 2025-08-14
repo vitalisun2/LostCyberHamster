@@ -1,0 +1,18 @@
+﻿.sprite {
+    max-width: 50px;
+    min-width: 50px;
+    max-height: 50px;
+    min-height: 50px;
+    margin: 5px;
+    padding: 4px;
+}
+
+.sprite:hover {
+    background-color: #202020;
+}
+
+#sprites .unity-scroll-view__content-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+

@@ -1,0 +1,19 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement name="quest-item" class="border bg-yellow shop-item" style="height: 480px; flex-direction: column; align-items: center; background-color: rgb(154, 167, 169); border-left-color: rgb(101, 156, 199); border-right-color: rgb(101, 156, 199); border-top-color: rgb(101, 156, 199); border-bottom-color: rgb(101, 156, 199); justify-content: center; width: 360px; border-top-width: 10px; border-right-width: 10px; border-bottom-width: 10px; border-left-width: 10px;">
+        <engine:VisualElement style="flex-grow: 1; background-color: rgb(224, 224, 207); justify-content: flex-end; width: 100%; border-right-width: 0; border-top-width: 0; border-top-left-radius: 10px; border-top-right-radius: 10px;">
+            <engine:VisualElement style="flex-grow: 0; justify-content: center; background-color: rgb(192, 190, 198); height: 80px; margin-top: 12px; margin-right: 12px; margin-bottom: 12px; margin-left: 12px; padding-top: 8px; padding-right: 8px; padding-bottom: 8px; padding-left: 8px; -unity-text-align: upper-center;">
+                <engine:Label text="Quest title&#10;" name="quest-item__title" style="font-size: 24px; color: rgb(81, 81, 81); white-space: nowrap;" />
+            </engine:VisualElement>
+        </engine:VisualElement>
+        <engine:VisualElement style="flex-grow: 1; background-color: rgb(101, 150, 183); justify-content: space-around; width: 100%; overflow: hidden; border-bottom-right-radius: 10px; border-bottom-left-radius: 10px; align-items: center; height: 35%;">
+            <engine:Label text="0 / 0" name="quest-item__progress" class="lcs-text" style="font-size: 36px;" />
+            <engine:VisualElement style="flex-grow: 0; flex-direction: row; align-self: center; align-items: center; max-height: 50px; margin-top: 10px; margin-bottom: 10px; position: relative; top: auto; height: 100px; width: 100%; justify-content: center;">
+                <engine:Label text="10" name="quest-item__reward-amount" class="lcs-text" style="font-size: 64px; -unity-text-align: middle-center; margin-right: 12px;" />
+                <engine:VisualElement name="quest-item__reward-image" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/shop/watchad.png?fileID=2800000&amp;guid=c1c4ec069be1646b88b2cafee0e2ec86&amp;type=3#watchad&quot;); width: 80px; height: 80px; margin-left: 0;" />
+            </engine:VisualElement>
+            <Vues.GameCore.LocalizedButton key="btn_get" name="quest-item__reward-get" class="lcs_btn" style="height: 80px; width: 320px; margin-left: 12px; margin-top: 12px; margin-right: 12px; margin-bottom: 12px; background-color: rgb(107, 229, 207);" />
+        </engine:VisualElement>
+        <engine:VisualElement name="quest-item__image" style="flex-grow: 0; flex-direction: row; align-self: center; align-items: center; background-image: url(&quot;project://database/Assets/Content/quests/quest-002.png?fileID=2800000&amp;guid=8c77fdb7a4fe84591a39202b6dfa20f6&amp;type=3#quest-002&quot;); width: 180px; height: 180px; margin-top: 8px; justify-content: center; max-width: none; max-height: none; min-width: auto; min-height: auto; margin-right: 12px; margin-left: 12px; position: absolute; top: -90px;" />
+    </engine:VisualElement>
+</engine:UXML>

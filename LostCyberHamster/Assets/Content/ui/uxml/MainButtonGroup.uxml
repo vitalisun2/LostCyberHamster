@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <ui:VisualElement style="flex-grow: 1; flex-direction: row; justify-content: center; align-self: center; align-items: center;">
+        <ui:Button text="&#10;" icon-image="project://database/Assets/Content/ui/textures/ui_atlas.psd?fileID=428085105501800460&amp;guid=29047d9fdf8ef4acdbb6f67516476d96&amp;type=3#hamster_face_icon" name="btn_character" class="lcs_btn" style="width: 120px; height: 120px;" />
+        <ui:Button icon-image="project://database/Assets/Content/ui/textures/ui_atlas.psd?fileID=7448841341171803087&amp;guid=29047d9fdf8ef4acdbb6f67516476d96&amp;type=3#quests_icon" name="btn_tasks" class="lcs_btn" style="width: 120px; height: 120px;" />
+        <ui:Button icon-image="project://database/Assets/Content/ui/textures/ui_atlas.psd?fileID=7448841341171803087&amp;guid=29047d9fdf8ef4acdbb6f67516476d96&amp;type=3#quests_icon" name="btn_quests" class="lcs_btn" style="width: 120px; height: 120px;" />
+    </ui:VisualElement>
+</ui:UXML>

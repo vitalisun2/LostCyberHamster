@@ -1,0 +1,14 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
+    <engine:Template name="MainButtonGroup" src="project://database/Assets/Content/ui/uxml/MainButtonGroup.uxml?fileID=9197481963319205126&amp;guid=bda278450cb444e77baf19c884d0a62a&amp;type=3#MainButtonGroup" />
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement name="homescreen" style="flex-grow: 1;">
+        <engine:Instance template="Toolbar" name="toolbar" />
+        <engine:VisualElement style="flex-grow: 1; justify-content: center; align-items: center; min-width: 10%;">
+            <Vues.GameCore.LocalizedButton key="btn_play" name="btn_play" class="lcs_btn" />
+            <Vues.GameCore.LocalizedLabel key="lbl_or" class="lcs-text" />
+            <Vues.GameCore.LocalizedButton key="btn_select-level" name="btn_select-level" parse-escape-sequences="true" class="lcs_btn" />
+        </engine:VisualElement>
+        <engine:Instance template="MainButtonGroup" name="main_btn_group" />
+    </engine:VisualElement>
+</engine:UXML>

@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Mappings
+  m_EditorClassIdentifier: 
+  m_GroupName: Mappings
+  m_GUID: ab5c8d69af808f24d8d65afbba97bb83
+  m_SerializeEntries:
+  - m_GUID: 406d2f729aa7b2e4590b1ea8a30d1caf
+    m_Address: 01_New_York/obstacle_sprite_to_type_mappings
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6de5bf6d7612c7046800ac0fb8d0cb86
+    m_Address: level_design_templates/obstacle_sprite_to_type_mappings
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cba079467daf37c499c75f6d362af46d
+    m_Address: 02_Paris/obstacle_sprite_to_type_mappings
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas: []

@@ -1,0 +1,124 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# Top-most EditorConfig file
+root = true
+
+# C# files
+[*.cs]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# C# solution files
+[*.sln]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# C# project files
+[*.*proj]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+
+
+[*.{cs,vb}]
+
+charset = utf-8
+indent_style = space
+indent_size = 4
+
+# Enforce const fields to be uppercase
+dotnet_naming_rule.const_uppercase.severity = suggestion
+dotnet_naming_rule.const_uppercase.symbols = const_field_like
+dotnet_naming_rule.const_uppercase.style = const_uppercase_style
+
+dotnet_naming_symbols.const_field_like.applicable_kinds = field
+dotnet_naming_symbols.const_field_like.applicable_accessibilities = public
+dotnet_naming_symbols.const_field_like.required_modifiers = const
+dotnet_naming_symbols.const_field_like.required_attribute_targets = field
+
+dotnet_naming_style.const_uppercase_style.capitalization = uppercase
+dotnet_naming_style.const_uppercase_style.required_prefix = 
+dotnet_naming_style.const_uppercase_style.required_suffix = 
+dotnet_naming_style.const_uppercase_style.word_separator = 
+
+# Allow _camel for fields
+dotnet_naming_rule.allow_underscore_camel.severity = suggestion
+dotnet_naming_rule.allow_underscore_camel.symbols = underscore_camel_like
+dotnet_naming_rule.allow_underscore_camel.style = underscore_camel_style
+
+dotnet_naming_symbols.underscore_camel_like.applicable_kinds = field,property
+dotnet_naming_symbols.underscore_camel_like.applicable_accessibilities = public,private,protected,internal,protected_internal
+dotnet_naming_symbols.underscore_camel_like.required_modifiers = 
+dotnet_naming_symbols.underscore_camel_like.required_attribute_targets = field,property
+
+dotnet_naming_style.underscore_camel_style.capitalization = camel_case
+dotnet_naming_style.underscore_camel_style.required_prefix = _
+dotnet_naming_style.underscore_camel_style.required_suffix = 
+dotnet_naming_style.underscore_camel_style.word_separator = 
+
+# Instance fields should be camel case, excluding const fields
+dotnet_naming_rule.instance_fields_should_be_camel_case.severity = warning
+dotnet_naming_rule.instance_fields_should_be_camel_case.symbols = instance_fields
+dotnet_naming_rule.instance_fields_should_be_camel_case.style = instance_field_style
+
+dotnet_naming_symbols.instance_fields.applicable_kinds = field
+dotnet_naming_symbols.instance_fields.applicable_accessibilities = private,protected,internal,protected_internal
+dotnet_naming_symbols.instance_fields.required_modifiers = 
+dotnet_naming_symbols.instance_fields.required_attribute_targets = field
+
+dotnet_naming_style.instance_field_style.capitalization = camel_case
+dotnet_naming_style.instance_field_style.required_prefix = _
+dotnet_naming_style.instance_field_style.required_suffix = 
+dotnet_naming_style.instance_field_style.word_separator = 
+
+
+# For variables
+dotnet_naming_symbols.local_symbol.applicable_kinds = local
+dotnet_naming_style.local_style.capitalization = camel_case
+dotnet_naming_rule.variables_are_camel_case.severity = suggestion
+dotnet_naming_rule.variables_are_camel_case.symbols = local_symbol
+dotnet_naming_rule.variables_are_camel_case.style = local_style
+
+# for parameters
+dotnet_naming_symbols.parameter_symbol.applicable_kinds = parameter
+dotnet_naming_style.parameter_style.capitalization = camel_case
+dotnet_naming_rule.parameters_are_camel_case.severity = suggestion
+dotnet_naming_rule.parameters_are_camel_case.symbols = parameter_symbol
+dotnet_naming_rule.parameters_are_camel_case.style = parameter_style
+
+
+
+
+# Enable named parameters suggestion
+dotnet_diagnostic.CS8013.severity = suggestion
+
+# Specify naming conventions for named parameters
+dotnet_naming_rule.named_parameter_convention.severity = suggestion
+dotnet_naming_rule.named_parameter_convention.symbols = named_parameters
+dotnet_naming_rule.named_parameter_convention.style = named_parameters_style
+
+# Naming conventions for named parameters
+dotnet_naming_rule.named_parameters_should_be_camel_case.severity = error
+dotnet_naming_rule.named_parameters_should_be_camel_case.symbols = named_parameters
+dotnet_naming_rule.named_parameters_should_be_camel_case.style = named_parameter_style
+
+dotnet_naming_symbols.named_parameters.applicable_kinds = parameter
+dotnet_naming_symbols.named_parameters.applicable_accessibilities = public, internal, private, protected, protected_internal
+dotnet_naming_symbols.named_parameters.required_modifiers = 
+
+dotnet_naming_style.named_parameter_style.capitalization = camel_case
+dotnet_naming_style.named_parameter_style.required_prefix = 
+dotnet_naming_style.named_parameter_style.required_suffix = 
+dotnet_naming_style.named_parameter_style.word_separator = 

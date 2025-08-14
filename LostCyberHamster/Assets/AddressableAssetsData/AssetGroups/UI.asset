@@ -1,0 +1,258 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: UI
+  m_EditorClassIdentifier: 
+  m_GroupName: UI
+  m_GUID: 8b60fa516636c4257a46110822c557e1
+  m_SerializeEntries:
+  - m_GUID: 12e874e61536a4fdb9acbd5defb13cf5
+    m_Address: not_opened_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 18abdce71a82c4bcc97a402af639aec2
+    m_Address: SelectLevelScreen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1ce8441ea148c41c2a2762a5a05f8454
+    m_Address: quest-007
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 29047d9fdf8ef4acdbb6f67516476d96
+    m_Address: ui_atlas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3233ff3132b05469f9a5e6332266d805
+    m_Address: quest-008
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3237856bfd2e045b5904a73093415872
+    m_Address: LevelItem.uxml
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 34221b9f30e814806bfc22646114e644
+    m_Address: QuestsScreen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3bf1371959723406b9ac25823fba2dc7
+    m_Address: quest-004
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4127e7ec79840428dadd4ca69854102c
+    m_Address: afternoon_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4c434d3f49aa041ddb2583b16acd5c01
+    m_Address: QuestItem.uxml
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4cdc77280b52f4c07a29752546dba2e7
+    m_Address: DailyTasksScreen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 53ef3fc4478f849abaaa97cb8052a325
+    m_Address: evening_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 563371a807bdd4181a88e9f56ba0753a
+    m_Address: story-005
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62d327090259f4d62b26421aa2da2f30
+    m_Address: story-007
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 64d1ce22ac12f48b9b3a7a172bbdaa79
+    m_Address: WinModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 64eebc4b0772b497f815ab480f721606
+    m_Address: LoseModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7713a4d386f4d46a9b14adda64c9fb70
+    m_Address: IntroScreen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7d508fc7ac56948c89befc24fb4ce373
+    m_Address: story-001
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 820a7e84c695c4988acffd606a5adb6d
+    m_Address: PauseModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8a2c8921584e242f384dbd4ae5efad38
+    m_Address: HealthItem
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 91c360975cca4413f8cff6a25dfed940
+    m_Address: StorageUI
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 95d4ff5f42b714152804f81a2f65b368
+    m_Address: HomeScreen
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - screens
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 99a68c08abc074591bc3afd7a12b6c61
+    m_Address: star
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 99fa2fb198d734d5c8fc9cf3258776f7
+    m_Address: SettingsModal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - screens
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a0ab86b9f4cb4b47b08de09e0c95992
+    m_Address: new_york_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9d86ad8de91fd4698ba8ea5ec6ae9c3a
+    m_Address: quest-005
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0ed9eba09b3644f4a085fc31c6541c7
+    m_Address: ShopModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a16e77b5f631c47dab9aaa44fca17fc5
+    m_Address: ShopItem
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a30853d96f2f04eaaad3fc413ef0a317
+    m_Address: night_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a78d210370ef54037aaf094ba0053894
+    m_Address: GameScreen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a914c44bef8c74e99a1c091ee60056cb
+    m_Address: EnergyBar
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af472ae585e9c4e46a4fc6ab78afda13
+    m_Address: story-008
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af8d8b5f944b1446d88abcf3df77f86d
+    m_Address: story-010
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b071bf131c1bf4b728810efcd1da1a3b
+    m_Address: story-009
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b7a10e98e3c1e4c46a04eca067fe4227
+    m_Address: star_empty
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b89bfc84c2fee4688b072a222f116662
+    m_Address: story-002
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b9ddb55fa3af84dfe8582986e95345da
+    m_Address: paris_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c15d9824e5ef74c42b3237800a5dd7b7
+    m_Address: SigninModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e0fdcc782c1a44d6aa8c6c5419e95460
+    m_Address: story-004
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e182fd01247e448ff9389314d415c69b
+    m_Address: story-003
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eaf3c790223074b1980ae25d6a39f19f
+    m_Address: quest-006
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ef1cd1ccf849b4bf69426b63be69aea5
+    m_Address: HomeScreenSprite
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - textures
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ef1d92421519244efa4366179960b4ef
+    m_Address: quest-009
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f1f21ae0b1dcb4903abafd4ad99ac9d8
+    m_Address: morning_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f58ab194c573e425289636e0923c36ff
+    m_Address: BackgroundScreenSprite
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - textures
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fa68dbf0fc0be4a1fa0c6360873d61c2
+    m_Address: CharacterScreen
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - screens
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: fbeace001fba44e1491b7cc4fc256c4f, type: 2}
+    - {fileID: 11400000, guid: 1e94cfc201b514043a6d4730acbc1d53, type: 2}

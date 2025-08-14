@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: skins ulta prefabs
+  m_EditorClassIdentifier: 
+  m_GroupName: skins ulta prefabs
+  m_Data:
+    m_SerializedData: []
+  m_GUID: ab3717bc17086fd42bb7f6361bde234e
+  m_SerializeEntries:
+  - m_GUID: b1178a70430f4184889672951fbf013b
+    m_Address: EnergyShieldPrefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 322b02c3441191444aa4e685e00a3fc9
+    m_Address: ElectricStrikePrefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: e2f4f3989fa1e4849953a09fa7207561, type: 2}
+    - {fileID: 11400000, guid: cc14bf700544b2f4597986a43bd5ca7f, type: 2}

@@ -1,0 +1,9 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement class="modal__background" style="flex-grow: 1;">
+        <engine:VisualElement name="modal__container" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/BackgroundScreen.png?fileID=5932796203531190822&amp;guid=f58ab194c573e425289636e0923c36ff&amp;type=3#BackgroundScreen_0&quot;); min-width: 640px; min-height: 360px; width: 1280px; height: 720px;">
+            <engine:VisualElement name="modal__content" style="flex-grow: 1; align-self: center; justify-content: center;" />
+            <engine:Button name="btn_close-modal" style="position: absolute; top: -24px; right: -24px; background-image: url(&quot;project://database/Assets/Content/ui/textures/ui_atlas.psd?fileID=-8938636340365726781&amp;guid=29047d9fdf8ef4acdbb6f67516476d96&amp;type=3#icon_close&quot;); width: 96px; height: 96px; border-top-left-radius: 48px; border-top-right-radius: 48px; border-bottom-right-radius: 48px; border-bottom-left-radius: 48px;" />
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

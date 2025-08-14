@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Skins
+  m_EditorClassIdentifier: 
+  m_GroupName: Skins
+  m_Data:
+    m_SerializedData: []
+  m_GUID: 245d49e72fcde804ab62b1433a3d8a86
+  m_SerializeEntries:
+  - m_GUID: 3d9968e7d40fbe546b168e30032fc015
+    m_Address: skins
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 90403d40a53bb4c38888e87bee258c9c
+    m_Address: skin_default
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1bd14aa037e924e6bb59d24f1b2a4d40
+    m_Address: skin_energy-shield
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6f939148836434acc83a6d2ad15934e9
+    m_Address: skin_electric-strike
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 0a69ce3f7d2920e4c892833f56bde36d, type: 2}
+    - {fileID: 11400000, guid: a0c03e940356aee4bb034ba53916846a, type: 2}

@@ -1,0 +1,21 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:Template name="HomeButton" src="project://database/Assets/Content/ui/uxml/HomeButton.uxml?fileID=9197481963319205126&amp;guid=d4d56334d80034ccbb95cdc946dbab88&amp;type=3#HomeButton" />
+    <engine:Template name="GameButton" src="project://database/Assets/Content/ui/uxml/RepeatButton.uxml?fileID=9197481963319205126&amp;guid=7119eba4dfc834ba9abc19bc78f556d1&amp;type=3#RepeatButton" />
+    <engine:Template name="PlayButton" src="project://database/Assets/Content/ui/uxml/PlayButton.uxml?fileID=9197481963319205126&amp;guid=b414e9450f40241cc87c69905fea2dfb&amp;type=3#PlayButton" />
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement style="flex-grow: 1; flex-direction: column; align-items: center; justify-content: space-between;">
+        <engine:VisualElement style="flex-grow: 1;" />
+        <engine:Label text="Label" name="level_location" class="lcs-text" style="font-size: 64px;" />
+        <engine:Label text="Label" name="level_name" class="lcs-text" />
+        <engine:VisualElement name="stars_container" style="flex-grow: 0; flex-direction: row; height: 160px; align-items: center; width: 360px; justify-content: space-around;">
+            <engine:VisualElement name="star1" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 100px; height: 100px;" />
+            <engine:VisualElement name="star2" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 100px; height: 100px;" />
+            <engine:VisualElement name="star3" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 100px; height: 100px;" />
+        </engine:VisualElement>
+        <engine:VisualElement style="flex-grow: 0; flex-direction: row; align-items: flex-end;">
+            <engine:Instance template="HomeButton" />
+            <engine:Instance template="GameButton" />
+            <engine:Instance template="PlayButton" />
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

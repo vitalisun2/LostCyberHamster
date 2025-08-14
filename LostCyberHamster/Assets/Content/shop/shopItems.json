@@ -1,0 +1,22 @@
+{
+    "items": [
+        {
+            "id": 1,
+            "name": "Coin Pack 1",
+            "price": 0,
+            "amount": 50,
+            "type": 1,
+            "resource": 99,
+            "imageAddress": "coins_pack_1"
+        },
+        {
+            "id": 2,
+            "name": "Crystal Pack 1",
+            "price": 500,
+            "amount": 1,
+            "type": 2,
+            "resource": 1,
+            "imageAddress": "crystals_pack_1"
+        }
+    ]
+}

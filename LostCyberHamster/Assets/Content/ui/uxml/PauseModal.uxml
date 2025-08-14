@@ -1,0 +1,11 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:Template name="HomeButton" src="project://database/Assets/Content/ui/uxml/HomeButton.uxml?fileID=9197481963319205126&amp;guid=d4d56334d80034ccbb95cdc946dbab88&amp;type=3#HomeButton" />
+    <engine:Template name="GameButton" src="project://database/Assets/Content/ui/uxml/RepeatButton.uxml?fileID=9197481963319205126&amp;guid=7119eba4dfc834ba9abc19bc78f556d1&amp;type=3#RepeatButton" />
+    <engine:Template name="PlayButton" src="project://database/Assets/Content/ui/uxml/PlayButton.uxml?fileID=9197481963319205126&amp;guid=b414e9450f40241cc87c69905fea2dfb&amp;type=3#PlayButton" />
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center; justify-content: center;">
+        <engine:Instance template="HomeButton" />
+        <engine:Instance template="GameButton" />
+        <engine:Instance template="PlayButton" />
+    </engine:VisualElement>
+</engine:UXML>

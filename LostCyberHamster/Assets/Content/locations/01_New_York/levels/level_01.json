@@ -1,0 +1,336 @@
+{
+  "backgroundTexture": "bg_new_york_morning",
+  "decorationPatterns": [],
+  "patterns": [
+    {
+      "name": "test",
+      "desсription": "",
+      "obstacles": [
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 4.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 8.800000190734864,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 13.600000381469727,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 18.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 27.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 32.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 36.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 41.60000228881836,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 46.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_opened_box",
+          "type": 3,
+          "x": 37.60000228881836,
+          "y": -1.0
+        }
+      ]
+    },
+    {
+      "name": "test",
+      "desсription": "",
+      "obstacles": [
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 4.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 8.800000190734864,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 13.600000381469727,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 18.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 27.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 32.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 36.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 41.60000228881836,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 46.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_opened_box",
+          "type": 3,
+          "x": 37.60000228881836,
+          "y": -1.0
+        }
+      ]
+    },
+    {
+      "name": "test",
+      "desсription": "",
+      "obstacles": [
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 4.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 8.800000190734864,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 13.600000381469727,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 18.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 27.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 32.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 36.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 41.60000228881836,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 46.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_opened_box",
+          "type": 3,
+          "x": 37.60000228881836,
+          "y": -1.0
+        }
+      ]
+    },
+    {
+      "name": "test",
+      "desсription": "",
+      "obstacles": [
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 4.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 8.800000190734864,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 13.600000381469727,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 18.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 27.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 32.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 36.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 41.60000228881836,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 46.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_opened_box",
+          "type": 3,
+          "x": 37.60000228881836,
+          "y": -1.0
+        }
+      ]
+    },
+    {
+      "name": "test",
+      "desсription": "",
+      "obstacles": [
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 4.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 8.800000190734864,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 13.600000381469727,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 18.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 27.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 32.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 36.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 41.60000228881836,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 46.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_opened_box",
+          "type": 3,
+          "x": 37.60000228881836,
+          "y": -1.0
+        }
+      ]
+    }
+  ]
+}

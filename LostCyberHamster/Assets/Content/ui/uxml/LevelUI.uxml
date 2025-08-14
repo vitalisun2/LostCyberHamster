@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Template name="EnergyBar" src="project://database/Assets/Content/ui/uxml/EnergyBar.uxml?fileID=9197481963319205126&amp;guid=a914c44bef8c74e99a1c091ee60056cb&amp;type=3#EnergyBar" />
+    <ui:Template name="HealthBar" src="project://database/Assets/Content/ui/uxml/HealthBar.uxml?fileID=9197481963319205126&amp;guid=74371cb81769b4c6591cf3b5746764f2&amp;type=3#HealthBar" />
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <ui:VisualElement class="top-block">
+        <ui:Instance template="EnergyBar" name="energy-container" />
+        <ui:Label tabindex="-1" text="Score" display-tooltip-when-elided="true" name="scorebar" />
+        <ui:Instance template="HealthBar" name="health-container" />
+        <ui:Button text="Pause" display-tooltip-when-elided="true" name="btn-pause" class="vues-btn" />
+    </ui:VisualElement>
+    <ui:VisualElement class="bottom-block">
+        <ui:VisualElement />
+        <ui:Label tabindex="-1" text="Debug" display-tooltip-when-elided="true" name="debug-game" />
+        <ui:Button text="Jump" display-tooltip-when-elided="true" name="btn-jump" />
+    </ui:VisualElement>
+    <ui:VisualElement name="tap" />
+</ui:UXML>

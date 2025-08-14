@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: obstacles sprites
+  m_EditorClassIdentifier: 
+  m_GroupName: obstacles sprites
+  m_GUID: 7bb582b3c050f5f49a616b92a5fc8991
+  m_SerializeEntries:
+  - m_GUID: 0e46970db7684e14890d3ef8a1e568ba
+    m_Address: obstacle_new_york_manhole
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1470367968d53814ebf4498b41062ff6
+    m_Address: obstacle_new_york_car
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3fff77cc66182e64b95d3ddc3ddbfb80
+    m_Address: obstacle_new_york_dog
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 53f713f0a1ee7514d98f4a55fa65d1d8
+    m_Address: obstacle_new_york_opened_box
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 69894289a2509974887e238d4eddd0b6
+    m_Address: obstacle_paris_businessman
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Paris obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af493faffdf7c98498e5fa2177ec64c1
+    m_Address: obstacle_paris_car
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Paris obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bada9d1e4c36cd04890ccf0f750460c6
+    m_Address: obstacle_new_york_businessman
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e5b046f7d4962b04f98b8144332bca33
+    m_Address: obstacle_new_york_hipster
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ef71812a0991cd64e8ce65017b19fd3c
+    m_Address: obstacle_new_york_granny
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f5227996d807cd241b93ed1e81477692
+    m_Address: obstacle_new_york_homeless
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 045412d9e683b0644bfbfa3f5fa70f8b, type: 2}
+    - {fileID: 11400000, guid: 406a93d2770f3574ba8d61ffa8d63111, type: 2}

@@ -1,0 +1,38 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:DropdownField label="location" name="location-dropdown" style="margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px;" />
+    <ui:DropdownField label="background texture" name="background-dropdown" style="margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px;" />
+    <ui:VisualElement style="flex-grow: 1; flex-direction: row; max-height: 60px; align-items: flex-start; justify-content: space-around; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; min-height: 30px;">
+        <ui:Button text="create level" name="create-level-btn" />
+        <ui:Toggle name="template-mode-toggle" text="Template mode" focusable="true" enabled="true" />
+    </ui:VisualElement>
+    <ui:VisualElement name="template-level-name-parent" style="flex-grow: 1; flex-direction: row; max-height: 60px; align-items: flex-start; justify-content: space-around; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; min-height: 30px; display: none;">
+        <ui:TextField label="Level Name" name="template-level-name" enabled="true" hide-placeholder-on-focus="false" style="justify-content: space-around; align-items: flex-end; align-self: auto; display: flex; min-width: 70%;" />
+    </ui:VisualElement>
+    <ui:VisualElement style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 120px; min-height: 50px; height: auto;">
+        <ui:Label text="files" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+        <ui:ListView name="files-list-view" style="min-height: 30px; max-height: 100px; height: auto;" />
+    </ui:VisualElement>
+    <ui:VisualElement style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 120px; min-height: 50px; height: auto;">
+        <ui:FloatField label="Pattern Duration (min)" value="1" name="patternDuration" />
+    </ui:VisualElement>
+    <ui:VisualElement name="VisualElement" style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 500px; min-height: 100px; height: auto;">
+        <ui:Label text="patterns" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+        <ui:TextField label="Selected pattern name" placeholder-text="filler text" name="selected-pattern-name" />
+        <ui:TextField label="Selected pattern description" placeholder-text="filler text" name="selected-pattern-description" vertical-scroller-visibility="Auto" multiline="true" />
+        <ui:ListView name="patterns-list-view" style="height: auto; max-height: 200px; min-height: 100px;" />
+    </ui:VisualElement>
+    <ui:VisualElement style="flex-grow: 1; flex-direction: row; justify-content: space-around; max-height: 60px; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; min-height: 30px;">
+        <ui:Button text="add" name="add-pattern-btn" />
+        <ui:Button text="remove" name="remove-pattern-btn" />
+        <ui:Button text="up" name="move-up-btn" />
+        <ui:Button text="down" name="move-down-btn" />
+    </ui:VisualElement>
+    <ui:DropdownField label="obstacle type" name="obstacle-type-dropdown" style="margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px;" />
+    <ui:Toggle label="IsCollectableOnRoof&#x9;" value="false" name="IsCollectableOnRoofToggle" style="margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; flex-direction: row; align-items: auto; justify-content: flex-start; align-self: stretch; flex-wrap: nowrap;" />
+    <ui:Label text="sprites" style="-unity-text-align: upper-center;" />
+    <ui:ScrollView name="sprites" mode="Vertical" style="display: flex; min-height: 100px; max-height: 600px; align-items: center; justify-content: space-between; align-self: center; flex-grow: 1; position: relative; flex-wrap: wrap; flex-direction: column;" />
+    <ui:VisualElement style="flex-grow: 1; flex-direction: row; max-height: 60px; align-items: center; justify-content: space-around; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px;">
+        <ui:Button text="save to json" name="save-btn" />
+        <ui:Button text="reset" name="reset-btn" />
+    </ui:VisualElement>
+</ui:UXML>
