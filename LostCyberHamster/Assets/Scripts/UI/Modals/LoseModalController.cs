@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using UnityEngine.UIElements;
 
@@ -13,9 +13,7 @@ namespace LostCyberHamster.UI
         private VisualElement _exitButton => _modalContent.Q<VisualElement>("btn__home");
 
         private Action _actionWatchAdd;
-
         private Action _actionRestart;
-
         private Action _actionExit;
 
         protected override ScreenEnum _modalAssetName => ScreenEnum.LoseModal;
@@ -60,11 +58,6 @@ namespace LostCyberHamster.UI
             _watchAdsButton?.UnregisterCallback<ClickEvent>(OnClickWatchAds);
             _restartButton?.UnregisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.UnregisterCallback<ClickEvent>(OnClickExit);
-        }
-
-        public void SetResumeAction(Action value)
-        {
-            _actionWatchAdd = value;
         }
 
         public void SetRestartAction(Action value)

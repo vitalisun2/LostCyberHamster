@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts.System;
 using UnityEngine;
@@ -21,6 +21,11 @@ public class Intro : MonoBehaviour
     private int _fadeSteps = 10;
     private float _waitAfterFade = 2f;
 
+    // Храним запущенную корутину интро, флаг одноразового завершения и ссылку на обработчик "Skip"
+    private Coroutine _introRoutine;           // чтобы корректно останавливать реальную корутину
+    private bool _ended;                       // чтобы EndIntro выполнился один раз
+    private EventCallback<ClickEvent> _skipHandler; // чтобы корректно отписаться от клика
+
     public void Initialize(List<Sprite> introSprites)
     {
         _uiDocument = GameObject.Find("[UI]").GetComponent<UIDocument>();
@@ -28,11 +33,11 @@ public class Intro : MonoBehaviour
 
         if (_introImages.Count == 1)
         {
-            StartCoroutine(PlaySingleImageIntro(_introImages[0]));
+            _introRoutine = StartCoroutine(PlaySingleImageIntro(_introImages[0]));
         }
         else
         {
-            StartCoroutine(PlayIntroSequence());
+            _introRoutine = StartCoroutine(PlayIntroSequence());
         }
     }
 
@@ -109,15 +114,27 @@ public class Intro : MonoBehaviour
         _skipButton.style.position = Position.Absolute;
         _skipButton.style.right = 50;
         _skipButton.style.bottom = 30;
-        _skipButton.RegisterCallback<ClickEvent>(_ => SkipIntro());
-        _skipButton.AddToClassList("lcs_btn");
 
+        // Сохраняем делегат, чтобы потом отписаться им же (лямбда в Unregister не сработает)
+        _skipHandler = _ => SkipIntro();
+        _skipButton.RegisterCallback(_skipHandler);
+
+        _skipButton.AddToClassList("lcs_btn");
         _introScreen.Add(_skipButton);
     }
 
     public void SkipIntro()
     {
-        StopCoroutine(PlayIntroSequence());
+        // Останавливаем именно ту корутину, что была запущена
+        if (_introRoutine != null)
+        {
+            StopCoroutine(_introRoutine);
+            _introRoutine = null;
+        }
+
+        // Подстраховка от параллельных корутин, если такие появятся
+        StopAllCoroutines();
+
         EndIntro();
     }
 
@@ -183,9 +200,25 @@ public class Intro : MonoBehaviour
 
     private void EndIntro()
     {
-        _skipButton.UnregisterCallback<ClickEvent>(_ => SkipIntro());
+        // Делает EndIntro идемпотентным — вызовется один раз
+        if (_ended) return;
+        _ended = true;
+
+        // Корректно отписываем кнопку Skip (важно — тем же делегатом)
+        if (_skipHandler != null)
+        {
+            _skipButton.UnregisterCallback(_skipHandler);
+            _skipHandler = null;
+        }
+
         _introScreen.RemoveFromHierarchy();
-        LevelController.Instance.LevelData.GameManager.StartGame();
+
+        // Запуск игры допускаем только из состояния INTRO, чтобы не «оживать» после луз-модалки
+        var gm = LevelController.Instance.LevelData.GameManager;
+        if (gm.State == Assets.Scripts.GameManagerLogic.GameState.INTRO)
+        {
+            gm.StartGame();
+        }
 
         LevelDataProvider.ReleaseIntroSprites();
     }
