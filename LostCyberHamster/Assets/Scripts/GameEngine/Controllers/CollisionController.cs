@@ -56,18 +56,17 @@ public class CollisionController : MonoBehaviour
             return;
         }
 
-        var onSameLine = HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle);
+        if(!HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle))
+            return;
 
         // Если можем подбирать
-        var isCollectableState = IsCollectableState();
-        var isObstacleCollectable = IsObstacleCollectable(obstacle);
-        if (isCollectableState && isObstacleCollectable)
+        if (IsCollectableState() && IsObstacleCollectable(obstacle))
         {
             HandleCollectable(obstacle);
             return;
         }
 
-        if (CanDamageHamsterState(obstacle) && onSameLine)
+        if (CanDamageHamsterState(obstacle) || CanDamageOnRoofRun(obstacle))
         {
             HandleDamage(obstacle);
         }
@@ -90,6 +89,19 @@ public class CollisionController : MonoBehaviour
         }.Contains(_hamster.HamsterState.Value);
 
         return canDamageHamsterState;
+    }
+
+    /// <summary>
+    /// Проверяет, может ли хомяк получить урон во время бега по крыше.
+    /// Возвращает true, если хомяк находится в состоянии RoofRun и препятствие не является типом bigNotAlive.
+    /// </summary>
+    private bool CanDamageOnRoofRun(Obstacle obstacle)
+    {
+        if (_hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
+            return false;
+
+        // true, если препятствие НЕ BigNotAlive
+        return obstacle.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.bigNotAlive;
     }
 
     private bool IsObstacleCollectable(Obstacle obstacle)
