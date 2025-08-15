@@ -74,6 +74,9 @@ namespace Assets.Scripts.GameEngine.Controllers
                     break;
 
                 // IsJump
+                case HamsterStateEnum.Jump:
+                case HamsterStateEnum.JumpOver:
+                case HamsterStateEnum.JumpDamageForBigAlive:
                 case HamsterStateEnum.JumpDamageForSmallNotAlive:
                     _animator.SetTrigger("IsJump");
                     break;
