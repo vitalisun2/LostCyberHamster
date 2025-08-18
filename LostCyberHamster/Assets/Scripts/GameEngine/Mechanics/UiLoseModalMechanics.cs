@@ -41,6 +41,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private void OnWatchAd()
         {
             GameEventsManager.OnAdCompleted += HandleAdCompleted;
+            _loseModalController.Hide();
             GameEventsManager.ShowAd();
         }
 
