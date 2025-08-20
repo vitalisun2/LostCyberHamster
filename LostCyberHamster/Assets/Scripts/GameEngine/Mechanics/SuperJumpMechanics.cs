@@ -162,7 +162,7 @@ public class SuperJumpMechanics
                                             obs))
             return new JumpResult(HamsterStateEnum.SuperJumpDamage, obs);
 
-        if (IsJumpOver(obs))
+        if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidth, _superJumpShift, obs))
             return new JumpResult(HamsterStateEnum.SuperJumpOver, obs);
 
         return _noHit;
@@ -176,7 +176,7 @@ public class SuperJumpMechanics
                                             obs))
             return new JumpResult(HamsterStateEnum.SuperJumpOnObstacle, obs);
 
-        if (IsJumpOver(obs))
+        if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidth, _superJumpShift, obs))
             return new JumpResult(HamsterStateEnum.SuperJumpOver, obs);
 
         return _noHit;
@@ -190,7 +190,7 @@ public class SuperJumpMechanics
                                             obs))
             return new JumpResult(HamsterStateEnum.SuperJumpDamage, obs);
 
-        if (IsJumpOver(obs))
+        if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidth, _superJumpShift, obs))
             return new JumpResult(HamsterStateEnum.SuperJumpOver, obs);
 
         return _noHit;
@@ -215,32 +215,10 @@ public class SuperJumpMechanics
             return new JumpResult(HamsterStateEnum.SuperJumpDamage, small);
         }
 
-        if (IsJumpOver(small))
+        if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidth, _superJumpShift, small))
             return new JumpResult(HamsterStateEnum.SuperJumpOver, small);
 
         return _noHit;
-    }
-
-    // ──────────────────────── helpers ──────────────────────────
-
-    /// <summary>True, если хомяк полностью перелетает obstacle без оверлапа.</summary>
-    private bool IsJumpOver(Obstacle obs)
-    {
-        CollisionUtils.GetObstacleXInterval(obs, obs.ColliderWidth, out var oL, out var oR);
-
-        float hx = _characterTransform.position.x;
-        float hHalf = _hamsterWidth * 0.5f;
-        float hStartL = hx - hHalf;
-        float hStartR = hx + hHalf;
-
-        CollisionUtils.GetHamsterXIntervalAtJumpEnd(_characterTransform, _hamsterWidth,
-                                                    _superJumpShift,
-                                                    out var hEndL, out var hEndR);
-
-        return CollisionUtils.IsJumpOverIntervals(hStartL, hStartR,
-                                                  hEndL, hEndR,
-                                                  oL, oR,
-                                                  0f);
     }
 
 }

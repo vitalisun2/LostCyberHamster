@@ -148,7 +148,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (CollisionUtils.IsOverlapAtShift(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, obs))
                 return new JumpResult(HamsterStateEnum.JumpOnObstacle, obs);
 
-            if (IsJumpOver(obs))
+            if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, obs))
                 return new JumpResult(HamsterStateEnum.JumpOver, obs);
 
             return _noHit;
@@ -159,7 +159,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (CollisionUtils.IsOverlapAtShift(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, obs))
                 return new JumpResult(HamsterStateEnum.JumpDamageForSmallNotAlive, obs);
 
-            if (IsJumpOver(obs))
+            if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, obs))
                 return new JumpResult(HamsterStateEnum.JumpOver, obs);
 
             return _noHit;
@@ -167,7 +167,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private JumpResult HandleSmallNotAliveRoadAndRoof(Obstacle small)
         {
-            if (IsJumpOver(small))
+            if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, small))
                 return new JumpResult(HamsterStateEnum.JumpOver, small);
 
             if (!CollisionUtils.IsOverlapAtShift(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, small))
@@ -225,30 +225,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
             bool hitY = CollisionUtils.IsOverlap(hB, hT, oB, oT);
 
             return hitX || hitY;
-        }
-
-        /// <summary>
-        /// True, если хомяк полностью перелетает препятствие (без оверлапа).
-        /// </summary>
-        private bool IsJumpOver(Obstacle obs)
-        {
-            CollisionUtils.GetObstacleXInterval(obs, obs.ColliderWidth,
-                                                out var oL, out var oR);
-
-            float hamsterX = _characterTransform.position.x;
-            float hamsterHalf = _hamsterWidthInUnits * 0.5f;
-            float hStartLeft = hamsterX - hamsterHalf;
-            float hStartRight = hamsterX + hamsterHalf;
-
-            CollisionUtils.GetHamsterXIntervalAtJumpEnd(_characterTransform,
-                                                        _hamsterWidthInUnits,
-                                                        _jumpClipWorldShift,
-                                                        out var hEndLeft, out var hEndRight);
-
-            return CollisionUtils.IsJumpOverIntervals(hStartLeft, hStartRight,
-                                                      hEndLeft, hEndRight,
-                                                      oL, oR,
-                                                      0f);
         }
 
     }

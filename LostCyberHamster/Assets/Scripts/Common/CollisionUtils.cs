@@ -117,6 +117,25 @@ namespace Assets.Scripts.Common
             return overlap;
         }
 
+        /// <summary>
+        /// Проверяет, перепрыгивает ли хомяк препятствие.
+        /// Использует интервалы в начале и конце прыжка и сравнивает с интервалом препятствия.
+        /// </summary>
+        public static bool IsJumpOver(Transform hamster, float hamsterWidth, float shift, Obstacle obs)
+        {
+            GetObstacleXInterval(obs, obs.ColliderWidth, out var oL, out var oR);
+
+            float hx = hamster.position.x;
+            float half = hamsterWidth * 0.5f;
+
+            float hStartL = hx - half;
+            float hStartR = hx + half;
+
+            GetHamsterXIntervalAtJumpEnd(hamster, hamsterWidth, shift, out var hEndL, out var hEndR);
+
+            return IsJumpOverIntervals(hStartL, hStartR, hEndL, hEndR, oL, oR, 0f);
+        }
+
 
         /// <summary>
         /// Проверяет, пересекается ли хомяк в конце прыжка (учтён worldShift клипа)
