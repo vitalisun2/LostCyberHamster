@@ -127,12 +127,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         // bigNotAlive → RoofJump
         private JumpResult HandleBigNotAlive(Obstacle obs)
         {
-            CollisionUtils.GetObstacleXInterval(obs, obs.ColliderWidth, out var oL, out var oR);
-            CollisionUtils.GetHamsterXIntervalAtJumpEnd(_transform, _hamsterWidth,
-                _roofJumpShift,
-                out var hL, out var hR);
-
-            if (!CollisionUtils.IsOverlap(hL, hR, oL, oR))
+            if (!CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _roofJumpShift, obs))
                 return _noHit;
 
             bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_transform, _hamsterWidth, _roofJumpShift, _sameLineObstacles);
@@ -144,13 +139,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         // bigAlive → JumpOnObstacleFromRoof
         private JumpResult HandleBigAlive(Obstacle obs)
         {
-            CollisionUtils.GetObstacleXInterval(obs, obs.ColliderWidth,
-                                                out var oL, out var oR);
-            CollisionUtils.GetHamsterXIntervalAtJumpEnd(_transform, _hamsterWidth,
-                                                        _jumpFromRoofShift,
-                                                        out var hL, out var hR);
-
-            if (CollisionUtils.IsOverlap(hL, hR, oL, oR))
+            if (CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs))
                 return new JumpResult(HamsterStateEnum.JumpOnObstacleFromRoof, obs);
 
             return _noHit;
@@ -159,13 +148,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         // smallAlive → JumpOnObstacleFromRoof
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
-            CollisionUtils.GetObstacleXInterval(obs, obs.ColliderWidth,
-                                                out var oL, out var oR);
-            CollisionUtils.GetHamsterXIntervalAtJumpEnd(_transform, _hamsterWidth,
-                                                        _jumpFromRoofShift,
-                                                        out var hL, out var hR);
-
-            if (CollisionUtils.IsOverlap(hL, hR, oL, oR))
+            if (CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs))
                 return new JumpResult(HamsterStateEnum.JumpOnObstacleFromRoof, obs);
 
             return _noHit;
@@ -174,13 +157,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         // smallNotAliveRoad → JumpFromRoofDamage
         private JumpResult HandleSmallNotAliveRoad(Obstacle obs)
         {
-            CollisionUtils.GetObstacleXInterval(obs, obs.ColliderWidth,
-                                                out var oL, out var oR);
-            CollisionUtils.GetHamsterXIntervalAtJumpEnd(_transform, _hamsterWidth,
-                                                        _jumpFromRoofShift,
-                                                        out var hL, out var hR);
-
-            if (CollisionUtils.IsOverlap(hL, hR, oL, oR))
+            if (CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs))
                 return new JumpResult(HamsterStateEnum.JumpFromRoofDamage, obs);
 
             return _noHit;
@@ -199,14 +176,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             }
 
             // ---- small стоит на дороге (прыгаем «с крыши вниз») ----
-            CollisionUtils.GetHamsterXIntervalAtJumpEnd(
-                _transform, _hamsterWidth, _jumpFromRoofShift,
-                out var hEndL, out var hEndR);
-
-            CollisionUtils.GetObstacleXInterval(small, small.ColliderWidth,
-                                                out var oL2, out var oR2);
-
-            if (CollisionUtils.IsOverlap(hEndL, hEndR, oL2, oR2))
+            if (CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, small))
                 return new JumpResult(HamsterStateEnum.JumpFromRoofDamage, small);
 
             return _noHit;
