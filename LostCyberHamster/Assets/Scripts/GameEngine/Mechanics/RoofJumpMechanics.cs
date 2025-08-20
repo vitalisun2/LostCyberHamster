@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
@@ -32,7 +31,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly float _jumpFromRoofShift;
 
         // список препятствий, уже лежащих на нужной линии
-        private List<Obstacle> _sameLineObstacles;
+        private IReadOnlyList<Obstacle> _sameLineObstacles;
 
         private readonly Dictionary<ObstacleTypeEnum, Func<Obstacle, JumpResult>> _handlers;
         private readonly JumpResult _noHit = new(HamsterStateEnum.JumpFromRoof, null);
@@ -63,7 +62,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _jumpFromRoofShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_JUMP_FROM_ROOF);
 
             // будет заполнено при вычислении состояния прыжка
-            _sameLineObstacles = new List<Obstacle>();
+            _sameLineObstacles = Array.Empty<Obstacle>();
 
             _handlers = new()
             {
@@ -104,7 +103,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private JumpResult CalculateRoofJumpState()
         {
             var obstacles = CollisionUtils.GetValidObstaclesAhead(_transform, _isOnBottomLine.Value);
-            _sameLineObstacles = obstacles.ToList();
+            _sameLineObstacles = obstacles;
             float reachShift = Mathf.Max(_jumpFromRoofShift, _roofJumpShift); // максимум из двух клипов
 
             foreach (var obs in obstacles)

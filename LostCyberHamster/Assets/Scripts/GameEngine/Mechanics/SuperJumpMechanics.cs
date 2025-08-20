@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
@@ -39,7 +38,7 @@ public class SuperJumpMechanics
     private readonly float _superJumpShift;
 
     // список препятствий, уже лежащих на нужной линии
-    private List<Obstacle> _sameLineObstacles;
+    private IReadOnlyList<Obstacle> _sameLineObstacles;
 
     // ──────────────────────── handlers ─────────────────────────
     private readonly Dictionary<ObstacleTypeEnum, Func<Obstacle, JumpResult>> _handlers;
@@ -71,7 +70,7 @@ public class SuperJumpMechanics
         _superJumpShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_SUPER_JUMP);
 
         // будет заполнено при вычислении состояния прыжка
-        _sameLineObstacles = new List<Obstacle>();
+        _sameLineObstacles = Array.Empty<Obstacle>();
 
         _handlers = new()
         {
@@ -119,7 +118,7 @@ public class SuperJumpMechanics
             return _noHit;
 
         var obstacles = CollisionUtils.GetValidObstaclesAhead(_characterTransform, _isOnBottomLine.Value);
-        _sameLineObstacles = obstacles.ToList();
+        _sameLineObstacles = obstacles;
         float reachShift = _superJumpShift;                 // дальность по X
 
         foreach (var obs in obstacles)

@@ -6,7 +6,6 @@ using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using UnityEngine;
 using Atomic.Elements;
@@ -36,7 +35,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly float _hamsterHeightInUnits;
 
         // список препятствий, уже лежащих на нужной линии
-        private List<Obstacle> _sameLineObstacles;
+        private IReadOnlyList<Obstacle> _sameLineObstacles;
 
         private readonly Dictionary<ObstacleTypeEnum, Func<Obstacle, JumpResult>> _handlers;
         private readonly JumpResult _noHit = new(HamsterStateEnum.Jump, null);
@@ -68,7 +67,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _jumpClipWorldShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_JUMP);
 
             // будет заполнено при вычислении состояния прыжка
-            _sameLineObstacles = new List<Obstacle>();
+            _sameLineObstacles = Array.Empty<Obstacle>();
 
             _handlers = new()
             {
@@ -122,7 +121,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return new JumpResult(HamsterStateEnum.Jump, null);
 
             var obstacles = CollisionUtils.GetValidObstaclesAhead(_characterTransform, _isOnBottomLine.Value);
-            _sameLineObstacles = obstacles.ToList();
+            _sameLineObstacles = obstacles;
             float reachShift = _jumpClipWorldShift;
 
             foreach (var obs in obstacles)

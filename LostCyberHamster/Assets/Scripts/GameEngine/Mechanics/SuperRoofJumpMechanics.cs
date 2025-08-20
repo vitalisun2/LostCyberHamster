@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
@@ -40,7 +39,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly float _jumpFromRoofShift;
 
         // список препятствий, уже лежащих на нужной линии
-        private List<Obstacle> _sameLineObstacles;
+        private IReadOnlyList<Obstacle> _sameLineObstacles;
 
         // ─────────────────────── handlers ─────────────────────────
         private readonly Dictionary<ObstacleTypeEnum, Func<Obstacle, JumpResult>> _handlers;
@@ -71,7 +70,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _jumpFromRoofShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_SUPER_JUMP_FROM_ROOF);
 
             // будет заполнено при вычислении состояния прыжка
-            _sameLineObstacles = new List<Obstacle>();
+            _sameLineObstacles = Array.Empty<Obstacle>();
 
             // словарь «тип → хендлер»
             _handlers = new()
@@ -116,7 +115,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private JumpResult CalculateRoofSuperJumpState()
         {
             var obstacles = CollisionUtils.GetValidObstaclesAhead(_transform, _isOnBottomLine.Value);
-            _sameLineObstacles = obstacles.ToList();
+            _sameLineObstacles = obstacles;
 
             // max досягаемого сдвига по X для супер-прыжка с крыши
             float maxShift = Mathf.Max(_jumpFromRoofShift, _roofSuperJumpShift);
