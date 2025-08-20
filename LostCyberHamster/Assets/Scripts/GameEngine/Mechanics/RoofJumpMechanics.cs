@@ -31,8 +31,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly float _roofJumpShift;
         private readonly float _jumpFromRoofShift;
 
-        private const string LOG = "[RoofJumpMechanics]";
-
         // список препятствий, уже лежащих на нужной линии
         private List<Obstacle> _sameLineObstacles;
 
@@ -105,32 +103,32 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private JumpResult CalculateRoofJumpState()
         {
-            float hamsterHalf = _hamsterWidth * 0.5f;
-
             _sameLineObstacles = ObstacleSpawner.Instance.SpawnedObstacles
-                                   .Select(io => io.ObstacleScript)
-                                   .Where(o => HelpMethods.IsOnSameLine(_isOnBottomLine.Value, o))
-                                   .ToList();
+                .Select(io => io.ObstacleScript)
+                .Where(o => HelpMethods.IsOnSameLine(_isOnBottomLine.Value, o))
+                .OrderBy(o => o.transform.position.x) // важно для корректного break
+                .ToList();
 
-            var obstacles = _sameLineObstacles;
+            float hamsterX = _transform.position.x;
+            float reachShift = Mathf.Max(_jumpFromRoofShift, _roofJumpShift); // максимум из двух клипов
 
-            foreach (var obs in obstacles)
+            foreach (var obs in _sameLineObstacles)
             {
-                float dx = obs.transform.position.x - _transform.position.x;
-                if (dx <= 0) continue;
+                if (obs.transform.position.x <= hamsterX) continue;
 
-                // «дальше всех» уходим в конце клипа JumpFromRoof
-                if (dx > hamsterHalf + _jumpFromRoofShift) break;
+                // ✅ корректный ранний выход по левой грани препятствия
+                if (CollisionUtils.ShouldBreakByReachRight(_transform, _hamsterWidth, reachShift, obs))
+                    break;
 
                 if (_handlers.TryGetValue(obs.ObstacleType.ObstacleTypeEnum, out var handler))
                 {
                     var res = handler(obs);
-                    if (res.State != _noHit.State)      // хендлер что-то нашёл
+                    if (res.State != _noHit.State)
                         return res;
                 }
             }
 
-            return _noHit;     // ничего не зацепили
+            return _noHit;
         }
 
         // ───── Обработчики ─────────────────────────────────────────────────────────

@@ -100,15 +100,21 @@ namespace Assets.Scripts.Common
         /// c указанным obstacle.
         /// </summary>
         public static bool IsOverlapAtShift(Transform hamster,
-                                            float hamsterWidth,
-                                            float worldShift,
-                                            Obstacle obstacle)
+            float hamsterWidth,
+            float worldShift,
+            Obstacle obstacle)
         {
             GetObstacleXInterval(obstacle, obstacle.ColliderWidth, out var oL, out var oR);
             GetHamsterXIntervalAtJumpEnd(hamster, hamsterWidth, worldShift,
-                                         out var hL, out var hR);
-            return IsOverlap(hL, hR, oL, oR);
+                out var hL, out var hR);
+            bool overlap = IsOverlap(hL, hR, oL, oR);
+
+            Debug.Log($"[CollisionUtils.IsOverlapAtShift] hamster=({hL:F3},{hR:F3}) " +
+                      $"obs={obstacle.name} ({oL:F3},{oR:F3}) shift={worldShift:F3} overlap={overlap}");
+
+            return overlap;
         }
+
 
         /// <summary>
         /// Проверяет, пересекается ли хомяк в конце прыжка (учтён worldShift клипа)
@@ -130,11 +136,14 @@ namespace Assets.Scripts.Common
 
                 GetObstacleXInterval(o, o.ColliderWidth, out var oL, out var oR);
                 bool overlap = IsOverlap(hL, hR, oL, oR);
+                Debug.Log($"[CollisionUtils.IsHitSmallNotAliveOnRoof] hamster=({hL:F3},{hR:F3}) " +
+                          $"small={o.name} ({oL:F3},{oR:F3}) overlap={overlap}");
                 if (overlap) return true;
             }
 
             return false;
         }
+
 
         /// <summary>
         /// Проверяет, находит ли bigNotAlive под smallNotAliveRoadAndRoof.
@@ -144,19 +153,21 @@ namespace Assets.Scripts.Common
         /// <param name="found"></param>
         /// <returns></returns>
         public static bool TryFindBigNotAliveUnderSmallNotAlive(
-            Obstacle              smallNotAlive,
+            Obstacle smallNotAlive,
             IEnumerable<Obstacle> allObstacles,
-            out Obstacle          found)
+            out Obstacle found)
         {
-            // X-интервал small
             GetObstacleXInterval(smallNotAlive, smallNotAlive.ColliderWidth,
-                                 out var smallL, out var smallR);
+                out var smallL, out var smallR);
 
             foreach (var o in allObstacles)
                 if (o.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.bigNotAlive)
                 {
                     GetObstacleXInterval(o, o.ColliderWidth, out var oL, out var oR);
-                    if (IsOverlap(smallL, smallR, oL, oR))
+                    bool overlap = IsOverlap(smallL, smallR, oL, oR);
+                    Debug.Log($"[CollisionUtils.TryFindBigNotAliveUnderSmallNotAlive] small={smallNotAlive.name} ({smallL:F3},{smallR:F3}) " +
+                              $"big={o.name} ({oL:F3},{oR:F3}) overlap={overlap}");
+                    if (overlap)
                     {
                         found = o;
                         return true;
@@ -165,6 +176,30 @@ namespace Assets.Scripts.Common
 
             found = null;
             return false;
+        }
+
+        /// <summary>
+        /// Утилита для механик прыжков: проверяет, стоит ли завершить перебор препятствий,
+        /// если их левый край уже правее максимально достижимого правого края хомяка.
+        /// Используется для корректного раннего выхода без лишних проверок.
+        /// </summary>
+
+        public static bool ShouldBreakByReachRight(
+            Transform hamster,
+            float hamsterWidth,
+            float reachShift,          // max из релевантных worldShift'ов
+            Obstacle obstacle,
+            float eps = 1e-4f)
+        {
+            // левый край препятствия
+            GetObstacleXInterval(obstacle, obstacle.ColliderWidth, out var oL, out _);
+
+            // максимальный правый край хомяка в конце прыжка
+            float hamsterEndRight = hamster.position.x + reachShift + (hamsterWidth * 0.5f);
+
+            bool stop = oL > hamsterEndRight + eps;
+            Debug.Log($"[CollisionUtils.ShouldBreakByReachRight] oL={oL:F3}, hamsterEndRight={hamsterEndRight:F3}, shift={reachShift:F3}, stop={stop}");
+            return stop;
         }
     }
 }

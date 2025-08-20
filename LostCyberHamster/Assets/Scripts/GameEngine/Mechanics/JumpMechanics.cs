@@ -122,22 +122,20 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return new JumpResult(HamsterStateEnum.Jump, null);
 
             _sameLineObstacles = ObstacleSpawner.Instance.SpawnedObstacles
-                                   .Select(io => io.ObstacleScript)
-                                   .Where(o => HelpMethods.IsOnSameLine(_isOnBottomLine.Value, o))
-                                   .ToList();
+                .Select(io => io.ObstacleScript)
+                .Where(o => HelpMethods.IsOnSameLine(_isOnBottomLine.Value, o))
+                .OrderBy(o => o.transform.position.x)
+                .ToList();
 
             float hamsterX = _characterTransform.position.x;
-            float hamsterHalf = _hamsterWidthInUnits * 0.5f;
+            float reachShift = Mathf.Abs(_jumpClipWorldShift);
 
-            var obstacles = _sameLineObstacles;
-
-            foreach (var obs in obstacles)
+            foreach (var obs in _sameLineObstacles)
             {
                 if (obs.transform.position.x <= hamsterX) continue;
 
-                float dx = obs.transform.position.x - hamsterX;
-                float maxReach = hamsterHalf + Mathf.Abs(_jumpClipWorldShift);
-                if (dx > maxReach) break;
+                if (CollisionUtils.ShouldBreakByReachRight(_characterTransform, _hamsterWidthInUnits, reachShift, obs))
+                    break;
 
                 if (_handlers.TryGetValue(obs.ObstacleType.ObstacleTypeEnum, out var handler))
                 {
@@ -149,6 +147,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             return new JumpResult(HamsterStateEnum.Jump, null);
         }
+
 
         // ───── Обработчики ──────────────────────────────────────────────────────
 
