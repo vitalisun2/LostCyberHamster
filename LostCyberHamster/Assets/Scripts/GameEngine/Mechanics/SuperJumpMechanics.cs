@@ -119,7 +119,7 @@ public class SuperJumpMechanics
 
         var obstacles = CollisionUtils.GetValidObstaclesAhead(_characterTransform, _isOnBottomLine.Value);
         _sameLineObstacles = obstacles.ToList();
-        float reachShift = Mathf.Abs(_superJumpShift);                 // дальность по X
+        float reachShift = _superJumpShift;                 // дальность по X
 
         foreach (var obs in obstacles)
         {
