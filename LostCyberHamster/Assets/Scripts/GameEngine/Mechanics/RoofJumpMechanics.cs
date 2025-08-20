@@ -146,7 +146,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return _noHit;
 
             bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_transform, _hamsterWidth, _roofJumpShift, _sameLineObstacles);
-            Debug.Log($"{LOG} [Big] hitSmallOnRoof={hitSmall}");
             var state = hitSmall ? HamsterStateEnum.RoofJumpDamage : HamsterStateEnum.RoofJump;
 
             return new JumpResult(state, obs);
@@ -206,7 +205,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (isOnBigRoof)
             {
                 bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_transform, _hamsterWidth, _roofJumpShift, _sameLineObstacles);
-                Debug.Log($"{LOG} [SmallR&R] onRoof: hitSmall={hitSmall}, roofShift={_roofJumpShift:F3}");
                 return new JumpResult(hitSmall ? HamsterStateEnum.RoofJumpDamage : HamsterStateEnum.RoofJump, bigUnderSmall);
             }
 

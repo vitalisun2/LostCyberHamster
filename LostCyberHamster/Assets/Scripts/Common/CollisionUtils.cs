@@ -130,7 +130,6 @@ namespace Assets.Scripts.Common
 
                 GetObstacleXInterval(o, o.ColliderWidth, out var oL, out var oR);
                 bool overlap = IsOverlap(hL, hR, oL, oR);
-                Debug.Log($"[CollisionUtils] IsHitSmallNotAliveOnRoof: hEnd=[{hL:F3};{hR:F3}] small='{o.name}' o=[{oL:F3};{oR:F3}] overlap={overlap}");
                 if (overlap) return true;
             }
 
@@ -138,33 +137,12 @@ namespace Assets.Scripts.Common
         }
 
         /// <summary>
-        /// Сценарий 1. Проверяем, «сидит» ли на bigNotAlive объект
-        /// smallNotAliveRoadAndRoof. Нужен лишь факт пересечения.
+        /// Проверяет, находит ли bigNotAlive под smallNotAliveRoadAndRoof.
         /// </summary>
-        public static bool HasSmallNotAliveOnRoof(
-            Obstacle              bigNotAlive,
-            IEnumerable<Obstacle> allObstacles)
-        {
-            // X-интервал big
-            GetObstacleXInterval(bigNotAlive, bigNotAlive.ColliderWidth,
-                                 out var bigL, out var bigR);
-
-            foreach (var o in allObstacles)
-                if (o.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.smallNotAliveRoadAndRoof)
-                {
-                    GetObstacleXInterval(o, o.ColliderWidth, out var oL, out var oR);
-                    if (IsOverlap(bigL, bigR, oL, oR))
-                        return true;
-                }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Сценарий 2. Уже нашли smallNotAliveRoadAndRoof. Проверяем, лежит ли он
-        /// поверх bigNotAlive. При успехе возвращаем bigNotAlive через out,
-        /// чтобы присвоить LastObstacle.
-        /// </summary>
+        /// <param name="smallNotAlive"></param>
+        /// <param name="allObstacles"></param>
+        /// <param name="found"></param>
+        /// <returns></returns>
         public static bool TryFindBigNotAliveUnderSmallNotAlive(
             Obstacle              smallNotAlive,
             IEnumerable<Obstacle> allObstacles,
