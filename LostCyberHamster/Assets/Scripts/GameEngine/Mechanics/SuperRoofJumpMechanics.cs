@@ -39,8 +39,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly float _roofSuperJumpShift;
         private readonly float _jumpFromRoofShift;
 
-        private const string LOG = "[SuperRoofJumpMechanics]";
-
         // список препятствий, уже лежащих на нужной линии
         private List<Obstacle> _sameLineObstacles;
 
@@ -72,9 +70,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _roofSuperJumpShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_SUPER_ROOF_JUMP);
             _jumpFromRoofShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_SUPER_JUMP_FROM_ROOF);
 
-            Debug.Log($"{LOG} INIT: hamsterWidth={_hamsterWidth}, roofShift={_roofSuperJumpShift}, jumpFromRoofShift={_jumpFromRoofShift}");
-
-
             // будет заполнено при вычислении состояния прыжка
             _sameLineObstacles = new List<Obstacle>();
 
@@ -102,8 +97,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _hamsterState.Value = result.State;
             if (result.Target != null) _lastObstacle.Value = result.Target;
 
-            Debug.Log($"{LOG} Final result: state={result.State}, target={(result.Target != null ? result.Target.name : "null")}");
-
             if (result.State == HamsterStateEnum.SuperJumpOnObstacleFromRoof)
                 GameEventsManager.ObstacleJumpedOn(result.Target!.name);
 
@@ -130,8 +123,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 .OrderBy(o => o.transform.position.x) // важно: корректный break
                 .ToList();
 
-
-            // max досягаемого сдвига по X для супер‑прыжка с крыши
+            // max досягаемого сдвига по X для супер-прыжка с крыши
             float maxShift = Mathf.Max(_jumpFromRoofShift, _roofSuperJumpShift);
 
             foreach (var obs in _sameLineObstacles)
@@ -141,19 +133,16 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 // ✅ Новый корректный ранний выход
                 if (CollisionUtils.ShouldBreakByReachRight(_transform, _hamsterWidth, maxShift, obs))
                 {
-                    Debug.Log($"{LOG} BREAK by reach: {obs.name}");
                     break;
                 }
 
                 if (_handlers.TryGetValue(obs.ObstacleType.ObstacleTypeEnum, out var handler))
                 {
                     JumpResult res = handler(obs);
-                    Debug.Log($"{LOG} Handler result for {obs.name}: {res.State}");
                     if (res.State != _noHit.State) return res;
                 }
             }
 
-            Debug.Log($"{LOG} noHit → {_noHit.State}");
             return _noHit;
         }
 
@@ -165,16 +154,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 _transform, _hamsterWidth, _roofSuperJumpShift, out var hL, out var hR);
             CollisionUtils.GetObstacleXInterval(obs, obs.ColliderWidth, out var oL, out var oR);
 
-            Debug.Log($"{LOG} [BigNotAlive] hamster=({hL:F3},{hR:F3}), obs=({oL:F3},{oR:F3}), roofShift={_roofSuperJumpShift:F3}");
-
-
             bool overlap = CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _roofSuperJumpShift, obs);
-            Debug.Log($"{LOG} [BigNotAlive] {obs.name} overlap={overlap}");
-
             if (!overlap) return _noHit;
 
             bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_transform, _hamsterWidth, _roofSuperJumpShift, _sameLineObstacles);
-            Debug.Log($"{LOG} [BigNotAlive] hitSmallOnRoof={hitSmall}");
             var state = hitSmall ? HamsterStateEnum.SuperRoofJumpDamage : HamsterStateEnum.SuperRoofJump;
 
             return new JumpResult(state, obs);
@@ -183,7 +166,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private JumpResult HandleBigAlive(Obstacle obs)
         {
             bool overlap = CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs);
-            Debug.Log($"{LOG} [BigAlive] {obs.name} overlap={overlap}");
             if (overlap)
                 return new JumpResult(HamsterStateEnum.SuperJumpOnObstacleFromRoof, obs);
 
@@ -193,7 +175,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
             bool overlap = CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs);
-            Debug.Log($"{LOG} [SmallAlive] {obs.name} overlap={overlap}");
             if (overlap)
                 return new JumpResult(HamsterStateEnum.SuperJumpOnObstacleFromRoof, obs);
 
@@ -203,7 +184,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private JumpResult HandleSmallNotAliveRoad(Obstacle obs)
         {
             bool overlap = CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs);
-            Debug.Log($"{LOG} [SmallRoad] {obs.name} overlap={overlap}");
             if (overlap)
                 return new JumpResult(HamsterStateEnum.SuperJumpFromRoofDamage, obs);
 
@@ -216,12 +196,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             bool isOnBigRoof = CollisionUtils.TryFindBigNotAliveUnderSmallNotAlive(
                                    small, _sameLineObstacles, out var bigUnderSmall);
 
-            Debug.Log($"{LOG} [SmallR&R] {small.name} isOnBigRoof={isOnBigRoof}");
-
             if (isOnBigRoof)
             {
                 bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_transform, _hamsterWidth, _roofSuperJumpShift, _sameLineObstacles);
-                Debug.Log($"{LOG} [SmallR&R] onRoof: hitSmall={hitSmall}, roofShift={_roofSuperJumpShift:F3}");
                 return new JumpResult(hitSmall ? HamsterStateEnum.SuperRoofJumpDamage : HamsterStateEnum.SuperRoofJump, bigUnderSmall);
             }
 
@@ -233,8 +210,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
                                                 out var oL2, out var oR2);
 
             bool overlap = CollisionUtils.IsOverlap(hEndL, hEndR, oL2, oR2);
-            Debug.Log($"{LOG} [SmallR&R] notOnRoof: hamsterEnd=({hEndL:F3},{hEndR:F3}), obs=({oL2:F3},{oR2:F3}), overlap={overlap}");
-
             if (overlap)
                 return new JumpResult(HamsterStateEnum.SuperJumpFromRoofDamage, small);
 
