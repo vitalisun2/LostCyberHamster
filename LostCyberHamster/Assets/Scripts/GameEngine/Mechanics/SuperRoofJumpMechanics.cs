@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
@@ -115,21 +114,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
         /// <summary>Определяет итог супер-прыжка, перебирая препятствия спереди.</summary>
         private JumpResult CalculateRoofSuperJumpState()
         {
-            float hamsterX = _transform.position.x;
-
-            _sameLineObstacles = ObstacleSpawner.Instance.SpawnedObstacles
-                .Select(io => io.ObstacleScript)
-                .Where(o => HelpMethods.IsOnSameLine(_isOnBottomLine.Value, o))
-                .OrderBy(o => o.transform.position.x) // важно: корректный break
-                .ToList();
+            var obstacles = CollisionUtils.GetValidObstaclesAhead(_transform, _isOnBottomLine.Value);
+            _sameLineObstacles = obstacles.ToList();
 
             // max досягаемого сдвига по X для супер-прыжка с крыши
             float maxShift = Mathf.Max(_jumpFromRoofShift, _roofSuperJumpShift);
 
-            foreach (var obs in _sameLineObstacles)
+            foreach (var obs in obstacles)
             {
-                if (obs.transform.position.x <= hamsterX) continue;
-
                 // ✅ Новый корректный ранний выход
                 if (CollisionUtils.ShouldBreakByReachRight(_transform, _hamsterWidth, maxShift, obs))
                 {
