@@ -123,7 +123,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             var obstacles = CollisionUtils.GetValidObstaclesAhead(_characterTransform, _isOnBottomLine.Value);
             _sameLineObstacles = obstacles.ToList();
-            float reachShift = Mathf.Abs(_jumpClipWorldShift);
+            float reachShift = _jumpClipWorldShift;
 
             foreach (var obs in obstacles)
             {
