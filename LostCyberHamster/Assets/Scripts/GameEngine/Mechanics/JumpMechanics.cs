@@ -6,7 +6,6 @@ using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using UnityEngine;
 using Atomic.Elements;
@@ -121,19 +120,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (_isDamaged.Value)
                 return new JumpResult(HamsterStateEnum.Jump, null);
 
-            _sameLineObstacles = ObstacleSpawner.Instance.SpawnedObstacles
-                .Select(io => io.ObstacleScript)
-                .Where(o => HelpMethods.IsOnSameLine(_isOnBottomLine.Value, o))
-                .OrderBy(o => o.transform.position.x)
-                .ToList();
-
-            float hamsterX = _characterTransform.position.x;
+            var obstacles = CollisionUtils.GetValidObstaclesAhead(_characterTransform, _isOnBottomLine.Value);
+            _sameLineObstacles = obstacles.ToList();
             float reachShift = Mathf.Abs(_jumpClipWorldShift);
 
-            foreach (var obs in _sameLineObstacles)
+            foreach (var obs in obstacles)
             {
-                if (obs.transform.position.x <= hamsterX) continue;
-
                 if (CollisionUtils.ShouldBreakByReachRight(_characterTransform, _hamsterWidthInUnits, reachShift, obs))
                     break;
 

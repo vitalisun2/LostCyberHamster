@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
@@ -118,19 +117,12 @@ public class SuperJumpMechanics
         if (_isDamaged.Value)
             return _noHit;
 
-        _sameLineObstacles = ObstacleSpawner.Instance.SpawnedObstacles
-            .Select(io => io.ObstacleScript)
-            .Where(o => HelpMethods.IsOnSameLine(_isOnBottomLine.Value, o))
-            .OrderBy(o => o.transform.position.x) // важно для корректного break
-            .ToList();
-
-        float hamsterX = _characterTransform.position.x;
+        var obstacles = CollisionUtils.GetValidObstaclesAhead(_characterTransform, _isOnBottomLine.Value);
+        _sameLineObstacles = obstacles.ToList();
         float reachShift = Mathf.Abs(_superJumpShift);                 // дальность по X
 
-        foreach (var obs in _sameLineObstacles)
+        foreach (var obs in obstacles)
         {
-            if (obs.transform.position.x <= hamsterX) continue;
-
             // корректный ранний выход: левый край препятствия правее максимально достижимого правого края хомяка
             if (CollisionUtils.ShouldBreakByReachRight(_characterTransform, _hamsterWidth, reachShift, obs))
                 break;

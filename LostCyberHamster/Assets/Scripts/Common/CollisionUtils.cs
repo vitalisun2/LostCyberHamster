@@ -1,6 +1,7 @@
 ﻿using Assets.Scripts.Gameplay;
 using Assets.Scripts.Common.Models;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Assets.Scripts.Common
@@ -176,6 +177,24 @@ namespace Assets.Scripts.Common
 
             found = null;
             return false;
+        }
+
+        /// <summary>
+        /// Возвращает список препятствий для проверки коллизий:
+        /// - только на той же линии, где находится хомяк;
+        /// - только те, что находятся правее позиции хомяка;
+        /// - отсортированные по координате X (по возрастанию).
+        /// </summary>
+        public static IReadOnlyList<Obstacle> GetValidObstaclesAhead(Transform hamster, bool isOnBottomLine)
+        {
+            float hx = hamster.position.x;
+
+            return ObstacleSpawner.Instance.SpawnedObstacles
+                .Select(io => io.ObstacleScript)
+                .Where(o => HelpMethods.IsOnSameLine(isOnBottomLine, o))
+                .Where(o => o.transform.position.x > hx)
+                .OrderBy(o => o.transform.position.x)
+                .ToList();
         }
 
         /// <summary>

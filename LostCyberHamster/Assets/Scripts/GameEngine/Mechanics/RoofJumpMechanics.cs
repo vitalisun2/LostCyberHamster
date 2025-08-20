@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
@@ -103,19 +102,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private JumpResult CalculateRoofJumpState()
         {
-            _sameLineObstacles = ObstacleSpawner.Instance.SpawnedObstacles
-                .Select(io => io.ObstacleScript)
-                .Where(o => HelpMethods.IsOnSameLine(_isOnBottomLine.Value, o))
-                .OrderBy(o => o.transform.position.x) // важно для корректного break
-                .ToList();
-
-            float hamsterX = _transform.position.x;
+            var obstacles = CollisionUtils.GetValidObstaclesAhead(_transform, _isOnBottomLine.Value);
+            _sameLineObstacles = obstacles.ToList();
             float reachShift = Mathf.Max(_jumpFromRoofShift, _roofJumpShift); // максимум из двух клипов
 
-            foreach (var obs in _sameLineObstacles)
+            foreach (var obs in obstacles)
             {
-                if (obs.transform.position.x <= hamsterX) continue;
-
                 // ✅ корректный ранний выход по левой грани препятствия
                 if (CollisionUtils.ShouldBreakByReachRight(_transform, _hamsterWidth, reachShift, obs))
                     break;
