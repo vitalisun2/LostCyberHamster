@@ -136,7 +136,8 @@ namespace Assets.Scripts.Gameplay
                 lastObstacle: LastObstacle,
                 hamsterState: HamsterState,
                 isOnBottomLine: IsOnBottomLine,
-                transformAnimatorController: _transformAnimatorController);
+                transformAnimatorController: _transformAnimatorController,
+                hamsterWidthInUnits: ColliderWidth);
 
             _roofJumpMechanics = new RoofJumpMechanics(
                 roofJumpRequest: RoofJumpRequest,

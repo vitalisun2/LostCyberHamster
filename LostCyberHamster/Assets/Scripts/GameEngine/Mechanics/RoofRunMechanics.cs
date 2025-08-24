@@ -3,7 +3,6 @@ using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Installers.Roots;
-using Assets.Scripts;
 using Atomic.Elements;
 using UnityEngine;
 using Assets.Scripts.GameEngine.Controllers;
@@ -16,18 +15,21 @@ public class RoofRunMechanics
     private readonly AtomicVariable<HamsterStateEnum> _hamsterState;
     private readonly EnvironmentRoot _environmentRoot;
     private TransformAnimatorController _transformAnimatorController;
+    private readonly float _hamsterWidthInUnits;
 
     public RoofRunMechanics(Transform transform,
         AtomicVariable<Obstacle> lastObstacle,
         AtomicVariable<HamsterStateEnum> hamsterState,
         AtomicVariable<bool> isOnBottomLine,
-        TransformAnimatorController transformAnimatorController)
+        TransformAnimatorController transformAnimatorController,
+        float hamsterWidthInUnits)
     {
         _transform = transform;
         _lastObstacle = lastObstacle;
         _hamsterState = hamsterState;
         _isOnBottomLine = isOnBottomLine;
         _transformAnimatorController = transformAnimatorController;
+        _hamsterWidthInUnits = hamsterWidthInUnits;
 
         _environmentRoot = GameObject.FindWithTag("EnvironmentRoot").GetComponent<EnvironmentRoot>();
     }
@@ -60,27 +62,23 @@ public class RoofRunMechanics
     /// </summary>
     private bool CheckRoofShifted()
     {
-        // Ещё совпадаем по линии?
         if (HelpMethods.IsOnSameLine(_isOnBottomLine.Value, _lastObstacle.Value))
         {
             return false;
         }
 
-        // Иначе пытаемся найти новое bigNotAlive прямо под Хомяком
         var newBigNotAlive = HelpMethods.FindBigNotAliveUnderHamster(
             _transform,
             _environmentRoot,
             _isOnBottomLine.Value
         );
 
-        // Если не нашли, то спрыгиваем
         if (newBigNotAlive == null)
         {
             ToRunFromRoof();
             return true;
         }
 
-        // Иначе переключаемся на новое препятствие
         _lastObstacle.Value = newBigNotAlive;
         return true;
     }
@@ -92,30 +90,30 @@ public class RoofRunMechanics
     /// </summary>
     private void CheckRoofEnd()
     {
-        float distance = _transform.position.x - _lastObstacle.Value.transform.position.x;
-        if (distance < 0f) return;
+        var current = _lastObstacle.Value;
 
+        CollisionUtils.GetObstacleXInterval(current, current.ColliderWidth, out var roofLeft, out var roofRight);
 
-        var hamsterWidthUnits = HelpMethods.FromPixelsToUnitsWidth(Consts.HAMSTER_WIDTH);
-        // Пусть есть дополнительный запас
-        float extendedEdge = hamsterWidthUnits * 0.75f;
-        if (distance > extendedEdge)
+        CollisionUtils.GetHamsterXIntervalAtJumpEnd(
+            _transform,
+            _hamsterWidthInUnits,
+            0f,
+            out var hamsterLeft, out var hamsterRight
+        );
+
+        if (!HasReachedNextRoofCheckPoint(hamsterRight, roofRight))
+            return;
+
+        var nextObstacle = FindNextBigNotAliveOnSameLine(
+            current, _environmentRoot, _isOnBottomLine.Value, hamsterLeft, hamsterRight);
+
+        if (nextObstacle != null)
         {
-            var nextObstacle = FindNextBigNotAliveOnSameLine(
-                _lastObstacle.Value,
-                _environmentRoot,
-                _isOnBottomLine.Value
-            );
-            if (nextObstacle != null)
-            {
-                // Переключаемся на следующее препятствие
-                _lastObstacle.Value = nextObstacle;
-            }
-            else
-            {
-                // Спрыгиваем
-                ToRunFromRoof();
-            }
+            _lastObstacle.Value = nextObstacle;
+        }
+        else
+        {
+            ToRunFromRoof();
         }
     }
 
@@ -129,46 +127,50 @@ public class RoofRunMechanics
     }
 
     /// <summary>
-    /// Finds the closest "bigNotAlive" obstacle to the right on the same line.
+    /// Находит ближайшую справа "bigNotAlive" на той же линии.
+    /// Возвращает плиту, которая находится ПОД левой кромкой хомяка (hamsterLeftX)
+    /// в момент, когда хомяк полностью вышел за правый край текущей крыши.
     /// </summary>
-    public static Obstacle FindNextBigNotAliveOnSameLine(
+    public Obstacle FindNextBigNotAliveOnSameLine(
         Obstacle currentObstacle,
         EnvironmentRoot environmentRoot,
-        bool isOnBottomLine
+        bool isOnBottomLine,
+        float hamsterLeftX,
+        float hamsterRightX
     )
     {
-        var obstacles = environmentRoot
-            .ObstaclesSpawnedContainer
-            .GetComponentsInChildren<Obstacle>();
+        var obstaclesAhead = CollisionUtils.GetValidObstaclesAhead(_transform, isOnBottomLine);
 
-        // Зазор между препятствиями из ширины большого неживого препятствия и допуском
-        var tolerance = Consts.BigNotAliveEdgeTolerance;
-        float maxGap = Consts.BIG_NOTALIVE_WIDTH_UNITS + tolerance;
-
-        foreach (var obstacle in obstacles)
+        foreach (var obstacle in obstaclesAhead)
         {
-            // 1) Это должно быть большое неживое препятствие
             if (obstacle.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.bigNotAlive)
                 continue;
 
-            // 2) Должно быть на той же линии (top/bottom)
-            if (!HelpMethods.IsOnSameLine(isOnBottomLine, obstacle))
-                continue;
+            CollisionUtils.GetObstacleXInterval(obstacle, obstacle.ColliderWidth, out var nextLeft, out var nextRight);
 
-            // 3) Координата x должна быть больше, чем у текущего (иначе «позади»)
-            float offset = obstacle.transform.position.x - currentObstacle.transform.position.x;
-            if (offset <= 0f)
-                continue;
+            bool overlaps = (hamsterRightX > nextLeft) && (hamsterLeftX < nextRight);
 
-            // 4) И не дальше нашего расширенного maxGap
-            if (offset <= maxGap)
+            if (overlaps)
             {
-                // Сразу возвращаем первое подходящее препятствие
                 return obstacle;
             }
         }
 
-        // Не нашли подходящего — возвращаем null
         return null;
     }
+
+    /// <summary>
+    /// Определяет момент, когда ПРАВАЯ кромка хомяка ушла за правый край текущего препятствия
+    /// на заданный процент его ширины (по умолчанию 70%).
+    /// В этот момент нужно проверять наличие следующей крыши.
+    /// </summary>
+    /// <param name="hamsterRight">Правая кромка хомяка.</param>
+    /// <param name="roofRight">Правая кромка текущей крыши.</param>
+    /// <returns>True — если наступил момент проверки следующей крыши.</returns>
+    private bool HasReachedNextRoofCheckPoint(float hamsterRight, float roofRight)
+    {
+        float threshold = _hamsterWidthInUnits * 0.7f; // 70% ширины хомяка
+        return hamsterRight >= roofRight + threshold;
+    }
+
 }
