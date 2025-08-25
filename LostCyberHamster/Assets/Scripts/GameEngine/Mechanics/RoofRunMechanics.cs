@@ -1,13 +1,10 @@
-﻿using Assets.Scripts.Common.Models;
 using Assets.Scripts.Common;
-using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Installers.Roots;
-using Assets.Scripts;
+using Assets.Scripts.GameEngine.Controllers;
 using Atomic.Elements;
 using UnityEngine;
-using Assets.Scripts.GameEngine.Controllers;
-using Assets.Scripts.System;
 
 public class RoofRunMechanics
 {
@@ -64,27 +61,21 @@ public class RoofRunMechanics
     /// </summary>
     private bool CheckRoofShifted()
     {
-        // Ещё совпадаем по линии?
         if (HelpMethods.IsOnSameLine(_isOnBottomLine.Value, _lastObstacle.Value))
         {
             return false;
         }
 
-        // Иначе пытаемся найти новое bigNotAlive прямо под Хомяком
         var newBigNotAlive = HelpMethods.FindBigNotAliveUnderHamster(
             _transform,
             _environmentRoot,
             _isOnBottomLine.Value
         );
-
-        // Если не нашли, то спрыгиваем
         if (newBigNotAlive == null)
         {
             ToRunFromRoof();
             return true;
         }
-
-        // Иначе переключаемся на новое препятствие
         _lastObstacle.Value = newBigNotAlive;
         return true;
     }
@@ -107,30 +98,21 @@ public class RoofRunMechanics
             out var hamsterLeft, out var hamsterRight
         );
 
-        // [ИЗМЕНЕНО] Ранняя проверка: правый край хомяка ушёл за правый край крыши на 70% ширины
         if (!HasReachedNextRoofCheckPoint(hamsterRight, roofRight))
             return;
-
-        var advance = hamsterRight - roofRight; // для диагностики
-        Debug.Log($"[RoofRun][EdgePassed70] advance={advance:F2}, threshold={_hamsterWidthInUnits * 0.7f:F2}, " +
-                  $"hamsterLeft={hamsterLeft:F2}, hamsterRight={hamsterRight:F2}, roofRight={roofRight:F2}, current='{current.name}'");
 
         var nextObstacle = FindNextBigNotAliveOnSameLine(
             current, _environmentRoot, _isOnBottomLine.Value, hamsterLeft, hamsterRight);
 
         if (nextObstacle != null)
         {
-            Debug.Log($"[RoofRun] Следующая крыша найдена (перекрытие). Переключаемся на: {nextObstacle.name}");
             _lastObstacle.Value = nextObstacle;
         }
         else
         {
-            Debug.Log($"[RoofRun] Под хомяком нет следующей крыши (после выхода за край). Падение с крыши.");
             ToRunFromRoof();
         }
     }
-
-
 
     /// <summary>
     /// Метод «спрыгивания» с крыши (перевод в состояние RunFromRoof).
@@ -155,7 +137,6 @@ public class RoofRunMechanics
     )
     {
         var obstaclesAhead = CollisionUtils.GetValidObstaclesAhead(_transform, isOnBottomLine);
-        Debug.Log($"[RoofRun][Ahead] count={obstaclesAhead.Count}, hamsterLeftX={hamsterLeftX:F2}, hamsterRightX={hamsterRightX:F2}");
 
         foreach (var obstacle in obstaclesAhead)
         {
@@ -164,20 +145,13 @@ public class RoofRunMechanics
 
             CollisionUtils.GetObstacleXInterval(obstacle, obstacle.ColliderWidth, out var nextLeft, out var nextRight);
 
-            // [ИЗМЕНЕНО] условие "под ним крыша" -> интервалы пересекаются
             bool overlaps = (hamsterRightX > nextLeft) && (hamsterLeftX < nextRight);
-
-            Debug.Log($"[RoofRun][Candidate] '{obstacle.name}': interval=[{nextLeft:F2}; {nextRight:F2}], overlaps={overlaps}");
 
             if (overlaps)
             {
-                Debug.Log($"[RoofRun] Подтверждено перекрытие с крышей '{obstacle.name}' " +
-                          $"[{nextLeft:F2}; {nextRight:F2}] хомяк=[{hamsterLeftX:F2}; {hamsterRightX:F2}].");
                 return obstacle;
             }
         }
-
-        Debug.Log("[RoofRun][Ahead] Совпадений нет — перекрытия не найдено.");
         return null;
     }
 
