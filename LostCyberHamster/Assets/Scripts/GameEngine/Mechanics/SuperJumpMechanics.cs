@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
@@ -170,8 +169,6 @@ public class SuperJumpMechanics
 
     private JumpResult HandleSmallAlive(Obstacle obs)
     {
-        const float EDGE_THRESHOLD = 0.5f;   // ≤50 % ширины → урон
-
         if (CollisionUtils.IsOverlapAtShift(
                 _characterTransform,
                 _hamsterWidth,
@@ -179,7 +176,7 @@ public class SuperJumpMechanics
                 obs,
                 out var frac))
         {
-            var state = frac <= EDGE_THRESHOLD
+            var state = frac <= Consts.JumpOverlapCrushThreshold
                 ? HamsterStateEnum.SuperJumpDamage   // краевой контакт
                 : HamsterStateEnum.SuperJumpOnObstacle;
 
