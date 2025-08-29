@@ -102,9 +102,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     _jumpOverEvent?.Invoke();
                 }
 
-                if (_hamsterState.Value == HamsterStateEnum.JumpDamageForSmallNotAlive ||
-                    _hamsterState.Value == HamsterStateEnum.SuperJumpDamage)
+                if (_hamsterState.Value == HamsterStateEnum.JumpDamageForSmallNotAlive
+                    || _hamsterState.Value == HamsterStateEnum.JumpDamageForSmallAlive
+                    || _hamsterState.Value == HamsterStateEnum.SuperJumpDamage)
+                {
                     _damageEvent?.Invoke();
+                }
 
                 _hamsterState.Value = HamsterStateEnum.Run;
             }

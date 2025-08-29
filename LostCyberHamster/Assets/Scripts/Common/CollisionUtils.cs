@@ -86,6 +86,23 @@ namespace Assets.Scripts.Common
 
         // ───────────────────────────────── Проверки в прыжках ─────────────────────────────────
 
+        public static bool IsOverlapAtShift(
+            Transform hamster,
+            float hamsterWidth,
+            float worldShift,
+            Obstacle obstacle,
+            out float overlapFraction)
+        {
+            GetObstacleXInterval(obstacle, obstacle.ColliderWidth, worldShift,
+                                 out var oL, out var oR);
+            GetHamsterXBounds(hamster, out var hL, out var hR);
+
+            float overlapLen = Mathf.Min(hR, oR) - Mathf.Max(hL, oL);
+            overlapLen      = Mathf.Max(0f, overlapLen);
+            overlapFraction = overlapLen / hamsterWidth;   // 0‒1
+            return overlapLen > 0f;
+        }
+
         /// <summary>Пересечение интервалов хомяка (он статичен) и obstacle к концу клипа.</summary>
         public static bool IsOverlapAtShift(
             Transform hamster,
