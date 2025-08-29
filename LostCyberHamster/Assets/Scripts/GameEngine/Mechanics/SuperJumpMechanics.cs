@@ -170,13 +170,27 @@ public class SuperJumpMechanics
 
     private JumpResult HandleSmallAlive(Obstacle obs)
     {
-        if (CollisionUtils.IsOverlapAtShift(_characterTransform,
-                                            _hamsterWidth,
-                                            _superJumpShift,
-                                            obs))
-            return new JumpResult(HamsterStateEnum.SuperJumpOnObstacle, obs);
+        const float EDGE_THRESHOLD = 0.5f;   // ≤50 % ширины → урон
 
-        if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidth, _superJumpShift, obs))
+        if (CollisionUtils.IsOverlapAtShift(
+                _characterTransform,
+                _hamsterWidth,
+                _superJumpShift,
+                obs,
+                out var frac))
+        {
+            var state = frac <= EDGE_THRESHOLD
+                ? HamsterStateEnum.SuperJumpDamage   // краевой контакт
+                : HamsterStateEnum.SuperJumpOnObstacle;
+
+            return new JumpResult(state, obs);
+        }
+
+        if (CollisionUtils.IsJumpOver(
+                _characterTransform,
+                _hamsterWidth,
+                _superJumpShift,
+                obs))
             return new JumpResult(HamsterStateEnum.SuperJumpOver, obs);
 
         return _noHit;
