@@ -169,8 +169,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private JumpResult HandleBigAlive(Obstacle obs)
         {
-            const float EDGE_THRESHOLD = 0.5f;
-
             if (!CollisionUtils.IsOverlapAtShift(
                     _transform,
                     _hamsterWidth,
@@ -179,7 +177,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     out float overlap))
                 return _noHit;
 
-            var state = overlap <= EDGE_THRESHOLD
+            var state = overlap <= Consts.JumpOverlapCrushThreshold
                 ? HamsterStateEnum.SuperJumpFromRoofDamage
                 : HamsterStateEnum.SuperJumpOnObstacleFromRoof;
 
@@ -188,8 +186,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
-            const float EDGE_THRESHOLD = 0.5f;
-
             if (!CollisionUtils.IsOverlapAtShift(
                     _transform,
                     _hamsterWidth,
@@ -198,7 +194,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     out float overlap))
                 return _noHit;
 
-            var state = overlap <= EDGE_THRESHOLD
+            var state = overlap <= Consts.JumpOverlapCrushThreshold
                 ? HamsterStateEnum.SuperJumpFromRoofDamage
                 : HamsterStateEnum.SuperJumpOnObstacleFromRoof;
 
