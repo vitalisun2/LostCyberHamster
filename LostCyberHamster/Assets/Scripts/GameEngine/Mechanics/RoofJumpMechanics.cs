@@ -136,22 +136,44 @@ namespace Assets.Scripts.GameEngine.Mechanics
             return new JumpResult(state, obs);
         }
 
-        // bigAlive → JumpOnObstacleFromRoof
+        // bigAlive → JumpOnObstacleFromRoof / JumpFromRoofDamage
         private JumpResult HandleBigAlive(Obstacle obs)
         {
-            if (CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs))
-                return new JumpResult(HamsterStateEnum.JumpOnObstacleFromRoof, obs);
+            const float EDGE_THRESHOLD = 0.5f;          // ≤50 % ширины → урон
 
-            return _noHit;
+            if (!CollisionUtils.IsOverlapAtShift(
+                    _transform,                          // Transform хомяка
+                    _hamsterWidth,                       // ширина хомяка
+                    _jumpFromRoofShift,                  // сдвиг мира во время прыжка
+                    obs,
+                    out float overlap))
+                return _noHit;
+
+            var state = overlap <= EDGE_THRESHOLD
+                ? HamsterStateEnum.JumpFromRoofDamage
+                : HamsterStateEnum.JumpOnObstacleFromRoof;
+
+            return new JumpResult(state, obs);
         }
 
-        // smallAlive → JumpOnObstacleFromRoof
+        // smallAlive → JumpOnObstacleFromRoof / JumpFromRoofDamage
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
-            if (CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs))
-                return new JumpResult(HamsterStateEnum.JumpOnObstacleFromRoof, obs);
+            const float EDGE_THRESHOLD = 0.5f;
 
-            return _noHit;
+            if (!CollisionUtils.IsOverlapAtShift(
+                    _transform,
+                    _hamsterWidth,
+                    _jumpFromRoofShift,
+                    obs,
+                    out float overlap))
+                return _noHit;
+
+            var state = overlap <= EDGE_THRESHOLD
+                ? HamsterStateEnum.JumpFromRoofDamage
+                : HamsterStateEnum.JumpOnObstacleFromRoof;
+
+            return new JumpResult(state, obs);
         }
 
         // smallNotAliveRoad → JumpFromRoofDamage
