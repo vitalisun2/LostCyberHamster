@@ -127,7 +127,13 @@ namespace Assets.Scripts
         public const float PIXELS_TO_UNITS_RATIO = 1f / PixelsPerUnit;   // 0.01
 
         public const double StrikeRangeMax = 12;
- 
+
+        /// <summary>
+        /// Доля ширины хомяка, необходимая для «удачного напрыга».
+        /// Если перекрытие ≤ порога — хомяк лишь задевает препятствие и получает урон.
+        /// Если перекрытие  > порога — хомяк полностью напрыгивает, разрушает препятствие и получает бонус.
+        /// </summary>
+        public const float JumpOverlapCrushThreshold = 0.5f;
 
 
         /// <summary>
