@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
@@ -147,7 +148,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     out float overlap))
                 return _noHit;
 
-            var state = overlap <= Consts.JumpOverlapCrushThreshold
+            var state = overlap <= Consts.JumpOverlapCrushBigThreshold
                 ? HamsterStateEnum.JumpFromRoofDamage
                 : HamsterStateEnum.JumpOnObstacleFromRoof;
 
@@ -165,7 +166,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     out float overlap))
                 return _noHit;
 
-            var state = overlap <= Consts.JumpOverlapCrushThreshold
+            var state = overlap <= Consts.JumpOverlapCrushSmallThreshold
                 ? HamsterStateEnum.JumpFromRoofDamage
                 : HamsterStateEnum.JumpOnObstacleFromRoof;
 

@@ -1,4 +1,5 @@
-﻿using Assets.Scripts.Common;
+﻿using Assets.Scripts;
+using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay;
@@ -155,7 +156,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     obs,
                     out var frac))
             {
-                var state = frac <= Consts.JumpOverlapCrushThreshold
+                var state = frac <= Consts.JumpOverlapCrushSmallThreshold
                     ? HamsterStateEnum.JumpDamageForSmallAlive
                     : HamsterStateEnum.JumpOnObstacle;
 
