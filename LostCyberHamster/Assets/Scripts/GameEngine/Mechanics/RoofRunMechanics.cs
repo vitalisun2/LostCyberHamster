@@ -92,14 +92,9 @@ public class RoofRunMechanics
     {
         var current = _lastObstacle.Value;
 
-        CollisionUtils.GetObstacleXInterval(current, current.ColliderWidth, out var roofLeft, out var roofRight);
+        CollisionUtils.GetObstacleXInterval(current, current.ColliderWidth, 0f, out _, out var roofRight);
 
-        CollisionUtils.GetHamsterXIntervalAtJumpEnd(
-            _transform,
-            _hamsterWidthInUnits,
-            0f,
-            out var hamsterLeft, out var hamsterRight
-        );
+        CollisionUtils.GetHamsterXBounds(_transform, out var hamsterLeft, out var hamsterRight);
 
         if (!HasReachedNextRoofCheckPoint(hamsterRight, roofRight))
             return;
@@ -146,7 +141,7 @@ public class RoofRunMechanics
             if (obstacle.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.bigNotAlive)
                 continue;
 
-            CollisionUtils.GetObstacleXInterval(obstacle, obstacle.ColliderWidth, out var nextLeft, out var nextRight);
+            CollisionUtils.GetObstacleXInterval(obstacle, obstacle.ColliderWidth, 0f, out var nextLeft, out var nextRight);
 
             bool overlaps = (hamsterRightX > nextLeft) && (hamsterLeftX < nextRight);
 

@@ -12,6 +12,8 @@ namespace Assets.Scripts.GameEngine.Controllers
         Listeners.IGameIntroListener,
         Listeners.IGameStartListener
     {
+        public Animator Animator => _animator;
+
         private Animator _animator;
 
         private void Awake()

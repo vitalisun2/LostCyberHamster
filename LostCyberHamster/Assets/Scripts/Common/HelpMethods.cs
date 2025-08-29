@@ -1,12 +1,14 @@
-﻿using Assets.Scripts.GameEngine.Controllers;
-using Assets.Scripts.Gameplay;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
-using GameManagement;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.GameEngine.Controllers;
+using Assets.Scripts.Gameplay;
 using Assets.Scripts.Installers.Roots;
+using GameManagement;
+using UnityEditor;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Assets.Scripts.Common
 {
@@ -26,7 +28,7 @@ namespace Assets.Scripts.Common
             var spriteAnimatorController = hamster.GetComponentInChildren<SpriteAnimatorController>();
             var animator = spriteAnimatorController.gameObject.GetComponent<Animator>();
 
-            if(SkinManager.CurrentSkin.HamsterOverrideController == null)
+            if (SkinManager.CurrentSkin.HamsterOverrideController == null)
             {
                 Debug.LogWarning("Hamster override controller is null, default skin applied");
                 GameDataManager.PlayerData.AppliedSkinId = 0;
@@ -78,7 +80,7 @@ namespace Assets.Scripts.Common
         {
             Debug.LogError(message);
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
+            EditorApplication.isPlaying = false;
 #else
         Application.Quit();
 #endif
@@ -163,6 +165,49 @@ namespace Assets.Scripts.Common
         {
             int frames = animController.GetClipFrameCount(clipName);
             return CalculateWorldShiftDistance(frames);
+        }
+
+        /// <summary>Возвращает AnimationClip из TransformAnimatorController по имени.</summary>
+        public static AnimationClip? FindClipByName(
+        TransformAnimatorController ctrl,
+        string clipName)
+        {
+            var r = ctrl.Animator?.runtimeAnimatorController;
+            if (r == null) return null;
+
+            return r.animationClips.FirstOrDefault(c => c.name == clipName);
+        }
+
+        /// <summary>
+        /// Возвращает root-Y в середине указанного клипа.
+        /// При ошибке — останавливает игру и выводит сообщение.
+        /// Работает одинаково в редакторе и в билде.
+        /// </summary>
+        public static float GetClipRootYAtHalf(
+            TransformAnimatorController ctrl,
+            string clipName)
+        {
+            if (ctrl == null)
+                LogAndStopGame("[GetClipRootYAtHalf] ctrl == null.");
+
+            var clip = FindClipByName(ctrl, clipName);
+            if (clip == null)
+                LogAndStopGame($"[GetClipRootYAtHalf] Клип '{clipName}' не найден.");
+
+            var go = new GameObject("ClipSampler_TMP");
+            try
+            {
+                var t = go.transform;
+                var midTime = clip.length * 0.8667f;
+
+                // Семплируем анимацию в середине клипа
+                clip.SampleAnimation(go, midTime);
+                return t.localPosition.y;
+            }
+            finally
+            {
+                Object.Destroy(go);
+            }
         }
 
     }

@@ -28,6 +28,9 @@ namespace Assets.Scripts.Gameplay
         public Transform EffectsSlot => _effectsSlot;
         public float ColliderWidth => GetBoxColliderWidth();
         public float ColliderHeight => GetBoxColliderHeight();
+        public float LeftX { get; private set; }
+        public float RightX { get; private set; }
+
         public AtomicVariable<HamsterStateEnum> HamsterState = new(HamsterStateEnum.Run);
 
         public CollectCoinsOrBonusAction CollectCoinsOrBonusAction;
@@ -78,6 +81,8 @@ namespace Assets.Scripts.Gameplay
 
         private void Awake()
         {
+            CacheHorizontalBounds();
+
             _shiftTransformAnimatorController = GetComponentInChildren<ShiftTransformAnimatorController>();
             _transformAnimatorController = GetComponentInChildren<TransformAnimatorController>();
             _spriteAnimatorController = GetComponentInChildren<SpriteAnimatorController>();
@@ -234,23 +239,35 @@ namespace Assets.Scripts.Gameplay
                 GameEventsManager.UltaActivated();
             }
         }
-  
+
         private float GetBoxColliderWidth()
         {
             var boxCollider2D = transform.GetComponentInChildren<BoxCollider2D>();
-            if (boxCollider2D == null)
-                throw new MissingComponentException("BoxCollider2D is missing on Hamster object.");
+            if (boxCollider2D == null) throw new MissingComponentException("BoxCollider2D is missing on Hamster object.");
 
-            return boxCollider2D.size.x;
+            // DIAG
+            var sizeXLocal = boxCollider2D.size.x;
+            var boundsXWorld = boxCollider2D.bounds.size.x;
+            var scaleX = boxCollider2D.transform.lossyScale.x;
+            Debug.Log($"[Diag.Hamster.ColliderWidth] name={name} size.x(local)={sizeXLocal:F3}, bounds.size.x(world)={boundsXWorld:F3}, lossyScale.x={scaleX:F3}");
+
+            return sizeXLocal;
         }
 
         private float GetBoxColliderHeight()
         {
             var boxCollider2D = transform.GetComponentInChildren<BoxCollider2D>();
-            if (boxCollider2D == null)
-                throw new MissingComponentException("BoxCollider2D is missing on Hamster object.");
+            if (boxCollider2D == null) throw new MissingComponentException("BoxCollider2D is missing on Hamster object.");
+            // было: return boxCollider2D.size.y;
+            return boxCollider2D.bounds.size.y; // ← теперь world height
+        }
 
-            return boxCollider2D.size.y;
+        private void CacheHorizontalBounds()
+        {
+            var box = GetComponentInChildren<BoxCollider2D>();
+            var b = box.bounds;          // уже в мировых координатах
+            LeftX = b.min.x;
+            RightX = b.max.x;
         }
     }
 }

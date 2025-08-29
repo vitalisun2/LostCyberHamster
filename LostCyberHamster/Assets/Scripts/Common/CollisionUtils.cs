@@ -9,203 +9,170 @@ namespace Assets.Scripts.Common
 {
     /// <summary>
     /// Чистые геометрические утилиты: расчёт интервалов и проверка перекрытия.
+    /// Версия после правок: препятствия сдвигаем на <paramref name="worldShift"/>,
+    /// а границы хомяка берём из свойств Hamster.LeftX / RightX (он по X не движется).
     /// </summary>
     public static class CollisionUtils
     {
-        /// <summary>X-интервал [left; right] препятствия с учётом edgeTol.</summary>
-        public static void GetObstacleXInterval(Obstacle obstacle,
-            float _ /*width: больше не нужен*/,
+        // ───────────────────────────────── X-интервалы ─────────────────────────────────
+
+        /// <summary>X-интервал [left; right] препятствия в конце клипа (учтён worldShift).</summary>
+        public static void GetObstacleXInterval(
+            Obstacle o,
+            float width,
+            float worldShift,
             out float left,
             out float right)
         {
-            var box = obstacle.GetComponentInChildren<BoxCollider2D>();
-            if (box == null) { left = right = obstacle.transform.position.x; return; }
-
-            Bounds b = box.bounds;          // world-space, учёл offset + scale
-            left = b.min.x;
-            right = b.max.x;
+            var b = o.GetComponentInChildren<BoxCollider2D>().bounds; // world @ t0
+            left = b.min.x - worldShift;     // влево вместе с миром
+            right = b.max.x - worldShift;
         }
 
-        /// <summary>Y-интервал [bottom; top] препятствия с учётом edgeTol.</summary>
-        public static void GetObstacleYInterval(Obstacle o,
+        /// <summary>Y-интервал [bottom; top] препятствия (без сдвига по Y).</summary>
+        public static void GetObstacleYInterval(
+            Obstacle o,
             out float bottom,
             out float top)
         {
             var box = o.GetComponentInChildren<BoxCollider2D>();
             if (box == null) { bottom = top = o.transform.position.y; return; }
 
-            Bounds b = box.bounds;          // world-space, учёл offset + scale
+            Bounds b = box.bounds;            // world
             bottom = b.min.y;
             top = b.max.y;
         }
 
-
         /// <summary>
-        /// X-интервал хомяка к концу прыжка (учтён worldShift клипа).
+        /// Y-интервал хомяка в середине клипа (при вертикальном смещении <paramref name="midYShift"/>).
         /// </summary>
-        public static void GetHamsterXIntervalAtJumpEnd(Transform hamster,
-                                                        float hamsterWidth,
-                                                        float worldShift,
-                                                        out float left,
-                                                        out float right)
+        public static void GetHamsterYIntervalAtJumpMid(
+            Transform hamster,
+            float hamsterHeight,
+            float midYShift,
+            out float bottom,
+            out float top)
         {
-            float endX = hamster.position.x + worldShift;
-            float half = hamsterWidth * 0.5f;
-            left = endX - half;
-            right = endX + half;
-        }
-
-        /// <summary>
-        /// Y-интервал хомяка к концу прыжка (вертикальный worldShift отсутствует).
-        /// </summary>
-        public static void GetHamsterYIntervalAtJumpEnd(Transform hamster,
-                                                        float hamsterHeight,
-                                                        out float bottom,
-                                                        out float top)
-        {
-            float centerY = hamster.position.y;
+            float centerY = hamster.position.y + midYShift;
             float half = hamsterHeight * 0.5f;
             bottom = centerY - half;
             top = centerY + half;
         }
 
-        /// <summary>Пересечение не менее чем на minOverlap.</summary>
-        public static bool IsOverlap(float leftA, float rightA,
-                                     float leftB, float rightB,
-                                     float minOverlap) =>
+        /// <summary>Правая / левая грани хомяка — из кэшированных свойств Hamster.</summary>
+        public static void GetHamsterXBounds(
+            Transform hamster,
+            out float left,
+            out float right)
+        {
+            var h = hamster.GetComponent<Hamster>();
+            left = h.LeftX;
+            right = h.RightX;
+        }
+
+        // ───────────────────────────────── Утилиты перекрытия ─────────────────────────────────
+
+        public static bool IsOverlap(
+            float leftA, float rightA,
+            float leftB, float rightB,
+            float minOverlap) =>
             (rightA - leftB) > minOverlap &&
             (rightB - leftA) > minOverlap;
 
-        /// <summary>Быстрая проверка пересечения без минимального порога.</summary>
-        public static bool IsOverlap(float leftA, float rightA,
-                                     float leftB, float rightB) =>
+        public static bool IsOverlap(
+            float leftA, float rightA,
+            float leftB, float rightB) =>
             (rightA > leftB) && (rightB > leftA);
 
-        /// <summary>
-        /// True, если хомяк перелетает препятствие полностью по X.
-        /// </summary>
-        public static bool IsJumpOverIntervals(
-            float hStartL, float hStartR,
-            float hEndL, float hEndR,
-            float obsL, float obsR,
-            float minOverlap)
-        {
-            bool clearStart = hStartR < obsL;   // хомяк слева
-            bool clearEnd = hEndL > obsR;   // хомяк справа
-            bool noOverlap = !IsOverlap(hEndL, hEndR, obsL, obsR, minOverlap);
+        // ───────────────────────────────── Проверки в прыжках ─────────────────────────────────
 
-            return clearStart && clearEnd && noOverlap;
-        }
-
-        /// <summary>
-        /// Пересечение X-интервалов хомяка в конце клипа (учитывает worldShift)
-        /// c указанным obstacle.
-        /// </summary>
-        public static bool IsOverlapAtShift(Transform hamster,
-            float hamsterWidth,
+        /// <summary>Пересечение интервалов хомяка (он статичен) и obstacle к концу клипа.</summary>
+        public static bool IsOverlapAtShift(
+            Transform hamster,
+            float _/*hamsterWidth не нужен, оставлен для совместимости*/,
             float worldShift,
             Obstacle obstacle)
         {
-            GetObstacleXInterval(obstacle, obstacle.ColliderWidth, out var oL, out var oR);
-            GetHamsterXIntervalAtJumpEnd(hamster, hamsterWidth, worldShift,
-                out var hL, out var hR);
-            bool overlap = IsOverlap(hL, hR, oL, oR);
+            GetObstacleXInterval(obstacle, obstacle.ColliderWidth, worldShift,
+                out var oL, out var oR);
 
+            GetHamsterXBounds(hamster, out var hL, out var hR);
+
+            bool overlap = IsOverlap(hL, hR, oL, oR);
             Debug.Log($"[CollisionUtils.IsOverlapAtShift] hamster=({hL:F3},{hR:F3}) " +
                       $"obs={obstacle.name} ({oL:F3},{oR:F3}) shift={worldShift:F3} overlap={overlap}");
-
             return overlap;
         }
 
-        /// <summary>
-        /// Проверяет, перепрыгивает ли хомяк препятствие.
-        /// Использует интервалы в начале и конце прыжка и сравнивает с интервалом препятствия.
-        /// </summary>
-        public static bool IsJumpOver(Transform hamster, float hamsterWidth, float shift, Obstacle obs)
+        /// <summary>True, если хомяк перелетает obstacle полностью по X.</summary>
+        public static bool IsJumpOver(
+            Transform hamster,
+            float hamsterWidth,                 // сохранён для совместимости
+            float shift,                        // worldShift клипа
+            Obstacle obs)
         {
-            GetObstacleXInterval(obs, obs.ColliderWidth, out var oL, out var oR);
+            // obstacle к концу клипа
+            GetObstacleXInterval(obs, obs.ColliderWidth, shift, out var oL, out var oR);
 
-            float hx = hamster.position.x;
-            float half = hamsterWidth * 0.5f;
-
-            float hStartL = hx - half;
-            float hStartR = hx + half;
-
-            GetHamsterXIntervalAtJumpEnd(hamster, hamsterWidth, shift, out var hEndL, out var hEndR);
+            // хомяк остаётся на месте
+            GetHamsterXBounds(hamster, out var hStartL, out var hStartR);
+            float hEndL = hStartL;              // не меняется
+            float hEndR = hStartR;
 
             return IsJumpOverIntervals(hStartL, hStartR, hEndL, hEndR, oL, oR, 0f);
         }
 
-
-        /// <summary>
-        /// Проверяет, пересекается ли хомяк в конце прыжка (учтён worldShift клипа)
-        /// с ЛЮБЫМ smallNotAliveRoadAndRoof из переданного списка препятствий.
-        /// Вызывать только в ветках, где хомяк уже на крыше.
-        /// </summary>
+        /// <summary>Хит-тест smallNotAliveRoadAndRoof на крыше.</summary>
         public static bool IsHitSmallNotAliveOnRoof(
             Transform hamster,
-            float hamsterWidth,
+            float _/*hamsterWidth*/,
             float worldShift,
             IEnumerable<Obstacle> sameLineObstacles)
         {
-            GetHamsterXIntervalAtJumpEnd(hamster, hamsterWidth, worldShift, out var hL, out var hR);
+            GetHamsterXBounds(hamster, out var hL, out var hR);
 
             foreach (var o in sameLineObstacles)
             {
                 if (o.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
                     continue;
 
-                GetObstacleXInterval(o, o.ColliderWidth, out var oL, out var oR);
+                GetObstacleXInterval(o, o.ColliderWidth, worldShift, out var oL, out var oR);
                 bool overlap = IsOverlap(hL, hR, oL, oR);
                 Debug.Log($"[CollisionUtils.IsHitSmallNotAliveOnRoof] hamster=({hL:F3},{hR:F3}) " +
-                          $"small={o.name} ({oL:F3},{oR:F3}) overlap={overlap}");
+                          $"small={o.name} ({oL:F3},{oR:F3}) shift={worldShift:F3} overlap={overlap}");
                 if (overlap) return true;
             }
-
             return false;
         }
 
+        // ───────────────────────────────── Поиск bigNotAlive под smallNotAlive ─────────────────────────────────
 
-        /// <summary>
-        /// Проверяет, находит ли bigNotAlive под smallNotAliveRoadAndRoof.
-        /// </summary>
-        /// <param name="smallNotAlive"></param>
-        /// <param name="allObstacles"></param>
-        /// <param name="found"></param>
-        /// <returns></returns>
         public static bool TryFindBigNotAliveUnderSmallNotAlive(
             Obstacle smallNotAlive,
             IEnumerable<Obstacle> allObstacles,
             out Obstacle found)
         {
-            GetObstacleXInterval(smallNotAlive, smallNotAlive.ColliderWidth,
+            // текущий кадр — shift = 0
+            GetObstacleXInterval(smallNotAlive, smallNotAlive.ColliderWidth, 0f,
                 out var smallL, out var smallR);
 
             foreach (var o in allObstacles)
                 if (o.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.bigNotAlive)
                 {
-                    GetObstacleXInterval(o, o.ColliderWidth, out var oL, out var oR);
+                    GetObstacleXInterval(o, o.ColliderWidth, 0f, out var oL, out var oR);
                     bool overlap = IsOverlap(smallL, smallR, oL, oR);
-                    Debug.Log($"[CollisionUtils.TryFindBigNotAliveUnderSmallNotAlive] small={smallNotAlive.name} ({smallL:F3},{smallR:F3}) " +
-                              $"big={o.name} ({oL:F3},{oR:F3}) overlap={overlap}");
-                    if (overlap)
-                    {
-                        found = o;
-                        return true;
-                    }
+                    if (overlap) { found = o; return true; }
                 }
 
             found = null;
             return false;
         }
 
-        /// <summary>
-        /// Возвращает список препятствий для проверки коллизий:
-        /// - только на той же линии, где находится хомяк;
-        /// - только те, что находятся правее позиции хомяка;
-        /// - отсортированные по координате X (по возрастанию).
-        /// </summary>
-        public static IReadOnlyList<Obstacle> GetValidObstaclesAhead(Transform hamster, bool isOnBottomLine)
+        // ───────────────────────────────── Список актуальных препятствий ─────────────────────────────────
+
+        public static IReadOnlyList<Obstacle> GetValidObstaclesAhead(
+            Transform hamster,
+            bool isOnBottomLine)
         {
             float hx = hamster.position.x;
 
@@ -217,28 +184,37 @@ namespace Assets.Scripts.Common
                 .ToList();
         }
 
-        /// <summary>
-        /// Утилита для механик прыжков: проверяет, стоит ли завершить перебор препятствий,
-        /// если их левый край уже правее максимально достижимого правого края хомяка.
-        /// Используется для корректного раннего выхода без лишних проверок.
-        /// </summary>
+        // ───────────────────────────────── Ранний выход по reach ─────────────────────────────────
 
         public static bool ShouldBreakByReachRight(
             Transform hamster,
-            float hamsterWidth,
-            float reachShift,          // max из релевантных worldShift'ов
+            float hamsterWidth,           // сохранён для совместимости
+            float reachShift,
             Obstacle obstacle,
             float eps = 1e-4f)
         {
-            // левый край препятствия
-            GetObstacleXInterval(obstacle, obstacle.ColliderWidth, out var oL, out _);
+            GetObstacleXInterval(obstacle, obstacle.ColliderWidth, reachShift,
+                out var oL, out _);
 
-            // максимальный правый край хомяка в конце прыжка
-            float hamsterEndRight = hamster.position.x + reachShift + (hamsterWidth * 0.5f);
+            GetHamsterXBounds(hamster, out _, out var hamsterRight);
 
-            bool stop = oL > hamsterEndRight + eps;
-            Debug.Log($"[CollisionUtils.ShouldBreakByReachRight] oL={oL:F3}, hamsterEndRight={hamsterEndRight:F3}, shift={reachShift:F3}, stop={stop}");
+            bool stop = oL > hamsterRight + eps;
             return stop;
+        }
+
+        // ───────────────────────────────── Служебные методы ─────────────────────────────────
+
+        /// <summary>Вспомогательный расчёт «чистого» перелёта через obstacle.</summary>
+        private static bool IsJumpOverIntervals(
+            float hStartL, float hStartR,
+            float hEndL, float hEndR,
+            float obsL, float obsR,
+            float minOverlap)
+        {
+            bool clearStart = hStartR < obsL;
+            bool clearEnd = hEndL > obsR;
+            bool noOverlap = !IsOverlap(hEndL, hEndR, obsL, obsR, minOverlap);
+            return clearStart && clearEnd && noOverlap;
         }
     }
 }

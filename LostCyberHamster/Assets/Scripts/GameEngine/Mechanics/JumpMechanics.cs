@@ -28,6 +28,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private const string CLIP_JUMP = "transform_jump";
         private readonly float _jumpClipWorldShift;
+        private readonly float _jumpClipHalfY;
 
         private readonly Transform _characterTransform;
         private readonly AtomicVariable<Obstacle> _lastObstacle;
@@ -65,6 +66,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _hamsterWidthInUnits = hamsterWidthInUnits;
             _hamsterHeightInUnits = hamsterHeightInUnits;
             _jumpClipWorldShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_JUMP);
+            _jumpClipHalfY = HelpMethods.GetClipRootYAtHalf(
+                _transformAnimatorController, CLIP_JUMP);
 
             // будет заполнено при вычислении состояния прыжка
             _sameLineObstacles = Array.Empty<Obstacle>();
@@ -213,19 +216,27 @@ namespace Assets.Scripts.GameEngine.Mechanics
         /// <summary>Для bigAlive: столкновение, если пересечение по X или по Y.</summary>
         private bool IsHitXY(Obstacle obs)
         {
-            bool hitX = CollisionUtils.IsOverlapAtShift(_characterTransform,
-                                                       _hamsterWidthInUnits,
-                                                       _jumpClipWorldShift,
-                                                       obs);
+            // пересечение по X в конце клипа
+            bool hitX = CollisionUtils.IsOverlapAtShift(
+                _characterTransform,
+                _hamsterWidthInUnits,
+                _jumpClipWorldShift,
+                obs);
 
+            // пересечение по Y в середине клипа
             CollisionUtils.GetObstacleYInterval(obs, out var oB, out var oT);
-            CollisionUtils.GetHamsterYIntervalAtJumpEnd(_characterTransform,
-                                                        _hamsterHeightInUnits,
-                                                        out var hB, out var hT);
+            CollisionUtils.GetHamsterYIntervalAtJumpMid(
+                _characterTransform,
+                _hamsterHeightInUnits,
+                _jumpClipHalfY,
+                out var hB,
+                out var hT);
+
             bool hitY = CollisionUtils.IsOverlap(hB, hT, oB, oT);
 
             return hitX || hitY;
         }
+
 
     }
 }
