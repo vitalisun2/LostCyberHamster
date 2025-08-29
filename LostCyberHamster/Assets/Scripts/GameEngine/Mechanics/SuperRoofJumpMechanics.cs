@@ -169,20 +169,40 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private JumpResult HandleBigAlive(Obstacle obs)
         {
-            bool overlap = CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs);
-            if (overlap)
-                return new JumpResult(HamsterStateEnum.SuperJumpOnObstacleFromRoof, obs);
+            const float EDGE_THRESHOLD = 0.5f;
 
-            return _noHit;
+            if (!CollisionUtils.IsOverlapAtShift(
+                    _transform,
+                    _hamsterWidth,
+                    _jumpFromRoofShift,
+                    obs,
+                    out float overlap))
+                return _noHit;
+
+            var state = overlap <= EDGE_THRESHOLD
+                ? HamsterStateEnum.SuperJumpFromRoofDamage
+                : HamsterStateEnum.SuperJumpOnObstacleFromRoof;
+
+            return new JumpResult(state, obs);
         }
 
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
-            bool overlap = CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs);
-            if (overlap)
-                return new JumpResult(HamsterStateEnum.SuperJumpOnObstacleFromRoof, obs);
+            const float EDGE_THRESHOLD = 0.5f;
 
-            return _noHit;
+            if (!CollisionUtils.IsOverlapAtShift(
+                    _transform,
+                    _hamsterWidth,
+                    _jumpFromRoofShift,
+                    obs,
+                    out float overlap))
+                return _noHit;
+
+            var state = overlap <= EDGE_THRESHOLD
+                ? HamsterStateEnum.SuperJumpFromRoofDamage
+                : HamsterStateEnum.SuperJumpOnObstacleFromRoof;
+
+            return new JumpResult(state, obs);
         }
 
         private JumpResult HandleSmallNotAliveRoad(Obstacle obs)
