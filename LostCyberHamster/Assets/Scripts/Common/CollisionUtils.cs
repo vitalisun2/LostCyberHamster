@@ -86,6 +86,10 @@ namespace Assets.Scripts.Common
 
         // ───────────────────────────────── Проверки в прыжках ─────────────────────────────────
 
+        /// <summary>
+        /// Проверяет перекрытие хомяка и препятствия при смещении мира.
+        /// </summary>
+        /// <returns>True, если есть перекрытие; out – доля перекрытия относительно ширины препятствия.</returns>
         public static bool IsOverlapAtShift(
             Transform hamster,
             float hamsterWidth,
@@ -99,7 +103,7 @@ namespace Assets.Scripts.Common
 
             float overlapLen = Mathf.Min(hR, oR) - Mathf.Max(hL, oL);
             overlapLen      = Mathf.Max(0f, overlapLen);
-            overlapFraction = overlapLen / hamsterWidth;   // 0‒1
+            overlapFraction = overlapLen / obstacle.ColliderWidth;   // 0‒1
             return overlapLen > 0f;
         }
 

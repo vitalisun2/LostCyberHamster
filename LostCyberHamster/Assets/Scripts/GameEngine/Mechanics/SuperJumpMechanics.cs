@@ -177,7 +177,7 @@ public class SuperJumpMechanics
                 obs,
                 out var frac))
         {
-            var state = frac <= Consts.JumpOverlapCrushSmallThreshold
+            var state = frac <= Consts.JumpOverlapCrushThreshold
                 ? HamsterStateEnum.SuperJumpDamage   // краевой контакт
                 : HamsterStateEnum.SuperJumpOnObstacle;
 

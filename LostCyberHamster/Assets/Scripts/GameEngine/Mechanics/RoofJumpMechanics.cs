@@ -148,7 +148,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     out float overlap))
                 return _noHit;
 
-            var state = overlap <= Consts.JumpOverlapCrushBigThreshold
+            var state = overlap <= Consts.JumpOverlapCrushThreshold
                 ? HamsterStateEnum.JumpFromRoofDamage
                 : HamsterStateEnum.JumpOnObstacleFromRoof;
 
@@ -166,7 +166,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     out float overlap))
                 return _noHit;
 
-            var state = overlap <= Consts.JumpOverlapCrushSmallThreshold
+            var state = overlap <= Consts.JumpOverlapCrushThreshold
                 ? HamsterStateEnum.JumpFromRoofDamage
                 : HamsterStateEnum.JumpOnObstacleFromRoof;
 

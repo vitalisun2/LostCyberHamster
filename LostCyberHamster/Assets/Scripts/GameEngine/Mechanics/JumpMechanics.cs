@@ -156,7 +156,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     obs,
                     out var frac))
             {
-                var state = frac <= Consts.JumpOverlapCrushSmallThreshold
+                var state = frac <= Consts.JumpOverlapCrushThreshold
                     ? HamsterStateEnum.JumpDamageForSmallAlive
                     : HamsterStateEnum.JumpOnObstacle;
 
