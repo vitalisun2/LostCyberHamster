@@ -148,10 +148,27 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
-            if (CollisionUtils.IsOverlapAtShift(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, obs))
-                return new JumpResult(HamsterStateEnum.JumpOnObstacle, obs);
+            const float EDGE_THRESHOLD = 0.5f;
 
-            if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, obs))
+            if (CollisionUtils.IsOverlapAtShift(
+                    _characterTransform,
+                    _hamsterWidthInUnits,
+                    _jumpClipWorldShift,
+                    obs,
+                    out var frac))
+            {
+                var state = frac <= EDGE_THRESHOLD
+                    ? HamsterStateEnum.JumpDamageForSmallAlive
+                    : HamsterStateEnum.JumpOnObstacle;
+
+                return new JumpResult(state, obs);
+            }
+
+            if (CollisionUtils.IsJumpOver(
+                    _characterTransform,
+                    _hamsterWidthInUnits,
+                    _jumpClipWorldShift,
+                    obs))
                 return new JumpResult(HamsterStateEnum.JumpOver, obs);
 
             return _noHit;

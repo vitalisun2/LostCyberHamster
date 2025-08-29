@@ -12,6 +12,7 @@
         JumpFromRoof,
         JumpFromRoofDamage,
         JumpDamageForSmallNotAlive,
+        JumpDamageForSmallAlive,
         JumpDamageForBigAlive,
         JumpOnRoofDamage,
         JumpOnObstacleFromRoof,
