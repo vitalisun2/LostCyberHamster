@@ -149,20 +149,22 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
+            // 1. Центр внутри границ препятствия? → удачный напрыг
+            if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
+                    _characterTransform,
+                    _jumpClipWorldShift,
+                    obs))
+                return new JumpResult(HamsterStateEnum.JumpOnObstacle, obs);
+
+            // 2. Иначе: есть ли вообще X-пересечение? → урон
             if (CollisionUtils.IsOverlapAtShift(
                     _characterTransform,
                     _hamsterWidthInUnits,
                     _jumpClipWorldShift,
-                    obs,
-                    out var frac))
-            {
-                var state = frac <= Consts.JumpOverlapCrushThreshold
-                    ? HamsterStateEnum.JumpDamageForSmallAlive
-                    : HamsterStateEnum.JumpOnObstacle;
+                    obs))
+                return new JumpResult(HamsterStateEnum.JumpDamageForSmallAlive, obs);
 
-                return new JumpResult(state, obs);
-            }
-
+            // 3. Проверяем, перепрыгнули ли полностью
             if (CollisionUtils.IsJumpOver(
                     _characterTransform,
                     _hamsterWidthInUnits,
@@ -170,6 +172,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     obs))
                 return new JumpResult(HamsterStateEnum.JumpOver, obs);
 
+            // 4. Вообще не задели
             return _noHit;
         }
 

@@ -129,14 +129,6 @@ namespace Assets.Scripts
         public const double StrikeRangeMax = 12;
 
         /// <summary>
-        /// Доля ширины препятствия, которую должен перекрыть хомяк,
-        /// чтобы прыжок считался удачным (раздавил + бонус).
-        /// Перекрытие ≤ порога — хомяк лишь задевает препятствие и получает урон.
-        /// </summary>
-        public const float JumpOverlapCrushThreshold = 0.5f;
-
-
-        /// <summary>
         /// Имя префаба фона
         /// </summary>
         public const string BackgroundPrefabName = "BackgroundPrefab";

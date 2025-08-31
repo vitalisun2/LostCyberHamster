@@ -237,5 +237,24 @@ namespace Assets.Scripts.Common
             bool noOverlap = !IsOverlap(hEndL, hEndR, obsL, obsR, minOverlap);
             return clearStart && clearEnd && noOverlap;
         }
+
+        /// <summary>
+        /// Проверяет, попадает ли горизонтальный центр хомяка (hamster.position.x)
+        /// внутрь отрезка [left; right] препятствия после смещения мира на
+        /// <paramref name="worldShift"/>.  
+        /// True → центр внутри (прыжок «раздавил» препятствие);  
+        /// False → центр снаружи (хомяк лишь чиркнул краем).
+        /// </summary>
+        public static bool IsHamsterCenterInsideObstacleAtShift(
+            Transform hamster,
+            float worldShift,
+            Obstacle obstacle)
+        {
+            GetObstacleXInterval(obstacle, obstacle.ColliderWidth, worldShift,
+                                 out var left, out var right);
+
+            float centerX = hamster.position.x;
+            return centerX > left && centerX < right;
+        }
     }
 }
