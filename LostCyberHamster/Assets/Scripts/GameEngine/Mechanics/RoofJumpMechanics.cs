@@ -140,37 +140,45 @@ namespace Assets.Scripts.GameEngine.Mechanics
         // bigAlive → JumpOnObstacleFromRoof / JumpFromRoofDamage
         private JumpResult HandleBigAlive(Obstacle obs)
         {
-            if (!CollisionUtils.IsOverlapAtShift(
-                    _transform,                          // Transform хомяка
-                    _hamsterWidth,                       // ширина хомяка
-                    _jumpFromRoofShift,                  // сдвиг мира во время прыжка
-                    obs,
-                    out float overlap))
-                return _noHit;
+            // 1. Центр внутри границ препятствия? → удачный напрыг
+            if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
+                    _transform,
+                    _jumpFromRoofShift,
+                    obs))
+                return new JumpResult(HamsterStateEnum.JumpOnObstacleFromRoof, obs);
 
-            var state = overlap <= Consts.JumpOverlapCrushThreshold
-                ? HamsterStateEnum.JumpFromRoofDamage
-                : HamsterStateEnum.JumpOnObstacleFromRoof;
+            // 2. Иначе: есть ли вообще X-пересечение? → урон
+            if (CollisionUtils.IsOverlapAtShift(
+                    _transform,
+                    _hamsterWidth,
+                    _jumpFromRoofShift,
+                    obs))
+                return new JumpResult(HamsterStateEnum.JumpFromRoofDamage, obs);
 
-            return new JumpResult(state, obs);
+            // 3. Вообще не задели
+            return _noHit;
         }
 
         // smallAlive → JumpOnObstacleFromRoof / JumpFromRoofDamage
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
-            if (!CollisionUtils.IsOverlapAtShift(
+            // 1. Центр внутри границ препятствия? → удачный напрыг
+            if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
+                    _transform,
+                    _jumpFromRoofShift,
+                    obs))
+                return new JumpResult(HamsterStateEnum.JumpOnObstacleFromRoof, obs);
+
+            // 2. Иначе: есть ли X-пересечение? → урон
+            if (CollisionUtils.IsOverlapAtShift(
                     _transform,
                     _hamsterWidth,
                     _jumpFromRoofShift,
-                    obs,
-                    out float overlap))
-                return _noHit;
+                    obs))
+                return new JumpResult(HamsterStateEnum.JumpFromRoofDamage, obs);
 
-            var state = overlap <= Consts.JumpOverlapCrushThreshold
-                ? HamsterStateEnum.JumpFromRoofDamage
-                : HamsterStateEnum.JumpOnObstacleFromRoof;
-
-            return new JumpResult(state, obs);
+            // 3. Вообще не задели
+            return _noHit;
         }
 
         // smallNotAliveRoad → JumpFromRoofDamage

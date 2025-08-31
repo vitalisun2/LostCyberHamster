@@ -170,20 +170,22 @@ public class SuperJumpMechanics
 
     private JumpResult HandleSmallAlive(Obstacle obs)
     {
+        // 1. Центр внутри границ препятствия? → удачный напрыг
+        if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
+                _characterTransform,
+                _superJumpShift,
+                obs))
+            return new JumpResult(HamsterStateEnum.SuperJumpOnObstacle, obs);
+
+        // 2. Иначе: есть ли вообще X-пересечение? → урон
         if (CollisionUtils.IsOverlapAtShift(
                 _characterTransform,
                 _hamsterWidth,
                 _superJumpShift,
-                obs,
-                out var frac))
-        {
-            var state = frac <= Consts.JumpOverlapCrushThreshold
-                ? HamsterStateEnum.SuperJumpDamage   // краевой контакт
-                : HamsterStateEnum.SuperJumpOnObstacle;
+                obs))
+            return new JumpResult(HamsterStateEnum.SuperJumpDamage, obs);
 
-            return new JumpResult(state, obs);
-        }
-
+        // 3. Проверяем, перепрыгнули ли полностью
         if (CollisionUtils.IsJumpOver(
                 _characterTransform,
                 _hamsterWidth,
@@ -191,6 +193,7 @@ public class SuperJumpMechanics
                 obs))
             return new JumpResult(HamsterStateEnum.SuperJumpOver, obs);
 
+        // 4. Вообще не задели
         return _noHit;
     }
 
