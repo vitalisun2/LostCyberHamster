@@ -28,18 +28,6 @@ public class LicenseManager : MonoBehaviour
     {
         while (true)
         {
-            if (DateTime.Now > _expirationDate)
-            {
-                ShowFullScreenView("License Expired", "This is a test build. Please contact support.");
-                yield break;
-            }
-
-            if (_currentTime.HasValue && _currentTime.Value > _expirationDate)
-            {
-                ShowFullScreenView("License Expired", "This is a test build. Please contact support.");
-                yield break;
-            }
-
             // Check network availability
             bool networkAvailable = IsNetworkAvailable();
 
