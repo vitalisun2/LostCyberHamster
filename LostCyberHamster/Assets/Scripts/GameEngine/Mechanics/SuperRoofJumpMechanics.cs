@@ -120,27 +120,17 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             float maxShift = Mathf.Max(_jumpFromRoofShift, _roofSuperJumpShift);
 
-            // DIAG: общий контекст супер-прыжка
-            Debug.Log($"[Diag.SuperRoofJump.Context] hamsterX={_transform.position.x:F3}, hamsterWidth={_hamsterWidth:F3}, " +
-                      $"shift_roof={_roofSuperJumpShift:F3}, shift_jumpFromRoof={_jumpFromRoofShift:F3}, maxShift={maxShift:F3}, obstacles={obstacles.Count}");
-
             foreach (var obs in obstacles)
             {
-                // DIAG: до ShouldBreakByReachRight
-                Debug.Log($"[Diag.SuperRoofJump.Iter] obs={obs.name}, type={obs.ObstacleType.ObstacleTypeEnum}, posX={obs.transform.position.x:F3}");
-
+   
                 if (CollisionUtils.ShouldBreakByReachRight(_transform, _hamsterWidth, maxShift, obs))
                 {
-                    Debug.Log($"[Diag.SuperRoofJump.ReachBreak] break on obs={obs.name}");
                     break;
                 }
 
                 if (_handlers.TryGetValue(obs.ObstacleType.ObstacleTypeEnum, out var handler))
                 {
                     JumpResult res = handler(obs);
-
-                    // DIAG: результат обработки препятствия
-                    Debug.Log($"[Diag.SuperRoofJump.Result] obs={obs.name}, handlerState={res.State}");
 
                     if (res.State != _noHit.State)
                         return res;

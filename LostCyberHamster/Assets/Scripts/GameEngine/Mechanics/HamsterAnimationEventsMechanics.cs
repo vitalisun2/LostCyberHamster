@@ -94,8 +94,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             if (animEvent == "transform_jump_end")
             {
-                Debug.Log("transform_jump_end");
-
                 if (_hamsterState.Value == HamsterStateEnum.JumpOver
                  || _hamsterState.Value == HamsterStateEnum.SuperJumpOver)
                 {

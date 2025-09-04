@@ -245,21 +245,15 @@ namespace Assets.Scripts.Gameplay
             var boxCollider2D = transform.GetComponentInChildren<BoxCollider2D>();
             if (boxCollider2D == null) throw new MissingComponentException("BoxCollider2D is missing on Hamster object.");
 
-            // DIAG
-            var sizeXLocal = boxCollider2D.size.x;
-            var boundsXWorld = boxCollider2D.bounds.size.x;
-            var scaleX = boxCollider2D.transform.lossyScale.x;
-            Debug.Log($"[Diag.Hamster.ColliderWidth] name={name} size.x(local)={sizeXLocal:F3}, bounds.size.x(world)={boundsXWorld:F3}, lossyScale.x={scaleX:F3}");
-
-            return sizeXLocal;
+            return boxCollider2D.size.x;
         }
 
         private float GetBoxColliderHeight()
         {
             var boxCollider2D = transform.GetComponentInChildren<BoxCollider2D>();
             if (boxCollider2D == null) throw new MissingComponentException("BoxCollider2D is missing on Hamster object.");
-            // было: return boxCollider2D.size.y;
-            return boxCollider2D.bounds.size.y; // ← теперь world height
+
+            return boxCollider2D.bounds.size.y;
         }
 
         private void CacheHorizontalBounds()

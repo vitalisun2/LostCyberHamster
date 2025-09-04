@@ -119,10 +119,7 @@ namespace Assets.Scripts.Common
 
             GetHamsterXBounds(hamster, out var hL, out var hR);
 
-            bool overlap = IsOverlap(hL, hR, oL, oR);
-            Debug.Log($"[CollisionUtils.IsOverlapAtShift] hamster=({hL:F3},{hR:F3}) " +
-                      $"obs={obstacle.name} ({oL:F3},{oR:F3}) shift={worldShift:F3} overlap={overlap}");
-            return overlap;
+            return IsOverlap(hL, hR, oL, oR);
         }
 
         /// <summary>True, если хомяк перелетает obstacle полностью по X.</summary>
@@ -159,8 +156,7 @@ namespace Assets.Scripts.Common
 
                 GetObstacleXInterval(o, o.ColliderWidth, worldShift, out var oL, out var oR);
                 bool overlap = IsOverlap(hL, hR, oL, oR);
-                Debug.Log($"[CollisionUtils.IsHitSmallNotAliveOnRoof] hamster=({hL:F3},{hR:F3}) " +
-                          $"small={o.name} ({oL:F3},{oR:F3}) shift={worldShift:F3} overlap={overlap}");
+ 
                 if (overlap) return true;
             }
             return false;
@@ -239,12 +235,14 @@ namespace Assets.Scripts.Common
         }
 
         /// <summary>
-        /// Проверяет, попадает ли горизонтальный центр хомяка (hamster.position.x)
-        /// внутрь отрезка [left; right] препятствия после смещения мира на
-        /// <paramref name="worldShift"/>.  
-        /// True → центр внутри (прыжок «раздавил» препятствие);  
-        /// False → центр снаружи (хомяк лишь чиркнул краем).
+        /// Определяет, находится ли центр хомяка (hamster.position.x) внутри X-интервала
+        /// препятствия после смещения на <paramref name="worldShift"/>.<br/>
+        /// • Для <b>SmallAlive</b> (по умолчанию) используем фактический [left; right].<br/>
+        /// • Для <b>bigAlive</b> интервал расширяем на 30 % ширины влево и вправо: высокие,
+        ///   но узкие объекты хомяк визуально “зацепляет головой” ещё до завершения прыжка.<br/>
+        /// Возвращает <c>true</c>, если центр внутри скорректированного интервала.
         /// </summary>
+
         public static bool IsHamsterCenterInsideObstacleAtShift(
             Transform hamster,
             float worldShift,
@@ -252,6 +250,13 @@ namespace Assets.Scripts.Common
         {
             GetObstacleXInterval(obstacle, obstacle.ColliderWidth, worldShift,
                                  out var left, out var right);
+
+            if (obstacle.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.bigAlive)
+            {
+                float thirdFraction = obstacle.ColliderWidth * 0.3f;
+                left -= thirdFraction;
+                right += thirdFraction;
+            }
 
             float centerX = hamster.position.x;
             return centerX > left && centerX < right;

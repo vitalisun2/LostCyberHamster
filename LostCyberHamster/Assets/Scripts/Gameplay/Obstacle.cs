@@ -112,12 +112,6 @@ namespace Assets.Scripts.Gameplay
             var boxCollider2D = transform.GetComponentInChildren<BoxCollider2D>();
             if (boxCollider2D == null) throw new MissingComponentException("BoxCollider2D is missing on Obstacle object.");
 
-            // DIAG
-            var sizeXLocal = boxCollider2D.size.x;
-            var boundsXWorld = boxCollider2D.bounds.size.x;
-            var scaleX = boxCollider2D.transform.lossyScale.x;
-            Debug.Log($"[Diag.Obstacle.ColliderWidth] name={name}, type={ObstacleType.ObstacleTypeEnum} size.x(local)={sizeXLocal:F3}, bounds.size.x(world)={boundsXWorld:F3}, lossyScale.x={scaleX:F3}");
-
             return boxCollider2D.size.x;
         }
 
