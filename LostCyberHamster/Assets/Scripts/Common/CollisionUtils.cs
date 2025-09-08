@@ -125,19 +125,22 @@ namespace Assets.Scripts.Common
         /// <summary>True, если хомяк перелетает obstacle полностью по X.</summary>
         public static bool IsJumpOver(
             Transform hamster,
-            float hamsterWidth,                 // сохранён для совместимости
-            float shift,                        // worldShift клипа
-            Obstacle obs)
+            float hamsterWidth,
+            float shift,
+            Obstacle obs,
+            float minOverlap = 0f)
         {
-            // obstacle к концу клипа
-            GetObstacleXInterval(obs, obs.ColliderWidth, shift, out var oL, out var oR);
+            // Границы хомяка (по X не меняются)
+            float hL = hamster.position.x - hamsterWidth * 0.5f;
+            float hR = hamster.position.x + hamsterWidth * 0.5f;
 
-            // хомяк остаётся на месте
-            GetHamsterXBounds(hamster, out var hStartL, out var hStartR);
-            float hEndL = hStartL;              // не меняется
-            float hEndR = hStartR;
+            // Границы препятствия в начале прыжка
+            GetObstacleXInterval(obs, obs.ColliderWidth, 0f, out var oStartL, out var oStartR);
 
-            return IsJumpOverIntervals(hStartL, hStartR, hEndL, hEndR, oL, oR, 0f);
+            // Границы препятствия в конце прыжка (со сдвигом мира)
+            GetObstacleXInterval(obs, obs.ColliderWidth, shift, out var oEndL, out var oEndR);
+
+            return IsJumpOverIntervals(hL, hR, oStartL, oStartR, oEndL, oEndR, minOverlap);
         }
 
         /// <summary>Хит-тест smallNotAliveRoadAndRoof на крыше.</summary>
@@ -223,14 +226,14 @@ namespace Assets.Scripts.Common
 
         /// <summary>Вспомогательный расчёт «чистого» перелёта через obstacle.</summary>
         private static bool IsJumpOverIntervals(
-            float hStartL, float hStartR,
-            float hEndL, float hEndR,
-            float obsL, float obsR,
+            float hL, float hR,
+            float oStartL, float oStartR,
+            float oEndL, float oEndR,
             float minOverlap)
         {
-            bool clearStart = hStartR < obsL;
-            bool clearEnd = hEndL > obsR;
-            bool noOverlap = !IsOverlap(hEndL, hEndR, obsL, obsR, minOverlap);
+            bool clearStart = hR < oStartL;
+            bool clearEnd = hL > oEndR;
+            bool noOverlap = !IsOverlap(hL, hR, oEndL, oEndR, minOverlap);
             return clearStart && clearEnd && noOverlap;
         }
 
