@@ -213,27 +213,52 @@ public class SuperJumpMechanics
 
     private JumpResult HandleSmallNotAliveRoadAndRoof(Obstacle small)
     {
-        if (CollisionUtils.IsOverlapAtShift(_characterTransform,
-                                            _hamsterWidth,
-                                            _superJumpShift,
-                                            small))
-        {
-            if (CollisionUtils.TryFindBigNotAliveUnderSmallNotAlive(small,
-                                                                   _sameLineObstacles,
-                                                                   out var big))
-            {
-                bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_characterTransform, _hamsterWidth, _superJumpShift, _sameLineObstacles);
-                var state = hitSmall ? HamsterStateEnum.SuperJumpOnRoofDamage : HamsterStateEnum.SuperJumpOnRoof;
-                return new JumpResult(state, big);
-            }
+        // ──────────────────────────────────────────────────────────────
+        // 1. Сначала проверяем: «Врезались ли мы в коробку к концу прыжка?»
+        // ──────────────────────────────────────────────────────────────
+        bool isOverlapSmall = CollisionUtils.IsOverlapAtShift(
+                                  _characterTransform, _hamsterWidth, _superJumpShift, small);
 
-            return new JumpResult(HamsterStateEnum.SuperJumpDamage, small);
+        // Если прямого столкновения нет, спрашиваем: «Перепрыгнули ли полностью?»
+        if (!isOverlapSmall)
+        {
+            bool isJumpOverSmall = CollisionUtils.IsJumpOver(
+                                       _characterTransform, _hamsterWidth, _superJumpShift, small);
+
+            // Ни столкновения, ни перелёта → коробка никак не затрагивает прыжок
+            if (!isJumpOverSmall)
+                return _noHit;
+            // Перелёт возможен, но нужна ещё проверка «коробка на крыше» — продолжаем логику ниже
         }
 
-        if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidth, _superJumpShift, small))
-            return new JumpResult(HamsterStateEnum.SuperJumpOver, small);
+        // ──────────────────────────────────────────────────────────────
+        // 2. Проверяем сценарий «коробка стоит на крыше большой машины».
+        //    Если BigNotAlive найден и мы реально садимся на крышу,
+        //    то работаем как с приземлением на крышу.
+        // ──────────────────────────────────────────────────────────────
+        if (CollisionUtils.TryFindBigNotAliveUnderSmallNotAlive(
+                small, _sameLineObstacles, out var big) &&
+            CollisionUtils.IsOverlapAtShift(
+                _characterTransform, _hamsterWidth, _superJumpShift, big))
+        {
+            bool hitSmallOnRoof = CollisionUtils.IsHitSmallNotAliveOnRoof(
+                                      _characterTransform, _hamsterWidth, _superJumpShift, _sameLineObstacles);
 
-        return _noHit;
+            var state = hitSmallOnRoof
+                        ? HamsterStateEnum.SuperJumpOnRoofDamage   // зацепили коробку → урон
+                        : HamsterStateEnum.SuperJumpOnRoof;        // чистое приземление
+
+            return new JumpResult(state, big);
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 3. Сценарий «коробка на дороге».
+        //    Если столкнулись — урон; если нет → перепрыгнули.
+        // ──────────────────────────────────────────────────────────────
+        return isOverlapSmall
+               ? new JumpResult(HamsterStateEnum.SuperJumpDamage, small) // наехали на коробку
+               : new JumpResult(HamsterStateEnum.SuperJumpOver, small); // перелетели коробку
     }
+
 
 }
