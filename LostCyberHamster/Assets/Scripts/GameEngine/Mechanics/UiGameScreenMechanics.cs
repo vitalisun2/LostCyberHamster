@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.GameManagerLogic;
+using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -80,7 +80,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 $"{LevelManager.GetLocationName()} " +
                 $"{LevelManager.GetCurrentPartOfDay()}, " +
                 $"{ObstacleSpawner.Instance.CurrPatternName} {ObstacleSpawner.Instance.CurrPatternIndex}, " +
-                $"{_gameManager.State.ToString()}, {_character.HamsterState.Value}, isDamaged: {_character.IsDamaged.Value}";
+                $"{_gameManager.State.ToString()},\n " +
+                $"{_character.HamsterState.Value}, isDamaged: {_character.IsDamaged.Value}";
 
             _gameScreenController.SetHamsterState(outputStr);
         }

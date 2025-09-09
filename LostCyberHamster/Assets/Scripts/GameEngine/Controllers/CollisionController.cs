@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Common.Models;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;
@@ -85,7 +85,9 @@ public class CollisionController : MonoBehaviour
         var canDamageHamsterState = new[]
         {
             HamsterStateEnum.Run,
-            HamsterStateEnum.RunFromRoof
+            HamsterStateEnum.RunFromRoof,
+            HamsterStateEnum.JumpFromRoof,
+            HamsterStateEnum.SuperJumpFromRoof
         }.Contains(_hamster.HamsterState.Value);
 
         return canDamageHamsterState;
