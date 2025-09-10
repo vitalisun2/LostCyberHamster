@@ -244,12 +244,19 @@ namespace Assets.Scripts.Common
         /// • Для <b>bigAlive</b> интервал расширяем на 30 % ширины влево и вправо: высокие,
         ///   но узкие объекты хомяк визуально “зацепляет головой” ещё до завершения прыжка.<br/>
         /// Возвращает <c>true</c>, если центр внутри скорректированного интервала.
+        /// Дополнительный допуск можно задать параметром <paramref name="rightTol"/>,
+        /// который расширяет правую границу препятствия.
         /// </summary>
 
+        /// <param name="rightTol">
+        /// Допуск по правому краю: насколько можно выйти за <c>right</c>,
+        /// чтобы всё ещё считать центр внутри препятствия.
+        /// </param>
         public static bool IsHamsterCenterInsideObstacleAtShift(
             Transform hamster,
             float worldShift,
-            Obstacle obstacle)
+            Obstacle obstacle,
+            float rightTol = 0f)
         {
             GetObstacleXInterval(obstacle, obstacle.ColliderWidth, worldShift,
                                  out var left, out var right);
@@ -261,8 +268,10 @@ namespace Assets.Scripts.Common
                 right += thirdFraction;
             }
 
+            right += rightTol; // допуск только по правому краю
+
             float centerX = hamster.position.x;
-            return centerX > left && centerX < right;
+            return centerX >= left && centerX <= right;
         }
     }
 }

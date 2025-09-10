@@ -21,6 +21,7 @@ public class SuperJumpMechanics
     // ──────────────────────── constants ────────────────────────
     private const int ENERGY_COST_SUPER_JUMP = 10;
     private const string CLIP_SUPER_JUMP = "transform_super_jump";
+    private const float RIGHT_EDGE_TOL_RATIO = 0.2f; // 20 % ширины хомяка
 
     // ──────────────────────── injected refs ────────────────────
     private readonly AtomicEvent _superJumpRequest;
@@ -171,10 +172,12 @@ public class SuperJumpMechanics
     private JumpResult HandleSmallAlive(Obstacle obs)
     {
         // 1. Центр внутри границ препятствия? → удачный напрыг
+        float rightTol = _hamsterWidth * RIGHT_EDGE_TOL_RATIO;
         if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
                 _characterTransform,
                 _superJumpShift,
-                obs))
+                obs,
+                rightTol))
             return new JumpResult(HamsterStateEnum.SuperJumpOnObstacle, obs);
 
         // 2. Иначе: есть ли вообще X-пересечение? → урон

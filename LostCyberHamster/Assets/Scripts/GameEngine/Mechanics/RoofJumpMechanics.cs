@@ -26,6 +26,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private const string CLIP_ROOF_JUMP = "transform_roof_jump";
         private const string CLIP_JUMP_FROM_ROOF = "transform_jump_from_roof";
+        private const float RIGHT_EDGE_TOL_RATIO = 0.2f; // 20 % ширины хомяка
 
         private readonly float _hamsterWidth;
         private readonly float _roofJumpShift;
@@ -141,10 +142,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private JumpResult HandleBigAlive(Obstacle obs)
         {
             // 1. Центр внутри границ препятствия? → удачный напрыг
+            float rightTol = _hamsterWidth * RIGHT_EDGE_TOL_RATIO;
             if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
                     _transform,
                     _jumpFromRoofShift,
-                    obs))
+                    obs,
+                    rightTol))
                 return new JumpResult(HamsterStateEnum.JumpOnObstacleFromRoof, obs);
 
             // 2. Иначе: есть ли вообще X-пересечение? → урон
@@ -163,10 +166,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
             // 1. Центр внутри границ препятствия? → удачный напрыг
+            float rightTol = _hamsterWidth * RIGHT_EDGE_TOL_RATIO;
             if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
                     _transform,
                     _jumpFromRoofShift,
-                    obs))
+                    obs,
+                    rightTol))
                 return new JumpResult(HamsterStateEnum.JumpOnObstacleFromRoof, obs);
 
             // 2. Иначе: есть ли X-пересечение? → урон
