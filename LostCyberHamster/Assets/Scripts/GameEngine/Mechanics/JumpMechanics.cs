@@ -28,6 +28,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly SpriteAnimatorController _spriteAnimatorController;
 
         private const string CLIP_JUMP = "transform_jump";
+        private const float RIGHT_EDGE_TOL_RATIO = 0.2f; // 20 % ширины хомяка
         private readonly float _jumpClipWorldShift;
         private readonly float _jumpClipHalfY;
 
@@ -150,10 +151,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
             // 1. Центр внутри границ препятствия? → удачный напрыг
+            float rightTol = _hamsterWidthInUnits * RIGHT_EDGE_TOL_RATIO;
             if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
                     _characterTransform,
                     _jumpClipWorldShift,
-                    obs))
+                    obs,
+                    rightTol))
                 return new JumpResult(HamsterStateEnum.JumpOnObstacle, obs);
 
             // 2. Иначе: есть ли вообще X-пересечение? → урон
