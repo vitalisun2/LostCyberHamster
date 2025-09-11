@@ -115,27 +115,35 @@ public class SuperJumpMechanics
     /// </summary>
     private JumpResult CalculateSuperJumpState()
     {
-        if (_isDamaged.Value)
-            return _noHit;
+        if (_isDamaged.Value) return _noHit;
 
         var obstacles = CollisionUtils.GetValidObstaclesAhead(_characterTransform, _isOnBottomLine.Value);
         _sameLineObstacles = obstacles;
-        float reachShift = _superJumpShift;                 // дальность по X
+
+        float reachShift = _superJumpShift;
+        JumpResult overResult = _noHit; // сохраняем Over, если встретится
 
         foreach (var obs in obstacles)
         {
-            // корректный ранний выход: левый край препятствия правее максимально достижимого правого края хомяка
             if (CollisionUtils.ShouldBreakByReachRight(_characterTransform, _hamsterWidth, reachShift, obs))
                 break;
 
             if (_handlers.TryGetValue(obs.ObstacleType.ObstacleTypeEnum, out var handler))
             {
                 var res = handler(obs);
-                if (res.State != _noHit.State) return res;
+
+                if (res.State == HamsterStateEnum.SuperJumpOver) // Over — запоминаем и ищем дальше
+                {
+                    overResult = res;
+                    continue;
+                }
+
+                if (res.State != _noHit.State) // любой другой результат — сразу возврат
+                    return res;
             }
         }
 
-        return _noHit;
+        return overResult; // вернём Over, если ничего важнее не нашли
     }
 
     // ──────────────────────── handlers ─────────────────────────
