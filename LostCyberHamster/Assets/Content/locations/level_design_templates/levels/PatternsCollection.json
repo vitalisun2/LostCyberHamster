@@ -415,9 +415,9 @@
             "desсription": "одиночные небольшие препятствия",
             "obstacles": [
                 {
-                    "spriteName": "obstacle_new_york_dog",
-                    "type": 0,
-                    "x": -8.800000190734864,
+                    "spriteName": "obstacle_new_york_opened_box",
+                    "type": 3,
+                    "x": -9.0,
                     "y": -2.799999952316284
                 },
                 {
@@ -469,12 +469,6 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_opened_box",
-                    "type": 3,
-                    "x": 65.20000457763672,
-                    "y": -2.799999952316284
-                },
-                {
                     "spriteName": "obstacle_new_york_manhole",
                     "type": 2,
                     "x": -4.599999904632568,
@@ -499,9 +493,9 @@
                     "y": -1.8000000715255738
                 },
                 {
-                    "spriteName": "coin",
-                    "type": 9,
-                    "x": 28.600000381469728,
+                    "spriteName": "energetic",
+                    "type": 5,
+                    "x": 30.0,
                     "y": -1.8000000715255738
                 },
                 {
@@ -771,13 +765,13 @@
                 {
                     "spriteName": "obstacle_new_york_manhole",
                     "type": 2,
-                    "x": 1.0,
+                    "x": 2.799999952316284,
                     "y": -2.799999952316284
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
                     "type": 2,
-                    "x": 8.199999809265137,
+                    "x": 8.600000381469727,
                     "y": -2.799999952316284
                 },
                 {
