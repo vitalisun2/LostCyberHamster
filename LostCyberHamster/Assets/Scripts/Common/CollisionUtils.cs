@@ -13,6 +13,8 @@ namespace Assets.Scripts.Common
     /// </summary>
     public static class CollisionUtils
     {
+        // добавь пул ёмкостью 32 (хватает для мобильных)
+        private static readonly List<Obstacle> _buffer = new(32);
         // ───────────────────────────────── X-интервалы ─────────────────────────────────
 
         /// <summary>X-интервал [left; right] препятствия в конце клипа (учтён worldShift).</summary>
@@ -24,8 +26,10 @@ namespace Assets.Scripts.Common
             out float right)
         {
             var b = o.GetComponentInChildren<BoxCollider2D>().bounds; // world @ t0
-            left = b.min.x - worldShift;     // влево вместе с миром
-            right = b.max.x - worldShift;
+            float minX = b.min.x;
+            float maxX = b.max.x;
+            left = minX - worldShift;     // влево вместе с миром
+            right = maxX - worldShift;
         }
 
         /// <summary>Y-интервал [bottom; top] препятствия (без сдвига по Y).</summary>
@@ -100,8 +104,10 @@ namespace Assets.Scripts.Common
                                  out var oL, out var oR);
             GetHamsterXBounds(hamster, out var hL, out var hR);
 
-            float overlapLen = Mathf.Min(hR, oR) - Mathf.Max(hL, oL);
-            overlapLen      = Mathf.Max(0f, overlapLen);
+            float minRight = Mathf.Min(hR, oR);
+            float maxLeft = Mathf.Max(hL, oL);
+            float overlapLen = minRight - maxLeft;
+            if (overlapLen < 0f) overlapLen = 0f;
             overlapFraction = overlapLen / obstacle.ColliderWidth;   // 0‒1
             return overlapLen > 0f;
         }
@@ -130,8 +136,10 @@ namespace Assets.Scripts.Common
             float minOverlap = 0f)
         {
             // Границы хомяка (по X не меняются)
-            float hL = hamster.position.x - hamsterWidth * 0.5f;
-            float hR = hamster.position.x + hamsterWidth * 0.5f;
+            float hx = hamster.position.x;
+            float half = hamsterWidth * 0.5f;
+            float hL = hx - half;
+            float hR = hx + half;
 
             // Границы препятствия в начале прыжка
             GetObstacleXInterval(obs, obs.ColliderWidth, 0f, out var oStartL, out var oStartR);
@@ -193,11 +201,10 @@ namespace Assets.Scripts.Common
             Transform hamster,
             bool isOnBottomLine)
         {
+            _buffer.Clear();
             float hx = hamster.position.x;
-            var spawned = ObstacleSpawner.Instance.SpawnedObstacles;
-            var result = new List<Obstacle>(spawned.Count);
 
-            foreach (var inst in spawned)
+            foreach (var inst in ObstacleSpawner.Instance.SpawnedObstacles)
             {
                 var obstacle = inst.ObstacleScript;
                 if (!HelpMethods.IsOnSameLine(isOnBottomLine, obstacle))
@@ -206,13 +213,10 @@ namespace Assets.Scripts.Common
                 if (obstacle.transform.position.x <= hx)
                     continue;
 
-                result.Add(obstacle);
+                _buffer.Add(obstacle);         // порядок уже по X
             }
 
-            result.Sort((a, b) =>
-                a.transform.position.x.CompareTo(b.transform.position.x));
-
-            return result;
+            return _buffer;            // без сортировок/аллокаций
         }
 
         // ───────────────────────────────── Ранний выход по reach ─────────────────────────────────

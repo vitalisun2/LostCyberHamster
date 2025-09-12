@@ -40,7 +40,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         // список препятствий, уже лежащих на нужной линии
         private IReadOnlyList<Obstacle> _sameLineObstacles;
 
-        private readonly Dictionary<ObstacleTypeEnum, Func<Obstacle, JumpResult>> _handlers;
         private readonly JumpResult _noHit = new(HamsterStateEnum.Jump, null);
 
         public JumpMechanics(
@@ -73,15 +72,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             // будет заполнено при вычислении состояния прыжка
             _sameLineObstacles = Array.Empty<Obstacle>();
-
-            _handlers = new()
-            {
-                { ObstacleTypeEnum.smallAlive,               HandleSmallAlive          },
-                { ObstacleTypeEnum.smallNotAliveRoad,        HandleSmallNotAliveRoad   }, // ← новое имя
-                { ObstacleTypeEnum.smallNotAliveRoadAndRoof, HandleSmallNotAliveRoadAndRoof    }, // ← новый обработчик
-                { ObstacleTypeEnum.bigAlive,                 HandleBigAlive            },
-                { ObstacleTypeEnum.bigNotAlive,              HandleBigNotAlive         },
-            };
         }
 
         public void OnEnable() => _jumpRequest.Subscribe(OnJump);
@@ -122,7 +112,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
         /// </summary>
         private JumpResult CalculateJumpState()
         {
-            if (_isDamaged.Value) return _noHit;
+            bool isDamaged = _isDamaged.Value;
+            if (isDamaged) return _noHit;
 
             var obstacles = CollisionUtils.GetValidObstaclesAhead(_characterTransform, _isOnBottomLine.Value);
             _sameLineObstacles = obstacles;
@@ -135,22 +126,33 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 if (CollisionUtils.ShouldBreakByReachRight(_characterTransform, _hamsterWidthInUnits, reachShift, obs))
                     break;
 
-                if (_handlers.TryGetValue(obs.ObstacleType.ObstacleTypeEnum, out var handler))
+                var res = HandleObstacle(obs);
+
+                if (res.State == HamsterStateEnum.JumpOver)  // Over — сохраняем и ищем дальше
                 {
-                    var res = handler(obs);
-
-                    if (res.State == HamsterStateEnum.JumpOver)  // Over — сохраняем и ищем дальше
-                    {
-                        overResult = res;
-                        continue;
-                    }
-
-                    if (res.State != _noHit.State)               // любой другой результат — сразу возвращаем
-                        return res;
+                    overResult = res;
+                    continue;
                 }
+
+                if (res.State != _noHit.State)               // любой другой результат — сразу возвращаем
+                    return res;
             }
 
             return overResult;
+        }
+
+
+        private JumpResult HandleObstacle(Obstacle o)
+        {
+            switch (o.ObstacleType.ObstacleTypeEnum)
+            {
+                case ObstacleTypeEnum.smallAlive:               return HandleSmallAlive(o);
+                case ObstacleTypeEnum.smallNotAliveRoad:        return HandleSmallNotAliveRoad(o);
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof: return HandleSmallNotAliveRoadAndRoof(o);
+                case ObstacleTypeEnum.bigAlive:                 return HandleBigAlive(o);
+                case ObstacleTypeEnum.bigNotAlive:              return HandleBigNotAlive(o);
+                default:                                       return _noHit; // no-hit
+            }
         }
 
 

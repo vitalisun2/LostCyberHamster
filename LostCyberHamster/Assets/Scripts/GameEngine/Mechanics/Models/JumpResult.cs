@@ -3,10 +3,10 @@ using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.GameEngine.Mechanics.Models
 {
-    class JumpResult
+    public readonly struct JumpResult
     {
-        public HamsterStateEnum State { get; }
-        public Obstacle? Target { get; }
+        public readonly HamsterStateEnum State;
+        public readonly Obstacle? Target;
 
         public JumpResult(HamsterStateEnum state, Obstacle? target)
         {
