@@ -122,12 +122,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
         /// </summary>
         private JumpResult CalculateJumpState()
         {
-            if (_isDamaged.Value)
-                return new JumpResult(HamsterStateEnum.Jump, null);
+            if (_isDamaged.Value) return _noHit;
 
             var obstacles = CollisionUtils.GetValidObstaclesAhead(_characterTransform, _isOnBottomLine.Value);
             _sameLineObstacles = obstacles;
+
             float reachShift = _jumpClipWorldShift;
+            JumpResult overResult = _noHit;                     // запоминаем Over, если встретится
 
             foreach (var obs in obstacles)
             {
@@ -137,12 +138,19 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 if (_handlers.TryGetValue(obs.ObstacleType.ObstacleTypeEnum, out var handler))
                 {
                     var res = handler(obs);
-                    if (res.State != HamsterStateEnum.Jump)
+
+                    if (res.State == HamsterStateEnum.JumpOver)  // Over — сохраняем и ищем дальше
+                    {
+                        overResult = res;
+                        continue;
+                    }
+
+                    if (res.State != _noHit.State)               // любой другой результат — сразу возвращаем
                         return res;
                 }
             }
 
-            return new JumpResult(HamsterStateEnum.Jump, null);
+            return overResult;
         }
 
 
