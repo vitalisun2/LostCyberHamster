@@ -1,6 +1,7 @@
 ﻿using Assets.Scripts.Gameplay;
 using Assets.Scripts.Common.Models;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Assets.Scripts.System;
 using UnityEngine;
 
@@ -13,8 +14,9 @@ namespace Assets.Scripts.Common
     /// </summary>
     public static class CollisionUtils
     {
-        // добавь пул ёмкостью 32 (хватает для мобильных)
-        private static readonly List<Obstacle> _buffer = new(32);
+        private static readonly List<Obstacle> _buffer = new(32);      // внутренний пул
+        private static readonly ReadOnlyCollection<Obstacle> _roBuffer // read-only обёртка
+            = new(_buffer);                                            // аллоцируется один раз
         // ───────────────────────────────── X-интервалы ─────────────────────────────────
 
         /// <summary>X-интервал [left; right] препятствия в конце клипа (учтён worldShift).</summary>
@@ -216,7 +218,7 @@ namespace Assets.Scripts.Common
                 _buffer.Add(obstacle);         // порядок уже по X
             }
 
-            return _buffer;            // без сортировок/аллокаций
+            return _roBuffer;      // наружу отдаём только неизменяемый вид
         }
 
         // ───────────────────────────────── Ранний выход по reach ─────────────────────────────────
