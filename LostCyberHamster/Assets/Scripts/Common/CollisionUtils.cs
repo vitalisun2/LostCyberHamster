@@ -1,7 +1,6 @@
 ﻿using Assets.Scripts.Gameplay;
 using Assets.Scripts.Common.Models;
 using System.Collections.Generic;
-using System.Linq;
 using Assets.Scripts.System;
 using UnityEngine;
 
@@ -195,13 +194,25 @@ namespace Assets.Scripts.Common
             bool isOnBottomLine)
         {
             float hx = hamster.position.x;
+            var spawned = ObstacleSpawner.Instance.SpawnedObstacles;
+            var result = new List<Obstacle>(spawned.Count);
 
-            return ObstacleSpawner.Instance.SpawnedObstacles
-                .Select(io => io.ObstacleScript)
-                .Where(o => HelpMethods.IsOnSameLine(isOnBottomLine, o))
-                .Where(o => o.transform.position.x > hx)
-                .OrderBy(o => o.transform.position.x)
-                .ToList();
+            foreach (var inst in spawned)
+            {
+                var obstacle = inst.ObstacleScript;
+                if (!HelpMethods.IsOnSameLine(isOnBottomLine, obstacle))
+                    continue;
+
+                if (obstacle.transform.position.x <= hx)
+                    continue;
+
+                result.Add(obstacle);
+            }
+
+            result.Sort((a, b) =>
+                a.transform.position.x.CompareTo(b.transform.position.x));
+
+            return result;
         }
 
         // ───────────────────────────────── Ранний выход по reach ─────────────────────────────────
