@@ -1875,7 +1875,7 @@
                 {
                     "spriteName": "obstacle_new_york_opened_box",
                     "type": 3,
-                    "x": 11.800000190734864,
+                    "x": 11.600000381469727,
                     "y": -1.8000000715255738
                 },
                 {
@@ -1967,6 +1967,12 @@
                     "type": 3,
                     "x": 67.5999984741211,
                     "y": -1.8000000715255738
+                },
+                {
+                    "spriteName": "pizza",
+                    "type": 6,
+                    "x": 13.0,
+                    "y": -1.0
                 }
             ]
         },
@@ -2360,7 +2366,7 @@
             "obstacles": []
         },
         {
-            "name": "roof_narrow_gap ",
+            "name": "roof_narrow_gap",
             "desсription": "прыжки между крышами с узкими промежутками (простые); препятствия на земле мотивируют держаться наверху.",
             "obstacles": [
                 {
@@ -2450,19 +2456,13 @@
                 {
                     "spriteName": "obstacle_new_york_businessman",
                     "type": 1,
-                    "x": 56.20000076293945,
-                    "y": -2.799999952316284
-                },
-                {
-                    "spriteName": "obstacle_new_york_granny",
-                    "type": 1,
-                    "x": 57.400001525878909,
-                    "y": -2.799999952316284
-                },
-                {
-                    "spriteName": "obstacle_new_york_granny",
-                    "type": 1,
                     "x": 58.60000228881836,
+                    "y": -2.799999952316284
+                },
+                {
+                    "spriteName": "obstacle_new_york_granny",
+                    "type": 1,
+                    "x": 59.79999923706055,
                     "y": -2.799999952316284
                 },
                 {
@@ -2499,6 +2499,12 @@
                     "spriteName": "obstacle_new_york_car",
                     "type": 4,
                     "x": 13.199999809265137,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "spriteName": "pizza",
+                    "type": 6,
+                    "x": 20.0,
                     "y": -1.8000000715255738
                 },
                 {
@@ -2542,6 +2548,18 @@
                     "type": 4,
                     "x": 64.20000457763672,
                     "y": -1.8000000715255738
+                },
+                {
+                    "spriteName": "obstacle_new_york_opened_box",
+                    "type": 3,
+                    "x": 30.200000762939454,
+                    "y": 0.0
+                },
+                {
+                    "spriteName": "obstacle_new_york_opened_box",
+                    "type": 3,
+                    "x": 58.20000076293945,
+                    "y": 0.0
                 }
             ]
         },
