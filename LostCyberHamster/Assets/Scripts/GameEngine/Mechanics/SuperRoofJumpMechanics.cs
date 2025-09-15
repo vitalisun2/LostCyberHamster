@@ -20,7 +20,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
     public sealed class SuperRoofJumpMechanics
     {
         // ─────────────────────── constants ───────────────────────
-        private const int REQUIRED_ENERGY = 10;
+        private const int REQUIRED_ENERGY = 20;
         private const string CLIP_SUPER_ROOF_JUMP = "transform_super_roof_jump";
         private const string CLIP_SUPER_JUMP_FROM_ROOF = "transform_super_jump_from_roof";
         private const float RIGHT_EDGE_TOL_RATIO = 0.2f; // 20 % ширины хомяка
