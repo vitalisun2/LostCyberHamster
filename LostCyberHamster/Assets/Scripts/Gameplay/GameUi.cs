@@ -52,7 +52,12 @@ namespace Assets.Scripts.Gameplay
 
             _uiGameScreenMechanics = new UiGameScreenMechanics(_uiManager, _gameManager, _character);
             _uiPauseScreenMechanics = new UiPauseScreenMechanics(_uiManager, _gameManager);
-            _energyMechanics = new EnergyMechanics(_character.Energy, _character.JumpRequest);
+            _energyMechanics = new EnergyMechanics(
+                _character.Energy,
+                _character.JumpRequest,
+                _character.RoofJumpRequest,
+                _character.SuperJumpRequest,
+                _character.SuperRoofJumpRequest);
             _uiGameOverMechanics = new UiGameOverMechanics(_uiManager, _gameManager, _character);
             _uiLoseModalMechanics = new UiLoseModalMechanics(_uiManager, _gameManager, _character);
             _uiWinModalMechanics = new UiWinModalMechanics(_uiManager, _gameManager);

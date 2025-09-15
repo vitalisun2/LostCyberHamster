@@ -19,7 +19,7 @@ using UnityEngine;
 public class SuperJumpMechanics
 {
     // ──────────────────────── constants ────────────────────────
-    private const int ENERGY_COST_SUPER_JUMP = 10;
+    private const int ENERGY_COST_SUPER_JUMP = 20;
     private const string CLIP_SUPER_JUMP = "transform_super_jump";
     private const float RIGHT_EDGE_TOL_RATIO = 0.2f; // 20 % ширины хомяка
 
