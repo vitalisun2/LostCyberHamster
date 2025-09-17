@@ -213,7 +213,7 @@ namespace Assets.Scripts.Gameplay
             _tapMechanics.OnDisable();
         }
 
-        public void AddEnergy(int value = 20)
+        public void AddEnergy(int value = 30)
         {
             var energyToAdd = Mathf.Min(100 - Energy.Value, value);
             Energy.Value += energyToAdd;
