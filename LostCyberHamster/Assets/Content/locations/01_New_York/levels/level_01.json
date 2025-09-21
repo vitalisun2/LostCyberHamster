@@ -3,614 +3,758 @@
   "decorationPatterns": [],
   "patterns": [
     {
-      "name": "jump_challenge",
-      "desсription": " участок с частыми прыжками",
+      "name": "roof_wide_gap",
+      "desсription": "прыжки между крышами с широкими промежутками (сложные); препятствия на земле мотивируют держаться наверху.",
       "obstacles": [
         {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": -4.599999904632568,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": 0.0,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_granny",
-          "type": 1,
-          "x": 4.800000190734863,
+          "spriteName": "obstacle_new_york_homeless",
+          "type": 0,
+          "x": -5.800000190734863,
           "y": -2.799999952316284
         },
         {
           "spriteName": "obstacle_new_york_manhole",
           "type": 2,
-          "x": 9.800000190734864,
+          "x": -3.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 3.6000001430511476,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 5.400000095367432,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 7.599999904632568,
           "y": -2.799999952316284
         },
         {
           "spriteName": "energetic",
           "type": 5,
-          "x": 13.199999809265137,
+          "x": 10.600000381469727,
           "y": -2.799999952316284
         },
         {
           "spriteName": "obstacle_new_york_granny",
           "type": 1,
-          "x": 16.399999618530275,
+          "x": 12.800000190734864,
           "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_homeless",
-          "type": 0,
-          "x": 25.0,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_dog",
-          "type": 0,
-          "x": 32.400001525878909,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": 42.79999923706055,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": 48.20000076293945,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_hipster",
-          "type": 1,
-          "x": 49.400001525878909,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": 56.60000228881836,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": 64.4000015258789,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_homeless",
-          "type": 0,
-          "x": 67.20000457763672,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": -5.200000286102295,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_hipster",
-          "type": 1,
-          "x": -4.0,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_car",
-          "type": 4,
-          "x": 2.200000047683716,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "coin",
-          "type": 9,
-          "x": 6.400000095367432,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 9.800000190734864,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_dog",
-          "type": 0,
-          "x": 16.399999618530275,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": 24.80000114440918,
-          "y": -1.8000000715255738
         },
         {
           "spriteName": "obstacle_new_york_granny",
           "type": 1,
-          "x": 26.200000762939454,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_car",
-          "type": 4,
-          "x": 34.0,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_granny",
-          "type": 1,
-          "x": 38.0,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 43.60000228881836,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 47.79999923706055,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 52.20000076293945,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_hipster",
-          "type": 1,
-          "x": 56.60000228881836,
-          "y": -1.8000000715255738
+          "x": 14.0,
+          "y": -2.799999952316284
         },
         {
           "spriteName": "pizza",
           "type": 6,
+          "x": 16.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 20.80000114440918,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_businessman",
+          "type": 1,
+          "x": 26.80000114440918,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 29.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 30.200000762939454,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "energetic",
+          "type": 5,
+          "x": 33.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 36.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 38.60000228881836,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 40.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 44.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_opened_box",
+          "type": 3,
+          "x": 50.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 54.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 55.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_businessman",
+          "type": 1,
           "x": 59.79999923706055,
-          "y": -1.8000000715255738
+          "y": -2.799999952316284
         },
         {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 63.20000076293945,
-          "y": -1.8000000715255738
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 61.0,
+          "y": -2.799999952316284
         },
         {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 64.80000305175781,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "energetic",
-          "type": 5,
-          "x": 2.4000000953674318,
-          "y": 0.0
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 62.20000076293945,
+          "y": -2.799999952316284
         },
         {
           "spriteName": "pizza",
           "type": 6,
-          "x": 34.400001525878909,
-          "y": 0.0
+          "x": 66.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 67.4000015258789,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 68.5999984741211,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": -5.400000095367432,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 4.400000095367432,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 14.0,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 24.399999618530275,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 28.200000762939454,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 29.80000114440918,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 33.400001525878909,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 42.79999923706055,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 51.400001525878909,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 54.60000228881836,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 56.20000076293945,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 57.79999923706055,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 60.79999923706055,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 67.80000305175781,
+          "y": -1.8000000715255738
         }
       ]
     },
     {
-      "name": "jump_challenge",
-      "desсription": " участок с частыми прыжками",
+      "name": "roof_wide_gap",
+      "desсription": "прыжки между крышами с широкими промежутками (сложные); препятствия на земле мотивируют держаться наверху.",
       "obstacles": [
         {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": -4.599999904632568,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": 0.0,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_granny",
-          "type": 1,
-          "x": 4.800000190734863,
+          "spriteName": "obstacle_new_york_homeless",
+          "type": 0,
+          "x": -5.800000190734863,
           "y": -2.799999952316284
         },
         {
           "spriteName": "obstacle_new_york_manhole",
           "type": 2,
-          "x": 9.800000190734864,
+          "x": -3.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 3.6000001430511476,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 5.400000095367432,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 7.599999904632568,
           "y": -2.799999952316284
         },
         {
           "spriteName": "energetic",
           "type": 5,
-          "x": 13.199999809265137,
+          "x": 10.600000381469727,
           "y": -2.799999952316284
         },
         {
           "spriteName": "obstacle_new_york_granny",
           "type": 1,
-          "x": 16.399999618530275,
+          "x": 12.800000190734864,
           "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_homeless",
-          "type": 0,
-          "x": 25.0,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_dog",
-          "type": 0,
-          "x": 32.400001525878909,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": 42.79999923706055,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": 48.20000076293945,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_hipster",
-          "type": 1,
-          "x": 49.400001525878909,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": 56.60000228881836,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": 64.4000015258789,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_homeless",
-          "type": 0,
-          "x": 67.20000457763672,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": -5.200000286102295,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_hipster",
-          "type": 1,
-          "x": -4.0,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_car",
-          "type": 4,
-          "x": 2.200000047683716,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "coin",
-          "type": 9,
-          "x": 6.400000095367432,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 9.800000190734864,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_dog",
-          "type": 0,
-          "x": 16.399999618530275,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": 24.80000114440918,
-          "y": -1.8000000715255738
         },
         {
           "spriteName": "obstacle_new_york_granny",
           "type": 1,
-          "x": 26.200000762939454,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_car",
-          "type": 4,
-          "x": 34.0,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_granny",
-          "type": 1,
-          "x": 38.0,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 43.60000228881836,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 47.79999923706055,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 52.20000076293945,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_hipster",
-          "type": 1,
-          "x": 56.60000228881836,
-          "y": -1.8000000715255738
+          "x": 14.0,
+          "y": -2.799999952316284
         },
         {
           "spriteName": "pizza",
           "type": 6,
+          "x": 16.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 20.80000114440918,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_businessman",
+          "type": 1,
+          "x": 26.80000114440918,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 29.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 30.200000762939454,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "energetic",
+          "type": 5,
+          "x": 33.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 36.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 38.60000228881836,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 40.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 44.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_opened_box",
+          "type": 3,
+          "x": 50.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 54.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 55.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_businessman",
+          "type": 1,
           "x": 59.79999923706055,
-          "y": -1.8000000715255738
+          "y": -2.799999952316284
         },
         {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 63.20000076293945,
-          "y": -1.8000000715255738
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 61.0,
+          "y": -2.799999952316284
         },
         {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 64.80000305175781,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "energetic",
-          "type": 5,
-          "x": 2.4000000953674318,
-          "y": 0.0
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 62.20000076293945,
+          "y": -2.799999952316284
         },
         {
           "spriteName": "pizza",
           "type": 6,
-          "x": 34.400001525878909,
-          "y": 0.0
+          "x": 66.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 67.4000015258789,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 68.5999984741211,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": -5.400000095367432,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 4.400000095367432,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 14.0,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 24.399999618530275,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 28.200000762939454,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 29.80000114440918,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 33.400001525878909,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 42.79999923706055,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 51.400001525878909,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 54.60000228881836,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 56.20000076293945,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 57.79999923706055,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 60.79999923706055,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 67.80000305175781,
+          "y": -1.8000000715255738
         }
       ]
     },
     {
-      "name": "jump_challenge",
-      "desсription": " участок с частыми прыжками",
+      "name": "roof_wide_gap",
+      "desсription": "прыжки между крышами с широкими промежутками (сложные); препятствия на земле мотивируют держаться наверху.",
       "obstacles": [
         {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": -4.599999904632568,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": 0.0,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_granny",
-          "type": 1,
-          "x": 4.800000190734863,
+          "spriteName": "obstacle_new_york_homeless",
+          "type": 0,
+          "x": -5.800000190734863,
           "y": -2.799999952316284
         },
         {
           "spriteName": "obstacle_new_york_manhole",
           "type": 2,
-          "x": 9.800000190734864,
+          "x": -3.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 3.6000001430511476,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 5.400000095367432,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 7.599999904632568,
           "y": -2.799999952316284
         },
         {
           "spriteName": "energetic",
           "type": 5,
-          "x": 13.199999809265137,
+          "x": 10.600000381469727,
           "y": -2.799999952316284
         },
         {
           "spriteName": "obstacle_new_york_granny",
           "type": 1,
-          "x": 16.399999618530275,
+          "x": 12.800000190734864,
           "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_homeless",
-          "type": 0,
-          "x": 25.0,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_dog",
-          "type": 0,
-          "x": 32.400001525878909,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": 42.79999923706055,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": 48.20000076293945,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_hipster",
-          "type": 1,
-          "x": 49.400001525878909,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_opened_box",
-          "type": 3,
-          "x": 56.60000228881836,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": 64.4000015258789,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_homeless",
-          "type": 0,
-          "x": 67.20000457763672,
-          "y": -2.799999952316284
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": -5.200000286102295,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_hipster",
-          "type": 1,
-          "x": -4.0,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_car",
-          "type": 4,
-          "x": 2.200000047683716,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "coin",
-          "type": 9,
-          "x": 6.400000095367432,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 9.800000190734864,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_dog",
-          "type": 0,
-          "x": 16.399999618530275,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_businessman",
-          "type": 1,
-          "x": 24.80000114440918,
-          "y": -1.8000000715255738
         },
         {
           "spriteName": "obstacle_new_york_granny",
           "type": 1,
-          "x": 26.200000762939454,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_car",
-          "type": 4,
-          "x": 34.0,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_granny",
-          "type": 1,
-          "x": 38.0,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 43.60000228881836,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 47.79999923706055,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 52.20000076293945,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "obstacle_new_york_hipster",
-          "type": 1,
-          "x": 56.60000228881836,
-          "y": -1.8000000715255738
+          "x": 14.0,
+          "y": -2.799999952316284
         },
         {
           "spriteName": "pizza",
           "type": 6,
+          "x": 16.399999618530275,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 20.80000114440918,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_businessman",
+          "type": 1,
+          "x": 26.80000114440918,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 29.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 30.200000762939454,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "energetic",
+          "type": 5,
+          "x": 33.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 36.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 38.60000228881836,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 40.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 44.79999923706055,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_opened_box",
+          "type": 3,
+          "x": 50.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 54.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 55.400001525878909,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_businessman",
+          "type": 1,
           "x": 59.79999923706055,
-          "y": -1.8000000715255738
+          "y": -2.799999952316284
         },
         {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 63.20000076293945,
-          "y": -1.8000000715255738
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 61.0,
+          "y": -2.799999952316284
         },
         {
-          "spriteName": "obstacle_new_york_manhole",
-          "type": 2,
-          "x": 64.80000305175781,
-          "y": -1.8000000715255738
-        },
-        {
-          "spriteName": "energetic",
-          "type": 5,
-          "x": 2.4000000953674318,
-          "y": 0.0
+          "spriteName": "obstacle_new_york_hipster",
+          "type": 1,
+          "x": 62.20000076293945,
+          "y": -2.799999952316284
         },
         {
           "spriteName": "pizza",
           "type": 6,
-          "x": 34.400001525878909,
-          "y": 0.0
+          "x": 66.0,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 67.4000015258789,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_granny",
+          "type": 1,
+          "x": 68.5999984741211,
+          "y": -2.799999952316284
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": -5.400000095367432,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 4.400000095367432,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 14.0,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 24.399999618530275,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 28.200000762939454,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 29.80000114440918,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 33.400001525878909,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 42.79999923706055,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 51.400001525878909,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 54.60000228881836,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 56.20000076293945,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_manhole",
+          "type": 2,
+          "x": 57.79999923706055,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_car",
+          "type": 4,
+          "x": 60.79999923706055,
+          "y": -1.8000000715255738
+        },
+        {
+          "spriteName": "obstacle_new_york_dog",
+          "type": 0,
+          "x": 67.80000305175781,
+          "y": -1.8000000715255738
         }
       ]
     }
