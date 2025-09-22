@@ -428,6 +428,7 @@ public class LevelTilemapEditor : EditorWindow
     {
         var addPatternButton = rootVisualElement.Q<Button>("add-pattern-btn");
         var removePatternButton = rootVisualElement.Q<Button>("remove-pattern-btn");
+        var duplicatePatternButton = rootVisualElement.Q<Button>("duplicate-pattern-btn");
         var moveUpButton = rootVisualElement.Q<Button>("move-up-btn");
         var moveDownButton = rootVisualElement.Q<Button>("move-down-btn");
 
@@ -435,6 +436,7 @@ public class LevelTilemapEditor : EditorWindow
         moveDownButton.clicked += MovePatternDown;
         addPatternButton.clicked += AddNewPattern;
         removePatternButton.clicked += RemovePattern;
+        duplicatePatternButton.clicked += DuplicatePattern;
     }
 
     /// <summary>
@@ -512,6 +514,56 @@ public class LevelTilemapEditor : EditorWindow
         _selectedPatternIndex = _currentLevelInfo.patterns.Count - 1;
 
         Debug.Log($"Добавлен новый паттерн: {newPattern.name}");
+    }
+
+    /// <summary>
+    /// Создает полный дубликат выбранного паттерна.
+    /// </summary>
+    private void DuplicatePattern()
+    {
+        if (_currentLevelInfo == null)
+        {
+            Debug.LogWarning("Невозможно дублировать паттерн: информация об уровне отсутствует.");
+            return;
+        }
+
+        if (_selectedPatternIndex < 0 || _selectedPatternIndex >= _currentLevelInfo.patterns.Count)
+        {
+            Debug.LogWarning("Невозможно дублировать паттерн: некорректный индекс выбранного паттерна.");
+            return;
+        }
+
+        var originalPattern = _currentLevelInfo.patterns[_selectedPatternIndex];
+
+        var duplicatedPattern = new Pattern
+        {
+            name = $"{originalPattern.name}_Duplicate",
+            desсription = originalPattern.desсription,
+            obstacles = originalPattern.obstacles?
+                .Select(o => new ObstacleModel
+                {
+                    spriteName = o.spriteName,
+                    type = o.type,
+                    x = o.x,
+                    y = o.y
+                })
+                .ToList() ?? new List<ObstacleModel>()
+        };
+
+        var insertIndex = _selectedPatternIndex + 1;
+        _currentLevelInfo.patterns.Insert(insertIndex, duplicatedPattern);
+
+        _selectedPatternIndex = insertIndex;
+        _currentPattern = duplicatedPattern;
+
+        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+        _uiManager.UpdatePatternsList(patternNames, _selectedPatternIndex);
+        _uiManager.UpdatePatternNameField(duplicatedPattern.name);
+        _uiManager.UpdatePatternDescriptionField(duplicatedPattern.desсription);
+
+        AddTilesToTilemap();
+
+        Debug.Log($"Создан дубликат паттерна: {duplicatedPattern.name}");
     }
 
     /// <summary>
