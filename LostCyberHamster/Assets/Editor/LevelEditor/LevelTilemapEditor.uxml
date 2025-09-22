@@ -24,6 +24,7 @@
     <ui:VisualElement style="flex-grow: 1; flex-direction: row; justify-content: space-around; max-height: 60px; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; min-height: 30px;">
         <ui:Button text="add" name="add-pattern-btn" />
         <ui:Button text="remove" name="remove-pattern-btn" />
+        <ui:Button text="duplicate" name="duplicate-pattern-btn" />
         <ui:Button text="up" name="move-up-btn" />
         <ui:Button text="down" name="move-down-btn" />
     </ui:VisualElement>
