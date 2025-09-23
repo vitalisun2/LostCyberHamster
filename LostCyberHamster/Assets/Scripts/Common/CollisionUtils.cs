@@ -166,6 +166,11 @@ namespace Assets.Scripts.Common
                 if (o.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
                     continue;
 
+                // пропускаем коробки, которые стоят на дороге,
+                //    а не на крыше BigNotAlive
+                if (!TryFindBigNotAliveUnderSmallNotAlive(o, sameLineObstacles, out var _)) // ✱
+                    continue;
+
                 GetObstacleXInterval(o, o.ColliderWidth, worldShift, out var oL, out var oR);
                 bool overlap = IsOverlap(hL, hR, oL, oR);
  
