@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using GameManagement;
+using Assets.Scripts.Legacy;
 
 namespace Assets.Scripts.System
 {
@@ -69,9 +70,10 @@ namespace Assets.Scripts.System
 
         public void SetCurrentLevel(string levelName)
         {
-            GameDataManager.PlayerData.CurrentLevel = levelName;
+            var key = LegacyLevelBridge.ToKey(levelName);
+            LevelManager.SetCurrentKey(key);
 
-            Debug.Log($"Current level set to {levelName}");
+            Debug.Log($"Current level set to {LegacyLevelBridge.ToName(key)}");
         }
 
         [Button]

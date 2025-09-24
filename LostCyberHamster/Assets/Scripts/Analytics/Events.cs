@@ -3,17 +3,17 @@ using System;
 
 public class LevelStartEvent : Event
 {
-    public LevelStartEvent(int levelNumber) : base("level_start")
+    public LevelStartEvent(string levelKey) : base("level_start")
     {
-        SetParameter("level_number", levelNumber);
+        SetParameter("level_key", levelKey);
     }
 }
 
 public class LevelCompleteEvent : Event
 {
-    public LevelCompleteEvent(int levelNumber, int stars) : base("level_complete")
+    public LevelCompleteEvent(string levelKey, int stars) : base("level_complete")
     {
-        SetParameter("level_number", levelNumber);
+        SetParameter("level_key", levelKey);
         SetParameter("stars_number", stars);
     }
 }

@@ -3,6 +3,8 @@ using Unity.Services.Analytics;
 using UnityEngine;
 using System.Threading.Tasks;
 using Vues.GameCore;
+using Assets.Scripts.Common.Models;
+using Assets.Scripts.Legacy;
 
 public static class AnalyticsManager
 {
@@ -70,11 +72,11 @@ public static class AnalyticsManager
     /// Tracks the level start event.
     /// </summary>
     /// <param name="levelNumber">The number of the level.</param>
-    private static void TrackLevelStart(int levelNumber)
+    private static void TrackLevelStart(LevelKey levelKey)
     {
         if (!_initialized) return;
 
-        var levelStartEvent = new LevelStartEvent(levelNumber);
+        var levelStartEvent = new LevelStartEvent(LegacyLevelBridge.ToName(levelKey));
         AnalyticsService.Instance.RecordEvent(levelStartEvent);
     }
 
@@ -84,11 +86,11 @@ public static class AnalyticsManager
     /// <param name="levelNumber">The number of the level.</param>
     /// <param name="completionTime">The time taken to complete the level.</param>
     /// <param name="success">Whether the level was successfully completed.</param>
-    private static void TrackLevelComplete(int levelNumber, int stars)
+    private static void TrackLevelComplete(LevelKey levelKey, int stars)
     {
         if (!_initialized) return;
 
-        var levelCompleteEvent = new LevelCompleteEvent(levelNumber, stars);
+        var levelCompleteEvent = new LevelCompleteEvent(LegacyLevelBridge.ToName(levelKey), stars);
         AnalyticsService.Instance.RecordEvent(levelCompleteEvent);
     }
 
