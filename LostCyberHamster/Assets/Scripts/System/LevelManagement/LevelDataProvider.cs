@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
 using GameManagement;
 using UnityEngine;
@@ -39,14 +40,14 @@ namespace Assets.Scripts.System
             _introHandles.Clear();
 
             List<Sprite> introSprites = new List<Sprite>();
-            string levelName = GameDataManager.PlayerData.CurrentLevel;
+            var levelKey = LevelManager.GetCurrentKey();
 
             int spriteIndex = 1;
             int maxSprites = 10;
 
             while (spriteIndex <= maxSprites)
             {
-                string spriteAddress = $"{levelName}_intro_{spriteIndex}";
+                string spriteAddress = LevelPathBuilder.IntroImage(levelKey, spriteIndex);
 
                 if (!Addressables.ResourceLocators.Any(locator => locator.Locate(spriteAddress, typeof(Sprite), out var _)))
                 {
@@ -59,6 +60,7 @@ namespace Assets.Scripts.System
                 if (handle.Status != AsyncOperationStatus.Succeeded || handle.Result == null)
                 {
                     Debug.LogWarning($"[LoadIntroSprites] Sprite '{spriteAddress}' is null or failed. Stopping here.");
+                    Addressables.Release(handle);
                     break;
                 }
 
@@ -122,8 +124,11 @@ namespace Assets.Scripts.System
 
         private static async Task LoadLevelInfo(LevelData levelData)
         {
-            var asset = await Addressables.LoadAssetAsync<TextAsset>(GameDataManager.PlayerData.CurrentLevel).Task;
+            var key = LevelManager.GetCurrentKey();
+            var handle = Addressables.LoadAssetAsync<TextAsset>(LevelPathBuilder.Build(key));
+            var asset = await handle.Task;
             levelData.LevelInfo = JsonUtility.FromJson<LevelInfo>(asset.text);
+            Addressables.Release(handle);
         }
 
         private static async Task LoadBackgroundPrefab(LevelData levelData)
