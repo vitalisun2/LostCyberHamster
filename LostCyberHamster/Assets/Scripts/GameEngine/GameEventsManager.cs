@@ -1,4 +1,5 @@
 using System;
+using Assets.Scripts.Common.Models;
 using UnityEngine;
 using Vues.GameCore;
 
@@ -86,25 +87,25 @@ public static class GameEventsManager
     /// <summary>
     /// Событие старта уровня
     /// </summary>
-    public static event Action<int> OnLevelStarted;
+    public static event Action<LevelKey> OnLevelStarted;
 
     /// <summary>
     /// Триггер события OnLevelStarted
     /// </summary>
     /// <param name="levelId">Номер уровня</param>
-    public static void LevelStarted(int levelId) => OnLevelStarted?.Invoke(levelId);
+    public static void LevelStarted(LevelKey levelKey) => OnLevelStarted?.Invoke(levelKey);
 
     /// <summary>
     /// Событие завершения уровня
     /// </summary>
-    public static event Action<int, int> OnLevelCompleted;
+    public static event Action<LevelKey, int> OnLevelCompleted;
 
     /// <summary>
     /// Триггер события OnLevelCompleted
     /// </summary>
     /// <param name="levelId">Номер уровня</param>
     /// <param name="stars">Количество звезд</param>
-    public static void LevelCompleted(int levelId, int stars) => OnLevelCompleted?.Invoke(levelId, stars);
+    public static void LevelCompleted(LevelKey levelKey, int stars) => OnLevelCompleted?.Invoke(levelKey, stars);
 
 #endregion
     /// <summary>

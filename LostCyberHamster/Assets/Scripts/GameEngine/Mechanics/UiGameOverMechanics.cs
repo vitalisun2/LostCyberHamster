@@ -37,7 +37,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             }
             else
             {
-                GameEventsManager.LevelCompleted(LevelManager.GetCurrentLevelNumber(), _hamster.Lives.Value);
+                GameEventsManager.LevelCompleted(LevelManager.GetCurrentKey(), _hamster.Lives.Value);
                 var winScreenController = _uiManager.GetController<WinModalController>();
                 winScreenController.SetParamsForInit(LevelManager.GetLocationName(), LevelManager.GetCurrentPartOfDay(), _hamster.Lives.Value);
                 _uiManager.ShowModalAsync(ScreenEnum.WinModal);

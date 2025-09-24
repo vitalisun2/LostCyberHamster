@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.Legacy;
 using GameManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -13,6 +14,7 @@ namespace Assets.Scripts.System
     {
         public static LocationInfoList LocationInfoList { get; private set; } = new();
         public static List<Common.Models.LocationInfo> OpenedLocations => GetOpenedLocations();
+        private static LevelKey _currentLevelKey = new("new_york", PartOfDay.Morning, 1);
 
         /// <summary>
         /// Возвращает список открытых локаций.
@@ -57,18 +59,37 @@ namespace Assets.Scripts.System
             await InitLocationsList();
         }
 
-        public static int GetCurrentLevelNumber()
+        public static LevelKey GetCurrentKey()
         {
-            var numberPart = GameDataManager.PlayerData.CurrentLevel.Split('_')[1];
-
-            if (!int.TryParse(numberPart, out var result)
-                || numberPart.Length != 2)
+            if (GameDataManager.PlayerData != null)
             {
-                Debug.LogError("Invalid level name");
-                return -1;
+                _currentLevelKey = GameDataManager.PlayerData.CurrentLevelKey;
             }
 
-            return result;
+            return _currentLevelKey;
+        }
+
+        public static void SetCurrentKey(LevelKey key)
+        {
+            _currentLevelKey = key;
+
+            if (GameDataManager.PlayerData != null)
+            {
+                GameDataManager.PlayerData.CurrentLevelKey = key;
+            }
+        }
+
+        [Obsolete("Use GetCurrentKey instead", false)]
+        public static int GetCurrentLevelNumber()
+        {
+            var key = GetCurrentKey();
+            return TryGetLegacyLevelNumber(key) ?? -1;
+        }
+
+        [Obsolete("Use GetCurrentKey instead", false)]
+        public static string GetCurrentLevelName()
+        {
+            return LegacyLevelBridge.ToName(GetCurrentKey());
         }
 
         public static async Task LoadLevelData()
@@ -215,25 +236,54 @@ namespace Assets.Scripts.System
             GameEventsManager.OnLevelCompleted += OnLevelComplited;
         }
 
-        private static void OnLevelComplited(int levelNumber, int stars)
+        private static void OnLevelComplited(LevelKey levelKey, int stars)
         {
-            if(GameDataManager.PlayerData.LevelStars[levelNumber-1] < stars){
-                GameDataManager.PlayerData.LevelStars[levelNumber-1] = stars;
+            if (GameDataManager.PlayerData == null)
+            {
+                return;
             }
-            OpenNextLevel(levelNumber);
+
+            var playerData = GameDataManager.PlayerData;
+
+            if (!playerData.StarsByLevel.TryGetValue(levelKey, out var storedStars) || storedStars < stars)
+            {
+                playerData.StarsByLevel[levelKey] = stars;
+            }
+
+#pragma warning disable CS0618
+            var legacyNumber = TryGetLegacyLevelNumber(levelKey);
+            if (legacyNumber.HasValue)
+            {
+                EnsureLevelStarsCapacity(legacyNumber.Value);
+                var index = legacyNumber.Value - 1;
+                if (index >= 0 && index < playerData.LevelStars.Count && playerData.LevelStars[index] < stars)
+                {
+                    playerData.LevelStars[index] = stars;
+                }
+            }
+#pragma warning restore CS0618
+
+            OpenNextLevel(levelKey);
         }
 
         /// <summary>
         /// Разблокирует следующий уровень (если хватает звёзд для новой локации),
         /// но не меняет текущий уровень и не загружает сцену.
         /// </summary>
-        /// <param name="levelNumber">Номер только что завершённого уровня.</param>
-        private static void OpenNextLevel(int levelNumber)
+        /// <param name="levelKey">Ключ только что завершённого уровня.</param>
+        private static void OpenNextLevel(LevelKey levelKey)
         {
             Debug.Log("OpenNextLevel: Unlock the next level without changing CurrentLevel.");
 
+            var legacyNumber = TryGetLegacyLevelNumber(levelKey);
+            if (!legacyNumber.HasValue)
+            {
+                Debug.LogWarning($"Unable to determine legacy level number for key {levelKey.ToCompactString()}");
+                return;
+            }
+
             // Расчёт следующего уровня (после пройденного)
-            int nextLevelNumber = levelNumber + 1;
+            int nextLevelNumber = legacyNumber.Value + 1;
 
             // 1) Проверяем, не вышли ли мы за общее число уровней
             int maxLevelsCount = LocationInfoList.locations.Count() * 4;
@@ -257,14 +307,7 @@ namespace Assets.Scripts.System
             {
                 // Убедимся, что в PlayerData.LevelStars есть слот для nextLevelNumber
                 // (Если там только 3 записи, а мы пытаемся открыть 4-й уровень, надо добавить элемент)
-                if (GameDataManager.PlayerData.LevelStars.Count < nextLevelNumber)
-                {
-                    while (GameDataManager.PlayerData.LevelStars.Count < nextLevelNumber)
-                    {
-                        // По умолчанию ставим 0 звёзд
-                        GameDataManager.PlayerData.LevelStars.Add(0);
-                    }
-                }
+                EnsureLevelStarsCapacity(nextLevelNumber);
 
                 // В этот момент уровень считается "открытым", т.к. он появился в словаре OpenedLevels
                 Debug.Log($"Unlocked next level: level_{nextLevelNumber:D2}");
@@ -276,6 +319,57 @@ namespace Assets.Scripts.System
             {
                 Debug.Log($"Next level is location start, but not enough stars. Remains locked.");
             }
+        }
+
+        private static void EnsureLevelStarsCapacity(int targetLevel)
+        {
+            if (GameDataManager.PlayerData == null)
+            {
+                return;
+            }
+
+            while (GameDataManager.PlayerData.LevelStars.Count < targetLevel)
+            {
+                GameDataManager.PlayerData.LevelStars.Add(0);
+            }
+        }
+
+        private static int? TryGetLegacyLevelNumber(LevelKey key)
+        {
+            if (LocationInfoList?.locations == null || LocationInfoList.locations.Length == 0)
+            {
+                return null;
+            }
+
+            int locationIndex = -1;
+            for (int i = 0; i < LocationInfoList.locations.Length; i++)
+            {
+                var info = LocationInfoList.locations[i];
+                var sysname = !string.IsNullOrWhiteSpace(info.sysname)
+                    ? info.sysname
+                    : info.name?.ToLowerInvariant().Replace(' ', '_');
+
+                if (!string.IsNullOrWhiteSpace(sysname) &&
+                    string.Equals(sysname, key.LocationId, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    locationIndex = i;
+                    break;
+                }
+            }
+
+            if (locationIndex < 0)
+            {
+                return null;
+            }
+
+            int partIndex = (int)key.Part - 1;
+            if (partIndex < 0)
+            {
+                return null;
+            }
+
+            // Legacy numbering assumes exactly 4 levels per location ordered by part of day.
+            return locationIndex * 4 + partIndex + 1;
         }
 
 
