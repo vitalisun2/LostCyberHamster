@@ -1,0 +1,27 @@
+Date: 2025-09-25
+Participants: User, Codex
+
+1. Initial request: switch Lost Cyber Hamster level structure to location/daypart/levels model while preserving legacy path. Codex produced high-level refactor plan (recorded in refactor_plan.md).
+2. User asked to keep plan immutable; Codex stored plan in refactor_plan.md, introduced step numbering and detailed first step sub-items.
+3. Step 1 execution:
+   - Added ILevelCatalog interface and LegacyLevelCatalog implementation.
+   - Created LevelCatalogService, HierarchicalLevelCatalog placeholder, updated LevelManager to use catalog.
+   - Extended LevelDataProvider contract and added day-part methods; plan updated.
+   - Committed results (`refactor(levels): introduce catalog abstraction (step 1)`).
+4. Step 2 planning: created substeps, stored in refactor_plan.md. Added IsExternalInit polyfill request from Unity (later committed).
+5. Step 2 execution:
+   - Substep 2.1: cataloged existing Addressables groups and level files; noted in plan.
+   - Substep 2.2: copied level JSONs into Morning/Afternoon/Evening/Night folders per location, preserved original files.
+   - Substep 2.3: created Addressables group `levels_by_daypart`, added labels `levels_daypart*`, updated AddressableAssetSettings and Consts.
+   - Substep 2.4: extended LevelDataProvider to validate day-part mapping alongside legacy levels.
+   - Substep 2.5: documented workflow, QA checklist, and designer guidance in refactor_plan.md.
+   - Committed results (`refactor(levels): add day-part addressables scaffolding (step 2)` and meta fix commit).
+6. User confirmed sprints finished for the day; conversation context saved via this log.
+
+Artifacts referenced:
+- refactor_plan.md (project root)
+- Assets/Scripts/System/LevelManagement/LevelDataProvider.cs
+- Assets/AddressableAssetsData/AssetGroups/levels_by_daypart.asset
+- Assets/AddressableAssetsData/AddressableAssetSettings.asset
+- Assets/Scripts/Common/Polyfills/IsExternalInit.cs
+- Directory layout under Assets/Content/locations/*/levels/*
