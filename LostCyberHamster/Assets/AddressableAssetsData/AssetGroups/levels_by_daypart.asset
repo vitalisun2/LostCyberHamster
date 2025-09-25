@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: levels_by_daypart
+  m_EditorClassIdentifier: 
+  m_GroupName: levels_by_daypart
+  m_Data:
+    m_SerializedData: []
+  m_GUID: 84de73c8c0de40f38c6c0703ba6332ec
+  m_SerializeEntries:
+  - m_GUID: 4835549402be4db3aa035128e3cd7e17
+    m_Address: 01_New_York/Morning/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dd1fa9d6ef204a9aaa9173f463264e56
+    m_Address: 01_New_York/Afternoon/level_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 30a3e7a771bf4f5b96f5afc907c47627
+    m_Address: 01_New_York/Evening/level_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3ff9b24aed1343ea894446ef72ebc11b
+    m_Address: 01_New_York/Night/level_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 55b78615374746218ff40edce8067aa8
+    m_Address: 02_Paris/Morning/level_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3f8530f9dbc44201ac0dd4740cbb4ed9
+    m_Address: 02_Paris/Afternoon/level_06
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e8efc364add549d9af081aa4bd271c10
+    m_Address: 02_Paris/Evening/level_07
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dc6e5a841f94432b9a91484484e020c3
+    m_Address: 02_Paris/Night/level_08
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 6bfd12726dbf19445abe9cc94e8bb405, type: 2}
+    - {fileID: 11400000, guid: b4f025b937c44d349bfe7dcba943cc2c, type: 2}

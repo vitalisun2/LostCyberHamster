@@ -59,6 +59,7 @@ MonoBehaviour:
   m_BuildAddressablesWithPlayerBuild: 0
   m_overridePlayerVersion: '[UnityEditor.PlayerSettings.bundleVersion]'
   m_GroupAssets:
+  - {fileID: 11400000, guid: 6f8b5a436ae84a6bb877e4cf46c025ed, type: 2}
   - {fileID: 11400000, guid: 692a6bc8bda4c024b9666654f1f55306, type: 2}
   - {fileID: 11400000, guid: e1c2532af0fbb914ca5a34907373190b, type: 2}
   - {fileID: 11400000, guid: 1290b18a75e30b2419fd21a0e95e69c7, type: 2}
@@ -127,6 +128,13 @@ MonoBehaviour:
     - levels
     - Paris obstacles sprites
     - New York decor sprites
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_daypart_Afternoon
+    - levels_daypart_Evening
+    - levels_daypart_Night
+    - levels_location_01_New_York
+    - levels_location_02_Paris
     - Paris decor sprites
   m_SchemaTemplates: []
   m_GroupTemplateObjects:

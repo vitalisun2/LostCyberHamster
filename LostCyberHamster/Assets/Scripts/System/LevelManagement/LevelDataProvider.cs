@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using GameManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 
 namespace Assets.Scripts.System
 {
@@ -234,11 +236,115 @@ namespace Assets.Scripts.System
                 .Select(location => Path.GetFileNameWithoutExtension(location.InternalId))
                 .ToList();
 
-            // Освобождаем handle
+            await ValidateDayPartGroupingAsync(levelNames);
+
             Addressables.Release(handle);
 
             return levelNames;
         }
-    }
+        private static async Task ValidateDayPartGroupingAsync(ICollection<string> legacyLevelNames)
+        {
+            var legacySet = new HashSet<string>(legacyLevelNames);
+            var partNames = Enum.GetNames(typeof(PartOfDayEnum));
+            var partSet = new HashSet<string>(partNames, StringComparer.OrdinalIgnoreCase);
+            var locationsByPart = new Dictionary<string, Dictionary<string, List<string>>>(StringComparer.OrdinalIgnoreCase);
 
+            AsyncOperationHandle<IList<IResourceLocation>>? handle = null;
+
+            try
+            {
+                handle = Addressables.LoadResourceLocationsAsync(Consts.LevelsDaypart, typeof(TextAsset));
+                var dayPartLocations = await handle.Value.Task;
+
+                if (dayPartLocations == null || dayPartLocations.Count == 0)
+                {
+                    Debug.LogWarning("[LevelDataProvider] Label '" + Consts.LevelsDaypart + "' has no entries. Day-part catalog is not configured yet.");
+                    return;
+                }
+
+                foreach (var location in dayPartLocations)
+                {
+                    var address = location?.PrimaryKey;
+                    if (string.IsNullOrWhiteSpace(address))
+                    {
+                        Debug.LogWarning("[LevelDataProvider] Encountered day-part entry with empty address.");
+                        continue;
+                    }
+
+                    var segments = address.Split('/');
+                    if (segments.Length != 3)
+                    {
+                        Debug.LogWarning($"[LevelDataProvider] Unexpected day-part address format '{address}'. Expected '<Location>/<Part>/<level_XX>'.");
+                        continue;
+                    }
+
+                    var locationKey = segments[0];
+                    var partKey = segments[1];
+                    var levelKey = segments[2];
+
+                    if (!partSet.Contains(partKey))
+                    {
+                        Debug.LogWarning($"[LevelDataProvider] Address '{address}' uses unknown part-of-day '{partKey}'.");
+                        continue;
+                    }
+
+                    if (!legacySet.Contains(levelKey))
+                    {
+                        Debug.LogWarning($"[LevelDataProvider] Address '{address}' points to '{levelKey}' which is not present in legacy label '{Consts.Levels}'.");
+                    }
+
+                    if (!locationsByPart.TryGetValue(locationKey, out var parts))
+                    {
+                        parts = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                        locationsByPart[locationKey] = parts;
+                    }
+
+                    if (!parts.TryGetValue(partKey, out var levels))
+                    {
+                        levels = new List<string>();
+                        parts[partKey] = levels;
+                    }
+
+                    if (!levels.Contains(levelKey))
+                    {
+                        levels.Add(levelKey);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[LevelDataProvider] Duplicate day-part entry for level '{levelKey}' in '{address}'.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Failed to validate day-part level mapping: {ex.Message}");
+            }
+            finally
+            {
+                if (handle.HasValue)
+                {
+                    Addressables.Release(handle.Value);
+                }
+            }
+
+            foreach (var (location, parts) in locationsByPart)
+            {
+                foreach (var part in partNames)
+                {
+                    if (!parts.TryGetValue(part, out var levels) || levels.Count == 0)
+                    {
+                        Debug.LogWarning($"[LevelDataProvider] Location '{location}' has no levels registered for part '{part}' in label '{Consts.LevelsDaypart}'.");
+                    }
+                }
+            }
+
+            var dayPartLevels = new HashSet<string>(locationsByPart.Values.SelectMany(p => p.Values).SelectMany(x => x));
+            var missing = legacySet.Except(dayPartLevels).ToList();
+            if (missing.Count > 0)
+            {
+                Debug.LogWarning($"[LevelDataProvider] The following legacy levels are missing from '{Consts.LevelsDaypart}': {string.Join(", ", missing)}");
+            }
+        }
+
+    }
 }
