@@ -14,6 +14,9 @@ namespace Assets.Scripts.System
         public static LocationInfoList LocationInfoList { get; private set; } = new();
         public static List<Common.Models.LocationInfo> OpenedLocations => GetOpenedLocations();
 
+        private static ILevelCatalog Catalog => LevelCatalogService.Current;
+        private static int LevelsPerLocation => Catalog.LevelsPerLocation > 0 ? Catalog.LevelsPerLocation : 4;
+
         /// <summary>
         /// Возвращает список открытых локаций.
         /// </summary>
@@ -22,17 +25,20 @@ namespace Assets.Scripts.System
         {
             return LocationInfoList?.locations?.Where((location, index) =>
             {
-                // Calculate the first level number for the location based on its index (0-based)
-                int firstLevel = index * 4 + 1;
-                string levelKey = $"level_{firstLevel:D2}"; // Format as "level_01", "level_05", etc.
+                var firstLevelName = Catalog.GetLevelsForLocation(index).FirstOrDefault();
 
-                // Check if the first level in this location's range is open
-                return GameDataManager.PlayerData.OpenedLevels.ContainsKey(levelKey);
+                if (string.IsNullOrEmpty(firstLevelName))
+                {
+                    int firstLevel = index * LevelsPerLocation + 1;
+                    firstLevelName = Catalog.GetLevelName(firstLevel);
+                }
+
+                return !string.IsNullOrEmpty(firstLevelName) &&
+                       GameDataManager.PlayerData.OpenedLevels.ContainsKey(firstLevelName);
             }).ToList();
-
         }
 
-        public static int StarsToOpenNewLocation => OpenedLocations.Count * 4 * 3 - 2;
+        public static int StarsToOpenNewLocation => OpenedLocations.Count * LevelsPerLocation * 3 - 2;
 
         /// <summary>
         /// Проверяет, открыты ли все локации.
@@ -43,9 +49,14 @@ namespace Assets.Scripts.System
             return LocationInfoList.locations
                 .Select((location, index) =>
                 {
-                    int firstLevel = index * 4 + 1;
-                    string levelKey = $"level_{firstLevel:D2}";
-                    return GameDataManager.PlayerData.OpenedLevels.ContainsKey(levelKey);
+                    var firstLevelName = Catalog.GetLevelsForLocation(index).FirstOrDefault();
+                    if (string.IsNullOrEmpty(firstLevelName))
+                    {
+                        int firstLevel = index * LevelsPerLocation + 1;
+                        firstLevelName = Catalog.GetLevelName(firstLevel);
+                    }
+                    return !string.IsNullOrEmpty(firstLevelName) &&
+                           GameDataManager.PlayerData.OpenedLevels.ContainsKey(firstLevelName);
                 })
                 .All(isOpen => isOpen);
         }
@@ -78,20 +89,12 @@ namespace Assets.Scripts.System
 
         public static int GetLevelNumber(int locationNumber, PartOfDayEnum partOfDay)
         {
-            // Calculate the level number
-            int levelNumber = locationNumber * 4 + (int)partOfDay;
-            return levelNumber;
+            return Catalog.GetLevelNumber(locationNumber, partOfDay);
         }
 
         public static string GetLevelName(int locationNumber, PartOfDayEnum partOfDay)
         {
-            // Calculate the level number
-            int levelNumber = GetLevelNumber(locationNumber, partOfDay);
-
-            // Format the level number with leading zeros to ensure two digits
-            string levelName = "level_" + levelNumber.ToString("D2");
-
-            return levelName;
+            return Catalog.GetLevelName(locationNumber, partOfDay);
         }
 
         /// <summary>
@@ -109,7 +112,7 @@ namespace Assets.Scripts.System
             LocationInfoList = JsonUtility.FromJson<LocationInfoList>(asset.text);
 
             int totalLocations = LocationInfoList.locations?.Length ?? 0;
-            int expectedLevelsCount = totalLocations * 4;
+            int expectedLevelsCount = totalLocations * LevelsPerLocation;
 
             if (realLevelsCount != expectedLevelsCount)
             {
@@ -149,8 +152,8 @@ namespace Assets.Scripts.System
                 return -1;
             }
 
-            // Каждая локация содержит по 4 уровня, поэтому смещаем на 1, чтобы 1..4 → 0, 5..8 → 1 и т.д.
-            int locationIndex = (numericLevel - 1) / 4;
+            // Legacy formula splits sequential numbers by LevelsPerLocation to obtain location index.
+            int locationIndex = (numericLevel - 1) / LevelsPerLocation;
 
             // Проверяем, не вышли ли мы за общее число локаций
             int totalLocations = LocationInfoList.locations?.Length ?? 0;
@@ -196,8 +199,8 @@ namespace Assets.Scripts.System
                 return "Invalid level format"; // на случай, если формат некорректный
             }
 
-            // Определяем, какой это уровень в локации (остаток от деления на 4)
-            int levelInLocation = (levelNumber - 1) % 4 + 1;
+            // Определяем, какой это уровень в локации (остаток от деления на LevelsPerLocation)
+            int levelInLocation = (levelNumber - 1) % LevelsPerLocation + 1;
 
             // Преобразуем номер уровня в части дня через enum
             if (Enum.IsDefined(typeof(PartOfDayEnum), levelInLocation))
@@ -236,7 +239,7 @@ namespace Assets.Scripts.System
             int nextLevelNumber = levelNumber + 1;
 
             // 1) Проверяем, не вышли ли мы за общее число уровней
-            int maxLevelsCount = LocationInfoList.locations.Count() * 4;
+            int maxLevelsCount = LocationInfoList.locations.Count() * LevelsPerLocation;
             if (nextLevelNumber > maxLevelsCount)
             {
                 Debug.Log("All levels are completed; no further levels to unlock.");
@@ -247,8 +250,8 @@ namespace Assets.Scripts.System
             int playerStars = GameDataManager.PlayerData.OpenedLevels.Values.Sum();
             bool canOpenNewLocation = playerStars >= StarsToOpenNewLocation;
 
-            // Например, если (nextLevelNumber - 1) % 4 == 0 => это 4-й, 8-й, 12-й уровень (то есть начало новой локации)
-            bool isNewLocationLevel = ((nextLevelNumber - 1) % 4 == 0);
+            // Например, если деление на LevelsPerLocation без остатка — это начало новой локации
+            bool isNewLocationLevel = ((nextLevelNumber - 1) % LevelsPerLocation == 0);
 
             // 3) Логика "можем ли мы открыть следующий уровень":
             //    - Если это начало новой локации (isNewLocationLevel) и хватает звёзд (canOpenNewLocation),
