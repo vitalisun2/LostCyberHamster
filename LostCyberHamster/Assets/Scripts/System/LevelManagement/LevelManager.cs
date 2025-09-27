@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using Assets.Scripts.Common.Models;
 using GameManagement;
 using UnityEngine;
@@ -25,12 +26,14 @@ namespace Assets.Scripts.System
         {
             return LocationInfoList?.locations?.Where((location, index) =>
             {
-                var firstLevelName = Catalog.GetLevelsForLocation(index).FirstOrDefault();
+                var firstLevelName = Catalog.GetLevelsForLocation(index)
+                    .Select(NormalizeLevelKey)
+                    .FirstOrDefault(name => !string.IsNullOrEmpty(name));
 
-                if (string.IsNullOrEmpty(firstLevelName))
+                if (string.IsNullOrEmpty(firstLevelName) && !LevelCatalogService.IsHierarchical)
                 {
                     int firstLevel = index * LevelsPerLocation + 1;
-                    firstLevelName = Catalog.GetLevelName(firstLevel);
+                    firstLevelName = NormalizeLevelKey(Catalog.GetLevelName(firstLevel));
                 }
 
                 return !string.IsNullOrEmpty(firstLevelName) &&
@@ -49,11 +52,14 @@ namespace Assets.Scripts.System
             return LocationInfoList.locations
                 .Select((location, index) =>
                 {
-                    var firstLevelName = Catalog.GetLevelsForLocation(index).FirstOrDefault();
-                    if (string.IsNullOrEmpty(firstLevelName))
+                    var firstLevelName = Catalog.GetLevelsForLocation(index)
+                        .Select(NormalizeLevelKey)
+                        .FirstOrDefault(name => !string.IsNullOrEmpty(name));
+
+                    if (string.IsNullOrEmpty(firstLevelName) && !LevelCatalogService.IsHierarchical)
                     {
                         int firstLevel = index * LevelsPerLocation + 1;
-                        firstLevelName = Catalog.GetLevelName(firstLevel);
+                        firstLevelName = NormalizeLevelKey(Catalog.GetLevelName(firstLevel));
                     }
                     return !string.IsNullOrEmpty(firstLevelName) &&
                            GameDataManager.PlayerData.OpenedLevels.ContainsKey(firstLevelName);
@@ -92,9 +98,235 @@ namespace Assets.Scripts.System
             return Catalog.GetLevelNumber(locationNumber, partOfDay);
         }
 
+        public static string GetLevelName(int locationIndex, string partOfDayKey)
+        {
+            if (string.IsNullOrWhiteSpace(partOfDayKey))
+            {
+                return string.Empty;
+            }
+
+            var levels = Catalog.GetLevelsForPartOfDay(locationIndex, partOfDayKey);
+            var firstLevel = levels?.FirstOrDefault();
+            return NormalizeLevelKey(firstLevel);
+        }
+
+        private static string NormalizeLevelKey(string? levelAddress)
+        {
+            if (string.IsNullOrWhiteSpace(levelAddress))
+            {
+                return string.Empty;
+            }
+
+            var normalized = Path.GetFileNameWithoutExtension(levelAddress);
+            return string.IsNullOrWhiteSpace(normalized) ? levelAddress : normalized;
+        }
+
+        public static bool TryParseLevelNumber(string levelKey, out int levelNumber)
+        {
+            levelNumber = -1;
+
+            if (string.IsNullOrWhiteSpace(levelKey) || !levelKey.StartsWith("level_"))
+            {
+                return false;
+            }
+
+            var suffix = levelKey.Substring(6);
+            if (!int.TryParse(suffix, out levelNumber))
+            {
+                levelNumber = -1;
+                return false;
+            }
+
+            return suffix.Length == 2;
+        }
+
+        public static bool TryResolveLevelKey(string levelKey, out int locationIndex, out string partOfDayKey, out int levelOrder)
+        {
+            locationIndex = -1;
+            partOfDayKey = string.Empty;
+            levelOrder = -1;
+
+            var normalizedKey = NormalizeLevelKey(levelKey);
+            if (string.IsNullOrEmpty(normalizedKey))
+            {
+                return false;
+            }
+
+            if (LevelCatalogService.Hierarchical is { } hierarchical)
+            {
+                for (int locIndex = 0; locIndex < hierarchical.Locations.Count; locIndex++)
+                {
+                    var location = hierarchical.Locations[locIndex];
+                    foreach (var part in location.PartsOfDay)
+                    {
+                        int order = 0;
+                        foreach (var level in part.Levels.OrderBy(l => l.Order))
+                        {
+                            order++;
+                            var key = NormalizeLevelKey(level.Address);
+                            if (string.Equals(key, normalizedKey, StringComparison.OrdinalIgnoreCase))
+                            {
+                                locationIndex = locIndex;
+                                partOfDayKey = part.Key;
+                                levelOrder = order - 1;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (TryResolveLegacyLevel(normalizedKey, out locationIndex, out var partEnum, out levelOrder))
+            {
+                partOfDayKey = partEnum.ToString();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryResolveLegacyLevel(string normalizedKey, out int locationIndex, out PartOfDayEnum partOfDay, out int levelOrder)
+        {
+            locationIndex = -1;
+            partOfDay = default;
+            levelOrder = -1;
+
+            if (!normalizedKey.StartsWith("level_") || !int.TryParse(normalizedKey.Substring(6), out var levelNumber))
+            {
+                return false;
+            }
+
+            partOfDay = (PartOfDayEnum)((levelNumber - 1) % LevelsPerLocation + 1);
+            locationIndex = (levelNumber - 1) / LevelsPerLocation;
+            levelOrder = ((levelNumber - 1) % LevelsPerLocation);
+            return true;
+        }
+
+
         public static string GetLevelName(int locationNumber, PartOfDayEnum partOfDay)
+
         {
             return Catalog.GetLevelName(locationNumber, partOfDay);
+        }
+
+        public static bool TryGetNextLevelKey(string currentLevelKey, out string nextLevelKey)
+        {
+            nextLevelKey = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(currentLevelKey))
+            {
+                return false;
+            }
+
+            if (LevelCatalogService.IsHierarchical && LevelCatalogService.Hierarchical is { } hierarchical)
+            {
+                return TryGetNextLevelKeyHierarchical(hierarchical, currentLevelKey, out nextLevelKey);
+            }
+
+            return TryGetNextLevelKeyLegacy(currentLevelKey, out nextLevelKey);
+        }
+
+        public static int GetTotalLevelsCount()
+        {
+            if (LevelCatalogService.Hierarchical is { } hierarchical)
+            {
+                return hierarchical.Locations.Sum(location => location.PartsOfDay.Sum(part => part.Levels.Count));
+            }
+
+            int totalLocations = LocationInfoList.locations?.Length ?? 0;
+            return totalLocations * LevelsPerLocation;
+        }
+
+        private static bool TryGetNextLevelKeyLegacy(string currentLevelKey, out string nextLevelKey)
+        {
+            nextLevelKey = string.Empty;
+            var normalized = NormalizeLevelKey(currentLevelKey);
+            if (!normalized.StartsWith("level_") || !int.TryParse(normalized.Substring(6), out var currentNumber))
+            {
+                return false;
+            }
+
+            int nextNumber = currentNumber + 1;
+            int totalLevels = GetTotalLevelsCount();
+            if (nextNumber > totalLevels)
+            {
+                return false;
+            }
+
+            nextLevelKey = Catalog.GetLevelName(nextNumber);
+            return true;
+        }
+
+        private static bool TryGetNextLevelKeyHierarchical(HierarchicalLevelCatalog catalog, string currentLevelKey, out string nextLevelKey)
+        {
+            nextLevelKey = string.Empty;
+            var normalized = NormalizeLevelKey(currentLevelKey);
+
+            for (int locationIndex = 0; locationIndex < catalog.Locations.Count; locationIndex++)
+            {
+                var orderedLevels = catalog.GetLevelsForLocation(locationIndex)
+                    .Select(NormalizeLevelKey)
+                    .Where(key => !string.IsNullOrEmpty(key))
+                    .ToList();
+
+                if (orderedLevels.Count == 0)
+                {
+                    continue;
+                }
+
+                var currentIndex = orderedLevels.FindIndex(key => string.Equals(key, normalized, StringComparison.OrdinalIgnoreCase));
+                if (currentIndex < 0)
+                {
+                    continue;
+                }
+
+                if (currentIndex + 1 < orderedLevels.Count)
+                {
+                    nextLevelKey = orderedLevels[currentIndex + 1];
+                    return true;
+                }
+
+                // move to next location
+                for (int nextLocation = locationIndex + 1; nextLocation < catalog.Locations.Count; nextLocation++)
+                {
+                    var nextLocationLevels = catalog.GetLevelsForLocation(nextLocation)
+                        .Select(NormalizeLevelKey)
+                        .Where(key => !string.IsNullOrEmpty(key))
+                        .ToList();
+
+                    if (nextLocationLevels.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    nextLevelKey = nextLocationLevels[0];
+                    return true;
+                }
+
+                break;
+            }
+
+            return false;
+        }
+
+        public static IEnumerable<string> GetPartOfDayKeys(int locationIndex)
+        {
+            return Catalog.GetPartOfDayKeys(locationIndex) ?? Array.Empty<string>();
+        }
+
+        public static IEnumerable<string> GetLevelsForPartOfDay(int locationIndex, string partOfDayKey)
+        {
+            return Catalog.GetLevelsForPartOfDay(locationIndex, partOfDayKey)?.Select(NormalizeLevelKey).Where(key => !string.IsNullOrEmpty(key)) ?? Array.Empty<string>();
+        }
+
+        public static string? GetLocationKey(int locationIndex)
+        {
+            if (LevelCatalogService.Hierarchical is { } hierarchical)
+            {
+                return hierarchical.GetLocationKey(locationIndex);
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -193,6 +425,16 @@ namespace Assets.Scripts.System
         {
             var levelName = GameDataManager.PlayerData.CurrentLevel;
 
+            if (LevelCatalogService.IsHierarchical)
+            {
+                if (TryResolveLevelKey(levelName, out _, out var partKey, out _))
+                {
+                    return partKey;
+                }
+
+                return "Invalid level format";
+            }
+
             // Проверяем, начинается ли строка с "level_" и извлекаем номер уровня
             if (!levelName.StartsWith("level_") || !int.TryParse(levelName.Substring(6), out int levelNumber))
             {
@@ -212,7 +454,6 @@ namespace Assets.Scripts.System
                 return "Invalid level number"; // на случай, если уровень вне диапазона 1-4
             }
         }
-
         public static void OnEnable()
         {
             GameEventsManager.OnLevelCompleted += OnLevelComplited;
@@ -239,7 +480,7 @@ namespace Assets.Scripts.System
             int nextLevelNumber = levelNumber + 1;
 
             // 1) Проверяем, не вышли ли мы за общее число уровней
-            int maxLevelsCount = LocationInfoList.locations.Count() * LevelsPerLocation;
+            int maxLevelsCount = GetTotalLevelsCount();
             if (nextLevelNumber > maxLevelsCount)
             {
                 Debug.Log("All levels are completed; no further levels to unlock.");

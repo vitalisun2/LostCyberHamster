@@ -1,5 +1,9 @@
 ﻿using Assets.Scripts.GameManagerLogic;
+using System;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -69,9 +73,75 @@ namespace Assets.Scripts.System
 
         public void SetCurrentLevel(string levelName)
         {
-            GameDataManager.PlayerData.CurrentLevel = levelName;
+            if (string.IsNullOrWhiteSpace(levelName))
+            {
+                Debug.LogError("[LevelController] Attempted to set an empty level name.");
+                return;
+            }
 
-            Debug.Log($"Current level set to {levelName}");
+            var normalized = NormalizeLevelIdentifier(levelName);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                Debug.LogError("[LevelController] Could not normalize level identifier '" + levelName + "'.");
+                return;
+            }
+
+            GameDataManager.PlayerData.CurrentLevel = normalized;
+
+            if (!string.Equals(normalized, levelName, StringComparison.Ordinal))
+            {
+                Debug.Log("Current level set to " + normalized + " (source '" + levelName + "').");
+            }
+            else
+            {
+                Debug.Log("Current level set to " + normalized);
+            }
+        }
+
+        public void SetCurrentLevel(int locationIndex, string partOfDayKey, int levelOrder = 0)
+        {
+            var levels = LevelManager.GetLevelsForPartOfDay(locationIndex, partOfDayKey)?.ToList() ?? new List<string>();
+
+            if (levels.Count == 0)
+            {
+                Debug.LogWarning("[LevelController] No levels found for location " + locationIndex + " and part '" + partOfDayKey + "'.");
+                return;
+            }
+
+            if (levelOrder < 0)
+            {
+                levelOrder = 0;
+            }
+
+            if (levelOrder >= levels.Count)
+            {
+                Debug.LogWarning("[LevelController] Requested level index " + levelOrder + " exceeds available levels (" + levels.Count + "). Using last available.");
+                levelOrder = levels.Count - 1;
+            }
+
+            SetCurrentLevel(levels[levelOrder]);
+        }
+
+        private static string NormalizeLevelIdentifier(string levelIdentifier)
+        {
+            if (string.IsNullOrWhiteSpace(levelIdentifier))
+            {
+                return string.Empty;
+            }
+
+            var trimmed = levelIdentifier.Trim();
+            var fileName = Path.GetFileNameWithoutExtension(trimmed);
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                trimmed = fileName;
+            }
+
+            if (trimmed.Contains("/"))
+            {
+                trimmed = trimmed.Split('/').LastOrDefault() ?? trimmed;
+            }
+
+            return trimmed;
         }
 
         [Button]
@@ -90,27 +160,32 @@ namespace Assets.Scripts.System
         public void PlayNextLevel()
         {
             if (Instance.LevelData.GameManager.State != GameState.FINISHED)
-                return;
-
-            var currentLevelNumber = LevelManager.GetCurrentLevelNumber();
-
-            if (currentLevelNumber == -1)
             {
-                Debug.LogError("Invalid level number");
                 return;
             }
 
-            var nextLevelNumber = currentLevelNumber + 1;
+            var currentLevelKey = GameDataManager.PlayerData.CurrentLevel;
 
-            if (nextLevelNumber > LevelManager.LocationInfoList.locations.Length * 4)
+            if (!LevelManager.TryGetNextLevelKey(currentLevelKey, out var nextLevelKey))
             {
                 Debug.Log("All levels completed");
                 return;
             }
 
-            var nextLevelName = $"level_{nextLevelNumber:D2}";
+            if (!LevelManager.TryParseLevelNumber(nextLevelKey, out var nextLevelNumber))
+            {
+                Debug.LogError($"[LevelController] Invalid next level identifier '{nextLevelKey}'.");
+                return;
+            }
 
-            SetCurrentLevel(nextLevelName);
+            var totalLevels = LevelManager.GetTotalLevelsCount();
+            if (nextLevelNumber > totalLevels)
+            {
+                Debug.Log("All levels completed");
+                return;
+            }
+
+            SetCurrentLevel(nextLevelKey);
 
             SceneManager.LoadScene("Game");
         }

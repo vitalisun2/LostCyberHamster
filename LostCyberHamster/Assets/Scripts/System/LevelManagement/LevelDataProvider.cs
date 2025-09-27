@@ -124,8 +124,101 @@ namespace Assets.Scripts.System
 
         private static async Task LoadLevelInfo(LevelData levelData)
         {
-            var asset = await Addressables.LoadAssetAsync<TextAsset>(GameDataManager.PlayerData.CurrentLevel).Task;
+            var levelKey = GameDataManager.PlayerData.CurrentLevel;
+            var resolvedAddress = ResolveCurrentLevelAddress(levelKey);
+            await LoadLevelInfo(levelData, resolvedAddress, levelKey);
+        }
+
+
+        public static Task LoadLevelInfo(LevelData levelData, string levelAddress)
+        {
+            var fallback = GameDataManager.PlayerData.CurrentLevel;
+            return LoadLevelInfo(levelData, levelAddress, fallback);
+        }
+
+        private static async Task LoadLevelInfo(LevelData levelData, string levelAddress, string fallbackAddress)
+        {
+            if (string.IsNullOrWhiteSpace(levelAddress))
+            {
+                Debug.LogError("[LevelDataProvider] Level address is empty. Aborting load.");
+                return;
+            }
+
+            var asset = await TryLoadLevelAssetAsync(levelAddress);
+
+            if (asset == null && !string.Equals(levelAddress, fallbackAddress, StringComparison.OrdinalIgnoreCase))
+            {
+                Debug.LogWarning($"[LevelDataProvider] Failed to load level asset '{levelAddress}'. Falling back to legacy address '{fallbackAddress}'.");
+                asset = await TryLoadLevelAssetAsync(fallbackAddress);
+            }
+
+            if (asset == null)
+            {
+                Debug.LogError($"[LevelDataProvider] Unable to load level definition for '{fallbackAddress}'.");
+                return;
+            }
+
             levelData.LevelInfo = JsonUtility.FromJson<LevelInfo>(asset.text);
+        }
+
+        private static async Task<TextAsset> TryLoadLevelAssetAsync(string address)
+        {
+            try
+            {
+                return await Addressables.LoadAssetAsync<TextAsset>(address).Task;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Exception while loading '{address}': {ex.Message}");
+                return null;
+            }
+        }
+
+
+        private static string ResolveCurrentLevelAddress(string levelKey)
+        {
+            if (LevelCatalogService.Hierarchical is { } hierarchical)
+            {
+                var candidate = FindHierarchicalAddress(hierarchical, levelKey);
+                if (!string.IsNullOrEmpty(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return levelKey;
+        }
+
+        private static string? FindHierarchicalAddress(HierarchicalLevelCatalog catalog, string levelKey)
+        {
+            foreach (var location in catalog.Locations)
+            {
+                foreach (var part in location.PartsOfDay)
+                {
+                    foreach (var level in part.Levels)
+                    {
+                        var legacyKey = ExtractLegacyLevelKey(level.Address);
+                        if (string.Equals(legacyKey, levelKey, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(level.Address, levelKey, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return level.Address;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static string ExtractLegacyLevelKey(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                return address;
+            }
+
+            var fileName = Path.GetFileNameWithoutExtension(address);
+            return string.IsNullOrWhiteSpace(fileName) ? address : fileName;
         }
 
         private static async Task LoadBackgroundPrefab(LevelData levelData)
@@ -219,29 +312,89 @@ namespace Assets.Scripts.System
         /// <summary>
         /// Возвращает список имён (без расширения) всех JSON-файлов с меткой "Levels".
         /// </summary>
-        public static async Task<List<string>> GetAllLevelNamesAsync()
+        public static Task<List<string>> GetAllLevelNamesAsync()
         {
-            // Запрашиваем локации у Addressables по метке "Levels" для объектов типа TextAsset.
+            var preferHierarchical = LevelCatalogService.IsHierarchical;
+            return GetAllLevelNamesAsync(preferHierarchical);
+        }
+
+        public static async Task<List<string>> GetAllLevelNamesAsync(bool preferHierarchical)
+        {
+            if (preferHierarchical)
+            {
+                var hierarchical = await GetHierarchicalLevelNamesAsync();
+                if (hierarchical.Count > 0)
+                {
+                    return hierarchical;
+                }
+            }
+
+            return await GetLegacyLevelNamesAsync();
+        }
+
+        private static async Task<List<string>> GetLegacyLevelNamesAsync()
+        {
             var handle = Addressables.LoadResourceLocationsAsync(Consts.Levels, typeof(TextAsset));
             var locations = await handle.Task;
 
-            if (locations == null || locations.Count == 0)
+            try
             {
-                Debug.LogWarning("Не найдено ни одного JSON-файла с меткой \"Levels\". Проверьте настройки Addressables.");
-                return new List<string>();
+                if (locations == null || locations.Count == 0)
+                {
+                    Debug.LogWarning("Не найдено ни одного JSON-файла с меткой \"Levels\". Проверьте настройки Addressables.");
+                    return new List<string>();
+                }
+
+                var levelNames = locations
+                    .Select(location => Path.GetFileNameWithoutExtension(location.InternalId))
+                    .ToList();
+
+                await ValidateDayPartGroupingAsync(levelNames);
+
+                return levelNames;
             }
-
-            // Для каждого ресурса получаем имя файла без расширения (обычно InternalId хранит путь к файлу)
-            var levelNames = locations
-                .Select(location => Path.GetFileNameWithoutExtension(location.InternalId))
-                .ToList();
-
-            await ValidateDayPartGroupingAsync(levelNames);
-
-            Addressables.Release(handle);
-
-            return levelNames;
+            finally
+            {
+                Addressables.Release(handle);
+            }
         }
+
+        private static async Task<List<string>> GetHierarchicalLevelNamesAsync()
+        {
+            var handle = Addressables.LoadResourceLocationsAsync(Consts.LevelsDaypart, typeof(TextAsset));
+
+            try
+            {
+                var locations = await handle.Task;
+                if (locations == null || locations.Count == 0)
+                {
+                    return new List<string>();
+                }
+
+                var comparer = StringComparer.OrdinalIgnoreCase;
+                var names = new HashSet<string>(comparer);
+
+                foreach (var location in locations)
+                {
+                    var address = location?.PrimaryKey;
+                    if (string.IsNullOrWhiteSpace(address))
+                    {
+                        continue;
+                    }
+
+                    names.Add(ExtractLegacyLevelKey(address));
+                }
+
+                var result = names.ToList();
+                result.Sort(StringComparer.OrdinalIgnoreCase);
+                return result;
+            }
+            finally
+            {
+                Addressables.Release(handle);
+            }
+        }
+
         private static async Task ValidateDayPartGroupingAsync(ICollection<string> legacyLevelNames)
         {
             var legacySet = new HashSet<string>(legacyLevelNames);
