@@ -3,67 +3,61 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts;
-using Assets.Scripts.System.FeatureFlags;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 
+#nullable enable
+
 namespace Assets.Scripts.System
 {
     /// <summary>
-    /// Builds and applies the hierarchical level catalog based on inspector overrides.
+    /// Builds the hierarchical level catalog from Addressables at runtime.
     /// </summary>
     public static class LevelCatalogRuntimeConfigurator
     {
-        private static bool? _inspectorOverride;
+        private static bool _forceReload;
 
         /// <summary>
-        /// Registers the desired catalog mode coming from the inspector toggle.
+        /// Legacy inspector hook – now simply marks the catalog for rebuild on the next load cycle.
         /// </summary>
-        public static void SetInspectorOverride(bool useHierarchical)
+        public static void SetInspectorOverride(bool _)
         {
-            _inspectorOverride = useHierarchical;
+            _forceReload = true;
         }
 
         /// <summary>
-        /// Applies the previously registered override by switching the catalog and feature flag.
+        /// Explicitly requests catalog rebuild.
         /// </summary>
-        public static async Task ApplyInspectorOverrideAsync(bool persist = false)
+        public static void RequestReload()
         {
-            if (!_inspectorOverride.HasValue)
+            _forceReload = true;
+        }
+
+        /// <summary>
+        /// Ensures the hierarchical catalog is loaded and configured.
+        /// </summary>
+        public static async Task ApplyInspectorOverrideAsync(bool forceRebuild = false)
+        {
+            if (!forceRebuild && !_forceReload && LevelCatalogService.HasCatalog)
             {
                 return;
             }
 
-            if (_inspectorOverride.Value)
+            var catalog = await BuildCatalogAsync();
+            if (catalog == null)
             {
-                var catalog = await EnsureHierarchicalCatalogAsync();
-                if (catalog == null)
-                {
-                    Debug.LogWarning("[LevelCatalogRuntimeConfigurator] Failed to configure hierarchical catalog. Falling back to legacy mode.");
-                    LevelCatalogService.UseLegacyCatalog();
-                    DayPartLevelsFeature.SetEnabled(false, persist: false);
-                    return;
-                }
+                Debug.LogWarning("[LevelCatalogRuntimeConfigurator] Failed to prepare hierarchical level catalog. The selection screens may not work as expected.");
+                return;
+            }
 
-                LevelCatalogService.ConfigureHierarchicalCatalog(catalog, activate: true);
-                DayPartLevelsFeature.SetEnabled(true, persist);
-            }
-            else
-            {
-                LevelCatalogService.UseLegacyCatalog();
-                DayPartLevelsFeature.SetEnabled(false, persist);
-            }
+            LevelCatalogService.Configure(catalog);
+            _forceReload = false;
         }
 
-        private static async Task<HierarchicalLevelCatalog?> EnsureHierarchicalCatalogAsync()
+        private static async Task<HierarchicalLevelCatalog?> BuildCatalogAsync()
         {
-            if (LevelCatalogService.Hierarchical is { } existing)
-            {
-                return existing;
-            }
-
             AsyncOperationHandle<IList<IResourceLocation>> handle = default;
 
             try
@@ -154,7 +148,6 @@ namespace Assets.Scripts.System
                     parts[partSegment] = levels;
                 }
 
-                // Store the original address so Addressables can resolve it later.
                 levels.Add(address);
             }
 

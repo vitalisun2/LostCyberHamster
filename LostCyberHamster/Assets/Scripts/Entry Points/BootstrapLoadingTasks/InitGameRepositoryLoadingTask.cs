@@ -18,16 +18,13 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
 
         public async Task LoadAsync(Dictionary<string, object> bundle)
         {
-            await LevelCatalogRuntimeConfigurator.ApplyInspectorOverrideAsync();
+            await LevelCatalogRuntimeConfigurator.ApplyInspectorOverrideAsync(forceRebuild: true);
 
-            GameDataManager.InitializeAsync();
             await GameDataManager.LoadDataAsync();
 
             GameDataManager.LoadSettings();
 
             await LevelCatalogRuntimeConfigurator.ApplyInspectorOverrideAsync();
-
-            GameDataManager.ApplyFeatureFlags();
 
             MoneyStorage.Init(GameDataManager.PlayerData.Money);
             CrystalStorage.Init(GameDataManager.PlayerData.Crystals);

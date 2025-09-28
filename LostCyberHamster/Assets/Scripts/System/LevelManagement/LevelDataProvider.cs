@@ -177,37 +177,12 @@ namespace Assets.Scripts.System
 
         private static string ResolveCurrentLevelAddress(string levelKey)
         {
-            if (LevelCatalogService.Hierarchical is { } hierarchical)
+            if (LevelCatalogService.TryFindLevel(levelKey, out var descriptor))
             {
-                var candidate = FindHierarchicalAddress(hierarchical, levelKey);
-                if (!string.IsNullOrEmpty(candidate))
-                {
-                    return candidate;
-                }
+                return descriptor.Address;
             }
 
             return levelKey;
-        }
-
-        private static string? FindHierarchicalAddress(HierarchicalLevelCatalog catalog, string levelKey)
-        {
-            foreach (var location in catalog.Locations)
-            {
-                foreach (var part in location.PartsOfDay)
-                {
-                    foreach (var level in part.Levels)
-                    {
-                        var legacyKey = ExtractLegacyLevelKey(level.Address);
-                        if (string.Equals(legacyKey, levelKey, StringComparison.OrdinalIgnoreCase) ||
-                            string.Equals(level.Address, levelKey, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return level.Address;
-                        }
-                    }
-                }
-            }
-
-            return null;
         }
 
         private static string ExtractLegacyLevelKey(string address)
@@ -548,8 +523,7 @@ namespace Assets.Scripts.System
         /// </summary>
         public static Task<List<string>> GetAllLevelNamesAsync()
         {
-            var preferHierarchical = LevelCatalogService.IsHierarchical;
-            return GetAllLevelNamesAsync(preferHierarchical);
+            return GetAllLevelNamesAsync(LevelCatalogService.HasCatalog);
         }
 
         public static async Task<List<string>> GetAllLevelNamesAsync(bool preferHierarchical)

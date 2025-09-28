@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using Assets.Scripts.System.FeatureFlags;
+using Assets.Scripts.System;
 using GameManagement.Progress;
 using Unity.Services.Authentication;
 using Unity.Services.CloudSave;
@@ -21,16 +22,7 @@ namespace GameManagement
 
         private static readonly ICryptoService _cryptoService = new AesCryptoService();
 
-        public static bool IsGameJustStarted = true;
-
-        public static async void InitializeAsync()
-        {
-        }
-
-        public static void ApplyFeatureFlags()
-        {
-            DayPartLevelsFeature.InitializeFromSettings(Settings);
-        }
+    public static bool IsGameJustStarted = true;
 
         public static async Task LoadDataAsync()
         {
@@ -44,9 +36,9 @@ namespace GameManagement
 
             PlayerData = cloudLastSaveDate > localLastSaveDate ? cloudData : localData;
 
-            PlayerProgressMigration.Initialize(PlayerData);
-
             SaveData();
+
+            EnsureProgressConsistency();
 
             Debug.Log("Data loaded." + PlayerData.ToJson());
         }
@@ -140,12 +132,80 @@ namespace GameManagement
                 Settings = JsonUtility.FromJson<SettingsData>(settingsJson);
             }
 
-            DayPartLevelsFeature.InitializeFromSettings(Settings);
+            EnsureProgressConsistency();
         }
 
         public static void ClearData()
         {
             PlayerPrefs.DeleteAll();
+        }
+
+        private static void EnsureProgressConsistency()
+        {
+            if (!LevelCatalogService.HasCatalog)
+            {
+                return;
+            }
+
+            try
+            {
+                var catalog = LevelCatalogService.Catalog;
+                if (catalog.IsEmpty)
+                {
+                    return;
+                }
+
+                var baseSnapshot = LevelProgressSnapshot.CreateFromCatalog(catalog);
+                var existingSnapshot = PlayerData.Progress;
+
+                var existingEntries = new Dictionary<LevelProgressKey, LevelProgressEntry>();
+                foreach (var entry in existingSnapshot.Entries)
+                {
+                    existingEntries[entry.Key] = entry;
+                }
+
+                var mergedEntries = new List<LevelProgressEntry>();
+                foreach (var entry in baseSnapshot.Entries)
+                {
+                    if (existingEntries.TryGetValue(entry.Key, out var existing))
+                    {
+                        mergedEntries.Add(existing);
+                    }
+                    else
+                    {
+                        mergedEntries.Add(entry);
+                    }
+                }
+
+                PlayerData.Progress = new LevelProgressSnapshot(mergedEntries);
+                EnsureCurrentLevelValid(catalog);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[GameDataManager] Failed to align player progress with catalog: {ex.Message}");
+            }
+        }
+
+        private static void EnsureCurrentLevelValid(HierarchicalLevelCatalog catalog)
+        {
+            if (catalog.IsEmpty)
+            {
+                return;
+            }
+
+            if (!LevelCatalogService.TryFindLevel(PlayerData.CurrentLevel, out var descriptor))
+            {
+                var firstLevel = catalog.EnumerateLevels()
+                    .OrderBy(level => level.LocationIndex)
+                    .ThenBy(level => level.PartIndex)
+                    .ThenBy(level => level.LevelIndex)
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(firstLevel.LevelKey))
+                {
+                    PlayerData.CurrentLevel = firstLevel.LevelKey;
+                }
+            }
         }
     }
 }

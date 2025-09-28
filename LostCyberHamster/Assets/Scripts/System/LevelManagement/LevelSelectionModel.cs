@@ -1,174 +1,140 @@
-using Assets.Scripts.System.FeatureFlags;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Assets.Scripts.Common.Models;
-using Assets.Scripts.System.FeatureFlags;
 
 namespace Assets.Scripts.System
 {
     /// <summary>
-    /// Defines which catalog representation should be used to build the level selection snapshot.
-    /// </summary>
-    public enum LevelSelectionMode
-    {
-        Legacy,
-        Hierarchical
-    }
-
-    /// <summary>
-    /// Provides a read-only snapshot of locations, parts of day, and level identifiers
-    /// for UI consumption. Supports both legacy flat layout and hierarchical layout.
+    /// Provides a snapshot of the hierarchical catalog for UI consumption.
     /// </summary>
     public sealed class LevelSelectionModel
     {
-        private LevelSelectionModel(LevelSelectionMode mode, List<LocationView> locations)
+        private LevelSelectionModel(List<LocationView> locations, List<LevelReference> flattenedLevels)
         {
-            Mode = mode;
             Locations = locations;
-            FlattenedLevels = locations
-                .SelectMany(location => location.Parts)
-                .SelectMany(part => part.Levels)
-                .ToList();
+            FlattenedLevels = flattenedLevels;
         }
-
-        public LevelSelectionMode Mode { get; }
-
-        public bool IsHierarchical => Mode == LevelSelectionMode.Hierarchical;
 
         public IReadOnlyList<LocationView> Locations { get; }
 
         public IReadOnlyList<LevelReference> FlattenedLevels { get; }
 
-        public static LevelSelectionModel Create(LevelSelectionMode preferredMode = LevelSelectionMode.Hierarchical)
+        public static LevelSelectionModel Create()
         {
-            var mode = DetermineMode(preferredMode);
-            var locations = mode == LevelSelectionMode.Hierarchical
-                ? BuildHierarchical()
-                : BuildLegacy();
-
-            return new LevelSelectionModel(mode, locations);
-        }
-
-        public static LevelSelectionModel CreateLegacy() => Create(LevelSelectionMode.Legacy);
-
-        public static LevelSelectionModel CreateHierarchical() => Create(LevelSelectionMode.Hierarchical);
-
-        private static LevelSelectionMode DetermineMode(LevelSelectionMode preferredMode)
-        {
-            DayPartLevelsFeature.EnsureInitialised();
-
-            if (DayPartLevelsFeature.IsEnabled)
+            if (!LevelCatalogService.HasCatalog)
             {
-                return LevelSelectionMode.Hierarchical;
+                return new LevelSelectionModel(new List<LocationView>(), new List<LevelReference>());
             }
 
-            var hierarchicalAvailable = LevelCatalogService.Hierarchical is not null;
-            if (preferredMode == LevelSelectionMode.Hierarchical && hierarchicalAvailable)
+            var catalog = LevelCatalogService.Catalog;
+            if (catalog.IsEmpty)
             {
-                return LevelSelectionMode.Hierarchical;
+                return new LevelSelectionModel(new List<LocationView>(), new List<LevelReference>());
             }
 
-            return LevelSelectionMode.Legacy;
-        }
-
-        private static List<LocationView> BuildLegacy()
-        {
             var locationInfos = LevelManager.LocationInfoList?.locations ?? Array.Empty<LocationInfo>();
-            var locations = new List<LocationView>(locationInfos.Length);
+            var locationViews = new List<LocationView>(catalog.LocationCount);
+            var flattenedLevels = new List<LevelReference>();
 
-            for (int locationIndex = 0; locationIndex < locationInfos.Length; locationIndex++)
+            for (int locationIndex = 0; locationIndex < catalog.LocationCount; locationIndex++)
             {
-                var info = locationInfos[locationIndex];
-                var parts = new List<PartView>();
-
-                foreach (PartOfDayEnum part in Enum.GetValues(typeof(PartOfDayEnum)))
+                if (!catalog.TryGetLocation(locationIndex, out var locationEntry))
                 {
-                    var levelKeys = LevelManager.GetLevelsForPartOfDay(locationIndex, part.ToString())
-                        .Select(key => new LevelReference(key, key))
-                        .ToList();
-
-                    parts.Add(new PartView(part.ToString(), part.ToString(), levelKeys));
-                }
-
-                locations.Add(new LocationView(
-                    locationIndex,
-                    info?.sysname ?? $"location_{locationIndex:D2}",
-                    info?.name ?? info?.sysname ?? $"Location {locationIndex + 1}",
-                    info?.image ?? string.Empty,
-                    parts));
-            }
-
-            return locations;
-        }
-
-        private static List<LocationView> BuildHierarchical()
-        {
-            var catalog = LevelCatalogService.Hierarchical ?? HierarchicalLevelCatalog.Empty;
-            var locationInfos = LevelManager.LocationInfoList?.locations ?? Array.Empty<LocationInfo>();
-            var locationViews = new List<LocationView>();
-            var locationCount = Math.Max(locationInfos.Length, catalog.Locations.Count);
-
-            for (int index = 0; index < locationCount; index++)
-            {
-                var info = index < locationInfos.Length ? locationInfos[index] : null;
-                var node = index < catalog.Locations.Count ? catalog.Locations[index] : null;
-
-                if (node == null)
-                {
-                    // Fallback to legacy representation when hierarchical data is missing for the index.
-                    var fallbackParts = new List<PartView>();
-                    foreach (PartOfDayEnum part in Enum.GetValues(typeof(PartOfDayEnum)))
-                    {
-                        var levelKeys = LevelManager.GetLevelsForPartOfDay(index, part.ToString())
-                            .Select(key => new LevelReference(key, key))
-                            .ToList();
-
-                        fallbackParts.Add(new PartView(part.ToString(), part.ToString(), levelKeys));
-                    }
-
-                    locationViews.Add(new LocationView(
-                        index,
-                        info?.sysname ?? $"location_{index:D2}",
-                        info?.name ?? info?.sysname ?? $"Location {index + 1}",
-                        info?.image ?? string.Empty,
-                        fallbackParts));
                     continue;
                 }
 
-                var partViews = new List<PartView>();
-                foreach (var part in node.PartsOfDay)
-                {
-                    var normalizedLevels = part.Levels
-                        .OrderBy(level => level.Order)
-                        .Select(level => new LevelReference(NormalizeLevelKey(level.Address), level.Address))
-                        .Where(level => !string.IsNullOrEmpty(level.Key))
-                        .ToList();
+                var info = locationIndex < locationInfos.Length ? locationInfos[locationIndex] : null;
+                var locationId = catalog.GetLocationId(locationIndex);
+                var locationKey = locationEntry.Key ?? string.Empty;
+                var displayName = ResolveLocationDisplayName(info, locationEntry, locationIndex);
+                var imageAddress = info?.image ?? string.Empty;
 
-                    partViews.Add(new PartView(part.Key, ResolvePartDisplayName(part.Key), normalizedLevels));
+                var partViews = new List<PartView>(locationEntry.PartsOfDay?.Count ?? 0);
+
+                for (int partIndex = 0; partIndex < (locationEntry.PartsOfDay?.Count ?? 0); partIndex++)
+                {
+                    var partEntry = locationEntry.PartsOfDay[partIndex];
+                    if (partEntry == null)
+                    {
+                        continue;
+                    }
+
+                    var partId = catalog.GetPartId(locationIndex, partIndex);
+                    var partKey = partEntry.Key ?? string.Empty;
+                    var partDisplayName = ResolvePartDisplayName(partKey);
+
+                    var levelReferences = new List<LevelReference>();
+                    var orderedLevels = partEntry.Levels?
+                        .OrderBy(level => level.Order)
+                        .ToList() ?? new List<HierarchicalLevelCatalog.LevelEntry>();
+
+                    for (int levelIndex = 0; levelIndex < orderedLevels.Count; levelIndex++)
+                    {
+                        var level = orderedLevels[levelIndex];
+                        var normalizedKey = HierarchicalLevelCatalog.NormalizeLevelKey(level.Address);
+                        if (string.IsNullOrEmpty(normalizedKey))
+                        {
+                            continue;
+                        }
+
+                        var reference = new LevelReference(
+                            normalizedKey,
+                            level.Address,
+                            locationId,
+                            locationIndex,
+                            partId,
+                            partIndex,
+                            levelIndex,
+                            level.Order > 0 ? level.Order : levelIndex + 1);
+
+                        levelReferences.Add(reference);
+                        flattenedLevels.Add(reference);
+                    }
+
+                    if (levelReferences.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    partViews.Add(new PartView(
+                        partIndex,
+                        partId,
+                        partKey,
+                        partDisplayName,
+                        levelReferences));
+                }
+
+                if (partViews.Count == 0)
+                {
+                    continue;
                 }
 
                 locationViews.Add(new LocationView(
-                    index,
-                    node.Key ?? info?.sysname ?? $"location_{index:D2}",
-                    info?.name ?? node.Key ?? $"Location {index + 1}",
-                    info?.image ?? string.Empty,
+                    locationIndex,
+                    locationId,
+                    locationKey,
+                    displayName,
+                    imageAddress,
                     partViews));
             }
 
-            return locationViews;
+            return new LevelSelectionModel(locationViews, flattenedLevels);
         }
 
-        private static string NormalizeLevelKey(string address)
+        private static string ResolveLocationDisplayName(LocationInfo info, HierarchicalLevelCatalog.LocationEntry entry, int index)
         {
-            if (string.IsNullOrWhiteSpace(address))
+            if (!string.IsNullOrWhiteSpace(info?.name))
             {
-                return string.Empty;
+                return info.name;
             }
 
-            var normalized = Path.GetFileNameWithoutExtension(address);
-            return string.IsNullOrWhiteSpace(normalized) ? address : normalized;
+            if (!string.IsNullOrWhiteSpace(entry?.Key))
+            {
+                return entry.Key;
+            }
+
+            return $"Location {index + 1}";
         }
 
         private static string ResolvePartDisplayName(string partKey)
@@ -179,18 +145,29 @@ namespace Assets.Scripts.System
             }
 
             return partKey;
-        }        public sealed class LocationView
+        }
+
+        public sealed class LocationView
         {
-            public LocationView(int index, string key, string displayName, string imageAddress, IReadOnlyList<PartView> parts)
+            public LocationView(
+                int index,
+                string id,
+                string key,
+                string displayName,
+                string imageAddress,
+                IReadOnlyList<PartView> parts)
             {
                 Index = index;
+                Id = id;
                 Key = key;
                 DisplayName = displayName;
                 ImageAddress = imageAddress;
-                Parts = parts;
+                Parts = parts ?? Array.Empty<PartView>();
             }
 
             public int Index { get; }
+
+            public string Id { get; }
 
             public string Key { get; }
 
@@ -203,12 +180,23 @@ namespace Assets.Scripts.System
 
         public sealed class PartView
         {
-            public PartView(string key, string displayName, IReadOnlyList<LevelReference> levels)
+            public PartView(
+                int index,
+                string id,
+                string key,
+                string displayName,
+                IReadOnlyList<LevelReference> levels)
             {
+                Index = index;
+                Id = id;
                 Key = key;
                 DisplayName = displayName;
-                Levels = levels;
+                Levels = levels ?? Array.Empty<LevelReference>();
             }
+
+            public int Index { get; }
+
+            public string Id { get; }
 
             public string Key { get; }
 
@@ -217,17 +205,43 @@ namespace Assets.Scripts.System
             public IReadOnlyList<LevelReference> Levels { get; }
         }
 
-        public sealed class LevelReference
+        public readonly struct LevelReference
         {
-            public LevelReference(string key, string address)
+            public LevelReference(
+                string key,
+                string address,
+                string locationId,
+                int locationIndex,
+                string partId,
+                int partIndex,
+                int levelIndex,
+                int displayOrder)
             {
                 Key = key;
                 Address = address;
+                LocationId = locationId;
+                LocationIndex = locationIndex;
+                PartId = partId;
+                PartIndex = partIndex;
+                LevelIndex = levelIndex;
+                DisplayOrder = displayOrder;
             }
 
             public string Key { get; }
 
             public string Address { get; }
+
+            public string LocationId { get; }
+
+            public int LocationIndex { get; }
+
+            public string PartId { get; }
+
+            public int PartIndex { get; }
+
+            public int LevelIndex { get; }
+
+            public int DisplayOrder { get; }
         }
     }
 }

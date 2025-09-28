@@ -1,4 +1,3 @@
-using Assets.Scripts.System.FeatureFlags;
 using System.Threading.Tasks;
 using Unity.Services.Analytics;
 using Unity.Services.Core;
@@ -43,7 +42,6 @@ public static class AnalyticsManager
         GameEventsManager.OnLevelStarted += TrackLevelStart;
         GameEventsManager.OnLevelCompleted += TrackLevelComplete;
         GameEventsManager.OnSkinPurchased += TrackSkinPurchased;
-        DayPartLevelsFeature.OnFeatureChanged += TrackFeatureFlagChanged;
     }
 
     /// <summary>
@@ -54,7 +52,6 @@ public static class AnalyticsManager
         GameEventsManager.OnLevelStarted -= TrackLevelStart;
         GameEventsManager.OnLevelCompleted -= TrackLevelComplete;
         GameEventsManager.OnSkinPurchased -= TrackSkinPurchased;
-        DayPartLevelsFeature.OnFeatureChanged -= TrackFeatureFlagChanged;
     }
 
     /// <summary>
@@ -88,15 +85,6 @@ public static class AnalyticsManager
 
         var levelCompleteEvent = new LevelCompleteEvent(levelNumber, stars);
         AnalyticsService.Instance.RecordEvent(levelCompleteEvent);
-    }
-
-    private static void TrackFeatureFlagChanged(bool enabled)
-    {
-        if (!_initialized) return;
-
-        var featureEvent = new FeatureFlagChangedEvent("day_part_levels", enabled);
-        AnalyticsService.Instance.RecordEvent(featureEvent);
-        Debug.Log($"[Analytics] Recorded feature flag change: day_part_levels={(enabled ? "ENABLED" : "DISABLED")}");
     }
 
     /// <summary>

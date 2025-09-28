@@ -1,12 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Assets.Scripts.Common.Models;
 using Assets.Scripts.System;
 using Extensions;
-using Sirenix.Utilities;
-using Unity.Properties;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.UIElements;
@@ -34,14 +29,6 @@ namespace LostCyberHamster.UI
         public LevelItem()
         {
             EnsureTemplateLoaded();
-        }
-
-        public LevelItem(PartOfDayEnum partOfDay, int locationName) : this()
-        {
-            var partKey = partOfDay.ToString();
-            var displayName = TryLocalize(partKey, LocalizationManager.GetLocalizedString(partKey));
-            var previewAddress = GetDefaultPreviewAddress(partKey);
-            SetupCard(displayName, previewAddress, LevelManager.GetLevelName(locationName, partKey));
         }
 
         public void ConfigureForPart(string partKey, string displayName, string previewAddress, string levelKeyForProgress)

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Assets.Scripts.Common.Models;
 using Assets.Scripts.System;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -20,7 +19,7 @@ namespace LostCyberHamster.UI
             Levels
         }
 
-        private const int LevelsPerPage = 4;
+        private const int _levelsPerPage = 4;
 
         private Button _buttonSettings => _contentRoot.Q<Button>("btn_settings");
         private Button _buttonHome => _contentRoot.Q<Button>("btn_home");
@@ -43,7 +42,6 @@ namespace LostCyberHamster.UI
         private Button _buttonAddCrystals => _contentRoot.Q<CrystalStorageUI>()?.ButtonAdd;
 
         private LevelSelectionModel _selectionModel;
-        private bool _useHierarchicalMode;
         private LevelSelectionModel.LocationView _selectedLocationView;
         private LevelSelectionModel.PartView _selectedPartView;
         private SelectionState _state = SelectionState.DayPart;
@@ -64,12 +62,7 @@ namespace LostCyberHamster.UI
 
         private void InitializeSelectionModel()
         {
-            var preferredMode = LevelCatalogService.IsHierarchical
-                ? LevelSelectionMode.Hierarchical
-                : LevelSelectionMode.Legacy;
-
-            _selectionModel = LevelSelectionModel.Create(preferredMode);
-            _useHierarchicalMode = _selectionModel.IsHierarchical;
+            _selectionModel = LevelSelectionModel.Create();
             _state = SelectionState.DayPart;
             _selectedPartView = null;
             _currentLevelPage = 0;
@@ -104,7 +97,7 @@ namespace LostCyberHamster.UI
             _onClickedLevelUnsubscribe.Clear();
             _levelsContainer.Clear();
 
-            if (_useHierarchicalMode && _state == SelectionState.Levels && _selectedPartView != null)
+            if (_state == SelectionState.Levels && _selectedPartView != null)
             {
                 PopulateLevelCards(_selectedPartView);
                 UpdateTitle(_selectedPartView.DisplayName);
@@ -128,78 +121,74 @@ namespace LostCyberHamster.UI
 
         private async Task InitLocation()
         {
+            var openedLocations = LevelManager.OpenedLocations;
             var locationView = GetCurrentLocationView();
+            Sprite resolvedSprite = null;
+
             if (locationView != null)
             {
                 _selectedLocationView = locationView;
 
                 if (!string.IsNullOrWhiteSpace(locationView.ImageAddress))
                 {
-                    try
+                    resolvedSprite = await TryLoadSprite(locationView.ImageAddress);
+                }
+            }
+
+            if (resolvedSprite == null)
+            {
+                if (_currentLocationIndex >= openedLocations.Count)
+                {
+                    _currentLocationIndex = openedLocations.Count > 0 ? openedLocations.Count - 1 : 0;
+                }
+
+                if (openedLocations.Count > 0 && _currentLocationIndex < openedLocations.Count)
+                {
+                    var fallbackInfo = openedLocations[_currentLocationIndex];
+                    if (!string.IsNullOrWhiteSpace(fallbackInfo.image))
                     {
-                        var sprite = await Addressables.LoadAssetAsync<Sprite>(locationView.ImageAddress).Task;
-                        if (sprite != null)
-                        {
-                            _locationImage.style.backgroundImage = new StyleBackground(sprite.texture);
-                            return;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogWarning($"[SelectLevelScreen] Failed to load location image '{locationView.ImageAddress}': {ex.Message}");
+                        resolvedSprite = await TryLoadSprite(fallbackInfo.image);
                     }
                 }
             }
 
-            if (_currentLocationIndex >= LevelManager.OpenedLocations.Count)
+            if (resolvedSprite != null)
             {
-                _currentLocationIndex = 0;
-            }
-
-            if (LevelManager.OpenedLocations.Count > 0)
-            {
-                var locationInfo = LevelManager.OpenedLocations[_currentLocationIndex];
-                var locationImage = await Addressables.LoadAssetAsync<Sprite>(locationInfo.image).Task;
-                _locationImage.style.backgroundImage = new StyleBackground(locationImage.texture);
+                _locationImage.style.backgroundImage = new StyleBackground(resolvedSprite.texture);
             }
         }
 
         private void PopulateDayCards(LevelSelectionModel.LocationView locationView)
         {
-            foreach (PartOfDayEnum partOfDay in Enum.GetValues(typeof(PartOfDayEnum)))
+            var parts = locationView?.Parts ?? Array.Empty<LevelSelectionModel.PartView>();
+            if (parts.Count == 0)
             {
-                var partKey = partOfDay.ToString();
-                var levelItem = new LevelItem(partOfDay, _currentLocationIndex)
+                var emptyLabel = new Label("No parts configured for this location.")
+                {
+                    style =
+                    {
+                        unityTextAlign = TextAnchor.MiddleCenter,
+                        fontSize = 24,
+                        alignSelf = Align.Center
+                    }
+                };
+                _levelsContainer.Add(emptyLabel);
+                return;
+            }
+
+            foreach (var partView in parts)
+            {
+                var primaryLevel = partView.Levels.FirstOrDefault();
+                var primaryLevelKey = primaryLevel.Key ?? string.Empty;
+                var levelItem = new LevelItem()
                 {
                     style = { opacity = 0f }
                 };
-
-                LevelSelectionModel.PartView partView = null;
-                if (locationView != null)
-                {
-                    partView = locationView.Parts.FirstOrDefault(p => string.Equals(p.Key, partKey, StringComparison.OrdinalIgnoreCase));
-                    if (partView != null)
-                    {
-                        var primaryLevelKey = partView.Levels.FirstOrDefault()?.Key ?? levelItem.LevelName;
-                        levelItem.ConfigureForPart(partView.Key, partView.DisplayName, string.Empty, primaryLevelKey);
-                    }
-                }
+                levelItem.ConfigureForPart(partView.Key, partView.DisplayName, string.Empty, primaryLevelKey);
 
                 _levelsContainer.Add(levelItem);
 
-                if (!_useHierarchicalMode && !levelItem.IsLocked)
-                {
-                    var levelKey = levelItem.LevelName;
-                    _onClickedLevelSubscribe.Add(() =>
-                    {
-                        levelItem.RegisterCallback<ClickEvent>(evt => OnClickLevel(evt, levelKey));
-                    });
-                    _onClickedLevelUnsubscribe.Add(() =>
-                    {
-                        levelItem.UnregisterCallback<ClickEvent>(evt => OnClickLevel(evt, levelKey));
-                    });
-                }
-                else if (_useHierarchicalMode && partView != null && !levelItem.IsLocked)
+                if (!levelItem.IsLocked)
                 {
                     var locationCapture = locationView;
                     var partCapture = partView;
@@ -233,15 +222,15 @@ namespace LostCyberHamster.UI
                 return;
             }
 
-            var maxPage = Mathf.Max(0, (levels.Count - 1) / LevelsPerPage);
+            var maxPage = Mathf.Max(0, (levels.Count - 1) / _levelsPerPage);
             _currentLevelPage = Mathf.Clamp(_currentLevelPage, 0, maxPage);
-            var startIndex = _currentLevelPage * LevelsPerPage;
-            var pageLevels = levels.Skip(startIndex).Take(LevelsPerPage).ToList();
+            var startIndex = _currentLevelPage * _levelsPerPage;
+            var pageLevels = levels.Skip(startIndex).Take(_levelsPerPage).ToList();
 
             if (pageLevels.Count == 0)
             {
                 _currentLevelPage = 0;
-                pageLevels = levels.Take(LevelsPerPage).ToList();
+                pageLevels = levels.Take(_levelsPerPage).ToList();
                 startIndex = 0;
             }
 
@@ -272,7 +261,10 @@ namespace LostCyberHamster.UI
         {
             _levelsContainer.Clear();
             var notOpenedLocationImage = await Addressables.LoadAssetAsync<Sprite>("not_opened_preview").Task;
-            _locationImage.style.backgroundImage = new StyleBackground(notOpenedLocationImage.texture);
+            if (notOpenedLocationImage != null)
+            {
+                _locationImage.style.backgroundImage = new StyleBackground(notOpenedLocationImage.texture);
+            }
 
             var starsToOpen = LevelManager.StarsToOpenNewLocation;
 
@@ -304,11 +296,6 @@ namespace LostCyberHamster.UI
         private async void OnClickDayPart(ClickEvent evt, LevelSelectionModel.LocationView locationView, LevelSelectionModel.PartView partView)
         {
             evt.StopPropagation();
-            if (!_useHierarchicalMode)
-            {
-                return;
-            }
-
             _selectedLocationView = locationView;
             _selectedPartView = partView;
             _state = SelectionState.Levels;
@@ -340,15 +327,18 @@ namespace LostCyberHamster.UI
 
         private async void OnClickPrevLocation(ClickEvent evt)
         {
-            if (_useHierarchicalMode && _state == SelectionState.Levels && TryChangeLevelPage(-1))
+            if (_state == SelectionState.Levels && TryChangeLevelPage(-1))
             {
                 await Init();
                 return;
             }
 
-            if (LevelManager.OpenedLocations.Count == LevelManager.LocationInfoList.locations.Length)
+            var openedLocations = LevelManager.OpenedLocations;
+            var totalLocations = LevelManager.LocationInfoList?.locations?.Length ?? 0;
+
+            if (openedLocations.Count > 0 && openedLocations.Count == totalLocations)
             {
-                _currentLocationIndex = (_currentLocationIndex - 1 + LevelManager.OpenedLocations.Count) % LevelManager.OpenedLocations.Count;
+                _currentLocationIndex = (_currentLocationIndex - 1 + openedLocations.Count) % openedLocations.Count;
                 _state = SelectionState.DayPart;
                 _selectedPartView = null;
                 await Init();
@@ -357,7 +347,7 @@ namespace LostCyberHamster.UI
 
             if (_isNotOpenedLocationShown)
             {
-                _currentLocationIndex = LevelManager.OpenedLocations.Count - 1;
+                _currentLocationIndex = openedLocations.Count > 0 ? openedLocations.Count - 1 : 0;
                 _isNotOpenedLocationShown = false;
                 _state = SelectionState.DayPart;
                 _selectedPartView = null;
@@ -382,15 +372,18 @@ namespace LostCyberHamster.UI
 
         private async void OnClickNextLocation(ClickEvent evt)
         {
-            if (_useHierarchicalMode && _state == SelectionState.Levels && TryChangeLevelPage(1))
+            if (_state == SelectionState.Levels && TryChangeLevelPage(1))
             {
                 await Init();
                 return;
             }
 
-            if (LevelManager.OpenedLocations.Count == LevelManager.LocationInfoList.locations.Length)
+            var openedLocations = LevelManager.OpenedLocations;
+            var totalLocations = LevelManager.LocationInfoList?.locations?.Length ?? 0;
+
+            if (openedLocations.Count > 0 && openedLocations.Count == totalLocations)
             {
-                _currentLocationIndex = (_currentLocationIndex + 1) % LevelManager.OpenedLocations.Count;
+                _currentLocationIndex = (_currentLocationIndex + 1) % openedLocations.Count;
                 _state = SelectionState.DayPart;
                 _selectedPartView = null;
                 await Init();
@@ -409,17 +402,35 @@ namespace LostCyberHamster.UI
 
             _currentLocationIndex++;
 
-            if (_currentLocationIndex >= LevelManager.OpenedLocations.Count)
+            if (_currentLocationIndex >= openedLocations.Count)
             {
                 await ShowNotOpenedLocation();
                 _isNotOpenedLocationShown = true;
-                _currentLocationIndex = LevelManager.OpenedLocations.Count - 1;
+                _currentLocationIndex = Mathf.Clamp(openedLocations.Count - 1, 0, int.MaxValue);
                 return;
             }
 
             _state = SelectionState.DayPart;
             _selectedPartView = null;
             await Init();
+        }
+
+        private static async Task<Sprite> TryLoadSprite(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                return null;
+            }
+
+            try
+            {
+                return await Addressables.LoadAssetAsync<Sprite>(address).Task;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[SelectLevelScreen] Failed to load sprite '{address}': {ex.Message}");
+                return null;
+            }
         }
 
         private void OnClickBtnHome(ClickEvent evt)
@@ -429,11 +440,6 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnBack(ClickEvent evt)
         {
-            if (!_useHierarchicalMode)
-            {
-                return;
-            }
-
             _state = SelectionState.DayPart;
             _selectedPartView = null;
             _currentLevelPage = 0;
@@ -504,7 +510,7 @@ namespace LostCyberHamster.UI
         private void UpdateLevelPagingButtons(LevelSelectionModel.PartView partView)
         {
             var levels = partView.Levels ?? Array.Empty<LevelSelectionModel.LevelReference>();
-            var maxPage = Mathf.Max(0, (levels.Count - 1) / LevelsPerPage);
+            var maxPage = Mathf.Max(0, (levels.Count - 1) / _levelsPerPage);
             _buttonPrevLocation?.SetEnabled(_currentLevelPage > 0);
             _buttonNextLocation?.SetEnabled(_currentLevelPage < maxPage);
         }
@@ -517,12 +523,12 @@ namespace LostCyberHamster.UI
             }
 
             var levels = _selectedPartView.Levels ?? Array.Empty<LevelSelectionModel.LevelReference>();
-            if (levels.Count <= LevelsPerPage)
+            if (levels.Count <= _levelsPerPage)
             {
                 return false;
             }
 
-            var maxPage = Mathf.Max(0, (levels.Count - 1) / LevelsPerPage);
+            var maxPage = Mathf.Max(0, (levels.Count - 1) / _levelsPerPage);
             var newPage = Mathf.Clamp(_currentLevelPage + delta, 0, maxPage);
             if (newPage == _currentLevelPage)
             {

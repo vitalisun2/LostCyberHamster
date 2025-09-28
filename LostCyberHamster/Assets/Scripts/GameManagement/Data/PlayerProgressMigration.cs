@@ -17,9 +17,9 @@ namespace GameManagement.Progress
 
             try
             {
-                if (LevelCatalogService.IsHierarchical && LevelCatalogService.Hierarchical is { } hierarchical)
+                if (LevelCatalogService.HasCatalog)
                 {
-                    var snapshot = LevelProgressSnapshot.CreateFromCatalog(hierarchical);
+                    var snapshot = LevelProgressSnapshot.CreateFromCatalog(LevelCatalogService.Catalog);
                     snapshot = ApplyLegacyStars(snapshot, playerData.LevelStars);
                     playerData.Progress = snapshot;
                 }

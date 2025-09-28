@@ -1,125 +1,182 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.System
 {
     /// <summary>
-    /// Placeholder implementation for the forthcoming hierarchical level model.
+    /// Immutable catalog describing locations, parts of day and level addresses in the hierarchical model.
     /// </summary>
-    public class HierarchicalLevelCatalog : ILevelCatalog
+    public sealed class HierarchicalLevelCatalog
     {
-        private readonly IReadOnlyList<LocationEntry> _locations;
+        private readonly List<LocationEntry> _locations;
+        private readonly Dictionary<string, LevelDescriptor> _levelsByAddress;
+        private readonly Dictionary<string, LevelDescriptor> _levelsByKey;
 
-        public HierarchicalLevelCatalog(IEnumerable<LocationEntry> locations)
+        private HierarchicalLevelCatalog(IEnumerable<LocationEntry> locations)
         {
-            _locations = locations?.Select(NormalizeLocation).ToList() ?? throw new ArgumentNullException(nameof(locations));
+            if (locations == null)
+            {
+                throw new ArgumentNullException(nameof(locations));
+            }
+
+            _locations = locations.Select(NormalizeLocation).ToList();
+            (_levelsByAddress, _levelsByKey) = BuildLevelLookups(_locations);
         }
 
         /// <summary>
-        /// Hierarchical catalog supports variable level counts; legacy constant is not applicable.
-        /// </summary>
-        public int LevelsPerLocation => 0;
-
-        /// <summary>
-        /// Exposes the internal locations for read-only scenarios.
+        /// List of configured locations in display order.
         /// </summary>
         public IReadOnlyList<LocationEntry> Locations => _locations;
 
-        public string GetLevelName(int levelNumber)
-        {
-            throw new NotSupportedException("Hierarchical catalog does not expose sequential level numbers.");
-        }
+        public int LocationCount => _locations.Count;
 
-        public string GetLevelName(int locationIndex, PartOfDayEnum partOfDay)
-        {
-            throw new NotSupportedException("Hierarchical catalog relies on explicit part-of-day identifiers.");
-        }
+        public bool IsEmpty => _locations.Count == 0;
 
-        public int GetLevelNumber(int locationIndex, PartOfDayEnum partOfDay)
+        public bool TryGetLocation(int index, out LocationEntry location)
         {
-            throw new NotSupportedException("Hierarchical catalog does not convert to sequential numbers.");
-        }
-
-        public IEnumerable<string> GetLevelsForLocation(int locationIndex)
-        {
-            if (locationIndex < 0 || locationIndex >= _locations.Count)
+            if (index >= 0 && index < _locations.Count)
             {
-                yield break;
+                location = _locations[index];
+                return true;
             }
 
-            foreach (var day in _locations[locationIndex].PartsOfDay)
+            location = default;
+            return false;
+        }
+
+        public string GetLocationId(int index)
+        {
+            if (!TryGetLocation(index, out var location))
             {
-                foreach (var level in day.Levels.OrderBy(l => l.Order))
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return ResolveLocationId(location.Key, index);
+        }
+
+        public bool TryResolveLocationId(string locationId, out int locationIndex)
+        {
+            locationIndex = -1;
+            if (string.IsNullOrWhiteSpace(locationId))
+            {
+                return false;
+            }
+
+            var normalized = locationId.Trim();
+            for (int index = 0; index < _locations.Count; index++)
+            {
+                var entry = _locations[index];
+                if (string.Equals(entry.Key, normalized, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(ResolveLocationId(entry.Key, index), normalized, StringComparison.OrdinalIgnoreCase))
                 {
-                    yield return level.Address;
+                    locationIndex = index;
+                    return true;
                 }
             }
+
+            return false;
         }
 
-        public IEnumerable<string> GetLevelsForPartOfDay(int locationIndex, string partOfDayKey)
+        public bool TryGetPart(int locationIndex, string partKey, out int partIndex, out PartOfDayEntry part)
         {
-            if (locationIndex < 0 || locationIndex >= _locations.Count)
+            partIndex = -1;
+            part = default;
+
+            if (!TryGetLocation(locationIndex, out var location) || string.IsNullOrWhiteSpace(partKey))
             {
-                yield break;
+                return false;
             }
 
-            if (string.IsNullOrWhiteSpace(partOfDayKey))
+            var normalized = partKey.Trim();
+            for (int index = 0; index < location.PartsOfDay.Count; index++)
             {
-                yield break;
+                var entry = location.PartsOfDay[index];
+                var entryId = ResolvePartId(entry.Key, index);
+
+                if (string.Equals(entry.Key, normalized, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(entryId, normalized, StringComparison.OrdinalIgnoreCase))
+                {
+                    partIndex = index;
+                    part = entry;
+                    return true;
+                }
             }
 
-            var day = _locations[locationIndex].PartsOfDay.FirstOrDefault(p => string.Equals(p.Key, partOfDayKey, StringComparison.OrdinalIgnoreCase));
-            if (day == null) yield break;
-
-            foreach (var level in day.Levels.OrderBy(l => l.Order))
-            {
-                yield return level.Address;
-            }
+            return false;
         }
 
-        public IEnumerable<string> GetPartOfDayKeys(int locationIndex)
+        public string GetPartId(int locationIndex, int partIndex)
         {
-            if (locationIndex < 0 || locationIndex >= _locations.Count)
+            if (!TryGetLocation(locationIndex, out var location))
             {
-                yield break;
+                throw new ArgumentOutOfRangeException(nameof(locationIndex));
             }
 
-            foreach (var part in _locations[locationIndex].PartsOfDay)
+            if (partIndex < 0 || partIndex >= location.PartsOfDay.Count)
             {
-                yield return part.Key;
+                throw new ArgumentOutOfRangeException(nameof(partIndex));
             }
+
+            return ResolvePartId(location.PartsOfDay[partIndex].Key, partIndex);
         }
 
         /// <summary>
-        /// Returns the logical key (e.g. "01_New_York") for the specified location index if known.
+        /// Attempts to resolve a level descriptor by address, file name or canonical key.
         /// </summary>
-        public string? GetLocationKey(int locationIndex)
+        public bool TryFindLevel(string identifier, out LevelDescriptor descriptor)
         {
-            if (locationIndex < 0 || locationIndex >= _locations.Count)
+            descriptor = default;
+            if (string.IsNullOrWhiteSpace(identifier))
             {
-                return null;
+                return false;
             }
 
-            return _locations[locationIndex].Key;
+            var normalizedAddress = NormalizeAddress(identifier);
+            if (_levelsByAddress.TryGetValue(normalizedAddress, out descriptor))
+            {
+                return true;
+            }
+
+            var normalizedKey = NormalizeLevelKey(identifier);
+            if (string.IsNullOrEmpty(normalizedKey))
+            {
+                return false;
+            }
+
+            return _levelsByKey.TryGetValue(normalizedKey, out descriptor);
+        }
+
+        public IEnumerable<LevelDescriptor> EnumerateLevels()
+        {
+            return _levelsByAddress.Values;
+        }
+
+        public IEnumerable<LevelDescriptor> EnumerateLevels(int locationIndex, int partIndex)
+        {
+            if (!TryGetLocation(locationIndex, out var location)
+                || partIndex < 0 || partIndex >= location.PartsOfDay.Count)
+            {
+                return Enumerable.Empty<LevelDescriptor>();
+            }
+
+            var part = location.PartsOfDay[partIndex];
+            return part.Levels
+                .OrderBy(level => level.Order)
+                .Select(level => _levelsByAddress[NormalizeAddress(level.Address)]);
+        }
+
+        public static HierarchicalLevelCatalog Empty { get; } = new HierarchicalLevelCatalog(new List<LocationEntry>());
+
+        public static HierarchicalLevelCatalog Create(IEnumerable<LocationEntry> locations)
+        {
+            return new HierarchicalLevelCatalog(locations ?? throw new ArgumentNullException(nameof(locations)));
         }
 
         /// <summary>
-        /// Returns the part-of-day entry matching the provided key or null if it is not defined.
-        /// </summary>
-        public PartOfDayEntry? GetPartOfDay(int locationIndex, string partOfDayKey)
-        {
-            if (locationIndex < 0 || locationIndex >= _locations.Count || string.IsNullOrWhiteSpace(partOfDayKey))
-            {
-                return null;
-            }
-
-            return _locations[locationIndex].PartsOfDay.FirstOrDefault(p => string.Equals(p.Key, partOfDayKey, StringComparison.OrdinalIgnoreCase));
-        }
-
-        /// <summary>
-        /// Factory helpers for building hierarchical catalog nodes.
+        /// Factory helpers for building hierarchical catalog nodes from serialized definitions.
         /// </summary>
         public static class Factory
         {
@@ -162,36 +219,24 @@ namespace Assets.Scripts.System
                     throw new ArgumentNullException(nameof(levels));
                 }
 
-                var normalized = levels.Select((definition, index) => NormalizeLevel(definition, index)).OrderBy(l => l.Order).ToList();
+                var normalized = levels.Select((definition, index) => NormalizeLevel(definition, index))
+                    .OrderBy(l => l.Order)
+                    .ToList();
                 return new PartOfDayEntry(key, normalized);
             }
 
             private static LocationEntry CreateLocationEntry(LocationDefinition definition)
             {
-                var parts = definition.Parts?.Select(CreatePartEntry).ToList() ?? new List<PartOfDayEntry>();
+                var parts = definition.Parts.Select(CreatePartEntry).ToList();
                 return new LocationEntry(definition.LocationKey, parts);
             }
 
             private static PartOfDayEntry CreatePartEntry(PartDefinition definition)
             {
-                var levels = definition.Levels?.Select((levelDef, index) => NormalizeLevel(levelDef, index)).OrderBy(l => l.Order).ToList() ?? new List<LevelEntry>();
-                return new PartOfDayEntry(definition.PartKey, levels);
+                var levels = definition.Levels.Select((levelDef, index) => NormalizeLevel(levelDef, index)).ToList();
+                return new PartOfDayEntry(definition.PartKey, levels.OrderBy(level => level.Order).ToList());
             }
         }
-
-        public record LevelEntry(string Address, int Order);
-
-        public record PartOfDayEntry(string Key, IReadOnlyList<LevelEntry> Levels);
-
-        public record LocationEntry(string Key, IReadOnlyList<PartOfDayEntry> PartsOfDay);
-
-        public record LevelDefinition(string Address, int Order = 0);
-
-        public record PartDefinition(string PartKey, IReadOnlyList<LevelDefinition>? Levels);
-
-        public record LocationDefinition(string LocationKey, IReadOnlyList<PartDefinition>? Parts);
-
-        public static HierarchicalLevelCatalog Empty { get; } = new HierarchicalLevelCatalog(new List<LocationEntry>());
 
         public static HierarchicalLevelCatalog FromDictionary(IReadOnlyDictionary<string, IReadOnlyDictionary<string, IEnumerable<string>>> layout)
         {
@@ -202,26 +247,115 @@ namespace Assets.Scripts.System
 
             var definitions = layout.Select(location => new LocationDefinition(
                 location.Key,
-                location.Value?.Select(part => new PartDefinition(part.Key, part.Value?.Select(address => new LevelDefinition(address)).ToList())).ToList()
+                (location.Value ?? new Dictionary<string, IEnumerable<string>>())
+                    .Select(part => new PartDefinition(part.Key,
+                        (part.Value ?? Array.Empty<string>()).Select(address => new LevelDefinition(address)).ToList()))
+                    .ToList()
             )).ToList();
 
             return Factory.CreateCatalog(definitions);
         }
 
+        public record LevelEntry(string Address, int Order);
+
+        public record PartOfDayEntry(string Key, IReadOnlyList<LevelEntry> Levels);
+
+        public record LocationEntry(string Key, IReadOnlyList<PartOfDayEntry> PartsOfDay);
+
+        public record LevelDefinition(string Address, int Order = 0);
+
+        public record PartDefinition(string PartKey, IReadOnlyList<LevelDefinition> Levels);
+
+        public record LocationDefinition(string LocationKey, IReadOnlyList<PartDefinition> Parts);
+
+        public readonly struct LevelDescriptor
+        {
+            public LevelDescriptor(
+                int locationIndex,
+                string locationId,
+                int partIndex,
+                string partId,
+                int levelIndex,
+                string levelKey,
+                string address)
+            {
+                LocationIndex = locationIndex;
+                LocationId = locationId;
+                PartIndex = partIndex;
+                PartId = partId;
+                LevelIndex = levelIndex;
+                LevelKey = levelKey;
+                Address = address;
+            }
+
+            public int LocationIndex { get; }
+            public string LocationId { get; }
+            public int PartIndex { get; }
+            public string PartId { get; }
+            public int LevelIndex { get; }
+            public string LevelKey { get; }
+            public string Address { get; }
+            public int DisplayOrder => LevelIndex + 1;
+        }
+
+        private static (Dictionary<string, LevelDescriptor> ByAddress, Dictionary<string, LevelDescriptor> ByKey) BuildLevelLookups(IReadOnlyList<LocationEntry> locations)
+        {
+            var byAddress = new Dictionary<string, LevelDescriptor>(StringComparer.OrdinalIgnoreCase);
+            var byKey = new Dictionary<string, LevelDescriptor>(StringComparer.OrdinalIgnoreCase);
+
+            for (int locationIndex = 0; locationIndex < locations.Count; locationIndex++)
+            {
+                var location = locations[locationIndex];
+                var locationId = ResolveLocationId(location.Key, locationIndex);
+
+                for (int partIndex = 0; partIndex < location.PartsOfDay.Count; partIndex++)
+                {
+                    var part = location.PartsOfDay[partIndex];
+                    var partId = ResolvePartId(part.Key, partIndex);
+                    var orderedLevels = part.Levels.OrderBy(level => level.Order).ToList();
+
+                    for (int levelIndex = 0; levelIndex < orderedLevels.Count; levelIndex++)
+                    {
+                        var level = orderedLevels[levelIndex];
+                        var descriptor = new LevelDescriptor(
+                            locationIndex,
+                            locationId,
+                            partIndex,
+                            partId,
+                            levelIndex,
+                            NormalizeLevelKey(level.Address),
+                            level.Address);
+
+                        var addressKey = NormalizeAddress(level.Address);
+                        byAddress[addressKey] = descriptor;
+
+                        var levelKey = descriptor.LevelKey;
+                        if (!string.IsNullOrEmpty(levelKey) && !byKey.ContainsKey(levelKey))
+                        {
+                            byKey[levelKey] = descriptor;
+                        }
+                    }
+                }
+            }
+
+            return (byAddress, byKey);
+        }
+
         private static LocationEntry NormalizeLocation(LocationEntry entry)
         {
-            var parts = entry.PartsOfDay?.Select(part => new PartOfDayEntry(part.Key, part.Levels?.Select(NormalizeLevel).OrderBy(l => l.Order).ToList() ?? new List<LevelEntry>())).ToList() ?? new List<PartOfDayEntry>();
+            var parts = entry.PartsOfDay?
+                .Select(part => new PartOfDayEntry(part.Key, part.Levels?
+                    .Select(NormalizeLevel)
+                    .OrderBy(level => level.Order)
+                    .ToList() ?? new List<LevelEntry>()))
+                .ToList() ?? new List<PartOfDayEntry>();
+
             return new LocationEntry(entry.Key, parts);
         }
 
         private static LevelEntry NormalizeLevel(LevelEntry level)
         {
-            var order = level.Order;
-            if (order <= 0)
-            {
-                order = 1;
-            }
-
+            var order = level.Order <= 0 ? 1 : level.Order;
             return new LevelEntry(level.Address, order);
         }
 
@@ -229,6 +363,51 @@ namespace Assets.Scripts.System
         {
             var order = definition.Order > 0 ? definition.Order : index + 1;
             return new LevelEntry(definition.Address, order);
+        }
+
+        private static string ResolveLocationId(string locationKey, int locationIndex)
+        {
+            if (!string.IsNullOrWhiteSpace(locationKey))
+            {
+                return locationKey.Trim();
+            }
+
+            return $"location_{locationIndex:D2}";
+        }
+
+        private static string ResolvePartId(string partKey, int partIndex)
+        {
+            if (!string.IsNullOrWhiteSpace(partKey))
+            {
+                return partKey.Trim();
+            }
+
+            return ((PartOfDayEnum)(partIndex + 1)).ToString();
+        }
+
+        private static string NormalizeAddress(string address)
+        {
+            return string.IsNullOrWhiteSpace(address)
+                ? string.Empty
+                : address.Replace('\\', '/').Trim();
+        }
+
+        public static string NormalizeLevelKey(string identifier)
+        {
+            if (string.IsNullOrWhiteSpace(identifier))
+            {
+                return string.Empty;
+            }
+
+            var trimmed = identifier.Trim();
+            var pathNormalized = trimmed.Replace('\\', '/');
+            var fileName = Path.GetFileNameWithoutExtension(pathNormalized);
+            if (!string.IsNullOrWhiteSpace(fileName))
+            {
+                return fileName.Trim();
+            }
+
+            return pathNormalized;
         }
     }
 }
