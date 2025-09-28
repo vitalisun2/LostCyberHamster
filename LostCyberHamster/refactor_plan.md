@@ -1,4 +1,4 @@
-﻿Перестройка нам нужна, но legacy-механика пока должна жить рядом с новой. Вот как предлагаю двигаться:
+Перестройка нам нужна, но legacy-механика пока должна жить рядом с новой. Вот как предлагаю двигаться:
 
 - **Каталог уровней и типы** — выделить отдельный уровень-реестр (например, `LevelCatalogService`) вместо арифметики в `LevelManager` (`Assets/Scripts/System/LevelManagement/LevelManager.cs:14`). Храним структуры `LocationId`, `PartOfDayId`, `LevelId`, описываем имена файлов, подпапки и адреса Addressables. Сервис по фиче-флагу возвращает либо старый плоский список, либо новое дерево.
 - **Ресурсы и Addressables** — перевести JSON уровней в иерархию Content/locations/<Location>/<PartOfDay>/level_XX.json, обновить метки levels и добавить метаданные для групп. Пока флаг выключен, публикуем обе схемы; LevelCatalog умеет собирать уровни из подпапок. Проверить `LevelDataProvider.LoadLevelInfo` (`Assets/Scripts/System/LevelManagement/LevelDataProvider.cs:121`) и сопутствующие ассеты.
@@ -46,6 +46,34 @@
 5. ✅ **Цель:** предоставить UI-контроллерам единый источник данных, независимый от схемы уровней.
    **Действие:** реализовать сервис-представление (например, `LevelSelectionModel`) поверх `LevelCatalogService`, выдающий плоский список или иерархию; текущие контроллеры до шага 4 продолжают использовать legacy API.
 
+
+
+### 5. Прогресс и сохранения
+1. ✅ **Цель:** собрать карту использования legacy-прогресса и сохранений.  
+   **Действие:** зафиксировать все обращения к CurrentLevel/LevelStars/OpenedLevels и описать текущее состояние данных в заметках (refactor_plan.md:128).
+2. ✅ **Цель:** спроектировать новый контракт прогресса с типизированным ключом.  
+   **Действие:** определить структуры (LocationId, PartOfDayId, LevelIndex) и договориться о DTO/интерфейсах, чтобы каталог и сохранения работали единообразно.
+3. ✅ **Цель:** обновить PlayerData и сериализацию под новую схему.  
+   **Действие:** добавить новое поле прогресса, оставить адаптер к legacy-формату и описать целевой JSON для feature-флага.
+4. ✅ **Цель:** реализовать миграцию и обратную совместимость в загрузке/сохранении.  
+   **Действие:** преобразовывать старые сейвы при включении флага и формировать legacy-данные при выключенном режиме (GameDataManager.LoadDataAsync/SaveData).
+5. ✅ **Цель:** перевести потребителей на новое API прогресса.  
+   **Действие:** обновить LevelManager, UI и связанные сервисы, чтобы они читали звёзды/доступность через новый слой с учётом фиче-флага.
+6. ✅ **Цель:** провалидировать сохранения и покрыть миграцию тестами.  
+   **Действие:** добавить автотесты/чек-листы для локальных и облачных сейвов, задокументировать результаты для QA.
+
+
+### 6. Фича-флаг и переключение
+1. ✅ **Цель:** зафиксировать текущие точки включения режимов и зависимости от каталога.  
+   **Действие:** пройти инициализацию (LevelCatalogService, загрузки/бутстрап), описать порядок подключения каталога и места выбора режима.
+2. ✅ **Цель:** добавить конфигурацию фиче-флага и хранение состояния.  
+   **Действие:** расширить настройки (SettingsData) и сервис чтения, определить дефолтный режим и способ изменения.
+3. ✅ **Цель:** связать флаг с системами уровня/прогресса/UI.  
+   **Действие:** при старте переключать каталог, инициировать мигратор, уведомлять UI и сервисы; предусмотреть hot-switch для девов.
+4. ✅ **Цель:** внедрить аналитику и логи для контроля режима.  
+   **Действие:** добавить события/логи при выборе режима, предусмотреть отчёт в консоли/аналитике.
+5. ⏳ **Цель:** подготовить проверки и документацию для QA и релиза.  
+   **Действие:** составить чек-лист переключения, описать процедуры smoke-теста в обоих режимах и обновить инструкцию для команды.
 
 ## Рабочие заметки
 
@@ -124,3 +152,99 @@
   4. Сборка Addressables генерирует обе группы без предупреждений.
 - Для дизайнеров: новый уровень добавляется копированием `level_XX.json` в нужную подпапку и назначением меток в Addressables (см. `levels_by_daypart` группу).
 - Для QA: тестовый чек-лист включает запуск игры с legacy и day-part режимом, проверку меню выбора времени суток и загрузку уровней.
+
+### Шаг 5 — подшаг 5.1 (Анализ legacy-прогресса)
+#### Legacy
+- PlayerData.CurrentLevel хранит строку вида level_XX; её читают загрузчики и контроллеры (Assets/Scripts/System/LevelManagement/LevelDataProvider.cs:44, Assets/Scripts/System/LevelManagement/LevelManager.cs:368, Assets/Scripts/System/LevelManagement/LevelController.cs:167).
+- Прогресс хранится в PlayerData.LevelStars как список, а открытые уровни вычисляются на лету через OpenedLevels (Assets/Scripts/GameManagement/Data/PlayerData.cs:50). UI и менеджеры опираются на словарь (Assets/Scripts/System/LevelManagement/LevelManager.cs:404, Assets/Scripts/UI/Components/LevelItem.cs:123).
+- Начисление звёзд и анлок происходят в LevelManager.OnLevelComplited/OpenNextLevel, где жёстко используется арифметика по LevelsPerLocation и порядковым номерам (Assets/Scripts/System/LevelManagement/LevelManager.cs:462, Assets/Scripts/System/LevelManagement/LevelManager.cs:495).
+- StarsToOpenNewLocation, GetLocationIndex, GetCurrentPartOfDay и переход на следующий уровень полагаются на деление/остаток от level_XX (Assets/Scripts/System/LevelManagement/LevelManager.cs:360, Assets/Scripts/System/LevelManagement/LevelManager.cs:444, Assets/Scripts/System/LevelManagement/LevelManager.cs:212).
+- Сохранения сериализуют PlayerData целиком: локально через GameDataManager.SaveData, в облако через TrySaveToCloud без дополнительной проверки (Assets/Scripts/GameManagement/GameDataManager.cs:99, Assets/Scripts/GameManagement/GameDataManager.cs:120).
+
+#### Новый подход
+- Ввести типизированный ключ прогресса (локация, часть дня, индекс) и хранить статусы уровней в структуре, совместимой с HierarchicalLevelCatalog (Assets/Scripts/System/LevelManagement/HierarchicalLevelCatalog.cs).
+- Обновить контракты LevelManager/UI так, чтобы они брали открытые уровни и звёзды из нового слоя вместо словаря level_XX.
+- Подготовить миграцию: при чтении legacy-сейва строить иерархический прогресс, при выключенном флаге продолжать экспортировать линейные level_XX для обратной совместимости.
+
+#### Наблюдения
+- LevelDataProvider.ResolveCurrentLevelAddress уже умеет искать адреса в каталоге; можно переиспользовать эту точку для маппинга нового ключа без прямой зависимости от строк.
+- Логика открытия локаций привязана к сумме OpenedLevels.Values, понадобятся хелперы, считающие прогресс по новой структуре.
+- Любые правки должны учитывать, что OpenNextLevel вызывается из событий GameEventsManager, поэтому миграция данных должна быть idempotent на момент вызова.
+### Шаг 5 — подшаг 5.2 (Контракт прогресса)
+#### Реализация
+- Добавлены типы LevelProgressKey/LevelProgressEntry/LevelProgressSnapshot для хранения прогресса (Assets/Scripts/GameManagement/Data/LevelProgressModels.cs).
+- Реализованы фабрики CreateFromCatalog/CreateLegacySkeleton, позволяющие заполнять прогресс из иерархического каталога или legacy-схемы.
+- Подготовлены адаптеры LevelProgressKeyAdapters для преобразования level_XX в типизированные ключи и обратно (Assets/Scripts/GameManagement/Data/LevelProgressKeyAdapters.cs).
+- Нормализован contract: уровни внутри части дня индексируются с нуля, MaxStars ограничен тремя, Unlock/ApplyStars возвращают новые экземпляры.
+### Шаг 5 — подшаг 5.3 (PlayerData и сериализация)
+#### Реализация
+- PlayerData хранит legacy LevelStars и новый снимок LevelProgressSnapshot; перед сериализацией звёзды синхронизируются (Assets/Scripts/GameManagement/Data/PlayerData.cs).
+- Добавлен список сериализуемых DTO _serializedProgress для JsonUtility, а Progress восстанавливает снимок лениво.
+- Сохранили старый формат OpenedLevels, чтобы потребители до миграции получали ключи level_XX.
+
+### Шаг 5 — подшаг 5.4 (Миграция и обратная совместимость)
+#### Реализация
+- PlayerProgressMigration.Initialize формирует снимок прогресса по активному каталогу и накладывает данные LevelStars (Assets/Scripts/GameManagement/Data/PlayerProgressMigration.cs).
+- GameDataManager.LoadDataAsync вызывает мигратор после чтения сейва и пересохраняет данные, чтобы зафиксировать _serializedProgress (Assets/Scripts/GameManagement/GameDataManager.cs).
+- При отсутствии иерархии мигратор оставляет fallback и не ломает legacy-путь (используется ленивое восстановление в PlayerData).
+
+### Шаг 5 — подшаг 5.5 (Потребители нового прогресса)
+#### Реализация
+- LevelManager теперь ориентируется на LevelProgressSnapshot: открытость и звёзды уровней берутся из снимка, добавлены адаптеры TryGetProgressKey и миграция к иерархии (Assets/Scripts/System/LevelManagement/LevelManager.cs).
+- Обновлены обработчики завершения уровня: при иерархии прогресс обновляется через LevelProgressEntry.ApplyStars, разблокировка следующего уровня работает через UnlockNextLevelHierarchical.
+- Legacy-путь сохранён: при выключенной иерархии поведение прежнее (модифицированный HandleLegacyLevelCompletion).
+
+### Шаг 5 — подшаг 5.6 (Валидация сохранений)
+#### План тестирования
+- Юнит-чек: сериализация PlayerData с legacy LevelStars → ToJson → FromJson возвращает те же звёзды и создаёт снимок (покрывается будущими тестами).
+- Smoke для миграции:
+  1. Запустить игру с legacy-режимом, пройти/открыть несколько уровней, убедиться, что PlayerData.ToJson() содержит _serializedProgress.
+  2. Включить day-part режим, вызвать PlayerProgressMigration.Initialize, проверить LevelManager.IsLevelOpen/GetLevelStars.
+  3. Пройти ещё один уровень, убедиться, что LevelProgressSnapshot обновился и LevelStars синхронизированы при SaveData.
+  4. Сохранить в облако, перезапустить клиент: загрузка выбирает новое представление и пересохраняет данные без потерь.
+- QA чек-лист: переключение фиче-флага, сравнение PlayerPrefs до/после миграции, smoke UI в обоих режимах.
+
+### Шаг 6 — подшаг 6.1 (Анализ текущего переключения)
+- LevelCatalogService нигде не конфигурируется вне тестов; проект при старте всегда остаётся в legacy (Assets/Scripts/System/LevelManagement/LevelCatalogService.cs).
+- Бутстрап InitGameRepositoryLoadingTask просто вызывает GameDataManager.LoadDataAsync без переключения каталога (Assets/Scripts/Entry Points/BootstrapLoadingTasks/InitGameRepositoryLoadingTask.cs:18).
+- UI и менеджеры ориентируются на LevelCatalogService.IsHierarchical при построении (Assets/Scripts/System/LevelManagement/LevelSelectionModel.cs:104, Assets/Scripts/UI/Screens/SelectLevelScreenController.cs:67), но флаг не меняется.
+- Миграция прогресса и LevelManager завязаны на LevelCatalogService.IsHierarchical, поэтому активация нового режима должна произойти до вызова GameDataManager.LoadDataAsync и инициализации UI.
+#### Legacy
+- LevelCatalogService по умолчанию активирует LegacyLevelCatalog, переключение делается вручную кодом.
+- Конфигов для выбора режима нет: GameDataManager и entry points всегда работают в legacy, инициализация новой схемы происходит только через программные вызовы.
+- UI/прогресс не реагируют на изменение режима в рантайме, требуется перезапуск.
+
+#### Новый подход
+- Ввести явный boolean/enum флаг (например, DayPartLevelsEnabled) в пользовательских настройках или ScriptableObject-конфиге.
+- При запуске читать значение флага и централизованно переключать каталог, миграцию прогресса, UI.
+- Добавить dev-инструмент для переключения на лету (консольная команда или debug UI) и события логирования для аналитики.
+
+### Шаг 6 — подшаг 6.2 (Конфигурация флага)
+#### Реализация
+- SettingsData дополнен полем EnableDayPartLevels, которое сериализуется вместе с остальными настройками (Assets/Scripts/GameManagement/Data/SettingsData.cs).
+- Добавлен сервис DayPartLevelsFeature для инициализации и изменения флага с сохранением через GameDataManager.SaveSettings (Assets/Scripts/System/FeatureFlags/DayPartLevelsFeature.cs).
+- GameDataManager.LoadSettings вызывает DayPartLevelsFeature.InitializeFromSettings, чтобы флаг восстанавливался при запуске (Assets/Scripts/GameManagement/GameDataManager.cs).
+
+### Шаг 6 — подшаг 6.3 (Связь флага с системами)
+#### Реализация
+- GameDataManager.ApplyFeatureFlags централизует применение флагов после загрузки настроек (Assets/Scripts/GameManagement/GameDataManager.cs).
+- Бутстрап InitGameRepositoryLoadingTask вызывает ApplyFeatureFlags сразу после LoadSettings, до загрузки данных и инициализации UI (Assets/Scripts/Entry Points/BootstrapLoadingTasks/InitGameRepositoryLoadingTask.cs).
+- Подготовлен дев-тоггл FeatureFlagToggle для быстрой смены режима в редакторе (Assets/Scripts/Debug/FeatureFlagToggle.cs).
+
+
+### Шаг 6 — подшаг 6.4 (Аналитика и логи)
+#### Реализация
+- DayPartLevelsFeature логирует смену режима и поднимает событие OnFeatureChanged (Assets/Scripts/System/FeatureFlags/DayPartLevelsFeature.cs).
+- AnalyticsManager подписывается на изменение флага и пишет событие eature_flag_change в Unity Analytics (Assets/Scripts/Analytics/AnalyticsManager.cs, Assets/Scripts/Analytics/Events.cs).
+### Шаг 6 — подшаг 6.5 (QA и документирование)
+#### План проверок
+- Legacy режим: переустановить флаг в false, пройти выбор уровня, убедиться в корректной загрузке каталога и UI (старый поток).
+- DayPart режим: включить флаг, проверить отображение времени суток, запуск уровней, корректность прогресса (звёзды/разблокировки).
+- Переключение: использовать дев-тоггл или сценарий в настройках, убедиться, что миграция работает при переключении без перезапуска.
+- Облачные данные: включить флаг → сохранить в облако → очистить локальные данные → убедиться, что загрузка восстанавливает новый режим.
+
+#### Документация
+- Обновить README/внутреннюю инструкцию: описать настройку EnableDayPartLevels, порядок включения и отката.
+- Добавить в чек-лист релиза шаги проверки обоих режимов и логов (поисковой шаблон [DayPartLevelsFeature]).
+- Для QA подготовить таблицу "режим → ожидаемый каталог/прогресс/экран".
+

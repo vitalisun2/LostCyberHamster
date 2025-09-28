@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -98,18 +98,12 @@ namespace Assets.Scripts.System
             return Catalog.GetLevelNumber(locationNumber, partOfDay);
         }
 
+
         public static string GetLevelName(int locationIndex, string partOfDayKey)
         {
-            if (string.IsNullOrWhiteSpace(partOfDayKey))
-            {
-                return string.Empty;
-            }
-
-            var levels = Catalog.GetLevelsForPartOfDay(locationIndex, partOfDayKey);
-            var firstLevel = levels?.FirstOrDefault();
+            var firstLevel = GetLevelsForPartOfDay(locationIndex, partOfDayKey).FirstOrDefault();
             return NormalizeLevelKey(firstLevel);
         }
-
         private static string NormalizeLevelKey(string? levelAddress)
         {
             if (string.IsNullOrWhiteSpace(levelAddress))
@@ -316,9 +310,14 @@ namespace Assets.Scripts.System
 
         public static IEnumerable<string> GetLevelsForPartOfDay(int locationIndex, string partOfDayKey)
         {
-            return Catalog.GetLevelsForPartOfDay(locationIndex, partOfDayKey)?.Select(NormalizeLevelKey).Where(key => !string.IsNullOrEmpty(key)) ?? Array.Empty<string>();
-        }
+            if (string.IsNullOrWhiteSpace(partOfDayKey))
+            {
+                return Enumerable.Empty<string>();
+            }
 
+            var levels = Catalog.GetLevelsForPartOfDay(locationIndex, partOfDayKey);
+            return levels?.Select(NormalizeLevelKey).Where(key => !string.IsNullOrEmpty(key)) ?? Enumerable.Empty<string>();
+        }
         public static string? GetLocationKey(int locationIndex)
         {
             if (LevelCatalogService.Hierarchical is { } hierarchical)
@@ -344,18 +343,34 @@ namespace Assets.Scripts.System
             LocationInfoList = JsonUtility.FromJson<LocationInfoList>(asset.text);
 
             int totalLocations = LocationInfoList.locations?.Length ?? 0;
-            int expectedLevelsCount = totalLocations * LevelsPerLocation;
+            int expectedLevelsCount;
+            if (LevelCatalogService.IsHierarchical && LevelCatalogService.Hierarchical is { } hierarchicalCatalog)
+            {
+                expectedLevelsCount = hierarchicalCatalog.Locations.Sum(location => location.PartsOfDay.Sum(part => part.Levels.Count));
+            }
+            else
+            {
+                expectedLevelsCount = totalLocations * LevelsPerLocation;
+            }
 
             if (realLevelsCount != expectedLevelsCount)
             {
-                var message = $"[InitLocationsList] Несоответствие: {realLevelsCount} реальных уровней, " +
-                              $"а ожидается {expectedLevelsCount} (на основе {totalLocations} локаций).";
-                Debug.LogError(message);
-                throw new Exception(message);
+                var message = $"[InitLocationsList] Несоответствие: {realLevelsCount} реальных уровней, ожидается {expectedLevelsCount}.";
+                if (LevelCatalogService.IsHierarchical)
+                {
+                    Debug.LogWarning(message + " (иерархический режим)");
+                }
+                else
+                {
+                    message += $" (на основе {totalLocations} локаций).";
+                    Debug.LogError(message);
+                    throw new Exception(message);
+                }
             }
 
             Debug.Log("Locations list initialized");
         }
+
 
 
         /// <summary>
@@ -529,3 +544,11 @@ namespace Assets.Scripts.System
         }
     }
 }
+
+
+
+
+
+
+
+

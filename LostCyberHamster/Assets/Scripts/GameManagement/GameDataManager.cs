@@ -1,59 +1,52 @@
-using System.Collections.Generic;
-using Unity.Services.Core;
-using Vues.GameCore;
-using UnityEngine;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Assets.Scripts.System.FeatureFlags;
+using GameManagement.Progress;
 using Unity.Services.Authentication;
 using Unity.Services.CloudSave;
-using System.Threading.Tasks;
+using Unity.Services.Core;
+using UnityEngine;
+using Vues.GameCore;
 
 namespace GameManagement
 {
     public static class GameDataManager
     {
         public static PlayerData PlayerData = new PlayerData();
-
-        private static string _playerDataKey = "PlayerData";
-
         public static SettingsData Settings = new SettingsData();
 
-        private static string _settingsKey = "Settings";
+        private static readonly string _playerDataKey = "PlayerData";
+        private static readonly string _settingsKey = "Settings";
 
-        /// <summary>
-        /// Сервис шифрования данных.
-        /// </summary>
-        private static ICryptoService _cryptoService = new AesCryptoService();
+        private static readonly ICryptoService _cryptoService = new AesCryptoService();
 
         public static bool IsGameJustStarted = true;
 
-
-
-        /// <summary>
-        /// Инициализация менеджера данных.
-        /// </summary>
-        /// <param name="cryptoService"></param>
         public static async void InitializeAsync()
         {
-            
+        }
+
+        public static void ApplyFeatureFlags()
+        {
+            DayPartLevelsFeature.InitializeFromSettings(Settings);
         }
 
         public static async Task LoadDataAsync()
         {
             Debug.Log("Loading data...");
-            PlayerData localData = LoadFromPlayerPrefs();
-            PlayerData cloudData = await LoadFromCloud();
 
-            DateTime.TryParse(localData.LastSaveDate, out DateTime localLastSaveDate);
-            DateTime.TryParse(cloudData.LastSaveDate, out DateTime cloudLastSaveDate);
-            if (cloudLastSaveDate > localLastSaveDate)
-            {
-                Debug.Log("Cloud data is newer.");
-                PlayerData = cloudData;
-                SaveData();
-                return;
-            }
+            var localData = LoadFromPlayerPrefs();
+            var cloudData = await LoadFromCloud();
 
-            PlayerData = localData;
+            DateTime.TryParse(localData.LastSaveDate, out var localLastSaveDate);
+            DateTime.TryParse(cloudData.LastSaveDate, out var cloudLastSaveDate);
+
+            PlayerData = cloudLastSaveDate > localLastSaveDate ? cloudData : localData;
+
+            PlayerProgressMigration.Initialize(PlayerData);
+
+            SaveData();
 
             Debug.Log("Data loaded." + PlayerData.ToJson());
         }
@@ -68,8 +61,7 @@ namespace GameManagement
 
             var encryptedData = PlayerPrefs.GetString(_playerDataKey);
             var decryptedData = _cryptoService.Decrypt(encryptedData);
-            PlayerData localData = PlayerData.FromJson(decryptedData);
-            return localData;
+            return PlayerData.FromJson(decryptedData);
         }
 
         private static async Task<PlayerData> LoadFromCloud()
@@ -83,10 +75,8 @@ namespace GameManagement
                 {
                     return PlayerData.FromJson(cloudJson.Value.GetAs<string>());
                 }
-                else
-                {
-                    Debug.Log("No cloud data found.");
-                }
+
+                Debug.Log("No cloud data found.");
             }
             catch (Exception e)
             {
@@ -99,14 +89,13 @@ namespace GameManagement
         public static void SaveData()
         {
             PlayerData.LastSaveDate = DateTime.UtcNow.ToString("o");
-            string serializedData = PlayerData.ToJson();
+            var serializedData = PlayerData.ToJson();
             Debug.Log(serializedData);
             var encryptedData = _cryptoService.Encrypt(serializedData);
             PlayerPrefs.SetString(_playerDataKey, encryptedData);
             PlayerPrefs.Save();
         }
 
-        // Purchase a skin and save
         public static void PurchaseSkin(int skinId)
         {
             if (!PlayerData.PurchasedSkinIds.Contains(skinId))
@@ -147,9 +136,11 @@ namespace GameManagement
         {
             if (PlayerPrefs.HasKey(_settingsKey))
             {
-                var settings = PlayerPrefs.GetString(_settingsKey);
-                Settings = JsonUtility.FromJson<SettingsData>(settings);
+                var settingsJson = PlayerPrefs.GetString(_settingsKey);
+                Settings = JsonUtility.FromJson<SettingsData>(settingsJson);
             }
+
+            DayPartLevelsFeature.InitializeFromSettings(Settings);
         }
 
         public static void ClearData()

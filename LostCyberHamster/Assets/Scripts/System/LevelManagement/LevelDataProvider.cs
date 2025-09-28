@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -224,7 +224,14 @@ namespace Assets.Scripts.System
         private static async Task LoadBackgroundPrefab(LevelData levelData)
         {
             var backgroundPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.BackgroundPrefabName).Task;
-            var backgroundTexture = await Addressables.LoadAssetAsync<Sprite>(levelData.LevelInfo.backgroundTexture).Task;
+
+            var backgroundTexture = await LoadBackgroundSpriteWithFallback(levelData.LevelInfo.backgroundTexture);
+
+            if (backgroundTexture == null)
+            {
+                Debug.LogError("[LevelDataProvider] Unable to load background sprite for the current level.");
+                return;
+            }
 
             LevelDataValidator.ValidateBackgroundTexture(backgroundTexture);
 
@@ -275,40 +282,267 @@ namespace Assets.Scripts.System
         // Load obstacles sprites
         private static async Task LoadObstaclesSprites(LevelData levelData)
         {
-            levelData.ObstaclesSprites = (await Addressables.LoadAssetsAsync<Sprite>(GetObstaclesSpritesLabel(), null).Task).ToList();
+            var primaryLabel = GetObstaclesSpritesLabel();
+            var fallbackLabel = GetFallbackObstaclesLabel();
 
-            if (!levelData.ObstaclesSprites.Any())
-                Debug.LogError($"No obstacle sprites found for location {LevelManager.GetLocationName()}");
+            var sprites = await LoadSpritesByLabelAsync(primaryLabel, "obstacle sprites", fallbackLabel);
+
+            levelData.ObstaclesSprites = sprites;
+
+            if (!sprites.Any())
+            {
+                Debug.LogWarning("[LevelDataProvider] No obstacle sprites found for the configured labels.");
+            }
+        }
+        private static string GetObstaclesSpritesLabel()
+        {
+            var locationName = LevelManager.GetLocationName();
+            return BuildLocationLabel(locationName, Consts.ObstaclesSpritesLabelPostfix);
         }
 
+        private static string GetFallbackObstaclesLabel()
+        {
+            return BuildLocationLabel(GetFallbackLocationName(), Consts.ObstaclesSpritesLabelPostfix);
+        }
         // load collectable sprites
         private static async Task LoadCollectablesSprites(LevelData levelData)
         {
-            levelData.CollectablesSprites = (await Addressables.LoadAssetsAsync<Sprite>(Consts.CollectableSpritesLabel, null).Task).ToList();
-
+            levelData.CollectablesSprites = await LoadSpritesByLabelAsync(Consts.CollectableSpritesLabel, "collectable sprites");
             LevelDataValidator.ValidateCollectableSprites(levelData.CollectablesSprites);
         }
-
         //load decor sprites
         private static async Task LoadDecorSprites(LevelData levelData)
         {
-            levelData.DecorSprites = (await Addressables.LoadAssetsAsync<Sprite>(GetDecorSpritesLabel(), null).Task).ToList();
+            var primaryLabel = GetDecorSpritesLabel();
+            var fallbackLabel = GetFallbackDecorLabel();
+
+            var decorSprites = await LoadSpritesByLabelAsync(primaryLabel, "decor sprites", fallbackLabel);
+
+            levelData.DecorSprites = decorSprites;
             LevelDataValidator.ValidateDecorSprites(levelData.DecorSprites);
         }
 
 
         // get obstacles sprites label by current level and postfix
-        private static string GetObstaclesSpritesLabel()
-        {
-            return $"{LevelManager.GetLocationName()} {Consts.ObstaclesSpritesLabelPostfix}";
-        }
-
         // get decor sprites label by current level and postfix
         private static string GetDecorSpritesLabel()
         {
-            return $"{LevelManager.GetLocationName()} {Consts.DecorSpritesLabelPostFix}";
+            var locationName = LevelManager.GetLocationName();
+            return BuildLocationLabel(locationName, Consts.DecorSpritesLabelPostFix);
         }
 
+        private static string GetFallbackDecorLabel()
+        {
+            return BuildLocationLabel(GetFallbackLocationName(), Consts.DecorSpritesLabelPostFix);
+        }
+
+        private static string BuildDecorLabel(string locationName)
+        {
+            return BuildLocationLabel(locationName, Consts.DecorSpritesLabelPostFix);
+        }
+
+        private static string BuildLocationLabel(string locationName, string postfix)
+        {
+            if (string.IsNullOrWhiteSpace(locationName))
+            {
+                locationName = GetFallbackLocationName();
+            }
+
+            return $"{locationName} {postfix}";
+        }
+
+        private static string GetFallbackLocationName()
+        {
+            var locationInfos = LevelManager.LocationInfoList?.locations;
+            if (locationInfos != null)
+            {
+                foreach (var info in locationInfos)
+                {
+                    if (!string.IsNullOrWhiteSpace(info?.name))
+                    {
+                        return info.name;
+                    }
+                }
+            }
+
+            return "New York";
+        }
+        private static async Task<List<Sprite>> LoadSpritesByLabelAsync(string label, string description, params string[] additionalFallbackLabels)
+        {
+            var candidates = new List<(string Label, bool IsFallback, string Reason)>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            void AddCandidate(string candidateLabel, bool isFallback, string reason)
+            {
+                if (string.IsNullOrWhiteSpace(candidateLabel))
+                {
+                    return;
+                }
+
+                var trimmed = candidateLabel.Trim();
+                if (seen.Add(trimmed))
+                {
+                    candidates.Add((trimmed, isFallback, reason));
+                }
+            }
+
+            AddCandidate(label, false, "primary");
+
+            if (additionalFallbackLabels is { Length: > 0 })
+            {
+                foreach (var fallbackLabel in additionalFallbackLabels)
+                {
+                    AddCandidate(fallbackLabel, true, "explicit");
+                }
+            }
+
+            var currentLocation = TryGetCurrentLocationName();
+            var fallbackLocation = GetFallbackLocationName();
+
+            if (!string.IsNullOrWhiteSpace(label) &&
+                !string.IsNullOrWhiteSpace(currentLocation) &&
+                !string.IsNullOrWhiteSpace(fallbackLocation) &&
+                !string.Equals(currentLocation, fallbackLocation, StringComparison.OrdinalIgnoreCase))
+            {
+                var locationFallback = LocationAssetFallback.TryBuildFallbackLabel(label, currentLocation, fallbackLocation);
+                AddCandidate(locationFallback, true, "location");
+            }
+
+            foreach (var (candidateLabel, isFallback, reason) in candidates)
+            {
+                var sprites = await TryLoadSpritesForLabel(candidateLabel, description);
+                if (sprites.Count > 0)
+                {
+                    if (isFallback)
+                    {
+                        var locationInfo = currentLocation ?? "unknown";
+                        Debug.LogWarning($"[LevelDataProvider] {description} for location '{locationInfo}' not found. Using fallback label '{candidateLabel}' ({reason}).");
+                    }
+
+                    return sprites;
+                }
+            }
+
+            if (candidates.Count > 1)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Unable to load {description}. Tried labels: {string.Join(", ", candidates.Select(c => c.Label))}.");
+            }
+
+            return new List<Sprite>();
+        }
+
+        private static async Task<List<Sprite>> TryLoadSpritesForLabel(string label, string description)
+        {
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                return new List<Sprite>();
+            }
+
+            AsyncOperationHandle<IList<IResourceLocation>> locationsHandle = default;
+            try
+            {
+                locationsHandle = Addressables.LoadResourceLocationsAsync(label, typeof(Sprite));
+                var locations = await locationsHandle.Task;
+
+                if (locations == null || locations.Count == 0)
+                {
+                    Debug.LogWarning($"[LevelDataProvider] Addressables label '{label}' has no sprite entries ({description}).");
+                    return new List<Sprite>();
+                }
+
+                var loadHandle = Addressables.LoadAssetsAsync<Sprite>(locations, null);
+                try
+                {
+                    var sprites = await loadHandle.Task;
+                    return sprites?.ToList() ?? new List<Sprite>();
+                }
+                finally
+                {
+                    if (loadHandle.IsValid())
+                    {
+                        Addressables.Release(loadHandle);
+                    }
+                }
+            }
+            catch (InvalidKeyException)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Addressables label '{label}' not found for {description}.");
+                return new List<Sprite>();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Failed to load sprites for label '{label}' ({description}): {ex.Message}");
+                return new List<Sprite>();
+            }
+            finally
+            {
+                if (locationsHandle.IsValid())
+                {
+                    Addressables.Release(locationsHandle);
+                }
+            }
+        }
+
+        private static string TryGetCurrentLocationName()
+        {
+            try
+            {
+                return LevelManager.GetLocationName();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Failed to resolve current location name: {ex.Message}");
+                return null;
+            }
+        }
+
+        private static async Task<Sprite> LoadBackgroundSpriteWithFallback(string primaryKey)
+        {
+            var sprite = await TryLoadSpriteByKey(primaryKey, "background sprite");
+            if (sprite != null)
+            {
+                return sprite;
+            }
+
+            var fallbackLocationName = GetFallbackLocationName();
+            var partOfDay = LevelManager.GetCurrentPartOfDay();
+            var fallbackKey = LocationAssetFallback.TryBuildFallbackBackgroundKey(primaryKey, fallbackLocationName, partOfDay);
+
+            if (!string.IsNullOrWhiteSpace(fallbackKey) && !string.Equals(fallbackKey, primaryKey, StringComparison.OrdinalIgnoreCase))
+            {
+                var fallbackSprite = await TryLoadSpriteByKey(fallbackKey, "background sprite fallback");
+                if (fallbackSprite != null)
+                {
+                    Debug.LogWarning($"[LevelDataProvider] Background sprite '{primaryKey}' not found. Using fallback '{fallbackKey}'.");
+                    return fallbackSprite;
+                }
+            }
+
+            return sprite;
+        }
+
+        private static async Task<Sprite> TryLoadSpriteByKey(string key, string description)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return null;
+            }
+
+            try
+            {
+                return await Addressables.LoadAssetAsync<Sprite>(key).Task;
+            }
+            catch (InvalidKeyException)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Addressables key '{key}' not found for {description}.");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Failed to load sprite '{key}' ({description}): {ex.Message}");
+                return null;
+            }
+        }
         /// <summary>
         /// Возвращает список имён (без расширения) всех JSON-файлов с меткой "Levels".
         /// </summary>
@@ -501,3 +735,16 @@ namespace Assets.Scripts.System
 
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

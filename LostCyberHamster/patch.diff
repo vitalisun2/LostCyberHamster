@@ -1,0 +1,75 @@
+diff --git a/Assets/Scripts/System/LevelManagement/LevelDataProvider.cs b/Assets/Scripts/System/LevelManagement/LevelDataProvider.cs
+index 92f8f41..0000000 100644
+--- a/Assets/Scripts/System/LevelManagement/LevelDataProvider.cs
++++ b/Assets/Scripts/System/LevelManagement/LevelDataProvider.cs
+@@
+-        private static async Task LoadDecorSprites(LevelData levelData)
+-        {
+-            levelData.DecorSprites = (await Addressables.LoadAssetsAsync<Sprite>(GetDecorSpritesLabel(), null).Task).ToList();
+-            LevelDataValidator.ValidateDecorSprites(levelData.DecorSprites);
+-        }
++        private static async Task LoadDecorSprites(LevelData levelData)
++        {
++            var primaryLabel = GetDecorSpritesLabel();
++            var decorSprites = await LoadSpritesByLabelAsync(primaryLabel);
++
++            if (!decorSprites.Any())
++            {
++                var fallbackLabel = GetFallbackDecorLabel();
++                if (!string.Equals(fallbackLabel, primaryLabel, StringComparison.OrdinalIgnoreCase))
++                {
++                    var fallbackSprites = await LoadSpritesByLabelAsync(fallbackLabel);
++                    if (fallbackSprites.Any())
++                    {
++                        Debug.LogWarning($"[LevelDataProvider] Decor sprites for location '{LevelManager.GetLocationName()}' not found (label '{primaryLabel}'). Using fallback '{fallbackLabel}'.");
++                        decorSprites = fallbackSprites;
++                    }
++                }
++            }
++
++            levelData.DecorSprites = decorSprites;
++            LevelDataValidator.ValidateDecorSprites(levelData.DecorSprites);
++        }
+@@
+-        private static string GetDecorSpritesLabel()
+-        {
+-            return $"{LevelManager.GetLocationName()} {Consts.DecorSpritesLabelPostFix}";
+-        }
++        private static string GetDecorSpritesLabel()
++        {
++            var locationName = LevelManager.GetLocationName();
++            return BuildDecorLabel(locationName);
++        }
++
++        private static string GetFallbackDecorLabel()
++        {
++            var locationInfos = LevelManager.LocationInfoList?.locations;
++            var defaultLocationName = locationInfos != null && locationInfos.Length > 0
++                ? locationInfos[0]?.name
++                : "New York";
++
++            return BuildDecorLabel(defaultLocationName);
++        }
++
++        private static string BuildDecorLabel(string locationName)
++        {
++            if (string.IsNullOrWhiteSpace(locationName))
++            {
++                locationName = "New York";
++            }
++
++            return $"{locationName} {Consts.DecorSpritesLabelPostFix}";
++        }
++
++        private static async Task<List<Sprite>> LoadSpritesByLabelAsync(string label)
++        {
++            if (string.IsNullOrWhiteSpace(label))
++            {
++                return new List<Sprite>();
++            }
++
++            var handle = Addressables.LoadAssetsAsync<Sprite>(label, null);
++            var sprites = await handle.Task;
++            return sprites?.ToList() ?? new List<Sprite>();
++        }
+*** End Patch

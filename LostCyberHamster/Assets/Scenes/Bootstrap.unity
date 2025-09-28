@@ -793,7 +793,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36fa44045318c7042b09cec6e537e91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameSpeed: 1
+  useDayPartLevelSelection: 1
+  timeScale: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.GameManagerLogic;
+using Assets.Scripts.GameManagerLogic;
 using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
@@ -8,6 +8,11 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using GameManagement;
+using Assets.Scripts;
+using Assets.Scripts.System.FeatureFlags;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 
 namespace Assets.Scripts.System
 {
@@ -15,6 +20,10 @@ namespace Assets.Scripts.System
         Listeners.IGameIntroListener,
         Listeners.IGameFinishListener
     {
+        [SerializeField]
+        [Tooltip("DEV: переключает иерархическую схему выбора уровней по времени суток.")]
+        private bool useDayPartLevelSelection = false;
+
         [SerializeField]
         [Range(0.1f, 2.0f)] // Настройка диапазона для удобства в инспекторе
         private float timeScale = 1.0f; // Скорость рантайма
@@ -28,15 +37,16 @@ namespace Assets.Scripts.System
 
         private async void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else
+            if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
+                return;
             }
+
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+
+            LevelCatalogRuntimeConfigurator.SetInspectorOverride(useDayPartLevelSelection);
 
             // Устанавливаем начальную скорость игры
             Time.timeScale = 1f;
@@ -211,3 +221,4 @@ namespace Assets.Scripts.System
 
     }
 }
+

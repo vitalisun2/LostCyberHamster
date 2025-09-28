@@ -24,6 +24,10 @@ namespace GameManagement
         /// Включена ли вибрация.
         /// </summary>
         public bool EnableVibration = true;
-    }
 
+        /// <summary>
+        /// Флаг включения уровней по времени суток.
+        /// </summary>
+        public bool EnableDayPartLevels;
+    }
 }

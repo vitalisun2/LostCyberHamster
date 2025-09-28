@@ -1,7 +1,8 @@
-using Unity.Services.Core;
-using Unity.Services.Analytics;
-using UnityEngine;
+using Assets.Scripts.System.FeatureFlags;
 using System.Threading.Tasks;
+using Unity.Services.Analytics;
+using Unity.Services.Core;
+using UnityEngine;
 using Vues.GameCore;
 
 public static class AnalyticsManager
@@ -42,6 +43,7 @@ public static class AnalyticsManager
         GameEventsManager.OnLevelStarted += TrackLevelStart;
         GameEventsManager.OnLevelCompleted += TrackLevelComplete;
         GameEventsManager.OnSkinPurchased += TrackSkinPurchased;
+        DayPartLevelsFeature.OnFeatureChanged += TrackFeatureFlagChanged;
     }
 
     /// <summary>
@@ -52,12 +54,12 @@ public static class AnalyticsManager
         GameEventsManager.OnLevelStarted -= TrackLevelStart;
         GameEventsManager.OnLevelCompleted -= TrackLevelComplete;
         GameEventsManager.OnSkinPurchased -= TrackSkinPurchased;
+        DayPartLevelsFeature.OnFeatureChanged -= TrackFeatureFlagChanged;
     }
 
     /// <summary>
     /// Tracks the skin purchased event.
     /// </summary>
-    /// <param name="skinId">The name or ID of the skin.</param>
     private static void TrackSkinPurchased(int skinId, ResourceType resourceType, int amount)
     {
         if (!_initialized) return;
@@ -69,7 +71,6 @@ public static class AnalyticsManager
     /// <summary>
     /// Tracks the level start event.
     /// </summary>
-    /// <param name="levelNumber">The number of the level.</param>
     private static void TrackLevelStart(int levelNumber)
     {
         if (!_initialized) return;
@@ -81,15 +82,21 @@ public static class AnalyticsManager
     /// <summary>
     /// Tracks the level completion event.
     /// </summary>
-    /// <param name="levelNumber">The number of the level.</param>
-    /// <param name="completionTime">The time taken to complete the level.</param>
-    /// <param name="success">Whether the level was successfully completed.</param>
     private static void TrackLevelComplete(int levelNumber, int stars)
     {
         if (!_initialized) return;
 
         var levelCompleteEvent = new LevelCompleteEvent(levelNumber, stars);
         AnalyticsService.Instance.RecordEvent(levelCompleteEvent);
+    }
+
+    private static void TrackFeatureFlagChanged(bool enabled)
+    {
+        if (!_initialized) return;
+
+        var featureEvent = new FeatureFlagChangedEvent("day_part_levels", enabled);
+        AnalyticsService.Instance.RecordEvent(featureEvent);
+        Debug.Log($"[Analytics] Recorded feature flag change: day_part_levels={(enabled ? "ENABLED" : "DISABLED")}");
     }
 
     /// <summary>

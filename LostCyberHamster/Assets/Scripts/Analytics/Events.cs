@@ -25,3 +25,12 @@ public class SkinPurchasedEvent : Event
         SetParameter("skin_name", skinName);
     }
 }
+
+public class FeatureFlagChangedEvent : Event
+{
+    public FeatureFlagChangedEvent(string flagName, bool enabled) : base("feature_flag_change")
+    {
+        SetParameter("flag_name", flagName);
+        SetParameter("flag_enabled", enabled);
+    }
+}

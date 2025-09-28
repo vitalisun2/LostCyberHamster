@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.System;
@@ -22,37 +23,171 @@ namespace LostCyberHamster.UI
         private VisualElement _starsContainer => this.Q<VisualElement>("level-item__stars-container");
         private VisualElement _lock => this.Q<VisualElement>("level-item__lock");
 
+        private readonly List<VisualElement> _starElements = new();
+        private bool _templateLoaded;
+        private Sprite _fullStarSprite;
+
         public string LevelName { get; private set; }
 
-        public bool IsLocked {get; private set;}
+        public bool IsLocked { get; private set; }
 
         public LevelItem()
         {
+            EnsureTemplateLoaded();
         }
 
-        public LevelItem(PartOfDayEnum partOfDay, int locationName)
+        public LevelItem(PartOfDayEnum partOfDay, int locationName) : this()
         {
-            AddressableExtentions.LoadAssetSync<VisualTreeAsset>("LevelItem.uxml").CloneTree(this);
-            var fullstar = AddressableExtentions.LoadAssetSync<Sprite>("star");
-            _name.text = LocalizationManager.GetLocalizedString(partOfDay.ToString());
-            var image = AddressableExtentions.LoadAssetSync<Sprite>($"{partOfDay.ToString().ToLower()}_preview");
-            _image.style.backgroundImage = new StyleBackground(image.texture);
-            LevelName = LevelManager.GetLevelName(locationName, partOfDay);
-            if (LevelManager.IsLevelOpen(LevelName))
+            var partKey = partOfDay.ToString();
+            var displayName = TryLocalize(partKey, LocalizationManager.GetLocalizedString(partKey));
+            var previewAddress = GetDefaultPreviewAddress(partKey);
+            SetupCard(displayName, previewAddress, LevelManager.GetLevelName(locationName, partKey));
+        }
+
+        public void ConfigureForPart(string partKey, string displayName, string previewAddress, string levelKeyForProgress)
+        {
+            EnsureTemplateLoaded();
+            var resolvedDisplay = TryLocalize(partKey, displayName);
+            var resolvedPreview = string.IsNullOrWhiteSpace(previewAddress)
+                ? GetDefaultPreviewAddress(partKey)
+                : previewAddress;
+            SetupCard(resolvedDisplay, resolvedPreview, levelKeyForProgress);
+        }
+        public void ConfigureForLevel(LevelSelectionModel.LevelReference level, int displayIndex, string partKey, string previewAddress)
+        {
+            EnsureTemplateLoaded();
+            var label = displayIndex > 0 ? displayIndex.ToString() : level.Key;
+            var resolvedPreview = string.IsNullOrWhiteSpace(previewAddress)
+                ? GetDefaultPreviewAddress(partKey)
+                : previewAddress;
+            SetupCard(label, resolvedPreview, level.Key);
+        }
+
+
+        private void EnsureTemplateLoaded()
+        {
+            if (_templateLoaded)
             {
-                var stars = LevelManager.GetLevelStars(LevelName);
-                for(int i=1; i<=stars; i++)
+                return;
+            }
+
+            AddressableExtentions.LoadAssetSync<VisualTreeAsset>("LevelItem.uxml").CloneTree(this);
+            _fullStarSprite = AddressableExtentions.LoadAssetSync<Sprite>("star");
+
+            _starElements.Clear();
+            if (_starsContainer != null)
+            {
+                for (int i = 1; i <= 3; i++)
                 {
-                    _starsContainer.Q($"star{i}").style.backgroundImage = fullstar.texture;
+                    var star = _starsContainer.Q<VisualElement>($"star{i}");
+                    if (star != null)
+                    {
+                        _starElements.Add(star);
+                    }
                 }
+            }
+
+            _templateLoaded = true;
+        }
+
+        private void SetupCard(string displayName, string previewAddress, string levelKey)
+        {
+            if (_name != null)
+            {
+                _name.text = string.IsNullOrWhiteSpace(displayName) ? levelKey : displayName;
+            }
+
+            if (_image != null && !string.IsNullOrWhiteSpace(previewAddress))
+            {
+                try
+                {
+                    var sprite = AddressableExtentions.LoadAssetSync<Sprite>(previewAddress);
+                    if (sprite != null)
+                    {
+                        _image.style.backgroundImage = new StyleBackground(sprite.texture);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[LevelItem] Failed to load preview '{previewAddress}': {ex.Message}");
+                }
+            }
+
+            ApplyProgressState(levelKey);
+        }
+
+        private void ApplyProgressState(string levelKey)
+        {
+            LevelName = levelKey;
+
+            if (!string.IsNullOrEmpty(levelKey) && LevelManager.IsLevelOpen(levelKey))
+            {
+                var stars = LevelManager.GetLevelStars(levelKey);
+                for (int i = 0; i < _starElements.Count; i++)
+                {
+                    if (i < stars && _fullStarSprite != null)
+                    {
+                        _starElements[i].style.backgroundImage = new StyleBackground(_fullStarSprite.texture);
+                    }
+                }
+
+                if (_lock != null)
+                {
+                    _lock.style.display = DisplayStyle.None;
+                }
+
+                if (_starsContainer != null)
+                {
+                    _starsContainer.style.display = DisplayStyle.Flex;
+                }
+
                 IsLocked = false;
             }
             else
             {
-                _lock.style.display = DisplayStyle.Flex;
-                _starsContainer.style.display = DisplayStyle.None;
+                if (_lock != null)
+                {
+                    _lock.style.display = DisplayStyle.Flex;
+                }
+
+                if (_starsContainer != null)
+                {
+                    _starsContainer.style.display = DisplayStyle.None;
+                }
+
                 IsLocked = true;
             }
         }
+
+        private static string TryLocalize(string key, string fallback)
+        {
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                try
+                {
+                    var localized = LocalizationManager.GetLocalizedString(key);
+                    if (!string.IsNullOrWhiteSpace(localized) && !string.Equals(localized, key, StringComparison.Ordinal))
+                    {
+                        return localized;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return string.IsNullOrWhiteSpace(fallback) ? key : fallback;
+        }
+
+        private static string GetDefaultPreviewAddress(string partKey)
+        {
+            if (string.IsNullOrWhiteSpace(partKey))
+            {
+                return string.Empty;
+            }
+
+            return partKey.ToLowerInvariant() + "_preview";
+        }
     }
 }
+

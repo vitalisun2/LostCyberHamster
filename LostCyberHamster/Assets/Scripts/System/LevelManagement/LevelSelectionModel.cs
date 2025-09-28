@@ -1,8 +1,10 @@
+using Assets.Scripts.System.FeatureFlags;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.System.FeatureFlags;
 
 namespace Assets.Scripts.System
 {
@@ -55,6 +57,13 @@ namespace Assets.Scripts.System
 
         private static LevelSelectionMode DetermineMode(LevelSelectionMode preferredMode)
         {
+            DayPartLevelsFeature.EnsureInitialised();
+
+            if (DayPartLevelsFeature.IsEnabled)
+            {
+                return LevelSelectionMode.Hierarchical;
+            }
+
             var hierarchicalAvailable = LevelCatalogService.Hierarchical is not null;
             if (preferredMode == LevelSelectionMode.Hierarchical && hierarchicalAvailable)
             {
@@ -170,57 +179,57 @@ namespace Assets.Scripts.System
             }
 
             return partKey;
-        }
-    }
-
-    public sealed class LocationView
-    {
-        public LocationView(int index, string key, string displayName, string imageAddress, IReadOnlyList<PartView> parts)
+        }        public sealed class LocationView
         {
-            Index = index;
-            Key = key;
-            DisplayName = displayName;
-            ImageAddress = imageAddress;
-            Parts = parts;
+            public LocationView(int index, string key, string displayName, string imageAddress, IReadOnlyList<PartView> parts)
+            {
+                Index = index;
+                Key = key;
+                DisplayName = displayName;
+                ImageAddress = imageAddress;
+                Parts = parts;
+            }
+
+            public int Index { get; }
+
+            public string Key { get; }
+
+            public string DisplayName { get; }
+
+            public string ImageAddress { get; }
+
+            public IReadOnlyList<PartView> Parts { get; }
         }
 
-        public int Index { get; }
-
-        public string Key { get; }
-
-        public string DisplayName { get; }
-
-        public string ImageAddress { get; }
-
-        public IReadOnlyList<PartView> Parts { get; }
-    }
-
-    public sealed class PartView
-    {
-        public PartView(string key, string displayName, IReadOnlyList<LevelReference> levels)
+        public sealed class PartView
         {
-            Key = key;
-            DisplayName = displayName;
-            Levels = levels;
+            public PartView(string key, string displayName, IReadOnlyList<LevelReference> levels)
+            {
+                Key = key;
+                DisplayName = displayName;
+                Levels = levels;
+            }
+
+            public string Key { get; }
+
+            public string DisplayName { get; }
+
+            public IReadOnlyList<LevelReference> Levels { get; }
         }
 
-        public string Key { get; }
-
-        public string DisplayName { get; }
-
-        public IReadOnlyList<LevelReference> Levels { get; }
-    }
-
-    public sealed class LevelReference
-    {
-        public LevelReference(string key, string address)
+        public sealed class LevelReference
         {
-            Key = key;
-            Address = address;
+            public LevelReference(string key, string address)
+            {
+                Key = key;
+                Address = address;
+            }
+
+            public string Key { get; }
+
+            public string Address { get; }
         }
-
-        public string Key { get; }
-
-        public string Address { get; }
     }
 }
+
+
