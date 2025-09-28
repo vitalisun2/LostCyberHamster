@@ -9,10 +9,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using GameManagement;
 using Assets.Scripts;
-using Assets.Scripts.System.FeatureFlags;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.ResourceLocations;
+using UnityEngine.Serialization;
 
 namespace Assets.Scripts.System
 {
@@ -20,13 +17,10 @@ namespace Assets.Scripts.System
         Listeners.IGameIntroListener,
         Listeners.IGameFinishListener
     {
-        [SerializeField]
-        [Tooltip("DEV: переключает иерархическую схему выбора уровней по времени суток.")]
-        private bool useDayPartLevelSelection = false;
-
-        [SerializeField]
-        [Range(0.1f, 2.0f)] // Настройка диапазона для удобства в инспекторе
-        private float timeScale = 1.0f; // Скорость рантайма
+    [SerializeField]
+    [FormerlySerializedAs("timeScale")]
+    [Range(0.1f, 2.0f)] // Настройка диапазона для удобства в инспекторе
+    private float _timeScale = 1.0f; // Скорость рантайма
 
         public LevelData LevelData { get; private set; } = new();
         public bool IsLevelLoaded { get; private set; }
@@ -35,7 +29,7 @@ namespace Assets.Scripts.System
 
         private Intro _introComponent;
 
-        private async void Awake()
+    private void Awake()
         {
             if (Instance != null && Instance != this)
             {
@@ -45,8 +39,6 @@ namespace Assets.Scripts.System
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
-
-            LevelCatalogRuntimeConfigurator.SetInspectorOverride(useDayPartLevelSelection);
 
             // Устанавливаем начальную скорость игры
             Time.timeScale = 1f;
@@ -58,7 +50,7 @@ namespace Assets.Scripts.System
             if (Instance?.LevelData?.GameManager == null) return;
 
             // Обновляем скорость игры, если изменено значение в инспекторе
-            var newTs = timeScale * Instance.LevelData.GameManager.TimeScaleCoefficient;
+            var newTs = _timeScale * Instance.LevelData.GameManager.TimeScaleCoefficient;
             if (!Mathf.Approximately(Time.timeScale, newTs))
                 Time.timeScale = newTs;
 

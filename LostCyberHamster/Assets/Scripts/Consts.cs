@@ -154,7 +154,6 @@ namespace Assets.Scripts
         public const string CollectableSpritesLabel = "collectable sprites";
 
         public const string Locations = "locations";
-        public const string Levels = "levels";
         public const string LevelsDaypart = "levels_daypart";
 
         public const float GapBetweenTiles = 0.2f;

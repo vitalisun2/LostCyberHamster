@@ -5,6 +5,8 @@ using Assets.Scripts.Common.Models;
 using Assets.Scripts.System;
 using Vues.GameCore;
 
+#nullable enable
+
 namespace GameManagement.Progress
 {
     [Serializable]
@@ -273,59 +275,6 @@ namespace GameManagement.Progress
                     }
 
                     partIndex++;
-                }
-            }
-
-            return entries.Count == 0
-                ? Empty
-                : new LevelProgressSnapshot(entries);
-        }
-
-        public static LevelProgressSnapshot CreateLegacySkeleton(
-            int locationCount,
-            int levelsPerLocation,
-            Func<int, string>? locationIdResolver = null,
-            Func<int, string>? partOfDayIdResolver = null,
-            bool unlockFirstLevel = true)
-        {
-            if (locationCount < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(locationCount));
-            }
-
-            if (levelsPerLocation <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(levelsPerLocation));
-            }
-
-            if (locationIdResolver == null)
-            {
-                locationIdResolver = index => $"location_{index:D2}";
-            }
-
-            if (partOfDayIdResolver == null)
-            {
-                partOfDayIdResolver = order => ((PartOfDayEnum)(order + 1)).ToString();
-            }
-
-            var entries = new Dictionary<LevelProgressKey, LevelProgressEntry>();
-            bool firstUnlockedAssigned = !unlockFirstLevel;
-
-            for (int locationIndex = 0; locationIndex < locationCount; locationIndex++)
-            {
-                var locationId = locationIdResolver(locationIndex);
-
-                for (int partIndex = 0; partIndex < levelsPerLocation; partIndex++)
-                {
-                    var partId = partOfDayIdResolver(partIndex);
-                    var key = new LevelProgressKey(locationId, partId, 0);
-                    var isUnlocked = !firstUnlockedAssigned;
-                    if (isUnlocked)
-                    {
-                        firstUnlockedAssigned = true;
-                    }
-
-                    entries[key] = new LevelProgressEntry(key, isUnlocked, 0);
                 }
             }
 

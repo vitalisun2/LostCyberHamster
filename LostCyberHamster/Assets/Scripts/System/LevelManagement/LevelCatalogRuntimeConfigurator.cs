@@ -17,22 +17,14 @@ namespace Assets.Scripts.System
     /// </summary>
     public static class LevelCatalogRuntimeConfigurator
     {
-        private static bool _forceReload;
-
-        /// <summary>
-        /// Legacy inspector hook – now simply marks the catalog for rebuild on the next load cycle.
-        /// </summary>
-        public static void SetInspectorOverride(bool _)
-        {
-            _forceReload = true;
-        }
+        private static bool _reloadRequested;
 
         /// <summary>
         /// Explicitly requests catalog rebuild.
         /// </summary>
         public static void RequestReload()
         {
-            _forceReload = true;
+            _reloadRequested = true;
         }
 
         /// <summary>
@@ -40,7 +32,7 @@ namespace Assets.Scripts.System
         /// </summary>
         public static async Task ApplyInspectorOverrideAsync(bool forceRebuild = false)
         {
-            if (!forceRebuild && !_forceReload && LevelCatalogService.HasCatalog)
+            if (!forceRebuild && !_reloadRequested && LevelCatalogService.HasCatalog)
             {
                 return;
             }
@@ -53,7 +45,7 @@ namespace Assets.Scripts.System
             }
 
             LevelCatalogService.Configure(catalog);
-            _forceReload = false;
+            _reloadRequested = false;
         }
 
         private static async Task<HierarchicalLevelCatalog?> BuildCatalogAsync()

@@ -268,7 +268,7 @@ namespace Assets.Scripts.System
             GameEventsManager.OnLevelCompleted -= HandleLevelCompleted;
         }
 
-        private static void HandleLevelCompleted(int legacyLevelNumber, int stars)
+    private static void HandleLevelCompleted(int _, int stars)
         {
             var playerData = GameDataManager.PlayerData;
             if (playerData == null)
