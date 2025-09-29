@@ -46,6 +46,10 @@ public class LevelTilemapEditor : EditorWindow
     private Pattern _currentPattern;
     private bool _isCollectableOnRoof;
     private bool _isTilemapBulkOperation;
+    private PartOfDayEnum _selectedDaypart = PartOfDayEnum.Morning;
+    private List<LevelFileDescriptor> _allLevelDescriptors = new();
+    private List<LevelFileDescriptor> _visibleLevelDescriptors = new();
+    private LevelFileDescriptor? _selectedLevelDescriptor;
 
     private string _levelsDirectory;
     private string _levelDesignTemplatesDirectory;
@@ -231,17 +235,29 @@ public class LevelTilemapEditor : EditorWindow
             backgroundTexture = _uiManager.BackGroundDropdown.value
         };
 
+        string createdLevelPath = null;
+
         if(_uiManager.IsTemplateMode)
         {
-            LevelDataManager.CreateNewTemplate(newLevelInfo, _uiManager.TemplateLevelName, _levelsDirectory, _spritesNames);
+            createdLevelPath = LevelDataManager.CreateNewTemplate(newLevelInfo, _uiManager.TemplateLevelName, _levelsDirectory, _spritesNames);
         }
         else
         {
-            LevelDataManager.CreateNewLevel(newLevelInfo, _levelsDirectory, _spritesNames);
+            createdLevelPath = LevelDataManager.CreateNewLevel(newLevelInfo, _levelsDirectory, _spritesNames);
         }
 
        
         AssetDatabase.Refresh();
+        RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
+
+        if (!string.IsNullOrEmpty(createdLevelPath))
+        {
+            var index = _visibleLevelDescriptors.FindIndex(d => string.Equals(d.AbsolutePath, createdLevelPath, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0)
+            {
+                _uiManager.SelectFileByIndex(index);
+            }
+        }
     }
 
     /// <summary>
@@ -261,18 +277,98 @@ public class LevelTilemapEditor : EditorWindow
 
         _currentLocationName = newValue;
 
+        var isTemplateLocation = string.Equals(newValue, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+        if (!isTemplateLocation)
+        {
+            _selectedDaypart = PartOfDayEnum.Morning;
+        }
+
+        _uiManager.SetDaypartSelectorVisible(!isTemplateLocation);
+        if (!isTemplateLocation)
+        {
+            _uiManager.SetSelectedDaypart(_selectedDaypart);
+        }
+
+        _selectedLevelDescriptor = null;
+
         _levelsDirectory = Path.Combine(Consts.LocationsPath, newValue, "levels");
         UpdateSpritesInfoInCurrentLocation(newValue);
 
         UpdateBackgroundDropdown();
-        var levelFiles = LevelDataManager.GetLevelFiles(_levelsDirectory, _levelsExt);
-        _uiManager.UpdateFilesList(levelFiles);
 
-        // Автоматически выбираем первый файл, если он есть
-        if (levelFiles.Count > 0)
+        RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: true);
+    }
+
+    private void HandleDaypartChanged(PartOfDayEnum newDaypart)
+    {
+        if (_selectedDaypart == newDaypart)
+        {
+            return;
+        }
+
+        _selectedDaypart = newDaypart;
+        _selectedLevelDescriptor = null;
+
+        RefreshLevelFilesList(reloadFromDisk: false, autoSelectFirst: true);
+    }
+
+    private void RefreshLevelFilesList(bool reloadFromDisk = false, bool autoSelectFirst = false)
+    {
+        if (string.IsNullOrEmpty(_levelsDirectory))
+        {
+            _allLevelDescriptors.Clear();
+            _visibleLevelDescriptors.Clear();
+            _uiManager.UpdateFilesList(_visibleLevelDescriptors);
+            return;
+        }
+
+        if (reloadFromDisk || _allLevelDescriptors.Count == 0)
+        {
+            _allLevelDescriptors = LevelDataManager
+                .GetLevelFileDescriptors(_levelsDirectory, _levelsExt)
+                .ToList();
+        }
+
+        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+
+        _visibleLevelDescriptors = isTemplateLocation
+            ? new List<LevelFileDescriptor>(_allLevelDescriptors)
+            : _allLevelDescriptors
+                .Where(descriptor => descriptor.PartOfDay.HasValue && descriptor.PartOfDay.Value == _selectedDaypart)
+                .ToList();
+
+        _uiManager.UpdateFilesList(_visibleLevelDescriptors);
+
+        if (_visibleLevelDescriptors.Count == 0)
+        {
+            if (reloadFromDisk)
+            {
+                _selectedFile = null;
+                _currentLevelInfo = null;
+                _selectedPatternIndex = -1;
+                _selectedLevelDescriptor = null;
+            }
+
+            return;
+        }
+
+        if (autoSelectFirst)
         {
             _uiManager.SelectFirstFile();
+            return;
         }
+
+        if (_selectedLevelDescriptor.HasValue)
+        {
+            var index = _visibleLevelDescriptors.FindIndex(descriptor => descriptor.Equals(_selectedLevelDescriptor.Value));
+            if (index >= 0)
+            {
+                _uiManager.SelectFileByIndex(index);
+                return;
+            }
+        }
+
+        _uiManager.SelectFirstFile();
     }
 
     /// <summary>
@@ -295,11 +391,12 @@ public class LevelTilemapEditor : EditorWindow
     /// <summary>
     /// Обработка выбора файла уровня из списка.
     /// </summary>
-    private void HandleFileSelected(string selectedFile)
+    private void HandleFileSelected(LevelFileDescriptor selectedDescriptor)
     {
         SpriteLoader.ReleaseSpritesAndClearCache();
 
-        _selectedFile = selectedFile;
+        _selectedLevelDescriptor = selectedDescriptor;
+        _selectedFile = selectedDescriptor.AbsolutePath;
 
         if (string.IsNullOrEmpty(_selectedFile))
         {
@@ -674,6 +771,10 @@ public class LevelTilemapEditor : EditorWindow
         _selectedPatternIndex = -1;
         _currentPattern = null;
         _isCollectableOnRoof = false;
+        _selectedLevelDescriptor = null;
+        _allLevelDescriptors.Clear();
+        _visibleLevelDescriptors.Clear();
+        _selectedDaypart = PartOfDayEnum.Morning;
 
         SpriteLoader.ReleaseSpritesAndClearCache();
 
@@ -784,6 +885,7 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.OnPatternDurationChanged += HandlePatternDurationChanged;
         _uiManager.OnPatternNameChanged += HandlePatternNameChanged;
         _uiManager.OnPatternDescriptionChanged += HandlePatternDescriptionChanged;
+        _uiManager.OnDaypartChanged += HandleDaypartChanged;
 
 
         Tilemap.tilemapTileChanged += OnTileChanged;
@@ -806,6 +908,7 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.OnPatternDurationChanged -= HandlePatternDurationChanged;
         _uiManager.OnPatternNameChanged -= HandlePatternNameChanged;
         _uiManager.OnPatternDescriptionChanged -= HandlePatternDescriptionChanged;
+        _uiManager.OnDaypartChanged -= HandleDaypartChanged;
 
 
         Tilemap.tilemapTileChanged -= OnTileChanged;

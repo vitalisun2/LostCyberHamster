@@ -4,7 +4,7 @@
     "patterns": [
         {
             "name": "easy_run",
-            "desсription": "",
+            "desсription": "прыжки между крышами с широкими промежутками (сложные); препятствия на земле мотивируют держаться наверху.",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",

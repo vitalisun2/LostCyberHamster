@@ -8,8 +8,14 @@
     <ui:VisualElement name="template-level-name-parent" style="flex-grow: 1; flex-direction: row; max-height: 60px; align-items: flex-start; justify-content: space-around; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; min-height: 30px; display: none;">
         <ui:TextField label="Level Name" name="template-level-name" enabled="true" hide-placeholder-on-focus="false" style="justify-content: space-around; align-items: flex-end; align-self: auto; display: flex; min-width: 70%;" />
     </ui:VisualElement>
-    <ui:VisualElement style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 120px; min-height: 50px; height: auto;">
-        <ui:Label text="files" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+    <ui:VisualElement style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 140px; min-height: 50px; height: auto;">
+        <ui:Label text="files" style="margin-top: 0; margin-right: 0; margin-bottom: 4px; margin-left: 0;" />
+        <ui:RadioButtonGroup name="daypart-radio-group" style="display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: flex-start; column-gap: 12px; margin-bottom: 6px;">
+            <ui:RadioButton text="Утро" value="true" name="daypart-morning" style="flex-grow: 0;" />
+            <ui:RadioButton text="День" name="daypart-afternoon" style="flex-grow: 0;" />
+            <ui:RadioButton text="Вечер" name="daypart-evening" style="flex-grow: 0;" />
+            <ui:RadioButton text="Ночь" name="daypart-night" style="flex-grow: 0;" />
+        </ui:RadioButtonGroup>
         <ui:ListView name="files-list-view" style="min-height: 30px; max-height: 100px; height: auto;" />
     </ui:VisualElement>
     <ui:VisualElement style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 120px; min-height: 50px; height: auto;">

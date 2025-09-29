@@ -31,6 +31,14 @@ public class LevelTilemapUi
     private TextField _templateLevelNameField;  // #template-level-name
     private TextField _patternNameField;
     private TextField _patternDescriptionField;
+    private RadioButtonGroup _daypartRadioGroup;
+    private readonly PartOfDayEnum[] _daypartOrder = new[]
+    {
+        PartOfDayEnum.Morning,
+        PartOfDayEnum.Afternoon,
+        PartOfDayEnum.Evening,
+        PartOfDayEnum.Night
+    };
 
     public DropdownField BackGroundDropdown => _backGroundDropdown;
     private const string _collectableSpritesTag = "collectable sprites";
@@ -44,7 +52,7 @@ public class LevelTilemapUi
     public event Action OnSaveLevelClicked;
     public event Action<string> OnLocationChanged;
     public event Action<string> OnSpriteSelected;
-    public event Action<string> OnFileSelected;
+    public event Action<LevelFileDescriptor> OnFileSelected;
     public event Action<int> OnPatternSelected;
     public event Action<bool> OnIsCollectableOnRoofToggleChanged;
     public event Action OnResetClicked;
@@ -52,6 +60,7 @@ public class LevelTilemapUi
     public event Action<float> OnPatternDurationChanged;
     public event Action<string> OnPatternNameChanged;
     public event Action<string> OnPatternDescriptionChanged;
+    public event Action<PartOfDayEnum> OnDaypartChanged;
 
     public LevelTilemapUi(VisualElement root,
         string opeLocation)
@@ -67,6 +76,7 @@ public class LevelTilemapUi
         InitializeToggles();
         InitializeFloatFields();
         InitializeTextFields();
+        InitializeDaypartSelector();
     }
 
     private void SetElements(VisualElement root)
@@ -87,6 +97,7 @@ public class LevelTilemapUi
         _templateLevelNameField = root.Q<TextField>("template-level-name");
         _patternNameField = root.Q<TextField>("selected-pattern-name");
         _patternDescriptionField = root.Q<TextField>("selected-pattern-description");
+        _daypartRadioGroup = root.Q<RadioButtonGroup>("daypart-radio-group");
 
 
     }
@@ -197,12 +208,94 @@ public class LevelTilemapUi
 
     }
 
-    private void OnFileSelectedInternal(IEnumerable<object> items)
+    private void InitializeDaypartSelector()
     {
-        var file = items.FirstOrDefault() as string;
-        OnFileSelected?.Invoke(file);
+        if (_daypartRadioGroup == null)
+        {
+            Debug.LogWarning("RadioButtonGroup 'daypart-radio-group' not found in UXML.");
+            return;
+        }
+
+        _daypartRadioGroup.style.flexDirection = FlexDirection.Row;
+        _daypartRadioGroup.style.flexWrap = Wrap.NoWrap;
+        _daypartRadioGroup.style.alignItems = Align.Center;
+        _daypartRadioGroup.style.justifyContent = Justify.FlexStart;
+
+        var daypartContainer = _daypartRadioGroup.contentContainer;
+        daypartContainer.style.flexDirection = FlexDirection.Row;
+        daypartContainer.style.flexWrap = Wrap.NoWrap;
+        daypartContainer.style.alignItems = Align.Center;
+        daypartContainer.style.justifyContent = Justify.FlexStart;
+
+        foreach (var child in _daypartRadioGroup.Children())
+        {
+            if (child is RadioButton radio)
+            {
+                radio.style.flexGrow = 0f;
+                radio.style.width = StyleKeyword.Auto;
+                radio.style.minWidth = StyleKeyword.Auto;
+                radio.style.maxWidth = StyleKeyword.Auto;
+                radio.style.marginRight = 12f;
+                radio.style.marginBottom = 0f;
+            }
+        }
+
+        _daypartRadioGroup.RegisterValueChangedCallback(evt =>
+        {
+            var mappedDaypart = GetDaypartForIndex(evt.newValue);
+            if (mappedDaypart.HasValue)
+            {
+                OnDaypartChanged?.Invoke(mappedDaypart.Value);
+            }
+        });
+
+        SetSelectedDaypart(PartOfDayEnum.Morning);
     }
 
+    private PartOfDayEnum? GetDaypartForIndex(int index)
+    {
+        if (index < 0 || index >= _daypartOrder.Length)
+        {
+            return null;
+        }
+
+        return _daypartOrder[index];
+    }
+
+    private int GetIndexForDaypart(PartOfDayEnum daypart)
+    {
+        for (int i = 0; i < _daypartOrder.Length; i++)
+        {
+            if (_daypartOrder[i] == daypart)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private void OnFileSelectedInternal(IEnumerable<object> _)
+    {
+        if (_filesList == null)
+        {
+            return;
+        }
+
+        _filesList.schedule.Execute(() =>
+        {
+            var index = _filesList.selectedIndex;
+            if (index < 0)
+            {
+                return;
+            }
+
+            if (_filesList.itemsSource is IList source && index < source.Count && source[index] is LevelFileDescriptor descriptor)
+            {
+                OnFileSelected?.Invoke(descriptor);
+            }
+        }).ExecuteLater(0);
+    }
     private void OnPatternSelectedInternal(IEnumerable<object> selectedItems)
     {
         var item = selectedItems.FirstOrDefault() as int? ?? -1;
@@ -342,10 +435,44 @@ public class LevelTilemapUi
         _spritesScrollView.MarkDirtyRepaint();
     }
 
-    public void UpdateFilesList(IEnumerable<string> files)
+    public void UpdateFilesList(IEnumerable<LevelFileDescriptor> files)
     {
-        _filesList.itemsSource = files.ToList();
+        var items = files?.ToList() ?? new List<LevelFileDescriptor>();
+
+        _filesList.selectionChanged -= OnFileSelectedInternal;
+        _filesList.ClearSelection();
+
+        _filesList.itemsSource = items;
         _filesList.RefreshItems();
+
+        _filesList.selectionChanged += OnFileSelectedInternal;
+    }
+
+    public void SetSelectedDaypart(PartOfDayEnum daypart)
+    {
+        if (_daypartRadioGroup == null)
+        {
+            return;
+        }
+
+        var index = GetIndexForDaypart(daypart);
+        if (index < 0)
+        {
+            Debug.LogWarning($"Unsupported daypart '{daypart}' requested for selector.");
+            return;
+        }
+
+        _daypartRadioGroup.SetValueWithoutNotify(index);
+    }
+
+    public void SetDaypartSelectorVisible(bool isVisible)
+    {
+        if (_daypartRadioGroup == null)
+        {
+            return;
+        }
+
+        _daypartRadioGroup.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     public void UpdatePatternsList(List<string> patternNames, int selectedIndex = 0)
@@ -405,11 +532,29 @@ public class LevelTilemapUi
 
     public void SelectFirstFile()
     {
-        if (_filesList.itemsSource != null && _filesList.itemsSource.Count > 0)
+        if (_filesList.itemsSource is List<LevelFileDescriptor> descriptors && descriptors.Count > 0)
         {
             _filesList.selectedIndex = 0;
-            OnFileSelected?.Invoke((_filesList.itemsSource as List<string>)?[0]);
         }
+    }
+
+    public void SelectFileByIndex(int index)
+    {
+        if (_filesList.itemsSource == null)
+        {
+            return;
+        }
+
+        if (index < 0 || index >= _filesList.itemsSource.Count)
+        {
+            return;
+        }
+
+        _filesList.selectionChanged -= OnFileSelectedInternal;
+        _filesList.ClearSelection();
+        _filesList.selectionChanged += OnFileSelectedInternal;
+
+        _filesList.selectedIndex = index;
     }
 
     public void SelectFirstPattern()
