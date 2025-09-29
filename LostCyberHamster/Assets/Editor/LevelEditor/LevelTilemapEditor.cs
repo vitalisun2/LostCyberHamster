@@ -236,10 +236,18 @@ public class LevelTilemapEditor : EditorWindow
         };
 
         string createdLevelPath = null;
+        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
 
-        if(_uiManager.IsTemplateMode)
+        if (isTemplateLocation)
         {
-            createdLevelPath = LevelDataManager.CreateNewTemplate(newLevelInfo, _uiManager.TemplateLevelName, _levelsDirectory, _spritesNames);
+            var templateName = _uiManager.TemplateLevelName;
+            if (string.IsNullOrWhiteSpace(templateName))
+            {
+                EditorUtility.DisplayDialog("Template name required", "Введите имя шаблона перед созданием файла.", "OK");
+                return;
+            }
+
+            createdLevelPath = LevelDataManager.CreateNewTemplate(newLevelInfo, templateName, _levelsDirectory, _spritesNames);
         }
         else
         {
@@ -278,14 +286,16 @@ public class LevelTilemapEditor : EditorWindow
         _currentLocationName = newValue;
 
         var isTemplateLocation = string.Equals(newValue, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-        if (!isTemplateLocation)
+        if (isTemplateLocation)
+        {
+            _uiManager.SetTemplateNameFieldVisible(true);
+            _uiManager.SetDaypartSelectorVisible(false);
+        }
+        else
         {
             _selectedDaypart = PartOfDayEnum.Morning;
-        }
-
-        _uiManager.SetDaypartSelectorVisible(!isTemplateLocation);
-        if (!isTemplateLocation)
-        {
+            _uiManager.SetTemplateNameFieldVisible(false);
+            _uiManager.SetDaypartSelectorVisible(true);
             _uiManager.SetSelectedDaypart(_selectedDaypart);
         }
 

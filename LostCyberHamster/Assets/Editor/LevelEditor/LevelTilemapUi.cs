@@ -26,7 +26,6 @@ public class LevelTilemapUi
     private DropdownField _backGroundDropdown;
     private Toggle _isCollectableOnRoofToggle;
     private Button _resetButton;
-    private Toggle _templateModeToggle;      // #template-mode-toggle
     private VisualElement _templateLevelNameParent;// #template-level-name-parent
     private TextField _templateLevelNameField;  // #template-level-name
     private TextField _patternNameField;
@@ -42,7 +41,6 @@ public class LevelTilemapUi
 
     public DropdownField BackGroundDropdown => _backGroundDropdown;
     private const string _collectableSpritesTag = "collectable sprites";
-    public bool IsTemplateMode => _templateModeToggle?.value ?? false;
     public string TemplateLevelName => _templateLevelNameField?.value;
 
     public string CurrentPatternDescription => _patternDescriptionField?.value ?? "";
@@ -92,9 +90,12 @@ public class LevelTilemapUi
         _isCollectableOnRoofToggle = root.Q<Toggle>("IsCollectableOnRoofToggle");
         _resetButton = _root.Q<Button>("reset-btn");
         _patternDurationField = root.Q<FloatField>("patternDuration");
-        _templateModeToggle = root.Q<Toggle>("template-mode-toggle");
         _templateLevelNameParent = root.Q<VisualElement>("template-level-name-parent");
         _templateLevelNameField = root.Q<TextField>("template-level-name");
+        if (_templateLevelNameParent != null)
+        {
+            _templateLevelNameParent.style.display = DisplayStyle.None;
+        }
         _patternNameField = root.Q<TextField>("selected-pattern-name");
         _patternDescriptionField = root.Q<TextField>("selected-pattern-description");
         _daypartRadioGroup = root.Q<RadioButtonGroup>("daypart-radio-group");
@@ -142,7 +143,6 @@ public class LevelTilemapUi
     private void InitializeToggles()
     {
         _isCollectableOnRoofToggle.RegisterValueChangedCallback(evt => OnIsCollectableOnRoofToggleChanged?.Invoke(evt.newValue));
-        _templateModeToggle.RegisterValueChangedCallback(OnTemplateModeToggleChangedInternal);
     }
 
     private void InitializeListViews()
@@ -301,15 +301,6 @@ public class LevelTilemapUi
         var item = selectedItems.FirstOrDefault() as int? ?? -1;
         OnPatternSelected?.Invoke(item);
     }
-
-    private void OnTemplateModeToggleChangedInternal(ChangeEvent<bool> evt)
-    {
-        bool isTemplate = evt.newValue;
-
-        // Скрыть/показать поле имени уровня через родительский контейнер
-        _templateLevelNameParent.style.display = isTemplate ? DisplayStyle.Flex : DisplayStyle.None;
-    }
-
 
     public void SetObstaclesSpritesListView(string spritePath, string spritesExt)
     {
@@ -473,6 +464,16 @@ public class LevelTilemapUi
         }
 
         _daypartRadioGroup.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    public void SetTemplateNameFieldVisible(bool isVisible)
+    {
+        if (_templateLevelNameParent == null)
+        {
+            return;
+        }
+
+        _templateLevelNameParent.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     public void UpdatePatternsList(List<string> patternNames, int selectedIndex = 0)
