@@ -18,6 +18,95 @@ public static class LevelDataManager
     private const string MappingFileName   = "obstacle_sprite_to_type_mappings";
     private const string MappingsGroupName = "Mappings";
 
+    private static readonly IReadOnlyDictionary<string, PartOfDayEnum> _partOfDayFolderMap =
+        new Dictionary<string, PartOfDayEnum>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Morning",  PartOfDayEnum.Morning },
+            { "Afternoon", PartOfDayEnum.Afternoon },
+            { "Evening",  PartOfDayEnum.Evening },
+            { "Night",    PartOfDayEnum.Night }
+        };
+
+    public static IReadOnlyList<LevelFileDescriptor> GetLevelFileDescriptors(string levelsDirectory,
+        string extension = "json")
+    {
+        if (string.IsNullOrWhiteSpace(levelsDirectory))
+        {
+            Debug.LogError("Levels directory path is null or empty.");
+            return Array.Empty<LevelFileDescriptor>();
+        }
+
+        if (!Directory.Exists(levelsDirectory))
+        {
+            Debug.LogError($"Directory does not exist: {levelsDirectory}");
+            return Array.Empty<LevelFileDescriptor>();
+        }
+
+        var descriptors = new List<LevelFileDescriptor>();
+        var files = Directory.GetFiles(levelsDirectory, $"*.{extension}", SearchOption.AllDirectories);
+
+        foreach (var absolutePath in files)
+        {
+            var relativePath = Path.GetRelativePath(levelsDirectory, absolutePath);
+            relativePath = NormalizePath(relativePath);
+
+            var partOfDay = ResolvePartOfDay(relativePath);
+            var displayName = BuildDisplayName(relativePath, partOfDay);
+
+            descriptors.Add(new LevelFileDescriptor(absolutePath, relativePath, partOfDay, displayName));
+        }
+
+        descriptors.Sort((left, right) => string.CompareOrdinal(left.RelativePath, right.RelativePath));
+        return descriptors;
+    }
+
+    public static IReadOnlyList<LevelFileDescriptor> GetLevelFileDescriptors(
+        string levelsDirectory,
+        PartOfDayEnum partOfDay,
+        string extension = "json")
+    {
+        var descriptors = GetLevelFileDescriptors(levelsDirectory, extension);
+        if (descriptors.Count == 0)
+        {
+            return descriptors;
+        }
+
+        return descriptors
+            .Where(descriptor => descriptor.PartOfDay.HasValue && descriptor.PartOfDay.Value == partOfDay)
+            .ToList();
+    }
+
+    private static string BuildDisplayName(string relativePath, PartOfDayEnum? partOfDay)
+    {
+        if (!partOfDay.HasValue)
+        {
+            return relativePath;
+        }
+
+        // Highlight the file name within its daypart folder for clarity.
+        var fileName = Path.GetFileName(relativePath);
+        return string.Concat(partOfDay.Value, ": ", fileName);
+    }
+
+    private static PartOfDayEnum? ResolvePartOfDay(string relativePath)
+    {
+        var firstSegment = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (string.IsNullOrEmpty(firstSegment))
+        {
+            return null;
+        }
+
+        return _partOfDayFolderMap.TryGetValue(firstSegment, out var partOfDay)
+            ? partOfDay
+            : null;
+    }
+
+    private static string NormalizePath(string path)
+    {
+        return path.Replace('\\', '/');
+    }
+
+    [Obsolete("Use GetLevelFileDescriptors for both locations and level design templates.")]
     public static List<string> GetLevelFiles(string levelsDirectory, string extension = "json")
     {
         if (!Directory.Exists(levelsDirectory))
@@ -75,13 +164,13 @@ public static class LevelDataManager
             if (errors.Any())
                 throw new Exception($"Level data is invalid: {string.Join(", ", errors)}");
 
-            var existingFiles = GetLevelFilesFromAllLocations();
+            var existingDescriptors = EnumerateAllLocationLevelFileDescriptors();
 
             var highestLevelNumber = 0;
 
-            foreach (var file in existingFiles)
+            foreach (var descriptor in existingDescriptors)
             {
-                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file);
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(descriptor.AbsolutePath);
                 var parts = fileNameWithoutExtension.Split('_');
                 if (parts.Length == 2 && int.TryParse(parts[1], out var levelNumber))
                 {
@@ -131,9 +220,8 @@ public static class LevelDataManager
 
     public static void SaveMappingsToAddressables(string location, Dictionary<string, ObstacleTypeEnum> spriteTypeBindings)
     {
-        // Адрес, по которому будет сохраняться JSON-файл, который также зарегистрирован в Addressables
-        var fileName = "obstacle_sprite_to_type_mappings";
-        var path = Path.Combine(Consts.LocationsPath, location, $"{MappingFileName}.json");   // Локальный путь в проекте Unity
+    // Адрес, по которому будет сохраняться JSON-файл, который также зарегистрирован в Addressables
+    var path = Path.Combine(Consts.LocationsPath, location, $"{MappingFileName}.json");   // Локальный путь в проекте Unity
 
         var mappings = new ObstacleSpriteTypeMappings
         {
@@ -290,6 +378,7 @@ public static class LevelDataManager
         return errors;
     }
 
+    [Obsolete("Use GetLevelFileDescriptors and filter as needed instead of scanning with this helper.")]
     public static List<string> GetLevelFilesFromAllLocations(string extension = "json")
     {
         var levelDirectories = Directory.GetDirectories(Consts.LocationsPath, "levels", SearchOption.AllDirectories);
@@ -301,6 +390,29 @@ public static class LevelDataManager
         }
 
         return levelFiles;
+    }
+
+    private static IEnumerable<LevelFileDescriptor> EnumerateAllLocationLevelFileDescriptors(string extension = "json")
+    {
+        if (!Directory.Exists(Consts.LocationsPath))
+        {
+            yield break;
+        }
+
+        var locationDirectories = Directory.GetDirectories(Consts.LocationsPath);
+        foreach (var locationDirectory in locationDirectories)
+        {
+            var levelsDirectory = Path.Combine(locationDirectory, "levels");
+            if (!Directory.Exists(levelsDirectory))
+            {
+                continue;
+            }
+
+            foreach (var descriptor in GetLevelFileDescriptors(levelsDirectory, extension))
+            {
+                yield return descriptor;
+            }
+        }
     }
 
 }
