@@ -38,7 +38,7 @@ namespace LostCyberHamster.UI
             var resolvedPreview = string.IsNullOrWhiteSpace(previewAddress)
                 ? GetDefaultPreviewAddress(partKey)
                 : previewAddress;
-            SetupCard(resolvedDisplay, resolvedPreview, levelKeyForProgress);
+            SetupCard(resolvedDisplay, resolvedPreview, string.IsNullOrWhiteSpace(levelKeyForProgress) ? levelKeyForProgress : levelKeyForProgress.Trim());
         }
         public void ConfigureForLevel(LevelSelectionModel.LevelReference level, int displayIndex, string partKey, string previewAddress)
         {
@@ -47,7 +47,10 @@ namespace LostCyberHamster.UI
             var resolvedPreview = string.IsNullOrWhiteSpace(previewAddress)
                 ? GetDefaultPreviewAddress(partKey)
                 : previewAddress;
-            SetupCard(label, resolvedPreview, level.Key);
+            var canonicalLevelKey = string.IsNullOrWhiteSpace(level.Address)
+                ? level.Key
+                : level.Address.Trim();
+            SetupCard(label, resolvedPreview, canonicalLevelKey);
         }
 
 

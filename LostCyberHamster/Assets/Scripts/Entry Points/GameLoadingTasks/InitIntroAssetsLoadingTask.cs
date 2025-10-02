@@ -22,9 +22,16 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             LevelController.Instance.Init((GameManager)bundle["gameManager"]);
 
             LevelController.Instance.LevelData.IntroObject = (GameObject)bundle["introObject"];
-            await LevelController.Instance.LoadIntroData();
+            var hasIntroSprites = await LevelController.Instance.LoadIntroData();
 
-            LevelController.Instance.LevelData.GameManager.StartIntro();
+            if (hasIntroSprites)
+            {
+                LevelController.Instance.LevelData.GameManager.StartIntro();
+            }
+            else
+            {
+                LevelController.Instance.LevelData.GameManager.StartGame();
+            }
         }
     }
 }

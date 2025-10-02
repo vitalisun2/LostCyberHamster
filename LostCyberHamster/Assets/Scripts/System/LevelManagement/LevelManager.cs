@@ -112,14 +112,18 @@ namespace Assets.Scripts.System
 
             var descriptors = EnumerateDescriptors();
             var index = descriptors.FindIndex(d =>
-                string.Equals(d.LevelKey, descriptor.LevelKey, StringComparison.OrdinalIgnoreCase));
+                string.Equals(d.Address?.Trim(), descriptor.Address?.Trim(), StringComparison.OrdinalIgnoreCase));
 
             if (index < 0 || index + 1 >= descriptors.Count)
             {
                 return false;
             }
 
-            nextLevelKey = descriptors[index + 1].LevelKey;
+            nextLevelKey = descriptors[index + 1].Address?.Trim() ?? string.Empty;
+            if (string.IsNullOrEmpty(nextLevelKey))
+            {
+                return false;
+            }
             return true;
         }
 
@@ -166,12 +170,10 @@ namespace Assets.Scripts.System
                 if (string.Equals(part.Key, partOfDayKey, StringComparison.OrdinalIgnoreCase)
                     || string.Equals(partId, partOfDayKey, StringComparison.OrdinalIgnoreCase))
                 {
-                    return part.Levels?
-                               .OrderBy(level => level.Order)
-                               .Select(level => HierarchicalLevelCatalog.NormalizeLevelKey(level.Address))
-                               .Where(key => !string.IsNullOrEmpty(key))
-                               .ToList()
-                           ?? new List<string>();
+                    return Catalog.EnumerateLevels(locationIndex, index)
+                        .Select(descriptor => descriptor.Address?.Trim())
+                        .Where(address => !string.IsNullOrWhiteSpace(address))
+                        .ToList();
                 }
             }
 
@@ -423,10 +425,17 @@ namespace Assets.Scripts.System
 
         private static int GetSequentialIndex(HierarchicalLevelCatalog.LevelDescriptor descriptor)
         {
+            if (string.IsNullOrWhiteSpace(descriptor.Address))
+            {
+                return -1;
+            }
+
+            var targetAddress = descriptor.Address.Trim();
             var descriptors = EnumerateDescriptors();
             for (int index = 0; index < descriptors.Count; index++)
             {
-                if (string.Equals(descriptors[index].LevelKey, descriptor.LevelKey, StringComparison.OrdinalIgnoreCase))
+                var candidateAddress = descriptors[index].Address?.Trim();
+                if (string.Equals(candidateAddress, targetAddress, StringComparison.OrdinalIgnoreCase))
                 {
                     return index;
                 }

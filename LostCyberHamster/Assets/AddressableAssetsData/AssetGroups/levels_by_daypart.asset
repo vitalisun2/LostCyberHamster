@@ -15,28 +15,68 @@ MonoBehaviour:
   m_GroupName: levels_by_daypart
   m_GUID: 84de73c8c0de40f38c6c0703ba6332ec
   m_SerializeEntries:
-  - m_GUID: 186083744f6d8bb47888a6c6c14e88f7
-    m_Address: 01_New_York/Afternoon/level_01
+  - m_GUID: 37612f9519975a84aa9524979eb24ea6
+    m_Address: 01_New_York/Night/level_04/intro_01
     m_ReadOnly: 0
     m_SerializedLabels:
     - levels_daypart
-    - levels_daypart_Afternoon
+    - levels_daypart_Night
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4835549402be4db3aa035128e3cd7e17
-    m_Address: 01_New_York/Morning/level_01
+  - m_GUID: 4975dd3cf1e9a6046818c02f5eb0572d
+    m_Address: 01_New_York/Morning/level_01/intro_01
     m_ReadOnly: 0
     m_SerializedLabels:
     - levels_daypart
     - levels_daypart_Morning
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 48e4b85cc06ab804ba9400990de4c428
-    m_Address: 01_New_York/Morning/level_02
+  - m_GUID: 500f619b818fc6945a24bd009183cc26
+    m_Address: 01_New_York/Morning/level_01/intro_02
     m_ReadOnly: 0
     m_SerializedLabels:
     - levels_daypart
-    - levels_daypart_Afternoon
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5eaa9e4ee490f784ca6c31ac5d29dd21
+    m_Address: 02_Paris/Morning/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62a4d45f8ae28a54895eced22f75038e
+    m_Address: 01_New_York/Evening/level_03/intro_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 69e2ed40c7b80594d97378b5e3e533e2
+    m_Address: 01_New_York/Morning/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6fd463a36da621249918d90c17ef95d1
+    m_Address: 01_New_York/Morning/level_01/intro_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 70f51de9101ee3941ac3db38c833fde9
+    m_Address: 01_New_York/Morning/level_01/intro_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
     - levels_daypart_Morning
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
@@ -48,7 +88,23 @@ MonoBehaviour:
     - levels_daypart_Evening
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ca9ef61c3ad74314582b51ba917775b7
+  - m_GUID: 89b809333a78843419d5481ad596d14c
+    m_Address: 01_New_York/Afternoon/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a9f96f93e944bfe42bd4f62e007aa2b7
+    m_Address: 01_New_York/Morning/level_01/intro_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b605d5110b3a1034aa9cc6b0a7b9c81d
     m_Address: 02_Paris/Morning/level_01
     m_ReadOnly: 0
     m_SerializedLabels:

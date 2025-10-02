@@ -193,18 +193,25 @@ namespace GameManagement
                 return;
             }
 
-            if (!LevelCatalogService.TryFindLevel(PlayerData.CurrentLevel, out var descriptor))
+            if (LevelCatalogService.TryFindLevel(PlayerData.CurrentLevel, out var descriptor))
             {
-                var firstLevel = catalog.EnumerateLevels()
-                    .OrderBy(level => level.LocationIndex)
-                    .ThenBy(level => level.PartIndex)
-                    .ThenBy(level => level.LevelIndex)
-                    .FirstOrDefault();
-
-                if (!string.IsNullOrWhiteSpace(firstLevel.LevelKey))
+                if (!string.IsNullOrWhiteSpace(descriptor.Address))
                 {
-                    PlayerData.CurrentLevel = firstLevel.LevelKey;
+                    PlayerData.CurrentLevel = descriptor.Address.Trim();
                 }
+
+                return;
+            }
+
+            var firstLevel = catalog.EnumerateLevels()
+                .OrderBy(level => level.LocationIndex)
+                .ThenBy(level => level.PartIndex)
+                .ThenBy(level => level.LevelIndex)
+                .FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(firstLevel.Address))
+            {
+                PlayerData.CurrentLevel = firstLevel.Address.Trim();
             }
         }
     }

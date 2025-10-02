@@ -35,22 +35,32 @@ namespace Assets.Scripts.System
         /// <summary>
         /// Asynchronously loads intro sprites for the specified level in sequence.
         /// </summary>
-        public static async Task LoadIntroSprites()
+        public static async Task<bool> LoadIntroSprites()
         {
             _introHandles.Clear();
 
-            List<Sprite> introSprites = new List<Sprite>();
-            string levelName = GameDataManager.PlayerData.CurrentLevel;
+            var introSprites = new List<Sprite>();
+            var levelIdentifier = GameDataManager.PlayerData.CurrentLevel;
+            var baseAddress = ResolveIntroBaseAddress(levelIdentifier);
 
-            int spriteIndex = 1;
-            int maxSprites = 10;
-
-            while (spriteIndex <= maxSprites)
+            if (string.IsNullOrWhiteSpace(baseAddress))
             {
-                string spriteAddress = $"{levelName}_intro_{spriteIndex}";
+                Debug.LogWarning("[LoadIntroSprites] Unable to resolve intro base address. Skip loading.");
+                LevelController.Instance.LevelData.IntroSprites = introSprites;
+                return false;
+            }
 
-                if (!Addressables.ResourceLocators.Any(locator => locator.Locate(spriteAddress, typeof(Sprite), out var _)))
+            const int maxSprites = 10;
+            for (int spriteIndex = 1; spriteIndex <= maxSprites; spriteIndex++)
+            {
+                var spriteAddress = $"{baseAddress}/intro_{spriteIndex:00}";
+
+                if (!CanLocateSprite(spriteAddress))
                 {
+                    if (spriteIndex == 1)
+                    {
+                        Debug.LogWarning($"[LoadIntroSprites] Address '{spriteAddress}' not found via resource locators.");
+                    }
                     break;
                 }
 
@@ -59,20 +69,56 @@ namespace Assets.Scripts.System
 
                 if (handle.Status != AsyncOperationStatus.Succeeded || handle.Result == null)
                 {
-                    Debug.LogWarning($"[LoadIntroSprites] Sprite '{spriteAddress}' is null or failed. Stopping here.");
+                    Debug.LogWarning($"[LoadIntroSprites] Sprite '{spriteAddress}' failed with status {handle.Status}. Breaking.");
+                    Addressables.Release(handle);
                     break;
                 }
 
                 _introHandles.Add(handle);
-
                 introSprites.Add(handle.Result);
-                spriteIndex++;
+            }
+
+            var hasIntroSprites = introSprites.Count > 0;
+
+            if (!hasIntroSprites)
+            {
+                Debug.LogWarning($"[LoadIntroSprites] No intro sprites loaded for '{baseAddress}'.");
             }
 
             LevelController.Instance.LevelData.IntroSprites = introSprites;
+            return hasIntroSprites;
         }
 
-        public static void ReleaseIntroSprites()
+        private static string ResolveIntroBaseAddress(string levelIdentifier)
+        {
+            if (LevelCatalogService.TryFindLevel(levelIdentifier, out var descriptor) && !string.IsNullOrWhiteSpace(descriptor.Address))
+            {
+                return descriptor.Address.Trim();
+            }
+
+            return string.IsNullOrWhiteSpace(levelIdentifier) ? string.Empty : levelIdentifier.Trim();
+        }
+
+        private static bool CanLocateSprite(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                return false;
+            }
+
+            foreach (var locator in Addressables.ResourceLocators)
+            {
+                if (locator != null && locator.Locate(address, typeof(Sprite), out var _))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+
+public static void ReleaseIntroSprites()
         {
             if (_introHandles.Count == 0)
             {
@@ -572,6 +618,8 @@ namespace Assets.Scripts.System
 
     }
 }
+
+
 
 
 

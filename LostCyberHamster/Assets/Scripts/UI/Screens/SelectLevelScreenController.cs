@@ -179,12 +179,12 @@ namespace LostCyberHamster.UI
             foreach (var partView in parts)
             {
                 var primaryLevel = partView.Levels.FirstOrDefault();
-                var primaryLevelKey = primaryLevel.Key ?? string.Empty;
+                var primaryLevelKey = primaryLevel.Address?.Trim();
                 var levelItem = new LevelItem()
                 {
                     style = { opacity = 0f }
                 };
-                levelItem.ConfigureForPart(partView.Key, partView.DisplayName, string.Empty, primaryLevelKey);
+                levelItem.ConfigureForPart(partView.Key, partView.DisplayName, string.Empty, primaryLevelKey ?? string.Empty);
 
                 _levelsContainer.Add(levelItem);
 
@@ -203,6 +203,7 @@ namespace LostCyberHamster.UI
                 }
             }
         }
+
 
         private void PopulateLevelCards(LevelSelectionModel.PartView partView)
         {
@@ -240,12 +241,15 @@ namespace LostCyberHamster.UI
                 var displayIndex = startIndex + i + 1;
                 var levelItem = new LevelItem();
                 levelItem.ConfigureForLevel(levelRef, displayIndex, partView.Key, string.Empty);
+                var canonicalLevelKey = string.IsNullOrWhiteSpace(levelRef.Address)
+                    ? levelRef.Key
+                    : levelRef.Address.Trim();
                 levelItem.style.opacity = 0f;
                 _levelsContainer.Add(levelItem);
 
                 if (!levelItem.IsLocked)
                 {
-                    var keyCapture = levelRef.Key;
+                    var keyCapture = canonicalLevelKey;
                     _onClickedLevelSubscribe.Add(() =>
                     {
                         levelItem.RegisterCallback<ClickEvent>(evt => OnClickLevel(evt, keyCapture));

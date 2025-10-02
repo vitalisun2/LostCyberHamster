@@ -52,13 +52,17 @@ namespace Assets.Scripts.System
 
                 var partViews = new List<PartView>(locationEntry.PartsOfDay?.Count ?? 0);
 
-                for (int partIndex = 0; partIndex < (locationEntry.PartsOfDay?.Count ?? 0); partIndex++)
+                var orderedParts = (locationEntry.PartsOfDay ?? Array.Empty<HierarchicalLevelCatalog.PartOfDayEntry>())
+                    .Select((partEntry, partIndex) => new { partEntry, partIndex })
+                    .Where(x => x.partEntry != null)
+                    .OrderBy(x => ResolvePartDisplayOrder(x.partEntry.Key, x.partIndex))
+                    .ThenBy(x => x.partIndex)
+                    .ToList();
+
+                foreach (var partInfo in orderedParts)
                 {
-                    var partEntry = locationEntry.PartsOfDay[partIndex];
-                    if (partEntry == null)
-                    {
-                        continue;
-                    }
+                    var partEntry = partInfo.partEntry;
+                    var partIndex = partInfo.partIndex;
 
                     var partId = catalog.GetPartId(locationIndex, partIndex);
                     var partKey = partEntry.Key ?? string.Empty;
@@ -145,6 +149,18 @@ namespace Assets.Scripts.System
             }
 
             return partKey;
+        }
+
+        private static int ResolvePartDisplayOrder(string partKey, int fallbackIndex)
+        {
+            if (!string.IsNullOrWhiteSpace(partKey)
+                && Enum.TryParse(typeof(PartOfDayEnum), partKey, true, out var value)
+                && value is PartOfDayEnum part)
+            {
+                return (int)part;
+            }
+
+            return fallbackIndex + 1000;
         }
 
         public sealed class LocationView

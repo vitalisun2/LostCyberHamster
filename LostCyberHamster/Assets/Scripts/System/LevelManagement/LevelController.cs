@@ -2,7 +2,6 @@ using Assets.Scripts.GameManagerLogic;
 using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -81,23 +80,14 @@ namespace Assets.Scripts.System
                 return;
             }
 
-            var normalized = NormalizeLevelIdentifier(levelName);
-            if (string.IsNullOrEmpty(normalized))
+            var canonical = ResolveCanonicalLevelIdentifier(levelName);
+            if (string.IsNullOrEmpty(canonical))
             {
-                Debug.LogError("[LevelController] Could not normalize level identifier '" + levelName + "'.");
+                Debug.LogError("[LevelController] Could not resolve level identifier '" + levelName + "'.");
                 return;
             }
 
-            GameDataManager.PlayerData.CurrentLevel = normalized;
-
-            if (!string.Equals(normalized, levelName, StringComparison.Ordinal))
-            {
-                Debug.Log("Current level set to " + normalized + " (source '" + levelName + "').");
-            }
-            else
-            {
-                Debug.Log("Current level set to " + normalized);
-            }
+            SetCurrentLevelInternal(canonical, levelName);
         }
 
         public void SetCurrentLevel(int locationIndex, string partOfDayKey, int levelOrder = 0)
@@ -124,26 +114,30 @@ namespace Assets.Scripts.System
             SetCurrentLevel(levels[levelOrder]);
         }
 
-        private static string NormalizeLevelIdentifier(string levelIdentifier)
+        private static string ResolveCanonicalLevelIdentifier(string levelIdentifier)
         {
-            if (string.IsNullOrWhiteSpace(levelIdentifier))
+            if (!LevelCatalogService.TryFindLevel(levelIdentifier, out var descriptor))
             {
                 return string.Empty;
             }
 
-            var trimmed = levelIdentifier.Trim();
-            var fileName = Path.GetFileNameWithoutExtension(trimmed);
-            if (!string.IsNullOrEmpty(fileName))
-            {
-                trimmed = fileName;
-            }
+            return string.IsNullOrWhiteSpace(descriptor.Address)
+                ? string.Empty
+                : descriptor.Address.Trim();
+        }
 
-            if (trimmed.Contains("/"))
-            {
-                trimmed = trimmed.Split('/').LastOrDefault() ?? trimmed;
-            }
+        private static void SetCurrentLevelInternal(string normalizedLevelIdentifier, string sourceIdentifier)
+        {
+            GameDataManager.PlayerData.CurrentLevel = normalizedLevelIdentifier;
 
-            return trimmed;
+            if (!string.Equals(normalizedLevelIdentifier, sourceIdentifier, StringComparison.Ordinal))
+            {
+                Debug.Log("Current level set to " + normalizedLevelIdentifier + " (source '" + sourceIdentifier + "').");
+            }
+            else
+            {
+                Debug.Log("Current level set to " + normalizedLevelIdentifier);
+            }
         }
 
         [Button]
@@ -205,10 +199,11 @@ namespace Assets.Scripts.System
             IsLevelLoaded = true;
         }
 
-        public async Task LoadIntroData()
+        public async Task<bool> LoadIntroData()
         {
-            await LevelDataProvider.LoadIntroSprites();
+            var hasIntroSprites = await LevelDataProvider.LoadIntroSprites();
             //await LevelDataProvider.LoadSkipButtonSprite();
+            return hasIntroSprites;
         }
 
     }
