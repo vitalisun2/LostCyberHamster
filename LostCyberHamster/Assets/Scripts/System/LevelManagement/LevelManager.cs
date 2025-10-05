@@ -452,18 +452,20 @@ namespace Assets.Scripts.System
             }
 
             var openedCount = OpenedLocations.Count;
-            if (openedCount >= Catalog.LocationCount)
+            if (openedCount == 0 || openedCount >= Catalog.LocationCount)
             {
                 return 0;
             }
 
-            var requiredStars = CalculateMaxStarsForLocation(openedCount) - _starUnlockOffset;
+            var referenceLocationIndex = openedCount - 1;
+            var requiredStars = CalculateMaxStarsForLocation(referenceLocationIndex) - _starUnlockOffset;
             if (requiredStars <= 0)
             {
                 return 0;
             }
 
-            var currentStars = Progress.Entries.Sum(entry => entry.Stars);
+            var locationId = Catalog.GetLocationId(referenceLocationIndex);
+            var currentStars = Progress.EnumerateLocation(locationId).Sum(entry => entry.Stars);
             return Math.Max(requiredStars - currentStars, 0);
         }
 

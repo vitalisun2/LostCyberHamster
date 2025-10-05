@@ -39,14 +39,6 @@ MonoBehaviour:
     - levels_daypart_Morning
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 5eaa9e4ee490f784ca6c31ac5d29dd21
-    m_Address: 02_Paris/Morning/level_01
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_02_Paris
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 62a4d45f8ae28a54895eced22f75038e
     m_Address: 01_New_York/Evening/level_03/intro_01
     m_ReadOnly: 0

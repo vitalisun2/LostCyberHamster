@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts;
+using Assets.Scripts.Common.Models;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -74,7 +75,8 @@ namespace Assets.Scripts.System
                     .Select(location => new HierarchicalLevelCatalog.LocationDefinition(
                         location.Key,
                         location.Value
-                            .OrderBy(part => part.Key, StringComparer.OrdinalIgnoreCase)
+                            .OrderBy(part => ResolvePartOrder(part.Key))
+                            .ThenBy(part => part.Key, StringComparer.OrdinalIgnoreCase)
                             .Select(part => new HierarchicalLevelCatalog.PartDefinition(
                                 part.Key,
                                 part.Value
@@ -102,6 +104,17 @@ namespace Assets.Scripts.System
                     Addressables.Release(handle);
                 }
             }
+        }
+
+
+        private static int ResolvePartOrder(string partKey)
+        {
+            if (Enum.TryParse(typeof(PartOfDayEnum), partKey, true, out var value) && value is PartOfDayEnum enumValue)
+            {
+                return (int)enumValue;
+            }
+
+            return int.MaxValue;
         }
 
         private static Dictionary<string, SortedDictionary<string, SortedSet<string>>> BuildLayout(IList<IResourceLocation> locations)
