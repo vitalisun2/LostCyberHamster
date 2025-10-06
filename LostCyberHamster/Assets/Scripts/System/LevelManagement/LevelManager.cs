@@ -14,6 +14,8 @@ namespace Assets.Scripts.System
     public static class LevelManager
     {
         private const int _starUnlockOffset = 2;
+        private static ProgressService _progressService;
+        private static HierarchicalLevelCatalog _progressCatalog;
 
         public static LocationInfoList LocationInfoList { get; private set; } = new();
 
@@ -284,29 +286,14 @@ namespace Assets.Scripts.System
                 return;
             }
 
-            if (!TryResolveProgressKey(currentLevel, out var progressKey))
+            if (!HasCatalog || !TryResolveProgressKey(currentLevel, out var progressKey))
             {
                 return;
             }
 
+            var service = RequireProgressService();
             var snapshot = playerData.Progress;
-            var clampedStars = Mathf.Clamp(stars, 0, LevelProgressEntry.MaxStars);
-
-            if (!snapshot.TryGet(progressKey, out var entry))
-            {
-                entry = new LevelProgressEntry(progressKey, true, 0);
-            }
-
-            snapshot = snapshot.Set(entry.ApplyStars(clampedStars));
-
-            if (TryGetNextProgressKey(progressKey, out var nextKey))
-            {
-                if (!snapshot.TryGet(nextKey, out var nextEntry) || !nextEntry.IsUnlocked)
-                {
-                    var unlocked = new LevelProgressEntry(nextKey, true, nextEntry?.Stars ?? 0);
-                    snapshot = snapshot.Set(unlocked);
-                }
-            }
+            snapshot = service.HandleLevelCompleted(snapshot, progressKey, stars);
 
             playerData.Progress = snapshot;
             GameDataManager.SaveData();
@@ -321,67 +308,8 @@ namespace Assets.Scripts.System
                 return false;
             }
 
-            if (!Catalog.TryResolveLocationId(current.LocationId, out var locationIndex))
-            {
-                return false;
-            }
-
-            if (!Catalog.TryGetPart(locationIndex, current.PartOfDayId, out var partIndex, out var partEntry))
-            {
-                return false;
-            }
-
-            var orderedLevels = partEntry.Levels?.OrderBy(level => level.Order).ToList()
-                                ?? new List<HierarchicalLevelCatalog.LevelEntry>();
-            var nextLevelIndex = current.LevelIndex + 1;
-            if (nextLevelIndex < orderedLevels.Count)
-            {
-                next = new LevelProgressKey(
-                    current.LocationId,
-                    Catalog.GetPartId(locationIndex, partIndex),
-                    nextLevelIndex);
-                return true;
-            }
-
-            var location = Catalog.Locations[locationIndex];
-            for (int i = partIndex + 1; i < location.PartsOfDay.Count; i++)
-            {
-                var candidate = location.PartsOfDay[i];
-                var candidateLevels = candidate.Levels?.OrderBy(level => level.Order).ToList()
-                                      ?? new List<HierarchicalLevelCatalog.LevelEntry>();
-                if (candidateLevels.Count == 0)
-                {
-                    continue;
-                }
-
-                var partId = Catalog.GetPartId(locationIndex, i);
-                next = new LevelProgressKey(current.LocationId, partId, 0);
-                return true;
-            }
-
-            for (int nextLocationIndex = locationIndex + 1; nextLocationIndex < Catalog.LocationCount; nextLocationIndex++)
-            {
-                var locationEntry = Catalog.Locations[nextLocationIndex];
-                var parts = locationEntry.PartsOfDay ?? Array.Empty<HierarchicalLevelCatalog.PartOfDayEntry>();
-
-                for (int i = 0; i < parts.Count; i++)
-                {
-                    var candidate = parts[i];
-                    var candidateLevels = candidate.Levels?.OrderBy(level => level.Order).ToList()
-                                          ?? new List<HierarchicalLevelCatalog.LevelEntry>();
-                    if (candidateLevels.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    var locationId = Catalog.GetLocationId(nextLocationIndex);
-                    var partId = Catalog.GetPartId(nextLocationIndex, i);
-                    next = new LevelProgressKey(locationId, partId, 0);
-                    return true;
-                }
-            }
-
-            return false;
+            var service = RequireProgressService();
+            return service.TryGetNextProgressKey(current, out next);
         }
 
         private static bool TryFindDescriptor(string identifier, out HierarchicalLevelCatalog.LevelDescriptor descriptor)
@@ -407,6 +335,23 @@ namespace Assets.Scripts.System
 
             progressKey = new LevelProgressKey(descriptor.LocationId, descriptor.PartId, descriptor.LevelIndex);
             return true;
+        }
+
+        private static ProgressService RequireProgressService()
+        {
+            if (!HasCatalog)
+            {
+                throw new InvalidOperationException("Level catalog is not available.");
+            }
+
+            if (_progressService == null || !ReferenceEquals(_progressCatalog, Catalog))
+            {
+                var policy = new DefaultUnlockPolicy(Catalog, _starUnlockOffset);
+                _progressService = new ProgressService(Catalog, policy);
+                _progressCatalog = Catalog;
+            }
+
+            return _progressService;
         }
 
         private static List<HierarchicalLevelCatalog.LevelDescriptor> EnumerateDescriptors()
@@ -451,75 +396,20 @@ namespace Assets.Scripts.System
                 return 0;
             }
 
-            var openedCount = OpenedLocations.Count;
-            if (openedCount == 0 || openedCount >= Catalog.LocationCount)
-            {
-                return 0;
-            }
-
-            var referenceLocationIndex = openedCount - 1;
-            var requiredStars = CalculateMaxStarsForLocation(referenceLocationIndex) - _starUnlockOffset;
-            if (requiredStars <= 0)
-            {
-                return 0;
-            }
-
-            var locationId = Catalog.GetLocationId(referenceLocationIndex);
-            var currentStars = Progress.EnumerateLocation(locationId).Sum(entry => entry.Stars);
-            return Math.Max(requiredStars - currentStars, 0);
-        }
-
-        private static int CalculateMaxStarsForLocation(int locationIndex)
-        {
-            if (!HasCatalog || !Catalog.TryGetLocation(locationIndex, out var location))
-            {
-                return 0;
-            }
-
-            var parts = location.PartsOfDay ?? Array.Empty<HierarchicalLevelCatalog.PartOfDayEntry>();
-            var levelCount = parts.Sum(part => part.Levels?.Count ?? 0);
-            return levelCount * LevelProgressEntry.MaxStars;
+            var service = RequireProgressService();
+            return service.GetStarsToOpenNextLocation(Progress);
         }
 
         private static List<LocationInfoModel> BuildOpenedLocations()
         {
-            var result = new List<LocationInfoModel>();
-
             if (!HasCatalog)
             {
-                return result;
+                return new List<LocationInfoModel>();
             }
 
-            var infos = LocationInfoList?.locations ?? Array.Empty<LocationInfoModel>();
-            var progress = Progress;
-
-            for (int index = 0; index < Catalog.LocationCount; index++)
-            {
-                var locationId = Catalog.GetLocationId(index);
-                var isUnlocked = progress.EnumerateLocation(locationId).Any(entry => entry.IsUnlocked);
-
-                if (!isUnlocked && index == 0)
-                {
-                    isUnlocked = true;
-                }
-
-                if (!isUnlocked)
-                {
-                    break;
-                }
-
-                var info = index < infos.Length
-                    ? infos[index]
-                    : new LocationInfoModel
-                    {
-                        name = Catalog.Locations[index].Key ?? $"Location {index + 1}",
-                        image = string.Empty
-                    };
-
-                result.Add(info);
-            }
-
-            return result;
+            var service = RequireProgressService();
+            var opened = service.BuildOpenedLocations(Progress, LocationInfoList);
+            return opened?.ToList() ?? new List<LocationInfoModel>();
         }
 
         private static async Task InitLocationsList()
