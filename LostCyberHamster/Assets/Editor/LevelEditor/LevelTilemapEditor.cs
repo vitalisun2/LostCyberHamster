@@ -906,20 +906,22 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void UnsubscribeEvents()
     {
-        _uiManager.OnCreateLevelClicked -= HandleCreateLevelClicked;
-        _uiManager.OnSaveLevelClicked -= HandleSaveLevelClicked;
-        _uiManager.OnLocationChanged -= HandleLocationChanged;
-        _uiManager.OnSpriteSelected -= HandleSpriteSelected;
-        _uiManager.OnFileSelected -= HandleFileSelected;
-        _uiManager.OnPatternSelected -= HandlePatternSelected;
-        _uiManager.OnIsCollectableOnRoofToggleChanged -= HandleIsCollectableOnRoofToggleChanged;
-        _uiManager.OnResetClicked -= HandleResetClicked;
-        _uiManager.OnBackgroundSelected -= HandleBackgroundSelected;
-        _uiManager.OnPatternDurationChanged -= HandlePatternDurationChanged;
-        _uiManager.OnPatternNameChanged -= HandlePatternNameChanged;
-        _uiManager.OnPatternDescriptionChanged -= HandlePatternDescriptionChanged;
-        _uiManager.OnDaypartChanged -= HandleDaypartChanged;
-
+        if (_uiManager != null)
+        {
+            _uiManager.OnCreateLevelClicked -= HandleCreateLevelClicked;
+            _uiManager.OnSaveLevelClicked -= HandleSaveLevelClicked;
+            _uiManager.OnLocationChanged -= HandleLocationChanged;
+            _uiManager.OnSpriteSelected -= HandleSpriteSelected;
+            _uiManager.OnFileSelected -= HandleFileSelected;
+            _uiManager.OnPatternSelected -= HandlePatternSelected;
+            _uiManager.OnIsCollectableOnRoofToggleChanged -= HandleIsCollectableOnRoofToggleChanged;
+            _uiManager.OnResetClicked -= HandleResetClicked;
+            _uiManager.OnBackgroundSelected -= HandleBackgroundSelected;
+            _uiManager.OnPatternDurationChanged -= HandlePatternDurationChanged;
+            _uiManager.OnPatternNameChanged -= HandlePatternNameChanged;
+            _uiManager.OnPatternDescriptionChanged -= HandlePatternDescriptionChanged;
+            _uiManager.OnDaypartChanged -= HandleDaypartChanged;
+        }
 
         Tilemap.tilemapTileChanged -= OnTileChanged;
     }

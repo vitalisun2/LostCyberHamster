@@ -275,26 +275,18 @@ public class LevelTilemapUi
         return -1;
     }
 
-    private void OnFileSelectedInternal(IEnumerable<object> _)
+    private void OnFileSelectedInternal(IEnumerable<object> selectedItems)
     {
-        if (_filesList == null)
+        if (selectedItems == null)
         {
             return;
         }
 
-        _filesList.schedule.Execute(() =>
+        var selected = selectedItems.FirstOrDefault();
+        if (selected is LevelFileDescriptor descriptor)
         {
-            var index = _filesList.selectedIndex;
-            if (index < 0)
-            {
-                return;
-            }
-
-            if (_filesList.itemsSource is IList source && index < source.Count && source[index] is LevelFileDescriptor descriptor)
-            {
-                OnFileSelected?.Invoke(descriptor);
-            }
-        }).ExecuteLater(0);
+            OnFileSelected?.Invoke(descriptor);
+        }
     }
     private void OnPatternSelectedInternal(IEnumerable<object> selectedItems)
     {
