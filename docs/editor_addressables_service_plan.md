@@ -1,35 +1,35 @@
-# Editor Addressables Service Mini-Plan
+# Мини-план сервиса Editor Addressables
 
-## Goal
-Introduce a dedicated service responsible for editor-side Addressables access (sprites and JSON data), reducing responsibilities from `LevelTilemapUi`, `LevelDataManager`, and legacy loaders, while providing a single place to manage leases and location normalization.
+## Цель
+Ввести отдельный сервис, который отвечает за работу с Addressables в редакторе (спрайты и JSON), разгрузив `LevelTilemapUi`, `LevelDataManager` и устаревшие загрузчики, а также централизовав управление lease и нормализацией локаций.
 
-## Tasks
-1. **Service Skeleton**
-   - Create `EditorAddressablesService` (namespace `Assets.Editor.LevelEditor.AddressablesSupport`).
-   - Inject or expose dependencies via static entry point for now (future refactor can move to DI).
+## Задачи
+1. **Каркас сервиса**
+   - Создать `EditorAddressablesService` (пространство имен `Assets.Editor.LevelEditor.AddressablesSupport`).
+   - На первом этапе использовать статический вход (позже можно перейти на DI).
 
-2. **Sprite Loading API**
-   - Method `LoadObstacleSprites(string location)` returning `AddressableSetLease<Sprite>` (internally handles template fallback and label composition).
-   - Optional overloads for other label-based sprite categories (collectables, decor) to prepare for future migrations.
+2. **API загрузки спрайтов**
+   - Метод `LoadObstacleSprites(string location)` возвращает `AddressableSetLease<Sprite>` и скрывает fallback для шаблонов и формирование лейблов.
+   - Подготовить перегрузки для других категорий (collectables, decor), чтобы облегчить будущие миграции.
 
-3. **JSON (Mappings) API**
-   - Methods `LoadObstacleMappings(string location, Action<Dictionary<string, ObstacleTypeEnum>> onLoaded)` and `SaveObstacleMappings(string location, Dictionary<string, ObstacleTypeEnum> bindings)` wrapping existing logic from `LevelDataManager`.
-   - Centralize label/key building; ensure asset registration is encapsulated.
+3. **API для JSON (маппингов)**
+   - Методы `LoadObstacleMappings(string location, Action<Dictionary<string, ObstacleTypeEnum>> onLoaded)` и `SaveObstacleMappings(string location, Dictionary<string, ObstacleTypeEnum> bindings)` инкапсулируют текущую логику `LevelDataManager`.
+   - Централизовать построение ключей/лейблов и регистрацию ассетов.
 
-4. **Location Helpers**
-   - Provide helper `ResolveLocation(string location, AddressableAssetType type)` to encapsulate template → New York fallback and future overrides.
-   - Keep reusable for runtime if needed later.
+4. **Хелперы локаций**
+   - Предоставить `ResolveLocation(string location, AddressableAssetType type)`, чтобы спрятать логику fallback (Templates → New York) и будущие переопределения.
+   - Оставить возможность переиспользования в рантайме.
 
-5. **Migration Steps**
-   - Update `LevelTilemapUi` to consume `EditorAddressablesService.LoadObstacleSprites` instead of inline logic.
-   - Refactor `ObstacleSpriteTypeMappingsManager` and `LevelDataManager` to call the service for Addressables interactions, leaving them focused on UI/state logic.
-   - Evaluate remaining references to legacy `SpriteLoader`; plan deprecation once editor consumers migrate.
+5. **Шаги миграции**
+   - Обновить `LevelTilemapUi`, чтобы использовать `EditorAddressablesService.LoadObstacleSprites` вместо встроенного кода.
+   - Перенести работу с Addressables в `ObstacleSpriteTypeMappingsManager` и `LevelDataManager` на новый сервис, оставив им UI/состояние.
+   - Проанализировать оставшиеся вызовы `SpriteLoader` и наметить его вывод из проекта после миграции потребителей.
 
-6. **Testing & Verification**
-   - Add editor-only tests or test harness to cover sprite lease lifecycle and JSON round-trips.
-   - Manual smoke test in Level Tilemap Editor for location switching and mapping saves.
+6. **Тестирование и проверка**
+   - Добавить редакторские тесты или тестовый стенд для проверки lease и JSON round-trip.
+   - Выполнить ручной smoke-тест для переключения локаций и сохранения маппингов в Level Tilemap Editor.
 
-## Risks / Considerations
-- Ensure service handles disposal correctly (optionally provide helper `Release` methods for consumers that cannot keep track).
-- Account for existing caching behavior (if needed, consider thin caching inside service).
-- Keep method naming aligned with existing `AddressableLoader` semantics to avoid confusion.
+## Риски и особенности
+- Убедиться, что сервис корректно освобождает ресурсы (при необходимости — предоставить вспомогательные методы `Release`).
+- Учесть существующее поведение кэша; при надобности добавить тонкий кэш внутри сервиса.
+- Согласовать именование методов с текущим `AddressableLoader`, чтобы избежать путаницы.
