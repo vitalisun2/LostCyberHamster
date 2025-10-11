@@ -126,21 +126,21 @@ namespace Assets.Tests.System.Resources
         }
 
         [Test]
-        public async Task LoadAssetAsync_WithEmptyKey_Throws()
+        public void LoadAssetAsync_WithEmptyKey_Throws()
         {
-            await Assert.ThrowsAsync<ArgumentException>(async () => await AddressableLoader.LoadAssetAsync<object>(null));
+            Assert.ThrowsAsync<ArgumentException>(() => AddressableLoader.LoadAssetAsync<object>(null));
         }
 
         [Test]
-        public async Task LoadAssetsByLabelAsync_WithEmptyLabel_Throws()
+        public void LoadAssetsByLabelAsync_WithEmptyLabel_Throws()
         {
-            await Assert.ThrowsAsync<ArgumentException>(async () => await AddressableLoader.LoadAssetsByLabelAsync<object>(string.Empty));
+            Assert.ThrowsAsync<ArgumentException>(() => AddressableLoader.LoadAssetsByLabelAsync<object>(string.Empty));
         }
 
         [Test]
-        public async Task LoadLocationsAsync_WithEmptyLabel_Throws()
+        public void LoadLocationsAsync_WithEmptyLabel_Throws()
         {
-            await Assert.ThrowsAsync<ArgumentException>(async () => await AddressableLoader.LoadLocationsAsync("", typeof(object)));
+            Assert.ThrowsAsync<ArgumentException>(() => AddressableLoader.LoadLocationsAsync("", typeof(object)));
         }
 
         private sealed class DummyLocation : IResourceLocation
@@ -169,6 +169,8 @@ namespace Assets.Tests.System.Resources
             public string PrimaryKey { get; }
 
             public Type ResourceType { get; }
+
+            public int Hash(Type _) => PrimaryKey.GetHashCode();
         }
     }
 }
