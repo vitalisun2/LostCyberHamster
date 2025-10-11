@@ -6,6 +6,7 @@ using System.Linq;
 using Assets.Editor.LevelEditor.ObstacleSpriteTypeMappingManagement;
 using Assets.Scripts;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.System.Resources;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -31,6 +32,8 @@ public class LevelTilemapUi
     private TextField _patternNameField;
     private TextField _patternDescriptionField;
     private RadioButtonGroup _daypartRadioGroup;
+    private AddressableSetLease<Sprite> _obstacleSpritesLease;
+    private const string _templatesFallbackLocation = "01_New_York"; // Template levels reuse New York obstacles
     private readonly PartOfDayEnum[] _daypartOrder = new[]
     {
         PartOfDayEnum.Morning,
@@ -294,29 +297,146 @@ public class LevelTilemapUi
         OnPatternSelected?.Invoke(item);
     }
 
-    public void SetObstaclesSpritesListView(string spritePath, string spritesExt)
+    public void SetObstaclesSpritesListView(string location, string spritesExt)
     {
-        var spriteNames = GetFolderFilenames(spritePath, "Sprites", spritesExt);
+        ReleaseObstacleSprites();
+
         _spritesScrollView.Clear();
 
-        foreach (var spriteName in spriteNames)
+        var effectiveLocation = ResolveLocationForObstacles(location);
+        var label = BuildObstacleLabel(effectiveLocation);
+        if (string.IsNullOrWhiteSpace(label))
         {
-            if (Path.GetFileNameWithoutExtension(spriteName).StartsWith("obstacle") || Path.GetFileNameWithoutExtension(spriteName).StartsWith("decor"))
-            {
-                var container = new Button();
-                container.AddToClassList("sprite");
-                CreateSpriteImage(spriteName, container);
-                container.RegisterCallback<ClickEvent, string>(OnAssetClick, spriteName);
-                _spritesScrollView.Add(container);
-            }
+            Debug.LogWarning("[LevelTilemapUi] Не удалось определить лейбл препятствий: локация не задана.");
+            return;
         }
+
+        try
+        {
+            _obstacleSpritesLease = AddressableLoader.LoadAssetsByLabelSync<Sprite>(label);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[LevelTilemapUi] Ошибка загрузки спрайтов по лейблу '{label}'. Детали: {ex.Message}");
+            return;
+        }
+
+        var sprites = _obstacleSpritesLease?.Values;
+        if (sprites == null || sprites.Count == 0)
+        {
+            Debug.LogWarning($"[LevelTilemapUi] Для лейбла '{label}' не найдено спрайтов.");
+            ReleaseObstacleSprites();
+            return;
+        }
+
+        foreach (var sprite in sprites
+                     .OrderBy(sprite => sprite?.name, StringComparer.OrdinalIgnoreCase)
+                     .ToList())
+        {
+            if (sprite == null)
+            {
+                continue;
+            }
+
+            if (!IsObstacleSprite(sprite.name))
+            {
+                continue;
+            }
+
+            var container = new Button();
+            container.AddToClassList("sprite");
+
+            var spriteImage = new Image
+            {
+                scaleMode = ScaleMode.ScaleToFit,
+                sprite = sprite
+            };
+
+            container.Add(spriteImage);
+            container.RegisterCallback<ClickEvent, string>(OnAssetClick, sprite.name);
+            _spritesScrollView.Add(container);
+        }
+
+        _spritesScrollView.MarkDirtyRepaint();
     }
 
-    private List<string> GetFolderFilenames(string folderPath, string folderName, string extension)
+    public void ReleaseObstacleSprites()
     {
-        return Directory.GetFiles(Path.Combine(Consts.LocationsPath, folderPath, folderName))
-            .Where(s => Path.GetExtension(s).TrimStart('.').ToLowerInvariant() == extension)
-            .ToList();
+        _obstacleSpritesLease?.Dispose();
+        _obstacleSpritesLease = null;
+    }
+
+    private static string ResolveLocationForObstacles(string location)
+    {
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            return location;
+        }
+
+        if (string.Equals(location, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase))
+        {
+            return _templatesFallbackLocation;
+        }
+
+        return location;
+    }
+
+    private static string BuildObstacleLabel(string location)
+    {
+        var normalized = NormalizeLocationForLabel(location);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return null;
+        }
+
+        return $"{normalized} {Consts.ObstaclesSpritesLabelPostfix}";
+    }
+
+    private static bool IsObstacleSprite(string spriteName)
+    {
+        if (string.IsNullOrEmpty(spriteName))
+        {
+            return false;
+        }
+
+        return spriteName.StartsWith("obstacle", StringComparison.OrdinalIgnoreCase) ||
+               spriteName.StartsWith("decor", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeLocationForLabel(string location)
+    {
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            return null;
+        }
+
+        var trimmed = location.Trim().Replace('\\', '/');
+        var lastSegment = trimmed.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+        if (string.IsNullOrEmpty(lastSegment))
+        {
+            return null;
+        }
+
+        var parts = lastSegment.Split('_', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+        {
+            return lastSegment.Replace('_', ' ');
+        }
+
+        int startIndex = 0;
+        if (int.TryParse(parts[0], out _))
+        {
+            startIndex = 1;
+        }
+
+        if (startIndex >= parts.Length)
+        {
+            return lastSegment.Replace('_', ' ');
+        }
+
+        var nameParts = parts.Skip(startIndex);
+        var result = string.Join(" ", nameParts);
+        return string.IsNullOrWhiteSpace(result) ? lastSegment.Replace('_', ' ') : result;
     }
 
     public void CreateSpriteImage(string spriteName, VisualElement cell)

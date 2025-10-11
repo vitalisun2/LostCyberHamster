@@ -84,6 +84,7 @@ public class LevelTilemapEditor : EditorWindow
 
     private void OnDisable()
     {
+        _uiManager?.ReleaseObstacleSprites();
         UnsubscribeEvents();
     }
 
@@ -273,7 +274,7 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void HandleLocationChanged(string newValue)
     {
-        _uiManager.SetObstaclesSpritesListView(newValue, _spritesExt);
+    _uiManager.SetObstaclesSpritesListView(newValue, _spritesExt);
         _uiManager.AddCollectablesToSpritesListView();
 
         /* Загружаем маппинг спрайт‑типов для выбранной локации */
@@ -403,6 +404,7 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void HandleFileSelected(LevelFileDescriptor selectedDescriptor)
     {
+        _uiManager.ReleaseObstacleSprites();
         SpriteLoader.ReleaseSpritesAndClearCache();
 
         _selectedLevelDescriptor = selectedDescriptor;
@@ -786,6 +788,7 @@ public class LevelTilemapEditor : EditorWindow
         _visibleLevelDescriptors.Clear();
         _selectedDaypart = PartOfDayEnum.Morning;
 
+    _uiManager.ReleaseObstacleSprites();
         SpriteLoader.ReleaseSpritesAndClearCache();
 
         rootVisualElement.Clear();
