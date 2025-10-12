@@ -4,7 +4,7 @@
     "patterns": [
         {
             "name": "easy_run",
-            "desсription": "прыжки между крышами с широкими промежутками (сложные); препятствия на земле мотивируют держаться наверху.",
+            "desсription": "простой участок, мало препятствий",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
@@ -88,7 +88,7 @@
         },
         {
             "name": "easy_run_3",
-            "desсription": "прыжки между крышами с широкими промежутками (сложные); препятствия на земле мотивируют держаться наверху.",
+            "desсription": "простой участок, мало препятствий",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_hipster",
@@ -124,7 +124,7 @@
         },
         {
             "name": "small_jumps",
-            "desсription": "одиночные небольшие препятствия",
+            "desсription": "(no super) одиночные небольшие препятствия",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_dog",
@@ -253,6 +253,12 @@
                     "y": -1.8000000715255738
                 },
                 {
+                    "spriteName": "pizza",
+                    "type": 6,
+                    "x": 45.79999923706055,
+                    "y": -1.8000000715255738
+                },
+                {
                     "spriteName": "obstacle_new_york_granny",
                     "type": 1,
                     "x": 50.60000228881836,
@@ -262,6 +268,12 @@
                     "spriteName": "obstacle_new_york_businessman",
                     "type": 1,
                     "x": 61.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "spriteName": "energetic",
+                    "type": 5,
+                    "x": 64.80000305175781,
                     "y": -1.8000000715255738
                 },
                 {
@@ -808,7 +820,7 @@
         },
         {
             "name": "medium_difficulty",
-            "desсription": "умеренное количество препятствий",
+            "desсription": "(no super) умеренное количество препятствий",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_businessman",
@@ -1360,7 +1372,7 @@
         },
         {
             "name": "jump_challenge",
-            "desсription": " участок с частыми прыжками",
+            "desсription": " (no super) участок с частыми прыжками",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_opened_box",
@@ -1426,6 +1438,12 @@
                     "spriteName": "obstacle_new_york_hipster",
                     "type": 1,
                     "x": 49.400001525878909,
+                    "y": -2.799999952316284
+                },
+                {
+                    "spriteName": "energetic",
+                    "type": 5,
+                    "x": 52.79999923706055,
                     "y": -2.799999952316284
                 },
                 {
@@ -1525,9 +1543,9 @@
                     "y": -1.8000000715255738
                 },
                 {
-                    "spriteName": "obstacle_new_york_hipster",
-                    "type": 1,
-                    "x": 56.60000228881836,
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 56.400001525878909,
                     "y": -1.8000000715255738
                 },
                 {
@@ -1978,7 +1996,7 @@
         },
         {
             "name": "peak",
-            "desсription": "максимальная сложность",
+            "desсription": "(no super)  максимальная сложность",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
@@ -2158,6 +2176,12 @@
                     "spriteName": "obstacle_new_york_granny",
                     "type": 1,
                     "x": 55.60000228881836,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "spriteName": "pizza",
+                    "type": 6,
+                    "x": 58.60000228881836,
                     "y": -1.8000000715255738
                 },
                 {
