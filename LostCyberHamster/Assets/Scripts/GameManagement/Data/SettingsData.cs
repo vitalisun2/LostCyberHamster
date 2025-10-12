@@ -13,7 +13,7 @@ namespace GameManagement
         /// <summary>
         /// Громкость музыки.
         /// </summary>
-        public float MusicVolume = 1;
+        public float MusicVolume = 0;
 
         /// <summary>
         /// Громкость звуковых эффектов.
