@@ -25,6 +25,7 @@ namespace Assets.Scripts.Gameplay
         public void OnStart()
         {
             enabled = true;
+            RefreshScrollBounds();
         }
 
         public void OnUpdate(float deltaTime)
@@ -41,6 +42,12 @@ namespace Assets.Scripts.Gameplay
         public void OnResume()
         {
             enabled = true;
+        }
+
+        // Addressable sprites are plugged in after Awake; refresh bounds once the real sprite is present.
+        public void RefreshScrollBounds()
+        {
+            _scrollRepeatMechanic?.RefreshBounds();
         }
 
     }

@@ -2,6 +2,7 @@
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.System.Resources;
 using UnityEngine;
 
 namespace Assets.Scripts.System
@@ -19,6 +20,10 @@ namespace Assets.Scripts.System
         // background sprites
         public GameObject BackgroundPrefab { get; set; }
         public Sprite BackgroundSprite { get; set; }
+
+    public AddressableSetLease<Sprite> ObstaclesSpritesLease { get; set; }
+    public AddressableSetLease<Sprite> CollectablesSpritesLease { get; set; }
+    public AddressableSetLease<Sprite> DecorSpritesLease { get; set; }
 
         // bonuses
         public CoinOneBonus CoinOneBonusPrefab { get; set; }

@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
+using Assets.Scripts.System.Resources;
 
 namespace Assets.Scripts.System
 {
@@ -292,11 +293,14 @@ public static void ReleaseIntroSprites()
             var primaryLabel = GetObstaclesSpritesLabel();
             var fallbackLabel = GetFallbackObstaclesLabel();
 
-            var sprites = await LoadSpritesByLabelAsync(primaryLabel, "obstacle sprites", fallbackLabel);
+            levelData.ObstaclesSpritesLease?.Dispose();
+            var obstaclesLease = await LoadSpritesByLabelAsync(primaryLabel, "obstacle sprites", fallbackLabel);
+            levelData.ObstaclesSpritesLease = obstaclesLease;
+            levelData.ObstaclesSprites = obstaclesLease != null
+                ? new List<Sprite>(obstaclesLease.Values)
+                : new List<Sprite>();
 
-            levelData.ObstaclesSprites = sprites;
-
-            if (!sprites.Any())
+            if (!levelData.ObstaclesSprites.Any())
             {
                 Debug.LogWarning("[LevelDataProvider] No obstacle sprites found for the configured labels.");
             }
@@ -314,7 +318,12 @@ public static void ReleaseIntroSprites()
         // load collectable sprites
         private static async Task LoadCollectablesSprites(LevelData levelData)
         {
-            levelData.CollectablesSprites = await LoadSpritesByLabelAsync(Consts.CollectableSpritesLabel, "collectable sprites");
+            levelData.CollectablesSpritesLease?.Dispose();
+            var collectablesLease = await LoadSpritesByLabelAsync(Consts.CollectableSpritesLabel, "collectable sprites");
+            levelData.CollectablesSpritesLease = collectablesLease;
+            levelData.CollectablesSprites = collectablesLease != null
+                ? new List<Sprite>(collectablesLease.Values)
+                : new List<Sprite>();
             LevelDataValidator.ValidateCollectableSprites(levelData.CollectablesSprites);
         }
         //load decor sprites
@@ -323,9 +332,12 @@ public static void ReleaseIntroSprites()
             var primaryLabel = GetDecorSpritesLabel();
             var fallbackLabel = GetFallbackDecorLabel();
 
-            var decorSprites = await LoadSpritesByLabelAsync(primaryLabel, "decor sprites", fallbackLabel);
-
-            levelData.DecorSprites = decorSprites;
+            levelData.DecorSpritesLease?.Dispose();
+            var decorLease = await LoadSpritesByLabelAsync(primaryLabel, "decor sprites", fallbackLabel);
+            levelData.DecorSpritesLease = decorLease;
+            levelData.DecorSprites = decorLease != null
+                ? new List<Sprite>(decorLease.Values)
+                : new List<Sprite>();
             LevelDataValidator.ValidateDecorSprites(levelData.DecorSprites);
         }
 
@@ -374,7 +386,7 @@ public static void ReleaseIntroSprites()
 
             return "New York";
         }
-        private static async Task<List<Sprite>> LoadSpritesByLabelAsync(string label, string description, params string[] additionalFallbackLabels)
+        private static async Task<AddressableSetLease<Sprite>> LoadSpritesByLabelAsync(string label, string description, params string[] additionalFallbackLabels)
         {
             var candidates = new List<(string Label, bool IsFallback, string Reason)>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -417,8 +429,26 @@ public static void ReleaseIntroSprites()
 
             foreach (var (candidateLabel, isFallback, reason) in candidates)
             {
-                var sprites = await TryLoadSpritesForLabel(candidateLabel, description);
-                if (sprites.Count > 0)
+                AddressableSetLease<Sprite> lease = null;
+                try
+                {
+                    lease = await AddressableLoader.LoadAssetsByLabelAsync<Sprite>(candidateLabel);
+                }
+                catch (InvalidKeyException)
+                {
+                    Debug.LogWarning($"[LevelDataProvider] Addressables label '{candidateLabel}' not found for {description}.");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[LevelDataProvider] Failed to load sprites for label '{candidateLabel}' ({description}): {ex.Message}");
+                }
+
+                if (lease == null)
+                {
+                    continue;
+                }
+
+                if (lease.Values.Count > 0)
                 {
                     if (isFallback)
                     {
@@ -426,8 +456,10 @@ public static void ReleaseIntroSprites()
                         Debug.LogWarning($"[LevelDataProvider] {description} for location '{locationInfo}' not found. Using fallback label '{candidateLabel}' ({reason}).");
                     }
 
-                    return sprites;
+                    return lease;
                 }
+
+                lease.Dispose();
             }
 
             if (candidates.Count > 1)
@@ -435,59 +467,7 @@ public static void ReleaseIntroSprites()
                 Debug.LogWarning($"[LevelDataProvider] Unable to load {description}. Tried labels: {string.Join(", ", candidates.Select(c => c.Label))}.");
             }
 
-            return new List<Sprite>();
-        }
-
-        private static async Task<List<Sprite>> TryLoadSpritesForLabel(string label, string description)
-        {
-            if (string.IsNullOrWhiteSpace(label))
-            {
-                return new List<Sprite>();
-            }
-
-            AsyncOperationHandle<IList<IResourceLocation>> locationsHandle = default;
-            try
-            {
-                locationsHandle = Addressables.LoadResourceLocationsAsync(label, typeof(Sprite));
-                var locations = await locationsHandle.Task;
-
-                if (locations == null || locations.Count == 0)
-                {
-                    Debug.LogWarning($"[LevelDataProvider] Addressables label '{label}' has no sprite entries ({description}).");
-                    return new List<Sprite>();
-                }
-
-                var loadHandle = Addressables.LoadAssetsAsync<Sprite>(locations, null);
-                try
-                {
-                    var sprites = await loadHandle.Task;
-                    return sprites?.ToList() ?? new List<Sprite>();
-                }
-                finally
-                {
-                    if (loadHandle.IsValid())
-                    {
-                        Addressables.Release(loadHandle);
-                    }
-                }
-            }
-            catch (InvalidKeyException)
-            {
-                Debug.LogWarning($"[LevelDataProvider] Addressables label '{label}' not found for {description}.");
-                return new List<Sprite>();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"[LevelDataProvider] Failed to load sprites for label '{label}' ({description}): {ex.Message}");
-                return new List<Sprite>();
-            }
-            finally
-            {
-                if (locationsHandle.IsValid())
-                {
-                    Addressables.Release(locationsHandle);
-                }
-            }
+            return null;
         }
 
         private static string TryGetCurrentLocationName()

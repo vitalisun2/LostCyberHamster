@@ -6,6 +6,7 @@ using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Installers.Roots;
 using Assets.Scripts.System;
+using Assets.Scripts.System.Rendering;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -46,7 +47,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
             var renderer = obstacleInst.GetComponentInChildren<SpriteRenderer>();
             var rendererSprite = GetRendererSpriteByModelTypeAndName(model.type, spriteName);
-            renderer.sprite = rendererSprite;
+            SpriteRendererMaterialHelper.ApplySpriteWithDefaultMaterial(renderer, rendererSprite);
             renderer.sortingLayerName = GetSortingLayer(model.y);
 
             var boxCollider = renderer.GetComponentInChildren<BoxCollider2D>();

@@ -6,6 +6,7 @@ using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Installers.Roots;
 using Assets.Scripts.System;
+using Assets.Scripts.System.Rendering;
 using LoadingTasks;
 using UnityEngine;
 using Zenject;
@@ -22,8 +23,6 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         public List<ILoadingTask> Children => _children;
 
         private EnvironmentRoot _environmentRoot;
-
-        private static Material s_SpritesDefaultMat;
 
         public async Task LoadAsync(Dictionary<string, object> bundle)
         {
@@ -69,6 +68,9 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             var firstBackground = firstGO.GetComponent<Background>();
             var secondBackground = secondGO.GetComponent<Background>();
 
+            firstBackground.RefreshScrollBounds();
+            secondBackground.RefreshScrollBounds();
+
             levelData.GameManager.AddListener(firstBackground);
             levelData.GameManager.AddListener(secondBackground);
         }
@@ -82,32 +84,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                 return;
             }
 
-            renderer.sprite = sprite;
-            renderer.SetPropertyBlock(null);
-
-            var material = GetSpritesDefaultMaterial();
-            if (material != null)
-            {
-                renderer.sharedMaterial = material;
-            }
-        }
-
-        private static Material GetSpritesDefaultMaterial()
-        {
-            if (s_SpritesDefaultMat != null)
-            {
-                return s_SpritesDefaultMat;
-            }
-
-            var shader = Shader.Find("Sprites/Default");
-            if (shader == null)
-            {
-                Debug.LogWarning("[InitBackgroundLoadingTask] Shader 'Sprites/Default' not found.");
-                return null;
-            }
-
-            s_SpritesDefaultMat = new Material(shader);
-            return s_SpritesDefaultMat;
+            SpriteRendererMaterialHelper.ApplySpriteWithDefaultMaterial(renderer, sprite);
         }
 
     }
