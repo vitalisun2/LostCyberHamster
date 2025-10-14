@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
@@ -18,6 +18,7 @@ namespace Assets.Scripts.System
 
         // background sprites
         public GameObject BackgroundPrefab { get; set; }
+        public Sprite BackgroundSprite { get; set; }
 
         // bonuses
         public CoinOneBonus CoinOneBonusPrefab { get; set; }

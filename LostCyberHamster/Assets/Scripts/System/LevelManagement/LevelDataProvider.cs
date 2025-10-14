@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -244,10 +244,8 @@ public static void ReleaseIntroSprites()
 
             LevelDataValidator.ValidateBackgroundTexture(backgroundTexture);
 
-            var backgroundRenderer = backgroundPrefab.GetComponentInChildren<SpriteRenderer>();
-            backgroundRenderer.sprite = backgroundTexture;
-
             levelData.BackgroundPrefab = backgroundPrefab;
+            levelData.BackgroundSprite = backgroundTexture;
         }
 
         private static async Task LoadBonuses(LevelData levelData)

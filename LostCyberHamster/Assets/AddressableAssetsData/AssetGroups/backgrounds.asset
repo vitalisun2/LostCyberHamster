@@ -13,32 +13,35 @@ MonoBehaviour:
   m_Name: background_sprites
   m_EditorClassIdentifier: 
   m_GroupName: background_sprites
-  m_Data:
-    m_SerializedData: []
   m_GUID: d185aa73523a09a4c8b6d27909c0676f
   m_SerializeEntries:
+  - m_GUID: 0d488935399af9a429f6c0d306570021
+    m_Address: bg_paris_night
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 54076f9c5d22bc04f8c2d4ae919f321e
     m_Address: bg_new_york_evening
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ae5c2b8061fce1c4588f8a7781e2ecc1
-    m_Address: bg_new_york_afternoon
+  - m_GUID: 5d89828121a8260409cf812edf038351
+    m_Address: BackgroundPrefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4bfa9fb94f6301142a6b08f90e205d2a
+  - m_GUID: 7a7fac89b4a52ec4b871878833ace958
+    m_Address: bg_paris_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a617f2ea648ac64ca8829e8c6fad77d
     m_Address: bg_new_york_morning
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e0ed4ac07f5fefd42b1921be183085c5
-    m_Address: bg_new_york_night
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 1fad66f80338e614abfb214ed36acf7a
-    m_Address: BackgroundPrefab
+  - m_GUID: ae5c2b8061fce1c4588f8a7781e2ecc1
+    m_Address: bg_new_york_afternoon
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -52,13 +55,8 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7a7fac89b4a52ec4b871878833ace958
-    m_Address: bg_paris_morning
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 0d488935399af9a429f6c0d306570021
-    m_Address: bg_paris_night
+  - m_GUID: e0ed4ac07f5fefd42b1921be183085c5
+    m_Address: bg_new_york_night
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

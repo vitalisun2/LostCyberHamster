@@ -23,6 +23,8 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
         private EnvironmentRoot _environmentRoot;
 
+        private static Material s_SpritesDefaultMat;
+
         public async Task LoadAsync(Dictionary<string, object> bundle)
         {
             _environmentRoot = (EnvironmentRoot)bundle["environmentRoot"];
@@ -32,21 +34,81 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
         private void InitBackgrounds()
         {
-            var backgroundPrefab = LevelController.Instance.LevelData.BackgroundPrefab;
+            var levelData = LevelController.Instance.LevelData;
+            var backgroundPrefab = levelData.BackgroundPrefab;
+            var backgroundSprite = levelData.BackgroundSprite;
 
-            var backgroundWidth = backgroundPrefab.GetComponentInChildren<SpriteRenderer>().bounds.size.x;
+            if (backgroundPrefab == null || backgroundSprite == null)
+            {
+                Debug.LogError("[InitBackgroundLoadingTask] Background prefab or sprite is missing.");
+                return;
+            }
 
-            var firstBackgroundGameObject = GameObject.Instantiate(backgroundPrefab, new Vector3(0, Consts.BackgroundYPos, 0), Quaternion.identity,
+            var spriteRendererOnPrefab = backgroundPrefab.GetComponentInChildren<SpriteRenderer>();
+            var spriteWidth = backgroundSprite.bounds.size.x;
+            if (spriteWidth <= 0f && spriteRendererOnPrefab != null)
+            {
+                spriteWidth = spriteRendererOnPrefab.bounds.size.x;
+            }
+
+            var firstGO = GameObject.Instantiate(
+                backgroundPrefab,
+                new Vector3(0f, Consts.BackgroundYPos, 0f),
+                Quaternion.identity,
                 _environmentRoot.transform);
 
-            var secondBackGroundGameObject = GameObject.Instantiate(backgroundPrefab, new Vector3(backgroundWidth, Consts.BackgroundYPos, 0), Quaternion.identity,
+            var secondGO = GameObject.Instantiate(
+                backgroundPrefab,
+                new Vector3(spriteWidth, Consts.BackgroundYPos, 0f),
+                Quaternion.identity,
                 _environmentRoot.transform);
 
-            var firstBackground = firstBackgroundGameObject.GetComponent<Background>();
-            var secondBackGround = secondBackGroundGameObject.GetComponent<Background>();
+            ApplySpriteAndMaterial(firstGO, backgroundSprite);
+            ApplySpriteAndMaterial(secondGO, backgroundSprite);
 
-            LevelController.Instance.LevelData.GameManager.AddListener(firstBackground);
-            LevelController.Instance.LevelData.GameManager.AddListener(secondBackGround);
+            var firstBackground = firstGO.GetComponent<Background>();
+            var secondBackground = secondGO.GetComponent<Background>();
+
+            levelData.GameManager.AddListener(firstBackground);
+            levelData.GameManager.AddListener(secondBackground);
         }
+
+        private void ApplySpriteAndMaterial(GameObject target, Sprite sprite)
+        {
+            var renderer = target.GetComponentInChildren<SpriteRenderer>(true);
+            if (renderer == null)
+            {
+                Debug.LogError("[InitBackgroundLoadingTask] Background prefab has no SpriteRenderer.");
+                return;
+            }
+
+            renderer.sprite = sprite;
+            renderer.SetPropertyBlock(null);
+
+            var material = GetSpritesDefaultMaterial();
+            if (material != null)
+            {
+                renderer.sharedMaterial = material;
+            }
+        }
+
+        private static Material GetSpritesDefaultMaterial()
+        {
+            if (s_SpritesDefaultMat != null)
+            {
+                return s_SpritesDefaultMat;
+            }
+
+            var shader = Shader.Find("Sprites/Default");
+            if (shader == null)
+            {
+                Debug.LogWarning("[InitBackgroundLoadingTask] Shader 'Sprites/Default' not found.");
+                return null;
+            }
+
+            s_SpritesDefaultMat = new Material(shader);
+            return s_SpritesDefaultMat;
+        }
+
     }
 }
