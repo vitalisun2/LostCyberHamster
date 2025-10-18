@@ -20,12 +20,12 @@ namespace Assets.Scripts.System
 #if UNITY_ANDROID || UNITY_IOS
         Handheld.Vibrate();
 #else
-                Debug.Log("Вибрация поддерживается только на Android/iOS.");
+                DebugManager.Log("Вибрация поддерживается только на Android/iOS.");
 #endif
             }
             catch
             {
-                Debug.Log("Не удалось вызвать вибрацию при помощи функции Handheld.Vibrate().");
+                DebugManager.Log("Не удалось вызвать вибрацию при помощи функции Handheld.Vibrate().");
             }
         }
 

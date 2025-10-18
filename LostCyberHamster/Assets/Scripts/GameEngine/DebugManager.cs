@@ -7,7 +7,9 @@ public static class DebugManager
 {
     public static void Log(string message)
     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
         Debug.Log(message);
+#endif
     }
 
     public static void OnEnable()

@@ -35,7 +35,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             _healthbar.value = lives;
 
-            Debug.Log("Lives: " + lives);
+            DebugManager.Log("Lives: " + lives);
 
             if (lives == 0)
             {
