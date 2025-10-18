@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using UnityEngine;
 using Atomic.Elements;
+using Unity.Profiling;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -35,7 +36,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly Transform _characterTransform;
         private readonly AtomicVariable<Obstacle> _lastObstacle;
         private readonly float _hamsterWidthInUnits;
-        private readonly float _hamsterHeightInUnits;
+    private readonly float _hamsterHeightInUnits;
+
+    private static readonly ProfilerMarker s_JumpLogicMarker = new ProfilerMarker("JumpLogic");
 
         // список препятствий, уже лежащих на нужной линии
         private IReadOnlyList<Obstacle> _sameLineObstacles;
@@ -82,16 +85,19 @@ namespace Assets.Scripts.GameEngine.Mechanics
         /// </summary>
         private void OnJump()
         {
-            if (_energy.Value < 10) return;
+            using (s_JumpLogicMarker.Auto())
+            {
+                if (_energy.Value < 10) return;
 
-            var result = CalculateJumpState();
-            _hamsterState.Value = result.State;
-            if (result.Target != null) _lastObstacle.Value = result.Target;
+                var result = CalculateJumpState();
+                _hamsterState.Value = result.State;
+                if (result.Target != null) _lastObstacle.Value = result.Target;
 
-            SendJumpEventIfNeeded(result);
+                SendJumpEventIfNeeded(result);
 
-            _transformAnimatorController.SetJumpAnimationTrigger(_hamsterState);
-            _spriteAnimatorController.Jump();
+                _transformAnimatorController.SetJumpAnimationTrigger(_hamsterState);
+                _spriteAnimatorController.Jump();
+            }
         }
 
         private void SendJumpEventIfNeeded(JumpResult result)

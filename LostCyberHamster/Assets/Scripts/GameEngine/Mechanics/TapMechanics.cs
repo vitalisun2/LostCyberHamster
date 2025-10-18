@@ -1,6 +1,7 @@
 ﻿using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay.Enums;
 using Atomic.Elements;
+using Unity.Profiling;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -11,7 +12,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly ShiftTransformAnimatorController _shiftTransformAnimatorController;
         private readonly AtomicVariable<HamsterStateEnum> _hamsterState;
         private readonly AtomicVariable<bool> _isShifting;
-        private readonly AtomicVariable<bool> _isDamaged;
+    private readonly AtomicVariable<bool> _isDamaged;
+
+    private static readonly ProfilerMarker s_TapLogicMarker = new ProfilerMarker("TapLogic");
 
         public TapMechanics(AtomicEvent tapRequest, AtomicVariable<bool> isOnBottomLine,
             ShiftTransformAnimatorController shiftTransformAnimatorController,
@@ -44,16 +47,19 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnTap()
         {
-            if (_hamsterState.Value != HamsterStateEnum.Run &&
-                _hamsterState.Value != HamsterStateEnum.RoofRun &&
-                !_isDamaged.Value)
-                return;
+            using (s_TapLogicMarker.Auto())
+            {
+                if (_hamsterState.Value != HamsterStateEnum.Run &&
+                    _hamsterState.Value != HamsterStateEnum.RoofRun &&
+                    !_isDamaged.Value)
+                    return;
 
-            if (_isShifting.Value)
-                return;
+                if (_isShifting.Value)
+                    return;
 
-            _shiftTransformAnimatorController.ShiftToBottomLine();
-            _isOnBottomLine.Value = _shiftTransformAnimatorController.IsShiftedDown();
+                _shiftTransformAnimatorController.ShiftToBottomLine();
+                _isOnBottomLine.Value = _shiftTransformAnimatorController.IsShiftedDown();
+            }
         }
 
     }
