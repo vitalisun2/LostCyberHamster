@@ -268,7 +268,8 @@ namespace Assets.Scripts.Common
                 return _roBuffer;
 
             int ensureCount = Mathf.Min(source.Count, _maxObstaclesPerCheck);
-            _buffer.EnsureCapacity(ensureCount);
+            if (_buffer.Capacity < ensureCount)
+                _buffer.Capacity = ensureCount;
 
             float hx = hamster.position.x;
             int added = 0;

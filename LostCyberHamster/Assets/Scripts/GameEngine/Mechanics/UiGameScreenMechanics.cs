@@ -1,4 +1,4 @@
-using Assets.Scripts.GameManagerLogic;
+﻿using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -21,6 +21,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent _superRoofJumpRequest;
         private readonly AtomicEvent _jumpEvent;
         private readonly AtomicEvent _superJumpEvent;
+        private readonly GameScreenStatusFormatter _statusFormatter = new GameScreenStatusFormatter();
 
         public UiGameScreenMechanics(UIManager uiManager, GameManager gameManager, Hamster character)
         {
@@ -75,20 +76,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnUpdate()
         {
-            var patternIndex = GetDisplayedPatternIndex();
-            var patternName = GetDisplayedPatternName(patternIndex);
-            var patternIndexText = patternIndex >= 0 ? patternIndex.ToString() : "-";
-            var patternNameText = string.IsNullOrEmpty(patternName) ? "-" : patternName;
-
-            var outputStr =
-                $"" +
-                $"{LevelManager.GetLocationName()} " +
-                $"{LevelManager.GetCurrentPartOfDay()}, " +
-                $"{patternNameText} {patternIndexText}, " +
-                $"{_gameManager.State.ToString()},\n " +
-                $"{_character.HamsterState.Value}, isDamaged: {_character.IsDamaged.Value}";
-
-            _gameScreenController.SetHamsterState(outputStr);
+            //if (_statusFormatter.TryFormat(Time.unscaledTime, _gameManager, _character, out var formattedText))
+            //{
+            //    _gameScreenController.SetHamsterState(formattedText);
+            //}
         }
 
         private void OnJump()
@@ -139,7 +130,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnBuyEnergy()
         {
-            var price = 50;
+            const int price = 50;
             if (ResourceManager.CanSpendResource(ResourceType.Coins, price))
             {
                 ResourceManager.SpendResource(ResourceType.Coins, price);
@@ -149,47 +140,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnBuyUltra()
         {
-            var price = 100;
+            const int price = 100;
             if (ResourceManager.CanSpendResource(ResourceType.Coins, price))
             {
                 ResourceManager.SpendResource(ResourceType.Coins, price);
                 _character.AddUltaCharge(100);
             }
-        }
-
-        private int GetDisplayedPatternIndex()
-        {
-            var spawner = ObstacleSpawner.Instance;
-            if (spawner == null)
-            {
-                return -1;
-            }
-
-            var levelController = LevelController.Instance;
-            if (levelController?.IsLevelLoaded != true)
-            {
-                return -1;
-            }
-
-            var index = spawner.CurrPatternIndex - 1;
-            return index >= 0 ? index : -1;
-        }
-
-        private string GetDisplayedPatternName(int patternIndex)
-        {
-            if (patternIndex < 0)
-            {
-                return string.Empty;
-            }
-
-            var levelInfo = LevelController.Instance?.LevelData?.LevelInfo;
-            var patterns = levelInfo?.patterns;
-            if (patterns == null || patternIndex >= patterns.Count)
-            {
-                return string.Empty;
-            }
-
-            return patterns[patternIndex]?.name ?? string.Empty;
         }
     }
 }
