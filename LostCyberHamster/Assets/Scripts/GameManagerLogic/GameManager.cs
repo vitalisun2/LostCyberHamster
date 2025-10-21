@@ -238,7 +238,7 @@ namespace Assets.Scripts.GameManagerLogic
             try
             {
 #if UNITY_2022_1_OR_NEWER
-                rr = (int)Mathf.Round(Screen.currentResolution.refreshRateRatio.value); // e.g., 60, 90, 120
+                rr = (int)global::System.Math.Round(Screen.currentResolution.refreshRateRatio.value); // e.g., 60, 90, 120
 #else
                 rr = Screen.currentResolution.refreshRate;
 #endif

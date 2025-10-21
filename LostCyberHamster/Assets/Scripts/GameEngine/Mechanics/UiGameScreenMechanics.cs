@@ -76,10 +76,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnUpdate()
         {
-            //if (_statusFormatter.TryFormat(Time.unscaledTime, _gameManager, _character, out var formattedText))
-            //{
-            //    _gameScreenController.SetHamsterState(formattedText);
-            //}
+            if (_statusFormatter.TryFormat(Time.unscaledTime, _gameManager, _character, out var formattedText))
+            {
+                _gameScreenController.SetHamsterState(formattedText);
+            }
         }
 
         private void OnJump()

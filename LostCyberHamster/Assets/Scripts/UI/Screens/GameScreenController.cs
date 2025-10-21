@@ -12,7 +12,7 @@ namespace LostCyberHamster.UI
         private Button _buttonPause;
         private Energybar _energyBar;
         private Healthbar _healthBar;
-        //private Label _hamsterState;
+        private Label _hamsterState;
         private Button _jumpButton;
         private Button _buyEnergyButton;
         private Button _buyUltraButton;
@@ -27,12 +27,6 @@ namespace LostCyberHamster.UI
         private VisualElement _tapArea;
         private Action _tapAction;
         private Action _pauseAction;
-
-        private int _currentUltraValue = -1;
-        private float _previousEnergy = -1f;
-        private int _previousHealth = -1;
-        private string _previousHamsterState = null;
-
         private DoubleJumpDetector _doubleJumpDetector = new();
         protected override ScreenEnum _screenAssetName => ScreenEnum.GameScreen;
 
@@ -105,7 +99,7 @@ namespace LostCyberHamster.UI
             _buttonPause = _contentRoot.Q<Button>("btn_pause");
             _energyBar = _contentRoot.Q<Energybar>();
             _healthBar = _contentRoot.Q<Healthbar>();
-            //_hamsterState = _contentRoot.Q<Label>("hamster-state-debug-label");
+            _hamsterState = _contentRoot.Q<Label>("hamster-state-debug-label");
             _jumpButton = _contentRoot.Q<Button>("btn_jump");
             _buyEnergyButton = _contentRoot.Q<Button>("btn_buy_energy");
             _buyUltraButton = _contentRoot.Q<Button>("btn_buy_ulta");
@@ -123,8 +117,7 @@ namespace LostCyberHamster.UI
 
         public void SetEnergy(float energy)
         {
-            // TEMP: отключаем перерисовку бара для проверки
-            //_energyBar.value = energy;
+            _energyBar.value = energy;
         }
 
         public void SetHealth(int health)
@@ -132,10 +125,10 @@ namespace LostCyberHamster.UI
             _healthBar.value = health;
         }
 
-        //public void SetHamsterState(string state)
-        //{
-        //    _hamsterState.text = state;
-        //}
+        public void SetHamsterState(string state)
+        {
+            _hamsterState.text = state;
+        }
 
         public void SetUltraValue(int value)
         {
