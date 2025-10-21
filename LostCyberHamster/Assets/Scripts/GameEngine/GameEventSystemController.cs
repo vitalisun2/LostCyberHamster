@@ -35,7 +35,10 @@ public class GameEventSystemController : MonoBehaviour
     {
         AdsManager.OnEnable();
         QuestManager.OnEnable();
+        // Disable runtime debug logging subscriptions on device to avoid jank
+#if UNITY_EDITOR
         DebugManager.OnEnable();
+#endif
         AnalyticsManager.OnEnable();
         LevelManager.OnEnable();
         MoneyStorage.OnEnable();
@@ -47,7 +50,10 @@ public class GameEventSystemController : MonoBehaviour
     {
         AdsManager.OnDisable();
         QuestManager.OnDisable();
+        // Disable runtime debug logging subscriptions on device to avoid jank
+#if UNITY_EDITOR
         DebugManager.OnDisable();
+#endif
         AnalyticsManager.OnDisable();
         LevelManager.OnDisable();
         MoneyStorage.OnDisable();

@@ -7,30 +7,33 @@ public static class DebugManager
 {
     public static void Log(string message)
     {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if UNITY_EDITOR
         Debug.Log(message);
 #endif
     }
 
     public static void OnEnable()
     {
+#if UNITY_EDITOR
         GameEventsManager.OnCrystalsCollected += CrystallCollected;
         GameEventsManager.OnObstacleJumpedOver += ObstacleJumpedOver;
         GameEventsManager.OnObstacleJumpedOn += ObstacleJumpedOn;
         GameEventsManager.OnCoinCollected += CoinCollected;
         GameEventsManager.OnQuestCompleted += QuestCompleted;
         GameEventsManager.OnSkinPurchased += SkinPurchased;
-
+#endif
     }
 
     public static void OnDisable()
     {
+#if UNITY_EDITOR
         GameEventsManager.OnCrystalsCollected -= CrystallCollected;
         GameEventsManager.OnObstacleJumpedOver -= ObstacleJumpedOver;
         GameEventsManager.OnObstacleJumpedOn -= ObstacleJumpedOn;
         GameEventsManager.OnCoinCollected -= CoinCollected;
         GameEventsManager.OnQuestCompleted -= QuestCompleted;
         GameEventsManager.OnSkinPurchased -= SkinPurchased;
+#endif
     }
 
     private static void SkinPurchased(int skinId, ResourceType type, int price)

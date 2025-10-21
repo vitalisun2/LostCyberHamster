@@ -5,6 +5,7 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using Zenject;
 using static Assets.Scripts.GameManagerLogic.Listeners;
+using UnityEngine.Rendering;
 
 namespace Assets.Scripts.GameManagerLogic
 {
@@ -48,7 +49,10 @@ namespace Assets.Scripts.GameManagerLogic
 
             // Управление частотой кадров: устанавливаем 60 FPS и включаем VSync 1 для стабилизации обновлений
             Application.targetFrameRate = Consts.FPS;
-            QualitySettings.vSyncCount = 1;
+            QualitySettings.vSyncCount = 0;
+#if UNITY_ANDROID
+            SetupFramePacing();
+#endif
         }
 
         private void Update()
@@ -225,5 +229,28 @@ namespace Assets.Scripts.GameManagerLogic
             TimeScaleCoefficient = 1f;
             _state = GameState.PLAYING;
         }
+
+#if UNITY_ANDROID
+        // +++ ADD: вызывать один раз при запуске
+        private void SetupFramePacing()
+        {
+            int rr = 60;
+            try
+            {
+#if UNITY_2022_1_OR_NEWER
+                rr = (int)Mathf.Round(Screen.currentResolution.refreshRateRatio.value); // e.g., 60, 90, 120
+#else
+                rr = Screen.currentResolution.refreshRate;
+#endif
+            }
+            catch { rr = 60; }
+
+            QualitySettings.vSyncCount = 1;            // sync to display
+            Application.targetFrameRate = rr;          // target real refresh rate
+
+            // If you want to always 60 even on 120 Hz – enable:
+            OnDemandRendering.renderFrameInterval = Mathf.Max(1, rr / 60); // 2 on 120 Hz
+        }
+#endif
     }
 }
