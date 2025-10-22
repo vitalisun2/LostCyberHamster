@@ -18,8 +18,8 @@ namespace Assets.Scripts.Gameplay
 
         public ObstacleType ObstacleType { get; private set; }
 
-    public float ColliderWidth => _colliderWidth;
-    public float ColliderHeight => _colliderHeight;
+        public float ColliderWidth => GetBoxColliderWidth();
+        public float ColliderHeight => GetBoxColliderHeight();
 
         // obstacle identifier, used for debugging
         [ShowInInspector]
@@ -33,24 +33,14 @@ namespace Assets.Scripts.Gameplay
 
         private AtomicVariable<BoomEffect> _boomEffect;
 
-    private ScrollLeftMechanics _scrollLeftMechanics;
+        private ScrollLeftMechanics _scrollLeftMechanics;
         private UnspawnOutOfBoundsMechanics _unspawnOutOfBoundsMechanics;
         private UnspawnOnJumpedOnMechanics _unspawnOnJumpedOnMechanics;
-
-    private BoxCollider2D _boxCollider;
-    private float _colliderWidth;
-    private float _colliderHeight;
 
       
 
         public void Init(ObstacleTypeEnum obstacleTypeEnum, GameManager gameManager, string spriteName)
         {
-            _boxCollider = GetComponentInChildren<BoxCollider2D>();
-            if (_boxCollider == null)
-                throw new MissingComponentException("BoxCollider2D is missing on Obstacle object.");
-
-            CacheColliderDimensions();
-
             var computedIsTop = IsPositionOnTopLine(transform.position.y);
             ObstacleType = new ObstacleType(computedIsTop, obstacleTypeEnum);
             Hamster = LevelController.Instance.LevelData.Hamster;
@@ -117,10 +107,21 @@ namespace Assets.Scripts.Gameplay
             return diffTop <= diffBottom && diffTop <= Consts.ObstacleLineTolerance;
         }
 
-        private void CacheColliderDimensions()
+        private float GetBoxColliderWidth()
         {
-            _colliderWidth = _boxCollider.size.x;
-            _colliderHeight = _boxCollider.bounds.size.y;
+            var boxCollider2D = transform.GetComponentInChildren<BoxCollider2D>();
+            if (boxCollider2D == null) throw new MissingComponentException("BoxCollider2D is missing on Obstacle object.");
+
+            return boxCollider2D.size.x;
+        }
+
+        private float GetBoxColliderHeight()
+        {
+            var boxCollider2D = transform.GetComponentInChildren<BoxCollider2D>();
+            if (boxCollider2D == null)
+                throw new MissingComponentException("BoxCollider2D is missing on Obstacle object.");
+
+            return boxCollider2D.size.y;
         }
     }
 }

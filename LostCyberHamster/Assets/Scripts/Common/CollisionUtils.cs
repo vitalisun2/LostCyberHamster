@@ -14,27 +14,9 @@ namespace Assets.Scripts.Common
     /// </summary>
     public static class CollisionUtils
     {
-    private const int _maxObstaclesPerCheck = 10;
-
-        private struct ObstacleSpan
-        {
-            public readonly Obstacle Obstacle;
-            public readonly float Left;
-            public readonly float Right;
-
-            public ObstacleSpan(Obstacle obstacle, float left, float right)
-            {
-                Obstacle = obstacle;
-                Left = left;
-                Right = right;
-            }
-        }
-
         private static readonly List<Obstacle> _buffer = new(32);      // внутренний пул
         private static readonly ReadOnlyCollection<Obstacle> _roBuffer // read-only обёртка
             = new(_buffer);                                            // аллоцируется один раз
-        private static readonly Dictionary<Obstacle, Obstacle> _smallOnBigCache = new();
-        private static readonly List<ObstacleSpan> _bigObstacleSpans = new();
         // ───────────────────────────────── X-интервалы ─────────────────────────────────
 
         /// <summary>X-интервал [left; right] препятствия в конце клипа (учтён worldShift).</summary>
@@ -120,22 +102,12 @@ namespace Assets.Scripts.Common
             Obstacle obstacle,
             out float overlapFraction)
         {
-            GetHamsterXBounds(hamster, out var hL, out var hR);
-            return IsOverlapAtShift(hL, hR, worldShift, obstacle, out overlapFraction);
-        }
-
-        public static bool IsOverlapAtShift(
-            float hamsterLeft,
-            float hamsterRight,
-            float worldShift,
-            Obstacle obstacle,
-            out float overlapFraction)
-        {
             GetObstacleXInterval(obstacle, obstacle.ColliderWidth, worldShift,
                                  out var oL, out var oR);
+            GetHamsterXBounds(hamster, out var hL, out var hR);
 
-            float minRight = Mathf.Min(hamsterRight, oR);
-            float maxLeft = Mathf.Max(hamsterLeft, oL);
+            float minRight = Mathf.Min(hR, oR);
+            float maxLeft = Mathf.Max(hL, oL);
             float overlapLen = minRight - maxLeft;
             if (overlapLen < 0f) overlapLen = 0f;
             overlapFraction = overlapLen / obstacle.ColliderWidth;   // 0‒1
@@ -149,20 +121,12 @@ namespace Assets.Scripts.Common
             float worldShift,
             Obstacle obstacle)
         {
-            GetHamsterXBounds(hamster, out var hL, out var hR);
-            return IsOverlapAtShift(hL, hR, worldShift, obstacle);
-        }
-
-        public static bool IsOverlapAtShift(
-            float hamsterLeft,
-            float hamsterRight,
-            float worldShift,
-            Obstacle obstacle)
-        {
             GetObstacleXInterval(obstacle, obstacle.ColliderWidth, worldShift,
                 out var oL, out var oR);
 
-            return IsOverlap(hamsterLeft, hamsterRight, oL, oR);
+            GetHamsterXBounds(hamster, out var hL, out var hR);
+
+            return IsOverlap(hL, hR, oL, oR);
         }
 
         /// <summary>True, если хомяк перелетает obstacle полностью по X.</summary>
@@ -196,15 +160,7 @@ namespace Assets.Scripts.Common
             IEnumerable<Obstacle> sameLineObstacles)
         {
             GetHamsterXBounds(hamster, out var hL, out var hR);
-            return IsHitSmallNotAliveOnRoof(hL, hR, worldShift, sameLineObstacles);
-        }
 
-        public static bool IsHitSmallNotAliveOnRoof(
-            float hamsterLeft,
-            float hamsterRight,
-            float worldShift,
-            IEnumerable<Obstacle> sameLineObstacles)
-        {
             foreach (var o in sameLineObstacles)
             {
                 if (o.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
@@ -216,8 +172,8 @@ namespace Assets.Scripts.Common
                     continue;
 
                 GetObstacleXInterval(o, o.ColliderWidth, worldShift, out var oL, out var oR);
-                bool overlap = IsOverlap(hamsterLeft, hamsterRight, oL, oR);
-
+                bool overlap = IsOverlap(hL, hR, oL, oR);
+ 
                 if (overlap) return true;
             }
             return false;
@@ -230,11 +186,6 @@ namespace Assets.Scripts.Common
             IEnumerable<Obstacle> allObstacles,
             out Obstacle found)
         {
-            if (_smallOnBigCache.TryGetValue(smallNotAlive, out found) && found != null)
-            {
-                return true;
-            }
-
             // текущий кадр — shift = 0
             GetObstacleXInterval(smallNotAlive, smallNotAlive.ColliderWidth, 0f,
                 out var smallL, out var smallR);
@@ -258,93 +209,21 @@ namespace Assets.Scripts.Common
             bool isOnBottomLine)
         {
             _buffer.Clear();
-
-            var spawner = ObstacleSpawner.Instance;
-            if (spawner == null)
-                return _roBuffer;
-
-            var source = isOnBottomLine ? spawner.SpawnedObstaclesBottom : spawner.SpawnedObstaclesTop;
-            if (source == null || source.Count == 0)
-                return _roBuffer;
-
-            int ensureCount = Mathf.Min(source.Count, _maxObstaclesPerCheck);
-            if (_buffer.Capacity < ensureCount)
-                _buffer.Capacity = ensureCount;
-
             float hx = hamster.position.x;
-            int added = 0;
 
-            for (int i = 0; i < source.Count && added < _maxObstaclesPerCheck; i++)
+            foreach (var inst in ObstacleSpawner.Instance.SpawnedObstacles)
             {
-                var inst = source[i];
                 var obstacle = inst.ObstacleScript;
-
-                if (obstacle == null)
+                if (!HelpMethods.IsOnSameLine(isOnBottomLine, obstacle))
                     continue;
 
                 if (obstacle.transform.position.x <= hx)
                     continue;
 
-                _buffer.Add(obstacle);
-                added++;
+                _buffer.Add(obstacle);         // порядок уже по X
             }
-
-            BuildSmallOnBigCache(_buffer);
 
             return _roBuffer;      // наружу отдаём только неизменяемый вид
-        }
-
-        private static void BuildSmallOnBigCache(List<Obstacle> obstacles)
-        {
-            _smallOnBigCache.Clear();
-            _bigObstacleSpans.Clear();
-
-            if (obstacles.Count == 0)
-                return;
-
-            foreach (var obstacle in obstacles)
-            {
-                if (obstacle == null)
-                    continue;
-
-                if (obstacle.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.bigNotAlive)
-                {
-                    GetObstacleXInterval(obstacle, obstacle.ColliderWidth, 0f, out var left, out var right);
-                    _bigObstacleSpans.Add(new ObstacleSpan(obstacle, left, right));
-                }
-            }
-
-            if (_bigObstacleSpans.Count == 0)
-                return;
-
-            int bigIndex = 0;
-
-            foreach (var obstacle in obstacles)
-            {
-                if (obstacle == null)
-                    continue;
-
-                if (obstacle.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
-                    continue;
-
-                GetObstacleXInterval(obstacle, obstacle.ColliderWidth, 0f, out var smallLeft, out var smallRight);
-
-                while (bigIndex < _bigObstacleSpans.Count && _bigObstacleSpans[bigIndex].Right < smallLeft)
-                    bigIndex++;
-
-                for (int j = bigIndex; j < _bigObstacleSpans.Count; j++)
-                {
-                    var span = _bigObstacleSpans[j];
-                    if (span.Left > smallRight)
-                        break;
-
-                    if (IsOverlap(smallLeft, smallRight, span.Left, span.Right))
-                    {
-                        _smallOnBigCache[obstacle] = span.Obstacle;
-                        break;
-                    }
-                }
-            }
         }
 
         // ───────────────────────────────── Ранний выход по reach ─────────────────────────────────
@@ -356,18 +235,10 @@ namespace Assets.Scripts.Common
             Obstacle obstacle,
             float eps = 1e-4f)
         {
-            GetHamsterXBounds(hamster, out _, out var hamsterRight);
-            return ShouldBreakByReachRight(hamsterRight, reachShift, obstacle, eps);
-        }
-
-        public static bool ShouldBreakByReachRight(
-            float hamsterRight,
-            float reachShift,
-            Obstacle obstacle,
-            float eps = 1e-4f)
-        {
             GetObstacleXInterval(obstacle, obstacle.ColliderWidth, reachShift,
                 out var oL, out _);
+
+            GetHamsterXBounds(hamster, out _, out var hamsterRight);
 
             bool stop = oL > hamsterRight + eps;
             return stop;

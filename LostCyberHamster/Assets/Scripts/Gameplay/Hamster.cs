@@ -112,9 +112,7 @@ namespace Assets.Scripts.Gameplay
                 characterTransform: transform,
                 lastObstacle: LastObstacle,
                 hamsterWidthInUnits: ColliderWidth,
-                hamsterHeightInUnits: ColliderHeight,
-                hamsterLeftBound: LeftX,
-                hamsterRightBound: RightX);
+                hamsterHeightInUnits: ColliderHeight);
 
             _superJumpMechanics = new SuperJumpMechanics(
                 superJumpRequest: SuperJumpRequest,

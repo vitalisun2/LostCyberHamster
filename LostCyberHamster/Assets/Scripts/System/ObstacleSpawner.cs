@@ -17,18 +17,14 @@ namespace Assets.Scripts.System
     {
         public static ObstacleSpawner Instance { get; private set; }
 
-    public List<InstantiatedObstacle> SpawnedObstacles => _spawnedObstacles;
-    public IReadOnlyList<InstantiatedObstacle> SpawnedObstaclesTop => _spawnedObstaclesTop;
-    public IReadOnlyList<InstantiatedObstacle> SpawnedObstaclesBottom => _spawnedObstaclesBottom;
+        public List<InstantiatedObstacle> SpawnedObstacles => _spawnedObstacles;
         public string CurrPatternName { get; private set; }
         public int CurrPatternIndex => _currentPatternIndex;
 
         private readonly float _delayBetweenPatterns = 2.0f;
         private float _timeSinceLastPattern;
         private int _currentPatternIndex;
-    private List<InstantiatedObstacle> _spawnedObstacles = new();
-    private readonly List<InstantiatedObstacle> _spawnedObstaclesTop = new();
-    private readonly List<InstantiatedObstacle> _spawnedObstaclesBottom = new();
+        private List<InstantiatedObstacle> _spawnedObstacles = new();
         private EnvironmentRoot _environmentRoot;
         private List<InstantiatedObstacle> _intantiatedObstacles = new();
         private readonly string _reliefPatternName = "relief";
@@ -141,14 +137,6 @@ namespace Assets.Scripts.System
 
             inst.ObstacleScript.transform.SetParent(_environmentRoot.ObstaclesPool);
             _spawnedObstacles.Remove(inst);
-            if (inst.ObstacleScript.ObstacleType?.IsTop == true)
-            {
-                _spawnedObstaclesTop.Remove(inst);
-            }
-            else
-            {
-                _spawnedObstaclesBottom.Remove(inst);
-            }
         }
 
         // ---------- SPAWN ОДНОГО ПАТТЕРНА ----------
@@ -171,14 +159,6 @@ namespace Assets.Scripts.System
                 obstacle.ObstacleScript.transform.SetParent(_environmentRoot.ObstaclesSpawnedContainer);
                 obstacle.ObstacleScript.InitializeMechanics();
                 _spawnedObstacles.Add(obstacle);
-                if (obstacle.ObstacleScript.ObstacleType?.IsTop == true)
-                {
-                    _spawnedObstaclesTop.Add(obstacle);
-                }
-                else
-                {
-                    _spawnedObstaclesBottom.Add(obstacle);
-                }
             }
         }
     }

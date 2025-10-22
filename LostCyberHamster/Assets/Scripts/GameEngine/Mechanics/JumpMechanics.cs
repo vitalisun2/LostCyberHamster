@@ -28,19 +28,17 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly TransformAnimatorController _transformAnimatorController;
         private readonly SpriteAnimatorController _spriteAnimatorController;
 
-    private const string _clipJump = "transform_jump";
-    private const float _rightEdgeTolRatio = 0.2f; // 20 % ширины хомяка
+        private const string CLIP_JUMP = "transform_jump";
+        private const float RIGHT_EDGE_TOL_RATIO = 0.2f; // 20 % ширины хомяка
         private readonly float _jumpClipWorldShift;
         private readonly float _jumpClipHalfY;
 
         private readonly Transform _characterTransform;
         private readonly AtomicVariable<Obstacle> _lastObstacle;
         private readonly float _hamsterWidthInUnits;
-        private readonly float _hamsterHeightInUnits;
-        private readonly float _hamsterLeftBound;
-        private readonly float _hamsterRightBound;
+    private readonly float _hamsterHeightInUnits;
 
-        private static readonly ProfilerMarker _jumpLogicMarker = new ProfilerMarker("JumpLogic");
+    private static readonly ProfilerMarker s_JumpLogicMarker = new ProfilerMarker("JumpLogic");
 
         // список препятствий, уже лежащих на нужной линии
         private IReadOnlyList<Obstacle> _sameLineObstacles;
@@ -58,9 +56,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             Transform characterTransform,
             AtomicVariable<Obstacle> lastObstacle,
             float hamsterWidthInUnits,
-            float hamsterHeightInUnits,
-            float hamsterLeftBound,
-            float hamsterRightBound)
+            float hamsterHeightInUnits)
         {
             _energy = energy;
             _isOnBottomLine = isOnBottomLine;
@@ -73,11 +69,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _lastObstacle = lastObstacle;
             _hamsterWidthInUnits = hamsterWidthInUnits;
             _hamsterHeightInUnits = hamsterHeightInUnits;
-            _hamsterLeftBound = hamsterLeftBound;
-            _hamsterRightBound = hamsterRightBound;
-            _jumpClipWorldShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, _clipJump);
+            _jumpClipWorldShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_JUMP);
             _jumpClipHalfY = HelpMethods.GetClipRootYAtHalf(
-                _transformAnimatorController, _clipJump);
+                _transformAnimatorController, CLIP_JUMP);
 
             // будет заполнено при вычислении состояния прыжка
             _sameLineObstacles = Array.Empty<Obstacle>();
@@ -91,7 +85,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         /// </summary>
         private void OnJump()
         {
-            using (_jumpLogicMarker.Auto())
+            using (s_JumpLogicMarker.Auto())
             {
                 if (_energy.Value < 10) return;
 
@@ -133,12 +127,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             float reachShift = _jumpClipWorldShift;
             JumpResult overResult = _noHit;                     // запоминаем Over, если встретится
 
-            int count = obstacles.Count;
-            for (int i = 0; i < count; i++)
+            foreach (var obs in obstacles)
             {
-                var obs = obstacles[i];
-
-                    if (CollisionUtils.ShouldBreakByReachRight(_hamsterRightBound, reachShift, obs))
+                if (CollisionUtils.ShouldBreakByReachRight(_characterTransform, _hamsterWidthInUnits, reachShift, obs))
                     break;
 
                 var res = HandleObstacle(obs);
@@ -176,7 +167,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private JumpResult HandleSmallAlive(Obstacle obs)
         {
             // 1. Центр внутри границ препятствия? → удачный напрыг
-            float rightTol = _hamsterWidthInUnits * _rightEdgeTolRatio;
+            float rightTol = _hamsterWidthInUnits * RIGHT_EDGE_TOL_RATIO;
             if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
                     _characterTransform,
                     _jumpClipWorldShift,
@@ -185,9 +176,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return new JumpResult(HamsterStateEnum.JumpOnObstacle, obs);
 
             // 2. Иначе: есть ли вообще X-пересечение? → урон
-                if (CollisionUtils.IsOverlapAtShift(
-                        _hamsterLeftBound,
-                        _hamsterRightBound,
+            if (CollisionUtils.IsOverlapAtShift(
+                    _characterTransform,
+                    _hamsterWidthInUnits,
                     _jumpClipWorldShift,
                     obs))
                 return new JumpResult(HamsterStateEnum.JumpDamageForSmallAlive, obs);
@@ -206,7 +197,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private JumpResult HandleSmallNotAliveRoad(Obstacle obs)
         {
-                if (CollisionUtils.IsOverlapAtShift(_hamsterLeftBound, _hamsterRightBound, _jumpClipWorldShift, obs))
+            if (CollisionUtils.IsOverlapAtShift(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, obs))
                 return new JumpResult(HamsterStateEnum.JumpDamageForSmallNotAlive, obs);
 
             if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, obs))
@@ -220,16 +211,16 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (CollisionUtils.IsJumpOver(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, small))
                 return new JumpResult(HamsterStateEnum.JumpOver, small);
 
-                if (!CollisionUtils.IsOverlapAtShift(_hamsterLeftBound, _hamsterRightBound, _jumpClipWorldShift, small))
+            if (!CollisionUtils.IsOverlapAtShift(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, small))
                 return _noHit;                                     // вовсе не столкнулись
 
             // проверяем: лежит ли small на крыше bigNotAlive
             // Нашли bigNotAlive под small → сохраняем в LastObstacle.
-                if (CollisionUtils.TryFindBigNotAliveUnderSmallNotAlive(small,
-                                                                       _sameLineObstacles,
-                                                                       out var big))
+            if (CollisionUtils.TryFindBigNotAliveUnderSmallNotAlive(small,
+                                                                   _sameLineObstacles,
+                                                                   out var big))
             {
-                    bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_hamsterLeftBound, _hamsterRightBound, _jumpClipWorldShift, _sameLineObstacles);
+                bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, _sameLineObstacles);
                 var state = hitSmall ? HamsterStateEnum.JumpOnRoofDamage : HamsterStateEnum.JumpOnRoof;
                 return new JumpResult(state, big);
             }
@@ -248,9 +239,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private JumpResult HandleBigNotAlive(Obstacle obs)
         {
-                if (CollisionUtils.IsOverlapAtShift(_hamsterLeftBound, _hamsterRightBound, _jumpClipWorldShift, obs))
+            if (CollisionUtils.IsOverlapAtShift(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, obs))
             {
-                    bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_hamsterLeftBound, _hamsterRightBound, _jumpClipWorldShift, _sameLineObstacles);
+                bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_characterTransform, _hamsterWidthInUnits, _jumpClipWorldShift, _sameLineObstacles);
                 var state = hitSmall ? HamsterStateEnum.JumpOnRoofDamage : HamsterStateEnum.JumpOnRoof;
                 return new JumpResult(state, obs);
             }
@@ -264,9 +255,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private bool IsHitXY(Obstacle obs)
         {
             // пересечение по X в конце клипа
-                bool hitX = CollisionUtils.IsOverlapAtShift(
-                    _hamsterLeftBound,
-                    _hamsterRightBound,
+            bool hitX = CollisionUtils.IsOverlapAtShift(
+                _characterTransform,
+                _hamsterWidthInUnits,
                 _jumpClipWorldShift,
                 obs);
 
