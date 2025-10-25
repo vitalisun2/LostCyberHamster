@@ -37,6 +37,11 @@ namespace Assets.Scripts.Gameplay
 
         public void OnUpdate(float deltaTime)
         {
+            if (_scrollLeftMechanics == null)
+            {
+                _scrollLeftMechanics = new ScrollLeftMechanics(transform, ScrollSpeed);
+            }
+            
             _scrollLeftMechanics.Update(deltaTime);
             _scrollRepeatMechanic.Update();
         }
