@@ -11,20 +11,27 @@ namespace Assets.Scripts.Gameplay
         Listeners.IGamePauseListener,
         Listeners.IGameResumeListener
     {
+        public float ScrollSpeed = Consts.BackgroundScrollSpeed;
+
         private ScrollLeftMechanics _scrollLeftMechanics;
         private ScrollRepeatMechanic _scrollRepeatMechanic;
 
         public void Awake()
         {
             enabled = false;
-
-            _scrollLeftMechanics = new ScrollLeftMechanics(transform);
             _scrollRepeatMechanic = new ScrollRepeatMechanic(transform);
         }
 
         public void OnStart()
         {
             enabled = true;
+            
+            // Initialize scroll mechanics with the configured speed
+            if (_scrollLeftMechanics == null)
+            {
+                _scrollLeftMechanics = new ScrollLeftMechanics(transform, ScrollSpeed);
+            }
+            
             RefreshScrollBounds();
         }
 
