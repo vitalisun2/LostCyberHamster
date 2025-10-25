@@ -67,6 +67,7 @@ namespace Assets.Scripts
         public const float BackgroundScrollSpeed = 0.8f;
         public const float RoadScrollSpeed = 1f;
         public const float BackgroundYPos = 0.515f;
+        public const float RoadYPos = BackgroundYPos - (BACKGROUND_HEIGHT * PIXELS_TO_UNITS_RATIO);
 
         public const float CameraSize = 3.1f;
         public static Vector3 CameraPosition = new(0, 0, -10);

@@ -36,6 +36,7 @@ MonoBehaviour:
         - rid: 2706311562664083607
         - rid: 6421078045922951243
         - rid: 6570499326113218622
+        - rid: 6570499326113218623
         - rid: 6570499326113218621
         - rid: 6570499326113218624
         - rid: 6570499326113218625
@@ -46,6 +47,10 @@ MonoBehaviour:
         _children: []
     - rid: 6570499326113218622
       type: {class: InitBackgroundLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []
+    - rid: 6570499326113218623
+      type: {class: InitRoadLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
       data:
         _children: []
     - rid: 6570499326113218624
