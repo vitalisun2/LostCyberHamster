@@ -82,4 +82,33 @@ crashlytics-build.properties
 */[Uu]ser[Ss]ettings/
 **/.DS_Store
 /LostCyberHamster/Assets/AddressableAssetsData/Android/
+/LostCyberHamster/Assets/AddressableAssetsData/iOS/
+/LostCyberHamster/Assets/AddressableAssetsData/WebGL/
+/LostCyberHamster/Assets/AddressableAssetsData/Windows/
 LostCyberHamster/.utmp/
+
+# Unity auto-generated files that change locally
+/[Pp]rojectSettings/ProjectSettings.asset
+/[Pp]rojectSettings/UnityConnectSettings.asset
+
+# Editor logs
+/LostCyberHamster/EditorLogs/
+
+# Rider cache
+.idea/
+*.idea/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+*.sln.DotSettings.user
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
