@@ -105,7 +105,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 _characterHamsterState.Value == HamsterStateEnum.JumpOver ||
                 _characterHamsterState.Value == HamsterStateEnum.JumpOnObstacle ||
                 _characterHamsterState.Value == HamsterStateEnum.JumpOnRoof ||
+                _characterHamsterState.Value == HamsterStateEnum.JumpDamageForSmallAlive ||
                 _characterHamsterState.Value == HamsterStateEnum.JumpDamageForSmallNotAlive ||
+                _characterHamsterState.Value == HamsterStateEnum.JumpDamageForBigAlive ||
                 _characterHamsterState.Value == HamsterStateEnum.JumpOnRoofDamage
                )
             {
