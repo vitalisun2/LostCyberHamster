@@ -15,8 +15,18 @@ MonoBehaviour:
   m_GroupName: background_sprites
   m_GUID: d185aa73523a09a4c8b6d27909c0676f
   m_SerializeEntries:
+  - m_GUID: 0923ce5faf8934a4ebc597c1b0dc9608
+    m_Address: rd_new_york_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0d488935399af9a429f6c0d306570021
     m_Address: bg_paris_night
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0e690d2fc2261554195623ae15297d06
+    m_Address: RoadPrefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -35,8 +45,23 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7e27e0ce885299d40b6a1c4092f8b649
+    m_Address: rd_new_york_afternoon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 809d4c744a4051540b485037c03876a8
+    m_Address: rd_new_york_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9a617f2ea648ac64ca8829e8c6fad77d
     m_Address: bg_new_york_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: adeee4f49257416458f1825a53074345
+    m_Address: rd_new_york_night
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

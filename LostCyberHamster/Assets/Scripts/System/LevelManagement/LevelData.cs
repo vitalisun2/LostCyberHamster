@@ -21,6 +21,10 @@ namespace Assets.Scripts.System
         public GameObject BackgroundPrefab { get; set; }
         public Sprite BackgroundSprite { get; set; }
 
+        // road sprites
+        public GameObject RoadPrefab { get; set; }
+        public Sprite RoadSprite { get; set; }
+
     public AddressableSetLease<Sprite> ObstaclesSpritesLease { get; set; }
     public AddressableSetLease<Sprite> CollectablesSpritesLease { get; set; }
     public AddressableSetLease<Sprite> DecorSpritesLease { get; set; }

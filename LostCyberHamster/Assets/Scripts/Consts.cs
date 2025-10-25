@@ -64,8 +64,9 @@ namespace Assets.Scripts
         /// </summary>
         public const float GameSpeedBase = 3.8f;
 
-        public const float BackgroundScrollSpeed = 1f;
-        public const float BackgroundYPos = -0.7f;
+        public const float BackgroundScrollSpeed = 0.8f;
+        public const float RoadScrollSpeed = 1f;
+        public const float BackgroundYPos = 0.515f;
 
         public const float CameraSize = 3.1f;
         public static Vector3 CameraPosition = new(0, 0, -10);
@@ -133,6 +134,11 @@ namespace Assets.Scripts
         /// </summary>
         public const string BackgroundPrefabName = "BackgroundPrefab";
 
+        /// <summary>
+        /// Имя префаба дороги
+        /// </summary>
+        public const string RoadPrefabName = "RoadPrefab";
+
         // Bonuses
         public const string CoinOneBonusPrefabName = "CoinOnePrefab";
         public const string CrystalBonusPrefabName = "CrystalBonusPrefab";
@@ -163,7 +169,10 @@ namespace Assets.Scripts
         // Новые константы размеров, значения в пикселях
         // -------------------------
         public const int BACKGROUND_WIDTH = 2000;
-        public const int BACKGROUND_HEIGHT = 483;
+        public const int BACKGROUND_HEIGHT = 240;
+
+        public const int ROAD_WIDTH = 2000;
+        public const int ROAD_HEIGHT = 240;
 
         public const int BONUS_WIDTH = 80;
         public const int BONUS_HEIGHT = 80;

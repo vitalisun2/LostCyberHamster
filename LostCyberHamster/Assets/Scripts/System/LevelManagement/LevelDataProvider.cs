@@ -24,6 +24,7 @@ namespace Assets.Scripts.System
 
             await LoadLevelInfo(levelData);
             await LoadBackgroundPrefab(levelData);
+            await LoadRoadPrefab(levelData);
             await LoadBonuses(levelData);
             await LoadEffects(levelData);
             await LoadObstacles(levelData);
@@ -247,6 +248,22 @@ public static void ReleaseIntroSprites()
 
             levelData.BackgroundPrefab = backgroundPrefab;
             levelData.BackgroundSprite = backgroundTexture;
+        }
+
+        private static async Task LoadRoadPrefab(LevelData levelData)
+        {
+            var roadPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.RoadPrefabName).Task;
+
+            var roadTexture = await LoadRoadSpriteWithFallback();
+
+            if (roadTexture == null)
+            {
+                Debug.LogError("[LevelDataProvider] Unable to load road sprite for the current level.");
+                return;
+            }
+
+            levelData.RoadPrefab = roadPrefab;
+            levelData.RoadSprite = roadTexture;
         }
 
         private static async Task LoadBonuses(LevelData levelData)
@@ -503,6 +520,27 @@ public static void ReleaseIntroSprites()
                     Debug.LogWarning($"[LevelDataProvider] Background sprite '{primaryKey}' not found. Using fallback '{fallbackKey}'.");
                     return fallbackSprite;
                 }
+            }
+
+            return sprite;
+        }
+
+        private static async Task<Sprite> LoadRoadSpriteWithFallback()
+        {
+            var fallbackLocationName = GetFallbackLocationName();
+            var partOfDay = LevelManager.GetCurrentPartOfDay();
+            var roadKey = LocationAssetFallback.BuildRoadKey(fallbackLocationName, partOfDay);
+
+            if (string.IsNullOrWhiteSpace(roadKey))
+            {
+                Debug.LogError("[LevelDataProvider] Unable to build road texture key.");
+                return null;
+            }
+
+            var sprite = await TryLoadSpriteByKey(roadKey, "road sprite");
+            if (sprite == null)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Road sprite '{roadKey}' not found.");
             }
 
             return sprite;
