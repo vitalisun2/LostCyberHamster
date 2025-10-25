@@ -62,8 +62,8 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             ApplySpriteAndMaterial(firstGO, roadSprite);
             ApplySpriteAndMaterial(secondGO, roadSprite);
 
-            var firstRoad = firstGO.GetComponent<Road>();
-            var secondRoad = secondGO.GetComponent<Road>();
+            var firstRoad = firstGO.GetComponent<ScrollingEnvironment>();
+            var secondRoad = secondGO.GetComponent<ScrollingEnvironment>();
 
             firstRoad.RefreshScrollBounds();
             secondRoad.RefreshScrollBounds();

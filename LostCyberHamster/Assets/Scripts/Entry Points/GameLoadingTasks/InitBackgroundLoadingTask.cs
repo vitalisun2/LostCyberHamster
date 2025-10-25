@@ -65,8 +65,8 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             ApplySpriteAndMaterial(firstGO, backgroundSprite);
             ApplySpriteAndMaterial(secondGO, backgroundSprite);
 
-            var firstBackground = firstGO.GetComponent<Background>();
-            var secondBackground = secondGO.GetComponent<Background>();
+            var firstBackground = firstGO.GetComponent<ScrollingEnvironment>();
+            var secondBackground = secondGO.GetComponent<ScrollingEnvironment>();
 
             firstBackground.RefreshScrollBounds();
             secondBackground.RefreshScrollBounds();

@@ -5,7 +5,7 @@ using NotImplementedException = System.NotImplementedException;
 
 namespace Assets.Scripts.Gameplay
 {
-    public class Background : AtomicObject,
+    public class ScrollingEnvironment : AtomicObject,
         Listeners.IGameStartListener,
         Listeners.IGameUpdateListener,
         Listeners.IGamePauseListener,
