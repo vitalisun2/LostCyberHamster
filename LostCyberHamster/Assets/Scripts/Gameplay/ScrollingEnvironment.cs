@@ -11,27 +11,25 @@ namespace Assets.Scripts.Gameplay
         Listeners.IGamePauseListener,
         Listeners.IGameResumeListener
     {
-        public float ScrollSpeed = Consts.BackgroundScrollSpeed;
-
+        private float _scrollSpeed;
         private ScrollLeftMechanics _scrollLeftMechanics;
         private ScrollRepeatMechanic _scrollRepeatMechanic;
 
         public void Awake()
         {
             enabled = false;
+        }
+
+        public void Initialize(float scrollSpeed)
+        {
+            _scrollSpeed = scrollSpeed;
+            _scrollLeftMechanics = new ScrollLeftMechanics(transform, scrollSpeed);
             _scrollRepeatMechanic = new ScrollRepeatMechanic(transform);
         }
 
         public void OnStart()
         {
             enabled = true;
-            
-            // Initialize scroll mechanics with the configured speed
-            if (_scrollLeftMechanics == null)
-            {
-                _scrollLeftMechanics = new ScrollLeftMechanics(transform, ScrollSpeed);
-            }
-            
             RefreshScrollBounds();
         }
 
@@ -39,9 +37,10 @@ namespace Assets.Scripts.Gameplay
         {
             if (_scrollLeftMechanics == null)
             {
-                _scrollLeftMechanics = new ScrollLeftMechanics(transform, ScrollSpeed);
+                UnityEngine.Debug.LogError("[ScrollingEnvironment] Not initialized! Call Initialize() first.");
+                return;
             }
-            
+
             _scrollLeftMechanics.Update(deltaTime);
             _scrollRepeatMechanic.Update();
         }

@@ -68,8 +68,8 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             var firstBackground = firstGO.GetComponent<ScrollingEnvironment>();
             var secondBackground = secondGO.GetComponent<ScrollingEnvironment>();
 
-            firstBackground.ScrollSpeed = Consts.BackgroundScrollSpeed;
-            secondBackground.ScrollSpeed = Consts.BackgroundScrollSpeed;
+            firstBackground.Initialize(Consts.BackgroundScrollSpeed);
+            secondBackground.Initialize(Consts.BackgroundScrollSpeed);
 
             firstBackground.RefreshScrollBounds();
             secondBackground.RefreshScrollBounds();

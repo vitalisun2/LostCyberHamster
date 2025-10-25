@@ -65,8 +65,8 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             var firstRoad = firstGO.GetComponent<ScrollingEnvironment>();
             var secondRoad = secondGO.GetComponent<ScrollingEnvironment>();
 
-            firstRoad.ScrollSpeed = Consts.RoadScrollSpeed;
-            secondRoad.ScrollSpeed = Consts.RoadScrollSpeed;
+            firstRoad.Initialize(Consts.RoadScrollSpeed);
+            secondRoad.Initialize(Consts.RoadScrollSpeed);
 
             firstRoad.RefreshScrollBounds();
             secondRoad.RefreshScrollBounds();
