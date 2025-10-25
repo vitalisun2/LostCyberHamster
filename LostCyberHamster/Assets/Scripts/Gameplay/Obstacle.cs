@@ -51,7 +51,7 @@ namespace Assets.Scripts.Gameplay
 
         public void InitializeMechanics()
         {
-            _scrollLeftMechanics = new ScrollLeftMechanics(transform);
+            _scrollLeftMechanics = new ScrollLeftMechanics(transform, Consts.RoadScrollSpeed);
             _unspawnOutOfBoundsMechanics = new UnspawnOutOfBoundsMechanics(this, OnObstacleUnspawned);
 
             _boomEffect = new AtomicVariable<BoomEffect>(LevelController.Instance.LevelData.BoomEffectPrefab);
