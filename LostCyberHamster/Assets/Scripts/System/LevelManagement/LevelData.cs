@@ -17,6 +17,10 @@ namespace Assets.Scripts.System
 
         // availalable loaded addressables
 
+        // sky sprites
+        public GameObject SkyPrefab { get; set; }
+        public Sprite SkySprite { get; set; }
+
         // background sprites
         public GameObject BackgroundPrefab { get; set; }
         public Sprite BackgroundSprite { get; set; }

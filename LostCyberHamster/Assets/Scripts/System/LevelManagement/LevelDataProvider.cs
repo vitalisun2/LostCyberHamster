@@ -23,6 +23,7 @@ namespace Assets.Scripts.System
             var levelData = LevelController.Instance.LevelData;
 
             await LoadLevelInfo(levelData);
+            await LoadSkyPrefab(levelData);
             await LoadBackgroundPrefab(levelData);
             await LoadRoadPrefab(levelData);
             await LoadBonuses(levelData);
@@ -264,6 +265,22 @@ public static void ReleaseIntroSprites()
 
             levelData.RoadPrefab = roadPrefab;
             levelData.RoadSprite = roadTexture;
+        }
+
+        private static async Task LoadSkyPrefab(LevelData levelData)
+        {
+            var skyPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
+
+            var skyTexture = await LoadSkySpriteWithFallback();
+
+            if (skyTexture == null)
+            {
+                Debug.LogError("[LevelDataProvider] Unable to load sky sprite for the current level.");
+                return;
+            }
+
+            levelData.SkyPrefab = skyPrefab;
+            levelData.SkySprite = skyTexture;
         }
 
         private static async Task LoadBonuses(LevelData levelData)
@@ -541,6 +558,27 @@ public static void ReleaseIntroSprites()
             if (sprite == null)
             {
                 Debug.LogWarning($"[LevelDataProvider] Road sprite '{roadKey}' not found.");
+            }
+
+            return sprite;
+        }
+
+        private static async Task<Sprite> LoadSkySpriteWithFallback()
+        {
+            var fallbackLocationName = GetFallbackLocationName();
+            var partOfDay = LevelManager.GetCurrentPartOfDay();
+            var skyKey = LocationAssetFallback.BuildSkyKey(fallbackLocationName, partOfDay);
+
+            if (string.IsNullOrWhiteSpace(skyKey))
+            {
+                Debug.LogError("[LevelDataProvider] Unable to build sky texture key.");
+                return null;
+            }
+
+            var sprite = await TryLoadSpriteByKey(skyKey, "sky sprite");
+            if (sprite == null)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Sky sprite '{skyKey}' not found.");
             }
 
             return sprite;

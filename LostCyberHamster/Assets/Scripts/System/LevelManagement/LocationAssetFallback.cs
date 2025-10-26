@@ -99,6 +99,23 @@ namespace Assets.Scripts.System
             return $"rd_{fallbackSlug}_{suffix}";
         }
 
+        public static string BuildSkyKey(string fallbackLocationName, string partOfDay)
+        {
+            var fallbackSlug = ToSlug(fallbackLocationName);
+            if (string.IsNullOrWhiteSpace(fallbackSlug))
+            {
+                return null;
+            }
+
+            var suffix = ToSlug(partOfDay);
+            if (string.IsNullOrWhiteSpace(suffix))
+            {
+                return null;
+            }
+
+            return $"sky_{fallbackSlug}_{suffix}";
+        }
+
         private static string ExtractBackgroundSuffix(string key)
         {
             if (string.IsNullOrWhiteSpace(key))

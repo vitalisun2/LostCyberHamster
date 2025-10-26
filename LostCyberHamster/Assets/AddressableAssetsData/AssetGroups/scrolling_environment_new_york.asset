@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: background_sprites
-  m_EditorClassIdentifier: 
-  m_GroupName: background_sprites
-  m_GUID: d185aa73523a09a4c8b6d27909c0676f
+  m_Name: scrolling_environment_new_york
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: scrolling_environment_new_york
+  m_GUID: b3638d4b8613f084497e43799113ba1c
   m_SerializeEntries:
   - m_GUID: 0203780de420ed74b88c6e590574ea4a
     m_Address: bg_new_york_afternoon
@@ -30,11 +30,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 0d488935399af9a429f6c0d306570021
-    m_Address: bg_paris_night
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5c57724eae481c44cac774fab4c154f0
     m_Address: bg_new_york_evening
     m_ReadOnly: 0
@@ -42,11 +37,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5d89828121a8260409cf812edf038351
     m_Address: ScrollingEnvironmentPrefab
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7a7fac89b4a52ec4b871878833ace958
-    m_Address: bg_paris_morning
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -60,6 +50,16 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8478c304f42a9a44c90cc4cdcb71ee69
+    m_Address: sky_new_york_night
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8bfa7032568634642871f9098a6d9bc5
+    m_Address: sky_new_york_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9a617f2ea648ac64ca8829e8c6fad77d
     m_Address: bg_new_york_morning
     m_ReadOnly: 0
@@ -70,13 +70,13 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: d1cfb1c6f7e502648a9b1d8f354b6e47
-    m_Address: bg_paris_afternoon
+  - m_GUID: beba0683eba11dc45947fe83158c9771
+    m_Address: sky_new_york_morning
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: d7b742fa556548142a366cacbcf7a289
-    m_Address: bg_paris_evening
+  - m_GUID: cf5196076cd82f147b634e03b61f098b
+    m_Address: sky_new_york_afternoon
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -84,5 +84,5 @@ MonoBehaviour:
   m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
   m_SchemaSet:
     m_Schemas:
-    - {fileID: 11400000, guid: 7cc8a9c435557c64997e0d98dfb48a15, type: 2}
-    - {fileID: 11400000, guid: 2020def4339c97346bc93814a3da5fea, type: 2}
+    - {fileID: 11400000, guid: f802b83ea8ae5974b9f3650d45f3f5ac, type: 2}
+    - {fileID: 11400000, guid: 08f990aeb75e4b64eb58de59cb9116be, type: 2}

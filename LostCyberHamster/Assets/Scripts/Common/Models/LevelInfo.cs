@@ -7,6 +7,7 @@ namespace Assets.Scripts.Common.Models
     [Serializable]
     public class LevelInfo
     {
+        public string skyTexture;
         public string backgroundTexture;
         public string roadTexture;
 
@@ -18,6 +19,7 @@ namespace Assets.Scripts.Common.Models
         {
             var sb = new StringBuilder();
 
+            sb.AppendLine($"skyTexture: {skyTexture}");
             sb.AppendLine($"backgroundTexture: {backgroundTexture}");
             sb.AppendLine($"roadTexture: {roadTexture}");
             sb.AppendLine($"decorationPatterns: {string.Join(", ", decorationPatterns)}");

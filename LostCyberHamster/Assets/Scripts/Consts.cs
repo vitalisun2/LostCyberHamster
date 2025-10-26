@@ -64,9 +64,12 @@ namespace Assets.Scripts
         /// </summary>
         public const float GameSpeedBase = 3.8f;
 
+        public const float SkyScrollSpeed = 0.5f;
         public const float BackgroundScrollSpeed = 0.8f;
         public const float RoadScrollSpeed = 1f;
+        
         public const float BackgroundYPos = 0.515f;
+        public static readonly float SkyYPos = BackgroundYPos + (BACKGROUND_HEIGHT * PIXELS_TO_UNITS_RATIO / 2);
         public const float RoadYPos = BackgroundYPos - (BACKGROUND_HEIGHT * PIXELS_TO_UNITS_RATIO);
 
         public const float CameraSize = 3.1f;
