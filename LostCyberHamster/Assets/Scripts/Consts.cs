@@ -64,7 +64,7 @@ namespace Assets.Scripts
         /// </summary>
         public const float GameSpeedBase = 3.8f;
 
-        public const float SkyScrollSpeed = 0.5f;
+        public const float SkyScrollSpeed = 0.2f;
         public const float BackgroundScrollSpeed = 0.8f;
         public const float RoadScrollSpeed = 1f;
         
