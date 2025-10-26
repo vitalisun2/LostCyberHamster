@@ -131,14 +131,9 @@ namespace Assets.Scripts
         public const double StrikeRangeMax = 12;
 
         /// <summary>
-        /// Имя префаба фона
+        /// Имя префаба для прокручиваемых слоёв окружения (фон, дорога и т.д.)
         /// </summary>
-        public const string BackgroundPrefabName = "BackgroundPrefab";
-
-        /// <summary>
-        /// Имя префаба дороги
-        /// </summary>
-        public const string RoadPrefabName = "RoadPrefab";
+        public const string ScrollingEnvironmentPrefabName = "ScrollingEnvironmentPrefab";
 
         // Bonuses
         public const string CoinOneBonusPrefabName = "CoinOnePrefab";
