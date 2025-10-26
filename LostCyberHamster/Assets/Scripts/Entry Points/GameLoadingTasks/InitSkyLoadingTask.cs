@@ -34,7 +34,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         private void InitSky()
         {
             var levelData = LevelController.Instance.LevelData;
-            var skyPrefab = levelData.SkyPrefab;
+            var skyPrefab = levelData.ScrollingEnvironmentPrefab;
             var skySprite = levelData.SkySprite;
 
             if (skyPrefab == null || skySprite == null)

@@ -35,6 +35,7 @@ MonoBehaviour:
         _children:
         - rid: 2706311562664083607
         - rid: 6421078045922951243
+        - rid: 6570499326113218626
         - rid: 6570499326113218622
         - rid: 6570499326113218623
         - rid: 6570499326113218621
@@ -59,5 +60,9 @@ MonoBehaviour:
         _children: []
     - rid: 6570499326113218625
       type: {class: InitGameUiLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []
+    - rid: 6570499326113218626
+      type: {class: InitSkyLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
       data:
         _children: []

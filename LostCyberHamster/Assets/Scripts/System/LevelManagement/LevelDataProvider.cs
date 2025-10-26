@@ -235,7 +235,11 @@ public static void ReleaseIntroSprites()
 
         private static async Task LoadBackgroundPrefab(LevelData levelData)
         {
-            var backgroundPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
+            // Load shared prefab only once if not already loaded
+            if (levelData.ScrollingEnvironmentPrefab == null)
+            {
+                levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
+            }
 
             var backgroundTexture = await LoadBackgroundSpriteWithFallback(levelData.LevelInfo.backgroundTexture);
 
@@ -247,13 +251,16 @@ public static void ReleaseIntroSprites()
 
             LevelDataValidator.ValidateBackgroundTexture(backgroundTexture);
 
-            levelData.BackgroundPrefab = backgroundPrefab;
             levelData.BackgroundSprite = backgroundTexture;
         }
 
         private static async Task LoadRoadPrefab(LevelData levelData)
         {
-            var roadPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
+            // Load shared prefab only once if not already loaded
+            if (levelData.ScrollingEnvironmentPrefab == null)
+            {
+                levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
+            }
 
             var roadTexture = await LoadRoadSpriteWithFallback();
 
@@ -263,13 +270,16 @@ public static void ReleaseIntroSprites()
                 return;
             }
 
-            levelData.RoadPrefab = roadPrefab;
             levelData.RoadSprite = roadTexture;
         }
 
         private static async Task LoadSkyPrefab(LevelData levelData)
         {
-            var skyPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
+            // Load shared prefab only once if not already loaded
+            if (levelData.ScrollingEnvironmentPrefab == null)
+            {
+                levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
+            }
 
             var skyTexture = await LoadSkySpriteWithFallback();
 
@@ -279,7 +289,6 @@ public static void ReleaseIntroSprites()
                 return;
             }
 
-            levelData.SkyPrefab = skyPrefab;
             levelData.SkySprite = skyTexture;
         }
 

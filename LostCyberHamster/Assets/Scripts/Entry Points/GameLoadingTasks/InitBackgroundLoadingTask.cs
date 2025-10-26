@@ -34,7 +34,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         private void InitBackgrounds()
         {
             var levelData = LevelController.Instance.LevelData;
-            var backgroundPrefab = levelData.BackgroundPrefab;
+            var backgroundPrefab = levelData.ScrollingEnvironmentPrefab;
             var backgroundSprite = levelData.BackgroundSprite;
 
             if (backgroundPrefab == null || backgroundSprite == null)

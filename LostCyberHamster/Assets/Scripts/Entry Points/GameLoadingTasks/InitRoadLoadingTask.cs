@@ -31,7 +31,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         private void InitRoads()
         {
             var levelData = LevelController.Instance.LevelData;
-            var roadPrefab = levelData.RoadPrefab;
+            var roadPrefab = levelData.ScrollingEnvironmentPrefab;
             var roadSprite = levelData.RoadSprite;
 
             if (roadPrefab == null || roadSprite == null)

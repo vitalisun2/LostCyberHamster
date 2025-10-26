@@ -17,16 +17,12 @@ namespace Assets.Scripts.System
 
         // availalable loaded addressables
 
-        // sky sprites
-        public GameObject SkyPrefab { get; set; }
+        // scrolling environment (shared prefab for sky, background, road)
+        public GameObject ScrollingEnvironmentPrefab { get; set; }
+
+        // layer textures
         public Sprite SkySprite { get; set; }
-
-        // background sprites
-        public GameObject BackgroundPrefab { get; set; }
         public Sprite BackgroundSprite { get; set; }
-
-        // road sprites
-        public GameObject RoadPrefab { get; set; }
         public Sprite RoadSprite { get; set; }
 
     public AddressableSetLease<Sprite> ObstaclesSpritesLease { get; set; }
