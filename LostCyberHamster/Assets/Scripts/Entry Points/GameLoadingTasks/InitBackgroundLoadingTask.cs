@@ -65,6 +65,10 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             ApplySpriteAndMaterial(firstGO, backgroundSprite);
             ApplySpriteAndMaterial(secondGO, backgroundSprite);
 
+            // Set sorting layer to "Background"
+            SetSortingLayer(firstGO, "Background");
+            SetSortingLayer(secondGO, "Background");
+
             var firstBackground = firstGO.GetComponent<ScrollingEnvironment>();
             var secondBackground = secondGO.GetComponent<ScrollingEnvironment>();
 
@@ -88,6 +92,18 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             }
 
             SpriteRendererMaterialHelper.ApplySpriteWithDefaultMaterial(renderer, sprite);
+        }
+
+        private void SetSortingLayer(GameObject target, string layerName)
+        {
+            var renderer = target.GetComponentInChildren<SpriteRenderer>(true);
+            if (renderer == null)
+            {
+                Debug.LogWarning("[InitBackgroundLoadingTask] Cannot set sorting layer - no SpriteRenderer found.");
+                return;
+            }
+
+            renderer.sortingLayerName = layerName;
         }
 
     }

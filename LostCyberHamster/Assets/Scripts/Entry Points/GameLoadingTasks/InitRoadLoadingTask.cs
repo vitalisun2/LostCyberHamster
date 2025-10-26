@@ -62,6 +62,10 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             ApplySpriteAndMaterial(firstGO, roadSprite);
             ApplySpriteAndMaterial(secondGO, roadSprite);
 
+            // Set sorting layer to "Road"
+            SetSortingLayer(firstGO, "Road");
+            SetSortingLayer(secondGO, "Road");
+
             var firstRoad = firstGO.GetComponent<ScrollingEnvironment>();
             var secondRoad = secondGO.GetComponent<ScrollingEnvironment>();
 
@@ -85,6 +89,18 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             }
 
             SpriteRendererMaterialHelper.ApplySpriteWithDefaultMaterial(renderer, sprite);
+        }
+
+        private void SetSortingLayer(GameObject target, string layerName)
+        {
+            var renderer = target.GetComponentInChildren<SpriteRenderer>(true);
+            if (renderer == null)
+            {
+                Debug.LogWarning("[InitRoadLoadingTask] Cannot set sorting layer - no SpriteRenderer found.");
+                return;
+            }
+
+            renderer.sortingLayerName = layerName;
         }
 
     }
