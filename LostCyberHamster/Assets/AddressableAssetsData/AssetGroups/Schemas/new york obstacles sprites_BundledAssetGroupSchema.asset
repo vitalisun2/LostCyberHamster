@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e5d17a21594effb4e9591490b009e7aa, type: 3}
-  m_Name: obstacles_BundledAssetGroupSchema
+  m_Name: new york obstacles sprites_BundledAssetGroupSchema
   m_EditorClassIdentifier: 
-  m_Group: {fileID: 11400000, guid: e1c2532af0fbb914ca5a34907373190b, type: 2}
+  m_Group: {fileID: 11400000, guid: a77ec3ce7c40fc74da3152a1f2f9af59, type: 2}
   m_InternalBundleIdMode: 1
   m_Compression: 1
   m_IncludeAddressInCatalog: 1

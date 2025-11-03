@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: paris obstacles sprites
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: paris obstacles sprites
+  m_GUID: 37a70c98fdb7cc54aa663bc87f7e15f7
+  m_SerializeEntries:
+  - m_GUID: 69894289a2509974887e238d4eddd0b6
+    m_Address: obstacle_paris_businessman
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Paris obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af493faffdf7c98498e5fa2177ec64c1
+    m_Address: obstacle_paris_car
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Paris obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 3cb9bc3949f8db34ea4d56a8095de70f, type: 2}
+    - {fileID: 11400000, guid: 5b6bf90a98ef8ab4cb657534d8e441e9, type: 2}

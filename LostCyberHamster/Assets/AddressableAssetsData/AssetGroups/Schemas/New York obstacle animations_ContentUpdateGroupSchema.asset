@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5834b5087d578d24c926ce20cd31e6d6, type: 3}
-  m_Name: obstacles sprites_ContentUpdateGroupSchema
+  m_Name: New York obstacle animations_ContentUpdateGroupSchema
   m_EditorClassIdentifier: 
-  m_Group: {fileID: 11400000, guid: a77ec3ce7c40fc74da3152a1f2f9af59, type: 2}
+  m_Group: {fileID: 11400000, guid: 966c2cf15072dbd418cde9005739e02f, type: 2}
   m_StaticContent: 0

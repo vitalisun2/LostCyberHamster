@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: New York obstacle animations
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: New York obstacle animations
+  m_GUID: b380736c23deb0f478652d32673dc154
+  m_SerializeEntries:
+  - m_GUID: ced60812d2e325845b6340633091a79e
+    m_Address: obstacle_new_york_dog_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 5d82d3e93f2139743bc9d19cab182d5c, type: 2}
+    - {fileID: 11400000, guid: 7184e0f267908374f8f4772092f4f3d4, type: 2}

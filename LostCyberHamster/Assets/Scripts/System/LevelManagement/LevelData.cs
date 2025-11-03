@@ -28,6 +28,7 @@ namespace Assets.Scripts.System
     public AddressableSetLease<Sprite> ObstaclesSpritesLease { get; set; }
     public AddressableSetLease<Sprite> CollectablesSpritesLease { get; set; }
     public AddressableSetLease<Sprite> DecorSpritesLease { get; set; }
+    public AddressableSetLease<AnimationClip> ObstacleAnimationClipsLease { get; set; }
 
         // bonuses
         public CoinOneBonus CoinOneBonusPrefab { get; set; }
@@ -46,6 +47,9 @@ namespace Assets.Scripts.System
 
         // obstacles sprites
         public List<Sprite> ObstaclesSprites { get; set; } = new();
+
+        // obstacle animation clips
+        public List<AnimationClip> ObstacleAnimationClips { get; set; } = new();
 
         // collectables sprites
         public List<Sprite> CollectablesSprites { get; set; } = new();

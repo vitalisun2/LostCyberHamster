@@ -157,6 +157,7 @@ namespace Assets.Scripts
         public const string ObstaclesSpritesLabelPostfix = "obstacles sprites";
         public const string DecorSpritesLabelPostFix = "decor sprites";
         public const string CollectableSpritesLabel = "collectable sprites";
+        public const string ObstacleAnimationsLabelPostfix = "obstacle animations";
 
         public const string Locations = "locations";
         public const string LevelsDaypart = "levels_daypart";

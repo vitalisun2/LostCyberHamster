@@ -444,6 +444,12 @@ public class LevelTilemapUi
         var baseName = Path.GetFileNameWithoutExtension(spriteName);
         var loadedSprite = SpriteLoader.LoadSpriteSync(baseName);
 
+        // Если не загрузился основной спрайт, попробовать первый кадр анимации
+        if (loadedSprite == null)
+        {
+            loadedSprite = SpriteLoader.LoadSpriteSync($"{baseName}_0");
+        }
+
         if (loadedSprite == null)
         {
             Debug.LogError($"Не удалось загрузить спрайт: {baseName}");

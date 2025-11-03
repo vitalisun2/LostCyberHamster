@@ -15,7 +15,7 @@ MonoBehaviour:
   m_DefaultGroup: 8b60fa516636c4257a46110822c557e1
   m_currentHash:
     serializedVersion: 2
-    Hash: f9d96ad7b8e2ef6c124f27e6cec8caef
+    Hash: fd99d1401e8bd58713dbfe3f28701d72
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 0
   m_CatalogRequestsTimeout: 0
@@ -65,6 +65,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1290b18a75e30b2419fd21a0e95e69c7, type: 2}
   - {fileID: 11400000, guid: 2c7aee9611ab547e38bef45362720c44, type: 2}
   - {fileID: 11400000, guid: 24842b1d5cdf8234fb62bf3b7461e0fc, type: 2}
+  - {fileID: 11400000, guid: 2eacb9c98e68d2742a1a64632ecf9600, type: 2}
   - {fileID: 11400000, guid: db59992eadff2438fa4699e263803324, type: 2}
   - {fileID: 11400000, guid: a77ec3ce7c40fc74da3152a1f2f9af59, type: 2}
   - {fileID: 11400000, guid: 5f5baa35eca3243b5b8ba4c61793133f, type: 2}
@@ -77,6 +78,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2788b029966e14608a400198c7d10917, type: 2}
   - {fileID: 11400000, guid: c1d5cca549ff5764287fe72f8bea3bab, type: 2}
   - {fileID: 11400000, guid: 928c0b1d61a4f9e49865a1ac38870153, type: 2}
+  - {fileID: 11400000, guid: 966c2cf15072dbd418cde9005739e02f, type: 2}
   - {fileID: 11400000, guid: 102e10109e24abb48b681bf2e50a1b0a, type: 2}
   - {fileID: 11400000, guid: f8b02c860fc0d85499a52222aeecc85a, type: 2}
   - {fileID: 11400000, guid: 6431898acc063e247bad07c90813bc6e, type: 2}
@@ -138,6 +140,7 @@ MonoBehaviour:
     - levels_location_01_New_York
     - levels_location_02_Paris
     - Paris decor sprites
+    - New York obstacle animations
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: c9f1c9b4aab8040468e89d35e65f704f, type: 2}

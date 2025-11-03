@@ -30,6 +30,7 @@ namespace Assets.Scripts.System
             await LoadEffects(levelData);
             await LoadObstacles(levelData);
             await LoadObstaclesSprites(levelData);
+            await LoadObstacleAnimations(levelData);
             await LoadDecorSprites(levelData);
             await LoadCollectablesSprites(levelData);
         }
@@ -357,6 +358,98 @@ public static void ReleaseIntroSprites()
         private static string GetFallbackObstaclesLabel()
         {
             return BuildLocationLabel(GetFallbackLocationName(), Consts.ObstaclesSpritesLabelPostfix);
+        }
+
+        // Load obstacle animation clips
+        private static async Task LoadObstacleAnimations(LevelData levelData)
+        {
+            var primaryLabel = GetObstacleAnimationsLabel();
+            var fallbackLabel = GetFallbackObstacleAnimationsLabel();
+
+            levelData.ObstacleAnimationClipsLease?.Dispose();
+            var animationsLease = await LoadAnimationClipsByLabelAsync(primaryLabel, "obstacle animations", fallbackLabel);
+            levelData.ObstacleAnimationClipsLease = animationsLease;
+            levelData.ObstacleAnimationClips = animationsLease != null
+                ? new List<AnimationClip>(animationsLease.Values)
+                : new List<AnimationClip>();
+        }
+
+        private static string GetObstacleAnimationsLabel()
+        {
+            var locationName = LevelManager.GetLocationName();
+            return BuildLocationLabel(locationName, Consts.ObstacleAnimationsLabelPostfix);
+        }
+
+        private static string GetFallbackObstacleAnimationsLabel()
+        {
+            return BuildLocationLabel(GetFallbackLocationName(), Consts.ObstacleAnimationsLabelPostfix);
+        }
+
+        private static async Task<AddressableSetLease<AnimationClip>> LoadAnimationClipsByLabelAsync(string label, string description, params string[] additionalFallbackLabels)
+        {
+            var candidates = new List<(string Label, bool IsFallback, string Reason)>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            void AddCandidate(string candidateLabel, bool isFallback, string reason)
+            {
+                if (string.IsNullOrWhiteSpace(candidateLabel))
+                {
+                    return;
+                }
+
+                var trimmed = candidateLabel.Trim();
+                if (seen.Add(trimmed))
+                {
+                    candidates.Add((trimmed, isFallback, reason));
+                }
+            }
+
+            AddCandidate(label, false, "primary");
+
+            if (additionalFallbackLabels is { Length: > 0 })
+            {
+                foreach (var fallbackLabel in additionalFallbackLabels)
+                {
+                    AddCandidate(fallbackLabel, true, "explicit");
+                }
+            }
+
+            foreach (var (candidateLabel, isFallback, reason) in candidates)
+            {
+                AddressableSetLease<AnimationClip> lease = null;
+                try
+                {
+                    lease = await AddressableLoader.LoadAssetsByLabelAsync<AnimationClip>(candidateLabel);
+                }
+                catch (InvalidKeyException)
+                {
+                    Debug.Log($"[LevelDataProvider] Addressables label '{candidateLabel}' not found for {description} (this is OK if no animations exist).");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[LevelDataProvider] Failed to load animation clips for label '{candidateLabel}' ({description}): {ex.Message}");
+                }
+
+                if (lease == null)
+                {
+                    continue;
+                }
+
+                if (lease.Values.Count > 0)
+                {
+                    if (isFallback)
+                    {
+                        var locationInfo = TryGetCurrentLocationName() ?? "unknown";
+                        Debug.LogWarning($"[LevelDataProvider] {description} for location '{locationInfo}' not found. Using fallback label '{candidateLabel}' ({reason}).");
+                    }
+
+                    return lease;
+                }
+
+                lease.Dispose();
+            }
+
+            return null;
         }
         // load collectable sprites
         private static async Task LoadCollectablesSprites(LevelData levelData)

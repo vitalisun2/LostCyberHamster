@@ -10,11 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: obstacles
+  m_Name: obstacles prefabs
   m_EditorClassIdentifier: 
-  m_GroupName: obstacles
-  m_Data:
-    m_SerializedData: []
+  m_GroupName: obstacles prefabs
   m_GUID: 18da1ca405cb4d0468b5b895a64f0862
   m_SerializeEntries:
   - m_GUID: 43d392c725377cf4180272556a8bb505
@@ -22,13 +20,13 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 861f703a7c35bf44ebd713e7086abd32
-    m_Address: BigCitizenPrefab
+  - m_GUID: 82728858ae2c3094eabe372ee7d39939
+    m_Address: BigNotAlivePrefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 82728858ae2c3094eabe372ee7d39939
-    m_Address: BigNotAlivePrefab
+  - m_GUID: 861f703a7c35bf44ebd713e7086abd32
+    m_Address: BigCitizenPrefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

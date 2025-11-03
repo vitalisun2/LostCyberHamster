@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: obstacles sprites
+  m_Name: new york obstacles sprites
   m_EditorClassIdentifier: 
-  m_GroupName: obstacles sprites
+  m_GroupName: new york obstacles sprites
   m_GUID: 7bb582b3c050f5f49a616b92a5fc8991
   m_SerializeEntries:
   - m_GUID: 0e46970db7684e14890d3ef8a1e568ba
@@ -38,18 +38,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 69894289a2509974887e238d4eddd0b6
-    m_Address: obstacle_paris_businessman
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Paris obstacles sprites
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: af493faffdf7c98498e5fa2177ec64c1
-    m_Address: obstacle_paris_car
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Paris obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: bada9d1e4c36cd04890ccf0f750460c6
     m_Address: obstacle_new_york_businessman
