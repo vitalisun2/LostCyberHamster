@@ -21,6 +21,8 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
     {
         // Animation constants
         private const string _animatorPlayStateName = "Play";
+        private const string _animatorPlaceholderClipName = "EmptyClip"; // Name of placeholder clip in ObstacleAnimatorController
+        private const string _animationTypeWalk = "walk";
         private const string _animationTypeIdle = "idle";
         private const string _spritePropertyName = "m_Sprite";
         
@@ -59,10 +61,10 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             var animator = obstacleInst.GetComponentInChildren<Animator>();
             
             // Try to setup animation first, fallback to static sprite if no animation
-            var hasAnimation = TrySetupAnimation(spriteName, renderer, animator, model.type);
+            var animationType = TrySetupAnimation(spriteName, renderer, animator, model.type);
             
             // If no animation, load and validate static sprite
-            if (!hasAnimation)
+            if (animationType == AnimationType.None)
             {
                 var rendererSprite = GetRendererSpriteByModelTypeAndName(model.type, spriteName);
                 SetStaticSprite(renderer, rendererSprite, animator);
@@ -85,7 +87,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
             var obstacleScript = obstacleInst.AddComponent<Obstacle>();
 
-            obstacleScript.Init((ObstacleTypeEnum)model.type, LevelController.Instance.LevelData.GameManager, spriteName);
+            obstacleScript.Init((ObstacleTypeEnum)model.type, LevelController.Instance.LevelData.GameManager, spriteName, animationType);
 
             return obstacleScript;
         }
@@ -177,33 +179,46 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         /// <summary>
         /// Attempts to setup animation for an obstacle using AnimatorOverrideController.
         /// Uses naming convention: {spriteName}_{animationType} (e.g., "obstacle_new_york_dog_idle").
+        /// Searches for "walk" animation first, then falls back to "idle".
         /// </summary>
         /// <param name="spriteName">Base name of the obstacle sprite</param>
         /// <param name="renderer">SpriteRenderer component to apply the first frame to</param>
         /// <param name="animator">Animator component to configure</param>
         /// <param name="modelType">Type of obstacle for validation</param>
-        /// <returns>True if animation was found and configured, false otherwise</returns>
-        private static bool TrySetupAnimation(string spriteName, SpriteRenderer renderer, Animator animator, int modelType)
+        /// <returns>AnimationType indicating which animation was found (Walk, Idle, or None)</returns>
+        private static AnimationType TrySetupAnimation(string spriteName, SpriteRenderer renderer, Animator animator, int modelType)
         {
-            var animationClip = TryGetAnimationClip(spriteName, _animationTypeIdle);
-            
-            if (animationClip != null && animator != null)
+            // Try to find walk animation first
+            var walkClip = TryGetAnimationClip(spriteName, _animationTypeWalk);
+            if (walkClip != null && animator != null)
             {
-                // Has animation - use AnimatorOverrideController to replace the clip
+                // Has walk animation
                 var overrideController = new AnimatorOverrideController(animator.runtimeAnimatorController);
-                overrideController[_animatorPlayStateName] = animationClip;
+                overrideController[_animatorPlaceholderClipName] = walkClip;
                 animator.runtimeAnimatorController = overrideController;
                 
-                // Validate that animation has at least one frame with sprite
-                ValidateAnimationClip(animationClip, spriteName, (ObstacleTypeEnum)modelType);
+                ValidateAnimationClip(walkClip, spriteName, (ObstacleTypeEnum)modelType);
+                SetFirstSpriteFromAnimation(renderer, walkClip, spriteName);
                 
-                // Manually set first sprite from animation clip
-                SetFirstSpriteFromAnimation(renderer, animationClip, spriteName);
-                
-                return true;
+                return AnimationType.Walk;
             }
             
-            return false;
+            // Try to find idle animation as fallback
+            var idleClip = TryGetAnimationClip(spriteName, _animationTypeIdle);
+            if (idleClip != null && animator != null)
+            {
+                // Has idle animation
+                var overrideController = new AnimatorOverrideController(animator.runtimeAnimatorController);
+                overrideController[_animatorPlaceholderClipName] = idleClip;
+                animator.runtimeAnimatorController = overrideController;
+                
+                ValidateAnimationClip(idleClip, spriteName, (ObstacleTypeEnum)modelType);
+                SetFirstSpriteFromAnimation(renderer, idleClip, spriteName);
+                
+                return AnimationType.Idle;
+            }
+            
+            return AnimationType.None;
         }
         
         private static void SetFirstSpriteFromAnimation(SpriteRenderer renderer, AnimationClip clip, string spriteName)
@@ -263,6 +278,8 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             }
             
             // Validate each sprite frame - check individual sprite rect, not entire texture
+            // Also collect unique underlying textures to validate ETC2 divisibility (width/height % 4 == 0)
+            var uniqueTextures = new HashSet<Texture2D>();
             for (int i = 0; i < keyframes.Length; i++)
             {
                 var sprite = keyframes[i].value as Sprite;
@@ -274,6 +291,17 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                 
                 // Validate individual sprite dimensions (not the entire texture)
                 ValidateAnimationSprite(sprite, obstacleType, i);
+
+                if (sprite.texture != null)
+                {
+                    uniqueTextures.Add(sprite.texture);
+                }
+            }
+
+            // Validate ETC2 divisibility for the textures used in this animation clip
+            foreach (var tex in uniqueTextures)
+            {
+                LevelDataValidator.ValidateTextureDivisibleBy4(tex, $"Animation texture '{tex.name}' for obstacle '{spriteName}' (clip '{clip.name}')");
             }
 #endif
         }

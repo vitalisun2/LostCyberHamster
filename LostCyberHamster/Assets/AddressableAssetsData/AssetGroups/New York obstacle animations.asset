@@ -21,6 +21,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e7cd0fd5b8db0504dab1938d4c5400e5
+    m_Address: obstacle_new_york_granny_walk
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
   m_SchemaSet:

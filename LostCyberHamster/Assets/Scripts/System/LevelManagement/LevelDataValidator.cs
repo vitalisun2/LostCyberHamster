@@ -7,6 +7,27 @@ using UnityEngine;
 
 public static class LevelDataValidator
 {
+    /// <summary>
+    /// Validates that a texture's width and height are divisible by 4 (required by ETC2 compression).
+    /// </summary>
+    /// <param name="texture">Texture to validate</param>
+    /// <param name="context">Context string for error messages (e.g., asset purpose/name)</param>
+    public static void ValidateTextureDivisibleBy4(Texture2D texture, string context)
+    {
+        if (texture == null)
+        {
+            HelpMethods.LogAndStopGame("[LevelDataValidator.ValidateTextureDivisibleBy4] Texture is null: " + context);
+            return;
+        }
+
+        if ((texture.width % 4) != 0 || (texture.height % 4) != 0)
+        {
+            HelpMethods.LogAndStopGame(
+                $"[LevelDataValidator.ValidateTextureDivisibleBy4] {context}: texture '{texture.name}' has size {texture.width}x{texture.height}. For ETC2 compression both width and height must be divisible by 4."
+            );
+        }
+    }
+
     public static void ValidateCollectableSprites(List<Sprite> sprites)
     {
         if (sprites == null || sprites.Count == 0)
@@ -29,6 +50,9 @@ public static class LevelDataValidator
                 );
                 return;
             }
+
+            // ETC2 requirement
+            ValidateTextureDivisibleBy4(sprite.texture, $"Collectable sprite '{sprite.name}'");
         }
     }
 
@@ -47,6 +71,15 @@ public static class LevelDataValidator
         {
             HelpMethods.LogAndStopGame($"{methodTag} A null sprite was found.");
         }
+
+        // Decor sprites: only validate ETC2 divisibility, no fixed size requirement
+        foreach (var sprite in levelDataDecorSprites)
+        {
+            if (sprite != null)
+            {
+                ValidateTextureDivisibleBy4(sprite.texture, $"Decor sprite '{sprite.name}'");
+            }
+        }
     }
 
     public static void ValidateBackgroundTexture(Sprite backgroundSprite)
@@ -63,6 +96,9 @@ public static class LevelDataValidator
                 $"[LevelDataValidator.ValidateBackgroundTexture] Background sprite '{backgroundSprite.name}' has resolution {backgroundSprite.texture.width}x{backgroundSprite.texture.height}, expected {Consts.BACKGROUND_WIDTH}x{Consts.BACKGROUND_HEIGHT}."
             );
         }
+
+        // ETC2 requirement
+        ValidateTextureDivisibleBy4(backgroundSprite.texture, $"Background sprite '{backgroundSprite.name}'");
     }
 
     public static void ValidateObstacleSprite(ObstacleTypeEnum obstacleType, string spriteName, Sprite sprite)
@@ -117,5 +153,8 @@ public static class LevelDataValidator
                 CheckSize(Consts.SMALL_NOTALIVE_WIDTH, Consts.SMALL_NOTALIVE_HEIGHT, "smallNotAliveRoadAndRoof");
                 break;
         }
+
+    // ETC2 requirement
+    ValidateTextureDivisibleBy4(sprite.texture, $"Obstacle sprite '{sprite.name}'");
     }
 }

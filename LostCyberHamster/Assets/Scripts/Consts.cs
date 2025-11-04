@@ -180,17 +180,17 @@ namespace Assets.Scripts
         public const int HAMSTER_WIDTH = 326;
         public const int HAMSTER_HEIGHT = 84;
 
-        public const int SMALL_ALIVE_WIDTH = 150;
+        public const int SMALL_ALIVE_WIDTH = 152;
         public const int SMALL_ALIVE_HEIGHT = 108;
 
         public const int BIG_ALIVE_WIDTH = 100;
-        public const int BIG_ALIVE_HEIGHT = 210;
+        public const int BIG_ALIVE_HEIGHT = 212;
 
         public const int SMALL_NOTALIVE_WIDTH = 140;
         public const int SMALL_NOTALIVE_HEIGHT = 108;
 
-        public const int BIG_NOTALIVE_WIDTH = 450;
-        public const int BIG_NOTALIVE_HEIGHT = 170;
+        public const int BIG_NOTALIVE_WIDTH = 452;
+        public const int BIG_NOTALIVE_HEIGHT = 172;
     }
 
 }

@@ -154,7 +154,7 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 150
+        width: 152
         height: 108
       alignment: 7
       pivot: {x: 0.5, y: 0}
@@ -174,9 +174,9 @@ TextureImporter:
       name: obstacle_new_york_dog_1
       rect:
         serializedVersion: 2
-        x: 150
+        x: 152
         y: 0
-        width: 150
+        width: 152
         height: 108
       alignment: 7
       pivot: {x: 0.5, y: 0}
@@ -196,9 +196,9 @@ TextureImporter:
       name: obstacle_new_york_dog_2
       rect:
         serializedVersion: 2
-        x: 300
+        x: 304
         y: 0
-        width: 150
+        width: 152
         height: 108
       alignment: 7
       pivot: {x: 0.5, y: 0}

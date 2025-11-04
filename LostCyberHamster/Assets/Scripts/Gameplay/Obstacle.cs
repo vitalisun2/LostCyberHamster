@@ -27,6 +27,8 @@ namespace Assets.Scripts.Gameplay
 
         public BoomEffectAction BoomEffectAction { get; private set; }
         public GameManager GameManager { get; private set; }
+        
+        public AnimationType AnimationType { get; private set; }
 
 
         public AtomicEvent<GameObject> OnObstacleUnspawned = new();
@@ -36,15 +38,17 @@ namespace Assets.Scripts.Gameplay
         private ScrollLeftMechanics _scrollLeftMechanics;
         private UnspawnOutOfBoundsMechanics _unspawnOutOfBoundsMechanics;
         private UnspawnOnJumpedOnMechanics _unspawnOnJumpedOnMechanics;
+        private ObstacleMoveMechanics _obstacleMoveMechanics;
 
       
 
-        public void Init(ObstacleTypeEnum obstacleTypeEnum, GameManager gameManager, string spriteName)
+        public void Init(ObstacleTypeEnum obstacleTypeEnum, GameManager gameManager, string spriteName, AnimationType animationType)
         {
             var computedIsTop = IsPositionOnTopLine(transform.position.y);
             ObstacleType = new ObstacleType(computedIsTop, obstacleTypeEnum);
             Hamster = LevelController.Instance.LevelData.Hamster;
             GameManager = gameManager;
+            AnimationType = animationType;
 
             ObstacleId = $"{ObstacleType}_{spriteName}_{transform.position.x:F2}_{transform.position.y:F2}";
         }
@@ -58,6 +62,12 @@ namespace Assets.Scripts.Gameplay
             BoomEffectAction = new BoomEffectAction(_boomEffect);
 
             _unspawnOnJumpedOnMechanics = new UnspawnOnJumpedOnMechanics(this);
+            
+            // Create additional movement mechanics for walking obstacles
+            if (AnimationType == Common.Models.AnimationType.Walk)
+            {
+                _obstacleMoveMechanics = new ObstacleMoveMechanics(transform);
+            }
 
 
             _unspawnOnJumpedOnMechanics.OnEnable();
@@ -73,6 +83,7 @@ namespace Assets.Scripts.Gameplay
             }
 
             _scrollLeftMechanics.Update(deltaTime);
+            _obstacleMoveMechanics?.Update(deltaTime);
             _unspawnOutOfBoundsMechanics.Update();
         }
 
