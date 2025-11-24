@@ -60,13 +60,16 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             var renderer = obstacleInst.GetComponentInChildren<SpriteRenderer>();
             var animator = obstacleInst.GetComponentInChildren<Animator>();
             
+            // Remove animation type suffix to get base name for lookup
+            var baseName = GetBaseObstacleName(spriteName);
+            
             // Try to setup animation first, fallback to static sprite if no animation
-            var animationType = TrySetupAnimation(spriteName, renderer, animator, model.type);
+            var animationType = TrySetupAnimation(baseName, renderer, animator, model.type);
             
             // If no animation, load and validate static sprite
             if (animationType == AnimationType.None)
             {
-                var rendererSprite = GetRendererSpriteByModelTypeAndName(model.type, spriteName);
+                var rendererSprite = GetRendererSpriteByModelTypeAndName(model.type, baseName);
                 SetStaticSprite(renderer, rendererSprite, animator);
             }
             
@@ -90,6 +93,28 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             obstacleScript.Init((ObstacleTypeEnum)model.type, LevelController.Instance.LevelData.GameManager, spriteName, animationType);
 
             return obstacleScript;
+        }
+
+        /// <summary>
+        /// Extracts the base obstacle name by removing animation type suffix (_idle, _walk).
+        /// Examples:
+        /// - "obstacle_new_york_people_1_idle" → "obstacle_new_york_people_1"
+        /// - "obstacle_new_york_people_2_walk" → "obstacle_new_york_people_2"
+        /// - "obstacle_new_york_granny" → "obstacle_new_york_granny" (unchanged)
+        /// </summary>
+        private static string GetBaseObstacleName(string spriteName)
+        {
+            if (spriteName.EndsWith("_idle", StringComparison.OrdinalIgnoreCase))
+            {
+                return spriteName.Substring(0, spriteName.Length - 5);
+            }
+            
+            if (spriteName.EndsWith("_walk", StringComparison.OrdinalIgnoreCase))
+            {
+                return spriteName.Substring(0, spriteName.Length - 5);
+            }
+            
+            return spriteName;
         }
 
         private static Sprite GetRendererSpriteByModelTypeAndName(int modelType, string spriteName)
