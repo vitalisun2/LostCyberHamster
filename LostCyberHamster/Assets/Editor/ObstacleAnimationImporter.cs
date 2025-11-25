@@ -54,9 +54,11 @@ namespace Assets.EditorTools
         private const string AnimationsFolder = "Assets/Animations/Obstacles";
         private const float PivotX = 0.5f;
         private const float PivotY = 0f;
+
         private const int FrameRate = 12;
 
         [MenuItem("Tools/Obstacle Animations/Import From Dropbox", priority = 500)]
+        [MenuItem("Assets/Obstacle Animations/Import From Dropbox", priority = 10)]
         public static void ImportFromDropboxMenu()
         {
             if (Application.isPlaying)
