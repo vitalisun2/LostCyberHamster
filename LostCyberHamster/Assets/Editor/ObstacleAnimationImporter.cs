@@ -55,7 +55,7 @@ namespace Assets.EditorTools
         private const float PivotX = 0.5f;
         private const float PivotY = 0f;
 
-        private const int FrameRate = 12;
+        private const int FrameRate = 5; // Procreate export setting: 5 FPS
 
         [MenuItem("Tools/Obstacle Animations/Import From Dropbox", priority = 500)]
         [MenuItem("Assets/Obstacle Animations/Import From Dropbox", priority = 10)]
