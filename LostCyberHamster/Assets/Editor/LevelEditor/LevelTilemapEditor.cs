@@ -174,13 +174,31 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void ProcessTileChange(Tilemap changedTilemap, Tile tile, Vector3Int cellPosition)
     {
-        // For decoration sprites (starting with "decor"), skip validation/placement rules
+        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+        
+        // For decoration sprites (starting with "decor"), allow placement only in non-template locations
         if (tile.sprite.name.StartsWith("decor", StringComparison.OrdinalIgnoreCase))
         {
-            return; // Decorations can be placed freely
+            if (isTemplateLocation)
+            {
+                // Decorations not allowed in Templates
+                changedTilemap.SetTile(cellPosition, null);
+                Debug.LogWarning("Decorations cannot be placed in Templates. Use specific locations (New York, Paris, etc.)");
+                return;
+            }
+            return; // Decorations can be placed freely in locations
         }
 
-        // For obstacle sprites, apply placement rules
+        // For obstacle sprites in specific locations (not templates), block editing
+        if (!isTemplateLocation)
+        {
+            // Obstacles are read-only in specific locations
+            changedTilemap.SetTile(cellPosition, null);
+            Debug.LogWarning("Obstacles are read-only in specific locations. Edit them in Templates mode.");
+            return;
+        }
+
+        // For obstacle sprites in Templates, apply placement rules
         if (!ObstacleSpriteTypeMappingsManager.TryGetType(tile.sprite.name, out var obstacleType))
             throw new InvalidOperationException($"No mapping found for sprite '{tile.sprite.name}'");
 
@@ -321,6 +339,7 @@ public class LevelTilemapEditor : EditorWindow
 
     /// <summary>
     /// Загружает decoration спрайты из decorationPatterns на Tilemap.
+    /// Decorations загружаются ПОВЕРХ obstacles (не очищая Tilemap).
     /// </summary>
     private void LoadDecorationsToTilemap()
     {
@@ -330,7 +349,8 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        _tipeMapInScene.ClearAllTiles();
+        // DON'T clear tilemap - obstacles already loaded!
+        // Decorations are placed on top of obstacles
 
         // Initialize decorationPatterns if missing
         if (_currentLevelInfo.decorationPatterns == null)
@@ -340,7 +360,7 @@ public class LevelTilemapEditor : EditorWindow
 
         if (_currentLevelInfo.decorationPatterns.Count == 0)
         {
-            Debug.Log("[LevelTilemapEditor] No decoration patterns found. Starting with empty tilemap for decoration placement.");
+            Debug.Log("[LevelTilemapEditor] No decoration patterns found. Ready for decoration placement on top of obstacles.");
             return;
         }
 
@@ -610,26 +630,32 @@ public class LevelTilemapEditor : EditorWindow
         var tilemapGameObject = SceneCreator.CreateSceneWithTilemap((int)totalWidth, _currentLevelInfo);
         _tipeMapInScene = tilemapGameObject.GetComponent<Tilemap>();
 
-        if (isTemplateLocation)
+        // Load patterns (obstacles) for both Templates and Locations
+        var patternCount = _currentLevelInfo.patterns.Count;
+        if (patternCount == 0)
         {
-            // Templates: work with patterns
-            var patternCount = _currentLevelInfo.patterns.Count;
-            if (patternCount == 0)
+            Debug.LogWarning("Уровень не содержит паттернов.");
+            _uiManager.UpdatePatternsList(new List<string>());
+            _currentPattern = null;
+            _selectedPatternIndex = -1;
+            
+            // For locations without patterns, still load decorations
+            if (!isTemplateLocation)
             {
-                Debug.LogWarning("Уровень не содержит паттернов.");
-                _uiManager.UpdatePatternsList(new List<string>());
-                _currentPattern = null;
-                _selectedPatternIndex = -1;
-                return;
+                LoadDecorationsToTilemap();
             }
-
-            var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-            _uiManager.UpdatePatternsList(patternNames);
-            _uiManager.SelectFirstPattern();
+            
+            UpdateBackgroundDropdown();
+            return;
         }
-        else
+
+        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+        _uiManager.UpdatePatternsList(patternNames);
+        _uiManager.SelectFirstPattern();
+
+        // For specific locations: also load decorations on top of obstacles
+        if (!isTemplateLocation)
         {
-            // Specific locations: load decorations
             LoadDecorationsToTilemap();
         }
 
