@@ -107,6 +107,12 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager?.ReleaseObstacleSprites();
         UnsubscribeEvents();
         
+        // Don't restore scene during assembly reload or domain reload
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+        {
+            return;
+        }
+        
         // Restore scene by reloading without saving changes
         if (!string.IsNullOrEmpty(_originalScenePath))
         {
