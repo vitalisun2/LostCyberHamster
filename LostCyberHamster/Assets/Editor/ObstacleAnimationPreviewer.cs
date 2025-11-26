@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -14,6 +15,8 @@ namespace Assets.EditorTools
     /// 2. Click: Tools → Obstacle Animations → Preview Selected Animation
     /// 3. Prefab spawns in scene, animation assigned, Animation window auto-plays
     /// 
+    /// Supports multiple selection - creates grid layout with max 5 objects per row.
+    /// 
     /// Saves time by automating:
     /// - Placing correct prefab (BigCitizen/SmallCitizen/BigNotAlive) in scene
     /// - Assigning animation to Animator via AnimatorOverrideController
@@ -26,11 +29,18 @@ namespace Assets.EditorTools
         private const string BigNotAlivePrefabPath = "Assets/Content/prefabs/BigNotAlivePrefab.prefab";
         
         private const string AnimatorPlaceholderClipName = "EmptyClip";
+        private const int MaxObjectsPerRow = 5;
+        private const float SpacingMultiplier = 1.2f; // 20% spacing between objects
+        private const string AnimatorStateName = "Play"; // Default state name in ObstacleAnimatorController
         
-        // Store current preview instance to cleanup on next preview
-        private static GameObject currentPreviewInstance;
+        // Store current preview instances to cleanup on next preview
+        private static List<GameObject> currentPreviewInstances = new List<GameObject>();
+        private static List<Animator> currentAnimators = new List<Animator>();
+        private static List<GameObject> currentAnimatedObjects = new List<GameObject>();
+        private static List<AnimationClip> currentAnimationClips = new List<AnimationClip>();
         private static bool originalGridVisibility;
         private static bool originalGizmosVisibility;
+        private static EditorApplication.CallbackFunction editorUpdateCallback;
 
         [MenuItem("Tools/Obstacle Animations/Preview Selected Animation", priority = 501)]
         [MenuItem("Assets/Obstacle Animations/Preview Selected Animation", priority = 11)]
@@ -42,82 +52,79 @@ namespace Assets.EditorTools
                 return;
             }
 
-            // Cleanup previous preview if exists
-            if (currentPreviewInstance != null)
-            {
-                Object.DestroyImmediate(currentPreviewInstance);
-                currentPreviewInstance = null;
-            }
+            // Cleanup previous previews if exist (call full cleanup)
+            ClearPreview();
 
-            // Get selected sprite sheet
-            var selected = Selection.activeObject;
-            if (selected == null)
+            // Get all selected sprite sheets
+            var selectedObjects = Selection.objects;
+            if (selectedObjects == null || selectedObjects.Length == 0)
             {
-                Debug.LogError("[ObstacleAnimationPreviewer] No asset selected. Please select a sprite sheet in Project window.");
+                Debug.LogError("[ObstacleAnimationPreviewer] No assets selected. Please select sprite sheet(s) in Project window.");
                 return;
             }
 
-            var assetPath = AssetDatabase.GetAssetPath(selected);
-            if (string.IsNullOrEmpty(assetPath) || !assetPath.EndsWith(".png"))
+            // Filter valid PNG sprite sheets
+            var validSpriteSheets = new List<string>();
+            foreach (var obj in selectedObjects)
             {
-                Debug.LogError("[ObstacleAnimationPreviewer] Selected asset is not a PNG sprite sheet. Please select an obstacle sprite sheet.");
+                var assetPath = AssetDatabase.GetAssetPath(obj);
+                if (!string.IsNullOrEmpty(assetPath) && assetPath.EndsWith(".png"))
+                {
+                    validSpriteSheets.Add(assetPath);
+                }
+            }
+
+            if (validSpriteSheets.Count == 0)
+            {
+                Debug.LogError("[ObstacleAnimationPreviewer] No PNG sprite sheets selected. Please select obstacle sprite sheet(s).");
                 return;
             }
 
-            // Extract base name from sprite sheet path
-            // Example: "Assets/Content/locations/01_New_York/sprites/obstacle_new_york_people_1_idle.png"
-            var fileName = System.IO.Path.GetFileNameWithoutExtension(assetPath);
-            
-            // Find matching animation clip
-            var animationClip = FindAnimationClip(fileName);
-            if (animationClip == null)
-            {
-                Debug.LogError($"[ObstacleAnimationPreviewer] Animation clip not found for '{fileName}'. Expected path: Assets/Animations/Obstacles/{fileName}.anim");
-                return;
-            }
-
-            // Determine prefab type based on naming convention
-            var prefabPath = GetPrefabPath(fileName);
-            if (string.IsNullOrEmpty(prefabPath))
-            {
-                Debug.LogError($"[ObstacleAnimationPreviewer] Could not determine prefab type for '{fileName}'. Add category to naming convention (_people_, _dog_, _car_).");
-                return;
-            }
-
-            // Load prefab
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (prefab == null)
-            {
-                Debug.LogError($"[ObstacleAnimationPreviewer] Prefab not found at path: {prefabPath}");
-                return;
-            }
-
-            // Hide all existing objects in scene (store original visibility)
+            // Hide all existing objects in scene
             var allRootObjects = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
             foreach (var obj in allRootObjects)
             {
                 obj.SetActive(false);
             }
 
-            // Instantiate in current scene at visible position
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            instance.transform.position = new Vector3(0, -2, 0);
-            instance.name = $"[PREVIEW] {fileName}";
-            
-            // Store reference for cleanup on next preview
-            currentPreviewInstance = instance;
-            
-            // Mark scene as dirty but DON'T save (user can undo with Ctrl+Z)
-            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(instance.scene);
-            Undo.RegisterCreatedObjectUndo(instance, "Preview Animation");
-            
-            // Find child with Animator and SpriteRenderer
-            var animator = instance.GetComponentInChildren<Animator>();
-            if (animator == null)
+            // Create preview data for all valid sprite sheets
+            var previewDataList = new List<PreviewData>();
+            foreach (var assetPath in validSpriteSheets)
             {
-                Debug.LogError($"[ObstacleAnimationPreviewer] Animator not found on prefab '{prefab.name}'.");
-                Object.DestroyImmediate(instance);
+                var fileName = System.IO.Path.GetFileNameWithoutExtension(assetPath);
                 
+                var animationClip = FindAnimationClip(fileName);
+                if (animationClip == null)
+                {
+                    Debug.LogWarning($"[ObstacleAnimationPreviewer] Animation clip not found for '{fileName}'. Skipping.");
+                    continue;
+                }
+
+                var prefabPath = GetPrefabPath(fileName);
+                if (string.IsNullOrEmpty(prefabPath))
+                {
+                    Debug.LogWarning($"[ObstacleAnimationPreviewer] Could not determine prefab type for '{fileName}'. Skipping.");
+                    continue;
+                }
+
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (prefab == null)
+                {
+                    Debug.LogWarning($"[ObstacleAnimationPreviewer] Prefab not found at path: {prefabPath}. Skipping.");
+                    continue;
+                }
+
+                previewDataList.Add(new PreviewData
+                {
+                    FileName = fileName,
+                    AnimationClip = animationClip,
+                    Prefab = prefab
+                });
+            }
+
+            if (previewDataList.Count == 0)
+            {
+                Debug.LogError("[ObstacleAnimationPreviewer] No valid previews could be created.");
                 // Restore visibility
                 foreach (var obj in allRootObjects)
                 {
@@ -126,56 +133,91 @@ namespace Assets.EditorTools
                 return;
             }
 
-            // Get the child GameObject that has both Animator and SpriteRenderer
-            var animatedObject = animator.gameObject;
-            var spriteRenderer = animatedObject.GetComponent<SpriteRenderer>();
-
-            // Setup animation using AnimatorOverrideController
-            var baseController = animator.runtimeAnimatorController as AnimatorController;
-            if (baseController == null)
+            // Create instances and collect animated objects for framing
+            var animatedObjects = new List<GameObject>();
+            var createdInstances = CreatePreviewInstances(previewDataList, out animatedObjects);
+            
+            if (createdInstances.Count == 0)
             {
-                Debug.LogError($"[ObstacleAnimationPreviewer] Animator controller is not AnimatorController type.");
-                Object.DestroyImmediate(instance);
+                Debug.LogError("[ObstacleAnimationPreviewer] Failed to create preview instances.");
+                // Restore visibility
+                foreach (var obj in allRootObjects)
+                {
+                    obj.SetActive(true);
+                }
                 return;
             }
 
-            var overrideController = new AnimatorOverrideController(baseController);
-            overrideController.name = $"PreviewController_{fileName}";
-            overrideController[AnimatorPlaceholderClipName] = animationClip;
-            animator.runtimeAnimatorController = overrideController;
-            
-            // Enable animator
-            animator.enabled = true;
-            animator.Rebind();
-            animator.Update(0f);
+            currentPreviewInstances.AddRange(createdInstances);
 
-            // Set first frame sprite if available
-            if (spriteRenderer != null && animationClip != null)
+            Debug.Log($"[ObstacleAnimationPreviewer] Using AnimationMode API for {animatedObjects.Count} objects");
+
+            // Select all animated objects for framing
+            Selection.objects = animatedObjects.ToArray();
+
+            // Store animation data for callback
+            currentAnimators.Clear();
+            currentAnimatedObjects.Clear();
+            currentAnimationClips.Clear();
+            
+            for (int i = 0; i < animatedObjects.Count; i++)
             {
-                var bindings = AnimationUtility.GetObjectReferenceCurveBindings(animationClip);
-                var spriteBinding = bindings.FirstOrDefault(b => b.type == typeof(SpriteRenderer) && b.propertyName == "m_Sprite");
+                var obj = animatedObjects[i];
+                if (obj == null) continue;
                 
-                if (spriteBinding.path != null)
+                var animator = obj.GetComponent<Animator>();
+                if (animator != null)
                 {
-                    var keyframes = AnimationUtility.GetObjectReferenceCurve(animationClip, spriteBinding);
-                    if (keyframes != null && keyframes.Length > 0)
-                    {
-                        var firstSprite = keyframes[0].value as Sprite;
-                        if (firstSprite != null)
-                        {
-                            spriteRenderer.sprite = firstSprite;
-                        }
-                    }
+                    currentAnimators.Add(animator);
+                    currentAnimatedObjects.Add(obj);
+                    currentAnimationClips.Add(previewDataList[i].AnimationClip);
                 }
             }
 
-            // Select the CHILD object with animator (not root)
-            Selection.activeGameObject = animatedObject;
+            // Start AnimationMode for editor preview
+            AnimationMode.StartAnimationMode();
+            
+            // Setup editor update callback to keep animations running
+            if (editorUpdateCallback != null)
+            {
+                EditorApplication.update -= editorUpdateCallback;
+            }
+            
+            double startTime = EditorApplication.timeSinceStartup;
+            editorUpdateCallback = () =>
+            {
+                if (currentAnimatedObjects.Count == 0) return;
+                
+                // Calculate elapsed time since animation start
+                double currentTime = EditorApplication.timeSinceStartup;
+                float elapsedTime = (float)(currentTime - startTime);
+                
+                // Sample all animations at current time
+                for (int i = 0; i < currentAnimatedObjects.Count; i++)
+                {
+                    var obj = currentAnimatedObjects[i];
+                    var clip = currentAnimationClips[i];
+                    
+                    if (obj == null || clip == null) continue;
+                    
+                    // Loop animation at correct framerate
+                    // clip.length already accounts for frameRate
+                    float time = elapsedTime % clip.length;
+                    AnimationMode.SampleAnimationClip(obj, clip, time);
+                }
+                
+                // Repaint scene view to show animation updates
+                if (SceneView.lastActiveSceneView != null)
+                {
+                    SceneView.lastActiveSceneView.Repaint();
+                }
+            };
+            EditorApplication.update += editorUpdateCallback;
 
-            // Setup scene view after a frame to ensure sprite is loaded
+            // Setup scene view and frame all objects
             EditorApplication.delayCall += () =>
             {
-                if (animatedObject == null) return;
+                if (animatedObjects.Count == 0) return;
                 
                 var sceneView = SceneView.lastActiveSceneView;
                 if (sceneView == null) return;
@@ -188,30 +230,53 @@ namespace Assets.EditorTools
                 sceneView.drawGizmos = false;
                 sceneView.showGrid = false;
                 
-                // IMPORTANT: Keep selection active for FrameSelected to work
-                Selection.activeGameObject = animatedObject;
+                // Keep selection active for framing
+                Selection.objects = animatedObjects.ToArray();
                 
                 // Wait another frame for selection to fully register, then frame
                 EditorApplication.delayCall += () =>
                 {
-                    if (animatedObject == null) return;
+                    if (animatedObjects.Count == 0 || animatedObjects.Any(obj => obj == null)) return;
                     
                     var sv = SceneView.lastActiveSceneView;
                     if (sv == null) return;
                     
-                    // Ensure selection is still active
-                    Selection.activeGameObject = animatedObject;
+                    // Calculate combined bounds of all objects
+                    Bounds combinedBounds = new Bounds();
+                    bool boundsInitialized = false;
                     
-                    // Frame the object to fill viewport
-                    if (spriteRenderer != null && spriteRenderer.sprite != null)
+                    foreach (var obj in animatedObjects)
                     {
-                        var bounds = spriteRenderer.bounds;
-                        sv.Frame(bounds, false);
+                        if (obj == null) continue;
+                        var spriteRenderer = obj.GetComponent<SpriteRenderer>();
+                        if (spriteRenderer != null && spriteRenderer.sprite != null)
+                        {
+                            if (!boundsInitialized)
+                            {
+                                combinedBounds = spriteRenderer.bounds;
+                                boundsInitialized = true;
+                            }
+                            else
+                            {
+                                combinedBounds.Encapsulate(spriteRenderer.bounds);
+                            }
+                        }
+                    }
+                    
+                    if (boundsInitialized)
+                    {
+                        sv.Frame(combinedBounds, false);
                     }
                     else
                     {
                         sv.FrameSelected();
                     }
+                    
+                    // Deselect after framing
+                    EditorApplication.delayCall += () =>
+                    {
+                        Selection.activeGameObject = null;
+                    };
                     
                     sv.Repaint();
                 };
@@ -219,64 +284,161 @@ namespace Assets.EditorTools
                 sceneView.Repaint();
             };
 
-            // Open Animation window and start playback after a delay
-            EditorApplication.delayCall += () =>
+            Debug.Log($"[ObstacleAnimationPreviewer] Created {createdInstances.Count} preview(s)");
+        }
+
+        private struct PreviewData
+        {
+            public string FileName;
+            public AnimationClip AnimationClip;
+            public GameObject Prefab;
+        }
+
+        private static List<GameObject> CreatePreviewInstances(List<PreviewData> previewDataList, out List<GameObject> animatedObjects)
+        {
+            animatedObjects = new List<GameObject>();
+            var instances = new List<GameObject>();
+
+            // Calculate grid layout positions
+            var positions = CalculateGridPositions(previewDataList);
+
+            for (int i = 0; i < previewDataList.Count; i++)
             {
-                if (animatedObject == null) return; // Check if object still exists
-                
-                // Ensure selection is the animated child object
-                Selection.activeGameObject = animatedObject;
-                
-                // Open Animation window
-                EditorApplication.ExecuteMenuItem("Window/Animation/Animation");
-                
-                // Wait one more frame for Animation window to initialize
-                EditorApplication.delayCall += () =>
+                var data = previewDataList[i];
+                var position = positions[i];
+
+                // Instantiate prefab properly for Editor
+                var instance = PrefabUtility.InstantiatePrefab(data.Prefab) as GameObject;
+                if (instance == null)
                 {
-                    if (animatedObject == null) return;
+                    Debug.LogWarning($"[ObstacleAnimationPreviewer] Failed to instantiate prefab for '{data.FileName}'. Skipping.");
+                    continue;
+                }
+
+                instance.name = $"Preview_{data.FileName}";
+                instance.transform.position = position;
+
+                // Find child object with Animator (naming varies: BigCitizenSprite, SmallCitizenSprite, BigNotAliveSprite)
+                var animator = instance.GetComponentInChildren<Animator>();
+                if (animator == null)
+                {
+                    Debug.LogWarning($"[ObstacleAnimationPreviewer] Animator not found in prefab '{data.Prefab.name}'. Skipping animation assignment for '{data.FileName}'.");
+                    Object.DestroyImmediate(instance);
+                    continue;
+                }
+
+                // Assign animation using AnimatorOverrideController
+                AssignAnimationToAnimator(animator, data.AnimationClip);
+
+                instances.Add(instance);
+                animatedObjects.Add(animator.gameObject);
+            }
+
+            return instances;
+        }
+
+        private static List<Vector3> CalculateGridPositions(List<PreviewData> previewDataList)
+        {
+            var positions = new List<Vector3>();
+            
+            // Get sizes from first frame of each animation clip
+            var objectSizes = new List<Vector2>();
+            
+            foreach (var data in previewDataList)
+            {
+                Vector2 size = Vector2.one; // Default fallback
+                
+                if (data.AnimationClip != null)
+                {
+                    // Get first sprite from animation
+                    var bindings = AnimationUtility.GetObjectReferenceCurveBindings(data.AnimationClip);
+                    var spriteBinding = bindings.FirstOrDefault(b => b.type == typeof(SpriteRenderer) && b.propertyName == "m_Sprite");
                     
-                    var animationWindowType = System.Type.GetType("UnityEditor.AnimationWindow,UnityEditor");
-                    if (animationWindowType != null)
+                    if (spriteBinding.path != null)
                     {
-                        var animationWindow = EditorWindow.GetWindow(animationWindowType);
-                        if (animationWindow != null)
+                        var keyframes = AnimationUtility.GetObjectReferenceCurve(data.AnimationClip, spriteBinding);
+                        if (keyframes != null && keyframes.Length > 0)
                         {
-                            // Ensure window is focused
-                            animationWindow.Focus();
-                            
-                            // Use reflection to access AnimationWindowState
-                            var stateProperty = animationWindowType.GetProperty("state", 
-                                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                            
-                            if (stateProperty != null)
+                            var firstSprite = keyframes[0].value as Sprite;
+                            if (firstSprite != null)
                             {
-                                var state = stateProperty.GetValue(animationWindow);
-                                if (state != null)
-                                {
-                                    // Set playing to true
-                                    var playingProperty = state.GetType().GetProperty("playing");
-                                    if (playingProperty != null)
-                                    {
-                                        playingProperty.SetValue(state, true);
-                                        animationWindow.Repaint();
-                                        
-                                        // NOW deselect after animation started - gizmos already hidden
-                                        EditorApplication.delayCall += () =>
-                                        {
-                                            Selection.activeGameObject = null;
-                                        };
-                                    }
-                                }
+                                // Use sprite's actual size in world units (pixels / pixelsPerUnit)
+                                size = firstSprite.bounds.size;
                             }
                         }
                     }
-                };
-            };
+                }
+                
+                objectSizes.Add(size);
+            }
+            
+            // Calculate positions in grid
+            // Start from top (Y=0), move down for each row
+            float currentX = 0f;
+            float currentRowY = 0f; // Top of current row
+            float rowHeight = 0f;
+            int currentRowIndex = 0;
+            
+            for (int i = 0; i < objectSizes.Count; i++)
+            {
+                var size = objectSizes[i];
+                var objWidth = size.x;
+                var objHeight = size.y;
+                
+                // Start new row if we exceed max objects per row
+                if (i > 0 && i % MaxObjectsPerRow == 0)
+                {
+                    currentX = 0f;
+                    // Move down to next row (subtract previous row height + spacing)
+                    DebugManager.DiagLog($"[Grid] Row {currentRowIndex} height: {rowHeight}, moving to Y={currentRowY - rowHeight * SpacingMultiplier}");
+                    currentRowY -= rowHeight * SpacingMultiplier;
+                    currentRowIndex++;
+                    rowHeight = 0f;
+                }
+                
+                // Track max height in current row
+                rowHeight = Mathf.Max(rowHeight, objHeight);
+                
+                // Position object
+                // X: offset by half width (pivot is center on X axis)
+                // Y: currentRowY is top of row, sprite pivot is at bottom, so place at (top - height)
+                var position = new Vector3(currentX + objWidth / 2f, currentRowY - objHeight, 0f);
+                DebugManager.DiagLog($"[Grid] Object {i}: size={objWidth:F2}x{objHeight:F2}, row={currentRowIndex}, pos={position}");
+                positions.Add(position);
+                
+                // Move X cursor for next object
+                currentX += objWidth * SpacingMultiplier;
+            }
+            
+            return positions;
+        }
 
-            Debug.Log($"[ObstacleAnimationPreviewer] Preview created for '{fileName}'\n" +
-                      $"Prefab: {prefab.name}\n" +
-                      $"Animation: {animationClip.name}\n" +
-                      $"Frames: {Mathf.RoundToInt(animationClip.length * animationClip.frameRate)}");
+        private static void AssignAnimationToAnimator(Animator animator, AnimationClip animationClip)
+        {
+            if (animator == null || animationClip == null) return;
+
+            var originalController = animator.runtimeAnimatorController as AnimatorController;
+            if (originalController == null)
+            {
+                Debug.LogWarning("[ObstacleAnimationPreviewer] RuntimeAnimatorController is not an AnimatorController.");
+                return;
+            }
+
+            var overrideController = new AnimatorOverrideController(originalController);
+            var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>();
+            overrideController.GetOverrides(overrides);
+
+            for (int i = 0; i < overrides.Count; i++)
+            {
+                if (overrides[i].Key.name == AnimatorPlaceholderClipName)
+                {
+                    overrides[i] = new KeyValuePair<AnimationClip, AnimationClip>(overrides[i].Key, animationClip);
+                    break;
+                }
+            }
+
+            overrideController.ApplyOverrides(overrides);
+            animator.runtimeAnimatorController = overrideController;
         }
 
         private static AnimationClip FindAnimationClip(string fileName)
@@ -337,28 +499,49 @@ namespace Assets.EditorTools
         [MenuItem("Assets/Obstacle Animations/Clear Preview", priority = 12)]
         public static void ClearPreview()
         {
-            if (currentPreviewInstance != null)
+            // Stop animation update callback
+            if (editorUpdateCallback != null)
             {
-                Object.DestroyImmediate(currentPreviewInstance);
-                currentPreviewInstance = null;
-                
-                // Restore original scene objects visibility
-                var allRootObjects = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
-                foreach (var obj in allRootObjects)
-                {
-                    obj.SetActive(true);
-                }
-                
-                // Restore grid and gizmos visibility
-                if (SceneView.lastActiveSceneView != null)
-                {
-                    SceneView.lastActiveSceneView.drawGizmos = originalGizmosVisibility;
-                    SceneView.lastActiveSceneView.showGrid = originalGridVisibility;
-                    SceneView.lastActiveSceneView.Repaint();
-                }
-                
-                Debug.Log("[ObstacleAnimationPreviewer] Preview cleared.");
+                EditorApplication.update -= editorUpdateCallback;
+                editorUpdateCallback = null;
             }
+            
+            // Stop AnimationMode
+            if (AnimationMode.InAnimationMode())
+            {
+                AnimationMode.StopAnimationMode();
+            }
+            
+            currentAnimators.Clear();
+            currentAnimatedObjects.Clear();
+            currentAnimationClips.Clear();
+            
+            // Destroy preview instances
+            foreach (var instance in currentPreviewInstances)
+            {
+                if (instance != null)
+                {
+                    Object.DestroyImmediate(instance);
+                }
+            }
+            currentPreviewInstances.Clear();
+            
+            // Restore original scene objects visibility
+            var allRootObjects = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
+            foreach (var obj in allRootObjects)
+            {
+                obj.SetActive(true);
+            }
+            
+            // Restore grid and gizmos visibility
+            if (SceneView.lastActiveSceneView != null)
+            {
+                SceneView.lastActiveSceneView.drawGizmos = originalGizmosVisibility;
+                SceneView.lastActiveSceneView.showGrid = originalGridVisibility;
+                SceneView.lastActiveSceneView.Repaint();
+            }
+            
+            Debug.Log("[ObstacleAnimationPreviewer] Preview cleared.");
         }
     }
 }
