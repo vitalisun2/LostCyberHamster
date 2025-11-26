@@ -258,17 +258,119 @@ public class LevelTilemapEditor : EditorWindow
     }
 
     /// <summary>
+    /// Синхронизирует decoration спрайты с Tilemap в decorationPatterns.
+    /// </summary>
+    private void SyncDecorationsFromTilemap()
+    {
+        if (_tipeMapInScene == null || _currentLevelInfo == null)
+        {
+            Debug.LogWarning("[LevelTilemapEditor] Tilemap или CurrentLevelInfo не инициализированы.");
+            return;
+        }
+
+        var decorationTiles = new List<DecorationTile>();
+
+        foreach (var cellPos in _tipeMapInScene.cellBounds.allPositionsWithin)
+        {
+            var tile = _tipeMapInScene.GetTile(cellPos) as Tile;
+            if (tile == null || tile.sprite == null)
+                continue;
+
+            // Only save decoration sprites (starting with "decor")
+            if (!tile.name.StartsWith("decor", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            decorationTiles.Add(new DecorationTile
+            {
+                name = tile.name,
+                xPos = cellPos.x,
+                yPos = cellPos.y
+            });
+        }
+
+        // Initialize decorationPatterns if null
+        if (_currentLevelInfo.decorationPatterns == null)
+        {
+            _currentLevelInfo.decorationPatterns = new List<DecorationPattern>();
+        }
+
+        // Clear existing and add new pattern
+        _currentLevelInfo.decorationPatterns.Clear();
+        _currentLevelInfo.decorationPatterns.Add(new DecorationPattern
+        {
+            decorationTiles = decorationTiles
+        });
+
+        DebugManager.DiagLog($"[LevelTilemapEditor] Synced {decorationTiles.Count} decoration tiles to decorationPatterns.");
+    }
+
+    /// <summary>
+    /// Загружает decoration спрайты из decorationPatterns на Tilemap.
+    /// </summary>
+    private void LoadDecorationsToTilemap()
+    {
+        if (_tipeMapInScene == null || _currentLevelInfo == null)
+        {
+            Debug.LogWarning("[LevelTilemapEditor] Tilemap или CurrentLevelInfo не инициализированы.");
+            return;
+        }
+
+        if (_currentLevelInfo.decorationPatterns == null || _currentLevelInfo.decorationPatterns.Count == 0)
+        {
+            Debug.Log("[LevelTilemapEditor] No decoration patterns found in level.");
+            return;
+        }
+
+        _tipeMapInScene.ClearAllTiles();
+
+        var decorationPattern = _currentLevelInfo.decorationPatterns[0];
+        if (decorationPattern.decorationTiles == null || decorationPattern.decorationTiles.Count == 0)
+        {
+            Debug.Log("[LevelTilemapEditor] Decoration pattern has no tiles.");
+            return;
+        }
+
+        int loadedCount = 0;
+        foreach (var decorTile in decorationPattern.decorationTiles)
+        {
+            var sprite = SpriteLoader.LoadSpriteSync(decorTile.name);
+            if (sprite == null)
+            {
+                Debug.LogWarning($"[LevelTilemapEditor] Failed to load decoration sprite: {decorTile.name}");
+                continue;
+            }
+
+            var tile = ScriptableObject.CreateInstance<Tile>();
+            tile.sprite = sprite;
+            tile.name = decorTile.name;
+
+            var cellPos = new Vector3Int(decorTile.xPos, decorTile.yPos, 0);
+            _tipeMapInScene.SetTile(cellPos, tile);
+            loadedCount++;
+        }
+
+        DebugManager.DiagLog($"[LevelTilemapEditor] Loaded {loadedCount} decoration tiles to Tilemap.");
+    }
+
+    /// <summary>
     /// Сохраняет текущий уровень.
     /// </summary>
     private void HandleSaveLevelClicked()
     {
-        if (_currentLocationName != Consts.TemplatesLocationName)
+        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+        
+        if (isTemplateLocation)
         {
-            Debug.Log("Cannot save level: only available for level_design_templates location");
-            return;
+            // Save patterns for templates
+            Debug.Log($"Сохранение шаблона уровня: {_selectedFile}");
+        }
+        else
+        {
+            // Save decorations for specific locations
+            Debug.Log($"Сохранение decoration для локации {_currentLocationName}: {_selectedFile}");
+            SyncDecorationsFromTilemap();
         }
 
-        Debug.Log("Сохранение уровня");
         LevelDataManager.SaveLevel(_currentLevelInfo, _selectedFile);
     }
 
@@ -481,20 +583,31 @@ public class LevelTilemapEditor : EditorWindow
         var tilemapGameObject = SceneCreator.CreateSceneWithTilemap((int)totalWidth, _currentLevelInfo);
         _tipeMapInScene = tilemapGameObject.GetComponent<Tilemap>();
 
-        var patternCount = _currentLevelInfo.patterns.Count;
-        if (patternCount == 0)
+        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+
+        if (isTemplateLocation)
         {
-            Debug.LogWarning("Уровень не содержит паттернов.");
-            _uiManager.UpdatePatternsList(new List<string>());
-            _currentPattern = null;
-            _selectedPatternIndex = -1;
-            return;
+            // Templates: work with patterns
+            var patternCount = _currentLevelInfo.patterns.Count;
+            if (patternCount == 0)
+            {
+                Debug.LogWarning("Уровень не содержит паттернов.");
+                _uiManager.UpdatePatternsList(new List<string>());
+                _currentPattern = null;
+                _selectedPatternIndex = -1;
+                return;
+            }
+
+            var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+            _uiManager.UpdatePatternsList(patternNames);
+            _uiManager.SelectFirstPattern();
+        }
+        else
+        {
+            // Specific locations: load decorations
+            LoadDecorationsToTilemap();
         }
 
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-
-        _uiManager.UpdatePatternsList(patternNames);
-        _uiManager.SelectFirstPattern();
         UpdateBackgroundDropdown();
     }
 

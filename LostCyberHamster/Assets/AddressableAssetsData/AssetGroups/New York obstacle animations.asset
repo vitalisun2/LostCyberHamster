@@ -33,6 +33,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 740a26f193e6c5a418d8511a44dfc3ce
+    m_Address: obstacle_new_york_big_alive_7_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b2a065861772bfb41a22b34a96bf6ba0
     m_Address: obstacle_new_york_big_alive_2_idle
     m_ReadOnly: 0

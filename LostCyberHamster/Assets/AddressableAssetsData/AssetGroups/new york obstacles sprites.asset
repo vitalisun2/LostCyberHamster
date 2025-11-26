@@ -69,6 +69,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c9b080513352faf46b706985073bc54b
+    m_Address: obstacle_new_york_big_alive_7_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cfd3e374cc6d31f449ab9d873cff49e6
     m_Address: obstacle_new_york_big_alive_2_idle
     m_ReadOnly: 0
