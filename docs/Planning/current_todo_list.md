@@ -4,36 +4,7 @@
 
 ## 🔴 TO DO (Требует выполнения)
 
-### 1. Обновить spriteName в level JSON файлах на новые имена с bigAlive
-
-**Что нужно сделать:**
-Заменить старые имена спрайтов (granny, hipster, etc.) на новые имена с анимациями (bigAlive) в JSON файлах уровней (`Assets/Resources/levels/NewYork/...`).
-
-**Логика замены:**
-- Сканировать все level JSON файлы (например, `levels_morning_level_001.json`)
-- Для каждого obstacle с `type: 1` (bigAlive):
-  - Первое уникальное имя (например, `obstacle_new_york_granny`) → `obstacle_new_york_bigAlive_1_idle`
-  - Второе уникальное имя (например, `obstacle_new_york_hipster`) → `obstacle_new_york_bigAlive_2_idle`
-  - Если встречается повторно `granny` → использовать то же имя `bigAlive_1_idle`
-  - Инкрементировать счётчик для каждого нового уникального имени
-
-**Примеры замены:**
-```
-obstacle_new_york_granny → obstacle_new_york_bigAlive_1_idle
-obstacle_new_york_hipster → obstacle_new_york_bigAlive_2_idle
-obstacle_new_york_cool_guy → obstacle_new_york_bigAlive_3_idle
-obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idle
-```
-
-**Файлы для обработки:**
-- `Assets/Resources/levels/NewYork/levels_morning_level_*.json`
-- `Assets/Resources/levels/NewYork/levels_day_level_*.json`
-- `Assets/Resources/levels/NewYork/levels_evening_level_*.json`
-- И т.д.
-
----
-
-### 2. Реализовать режимы редактирования в Level Tilemap Editor
+### 1. Реализовать режимы редактирования в Level Tilemap Editor
 
 **Проблема:**
 Сейчас в Level Tilemap Editor можно редактировать препятствия одинаково во всех локациях. Нужно разграничить возможности редактирования в зависимости от выбранной локации.
@@ -65,7 +36,7 @@ obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idl
 
 ---
 
-### 3. Добавить decoration спрайты в папку New York
+### 2. Добавить decoration спрайты в папку New York
 
 **Что нужно сделать:**
 - Добавить несколько decoration файлов (PNG) в папку `Assets/Content/locations/01_New_York/sprites/`
@@ -77,7 +48,7 @@ obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idl
 
 ---
 
-### 4. Выяснить, почему decoration спрайты не отображаются в Level Tilemap Editor
+### 3. Выяснить, почему decoration спрайты не отображаются в Level Tilemap Editor
 
 **Проблема:**
 В проекте уже есть несколько decoration спрайтов, но они не появляются в списке спрайтов Level Tilemap Editor.
@@ -95,18 +66,5 @@ obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idl
 - `Assets/Editor/LevelEditor/SpriteLoader.cs` — логика загрузки по tag/label
 - Addressables groups — проверить наличие decoration label
 
----
-
-### 5. Удалить последние 2 паттерна из level 01 и level 02
-
-**Что нужно сделать:**
-- Открыть файлы уровней:
-  - `Assets/Content/locations/01_New_York/levels/Morning/level_01/level_01.json`
-  - `Assets/Content/locations/01_New_York/levels/Morning/level_02/level_02.json`
-- Удалить последние 2 паттерна из массива `patterns` в каждом файле
-- Оставить 8 паттернов в каждом уровне (сейчас по 10)
-
-**Цель:**
-Сократить длительность первых двух уровней для более быстрого тестирования.
 
 
