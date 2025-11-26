@@ -592,7 +592,13 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        LevelDataManager.FixObstacleTypesInLevelInfoAndSaveToJson(_currentLocationName, _selectedFile, _currentLevelInfo);
+        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+
+        // Only fix obstacle types for templates (they have patterns with obstacles)
+        if (isTemplateLocation)
+        {
+            LevelDataManager.FixObstacleTypesInLevelInfoAndSaveToJson(_currentLocationName, _selectedFile, _currentLevelInfo);
+        }
 
         // 1) Вычисляем ширину для одной "прокрутки" паттерна
         //    Исходя из того, что при ScrollSpeed=1 движемся ~3.8 ед/сек.
@@ -603,8 +609,6 @@ public class LevelTilemapEditor : EditorWindow
         // который сам найдёт/очистит/или создаст сцену, и вернёт TilemapGameObject.
         var tilemapGameObject = SceneCreator.CreateSceneWithTilemap((int)totalWidth, _currentLevelInfo);
         _tipeMapInScene = tilemapGameObject.GetComponent<Tilemap>();
-
-        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
 
         if (isTemplateLocation)
         {
