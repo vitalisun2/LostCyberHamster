@@ -4,8 +4,7 @@
             "type": 10,
             "sprites": [
                 "decor_bush_1",
-                "decor_tree_1",
-                "obstacle_new_york_manhole"
+                "decor_tree_1"
             ]
         },
         {
@@ -13,7 +12,15 @@
             "sprites": [
                 "obstacle_new_york_businessman",
                 "obstacle_new_york_granny",
-                "obstacle_new_york_hipster"
+                "obstacle_new_york_hipster",
+                "obstacle_new_york_manhole",
+                "obstacle_new_york_bigAlive_1_idle",
+                "obstacle_new_york_bigAlive_2_idle",
+                "obstacle_new_york_bigAlive_3_idle",
+                "obstacle_new_york_bigAlive_4_idle",
+                "obstacle_new_york_bigAlive_5_idle",
+                "obstacle_new_york_bigAlive_6_idle",
+                "obstacle_new_york_bigAlive_7_idle"
             ]
         },
         {
