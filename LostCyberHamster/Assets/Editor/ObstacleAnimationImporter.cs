@@ -511,8 +511,8 @@ namespace Assets.EditorTools
                 return false;
             }
 
-            // Known category markers (case-insensitive)
-            var knownCategories = new[] { "bigAlive", "smallAlive", "bigNotAlive", "smallNotAlive", "people", "dogs", "cats", "cars", "buses" };
+            // Known category markers (case-insensitive, supporting both snake_case and legacy camelCase)
+            var knownCategories = new[] { "big", "small", "people", "dogs", "cats", "cars", "buses", "bigAlive", "smallAlive", "bigNotAlive", "smallNotAlive" };
             
             // Find first occurrence of known category after "obstacle"
             int categoryIndex = -1;
@@ -811,23 +811,23 @@ namespace Assets.EditorTools
             // Determine expected size based on naming convention
             var lowerName = baseName.ToLowerInvariant();
             
-            if (lowerName.Contains("_people_"))
+            if (lowerName.Contains("_people_") || lowerName.Contains("_big_alive_"))
             {
                 expectedWidth = Assets.Scripts.Consts.BIG_ALIVE_WIDTH;
                 expectedHeight = Assets.Scripts.Consts.BIG_ALIVE_HEIGHT;
-                categoryName = "bigAlive/people";
+                categoryName = "big_alive/people";
             }
-            else if (lowerName.Contains("_dog_") || lowerName.Contains("_cat_"))
+            else if (lowerName.Contains("_dog_") || lowerName.Contains("_cat_") || lowerName.Contains("_small_alive_"))
             {
                 expectedWidth = Assets.Scripts.Consts.SMALL_ALIVE_WIDTH;
                 expectedHeight = Assets.Scripts.Consts.SMALL_ALIVE_HEIGHT;
-                categoryName = "smallAlive";
+                categoryName = "small_alive";
             }
-            else if (lowerName.Contains("_car_") || lowerName.Contains("_truck_") || lowerName.Contains("_bus_"))
+            else if (lowerName.Contains("_car_") || lowerName.Contains("_truck_") || lowerName.Contains("_bus_") || lowerName.Contains("_big_not_alive_"))
             {
                 expectedWidth = Assets.Scripts.Consts.BIG_NOTALIVE_WIDTH;
                 expectedHeight = Assets.Scripts.Consts.BIG_NOTALIVE_HEIGHT;
-                categoryName = "bigNotAlive/vehicle";
+                categoryName = "big_not_alive/vehicle";
             }
             else
             {

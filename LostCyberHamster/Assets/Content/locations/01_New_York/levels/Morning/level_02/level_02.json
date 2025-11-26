@@ -21,7 +21,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 8.0,
                     "y": -1.8000000715255737
@@ -33,7 +33,7 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 46.60000228881836,
                     "y": -1.8000000715255737
@@ -57,7 +57,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 8.0,
                     "y": -1.8000000715255737
@@ -69,7 +69,7 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 46.60000228881836,
                     "y": -1.8000000715255737
@@ -87,7 +87,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 2.799999952316284,
                     "y": -2.799999952316284
@@ -99,19 +99,19 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 12.40000057220459,
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 18.600000381469727,
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 19.80000114440918,
                     "y": -2.799999952316284
@@ -165,7 +165,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": -5.800000190734863,
                     "y": -1.8000000715255737
@@ -195,31 +195,31 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 39.60000228881836,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 41.0,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 50.60000228881836,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 61.0,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 69.0,
                     "y": -1.8000000715255737
@@ -249,7 +249,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 2.799999952316284,
                     "y": -2.799999952316284
@@ -261,19 +261,19 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 12.40000057220459,
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 18.600000381469727,
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 19.80000114440918,
                     "y": -2.799999952316284
@@ -327,7 +327,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": -5.800000190734863,
                     "y": -1.8000000715255737
@@ -357,31 +357,31 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 39.60000228881836,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 41.0,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 50.60000228881836,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 61.0,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 69.0,
                     "y": -1.8000000715255737
@@ -417,7 +417,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 8.0,
                     "y": -1.8000000715255737
@@ -429,7 +429,7 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 46.60000228881836,
                     "y": -1.8000000715255737
@@ -453,7 +453,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 4.800000190734863,
                     "y": -2.799999952316284
@@ -471,7 +471,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 16.399999618530273,
                     "y": -2.799999952316284
@@ -495,13 +495,13 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 48.20000076293945,
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 49.400001525878906,
                     "y": -2.799999952316284
@@ -519,7 +519,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 64.4000015258789,
                     "y": -2.799999952316284
@@ -531,13 +531,13 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": -5.200000286102295,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": -4.0,
                     "y": -1.8000000715255737
@@ -567,13 +567,13 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 24.80000114440918,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 26.200000762939453,
                     "y": -1.8000000715255737
@@ -585,7 +585,7 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 38.0,
                     "y": -1.8000000715255737
@@ -663,7 +663,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 4.800000190734863,
                     "y": -2.799999952316284
@@ -681,7 +681,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 16.399999618530273,
                     "y": -2.799999952316284
@@ -705,13 +705,13 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 48.20000076293945,
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 49.400001525878906,
                     "y": -2.799999952316284
@@ -729,7 +729,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 64.4000015258789,
                     "y": -2.799999952316284
@@ -741,13 +741,13 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": -5.200000286102295,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": -4.0,
                     "y": -1.8000000715255737
@@ -777,13 +777,13 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_3_idle",
+                    "spriteName": "obstacle_new_york_big_alive_3_idle",
                     "type": 1,
                     "x": 24.80000114440918,
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 26.200000762939453,
                     "y": -1.8000000715255737
@@ -795,7 +795,7 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 38.0,
                     "y": -1.8000000715255737
@@ -873,7 +873,7 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_1_idle",
+                    "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 8.0,
                     "y": -1.8000000715255737
@@ -885,7 +885,7 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_bigAlive_2_idle",
+                    "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 46.60000228881836,
                     "y": -1.8000000715255737
