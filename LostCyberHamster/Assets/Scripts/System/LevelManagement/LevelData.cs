@@ -22,6 +22,7 @@ namespace Assets.Scripts.System
 
         // layer textures
         public Sprite SkySprite { get; set; }
+        public Sprite Background2Sprite { get; set; }
         public Sprite BackgroundSprite { get; set; }
         public Sprite RoadSprite { get; set; }
 

@@ -24,6 +24,7 @@ namespace Assets.Scripts.System
 
             await LoadLevelInfo(levelData);
             await LoadSkyPrefab(levelData);
+            await LoadBackground2Prefab(levelData);
             await LoadBackgroundPrefab(levelData);
             await LoadRoadPrefab(levelData);
             await LoadBonuses(levelData);
@@ -253,6 +254,34 @@ public static void ReleaseIntroSprites()
             LevelDataValidator.ValidateBackgroundTexture(backgroundTexture);
 
             levelData.BackgroundSprite = backgroundTexture;
+        }
+
+        private static async Task LoadBackground2Prefab(LevelData levelData)
+        {
+            // Load shared prefab only once if not already loaded
+            if (levelData.ScrollingEnvironmentPrefab == null)
+            {
+                levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
+            }
+
+            // Background2 is optional - if not configured in JSON, skip
+            if (string.IsNullOrEmpty(levelData.LevelInfo.background2Texture))
+            {
+                Debug.Log("[LevelDataProvider] background2Texture not configured, skipping Background2 loading.");
+                return;
+            }
+
+            var background2Texture = await LoadBackgroundSpriteWithFallback(levelData.LevelInfo.background2Texture);
+
+            if (background2Texture == null)
+            {
+                Debug.LogWarning("[LevelDataProvider] Unable to load background2 sprite, continuing without it.");
+                return;
+            }
+
+            LevelDataValidator.ValidateBackgroundTexture(background2Texture);
+
+            levelData.Background2Sprite = background2Texture;
         }
 
         private static async Task LoadRoadPrefab(LevelData levelData)
