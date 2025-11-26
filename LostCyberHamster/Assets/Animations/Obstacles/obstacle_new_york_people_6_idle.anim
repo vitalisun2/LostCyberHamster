@@ -6,7 +6,7 @@ AnimationClip:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: obstacle_new_york_people_6_idle
+  m_Name: 
   serializedVersion: 7
   m_Legacy: 0
   m_Compressed: 0
@@ -22,9 +22,9 @@ AnimationClip:
     curve:
     - time: 0
       value: {fileID: -8371986434343513920, guid: 448eeeb8950bf604c90f800acf1459c9, type: 3}
-    - time: 0.083333336
+    - time: 0.2
       value: {fileID: 5956908010125503661, guid: 448eeeb8950bf604c90f800acf1459c9, type: 3}
-    - time: 0.16666667
+    - time: 0.4
       value: {fileID: 8208638431115627663, guid: 448eeeb8950bf604c90f800acf1459c9, type: 3}
     attribute: m_Sprite
     path: 
@@ -37,26 +37,14 @@ AnimationClip:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
   m_ClipBindingConstant:
-    genericBindings:
-    - serializedVersion: 2
-      path: 0
-      attribute: 0
-      script: {fileID: 0}
-      typeID: 212
-      customType: 23
-      isPPtrCurve: 1
-      isIntCurve: 0
-      isSerializeReferenceCurve: 0
-    pptrCurveMapping:
-    - {fileID: -8371986434343513920, guid: 448eeeb8950bf604c90f800acf1459c9, type: 3}
-    - {fileID: 5956908010125503661, guid: 448eeeb8950bf604c90f800acf1459c9, type: 3}
-    - {fileID: 8208638431115627663, guid: 448eeeb8950bf604c90f800acf1459c9, type: 3}
+    genericBindings: []
+    pptrCurveMapping: []
   m_AnimationClipSettings:
     serializedVersion: 2
     m_AdditiveReferencePoseClip: {fileID: 0}
     m_AdditiveReferencePoseTime: 0
     m_StartTime: 0
-    m_StopTime: 0.25
+    m_StopTime: 0.6
     m_OrientationOffsetY: 0
     m_Level: 0
     m_CycleOffset: 0

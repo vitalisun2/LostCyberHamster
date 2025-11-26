@@ -412,8 +412,15 @@ namespace Assets.EditorTools
             }
 
             // Determine group names based on location
-            var spritesGroupName = $"{locationPascal.ToLower()} obstacles sprites";
-            var animationsGroupName = $"{locationPascal} obstacle animations";
+            // Convert PascalCase to lowercase with spaces: "NewYork" → "new york"
+            var locationLowerWithSpaces = PascalCaseToLowerWithSpaces(locationPascal);
+            // Convert PascalCase to Title Case with spaces: "NewYork" → "New York"
+            var locationTitleCase = PascalCaseToTitleCase(locationPascal);
+            
+            var spritesGroupName = $"{locationLowerWithSpaces} obstacles sprites";
+            var animationsGroupName = $"{locationTitleCase} obstacle animations";
+
+            DebugManager.DiagLog($"[ObstacleAnimationImporter] Addressables lookup: locationPascal='{locationPascal}' → spritesGroup='{spritesGroupName}', animationsGroup='{animationsGroupName}'");
 
             // Find or create groups
             var spritesGroup = settings.FindGroup(spritesGroupName);
@@ -563,6 +570,60 @@ namespace Assets.EditorTools
                 {
                     sb.Append(lower[1..]);
                 }
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Converts PascalCase to lowercase with spaces: "NewYork" → "new york"
+        /// </summary>
+        private static string PascalCaseToLowerWithSpaces(string pascalCase)
+        {
+            if (string.IsNullOrEmpty(pascalCase))
+            {
+                return pascalCase;
+            }
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < pascalCase.Length; i++)
+            {
+                var ch = pascalCase[i];
+                
+                // Insert space before uppercase letters (except first character)
+                if (i > 0 && char.IsUpper(ch))
+                {
+                    sb.Append(' ');
+                }
+                
+                sb.Append(char.ToLowerInvariant(ch));
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Converts PascalCase to Title Case with spaces: "NewYork" → "New York"
+        /// </summary>
+        private static string PascalCaseToTitleCase(string pascalCase)
+        {
+            if (string.IsNullOrEmpty(pascalCase))
+            {
+                return pascalCase;
+            }
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < pascalCase.Length; i++)
+            {
+                var ch = pascalCase[i];
+                
+                // Insert space before uppercase letters (except first character)
+                if (i > 0 && char.IsUpper(ch))
+                {
+                    sb.Append(' ');
+                }
+                
+                sb.Append(ch);
             }
 
             return sb.ToString();

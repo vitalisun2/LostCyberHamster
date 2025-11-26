@@ -27,17 +27,53 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3af24fc322993da40bc513a2d55da89b
+    m_Address: obstacle_new_york_people_5_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3fff77cc66182e64b95d3ddc3ddbfb80
     m_Address: obstacle_new_york_dog
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 448eeeb8950bf604c90f800acf1459c9
+    m_Address: obstacle_new_york_people_6_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4a076e7199e936c4b92c11badafb30c7
+    m_Address: obstacle_new_york_people_1_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 53f713f0a1ee7514d98f4a55fa65d1d8
     m_Address: obstacle_new_york_opened_box
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62a186b02cbcade40a759657fa46ebde
+    m_Address: obstacle_new_york_people_7_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8fc9a79b276b949488d0caa713885eb7
+    m_Address: obstacle_new_york_people_3_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 944bfc9832b18f540a7df014d8b4cc8b
+    m_Address: obstacle_new_york_people_4_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: bada9d1e4c36cd04890ccf0f750460c6
     m_Address: obstacle_new_york_businessman
@@ -62,6 +98,12 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f9060e768770d51408ff0c82a23c0d95
+    m_Address: obstacle_new_york_people_2_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}

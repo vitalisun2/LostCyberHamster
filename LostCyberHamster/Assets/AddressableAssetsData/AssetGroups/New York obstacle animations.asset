@@ -15,11 +15,53 @@ MonoBehaviour:
   m_GroupName: New York obstacle animations
   m_GUID: b380736c23deb0f478652d32673dc154
   m_SerializeEntries:
+  - m_GUID: 1ec8d6ff995fee6459bb5ba8e5e47bfc
+    m_Address: obstacle_new_york_people_2_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 248c814bf0b9c0641a049a0d38024102
+    m_Address: obstacle_new_york_people_4_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3c398adefa856cf4e9d05550f0e4bae3
+    m_Address: obstacle_new_york_people_5_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 53e35b005ddb6dd4f83a289901a92853
+    m_Address: obstacle_new_york_people_6_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 91cd2fefe552d764ea3761d79fc56472
+    m_Address: obstacle_new_york_people_7_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b3588cf8b0f80fd4fb8d2a76bebe02e8
+    m_Address: obstacle_new_york_people_3_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ced60812d2e325845b6340633091a79e
     m_Address: obstacle_new_york_dog_idle
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d235fe8e178d95644929fbd76ad62703
+    m_Address: obstacle_new_york_people_1_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - NewYork obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e7cd0fd5b8db0504dab1938d4c5400e5
     m_Address: obstacle_new_york_granny_walk
