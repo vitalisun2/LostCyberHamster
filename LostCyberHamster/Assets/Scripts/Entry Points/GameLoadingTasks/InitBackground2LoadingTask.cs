@@ -33,6 +33,9 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
         private void InitBackground2()
         {
+            // Ensure Background2 sorting layer exists
+            EnsureBackground2SortingLayer();
+
             var levelData = LevelController.Instance.LevelData;
             var background2Prefab = levelData.ScrollingEnvironmentPrefab;
             var background2Sprite = levelData.Background2Sprite;
@@ -111,6 +114,69 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             }
 
             renderer.sortingLayerName = layerName;
+        }
+
+        /// <summary>
+        /// Ensures Background2 sorting layer exists at runtime.
+        /// Creates it if missing (between Sky and Background).
+        /// </summary>
+        private void EnsureBackground2SortingLayer()
+        {
+#if UNITY_EDITOR
+            var tagManager = new UnityEditor.SerializedObject(
+                UnityEditor.AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
+            var sortingLayersProp = tagManager.FindProperty("m_SortingLayers");
+
+            if (sortingLayersProp == null || !sortingLayersProp.isArray)
+            {
+                Debug.LogWarning("[InitBackground2LoadingTask] Cannot access sorting layers.");
+                return;
+            }
+
+            // Check if Background2 already exists
+            for (int i = 0; i < sortingLayersProp.arraySize; i++)
+            {
+                var layerProp = sortingLayersProp.GetArrayElementAtIndex(i);
+                var nameProp = layerProp.FindPropertyRelative("name");
+                if (nameProp != null && nameProp.stringValue == "Background2")
+                {
+                    return; // Already exists
+                }
+            }
+
+            // Find Background layer index
+            int backgroundIndex = -1;
+            for (int i = 0; i < sortingLayersProp.arraySize; i++)
+            {
+                var layerProp = sortingLayersProp.GetArrayElementAtIndex(i);
+                var nameProp = layerProp.FindPropertyRelative("name");
+                if (nameProp != null && nameProp.stringValue == "Background")
+                {
+                    backgroundIndex = i;
+                    break;
+                }
+            }
+
+            // Insert before Background (or at end if not found)
+            int insertIndex = backgroundIndex > 0 ? backgroundIndex : sortingLayersProp.arraySize;
+            sortingLayersProp.InsertArrayElementAtIndex(insertIndex);
+            var newLayerProp = sortingLayersProp.GetArrayElementAtIndex(insertIndex);
+
+            var newNameProp = newLayerProp.FindPropertyRelative("name");
+            if (newNameProp != null)
+            {
+                newNameProp.stringValue = "Background2";
+            }
+
+            var uniqueIDProp = newLayerProp.FindPropertyRelative("uniqueID");
+            if (uniqueIDProp != null)
+            {
+                uniqueIDProp.intValue = UnityEngine.Random.Range(1000000, int.MaxValue);
+            }
+
+            tagManager.ApplyModifiedProperties();
+            Debug.Log("[InitBackground2LoadingTask] Created 'Background2' sorting layer.");
+#endif
         }
 
     }

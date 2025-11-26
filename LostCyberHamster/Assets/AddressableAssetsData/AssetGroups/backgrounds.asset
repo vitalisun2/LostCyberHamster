@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: backgrounds
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: backgrounds
+  m_GUID: 036265a66266f2546afac58e052539db
+  m_SerializeEntries:
+  - m_GUID: 36bb7a4d64d39a845a8a4a4558b18f8a
+    m_Address: bg_2_new_york_morning
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York backgrounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9d169ab309443024f8209a248f3e4a9d
+    m_Address: bg_2_new_york_night
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York backgrounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d65e8bffbe55213489a14b6fb844ee04
+    m_Address: bg_2_new_york_evening
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York backgrounds
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: defb7b5e467e43443a87b84d6e84b311
+    m_Address: bg_2_new_york_afternoon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York backgrounds
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 497af0eccd4dc0f408e60ef3a97ae328, type: 2}
+    - {fileID: 11400000, guid: fd0406d017ceb7741bcb48feb03c006b, type: 2}
