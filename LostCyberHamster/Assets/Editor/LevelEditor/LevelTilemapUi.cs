@@ -304,30 +304,59 @@ public class LevelTilemapUi
         _spritesScrollView.Clear();
 
         var effectiveLocation = ResolveLocationForObstacles(location);
-        var label = BuildObstacleLabel(effectiveLocation);
-        if (string.IsNullOrWhiteSpace(label))
+        
+        // Load both obstacles and decoration sprites
+        var obstacleLabel = BuildObstacleLabel(effectiveLocation);
+        var decorLabel = BuildDecorLabel(effectiveLocation);
+        
+        DebugManager.DiagLog($"[LevelTilemapUi] Loading sprites for location '{effectiveLocation}'. Obstacle label: '{obstacleLabel}', Decor label: '{decorLabel}'");
+        
+        var allSprites = new List<Sprite>();
+        
+        // Load obstacles sprites
+        if (!string.IsNullOrWhiteSpace(obstacleLabel))
         {
-            Debug.LogWarning("[LevelTilemapUi] Не удалось определить лейбл препятствий: локация не задана.");
-            return;
+            try
+            {
+                _obstacleSpritesLease = AddressableLoader.LoadAssetsByLabelSync<Sprite>(obstacleLabel);
+                if (_obstacleSpritesLease?.Values != null && _obstacleSpritesLease.Values.Count > 0)
+                {
+                    allSprites.AddRange(_obstacleSpritesLease.Values);
+                    DebugManager.DiagLog($"[LevelTilemapUi] Loaded {_obstacleSpritesLease.Values.Count} obstacle sprites.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[LevelTilemapUi] Ошибка загрузки спрайтов препятствий по лейблу '{obstacleLabel}': {ex.Message}");
+            }
+        }
+        
+        // Load decoration sprites
+        if (!string.IsNullOrWhiteSpace(decorLabel))
+        {
+            try
+            {
+                var decorLease = AddressableLoader.LoadAssetsByLabelSync<Sprite>(decorLabel);
+                if (decorLease?.Values != null && decorLease.Values.Count > 0)
+                {
+                    allSprites.AddRange(decorLease.Values);
+                    DebugManager.DiagLog($"[LevelTilemapUi] Loaded {decorLease.Values.Count} decoration sprites.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[LevelTilemapUi] Ошибка загрузки декораций по лейблу '{decorLabel}': {ex.Message}");
+            }
         }
 
-        try
+        if (allSprites.Count == 0)
         {
-            _obstacleSpritesLease = AddressableLoader.LoadAssetsByLabelSync<Sprite>(label);
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"[LevelTilemapUi] Ошибка загрузки спрайтов по лейблу '{label}'. Детали: {ex.Message}");
-            return;
-        }
-
-        var sprites = _obstacleSpritesLease?.Values;
-        if (sprites == null || sprites.Count == 0)
-        {
-            Debug.LogWarning($"[LevelTilemapUi] Для лейбла '{label}' не найдено спрайтов.");
+            Debug.LogWarning($"[LevelTilemapUi] Для локации '{effectiveLocation}' не найдено ни препятствий, ни декораций.");
             ReleaseObstacleSprites();
             return;
         }
+
+        var sprites = allSprites;
 
         foreach (var sprite in sprites
                      .OrderBy(sprite => sprite?.name, StringComparer.OrdinalIgnoreCase)
@@ -390,6 +419,17 @@ public class LevelTilemapUi
         }
 
         return $"{normalized} {Consts.ObstaclesSpritesLabelPostfix}";
+    }
+
+    private static string BuildDecorLabel(string location)
+    {
+        var normalized = NormalizeLocationForLabel(location);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return null;
+        }
+
+        return $"{normalized} {Consts.DecorSpritesLabelPostFix}";
     }
 
     private static bool IsObstacleSprite(string spriteName)
