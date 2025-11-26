@@ -8,17 +8,15 @@ using UnityEngine.SceneManagement;
 
 public static class SceneCreator
 {
-    private const string DefaultSceneName = "NewTilemapScene";
     private const float PixelsPerUnit = 100.0f;
     private const float BackgroundZPosition = 1.0f;
     private const string BackgroundSortingLayer = "Background";
     private static readonly Vector2 SpritePivot = new Vector2(0.5f, 0.5f);
-    private static Scene _tilemapScene;
 
     public static GameObject CreateSceneWithTilemap(int targetWidth, LevelInfo currentLevelInfo)
     {
-        var scene = FindOrCreateScene();
-        ClearScene(scene);
+        // Work in the currently active scene
+        var scene = SceneManager.GetActiveScene();
 
         var gridGameObject = new GameObject("Grid");
         SceneManager.MoveGameObjectToScene(gridGameObject, scene);
@@ -37,31 +35,6 @@ public static class SceneCreator
 
         CreateBackground(targetWidth, currentLevelInfo, scene);
         return tilemapGameObject;
-    }
-
-    private static Scene FindOrCreateScene()
-    {
-        if (_tilemapScene.IsValid())
-        {
-            SceneManager.SetActiveScene(_tilemapScene);
-            return _tilemapScene;
-        }
-
-        SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
-
-        var newScene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
-        SceneManager.SetActiveScene(newScene);
-
-        _tilemapScene = newScene;
-        return _tilemapScene;
-    }
-
-    private static void ClearScene(Scene scene)
-    {
-        foreach (var rootObject in scene.GetRootGameObjects())
-        {
-            UnityEngine.Object.DestroyImmediate(rootObject);
-        }
     }
 
     private static void CreateBackground(int targetWidth, LevelInfo currentLevelInfo, Scene scene)

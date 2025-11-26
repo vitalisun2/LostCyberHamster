@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEditor.Tilemaps;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
 using Unity.VisualScripting;
@@ -57,6 +59,10 @@ public class LevelTilemapEditor : EditorWindow
     private string _backgroundsPath;
     private string _currentLocationName;
     private List<string> _spritesNames { get; set; }
+    
+    // Scene management for non-intrusive workflow
+    private string _originalScenePath;
+    private List<GameObject> _hiddenRootObjects = new();
 
     /// <summary>
     /// Открывает окно редактора LevelTilemapEditor.
@@ -80,12 +86,46 @@ public class LevelTilemapEditor : EditorWindow
 
     private void OnEnable()
     {
+        // Save current scene path for restoration
+        var currentScene = SceneManager.GetActiveScene();
+        _originalScenePath = currentScene.path;
+        
+        // Hide all existing root objects in the scene
+        _hiddenRootObjects.Clear();
+        foreach (var rootObject in currentScene.GetRootGameObjects())
+        {
+            if (rootObject.activeSelf)
+            {
+                rootObject.SetActive(false);
+                _hiddenRootObjects.Add(rootObject);
+            }
+        }
     }
 
     private void OnDisable()
     {
         _uiManager?.ReleaseObstacleSprites();
         UnsubscribeEvents();
+        
+        // Restore scene by reloading without saving changes
+        if (!string.IsNullOrEmpty(_originalScenePath))
+        {
+            EditorSceneManager.OpenScene(_originalScenePath, OpenSceneMode.Single);
+            Debug.Log($"[LevelTilemapEditor] Scene restored: {_originalScenePath}");
+        }
+        else
+        {
+            // If no scene was open, restore visibility of hidden objects
+            foreach (var obj in _hiddenRootObjects)
+            {
+                if (obj != null)
+                {
+                    obj.SetActive(true);
+                }
+            }
+        }
+        
+        _hiddenRootObjects.Clear();
     }
 
     /// <summary>
