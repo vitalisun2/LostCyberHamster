@@ -189,15 +189,14 @@ namespace Assets.EditorTools
                 var animationCreated = TryCreateAnimation(baseName, dedupResult.FrameSequence, sprites);
                 if (animationCreated)
                 {
-                    Debug.Log($"[ObstacleAnimationImporter] Animation created: Assets/Animations/Obstacles/{baseName}.anim ({dedupResult.FrameSequence.Count} keyframes)");
+                    Debug.Log($"[ObstacleAnimationImporter] Animation processed: Assets/Animations/Obstacles/{baseName}.anim ({dedupResult.FrameSequence.Count} keyframes)");
                 }
-
-                if (!animationCreated && AnimationExists(baseName))
+                else
                 {
-                    Debug.LogWarning($"[ObstacleAnimationImporter] Animation already exists, skipping creation: Assets/Animations/Obstacles/{baseName}.anim");
+                    Debug.LogWarning($"[ObstacleAnimationImporter] Failed to process animation: Assets/Animations/Obstacles/{baseName}.anim");
                 }
 
-                // Register sprite sheet and animation in Addressables
+                // Always register/update in Addressables
                 RegisterInAddressables(baseName, spriteSheetAssetPath, locationPascal);
 
                 // Source PNG files are preserved in Dropbox for archival purposes
@@ -324,14 +323,11 @@ namespace Assets.EditorTools
                 .ToList();
         }
 
-        private static bool TryCreateAnimation(string baseName, List<int> frameSequence, IReadOnlyCollection<Sprite> sprites)
+        private static bool TryCreateAnimation(string baseName, List<int> frameSequence, List<Sprite> sprites)
         {
             var animAssetPath = $"{AnimationsFolder}/{baseName}.anim";
             var animFullPath = GetAbsolutePath(animAssetPath);
-            if (File.Exists(animFullPath))
-            {
-                return false;
-            }
+            var isOverwrite = File.Exists(animFullPath);
 
             try
             {
@@ -368,7 +364,25 @@ namespace Assets.EditorTools
                 AnimationUtility.SetObjectReferenceCurve(clip, binding, keyframes);
                 SetLoopTime(clip, true);
 
-                AssetDatabase.CreateAsset(clip, animAssetPath);
+                if (isOverwrite)
+                {
+                    var existingClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(animAssetPath);
+                    if (existingClip != null)
+                    {
+                        EditorUtility.CopySerialized(clip, existingClip);
+                        EditorUtility.SetDirty(existingClip);
+                        Debug.Log($"[ObstacleAnimationImporter] Animation overwritten: {animAssetPath}");
+                    }
+                    else
+                    {
+                        AssetDatabase.CreateAsset(clip, animAssetPath);
+                    }
+                }
+                else
+                {
+                    AssetDatabase.CreateAsset(clip, animAssetPath);
+                }
+
                 AssetDatabase.SaveAssets();
                 AssetDatabase.ImportAsset(animAssetPath, ImportAssetOptions.ForceUpdate);
 
@@ -414,19 +428,16 @@ namespace Assets.EditorTools
                 if (!string.IsNullOrEmpty(spriteGuid))
                 {
                     var spriteEntry = settings.FindAssetEntry(spriteGuid);
-                    if (spriteEntry == null)
+                    if (spriteEntry == null || spriteEntry.parentGroup != spritesGroup)
                     {
                         spriteEntry = settings.CreateOrMoveEntry(spriteGuid, spritesGroup, false, false);
-                        if (spriteEntry != null)
-                        {
-                            spriteEntry.address = baseName;
-                            spriteEntry.SetLabel($"{locationPascal} obstacles sprites", true, true);
-                            Debug.Log($"[ObstacleAnimationImporter] Registered sprite sheet in Addressables: {baseName}");
-                        }
                     }
-                    else
+
+                    if (spriteEntry != null)
                     {
-                        Debug.Log($"[ObstacleAnimationImporter] Sprite sheet already in Addressables: {baseName}");
+                        spriteEntry.address = baseName;
+                        spriteEntry.SetLabel($"{locationPascal} obstacles sprites", true, true);
+                        Debug.Log($"[ObstacleAnimationImporter] Sprite sheet registered in Addressables: {baseName}");
                     }
                 }
             }
@@ -444,19 +455,16 @@ namespace Assets.EditorTools
                 if (!string.IsNullOrEmpty(animGuid))
                 {
                     var animEntry = settings.FindAssetEntry(animGuid);
-                    if (animEntry == null)
+                    if (animEntry == null || animEntry.parentGroup != animationsGroup)
                     {
                         animEntry = settings.CreateOrMoveEntry(animGuid, animationsGroup, false, false);
-                        if (animEntry != null)
-                        {
-                            animEntry.address = baseName;
-                            animEntry.SetLabel($"{locationPascal} obstacle animations", true, true);
-                            Debug.Log($"[ObstacleAnimationImporter] Registered animation in Addressables: {baseName}");
-                        }
                     }
-                    else
+
+                    if (animEntry != null)
                     {
-                        Debug.Log($"[ObstacleAnimationImporter] Animation already in Addressables: {baseName}");
+                        animEntry.address = baseName;
+                        animEntry.SetLabel($"{locationPascal} obstacle animations", true, true);
+                        Debug.Log($"[ObstacleAnimationImporter] Animation registered in Addressables: {baseName}");
                     }
                 }
             }
