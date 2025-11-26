@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Animations;
 using UnityEngine;
 
@@ -43,7 +45,8 @@ namespace Assets.EditorTools
     /// <list type="bullet">
     /// <item>Каждый персонаж имеет только одну анимацию одного типа (_idle ИЛИ _walk)</item>
     /// <item>Множественные движения создаются через дублирование кадров, не через отдельные файлы</item>
-    /// <item>Исходные PNG удаляются из Dropbox после успешного импорта</item>
+    /// <item>Спрайт-шиты и анимации автоматически регистрируются в Addressables</item>
+    /// <item>Исходные PNG сохраняются в Dropbox для архива</item>
     /// <item>Pivot спрайтов: Bottom Center (0.5, 0.0)</item>
     /// </list>
     /// </summary>
@@ -194,10 +197,11 @@ namespace Assets.EditorTools
                     Debug.LogWarning($"[ObstacleAnimationImporter] Animation already exists, skipping creation: Assets/Animations/Obstacles/{baseName}.anim");
                 }
 
-                if (animationCreated || AnimationExists(baseName))
-                {
-                    DeleteSourceFrames(baseName, frames);
-                }
+                // Register sprite sheet and animation in Addressables
+                RegisterInAddressables(baseName, spriteSheetAssetPath, locationPascal);
+
+                // Source PNG files are preserved in Dropbox for archival purposes
+                // DeleteSourceFrames(baseName, frames);
             }
             finally
             {
@@ -382,6 +386,82 @@ namespace Assets.EditorTools
             var animAssetPath = $"{AnimationsFolder}/{baseName}.anim";
             var animFullPath = GetAbsolutePath(animAssetPath);
             return File.Exists(animFullPath);
+        }
+
+        private static void RegisterInAddressables(string baseName, string spriteSheetAssetPath, string locationPascal)
+        {
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+            {
+                Debug.LogWarning($"[ObstacleAnimationImporter] AddressableAssetSettings not found. Skipping registration for '{baseName}'.");
+                return;
+            }
+
+            // Determine group names based on location
+            var spritesGroupName = $"{locationPascal.ToLower()} obstacles sprites";
+            var animationsGroupName = $"{locationPascal} obstacle animations";
+
+            // Find or create groups
+            var spritesGroup = settings.FindGroup(spritesGroupName);
+            if (spritesGroup == null)
+            {
+                Debug.LogWarning($"[ObstacleAnimationImporter] Addressables group '{spritesGroupName}' not found. Skipping sprite sheet registration.");
+            }
+            else
+            {
+                // Register sprite sheet
+                var spriteGuid = AssetDatabase.AssetPathToGUID(spriteSheetAssetPath);
+                if (!string.IsNullOrEmpty(spriteGuid))
+                {
+                    var spriteEntry = settings.FindAssetEntry(spriteGuid);
+                    if (spriteEntry == null)
+                    {
+                        spriteEntry = settings.CreateOrMoveEntry(spriteGuid, spritesGroup, false, false);
+                        if (spriteEntry != null)
+                        {
+                            spriteEntry.address = baseName;
+                            spriteEntry.SetLabel($"{locationPascal} obstacles sprites", true, true);
+                            Debug.Log($"[ObstacleAnimationImporter] Registered sprite sheet in Addressables: {baseName}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log($"[ObstacleAnimationImporter] Sprite sheet already in Addressables: {baseName}");
+                    }
+                }
+            }
+
+            var animationsGroup = settings.FindGroup(animationsGroupName);
+            if (animationsGroup == null)
+            {
+                Debug.LogWarning($"[ObstacleAnimationImporter] Addressables group '{animationsGroupName}' not found. Skipping animation registration.");
+            }
+            else
+            {
+                // Register animation
+                var animAssetPath = $"{AnimationsFolder}/{baseName}.anim";
+                var animGuid = AssetDatabase.AssetPathToGUID(animAssetPath);
+                if (!string.IsNullOrEmpty(animGuid))
+                {
+                    var animEntry = settings.FindAssetEntry(animGuid);
+                    if (animEntry == null)
+                    {
+                        animEntry = settings.CreateOrMoveEntry(animGuid, animationsGroup, false, false);
+                        if (animEntry != null)
+                        {
+                            animEntry.address = baseName;
+                            animEntry.SetLabel($"{locationPascal} obstacle animations", true, true);
+                            Debug.Log($"[ObstacleAnimationImporter] Registered animation in Addressables: {baseName}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log($"[ObstacleAnimationImporter] Animation already in Addressables: {baseName}");
+                    }
+                }
+            }
+
+            settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryAdded, null, true);
         }
 
         private static void DeleteSourceFrames(string baseName, IEnumerable<FrameInfo> frames)
