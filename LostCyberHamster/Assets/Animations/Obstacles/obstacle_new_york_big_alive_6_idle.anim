@@ -6,7 +6,7 @@ AnimationClip:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: obstacle_new_york_bigAlive_6_idle
+  m_Name: obstacle_new_york_big_alive_6_idle
   serializedVersion: 7
   m_Legacy: 0
   m_Compressed: 0
@@ -21,11 +21,11 @@ AnimationClip:
   - serializedVersion: 2
     curve:
     - time: 0
-      value: {fileID: 1181761202544710619, guid: 30d3530403404c3498241ee32ab2aa62, type: 3}
+      value: {fileID: 2375387996696923446, guid: 9c5f94e51a6f24d4498f4b3716574403, type: 3}
     - time: 0.2
-      value: {fileID: 2981288361282778300, guid: 30d3530403404c3498241ee32ab2aa62, type: 3}
+      value: {fileID: -5282679689102017585, guid: 9c5f94e51a6f24d4498f4b3716574403, type: 3}
     - time: 0.4
-      value: {fileID: 813731529918627058, guid: 30d3530403404c3498241ee32ab2aa62, type: 3}
+      value: {fileID: -2606174571022923186, guid: 9c5f94e51a6f24d4498f4b3716574403, type: 3}
     attribute: m_Sprite
     path: 
     classID: 212
@@ -48,9 +48,9 @@ AnimationClip:
       isIntCurve: 0
       isSerializeReferenceCurve: 0
     pptrCurveMapping:
-    - {fileID: 1181761202544710619, guid: 30d3530403404c3498241ee32ab2aa62, type: 3}
-    - {fileID: 2981288361282778300, guid: 30d3530403404c3498241ee32ab2aa62, type: 3}
-    - {fileID: 813731529918627058, guid: 30d3530403404c3498241ee32ab2aa62, type: 3}
+    - {fileID: 2375387996696923446, guid: 9c5f94e51a6f24d4498f4b3716574403, type: 3}
+    - {fileID: -5282679689102017585, guid: 9c5f94e51a6f24d4498f4b3716574403, type: 3}
+    - {fileID: -2606174571022923186, guid: 9c5f94e51a6f24d4498f4b3716574403, type: 3}
   m_AnimationClipSettings:
     serializedVersion: 2
     m_AdditiveReferencePoseClip: {fileID: 0}

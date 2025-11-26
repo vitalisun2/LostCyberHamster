@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: new york obstacles sprites
   m_GUID: 7bb582b3c050f5f49a616b92a5fc8991
   m_SerializeEntries:
+  - m_GUID: 03a3d97e52be34f42bd88916aef92641
+    m_Address: obstacle_new_york_big_alive_5_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0e46970db7684e14890d3ef8a1e568ba
     m_Address: obstacle_new_york_manhole
     m_ReadOnly: 0
@@ -27,26 +33,8 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 30d3530403404c3498241ee32ab2aa62
-    m_Address: obstacle_new_york_bigAlive_6_idle
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - New York obstacles sprites
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3f7cd193a4cdbd241bd51870c7925d7d
-    m_Address: obstacle_new_york_bigAlive_3_idle
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - New York obstacles sprites
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3fff77cc66182e64b95d3ddc3ddbfb80
     m_Address: obstacle_new_york_dog
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - New York obstacles sprites
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 42b8b069f4e60654c8ad2505fe98faa0
-    m_Address: obstacle_new_york_bigAlive_2_idle
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
@@ -57,14 +45,14 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6b0ddfc53e004904aa1a2c3ec9e49961
-    m_Address: obstacle_new_york_bigAlive_4_idle
+  - m_GUID: 8361ae89fdf49164b967e9b7557ffd27
+    m_Address: obstacle_new_york_big_alive_4_idle
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ac95c2a0c8a5e444ab95e11efadea53f
-    m_Address: obstacle_new_york_bigAlive_1_idle
+  - m_GUID: 9c5f94e51a6f24d4498f4b3716574403
+    m_Address: obstacle_new_york_big_alive_6_idle
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
@@ -75,8 +63,14 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e1768ff2ae9d8044f8b685aeafffd6fa
-    m_Address: obstacle_new_york_bigAlive_5_idle
+  - m_GUID: c39fe888e379f3e48b03144100484bc8
+    m_Address: obstacle_new_york_big_alive_3_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cfd3e374cc6d31f449ab9d873cff49e6
+    m_Address: obstacle_new_york_big_alive_2_idle
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
@@ -93,14 +87,14 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: f5227996d807cd241b93ed1e81477692
-    m_Address: obstacle_new_york_homeless
+  - m_GUID: f51831c4dc57a854db04cd4d0d3cbac2
+    m_Address: obstacle_new_york_big_alive_1_idle
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: f6523ac264a46e449ad2208602665df1
-    m_Address: obstacle_new_york_bigAlive_7_idle
+  - m_GUID: f5227996d807cd241b93ed1e81477692
+    m_Address: obstacle_new_york_homeless
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
