@@ -145,13 +145,29 @@ BigCitizenPrefab (root)
 - Работает с **активной сценой** (не создаёт отдельные сцены)
 - Использует **Tilemap** для визуализации препятствий
 - Паттерны хранятся в JSON-файлах
+- **Два режима работы:** Templates и Locations
+
+### Режимы работы редактора
+
+#### **Templates режим** (`level_design_templates`)
+- ✅ Показывает **obstacles** (patterns) на Tilemap
+- ✅ **Можно редактировать** obstacles (add, delete, move)
+- ❌ **Decorations запрещены** — будет предупреждение
+- 💾 При сохранении обновляются **patterns** с obstacles
+
+#### **Locations режим** (New York, Paris, etc.)
+- ✅ Показывает **obstacles (read-only)** — видны на Tilemap, но нельзя изменять
+- ✅ **Можно редактировать decorations** (add, delete, move)
+- ✅ Decorations размещаются **поверх obstacles**
+- ❌ Попытка редактировать obstacles → предупреждение "Obstacles are read-only"
+- 💾 При сохранении обновляются **decorationPatterns**
 
 ### Workflow редактора
 1. Выбрать **Location** (01_New_York, level_design_templates)
 2. Выбрать **Daypart** (Morning, Day, Evening, Night) — если не templates
 3. Выбрать **Level file** (level_01.json, level_02.json)
-4. Выбрать **Pattern** из списка
-5. Редактировать препятствия на тайлмапе
+4. **Templates:** Выбрать Pattern из списка, редактировать obstacles
+5. **Locations:** Видеть obstacles (read-only), добавлять decorations поверх
 
 ### Важные компоненты
 - **LevelTilemapEditor.cs** — главное окно редактора
@@ -165,6 +181,45 @@ BigCitizenPrefab (root)
 
 **Почему это нужно:**
 Редактор больше не создаёт отдельные сцены, работает с активной сценой. Без очистки объекты накапливаются и наслаиваются друг на друга.
+
+### Decoration System
+
+**Naming Convention:**
+```
+decor_bush_1
+decor_tree_1
+decor_{type}_{id}
+```
+
+**Addressables Structure:**
+```
+decor sprites
+├─ decor_bush_1 (Sprite)
+├─ decor_tree_1 (Sprite)
+└─ ...
+
+Label: "New York decor sprites"
+```
+
+**LevelInfo.json Structure:**
+```json
+{
+  "decorationPatterns": [
+    {
+      "decorationTiles": [
+        { "name": "decor_bush_1", "xPos": 10, "yPos": 2 },
+        { "name": "decor_tree_1", "xPos": 15, "yPos": 3 }
+      ]
+    }
+  ],
+  "patterns": [ ... ]
+}
+```
+
+**Важно:**
+- Decorations НЕ очищают Tilemap при загрузке — добавляются поверх obstacles
+- `ProcessTileChange()` блокирует редактирование obstacles в Locations режиме
+- `UpdateCurrentLevelInfoFromTilemap()` пропускает обновление patterns для Locations
 
 ---
 
@@ -278,9 +333,32 @@ animator.Update(Time.deltaTime);
 AnimationMode.StartAnimationMode();
 AnimationMode.SampleAnimationClip(gameObject, clip, time);
 ```
-**Почему:** `animator.Update()` нестабилен в Editor mode.
 
-**4. НЕ инстанцировать префаб для получения размеров спрайта**
+**4. НЕ вызывать FixObstacleTypes для Locations**
+```csharp
+// ❌ НЕПРАВИЛЬНО (сотни ошибок "No mapping")
+FixObstacleTypesInLevelInfoAndSaveToJson(levelInfo, filePath);
+
+// ✅ ПРАВИЛЬНО
+if (isTemplateLocation)
+{
+    FixObstacleTypesInLevelInfoAndSaveToJson(levelInfo, filePath);
+}
+```
+**Почему:** FixObstacleTypes валидирует obstacles через mappings manager, который не знает про decorations. В Locations patterns read-only.
+
+**5. НЕ очищать Tilemap при загрузке decorations**
+```csharp
+// ❌ НЕПРАВИЛЬНО
+tilemap.ClearAllTiles();
+LoadDecorationsToTilemap();
+
+// ✅ ПРАВИЛЬНО
+LoadDecorationsToTilemap(); // Добавляет decorations ПОВЕРХ obstacles
+```
+**Почему:** В Locations режиме obstacles показываются read-only для контекста. Очистка Tilemap удалит их.
+
+**6. НЕ инстанцировать префаб для получения размеров спрайта**
 ```csharp
 // ❌ НЕПРАВИЛЬНО
 var instance = Instantiate(prefab);
@@ -315,6 +393,24 @@ DebugManager.DiagLog($"[Component] Important data: {value}");
 - Не делать 10 изменений сразу
 - После каждого изменения — компиляция + проверка
 - Использовать `get_errors` для валидации
+
+**5. Использовать два Addressables лейбла для разделения типов спрайтов**
+```csharp
+// Obstacles
+"New York obstacles sprites"
+
+// Decorations
+"New York decor sprites"
+```
+- Загружать оба лейбла через `Addressables.LoadAssetsAsync`
+- Фильтровать через `IsObstacleSprite()` (префиксы "obstacle" / "decor")
+- Labels **регистрозависимы** — не трансформировать строки
+
+**6. ProcessTileChange() для режим-специфичной валидации**
+- Проверять `isTemplateLocation` перед редактированием
+- Блокировать редактирование obstacles в Locations
+- Показывать понятные Debug.LogWarning для пользователя
+- Возвращать `false` при нарушении правил
 
 ---
 
