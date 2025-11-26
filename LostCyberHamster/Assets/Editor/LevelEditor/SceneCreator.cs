@@ -18,6 +18,9 @@ public static class SceneCreator
         // Work in the currently active scene
         var scene = SceneManager.GetActiveScene();
 
+        // Очистка старых объектов Grid и фона при смене локации/файла
+        CleanupOldSceneObjects(scene);
+
         var gridGameObject = new GameObject("Grid");
         SceneManager.MoveGameObjectToScene(gridGameObject, scene);
         var grid = gridGameObject.AddComponent<Grid>();
@@ -35,6 +38,36 @@ public static class SceneCreator
 
         CreateBackground(targetWidth, currentLevelInfo, scene);
         return tilemapGameObject;
+    }
+
+    /// <summary>
+    /// Удаляет все старые объекты Grid, Tilemap и BackgroundSegment из сцены.
+    /// </summary>
+    private static void CleanupOldSceneObjects(Scene scene)
+    {
+        var rootObjects = scene.GetRootGameObjects();
+        int removedCount = 0;
+        
+        foreach (var obj in rootObjects)
+        {
+            // Удаляем старые Grid (содержат Tilemap как дочерний)
+            if (obj.name == "Grid")
+            {
+                UnityEngine.Object.DestroyImmediate(obj);
+                removedCount++;
+            }
+            // Удаляем старые сегменты фона
+            else if (obj.name.StartsWith("BackgroundSegment_"))
+            {
+                UnityEngine.Object.DestroyImmediate(obj);
+                removedCount++;
+            }
+        }
+        
+        if (removedCount > 0)
+        {
+            Debug.Log($"[SceneCreator] Removed {removedCount} old scene objects (Grid/Background)");
+        }
     }
 
     private static void CreateBackground(int targetWidth, LevelInfo currentLevelInfo, Scene scene)
