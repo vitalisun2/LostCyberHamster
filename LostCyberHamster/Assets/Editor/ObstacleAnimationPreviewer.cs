@@ -183,14 +183,20 @@ namespace Assets.EditorTools
                 EditorApplication.update -= editorUpdateCallback;
             }
             
-            double startTime = EditorApplication.timeSinceStartup;
+            float animationTime = 0f;
+            double lastUpdateTime = EditorApplication.timeSinceStartup;
+            
             editorUpdateCallback = () =>
             {
                 if (currentAnimatedObjects.Count == 0) return;
                 
-                // Calculate elapsed time since animation start
+                // Calculate delta time since last update
                 double currentTime = EditorApplication.timeSinceStartup;
-                float elapsedTime = (float)(currentTime - startTime);
+                float deltaTime = (float)(currentTime - lastUpdateTime);
+                lastUpdateTime = currentTime;
+                
+                // Advance animation time
+                animationTime += deltaTime;
                 
                 // Sample all animations at current time
                 for (int i = 0; i < currentAnimatedObjects.Count; i++)
@@ -200,9 +206,8 @@ namespace Assets.EditorTools
                     
                     if (obj == null || clip == null) continue;
                     
-                    // Loop animation at correct framerate
-                    // clip.length already accounts for frameRate
-                    float time = elapsedTime % clip.length;
+                    // Loop animation - clip.length is calculated from frameCount / frameRate
+                    float time = animationTime % clip.length;
                     AnimationMode.SampleAnimationClip(obj, clip, time);
                 }
                 
@@ -390,7 +395,6 @@ namespace Assets.EditorTools
                 {
                     currentX = 0f;
                     // Move down to next row (subtract previous row height + spacing)
-                    DebugManager.DiagLog($"[Grid] Row {currentRowIndex} height: {rowHeight}, moving to Y={currentRowY - rowHeight * SpacingMultiplier}");
                     currentRowY -= rowHeight * SpacingMultiplier;
                     currentRowIndex++;
                     rowHeight = 0f;
@@ -403,7 +407,6 @@ namespace Assets.EditorTools
                 // X: offset by half width (pivot is center on X axis)
                 // Y: currentRowY is top of row, sprite pivot is at bottom, so place at (top - height)
                 var position = new Vector3(currentX + objWidth / 2f, currentRowY - objHeight, 0f);
-                DebugManager.DiagLog($"[Grid] Object {i}: size={objWidth:F2}x{objHeight:F2}, row={currentRowIndex}, pos={position}");
                 positions.Add(position);
                 
                 // Move X cursor for next object
