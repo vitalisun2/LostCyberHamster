@@ -4,7 +4,8 @@
             "type": 10,
             "sprites": [
                 "decor_bush_1",
-                "decor_tree_1"
+                "decor_tree_1",
+                "obstacle_new_york_manhole"
             ]
         },
         {
@@ -26,12 +27,6 @@
             "sprites": [
                 "obstacle_new_york_dog",
                 "obstacle_new_york_homeless"
-            ]
-        },
-        {
-            "type": 2,
-            "sprites": [
-                "obstacle_new_york_manhole"
             ]
         },
         {

@@ -5,7 +5,8 @@
             "sprites": [
                 "obstacle_new_york_businessman",
                 "obstacle_new_york_granny",
-                "obstacle_new_york_hipster"
+                "obstacle_new_york_hipster",
+                "obstacle_new_york_manhole"
             ]
         },
         {
@@ -19,12 +20,6 @@
             "sprites": [
                 "obstacle_new_york_dog",
                 "obstacle_new_york_homeless"
-            ]
-        },
-        {
-            "type": 2,
-            "sprites": [
-                "obstacle_new_york_manhole"
             ]
         },
         {

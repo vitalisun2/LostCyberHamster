@@ -65,18 +65,35 @@ obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idl
 
 ---
 
-### 3. Проверить возможность размещения декораций на уровне
+### 3. Добавить decoration спрайты в папку New York
 
 **Что нужно сделать:**
-- Проверить, загружаются ли decoration sprites в Level Tilemap Editor
-- Убедиться, что их можно разместить на tilemap
-- Проверить сохранение в level JSON
-- Проверить корректное отображение при загрузке уровня в игре
+- Добавить несколько decoration файлов (PNG) в папку `Assets/Content/locations/01_New_York/sprites/`
+- Убедиться, что они помечены как Addressable
+- Проверить, что установлен правильный label для загрузки в редакторе
 
-**Возможные проблемы:**
-- Decoration sprites могут иметь другой label в Addressables
-- Может требоваться отдельная логика фильтрации
-- Может потребоваться специальный тип `ObstacleTypeEnum.decor`
+**Примечание:**
+Это нужно для тестирования отображения декораций в Level Tilemap Editor.
+
+---
+
+### 4. Выяснить, почему decoration спрайты не отображаются в Level Tilemap Editor
+
+**Проблема:**
+В проекте уже есть несколько decoration спрайтов, но они не появляются в списке спрайтов Level Tilemap Editor.
+
+**Что проверить:**
+1. Как работает фильтрация спрайтов в `LevelTilemapUi.cs` (метод `IsObstacleSprite()`)
+   - Проверяет ли он префикс `"decor"`?
+2. Какой label используется для загрузки спрайтов из Addressables
+   - Ищется ли отдельный label для decoration или тот же, что и для obstacles?
+3. Загружаются ли decoration спрайты через `SpriteLoader.LoadSpritesByTag()`
+4. Есть ли в Addressables группа/label для decoration спрайтов
+
+**Файлы для анализа:**
+- `Assets/Editor/LevelEditor/LevelTilemapUi.cs` — метод `IsObstacleSprite()`, `BuildObstacleLabel()`
+- `Assets/Editor/LevelEditor/SpriteLoader.cs` — логика загрузки по tag/label
+- Addressables groups — проверить наличие decoration label
 
 ---
 
