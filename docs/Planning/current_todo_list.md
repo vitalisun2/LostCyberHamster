@@ -95,4 +95,18 @@ obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idl
 - `Assets/Editor/LevelEditor/SpriteLoader.cs` — логика загрузки по tag/label
 - Addressables groups — проверить наличие decoration label
 
+---
+
+### 5. Удалить последние 2 паттерна из level 01 и level 02
+
+**Что нужно сделать:**
+- Открыть файлы уровней:
+  - `Assets/Content/locations/01_New_York/levels/Morning/level_01/level_01.json`
+  - `Assets/Content/locations/01_New_York/levels/Morning/level_02/level_02.json`
+- Удалить последние 2 паттерна из массива `patterns` в каждом файле
+- Оставить 8 паттернов в каждом уровне (сейчас по 10)
+
+**Цель:**
+Сократить длительность первых двух уровней для более быстрого тестирования.
+
 
