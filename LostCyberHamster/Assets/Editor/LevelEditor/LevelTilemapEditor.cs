@@ -315,18 +315,24 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        if (_currentLevelInfo.decorationPatterns == null || _currentLevelInfo.decorationPatterns.Count == 0)
+        _tipeMapInScene.ClearAllTiles();
+
+        // Initialize decorationPatterns if missing
+        if (_currentLevelInfo.decorationPatterns == null)
         {
-            Debug.Log("[LevelTilemapEditor] No decoration patterns found in level.");
-            return;
+            _currentLevelInfo.decorationPatterns = new List<DecorationPattern>();
         }
 
-        _tipeMapInScene.ClearAllTiles();
+        if (_currentLevelInfo.decorationPatterns.Count == 0)
+        {
+            Debug.Log("[LevelTilemapEditor] No decoration patterns found. Starting with empty tilemap for decoration placement.");
+            return;
+        }
 
         var decorationPattern = _currentLevelInfo.decorationPatterns[0];
         if (decorationPattern.decorationTiles == null || decorationPattern.decorationTiles.Count == 0)
         {
-            Debug.Log("[LevelTilemapEditor] Decoration pattern has no tiles.");
+            Debug.Log("[LevelTilemapEditor] Decoration pattern has no tiles. Tilemap is empty.");
             return;
         }
 
