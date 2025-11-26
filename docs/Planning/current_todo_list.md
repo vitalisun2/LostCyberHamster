@@ -4,6 +4,35 @@
 
 ## 🔴 TO DO (Требует выполнения)
 
+### Обновить spriteName в level JSON файлах на новые имена с bigAlive
+
+**Что нужно сделать:**
+Заменить старые имена спрайтов (granny, hipster, etc.) на новые имена с анимациями (bigAlive) в JSON файлах уровней (`Assets/Resources/levels/NewYork/...`).
+
+**Логика замены:**
+- Сканировать все level JSON файлы (например, `levels_morning_level_001.json`)
+- Для каждого obstacle с `type: 1` (bigAlive):
+  - Первое уникальное имя (например, `obstacle_new_york_granny`) → `obstacle_new_york_bigAlive_1_idle`
+  - Второе уникальное имя (например, `obstacle_new_york_hipster`) → `obstacle_new_york_bigAlive_2_idle`
+  - Если встречается повторно `granny` → использовать то же имя `bigAlive_1_idle`
+  - Инкрементировать счётчик для каждого нового уникального имени
+
+**Примеры замены:**
+```
+obstacle_new_york_granny → obstacle_new_york_bigAlive_1_idle
+obstacle_new_york_hipster → obstacle_new_york_bigAlive_2_idle
+obstacle_new_york_cool_guy → obstacle_new_york_bigAlive_3_idle
+obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idle
+```
+
+**Файлы для обработки:**
+- `Assets/Resources/levels/NewYork/levels_morning_level_*.json`
+- `Assets/Resources/levels/NewYork/levels_day_level_*.json`
+- `Assets/Resources/levels/NewYork/levels_evening_level_*.json`
+- И т.д.
+
+---
+
 ### Проверить возможность размещения декораций на уровне
 
 **Что нужно сделать:**
