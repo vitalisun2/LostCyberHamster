@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Assets.EditorTools
@@ -495,8 +496,8 @@ namespace Assets.EditorTools
         }
 
         /// <summary>
-        /// Cleans up preview and restores scene state.
-        /// Call this manually or it will be cleaned up on next preview.
+        /// Clear preview by reloading current scene without saving changes.
+        /// This ensures all temporary objects are removed even after recompilation.
         /// </summary>
         [MenuItem("Tools/Obstacle Animations/Clear Preview", priority = 502)]
         [MenuItem("Assets/Obstacle Animations/Clear Preview", priority = 12)]
@@ -518,33 +519,14 @@ namespace Assets.EditorTools
             currentAnimators.Clear();
             currentAnimatedObjects.Clear();
             currentAnimationClips.Clear();
-            
-            // Destroy preview instances
-            foreach (var instance in currentPreviewInstances)
-            {
-                if (instance != null)
-                {
-                    Object.DestroyImmediate(instance);
-                }
-            }
             currentPreviewInstances.Clear();
             
-            // Restore original scene objects visibility
-            var allRootObjects = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
-            foreach (var obj in allRootObjects)
-            {
-                obj.SetActive(true);
-            }
+            // Reload current scene without saving changes
+            // This guarantees all temporary preview objects are removed
+            var currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            EditorSceneManager.OpenScene(currentScene.path, OpenSceneMode.Single);
             
-            // Restore grid and gizmos visibility
-            if (SceneView.lastActiveSceneView != null)
-            {
-                SceneView.lastActiveSceneView.drawGizmos = originalGizmosVisibility;
-                SceneView.lastActiveSceneView.showGrid = originalGridVisibility;
-                SceneView.lastActiveSceneView.Repaint();
-            }
-            
-            Debug.Log("[ObstacleAnimationPreviewer] Preview cleared.");
+            Debug.Log("[ObstacleAnimationPreviewer] Preview cleared by reloading scene.");
         }
     }
 }
