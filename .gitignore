@@ -93,6 +93,7 @@ LostCyberHamster/.utmp/
 
 # Editor logs
 /LostCyberHamster/EditorLogs/
+/EditorLogs/*.txt
 
 # Rider cache
 .idea/
