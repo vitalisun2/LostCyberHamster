@@ -4,7 +4,7 @@
 
 ## 🔴 TO DO (Требует выполнения)
 
-### Обновить spriteName в level JSON файлах на новые имена с bigAlive
+### 1. Обновить spriteName в level JSON файлах на новые имена с bigAlive
 
 **Что нужно сделать:**
 Заменить старые имена спрайтов (granny, hipster, etc.) на новые имена с анимациями (bigAlive) в JSON файлах уровней (`Assets/Resources/levels/NewYork/...`).
@@ -33,7 +33,7 @@ obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idl
 
 ---
 
-### Проверить возможность размещения декораций на уровне
+### 2. Проверить возможность размещения декораций на уровне
 
 **Что нужно сделать:**
 - Проверить, загружаются ли decoration sprites в Level Tilemap Editor
@@ -50,7 +50,7 @@ obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idl
 
 ## ✅ DONE (Выполнено)
 
-### Рефакторинг Level Tilemap Editor для работы в текущей сцене
+### 1. Рефакторинг Level Tilemap Editor для работы в текущей сцене
 **Дата:** 2025-11-26
 
 **Что сделано:**
@@ -65,7 +65,7 @@ obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idl
 
 ---
 
-### Исправлена регистрация ассетов в Addressables
+### 2. Исправлена регистрация ассетов в Addressables
 **Дата:** 2025-11-26
 
 **Проблема:**
@@ -79,7 +79,7 @@ obstacle_new_york_granny (повторно) → obstacle_new_york_bigAlive_1_idl
 
 ---
 
-### Поддержка naming convention с категориями (bigAlive, smallAlive, etc.)
+### 3. Поддержка naming convention с категориями (bigAlive, smallAlive, etc.)
 **Дата:** 2025-11-26
 
 **Что сделано:**
