@@ -174,6 +174,13 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void ProcessTileChange(Tilemap changedTilemap, Tile tile, Vector3Int cellPosition)
     {
+        // For decoration sprites (starting with "decor"), skip validation/placement rules
+        if (tile.sprite.name.StartsWith("decor", StringComparison.OrdinalIgnoreCase))
+        {
+            return; // Decorations can be placed freely
+        }
+
+        // For obstacle sprites, apply placement rules
         if (!ObstacleSpriteTypeMappingsManager.TryGetType(tile.sprite.name, out var obstacleType))
             throw new InvalidOperationException($"No mapping found for sprite '{tile.sprite.name}'");
 
@@ -206,6 +213,14 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
+        // For specific locations (not templates), decorations are synced only on save
+        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+        if (!isTemplateLocation)
+        {
+            return;
+        }
+
+        // Templates mode: update patterns
         if (_selectedPatternIndex < 0 || _selectedPatternIndex >= _currentLevelInfo.patterns.Count)
         {
             Debug.LogWarning("Выбранный паттерн некорректен.");
