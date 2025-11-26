@@ -474,20 +474,20 @@ namespace Assets.EditorTools
         {
             var lowerName = fileName.ToLowerInvariant();
 
-            // bigAlive: people (standing)
-            if (lowerName.Contains("_people_"))
+            // bigAlive: people (standing), or explicit bigAlive category
+            if (lowerName.Contains("_people_") || lowerName.Contains("_bigalive_"))
             {
                 return BigCitizenPrefabPath;
             }
 
-            // smallAlive: dogs, cats
-            if (lowerName.Contains("_dog_") || lowerName.Contains("_cat_"))
+            // smallAlive: dogs, cats, or explicit smallAlive category
+            if (lowerName.Contains("_dog_") || lowerName.Contains("_cat_") || lowerName.Contains("_smallalive_"))
             {
                 return SmallCitizenPrefabPath;
             }
 
-            // bigNotAlive: cars, trucks, buses
-            if (lowerName.Contains("_car_") || lowerName.Contains("_truck_") || lowerName.Contains("_bus_"))
+            // bigNotAlive: cars, trucks, buses, or explicit bigNotAlive category
+            if (lowerName.Contains("_car_") || lowerName.Contains("_truck_") || lowerName.Contains("_bus_") || lowerName.Contains("_bignotalive_"))
             {
                 return BigNotAlivePrefabPath;
             }

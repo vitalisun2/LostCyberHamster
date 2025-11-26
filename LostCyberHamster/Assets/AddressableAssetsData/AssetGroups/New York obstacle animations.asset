@@ -15,41 +15,35 @@ MonoBehaviour:
   m_GroupName: New York obstacle animations
   m_GUID: b380736c23deb0f478652d32673dc154
   m_SerializeEntries:
-  - m_GUID: 1ec8d6ff995fee6459bb5ba8e5e47bfc
-    m_Address: obstacle_new_york_people_2_idle
+  - m_GUID: 38b90f5f5833c4b49a93cb66aa38b364
+    m_Address: obstacle_new_york_bigAlive_3_idle
     m_ReadOnly: 0
     m_SerializedLabels:
-    - NewYork obstacle animations
+    - New York obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 248c814bf0b9c0641a049a0d38024102
-    m_Address: obstacle_new_york_people_4_idle
+  - m_GUID: 39bf4b988c21b2c48aa62af57208aa91
+    m_Address: obstacle_new_york_bigAlive_5_idle
     m_ReadOnly: 0
     m_SerializedLabels:
-    - NewYork obstacle animations
+    - New York obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3c398adefa856cf4e9d05550f0e4bae3
-    m_Address: obstacle_new_york_people_5_idle
+  - m_GUID: 3ac4837947d22594f8bc1d8f81db44db
+    m_Address: obstacle_new_york_bigAlive_2_idle
     m_ReadOnly: 0
     m_SerializedLabels:
-    - NewYork obstacle animations
+    - New York obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 53e35b005ddb6dd4f83a289901a92853
-    m_Address: obstacle_new_york_people_6_idle
+  - m_GUID: 6bdcb6865466bf24da795b8cc9bcda97
+    m_Address: obstacle_new_york_bigAlive_7_idle
     m_ReadOnly: 0
     m_SerializedLabels:
-    - NewYork obstacle animations
+    - New York obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 91cd2fefe552d764ea3761d79fc56472
-    m_Address: obstacle_new_york_people_7_idle
+  - m_GUID: 72893d0c0d83cdf46ad6d8c85d34dfd4
+    m_Address: obstacle_new_york_bigAlive_4_idle
     m_ReadOnly: 0
     m_SerializedLabels:
-    - NewYork obstacle animations
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: b3588cf8b0f80fd4fb8d2a76bebe02e8
-    m_Address: obstacle_new_york_people_3_idle
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - NewYork obstacle animations
+    - New York obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ced60812d2e325845b6340633091a79e
     m_Address: obstacle_new_york_dog_idle
@@ -57,14 +51,20 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: d235fe8e178d95644929fbd76ad62703
-    m_Address: obstacle_new_york_people_1_idle
+  - m_GUID: cfb7161b8e82f754d924c5bf46917465
+    m_Address: obstacle_new_york_bigAlive_6_idle
     m_ReadOnly: 0
     m_SerializedLabels:
-    - NewYork obstacle animations
+    - New York obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e7cd0fd5b8db0504dab1938d4c5400e5
     m_Address: obstacle_new_york_granny_walk
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacle animations
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f58fb12bb5b6f6944bed9f72bba1386c
+    m_Address: obstacle_new_york_bigAlive_1_idle
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacle animations

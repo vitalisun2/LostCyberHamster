@@ -1,25 +1,34 @@
 fileFormatVersion: 2
-guid: 3af24fc322993da40bc513a2d55da89b
+guid: f6523ac264a46e449ad2208602665df1
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7765710382017657538
-    second: obstacle_new_york_people_5_idle_0
+      213: 1287859492080658405
+    second: obstacle_new_york_bigAlive_7_idle_0
   - first:
-      213: -4303160460428874894
-    second: obstacle_new_york_people_5_idle_1
+      213: -5742719654239702915
+    second: obstacle_new_york_bigAlive_7_idle_1
   - first:
-      213: -3483136877062349364
-    second: obstacle_new_york_people_5_idle_2
+      213: -3035436998942702536
+    second: obstacle_new_york_bigAlive_7_idle_2
   - first:
-      213: 3970553364617668824
-    second: obstacle_new_york_people_5_idle-0
+      213: 8487971734815692066
+    second: obstacle_new_york_bigAlive_7_idle_3
   - first:
-      213: 5282536774634073125
-    second: obstacle_new_york_people_5_idle-1
+      213: -6877537510519793694
+    second: obstacle_new_york_bigAlive_7_idle_4
   - first:
-      213: 1098720034601985032
-    second: obstacle_new_york_people_5_idle-2
+      213: 6907042399622872575
+    second: obstacle_new_york_bigAlive_7_idle_5
+  - first:
+      213: -510720238045545459
+    second: obstacle_new_york_bigAlive_7_idle-0
+  - first:
+      213: 8757491762168118516
+    second: obstacle_new_york_bigAlive_7_idle-1
+  - first:
+      213: -7072926138815733472
+    second: obstacle_new_york_bigAlive_7_idle-2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -154,13 +163,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: obstacle_new_york_people_5_idle-0
+      name: obstacle_new_york_bigAlive_7_idle-0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 100
-        height: 212
+        width: 200
+        height: 424
       alignment: 9
       pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -169,42 +178,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8d8a4cb8f3d3a1730800000000000000
-      internalID: 3970553364617668824
+      spriteID: d0c31bf36ae89e8f0800000000000000
+      internalID: -510720238045545459
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: obstacle_new_york_people_5_idle-1
-      rect:
-        serializedVersion: 2
-        x: 100
-        y: 0
-        width: 100
-        height: 212
-      alignment: 9
-      pivot: {x: 0.5, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 52c600d55375f4940800000000000000
-      internalID: 5282536774634073125
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: obstacle_new_york_people_5_idle-2
+      name: obstacle_new_york_bigAlive_7_idle-1
       rect:
         serializedVersion: 2
         x: 200
         y: 0
-        width: 100
-        height: 212
+        width: 200
+        height: 424
       alignment: 9
       pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -213,8 +200,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8046e0adc007f3f00800000000000000
-      internalID: 1098720034601985032
+      spriteID: 4fcb077cb5cd88970800000000000000
+      internalID: 8757491762168118516
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: obstacle_new_york_bigAlive_7_idle-2
+      rect:
+        serializedVersion: 2
+        x: 400
+        y: 0
+        width: 200
+        height: 424
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0212055962be7dd90800000000000000
+      internalID: -7072926138815733472
       vertices: []
       indices: 
       edges: []
@@ -233,12 +242,15 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      obstacle_new_york_people_5_idle-0: 3970553364617668824
-      obstacle_new_york_people_5_idle-1: 5282536774634073125
-      obstacle_new_york_people_5_idle-2: 1098720034601985032
-      obstacle_new_york_people_5_idle_0: 7765710382017657538
-      obstacle_new_york_people_5_idle_1: -4303160460428874894
-      obstacle_new_york_people_5_idle_2: -3483136877062349364
+      obstacle_new_york_bigAlive_7_idle-0: -510720238045545459
+      obstacle_new_york_bigAlive_7_idle-1: 8757491762168118516
+      obstacle_new_york_bigAlive_7_idle-2: -7072926138815733472
+      obstacle_new_york_bigAlive_7_idle_0: 1287859492080658405
+      obstacle_new_york_bigAlive_7_idle_1: -5742719654239702915
+      obstacle_new_york_bigAlive_7_idle_2: -3035436998942702536
+      obstacle_new_york_bigAlive_7_idle_3: 8487971734815692066
+      obstacle_new_york_bigAlive_7_idle_4: -6877537510519793694
+      obstacle_new_york_bigAlive_7_idle_5: 6907042399622872575
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -443,7 +443,7 @@ namespace Assets.EditorTools
                     if (spriteEntry != null)
                     {
                         spriteEntry.address = baseName;
-                        spriteEntry.SetLabel($"{locationPascal} obstacles sprites", true, true);
+                        spriteEntry.SetLabel($"{locationTitleCase} obstacles sprites", true, true);
                         Debug.Log($"[ObstacleAnimationImporter] Sprite sheet registered in Addressables: {baseName}");
                     }
                 }
@@ -470,7 +470,7 @@ namespace Assets.EditorTools
                     if (animEntry != null)
                     {
                         animEntry.address = baseName;
-                        animEntry.SetLabel($"{locationPascal} obstacle animations", true, true);
+                        animEntry.SetLabel($"{locationTitleCase} obstacle animations", true, true);
                         Debug.Log($"[ObstacleAnimationImporter] Animation registered in Addressables: {baseName}");
                     }
                 }
@@ -498,19 +498,60 @@ namespace Assets.EditorTools
 
         private static bool TryExtractLocation(string baseName, out string locationPascal)
         {
+            // Expected format: obstacle_{location}_{category}_{id}_{animType}
+            // Example: obstacle_new_york_bigAlive_1_idle
+            // Known categories: bigAlive, smallAlive, bigNotAlive, smallNotAlive, people, dogs, etc.
+            
             var parts = baseName.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
             var obstacleIndex = Array.FindIndex(parts, p => string.Equals(p, "obstacle", StringComparison.OrdinalIgnoreCase));
-            var peopleIndex = Array.FindIndex(parts, p => string.Equals(p, "people", StringComparison.OrdinalIgnoreCase));
-
-            if (obstacleIndex < 0 || peopleIndex < 0 || peopleIndex - obstacleIndex <= 1)
+            
+            if (obstacleIndex < 0 || parts.Length < obstacleIndex + 3)
             {
                 locationPascal = string.Empty;
                 return false;
             }
 
-            var locationParts = parts.Skip(obstacleIndex + 1).Take(peopleIndex - obstacleIndex - 1);
-            var snake = string.Join("_", locationParts);
-            locationPascal = ToPascalCaseFromSnake(snake);
+            // Known category markers (case-insensitive)
+            var knownCategories = new[] { "bigAlive", "smallAlive", "bigNotAlive", "smallNotAlive", "people", "dogs", "cats", "cars", "buses" };
+            
+            // Find first occurrence of known category after "obstacle"
+            int categoryIndex = -1;
+            for (int i = obstacleIndex + 1; i < parts.Length; i++)
+            {
+                if (knownCategories.Any(cat => string.Equals(parts[i], cat, StringComparison.OrdinalIgnoreCase)))
+                {
+                    categoryIndex = i;
+                    break;
+                }
+            }
+
+            // If no category found, assume everything between "obstacle" and last 2 parts is location
+            // Format: obstacle_{location...}_{id}_{animType}
+            if (categoryIndex < 0)
+            {
+                if (parts.Length < obstacleIndex + 3)
+                {
+                    locationPascal = string.Empty;
+                    return false;
+                }
+                
+                // Take all parts except last 2 (id and animType)
+                var locationParts = parts.Skip(obstacleIndex + 1).Take(parts.Length - obstacleIndex - 3);
+                var snake = string.Join("_", locationParts);
+                locationPascal = ToPascalCaseFromSnake(snake);
+                return !string.IsNullOrEmpty(locationPascal);
+            }
+
+            // Category found - extract location between "obstacle" and category
+            if (categoryIndex - obstacleIndex <= 1)
+            {
+                locationPascal = string.Empty;
+                return false;
+            }
+
+            var locationSegments = parts.Skip(obstacleIndex + 1).Take(categoryIndex - obstacleIndex - 1);
+            var snakeCase = string.Join("_", locationSegments);
+            locationPascal = ToPascalCaseFromSnake(snakeCase);
             return !string.IsNullOrEmpty(locationPascal);
         }
 
