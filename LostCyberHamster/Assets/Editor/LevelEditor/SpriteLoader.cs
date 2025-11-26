@@ -11,18 +11,17 @@ public static class SpriteLoader
 
     public static Sprite LoadSpriteSync(string spriteName)
     {
-        string key = spriteName.ToLower();
-        if (_spriteCache.TryGetValue(key, out var cachedSprite))
+        if (_spriteCache.TryGetValue(spriteName, out var cachedSprite))
             return cachedSprite;
 
         // Адресуемся к Addressables и ждём завершения
-        var handle = Addressables.LoadAssetAsync<Sprite>(key);
+        var handle = Addressables.LoadAssetAsync<Sprite>(spriteName);
         var loadedSprite = handle.WaitForCompletion();
 
         if (loadedSprite != null)
         {
-            _spriteCache[key] = loadedSprite;
-            _handleCache[key] = handle;
+            _spriteCache[spriteName] = loadedSprite;
+            _handleCache[spriteName] = handle;
             return loadedSprite;
         }
 
