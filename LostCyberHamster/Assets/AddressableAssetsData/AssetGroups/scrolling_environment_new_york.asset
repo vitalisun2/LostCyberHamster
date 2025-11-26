@@ -30,6 +30,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 36bb7a4d64d39a845a8a4a4558b18f8a
+    m_Address: bg_2_new_york_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5c57724eae481c44cac774fab4c154f0
     m_Address: bg_new_york_evening
     m_ReadOnly: 0
@@ -65,6 +70,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9d169ab309443024f8209a248f3e4a9d
+    m_Address: bg_2_new_york_night
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: adeee4f49257416458f1825a53074345
     m_Address: rd_new_york_night
     m_ReadOnly: 0
@@ -77,6 +87,16 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cf5196076cd82f147b634e03b61f098b
     m_Address: sky_new_york_afternoon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d65e8bffbe55213489a14b6fb844ee04
+    m_Address: bg_2_new_york_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: defb7b5e467e43443a87b84d6e84b311
+    m_Address: bg_2_new_york_afternoon
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
