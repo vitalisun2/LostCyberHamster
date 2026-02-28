@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using global::System.IO;
 using System.Text;
 using Assets.Scripts.System;
 using UnityEngine;

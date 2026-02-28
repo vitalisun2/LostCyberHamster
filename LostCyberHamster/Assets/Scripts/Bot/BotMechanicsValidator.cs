@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using global::System.IO;
 using System.Text;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine;
@@ -313,14 +313,14 @@ namespace Assets.Scripts.Bot
         {
             string baseDir;
 #if UNITY_EDITOR
-            baseDir = System.IO.Path.Combine(Application.dataPath, "..", "EditorLogs", "bot_sessions");
+            baseDir = Path.Combine(Application.dataPath, "..", "EditorLogs", "bot_sessions");
 #else
-            baseDir = System.IO.Path.Combine(Application.persistentDataPath, "bot_sessions");
+            baseDir = Path.Combine(Application.persistentDataPath, "bot_sessions");
 #endif
             Directory.CreateDirectory(baseDir);
 
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            string path = System.IO.Path.Combine(baseDir, $"validation_{timestamp}.txt");
+            string path = Path.Combine(baseDir, $"validation_{timestamp}.txt");
 
             var sb = new StringBuilder();
             sb.AppendLine("=== HamsterBot Mechanics Validation Report ===");
