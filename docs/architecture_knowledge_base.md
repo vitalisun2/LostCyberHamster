@@ -493,9 +493,25 @@ obstacle_paris_big_alive_7_idle-1.png ... -18.png
 - `HamsterBot` (MonoBehaviour, Singleton, DontDestroyOnLoad) — оркестратор
 - `BotBrain` — реактивное дерево решений, параметризованное через `BotPlayStyleConfig`
 - `BotThreatScanner` — сканирование препятствий перед хомяком
+- `BotJumpPredictor` — предсказание исхода прыжка, переиспользует `CollisionUtils`
 - `BotResourceManager` — покупки энергии (50 coins → 100 energy) и ульты (100 coins → 100% ulta)
 - `BotPlanner` — forward simulation (дерево решений на N шагов), `EnablePlanner = false` по умолчанию
-- `BotLogger` — файловый лог сессий в `EditorLogs/bot_sessions/`
+- `BotLogger` — файловый лог сессий в `EditorLogs/bot_sessions/`, авто-очистка старых (> 1 дня)
+
+### BotJumpPredictor
+Предсказывает исход прыжка **до его совершения**, переиспользуя ту же логику, что и `JumpMechanics`:
+- Использует `CollisionUtils.IsOverlapAtShift`, `IsJumpOver`, `IsHamsterCenterInsideObstacleAtShift`
+- Получает `_jumpClipWorldShift` из `TransformAnimatorController` хомяка при инициализации
+- Результат `JumpPrediction`: NoHit, JumpOver, JumpOnObstacle, JumpOnRoof, Damage, Unknown
+- `BotBrain.HandleUrgentThreat` перед каждым Jump-решением вызывает `CheckJumpSafe()`
+- Если предиктор говорит `Damage` — бот ждёт, пока хомяк подъедет ближе (DoNothing)
+- **Это решает проблему раннего прыжка:** бот прыгал на расстоянии 2.3 юнита, приземлялся на препятствие
+
+### Ключевое правило: smallNotAliveRoadAndRoof
+- Это препятствие (opened_box, manhole) может быть на дороге ИЛИ на крыше bigNotAlive
+- Обрабатывается **прыжком** (не сменой полосы!)
+- На дороге: JumpOver, если хомяк достаточно близко; иначе Damage
+- На крыше bigNotAlive: JumpOnRoof (если нет hitSmall) или JumpOnRoofDamage
 
 ### Play Styles (BotPlayStyle enum)
 Каждый стиль — предустановленный набор весов и порогов (`BotPlayStylePresets`):
