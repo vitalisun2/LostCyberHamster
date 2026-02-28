@@ -184,7 +184,7 @@ AnimationClip:
     messageOptions: 0
   - time: 0.5
     functionName: ReceiveEvent
-    data: transform_medium_jump_end
+    data: transform_jump_end
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0

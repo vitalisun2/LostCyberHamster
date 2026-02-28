@@ -249,14 +249,14 @@ AnimationClip:
   m_Events:
   - time: 1.3666667
     functionName: ReceiveEvent
-    data: transform_medium_jumped_on
+    data: transform_jumped_on
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
   - time: 2.4833333
     functionName: ReceiveEvent
-    data: transform_medium_jump_end
+    data: transform_jump_end
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0

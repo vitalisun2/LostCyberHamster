@@ -80,6 +80,7 @@ public class RoofRunMechanics
         }
 
         _lastObstacle.Value = newBigNotAlive;
+        SwapRoofClipsForObstacle(newBigNotAlive);
         return true;
     }
 
@@ -105,11 +106,21 @@ public class RoofRunMechanics
         if (nextObstacle != null)
         {
             _lastObstacle.Value = nextObstacle;
+            SwapRoofClipsForObstacle(nextObstacle);
         }
         else
         {
             ToRunFromRoof();
         }
+    }
+
+    /// <summary>
+    /// Переключает roof-клипы аниматора в соответствии с типом препятствия.
+    /// </summary>
+    private void SwapRoofClipsForObstacle(Obstacle obstacle)
+    {
+        bool isMedium = obstacle.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.mediumNotAlive;
+        _transformAnimatorController.SwapRoofClips(isMedium);
     }
 
     /// <summary>

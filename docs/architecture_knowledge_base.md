@@ -371,6 +371,20 @@ var bounds = sprite.bounds;
 ```
 **Почему:** Префаб может содержать дефолтный/пустой спрайт.
 
+**7. При генерации medium .anim клипов — НЕ переименовывать события**
+```yaml
+# ❌ НЕПРАВИЛЬНО (events data получают medium_ префикс)
+data: transform_medium_jump_on_roof_end
+
+# ✅ ПРАВИЛЬНО (события ДОЛЖНЫ совпадать с оригиналом)
+data: transform_jump_on_roof_end
+```
+**Почему:** `HamsterAnimationEventsMechanics.OnEvent()` слушает только оригинальные имена событий
+(например, `transform_jump_on_roof_end`, `transform_roof_jump_end`). Если medium-клип
+стреляет `transform_medium_jump_on_roof_end`, обработчик его не распознаёт — хомяк
+навсегда застревает в промежуточном состоянии (`JumpOnRoof` вместо `RoofRun`).
+Механизм `SwapRoofClips` уже подменяет клипы в Animator — названия событий должны оставаться одинаковыми.
+
 ### ✅ Best Practices
 
 **1. Проверять Architecture Knowledge Base ПЕРВЫМ**

@@ -213,7 +213,7 @@ AnimationClip:
   m_Events:
   - time: 1
     functionName: ReceiveEvent
-    data: transform_medium_jump_on_roof_end
+    data: transform_jump_on_roof_end
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0
