@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Assets.Scripts.Gameplay;
@@ -62,9 +63,10 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Логирует действие бота.
+        /// Логирует действие бота с контекстом угроз.
         /// </summary>
-        public void LogAction(BotDecision decision, Hamster hamster)
+        public void LogAction(BotDecision decision, Hamster hamster,
+            IReadOnlyList<ThreatInfo> currentLane = null, IReadOnlyList<ThreatInfo> otherLane = null)
         {
             if (_writer == null) return;
 
@@ -80,6 +82,34 @@ namespace Assets.Scripts.Bot
                 $"| conf={decision.Confidence:F2} | planned={decision.IsPlanned} " +
                 $"| state={state} | energy={energy} | lives={lives} | lane={(bottom ? "bottom" : "top")} " +
                 $"| ulta={ulta}");
+
+            // Контекст: что видит бот на текущей и другой линии
+            if (currentLane != null && currentLane.Count > 0)
+            {
+                var sb = new StringBuilder();
+                sb.Append($"{t:F3} | SCAN   | curLane({currentLane.Count}): ");
+                int max = currentLane.Count > 5 ? 5 : currentLane.Count;
+                for (int i = 0; i < max; i++)
+                {
+                    var th = currentLane[i];
+                    sb.Append($"[{th.Type} @{th.DistanceX:F1} t={th.TimeToReach:F2}] ");
+                }
+                _writer.WriteLine(sb.ToString());
+            }
+
+            if (otherLane != null && otherLane.Count > 0)
+            {
+                var sb = new StringBuilder();
+                sb.Append($"{t:F3} | SCAN   | othLane({otherLane.Count}): ");
+                int max = otherLane.Count > 5 ? 5 : otherLane.Count;
+                for (int i = 0; i < max; i++)
+                {
+                    var th = otherLane[i];
+                    sb.Append($"[{th.Type} @{th.DistanceX:F1} t={th.TimeToReach:F2}] ");
+                }
+                _writer.WriteLine(sb.ToString());
+            }
+
             _eventCount++;
         }
 

@@ -139,20 +139,22 @@ namespace Assets.Scripts.Bot
 
         private BotDecision EvaluateWhileJumping(Hamster hamster, IReadOnlyList<ThreatInfo> currentLane)
         {
-            // Во время прыжка можно только SuperJump (и только из обычного прыжка)
+            // Во время прыжка можно только SuperJump (и только из начальных стадий прыжка)
             if (!CanSuperJump(hamster.HamsterState.Value))
                 return BotDecision.DoNothing("in jump, no super available");
 
             if (hamster.Energy.Value < 20)
                 return BotDecision.DoNothing("in jump, no energy for super");
 
-            // SuperJump только для реальных угроз (не для бонусов — жадность убивает)
+            // SuperJump ТОЛЬКО для bigAlive (высокий — может задеть в воздухе).
+            // smallAlive — безопасен в воздухе (приземлимся на него = бонус).
+            // smallNotAlive* — обычный прыжок перелетает их.
             for (int i = 0; i < currentLane.Count; i++)
             {
                 var t = currentLane[i];
-                if (t.IsDangerous && t.TimeToReach < _reactionWindowSec * 0.5f)
+                if (t.Type == ObstacleTypeEnum.bigAlive && t.TimeToReach < _reactionWindowSec * 0.5f)
                     return BotDecision.Urgent(BotAction.SuperJump,
-                        $"super jump to avoid {t.Type} @{t.DistanceX:F1}");
+                        $"super jump to avoid bigAlive @{t.DistanceX:F1}");
             }
 
             return BotDecision.DoNothing("in jump, nothing urgent");
@@ -326,17 +328,11 @@ namespace Assets.Scripts.Bot
 
         private static bool CanSuperJump(HamsterStateEnum state)
         {
-            // Суперпрыжок доступен только из обычного прыжка (не из Super*)
+            // Суперпрыжок доступен только из начальных стадий обычного прыжка.
+            // НЕ из JumpOnObstacle/JumpOnRoof/Damage — при отскоке хомяк уже летит,
+            // тратить SuperJump бессмысленно, отскок сам перенесёт через мелкие препятствия.
             return state == HamsterStateEnum.Jump ||
-                   state == HamsterStateEnum.JumpOver ||
-                   state == HamsterStateEnum.JumpOnObstacle ||
-                   state == HamsterStateEnum.JumpOnRoof ||
-                   state == HamsterStateEnum.JumpDamageForSmallAlive ||
-                   state == HamsterStateEnum.JumpDamageForSmallNotAlive ||
-                   state == HamsterStateEnum.JumpDamageForBigAlive ||
-                   state == HamsterStateEnum.JumpOnRoofDamage ||
-                   state == HamsterStateEnum.RoofJump ||
-                   state == HamsterStateEnum.RoofJumpDamage;
+                   state == HamsterStateEnum.RoofJump;
         }
     }
 }

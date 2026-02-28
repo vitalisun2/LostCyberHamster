@@ -230,6 +230,9 @@ namespace Assets.Scripts.Bot
             _logger?.OnBotEnabled(CurrentMode, GetCurrentLevelName());
             SubscribeToGameEvents();
 
+            // Отписаться перед подпиской на OnFinish (предотвращаем дубли)
+            if (_gameManager != null)
+                _gameManager.OnFinish -= OnGameFinished;
             if (_gameManager != null)
                 _gameManager.OnFinish += OnGameFinished;
 
@@ -280,7 +283,7 @@ namespace Assets.Scripts.Bot
             }
 
             _actionsExecuted++;
-            _logger?.LogAction(decision, _hamster);
+            _logger?.LogAction(decision, _hamster, _scanner.CurrentLaneThreats, _scanner.OtherLaneThreats);
             DebugManager.DiagLog(
                 $"[HamsterBot] Action #{_actionsExecuted}: {decision.Action} | {decision.Reason} " +
                 $"| conf={decision.Confidence:F2} state={_hamster.HamsterState.Value}");
@@ -301,6 +304,9 @@ namespace Assets.Scripts.Bot
 
         private void SubscribeToGameEvents()
         {
+            // Сначала отписываемся, чтобы не накапливать дубли при scene reload
+            UnsubscribeFromGameEvents();
+
             GameEventsManager.OnObstacleJumpedOver += OnObstacleJumpedOver;
             GameEventsManager.OnObstacleJumpedOn += OnObstacleJumpedOn;
             GameEventsManager.OnCoinCollected += OnCoinCollected;
