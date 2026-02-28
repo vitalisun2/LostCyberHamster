@@ -12,6 +12,8 @@ namespace Assets.EditorTools
     /// - Path matches Content/locations/*/sprites/obstacle_*.png
     /// - Filename does NOT end with _idle or _walk (those are animated sprite sheets
     ///   managed by <see cref="ObstacleAnimationImporter"/>)
+    /// - No matching animation clip exists in Assets/Animations/Obstacles/
+    ///   (e.g. obstacle_new_york_dog.png is skipped because obstacle_new_york_dog_idle.anim exists)
     /// 
     /// Applied settings:
     /// - SpriteImportMode.Single — no manual Sprite Editor slicing needed
@@ -72,11 +74,33 @@ namespace Assets.EditorTools
                 return false;
 
             // Animated sprite sheets are managed by ObstacleAnimationImporter — skip them
+            // Check 1: filename ends with _idle/_walk (sprite sheet named after animation type)
             if (fileName.EndsWith("_idle", System.StringComparison.OrdinalIgnoreCase) ||
                 fileName.EndsWith("_walk", System.StringComparison.OrdinalIgnoreCase))
                 return false;
 
+            // Check 2: a matching .anim clip exists (sprite sheet named after obstacle,
+            // e.g. obstacle_new_york_dog.png → obstacle_new_york_dog_idle.anim)
+            if (HasMatchingAnimationClip(fileName))
+                return false;
+
             return true;
+        }
+
+        /// <summary>
+        /// Checks if an animation clip exists for the given sprite sheet base name.
+        /// Uses file-system check against Assets/Animations/Obstacles/ directory.
+        /// </summary>
+        private static bool HasMatchingAnimationClip(string baseName)
+        {
+            // Path relative to project root (LostCyberHamster/)
+            var animDir = Path.Combine("Assets", "Animations", "Obstacles");
+
+            if (File.Exists(Path.Combine(animDir, $"{baseName}_idle.anim")) ||
+                File.Exists(Path.Combine(animDir, $"{baseName}_walk.anim")))
+                return true;
+
+            return false;
         }
     }
 }
