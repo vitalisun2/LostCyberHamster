@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.IO;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine;
 using GameManagement;
@@ -436,11 +437,11 @@ namespace Assets.Scripts.Bot
 
 #if UNITY_EDITOR
             // BotTrainingRunner: записать результат и остановить Play Mode
-            if (LostCyberHamster.Editor.BotTrainingRunner.ShouldStopOnFinish())
+            if (PlayerPrefs.GetInt("BotTraining_StopOnFinish", 0) == 1)
             {
                 var report = _learningOrchestrator?.CurrentReport;
                 string result = FormatTrainingResult(outcome, report);
-                LostCyberHamster.Editor.BotTrainingRunner.WriteResultAndStop(result);
+                WriteTrainingResultAndStop(result);
                 return; // не авто-рестартить
             }
 #endif
@@ -459,36 +460,60 @@ namespace Assets.Scripts.Bot
         private string FormatTrainingResult(string outcome,
             Learning.BotSessionReport report)
         {
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"=== Bot Training Result ===");
-            sb.AppendLine($"Level: {GetCurrentLevelName()}");
-            sb.AppendLine($"Style: {CurrentPlayStyle}");
-            sb.AppendLine($"Outcome: {outcome}");
-            sb.AppendLine($"Time: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            sb.AppendLine("---");
+            string levelName = GetCurrentLevelName();
+            string style = CurrentPlayStyle.ToString();
+            string timestamp = UnityEngine.Application.isPlaying
+                ? UnityEngine.Time.realtimeSinceStartup.ToString("F1") + "s"
+                : "N/A";
+
+            string text = $"=== Bot Training Result ===\n"
+                        + $"Level: {levelName}\n"
+                        + $"Style: {style}\n"
+                        + $"Outcome: {outcome}\n";
 
             if (report != null)
             {
-                sb.AppendLine($"TimeAlive: {report.TimeAlive:F1}s");
-                sb.AppendLine($"Lives: {report.LivesAtStart} -> {report.LivesAtEnd}");
-                sb.AppendLine($"Collisions: {report.ObstacleCollisions}");
-                sb.AppendLine($"JumpedOver: {report.ObstaclesJumpedOver}");
-                sb.AppendLine($"JumpedOn: {report.ObstaclesJumpedOn}");
-                sb.AppendLine($"Coins: {report.CoinsCollected}");
-                sb.AppendLine($"Crystals: {report.CrystalsCollected}");
-                sb.AppendLine($"Ulta: {report.UltaUsesCount}");
-                sb.AppendLine($"EnergySpent: {report.EnergySpentTotal}");
-                sb.AppendLine($"EnergyGained: {report.EnergyGainedTotal}");
-                sb.AppendLine($"Jumps: {report.JumpsExecuted}");
-                sb.AppendLine($"SuperJumps: {report.SuperJumpsExecuted}");
-                sb.AppendLine($"LaneSwitches: {report.LaneSwitches}");
-                sb.AppendLine($"EnergyPurchases: {report.EnergyPurchases}");
-                sb.AppendLine($"UltaPurchases: {report.UltaPurchases}");
+                text += "---\n"
+                      + $"TimeAlive: {report.TimeAlive:F1}s\n"
+                      + $"Lives: {report.LivesAtStart} -> {report.LivesAtEnd}\n"
+                      + $"Collisions: {report.ObstacleCollisions}\n"
+                      + $"JumpedOver: {report.ObstaclesJumpedOver}\n"
+                      + $"JumpedOn: {report.ObstaclesJumpedOn}\n"
+                      + $"Coins: {report.CoinsCollected}\n"
+                      + $"Crystals: {report.CrystalsCollected}\n"
+                      + $"Ulta: {report.UltaUsesCount}\n"
+                      + $"EnergySpent: {report.EnergySpentTotal}\n"
+                      + $"EnergyGained: {report.EnergyGainedTotal}\n"
+                      + $"Jumps: {report.JumpsExecuted}\n"
+                      + $"SuperJumps: {report.SuperJumpsExecuted}\n"
+                      + $"LaneSwitches: {report.LaneSwitches}\n"
+                      + $"EnergyPurchases: {report.EnergyPurchases}\n"
+                      + $"UltaPurchases: {report.UltaPurchases}\n";
                 if (report.FailReasons.Count > 0)
-                    sb.AppendLine($"FailReasons: {string.Join(", ", report.FailReasons)}");
+                    text += $"FailReasons: {string.Join(", ", report.FailReasons)}\n";
             }
 
-            return sb.ToString();
+            return text;
+        }
+
+        private void WriteTrainingResultAndStop(string result)
+        {
+            string editorLogsDir = Path.Combine(
+                Application.dataPath, "..", "EditorLogs");
+            string resultPath = Path.Combine(editorLogsDir, "bot_training_result.txt");
+
+            Directory.CreateDirectory(editorLogsDir);
+            File.WriteAllText(resultPath, result);
+            Debug.Log("[BotTraining] Result written to EditorLogs/bot_training_result.txt");
+
+            PlayerPrefs.DeleteKey("BotTraining_StopOnFinish");
+            PlayerPrefs.Save();
+
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                UnityEditor.EditorApplication.isPlaying = false;
+                Debug.Log("[BotTraining] Play Mode stopped.");
+            };
         }
 #endif
 
