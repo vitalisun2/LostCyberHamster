@@ -434,6 +434,17 @@ namespace Assets.Scripts.Bot
             _learningOrchestrator?.OnGameFinished(!lost);
             DebugManager.DiagLog($"[HamsterBot] Game finished: {outcome}");
 
+#if UNITY_EDITOR
+            // BotTrainingRunner: записать результат и остановить Play Mode
+            if (LostCyberHamster.Editor.BotTrainingRunner.ShouldStopOnFinish())
+            {
+                var report = _learningOrchestrator?.CurrentReport;
+                string result = FormatTrainingResult(outcome, report);
+                LostCyberHamster.Editor.BotTrainingRunner.WriteResultAndStop(result);
+                return; // не авто-рестартить
+            }
+#endif
+
             if (lost && _autoRestartOnDeath)
             {
                 StartCoroutine(AutoRestartCoroutine());
@@ -443,6 +454,43 @@ namespace Assets.Scripts.Bot
                 StartCoroutine(AutoNextLevelCoroutine());
             }
         }
+
+#if UNITY_EDITOR
+        private string FormatTrainingResult(string outcome,
+            Learning.BotSessionReport report)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"=== Bot Training Result ===");
+            sb.AppendLine($"Level: {GetCurrentLevelName()}");
+            sb.AppendLine($"Style: {CurrentPlayStyle}");
+            sb.AppendLine($"Outcome: {outcome}");
+            sb.AppendLine($"Time: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine("---");
+
+            if (report != null)
+            {
+                sb.AppendLine($"TimeAlive: {report.TimeAlive:F1}s");
+                sb.AppendLine($"Lives: {report.LivesAtStart} -> {report.LivesAtEnd}");
+                sb.AppendLine($"Collisions: {report.ObstacleCollisions}");
+                sb.AppendLine($"JumpedOver: {report.ObstaclesJumpedOver}");
+                sb.AppendLine($"JumpedOn: {report.ObstaclesJumpedOn}");
+                sb.AppendLine($"Coins: {report.CoinsCollected}");
+                sb.AppendLine($"Crystals: {report.CrystalsCollected}");
+                sb.AppendLine($"Ulta: {report.UltaUsesCount}");
+                sb.AppendLine($"EnergySpent: {report.EnergySpentTotal}");
+                sb.AppendLine($"EnergyGained: {report.EnergyGainedTotal}");
+                sb.AppendLine($"Jumps: {report.JumpsExecuted}");
+                sb.AppendLine($"SuperJumps: {report.SuperJumpsExecuted}");
+                sb.AppendLine($"LaneSwitches: {report.LaneSwitches}");
+                sb.AppendLine($"EnergyPurchases: {report.EnergyPurchases}");
+                sb.AppendLine($"UltaPurchases: {report.UltaPurchases}");
+                if (report.FailReasons.Count > 0)
+                    sb.AppendLine($"FailReasons: {string.Join(", ", report.FailReasons)}");
+            }
+
+            return sb.ToString();
+        }
+#endif
 
         private IEnumerator AutoRestartCoroutine()
         {
