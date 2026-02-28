@@ -27,12 +27,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 1470367968d53814ebf4498b41062ff6
-    m_Address: obstacle_new_york_car
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - New York obstacles sprites
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3fff77cc66182e64b95d3ddc3ddbfb80
     m_Address: obstacle_new_york_dog
     m_ReadOnly: 0

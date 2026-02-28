@@ -1,5 +1,8 @@
-{
+﻿{
+    "skyTexture": "",
+    "background2Texture": "bg_2_new_york_morning",
     "backgroundTexture": "bg_new_york_morning",
+    "roadTexture": "",
     "decorationPatterns": [],
     "patterns": [
         {
@@ -187,12 +190,6 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_car",
-                    "type": 4,
-                    "x": 30.200000762939453,
-                    "y": -1.8000000715255737
-                },
-                {
                     "spriteName": "obstacle_new_york_big_alive_2_idle",
                     "type": 1,
                     "x": 39.60000228881836,
@@ -346,12 +343,6 @@
                     "spriteName": "obstacle_new_york_opened_box",
                     "type": 3,
                     "x": 19.399999618530273,
-                    "y": -1.8000000715255737
-                },
-                {
-                    "spriteName": "obstacle_new_york_car",
-                    "type": 4,
-                    "x": 30.200000762939453,
                     "y": -1.8000000715255737
                 },
                 {
@@ -541,12 +532,6 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_car",
-                    "type": 4,
-                    "x": 2.200000047683716,
-                    "y": -1.8000000715255737
-                },
-                {
                     "spriteName": "coin",
                     "type": 9,
                     "x": 6.400000095367432,
@@ -574,12 +559,6 @@
                     "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 26.200000762939453,
-                    "y": -1.8000000715255737
-                },
-                {
-                    "spriteName": "obstacle_new_york_car",
-                    "type": 4,
-                    "x": 34.0,
                     "y": -1.8000000715255737
                 },
                 {
@@ -751,12 +730,6 @@
                     "y": -1.8000000715255737
                 },
                 {
-                    "spriteName": "obstacle_new_york_car",
-                    "type": 4,
-                    "x": 2.200000047683716,
-                    "y": -1.8000000715255737
-                },
-                {
                     "spriteName": "coin",
                     "type": 9,
                     "x": 6.400000095367432,
@@ -784,12 +757,6 @@
                     "spriteName": "obstacle_new_york_big_alive_1_idle",
                     "type": 1,
                     "x": 26.200000762939453,
-                    "y": -1.8000000715255737
-                },
-                {
-                    "spriteName": "obstacle_new_york_car",
-                    "type": 4,
-                    "x": 34.0,
                     "y": -1.8000000715255737
                 },
                 {

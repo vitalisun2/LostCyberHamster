@@ -23,12 +23,6 @@
             ]
         },
         {
-            "type": 4,
-            "sprites": [
-                "obstacle_new_york_car"
-            ]
-        },
-        {
             "type": 0,
             "sprites": [
                 "obstacle_new_york_dog",
