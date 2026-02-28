@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using GameManagement;
 using LoadingTasks;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;
-using Vues.GameCore;
 
 namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
 {
@@ -12,11 +11,30 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
     {
         public string Name { get; } = "Загрузка главного меню";
         public List<ILoadingTask> Children { get; }
-        private string _sceneName = "Menu";
+
+        private const string MenuScene = "Menu";
+        private const string GameScene = "Game";
+        private const string TestLevelPrefsKey = "TestLevel_Address";
 
         public async Task LoadAsync(Dictionary<string, object> bundle)
         {
-            await SceneManager.LoadSceneAsync(_sceneName);
+            // Check for test level override written by TestLevelLauncher
+            if (PlayerPrefs.HasKey(TestLevelPrefsKey))
+            {
+                var levelAddress = PlayerPrefs.GetString(TestLevelPrefsKey);
+                PlayerPrefs.DeleteKey(TestLevelPrefsKey);
+                PlayerPrefs.Save();
+
+                if (!string.IsNullOrEmpty(levelAddress))
+                {
+                    GameDataManager.PlayerData.CurrentLevel = levelAddress;
+                    Debug.Log($"[LoadMainMenuLoadingTask] Test level override: '{levelAddress}'. Skipping menu → Game.");
+                    await SceneManager.LoadSceneAsync(GameScene);
+                    return;
+                }
+            }
+
+            await SceneManager.LoadSceneAsync(MenuScene);
         }
     }
 }
