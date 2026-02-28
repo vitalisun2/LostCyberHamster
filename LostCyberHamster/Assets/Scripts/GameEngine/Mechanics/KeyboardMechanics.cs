@@ -1,4 +1,5 @@
-﻿using Assets.Scripts.Common;
+﻿using Assets.Scripts.Bot;
+using Assets.Scripts.Common;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
@@ -82,6 +83,17 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (_keyboard.bKey.wasPressedThisFrame)
             {
                 OnUlta();
+            }
+
+            // HamsterBot hotkeys
+            if (_keyboard.f1Key.wasPressedThisFrame && HamsterBot.Instance != null)
+            {
+                HamsterBot.Instance.ToggleEnabled();
+            }
+
+            if (_keyboard.f2Key.wasPressedThisFrame && HamsterBot.Instance != null)
+            {
+                HamsterBot.Instance.CycleMode();
             }
         }
 
