@@ -82,6 +82,7 @@ namespace Assets.Scripts.Bot
         private BotBrain _brain;
         private BotLogger _logger;
         private BotResourceManager _resourceManager;
+        private BotJumpPredictor _jumpPredictor;
         private LearningOrchestrator _learningOrchestrator;
 
         private float _lastActionTime;
@@ -259,6 +260,8 @@ namespace Assets.Scripts.Bot
 
                 _scanner = new BotThreatScanner();
                 _resourceManager = new BotResourceManager();
+                _jumpPredictor = new BotJumpPredictor();
+                _jumpPredictor.Initialize(_hamster);
 
                 // Оркестратор обучения переживает scene reload (хранит FailReasons для мутаций)
                 if (_learningOrchestrator == null)
@@ -266,7 +269,7 @@ namespace Assets.Scripts.Bot
 
                 var styleConfig = _learningOrchestrator.InitForLevel(
                     _hamster, CurrentPlayStyle, GetCurrentLevelName());
-                _brain = new BotBrain(styleConfig, _resourceManager);
+                _brain = new BotBrain(styleConfig, _resourceManager, _jumpPredictor);
                 _logger = new BotLogger();
 
                 // GameManager для отслеживания конца уровня

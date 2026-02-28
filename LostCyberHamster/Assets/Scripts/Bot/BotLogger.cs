@@ -40,6 +40,8 @@ namespace Assets.Scripts.Bot
 #endif
             Directory.CreateDirectory(baseDir);
 
+            CleanupOldLogs(baseDir);
+
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             _sessionFilePath = Path.Combine(baseDir, $"bot_{mode}_{playStyle}_{timestamp}.log");
             _writer = new StreamWriter(_sessionFilePath, append: false, Encoding.UTF8) { AutoFlush = true };
@@ -47,6 +49,36 @@ namespace Assets.Scripts.Bot
             _eventCount = 0;
 
             WriteHeader(mode, levelName, playStyle);
+        }
+
+        /// <summary>
+        /// Удаляет лог-файлы старше сегодняшнего дня.
+        /// </summary>
+        private static void CleanupOldLogs(string directory)
+        {
+            try
+            {
+                var today = DateTime.Today;
+                var files = Directory.GetFiles(directory, "*.log");
+                int deleted = 0;
+
+                foreach (var file in files)
+                {
+                    var lastWrite = File.GetLastWriteTime(file);
+                    if (lastWrite.Date < today)
+                    {
+                        File.Delete(file);
+                        deleted++;
+                    }
+                }
+
+                if (deleted > 0)
+                    DebugManager.DiagLog($"[BotLogger] Cleaned up {deleted} old log file(s).");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[BotLogger] Failed to cleanup old logs: {ex.Message}");
+            }
         }
 
         /// <summary>

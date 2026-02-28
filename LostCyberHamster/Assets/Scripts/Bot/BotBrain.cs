@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
+using UnityEngine;
 
 namespace Assets.Scripts.Bot
 {
@@ -26,15 +27,18 @@ namespace Assets.Scripts.Bot
         private int _buyUltaCoinMinimum;
 
         private BotResourceManager _resourceManager;
+        private BotJumpPredictor _jumpPredictor;
 
         /// <summary>
         /// Текущий стиль игры (для логирования).
         /// </summary>
         public BotPlayStyle CurrentStyle { get; private set; }
 
-        public BotBrain(BotPlayStyleConfig config, BotResourceManager resourceManager = null)
+        public BotBrain(BotPlayStyleConfig config, BotResourceManager resourceManager = null,
+            BotJumpPredictor jumpPredictor = null)
         {
             _resourceManager = resourceManager ?? new BotResourceManager();
+            _jumpPredictor = jumpPredictor;
             ApplyConfig(config);
         }
 
@@ -77,6 +81,11 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
+        /// Устанавливает предиктор прыжков (можно вызвать после конструктора).
+        /// </summary>
+        public void SetJumpPredictor(BotJumpPredictor predictor) => _jumpPredictor = predictor;
+
+        /// <summary>
         /// Оценивает ситуацию и возвращает решение.
         /// </summary>
         public BotDecision Evaluate(
@@ -107,7 +116,7 @@ namespace Assets.Scripts.Bot
             var urgentThreat = FindNearestDanger(currentLane);
             if (urgentThreat.HasValue && urgentThreat.Value.TimeToReach < _reactionWindowSec * 1.15f)
             {
-                var decision = HandleUrgentThreat(hamster, urgentThreat.Value, otherLane);
+                var decision = HandleUrgentThreat(hamster, urgentThreat.Value, otherLane, currentLane);
                 if (decision.Action != BotAction.None)
                     return decision;
             }
@@ -242,39 +251,44 @@ namespace Assets.Scripts.Bot
         // ──────────────── Urgent Threat Handling ────────────────
 
         private BotDecision HandleUrgentThreat(
-            Hamster hamster, ThreatInfo threat, IReadOnlyList<ThreatInfo> otherLane)
+            Hamster hamster, ThreatInfo threat, IReadOnlyList<ThreatInfo> otherLane,
+            IReadOnlyList<ThreatInfo> currentLane)
         {
             int energy = hamster.Energy.Value;
 
-            // smallAlive → напрыгнуть (безопасно + бонус)
+            // smallAlive → напрыгнуть (безопасно + бонус), но проверяем предиктором
             if (threat.IsSmallAlive && energy >= 10)
-                return BotDecision.Urgent(BotAction.Jump,
-                    $"jump on smallAlive @{threat.DistanceX:F1} (bonus)");
-
-            // bigNotAlive/mediumNotAlive → залезть на крышу
-            if (threat.IsRoofable && energy >= 10)
-                return BotDecision.Urgent(BotAction.Jump,
-                    $"jump on roof {threat.Type} @{threat.DistanceX:F1}");
-
-            // smallNotAliveRoadAndRoof → не перепрыгнуть! Смена полосы обязательна.
-            if (threat.Type == ObstacleTypeEnum.smallNotAliveRoadAndRoof)
             {
-                if (IsLaneSafe(otherLane))
-                    return BotDecision.Urgent(BotAction.SwitchLane,
-                        $"dodge smallNotAliveRoadAndRoof @{threat.DistanceX:F1}, switch lane");
-
-                // Если другая линия тоже опасна — прыжок как крайний вариант
-                if (energy >= 10)
+                if (CheckJumpSafe(hamster.transform, threat, currentLane))
                     return BotDecision.Urgent(BotAction.Jump,
-                        $"forced jump over roadAndRoof @{threat.DistanceX:F1}, no safe lane");
-
-                return BotDecision.DoNothing("roadAndRoof, no options");
+                        $"jump on smallAlive @{threat.DistanceX:F1} (bonus)");
+                // Ещё рано — подождём когда хомяк подъедет ближе
+                return BotDecision.DoNothing(
+                    $"wait for better jump on smallAlive @{threat.DistanceX:F1}");
             }
 
-            // smallNotAliveRoad → перепрыгнуть (обычный прыжок работает)
-            if (threat.Type == ObstacleTypeEnum.smallNotAliveRoad && energy >= 10)
-                return BotDecision.Urgent(BotAction.Jump,
-                    $"jump over smallNotAliveRoad @{threat.DistanceX:F1}");
+            // bigNotAlive/mediumNotAlive → залезть на крышу, проверяем предиктором
+            if (threat.IsRoofable && energy >= 10)
+            {
+                if (CheckJumpSafe(hamster.transform, threat, currentLane))
+                    return BotDecision.Urgent(BotAction.Jump,
+                        $"jump on roof {threat.Type} @{threat.DistanceX:F1}");
+                return BotDecision.DoNothing(
+                    $"wait for better jump on roof {threat.Type} @{threat.DistanceX:F1}");
+            }
+
+            // smallNotAliveRoadAndRoof / smallNotAliveRoad → перепрыгнуть, но только если предиктор даёт JumpOver
+            if ((threat.Type == ObstacleTypeEnum.smallNotAliveRoadAndRoof ||
+                 threat.Type == ObstacleTypeEnum.smallNotAliveRoad) && energy >= 10)
+            {
+                if (CheckJumpSafe(hamster.transform, threat, currentLane))
+                    return BotDecision.Urgent(BotAction.Jump,
+                        $"jump over {threat.Type} @{threat.DistanceX:F1}");
+
+                // Предиктор говорит damage или noHit — ещё рано, подождём
+                return BotDecision.DoNothing(
+                    $"wait for safe jump over {threat.Type} @{threat.DistanceX:F1}");
+            }
 
             // bigAlive → попробовать уйти на другую линию
             if (threat.Type == ObstacleTypeEnum.bigAlive)
@@ -290,14 +304,33 @@ namespace Assets.Scripts.Bot
 
             // Общий fallback
             if (energy >= 10)
-                return BotDecision.Urgent(BotAction.Jump,
-                    $"emergency jump @{threat.DistanceX:F1}");
+            {
+                if (CheckJumpSafe(hamster.transform, threat, currentLane))
+                    return BotDecision.Urgent(BotAction.Jump,
+                        $"emergency jump @{threat.DistanceX:F1}");
+                // Если прыжок не безопасен — смена полосы
+                if (IsLaneSafe(otherLane))
+                    return BotDecision.Urgent(BotAction.SwitchLane,
+                        $"emergency lane switch, jump unsafe @{threat.DistanceX:F1}");
+            }
 
             if (IsLaneSafe(otherLane))
                 return BotDecision.Urgent(BotAction.SwitchLane,
                     $"emergency lane switch, no energy");
 
             return BotDecision.DoNothing("danger but no options");
+        }
+
+        /// <summary>
+        /// Проверяет через предиктор: безопасно ли прыгнуть прямо сейчас?
+        /// Если предиктор не инициализирован — разрешаем прыжок (fallback к старому поведению).
+        /// </summary>
+        private bool CheckJumpSafe(
+            Transform hamsterTransform, ThreatInfo threat, IReadOnlyList<ThreatInfo> currentLane)
+        {
+            if (_jumpPredictor == null)
+                return true; // fallback
+            return _jumpPredictor.IsSafeToJump(hamsterTransform, threat, currentLane);
         }
 
         // ──────────────── Helpers ────────────────
