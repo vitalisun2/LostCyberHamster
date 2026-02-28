@@ -1,11 +1,15 @@
 using System;
+using System.Collections;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine;
+using GameManagement;
+using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Assets.Scripts.Bot
 {
@@ -39,6 +43,19 @@ namespace Assets.Scripts.Bot
         [Tooltip("Агрессивность (0=осторожный, 1=агрессивный)")]
         private float _aggressionLevel = 0.7f;
 
+        [Title("Auto-Play")]
+        [SerializeField]
+        [Tooltip("Авто-рестарт уровня при проигрыше")]
+        private bool _autoRestartOnDeath = true;
+
+        [SerializeField]
+        [Tooltip("Авто-переход на следующий уровень при победе")]
+        private bool _autoNextOnWin = true;
+
+        [SerializeField, Range(1f, 5f)]
+        [Tooltip("Задержка перед авто-действием (сек)")]
+        private float _autoActionDelay = 2f;
+
         [Title("Runtime Info"), ReadOnly]
         [ShowInInspector] public bool IsEnabled { get; private set; }
 
@@ -63,6 +80,7 @@ namespace Assets.Scripts.Bot
 
         private float _lastActionTime;
         private bool _initialized;
+        private GameManager _gameManager;
 
         // ──────────────── Lifecycle ────────────────
 
@@ -74,12 +92,42 @@ namespace Assets.Scripts.Bot
                 return;
             }
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
         private void Start()
         {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+
             if (_enabledOnStart)
                 TryInitAndEnable();
+        }
+
+        /// <summary>
+        /// При перезагрузке сцены (авто-рестарт/авто-next) нужно переинициализировать ссылки.
+        /// </summary>
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (!IsEnabled) return;
+
+            // Сброс — старые ссылки мертвы после reload
+            _initialized = false;
+            _hamster = null;
+            _gameManager = null;
+
+            // Даём сцене время инициализироваться, потом ре-инициализируем бота
+            StartCoroutine(ReinitAfterSceneLoad());
+        }
+
+        private IEnumerator ReinitAfterSceneLoad()
+        {
+            // Ждём 2 секунды — сцена, Zenject, LevelController должны инициализироваться
+            yield return new WaitForSeconds(2f);
+
+            if (!IsEnabled) yield break;
+
+            TryInitAndEnable();
+            DebugManager.DiagLog($"[HamsterBot] Re-initialized after scene load. Level: {GetCurrentLevelName()}");
         }
 
         private void Update()
@@ -111,6 +159,8 @@ namespace Assets.Scripts.Bot
 
         private void OnDestroy()
         {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+
             if (Instance == this)
                 Instance = null;
 
@@ -164,6 +214,10 @@ namespace Assets.Scripts.Bot
                     aggressionLevel: _aggressionLevel);
                 _logger = new BotLogger();
 
+                // GameManager для отслеживания конца уровня
+                if (LevelController.Instance != null && LevelController.Instance.LevelData != null)
+                    _gameManager = LevelController.Instance.LevelData.GameManager;
+
                 _initialized = true;
                 DebugManager.DiagLog("[HamsterBot] Initialized successfully.");
             }
@@ -173,8 +227,11 @@ namespace Assets.Scripts.Bot
             _actionsExecuted = 0;
             _framesAlive = 0;
 
-            _logger?.OnBotEnabled(CurrentMode);
+            _logger?.OnBotEnabled(CurrentMode, GetCurrentLevelName());
             SubscribeToGameEvents();
+
+            if (_gameManager != null)
+                _gameManager.OnFinish += OnGameFinished;
 
             DebugManager.DiagLog($"[HamsterBot] ENABLED in {CurrentMode} mode.");
         }
@@ -183,6 +240,10 @@ namespace Assets.Scripts.Bot
         {
             IsEnabled = false;
             UnsubscribeFromGameEvents();
+
+            if (_gameManager != null)
+                _gameManager.OnFinish -= OnGameFinished;
+
             _logger?.OnBotDisabled(_framesAlive, _actionsExecuted);
             DebugManager.DiagLog("[HamsterBot] DISABLED.");
         }
@@ -273,5 +334,64 @@ namespace Assets.Scripts.Bot
         private void OnEnergySpent(int amount) => _logger?.LogEvent("EnergySpent", amount.ToString());
         private void OnUltaUsed() => _logger?.LogEvent("UltaUsed", "");
         private void OnObstacleCollision() => _logger?.LogEvent("Collision", "");
+
+        // ──────────────── Auto-Restart / Auto-Next ────────────────
+
+        private void OnGameFinished()
+        {
+            if (!IsEnabled) return;
+
+            bool lost = _hamster != null && _hamster.Lives.Value <= 0;
+            string outcome = lost ? "LOST" : "WON";
+            _logger?.LogEvent("GameFinished", $"{outcome} | level={GetCurrentLevelName()}");
+            DebugManager.DiagLog($"[HamsterBot] Game finished: {outcome}");
+
+            if (lost && _autoRestartOnDeath)
+            {
+                StartCoroutine(AutoRestartCoroutine());
+            }
+            else if (!lost && _autoNextOnWin)
+            {
+                StartCoroutine(AutoNextLevelCoroutine());
+            }
+        }
+
+        private IEnumerator AutoRestartCoroutine()
+        {
+            DebugManager.DiagLog($"[HamsterBot] Auto-restart in {_autoActionDelay}s...");
+            yield return new WaitForSecondsRealtime(_autoActionDelay);
+
+            if (!IsEnabled) yield break;
+
+            _logger?.LogEvent("AutoRestart", GetCurrentLevelName());
+            DebugManager.DiagLog("[HamsterBot] Auto-restarting level.");
+            LevelController.Instance.Replay();
+        }
+
+        private IEnumerator AutoNextLevelCoroutine()
+        {
+            DebugManager.DiagLog($"[HamsterBot] Auto-next level in {_autoActionDelay}s...");
+            yield return new WaitForSecondsRealtime(_autoActionDelay);
+
+            if (!IsEnabled) yield break;
+
+            _logger?.LogEvent("AutoNextLevel", GetCurrentLevelName());
+            DebugManager.DiagLog("[HamsterBot] Auto-advancing to next level.");
+            LevelController.Instance.PlayNextLevel();
+        }
+
+        // ──────────────── Helpers ────────────────
+
+        private static string GetCurrentLevelName()
+        {
+            try
+            {
+                return GameDataManager.PlayerData?.CurrentLevel ?? "unknown";
+            }
+            catch
+            {
+                return "unknown";
+            }
+        }
     }
 }

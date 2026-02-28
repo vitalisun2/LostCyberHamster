@@ -74,19 +74,21 @@ namespace Assets.Scripts.Bot
             }
 
             // Priority 5: Напрыгивание на smallAlive для бонусов
-            if (hamster.Energy.Value >= 10 && _aggressionLevel > 0.3f)
+            // Только если есть запас энергии (резерв 20 на уклонение)
+            if (hamster.Energy.Value >= 10 + _energyConserveThreshold && _aggressionLevel > 0.3f)
             {
                 var jumpTarget = FindFirstOfType(currentLane, ObstacleTypeEnum.smallAlive,
-                    maxTime: _reactionWindowSec * 1.5f);
+                    maxTime: _reactionWindowSec * 0.8f);
                 if (jumpTarget.HasValue)
                     return BotDecision.Urgent(BotAction.Jump,
                         $"jump on smallAlive for bonus @{jumpTarget.Value.DistanceX:F1}");
             }
 
             // Priority 5b: Прыжок на крышу bigNotAlive
-            if (hamster.Energy.Value >= 10)
+            // Только если есть запас энергии
+            if (hamster.Energy.Value >= 10 + _energyConserveThreshold)
             {
-                var roofTarget = FindFirstRoofable(currentLane, maxTime: _reactionWindowSec * 1.2f);
+                var roofTarget = FindFirstRoofable(currentLane, maxTime: _reactionWindowSec * 0.8f);
                 if (roofTarget.HasValue)
                     return BotDecision.Urgent(BotAction.Jump,
                         $"jump on roof {roofTarget.Value.Type} @{roofTarget.Value.DistanceX:F1}");
@@ -137,27 +139,23 @@ namespace Assets.Scripts.Bot
 
         private BotDecision EvaluateWhileJumping(Hamster hamster, IReadOnlyList<ThreatInfo> currentLane)
         {
-            // Во время прыжка можно только SuperJump
+            // Во время прыжка можно только SuperJump (и только из обычного прыжка)
             if (!CanSuperJump(hamster.HamsterState.Value))
                 return BotDecision.DoNothing("in jump, no super available");
 
             if (hamster.Energy.Value < 20)
                 return BotDecision.DoNothing("in jump, no energy for super");
 
-            // Ищем что-то, что стоит суперпрыжка
+            // SuperJump только для реальных угроз (не для бонусов — жадность убивает)
             for (int i = 0; i < currentLane.Count; i++)
             {
                 var t = currentLane[i];
-                if (t.IsDangerous && t.TimeToReach < _reactionWindowSec)
+                if (t.IsDangerous && t.TimeToReach < _reactionWindowSec * 0.5f)
                     return BotDecision.Urgent(BotAction.SuperJump,
                         $"super jump to avoid {t.Type} @{t.DistanceX:F1}");
-
-                if (t.IsRoofable && t.TimeToReach < _reactionWindowSec)
-                    return BotDecision.Urgent(BotAction.SuperJump,
-                        $"super jump onto roof {t.Type} @{t.DistanceX:F1}");
             }
 
-            return BotDecision.DoNothing("in jump, nothing in range");
+            return BotDecision.DoNothing("in jump, nothing urgent");
         }
 
         // ──────────────── Urgent Threat Handling ────────────────
@@ -306,11 +304,29 @@ namespace Assets.Scripts.Bot
                    state == HamsterStateEnum.JumpDamageForSmallNotAlive ||
                    state == HamsterStateEnum.JumpDamageForSmallAlive ||
                    state == HamsterStateEnum.JumpDamageForBigAlive ||
-                   state == HamsterStateEnum.JumpOnRoofDamage;
+                   state == HamsterStateEnum.JumpOnRoofDamage ||
+                   state == HamsterStateEnum.JumpOnObstacleFromRoof ||
+                   state == HamsterStateEnum.JumpFromRoof ||
+                   state == HamsterStateEnum.JumpFromRoofDamage ||
+                   state == HamsterStateEnum.RoofJump ||
+                   state == HamsterStateEnum.RoofJumpDamage ||
+                   // Super jump states
+                   state == HamsterStateEnum.SuperJump ||
+                   state == HamsterStateEnum.SuperJumpDamage ||
+                   state == HamsterStateEnum.SuperJumpOver ||
+                   state == HamsterStateEnum.SuperJumpOnObstacle ||
+                   state == HamsterStateEnum.SuperJumpOnRoof ||
+                   state == HamsterStateEnum.SuperJumpOnRoofDamage ||
+                   state == HamsterStateEnum.SuperRoofJump ||
+                   state == HamsterStateEnum.SuperJumpFromRoof ||
+                   state == HamsterStateEnum.SuperJumpOnObstacleFromRoof ||
+                   state == HamsterStateEnum.SuperRoofJumpDamage ||
+                   state == HamsterStateEnum.SuperJumpFromRoofDamage;
         }
 
         private static bool CanSuperJump(HamsterStateEnum state)
         {
+            // Суперпрыжок доступен только из обычного прыжка (не из Super*)
             return state == HamsterStateEnum.Jump ||
                    state == HamsterStateEnum.JumpOver ||
                    state == HamsterStateEnum.JumpOnObstacle ||
@@ -318,7 +334,9 @@ namespace Assets.Scripts.Bot
                    state == HamsterStateEnum.JumpDamageForSmallAlive ||
                    state == HamsterStateEnum.JumpDamageForSmallNotAlive ||
                    state == HamsterStateEnum.JumpDamageForBigAlive ||
-                   state == HamsterStateEnum.JumpOnRoofDamage;
+                   state == HamsterStateEnum.JumpOnRoofDamage ||
+                   state == HamsterStateEnum.RoofJump ||
+                   state == HamsterStateEnum.RoofJumpDamage;
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Начинает новую сессию логирования.
         /// </summary>
-        public void OnBotEnabled(BotMode mode)
+        public void OnBotEnabled(BotMode mode, string levelName = "unknown")
         {
             CloseWriter();
 
@@ -45,7 +45,7 @@ namespace Assets.Scripts.Bot
             _sessionStartTime = Time.time;
             _eventCount = 0;
 
-            WriteHeader(mode);
+            WriteHeader(mode, levelName);
         }
 
         /// <summary>
@@ -104,10 +104,11 @@ namespace Assets.Scripts.Bot
 
         // ──────────────── Private ────────────────
 
-        private void WriteHeader(BotMode mode)
+        private void WriteHeader(BotMode mode, string levelName)
         {
             _writer.WriteLine($"=== HamsterBot Session ===");
             _writer.WriteLine($"Mode: {mode}");
+            _writer.WriteLine($"Level: {levelName}");
             _writer.WriteLine($"Started: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             _writer.WriteLine($"Unity Version: {Application.unityVersion}");
             _writer.WriteLine("---");
