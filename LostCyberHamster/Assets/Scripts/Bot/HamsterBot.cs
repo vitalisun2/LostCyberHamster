@@ -134,7 +134,21 @@ namespace Assets.Scripts.Bot
             if (!IsEnabled) yield break;
 
             TryInitAndEnable();
+            TrySkipIntro();
             DebugManager.DiagLog($"[HamsterBot] Re-initialized after scene load. Level: {GetCurrentLevelName()}");
+        }
+
+        /// <summary>
+        /// Автоматически пропускает интро-экран, если он активен.
+        /// </summary>
+        private void TrySkipIntro()
+        {
+            var intro = FindObjectOfType<Intro>();
+            if (intro != null)
+            {
+                intro.SkipIntro();
+                DebugManager.DiagLog("[HamsterBot] Auto-skipped intro.");
+            }
         }
 
         private void Update()
