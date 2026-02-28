@@ -146,6 +146,52 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
+        /// Логирует полный контекст столкновения с препятствием.
+        /// </summary>
+        public void LogCollisionContext(
+            string obstacleInfo, string hamsterInfo, string decisionTrail,
+            IReadOnlyList<ThreatInfo> currentLane, IReadOnlyList<ThreatInfo> otherLane,
+            string lastDecision)
+        {
+            if (_writer == null) return;
+
+            float t = Time.time - _sessionStartTime;
+            _writer.WriteLine($"{t:F3} | !!COLLISION!! ========================================");
+            _writer.WriteLine($"{t:F3} | COLL_OBJ    | {obstacleInfo}");
+            _writer.WriteLine($"{t:F3} | COLL_HMSTR  | {hamsterInfo}");
+            _writer.WriteLine($"{t:F3} | COLL_DECIDE | lastAction={lastDecision}");
+            if (!string.IsNullOrEmpty(decisionTrail))
+                _writer.WriteLine($"{t:F3} | COLL_TRAIL  | {decisionTrail}");
+
+            if (currentLane != null && currentLane.Count > 0)
+            {
+                var sb = new StringBuilder();
+                sb.Append($"{t:F3} | COLL_CUR_LN | ");
+                for (int i = 0; i < currentLane.Count && i < 8; i++)
+                {
+                    var th = currentLane[i];
+                    sb.Append($"[{th.Type} @{th.DistanceX:F1} t={th.TimeToReach:F2}] ");
+                }
+                _writer.WriteLine(sb.ToString());
+            }
+
+            if (otherLane != null && otherLane.Count > 0)
+            {
+                var sb = new StringBuilder();
+                sb.Append($"{t:F3} | COLL_OTH_LN | ");
+                for (int i = 0; i < otherLane.Count && i < 8; i++)
+                {
+                    var th = otherLane[i];
+                    sb.Append($"[{th.Type} @{th.DistanceX:F1} t={th.TimeToReach:F2}] ");
+                }
+                _writer.WriteLine(sb.ToString());
+            }
+
+            _writer.WriteLine($"{t:F3} | !!COLLISION!! ========================================");
+            _eventCount++;
+        }
+
+        /// <summary>
         /// Логирует игровые события (столкновения, сбор, и т.д.).
         /// </summary>
         public void LogEvent(string eventType, string data)

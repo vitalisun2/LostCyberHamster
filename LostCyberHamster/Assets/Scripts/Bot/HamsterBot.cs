@@ -8,6 +8,7 @@ using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Bot.Learning;
+using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.System;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -81,6 +82,7 @@ namespace Assets.Scripts.Bot
         private Hamster _hamster;
         private BotThreatScanner _scanner;
         private BotBrain _brain;
+        private BotPlanner _planner;
         private BotLogger _logger;
         private BotResourceManager _resourceManager;
         private BotJumpPredictor _jumpPredictor;
@@ -116,7 +118,9 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (!IsEnabled) return;
+            // Если бот ещё не initialized (Start отработал раньше, чем Hamster появился)
+            // и _enabledOnStart=true — пробуем инициализироваться заново при каждой загрузке сцены
+            if (!IsEnabled && !_enabledOnStart) return;
 
             // Сброс — старые ссылки мертвы после reload
             _initialized = false;
@@ -165,10 +169,18 @@ namespace Assets.Scripts.Bot
 
             _scanner.Scan(_hamster, _scanRange);
 
-            var decision = _brain.Evaluate(
+            // 1. Immediate checks (dead, damaged, shifting, roof, in-jump, purchases, ulta)
+            var decision = _brain.EvaluateImmediate(
                 _hamster,
                 _scanner.CurrentLaneThreats,
                 _scanner.OtherLaneThreats);
+
+            // 2. Если BotBrain не определил действие — планнер
+            if (decision.Action == BotAction.None && _planner != null)
+            {
+                var simState = SimWorldState.FromCurrent(_hamster, _scanner.AllThreats, _jumpPredictor);
+                decision = _planner.Plan(simState);
+            }
 
             if (decision.Action != BotAction.None)
             {
@@ -285,6 +297,7 @@ namespace Assets.Scripts.Bot
                 var styleConfig = _learningOrchestrator.InitForLevel(
                     _hamster, CurrentPlayStyle, GetCurrentLevelName());
                 _brain = new BotBrain(styleConfig, _resourceManager, _jumpPredictor);
+                _planner = new BotPlanner(styleConfig);
                 _logger = new BotLogger();
 
                 // GameManager для отслеживания конца уровня
@@ -421,7 +434,26 @@ namespace Assets.Scripts.Bot
         private void OnEnergyAdded(int amount) => _logger?.LogEvent("EnergyAdded", amount.ToString());
         private void OnEnergySpent(int amount) => _logger?.LogEvent("EnergySpent", amount.ToString());
         private void OnUltaUsed() => _logger?.LogEvent("UltaUsed", "");
-        private void OnObstacleCollision() => _logger?.LogEvent("Collision", "");
+        private void OnObstacleCollision()
+        {
+            // Собираем полный контекст столкновения
+            string obstacleInfo = "unknown";
+            if (_hamster != null && _hamster.LastObstacle?.Value != null)
+            {
+                var obs = _hamster.LastObstacle.Value;
+                obstacleInfo = $"{obs.ObstacleType?.ObstacleTypeEnum}:{obs.ObstacleId} pos={obs.transform.position}";
+            }
+
+            string hamsterInfo = _hamster != null
+                ? $"pos={_hamster.transform.position} state={_hamster.HamsterState.Value} lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} energy={_hamster.Energy.Value} lives={_hamster.Lives.Value}"
+                : "hamster=null";
+
+            // Plan trace от BotPlanner
+            string trail = _planner?.LastPlanTrace ?? "";
+
+            _logger?.LogCollisionContext(obstacleInfo, hamsterInfo, trail,
+                _scanner?.CurrentLaneThreats, _scanner?.OtherLaneThreats, _lastDecisionText);
+        }
 
         // ──────────────── Auto-Restart / Auto-Next ────────────────
 

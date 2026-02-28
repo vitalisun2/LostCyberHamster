@@ -7,8 +7,9 @@ using UnityEngine;
 namespace Assets.Scripts.Bot
 {
     /// <summary>
-    /// Реактивная система принятия решений, параметризованная через <see cref="BotPlayStyleConfig"/>.
-    /// Приоритеты и пороги определяются текущим стилем игры.
+    /// Реактивная система решений для edge-cases, которые нельзя планировать:
+    /// dead, damaged, shifting, roof-run, in-jump, purchases, ulta.
+    /// Всё остальное (какое действие выполнить и когда) решает <see cref="Planning.BotPlanner"/>.
     /// </summary>
     public class BotBrain
     {
@@ -27,23 +28,19 @@ namespace Assets.Scripts.Bot
         private int _buyUltaCoinMinimum;
 
         private BotResourceManager _resourceManager;
-        private BotJumpPredictor _jumpPredictor;
 
-        /// <summary>
-        /// Текущий стиль игры (для логирования).
-        /// </summary>
+        /// <summary>Текущий стиль игры (для логирования).</summary>
         public BotPlayStyle CurrentStyle { get; private set; }
 
         public BotBrain(BotPlayStyleConfig config, BotResourceManager resourceManager = null,
             BotJumpPredictor jumpPredictor = null)
         {
             _resourceManager = resourceManager ?? new BotResourceManager();
-            _jumpPredictor = jumpPredictor;
             ApplyConfig(config);
         }
 
         /// <summary>
-        /// Legacy-конструктор для обратной совместимости (использует Survival-подобные параметры).
+        /// Legacy-конструктор для обратной совместимости.
         /// </summary>
         public BotBrain(
             float reactionWindowSec = 0.6f,
@@ -81,21 +78,17 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Устанавливает предиктор прыжков (можно вызвать после конструктора).
+        /// Проверяет immediate edge-cases: dead, damaged, shifting, roof-run, in-jump,
+        /// purchases, ulta. Если ни один не сработал — возвращает None (решение за планнером).
         /// </summary>
-        public void SetJumpPredictor(BotJumpPredictor predictor) => _jumpPredictor = predictor;
-
-        /// <summary>
-        /// Оценивает ситуацию и возвращает решение.
-        /// </summary>
-        public BotDecision Evaluate(
+        public BotDecision EvaluateImmediate(
             Hamster hamster,
             IReadOnlyList<ThreatInfo> currentLane,
             IReadOnlyList<ThreatInfo> otherLane)
         {
             var state = hamster.HamsterState.Value;
 
-            // Priority 1: Нерабочие состояния
+            // P1: Нерабочие состояния — бот не может действовать
             if (state == HamsterStateEnum.Dead)
                 return BotDecision.DoNothing("dead");
             if (hamster.IsDamaged.Value)
@@ -103,30 +96,20 @@ namespace Assets.Scripts.Bot
             if (hamster.IsShifting.Value)
                 return BotDecision.DoNothing("shifting lanes");
 
-            // Бот на крыше — другая логика
+            // P2: На крыше — прыжок если smallNotAliveRoadAndRoof
             if (state == HamsterStateEnum.RoofRun)
                 return EvaluateRoofRun(hamster, currentLane);
 
-            // Бот в прыжке — возможен суперпрыжок
+            // P3: В прыжке — SuperJump для bigAlive
             if (IsInJumpState(state))
                 return EvaluateWhileJumping(hamster, currentLane);
 
-            // Priority 2: Непосредственная угроза
-            // Реагируем с запасом 15% для надёжности прыжка
-            var urgentThreat = FindNearestDanger(currentLane);
-            if (urgentThreat.HasValue && urgentThreat.Value.TimeToReach < _reactionWindowSec * 1.15f)
-            {
-                var decision = HandleUrgentThreat(hamster, urgentThreat.Value, otherLane, currentLane);
-                if (decision.Action != BotAction.None)
-                    return decision;
-            }
-
-            // Priority 3: Покупки (энергия / ульта)
+            // P4: Покупки (энергия / ульта)
             var purchaseDecision = EvaluatePurchases(hamster);
             if (purchaseDecision.Action != BotAction.None)
                 return purchaseDecision;
 
-            // Priority 4: Ульта
+            // P5: Ульта (при кластере опасностей или мало жизней)
             if (hamster.UltaChargeAmount.Value >= 100)
             {
                 int dangerCount = CountDangersInWindow(currentLane, _reactionWindowSec * 2f);
@@ -135,54 +118,14 @@ namespace Assets.Scripts.Bot
                         $"ulta ready, {dangerCount} dangers ahead / lives={hamster.Lives.Value}");
             }
 
-            // Priority 5: Напрыгивание на smallAlive для бонусов
-            if (hamster.Energy.Value >= 10 + _energyConserveThreshold && _aggressionLevel > 0.3f)
-            {
-                var jumpTarget = FindFirstOfType(currentLane, ObstacleTypeEnum.smallAlive,
-                    maxTime: _reactionWindowSec * 0.8f);
-                if (jumpTarget.HasValue)
-                    return BotDecision.Urgent(BotAction.Jump,
-                        $"jump on smallAlive for bonus @{jumpTarget.Value.DistanceX:F1}");
-            }
-
-            // Priority 5b: Прыжок на крышу bigNotAlive
-            if (hamster.Energy.Value >= 10 + _energyConserveThreshold)
-            {
-                var roofTarget = FindFirstRoofable(currentLane, maxTime: _reactionWindowSec * 0.8f);
-                if (roofTarget.HasValue)
-                    return BotDecision.Urgent(BotAction.Jump,
-                        $"jump on roof {roofTarget.Value.Type} @{roofTarget.Value.DistanceX:F1}");
-            }
-
-            // Priority 6: Коллектиблы на другой линии (только при достаточной агрессивности)
-            if (_aggressionLevel > 0.4f)
-            {
-                var collectible = FindBestCollectible(otherLane);
-                if (collectible.HasValue && IsLaneSafe(otherLane))
-                {
-                    return BotDecision.Urgent(BotAction.SwitchLane,
-                        $"collect {collectible.Value.Type} on other lane @{collectible.Value.DistanceX:F1}");
-                }
-            }
-
-            return BotDecision.DoNothing("all clear");
-        }
-
-        /// <summary>
-        /// Быстрая проверка: есть ли угроза в зоне быстрой реакции?
-        /// Используется HamsterBot для выбора между BotBrain и BotPlanner.
-        /// </summary>
-        public bool HasUrgentThreat(IReadOnlyList<ThreatInfo> currentLane, float urgentWindowSec)
-        {
-            var danger = FindNearestDanger(currentLane);
-            return danger.HasValue && danger.Value.TimeToReach < urgentWindowSec;
+            // Всё остальное решает BotPlanner
+            return BotDecision.DoNothing();
         }
 
         // ──────────────── Purchases ────────────────
 
         private BotDecision EvaluatePurchases(Hamster hamster)
         {
-            // Покупка энергии: мало энергии + есть монеты
             if (_allowBuyEnergy &&
                 hamster.Energy.Value < _buyEnergyThreshold &&
                 _resourceManager.CurrentCoins >= _buyEnergyCoinMinimum &&
@@ -193,7 +136,6 @@ namespace Assets.Scripts.Bot
                     0.85f);
             }
 
-            // Покупка ульты: мало заряда + есть монеты
             if (_allowBuyUlta &&
                 hamster.UltaChargeAmount.Value < _buyUltaThreshold &&
                 _resourceManager.CurrentCoins >= _buyUltaCoinMinimum &&
@@ -236,7 +178,6 @@ namespace Assets.Scripts.Bot
             if (hamster.Energy.Value < 20)
                 return BotDecision.DoNothing("in jump, no energy for super");
 
-            // SuperJump ТОЛЬКО для bigAlive (высокий — может задеть в воздухе).
             for (int i = 0; i < currentLane.Count; i++)
             {
                 var t = currentLane[i];
@@ -248,156 +189,7 @@ namespace Assets.Scripts.Bot
             return BotDecision.DoNothing("in jump, nothing urgent");
         }
 
-        // ──────────────── Urgent Threat Handling ────────────────
-
-        private BotDecision HandleUrgentThreat(
-            Hamster hamster, ThreatInfo threat, IReadOnlyList<ThreatInfo> otherLane,
-            IReadOnlyList<ThreatInfo> currentLane)
-        {
-            int energy = hamster.Energy.Value;
-
-            // smallAlive → напрыгнуть (безопасно + бонус), но проверяем предиктором
-            if (threat.IsSmallAlive && energy >= 10)
-            {
-                if (CheckJumpSafe(hamster.transform, threat, currentLane))
-                    return BotDecision.Urgent(BotAction.Jump,
-                        $"jump on smallAlive @{threat.DistanceX:F1} (bonus)");
-                // Ещё рано — подождём когда хомяк подъедет ближе
-                return BotDecision.DoNothing(
-                    $"wait for better jump on smallAlive @{threat.DistanceX:F1}");
-            }
-
-            // bigNotAlive/mediumNotAlive → залезть на крышу, проверяем предиктором
-            if (threat.IsRoofable && energy >= 10)
-            {
-                if (CheckJumpSafe(hamster.transform, threat, currentLane))
-                    return BotDecision.Urgent(BotAction.Jump,
-                        $"jump on roof {threat.Type} @{threat.DistanceX:F1}");
-                return BotDecision.DoNothing(
-                    $"wait for better jump on roof {threat.Type} @{threat.DistanceX:F1}");
-            }
-
-            // smallNotAliveRoadAndRoof / smallNotAliveRoad → перепрыгнуть, но только если предиктор даёт JumpOver
-            if ((threat.Type == ObstacleTypeEnum.smallNotAliveRoadAndRoof ||
-                 threat.Type == ObstacleTypeEnum.smallNotAliveRoad) && energy >= 10)
-            {
-                if (CheckJumpSafe(hamster.transform, threat, currentLane))
-                    return BotDecision.Urgent(BotAction.Jump,
-                        $"jump over {threat.Type} @{threat.DistanceX:F1}");
-
-                // Предиктор говорит damage или noHit — ещё рано, подождём
-                return BotDecision.DoNothing(
-                    $"wait for safe jump over {threat.Type} @{threat.DistanceX:F1}");
-            }
-
-            // bigAlive → попробовать уйти на другую линию
-            if (threat.Type == ObstacleTypeEnum.bigAlive)
-            {
-                if (IsLaneSafe(otherLane))
-                    return BotDecision.Urgent(BotAction.SwitchLane,
-                        $"dodge bigAlive @{threat.DistanceX:F1}, other lane safe");
-
-                if (energy >= 10)
-                    return BotDecision.Urgent(BotAction.Jump,
-                        $"forced jump, bigAlive @{threat.DistanceX:F1}, both lanes dangerous");
-            }
-
-            // Общий fallback
-            if (energy >= 10)
-            {
-                if (CheckJumpSafe(hamster.transform, threat, currentLane))
-                    return BotDecision.Urgent(BotAction.Jump,
-                        $"emergency jump @{threat.DistanceX:F1}");
-                // Если прыжок не безопасен — смена полосы
-                if (IsLaneSafe(otherLane))
-                    return BotDecision.Urgent(BotAction.SwitchLane,
-                        $"emergency lane switch, jump unsafe @{threat.DistanceX:F1}");
-            }
-
-            if (IsLaneSafe(otherLane))
-                return BotDecision.Urgent(BotAction.SwitchLane,
-                    $"emergency lane switch, no energy");
-
-            return BotDecision.DoNothing("danger but no options");
-        }
-
-        /// <summary>
-        /// Проверяет через предиктор: безопасно ли прыгнуть прямо сейчас?
-        /// Если предиктор не инициализирован — разрешаем прыжок (fallback к старому поведению).
-        /// </summary>
-        private bool CheckJumpSafe(
-            Transform hamsterTransform, ThreatInfo threat, IReadOnlyList<ThreatInfo> currentLane)
-        {
-            if (_jumpPredictor == null)
-                return true; // fallback
-            return _jumpPredictor.IsSafeToJump(hamsterTransform, threat, currentLane);
-        }
-
         // ──────────────── Helpers ────────────────
-
-        private static ThreatInfo? FindNearestDanger(IReadOnlyList<ThreatInfo> lane)
-        {
-            ThreatInfo? nearest = null;
-            for (int i = 0; i < lane.Count; i++)
-            {
-                if (!lane[i].IsDangerous) continue;
-                if (!nearest.HasValue || lane[i].TimeToReach < nearest.Value.TimeToReach)
-                    nearest = lane[i];
-            }
-            return nearest;
-        }
-
-        private static ThreatInfo? FindFirstOfType(
-            IReadOnlyList<ThreatInfo> lane, ObstacleTypeEnum type, float maxTime)
-        {
-            for (int i = 0; i < lane.Count; i++)
-            {
-                if (lane[i].Type == type && lane[i].TimeToReach <= maxTime)
-                    return lane[i];
-            }
-            return null;
-        }
-
-        private static ThreatInfo? FindFirstRoofable(IReadOnlyList<ThreatInfo> lane, float maxTime)
-        {
-            for (int i = 0; i < lane.Count; i++)
-            {
-                if (lane[i].IsRoofable && lane[i].TimeToReach <= maxTime)
-                    return lane[i];
-            }
-            return null;
-        }
-
-        private static ThreatInfo? FindBestCollectible(IReadOnlyList<ThreatInfo> lane)
-        {
-            ThreatInfo? best = null;
-            int bestPriority = -1;
-
-            for (int i = 0; i < lane.Count; i++)
-            {
-                if (!lane[i].IsCollectable) continue;
-                int priority = GetCollectiblePriority(lane[i].Type);
-                if (priority > bestPriority)
-                {
-                    best = lane[i];
-                    bestPriority = priority;
-                }
-            }
-            return best;
-        }
-
-        private static int GetCollectiblePriority(ObstacleTypeEnum type)
-        {
-            return type switch
-            {
-                ObstacleTypeEnum.collectableLife => 5,
-                ObstacleTypeEnum.collectableCrystal => 4,
-                ObstacleTypeEnum.collectableEnergetic => 3,
-                ObstacleTypeEnum.collectablePizza => 2,
-                ObstacleTypeEnum.collectableCoin => 1,
-                _ => 0
-            };
-        }
 
         private static int CountDangersInWindow(IReadOnlyList<ThreatInfo> lane, float windowSec)
         {
@@ -408,16 +200,6 @@ namespace Assets.Scripts.Bot
                     count++;
             }
             return count;
-        }
-
-        private bool IsLaneSafe(IReadOnlyList<ThreatInfo> lane)
-        {
-            for (int i = 0; i < lane.Count; i++)
-            {
-                if (lane[i].IsDangerous && lane[i].TimeToReach < _reactionWindowSec)
-                    return false;
-            }
-            return true;
         }
 
         private static bool IsInJumpState(HamsterStateEnum state)

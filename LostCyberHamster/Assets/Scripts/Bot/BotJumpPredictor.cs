@@ -47,6 +47,18 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
+        /// Дистанция горизонтального смещения хомяка за один прыжок (мировые координаты).
+        /// Используется для проверки consecutive obstacles.
+        /// </summary>
+        public float JumpShiftDistance => _jumpClipWorldShift;
+
+        /// <summary>
+        /// Высота центра хомяка в середине прыжка (относительно земли).
+        /// Используется для проверки bigAlive Y-перекрытия в симуляции.
+        /// </summary>
+        public float JumpMidY => _jumpClipHalfY;
+
+        /// <summary>
         /// Предсказывает исход прыжка для конкретного препятствия, если бот прыгнет прямо сейчас.
         /// Использует ту же логику, что и <see cref="JumpMechanics"/>.
         /// </summary>

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot.Planning
@@ -17,6 +18,9 @@ namespace Assets.Scripts.Bot.Planning
         private readonly IStateEvaluator _evaluator;
 
         private readonly IBotCommand[] _allCommands;
+
+        /// <summary>Debug trace последнего вызова Plan().</summary>
+        public string LastPlanTrace { get; private set; } = "";
 
         public BotPlanner(
             int maxDepth = 3,
@@ -41,6 +45,16 @@ namespace Assets.Scripts.Bot.Planning
             };
         }
 
+        public BotPlanner(BotPlayStyleConfig config)
+            : this(
+                config.PlannerDepth > 0 ? config.PlannerDepth : 3,
+                branchFactor: 5,
+                stepTimeSec: 0.3f,
+                worldSpeed: Consts.GameSpeedBase,
+                evaluator: new DefaultStateEvaluator(config))
+        {
+        }
+
         public BotPlanner(BotStrategyConfig config, IStateEvaluator evaluator = null)
             : this(
                 config.PlannerDepth,
@@ -62,8 +76,8 @@ namespace Assets.Scripts.Bot.Planning
             float bestScore = float.MinValue;
             BotAction bestAction = BotAction.None;
             string bestReason = "no valid branches";
+            string bestTrace = "";
 
-            // Для каждой доступной команды на первом шаге
             for (int c = 0; c < _allCommands.Length; c++)
             {
                 var cmd = _allCommands[c];
@@ -72,7 +86,7 @@ namespace Assets.Scripts.Bot.Planning
 
                 var branch = rootState.Clone();
                 cmd.Execute(ref branch);
-                branch.Simulate(_stepTimeSec, _worldSpeed);
+                branch.Advance(_stepTimeSec, _worldSpeed);
 
                 float score = Search(ref branch, 1);
 
@@ -81,8 +95,11 @@ namespace Assets.Scripts.Bot.Planning
                     bestScore = score;
                     bestAction = cmd.Action;
                     bestReason = $"planned {cmd.Action}, score={score:F1}";
+                    bestTrace = branch.DebugTrace?.ToString() ?? "";
                 }
             }
+
+            LastPlanTrace = bestTrace;
 
             if (bestAction == BotAction.None)
                 return BotDecision.DoNothing(bestReason);
@@ -108,7 +125,7 @@ namespace Assets.Scripts.Bot.Planning
 
                 var branch = state.Clone();
                 cmd.Execute(ref branch);
-                branch.Simulate(_stepTimeSec, _worldSpeed);
+                branch.Advance(_stepTimeSec, _worldSpeed);
 
                 float score = Search(ref branch, depth + 1);
                 if (score > bestScore)
@@ -117,13 +134,11 @@ namespace Assets.Scripts.Bot.Planning
                 branches++;
             }
 
-            // Если ни одна команда не доступна — оцениваем текущее состояние
             return bestScore > float.MinValue ? bestScore : _evaluator.Evaluate(ref state);
         }
 
         private static float ConfidenceFromScore(float score)
         {
-            // Нормализуем score в 0-1 range для confidence
             if (score > 50f) return 1f;
             if (score > 20f) return 0.8f;
             if (score > 0f) return 0.6f;

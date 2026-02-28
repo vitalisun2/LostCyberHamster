@@ -45,6 +45,8 @@ namespace LostCyberHamster.Editor
         {
             EditorApplication.update += PollForCommand;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            // Editor: не паузить игру при потере фокуса (чтобы бот продолжал играть)
+            Application.runInBackground = true;
             WriteReadySignal();
         }
 

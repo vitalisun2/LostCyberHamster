@@ -4,13 +4,14 @@ namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
     /// Конкретные команды для forward simulation.
-    /// Каждая модифицирует SimWorldState арифметически.
+    /// Каждая делегирует в SimWorldState.Apply*() методы.
     /// </summary>
     public static class BotCommands
     {
         /// <summary>
-        /// Прыжок: тратит 10 энергии, перескакивает ближайшее мелкое
-        /// или запрыгивает на roofable.
+        /// Прыжок: тратит 10 энергии, вызывает SimJumpPredictor для каждого
+        /// препятствия в зоне прыжка. Определяет исход: JumpOnObstacle, JumpOver,
+        /// JumpOnRoof или Damage.
         /// </summary>
         public struct JumpCommand : IBotCommand
         {
@@ -20,21 +21,18 @@ namespace Assets.Scripts.Bot.Planning
             {
                 return state.Energy >= 10 &&
                        !state.IsDead &&
-                       (state.HamsterState == HamsterStateEnum.Run ||
-                        state.HamsterState == HamsterStateEnum.RoofRun);
+                       state.Phase == SimPhase.Running;
             }
 
             public void Execute(ref SimWorldState state)
             {
-                state.Energy -= 10;
-                state.HamsterState = HamsterStateEnum.Jump;
-                // Упрощённо: удаляем ближайшую опасность на текущей линии
-                RemoveNearestOnCurrentLane(ref state);
+                state.ApplyJump();
             }
         }
 
         /// <summary>
-        /// Суперпрыжок: тратит 20 энергии, перелетает больше.
+        /// Суперпрыжок: тратит 20 энергии. В симуляции упрощённо —
+        /// удаляем ближайшее опасное (superJump перелетает всё).
         /// </summary>
         public struct SuperJumpCommand : IBotCommand
         {
@@ -44,14 +42,36 @@ namespace Assets.Scripts.Bot.Planning
             {
                 return state.Energy >= 20 &&
                        !state.IsDead &&
-                       IsInJumpState(state.HamsterState);
+                       state.Phase == SimPhase.Running;
             }
 
             public void Execute(ref SimWorldState state)
             {
                 state.Energy -= 20;
-                state.HamsterState = HamsterStateEnum.SuperJump;
-                RemoveNearestOnCurrentLane(ref state);
+                // SuperJump перелетает всё — помечаем ближайшее опасное как handled
+                int nearIdx = -1;
+                float nearDist = float.MaxValue;
+                for (int i = 0; i < state.Obstacles.Count; i++)
+                {
+                    var obs = state.Obstacles[i];
+                    if (obs.Handled) continue;
+                    if (obs.IsOnBottomLine != state.IsOnBottomLine) continue;
+                    if (!obs.IsDangerous) continue;
+                    float dist = obs.WorldLeftX - state.HamsterRightX;
+                    if (dist > 0 && dist < nearDist)
+                    {
+                        nearDist = dist;
+                        nearIdx = i;
+                    }
+                }
+                if (nearIdx >= 0)
+                {
+                    var obs = state.Obstacles[nearIdx];
+                    obs.Handled = true;
+                    state.Obstacles[nearIdx] = obs;
+                    state.Score += 15f;
+                }
+                state.DebugTrace?.Append("SuperJump ");
             }
         }
 
@@ -65,12 +85,12 @@ namespace Assets.Scripts.Bot.Planning
             public bool CanExecute(ref SimWorldState state)
             {
                 return !state.IsDead &&
-                       (state.HamsterState == HamsterStateEnum.Run);
+                       state.Phase == SimPhase.Running;
             }
 
             public void Execute(ref SimWorldState state)
             {
-                state.IsOnBottomLine = !state.IsOnBottomLine;
+                state.ApplySwitchLane();
             }
         }
 
@@ -88,22 +108,12 @@ namespace Assets.Scripts.Bot.Planning
 
             public void Execute(ref SimWorldState state)
             {
-                state.UltaCharge = 0;
-                state.IsProtected = true;
-                // Уничтожаем все опасные в зоне
-                for (int i = state.Obstacles.Count - 1; i >= 0; i--)
-                {
-                    if (state.Obstacles[i].IsDangerous && state.Obstacles[i].DistanceX < 8f)
-                    {
-                        state.Score += 10f;
-                        state.Obstacles.RemoveAt(i);
-                    }
-                }
+                state.ApplyUlta();
             }
         }
 
         /// <summary>
-        /// Ничего не делать — просто ждать.
+        /// Ничего не делать — просто ждать. Мир продвигается в Advance().
         /// </summary>
         public struct DoNothingCommand : IBotCommand
         {
@@ -113,45 +123,8 @@ namespace Assets.Scripts.Bot.Planning
 
             public void Execute(ref SimWorldState state)
             {
-                // Ничего — мир продвигается сам в Simulate()
+                state.DebugTrace?.Append("Wait ");
             }
-        }
-
-        // ──────────────── Helpers ────────────────
-
-        private static void RemoveNearestOnCurrentLane(ref SimWorldState state)
-        {
-            int nearIdx = -1;
-            float nearDist = float.MaxValue;
-
-            for (int i = 0; i < state.Obstacles.Count; i++)
-            {
-                var obs = state.Obstacles[i];
-                if (obs.DistanceX > 0 && obs.DistanceX < nearDist &&
-                    obs.IsOnBottomLine == state.IsOnBottomLine)
-                {
-                    nearDist = obs.DistanceX;
-                    nearIdx = i;
-                }
-            }
-
-            if (nearIdx >= 0)
-            {
-                var obs = state.Obstacles[nearIdx];
-                if (obs.IsCollectable)
-                    state.CoinsCollected++;
-
-                state.Score += obs.IsDangerous ? 20f : 5f;
-                state.Obstacles.RemoveAt(nearIdx);
-            }
-        }
-
-        private static bool IsInJumpState(HamsterStateEnum state)
-        {
-            return state == HamsterStateEnum.Jump ||
-                   state == HamsterStateEnum.JumpOver ||
-                   state == HamsterStateEnum.JumpOnObstacle ||
-                   state == HamsterStateEnum.JumpOnRoof;
         }
     }
 }
