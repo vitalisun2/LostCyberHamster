@@ -2,62 +2,66 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using GameManagement;
 
 namespace LostCyberHamster.Editor
 {
     /// <summary>
     /// Editor tool for launching test levels directly from the menu.
-    /// Sets the current level key and enters Play mode in the Game scene.
-    /// 
-    /// Prerequisites (manual setup):
-    /// 1. Car sprites (car_1, car_2, car_3) must be marked as Addressable with label "new_york_obstacles_sprites"
-    /// 2. Test level JSON must be marked as Addressable with the correct level key
-    /// 3. Medium roof .anim clips need to be in Assets/Animations/Hamster/
+    /// Stores the test level JSON path in SessionState and enters Play mode.
+    /// LevelDataProvider reads the override and loads JSON directly from disk,
+    /// bypassing Addressables entirely for test levels.
     /// </summary>
     public static class TestLevelLauncher
     {
-        private const string TestLevelKey = "test_medium_notalive";
+        /// <summary>SessionState key used by LevelDataProvider to detect test override.</summary>
+        public const string OverrideSessionKey = "TestLevel_JsonPath";
+
         private const string GameScenePath = "Assets/Scenes/Game.unity";
-        private const string TestLevelJsonPath = "Assets/Content/locations/01_New_York/levels/Test/test_medium_notalive/test_medium_notalive.json";
+        private const string TestLevelJsonPath =
+            "Assets/Content/locations/01_New_York/levels/Test/test_medium_notalive/test_medium_notalive.json";
 
         [MenuItem("Tools/Test Level/Launch Medium NotAlive Test", priority = 50)]
         private static void LaunchTestLevel()
         {
-            // Verify test level JSON exists
-            var json = AssetDatabase.LoadAssetAtPath<TextAsset>(TestLevelJsonPath);
-            if (json == null)
+            try
             {
-                Debug.LogError($"[TestLevelLauncher] Test level JSON not found at: {TestLevelJsonPath}");
-                return;
-            }
+                // Verify test level JSON exists
+                var json = AssetDatabase.LoadAssetAtPath<TextAsset>(TestLevelJsonPath);
+                if (json == null)
+                {
+                    EditorUtility.DisplayDialog("Test Level",
+                        $"Test level JSON not found:\n{TestLevelJsonPath}", "OK");
+                    return;
+                }
 
-            // Verify Game scene exists
-            if (!System.IO.File.Exists(GameScenePath))
-            {
-                Debug.LogError($"[TestLevelLauncher] Game scene not found at: {GameScenePath}");
-                return;
-            }
+                // Verify Game scene exists
+                if (!System.IO.File.Exists(GameScenePath))
+                {
+                    EditorUtility.DisplayDialog("Test Level",
+                        $"Game scene not found:\n{GameScenePath}", "OK");
+                    return;
+                }
 
-            // Set the current level
-            if (GameDataManager.PlayerData != null)
-            {
-                GameDataManager.PlayerData.CurrentLevel = TestLevelKey;
-                GameDataManager.Save();
-                Debug.Log($"[TestLevelLauncher] Set CurrentLevel to '{TestLevelKey}'. Entering Play mode...");
-            }
-            else
-            {
-                Debug.LogWarning("[TestLevelLauncher] GameDataManager.PlayerData is null. " +
-                    "Setting PlayerPrefs fallback. Run the game once first to initialize PlayerData.");
-            }
+                if (EditorApplication.isPlaying)
+                {
+                    EditorUtility.DisplayDialog("Test Level",
+                        "Exit Play mode first before launching a test level.", "OK");
+                    return;
+                }
 
-            // Open Game scene and enter Play mode
-            if (!EditorApplication.isPlaying)
-            {
+                // Store override path — LevelDataProvider will pick it up at runtime
+                SessionState.SetString(OverrideSessionKey, TestLevelJsonPath);
+
+                Debug.Log($"[TestLevelLauncher] Override set: {TestLevelJsonPath}. Opening Game scene...");
+
                 EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
                 EditorSceneManager.OpenScene(GameScenePath);
                 EditorApplication.isPlaying = true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[TestLevelLauncher] Failed to launch: {ex}");
+                SessionState.EraseString(OverrideSessionKey);
             }
         }
 
@@ -75,20 +79,11 @@ namespace LostCyberHamster.Editor
             }
         }
 
-        [MenuItem("Tools/Test Level/Setup Checklist", priority = 52)]
-        private static void ShowSetupChecklist()
+        [MenuItem("Tools/Test Level/Clear Test Override", priority = 53)]
+        private static void ClearOverride()
         {
-            Debug.Log(
-                "[TestLevelLauncher] Setup Checklist:\n" +
-                "1. Mark car sprites as Addressable:\n" +
-                "   - obstacle_new_york_car_1.png (label: new_york_obstacles_sprites)\n" +
-                "   - obstacle_new_york_car_2.png (label: new_york_obstacles_sprites)\n" +
-                "   - obstacle_new_york_car_3.png (label: new_york_obstacles_sprites)\n" +
-                "2. Mark test level JSON as Addressable:\n" +
-                "   - test_medium_notalive.json (address: test_medium_notalive)\n" +
-                "3. Verify medium .anim clips exist in Assets/Animations/Hamster/\n" +
-                "4. Run 'Tools > Test Level > Launch Medium NotAlive Test'"
-            );
+            SessionState.EraseString(OverrideSessionKey);
+            Debug.Log("[TestLevelLauncher] Test level override cleared.");
         }
     }
 }

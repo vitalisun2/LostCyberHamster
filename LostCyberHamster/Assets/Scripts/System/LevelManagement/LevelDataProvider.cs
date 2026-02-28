@@ -174,10 +174,45 @@ public static void ReleaseIntroSprites()
 
         private static async Task LoadLevelInfo(LevelData levelData)
         {
+#if UNITY_EDITOR
+            if (TryLoadTestLevelOverride(levelData))
+            {
+                return;
+            }
+#endif
             var levelKey = GameDataManager.PlayerData.CurrentLevel;
             var resolvedAddress = ResolveCurrentLevelAddress(levelKey);
             await LoadLevelInfo(levelData, resolvedAddress, levelKey);
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Checks for a test level override set by TestLevelLauncher via SessionState.
+        /// Loads the level JSON directly from disk, bypassing Addressables.
+        /// The override is consumed (erased) after first use.
+        /// </summary>
+        private static bool TryLoadTestLevelOverride(LevelData levelData)
+        {
+            var overridePath = UnityEditor.SessionState.GetString("TestLevel_JsonPath", "");
+            if (string.IsNullOrEmpty(overridePath))
+            {
+                return false;
+            }
+
+            UnityEditor.SessionState.EraseString("TestLevel_JsonPath");
+
+            var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(overridePath);
+            if (asset == null)
+            {
+                Debug.LogError($"[LevelDataProvider] Test level override asset not found: {overridePath}");
+                return false;
+            }
+
+            levelData.LevelInfo = JsonUtility.FromJson<LevelInfo>(asset.text);
+            Debug.Log($"[LevelDataProvider] Loaded test level override from: {overridePath}");
+            return true;
+        }
+#endif
 
 
         public static Task LoadLevelInfo(LevelData levelData, string levelAddress)
