@@ -119,6 +119,11 @@ namespace Assets.Scripts.Bot.Learning
                 }
 
                 DebugManager.DiagLog($"[Learning] {LastMutationInfo}");
+
+                // Консольный вывод для удобства наблюдения
+                Debug.Log($"<color=#FFA500>[TRAINING]</color> <b>Gen {mutated.Generation}</b> | {_playStyle}/{_levelName}\n" +
+                          $"  Mutations: {(failReasons.Count > 0 ? string.Join(", ", failReasons) : "random only")}\n" +
+                          FormatConfigChanges(mutated.ToConfig()));
             }
             else
             {
@@ -155,16 +160,37 @@ namespace Assets.Scripts.Bot.Learning
                 $"| collisions={_currentReport.ObstacleCollisions} " +
                 $"| ulta={_currentReport.UltaUsesCount} | fails=[{string.Join(", ", _currentReport.FailReasons)}]");
 
+            // Консольный резюме сессии
+            string outcomeTag = won ? "<color=#00FF00>WIN</color>" : "<color=#FF4444>LOST</color>";
+            string failsStr = _currentReport.FailReasons.Count > 0
+                ? $"  Problems: {string.Join(", ", _currentReport.FailReasons)}"
+                : "  No problems detected";
+            Debug.Log($"<color=#FFA500>[TRAINING]</color> Session Result: {outcomeTag} | " +
+                      $"fitness=<b>{fitness:F0}</b> (best={_currentGenome?.BestFitness ?? 0:F0})\n" +
+                      $"  {_playStyle}/{_levelName} | time={_currentReport.TimeAlive:F1}s\n" +
+                      $"  Lives: {_currentReport.LivesAtStart} -> {_currentReport.LivesAtEnd} | " +
+                      $"Collisions: {_currentReport.ObstacleCollisions} | " +
+                      $"JumpOver: {_currentReport.ObstaclesJumpedOver} | JumpOn: {_currentReport.ObstaclesJumpedOn}\n" +
+                      $"  Coins: {_currentReport.CoinsCollected} | Crystals: {_currentReport.CrystalsCollected} | " +
+                      $"Ulta: {_currentReport.UltaUsesCount}\n" +
+                      failsStr);
+
             // Сохраняем геном
             if (_currentGenome != null)
             {
                 LastSessionImproved = _genomeManager.SaveIfBetter(_currentGenome, fitness);
 
                 if (LastSessionImproved)
+                {
                     DebugManager.DiagLog($"[Learning] NEW BEST! fitness={fitness:F1} (gen {_currentGenome.Generation})");
+                    Debug.Log($"<color=#00FF00>[TRAINING] >>> NEW BEST! fitness={fitness:F0} (gen {_currentGenome.Generation}) <<<</color>");
+                }
                 else
+                {
                     DebugManager.DiagLog($"[Learning] No improvement. best={_currentGenome.BestFitness:F1}, " +
                                          $"current={fitness:F1}");
+                    Debug.Log($"<color=#FF8800>[TRAINING]</color> No improvement. best={_currentGenome.BestFitness:F0}, current={fitness:F0}");
+                }
             }
 
             UnsubscribeFromEvents();
@@ -201,6 +227,19 @@ namespace Assets.Scripts.Bot.Learning
         public void Dispose()
         {
             UnsubscribeFromEvents();
+        }
+
+        // ──────────────── Formatting ────────────────
+
+        /// <summary>
+        /// Форматирует ключевые параметры конфига для консольного вывода.
+        /// </summary>
+        private static string FormatConfigChanges(BotPlayStyleConfig cfg)
+        {
+            return $"  Params: Aggr={cfg.AggressionLevel:F2} | Window={cfg.UrgentWindowSec:F2} | " +
+                   $"EnergyCons={cfg.EnergyConserveThreshold} | UltaCluster={cfg.UltaClusterThreshold}\n" +
+                   $"  Weights: Surv={cfg.WeightSurvival:F1} Enrg={cfg.WeightEnergy:F1} " +
+                   $"Coll={cfg.WeightCollectibles:F1} Ulta={cfg.WeightUlta:F1}";
         }
 
         // ──────────────── Session Data Collection ────────────────
