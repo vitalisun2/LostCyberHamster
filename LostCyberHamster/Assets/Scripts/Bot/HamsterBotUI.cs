@@ -61,10 +61,10 @@ namespace Assets.Scripts.Bot
 
             InitStyles();
 
-            float x = 10f;
-            float y = Screen.height * 0.35f;  // ниже UI кнопок (BE/BU/lives)
             float w = 340f;
             float lineHeight = 20f;
+            float x = Screen.width - w - 10f;  // справа, с отступом 10px
+            float y = 80f;                      // под кнопкой PAUSE
 
             if (!bot.IsEnabled)
             {
