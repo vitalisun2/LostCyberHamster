@@ -510,6 +510,35 @@ obstacle_paris_big_alive_7_idle-1.png ... -18.png
 - F1 — вкл/выкл бота
 - F2 — цикл режимов (Play/Test/Analytics)
 - F3 — цикл стилей игры (Survival → ThreeStars → ... → GodMode → Survival)
+- F4 — вкл/выкл режим обучения (Training Mode)
+
+### Self-Learning Module (Bot/Learning/)
+Модуль автоматического самообучения через offline parameter tuning (GA-подобный):
+
+**Компоненты:**
+- `BotSessionReport` — данные сессии (время, жизни, монеты, столкновения, покупки)
+- `SessionAnalyzer` — вычисляет FitnessScore по формуле, зависящей от PlayStyle
+- `ParameterTuner` — мутирует параметры: целевые мутации (FailReasons) + случайные (10%)
+- `GenomeManager` — JSON сериализация геномов в `EditorLogs/BotGenomes/`
+- `BotGenome` — сериализуемая обёртка над BotPlayStyleConfig + метаданные (generation, fitness)
+- `LearningOrchestrator` — связывает: Load → Mutate → Play → Evaluate → Save → Restart
+
+**Цикл обучения (при IsTrainingMode=true):**
+1. `InitForLevel()` — загружает лучший геном из JSON или создаёт из пресета
+2. `ParameterTuner.Mutate()` — мутирует на основе FailReasons прошлой сессии
+3. Геймплей — `LearningOrchestrator` собирает данные через GameEventsManager
+4. `OnGameFinished()` — `SessionAnalyzer.Evaluate()` считает fitness
+5. `GenomeManager.SaveIfBetter()` — сохраняет если лучше, иначе откатывает
+6. Авто-рестарт (через HamsterBot)
+
+**FailReasons → Целевые мутации:**
+- `EnergyDepleted` → EnergyConserveThreshold+5, WeightEnergy+1
+- `TooAggressive` → AggressionLevel-0.1, WeightSurvival+1
+- `MissedOpportunities` → WeightCollectibles+1, AggressionLevel+0.05
+- `UnusedResources` → EnableBuys, BuyThresholds+10
+- `TooFewUltaUses` → WeightUlta+1, UltaCluster-1
+
+**Параметры ограничены диапазонами:** Weights [0.5, 20], Aggression [0.1, 1.0], UrgentWindow [0.3, 1.2]
 
 ### Energy Economics
 - Jump / RoofJump = 10 energy

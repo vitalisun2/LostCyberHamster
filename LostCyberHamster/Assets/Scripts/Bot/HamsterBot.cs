@@ -6,6 +6,7 @@ using GameManagement;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
+using Assets.Scripts.Bot.Learning;
 using Assets.Scripts.System;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -81,6 +82,7 @@ namespace Assets.Scripts.Bot
         private BotBrain _brain;
         private BotLogger _logger;
         private BotResourceManager _resourceManager;
+        private LearningOrchestrator _learningOrchestrator;
 
         private float _lastActionTime;
         private bool _initialized;
@@ -169,6 +171,7 @@ namespace Assets.Scripts.Bot
                 Instance = null;
 
             _logger?.Dispose();
+            _learningOrchestrator?.Dispose();
         }
 
         // ──────────────── Public API ────────────────
@@ -198,6 +201,27 @@ namespace Assets.Scripts.Bot
             };
             DebugManager.DiagLog($"[HamsterBot] Mode switched to {CurrentMode}");
         }
+
+        /// <summary>
+        /// Включить/выключить режим обучения (F4).
+        /// </summary>
+        public void ToggleTraining()
+        {
+            _learningOrchestrator?.ToggleTraining();
+            DebugManager.DiagLog($"[HamsterBot] Training mode: {IsTrainingMode}");
+        }
+
+        /// <summary>Сбросить геном к пресету для текущего уровня/стиля.</summary>
+        public void ResetGenome()
+        {
+            _learningOrchestrator?.ResetGenome(CurrentPlayStyle, GetCurrentLevelName());
+        }
+
+        /// <summary>Включён ли режим обучения.</summary>
+        public bool IsTrainingMode => _learningOrchestrator?.IsTrainingMode ?? false;
+
+        /// <summary>Оркестратор обучения (для UI).</summary>
+        public LearningOrchestrator LearningOrchestrator => _learningOrchestrator;
 
         /// <summary>
         /// Переключить стиль игры: Survival → ThreeStars → ... → GodMode → Survival (F3).
@@ -236,7 +260,12 @@ namespace Assets.Scripts.Bot
                 _scanner = new BotThreatScanner();
                 _resourceManager = new BotResourceManager();
 
-                var styleConfig = BotPlayStylePresets.Get(CurrentPlayStyle);
+                // Оркестратор обучения переживает scene reload (хранит FailReasons для мутаций)
+                if (_learningOrchestrator == null)
+                    _learningOrchestrator = new LearningOrchestrator();
+
+                var styleConfig = _learningOrchestrator.InitForLevel(
+                    _hamster, CurrentPlayStyle, GetCurrentLevelName());
                 _brain = new BotBrain(styleConfig, _resourceManager);
                 _logger = new BotLogger();
 
@@ -317,6 +346,7 @@ namespace Assets.Scripts.Bot
             }
 
             _actionsExecuted++;
+            _learningOrchestrator?.TrackAction(decision.Action);
             _logger?.LogAction(decision, _hamster, _scanner.CurrentLaneThreats, _scanner.OtherLaneThreats);
             DebugManager.DiagLog(
                 $"[HamsterBot] Action #{_actionsExecuted}: {decision.Action} | {decision.Reason} " +
@@ -384,6 +414,7 @@ namespace Assets.Scripts.Bot
             bool lost = _hamster != null && _hamster.Lives.Value <= 0;
             string outcome = lost ? "LOST" : "WON";
             _logger?.LogEvent("GameFinished", $"{outcome} | level={GetCurrentLevelName()}");
+            _learningOrchestrator?.OnGameFinished(!lost);
             DebugManager.DiagLog($"[HamsterBot] Game finished: {outcome}");
 
             if (lost && _autoRestartOnDeath)

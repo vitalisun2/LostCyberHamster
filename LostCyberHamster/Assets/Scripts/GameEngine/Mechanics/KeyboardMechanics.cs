@@ -100,6 +100,11 @@ namespace Assets.Scripts.GameEngine.Mechanics
             {
                 HamsterBot.Instance.CyclePlayStyle();
             }
+
+            if (_keyboard.f4Key.wasPressedThisFrame && HamsterBot.Instance != null)
+            {
+                HamsterBot.Instance.ToggleTraining();
+            }
         }
 
         private void OnUlta()
