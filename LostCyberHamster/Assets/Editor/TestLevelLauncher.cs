@@ -18,9 +18,9 @@ namespace LostCyberHamster.Editor
         public const string OverridePrefsKey = "TestLevel_Address";
 
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
-        private const string TestLevelAddress = "01_New_York/Test/test_medium_notalive";
+        private const string TestLevelAddress = "01_New_York/Morning/test_medium_notalive";
         private const string TestLevelJsonPath =
-            "Assets/Content/locations/01_New_York/levels/Test/test_medium_notalive/test_medium_notalive.json";
+            "Assets/Content/locations/01_New_York/levels/Morning/test_medium_notalive/test_medium_notalive.json";
 
         [MenuItem("Tools/Test Level/Launch Medium NotAlive Test", priority = 50)]
         private static void LaunchTestLevel()
