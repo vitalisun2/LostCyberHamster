@@ -103,8 +103,9 @@ namespace Assets.Scripts.Bot
                 return EvaluateWhileJumping(hamster, currentLane);
 
             // Priority 2: Непосредственная угроза
+            // Реагируем с запасом 15% для надёжности прыжка
             var urgentThreat = FindNearestDanger(currentLane);
-            if (urgentThreat.HasValue && urgentThreat.Value.TimeToReach < _reactionWindowSec)
+            if (urgentThreat.HasValue && urgentThreat.Value.TimeToReach < _reactionWindowSec * 1.15f)
             {
                 var decision = HandleUrgentThreat(hamster, urgentThreat.Value, otherLane);
                 if (decision.Action != BotAction.None)
@@ -255,11 +256,25 @@ namespace Assets.Scripts.Bot
                 return BotDecision.Urgent(BotAction.Jump,
                     $"jump on roof {threat.Type} @{threat.DistanceX:F1}");
 
-            // smallNotAlive → перепрыгнуть
-            if ((threat.Type == ObstacleTypeEnum.smallNotAliveRoad ||
-                 threat.Type == ObstacleTypeEnum.smallNotAliveRoadAndRoof) && energy >= 10)
+            // smallNotAliveRoadAndRoof → не перепрыгнуть! Смена полосы обязательна.
+            if (threat.Type == ObstacleTypeEnum.smallNotAliveRoadAndRoof)
+            {
+                if (IsLaneSafe(otherLane))
+                    return BotDecision.Urgent(BotAction.SwitchLane,
+                        $"dodge smallNotAliveRoadAndRoof @{threat.DistanceX:F1}, switch lane");
+
+                // Если другая линия тоже опасна — прыжок как крайний вариант
+                if (energy >= 10)
+                    return BotDecision.Urgent(BotAction.Jump,
+                        $"forced jump over roadAndRoof @{threat.DistanceX:F1}, no safe lane");
+
+                return BotDecision.DoNothing("roadAndRoof, no options");
+            }
+
+            // smallNotAliveRoad → перепрыгнуть (обычный прыжок работает)
+            if (threat.Type == ObstacleTypeEnum.smallNotAliveRoad && energy >= 10)
                 return BotDecision.Urgent(BotAction.Jump,
-                    $"jump over {threat.Type} @{threat.DistanceX:F1}");
+                    $"jump over smallNotAliveRoad @{threat.DistanceX:F1}");
 
             // bigAlive → попробовать уйти на другую линию
             if (threat.Type == ObstacleTypeEnum.bigAlive)

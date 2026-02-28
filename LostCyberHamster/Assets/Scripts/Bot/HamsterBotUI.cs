@@ -62,7 +62,7 @@ namespace Assets.Scripts.Bot
             InitStyles();
 
             float x = 10f;
-            float y = 10f;
+            float y = Screen.height * 0.35f;  // ниже UI кнопок (BE/BU/lives)
             float w = 340f;
             float lineHeight = 20f;
 

@@ -35,7 +35,7 @@ namespace Assets.Scripts.Bot
                 WeightUlta = 1f,
                 // Осторожный
                 AggressionLevel = 0.3f,
-                UrgentWindowSec = 0.6f,
+                UrgentWindowSec = 0.75f,
                 EnergyConserveThreshold = 40,
                 UltaClusterThreshold = 2,
                 UltaEmergencyLives = 1,

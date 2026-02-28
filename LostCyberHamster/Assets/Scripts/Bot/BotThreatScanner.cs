@@ -116,7 +116,9 @@ namespace Assets.Scripts.Bot
             return type == ObstacleTypeEnum.smallAlive ||
                    type == ObstacleTypeEnum.bigAlive ||
                    type == ObstacleTypeEnum.smallNotAliveRoad ||
-                   type == ObstacleTypeEnum.smallNotAliveRoadAndRoof;
+                   type == ObstacleTypeEnum.smallNotAliveRoadAndRoof ||
+                   type == ObstacleTypeEnum.bigNotAlive ||
+                   type == ObstacleTypeEnum.mediumNotAlive;
         }
     }
 }
