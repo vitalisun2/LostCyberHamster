@@ -175,8 +175,9 @@ namespace Assets.Scripts.Bot
                 _scanner.CurrentLaneThreats,
                 _scanner.OtherLaneThreats);
 
-            // 2. Если BotBrain не определил действие — планнер
-            if (decision.Action == BotAction.None && _planner != null)
+            // 2. Если BotBrain не определил действие и хомяк в управляемом состоянии — планнер
+            if (decision.Action == BotAction.None && _planner != null
+                && _hamster.HamsterState.Value == HamsterStateEnum.Run)
             {
                 var simState = SimWorldState.FromCurrent(_hamster, _scanner.AllThreats, _jumpPredictor);
                 decision = _planner.Plan(simState);

@@ -179,22 +179,22 @@ namespace Assets.Scripts.Bot.Planning
                 case JumpPrediction.JumpOnObstacle:
                     Score += 50f;
                     if (obsIdx >= 0) MarkHandled(obsIdx);
-                    Phase = SimPhase.Running;
-                    DebugTrace?.Append($"Jump→OnObstacle(+50) ");
+                    Phase = SimPhase.Jumping;
+                    DebugTrace?.Append($"Jump->OnObstacle(+50) ");
                     break;
 
                 case JumpPrediction.JumpOnRoof:
                     Score += 30f;
                     Phase = SimPhase.OnRoof;
                     // На крыше — не помечаем как handled (хомяк НА нём)
-                    DebugTrace?.Append($"Jump→OnRoof(+30) ");
+                    DebugTrace?.Append($"Jump->OnRoof(+30) ");
                     break;
 
                 case JumpPrediction.JumpOver:
                     Score += 10f;
                     if (obsIdx >= 0) MarkHandled(obsIdx);
-                    Phase = SimPhase.Running;
-                    DebugTrace?.Append($"Jump→Over(+10) ");
+                    Phase = SimPhase.Jumping;
+                    DebugTrace?.Append($"Jump->Over(+10) ");
                     break;
 
                 case JumpPrediction.Damage:
@@ -202,13 +202,13 @@ namespace Assets.Scripts.Bot.Planning
                     Lives--;
                     if (obsIdx >= 0) MarkHandled(obsIdx);
                     if (Lives <= 0) { IsDead = true; Score -= 1000f; }
-                    Phase = SimPhase.Running;
-                    DebugTrace?.Append($"Jump→Damage(-100, lives={Lives}) ");
+                    Phase = SimPhase.Jumping;
+                    DebugTrace?.Append($"Jump->Damage(-100, lives={Lives}) ");
                     break;
 
                 default: // NoHit
-                    Phase = SimPhase.Running;
-                    DebugTrace?.Append("Jump→NoHit ");
+                    Phase = SimPhase.Jumping;
+                    DebugTrace?.Append("Jump->NoHit ");
                     break;
             }
         }
@@ -305,6 +305,10 @@ namespace Assets.Scripts.Bot.Planning
                 if (restore > 0 && Energy < 100)
                     Energy = Energy + restore > 100 ? 100 : Energy + restore;
             }
+
+            // Приземление: после продвижения мира прыжок завершается
+            if (Phase == SimPhase.Jumping)
+                Phase = SimPhase.Running;
         }
 
         // ──── Helpers ────
@@ -320,8 +324,36 @@ namespace Assets.Scripts.Bot.Planning
         {
             if (state == HamsterStateEnum.RoofRun)
                 return SimPhase.OnRoof;
-            // Все Jump-стейты в симуляции считаем Running
-            // (бот принимает решение ДО прыжка)
+
+            switch (state)
+            {
+                case HamsterStateEnum.Jump:
+                case HamsterStateEnum.JumpOver:
+                case HamsterStateEnum.JumpOnObstacle:
+                case HamsterStateEnum.JumpOnRoof:
+                case HamsterStateEnum.JumpDamageForSmallNotAlive:
+                case HamsterStateEnum.JumpDamageForSmallAlive:
+                case HamsterStateEnum.JumpDamageForBigAlive:
+                case HamsterStateEnum.JumpOnRoofDamage:
+                case HamsterStateEnum.JumpOnObstacleFromRoof:
+                case HamsterStateEnum.JumpFromRoof:
+                case HamsterStateEnum.JumpFromRoofDamage:
+                case HamsterStateEnum.RoofJump:
+                case HamsterStateEnum.RoofJumpDamage:
+                case HamsterStateEnum.SuperJump:
+                case HamsterStateEnum.SuperJumpDamage:
+                case HamsterStateEnum.SuperJumpOver:
+                case HamsterStateEnum.SuperJumpOnObstacle:
+                case HamsterStateEnum.SuperJumpOnRoof:
+                case HamsterStateEnum.SuperJumpOnRoofDamage:
+                case HamsterStateEnum.SuperRoofJump:
+                case HamsterStateEnum.SuperJumpFromRoof:
+                case HamsterStateEnum.SuperJumpOnObstacleFromRoof:
+                case HamsterStateEnum.SuperRoofJumpDamage:
+                case HamsterStateEnum.SuperJumpFromRoofDamage:
+                    return SimPhase.Jumping;
+            }
+
             return SimPhase.Running;
         }
     }

@@ -40,9 +40,10 @@ namespace Assets.Scripts.Bot.Planning
 
             public bool CanExecute(ref SimWorldState state)
             {
+                // SuperJump доступен только из обычного прыжка (Jumping)
                 return state.Energy >= 20 &&
                        !state.IsDead &&
-                       state.Phase == SimPhase.Running;
+                       state.Phase == SimPhase.Jumping;
             }
 
             public void Execute(ref SimWorldState state)
