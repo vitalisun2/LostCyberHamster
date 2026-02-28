@@ -9,7 +9,7 @@ namespace Assets.Scripts.Bot.Learning
     /// </summary>
     public static class ParameterTuner
     {
-        private static readonly System.Random Rng = new();
+        private static readonly global::System.Random Rng = new();
 
         // ──────────────── Допустимые диапазоны ────────────────
 

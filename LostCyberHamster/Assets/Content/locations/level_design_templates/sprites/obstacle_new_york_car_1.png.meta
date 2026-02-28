@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: aeb149e84af3c03429e45cce97e057d3
+guid: 13eec65757eb77f41a66ec48241c8efe
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7223291969193270794
-    second: obstacle_new_york_car_0
+      213: -6138183274428495633
+    second: obstacle_new_york_car_1_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -139,23 +139,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: obstacle_new_york_car
+      name: obstacle_new_york_car_1_0
       rect:
         serializedVersion: 2
-        x: 0
+        x: 25
         y: 0
-        width: 450
+        width: 387
         height: 170
-      alignment: 7
-      pivot: {x: 0.5, y: 0}
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a0e52bc76c94e3460800000000000000
-      internalID: 7223291969193270794
+      spriteID: fe8027955dac0daa0800000000000000
+      internalID: -6138183274428495633
       vertices: []
       indices: 
       edges: []
@@ -164,7 +164,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 0a251894caad75542b9b50a6d19c87ac
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -174,7 +174,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      obstacle_new_york_car: 7223291969193270794
+      obstacle_new_york_car_1_0: -6138183274428495633
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
