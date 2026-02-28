@@ -173,7 +173,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      obstacle_new_york_car_1_0: -6138183274428495633
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

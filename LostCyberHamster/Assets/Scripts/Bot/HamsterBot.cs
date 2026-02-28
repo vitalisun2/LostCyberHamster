@@ -93,7 +93,7 @@ namespace Assets.Scripts.Bot
             if (Time.time - _lastActionTime < _actionCooldown)
                 return;
 
-            _scanner.Scan(_hamster.IsOnBottomLine.Value, _scanRange);
+            _scanner.Scan(_hamster, _scanRange);
 
             var decision = _brain.Evaluate(
                 _hamster,

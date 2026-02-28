@@ -45,8 +45,26 @@ MonoBehaviour:
     m_SerializedLabels:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 87c52b164936c5e4aaeb1661be775131
+    m_Address: obstacle_new_york_car_1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9c5f94e51a6f24d4498f4b3716574403
     m_Address: obstacle_new_york_big_alive_6_idle
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a1b4aaa0132337245b27ca710fe5d771
+    m_Address: obstacle_new_york_car_3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - New York obstacles sprites
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a3d919ed2261c424fad1a354c3a834e1
+    m_Address: obstacle_new_york_car_2
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
