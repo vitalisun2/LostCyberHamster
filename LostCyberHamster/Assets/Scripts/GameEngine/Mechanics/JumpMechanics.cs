@@ -95,6 +95,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 SendJumpEventIfNeeded(result);
 
+                SwapRoofClipsIfNeeded(result);
                 _transformAnimatorController.SetJumpAnimationTrigger(_hamsterState);
                 _spriteAnimatorController.Jump();
             }
@@ -111,6 +112,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     GameEventsManager.ObstacleJumpedOver(result.Target!.name);
                     break;
             }
+        }
+
+        private void SwapRoofClipsIfNeeded(JumpResult result)
+        {
+            bool isMedium = result.Target != null &&
+                            result.Target.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.mediumNotAlive;
+            _transformAnimatorController.SwapRoofClips(isMedium);
         }
 
         /// <summary>
@@ -157,6 +165,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 case ObstacleTypeEnum.smallNotAliveRoadAndRoof: return HandleSmallNotAliveRoadAndRoof(o);
                 case ObstacleTypeEnum.bigAlive:                 return HandleBigAlive(o);
                 case ObstacleTypeEnum.bigNotAlive:              return HandleBigNotAlive(o);
+                case ObstacleTypeEnum.mediumNotAlive:           return HandleBigNotAlive(o);
                 default:                                       return _noHit; // no-hit
             }
         }

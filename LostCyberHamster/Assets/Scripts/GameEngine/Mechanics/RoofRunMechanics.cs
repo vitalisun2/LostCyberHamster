@@ -138,7 +138,7 @@ public class RoofRunMechanics
 
         foreach (var obstacle in obstaclesAhead)
         {
-            if (obstacle.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.bigNotAlive)
+            if (!CollisionUtils.IsRoofObstacle(obstacle.ObstacleType.ObstacleTypeEnum))
                 continue;
 
             CollisionUtils.GetObstacleXInterval(obstacle, obstacle.ColliderWidth, 0f, out var nextLeft, out var nextRight);

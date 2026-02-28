@@ -17,6 +17,13 @@ namespace Assets.Scripts.Common
         private static readonly List<Obstacle> _buffer = new(32);      // внутренний пул
         private static readonly ReadOnlyCollection<Obstacle> _roBuffer // read-only обёртка
             = new(_buffer);                                            // аллоцируется один раз
+
+        /// <summary>
+        /// Является ли тип препятствия «крышным» — т.е. хомяк может бегать по его крыше.
+        /// Включает bigNotAlive и mediumNotAlive.
+        /// </summary>
+        public static bool IsRoofObstacle(ObstacleTypeEnum type) =>
+            type == ObstacleTypeEnum.bigNotAlive || type == ObstacleTypeEnum.mediumNotAlive;
         // ───────────────────────────────── X-интервалы ─────────────────────────────────
 
         /// <summary>X-интервал [left; right] препятствия в конце клипа (учтён worldShift).</summary>
@@ -191,7 +198,7 @@ namespace Assets.Scripts.Common
                 out var smallL, out var smallR);
 
             foreach (var o in allObstacles)
-                if (o.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.bigNotAlive)
+                if (IsRoofObstacle(o.ObstacleType.ObstacleTypeEnum))
                 {
                     GetObstacleXInterval(o, o.ColliderWidth, 0f, out var oL, out var oR);
                     bool overlap = IsOverlap(smallL, smallR, oL, oR);

@@ -185,7 +185,7 @@
 - ✅ `SceneView.lastActiveSceneView.Repaint()` для принудительной перерисовки
 
 ### Структура префабов препятствий
-- Корневой объект: `BigCitizenPrefab` / `SmallCitizenPrefab` / `BigNotAlivePrefab`
+- Корневой объект: `BigCitizenPrefab` / `SmallCitizenPrefab` / `MediumOrBigNotAlivePrefab`
 - Дочерний объект с Animator/SpriteRenderer: `*Sprite` (например, `BigCitizenSprite`)
 - ✅ Использовать `GetComponentInChildren<Animator>()` вместо поиска по имени
 - Pivot: Bottom Center (учитывать при расчёте позиций)

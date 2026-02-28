@@ -1,0 +1,123 @@
+{
+    "skyTexture": "",
+    "background2Texture": "bg_2_new_york_morning",
+    "backgroundTexture": "bg_new_york_morning",
+    "roadTexture": "",
+    "decorationPatterns": [],
+    "patterns": [
+        {
+            "name": "test_medium_basic",
+            "description": "Базовый тест: medium car_2 на нижней линии, medium car_3 на верхней",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_2",
+                    "type": 11,
+                    "x": 20.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_3",
+                    "type": 11,
+                    "x": 40.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "test_big_vs_medium_comparison",
+            "description": "Сравнение: big car_1 и medium car_2 рядом на одной линии",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 20.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_2",
+                    "type": 11,
+                    "x": 35.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "test_medium_with_box_on_roof",
+            "description": "Medium car с коробкой на крыше (roof Y = -2.8 + 1.40 + 0.1 = -1.3)",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_2",
+                    "type": 11,
+                    "x": 20.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_opened_box",
+                    "type": 2,
+                    "x": 20.0,
+                    "y": -1.3
+                }
+            ]
+        },
+        {
+            "name": "test_big_with_box_on_roof",
+            "description": "Big car с коробкой на крыше для сравнения (roof Y = -2.8 + 1.72 + 0.1 = -0.98)",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 20.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_opened_box",
+                    "type": 2,
+                    "x": 20.0,
+                    "y": -0.98
+                }
+            ]
+        },
+        {
+            "name": "test_consecutive_roofs",
+            "description": "Big car+ medium car рядом — тест перехода между крышами разной высоты",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 18.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_2",
+                    "type": 11,
+                    "x": 24.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "test_medium_both_lines",
+            "description": "Medium cars на обеих линиях с коллектами между ними",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_3",
+                    "type": 11,
+                    "x": 15.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_2",
+                    "type": 11,
+                    "x": 25.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "coin",
+                    "type": 9,
+                    "x": 20.0,
+                    "y": -2.8
+                }
+            ]
+        }
+    ]
+}

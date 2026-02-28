@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6060960928542192528}
   m_Layer: 0
-  m_Name: BigNotAlivePrefab
+  m_Name: MediumOrBigNotAlivePrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

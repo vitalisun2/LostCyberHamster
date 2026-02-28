@@ -85,6 +85,11 @@ namespace Assets.Scripts
         /// <summary>Высота большого неживого препятствия в юнитах.</summary>
         public static readonly float BIG_NOTALIVE_HEIGHT_UNITS = BIG_NOTALIVE_HEIGHT * PIXELS_TO_UNITS_RATIO;
 
+        /// <summary>Ширина среднего неживого препятствия в юнитах.</summary>
+        public static readonly float MEDIUM_NOTALIVE_WIDTH_UNITS = MEDIUM_NOTALIVE_WIDTH * PIXELS_TO_UNITS_RATIO;
+        /// <summary>Высота среднего неживого препятствия в юнитах.</summary>
+        public static readonly float MEDIUM_NOTALIVE_HEIGHT_UNITS = MEDIUM_NOTALIVE_HEIGHT * PIXELS_TO_UNITS_RATIO;
+
 
         /// <summary>
         /// Y-позиция верхнего края дороги (необходима для размещения декора выше дороги).
@@ -153,7 +158,7 @@ namespace Assets.Scripts
         // Obstacles
         public const string SmallCitizenPrefabName = "SmallCitizenPrefab";
         public const string BigCitizenPrefabName = "BigCitizenPrefab";
-        public const string BigNotAlivePrefabName = "BigNotAlivePrefab";
+        public const string MediumOrBigNotAlivePrefabName = "MediumOrBigNotAlivePrefab";
 
         // Labels for sprites
         public const string ObstaclesSpritesLabelPostfix = "obstacles sprites";
@@ -193,6 +198,9 @@ namespace Assets.Scripts
 
         public const int BIG_NOTALIVE_WIDTH = 452;
         public const int BIG_NOTALIVE_HEIGHT = 172;
+
+        public const int MEDIUM_NOTALIVE_WIDTH = 344;
+        public const int MEDIUM_NOTALIVE_HEIGHT = 140;
     }
 
 }

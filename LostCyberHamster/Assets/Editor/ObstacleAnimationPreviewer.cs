@@ -27,7 +27,7 @@ namespace Assets.EditorTools
     {
         private const string BigCitizenPrefabPath = "Assets/Content/prefabs/BigCitizenPrefab.prefab";
         private const string SmallCitizenPrefabPath = "Assets/Content/prefabs/SmallCitizenPrefab.prefab";
-        private const string BigNotAlivePrefabPath = "Assets/Content/prefabs/BigNotAlivePrefab.prefab";
+        private const string MediumOrBigNotAlivePrefabPath = "Assets/Content/prefabs/MediumOrBigNotAlivePrefab.prefab";
         
         private const string AnimatorPlaceholderClipName = "EmptyClip";
         private const int MaxObjectsPerRow = 5;
@@ -486,10 +486,10 @@ namespace Assets.EditorTools
                 return SmallCitizenPrefabPath;
             }
 
-            // big_not_alive: cars, trucks, buses, or explicit category (snake_case or legacy camelCase)
-            if (lowerName.Contains("_car_") || lowerName.Contains("_truck_") || lowerName.Contains("_bus_") || lowerName.Contains("_big_not_alive_") || lowerName.Contains("_bignotalive_"))
+            // big_not_alive / medium_not_alive: cars, trucks, buses, or explicit category (snake_case or legacy camelCase)
+            if (lowerName.Contains("_car_") || lowerName.Contains("_truck_") || lowerName.Contains("_bus_") || lowerName.Contains("_big_not_alive_") || lowerName.Contains("_bignotalive_") || lowerName.Contains("_medium_not_alive_") || lowerName.Contains("_mediumnotalive_"))
             {
-                return BigNotAlivePrefabPath;
+                return MediumOrBigNotAlivePrefabPath;
             }
 
             return null;

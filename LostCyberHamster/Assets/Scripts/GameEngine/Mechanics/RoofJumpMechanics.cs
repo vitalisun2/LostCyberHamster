@@ -69,6 +69,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _handlers = new()
             {
                 { ObstacleTypeEnum.bigNotAlive,              HandleBigNotAlive              },
+                { ObstacleTypeEnum.mediumNotAlive,           HandleBigNotAlive              },
                 { ObstacleTypeEnum.bigAlive,                 HandleBigAlive                 },
                 { ObstacleTypeEnum.smallAlive,               HandleSmallAlive               },
                 { ObstacleTypeEnum.smallNotAliveRoad,        HandleSmallNotAliveRoad        },
@@ -98,8 +99,16 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (result.State == HamsterStateEnum.JumpOnObstacleFromRoof)
                 GameEventsManager.ObstacleJumpedOn(result.Target!.name);
 
+            SwapRoofClipsIfNeeded(result);
             _transformAnimatorController.SetRoofJumpAnimationTrigger(_hamsterState);
             _spriteAnimatorController.Jump();
+        }
+
+        private void SwapRoofClipsIfNeeded(JumpResult result)
+        {
+            bool isMedium = result.Target != null &&
+                            result.Target.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.mediumNotAlive;
+            _transformAnimatorController.SwapRoofClips(isMedium);
         }
 
         private JumpResult CalculateRoofJumpState()

@@ -356,8 +356,8 @@ public static void ReleaseIntroSprites()
             var bigCitizenPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.BigCitizenPrefabName).Task;
             levelData.BigCitizenPrefab = bigCitizenPrefab;
 
-            var bigNotAlivePrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.BigNotAlivePrefabName).Task;
-            levelData.BigNotAlivePrefab = bigNotAlivePrefab;
+            var mediumOrBigNotAlivePrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.MediumOrBigNotAlivePrefabName).Task;
+            levelData.MediumOrBigNotAlivePrefab = mediumOrBigNotAlivePrefab;
         }
 
         // Load obstacles sprites

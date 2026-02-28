@@ -87,7 +87,7 @@ namespace Assets.Scripts.Common
         }
 
         /// <summary>
-        /// Ищет препятствие типа bigNotAlive «под хомяком»,
+        /// Ищет roof-препятствие (bigNotAlive или mediumNotAlive) «под хомяком»,
         /// если тот стоит на верхней или нижней линии в соответствующей координате X.
         /// Возвращает <see cref="Obstacle"/> или null, если препятствие не найдено.
         /// </summary>
@@ -108,8 +108,8 @@ namespace Assets.Scripts.Common
 
             foreach (var obstacle in obstacles)
             {
-                // Нас интересуют только большие неживые препятствия
-                if (obstacle.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.bigNotAlive)
+                // Нас интересуют только roof-препятствия (bigNotAlive, mediumNotAlive)
+                if (!CollisionUtils.IsRoofObstacle(obstacle.ObstacleType.ObstacleTypeEnum))
                     continue;
 
                 // Проверяем, совпадает ли линия (верх/низ) с нашей позицией
@@ -119,15 +119,15 @@ namespace Assets.Scripts.Common
                 // Смотрим, пересекается ли хомяк по X с этим препятствием
                 float distX = Mathf.Abs(hamsterX - obstacle.transform.position.x);
 
-                // Если хомяк находится в пределах допустимого расстояния от препятствия, возвращаем препятствие
-                float extendedEdge = Consts.BIG_NOTALIVE_WIDTH_UNITS / 2 + Consts.BigNotAliveEdgeTolerance;
+                // Используем фактическую ширину коллайдера вместо хардкода
+                float extendedEdge = obstacle.ColliderWidth / 2 + Consts.BigNotAliveEdgeTolerance;
                 if (distX <= extendedEdge)
                 {
                     return obstacle;
                 }
             }
 
-            // Если подходящего bigNotAlive не нашли, возвращаем null
+            // Если подходящего roof-препятствия не нашли, возвращаем null
             return null;
         }
 

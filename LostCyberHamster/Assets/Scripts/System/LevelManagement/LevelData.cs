@@ -44,7 +44,7 @@ namespace Assets.Scripts.System
         // obstacles
         public GameObject SmallCitizenPrefab { get; set; }
         public GameObject BigCitizenPrefab { get; set; }
-        public GameObject BigNotAlivePrefab { get; set; }
+        public GameObject MediumOrBigNotAlivePrefab { get; set; }
 
         // obstacles sprites
         public List<Sprite> ObstaclesSprites { get; set; } = new();

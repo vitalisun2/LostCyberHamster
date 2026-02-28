@@ -137,6 +137,10 @@ public static class LevelDataValidator
                 CheckSize(Consts.BIG_NOTALIVE_WIDTH, Consts.BIG_NOTALIVE_HEIGHT, "bigNotAlive");
                 break;
 
+            case ObstacleTypeEnum.mediumNotAlive:
+                CheckSize(Consts.MEDIUM_NOTALIVE_WIDTH, Consts.MEDIUM_NOTALIVE_HEIGHT, "mediumNotAlive");
+                break;
+
             case ObstacleTypeEnum.bigAlive:
                 CheckSize(Consts.BIG_ALIVE_WIDTH, Consts.BIG_ALIVE_HEIGHT, "bigAlive");
                 break;

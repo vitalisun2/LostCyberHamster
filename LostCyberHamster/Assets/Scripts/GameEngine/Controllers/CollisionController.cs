@@ -102,8 +102,8 @@ public class CollisionController : MonoBehaviour
         if (_hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
             return false;
 
-        // true, если препятствие НЕ BigNotAlive
-        return obstacle.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.bigNotAlive;
+        // true, если препятствие НЕ roof-тип (bigNotAlive / mediumNotAlive)
+        return !CollisionUtils.IsRoofObstacle(obstacle.ObstacleType.ObstacleTypeEnum);
     }
 
     private bool IsObstacleCollectable(Obstacle obstacle)

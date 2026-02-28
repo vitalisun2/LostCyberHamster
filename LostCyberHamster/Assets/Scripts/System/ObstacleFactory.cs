@@ -127,7 +127,8 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                     ObstacleTypeEnum.smallNotAliveRoad,
                     ObstacleTypeEnum.smallNotAliveRoadAndRoof,
                     ObstacleTypeEnum.bigAlive,
-                    ObstacleTypeEnum.bigNotAlive
+                    ObstacleTypeEnum.bigNotAlive,
+                    ObstacleTypeEnum.mediumNotAlive
                 }.Contains((ObstacleTypeEnum)modelType))
                 sprite = LevelController.Instance.LevelData.ObstaclesSprites.FirstOrDefault(s =>
                     string.Equals(s.name, spriteName, StringComparison.OrdinalIgnoreCase));
@@ -176,7 +177,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             if (type == (int)ObstacleTypeEnum.bigAlive)
                 return levelData.BigCitizenPrefab;
 
-            return levelData.BigNotAlivePrefab;
+            return levelData.MediumOrBigNotAlivePrefab;
         }
 
         private static string GetSortingLayer(float yPosition)
@@ -361,6 +362,10 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             {
                 case ObstacleTypeEnum.bigNotAlive:
                     CheckSize(Consts.BIG_NOTALIVE_WIDTH, Consts.BIG_NOTALIVE_HEIGHT, "bigNotAlive");
+                    break;
+
+                case ObstacleTypeEnum.mediumNotAlive:
+                    CheckSize(Consts.MEDIUM_NOTALIVE_WIDTH, Consts.MEDIUM_NOTALIVE_HEIGHT, "mediumNotAlive");
                     break;
 
                 case ObstacleTypeEnum.bigAlive:

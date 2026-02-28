@@ -21,7 +21,7 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 82728858ae2c3094eabe372ee7d39939
-    m_Address: BigNotAlivePrefab
+    m_Address: MediumOrBigNotAlivePrefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

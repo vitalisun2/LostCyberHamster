@@ -76,6 +76,7 @@ public class SuperJumpMechanics
         _handlers = new()
         {
             { ObstacleTypeEnum.bigNotAlive,              HandleBigNotAlive              },
+            { ObstacleTypeEnum.mediumNotAlive,           HandleBigNotAlive              },
             { ObstacleTypeEnum.bigAlive,                 HandleBigAlive                 },
             { ObstacleTypeEnum.smallAlive,               HandleSmallAlive               },
             { ObstacleTypeEnum.smallNotAliveRoad,        HandleSmallNotAliveRoad        },
@@ -105,8 +106,16 @@ public class SuperJumpMechanics
         if (result.State == HamsterStateEnum.SuperJumpOver)
             GameEventsManager.ObstacleJumpedOver(result.Target!.name);
 
+        SwapRoofClipsIfNeeded(result);
         _transformAnimatorController.SetSuperJumpAnimationTrigger(_hamsterState);
         _spriteAnimatorController.Jump();
+    }
+
+    private void SwapRoofClipsIfNeeded(JumpResult result)
+    {
+        bool isMedium = result.Target != null &&
+                        result.Target.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.mediumNotAlive;
+        _transformAnimatorController.SwapRoofClips(isMedium);
     }
 
     /// <summary>

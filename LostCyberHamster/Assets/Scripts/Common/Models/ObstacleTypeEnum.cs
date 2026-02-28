@@ -12,6 +12,7 @@
         collectableCrystal,
         collectableLife,
         collectableCoin,
-        decor
+        decor,
+        mediumNotAlive
     }
 }
