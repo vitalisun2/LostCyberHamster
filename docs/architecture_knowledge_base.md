@@ -484,3 +484,51 @@ obstacle_paris_big_alive_7_idle-1.png ... -18.png
 **Как использовать:**
 - Примеры кода / команды
 ```
+
+---
+
+## HamsterBot Architecture
+
+### Компоненты бота
+- `HamsterBot` (MonoBehaviour, Singleton, DontDestroyOnLoad) — оркестратор
+- `BotBrain` — реактивное дерево решений, параметризованное через `BotPlayStyleConfig`
+- `BotThreatScanner` — сканирование препятствий перед хомяком
+- `BotResourceManager` — покупки энергии (50 coins → 100 energy) и ульты (100 coins → 100% ulta)
+- `BotPlanner` — forward simulation (дерево решений на N шагов), `EnablePlanner = false` по умолчанию
+- `BotLogger` — файловый лог сессий в `EditorLogs/bot_sessions/`
+
+### Play Styles (BotPlayStyle enum)
+Каждый стиль — предустановленный набор весов и порогов (`BotPlayStylePresets`):
+- **Survival** — выжить любой ценой (AggressionLevel=0.3, EnergyConserve=40)
+- **ThreeStars** — 0 смертей (UrgentWindow=0.8, UltaEmergencyLives=2)
+- **BonusHunter** — максимум монет (Aggression=0.9, AllowBuyEnergy=true)
+- **Perfectionist** — 3 звезды + бонусы (сбалансированный)
+- **UltaMaster** — активное использование суперударов (UltaCluster=1, AllowBuyUlta=true)
+- **GodMode** — всё по максимуму + покупки + BotPlanner
+
+### Горячие клавиши
+- F1 — вкл/выкл бота
+- F2 — цикл режимов (Play/Test/Analytics)
+- F3 — цикл стилей игры (Survival → ThreeStars → ... → GodMode → Survival)
+
+### Energy Economics
+- Jump / RoofJump = 10 energy
+- SuperJump / SuperRoofJump = 20 energy
+- Restore = 1/sec
+- Max = 100
+- BuyEnergy = 50 coins → 100 energy (через `ResourceManager.SpendResource`)
+- BuyUlta = 100 coins → 100% ulta charge
+
+### Дерево решений (BotBrain.Evaluate)
+```
+P1: Dead/Damaged/Shifting → DoNothing
+P2: RoofRun → EvaluateRoofRun
+P3: InJump → EvaluateWhileJumping (SuperJump только для bigAlive)
+P4: UrgentThreat → HandleUrgentThreat
+P5: Purchases → BuyEnergy/BuyUlta (если разрешено стилем)
+P6: Ulta → UseUlta (при кластере или low lives)
+P7: JumpOnSmallAlive → бонус (если энергия > threshold)
+P8: RoofJump → крыша bigNotAlive
+P9: Collectibles → SwitchLane (если безопасно)
+P10: DoNothing
+```

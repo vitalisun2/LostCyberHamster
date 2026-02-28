@@ -6,17 +6,41 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot
 {
     /// <summary>
-    /// Реактивная система принятия решений: обрабатывает непосредственные угрозы
-    /// (Priority 1-8 из ТЗ). Вызывается когда ближайшая угроза — в зоне быстрой реакции,
-    /// либо как fallback, когда BotPlanner не нужен.
+    /// Реактивная система принятия решений, параметризованная через <see cref="BotPlayStyleConfig"/>.
+    /// Приоритеты и пороги определяются текущим стилем игры.
     /// </summary>
     public class BotBrain
     {
-        private readonly float _reactionWindowSec;
-        private readonly float _aggressionLevel;
-        private readonly int _ultaClusterThreshold;
-        private readonly int _energyConserveThreshold;
+        private float _reactionWindowSec;
+        private float _aggressionLevel;
+        private int _ultaClusterThreshold;
+        private int _energyConserveThreshold;
+        private int _ultaEmergencyLives;
 
+        // Покупки
+        private bool _allowBuyEnergy;
+        private int _buyEnergyThreshold;
+        private int _buyEnergyCoinMinimum;
+        private bool _allowBuyUlta;
+        private int _buyUltaThreshold;
+        private int _buyUltaCoinMinimum;
+
+        private BotResourceManager _resourceManager;
+
+        /// <summary>
+        /// Текущий стиль игры (для логирования).
+        /// </summary>
+        public BotPlayStyle CurrentStyle { get; private set; }
+
+        public BotBrain(BotPlayStyleConfig config, BotResourceManager resourceManager = null)
+        {
+            _resourceManager = resourceManager ?? new BotResourceManager();
+            ApplyConfig(config);
+        }
+
+        /// <summary>
+        /// Legacy-конструктор для обратной совместимости (использует Survival-подобные параметры).
+        /// </summary>
         public BotBrain(
             float reactionWindowSec = 0.6f,
             float aggressionLevel = 0.7f,
@@ -27,6 +51,29 @@ namespace Assets.Scripts.Bot
             _aggressionLevel = aggressionLevel;
             _ultaClusterThreshold = ultaClusterThreshold;
             _energyConserveThreshold = energyConserveThreshold;
+            _ultaEmergencyLives = 1;
+            _resourceManager = new BotResourceManager();
+            CurrentStyle = BotPlayStyle.Survival;
+        }
+
+        /// <summary>
+        /// Применяет новую конфигурацию стиля игры на лету.
+        /// </summary>
+        public void ApplyConfig(BotPlayStyleConfig config)
+        {
+            CurrentStyle = config.Style;
+            _reactionWindowSec = config.UrgentWindowSec;
+            _aggressionLevel = config.AggressionLevel;
+            _ultaClusterThreshold = config.UltaClusterThreshold;
+            _energyConserveThreshold = config.EnergyConserveThreshold;
+            _ultaEmergencyLives = config.UltaEmergencyLives;
+
+            _allowBuyEnergy = config.AllowBuyEnergy;
+            _buyEnergyThreshold = config.BuyEnergyThreshold;
+            _buyEnergyCoinMinimum = config.BuyEnergyCoinMinimum;
+            _allowBuyUlta = config.AllowBuyUlta;
+            _buyUltaThreshold = config.BuyUltaThreshold;
+            _buyUltaCoinMinimum = config.BuyUltaCoinMinimum;
         }
 
         /// <summary>
@@ -64,17 +111,21 @@ namespace Assets.Scripts.Bot
                     return decision;
             }
 
+            // Priority 3: Покупки (энергия / ульта)
+            var purchaseDecision = EvaluatePurchases(hamster);
+            if (purchaseDecision.Action != BotAction.None)
+                return purchaseDecision;
+
             // Priority 4: Ульта
             if (hamster.UltaChargeAmount.Value >= 100)
             {
                 int dangerCount = CountDangersInWindow(currentLane, _reactionWindowSec * 2f);
-                if (dangerCount >= _ultaClusterThreshold || hamster.Lives.Value <= 1)
+                if (dangerCount >= _ultaClusterThreshold || hamster.Lives.Value <= _ultaEmergencyLives)
                     return BotDecision.Urgent(BotAction.UseUlta,
                         $"ulta ready, {dangerCount} dangers ahead / lives={hamster.Lives.Value}");
             }
 
             // Priority 5: Напрыгивание на smallAlive для бонусов
-            // Только если есть запас энергии (резерв 20 на уклонение)
             if (hamster.Energy.Value >= 10 + _energyConserveThreshold && _aggressionLevel > 0.3f)
             {
                 var jumpTarget = FindFirstOfType(currentLane, ObstacleTypeEnum.smallAlive,
@@ -85,7 +136,6 @@ namespace Assets.Scripts.Bot
             }
 
             // Priority 5b: Прыжок на крышу bigNotAlive
-            // Только если есть запас энергии
             if (hamster.Energy.Value >= 10 + _energyConserveThreshold)
             {
                 var roofTarget = FindFirstRoofable(currentLane, maxTime: _reactionWindowSec * 0.8f);
@@ -94,12 +144,15 @@ namespace Assets.Scripts.Bot
                         $"jump on roof {roofTarget.Value.Type} @{roofTarget.Value.DistanceX:F1}");
             }
 
-            // Priority 6: Коллектиблы на другой линии
-            var collectible = FindBestCollectible(otherLane);
-            if (collectible.HasValue && IsLaneSafe(otherLane))
+            // Priority 6: Коллектиблы на другой линии (только при достаточной агрессивности)
+            if (_aggressionLevel > 0.4f)
             {
-                return BotDecision.Urgent(BotAction.SwitchLane,
-                    $"collect {collectible.Value.Type} on other lane @{collectible.Value.DistanceX:F1}");
+                var collectible = FindBestCollectible(otherLane);
+                if (collectible.HasValue && IsLaneSafe(otherLane))
+                {
+                    return BotDecision.Urgent(BotAction.SwitchLane,
+                        $"collect {collectible.Value.Type} on other lane @{collectible.Value.DistanceX:F1}");
+                }
             }
 
             return BotDecision.DoNothing("all clear");
@@ -115,11 +168,39 @@ namespace Assets.Scripts.Bot
             return danger.HasValue && danger.Value.TimeToReach < urgentWindowSec;
         }
 
+        // ──────────────── Purchases ────────────────
+
+        private BotDecision EvaluatePurchases(Hamster hamster)
+        {
+            // Покупка энергии: мало энергии + есть монеты
+            if (_allowBuyEnergy &&
+                hamster.Energy.Value < _buyEnergyThreshold &&
+                _resourceManager.CurrentCoins >= _buyEnergyCoinMinimum &&
+                _resourceManager.CanBuyEnergy())
+            {
+                return BotDecision.Urgent(BotAction.BuyEnergy,
+                    $"buying energy (e={hamster.Energy.Value}, coins={_resourceManager.CurrentCoins})",
+                    0.85f);
+            }
+
+            // Покупка ульты: мало заряда + есть монеты
+            if (_allowBuyUlta &&
+                hamster.UltaChargeAmount.Value < _buyUltaThreshold &&
+                _resourceManager.CurrentCoins >= _buyUltaCoinMinimum &&
+                _resourceManager.CanBuyUlta())
+            {
+                return BotDecision.Urgent(BotAction.BuyUlta,
+                    $"buying ulta (ulta={hamster.UltaChargeAmount.Value}%, coins={_resourceManager.CurrentCoins})",
+                    0.80f);
+            }
+
+            return BotDecision.DoNothing();
+        }
+
         // ──────────────── Roof Run ────────────────
 
         private BotDecision EvaluateRoofRun(Hamster hamster, IReadOnlyList<ThreatInfo> currentLane)
         {
-            // На крыше: ищем smallNotAliveRoadAndRoof на крыше впереди
             for (int i = 0; i < currentLane.Count; i++)
             {
                 var t = currentLane[i];
@@ -139,7 +220,6 @@ namespace Assets.Scripts.Bot
 
         private BotDecision EvaluateWhileJumping(Hamster hamster, IReadOnlyList<ThreatInfo> currentLane)
         {
-            // Во время прыжка можно только SuperJump (и только из начальных стадий прыжка)
             if (!CanSuperJump(hamster.HamsterState.Value))
                 return BotDecision.DoNothing("in jump, no super available");
 
@@ -147,8 +227,6 @@ namespace Assets.Scripts.Bot
                 return BotDecision.DoNothing("in jump, no energy for super");
 
             // SuperJump ТОЛЬКО для bigAlive (высокий — может задеть в воздухе).
-            // smallAlive — безопасен в воздухе (приземлимся на него = бонус).
-            // smallNotAlive* — обычный прыжок перелетает их.
             for (int i = 0; i < currentLane.Count; i++)
             {
                 var t = currentLane[i];
@@ -190,13 +268,12 @@ namespace Assets.Scripts.Bot
                     return BotDecision.Urgent(BotAction.SwitchLane,
                         $"dodge bigAlive @{threat.DistanceX:F1}, other lane safe");
 
-                // Другая линия тоже опасна — прыгаем
                 if (energy >= 10)
                     return BotDecision.Urgent(BotAction.Jump,
                         $"forced jump, bigAlive @{threat.DistanceX:F1}, both lanes dangerous");
             }
 
-            // Общий fallback: прыгать если есть энергия, иначе сменить линию
+            // Общий fallback
             if (energy >= 10)
                 return BotDecision.Urgent(BotAction.Jump,
                     $"emergency jump @{threat.DistanceX:F1}");
@@ -245,7 +322,6 @@ namespace Assets.Scripts.Bot
 
         private static ThreatInfo? FindBestCollectible(IReadOnlyList<ThreatInfo> lane)
         {
-            // Приоритет: life > crystal > energetic > pizza > coin
             ThreatInfo? best = null;
             int bestPriority = -1;
 
@@ -288,7 +364,6 @@ namespace Assets.Scripts.Bot
 
         private bool IsLaneSafe(IReadOnlyList<ThreatInfo> lane)
         {
-            // Линия безопасна, если нет опасности в ближайшей зоне реакции
             for (int i = 0; i < lane.Count; i++)
             {
                 if (lane[i].IsDangerous && lane[i].TimeToReach < _reactionWindowSec)
@@ -312,7 +387,6 @@ namespace Assets.Scripts.Bot
                    state == HamsterStateEnum.JumpFromRoofDamage ||
                    state == HamsterStateEnum.RoofJump ||
                    state == HamsterStateEnum.RoofJumpDamage ||
-                   // Super jump states
                    state == HamsterStateEnum.SuperJump ||
                    state == HamsterStateEnum.SuperJumpDamage ||
                    state == HamsterStateEnum.SuperJumpOver ||
@@ -328,9 +402,6 @@ namespace Assets.Scripts.Bot
 
         private static bool CanSuperJump(HamsterStateEnum state)
         {
-            // Суперпрыжок доступен только из начальных стадий обычного прыжка.
-            // НЕ из JumpOnObstacle/JumpOnRoof/Damage — при отскоке хомяк уже летит,
-            // тратить SuperJump бессмысленно, отскок сам перенесёт через мелкие препятствия.
             return state == HamsterStateEnum.Jump ||
                    state == HamsterStateEnum.RoofJump;
         }

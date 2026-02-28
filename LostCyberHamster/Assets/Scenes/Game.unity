@@ -725,11 +725,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00f60a3f0aa3fb54da68538ece455bbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.Bot.HamsterBot
-  _enabledOnStart: 0
+  _enabledOnStart: 1
   _actionCooldown: 0.05
   _scanRange: 15
   _urgentWindowSec: 0.6
   _aggressionLevel: 0.7
+  _autoRestartOnDeath: 1
+  _autoNextOnWin: 1
+  _autoActionDelay: 2
 --- !u!4 &1858864217
 Transform:
   m_ObjectHideFlags: 0

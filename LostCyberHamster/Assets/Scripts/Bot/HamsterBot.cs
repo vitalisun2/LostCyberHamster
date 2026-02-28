@@ -63,6 +63,9 @@ namespace Assets.Scripts.Bot
         public BotMode CurrentMode { get; private set; } = BotMode.Play;
 
         [ShowInInspector, ReadOnly]
+        public BotPlayStyle CurrentPlayStyle { get; private set; } = BotPlayStyle.Survival;
+
+        [ShowInInspector, ReadOnly]
         private string _lastDecisionText = "—";
 
         [ShowInInspector, ReadOnly]
@@ -77,6 +80,7 @@ namespace Assets.Scripts.Bot
         private BotThreatScanner _scanner;
         private BotBrain _brain;
         private BotLogger _logger;
+        private BotResourceManager _resourceManager;
 
         private float _lastActionTime;
         private bool _initialized;
@@ -195,6 +199,27 @@ namespace Assets.Scripts.Bot
             DebugManager.DiagLog($"[HamsterBot] Mode switched to {CurrentMode}");
         }
 
+        /// <summary>
+        /// Переключить стиль игры: Survival → ThreeStars → ... → GodMode → Survival (F3).
+        /// </summary>
+        public void CyclePlayStyle()
+        {
+            CurrentPlayStyle = CurrentPlayStyle switch
+            {
+                BotPlayStyle.Survival => BotPlayStyle.ThreeStars,
+                BotPlayStyle.ThreeStars => BotPlayStyle.BonusHunter,
+                BotPlayStyle.BonusHunter => BotPlayStyle.Perfectionist,
+                BotPlayStyle.Perfectionist => BotPlayStyle.UltaMaster,
+                BotPlayStyle.UltaMaster => BotPlayStyle.GodMode,
+                BotPlayStyle.GodMode => BotPlayStyle.Survival,
+                _ => BotPlayStyle.Survival
+            };
+
+            var config = BotPlayStylePresets.Get(CurrentPlayStyle);
+            _brain?.ApplyConfig(config);
+            DebugManager.DiagLog($"[HamsterBot] PlayStyle switched to {CurrentPlayStyle}");
+        }
+
         // ──────────────── Init / Enable / Disable ────────────────
 
         private void TryInitAndEnable()
@@ -209,9 +234,10 @@ namespace Assets.Scripts.Bot
                 }
 
                 _scanner = new BotThreatScanner();
-                _brain = new BotBrain(
-                    reactionWindowSec: _urgentWindowSec,
-                    aggressionLevel: _aggressionLevel);
+                _resourceManager = new BotResourceManager();
+
+                var styleConfig = BotPlayStylePresets.Get(CurrentPlayStyle);
+                _brain = new BotBrain(styleConfig, _resourceManager);
                 _logger = new BotLogger();
 
                 // GameManager для отслеживания конца уровня
@@ -227,7 +253,7 @@ namespace Assets.Scripts.Bot
             _actionsExecuted = 0;
             _framesAlive = 0;
 
-            _logger?.OnBotEnabled(CurrentMode, GetCurrentLevelName());
+            _logger?.OnBotEnabled(CurrentMode, GetCurrentLevelName(), CurrentPlayStyle);
             SubscribeToGameEvents();
 
             // Отписаться перед подпиской на OnFinish (предотвращаем дубли)
@@ -279,6 +305,14 @@ namespace Assets.Scripts.Bot
 
                 case BotAction.UseUlta:
                     _hamster.UltaEvent.Invoke();
+                    break;
+
+                case BotAction.BuyEnergy:
+                    _resourceManager?.BuyEnergy(_hamster);
+                    break;
+
+                case BotAction.BuyUlta:
+                    _resourceManager?.BuyUlta(_hamster);
                     break;
             }
 

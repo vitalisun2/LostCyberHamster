@@ -24,6 +24,12 @@ namespace Assets.Scripts.Bot
         SuperRoofJump,
 
         /// <summary>Активировать ульта-способность.</summary>
-        UseUlta
+        UseUlta,
+
+        /// <summary>Купить энергию за монеты (50 coins → 100 energy).</summary>
+        BuyEnergy,
+
+        /// <summary>Купить ульту за монеты (100 coins → 100% ulta).</summary>
+        BuyUlta
     }
 }

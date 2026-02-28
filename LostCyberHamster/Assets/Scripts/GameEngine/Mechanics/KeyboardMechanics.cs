@@ -95,6 +95,11 @@ namespace Assets.Scripts.GameEngine.Mechanics
             {
                 HamsterBot.Instance.CycleMode();
             }
+
+            if (_keyboard.f3Key.wasPressedThisFrame && HamsterBot.Instance != null)
+            {
+                HamsterBot.Instance.CyclePlayStyle();
+            }
         }
 
         private void OnUlta()

@@ -48,14 +48,14 @@ namespace Assets.Scripts.Bot
 
             float x = 10f;
             float y = 10f;
-            float w = 260f;
+            float w = 320f;
             float lineHeight = 20f;
 
             if (!bot.IsEnabled)
             {
                 _labelStyle.normal.textColor = ColorDisabled;
                 GUI.Box(new Rect(x, y, w, lineHeight + 12f), GUIContent.none, _boxStyle);
-                GUI.Label(new Rect(x, y, w, lineHeight + 12f), "BOT: OFF  (F1 toggle, F2 mode)", _labelStyle);
+                GUI.Label(new Rect(x, y, w, lineHeight + 12f), "BOT: OFF  (F1 toggle, F2 mode, F3 style)", _labelStyle);
                 return;
             }
 
@@ -67,18 +67,30 @@ namespace Assets.Scripts.Bot
                 _ => Color.white
             };
 
-            float boxHeight = lineHeight * 2 + 16f;
+            Color styleColor = bot.CurrentPlayStyle switch
+            {
+                BotPlayStyle.Survival => new Color(0.9f, 0.9f, 0.3f),
+                BotPlayStyle.ThreeStars => new Color(1f, 0.85f, 0f),
+                BotPlayStyle.BonusHunter => new Color(0.3f, 1f, 0.5f),
+                BotPlayStyle.Perfectionist => new Color(0.6f, 0.4f, 1f),
+                BotPlayStyle.UltaMaster => new Color(1f, 0.3f, 0.3f),
+                BotPlayStyle.GodMode => new Color(1f, 0.2f, 0.8f),
+                _ => Color.white
+            };
+
+            float boxHeight = lineHeight * 3 + 16f;
             GUI.Box(new Rect(x, y, w, boxHeight), GUIContent.none, _boxStyle);
 
             _labelStyle.normal.textColor = modeColor;
             GUI.Label(new Rect(x, y, w, lineHeight + 12f),
-                $"BOT: {bot.CurrentMode}  |  F1 off  F2 mode", _labelStyle);
+                $"BOT: {bot.CurrentMode}  |  F1 off  F2 mode  F3 style", _labelStyle);
+
+            _labelStyle.normal.textColor = styleColor;
+            _labelStyle.fontSize = 13;
+            GUI.Label(new Rect(x, y + lineHeight + 2f, w, lineHeight + 12f),
+                $"Style: {bot.CurrentPlayStyle}", _labelStyle);
 
             _labelStyle.normal.textColor = Color.white;
-            _labelStyle.fontSize = 12;
-            _labelStyle.fontStyle = FontStyle.Normal;
-            // No direct access to _lastDecisionText — we show mode only
-            // (BotLogger handles detailed output to file)
             _labelStyle.fontSize = 14;
             _labelStyle.fontStyle = FontStyle.Bold;
         }

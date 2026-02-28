@@ -28,7 +28,7 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Начинает новую сессию логирования.
         /// </summary>
-        public void OnBotEnabled(BotMode mode, string levelName = "unknown")
+        public void OnBotEnabled(BotMode mode, string levelName = "unknown", BotPlayStyle playStyle = BotPlayStyle.Survival)
         {
             CloseWriter();
 
@@ -41,12 +41,12 @@ namespace Assets.Scripts.Bot
             Directory.CreateDirectory(baseDir);
 
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            _sessionFilePath = Path.Combine(baseDir, $"bot_{mode}_{timestamp}.log");
+            _sessionFilePath = Path.Combine(baseDir, $"bot_{mode}_{playStyle}_{timestamp}.log");
             _writer = new StreamWriter(_sessionFilePath, append: false, Encoding.UTF8) { AutoFlush = true };
             _sessionStartTime = Time.time;
             _eventCount = 0;
 
-            WriteHeader(mode, levelName);
+            WriteHeader(mode, levelName, playStyle);
         }
 
         /// <summary>
@@ -134,10 +134,11 @@ namespace Assets.Scripts.Bot
 
         // ──────────────── Private ────────────────
 
-        private void WriteHeader(BotMode mode, string levelName)
+        private void WriteHeader(BotMode mode, string levelName, BotPlayStyle playStyle = BotPlayStyle.Survival)
         {
             _writer.WriteLine($"=== HamsterBot Session ===");
             _writer.WriteLine($"Mode: {mode}");
+            _writer.WriteLine($"PlayStyle: {playStyle}");
             _writer.WriteLine($"Level: {levelName}");
             _writer.WriteLine($"Started: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             _writer.WriteLine($"Unity Version: {Application.unityVersion}");
