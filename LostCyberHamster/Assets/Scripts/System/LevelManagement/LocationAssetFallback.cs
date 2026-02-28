@@ -116,40 +116,6 @@ namespace Assets.Scripts.System
             return $"sky_{fallbackSlug}_{suffix}";
         }
 
-        public static string BuildBackground2Key(string fallbackLocationName, string partOfDay)
-        {
-            var fallbackSlug = ToSlug(fallbackLocationName);
-            if (string.IsNullOrWhiteSpace(fallbackSlug))
-            {
-                return null;
-            }
-
-            var suffix = ToSlug(partOfDay);
-            if (string.IsNullOrWhiteSpace(suffix))
-            {
-                return null;
-            }
-
-            return $"bg_2_{fallbackSlug}_{suffix}";
-        }
-
-        public static string BuildBackgroundKey(string fallbackLocationName, string partOfDay)
-        {
-            var fallbackSlug = ToSlug(fallbackLocationName);
-            if (string.IsNullOrWhiteSpace(fallbackSlug))
-            {
-                return null;
-            }
-
-            var suffix = ToSlug(partOfDay);
-            if (string.IsNullOrWhiteSpace(suffix))
-            {
-                return null;
-            }
-
-            return $"bg_{fallbackSlug}_{suffix}";
-        }
-
         private static string ExtractBackgroundSuffix(string key)
         {
             if (string.IsNullOrWhiteSpace(key))

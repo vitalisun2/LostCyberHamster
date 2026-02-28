@@ -243,26 +243,7 @@ public static void ReleaseIntroSprites()
                 levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
             }
 
-            Sprite backgroundTexture = null;
-
-            // Try loading from JSON if specified (for per-level customization)
-            if (!string.IsNullOrEmpty(levelData.LevelInfo.backgroundTexture))
-            {
-                backgroundTexture = await LoadBackgroundSpriteWithFallback(levelData.LevelInfo.backgroundTexture);
-            }
-
-            // Fallback to auto-generated key if JSON field is empty or failed
-            if (backgroundTexture == null)
-            {
-                var fallbackLocationName = GetFallbackLocationName();
-                var partOfDay = LevelManager.GetCurrentPartOfDay();
-                var backgroundKey = LocationAssetFallback.BuildBackgroundKey(fallbackLocationName, partOfDay);
-
-                if (!string.IsNullOrWhiteSpace(backgroundKey))
-                {
-                    backgroundTexture = await TryLoadSpriteByKey(backgroundKey, "background sprite auto-generated");
-                }
-            }
+            var backgroundTexture = await LoadBackgroundSpriteWithFallback(levelData.LevelInfo.backgroundTexture);
 
             if (backgroundTexture == null)
             {
@@ -283,21 +264,18 @@ public static void ReleaseIntroSprites()
                 levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
             }
 
-            var fallbackLocationName = GetFallbackLocationName();
-            var partOfDay = LevelManager.GetCurrentPartOfDay();
-            var background2Key = LocationAssetFallback.BuildBackground2Key(fallbackLocationName, partOfDay);
-
-            if (string.IsNullOrWhiteSpace(background2Key))
+            // Background2 is optional - if not configured in JSON, skip
+            if (string.IsNullOrEmpty(levelData.LevelInfo.background2Texture))
             {
-                Debug.LogError("[LevelDataProvider] Unable to build background2 texture key.");
+                Debug.Log("[LevelDataProvider] background2Texture not configured, skipping Background2 loading.");
                 return;
             }
 
-            var background2Texture = await TryLoadSpriteByKey(background2Key, "background2 sprite");
+            var background2Texture = await LoadBackgroundSpriteWithFallback(levelData.LevelInfo.background2Texture);
 
             if (background2Texture == null)
             {
-                Debug.LogWarning($"[LevelDataProvider] Background2 sprite '{background2Key}' not found, continuing without it.");
+                Debug.LogWarning("[LevelDataProvider] Unable to load background2 sprite, continuing without it.");
                 return;
             }
 
