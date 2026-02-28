@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Planning
