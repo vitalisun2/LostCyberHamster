@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.Common.Models;
 using Assets.Scripts;
+using Assets.Scripts.System.LevelManagement;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -42,6 +43,9 @@ public class LevelTilemapEditor : EditorWindow
 
     private LevelTilemapUi _uiManager;
     private LevelInfo _currentLevelInfo;
+    private LevelInfoRef _currentLevelRef;
+    private PatternsCollection _patternsCollection;
+    private LocationTheme _locationTheme;
     private string _selectedFile;
     private int _selectedPatternIndex = -1;
     private Tilemap _tipeMapInScene;
@@ -402,17 +406,24 @@ public class LevelTilemapEditor : EditorWindow
         
         if (isTemplateLocation)
         {
-            // Save patterns for templates
             Debug.Log($"Сохранение шаблона уровня: {_selectedFile}");
+            LevelDataManager.SaveLevel(_currentLevelInfo, _selectedFile);
         }
         else
         {
-            // Save decorations for specific locations
-            Debug.Log($"Сохранение decoration для локации {_currentLocationName}: {_selectedFile}");
+            Debug.Log($"Сохранение уровня (ref) для локации {_currentLocationName}: {_selectedFile}");
             SyncDecorationsFromTilemap();
-        }
 
-        LevelDataManager.SaveLevel(_currentLevelInfo, _selectedFile);
+            if (_currentLevelRef != null)
+            {
+                _currentLevelRef.decorationPatterns = _currentLevelInfo.decorationPatterns;
+                LevelDataManager.SaveLevelRef(_currentLevelRef, _selectedFile);
+            }
+            else
+            {
+                LevelDataManager.SaveLevel(_currentLevelInfo, _selectedFile);
+            }
+        }
     }
 
     /// <summary>
@@ -545,6 +556,7 @@ public class LevelTilemapEditor : EditorWindow
             {
                 _selectedFile = null;
                 _currentLevelInfo = null;
+                _currentLevelRef = null;
                 _selectedPatternIndex = -1;
                 _selectedLevelDescriptor = null;
             }
@@ -605,19 +617,32 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        _currentLevelInfo = LevelDataManager.LoadLevel(_selectedFile);
-        if (_currentLevelInfo == null)
-        {
-            Debug.LogWarning($"Не удалось загрузить уровень из файла {_selectedFile}");
-            return;
-        }
-
         var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
 
-        // Only fix obstacle types for templates (they have patterns with obstacles)
         if (isTemplateLocation)
         {
+            _currentLevelRef = null;
+            _currentLevelInfo = LevelDataManager.LoadLevel(_selectedFile);
+            if (_currentLevelInfo == null)
+            {
+                Debug.LogWarning($"Не удалось загрузить уровень из файла {_selectedFile}");
+                return;
+            }
+
             LevelDataManager.FixObstacleTypesInLevelInfoAndSaveToJson(_currentLocationName, _selectedFile, _currentLevelInfo);
+        }
+        else
+        {
+            _currentLevelRef = LevelDataManager.LoadLevelRef(_selectedFile);
+            if (_currentLevelRef == null)
+            {
+                Debug.LogWarning($"Не удалось загрузить уровень (ref) из файла {_selectedFile}");
+                return;
+            }
+
+            _patternsCollection = LevelDataManager.LoadPatternsCollection();
+            _locationTheme = LevelDataManager.LoadLocationTheme(_currentLocationName);
+            _currentLevelInfo = LevelResolver.Resolve(_currentLevelRef, _patternsCollection, _locationTheme);
         }
 
         // 1) Вычисляем ширину для одной "прокрутки" паттерна

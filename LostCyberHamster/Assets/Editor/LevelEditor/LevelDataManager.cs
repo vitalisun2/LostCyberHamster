@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Common.Models;
+using Assets.Scripts.System.LevelManagement;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -153,6 +154,46 @@ public static class LevelDataManager
         {
             Debug.LogError($"Failed to save level to {filePath}: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Loads PatternsCollection.json from the level_design_templates folder.
+    /// </summary>
+    public static PatternsCollection LoadPatternsCollection()
+    {
+        var path = Path.Combine(Consts.LocationsPath,
+            Consts.TemplatesLocationName, "levels", "PatternsCollection.json");
+        var json = File.ReadAllText(path, Encoding.UTF8);
+        return JsonUtility.FromJson<PatternsCollection>(json);
+    }
+
+    /// <summary>
+    /// Loads LocationTheme (obstacle_sprite_to_type_mappings.json) for the given location folder.
+    /// </summary>
+    public static LocationTheme LoadLocationTheme(string locationFolder)
+    {
+        var path = Path.Combine(Consts.LocationsPath,
+            locationFolder, "obstacle_sprite_to_type_mappings.json");
+        var json = File.ReadAllText(path, Encoding.UTF8);
+        return JsonUtility.FromJson<LocationTheme>(json);
+    }
+
+    /// <summary>
+    /// Loads a level JSON in the new reference-based format.
+    /// </summary>
+    public static LevelInfoRef LoadLevelRef(string filePath)
+    {
+        var json = File.ReadAllText(filePath, Encoding.UTF8);
+        return JsonUtility.FromJson<LevelInfoRef>(json);
+    }
+
+    /// <summary>
+    /// Saves a level JSON in the new reference-based format.
+    /// </summary>
+    public static void SaveLevelRef(LevelInfoRef levelRef, string filePath)
+    {
+        var json = JsonUtility.ToJson(levelRef, true);
+        File.WriteAllText(filePath, json, Encoding.UTF8);
     }
 
     public static string CreateNewLevel(LevelInfo levelInfo, string levelsDirectory, List<string> spritesNames = null)

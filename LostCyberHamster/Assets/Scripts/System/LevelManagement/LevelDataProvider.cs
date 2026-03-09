@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
+using Assets.Scripts.System.LevelManagement;
 using Assets.Scripts.System.Resources;
 
 namespace Assets.Scripts.System
@@ -208,7 +209,15 @@ public static void ReleaseIntroSprites()
                 return;
             }
 
-            levelData.LevelInfo = JsonUtility.FromJson<LevelInfo>(asset.text);
+            var levelRef = JsonUtility.FromJson<LevelInfoRef>(asset.text);
+
+            var patternsAsset = await LoadPatternsCollectionAsync();
+            var patterns = JsonUtility.FromJson<PatternsCollection>(patternsAsset.text);
+
+            var themeAsset = await LoadLocationThemeAsync(levelRef.location);
+            var theme = JsonUtility.FromJson<LocationTheme>(themeAsset.text);
+
+            levelData.LevelInfo = LevelResolver.Resolve(levelRef, patterns, theme);
         }
 
         private static async Task<TextAsset> TryLoadLevelAssetAsync(string address)
@@ -222,6 +231,17 @@ public static void ReleaseIntroSprites()
                 Debug.LogWarning($"[LevelDataProvider] Exception while loading '{address}': {ex.Message}");
                 return null;
             }
+        }
+
+        private static async Task<TextAsset> LoadPatternsCollectionAsync()
+        {
+            return await Addressables.LoadAssetAsync<TextAsset>("PatternsCollection").Task;
+        }
+
+        private static async Task<TextAsset> LoadLocationThemeAsync(string location)
+        {
+            var address = $"{location}_theme";
+            return await Addressables.LoadAssetAsync<TextAsset>(address).Task;
         }
 
 

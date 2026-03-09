@@ -464,6 +464,66 @@ obstacle_paris_big_alive_7_idle-1.png ... -18.png
 
 ---
 
+## Reference-Based Level Assembly (New Architecture)
+
+### Трёхслойная модель
+
+Уровни теперь не хранят копии паттернов, а ссылаются на них:
+
+1. **PatternsCollection** (шаблоны) → `PatternTemplate` с `ObstacleSlot` (id, type, x, y — без spriteName)
+2. **LocationTheme** (`obstacle_sprite_to_type_mappings.json`) → маппинг type → список спрайтов + default
+3. **LevelInfoRef** (level JSON) → `patternSequence` со ссылками `PatternRef` ({ref, spriteSeed, overrides})
+
+### Resolution chain (LevelResolver.Resolve)
+
+Для каждого obstacle спрайт выбирается по приоритету:
+1. **Manual override** → `PatternRef.overrides[obstacleId]`
+2. **Seed-based random** → `new System.Random(spriteSeed + obstacleId)` → случайный из theme.sprites
+3. **Theme default** → `SpriteTypeMapping.@default`
+4. **Universal name** → для collectables: `"collectable_{type}"`
+
+### Ключевые файлы
+
+- `Assets/Scripts/Common/Models/` — ObstacleSlot, PatternTemplate, PatternsCollection, PatternRef, SpriteOverride, LevelInfoRef, LocationTheme
+- `Assets/Scripts/System/LevelManagement/LevelResolver.cs` — статический Resolve()
+- `Assets/Editor/Migration/LevelFormatMigration.cs` — миграция старого формата
+- `Assets/Editor/LevelEditor/PatternSequencePanel.cs` — UI для последовательности паттернов
+- `Assets/Editor/LevelEditor/SpriteOverridePanel.cs` — UI для override спрайтов
+
+### Runtime flow
+
+```
+LevelDataProvider.LoadLevelInfo()
+  → JsonUtility.FromJson<LevelInfoRef>(json)
+  → LoadPatternsCollectionAsync() → "PatternsCollection" (Addressable)
+  → LoadLocationThemeAsync(location) → "{location}_theme" (Addressable)
+  → LevelResolver.Resolve(levelRef, patterns, theme)
+  → LevelInfo (fully resolved, с spriteName для каждого obstacle)
+```
+
+ObstacleFactory / ObstacleSpawner работают с resolved LevelInfo — без изменений.
+
+### Editor flow (Location Level mode)
+
+```
+HandleFileSelected()
+  → LevelDataManager.LoadLevelRef(filePath)
+  → LevelDataManager.LoadPatternsCollection()
+  → LevelDataManager.LoadLocationTheme(location)
+  → LevelResolver.Resolve() → для отображения на tilemap
+HandleSaveLevelClicked()
+  → LevelDataManager.SaveLevelRef(_currentLevelRef) → сохраняется LevelInfoRef (ссылки)
+```
+
+### Миграция
+
+Menu: `Tools/Migration/` — 3 шага:
+1. Migrate PatternsCollection (удаляет spriteName, добавляет id)
+2. Migrate Location Themes (добавляет default)
+3. Migrate Level Files (из LevelInfo → LevelInfoRef с overrides)
+
+---
+
 ## Обновление документации
 
 Этот файл должен обновляться при:
