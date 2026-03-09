@@ -23,6 +23,12 @@
             ]
         },
         {
+            "type": 4,
+            "sprites": [
+                "obstacle_new_york_car_1"
+            ]
+        },
+        {
             "type": 9,
             "sprites": [
                 "coin"
