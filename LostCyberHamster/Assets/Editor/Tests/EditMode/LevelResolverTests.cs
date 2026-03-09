@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.System.LevelManagement;
 using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Assets.Tests.EditMode
 {
@@ -335,6 +337,7 @@ namespace Assets.Tests.EditMode
                 Ref("nonexistent"),
                 Ref("existing"));
 
+            LogAssert.Expect(LogType.Error, "[LevelResolver] Pattern 'nonexistent' not found in PatternsCollection. Skipping.");
             var result = LevelResolver.Resolve(levelRef, patterns, theme);
 
             Assert.AreEqual(1, result.patterns.Count);
