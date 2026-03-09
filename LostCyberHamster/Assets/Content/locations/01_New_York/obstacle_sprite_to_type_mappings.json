@@ -30,10 +30,15 @@
             ]
         },
         {
+            "type": 2,
+            "sprites": [
+                "obstacle_new_york_manhole"
+            ]
+        },
+        {
             "type": 3,
             "sprites": [
-                "obstacle_new_york_opened_box",
-                "obstacle_new_york_manhole"
+                "obstacle_new_york_opened_box"
             ]
         },
         {

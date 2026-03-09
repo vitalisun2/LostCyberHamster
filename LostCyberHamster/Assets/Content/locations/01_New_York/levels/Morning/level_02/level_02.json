@@ -1,4 +1,4 @@
-﻿{
+{
     "skyTexture": "",
     "background2Texture": "bg_2_new_york_morning",
     "backgroundTexture": "bg_new_york_morning",
@@ -11,7 +11,7 @@
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 22.200000762939453,
                     "y": -2.799999952316284
                 },
@@ -47,7 +47,7 @@
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 22.200000762939453,
                     "y": -2.799999952316284
                 },
@@ -95,7 +95,7 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 5.400000095367432,
                     "y": -2.799999952316284
                 },
@@ -119,7 +119,7 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 28.80000114440918,
                     "y": -2.799999952316284
                 },
@@ -137,19 +137,19 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 40.20000076293945,
                     "y": -2.799999952316284
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 45.20000076293945,
                     "y": -2.799999952316284
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 50.79999923706055,
                     "y": -2.799999952316284
                 },
@@ -173,13 +173,13 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 5.599999904632568,
                     "y": -1.8000000715255737
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 12.40000057220459,
                     "y": -1.8000000715255737
                 },
@@ -269,7 +269,7 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 5.400000095367432,
                     "y": -2.799999952316284
                 },
@@ -293,7 +293,7 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 28.80000114440918,
                     "y": -2.799999952316284
                 },
@@ -311,19 +311,19 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 40.20000076293945,
                     "y": -2.799999952316284
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 45.20000076293945,
                     "y": -2.799999952316284
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 50.79999923706055,
                     "y": -2.799999952316284
                 },
@@ -347,13 +347,13 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 5.599999904632568,
                     "y": -1.8000000715255737
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 12.40000057220459,
                     "y": -1.8000000715255737
                 },
@@ -431,7 +431,7 @@
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 22.200000762939453,
                     "y": -2.799999952316284
                 },
@@ -485,7 +485,7 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 9.800000190734863,
                     "y": -2.799999952316284
                 },
@@ -581,7 +581,7 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 9.800000190734863,
                     "y": -1.8000000715255737
                 },
@@ -617,25 +617,25 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 43.60000228881836,
                     "y": -1.8000000715255737
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 47.79999923706055,
                     "y": -1.8000000715255737
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 52.20000076293945,
                     "y": -1.8000000715255737
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 56.400001525878906,
                     "y": -1.8000000715255737
                 },
@@ -647,13 +647,13 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 63.20000076293945,
                     "y": -1.8000000715255737
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 64.80000305175781,
                     "y": -1.8000000715255737
                 },
@@ -695,7 +695,7 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 9.800000190734863,
                     "y": -2.799999952316284
                 },
@@ -791,7 +791,7 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 9.800000190734863,
                     "y": -1.8000000715255737
                 },
@@ -827,25 +827,25 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 43.60000228881836,
                     "y": -1.8000000715255737
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 47.79999923706055,
                     "y": -1.8000000715255737
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 52.20000076293945,
                     "y": -1.8000000715255737
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 56.400001525878906,
                     "y": -1.8000000715255737
                 },
@@ -857,13 +857,13 @@
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 63.20000076293945,
                     "y": -1.8000000715255737
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 64.80000305175781,
                     "y": -1.8000000715255737
                 },
@@ -887,7 +887,7 @@
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
-                    "type": 1,
+                    "type": 2,
                     "x": 22.200000762939453,
                     "y": -2.799999952316284
                 },
