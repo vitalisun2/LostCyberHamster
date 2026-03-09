@@ -1,4 +1,5 @@
-﻿using Assets.Scripts.Common.Models;
+﻿using Assets.Editor.LevelEditor;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts;
 using Assets.Scripts.System.LevelManagement;
 using System;
@@ -57,6 +58,9 @@ public class LevelTilemapEditor : EditorWindow
     private List<LevelFileDescriptor> _visibleLevelDescriptors = new();
     private LevelFileDescriptor? _selectedLevelDescriptor;
 
+    private PatternSequencePanel _patternSequencePanel;
+    private SpriteOverridePanel _spriteOverridePanel;
+
     private string _levelsDirectory;
     private string _levelDesignTemplatesDirectory;
     private string _spritesDirectory;
@@ -83,6 +87,8 @@ public class LevelTilemapEditor : EditorWindow
     public void CreateGUI()
     {
         _uiManager = new LevelTilemapUi(rootVisualElement, _opeLocation);
+        _patternSequencePanel = new PatternSequencePanel(rootVisualElement);
+        _spriteOverridePanel = new SpriteOverridePanel(rootVisualElement);
         SubscribeEvents();
         InitializePatternButtons();
         InitializeLevelDesignTemplateDirectory();
@@ -406,8 +412,11 @@ public class LevelTilemapEditor : EditorWindow
         
         if (isTemplateLocation)
         {
-            Debug.Log($"Сохранение шаблона уровня: {_selectedFile}");
-            LevelDataManager.SaveLevel(_currentLevelInfo, _selectedFile);
+            Debug.Log($"Сохранение PatternsCollection: {_selectedFile}");
+            SyncTemplatesFromLevelInfo();
+            var pcPath = Path.Combine(Consts.LocationsPath, Consts.TemplatesLocationName, "levels", "PatternsCollection.json");
+            var json = JsonUtility.ToJson(_patternsCollection, true);
+            File.WriteAllText(pcPath, json, System.Text.Encoding.UTF8);
         }
         else
         {
@@ -622,14 +631,20 @@ public class LevelTilemapEditor : EditorWindow
         if (isTemplateLocation)
         {
             _currentLevelRef = null;
-            _currentLevelInfo = LevelDataManager.LoadLevel(_selectedFile);
-            if (_currentLevelInfo == null)
+            _patternsCollection = LevelDataManager.LoadPatternsCollection();
+            if (_patternsCollection == null || _patternsCollection.patterns.Count == 0)
             {
-                Debug.LogWarning($"Не удалось загрузить уровень из файла {_selectedFile}");
+                Debug.LogWarning($"Не удалось загрузить PatternsCollection");
                 return;
             }
 
-            LevelDataManager.FixObstacleTypesInLevelInfoAndSaveToJson(_currentLocationName, _selectedFile, _currentLevelInfo);
+            // For display, resolve using NY theme (as templates reuse NY sprites)
+            _locationTheme = LevelDataManager.LoadLocationTheme("01_New_York");
+
+            // Build a virtual LevelInfoRef from the PatternsCollection for display
+            _currentLevelInfo = ResolveTemplatesForDisplay(_patternsCollection, _locationTheme);
+            _patternSequencePanel.Hide();
+            _spriteOverridePanel.Hide();
         }
         else
         {
@@ -643,6 +658,8 @@ public class LevelTilemapEditor : EditorWindow
             _patternsCollection = LevelDataManager.LoadPatternsCollection();
             _locationTheme = LevelDataManager.LoadLocationTheme(_currentLocationName);
             _currentLevelInfo = LevelResolver.Resolve(_currentLevelRef, _patternsCollection, _locationTheme);
+            _patternSequencePanel.Show(_currentLevelRef, _patternsCollection);
+            _spriteOverridePanel.Hide();
         }
 
         // 1) Вычисляем ширину для одной "прокрутки" паттерна
@@ -1135,6 +1152,8 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.OnPatternDescriptionChanged += HandlePatternDescriptionChanged;
         _uiManager.OnDaypartChanged += HandleDaypartChanged;
 
+        _patternSequencePanel.OnSequenceChanged += HandlePatternSequenceChanged;
+        _spriteOverridePanel.OnOverrideChanged += HandleSpriteOverrideChanged;
 
         Tilemap.tilemapTileChanged += OnTileChanged;
     }
@@ -1161,6 +1180,111 @@ public class LevelTilemapEditor : EditorWindow
             _uiManager.OnDaypartChanged -= HandleDaypartChanged;
         }
 
+        if (_patternSequencePanel != null)
+            _patternSequencePanel.OnSequenceChanged -= HandlePatternSequenceChanged;
+        if (_spriteOverridePanel != null)
+            _spriteOverridePanel.OnOverrideChanged -= HandleSpriteOverrideChanged;
+
         Tilemap.tilemapTileChanged -= OnTileChanged;
+    }
+
+    /// <summary>
+    /// Re-resolves and refreshes tilemap when pattern sequence changes.
+    /// </summary>
+    private void HandlePatternSequenceChanged()
+    {
+        if (_currentLevelRef == null || _patternsCollection == null || _locationTheme == null)
+            return;
+
+        _currentLevelInfo = LevelResolver.Resolve(_currentLevelRef, _patternsCollection, _locationTheme);
+
+        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+        _uiManager.UpdatePatternsList(patternNames);
+
+        if (patternNames.Count > 0)
+            _uiManager.SelectFirstPattern();
+    }
+
+    /// <summary>
+    /// Re-resolves and refreshes current pattern when a sprite override changes.
+    /// </summary>
+    private void HandleSpriteOverrideChanged()
+    {
+        if (_currentLevelRef == null || _patternsCollection == null || _locationTheme == null)
+            return;
+
+        _currentLevelInfo = LevelResolver.Resolve(_currentLevelRef, _patternsCollection, _locationTheme);
+        AddTilesToTilemap();
+    }
+
+    /// <summary>
+    /// Converts PatternsCollection to LevelInfo for tilemap display in Templates mode.
+    /// Uses the given theme to resolve sprite names for display purposes.
+    /// </summary>
+    private static LevelInfo ResolveTemplatesForDisplay(PatternsCollection pc, LocationTheme theme)
+    {
+        var levelRef = new LevelInfoRef
+        {
+            skyTexture = "",
+            backgroundTexture = "",
+            background2Texture = "",
+            roadTexture = "",
+            location = "01_New_York"
+        };
+
+        foreach (var template in pc.patterns)
+        {
+            levelRef.patternSequence.Add(new PatternRef
+            {
+                @ref = template.name,
+                spriteSeed = 0,
+                overrides = new List<SpriteOverride>()
+            });
+        }
+
+        return LevelResolver.Resolve(levelRef, pc, theme);
+    }
+
+    /// <summary>
+    /// Syncs current tilemap state back into PatternsCollection.
+    /// Updates obstacles in the currently selected pattern template.
+    /// </summary>
+    private void SyncTemplatesFromLevelInfo()
+    {
+        if (_patternsCollection == null || _currentLevelInfo == null)
+            return;
+
+        // Only sync the currently selected pattern
+        if (_selectedPatternIndex < 0 || _selectedPatternIndex >= _patternsCollection.patterns.Count)
+            return;
+
+        var template = _patternsCollection.patterns[_selectedPatternIndex];
+        var resolvedPattern = _currentLevelInfo.patterns[_selectedPatternIndex];
+
+        // Rebuild obstacles from resolved pattern — keep existing ids where possible
+        var newObstacles = new List<ObstacleSlot>();
+        int nextId = template.nextObstacleId;
+
+        foreach (var obstacle in resolvedPattern.obstacles)
+        {
+            // Try to find existing slot by position
+            var existingSlot = template.obstacles.Find(s =>
+                s.type == obstacle.type &&
+                Math.Abs(s.x - obstacle.x) < 0.01f &&
+                Math.Abs(s.y - obstacle.y) < 0.01f);
+
+            newObstacles.Add(new ObstacleSlot
+            {
+                id = existingSlot?.id ?? nextId++,
+                type = obstacle.type,
+                x = obstacle.x,
+                y = obstacle.y
+            });
+        }
+
+        template.obstacles = newObstacles;
+        template.nextObstacleId = nextId;
+        template.name = resolvedPattern.name;
+        template.description = resolvedPattern.desсription ?? "";
     }
 }

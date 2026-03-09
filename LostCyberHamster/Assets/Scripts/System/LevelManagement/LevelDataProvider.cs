@@ -240,7 +240,7 @@ public static void ReleaseIntroSprites()
 
         private static async Task<TextAsset> LoadLocationThemeAsync(string location)
         {
-            var address = $"{location}_theme";
+            var address = $"{location}/obstacle_sprite_to_type_mappings";
             return await Addressables.LoadAssetAsync<TextAsset>(address).Task;
         }
 

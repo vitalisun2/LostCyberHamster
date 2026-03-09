@@ -496,7 +496,7 @@ obstacle_paris_big_alive_7_idle-1.png ... -18.png
 LevelDataProvider.LoadLevelInfo()
   → JsonUtility.FromJson<LevelInfoRef>(json)
   → LoadPatternsCollectionAsync() → "PatternsCollection" (Addressable)
-  → LoadLocationThemeAsync(location) → "{location}_theme" (Addressable)
+  → LoadLocationThemeAsync(location) → "{location}/obstacle_sprite_to_type_mappings" (Addressable)
   → LevelResolver.Resolve(levelRef, patterns, theme)
   → LevelInfo (fully resolved, с spriteName для каждого obstacle)
 ```
