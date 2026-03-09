@@ -92,7 +92,7 @@ namespace Assets.Scripts.System.LevelManagement
             {
                 if (spriteSeed != 0 && mapping.sprites.Count > 1)
                 {
-                    var rng = new System.Random(spriteSeed + slot.id);
+                    var rng = new global::System.Random(spriteSeed + slot.id);
                     var index = rng.Next(mapping.sprites.Count);
                     return mapping.sprites[index];
                 }
