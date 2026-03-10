@@ -30,7 +30,12 @@ public class LevelTilemapUi
     private TextField _templateLevelNameField;  // #template-level-name
     private TextField _patternNameField;
     private TextField _patternDescriptionField;
+    private TextField _patternSearchField;
     private RadioButtonGroup _daypartRadioGroup;
+    private VisualElement _patternsSection;
+    private VisualElement _patternButtonsRow;
+    private VisualElement _createLevelRow;
+    private Label _spritesLabel;
     private AddressableSetLease<Sprite> _obstacleSpritesLease;
     private const string _templatesFallbackLocation = "01_New_York"; // Template levels reuse New York obstacles
     private readonly PartOfDayEnum[] _daypartOrder = new[]
@@ -59,6 +64,7 @@ public class LevelTilemapUi
     public event Action<string> OnPatternNameChanged;
     public event Action<string> OnPatternDescriptionChanged;
     public event Action<PartOfDayEnum> OnDaypartChanged;
+    public event Action<string> OnPatternSearchChanged;
 
     public LevelTilemapUi(VisualElement root,
         string opeLocation)
@@ -75,6 +81,7 @@ public class LevelTilemapUi
         InitializeFloatFields();
         InitializeTextFields();
         InitializeDaypartSelector();
+        InitializePatternSearch();
     }
 
     private void SetElements(VisualElement root)
@@ -97,7 +104,14 @@ public class LevelTilemapUi
         }
         _patternNameField = root.Q<TextField>("selected-pattern-name");
         _patternDescriptionField = root.Q<TextField>("selected-pattern-description");
+        _patternSearchField = root.Q<TextField>("pattern-search-field");
         _daypartRadioGroup = root.Q<RadioButtonGroup>("daypart-radio-group");
+
+        // Section containers for mode visibility
+        _patternsSection = root.Q<VisualElement>("VisualElement"); // named container with patterns
+        _patternButtonsRow = root.Q<Button>("add-pattern-btn")?.parent;
+        _createLevelRow = root.Q<Button>("create-level-btn")?.parent;
+        _spritesLabel = root.Q<Label>("sprites-label");
 
 
     }
@@ -644,6 +658,54 @@ public class LevelTilemapUi
         if (moveDown != null) moveDown.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
+    /// <summary>
+    /// Applies UI visibility based on the current editor mode.
+    /// Templates mode: shows pattern editing tools, hides file list and level-only elements.
+    /// Level mode: shows file list, daypart, hides pattern editing tools.
+    /// </summary>
+    public void ApplyModeUI(bool isTemplateMode)
+    {
+        // Templates-only elements
+        SetVisible(_templateLevelNameParent, isTemplateMode);
+        SetVisible(_patternsSection, isTemplateMode);
+        SetVisible(_patternButtonsRow, isTemplateMode);
+        SetVisible(_obstacleTypeDropdownField, isTemplateMode);
+        SetVisible(_isCollectableOnRoofToggle, isTemplateMode);
+        SetVisible(_spritesScrollView, isTemplateMode);
+        SetVisible(_spritesLabel, isTemplateMode);
+        SetVisible(_patternSearchField, isTemplateMode);
+
+        // Кнопки up/down скрыты в Templates (порядок неважен)
+        SetMoveButtonsVisible(!isTemplateMode);
+
+        // Level-only elements
+        SetDaypartSelectorVisible(!isTemplateMode);
+        SetFilesListVisible(!isTemplateMode);
+
+        // Create button — visible in both modes
+        SetVisible(_createLevelRow, true);
+    }
+
+    private static void SetVisible(VisualElement element, bool isVisible)
+    {
+        if (element == null) return;
+        element.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    private void InitializePatternSearch()
+    {
+        if (_patternSearchField == null)
+        {
+            Debug.LogWarning("TextField 'pattern-search-field' not found in UXML.");
+            return;
+        }
+
+        _patternSearchField.RegisterValueChangedCallback(evt =>
+        {
+            OnPatternSearchChanged?.Invoke(evt.newValue);
+        });
+    }
+
     public void UpdatePatternsList(List<string> patternNames, int selectedIndex = 0)
     {
         Debug.Log($"[UI] Updating patterns list with {patternNames.Count} patterns, selecting index {selectedIndex}");
@@ -732,6 +794,15 @@ public class LevelTilemapUi
         {
             _patternsList.selectedIndex = 0;
             OnPatternSelected?.Invoke(_patternsList.selectedIndex);
+        }
+    }
+
+    public void SelectPatternByIndex(int index)
+    {
+        if (_patternsList.itemsSource != null && index >= 0 && index < _patternsList.itemsSource.Count)
+        {
+            _patternsList.selectedIndex = index;
+            OnPatternSelected?.Invoke(index);
         }
     }
 

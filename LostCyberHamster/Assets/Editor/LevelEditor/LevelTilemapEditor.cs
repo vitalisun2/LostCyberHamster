@@ -62,6 +62,10 @@ public class LevelTilemapEditor : EditorWindow
     private PatternSequencePanel _patternSequencePanel;
     private SpriteOverridePanel _spriteOverridePanel;
 
+    private List<string> _allPatternNames = new();
+    private List<int> _filteredPatternIndices = new();
+    private string _patternSearchFilter = "";
+
     private string _levelsDirectory;
     private string _levelDesignTemplatesDirectory;
     private string _spritesDirectory;
@@ -493,21 +497,12 @@ public class LevelTilemapEditor : EditorWindow
         _currentLocationName = newValue;
 
         var isTemplateLocation = string.Equals(newValue, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-        if (isTemplateLocation)
-        {
-            _uiManager.SetTemplateNameFieldVisible(true);
-            _uiManager.SetDaypartSelectorVisible(false);
-            _uiManager.SetFilesListVisible(false);
-            _uiManager.SetMoveButtonsVisible(false);
-        }
-        else
+        _uiManager.ApplyModeUI(isTemplateLocation);
+
+        if (!isTemplateLocation)
         {
             _selectedDaypart = PartOfDayEnum.Morning;
-            _uiManager.SetTemplateNameFieldVisible(false);
-            _uiManager.SetDaypartSelectorVisible(true);
             _uiManager.SetSelectedDaypart(_selectedDaypart);
-            _uiManager.SetFilesListVisible(true);
-            _uiManager.SetMoveButtonsVisible(true);
         }
 
         _selectedLevelDescriptor = null;
@@ -758,7 +753,17 @@ public class LevelTilemapEditor : EditorWindow
             HandlePatternDescriptionChanged(_uiManager.CurrentPatternDescription);
         }
 
-        _selectedPatternIndex = selectedIndex;
+        // Map filtered index to real index when search filter is active
+        var isTemplateMode = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+        if (isTemplateMode && _filteredPatternIndices.Count > 0 && selectedIndex >= 0 && selectedIndex < _filteredPatternIndices.Count)
+        {
+            _selectedPatternIndex = _filteredPatternIndices[selectedIndex];
+        }
+        else
+        {
+            _selectedPatternIndex = selectedIndex;
+        }
+
         if (_selectedPatternIndex < 0 || _selectedPatternIndex >= _currentLevelInfo.patterns.Count)
         {
             _currentPattern = null;
@@ -1160,6 +1165,57 @@ public class LevelTilemapEditor : EditorWindow
         _currentLevelInfo.patterns[_selectedPatternIndex] = pattern;
     }
 
+    /// <summary>
+    /// Фильтрация списка паттернов по поисковому запросу (Templates mode).
+    /// </summary>
+    private void HandlePatternSearchChanged(string searchText)
+    {
+        _patternSearchFilter = searchText ?? "";
+        RefreshFilteredPatternsList();
+    }
+
+    /// <summary>
+    /// Обновляет отфильтрованный список паттернов и UI. Сохраняет выбор, если возможно.
+    /// </summary>
+    private void RefreshFilteredPatternsList()
+    {
+        if (_currentLevelInfo == null) return;
+
+        _allPatternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+
+        if (string.IsNullOrEmpty(_patternSearchFilter))
+        {
+            _filteredPatternIndices = Enumerable.Range(0, _allPatternNames.Count).ToList();
+        }
+        else
+        {
+            _filteredPatternIndices = new List<int>();
+            for (int i = 0; i < _allPatternNames.Count; i++)
+            {
+                if (_allPatternNames[i].IndexOf(_patternSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                    _filteredPatternIndices.Add(i);
+            }
+        }
+
+        var filteredNames = _filteredPatternIndices.Select(i => _allPatternNames[i]).ToList();
+        _uiManager.UpdatePatternsList(filteredNames);
+
+        // Preserve selection if possible
+        if (_selectedPatternIndex >= 0)
+        {
+            var posInFiltered = _filteredPatternIndices.IndexOf(_selectedPatternIndex);
+            if (posInFiltered >= 0)
+            {
+                _uiManager.SelectPatternByIndex(posInFiltered);
+                return;
+            }
+        }
+
+        // Select first filtered if current is not visible
+        if (_filteredPatternIndices.Count > 0)
+            _uiManager.SelectFirstPattern();
+    }
+
 
     /// <summary>
     /// Подписка на события UI и Tilemap.
@@ -1178,6 +1234,7 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.OnPatternNameChanged += HandlePatternNameChanged;
         _uiManager.OnPatternDescriptionChanged += HandlePatternDescriptionChanged;
         _uiManager.OnDaypartChanged += HandleDaypartChanged;
+        _uiManager.OnPatternSearchChanged += HandlePatternSearchChanged;
 
         _patternSequencePanel.OnSequenceChanged += HandlePatternSequenceChanged;
         _spriteOverridePanel.OnOverrideChanged += HandleSpriteOverrideChanged;
@@ -1204,6 +1261,7 @@ public class LevelTilemapEditor : EditorWindow
             _uiManager.OnPatternNameChanged -= HandlePatternNameChanged;
             _uiManager.OnPatternDescriptionChanged -= HandlePatternDescriptionChanged;
             _uiManager.OnDaypartChanged -= HandleDaypartChanged;
+            _uiManager.OnPatternSearchChanged -= HandlePatternSearchChanged;
         }
 
         if (_patternSequencePanel != null)

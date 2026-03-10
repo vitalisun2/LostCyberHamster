@@ -20,8 +20,6 @@ namespace Assets.Editor.LevelEditor
         private IntegerField _seedField;
         private Button _addButton;
         private Button _removeButton;
-        private Button _moveUpButton;
-        private Button _moveDownButton;
         private Button _randomizeSeedButton;
 
         private PatternsCollection _patternsCollection;
@@ -106,6 +104,7 @@ namespace Assets.Editor.LevelEditor
 
             _sequenceList = new ListView();
             _sequenceList.selectionType = SelectionType.Single;
+            _sequenceList.reorderable = true;
             _sequenceList.style.flexGrow = 1;
             _sequenceList.makeItem = () => new Label();
             _sequenceList.bindItem = (e, i) =>
@@ -116,6 +115,7 @@ namespace Assets.Editor.LevelEditor
                 ((Label)e).text = $"{i + 1}. {patternRef.@ref}{(hasOverrides ? " (!)" : "")}";
             };
             _sequenceList.selectionChanged += OnSequenceSelectionChanged;
+            _sequenceList.itemIndexChanged += OnSequenceReordered;
             rightColumn.Add(_sequenceList);
 
             // Buttons row
@@ -124,13 +124,9 @@ namespace Assets.Editor.LevelEditor
             buttonsRow.style.marginTop = 4;
             _root.Add(buttonsRow);
 
-            _moveUpButton = new Button(MoveUp) { text = "Up" };
-            _moveDownButton = new Button(MoveDown) { text = "Down" };
             _addButton = new Button(AddPattern) { text = "+ Add" };
             _removeButton = new Button(RemovePattern) { text = "Remove" };
 
-            buttonsRow.Add(_moveUpButton);
-            buttonsRow.Add(_moveDownButton);
             buttonsRow.Add(_addButton);
             buttonsRow.Add(_removeButton);
 
@@ -252,31 +248,15 @@ namespace Assets.Editor.LevelEditor
             OnSequenceChanged?.Invoke();
         }
 
-        private void MoveUp()
+        private void OnSequenceReordered(int oldIndex, int newIndex)
         {
-            if (_levelRef == null || _selectedSequenceIndex <= 0)
-                return;
+            if (_levelRef == null) return;
 
-            var temp = _levelRef.patternSequence[_selectedSequenceIndex];
-            _levelRef.patternSequence[_selectedSequenceIndex] = _levelRef.patternSequence[_selectedSequenceIndex - 1];
-            _levelRef.patternSequence[_selectedSequenceIndex - 1] = temp;
-            _selectedSequenceIndex--;
+            // ListView already moved the item in itemsSource, just update selection and notify
+            _selectedSequenceIndex = newIndex;
             _sequenceList.Rebuild();
             _sequenceList.SetSelection(_selectedSequenceIndex);
-            OnSequenceChanged?.Invoke();
-        }
-
-        private void MoveDown()
-        {
-            if (_levelRef == null || _selectedSequenceIndex < 0 || _selectedSequenceIndex >= _levelRef.patternSequence.Count - 1)
-                return;
-
-            var temp = _levelRef.patternSequence[_selectedSequenceIndex];
-            _levelRef.patternSequence[_selectedSequenceIndex] = _levelRef.patternSequence[_selectedSequenceIndex + 1];
-            _levelRef.patternSequence[_selectedSequenceIndex + 1] = temp;
-            _selectedSequenceIndex++;
-            _sequenceList.Rebuild();
-            _sequenceList.SetSelection(_selectedSequenceIndex);
+            UpdateSeedField();
             OnSequenceChanged?.Invoke();
         }
     }
