@@ -644,7 +644,8 @@ public class LevelTilemapEditor : EditorWindow
         _patternSequencePanel.Hide();
         _spriteOverridePanel.Hide();
 
-        var tilemapGameObject = SceneCreator.CreateSceneWithTilemap(DefaultTilemapWidth, Consts.TemplatesFallbackLocation, "morning");
+        int sceneWidth = Math.Max(DefaultTilemapWidth, (int)Math.Ceiling(ComputeMaxPatternWidth(_currentLevelInfo.patterns)));
+        var tilemapGameObject = SceneCreator.CreateSceneWithTilemap(sceneWidth, Consts.TemplatesFallbackLocation, "morning");
         _tilemapInScene = tilemapGameObject.GetComponent<Tilemap>();
 
         if (_currentLevelInfo.patterns.Count == 0)
@@ -956,6 +957,27 @@ public class LevelTilemapEditor : EditorWindow
 
         var bounds = _patternBounds[patternIndex];
         FrameToBounds(bounds);
+    }
+
+    /// <summary>
+    /// Вычисляет максимальную ширину среди всех паттернов (по obstacle.x).
+    /// </summary>
+    private float ComputeMaxPatternWidth(List<Pattern> patterns)
+    {
+        float maxWidth = 0f;
+        foreach (var pattern in patterns)
+        {
+            if (pattern.obstacles == null || pattern.obstacles.Count == 0) continue;
+            float minX = float.MaxValue, maxX = float.MinValue;
+            foreach (var obs in pattern.obstacles)
+            {
+                if (obs.x < minX) minX = obs.x;
+                if (obs.x > maxX) maxX = obs.x;
+            }
+            float width = maxX - minX + PatternGap;
+            if (width > maxWidth) maxWidth = width;
+        }
+        return maxWidth;
     }
 
     /// <summary>
