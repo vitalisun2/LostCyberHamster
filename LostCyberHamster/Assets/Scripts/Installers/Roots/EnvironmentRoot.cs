@@ -6,5 +6,6 @@ namespace Assets.Scripts.Installers.Roots
     {
         public Transform ObstaclesPool;
         public Transform ObstaclesSpawnedContainer;
+        public Transform DecorationsContainer;
     }
 }

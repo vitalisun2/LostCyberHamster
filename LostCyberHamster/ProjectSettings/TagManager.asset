@@ -55,6 +55,9 @@ TagManager:
   - name: Road
     uniqueID: 3612175869
     locked: 0
+  - name: Decor
+    uniqueID: 2847193650
+    locked: 0
   - name: UpperSprites
     uniqueID: 3490192917
     locked: 0

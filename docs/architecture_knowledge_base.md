@@ -547,6 +547,38 @@ Menu: `Tools/Migration/` — 3 шага:
 
 ---
 
+## Decoration System (Runtime)
+
+### Архитектура
+Декор (кусты, деревья) — чисто визуальный слой, не участвующий в геймплее. Обрабатывается отдельно от obstacles.
+
+### Ключевые компоненты
+- **`DecorationSpawner.cs`** — MonoBehaviour, Singleton. Создаёт GO из `decorationPatterns`, скроллит с RoadScrollSpeed, активирует/деактивирует по видимости.
+- **`InitDecorationsLoadingTask.cs`** — загрузочная задача, вызывает `DecorationSpawner.Init()` после инициализации дороги.
+
+### Координаты декора
+- В JSON хранятся **cell-координаты** (int `xPos`, `yPos`) из тайлмапа редактора
+- Конвертация в world: `worldX = xPos * GridSnapStep (0.2)`, `worldY = yPos * GridSnapStep (0.2)`
+- Координаты **абсолютные** для всего уровня (не привязаны к паттернам)
+
+### Sorting Layer "Decor"
+- Между Road и UpperSprites: Sky → Background2 → Background → Road → **Decor** → UpperSprites → Hamster → LowerSprites
+- Y-based sortingOrder: `sortingOrder = RoundToInt(-worldY * 100)` — нижние элементы перекрывают верхние
+
+### Отличия от Obstacles
+| | Obstacles | Decorations |
+|---|---|---|
+| Координаты | локальные (внутри паттерна) | абсолютные (для всего уровня) |
+| Спавн | пачками, с dynamic offset | потоком, по мере приближения к экрану |
+| Коллизии | да (BoxCollider2D) | нет |
+| Компонент | Obstacle (MonoBehaviour) | просто SpriteRenderer |
+| Sorting | UpperSprites / LowerSprites | Decor (Y-based order) |
+
+### EnvironmentRoot
+Содержит `DecorationsContainer` — дочерний Transform для хранения декор-объектов.
+
+---
+
 ## HamsterBot Architecture
 
 ### Компоненты бота

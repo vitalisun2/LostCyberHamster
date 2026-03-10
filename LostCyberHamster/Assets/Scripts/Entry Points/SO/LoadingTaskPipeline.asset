@@ -42,6 +42,7 @@ MonoBehaviour:
         - rid: 6570499326113218621
         - rid: 6570499326113218624
         - rid: 6570499326113218625
+        - rid: 8847391099000000001
         - rid: 1442725433635242043
     - rid: 6570499326113218621
       type: {class: InitCameraLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
@@ -69,5 +70,9 @@ MonoBehaviour:
         _children: []
     - rid: 6570499326113218627
       type: {class: InitBackground2LoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []
+    - rid: 8847391099000000001
+      type: {class: InitDecorationsLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
       data:
         _children: []
