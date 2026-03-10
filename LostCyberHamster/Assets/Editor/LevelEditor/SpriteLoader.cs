@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -8,6 +9,24 @@ public static class SpriteLoader
     private static readonly Dictionary<string, Sprite> _spriteCache = new();
     private static readonly Dictionary<string, AsyncOperationHandle> _handleCache = new();
 
+    private static readonly Regex _frameSuffixRegex = new(@"-\d+$", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Удаляет суффикс кадра (-0, -1, ...) из имени спрайта.
+    /// </summary>
+    public static string StripFrameSuffix(string spriteName)
+    {
+        return string.IsNullOrEmpty(spriteName) ? spriteName : _frameSuffixRegex.Replace(spriteName, "");
+    }
+
+    /// <summary>
+    /// Регистрирует ранее загруженный спрайт в кеше (например, из label-загрузки).
+    /// </summary>
+    public static void RegisterSprite(string name, Sprite sprite)
+    {
+        if (!string.IsNullOrEmpty(name) && sprite != null)
+            _spriteCache[name] = sprite;
+    }
 
     public static Sprite LoadSpriteSync(string spriteName)
     {

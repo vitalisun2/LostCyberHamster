@@ -9,10 +9,14 @@ public static class ObstacleSpriteTypeMappingsManager
     private static System.Collections.Generic.Dictionary<string, ObstacleTypeEnum> _bindings = new();
     private static string _currentLocation;
 
+    private static readonly System.Text.RegularExpressions.Regex _frameSuffixRegex =
+        new(@"-\d+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
     private static string NormalizeSpriteName(string spriteName)
     {
         var shortName = System.IO.Path.GetFileNameWithoutExtension(spriteName.ToLower());
-        return shortName;
+        // Убираем суффикс кадра (-0, -1, ...) из имён sub-sprite анимаций
+        return _frameSuffixRegex.Replace(shortName, "");
     }
 
     /// <summary>

@@ -363,6 +363,10 @@ public class LevelTilemapUi
 
         var sprites = allSprites;
 
+        // Группируем sub-sprites по базовому имени (без суффикса кадра -N).
+        // Для анимированных спрайт-шитов показываем только первый кадр.
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         foreach (var sprite in sprites
                      .OrderBy(sprite => sprite?.name, StringComparer.OrdinalIgnoreCase)
                      .ToList())
@@ -377,6 +381,15 @@ public class LevelTilemapUi
                 continue;
             }
 
+            var baseName = SpriteLoader.StripFrameSuffix(sprite.name);
+            if (!seen.Add(baseName))
+            {
+                continue; // Уже показали представителя этого спрайт-шита
+            }
+
+            // Кешируем спрайт под базовым именем для последующей загрузки в кисть
+            SpriteLoader.RegisterSprite(baseName, sprite);
+
             var container = new Button();
             container.AddToClassList("sprite");
 
@@ -387,7 +400,7 @@ public class LevelTilemapUi
             };
 
             container.Add(spriteImage);
-            container.RegisterCallback<ClickEvent, string>(OnAssetClick, sprite.name);
+            container.RegisterCallback<ClickEvent, string>(OnAssetClick, baseName);
             _spritesScrollView.Add(container);
         }
 
