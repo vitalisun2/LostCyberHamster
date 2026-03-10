@@ -1226,7 +1226,7 @@ public class LevelTilemapEditor : EditorWindow
         var levelRef = new LevelInfoRef
         {
             skyTexture = "",
-            backgroundTexture = "",
+            backgroundTexture = "bg_new_york_morning",
             background2Texture = "",
             roadTexture = "",
             location = "01_New_York"

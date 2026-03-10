@@ -332,7 +332,7 @@ public class LevelTilemapUi
         }
         
         // Load decoration sprites
-        if (!string.IsNullOrWhiteSpace(decorLabel))
+        if (!string.IsNullOrWhiteSpace(decorLabel) && AddressableLoader.HasAssetsForLabel(decorLabel))
         {
             try
             {

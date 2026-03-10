@@ -125,6 +125,21 @@ namespace Assets.Scripts.System.Resources
             }
         }
 
+        /// <summary>
+        /// Checks whether any assets exist for the given label. Editor-only synchronous call.
+        /// </summary>
+        public static bool HasAssetsForLabel(string label)
+        {
+            if (string.IsNullOrWhiteSpace(label))
+                return false;
+
+            var handle = Addressables.LoadResourceLocationsAsync(label);
+            var locations = handle.WaitForCompletion();
+            bool hasAssets = locations != null && locations.Count > 0;
+            Addressables.Release(handle);
+            return hasAssets;
+        }
+
         public static async Task<AddressableLocationsLease> LoadLocationsAsync(string label, Type assetType, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(label))
