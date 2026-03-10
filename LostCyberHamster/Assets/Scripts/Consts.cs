@@ -50,6 +50,11 @@ namespace Assets.Scripts
 
         public static string TemplatesLocationName = "level_design_templates";
 
+        /// <summary>
+        /// Fallback-локация для Templates: спрайты и маппинги загружаются отсюда.
+        /// </summary>
+        public static string TemplatesFallbackLocation = "01_New_York";
+
         /*  путь до общих коллектиблов  */
         public static string SharedSpritesPath = Path.Combine("Assets", "Content", "shared", "sprites");
 

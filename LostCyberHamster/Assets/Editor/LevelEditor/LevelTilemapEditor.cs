@@ -229,7 +229,11 @@ public class LevelTilemapEditor : EditorWindow
 
         // For obstacle sprites in Templates, apply placement rules
         if (!ObstacleSpriteTypeMappingsManager.TryGetType(tile.sprite.name, out var obstacleType))
-            throw new InvalidOperationException($"No mapping found for sprite '{tile.sprite.name}'");
+        {
+            changedTilemap.SetTile(cellPosition, null);
+            Debug.LogWarning($"No mapping found for sprite '{tile.sprite.name}'. Tile removed.");
+            return;
+        }
 
         var strategy = TilePlacementStrategies.GetStrategyForType(obstacleType, _isCollectableOnRoof);
         var initialWorldPos = changedTilemap.CellToWorld(cellPosition);
@@ -502,8 +506,12 @@ public class LevelTilemapEditor : EditorWindow
     _uiManager.SetObstaclesSpritesListView(newValue, _spritesExt);
         _uiManager.AddCollectablesToSpritesListView();
 
-        /* Загружаем маппинг спрайт‑типов для выбранной локации */
-        ObstacleSpriteTypeMappingsManager.LoadBindings(newValue, success =>
+        /* Загружаем маппинг спрайт‑типов для выбранной локации.
+           Templates не имеет своих спрайтов — используем fallback-локацию. */
+        var mappingLocation = string.Equals(newValue, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase)
+            ? Consts.TemplatesFallbackLocation
+            : newValue;
+        ObstacleSpriteTypeMappingsManager.LoadBindings(mappingLocation, success =>
         {
             if (!success)
                 Debug.LogWarning($"No mapping file yet for '{newValue}'. It will be created on first save.");

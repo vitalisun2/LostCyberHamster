@@ -37,7 +37,7 @@ public class LevelTilemapUi
     private VisualElement _createLevelRow;
     private Label _spritesLabel;
     private AddressableSetLease<Sprite> _obstacleSpritesLease;
-    private const string _templatesFallbackLocation = "01_New_York"; // Template levels reuse New York obstacles
+    private static string _templatesFallbackLocation => Consts.TemplatesFallbackLocation;
     private readonly PartOfDayEnum[] _daypartOrder = new[]
     {
         PartOfDayEnum.Morning,
