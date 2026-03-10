@@ -16,9 +16,6 @@
         </ui:RadioButtonGroup>
         <ui:ListView name="files-list-view" style="min-height: 30px; max-height: 100px; height: auto;" />
     </ui:VisualElement>
-    <ui:VisualElement style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 120px; min-height: 50px; height: auto;">
-        <ui:FloatField label="Pattern Duration (min)" value="1" name="patternDuration" />
-    </ui:VisualElement>
     <ui:VisualElement name="VisualElement" style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 500px; min-height: 100px; height: auto;">
         <ui:Label text="patterns" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
         <ui:TextField label="Selected pattern name" placeholder-text="filler text" name="selected-pattern-name" />

@@ -38,11 +38,6 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private const string _opeLocation = "Assets/Editor/LevelEditor";
 
-    /// <summary>
-    /// Длительность паттерна в минутах.
-    /// </summary>
-    private float _patternDurationMinutes = 1f;
-
     private LevelTilemapUi _uiManager;
     private LevelInfo _currentLevelInfo;
     private LevelInfoRef _currentLevelRef;
@@ -50,9 +45,17 @@ public class LevelTilemapEditor : EditorWindow
     private LocationTheme _locationTheme;
     private string _selectedFile;
     private int _selectedPatternIndex = -1;
-    private Tilemap _tipeMapInScene;
-    private Pattern _currentPattern;
+    private Tilemap _tilemapInScene;
     private bool _isCollectableOnRoof;
+
+    private bool IsTemplateMode => string.Equals(_currentLocationName,
+        Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+
+    private Pattern CurrentPattern =>
+        _selectedPatternIndex >= 0 && _currentLevelInfo?.patterns != null
+            && _selectedPatternIndex < _currentLevelInfo.patterns.Count
+            ? _currentLevelInfo.patterns[_selectedPatternIndex]
+            : null;
     private bool _isTilemapBulkOperation;
     private PartOfDayEnum _selectedDaypart = PartOfDayEnum.Morning;
     private List<LevelFileDescriptor> _allLevelDescriptors = new();
@@ -176,7 +179,7 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        if (changedTilemap != _tipeMapInScene)
+        if (changedTilemap != _tilemapInScene)
         {
             Tilemap.tilemapTileChanged += OnTileChanged;
             return;
@@ -203,12 +206,10 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void ProcessTileChange(Tilemap changedTilemap, Tile tile, Vector3Int cellPosition)
     {
-        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-        
         // For decoration sprites (starting with "decor"), allow placement only in non-template locations
         if (tile.sprite.name.StartsWith("decor", StringComparison.OrdinalIgnoreCase))
         {
-            if (isTemplateLocation)
+            if (IsTemplateMode)
             {
                 // Decorations not allowed in Templates
                 changedTilemap.SetTile(cellPosition, null);
@@ -219,7 +220,7 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         // For obstacle sprites in specific locations (not templates), block editing
-        if (!isTemplateLocation)
+        if (!IsTemplateMode)
         {
             // Obstacles are read-only in specific locations
             changedTilemap.SetTile(cellPosition, null);
@@ -258,15 +259,14 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void UpdateCurrentLevelInfoFromTilemap()
     {
-        if (_tipeMapInScene == null || _currentLevelInfo == null)
+        if (_tilemapInScene == null || _currentLevelInfo == null)
         {
             Debug.LogWarning("Tilemap или CurrentLevelInfo не инициализированы.");
             return;
         }
 
         // For specific locations (not templates), decorations are synced only on save
-        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-        if (!isTemplateLocation)
+        if (!IsTemplateMode)
         {
             return;
         }
@@ -281,13 +281,13 @@ public class LevelTilemapEditor : EditorWindow
         var selectedPattern = _currentLevelInfo.patterns[_selectedPatternIndex];
         var updatedObstacles = new List<ObstacleModel>();
 
-        foreach (var cellPos in _tipeMapInScene.cellBounds.allPositionsWithin)
+        foreach (var cellPos in _tilemapInScene.cellBounds.allPositionsWithin)
         {
-            var tile = _tipeMapInScene.GetTile(cellPos) as Tile;
+            var tile = _tilemapInScene.GetTile(cellPos) as Tile;
             if (tile == null || tile.sprite == null)
                 continue;
 
-            updatedObstacles.Add(CreateObstacleModelFromCell(_tipeMapInScene, cellPos, tile));
+            updatedObstacles.Add(CreateObstacleModelFromCell(_tilemapInScene, cellPos, tile));
         }
 
         selectedPattern.obstacles = updatedObstacles;
@@ -328,7 +328,7 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void SyncDecorationsFromTilemap()
     {
-        if (_tipeMapInScene == null || _currentLevelInfo == null)
+        if (_tilemapInScene == null || _currentLevelInfo == null)
         {
             Debug.LogWarning("[LevelTilemapEditor] Tilemap или CurrentLevelInfo не инициализированы.");
             return;
@@ -336,9 +336,9 @@ public class LevelTilemapEditor : EditorWindow
 
         var decorationTiles = new List<DecorationTile>();
 
-        foreach (var cellPos in _tipeMapInScene.cellBounds.allPositionsWithin)
+        foreach (var cellPos in _tilemapInScene.cellBounds.allPositionsWithin)
         {
-            var tile = _tipeMapInScene.GetTile(cellPos) as Tile;
+            var tile = _tilemapInScene.GetTile(cellPos) as Tile;
             if (tile == null || tile.sprite == null)
                 continue;
 
@@ -376,7 +376,7 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void LoadDecorationsToTilemap()
     {
-        if (_tipeMapInScene == null || _currentLevelInfo == null)
+        if (_tilemapInScene == null || _currentLevelInfo == null)
         {
             Debug.LogWarning("[LevelTilemapEditor] Tilemap или CurrentLevelInfo не инициализированы.");
             return;
@@ -419,7 +419,7 @@ public class LevelTilemapEditor : EditorWindow
             tile.name = decorTile.name;
 
             var cellPos = new Vector3Int(decorTile.xPos, decorTile.yPos, 0);
-            _tipeMapInScene.SetTile(cellPos, tile);
+            _tilemapInScene.SetTile(cellPos, tile);
             loadedCount++;
         }
 
@@ -431,9 +431,7 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void HandleSaveLevelClicked()
     {
-        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-        
-        if (isTemplateLocation)
+        if (IsTemplateMode)
         {
             Debug.Log($"Сохранение PatternsCollection: {_selectedFile}");
             SyncTemplatesFromLevelInfo();
@@ -466,9 +464,8 @@ public class LevelTilemapEditor : EditorWindow
         var newLevelInfo = new LevelInfo();
 
         string createdLevelPath = null;
-        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
 
-        if (isTemplateLocation)
+        if (IsTemplateMode)
         {
             var templateName = _uiManager.TemplateLevelName;
             if (string.IsNullOrWhiteSpace(templateName))
@@ -503,12 +500,14 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void HandleLocationChanged(string newValue)
     {
+        _currentLocationName = newValue;
+
     _uiManager.SetObstaclesSpritesListView(newValue, _spritesExt);
         _uiManager.AddCollectablesToSpritesListView();
 
         /* Загружаем маппинг спрайт‑типов для выбранной локации.
            Templates не имеет своих спрайтов — используем fallback-локацию. */
-        var mappingLocation = string.Equals(newValue, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase)
+        var mappingLocation = IsTemplateMode
             ? Consts.TemplatesFallbackLocation
             : newValue;
         ObstacleSpriteTypeMappingsManager.LoadBindings(mappingLocation, success =>
@@ -517,12 +516,9 @@ public class LevelTilemapEditor : EditorWindow
                 Debug.LogWarning($"No mapping file yet for '{newValue}'. It will be created on first save.");
         });
 
-        _currentLocationName = newValue;
+        _uiManager.ApplyModeUI(IsTemplateMode);
 
-        var isTemplateLocation = string.Equals(newValue, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-        _uiManager.ApplyModeUI(isTemplateLocation);
-
-        if (!isTemplateLocation)
+        if (!IsTemplateMode)
         {
             _selectedDaypart = PartOfDayEnum.Morning;
             _uiManager.SetSelectedDaypart(_selectedDaypart);
@@ -533,7 +529,7 @@ public class LevelTilemapEditor : EditorWindow
         _levelsDirectory = Path.Combine(Consts.LocationsPath, newValue, "levels");
         UpdateSpritesInfoInCurrentLocation(newValue);
 
-        if (isTemplateLocation)
+        if (IsTemplateMode)
         {
             LoadTemplatesDirectly();
         }
@@ -574,9 +570,7 @@ public class LevelTilemapEditor : EditorWindow
                 .ToList();
         }
 
-        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-
-        _visibleLevelDescriptors = isTemplateLocation
+        _visibleLevelDescriptors = IsTemplateMode
             ? new List<LevelFileDescriptor>(_allLevelDescriptors)
             : _allLevelDescriptors
                 .Where(descriptor => descriptor.PartOfDay.HasValue && descriptor.PartOfDay.Value == _selectedDaypart)
@@ -645,21 +639,17 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        _locationTheme = LevelDataManager.LoadLocationTheme("01_New_York");
+        _locationTheme = LevelDataManager.LoadLocationTheme(Consts.TemplatesFallbackLocation);
         _currentLevelInfo = ResolveTemplatesForDisplay(_patternsCollection, _locationTheme);
         _patternSequencePanel.Hide();
         _spriteOverridePanel.Hide();
 
-        float singlePatternWidth = _patternDurationMinutes * 60f * 3.8f;
-        float totalWidth = Math.Max(singlePatternWidth, singlePatternWidth);
-
-        var tilemapGameObject = SceneCreator.CreateSceneWithTilemap((int)totalWidth, "01_New_York", "morning");
-        _tipeMapInScene = tilemapGameObject.GetComponent<Tilemap>();
+        var tilemapGameObject = SceneCreator.CreateSceneWithTilemap(DefaultTilemapWidth, Consts.TemplatesFallbackLocation, "morning");
+        _tilemapInScene = tilemapGameObject.GetComponent<Tilemap>();
 
         if (_currentLevelInfo.patterns.Count == 0)
         {
             _uiManager.UpdatePatternsList(new List<string>());
-            _currentPattern = null;
             _selectedPatternIndex = -1;
             return;
         }
@@ -686,9 +676,7 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-
-        if (isTemplateLocation)
+        if (IsTemplateMode)
         {
             _currentLevelRef = null;
             _patternsCollection = LevelDataManager.LoadPatternsCollection();
@@ -698,8 +686,7 @@ public class LevelTilemapEditor : EditorWindow
                 return;
             }
 
-            // For display, resolve using NY theme (as templates reuse NY sprites)
-            _locationTheme = LevelDataManager.LoadLocationTheme("01_New_York");
+            _locationTheme = LevelDataManager.LoadLocationTheme(Consts.TemplatesFallbackLocation);
 
             // Build a virtual LevelInfoRef from the PatternsCollection for display
             _currentLevelInfo = ResolveTemplatesForDisplay(_patternsCollection, _locationTheme);
@@ -723,11 +710,10 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         // Вычисляем общую ширину уровня.
-        float singlePatternWidth = _patternDurationMinutes * 60f * Consts.GameSpeedBase;
         float totalWidth;
-        if (isTemplateLocation)
+        if (IsTemplateMode)
         {
-            totalWidth = singlePatternWidth;
+            totalWidth = DefaultTilemapWidth;
         }
         else
         {
@@ -744,25 +730,23 @@ public class LevelTilemapEditor : EditorWindow
                 }
                 totalWidth += maxX - minX + PatternGap;
             }
-            totalWidth = Math.Max(totalWidth, singlePatternWidth);
         }
 
         // Создаём сцену с фоном и дорогой по naming convention
-        string locationForBg = isTemplateLocation ? "01_New_York" : _currentLocationName;
-        string daypartSlug = isTemplateLocation ? "morning" : _selectedDaypart.ToString().ToLowerInvariant();
+        string locationForBg = IsTemplateMode ? Consts.TemplatesFallbackLocation : _currentLocationName;
+        string daypartSlug = IsTemplateMode ? "morning" : _selectedDaypart.ToString().ToLowerInvariant();
         var tilemapGameObject = SceneCreator.CreateSceneWithTilemap((int)totalWidth, locationForBg, daypartSlug);
-        _tipeMapInScene = tilemapGameObject.GetComponent<Tilemap>();
+        _tilemapInScene = tilemapGameObject.GetComponent<Tilemap>();
 
         // Load patterns (obstacles) for both Templates and Locations
         if (_currentLevelInfo.patterns.Count == 0)
         {
             Debug.LogWarning("Уровень не содержит паттернов.");
             _uiManager.UpdatePatternsList(new List<string>());
-            _currentPattern = null;
             _selectedPatternIndex = -1;
             
             // For locations without patterns, still load decorations
-            if (!isTemplateLocation)
+            if (!IsTemplateMode)
             {
                 LoadDecorationsToTilemap();
             }
@@ -773,7 +757,7 @@ public class LevelTilemapEditor : EditorWindow
         var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
         _uiManager.UpdatePatternsList(patternNames);
 
-        if (isTemplateLocation)
+        if (IsTemplateMode)
         {
             _uiManager.SelectFirstPattern();
         }
@@ -797,8 +781,7 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         // Map filtered index to real index when search filter is active
-        var isTemplateMode = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-        if (isTemplateMode && _filteredPatternIndices.Count > 0 && selectedIndex >= 0 && selectedIndex < _filteredPatternIndices.Count)
+        if (IsTemplateMode && _filteredPatternIndices.Count > 0 && selectedIndex >= 0 && selectedIndex < _filteredPatternIndices.Count)
         {
             _selectedPatternIndex = _filteredPatternIndices[selectedIndex];
         }
@@ -807,21 +790,18 @@ public class LevelTilemapEditor : EditorWindow
             _selectedPatternIndex = selectedIndex;
         }
 
-        if (_selectedPatternIndex < 0 || _selectedPatternIndex >= _currentLevelInfo.patterns.Count)
+        if (CurrentPattern == null)
         {
-            _currentPattern = null;
             Debug.LogWarning("Выбранный паттерн некорректен.");
             return;
         }
 
-        _currentPattern = _currentLevelInfo.patterns[_selectedPatternIndex];
-
-        _uiManager.UpdatePatternNameField(_currentPattern.name);
-        _uiManager.UpdatePatternDescriptionField(_currentPattern.desсription);
+        _uiManager.UpdatePatternNameField(CurrentPattern.name);
+        _uiManager.UpdatePatternDescriptionField(CurrentPattern.desсription);
 
         AddTilesToTilemap();
 
-        if (isTemplateMode)
+        if (IsTemplateMode)
         {
             FrameCurrentTilemapBounds();
         }
@@ -841,16 +821,16 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void AddTilesToTilemap()
     {
-        if (_currentPattern == null || _tipeMapInScene == null)
+        if (CurrentPattern == null || _tilemapInScene == null)
             return;
 
         _isTilemapBulkOperation = true;
-        _tipeMapInScene.ClearAllTiles();
+        _tilemapInScene.ClearAllTiles();
 
         var positions = new List<Vector3Int>();
         var tiles = new List<TileBase>();
 
-        foreach (var obstacle in _currentPattern.obstacles)
+        foreach (var obstacle in CurrentPattern.obstacles)
         {
             var loadedSprite = SpriteLoader.LoadSpriteSync(obstacle.spriteName);
             if (loadedSprite != null)
@@ -860,7 +840,7 @@ public class LevelTilemapEditor : EditorWindow
                 tile.name = obstacle.spriteName;
 
                 var worldPos = new Vector3(obstacle.x, obstacle.y, 0f);
-                var cellPos = _tipeMapInScene.WorldToCell(worldPos);
+                var cellPos = _tilemapInScene.WorldToCell(worldPos);
 
                 positions.Add(cellPos);
                 tiles.Add(tile);
@@ -871,16 +851,15 @@ public class LevelTilemapEditor : EditorWindow
             }
         }
 
-        _tipeMapInScene.SetTiles(positions.ToArray(), tiles.ToArray());
+        _tilemapInScene.SetTiles(positions.ToArray(), tiles.ToArray());
 
         // Restore decorations after clearing tilemap (they are level-wide, not per-pattern)
-        var isTemplate = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-        if (!isTemplate)
+        if (!IsTemplateMode)
         {
             LoadDecorationsToTilemap();
         }
 
-        EditorUtility.SetDirty(_tipeMapInScene.gameObject);
+        EditorUtility.SetDirty(_tilemapInScene.gameObject);
         _isTilemapBulkOperation = false;
     }
 
@@ -890,11 +869,11 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void RenderAllPatternsToTilemap()
     {
-        if (_currentLevelInfo == null || _tipeMapInScene == null)
+        if (_currentLevelInfo == null || _tilemapInScene == null)
             return;
 
         _isTilemapBulkOperation = true;
-        _tipeMapInScene.ClearAllTiles();
+        _tilemapInScene.ClearAllTiles();
         _cellToPatternMap.Clear();
         _patternBounds.Clear();
 
@@ -936,7 +915,7 @@ public class LevelTilemapEditor : EditorWindow
                 tile.name = obstacle.spriteName;
 
                 var worldPos = new Vector3(obstacle.x + patternOffset, obstacle.y, 0f);
-                var cellPos = _tipeMapInScene.WorldToCell(worldPos);
+                var cellPos = _tilemapInScene.WorldToCell(worldPos);
 
                 // Вычисляем bounds спрайта для framing
                 var spriteBounds = new Bounds(worldPos, new Vector3(sprite.bounds.size.x, sprite.bounds.size.y, 0f));
@@ -959,11 +938,11 @@ public class LevelTilemapEditor : EditorWindow
             cumulativeOffset += patternWidth;
         }
 
-        _tipeMapInScene.SetTiles(positions.ToArray(), tiles.ToArray());
+        _tilemapInScene.SetTiles(positions.ToArray(), tiles.ToArray());
 
         LoadDecorationsToTilemap();
 
-        EditorUtility.SetDirty(_tipeMapInScene.gameObject);
+        EditorUtility.SetDirty(_tilemapInScene.gameObject);
         _isTilemapBulkOperation = false;
     }
 
@@ -984,14 +963,14 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void FrameCurrentTilemapBounds()
     {
-        if (_tipeMapInScene == null) return;
+        if (_tilemapInScene == null) return;
 
-        _tipeMapInScene.CompressBounds();
-        var cellBounds = _tipeMapInScene.cellBounds;
+        _tilemapInScene.CompressBounds();
+        var cellBounds = _tilemapInScene.cellBounds;
         if (cellBounds.size == Vector3Int.zero) return;
 
-        var worldMin = _tipeMapInScene.CellToWorld(cellBounds.min);
-        var worldMax = _tipeMapInScene.CellToWorld(cellBounds.max);
+        var worldMin = _tilemapInScene.CellToWorld(cellBounds.min);
+        var worldMax = _tilemapInScene.CellToWorld(cellBounds.max);
         var bounds = new Bounds((worldMin + worldMax) / 2f, worldMax - worldMin);
 
         FrameToBounds(bounds);
@@ -1024,11 +1003,10 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void OnSceneGUI(SceneView sceneView)
     {
-        if (_tipeMapInScene == null || _cellToPatternMap.Count == 0)
+        if (_tilemapInScene == null || _cellToPatternMap.Count == 0)
             return;
 
-        var isTemplateMode = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
-        if (isTemplateMode)
+        if (IsTemplateMode)
             return;
 
         var evt = Event.current;
@@ -1039,7 +1017,7 @@ public class LevelTilemapEditor : EditorWindow
         var worldPos = worldRay.origin;
         worldPos.z = 0f;
 
-        var cellPos = _tipeMapInScene.WorldToCell(worldPos);
+        var cellPos = _tilemapInScene.WorldToCell(worldPos);
         if (!_cellToPatternMap.TryGetValue(cellPos, out var mapping))
             return;
 
@@ -1207,7 +1185,6 @@ public class LevelTilemapEditor : EditorWindow
         _currentLevelInfo.patterns.Insert(insertIndex, duplicatedPattern);
 
         _selectedPatternIndex = insertIndex;
-        _currentPattern = duplicatedPattern;
 
         var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
         _uiManager.UpdatePatternsList(patternNames, _selectedPatternIndex);
@@ -1287,11 +1264,10 @@ public class LevelTilemapEditor : EditorWindow
     {
         SceneCreator.CleanupOldSceneObjects(SceneManager.GetActiveScene());
 
-        _tipeMapInScene = null;
+        _tilemapInScene = null;
         _selectedFile = null;
         _currentLevelInfo = null;
         _currentLevelRef = null;
-        _currentPattern = null;
         _selectedPatternIndex = -1;
         _selectedLevelDescriptor = null;
 
@@ -1305,16 +1281,15 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void HandleResetClicked()
     {
-        if (_tipeMapInScene != null)
+        if (_tilemapInScene != null)
         {
-            DestroyImmediate(_tipeMapInScene.gameObject);
-            _tipeMapInScene = null;
+            DestroyImmediate(_tilemapInScene.gameObject);
+            _tilemapInScene = null;
         }
 
         _currentLevelInfo = null;
         _selectedFile = null;
         _selectedPatternIndex = -1;
-        _currentPattern = null;
         _isCollectableOnRoof = false;
         _selectedLevelDescriptor = null;
         _allLevelDescriptors.Clear();
@@ -1326,12 +1301,6 @@ public class LevelTilemapEditor : EditorWindow
 
         rootVisualElement.Clear();
         CreateGUI();
-    }
-
-    private void HandlePatternDurationChanged(float newDuration)
-    {
-        _patternDurationMinutes = newDuration;
-        Debug.Log($"Pattern duration changed to {_patternDurationMinutes} minutes");
     }
 
     private void HandlePatternNameChanged(string newName)
@@ -1468,7 +1437,6 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.OnPatternSelected += HandlePatternSelected;
         _uiManager.OnIsCollectableOnRoofToggleChanged += HandleIsCollectableOnRoofToggleChanged;
         _uiManager.OnResetClicked += HandleResetClicked;
-        _uiManager.OnPatternDurationChanged += HandlePatternDurationChanged;
         _uiManager.OnPatternNameChanged += HandlePatternNameChanged;
         _uiManager.OnPatternDescriptionChanged += HandlePatternDescriptionChanged;
         _uiManager.OnDaypartChanged += HandleDaypartChanged;
@@ -1496,7 +1464,6 @@ public class LevelTilemapEditor : EditorWindow
             _uiManager.OnPatternSelected -= HandlePatternSelected;
             _uiManager.OnIsCollectableOnRoofToggleChanged -= HandleIsCollectableOnRoofToggleChanged;
             _uiManager.OnResetClicked -= HandleResetClicked;
-            _uiManager.OnPatternDurationChanged -= HandlePatternDurationChanged;
             _uiManager.OnPatternNameChanged -= HandlePatternNameChanged;
             _uiManager.OnPatternDescriptionChanged -= HandlePatternDescriptionChanged;
             _uiManager.OnDaypartChanged -= HandleDaypartChanged;
@@ -1546,7 +1513,7 @@ public class LevelTilemapEditor : EditorWindow
     {
         var levelRef = new LevelInfoRef
         {
-            location = "01_New_York"
+            location = Consts.TemplatesFallbackLocation
         };
 
         foreach (var template in pc.patterns)

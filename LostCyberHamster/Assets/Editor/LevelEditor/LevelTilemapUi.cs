@@ -19,7 +19,6 @@ public class LevelTilemapUi
     private DropdownField _obstacleTypeDropdownField;
     private ScrollView _spritesScrollView;
     private ListView _filesList;
-    private FloatField _patternDurationField;
     private ListView _patternsList;
     private Button _saveJsonButton;
     private Button _createLevelButton;
@@ -60,7 +59,6 @@ public class LevelTilemapUi
     public event Action<int> OnPatternSelected;
     public event Action<bool> OnIsCollectableOnRoofToggleChanged;
     public event Action OnResetClicked;
-    public event Action<float> OnPatternDurationChanged;
     public event Action<string> OnPatternNameChanged;
     public event Action<string> OnPatternDescriptionChanged;
     public event Action<PartOfDayEnum> OnDaypartChanged;
@@ -78,7 +76,6 @@ public class LevelTilemapUi
         InitializeButtons();
         InitializeListViews();
         InitializeToggles();
-        InitializeFloatFields();
         InitializeTextFields();
         InitializeDaypartSelector();
         InitializePatternSearch();
@@ -95,7 +92,6 @@ public class LevelTilemapUi
         _patternsList = _root.Q<ListView>("patterns-list-view");
         _isCollectableOnRoofToggle = root.Q<Toggle>("IsCollectableOnRoofToggle");
         _resetButton = _root.Q<Button>("reset-btn");
-        _patternDurationField = root.Q<FloatField>("patternDuration");
         _templateLevelNameParent = root.Q<VisualElement>("template-level-name-parent");
         _templateLevelNameField = root.Q<TextField>("template-level-name");
         if (_templateLevelNameParent != null)
@@ -160,22 +156,6 @@ public class LevelTilemapUi
 
         _patternsList.selectionType = SelectionType.Single;
         _patternsList.selectionChanged += OnPatternSelectedInternal;
-    }
-
-    private void InitializeFloatFields()
-    {
-        if (_patternDurationField != null)
-        {
-            // При изменении значения оповещаем EditorWindow
-            _patternDurationField.RegisterValueChangedCallback(evt =>
-            {
-                OnPatternDurationChanged?.Invoke(evt.newValue);
-            });
-        }
-        else
-        {
-            Debug.LogWarning("FloatField 'patternDuration' не найден в UXML.");
-        }
     }
 
     private void InitializeTextFields()
