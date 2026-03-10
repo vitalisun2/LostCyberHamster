@@ -125,7 +125,7 @@ namespace Assets.Scripts.System
                 return;
             }
 
-            var spriteLookup = new Dictionary<string, Sprite>(System.StringComparer.OrdinalIgnoreCase);
+            var spriteLookup = new Dictionary<string, Sprite>(global::System.StringComparer.OrdinalIgnoreCase);
             foreach (var sprite in decorSprites)
             {
                 spriteLookup[sprite.name] = sprite;
