@@ -24,7 +24,6 @@ public class LevelTilemapUi
     private Button _saveJsonButton;
     private Button _createLevelButton;
     private string _selectedSprite;
-    private DropdownField _backGroundDropdown;
     private Toggle _isCollectableOnRoofToggle;
     private Button _resetButton;
     private VisualElement _templateLevelNameParent;// #template-level-name-parent
@@ -42,7 +41,6 @@ public class LevelTilemapUi
         PartOfDayEnum.Night
     };
 
-    public DropdownField BackGroundDropdown => _backGroundDropdown;
     private const string _collectableSpritesTag = "collectable sprites";
     public string TemplateLevelName => _templateLevelNameField?.value;
 
@@ -57,7 +55,6 @@ public class LevelTilemapUi
     public event Action<int> OnPatternSelected;
     public event Action<bool> OnIsCollectableOnRoofToggleChanged;
     public event Action OnResetClicked;
-    public event Action<string> OnBackgroundSelected;
     public event Action<float> OnPatternDurationChanged;
     public event Action<string> OnPatternNameChanged;
     public event Action<string> OnPatternDescriptionChanged;
@@ -82,7 +79,6 @@ public class LevelTilemapUi
 
     private void SetElements(VisualElement root)
     {
-        _backGroundDropdown = root.Q<DropdownField>("background-dropdown");
         _createLevelButton = _root.Q<Button>("create-level-btn");
         _locationsDropdownField = _root.Q<DropdownField>("location-dropdown");
         _obstacleTypeDropdownField = root.Q<DropdownField>("obstacle-type-dropdown");
@@ -128,11 +124,6 @@ public class LevelTilemapUi
         });
 
         InitializeObstacleTypeDropdown();
-
-        _backGroundDropdown.RegisterValueChangedCallback(evt =>
-        {
-            OnBackgroundSelected?.Invoke(evt.newValue);
-        });
 
     }
 
@@ -632,6 +623,25 @@ public class LevelTilemapUi
         }
 
         _templateLevelNameParent.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    public void SetFilesListVisible(bool isVisible)
+    {
+        if (_filesList?.parent == null)
+        {
+            return;
+        }
+
+        // Hide the entire parent container that holds the "files" label, daypart selector, and files list
+        _filesList.parent.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    public void SetMoveButtonsVisible(bool isVisible)
+    {
+        var moveUp = _root.Q<Button>("move-up-btn");
+        var moveDown = _root.Q<Button>("move-down-btn");
+        if (moveUp != null) moveUp.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
+        if (moveDown != null) moveDown.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     public void UpdatePatternsList(List<string> patternNames, int selectedIndex = 0)

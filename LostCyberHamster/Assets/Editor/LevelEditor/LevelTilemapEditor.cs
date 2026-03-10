@@ -1,6 +1,7 @@
 ﻿using Assets.Editor.LevelEditor;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts;
+using Assets.Scripts.System;
 using Assets.Scripts.System.LevelManagement;
 using System;
 using System.Collections.Generic;
@@ -64,7 +65,6 @@ public class LevelTilemapEditor : EditorWindow
     private string _levelsDirectory;
     private string _levelDesignTemplatesDirectory;
     private string _spritesDirectory;
-    private string _backgroundsPath;
     private string _currentLocationName;
     private List<string> _spritesNames { get; set; }
     
@@ -440,10 +440,7 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void HandleCreateLevelClicked()
     {
-        var newLevelInfo = new LevelInfo
-        {
-            backgroundTexture = _uiManager.BackGroundDropdown.value
-        };
+        var newLevelInfo = new LevelInfo();
 
         string createdLevelPath = null;
         var isTemplateLocation = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
@@ -500,6 +497,8 @@ public class LevelTilemapEditor : EditorWindow
         {
             _uiManager.SetTemplateNameFieldVisible(true);
             _uiManager.SetDaypartSelectorVisible(false);
+            _uiManager.SetFilesListVisible(false);
+            _uiManager.SetMoveButtonsVisible(false);
         }
         else
         {
@@ -507,6 +506,8 @@ public class LevelTilemapEditor : EditorWindow
             _uiManager.SetTemplateNameFieldVisible(false);
             _uiManager.SetDaypartSelectorVisible(true);
             _uiManager.SetSelectedDaypart(_selectedDaypart);
+            _uiManager.SetFilesListVisible(true);
+            _uiManager.SetMoveButtonsVisible(true);
         }
 
         _selectedLevelDescriptor = null;
@@ -514,9 +515,14 @@ public class LevelTilemapEditor : EditorWindow
         _levelsDirectory = Path.Combine(Consts.LocationsPath, newValue, "levels");
         UpdateSpritesInfoInCurrentLocation(newValue);
 
-        UpdateBackgroundDropdown();
-
-        RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: true);
+        if (isTemplateLocation)
+        {
+            LoadTemplatesDirectly();
+        }
+        else
+        {
+            RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: true);
+        }
     }
 
     private void HandleDaypartChanged(PartOfDayEnum newDaypart)
@@ -603,6 +609,49 @@ public class LevelTilemapEditor : EditorWindow
     }
 
     /// <summary>
+    /// Загружает PatternsCollection напрямую в Templates mode, без выбора файла из списка.
+    /// </summary>
+    private void LoadTemplatesDirectly()
+    {
+        _uiManager.ReleaseObstacleSprites();
+        SpriteLoader.ReleaseSpritesAndClearCache();
+
+        _currentLevelRef = null;
+        _selectedFile = Path.Combine(_levelsDirectory, "PatternsCollection.json");
+
+        _patternsCollection = LevelDataManager.LoadPatternsCollection();
+        if (_patternsCollection == null || _patternsCollection.patterns.Count == 0)
+        {
+            Debug.LogWarning("Не удалось загрузить PatternsCollection");
+            ClearScene();
+            return;
+        }
+
+        _locationTheme = LevelDataManager.LoadLocationTheme("01_New_York");
+        _currentLevelInfo = ResolveTemplatesForDisplay(_patternsCollection, _locationTheme);
+        _patternSequencePanel.Hide();
+        _spriteOverridePanel.Hide();
+
+        float singlePatternWidth = _patternDurationMinutes * 60f * 3.8f;
+        float totalWidth = Math.Max(singlePatternWidth, singlePatternWidth);
+
+        var tilemapGameObject = SceneCreator.CreateSceneWithTilemap((int)totalWidth, "01_New_York", "morning");
+        _tipeMapInScene = tilemapGameObject.GetComponent<Tilemap>();
+
+        if (_currentLevelInfo.patterns.Count == 0)
+        {
+            _uiManager.UpdatePatternsList(new List<string>());
+            _currentPattern = null;
+            _selectedPatternIndex = -1;
+            return;
+        }
+
+        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+        _uiManager.UpdatePatternsList(patternNames);
+        _uiManager.SelectFirstPattern();
+    }
+
+    /// <summary>
     /// Обработка выбора файла уровня из списка.
     /// </summary>
     private void HandleFileSelected(LevelFileDescriptor selectedDescriptor)
@@ -662,9 +711,10 @@ public class LevelTilemapEditor : EditorWindow
         int patternCount = isTemplateLocation ? 1 : _currentLevelInfo.patterns.Count;
         float totalWidth = Math.Max(singlePatternWidth, patternCount * singlePatternWidth);
 
-        // Вместо создания новой сцены — вызываем обновлённый метод,
-        // который сам найдёт/очистит/или создаст сцену, и вернёт TilemapGameObject.
-        var tilemapGameObject = SceneCreator.CreateSceneWithTilemap((int)totalWidth, _currentLevelInfo);
+        // Создаём сцену с фоном и дорогой по naming convention
+        string locationForBg = isTemplateLocation ? "01_New_York" : _currentLocationName;
+        string daypartSlug = isTemplateLocation ? "morning" : _selectedDaypart.ToString().ToLowerInvariant();
+        var tilemapGameObject = SceneCreator.CreateSceneWithTilemap((int)totalWidth, locationForBg, daypartSlug);
         _tipeMapInScene = tilemapGameObject.GetComponent<Tilemap>();
 
         // Load patterns (obstacles) for both Templates and Locations
@@ -681,7 +731,6 @@ public class LevelTilemapEditor : EditorWindow
                 LoadDecorationsToTilemap();
             }
             
-            UpdateBackgroundDropdown();
             return;
         }
 
@@ -694,8 +743,6 @@ public class LevelTilemapEditor : EditorWindow
         {
             LoadDecorationsToTilemap();
         }
-
-        UpdateBackgroundDropdown();
     }
 
 
@@ -955,40 +1002,9 @@ public class LevelTilemapEditor : EditorWindow
     private void UpdateSpritesInfoInCurrentLocation(string newValue)
     {
         _spritesDirectory = Path.Combine(Consts.LocationsPath, newValue, "sprites");
-        _backgroundsPath = Path.Combine(Consts.LocationsPath, newValue, "sprites", "backgrounds");
         var sprites = Directory.GetFiles(_spritesDirectory, $"*.{_spritesExt}", SearchOption.AllDirectories);
 
         _spritesNames = sprites.Select(Path.GetFileNameWithoutExtension).ToList();
-    }
-
-    /// <summary>
-    /// Обновляет выпадающий список фонов.
-    /// </summary>
-    private void UpdateBackgroundDropdown()
-    {
-        _uiManager.BackGroundDropdown.choices.Clear();
-
-        if (!Directory.Exists(_backgroundsPath))
-        {
-            Debug.LogWarning($"Background path '{_backgroundsPath}' does not exist.");
-            return;
-        }
-
-        var textureFiles = Directory.GetFiles(_backgroundsPath, "*.png").ToArray();
-        var textureNames = textureFiles.Select(Path.GetFileNameWithoutExtension).ToList();
-
-        _uiManager.BackGroundDropdown.choices.AddRange(textureNames);
-
-        var defaultValue = string.Empty;
-        if (_currentLevelInfo != null && !string.IsNullOrEmpty(_currentLevelInfo.backgroundTexture))
-        {
-            if (textureNames.Contains(_currentLevelInfo.backgroundTexture))
-            {
-                defaultValue = _currentLevelInfo.backgroundTexture;
-            }
-        }
-
-        _uiManager.BackGroundDropdown.value = defaultValue;
     }
 
     /// <summary>
@@ -1067,16 +1083,6 @@ public class LevelTilemapEditor : EditorWindow
 
         rootVisualElement.Clear();
         CreateGUI();
-    }
-
-    private void HandleBackgroundSelected(string backgroundName)
-    {
-        if (_currentLevelInfo == null)
-        {
-            Debug.LogWarning("Current level info is not initialized.");
-            return;
-        }
-        _currentLevelInfo.backgroundTexture = backgroundName;
     }
 
     private void HandlePatternDurationChanged(float newDuration)
@@ -1168,7 +1174,6 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.OnPatternSelected += HandlePatternSelected;
         _uiManager.OnIsCollectableOnRoofToggleChanged += HandleIsCollectableOnRoofToggleChanged;
         _uiManager.OnResetClicked += HandleResetClicked;
-        _uiManager.OnBackgroundSelected += HandleBackgroundSelected;
         _uiManager.OnPatternDurationChanged += HandlePatternDurationChanged;
         _uiManager.OnPatternNameChanged += HandlePatternNameChanged;
         _uiManager.OnPatternDescriptionChanged += HandlePatternDescriptionChanged;
@@ -1195,7 +1200,6 @@ public class LevelTilemapEditor : EditorWindow
             _uiManager.OnPatternSelected -= HandlePatternSelected;
             _uiManager.OnIsCollectableOnRoofToggleChanged -= HandleIsCollectableOnRoofToggleChanged;
             _uiManager.OnResetClicked -= HandleResetClicked;
-            _uiManager.OnBackgroundSelected -= HandleBackgroundSelected;
             _uiManager.OnPatternDurationChanged -= HandlePatternDurationChanged;
             _uiManager.OnPatternNameChanged -= HandlePatternNameChanged;
             _uiManager.OnPatternDescriptionChanged -= HandlePatternDescriptionChanged;
@@ -1247,10 +1251,6 @@ public class LevelTilemapEditor : EditorWindow
     {
         var levelRef = new LevelInfoRef
         {
-            skyTexture = "",
-            backgroundTexture = "bg_new_york_morning",
-            background2Texture = "",
-            roadTexture = "",
             location = "01_New_York"
         };
 

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text;
 
 namespace Assets.Scripts.System
@@ -130,6 +131,39 @@ namespace Assets.Scripts.System
             }
 
             return segments[^1];
+        }
+
+        /// <summary>
+        /// Converts a location directory name like "01_New_York" into a slug "new_york",
+        /// stripping the leading numeric prefix if present.
+        /// </summary>
+        public static string ToLocationSlug(string locationDirName)
+        {
+            if (string.IsNullOrWhiteSpace(locationDirName))
+                return string.Empty;
+
+            var parts = locationDirName.Trim().Split('_', StringSplitOptions.RemoveEmptyEntries);
+            int startIndex = 0;
+            if (parts.Length > 0 && int.TryParse(parts[0], out _))
+                startIndex = 1;
+
+            if (startIndex >= parts.Length)
+                return ToSlug(locationDirName);
+
+            return string.Join("_", parts.Skip(startIndex).Select(p => p.ToLowerInvariant()));
+        }
+
+        /// <summary>
+        /// Builds background sprite key: bg_{locationSlug}_{daypart}.
+        /// </summary>
+        public static string BuildBackgroundKey(string locationDirName, string partOfDay)
+        {
+            var slug = ToLocationSlug(locationDirName);
+            var daySuffix = ToSlug(partOfDay);
+            if (string.IsNullOrWhiteSpace(slug) || string.IsNullOrWhiteSpace(daySuffix))
+                return null;
+
+            return $"bg_{slug}_{daySuffix}";
         }
     }
 }

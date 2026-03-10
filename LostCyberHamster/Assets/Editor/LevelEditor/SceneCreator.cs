@@ -1,5 +1,5 @@
 using Assets.Scripts;
-using Assets.Scripts.Common.Models;
+using Assets.Scripts.System;
 using UnityEditor.SceneManagement;
 using UnityEngine.Tilemaps;
 using UnityEngine;
@@ -15,7 +15,7 @@ public static class SceneCreator
     private const string RoadSortingLayer = "Road";
     private static readonly Vector2 SpritePivot = new Vector2(0.5f, 0.5f);
 
-    public static GameObject CreateSceneWithTilemap(int targetWidth, LevelInfo currentLevelInfo)
+    public static GameObject CreateSceneWithTilemap(int targetWidth, string locationName, string daypartSlug)
     {
         // Work in the currently active scene
         var scene = SceneManager.GetActiveScene();
@@ -38,8 +38,12 @@ public static class SceneCreator
         tilemapRenderer.sortingLayerName = "SpecialEffects";
         tilemap.tileAnchor = Vector3.zero;
 
-        CreateBackground(targetWidth, currentLevelInfo, scene);
-        CreateRoad(targetWidth, currentLevelInfo, scene);
+        var bgKey = LocationAssetFallback.BuildBackgroundKey(locationName, daypartSlug);
+        var rdKey = LocationAssetFallback.BuildRoadKey(
+            LocationAssetFallback.ToLocationSlug(locationName), daypartSlug);
+
+        CreateBackground(targetWidth, bgKey, scene);
+        CreateRoad(targetWidth, rdKey, scene);
         return tilemapGameObject;
     }
 
@@ -79,20 +83,19 @@ public static class SceneCreator
         }
     }
 
-    private static void CreateBackground(int targetWidth, LevelInfo currentLevelInfo, Scene scene)
+    private static void CreateBackground(int targetWidth, string backgroundKey, Scene scene)
     {
-        var backgroundTextureName = currentLevelInfo.backgroundTexture;
-        if (string.IsNullOrEmpty(backgroundTextureName))
+        if (string.IsNullOrEmpty(backgroundKey))
         {
-            Debug.LogWarning("Background texture is empty.");
+            Debug.LogWarning("[SceneCreator] Background key is empty.");
             return;
         }
 
         // СИНХРОННАЯ загрузка
-        var sprite = SpriteLoader.LoadSpriteSync(backgroundTextureName);
+        var sprite = SpriteLoader.LoadSpriteSync(backgroundKey);
         if (sprite == null)
         {
-            Debug.LogError($"Failed to load background sprite: {backgroundTextureName}");
+            Debug.LogWarning($"[SceneCreator] Failed to load background sprite: {backgroundKey}");
             return;
         }
 
@@ -122,26 +125,11 @@ public static class SceneCreator
         renderer.sortingLayerName = BackgroundSortingLayer;
     }
 
-    /// <summary>
-    /// Вычисляет ключ road-спрайта из backgroundTexture, заменяя префикс "bg_" на "rd_".
-    /// </summary>
-    private static string ResolveRoadKey(string backgroundTexture)
+    private static void CreateRoad(int targetWidth, string roadKey, Scene scene)
     {
-        if (string.IsNullOrEmpty(backgroundTexture))
-            return null;
-
-        if (backgroundTexture.StartsWith("bg_", StringComparison.OrdinalIgnoreCase))
-            return "rd_" + backgroundTexture.Substring(3);
-
-        return null;
-    }
-
-    private static void CreateRoad(int targetWidth, LevelInfo currentLevelInfo, Scene scene)
-    {
-        var roadKey = ResolveRoadKey(currentLevelInfo.backgroundTexture);
         if (string.IsNullOrEmpty(roadKey))
         {
-            Debug.LogWarning("[SceneCreator] Could not resolve road key from background texture.");
+            Debug.LogWarning("[SceneCreator] Road key is empty.");
             return;
         }
 
