@@ -10,7 +10,9 @@ public static class SceneCreator
 {
     private const float PixelsPerUnit = 100.0f;
     private const float BackgroundZPosition = 1.0f;
+    private const float RoadZPosition = 0.5f;
     private const string BackgroundSortingLayer = "Background";
+    private const string RoadSortingLayer = "Road";
     private static readonly Vector2 SpritePivot = new Vector2(0.5f, 0.5f);
 
     public static GameObject CreateSceneWithTilemap(int targetWidth, LevelInfo currentLevelInfo)
@@ -37,6 +39,7 @@ public static class SceneCreator
         tilemap.tileAnchor = Vector3.zero;
 
         CreateBackground(targetWidth, currentLevelInfo, scene);
+        CreateRoad(targetWidth, currentLevelInfo, scene);
         return tilemapGameObject;
     }
 
@@ -58,6 +61,12 @@ public static class SceneCreator
             }
             // Удаляем старые сегменты фона
             else if (obj.name.StartsWith("BackgroundSegment_"))
+            {
+                UnityEngine.Object.DestroyImmediate(obj);
+                removedCount++;
+            }
+            // Удаляем старые сегменты дороги
+            else if (obj.name.StartsWith("RoadSegment_"))
             {
                 UnityEngine.Object.DestroyImmediate(obj);
                 removedCount++;
@@ -111,5 +120,60 @@ public static class SceneCreator
         renderer.sprite = sprite;
         segment.transform.position = new Vector3(xPosition, Consts.BackgroundYPos, BackgroundZPosition);
         renderer.sortingLayerName = BackgroundSortingLayer;
+    }
+
+    /// <summary>
+    /// Вычисляет ключ road-спрайта из backgroundTexture, заменяя префикс "bg_" на "rd_".
+    /// </summary>
+    private static string ResolveRoadKey(string backgroundTexture)
+    {
+        if (string.IsNullOrEmpty(backgroundTexture))
+            return null;
+
+        if (backgroundTexture.StartsWith("bg_", StringComparison.OrdinalIgnoreCase))
+            return "rd_" + backgroundTexture.Substring(3);
+
+        return null;
+    }
+
+    private static void CreateRoad(int targetWidth, LevelInfo currentLevelInfo, Scene scene)
+    {
+        var roadKey = ResolveRoadKey(currentLevelInfo.backgroundTexture);
+        if (string.IsNullOrEmpty(roadKey))
+        {
+            Debug.LogWarning("[SceneCreator] Could not resolve road key from background texture.");
+            return;
+        }
+
+        var sprite = SpriteLoader.LoadSpriteSync(roadKey);
+        if (sprite == null)
+        {
+            Debug.LogWarning($"[SceneCreator] Failed to load road sprite: {roadKey}");
+            return;
+        }
+
+        var roadSprite = Sprite.Create(
+            sprite.texture,
+            new Rect(0, 0, sprite.texture.width, sprite.texture.height),
+            SpritePivot
+        );
+
+        float textureWidthInUnits = roadSprite.texture.width / PixelsPerUnit;
+        int numberOfCopies = Mathf.CeilToInt(targetWidth / textureWidthInUnits);
+
+        for (int i = 0; i < numberOfCopies; i++)
+        {
+            CreateRoadSegment(roadSprite, i * textureWidthInUnits, scene);
+        }
+    }
+
+    private static void CreateRoadSegment(Sprite sprite, float xPosition, Scene scene)
+    {
+        var segment = new GameObject($"RoadSegment_{xPosition}");
+        SceneManager.MoveGameObjectToScene(segment, scene);
+        var renderer = segment.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        segment.transform.position = new Vector3(xPosition, Consts.RoadYPos, RoadZPosition);
+        renderer.sortingLayerName = RoadSortingLayer;
     }
 }
