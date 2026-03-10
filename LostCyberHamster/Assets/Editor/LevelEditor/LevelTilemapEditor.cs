@@ -66,6 +66,11 @@ public class LevelTilemapEditor : EditorWindow
     private List<int> _filteredPatternIndices = new();
     private string _patternSearchFilter = "";
 
+    /// <summary>
+    /// Маппинг cell position → (patternIndex, obstacleIndex) для определения паттерна по клику на тайл.
+    /// </summary>
+    private Dictionary<Vector3Int, (int patternIndex, int obstacleIndex)> _cellToPatternMap = new();
+
     private string _levelsDirectory;
     private string _levelDesignTemplatesDirectory;
     private string _spritesDirectory;
@@ -114,10 +119,13 @@ public class LevelTilemapEditor : EditorWindow
                 _hiddenRootObjects.Add(rootObject);
             }
         }
+
+        SceneView.duringSceneGui += OnSceneGUI;
     }
 
     private void OnDisable()
     {
+        SceneView.duringSceneGui -= OnSceneGUI;
         _uiManager?.ReleaseObstacleSprites();
         UnsubscribeEvents();
         
@@ -731,12 +739,14 @@ public class LevelTilemapEditor : EditorWindow
 
         var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
         _uiManager.UpdatePatternsList(patternNames);
-        _uiManager.SelectFirstPattern();
 
-        // For specific locations: also load decorations on top of obstacles
-        if (!isTemplateLocation)
+        if (isTemplateLocation)
         {
-            LoadDecorationsToTilemap();
+            _uiManager.SelectFirstPattern();
+        }
+        else
+        {
+            RenderAllPatternsToTilemap();
         }
     }
 
@@ -834,6 +844,133 @@ public class LevelTilemapEditor : EditorWindow
 
         EditorUtility.SetDirty(_tipeMapInScene.gameObject);
         _isTilemapBulkOperation = false;
+    }
+
+    /// <summary>
+    /// Отрисовывает все паттерны уровня последовательно слева направо (Level mode).
+    /// </summary>
+    private void RenderAllPatternsToTilemap()
+    {
+        if (_currentLevelInfo == null || _tipeMapInScene == null)
+            return;
+
+        _isTilemapBulkOperation = true;
+        _tipeMapInScene.ClearAllTiles();
+        _cellToPatternMap.Clear();
+
+        float singlePatternWidth = _patternDurationMinutes * 60f * Consts.GameSpeedBase;
+        var positions = new List<Vector3Int>();
+        var tiles = new List<TileBase>();
+
+        for (int p = 0; p < _currentLevelInfo.patterns.Count; p++)
+        {
+            var pattern = _currentLevelInfo.patterns[p];
+            float patternOffset = p * singlePatternWidth;
+
+            for (int o = 0; o < pattern.obstacles.Count; o++)
+            {
+                var obstacle = pattern.obstacles[o];
+                var sprite = SpriteLoader.LoadSpriteSync(obstacle.spriteName);
+                if (sprite == null) continue;
+
+                var tile = CreateInstance<Tile>();
+                tile.sprite = sprite;
+                tile.name = obstacle.spriteName;
+
+                var worldPos = new Vector3(obstacle.x + patternOffset, obstacle.y, 0f);
+                var cellPos = _tipeMapInScene.WorldToCell(worldPos);
+
+                positions.Add(cellPos);
+                tiles.Add(tile);
+                _cellToPatternMap[cellPos] = (p, o);
+            }
+        }
+
+        _tipeMapInScene.SetTiles(positions.ToArray(), tiles.ToArray());
+
+        LoadDecorationsToTilemap();
+
+        EditorUtility.SetDirty(_tipeMapInScene.gameObject);
+        _isTilemapBulkOperation = false;
+    }
+
+    /// <summary>
+    /// Зумирует SceneView к области выбранного паттерна.
+    /// </summary>
+    private void ZoomToPattern(int patternIndex)
+    {
+        float singlePatternWidth = _patternDurationMinutes * 60f * Consts.GameSpeedBase;
+        float xCenter = patternIndex * singlePatternWidth + singlePatternWidth / 2f;
+
+        var bounds = new Bounds(
+            new Vector3(xCenter, 0f, 0f),
+            new Vector3(singlePatternWidth, 10f, 0f)
+        );
+
+        var sceneView = SceneView.lastActiveSceneView;
+        if (sceneView != null)
+        {
+            EditorApplication.delayCall += () =>
+            {
+                sceneView.Frame(bounds, false);
+                sceneView.Repaint();
+            };
+        }
+    }
+
+    /// <summary>
+    /// Обработка кликов мыши в SceneView для выбора obstacle и показа override panel.
+    /// </summary>
+    private void OnSceneGUI(SceneView sceneView)
+    {
+        if (_tipeMapInScene == null || _cellToPatternMap.Count == 0)
+            return;
+
+        var isTemplateMode = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+        if (isTemplateMode)
+            return;
+
+        var evt = Event.current;
+        if (evt.type != EventType.MouseDown || evt.button != 0 || evt.alt)
+            return;
+
+        var worldRay = HandleUtility.GUIPointToWorldRay(evt.mousePosition);
+        var worldPos = worldRay.origin;
+        worldPos.z = 0f;
+
+        var cellPos = _tipeMapInScene.WorldToCell(worldPos);
+        if (!_cellToPatternMap.TryGetValue(cellPos, out var mapping))
+            return;
+
+        var (patternIndex, obstacleIndex) = mapping;
+        HandleTileClicked(patternIndex, obstacleIndex);
+        evt.Use();
+    }
+
+    /// <summary>
+    /// Показывает override panel для кликнутого obstacle.
+    /// </summary>
+    private void HandleTileClicked(int patternIndex, int obstacleIndex)
+    {
+        if (_currentLevelRef == null || _patternsCollection == null || _locationTheme == null)
+            return;
+
+        if (patternIndex < 0 || patternIndex >= _currentLevelRef.patternSequence.Count)
+            return;
+
+        var patternRef = _currentLevelRef.patternSequence[patternIndex];
+        var template = _patternsCollection.patterns.Find(p => p.name == patternRef.@ref);
+        if (template == null || obstacleIndex < 0 || obstacleIndex >= template.obstacles.Count)
+            return;
+
+        var slot = template.obstacles[obstacleIndex];
+        var resolvedSpriteName = _currentLevelInfo.patterns[patternIndex].obstacles[obstacleIndex].spriteName;
+
+        // Determine source
+        var hasOverride = patternRef.overrides?.Exists(o => o.obstacleId == slot.id) == true;
+        var source = hasOverride ? "override" : (patternRef.spriteSeed != 0 ? "seed" : "theme");
+
+        _spriteOverridePanel.Show(_currentLevelRef, _locationTheme, patternIndex, slot, resolvedSpriteName, source);
     }
 
     /// <summary>
@@ -1237,6 +1374,7 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.OnPatternSearchChanged += HandlePatternSearchChanged;
 
         _patternSequencePanel.OnSequenceChanged += HandlePatternSequenceChanged;
+        _patternSequencePanel.OnPatternSelected += ZoomToPattern;
         _spriteOverridePanel.OnOverrideChanged += HandleSpriteOverrideChanged;
 
         Tilemap.tilemapTileChanged += OnTileChanged;
@@ -1265,7 +1403,10 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         if (_patternSequencePanel != null)
+        {
             _patternSequencePanel.OnSequenceChanged -= HandlePatternSequenceChanged;
+            _patternSequencePanel.OnPatternSelected -= ZoomToPattern;
+        }
         if (_spriteOverridePanel != null)
             _spriteOverridePanel.OnOverrideChanged -= HandleSpriteOverrideChanged;
 
@@ -1281,12 +1422,7 @@ public class LevelTilemapEditor : EditorWindow
             return;
 
         _currentLevelInfo = LevelResolver.Resolve(_currentLevelRef, _patternsCollection, _locationTheme);
-
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-        _uiManager.UpdatePatternsList(patternNames);
-
-        if (patternNames.Count > 0)
-            _uiManager.SelectFirstPattern();
+        RenderAllPatternsToTilemap();
     }
 
     /// <summary>
@@ -1298,7 +1434,7 @@ public class LevelTilemapEditor : EditorWindow
             return;
 
         _currentLevelInfo = LevelResolver.Resolve(_currentLevelRef, _patternsCollection, _locationTheme);
-        AddTilesToTilemap();
+        RenderAllPatternsToTilemap();
     }
 
     /// <summary>

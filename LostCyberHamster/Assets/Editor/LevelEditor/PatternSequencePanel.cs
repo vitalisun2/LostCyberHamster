@@ -29,6 +29,7 @@ namespace Assets.Editor.LevelEditor
         private int _selectedSequenceIndex = -1;
 
         public event Action OnSequenceChanged;
+        public event Action<int> OnPatternSelected;
 
         public PatternSequencePanel(VisualElement parent)
         {
@@ -181,6 +182,8 @@ namespace Assets.Editor.LevelEditor
         {
             _selectedSequenceIndex = _sequenceList.selectedIndex;
             UpdateSeedField();
+            if (_selectedSequenceIndex >= 0)
+                OnPatternSelected?.Invoke(_selectedSequenceIndex);
         }
 
         private void UpdateSeedField()
