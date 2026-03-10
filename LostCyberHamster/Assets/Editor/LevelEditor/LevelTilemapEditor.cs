@@ -820,6 +820,11 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.UpdatePatternDescriptionField(_currentPattern.desсription);
 
         AddTilesToTilemap();
+
+        if (isTemplateMode)
+        {
+            FrameCurrentTilemapBounds();
+        }
     }
 
     /// <summary>
@@ -971,24 +976,47 @@ public class LevelTilemapEditor : EditorWindow
             return;
 
         var bounds = _patternBounds[patternIndex];
+        FrameToBounds(bounds);
+    }
+
+    /// <summary>
+    /// Вычисляет bounds всех тайлов на Tilemap и зумирует SceneView к ним.
+    /// </summary>
+    private void FrameCurrentTilemapBounds()
+    {
+        if (_tipeMapInScene == null) return;
+
+        _tipeMapInScene.CompressBounds();
+        var cellBounds = _tipeMapInScene.cellBounds;
+        if (cellBounds.size == Vector3Int.zero) return;
+
+        var worldMin = _tipeMapInScene.CellToWorld(cellBounds.min);
+        var worldMax = _tipeMapInScene.CellToWorld(cellBounds.max);
+        var bounds = new Bounds((worldMin + worldMax) / 2f, worldMax - worldMin);
+
+        FrameToBounds(bounds);
+    }
+
+    /// <summary>
+    /// Зумирует SceneView, чтобы указанные bounds заполняли viewport.
+    /// </summary>
+    private void FrameToBounds(Bounds bounds)
+    {
         if (bounds.size == Vector3.zero) return;
 
         var sceneView = SceneView.lastActiveSceneView;
-        if (sceneView != null)
-        {
-            EditorApplication.delayCall += () =>
-            {
-                // Сначала Frame для правильной ориентации, затем уточняем zoom
-                sceneView.Frame(bounds, false);
+        if (sceneView == null) return;
 
-                // Рассчитываем точный size, чтобы bounds заполнил viewport
-                float aspect = sceneView.camera.aspect;
-                float sizeByWidth = bounds.size.x / (2f * aspect);
-                float sizeByHeight = bounds.size.y / 2f;
-                sceneView.size = Mathf.Max(sizeByWidth, sizeByHeight);
-                sceneView.Repaint();
-            };
-        }
+        EditorApplication.delayCall += () =>
+        {
+            sceneView.Frame(bounds, false);
+
+            float aspect = sceneView.camera.aspect;
+            float sizeByWidth = bounds.size.x / (2f * aspect);
+            float sizeByHeight = bounds.size.y / 2f;
+            sceneView.size = Mathf.Max(sizeByWidth, sizeByHeight);
+            sceneView.Repaint();
+        };
     }
 
     /// <summary>
