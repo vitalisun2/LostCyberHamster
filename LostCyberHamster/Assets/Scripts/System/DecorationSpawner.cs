@@ -24,11 +24,11 @@ namespace Assets.Scripts.System
         public static DecorationSpawner Instance { get; private set; }
 
         private const string DecorSortingLayer = "Decor";
-        private const float ActivationPadding = 3f;
         private const float DeactivationPadding = 2f;
 
         private List<DecorationInstance> _decorations = new();
         private Transform _container;
+        private ScrollLeftMechanics[] _scrollMechanics;
 
         private void Awake()
         {
@@ -51,6 +51,14 @@ namespace Assets.Scripts.System
             LevelController.Instance.LevelData.GameManager.AddListener(this);
 
             CreateDecorations();
+
+            // Pre-create scroll mechanics for all decorations
+            _scrollMechanics = new ScrollLeftMechanics[_decorations.Count];
+            for (int i = 0; i < _decorations.Count; i++)
+            {
+                _scrollMechanics[i] = new ScrollLeftMechanics(
+                    _decorations[i].GameObject.transform, Consts.BackgroundScrollSpeed);
+            }
         }
 
         public void OnStart()
@@ -61,35 +69,21 @@ namespace Assets.Scripts.System
         public void OnUpdate(float deltaTime)
         {
             float screenLeft = Camera.main.transform.position.x - Camera.main.orthographicSize * Camera.main.aspect;
-            float screenRight = Camera.main.transform.position.x + Camera.main.orthographicSize * Camera.main.aspect;
 
             for (int i = 0; i < _decorations.Count; i++)
             {
                 var decor = _decorations[i];
 
                 if (!decor.IsActive)
-                {
-                    // Activate when approaching right edge of screen
-                    if (decor.GameObject.transform.position.x <= screenRight + ActivationPadding &&
-                        decor.GameObject.transform.position.x >= screenLeft - DeactivationPadding)
-                    {
-                        decor.GameObject.SetActive(true);
-                        decor.IsActive = true;
-                        decor.ScrollMechanics = new ScrollLeftMechanics(decor.GameObject.transform, Consts.RoadScrollSpeed);
-                    }
-
                     continue;
-                }
 
-                // Scroll
-                decor.ScrollMechanics.Update(deltaTime);
+                _scrollMechanics[i].Update(deltaTime);
 
                 // Deactivate when past left edge
                 if (decor.GameObject.transform.position.x < screenLeft - DeactivationPadding)
                 {
                     decor.GameObject.SetActive(false);
                     decor.IsActive = false;
-                    decor.ScrollMechanics = null;
                 }
             }
         }
@@ -148,13 +142,11 @@ namespace Assets.Scripts.System
                     float worldY = tile.yPos * Consts.GridSnapStep;
 
                     var go = CreateDecorationObject(tile.name, sprite, worldX, worldY);
-                    go.SetActive(false);
 
                     _decorations.Add(new DecorationInstance
                     {
                         GameObject = go,
-                        IsActive = false,
-                        ScrollMechanics = null
+                        IsActive = true
                     });
                 }
             }
@@ -178,7 +170,6 @@ namespace Assets.Scripts.System
         {
             public GameObject GameObject;
             public bool IsActive;
-            public ScrollLeftMechanics ScrollMechanics;
         }
     }
 }
