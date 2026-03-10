@@ -970,7 +970,14 @@ public class LevelTilemapEditor : EditorWindow
         {
             EditorApplication.delayCall += () =>
             {
+                // Сначала Frame для правильной ориентации, затем уточняем zoom
                 sceneView.Frame(bounds, false);
+
+                // Рассчитываем точный size, чтобы bounds заполнил viewport
+                float aspect = sceneView.camera.aspect;
+                float sizeByWidth = bounds.size.x / (2f * aspect);
+                float sizeByHeight = bounds.size.y / 2f;
+                sceneView.size = Mathf.Max(sizeByWidth, sizeByHeight);
                 sceneView.Repaint();
             };
         }
