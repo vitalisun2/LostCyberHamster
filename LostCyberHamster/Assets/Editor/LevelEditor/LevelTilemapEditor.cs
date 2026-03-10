@@ -539,6 +539,7 @@ public class LevelTilemapEditor : EditorWindow
             _allLevelDescriptors.Clear();
             _visibleLevelDescriptors.Clear();
             _uiManager.UpdateFilesList(_visibleLevelDescriptors);
+            ClearScene();
             return;
         }
 
@@ -561,15 +562,7 @@ public class LevelTilemapEditor : EditorWindow
 
         if (_visibleLevelDescriptors.Count == 0)
         {
-            if (reloadFromDisk)
-            {
-                _selectedFile = null;
-                _currentLevelInfo = null;
-                _currentLevelRef = null;
-                _selectedPatternIndex = -1;
-                _selectedLevelDescriptor = null;
-            }
-
+            ClearScene();
             return;
         }
 
@@ -1017,6 +1010,26 @@ public class LevelTilemapEditor : EditorWindow
 
         // открываем Tile Palette окно
         EditorApplication.ExecuteMenuItem("Window/2D/Tile Palette");
+    }
+
+    /// <summary>
+    /// Очищает сцену и сбрасывает состояние редактора при отсутствии уровней.
+    /// </summary>
+    private void ClearScene()
+    {
+        SceneCreator.CleanupOldSceneObjects(SceneManager.GetActiveScene());
+
+        _tipeMapInScene = null;
+        _selectedFile = null;
+        _currentLevelInfo = null;
+        _currentLevelRef = null;
+        _currentPattern = null;
+        _selectedPatternIndex = -1;
+        _selectedLevelDescriptor = null;
+
+        _uiManager.UpdatePatternsList(new List<string>());
+        _patternSequencePanel.Hide();
+        _spriteOverridePanel.Hide();
     }
 
     /// <summary>

@@ -44,9 +44,9 @@ public static class SceneCreator
     }
 
     /// <summary>
-    /// Удаляет все старые объекты Grid, Tilemap и BackgroundSegment из сцены.
+    /// Удаляет все старые объекты Grid, Tilemap, BackgroundSegment и RoadSegment из сцены.
     /// </summary>
-    private static void CleanupOldSceneObjects(Scene scene)
+    public static void CleanupOldSceneObjects(Scene scene)
     {
         var rootObjects = scene.GetRootGameObjects();
         int removedCount = 0;
