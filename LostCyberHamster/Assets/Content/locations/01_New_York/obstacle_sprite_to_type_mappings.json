@@ -1,100 +1,88 @@
 ﻿{
-  "obstacle_sprite_to_type_mappings": [
-    {
-      "type": 10,
-      "sprites": [
-        "decor_bush_1",
-        "decor_tree_1"
-      ],
-      "default": "decor_bush_1"
-    },
-    {
-      "type": 1,
-      "sprites": [
-        "obstacle_new_york_businessman",
-        "obstacle_new_york_granny",
-        "obstacle_new_york_hipster",
-        "obstacle_new_york_big_alive_1_idle",
-        "obstacle_new_york_big_alive_2_idle",
-        "obstacle_new_york_big_alive_3_idle",
-        "obstacle_new_york_big_alive_4_idle",
-        "obstacle_new_york_big_alive_5_idle",
-        "obstacle_new_york_big_alive_6_idle",
-        "obstacle_new_york_big_alive_7_idle"
-      ],
-      "default": "obstacle_new_york_businessman"
-    },
-    {
-      "type": 0,
-      "sprites": [
-        "obstacle_new_york_dog",
-        "obstacle_new_york_homeless"
-      ],
-      "default": "obstacle_new_york_dog"
-    },
-    {
-      "type": 2,
-      "sprites": [
-        "obstacle_new_york_manhole"
-      ],
-      "default": "obstacle_new_york_manhole"
-    },
-    {
-      "type": 3,
-      "sprites": [
-        "obstacle_new_york_opened_box"
-      ],
-      "default": "obstacle_new_york_opened_box"
-    },
-    {
-      "type": 4,
-      "sprites": [
-        "obstacle_new_york_car_1"
-      ],
-      "default": "obstacle_new_york_car_1"
-    },
-    {
-      "type": 11,
-      "sprites": [
-        "obstacle_new_york_car_2",
-        "obstacle_new_york_car_3"
-      ],
-      "default": "obstacle_new_york_car_2"
-    },
-    {
-      "type": 9,
-      "sprites": [
-        "coin"
-      ],
-      "default": "coin"
-    },
-    {
-      "type": 7,
-      "sprites": [
-        "crystal"
-      ],
-      "default": "crystal"
-    },
-    {
-      "type": 5,
-      "sprites": [
-        "energetic"
-      ],
-      "default": "energetic"
-    },
-    {
-      "type": 6,
-      "sprites": [
-        "pizza"
-      ],
-      "default": "pizza"
-    },
-    {
-      "type": 8,
-      "sprites": [
-        "life"
-      ],
-      "default": "life"
-    }
-  ]
+    "obstacle_sprite_to_type_mappings": [
+        {
+            "type": 10,
+            "sprites": [
+                "decor_bush_1",
+                "decor_tree_1"
+            ]
+        },
+        {
+            "type": 1,
+            "sprites": [
+                "obstacle_new_york_businessman",
+                "obstacle_new_york_granny",
+                "obstacle_new_york_hipster",
+                "obstacle_new_york_big_alive_1_idle",
+                "obstacle_new_york_big_alive_2_idle",
+                "obstacle_new_york_big_alive_3_idle",
+                "obstacle_new_york_big_alive_4_idle",
+                "obstacle_new_york_big_alive_5_idle",
+                "obstacle_new_york_big_alive_6_idle",
+                "obstacle_new_york_big_alive_7_idle"
+            ]
+        },
+        {
+            "type": 0,
+            "sprites": [
+                "obstacle_new_york_dog",
+                "obstacle_new_york_homeless"
+            ]
+        },
+        {
+            "type": 2,
+            "sprites": [
+                "obstacle_new_york_manhole"
+            ]
+        },
+        {
+            "type": 3,
+            "sprites": [
+                "obstacle_new_york_opened_box"
+            ]
+        },
+        {
+            "type": 4,
+            "sprites": [
+                "obstacle_new_york_car_1"
+            ]
+        },
+        {
+            "type": 11,
+            "sprites": [
+                "obstacle_new_york_car_2",
+                "obstacle_new_york_car_3"
+            ]
+        },
+        {
+            "type": 9,
+            "sprites": [
+                "coin"
+            ]
+        },
+        {
+            "type": 7,
+            "sprites": [
+                "crystal"
+            ]
+        },
+        {
+            "type": 5,
+            "sprites": [
+                "energetic"
+            ]
+        },
+        {
+            "type": 6,
+            "sprites": [
+                "pizza"
+            ]
+        },
+        {
+            "type": 8,
+            "sprites": [
+                "life"
+            ]
+        }
+    ]
 }

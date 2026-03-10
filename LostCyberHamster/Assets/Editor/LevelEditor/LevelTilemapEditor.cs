@@ -655,10 +655,12 @@ public class LevelTilemapEditor : EditorWindow
             _spriteOverridePanel.Hide();
         }
 
-        // 1) Вычисляем ширину для одной "прокрутки" паттерна
-        //    Исходя из того, что при ScrollSpeed=1 движемся ~3.8 ед/сек.
-        //    5 минут = 300 секунд => 300 * 3.8 = 1140, например.
-        float totalWidth = _patternDurationMinutes * 60f * 3.8f;
+        // Вычисляем общую ширину уровня.
+        // Для локаций: все паттерны × длительность одного.
+        // Для шаблонов: одна длительность (редактируются по одному).
+        float singlePatternWidth = _patternDurationMinutes * 60f * 3.8f;
+        int patternCount = isTemplateLocation ? 1 : _currentLevelInfo.patterns.Count;
+        float totalWidth = Math.Max(singlePatternWidth, patternCount * singlePatternWidth);
 
         // Вместо создания новой сцены — вызываем обновлённый метод,
         // который сам найдёт/очистит/или создаст сцену, и вернёт TilemapGameObject.
@@ -666,8 +668,7 @@ public class LevelTilemapEditor : EditorWindow
         _tipeMapInScene = tilemapGameObject.GetComponent<Tilemap>();
 
         // Load patterns (obstacles) for both Templates and Locations
-        var patternCount = _currentLevelInfo.patterns.Count;
-        if (patternCount == 0)
+        if (_currentLevelInfo.patterns.Count == 0)
         {
             Debug.LogWarning("Уровень не содержит паттернов.");
             _uiManager.UpdatePatternsList(new List<string>());
@@ -771,6 +772,14 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         _tipeMapInScene.SetTiles(positions.ToArray(), tiles.ToArray());
+
+        // Restore decorations after clearing tilemap (they are level-wide, not per-pattern)
+        var isTemplate = string.Equals(_currentLocationName, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
+        if (!isTemplate)
+        {
+            LoadDecorationsToTilemap();
+        }
+
         EditorUtility.SetDirty(_tipeMapInScene.gameObject);
         _isTilemapBulkOperation = false;
     }

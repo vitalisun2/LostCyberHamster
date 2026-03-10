@@ -1,425 +1,320 @@
 ﻿{
-  "skyTexture": "",
-  "background2Texture": "bg_2_new_york_morning",
-  "backgroundTexture": "bg_new_york_morning",
-  "roadTexture": "",
-  "location": "01_New_York",
-  "patternSequence": [
-    {
-      "ref": "easy_run",
-      "spriteSeed": 0,
-      "overrides": [
+    "skyTexture": "",
+    "background2Texture": "bg_2_new_york_morning",
+    "backgroundTexture": "bg_new_york_morning",
+    "roadTexture": "",
+    "location": "01_New_York",
+    "patternSequence": [
         {
-          "obstacleId": 2,
-          "spriteName": "obstacle_new_york_big_alive_3_idle"
+            "ref": "easy_run",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 2,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                },
+                {
+                    "obstacleId": 4,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                }
+            ]
         },
         {
-          "obstacleId": 4,
-          "spriteName": "obstacle_new_york_big_alive_5_idle"
+            "ref": "easy_run",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 2,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                },
+                {
+                    "obstacleId": 4,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                }
+            ]
+        },
+        {
+            "ref": "small_jumps",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 1,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                },
+                {
+                    "obstacleId": 3,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                },
+                {
+                    "obstacleId": 4,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                },
+                {
+                    "obstacleId": 5,
+                    "spriteName": "obstacle_new_york_big_alive_4_idle"
+                },
+                {
+                    "obstacleId": 8,
+                    "spriteName": "obstacle_new_york_homeless"
+                },
+                {
+                    "obstacleId": 14,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                },
+                {
+                    "obstacleId": 19,
+                    "spriteName": "obstacle_new_york_big_alive_4_idle"
+                },
+                {
+                    "obstacleId": 20,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                },
+                {
+                    "obstacleId": 22,
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                },
+                {
+                    "obstacleId": 23,
+                    "spriteName": "obstacle_new_york_big_alive_2_idle"
+                },
+                {
+                    "obstacleId": 25,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                }
+            ]
+        },
+        {
+            "ref": "small_jumps",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 1,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                },
+                {
+                    "obstacleId": 3,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                },
+                {
+                    "obstacleId": 4,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                },
+                {
+                    "obstacleId": 5,
+                    "spriteName": "obstacle_new_york_big_alive_4_idle"
+                },
+                {
+                    "obstacleId": 8,
+                    "spriteName": "obstacle_new_york_homeless"
+                },
+                {
+                    "obstacleId": 14,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                },
+                {
+                    "obstacleId": 19,
+                    "spriteName": "obstacle_new_york_big_alive_4_idle"
+                },
+                {
+                    "obstacleId": 20,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                },
+                {
+                    "obstacleId": 22,
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                },
+                {
+                    "obstacleId": 23,
+                    "spriteName": "obstacle_new_york_big_alive_2_idle"
+                },
+                {
+                    "obstacleId": 25,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                }
+            ]
+        },
+        {
+            "ref": "easy_run",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 2,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                },
+                {
+                    "obstacleId": 4,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                }
+            ]
+        },
+        {
+            "ref": "medium_difficulty",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 0,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                },
+                {
+                    "obstacleId": 5,
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                },
+                {
+                    "obstacleId": 7,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                },
+                {
+                    "obstacleId": 8,
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                },
+                {
+                    "obstacleId": 11,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                },
+                {
+                    "obstacleId": 12,
+                    "spriteName": "obstacle_new_york_homeless"
+                },
+                {
+                    "obstacleId": 13,
+                    "spriteName": "obstacle_new_york_big_alive_6_idle"
+                },
+                {
+                    "obstacleId": 14,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                },
+                {
+                    "obstacleId": 22,
+                    "spriteName": "obstacle_new_york_big_alive_6_idle"
+                }
+            ]
+        },
+        {
+            "ref": "medium_difficulty",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 0,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                },
+                {
+                    "obstacleId": 5,
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                },
+                {
+                    "obstacleId": 7,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                },
+                {
+                    "obstacleId": 8,
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                },
+                {
+                    "obstacleId": 11,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                },
+                {
+                    "obstacleId": 12,
+                    "spriteName": "obstacle_new_york_homeless"
+                },
+                {
+                    "obstacleId": 13,
+                    "spriteName": "obstacle_new_york_big_alive_6_idle"
+                },
+                {
+                    "obstacleId": 14,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                },
+                {
+                    "obstacleId": 22,
+                    "spriteName": "obstacle_new_york_big_alive_6_idle"
+                }
+            ]
+        },
+        {
+            "ref": "easy_run",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 2,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                },
+                {
+                    "obstacleId": 4,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                }
+            ]
         }
-      ]
-    },
-    {
-      "ref": "easy_run",
-      "spriteSeed": 0,
-      "overrides": [
+    ],
+    "decorationPatterns": [
         {
-          "obstacleId": 2,
-          "spriteName": "obstacle_new_york_big_alive_3_idle"
-        },
-        {
-          "obstacleId": 4,
-          "spriteName": "obstacle_new_york_big_alive_5_idle"
+            "decorationTiles": [
+                {
+                    "name": "decor_tree_1",
+                    "xPos": -31,
+                    "yPos": -2
+                },
+                {
+                    "name": "decor_tree_1",
+                    "xPos": 1,
+                    "yPos": -2
+                },
+                {
+                    "name": "decor_tree_1",
+                    "xPos": 70,
+                    "yPos": -2
+                },
+                {
+                    "name": "decor_tree_1",
+                    "xPos": 96,
+                    "yPos": -2
+                },
+                {
+                    "name": "decor_tree_1",
+                    "xPos": 138,
+                    "yPos": -2
+                },
+                {
+                    "name": "decor_bush_1",
+                    "xPos": 93,
+                    "yPos": -1
+                },
+                {
+                    "name": "decor_bush_1",
+                    "xPos": -35,
+                    "yPos": 0
+                },
+                {
+                    "name": "decor_bush_1",
+                    "xPos": -3,
+                    "yPos": 0
+                },
+                {
+                    "name": "decor_bush_1",
+                    "xPos": 17,
+                    "yPos": 0
+                },
+                {
+                    "name": "decor_bush_1",
+                    "xPos": 32,
+                    "yPos": 0
+                },
+                {
+                    "name": "decor_bush_1",
+                    "xPos": 55,
+                    "yPos": 0
+                },
+                {
+                    "name": "decor_bush_1",
+                    "xPos": 115,
+                    "yPos": 0
+                },
+                {
+                    "name": "decor_bush_1",
+                    "xPos": 132,
+                    "yPos": 2
+                }
+            ]
         }
-      ]
-    },
-    {
-      "ref": "small_jumps",
-      "spriteSeed": 0,
-      "overrides": [
-        {
-          "obstacleId": 1,
-          "spriteName": "obstacle_new_york_big_alive_7_idle"
-        },
-        {
-          "obstacleId": 3,
-          "spriteName": "obstacle_new_york_big_alive_5_idle"
-        },
-        {
-          "obstacleId": 4,
-          "spriteName": "obstacle_new_york_big_alive_7_idle"
-        },
-        {
-          "obstacleId": 5,
-          "spriteName": "obstacle_new_york_big_alive_4_idle"
-        },
-        {
-          "obstacleId": 8,
-          "spriteName": "obstacle_new_york_homeless"
-        },
-        {
-          "obstacleId": 14,
-          "spriteName": "obstacle_new_york_big_alive_7_idle"
-        },
-        {
-          "obstacleId": 19,
-          "spriteName": "obstacle_new_york_big_alive_4_idle"
-        },
-        {
-          "obstacleId": 20,
-          "spriteName": "obstacle_new_york_big_alive_5_idle"
-        },
-        {
-          "obstacleId": 22,
-          "spriteName": "obstacle_new_york_big_alive_1_idle"
-        },
-        {
-          "obstacleId": 23,
-          "spriteName": "obstacle_new_york_big_alive_2_idle"
-        },
-        {
-          "obstacleId": 25,
-          "spriteName": "obstacle_new_york_big_alive_7_idle"
-        }
-      ]
-    },
-    {
-      "ref": "small_jumps",
-      "spriteSeed": 0,
-      "overrides": [
-        {
-          "obstacleId": 1,
-          "spriteName": "obstacle_new_york_big_alive_7_idle"
-        },
-        {
-          "obstacleId": 3,
-          "spriteName": "obstacle_new_york_big_alive_5_idle"
-        },
-        {
-          "obstacleId": 4,
-          "spriteName": "obstacle_new_york_big_alive_7_idle"
-        },
-        {
-          "obstacleId": 5,
-          "spriteName": "obstacle_new_york_big_alive_4_idle"
-        },
-        {
-          "obstacleId": 8,
-          "spriteName": "obstacle_new_york_homeless"
-        },
-        {
-          "obstacleId": 14,
-          "spriteName": "obstacle_new_york_big_alive_7_idle"
-        },
-        {
-          "obstacleId": 19,
-          "spriteName": "obstacle_new_york_big_alive_4_idle"
-        },
-        {
-          "obstacleId": 20,
-          "spriteName": "obstacle_new_york_big_alive_5_idle"
-        },
-        {
-          "obstacleId": 22,
-          "spriteName": "obstacle_new_york_big_alive_1_idle"
-        },
-        {
-          "obstacleId": 23,
-          "spriteName": "obstacle_new_york_big_alive_2_idle"
-        },
-        {
-          "obstacleId": 25,
-          "spriteName": "obstacle_new_york_big_alive_7_idle"
-        }
-      ]
-    },
-    {
-      "ref": "easy_run",
-      "spriteSeed": 0,
-      "overrides": [
-        {
-          "obstacleId": 2,
-          "spriteName": "obstacle_new_york_big_alive_3_idle"
-        },
-        {
-          "obstacleId": 4,
-          "spriteName": "obstacle_new_york_big_alive_5_idle"
-        }
-      ]
-    },
-    {
-      "ref": "medium_difficulty",
-      "spriteSeed": 0,
-      "overrides": [
-        {
-          "obstacleId": 0,
-          "spriteName": "obstacle_new_york_big_alive_3_idle"
-        },
-        {
-          "obstacleId": 5,
-          "spriteName": "obstacle_new_york_big_alive_1_idle"
-        },
-        {
-          "obstacleId": 7,
-          "spriteName": "obstacle_new_york_big_alive_7_idle"
-        },
-        {
-          "obstacleId": 8,
-          "spriteName": "obstacle_new_york_big_alive_1_idle"
-        },
-        {
-          "obstacleId": 11,
-          "spriteName": "obstacle_new_york_big_alive_5_idle"
-        },
-        {
-          "obstacleId": 12,
-          "spriteName": "obstacle_new_york_homeless"
-        },
-        {
-          "obstacleId": 13,
-          "spriteName": "obstacle_new_york_big_alive_6_idle"
-        },
-        {
-          "obstacleId": 14,
-          "spriteName": "obstacle_new_york_big_alive_3_idle"
-        },
-        {
-          "obstacleId": 22,
-          "spriteName": "obstacle_new_york_big_alive_6_idle"
-        }
-      ]
-    },
-    {
-      "ref": "medium_difficulty",
-      "spriteSeed": 0,
-      "overrides": [
-        {
-          "obstacleId": 0,
-          "spriteName": "obstacle_new_york_big_alive_3_idle"
-        },
-        {
-          "obstacleId": 5,
-          "spriteName": "obstacle_new_york_big_alive_1_idle"
-        },
-        {
-          "obstacleId": 7,
-          "spriteName": "obstacle_new_york_big_alive_7_idle"
-        },
-        {
-          "obstacleId": 8,
-          "spriteName": "obstacle_new_york_big_alive_1_idle"
-        },
-        {
-          "obstacleId": 11,
-          "spriteName": "obstacle_new_york_big_alive_5_idle"
-        },
-        {
-          "obstacleId": 12,
-          "spriteName": "obstacle_new_york_homeless"
-        },
-        {
-          "obstacleId": 13,
-          "spriteName": "obstacle_new_york_big_alive_6_idle"
-        },
-        {
-          "obstacleId": 14,
-          "spriteName": "obstacle_new_york_big_alive_3_idle"
-        },
-        {
-          "obstacleId": 22,
-          "spriteName": "obstacle_new_york_big_alive_6_idle"
-        }
-      ]
-    },
-    {
-      "ref": "easy_run",
-      "spriteSeed": 0,
-      "overrides": [
-        {
-          "obstacleId": 2,
-          "spriteName": "obstacle_new_york_big_alive_3_idle"
-        },
-        {
-          "obstacleId": 4,
-          "spriteName": "obstacle_new_york_big_alive_5_idle"
-        }
-      ]
-    }
-  ],
-  "decorationPatterns": [
-    {
-      "decorationTiles": [
-        {
-          "name": "decor_bush_1",
-          "xPos": 378,
-          "yPos": -16
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 577,
-          "yPos": -15
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 578,
-          "yPos": -15
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 449,
-          "yPos": -14
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 634,
-          "yPos": -13
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 151,
-          "yPos": -6
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 567,
-          "yPos": -6
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 534,
-          "yPos": -5
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 535,
-          "yPos": -5
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 567,
-          "yPos": -5
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 633,
-          "yPos": -4
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 396,
-          "yPos": -3
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 360,
-          "yPos": -2
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 80,
-          "yPos": -1
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 183,
-          "yPos": -1
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 11,
-          "yPos": 0
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 12,
-          "yPos": 0
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 78,
-          "yPos": 0
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 79,
-          "yPos": 0
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 419,
-          "yPos": 0
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 278,
-          "yPos": 1
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 279,
-          "yPos": 1
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 418,
-          "yPos": 1
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 479,
-          "yPos": 1
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 609,
-          "yPos": 1
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 610,
-          "yPos": 1
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 611,
-          "yPos": 1
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 53,
-          "yPos": 2
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 54,
-          "yPos": 2
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 120,
-          "yPos": 2
-        },
-        {
-          "name": "decor_bush_1",
-          "xPos": 120,
-          "yPos": 3
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 236,
-          "yPos": 3
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 237,
-          "yPos": 3
-        },
-        {
-          "name": "decor_tree_1",
-          "xPos": 344,
-          "yPos": 7
-        }
-      ]
-    }
-  ]
+    ]
 }
