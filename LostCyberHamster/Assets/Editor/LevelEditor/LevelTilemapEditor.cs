@@ -72,9 +72,9 @@ public class LevelTilemapEditor : EditorWindow
     private Dictionary<Vector3Int, (int patternIndex, int obstacleIndex)> _cellToPatternMap = new();
 
     /// <summary>
-    /// X-offset и ширина каждого паттерна при последовательной отрисовке.
+    /// Реальные world bounds каждого паттерна при последовательной отрисовке.
     /// </summary>
-    private List<(float xOffset, float width)> _patternOffsets = new();
+    private List<Bounds> _patternBounds = new();
 
     private const float PatternGap = 2f;
 
@@ -883,7 +883,7 @@ public class LevelTilemapEditor : EditorWindow
         _isTilemapBulkOperation = true;
         _tipeMapInScene.ClearAllTiles();
         _cellToPatternMap.Clear();
-        _patternOffsets.Clear();
+        _patternBounds.Clear();
 
         var positions = new List<Vector3Int>();
         var tiles = new List<TileBase>();
@@ -894,7 +894,7 @@ public class LevelTilemapEditor : EditorWindow
             var pattern = _currentLevelInfo.patterns[p];
             if (pattern.obstacles == null || pattern.obstacles.Count == 0)
             {
-                _patternOffsets.Add((cumulativeOffset, 0f));
+                _patternBounds.Add(new Bounds());
                 continue;
             }
 
@@ -909,7 +909,8 @@ public class LevelTilemapEditor : EditorWindow
             float patternWidth = maxX - minX + PatternGap;
             float patternOffset = cumulativeOffset - minX;
 
-            _patternOffsets.Add((cumulativeOffset, patternWidth));
+            bool boundsInitialized = false;
+            var patternBounds = new Bounds();
 
             for (int o = 0; o < pattern.obstacles.Count; o++)
             {
@@ -924,11 +925,24 @@ public class LevelTilemapEditor : EditorWindow
                 var worldPos = new Vector3(obstacle.x + patternOffset, obstacle.y, 0f);
                 var cellPos = _tipeMapInScene.WorldToCell(worldPos);
 
+                // Вычисляем bounds спрайта для framing
+                var spriteBounds = new Bounds(worldPos, new Vector3(sprite.bounds.size.x, sprite.bounds.size.y, 0f));
+                if (!boundsInitialized)
+                {
+                    patternBounds = spriteBounds;
+                    boundsInitialized = true;
+                }
+                else
+                {
+                    patternBounds.Encapsulate(spriteBounds);
+                }
+
                 positions.Add(cellPos);
                 tiles.Add(tile);
                 _cellToPatternMap[cellPos] = (p, o);
             }
 
+            _patternBounds.Add(patternBounds);
             cumulativeOffset += patternWidth;
         }
 
@@ -945,18 +959,11 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void ZoomToPattern(int patternIndex)
     {
-        if (patternIndex < 0 || patternIndex >= _patternOffsets.Count)
+        if (patternIndex < 0 || patternIndex >= _patternBounds.Count)
             return;
 
-        var (xOffset, width) = _patternOffsets[patternIndex];
-        if (width <= 0f) return;
-
-        float xCenter = xOffset + width / 2f;
-
-        var bounds = new Bounds(
-            new Vector3(xCenter, -2f, 0f),
-            new Vector3(width + 4f, 8f, 0f)
-        );
+        var bounds = _patternBounds[patternIndex];
+        if (bounds.size == Vector3.zero) return;
 
         var sceneView = SceneView.lastActiveSceneView;
         if (sceneView != null)
