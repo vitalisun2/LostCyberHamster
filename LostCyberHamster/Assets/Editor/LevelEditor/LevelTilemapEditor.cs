@@ -71,6 +71,13 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private Dictionary<Vector3Int, (int patternIndex, int obstacleIndex)> _cellToPatternMap = new();
 
+    /// <summary>
+    /// X-offset и ширина каждого паттерна при последовательной отрисовке.
+    /// </summary>
+    private List<(float xOffset, float width)> _patternOffsets = new();
+
+    private const float PatternGap = 2f;
+
     private string _levelsDirectory;
     private string _levelDesignTemplatesDirectory;
     private string _spritesDirectory;
@@ -708,11 +715,29 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         // Вычисляем общую ширину уровня.
-        // Для локаций: все паттерны × длительность одного.
-        // Для шаблонов: одна длительность (редактируются по одному).
-        float singlePatternWidth = _patternDurationMinutes * 60f * 3.8f;
-        int patternCount = isTemplateLocation ? 1 : _currentLevelInfo.patterns.Count;
-        float totalWidth = Math.Max(singlePatternWidth, patternCount * singlePatternWidth);
+        float singlePatternWidth = _patternDurationMinutes * 60f * Consts.GameSpeedBase;
+        float totalWidth;
+        if (isTemplateLocation)
+        {
+            totalWidth = singlePatternWidth;
+        }
+        else
+        {
+            totalWidth = 0f;
+            foreach (var pattern in _currentLevelInfo.patterns)
+            {
+                if (pattern.obstacles == null || pattern.obstacles.Count == 0) continue;
+                float maxX = float.MinValue;
+                float minX = float.MaxValue;
+                foreach (var obs in pattern.obstacles)
+                {
+                    if (obs.x > maxX) maxX = obs.x;
+                    if (obs.x < minX) minX = obs.x;
+                }
+                totalWidth += maxX - minX + PatternGap;
+            }
+            totalWidth = Math.Max(totalWidth, singlePatternWidth);
+        }
 
         // Создаём сцену с фоном и дорогой по naming convention
         string locationForBg = isTemplateLocation ? "01_New_York" : _currentLocationName;
@@ -848,6 +873,7 @@ public class LevelTilemapEditor : EditorWindow
 
     /// <summary>
     /// Отрисовывает все паттерны уровня последовательно слева направо (Level mode).
+    /// Ширина каждого паттерна определяется реальным диапазоном x-координат его obstacles.
     /// </summary>
     private void RenderAllPatternsToTilemap()
     {
@@ -857,15 +883,33 @@ public class LevelTilemapEditor : EditorWindow
         _isTilemapBulkOperation = true;
         _tipeMapInScene.ClearAllTiles();
         _cellToPatternMap.Clear();
+        _patternOffsets.Clear();
 
-        float singlePatternWidth = _patternDurationMinutes * 60f * Consts.GameSpeedBase;
         var positions = new List<Vector3Int>();
         var tiles = new List<TileBase>();
+        float cumulativeOffset = 0f;
 
         for (int p = 0; p < _currentLevelInfo.patterns.Count; p++)
         {
             var pattern = _currentLevelInfo.patterns[p];
-            float patternOffset = p * singlePatternWidth;
+            if (pattern.obstacles == null || pattern.obstacles.Count == 0)
+            {
+                _patternOffsets.Add((cumulativeOffset, 0f));
+                continue;
+            }
+
+            float minX = float.MaxValue;
+            float maxX = float.MinValue;
+            foreach (var obs in pattern.obstacles)
+            {
+                if (obs.x < minX) minX = obs.x;
+                if (obs.x > maxX) maxX = obs.x;
+            }
+
+            float patternWidth = maxX - minX + PatternGap;
+            float patternOffset = cumulativeOffset - minX;
+
+            _patternOffsets.Add((cumulativeOffset, patternWidth));
 
             for (int o = 0; o < pattern.obstacles.Count; o++)
             {
@@ -884,6 +928,8 @@ public class LevelTilemapEditor : EditorWindow
                 tiles.Add(tile);
                 _cellToPatternMap[cellPos] = (p, o);
             }
+
+            cumulativeOffset += patternWidth;
         }
 
         _tipeMapInScene.SetTiles(positions.ToArray(), tiles.ToArray());
@@ -899,12 +945,17 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void ZoomToPattern(int patternIndex)
     {
-        float singlePatternWidth = _patternDurationMinutes * 60f * Consts.GameSpeedBase;
-        float xCenter = patternIndex * singlePatternWidth + singlePatternWidth / 2f;
+        if (patternIndex < 0 || patternIndex >= _patternOffsets.Count)
+            return;
+
+        var (xOffset, width) = _patternOffsets[patternIndex];
+        if (width <= 0f) return;
+
+        float xCenter = xOffset + width / 2f;
 
         var bounds = new Bounds(
-            new Vector3(xCenter, 0f, 0f),
-            new Vector3(singlePatternWidth, 10f, 0f)
+            new Vector3(xCenter, -2f, 0f),
+            new Vector3(width + 4f, 8f, 0f)
         );
 
         var sceneView = SceneView.lastActiveSceneView;
