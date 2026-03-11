@@ -36,11 +36,6 @@ namespace Assets.Scripts.Bot
         // (1.817 - 0.85) * GameSpeedBase ≈ 3.5 юнитов.
         private const float JumpOnBounceTravel = 3.5f;
 
-        // Для напрыгивания (JumpOn) центр хомяка должен попасть внутрь цели.
-        // При worldShift=3.8 нужно прыгать когда цель на ~3.0–3.5 юнитов.
-        // Отступ от JumpLandingTravel для попадания в центр цели:
-        private const float JumpOnTargetDistance = JumpLandingTravel - 0.5f;
-
         // Минимальное расстояние, с которого ульту имеет смысл использовать
         private const float UltaMinDistance = 1.0f;
 
@@ -271,9 +266,10 @@ namespace Assets.Scripts.Bot
                     continue; // Небезопасно — пропускаем эту Target
                 }
 
-                // Дистанция исполнения: для JumpOn нужно прыгать заранее,
-                // чтобы центр хомяка попал внутрь цели при worldShift.
-                float execDist = isJumpOn ? JumpOnTargetDistance : SafeMargin;
+                // Дистанция исполнения: для JumpOn используем JumpLandingTravel
+                // как порог входа — точный момент прыжка определяет
+                // ShouldDelayJumpOn в HamsterBot через CollisionUtils.
+                float execDist = isJumpOn ? JumpLandingTravel : SafeMargin;
 
                 // Проверяем энергию (+ аварийная покупка — Этап 8)
                 if (energy < totalEnergyCost)

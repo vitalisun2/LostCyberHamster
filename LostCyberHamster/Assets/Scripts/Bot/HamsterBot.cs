@@ -193,6 +193,9 @@ namespace Assets.Scripts.Bot
                             if (ShouldDelayJumpOver(step, target))
                                 return; // ждём — CollisionUtils показывает overlap
 
+                            if (ShouldDelayJumpOn(step, target))
+                                return; // ждём — центр ещё не попадает внутрь цели
+
                             ExecuteAction(step.Action);
                             _dirty = true; // пересчитать после действия
                         }
@@ -256,6 +259,41 @@ namespace Assets.Scripts.Bot
         }
 
         // ──────────────── Jump-Over Collision Check ────────────────
+
+        /// <summary>
+        /// Для JumpOn (Target) — ждёт момент, когда центр хомяка попадёт внутрь цели.
+        /// Использует CollisionUtils.IsHamsterCenterInsideObstacleAtShift —
+        /// ту же проверку, что JumpMechanics.HandleSmallAlive для JumpOnObstacle.
+        /// </summary>
+        private bool ShouldDelayJumpOn(ChainStep step, ObstacleInfo target)
+        {
+            if (step.Action != BotAction.Jump && step.Action != BotAction.RoofJump)
+                return false;
+
+            if (step.Reason == null || !step.Reason.StartsWith("JumpOn"))
+                return false;
+
+            var obsRef = target.ObstacleRef;
+            if (obsRef == null) return false;
+
+            EnsureWorldShiftsCached();
+            float worldShift = step.Action == BotAction.RoofJump
+                ? _roofJumpWorldShift
+                : _jumpWorldShift;
+            if (worldShift <= 0f) return false;
+
+            // Та же проверка, что JumpMechanics: rightTol = hamsterWidth * 0.2
+            float rightTol = _hamster.ColliderWidth * 0.2f;
+            bool wouldLandOn = CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
+                _hamster.transform, worldShift, obsRef, rightTol);
+
+            if (wouldLandOn) return false; // идеальный момент — прыгаем!
+
+            // Failsafe: слишком близко — прыгаем всё равно (лучше damage, чем crash)
+            float realDist = obsRef.transform.position.x
+                - obsRef.ColliderWidth * 0.5f - _hamster.RightX;
+            return realDist > 0.5f;
+        }
 
         /// <summary>
         /// Проверяет, приведёт ли прыжок прямо сейчас к наложению на препятствие.
