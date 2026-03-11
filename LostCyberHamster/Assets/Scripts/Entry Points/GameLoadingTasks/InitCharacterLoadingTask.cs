@@ -44,11 +44,22 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
         private void AddGameListeners(Hamster hamster)
         {
+            var gameManager = LevelController.Instance.LevelData.GameManager;
             var listeners = hamster.gameObject.GetComponentsInChildren<Listeners.IGameListener>();
 
             foreach (var listener in listeners)
             {
-                LevelController.Instance.LevelData.GameManager.AddListener(listener);
+                gameManager.AddListener(listener);
+            }
+
+            // If game already started (e.g. test level without intro), fire OnStart for late listeners
+            if (gameManager.State == GameState.PLAYING)
+            {
+                foreach (var listener in listeners)
+                {
+                    if (listener is Listeners.IGameStartListener startListener)
+                        startListener.OnStart();
+                }
             }
         }
 

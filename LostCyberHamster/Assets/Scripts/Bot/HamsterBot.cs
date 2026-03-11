@@ -64,8 +64,10 @@ namespace Assets.Scripts.Bot
 
         // Watchdog: обнаружение застревания в неконтролируемом состоянии
         private float _uncontrollableStartTime;
+        private float _lastWatchdogWarnTime;
         private bool _inUncontrollableState;
         private const float UncontrollableWarnTime = 2f;
+        private const float ForceRecoveryTime = 5f;
         private float _lastPeriodicLogTime;
 
         // ──────────────── Lifecycle ────────────────
@@ -132,11 +134,23 @@ namespace Assets.Scripts.Bot
                 {
                     _inUncontrollableState = true;
                     _uncontrollableStartTime = Time.time;
+                    _lastWatchdogWarnTime = Time.time;
                 }
-                else if (Time.time - _uncontrollableStartTime > UncontrollableWarnTime)
+                else
                 {
-                    DebugManager.DiagLog($"[HamsterBot] WARNING: stuck in state={currentState} for {Time.time - _uncontrollableStartTime:F1}s");
-                    _uncontrollableStartTime = Time.time; // не спамить, лог раз в 2 сек
+                    float elapsed = Time.time - _uncontrollableStartTime;
+                    if (Time.time - _lastWatchdogWarnTime >= UncontrollableWarnTime)
+                    {
+                        _lastWatchdogWarnTime = Time.time;
+                        DebugManager.DiagLog($"[HamsterBot] WARNING: stuck in state={currentState} for {elapsed:F1}s");
+                    }
+
+                    if (elapsed >= ForceRecoveryTime)
+                    {
+                        DebugManager.DiagLog($"[HamsterBot] RECOVERY: forcing state from {currentState} to Run after {elapsed:F1}s");
+                        _hamster.HamsterState.Value = HamsterStateEnum.Run;
+                        _inUncontrollableState = false;
+                    }
                 }
                 return;
             }
