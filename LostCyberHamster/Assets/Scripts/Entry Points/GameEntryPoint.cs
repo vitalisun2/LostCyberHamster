@@ -57,6 +57,7 @@ namespace Assets.Scripts.Entry_Points
 
         private async Task ExecuteTask(ILoadingTask task, Dictionary<string, object> bundle)
         {
+            DebugManager.DiagLog($"[GameEntryPoint] >>> Starting task: {task.Name}");
             await task.LoadAsync(bundle);
 
             if (task is ILoadingTaskParallel parallelTask)
@@ -71,7 +72,7 @@ namespace Assets.Scripts.Entry_Points
                 }
             }
 
-            Debug.Log($"Finished task: {task.Name}");
+            DebugManager.DiagLog($"[GameEntryPoint] <<< Finished task: {task.Name}");
         }
     }
 

@@ -381,6 +381,34 @@ namespace Assets.Scripts.Bot
             }
             DebugManager.DiagLog(
                 $"[HamsterBot] EXEC #{_actionsExecuted}: {action} state={_hamster.HamsterState.Value} pos={_hamster.RightX:F2}{nearInfo}");
+
+            // Мониторинг: через 2 кадра проверяем, перешёл ли Animator в новый state
+            StartCoroutine(LogAnimatorStateAfterFrames(action, _actionsExecuted));
+        }
+
+        private IEnumerator LogAnimatorStateAfterFrames(BotAction action, int execNum)
+        {
+            yield return null; // 1 кадр
+            yield return null; // 2 кадр
+
+            var transformAnim = _hamster.GetComponentInChildren<TransformAnimatorController>();
+            var spriteAnim = _hamster.GetComponentInChildren<SpriteAnimatorController>();
+            if (transformAnim != null)
+            {
+                var a = transformAnim.Animator;
+                var info = a.GetCurrentAnimatorStateInfo(0);
+                var clips = a.GetCurrentAnimatorClipInfo(0);
+                string clipName = clips.Length > 0 ? clips[0].clip.name : "?";
+                DebugManager.DiagLog($"[HamsterBot] ANIM_CHECK exec#{execNum} ({action}) +2frames: transformAnim enabled={a.enabled} stateHash={info.shortNameHash} clip='{clipName}' normTime={info.normalizedTime:F2} hamsterState={_hamster.HamsterState.Value}");
+            }
+            if (spriteAnim != null)
+            {
+                var a = spriteAnim.GetComponent<Animator>();
+                var info = a.GetCurrentAnimatorStateInfo(0);
+                var clips = a.GetCurrentAnimatorClipInfo(0);
+                string clipName = clips.Length > 0 ? clips[0].clip.name : "?";
+                DebugManager.DiagLog($"[HamsterBot] ANIM_CHECK exec#{execNum} ({action}) +2frames: spriteAnim enabled={a.enabled} stateHash={info.shortNameHash} clip='{clipName}' normTime={info.normalizedTime:F2}");
+            }
         }
     }
 }

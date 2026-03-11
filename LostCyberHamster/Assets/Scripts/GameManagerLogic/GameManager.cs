@@ -163,18 +163,20 @@ namespace Assets.Scripts.GameManagerLogic
         [Button]
         public void StartGame()
         {
-            Debug.Log("Game Started");
+            DebugManager.DiagLog($"[GameManager] StartGame() called. {_listeners.Count} listeners registered.");
 
             foreach (var listener in _listeners)
             {
                 if (listener is Listeners.IGameStartListener startListener)
                 {
+                    DebugManager.DiagLog($"[GameManager] Calling OnStart on: {startListener.GetType().Name}");
                     startListener.OnStart();
                 }
             }
 
             TimeScaleCoefficient = 1f; 
             _state = GameState.PLAYING;
+            DebugManager.DiagLog("[GameManager] State set to PLAYING.");
         }
 
         [Button]

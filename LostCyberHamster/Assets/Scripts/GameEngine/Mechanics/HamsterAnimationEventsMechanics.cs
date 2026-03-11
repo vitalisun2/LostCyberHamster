@@ -39,16 +39,19 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             _transformAnimatorEventsDispatcher.OnEvent += OnEvent;
             _spriteAnimatorEventsDispatcher.OnEvent += OnEvent;
+            DebugManager.DiagLog("[AnimEvents] OnEnable: subscribed to transform + sprite event dispatchers.");
         }
 
         public void OnDisable()
         {
             _transformAnimatorEventsDispatcher.OnEvent -= OnEvent;
             _spriteAnimatorEventsDispatcher.OnEvent -= OnEvent;
+            DebugManager.DiagLog("[AnimEvents] OnDisable: unsubscribed.");
         }
 
         private void OnEvent(string animEvent)
         {
+            DebugManager.DiagLog($"[AnimEvents] OnEvent received: '{animEvent}' currentHamsterState={_hamsterState.Value}");
             if (animEvent == "transform_jumped_on")
             {
                 _destroyObstacleEvent?.Invoke();

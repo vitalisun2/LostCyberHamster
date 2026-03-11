@@ -115,13 +115,19 @@ namespace Assets.Scripts.GameEngine.Controllers
 
         public void SetSuperJumpAnimationTrigger(AtomicVariable<HamsterStateEnum> hamsterState)
         {
+            DebugManager.DiagLog($"[TransformAnim] SetSuperJumpTrigger: hamsterState={hamsterState.Value} animEnabled={_animator.enabled} animStateHash={_animator.GetCurrentAnimatorStateInfo(0).shortNameHash} normTime={_animator.GetCurrentAnimatorStateInfo(0).normalizedTime:F2}");
             switch (hamsterState.Value)
             {
                 // IsSuperJump
                 case HamsterStateEnum.SuperJump:
                 case HamsterStateEnum.SuperJumpDamage:
                 case HamsterStateEnum.SuperJumpOver:
+                    DebugManager.DiagLog($"[TransformAnim] Setting trigger 'IsSuperJump' for state {hamsterState.Value}");
                     _animator.SetTrigger("IsSuperJump");
+                    // Логируем состояние сразу после trigger
+                    var info = _animator.GetCurrentAnimatorStateInfo(0);
+                    var nextInfo = _animator.GetNextAnimatorStateInfo(0);
+                    DebugManager.DiagLog($"[TransformAnim] After SetTrigger: currentState={info.shortNameHash} nextState={nextInfo.shortNameHash} inTransition={_animator.IsInTransition(0)}");
                     break;
 
                 // IsSuperJumpOn
@@ -282,6 +288,7 @@ namespace Assets.Scripts.GameEngine.Controllers
 
         public void OnIntro()
         {
+            DebugManager.DiagLog($"[TransformAnim] OnIntro: disabling animator (was enabled={_animator.enabled})");
             _animator.enabled = false;
         }
 
