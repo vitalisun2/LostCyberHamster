@@ -70,6 +70,10 @@ namespace Assets.Scripts.Bot
         private const float UncontrollableWarnTime = 2f;
         private float _lastPeriodicLogTime;
 
+        // World-shift кэш для проверки прыжков через CollisionUtils
+        private float _jumpWorldShift = -1f;
+        private float _roofJumpWorldShift = -1f;
+
         // ──────────────── Lifecycle ────────────────
 
         private void Awake()
@@ -97,6 +101,8 @@ namespace Assets.Scripts.Bot
 
             _initialized = false;
             _hamster = null;
+            _jumpWorldShift = -1f;
+            _roofJumpWorldShift = -1f;
 
             StartCoroutine(ReinitAfterSceneLoad());
         }
@@ -184,6 +190,9 @@ namespace Assets.Scripts.Bot
                         var target = _planner.Obstacles[step.TargetObstacleIndex];
                         if (target.DistanceToHamster <= step.ExecuteAtDistance)
                         {
+                            if (ShouldDelayJumpOver(step, target))
+                                return; // ждём — CollisionUtils показывает overlap
+
                             ExecuteAction(step.Action);
                             _dirty = true; // пересчитать после действия
                         }
@@ -245,6 +254,59 @@ namespace Assets.Scripts.Bot
                 _dirty = true;
             }
         }
+
+        // ──────────────── Jump-Over Collision Check ────────────────
+
+        /// <summary>
+        /// Проверяет, приведёт ли прыжок прямо сейчас к наложению на препятствие.
+        /// Использует CollisionUtils — ту же логику коллайдеров, что JumpMechanics.
+        /// </summary>
+        private bool ShouldDelayJumpOver(ChainStep step, ObstacleInfo target)
+        {
+            if (step.Action != BotAction.Jump && step.Action != BotAction.RoofJump)
+                return false;
+
+            // Только для перепрыгиваемых мелких препятствий
+            if (target.Type != ObstacleTypeEnum.smallNotAliveRoad &&
+                target.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof &&
+                target.Type != ObstacleTypeEnum.smallAlive)
+                return false;
+
+            var obsRef = target.ObstacleRef;
+            if (obsRef == null) return false;
+
+            EnsureWorldShiftsCached();
+            float worldShift = step.Action == BotAction.RoofJump
+                ? _roofJumpWorldShift
+                : _jumpWorldShift;
+            if (worldShift <= 0f) return false;
+
+            bool wouldOverlap = CollisionUtils.IsOverlapAtShift(
+                _hamster.transform, _hamster.ColliderWidth, worldShift, obsRef);
+
+            if (!wouldOverlap) return false; // безопасно — прыгаем
+
+            // Failsafe: препятствие вплотную — прыгаем всё равно
+            float realDist = obsRef.transform.position.x
+                - obsRef.ColliderWidth * 0.5f - _hamster.RightX;
+            return realDist > 0.1f;
+        }
+
+        private void EnsureWorldShiftsCached()
+        {
+            if (_jumpWorldShift >= 0f) return;
+
+            var ctrl = _hamster.GetComponentInChildren<TransformAnimatorController>();
+            if (ctrl == null) return;
+
+            _jumpWorldShift = HelpMethods.GetWorldShiftForClip(ctrl, "transform_jump");
+            _roofJumpWorldShift = HelpMethods.GetWorldShiftForClip(ctrl, "transform_roof_jump");
+
+            DebugManager.DiagLog(
+                $"[HamsterBot] Cached worldShifts: jump={_jumpWorldShift:F2}, roofJump={_roofJumpWorldShift:F2}");
+        }
+
+        // ──────────────── State Checks ────────────────
 
         /// <summary>Хомяк в состоянии, когда можно давать команды.</summary>
         private static bool IsControllableState(HamsterStateEnum state)

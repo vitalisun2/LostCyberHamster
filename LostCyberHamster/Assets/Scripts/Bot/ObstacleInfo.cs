@@ -1,9 +1,10 @@
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.Gameplay;
 
 namespace Assets.Scripts.Bot
 {
     /// <summary>
-    /// Снимок данных об одном объекте на сцене. Readonly struct — без ссылок на GameObject.
+    /// Снимок данных об одном объекте на сцене.
     /// </summary>
     public readonly struct ObstacleInfo
     {
@@ -16,13 +17,16 @@ namespace Assets.Scripts.Bot
         public readonly float DistanceToHamster;
         public readonly float TimeToReach;
         public readonly ObjectCategory Category;
+        /// <summary>Ссылка на реальный Obstacle для проверок через CollisionUtils.</summary>
+        public readonly Obstacle ObstacleRef;
 
         public ObstacleInfo(
             ObstacleTypeEnum type,
             float leftX, float rightX, float centerX,
             bool isTopLane, bool isOnRoof,
             float distanceToHamster, float timeToReach,
-            ObjectCategory category)
+            ObjectCategory category,
+            Obstacle obstacleRef)
         {
             Type = type;
             LeftX = leftX;
@@ -33,6 +37,7 @@ namespace Assets.Scripts.Bot
             DistanceToHamster = distanceToHamster;
             TimeToReach = timeToReach;
             Category = category;
+            ObstacleRef = obstacleRef;
         }
     }
 
