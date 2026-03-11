@@ -42,6 +42,15 @@ namespace Assets.Scripts.Bot
         private BotChainPlanner _planner;
         private bool _initialized;
 
+        // Dirty flag
+        private bool _dirty = true;
+        private int _framesSinceRecalc;
+        private const int MaxFramesWithoutRecalc = 10;
+        private int _prevObstacleCount;
+        private HamsterStateEnum _prevState;
+        private int _prevEnergy;
+        private int _prevUlta;
+
         // ──────────────── Lifecycle ────────────────
 
         private void Awake()
@@ -100,7 +109,100 @@ namespace Assets.Scripts.Bot
             if (_hamster == null || _hamster.HamsterState.Value == HamsterStateEnum.Dead)
                 return;
 
-            // TODO: Chain Planner — будет реализован в Этапах 2-8
+            // Не действуем в процессе прыжка/смены линии — ждём приземления
+            if (!IsControllableState(_hamster.HamsterState.Value))
+                return;
+
+            CheckDirtyFlag();
+
+            if (_dirty)
+            {
+                _planner.ScanObstacles(_hamster, _scanRange);
+                _planner.BuildChain(_hamster);
+                _dirty = false;
+                _framesSinceRecalc = 0;
+            }
+
+            // Есть ли шаг для выполнения?
+            if (_planner.Chain.Count > 0)
+            {
+                var step = _planner.Chain[0];
+                if (step.Action != BotAction.None)
+                {
+                    // Проверяем тайминг: объект достаточно близко?
+                    if (step.TargetObstacleIndex >= 0 &&
+                        step.TargetObstacleIndex < _planner.Obstacles.Count)
+                    {
+                        var target = _planner.Obstacles[step.TargetObstacleIndex];
+                        if (target.DistanceToHamster <= step.ExecuteAtDistance)
+                        {
+                            ExecuteAction(step.Action);
+                            _dirty = true; // пересчитать после действия
+                        }
+                    }
+                    else
+                    {
+                        // Шаг без конкретной цели — выполнить сразу
+                        ExecuteAction(step.Action);
+                        _dirty = true;
+                    }
+                }
+            }
+        }
+
+        private void CheckDirtyFlag()
+        {
+            _framesSinceRecalc++;
+
+            // Fallback
+            if (_framesSinceRecalc >= MaxFramesWithoutRecalc)
+            {
+                _dirty = true;
+                return;
+            }
+
+            // Состояние изменилось
+            var curState = _hamster.HamsterState.Value;
+            if (curState != _prevState)
+            {
+                _prevState = curState;
+                _dirty = true;
+                return;
+            }
+
+            // Энергия изменилась
+            int curEnergy = _hamster.Energy.Value;
+            if (curEnergy != _prevEnergy)
+            {
+                _prevEnergy = curEnergy;
+                _dirty = true;
+                return;
+            }
+
+            // Ульта готова
+            int curUlta = _hamster.UltaChargeAmount.Value;
+            if (curUlta != _prevUlta)
+            {
+                _prevUlta = curUlta;
+                _dirty = true;
+                return;
+            }
+
+            // Изменилось количество объектов на сцене
+            var spawner = ObstacleSpawner.Instance;
+            int count = spawner != null ? spawner.SpawnedObstacles.Count : 0;
+            if (count != _prevObstacleCount)
+            {
+                _prevObstacleCount = count;
+                _dirty = true;
+            }
+        }
+
+        /// <summary>Хомяк в состоянии, когда можно давать команды.</summary>
+        private static bool IsControllableState(HamsterStateEnum state)
+        {
+            return state == HamsterStateEnum.Run
+                || state == HamsterStateEnum.RoofRun;
         }
 
         private void OnDestroy()
