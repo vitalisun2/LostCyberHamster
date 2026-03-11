@@ -4,6 +4,7 @@ using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using UnityEngine;
+using Vues.GameCore;
 
 namespace Assets.Scripts.Bot
 {
@@ -18,8 +19,19 @@ namespace Assets.Scripts.Bot
         private const float ScanBehindMargin = 1.0f;
         private const float SafeMargin = 1.5f;
         private const float LaneSwitchDuration = 0.3f;
+        private const float LaneSwitchTravel = LaneSwitchDuration * Consts.GameSpeedBase;
         private const int JumpEnergyCost = 10;
         private const int SuperJumpEnergyCost = 20;
+        private const int BuyEnergyPrice = 50;
+        private const int BuyEnergyAmount = 100;
+
+        // Приблизительные дальности приземления прыжков (в юнитах сдвига сцены)
+        private const float JumpLandingTravel = 3.8f;   // ~1с * GameSpeedBase
+        private const float SuperJumpLandingTravel = 4.6f; // ~1.2с * GameSpeedBase
+        private const float LandingCheckTolerance = 0.8f;
+
+        // Минимальное расстояние, с которого ульту имеет смысл использовать
+        private const float UltaMinDistance = 1.0f;
 
         // ──────────────── Переиспользуемые буферы ────────────────
 
@@ -35,7 +47,7 @@ namespace Assets.Scripts.Bot
         public IReadOnlyList<ChainStep> Chain => _chain;
 
         // ══════════════════════════════════════════════
-        //  Этап 2: Сканирование
+        //  Сканирование
         // ══════════════════════════════════════════════
 
         /// <summary>
@@ -68,7 +80,6 @@ namespace Assets.Scripts.Bot
                 float leftX = pos.x - halfW;
                 float rightX = pos.x + halfW;
 
-                // Пропускаем: за хомяком или за пределами сканирования
                 if (rightX < minX || leftX > maxX) continue;
 
                 var typeEnum = obs.ObstacleType.ObstacleTypeEnum;
@@ -89,16 +100,19 @@ namespace Assets.Scripts.Bot
                     distance, timeToReach, category));
             }
 
-            // Сортировка по LeftX (ближайшие первыми)
             _obstacles.Sort((a, b) => a.LeftX.CompareTo(b.LeftX));
         }
 
         // ══════════════════════════════════════════════
-        //  Этап 3: Построение цепочки уклонения
+        //  Основная точка входа: BuildChain
         // ══════════════════════════════════════════════
 
         /// <summary>
-        /// Строит цепочку действий на основе отсканированных объектов.
+        /// Строит цепочку действий. Порядок приоритетов:
+        /// 1. Ульта (если готова и выгодно)
+        /// 2. Попытка напрыгнуть на Target
+        /// 3. Уклонение от Threat
+        /// 4. Сбор ценных Bonus (если безопасно)
         /// Возвращает true, если цепочка не пуста.
         /// </summary>
         public bool BuildChain(Hamster hamster)
@@ -110,57 +124,245 @@ namespace Assets.Scripts.Bot
             bool hamsterOnBottom = hamster.IsOnBottomLine.Value;
             bool hamsterOnRoof = IsRoofState(hamster.HamsterState.Value);
             int energy = hamster.Energy.Value;
+            int lives = hamster.Lives.Value;
+            int ulta = hamster.UltaChargeAmount.Value;
 
-            // Ищем ближайшую угрозу на текущей линии
+            // ── Этап 6: Ульта ──
+            if (ulta >= 100 && TryBuildUltaChain(hamsterOnBottom, hamsterOnRoof, lives))
+                return true;
+
+            // ── Этап 4: Напрыгивание на Target ──
+            if (TryBuildTargetChain(hamsterOnBottom, hamsterOnRoof, energy, hamster))
+                return true;
+
+            // ── Этап 3: Уклонение от Threat ──
+            if (TryBuildEvasionChain(hamsterOnBottom, hamsterOnRoof, energy, hamster))
+                return true;
+
+            // ── Этап 7: Сбор Bonus (если текущая линия чистая) ──
+            if (TryBuildBonusChain(hamsterOnBottom, hamsterOnRoof))
+                return true;
+
+            return false;
+        }
+
+        // ══════════════════════════════════════════════
+        //  Этап 6: Ульта
+        // ══════════════════════════════════════════════
+
+        private bool TryBuildUltaChain(bool hamsterOnBottom, bool hamsterOnRoof, int lives)
+        {
+            // Считаем угрозы на текущей линии в ближайшей зоне
+            int nearThreats = 0;
+            bool unavoidableThreat = false;
+
             for (int i = 0; i < _obstacles.Count; i++)
             {
                 var obs = _obstacles[i];
-
-                // Пропускаем объекты позади
-                if (obs.DistanceToHamster < -0.5f) continue;
-
-                // Пропускаем нейтральные и бонусы (пока)
-                if (obs.Category == ObjectCategory.Neutral ||
-                    obs.Category == ObjectCategory.Bonus)
+                if (obs.DistanceToHamster < 0 || obs.DistanceToHamster > 6f) continue;
+                if (obs.Category != ObjectCategory.Threat) continue;
+                if (!IsSameLane(obs.IsTopLane, hamsterOnBottom, obs.IsOnRoof, hamsterOnRoof))
                     continue;
 
-                bool sameLane = IsSameLane(obs.IsTopLane, hamsterOnBottom, obs.IsOnRoof, hamsterOnRoof);
+                nearThreats++;
 
-                if (!sameLane) continue;
+                // Неизбежная угроза: слишком близко и другая линия тоже заблокирована
+                if (obs.DistanceToHamster < SafeMargin + 0.5f &&
+                    !IsOtherLaneSafe(obs, hamsterOnBottom))
+                    unavoidableThreat = true;
+            }
 
-                if (obs.Category == ObjectCategory.Threat)
+            // Кластер из 2+ угроз или при 1 жизни неизбежная угроза
+            if (nearThreats >= 2 || (lives <= 1 && unavoidableThreat))
+            {
+                _chain.Add(new ChainStep(BotAction.UseUlta, -1, 0, 0,
+                    $"Ulta: {nearThreats} threats, lives={lives}"));
+                return true;
+            }
+
+            return false;
+        }
+
+        // ══════════════════════════════════════════════
+        //  Этап 4: Напрыгивание на Target
+        // ══════════════════════════════════════════════
+
+        private bool TryBuildTargetChain(bool hamsterOnBottom, bool hamsterOnRoof,
+            int energy, Hamster hamster)
+        {
+            // Найти ближайшую Target на текущей линии
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                var obs = _obstacles[i];
+                if (obs.DistanceToHamster < 0) continue;
+                if (obs.Category != ObjectCategory.Target) continue;
+                if (!IsSameLane(obs.IsTopLane, hamsterOnBottom, obs.IsOnRoof, hamsterOnRoof))
+                    continue;
+
+                int jumpCost = JumpEnergyCost;
+                BotAction jumpAction = hamsterOnRoof ? BotAction.RoofJump : BotAction.Jump;
+
+                // Проверяем угрозы между хомяком и Target
+                int totalEnergyCost = jumpCost;
+                bool pathBlocked = false;
+
+                for (int j = 0; j < _obstacles.Count; j++)
                 {
-                    var step = SelectEvasionTool(obs, i, hamsterOnBottom, hamsterOnRoof, energy);
-                    if (step.Action != BotAction.None)
+                    if (j == i) continue;
+                    var between = _obstacles[j];
+                    if (between.DistanceToHamster < 0) continue;
+                    if (between.LeftX >= obs.LeftX) break; // Дальше Target — не на пути
+
+                    if (!IsSameLane(between.IsTopLane, hamsterOnBottom, between.IsOnRoof, hamsterOnRoof))
+                        continue;
+
+                    if (between.Category == ObjectCategory.Threat)
                     {
-                        _chain.Add(step);
+                        // Есть угроза перед Target — путь заблокирован для простого прыжка
+                        pathBlocked = true;
+                        break;
+                    }
+                }
+
+                if (pathBlocked) continue; // Попробовать следующую Target
+
+                // Проверяем последствия: безопасно ли приземление после напрыгивания?
+                if (!IsLandingSafe(obs, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
+                {
+                    continue; // Небезопасно — пропускаем эту Target
+                }
+
+                // Проверяем энергию (+ аварийная покупка — Этап 8)
+                if (energy < totalEnergyCost)
+                {
+                    if (TryAddBuyEnergyStep(hamster))
+                    {
+                        _chain.Add(new ChainStep(jumpAction, i, SafeMargin,
+                            jumpCost, $"Jump on {obs.Type} (after buy energy)"));
+                        return true;
+                    }
+                    continue; // Не хватает энергии и не можем купить
+                }
+
+                _chain.Add(new ChainStep(jumpAction, i, SafeMargin,
+                    jumpCost, $"Jump on target {obs.Type}"));
+                return true;
+            }
+
+            return false;
+        }
+
+        // ══════════════════════════════════════════════
+        //  Этап 3: Уклонение
+        // ══════════════════════════════════════════════
+
+        private bool TryBuildEvasionChain(bool hamsterOnBottom, bool hamsterOnRoof,
+            int energy, Hamster hamster)
+        {
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                var obs = _obstacles[i];
+                if (obs.DistanceToHamster < -0.5f) continue;
+                if (obs.Category != ObjectCategory.Threat) continue;
+                if (!IsSameLane(obs.IsTopLane, hamsterOnBottom, obs.IsOnRoof, hamsterOnRoof))
+                    continue;
+
+                var step = SelectEvasionTool(obs, i, hamsterOnBottom, hamsterOnRoof, energy);
+
+                // Этап 8: если нет инструмента из-за энергии — попробовать купить
+                if (step.Action == BotAction.None && energy < JumpEnergyCost)
+                {
+                    if (TryAddBuyEnergyStep(hamster))
+                    {
+                        // После покупки пересканируем: dirty flag сработает
                         return true;
                     }
                 }
-                else if (obs.Category == ObjectCategory.Target)
+
+                if (step.Action != BotAction.None)
                 {
-                    // Этап 4: напрыгивание — пока просто прыжок на Target
-                    if (energy >= JumpEnergyCost)
-                    {
-                        _chain.Add(new ChainStep(
-                            hamsterOnRoof ? BotAction.RoofJump : BotAction.Jump,
-                            i, SafeMargin, JumpEnergyCost,
-                            $"Jump on target {obs.Type}"));
-                        return true;
-                    }
+                    _chain.Add(step);
+                    return true;
                 }
             }
 
             return false;
         }
 
-        // ──────────────── Классификация ────────────────
+        // ══════════════════════════════════════════════
+        //  Этап 7: Сбор Bonus
+        // ══════════════════════════════════════════════
+
+        private bool TryBuildBonusChain(bool hamsterOnBottom, bool hamsterOnRoof)
+        {
+            // Текущая линия безопасна? (нет Threat/Target в ближайших ~4 юнитах)
+            bool currentLineBusy = false;
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                var obs = _obstacles[i];
+                if (obs.DistanceToHamster < 0 || obs.DistanceToHamster > 4f) continue;
+                if (obs.Category == ObjectCategory.Neutral || obs.Category == ObjectCategory.Bonus) continue;
+                if (IsSameLane(obs.IsTopLane, hamsterOnBottom, obs.IsOnRoof, hamsterOnRoof))
+                {
+                    currentLineBusy = true;
+                    break;
+                }
+            }
+
+            if (currentLineBusy) return false;
+
+            // Ищем ценный Bonus на другой линии
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                var obs = _obstacles[i];
+                if (obs.DistanceToHamster < 0.5f || obs.DistanceToHamster > 5f) continue;
+                if (obs.Category != ObjectCategory.Bonus) continue;
+
+                // Бонус на текущей линии — хомяк соберёт сам
+                if (IsSameLane(obs.IsTopLane, hamsterOnBottom, obs.IsOnRoof, hamsterOnRoof))
+                    continue;
+
+                // Приоритет: жизнь и энергетики стоят смены, монеты — нет
+                if (!IsValuableBonus(obs.Type)) continue;
+
+                // Другая линия безопасна?
+                if (IsOtherLaneSafe(obs, hamsterOnBottom))
+                {
+                    _chain.Add(new ChainStep(BotAction.SwitchLane, i,
+                        SafeMargin + 1f, 0, $"Collect bonus {obs.Type}"));
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // ══════════════════════════════════════════════
+        //  Этап 8: Аварийная покупка энергии
+        // ══════════════════════════════════════════════
+
+        /// <summary>
+        /// Добавляет шаг покупки энергии, если хватает монет. Возвращает true при успехе.
+        /// </summary>
+        private bool TryAddBuyEnergyStep(Hamster hamster)
+        {
+            if (!ResourceManager.CanSpendResource(ResourceType.Coins, BuyEnergyPrice))
+                return false;
+
+            ResourceManager.SpendResource(ResourceType.Coins, BuyEnergyPrice);
+            hamster.AddEnergy(BuyEnergyAmount);
+            DebugManager.DiagLog("[BotChainPlanner] Emergency energy purchase: -50 coins, +100 energy");
+            return true;
+        }
+
+        // ══════════════════════════════════════════════
+        //  Классификация
+        // ══════════════════════════════════════════════
 
         private static ObjectCategory Classify(
             ObstacleTypeEnum type, bool isTopLane, bool isOnRoof,
             bool hamsterOnBottom, bool hamsterOnRoof, float distance)
         {
-            // Объекты позади — нейтральные
             if (distance < -0.5f) return ObjectCategory.Neutral;
 
             switch (type)
@@ -176,12 +378,11 @@ namespace Assets.Scripts.Bot
                     return ObjectCategory.Bonus;
 
                 case ObstacleTypeEnum.smallAlive:
-                    // SmallAlive — цель (можно напрыгнуть)
                     return ObjectCategory.Target;
 
                 case ObstacleTypeEnum.bigAlive:
                     if (hamsterOnRoof)
-                        return ObjectCategory.Target; // Можно напрыгнуть с крыши
+                        return ObjectCategory.Target;
                     return ObjectCategory.Threat;
 
                 case ObstacleTypeEnum.bigNotAlive:
@@ -199,21 +400,20 @@ namespace Assets.Scripts.Bot
             }
         }
 
-        // ──────────────── Выбор инструмента уклонения ────────────────
+        // ══════════════════════════════════════════════
+        //  Выбор инструмента уклонения
+        // ══════════════════════════════════════════════
 
         private ChainStep SelectEvasionTool(
             ObstacleInfo threat, int index,
             bool hamsterOnBottom, bool hamsterOnRoof, int energy)
         {
-            // Порядок: дешёвые инструменты первыми
             switch (threat.Type)
             {
                 case ObstacleTypeEnum.bigAlive:
-                    // 1. Смена линии (бесплатно)
                     if (IsOtherLaneSafe(threat, hamsterOnBottom))
                         return new ChainStep(BotAction.SwitchLane, index,
                             SafeMargin, 0, "Evade bigAlive: switch lane");
-                    // 2. Суперпрыжок (20 энергии)
                     if (energy >= SuperJumpEnergyCost)
                         return new ChainStep(
                             hamsterOnRoof ? BotAction.SuperRoofJump : BotAction.SuperJump,
@@ -223,68 +423,128 @@ namespace Assets.Scripts.Bot
 
                 case ObstacleTypeEnum.bigNotAlive:
                 case ObstacleTypeEnum.mediumNotAlive:
-                    // 1. Прыжок на крышу (10 энергии) — только с дороги
                     if (!hamsterOnRoof && energy >= JumpEnergyCost)
-                        return new ChainStep(BotAction.Jump, index,
-                            SafeMargin, JumpEnergyCost,
-                            $"Evade {threat.Type}: jump on roof");
-                    // 2. Смена линии
+                    {
+                        // Проверяем: есть ли SmallNotAliveRoadAndRoof на крыше?
+                        bool roofClear = !HasRoofObstacle(threat);
+                        if (roofClear)
+                            return new ChainStep(BotAction.Jump, index,
+                                SafeMargin, JumpEnergyCost,
+                                $"Evade {threat.Type}: jump on roof");
+                    }
                     if (IsOtherLaneSafe(threat, hamsterOnBottom))
                         return new ChainStep(BotAction.SwitchLane, index,
                             SafeMargin, 0, $"Evade {threat.Type}: switch lane");
+                    // Крыша занята, другая линия тоже — прыжок на крышу всё равно (лучше чем ничего)
+                    if (!hamsterOnRoof && energy >= JumpEnergyCost)
+                        return new ChainStep(BotAction.Jump, index,
+                            SafeMargin, JumpEnergyCost,
+                            $"Evade {threat.Type}: jump on roof (roof has obstacle)");
                     break;
 
                 case ObstacleTypeEnum.smallNotAliveRoad:
-                    // 1. Смена линии
                     if (IsOtherLaneSafe(threat, hamsterOnBottom))
                         return new ChainStep(BotAction.SwitchLane, index,
                             SafeMargin, 0, "Evade smallNotAliveRoad: switch lane");
-                    // 2. Прыжок (10 энергии)
                     if (energy >= JumpEnergyCost)
-                        return new ChainStep(
-                            hamsterOnRoof ? BotAction.RoofJump : BotAction.Jump,
-                            index, SafeMargin, JumpEnergyCost,
-                            "Evade smallNotAliveRoad: jump over");
+                    {
+                        var action = hamsterOnRoof ? BotAction.RoofJump : BotAction.Jump;
+                        if (IsLandingSafe(threat, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
+                            return new ChainStep(action, index,
+                                SafeMargin, JumpEnergyCost,
+                                "Evade smallNotAliveRoad: jump over");
+                    }
                     break;
 
                 case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
                     if (hamsterOnRoof)
                     {
-                        // На крыше — перепрыгнуть
                         if (energy >= JumpEnergyCost)
-                            return new ChainStep(BotAction.RoofJump, index,
-                                SafeMargin, JumpEnergyCost,
-                                "Evade smallNotAliveRoadAndRoof on roof: roof jump");
+                        {
+                            if (IsLandingSafe(threat, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
+                                return new ChainStep(BotAction.RoofJump, index,
+                                    SafeMargin, JumpEnergyCost,
+                                    "Evade smallNotAliveRoadAndRoof on roof: roof jump");
+                        }
                     }
                     else
                     {
-                        // На дороге — смена линии или прыжок
                         if (IsOtherLaneSafe(threat, hamsterOnBottom))
                             return new ChainStep(BotAction.SwitchLane, index,
                                 SafeMargin, 0,
                                 "Evade smallNotAliveRoadAndRoof: switch lane");
                         if (energy >= JumpEnergyCost)
-                            return new ChainStep(BotAction.Jump, index,
-                                SafeMargin, JumpEnergyCost,
-                                "Evade smallNotAliveRoadAndRoof: jump over");
+                        {
+                            var action = BotAction.Jump;
+                            if (IsLandingSafe(threat, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
+                                return new ChainStep(action, index,
+                                    SafeMargin, JumpEnergyCost,
+                                    "Evade smallNotAliveRoadAndRoof: jump over");
+                        }
                     }
                     break;
             }
 
-            // Нет доступного инструмента
             return new ChainStep(BotAction.None, -1, 0, 0, "No tool available");
         }
 
-        // ──────────────── Вспомогательные ────────────────
+        // ══════════════════════════════════════════════
+        //  Проверки последствий
+        // ══════════════════════════════════════════════
+
+        /// <summary>
+        /// Безопасно ли приземление после прыжка через/на объект?
+        /// Проверяет: нет ли Threat в зоне приземления на той же линии.
+        /// </summary>
+        private bool IsLandingSafe(ObstacleInfo source,
+            bool hamsterOnBottom, bool hamsterOnRoof, float landingTravel)
+        {
+            float landingX = source.RightX + landingTravel;
+            float checkFrom = landingX - LandingCheckTolerance;
+            float checkTo = landingX + LandingCheckTolerance;
+
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                var obs = _obstacles[i];
+                if (obs.Category != ObjectCategory.Threat) continue;
+                if (!IsSameLane(obs.IsTopLane, hamsterOnBottom, obs.IsOnRoof, hamsterOnRoof))
+                    continue;
+
+                if (obs.RightX > checkFrom && obs.LeftX < checkTo)
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Есть ли SmallNotAliveRoadAndRoof на крыше данного BigNotAlive/MediumNotAlive?
+        /// </summary>
+        private bool HasRoofObstacle(ObstacleInfo baseObs)
+        {
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                var obs = _obstacles[i];
+                if (!obs.IsOnRoof) continue;
+                if (obs.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof) continue;
+                if (obs.IsTopLane != baseObs.IsTopLane) continue;
+
+                // Пересечение по X: объект на крыше перекрывает базовый?
+                if (obs.RightX > baseObs.LeftX && obs.LeftX < baseObs.RightX)
+                    return true;
+            }
+            return false;
+        }
+
+        // ══════════════════════════════════════════════
+        //  Вспомогательные
+        // ══════════════════════════════════════════════
 
         /// <summary>Проверяет, что другая линия безопасна для смены.</summary>
         private bool IsOtherLaneSafe(ObstacleInfo threat, bool hamsterOnBottom)
         {
-            // Зона, которую хомяк пройдёт за время смены линии
-            float switchTravel = LaneSwitchDuration * Consts.GameSpeedBase;
-            float checkFrom = threat.LeftX - switchTravel;
-            float checkTo = threat.RightX + switchTravel;
-            bool otherLaneIsTop = hamsterOnBottom; // если хомяк снизу, другая линия — верхняя
+            float checkFrom = threat.LeftX - LaneSwitchTravel;
+            float checkTo = threat.RightX + LaneSwitchTravel;
+            bool otherLaneIsTop = hamsterOnBottom;
 
             for (int i = 0; i < _obstacles.Count; i++)
             {
@@ -293,18 +553,11 @@ namespace Assets.Scripts.Bot
                     obs.Category == ObjectCategory.Bonus)
                     continue;
 
-                // Объект на другой линии? (линия, куда хомяк перейдёт)
                 if (obs.IsTopLane != otherLaneIsTop) continue;
-                if (obs.IsOnRoof) continue; // На крыше — не мешает на дороге
+                if (obs.IsOnRoof) continue;
 
-                // Пересечение по X?
                 if (obs.RightX > checkFrom && obs.LeftX < checkTo)
-                {
-                    // Есть угроза/цель на другой линии в зоне смены
-                    if (obs.Category == ObjectCategory.Threat ||
-                        obs.Category == ObjectCategory.Target)
-                        return false;
-                }
+                    return false;
             }
 
             return true;
@@ -317,7 +570,6 @@ namespace Assets.Scripts.Bot
             if (hamsterOnRoof)
                 return obsOnRoof && (obsIsTop != hamsterOnBottom);
 
-            // Хомяк на дороге: top = !hamsterOnBottom
             bool hamsterIsTop = !hamsterOnBottom;
             return !obsOnRoof && obsIsTop == hamsterIsTop;
         }
@@ -337,6 +589,15 @@ namespace Assets.Scripts.Bot
                 || state == HamsterStateEnum.RoofJumpDamage
                 || state == HamsterStateEnum.SuperRoofJump
                 || state == HamsterStateEnum.SuperRoofJumpDamage;
+        }
+
+        /// <summary>Стоит ли менять линию ради этого бонуса?</summary>
+        private static bool IsValuableBonus(ObstacleTypeEnum type)
+        {
+            return type == ObstacleTypeEnum.collectableLife
+                || type == ObstacleTypeEnum.collectableEnergetic
+                || type == ObstacleTypeEnum.collectablePizza
+                || type == ObstacleTypeEnum.collectableCrystal;
         }
     }
 }
