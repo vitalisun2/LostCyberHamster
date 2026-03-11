@@ -85,25 +85,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 OnUlta();
             }
 
-            // HamsterBot hotkeys
+            // HamsterBot hotkey
             if (_keyboard.f1Key.wasPressedThisFrame && HamsterBot.Instance != null)
             {
                 HamsterBot.Instance.ToggleEnabled();
-            }
-
-            if (_keyboard.f2Key.wasPressedThisFrame && HamsterBot.Instance != null)
-            {
-                HamsterBot.Instance.CycleMode();
-            }
-
-            if (_keyboard.f3Key.wasPressedThisFrame && HamsterBot.Instance != null)
-            {
-                HamsterBot.Instance.CyclePlayStyle();
-            }
-
-            if (_keyboard.f4Key.wasPressedThisFrame && HamsterBot.Instance != null)
-            {
-                HamsterBot.Instance.ToggleTraining();
             }
         }
 
