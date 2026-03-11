@@ -345,7 +345,10 @@ namespace Assets.Scripts.Bot
                     break;
 
                 case BotAction.SuperJump:
-                    _hamster.SuperJumpRequest.Invoke();
+                    // SuperJump = double-tap: сначала Jump (→ hamster_jump state),
+                    // потом SuperJump (transition из hamster_jump → transform_super_jump)
+                    _hamster.JumpRequest.Invoke();
+                    StartCoroutine(DelayedSuperJump());
                     break;
 
                 case BotAction.RoofJump:
@@ -353,7 +356,9 @@ namespace Assets.Scripts.Bot
                     break;
 
                 case BotAction.SuperRoofJump:
-                    _hamster.SuperRoofJumpRequest.Invoke();
+                    // SuperRoofJump = double-tap on roof: сначала RoofJump, потом SuperRoofJump
+                    _hamster.RoofJumpRequest.Invoke();
+                    StartCoroutine(DelayedSuperRoofJump());
                     break;
 
                 case BotAction.SwitchLane:
@@ -410,6 +415,25 @@ namespace Assets.Scripts.Bot
                 string clipName = clips.Length > 0 ? clips[0].clip.name : "?";
                 DebugManager.DiagLog($"[HamsterBot] ANIM_CHECK exec#{execNum} ({action}) +2frames: spriteAnim enabled={a.enabled} stateHash={info.shortNameHash} clip='{clipName}' normTime={info.normalizedTime:F2}");
             }
+        }
+
+        /// <summary>
+        /// SuperJump = double-tap. Ждём 1 кадр (чтобы Animator перешёл в hamster_jump),
+        /// затем вызываем SuperJumpRequest.
+        /// </summary>
+        private IEnumerator DelayedSuperJump()
+        {
+            yield return null;
+            _hamster.SuperJumpRequest.Invoke();
+        }
+
+        /// <summary>
+        /// SuperRoofJump = double-tap on roof. Ждём 1 кадр, затем SuperRoofJumpRequest.
+        /// </summary>
+        private IEnumerator DelayedSuperRoofJump()
+        {
+            yield return null;
+            _hamster.SuperRoofJumpRequest.Invoke();
         }
     }
 }
