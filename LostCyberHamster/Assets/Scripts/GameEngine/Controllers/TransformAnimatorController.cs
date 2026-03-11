@@ -287,6 +287,12 @@ namespace Assets.Scripts.GameEngine.Controllers
 
         public void OnStart()
         {
+            // Rebind сбрасывает stale trigger/state, накопленный во время загрузки
+            // (критично для тестового уровня без intro, где animator никогда не выключался)
+            var wasEnabled = _animator.enabled;
+            var stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
+            DebugManager.DiagLog($"[TransformAnimatorController] OnStart: wasEnabled={wasEnabled} animState={stateInfo.shortNameHash} normalizedTime={stateInfo.normalizedTime:F2}. Calling Rebind().");
+            _animator.Rebind();
             _animator.enabled = true;
         }
 

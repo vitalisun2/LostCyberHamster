@@ -47,9 +47,10 @@ namespace Assets.Scripts.Entry_Points
             // Если интро не было (например, тестовый уровень), игра ещё в OFF — запускаем.
             // Если интро было, состояние INTRO или PLAYING — Intro.EndIntro() сам вызовет StartGame().
             var gm = (GameManager)_bundle["gameManager"];
+            DebugManager.DiagLog($"[GameEntryPoint] All tasks done. GameState={gm.State}");
             if (gm.State == GameState.OFF)
             {
-                Debug.Log("[GameEntryPoint] No intro — starting game after all tasks loaded.");
+                DebugManager.DiagLog("[GameEntryPoint] No intro — starting game after all tasks loaded.");
                 gm.StartGame();
             }
         }
