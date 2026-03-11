@@ -260,10 +260,15 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Проверяет, приведёт ли прыжок прямо сейчас к наложению на препятствие.
         /// Использует CollisionUtils — ту же логику коллайдеров, что JumpMechanics.
+        /// Не применяется к Target-прыжкам (JumpOn) — там цель приземлиться НА препятствие.
         /// </summary>
         private bool ShouldDelayJumpOver(ChainStep step, ObstacleInfo target)
         {
             if (step.Action != BotAction.Jump && step.Action != BotAction.RoofJump)
+                return false;
+
+            // JumpOn Target — не задерживать: хотим приземлиться НА цель, а не перепрыгнуть
+            if (step.Reason != null && step.Reason.StartsWith("JumpOn"))
                 return false;
 
             // Только для перепрыгиваемых мелких препятствий
