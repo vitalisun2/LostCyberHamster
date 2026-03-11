@@ -668,7 +668,7 @@ namespace Assets.Scripts.Bot
             _logBuf.Append($" | lane={( hamsterOnBottom ? "bot" : "top")} roof={hamsterOnRoof}");
             _logBuf.Append($" E={energy} L={lives} U={ulta}");
             if (!string.IsNullOrEmpty(step.Reason))
-                _logBuf.Append($\" [{step.Reason}]\");
+                _logBuf.Append($" [{step.Reason}]");
 
             // Кратко — угрозы на текущей линии
             for (int i = 0; i < _obstacles.Count; i++)
