@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using UnityEngine;

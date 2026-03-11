@@ -1,4 +1,4 @@
-using Assets.Scripts.Gameplay.Enums;
+using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.Bot
 {
