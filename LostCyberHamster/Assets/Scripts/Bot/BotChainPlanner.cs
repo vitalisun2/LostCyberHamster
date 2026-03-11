@@ -41,6 +41,11 @@ namespace Assets.Scripts.Bot
         private readonly StringBuilder _logBuf = new(512);
         private int _decisionId;
 
+        // Decision dedup for logging
+        private BotAction _prevLoggedAction;
+        private int _prevLoggedTargetIdx = -1;
+        private string _prevLoggedStrategy;
+
         // ──────────────── Публичные результаты ────────────────
 
         /// <summary>Текущий список отсканированных объектов (readonly view).</summary>
@@ -282,7 +287,9 @@ namespace Assets.Scripts.Bot
             {
                 var obs = _obstacles[i];
                 if (obs.DistanceToHamster < -0.5f) continue;
-                if (obs.Category != ObjectCategory.Threat) continue;
+                // Уклоняемся от Threat и от Target (которые Target-chain не смог обработать)
+                if (obs.Category != ObjectCategory.Threat && obs.Category != ObjectCategory.Target)
+                    continue;
                 if (!IsSameLane(obs.IsTopLane, hamsterOnBottom, obs.IsOnRoof, hamsterOnRoof))
                     continue;
 
@@ -429,6 +436,21 @@ namespace Assets.Scripts.Bot
         {
             switch (threat.Type)
             {
+                case ObstacleTypeEnum.smallAlive:
+                    // Target на нашей линии, который Target-chain не смог обработать
+                    if (IsOtherLaneSafe(threat, hamsterOnBottom))
+                        return new ChainStep(BotAction.SwitchLane, index,
+                            SafeMargin, 0, "Evade smallAlive: switch lane");
+                    if (energy >= JumpEnergyCost)
+                    {
+                        var jumpAct = hamsterOnRoof ? BotAction.RoofJump : BotAction.Jump;
+                        if (IsLandingSafe(threat, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
+                            return new ChainStep(jumpAct, index,
+                                SafeMargin, JumpEnergyCost,
+                                "Evade smallAlive: jump over");
+                    }
+                    break;
+
                 case ObstacleTypeEnum.bigAlive:
                     if (IsOtherLaneSafe(threat, hamsterOnBottom))
                         return new ChainStep(BotAction.SwitchLane, index,
@@ -657,8 +679,19 @@ namespace Assets.Scripts.Bot
         private void LogDecision(bool hamsterOnBottom, bool hamsterOnRoof,
             int energy, int lives, int ulta, string strategy)
         {
-            _logBuf.Clear();
             var step = _chain.Count > 0 ? _chain[0] : default;
+
+            // Dedup: не логировать одно и то же решение каждый кадр
+            if (step.Action == _prevLoggedAction &&
+                step.TargetObstacleIndex == _prevLoggedTargetIdx &&
+                strategy == _prevLoggedStrategy)
+                return;
+
+            _prevLoggedAction = step.Action;
+            _prevLoggedTargetIdx = step.TargetObstacleIndex;
+            _prevLoggedStrategy = strategy;
+
+            _logBuf.Clear();
             _logBuf.Append($"[Bot#{_decisionId}] {strategy}: {step.Action}");
             if (step.TargetObstacleIndex >= 0 && step.TargetObstacleIndex < _obstacles.Count)
             {
