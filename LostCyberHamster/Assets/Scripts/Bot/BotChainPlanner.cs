@@ -430,103 +430,161 @@ namespace Assets.Scripts.Bot
         //  Выбор инструмента уклонения
         // ══════════════════════════════════════════════
 
+        /// <summary>
+        /// Универсальный подбор инструмента для уклонения от угрозы.
+        /// Порядок приоритетов (от дешёвого к дорогому):
+        ///   1. Смена линии (бесплатно) — если другая линия безопасна
+        ///   2. Прямой прыжок/суперпрыжок — если тип позволяет
+        ///   3. Смена линии на линию с преодолеваемыми угрозами (fallback)
+        /// </summary>
         private ChainStep SelectEvasionTool(
+            ObstacleInfo threat, int index,
+            bool hamsterOnBottom, bool hamsterOnRoof, int energy)
+        {
+            // ─── 1. Смена линии (бесплатно, если другая линия чистая) ───
+            if (IsOtherLaneSafe(threat, hamsterOnBottom))
+                return new ChainStep(BotAction.SwitchLane, index,
+                    SafeMargin, 0, $"Evade {threat.Type}: switch lane");
+
+            // ─── 2. Прямые инструменты на текущей линии ───
+            var direct = TryDirectEvasion(threat, index, hamsterOnBottom, hamsterOnRoof, energy);
+            if (direct.Action != BotAction.None)
+                return direct;
+
+            // ─── 3. Fallback: смена линии, даже если там есть угрозы ───
+            // Если все угрозы на другой линии преодолеваемые (jumpable) и у нас
+            // хватает энергии хотя бы на один прыжок — лучше сменить линию,
+            // чем гарантированно врезаться в текущую угрозу.
+            if (IsOtherLaneEvadable(threat, hamsterOnBottom, energy))
+                return new ChainStep(BotAction.SwitchLane, index,
+                    SafeMargin, 0, $"Evade {threat.Type}: switch to evadable lane");
+
+            return new ChainStep(BotAction.None, -1, 0, 0, "No tool available");
+        }
+
+        /// <summary>
+        /// Прямые инструменты для конкретного типа угрозы (без смены линии).
+        /// </summary>
+        private ChainStep TryDirectEvasion(
             ObstacleInfo threat, int index,
             bool hamsterOnBottom, bool hamsterOnRoof, int energy)
         {
             switch (threat.Type)
             {
+                // ─── Перепрыгиваемые мелкие ───
                 case ObstacleTypeEnum.smallAlive:
-                    // Target на нашей линии, который Target-chain не смог обработать
-                    if (IsOtherLaneSafe(threat, hamsterOnBottom))
-                        return new ChainStep(BotAction.SwitchLane, index,
-                            SafeMargin, 0, "Evade smallAlive: switch lane");
+                case ObstacleTypeEnum.smallNotAliveRoad:
+                {
                     if (energy >= JumpEnergyCost)
                     {
                         var jumpAct = hamsterOnRoof ? BotAction.RoofJump : BotAction.Jump;
                         if (IsLandingSafe(threat, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
                             return new ChainStep(jumpAct, index,
                                 SafeMargin, JumpEnergyCost,
-                                "Evade smallAlive: jump over");
+                                $"Evade {threat.Type}: jump over");
                     }
                     break;
+                }
 
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                {
+                    if (energy >= JumpEnergyCost)
+                    {
+                        var jumpAct = hamsterOnRoof ? BotAction.RoofJump : BotAction.Jump;
+                        if (IsLandingSafe(threat, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
+                            return new ChainStep(jumpAct, index,
+                                SafeMargin, JumpEnergyCost,
+                                $"Evade {threat.Type}: jump over");
+                    }
+                    break;
+                }
+
+                // ─── bigAlive: только суперпрыжок перелетает ───
                 case ObstacleTypeEnum.bigAlive:
-                    if (IsOtherLaneSafe(threat, hamsterOnBottom))
-                        return new ChainStep(BotAction.SwitchLane, index,
-                            SafeMargin, 0, "Evade bigAlive: switch lane");
+                {
                     if (energy >= SuperJumpEnergyCost)
                         return new ChainStep(
                             hamsterOnRoof ? BotAction.SuperRoofJump : BotAction.SuperJump,
                             index, SafeMargin, SuperJumpEnergyCost,
                             "Evade bigAlive: super jump");
                     break;
+                }
 
+                // ─── bigNotAlive / mediumNotAlive: прыжок на крышу ───
                 case ObstacleTypeEnum.bigNotAlive:
                 case ObstacleTypeEnum.mediumNotAlive:
+                {
                     if (!hamsterOnRoof && energy >= JumpEnergyCost)
                     {
-                        // Проверяем: есть ли SmallNotAliveRoadAndRoof на крыше?
                         bool roofClear = !HasRoofObstacle(threat);
                         if (roofClear)
                             return new ChainStep(BotAction.Jump, index,
                                 SafeMargin, JumpEnergyCost,
                                 $"Evade {threat.Type}: jump on roof");
                     }
-                    if (IsOtherLaneSafe(threat, hamsterOnBottom))
-                        return new ChainStep(BotAction.SwitchLane, index,
-                            SafeMargin, 0, $"Evade {threat.Type}: switch lane");
-                    // Крыша занята, другая линия имеет препятствия — но если они
-                    // перепрыгиваемые, лучше сменить линию и потом прыгнуть
-                    if (IsOtherLaneJumpable(threat, hamsterOnBottom) && energy >= JumpEnergyCost)
-                        return new ChainStep(BotAction.SwitchLane, index,
-                            SafeMargin, 0, $"Evade {threat.Type}: switch lane (jumpable)");
                     break;
-
-                case ObstacleTypeEnum.smallNotAliveRoad:
-                    if (IsOtherLaneSafe(threat, hamsterOnBottom))
-                        return new ChainStep(BotAction.SwitchLane, index,
-                            SafeMargin, 0, "Evade smallNotAliveRoad: switch lane");
-                    if (energy >= JumpEnergyCost)
-                    {
-                        var action = hamsterOnRoof ? BotAction.RoofJump : BotAction.Jump;
-                        if (IsLandingSafe(threat, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
-                            return new ChainStep(action, index,
-                                SafeMargin, JumpEnergyCost,
-                                "Evade smallNotAliveRoad: jump over");
-                    }
-                    break;
-
-                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
-                    if (hamsterOnRoof)
-                    {
-                        if (energy >= JumpEnergyCost)
-                        {
-                            if (IsLandingSafe(threat, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
-                                return new ChainStep(BotAction.RoofJump, index,
-                                    SafeMargin, JumpEnergyCost,
-                                    "Evade smallNotAliveRoadAndRoof on roof: roof jump");
-                        }
-                    }
-                    else
-                    {
-                        if (IsOtherLaneSafe(threat, hamsterOnBottom))
-                            return new ChainStep(BotAction.SwitchLane, index,
-                                SafeMargin, 0,
-                                "Evade smallNotAliveRoadAndRoof: switch lane");
-                        if (energy >= JumpEnergyCost)
-                        {
-                            var action = BotAction.Jump;
-                            if (IsLandingSafe(threat, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
-                                return new ChainStep(action, index,
-                                    SafeMargin, JumpEnergyCost,
-                                    "Evade smallNotAliveRoadAndRoof: jump over");
-                        }
-                    }
-                    break;
+                }
             }
 
-            return new ChainStep(BotAction.None, -1, 0, 0, "No tool available");
+            return new ChainStep(BotAction.None, -1, 0, 0, "");
+        }
+
+        /// <summary>
+        /// Проверяет, что другая линия "проходима": все угрозы на ней
+        /// имеют доступный инструмент уклонения (прыжок / суперпрыжок).
+        /// Это позволяет боту сменить линию, а на следующем пересчёте
+        /// построить шаг для преодоления угрозы на новой линии.
+        /// </summary>
+        private bool IsOtherLaneEvadable(ObstacleInfo threat, bool hamsterOnBottom, int energy)
+        {
+            float checkFrom = threat.LeftX - LaneSwitchTravel;
+            float checkTo = threat.RightX + LaneSwitchTravel;
+            bool otherLaneIsTop = hamsterOnBottom;
+
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                var obs = _obstacles[i];
+                if (obs.Category == ObjectCategory.Neutral ||
+                    obs.Category == ObjectCategory.Bonus)
+                    continue;
+                if (obs.IsTopLane != otherLaneIsTop) continue;
+                if (obs.IsOnRoof) continue;
+                if (obs.RightX <= checkFrom || obs.LeftX >= checkTo) continue;
+
+                // Для каждой угрозы на другой линии проверяем: есть ли инструмент?
+                if (!HasEvasionTool(obs, energy))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Есть ли в принципе инструмент для преодоления данной угрозы?
+        /// (не проверяет смену линии — только прямые инструменты)
+        /// </summary>
+        private static bool HasEvasionTool(ObstacleInfo obs, int energy)
+        {
+            switch (obs.Type)
+            {
+                // Перепрыгиваемые обычным прыжком
+                case ObstacleTypeEnum.smallAlive:
+                case ObstacleTypeEnum.smallNotAliveRoad:
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                    return energy >= JumpEnergyCost;
+
+                // Только суперпрыжок
+                case ObstacleTypeEnum.bigAlive:
+                    return energy >= SuperJumpEnergyCost;
+
+                // bigNotAlive/mediumNotAlive — прыжок на крышу (только с дороги)
+                case ObstacleTypeEnum.bigNotAlive:
+                case ObstacleTypeEnum.mediumNotAlive:
+                    return energy >= JumpEnergyCost;
+
+                default:
+                    return false;
+            }
         }
 
         // ══════════════════════════════════════════════
@@ -585,35 +643,6 @@ namespace Assets.Scripts.Bot
         // ══════════════════════════════════════════════
         //  Вспомогательные
         // ══════════════════════════════════════════════
-
-        /// <summary>Другая линия содержит только перепрыгиваемые препятствия?</summary>
-        private bool IsOtherLaneJumpable(ObstacleInfo threat, bool hamsterOnBottom)
-        {
-            float checkFrom = threat.LeftX - LaneSwitchTravel;
-            float checkTo = threat.RightX + LaneSwitchTravel;
-            bool otherLaneIsTop = hamsterOnBottom;
-            bool hasAny = false;
-
-            for (int i = 0; i < _obstacles.Count; i++)
-            {
-                var obs = _obstacles[i];
-                if (obs.Category == ObjectCategory.Neutral ||
-                    obs.Category == ObjectCategory.Bonus)
-                    continue;
-                if (obs.IsTopLane != otherLaneIsTop) continue;
-                if (obs.IsOnRoof) continue;
-                if (obs.RightX <= checkFrom || obs.LeftX >= checkTo) continue;
-
-                hasAny = true;
-                // Непрыгаемые типы — линия непроходима
-                if (obs.Type == ObstacleTypeEnum.bigNotAlive ||
-                    obs.Type == ObstacleTypeEnum.mediumNotAlive ||
-                    obs.Type == ObstacleTypeEnum.bigAlive)
-                    return false;
-            }
-
-            return hasAny; // true только если есть препятствия и все jumpable
-        }
 
         /// <summary>Проверяет, что другая линия безопасна для смены.</summary>
         private bool IsOtherLaneSafe(ObstacleInfo threat, bool hamsterOnBottom)
