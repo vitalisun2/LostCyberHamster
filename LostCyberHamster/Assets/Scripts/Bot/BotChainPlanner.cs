@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using System.Text;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay;
-using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using UnityEngine;
@@ -619,7 +619,7 @@ namespace Assets.Scripts.Bot
 
             if (!hasNearThreat) return;
 
-            var sb = new System.Text.StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine("[BotQA] NO SAFE PATH FOUND");
             sb.AppendLine($"  Hamster: lane={( hamsterOnBottom ? "bottom" : "top")} roof={hamsterOnRoof} energy={energy} lives={lives} ulta={ulta}");
             sb.AppendLine($"  Obstacles ({_obstacles.Count}):");
