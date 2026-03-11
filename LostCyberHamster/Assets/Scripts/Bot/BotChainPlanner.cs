@@ -143,6 +143,9 @@ namespace Assets.Scripts.Bot
             if (TryBuildBonusChain(hamsterOnBottom, hamsterOnRoof))
                 return true;
 
+            // ── Этап 10: Логирование непроходимых ситуаций ──
+            LogNoSafePath(hamsterOnBottom, hamsterOnRoof, energy, lives, ulta);
+
             return false;
         }
 
@@ -589,6 +592,43 @@ namespace Assets.Scripts.Bot
                 || state == HamsterStateEnum.RoofJumpDamage
                 || state == HamsterStateEnum.SuperRoofJump
                 || state == HamsterStateEnum.SuperRoofJumpDamage;
+        }
+
+        // ══════════════════════════════════════════════
+        //  Этап 10: QA логирование
+        // ══════════════════════════════════════════════
+
+        private void LogNoSafePath(bool hamsterOnBottom, bool hamsterOnRoof,
+            int energy, int lives, int ulta)
+        {
+            // Логируем только если есть реальные угрозы впереди
+            bool hasNearThreat = false;
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                if (_obstacles[i].Category == ObjectCategory.Threat &&
+                    _obstacles[i].DistanceToHamster > 0 &&
+                    _obstacles[i].DistanceToHamster < 4f &&
+                    IsSameLane(_obstacles[i].IsTopLane, hamsterOnBottom,
+                        _obstacles[i].IsOnRoof, hamsterOnRoof))
+                {
+                    hasNearThreat = true;
+                    break;
+                }
+            }
+
+            if (!hasNearThreat) return;
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("[BotQA] NO SAFE PATH FOUND");
+            sb.AppendLine($"  Hamster: lane={( hamsterOnBottom ? "bottom" : "top")} roof={hamsterOnRoof} energy={energy} lives={lives} ulta={ulta}");
+            sb.AppendLine($"  Obstacles ({_obstacles.Count}):");
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                var o = _obstacles[i];
+                if (o.DistanceToHamster < -1f || o.DistanceToHamster > 6f) continue;
+                sb.AppendLine($"    [{i}] {o.Type} cat={o.Category} dist={o.DistanceToHamster:F2} lane={( o.IsTopLane ? "top" : "bottom")} roof={o.IsOnRoof}");
+            }
+            DebugManager.DiagLog(sb.ToString());
         }
 
         /// <summary>Стоит ли менять линию ради этого бонуса?</summary>

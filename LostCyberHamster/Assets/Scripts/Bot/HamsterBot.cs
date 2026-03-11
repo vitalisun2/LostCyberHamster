@@ -27,6 +27,14 @@ namespace Assets.Scripts.Bot
         [Tooltip("Дальность сканирования (мировые единицы)")]
         private float _scanRange = 15f;
 
+        [SerializeField]
+        [Tooltip("Авто-рестарт уровня при смерти хомяка")]
+        private bool _autoRestartOnDeath;
+
+        [SerializeField, Range(1f, 5f)]
+        [Tooltip("Задержка перед авто-рестартом (сек)")]
+        private float _autoRestartDelay = 2f;
+
         [Title("Runtime Info"), ReadOnly]
         [ShowInInspector] public bool IsEnabled { get; private set; }
 
@@ -106,8 +114,13 @@ namespace Assets.Scripts.Bot
         private void Update()
         {
             if (!IsEnabled || !_initialized) return;
-            if (_hamster == null || _hamster.HamsterState.Value == HamsterStateEnum.Dead)
+            if (_hamster == null) return;
+
+            if (_hamster.HamsterState.Value == HamsterStateEnum.Dead)
+            {
+                HandleDeath();
                 return;
+            }
 
             // Не действуем в процессе прыжка/смены линии — ждём приземления
             if (!IsControllableState(_hamster.HamsterState.Value))
@@ -203,6 +216,33 @@ namespace Assets.Scripts.Bot
         {
             return state == HamsterStateEnum.Run
                 || state == HamsterStateEnum.RoofRun;
+        }
+
+        // ──────────────── Auto-restart on death ────────────────
+
+        private bool _deathHandled;
+
+        private void HandleDeath()
+        {
+            if (_deathHandled) return;
+            _deathHandled = true;
+
+            DebugManager.DiagLog($"[HamsterBot] Hamster DIED. Actions executed: {_actionsExecuted}");
+
+            if (_autoRestartOnDeath && LevelController.Instance != null)
+            {
+                StartCoroutine(AutoRestartCoroutine());
+            }
+        }
+
+        private IEnumerator AutoRestartCoroutine()
+        {
+            yield return new WaitForSecondsRealtime(_autoRestartDelay);
+            if (!IsEnabled) yield break;
+
+            DebugManager.DiagLog("[HamsterBot] Auto-restarting level.");
+            _deathHandled = false;
+            LevelController.Instance.Replay();
         }
 
         private void OnDestroy()

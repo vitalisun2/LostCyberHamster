@@ -8,6 +8,7 @@
 - [Data Flow](#data-flow)
 - [Important Constants](#important-constants)
 - [Lessons Learned](#lessons-learned)
+- [HamsterBot Architecture](#hamsterbot-architecture-v2---chain-planner)
 
 ---
 
@@ -579,74 +580,47 @@ Menu: `Tools/Migration/` — 3 шага:
 
 ---
 
-## HamsterBot Architecture
+## HamsterBot Architecture (v2 - Chain Planner)
 
-### Компоненты бота
-- `HamsterBot` (MonoBehaviour, Singleton, DontDestroyOnLoad) — оркестратор
-- `BotBrain` — реактивное дерево решений, параметризованное через `BotPlayStyleConfig`
-- `BotThreatScanner` — сканирование препятствий перед хомяком
-- `BotJumpPredictor` — предсказание исхода прыжка, переиспользует `CollisionUtils`
-- `BotResourceManager` — покупки энергии (50 coins → 100 energy) и ульты (100 coins → 100% ulta)
-- `BotPlanner` — forward simulation (дерево решений на N шагов), `EnablePlanner = false` по умолчанию
-- `BotLogger` — файловый лог сессий в `EditorLogs/bot_sessions/`, авто-очистка старых (> 1 дня)
+> Полностью переписано. Старая архитектура (31 файл, BotBrain, BotPlanner, Self-Learning) удалена.
 
-### BotJumpPredictor
-Предсказывает исход прыжка **до его совершения**, переиспользуя ту же логику, что и `JumpMechanics`:
-- Использует `CollisionUtils.IsOverlapAtShift`, `IsJumpOver`, `IsHamsterCenterInsideObstacleAtShift`
-- Получает `_jumpClipWorldShift` из `TransformAnimatorController` хомяка при инициализации
-- Результат `JumpPrediction`: NoHit, JumpOver, JumpOnObstacle, JumpOnRoof, Damage, Unknown
-- `BotBrain.HandleUrgentThreat` перед каждым Jump-решением вызывает `CheckJumpSafe()`
-- Если предиктор говорит `Damage` — бот ждёт, пока хомяк подъедет ближе (DoNothing)
-- **Это решает проблему раннего прыжка:** бот прыгал на расстоянии 2.3 юнита, приземлялся на препятствие
+### Файлы (6 файлов, ~950 строк)
+| Файл | Назначение |
+|---|---|
+| `HamsterBot.cs` | MonoBehaviour-оркестратор: Singleton, DontDestroyOnLoad, dirty flag, Update loop, ExecuteAction, auto-restart |
+| `HamsterBotUI.cs` | Минимальный OnGUI оверлей "BOT: ON/OFF (F1)" |
+| `BotChainPlanner.cs` | Алгоритм: сканирование, классификация, построение цепочки действий |
+| `BotAction.cs` | Enum: None, SwitchLane, Jump, SuperJump, RoofJump, SuperRoofJump, UseUlta |
+| `ObstacleInfo.cs` | Readonly struct + ObjectCategory (Target, Threat, Bonus, Neutral) |
+| `ChainStep.cs` | Readonly struct: BotAction + delay |
 
-### Ключевое правило: smallNotAliveRoadAndRoof
-- Это препятствие (opened_box, manhole) может быть на дороге ИЛИ на крыше bigNotAlive
-- Обрабатывается **прыжком** (не сменой полосы!)
-- На дороге: JumpOver, если хомяк достаточно близко; иначе Damage
-- На крыше bigNotAlive: JumpOnRoof (если нет hitSmall) или JumpOnRoofDamage
+### Алгоритм (BotChainPlanner)
+1. `ScanObstacles()` — фильтрует SpawnedObstacles по дальности, классифицирует через `Classify()`
+2. `BuildChain()` — приоритетная цепочка:
+   - **Ulta** → 2+ угрозы в кластере ИЛИ 1 жизнь + неизбежная угроза
+   - **Target** → прыжок на SmallAlive (JumpOnObstacle), проверка пути и приземления
+   - **Evasion** → уклонение от ближайшей угрозы (SwitchLane/Jump/SuperJump/RoofJump)
+   - **Bonus** → ценные бонусы (life/energetic/pizza/crystal) на другой полосе, если безопасно
+3. `TryAddBuyEnergyStep()` — покупка энергии за 50 монет при <10 energy
 
-### Play Styles (BotPlayStyle enum)
-Каждый стиль — предустановленный набор весов и порогов (`BotPlayStylePresets`):
-- **Survival** — выжить любой ценой (AggressionLevel=0.3, EnergyConserve=40)
-- **ThreeStars** — 0 смертей (UrgentWindow=0.8, UltaEmergencyLives=2)
-- **BonusHunter** — максимум монет (Aggression=0.9, AllowBuyEnergy=true)
-- **Perfectionist** — 3 звезды + бонусы (сбалансированный)
-- **UltaMaster** — активное использование суперударов (UltaCluster=1, AllowBuyUlta=true)
-- **GodMode** — всё по максимуму + покупки + BotPlanner
+### Dirty Flag система
+Пересчёт цепочки только при изменении: HamsterState, Energy, Ulta, Lives, кол-во препятствий, или каждые 10 кадров.
 
-### Горячие клавиши
+### Управление уровнями
 - F1 — вкл/выкл бота
-- F2 — цикл режимов (Play/Test/Analytics)
-- F3 — цикл стилей игры (Survival → ThreeStars → ... → GodMode → Survival)
-- F4 — вкл/выкл режим обучения (Training Mode)
+- `_autoRestartOnDeath` — авто-рестарт через `LevelController.Instance.Replay()` с задержкой
+- QA логирование: `LogNoSafePath()` записывает непроходимые ситуации в DiagLog
 
-### Self-Learning Module (Bot/Learning/)
-Модуль автоматического самообучения через offline parameter tuning (GA-подобный):
+### Ключевые константы
+- `SafeMargin = 1.5f` — минимальная дистанция реакции
+- `JumpLandingTravel = 3.8f`, `SuperJumpLandingTravel = 4.6f`
+- `LandingCheckTolerance = 0.8f`
+- `LaneSwitchDuration = 0.3f`
+- Скорость игры: `Consts.GameSpeedBase = 3.8f`
 
-**Компоненты:**
-- `BotSessionReport` — данные сессии (время, жизни, монеты, столкновения, покупки)
-- `SessionAnalyzer` — вычисляет FitnessScore по формуле, зависящей от PlayStyle
-- `ParameterTuner` — мутирует параметры: целевые мутации (FailReasons) + случайные (10%)
-- `GenomeManager` — JSON сериализация геномов в `EditorLogs/BotGenomes/`
-- `BotGenome` — сериализуемая обёртка над BotPlayStyleConfig + метаданные (generation, fitness)
-- `LearningOrchestrator` — связывает: Load → Mutate → Play → Evaluate → Save → Restart
-
-**Цикл обучения (при IsTrainingMode=true):**
-1. `InitForLevel()` — загружает лучший геном из JSON или создаёт из пресета
-2. `ParameterTuner.Mutate()` — мутирует на основе FailReasons прошлой сессии
-3. Геймплей — `LearningOrchestrator` собирает данные через GameEventsManager
-4. `OnGameFinished()` — `SessionAnalyzer.Evaluate()` считает fitness
-5. `GenomeManager.SaveIfBetter()` — сохраняет если лучше, иначе откатывает
-6. Авто-рестарт (через HamsterBot)
-
-**FailReasons → Целевые мутации:**
-- `EnergyDepleted` → EnergyConserveThreshold+5, WeightEnergy+1
-- `TooAggressive` → AggressionLevel-0.1, WeightSurvival+1
-- `MissedOpportunities` → WeightCollectibles+1, AggressionLevel+0.05
-- `UnusedResources` → EnableBuys, BuyThresholds+10
-- `TooFewUltaUses` → WeightUlta+1, UltaCluster-1
-
-**Параметры ограничены диапазонами:** Weights [0.5, 20], Aggression [0.1, 1.0], UrgentWindow [0.3, 1.2]
+### Roof логика
+- `HasRoofObstacle()` проверяет SmallNotAliveRoadAndRoof в зоне BigNotAlive/MediumNotAlive
+- `SelectEvasionTool()` учитывает: на крыше → SuperRoofJump, иначе анализ соседней полосы
 
 ### Energy Economics
 - Jump / RoofJump = 10 energy
