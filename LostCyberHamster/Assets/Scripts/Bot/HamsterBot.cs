@@ -332,8 +332,21 @@ namespace Assets.Scripts.Bot
 
             _actionsExecuted++;
             _lastDecisionText = action.ToString();
+
+            // Логируем действие + контекст ближайших объектов
+            var obs = _planner?.Obstacles;
+            string nearInfo = "";
+            if (obs != null)
+            {
+                for (int i = 0; i < obs.Count && i < 3; i++)
+                {
+                    var o = obs[i];
+                    if (o.DistanceToHamster < -1f || o.DistanceToHamster > 6f) continue;
+                    nearInfo += $" | {o.Type}({o.Category}) d={o.DistanceToHamster:F2}";
+                }
+            }
             DebugManager.DiagLog(
-                $"[HamsterBot] Action #{_actionsExecuted}: {action} | state={_hamster.HamsterState.Value}");
+                $"[HamsterBot] EXEC #{_actionsExecuted}: {action} state={_hamster.HamsterState.Value} pos={_hamster.RightX:F2}{nearInfo}");
         }
     }
 }

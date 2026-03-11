@@ -38,6 +38,8 @@ namespace Assets.Scripts.Bot
 
         private readonly List<ObstacleInfo> _obstacles = new(32);
         private readonly List<ChainStep> _chain = new(8);
+        private readonly StringBuilder _logBuf = new(512);
+        private int _decisionId;
 
         // ──────────────── Публичные результаты ────────────────
 
@@ -127,22 +129,35 @@ namespace Assets.Scripts.Bot
             int energy = hamster.Energy.Value;
             int lives = hamster.Lives.Value;
             int ulta = hamster.UltaChargeAmount.Value;
+            _decisionId++;
 
             // ── Этап 6: Ульта ──
             if (ulta >= 100 && TryBuildUltaChain(hamsterOnBottom, hamsterOnRoof, lives))
+            {
+                LogDecision(hamsterOnBottom, hamsterOnRoof, energy, lives, ulta, "ULTA");
                 return true;
+            }
 
             // ── Этап 4: Напрыгивание на Target ──
             if (TryBuildTargetChain(hamsterOnBottom, hamsterOnRoof, energy, hamster))
+            {
+                LogDecision(hamsterOnBottom, hamsterOnRoof, energy, lives, ulta, "TARGET");
                 return true;
+            }
 
             // ── Этап 3: Уклонение от Threat ──
             if (TryBuildEvasionChain(hamsterOnBottom, hamsterOnRoof, energy, hamster))
+            {
+                LogDecision(hamsterOnBottom, hamsterOnRoof, energy, lives, ulta, "EVASION");
                 return true;
+            }
 
             // ── Этап 7: Сбор Bonus (если текущая линия чистая) ──
             if (TryBuildBonusChain(hamsterOnBottom, hamsterOnRoof))
+            {
+                LogDecision(hamsterOnBottom, hamsterOnRoof, energy, lives, ulta, "BONUS");
                 return true;
+            }
 
             // ── Этап 10: Логирование непроходимых ситуаций ──
             LogNoSafePath(hamsterOnBottom, hamsterOnRoof, energy, lives, ulta);
@@ -439,11 +454,8 @@ namespace Assets.Scripts.Bot
                     if (IsOtherLaneSafe(threat, hamsterOnBottom))
                         return new ChainStep(BotAction.SwitchLane, index,
                             SafeMargin, 0, $"Evade {threat.Type}: switch lane");
-                    // Крыша занята, другая линия тоже — прыжок на крышу всё равно (лучше чем ничего)
-                    if (!hamsterOnRoof && energy >= JumpEnergyCost)
-                        return new ChainStep(BotAction.Jump, index,
-                            SafeMargin, JumpEnergyCost,
-                            $"Evade {threat.Type}: jump on roof (roof has obstacle)");
+                    // Крыша занята, другая линия тоже — ничего не делаем (прыжок на крышу с 
+                    // препятствием гарантирует урон, лучше пусть LogNoSafePath это залогирует)
                     break;
 
                 case ObstacleTypeEnum.smallNotAliveRoad:
@@ -498,13 +510,16 @@ namespace Assets.Scripts.Bot
 
         /// <summary>
         /// Безопасно ли приземление после прыжка через/на объект?
-        /// Проверяет: нет ли Threat в зоне приземления на той же линии.
+        /// Проверяет весь путь от source до зоны приземления: нет ли Threat.
+        /// Для маленьких объектов (small*) проверяет только зону приземления (прыжок их перелетает).
+        /// Для больших объектов (big*/medium*) проверяет всю зону, т.к. прыжок их НЕ перелетает.
         /// </summary>
         private bool IsLandingSafe(ObstacleInfo source,
             bool hamsterOnBottom, bool hamsterOnRoof, float landingTravel)
         {
             float landingX = source.RightX + landingTravel;
-            float checkFrom = landingX - LandingCheckTolerance;
+            // Проверяем от конца source до конца зоны приземления
+            float checkFrom = source.RightX;
             float checkTo = landingX + LandingCheckTolerance;
 
             for (int i = 0; i < _obstacles.Count; i++)
@@ -513,6 +528,9 @@ namespace Assets.Scripts.Bot
                 if (obs.Category != ObjectCategory.Threat) continue;
                 if (!IsSameLane(obs.IsTopLane, hamsterOnBottom, obs.IsOnRoof, hamsterOnRoof))
                     continue;
+
+                // Пропускаем сам source-объект
+                if (Mathf.Abs(obs.CenterX - source.CenterX) < 0.1f) continue;
 
                 if (obs.RightX > checkFrom && obs.LeftX < checkTo)
                     return false;
@@ -630,6 +648,39 @@ namespace Assets.Scripts.Bot
                 sb.AppendLine($"    [{i}] {o.Type} cat={o.Category} dist={o.DistanceToHamster:F2} lane={( o.IsTopLane ? "top" : "bottom")} roof={o.IsOnRoof}");
             }
             DebugManager.DiagLog(sb.ToString());
+        }
+
+        // ══════════════════════════════════════════════
+        //  Decision Logging
+        // ══════════════════════════════════════════════
+
+        private void LogDecision(bool hamsterOnBottom, bool hamsterOnRoof,
+            int energy, int lives, int ulta, string strategy)
+        {
+            _logBuf.Clear();
+            var step = _chain.Count > 0 ? _chain[0] : default;
+            _logBuf.Append($"[Bot#{_decisionId}] {strategy}: {step.Action}");
+            if (step.TargetObstacleIndex >= 0 && step.TargetObstacleIndex < _obstacles.Count)
+            {
+                var t = _obstacles[step.TargetObstacleIndex];
+                _logBuf.Append($" → {t.Type} dist={t.DistanceToHamster:F2}");
+            }
+            _logBuf.Append($" | lane={( hamsterOnBottom ? "bot" : "top")} roof={hamsterOnRoof}");
+            _logBuf.Append($" E={energy} L={lives} U={ulta}");
+            if (!string.IsNullOrEmpty(step.Reason))
+                _logBuf.Append($\" [{step.Reason}]\");
+
+            // Кратко — угрозы на текущей линии
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                var o = _obstacles[i];
+                if (o.DistanceToHamster < -0.5f || o.DistanceToHamster > 8f) continue;
+                if (o.Category == ObjectCategory.Neutral) continue;
+                _logBuf.Append($"\n  [{i}]{o.Type}({o.Category}) d={o.DistanceToHamster:F1}"
+                    + $" {(o.IsTopLane?"T":"B")}{(o.IsOnRoof?"R":"")}");
+            }
+
+            DebugManager.DiagLog(_logBuf.ToString());
         }
 
         /// <summary>Стоит ли менять линию ради этого бонуса?</summary>
