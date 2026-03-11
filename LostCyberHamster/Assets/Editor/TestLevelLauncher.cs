@@ -18,25 +18,15 @@ namespace LostCyberHamster.Editor
         public const string OverridePrefsKey = "TestLevel_Address";
 
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
-        private const string TestLevelAddress = "01_New_York/Morning/test_medium_notalive";
-        private const string TestLevelJsonPath =
-            "Assets/Content/locations/01_New_York/levels/Morning/test_medium_notalive/test_medium_notalive.json";
+        private const string TestLevelAddress = "01_New_York/Morning/test_level";
 
-        [MenuItem("Tools/Test Level/Launch Medium NotAlive Test", priority = 50)]
+        [MenuItem("Tools/Test Level/Launch", priority = 50)]
         private static void LaunchTestLevel()
         {
             if (EditorApplication.isPlaying)
             {
                 EditorUtility.DisplayDialog("Test Level",
                     "Exit Play mode first.", "OK");
-                return;
-            }
-
-            var json = AssetDatabase.LoadAssetAtPath<TextAsset>(TestLevelJsonPath);
-            if (json == null)
-            {
-                EditorUtility.DisplayDialog("Test Level",
-                    $"Test level JSON not found:\n{TestLevelJsonPath}", "OK");
                 return;
             }
 
@@ -49,20 +39,6 @@ namespace LostCyberHamster.Editor
             EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
             EditorSceneManager.OpenScene(BootstrapScenePath);
             EditorApplication.isPlaying = true;
-        }
-
-        [MenuItem("Tools/Test Level/Open Test Level JSON", priority = 51)]
-        private static void OpenTestLevelJson()
-        {
-            var asset = AssetDatabase.LoadAssetAtPath<TextAsset>(TestLevelJsonPath);
-            if (asset != null)
-            {
-                AssetDatabase.OpenAsset(asset);
-            }
-            else
-            {
-                Debug.LogError($"[TestLevelLauncher] Test level JSON not found at: {TestLevelJsonPath}");
-            }
         }
 
         [MenuItem("Tools/Test Level/Clear Test Override", priority = 53)]

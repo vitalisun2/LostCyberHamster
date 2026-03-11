@@ -60,6 +60,12 @@ namespace Assets.Scripts.Bot
         private int _prevEnergy;
         private int _prevUlta;
 
+        // Watchdog: обнаружение застревания в неконтролируемом состоянии
+        private float _uncontrollableStartTime;
+        private bool _inUncontrollableState;
+        private const float UncontrollableWarnTime = 2f;
+        private float _lastPeriodicLogTime;
+
         // ──────────────── Lifecycle ────────────────
 
         private void Awake()
@@ -124,17 +130,43 @@ namespace Assets.Scripts.Bot
             }
 
             // Не действуем в процессе прыжка/смены линии — ждём приземления
-            if (!IsControllableState(_hamster.HamsterState.Value))
+            var currentState = _hamster.HamsterState.Value;
+            if (!IsControllableState(currentState))
+            {
+                if (!_inUncontrollableState)
+                {
+                    _inUncontrollableState = true;
+                    _uncontrollableStartTime = Time.time;
+                }
+                else if (Time.time - _uncontrollableStartTime > UncontrollableWarnTime)
+                {
+                    DebugManager.DiagLog($"[HamsterBot] WARNING: stuck in state={currentState} for {Time.time - _uncontrollableStartTime:F1}s");
+                    _uncontrollableStartTime = Time.time; // не спамить, лог раз в 2 сек
+                }
                 return;
+            }
+
+            if (_inUncontrollableState)
+            {
+                _inUncontrollableState = false;
+                DebugManager.DiagLog($"[HamsterBot] Returned to controllable state={currentState} after {Time.time - _uncontrollableStartTime:F1}s");
+            }
 
             CheckDirtyFlag();
 
             if (_dirty)
             {
                 _planner.ScanObstacles(_hamster, _scanRange);
-                _planner.BuildChain(_hamster);
+                bool chainBuilt = _planner.BuildChain(_hamster);
                 _dirty = false;
                 _framesSinceRecalc = 0;
+
+                // Периодический лог: состояние и результат сканирования (раз в 3 сек)
+                if (Time.time - _lastPeriodicLogTime > 3f)
+                {
+                    _lastPeriodicLogTime = Time.time;
+                    DebugManager.DiagLog($"[HamsterBot] SCAN: {_planner.Obstacles.Count} obs, chain={chainBuilt}, state={currentState} pos={_hamster.RightX:F2}");
+                }
             }
 
             // Есть ли шаг для выполнения?
