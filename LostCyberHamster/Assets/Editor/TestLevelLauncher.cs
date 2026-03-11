@@ -10,8 +10,9 @@ namespace LostCyberHamster.Editor
     /// Writes the target level address into PlayerPrefs, opens the Bootstrap
     /// scene and enters Play mode. LoadMainMenuLoadingTask detects the
     /// override, sets CurrentLevel, and loads Game instead of Menu.
-    /// The full bootstrap pipeline (auth, catalog, addressables) runs normally.
+    /// Override auto-clears when Play Mode exits.
     /// </summary>
+    [InitializeOnLoad]
     public static class TestLevelLauncher
     {
         /// <summary>PlayerPrefs key checked by LoadMainMenuLoadingTask.</summary>
@@ -19,6 +20,24 @@ namespace LostCyberHamster.Editor
 
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string TestLevelAddress = "01_New_York/Morning/test_level";
+
+        static TestLevelLauncher()
+        {
+            EditorApplication.playModeStateChanged += OnPlayModeChanged;
+        }
+
+        private static void OnPlayModeChanged(PlayModeStateChange state)
+        {
+            // Auto-clear override when exiting Play Mode
+            if (state == PlayModeStateChange.EnteredEditMode)
+            {
+                if (PlayerPrefs.HasKey(OverridePrefsKey))
+                {
+                    PlayerPrefs.DeleteKey(OverridePrefsKey);
+                    PlayerPrefs.Save();
+                }
+            }
+        }
 
         [MenuItem("Tools/Test Level/Launch", priority = 50)]
         private static void LaunchTestLevel()
@@ -39,14 +58,6 @@ namespace LostCyberHamster.Editor
             EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
             EditorSceneManager.OpenScene(BootstrapScenePath);
             EditorApplication.isPlaying = true;
-        }
-
-        [MenuItem("Tools/Test Level/Clear Test Override", priority = 53)]
-        private static void ClearOverride()
-        {
-            PlayerPrefs.DeleteKey(OverridePrefsKey);
-            PlayerPrefs.Save();
-            Debug.Log("[TestLevelLauncher] Test level override cleared.");
         }
     }
 }

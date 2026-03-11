@@ -2,6 +2,7 @@ using System.Collections;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using Sirenix.OdinInspector;
@@ -49,6 +50,7 @@ namespace Assets.Scripts.Bot
 
         private Hamster _hamster;
         private BotChainPlanner _planner;
+        private GameManager _gameManager;
         private bool _initialized;
 
         // Dirty flag
@@ -99,29 +101,22 @@ namespace Assets.Scripts.Bot
 
         private IEnumerator ReinitAfterSceneLoad()
         {
-            yield return new WaitForSeconds(2f);
+            yield return new WaitForSeconds(0.5f);
 
             if (!IsEnabled) yield break;
 
             TryInitAndEnable();
-            TrySkipIntro();
-            DebugManager.DiagLog("[HamsterBot] Re-initialized after scene load.");
-        }
-
-        private void TrySkipIntro()
-        {
-            var intro = FindObjectOfType<Intro>();
-            if (intro != null)
-            {
-                intro.SkipIntro();
-                DebugManager.DiagLog("[HamsterBot] Auto-skipped intro.");
-            }
+            DebugManager.DiagLog("[HamsterBot] Re-initialized after scene load. Waiting for PLAYING state.");
         }
 
         private void Update()
         {
             if (!IsEnabled || !_initialized) return;
             if (_hamster == null) return;
+
+            // Ждём, пока игра реально запустится (после интро)
+            if (_gameManager == null || _gameManager.State != GameState.PLAYING)
+                return;
 
             if (_hamster.HamsterState.Value == HamsterStateEnum.Dead)
             {
@@ -313,6 +308,7 @@ namespace Assets.Scripts.Bot
                 }
 
                 _planner = new BotChainPlanner();
+                _gameManager = LevelController.Instance?.LevelData?.GameManager;
                 _initialized = true;
                 DebugManager.DiagLog("[HamsterBot] Initialized successfully.");
             }
