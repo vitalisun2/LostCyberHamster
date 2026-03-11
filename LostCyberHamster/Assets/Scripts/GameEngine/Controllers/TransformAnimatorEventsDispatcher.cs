@@ -10,7 +10,6 @@ namespace Assets.Scripts.GameEngine.Controllers
 
         public void ReceiveEvent(string animEvent)
         {
-            DebugManager.DiagLog($"[TransformAnimEvents] ReceiveEvent: '{animEvent}'");
             OnEvent?.Invoke(animEvent);
         }
     }

@@ -20,7 +20,6 @@ namespace Assets.Scripts.GameEngine.Controllers
 
         public void Jump()
         {
-            DebugManager.DiagLog($"[SpriteAnim] Jump trigger set. enabled={_animator.enabled} stateHash={_animator.GetCurrentAnimatorStateInfo(0).shortNameHash}");
             _animator.SetTrigger("IsJump");
         }
 
@@ -41,13 +40,11 @@ namespace Assets.Scripts.GameEngine.Controllers
 
         public void OnIntro()
         {
-            DebugManager.DiagLog($"[SpriteAnim] OnIntro: disabling animator (was enabled={_animator.enabled})");
             _animator.enabled = false;
         }
 
         public void OnStart()
         {
-            DebugManager.DiagLog($"[SpriteAnim] OnStart: was enabled={_animator.enabled}. Calling Rebind().");
             _animator.Rebind();
             _animator.enabled = true;
         }

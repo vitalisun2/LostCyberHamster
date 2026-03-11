@@ -47,17 +47,14 @@ namespace Assets.Scripts.Entry_Points
             // Если интро не было (например, тестовый уровень), игра ещё в OFF — запускаем.
             // Если интро было, состояние INTRO или PLAYING — Intro.EndIntro() сам вызовет StartGame().
             var gm = (GameManager)_bundle["gameManager"];
-            DebugManager.DiagLog($"[GameEntryPoint] All tasks done. GameState={gm.State}");
             if (gm.State == GameState.OFF)
             {
-                DebugManager.DiagLog("[GameEntryPoint] No intro — starting game after all tasks loaded.");
                 gm.StartGame();
             }
         }
 
         private async Task ExecuteTask(ILoadingTask task, Dictionary<string, object> bundle)
         {
-            DebugManager.DiagLog($"[GameEntryPoint] >>> Starting task: {task.Name}");
             await task.LoadAsync(bundle);
 
             if (task is ILoadingTaskParallel parallelTask)
@@ -72,7 +69,7 @@ namespace Assets.Scripts.Entry_Points
                 }
             }
 
-            DebugManager.DiagLog($"[GameEntryPoint] <<< Finished task: {task.Name}");
+
         }
     }
 

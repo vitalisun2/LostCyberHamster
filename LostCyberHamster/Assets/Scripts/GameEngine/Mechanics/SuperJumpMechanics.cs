@@ -98,10 +98,6 @@ public class SuperJumpMechanics
 
         JumpResult result = CalculateSuperJumpState();
 
-        var animator = _transformAnimatorController.Animator;
-        var stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-        DebugManager.DiagLog($"[SuperJump] state={result.State} animEnabled={animator.enabled} animState={stateInfo.shortNameHash} normTime={stateInfo.normalizedTime:F2}");
-
         _hamsterState.Value = result.State;
         if (result.Target != null) _lastObstacle.Value = result.Target;
 

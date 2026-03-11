@@ -33,7 +33,6 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
         private void CreateHamster()
         {
-            DebugManager.DiagLog("[InitCharacterTask] Creating hamster...");
             var hamster = GameObject.Instantiate(_characterPrefab,
                 new Vector3(Consts.HamsterXPos, Consts.HamsterYPos, 0), Quaternion.identity, _environmentRoot.transform);
 
@@ -41,7 +40,6 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             HelpMethods.ApplyOverrideController(hamster);
 
             LevelController.Instance.LevelData.Hamster = hamster;
-            DebugManager.DiagLog("[InitCharacterTask] Hamster created and assigned.");
         }
 
         private void AddGameListeners(Hamster hamster)
@@ -49,7 +47,6 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             var gameManager = LevelController.Instance.LevelData.GameManager;
             var listeners = hamster.gameObject.GetComponentsInChildren<Listeners.IGameListener>();
 
-            DebugManager.DiagLog($"[InitCharacterTask] Adding {listeners.Length} listeners. GameState={gameManager.State}");
             foreach (var listener in listeners)
             {
                 gameManager.AddListener(listener);

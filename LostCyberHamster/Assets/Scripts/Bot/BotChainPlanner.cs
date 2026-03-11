@@ -476,8 +476,11 @@ namespace Assets.Scripts.Bot
                     if (IsOtherLaneSafe(threat, hamsterOnBottom))
                         return new ChainStep(BotAction.SwitchLane, index,
                             SafeMargin, 0, $"Evade {threat.Type}: switch lane");
-                    // Крыша занята, другая линия тоже — ничего не делаем (прыжок на крышу с 
-                    // препятствием гарантирует урон, лучше пусть LogNoSafePath это залогирует)
+                    // Крыша занята, другая линия имеет препятствия — но если они
+                    // перепрыгиваемые, лучше сменить линию и потом прыгнуть
+                    if (IsOtherLaneJumpable(threat, hamsterOnBottom) && energy >= JumpEnergyCost)
+                        return new ChainStep(BotAction.SwitchLane, index,
+                            SafeMargin, 0, $"Evade {threat.Type}: switch lane (jumpable)");
                     break;
 
                 case ObstacleTypeEnum.smallNotAliveRoad:
@@ -582,6 +585,35 @@ namespace Assets.Scripts.Bot
         // ══════════════════════════════════════════════
         //  Вспомогательные
         // ══════════════════════════════════════════════
+
+        /// <summary>Другая линия содержит только перепрыгиваемые препятствия?</summary>
+        private bool IsOtherLaneJumpable(ObstacleInfo threat, bool hamsterOnBottom)
+        {
+            float checkFrom = threat.LeftX - LaneSwitchTravel;
+            float checkTo = threat.RightX + LaneSwitchTravel;
+            bool otherLaneIsTop = hamsterOnBottom;
+            bool hasAny = false;
+
+            for (int i = 0; i < _obstacles.Count; i++)
+            {
+                var obs = _obstacles[i];
+                if (obs.Category == ObjectCategory.Neutral ||
+                    obs.Category == ObjectCategory.Bonus)
+                    continue;
+                if (obs.IsTopLane != otherLaneIsTop) continue;
+                if (obs.IsOnRoof) continue;
+                if (obs.RightX <= checkFrom || obs.LeftX >= checkTo) continue;
+
+                hasAny = true;
+                // Непрыгаемые типы — линия непроходима
+                if (obs.Type == ObstacleTypeEnum.bigNotAlive ||
+                    obs.Type == ObstacleTypeEnum.mediumNotAlive ||
+                    obs.Type == ObstacleTypeEnum.bigAlive)
+                    return false;
+            }
+
+            return hasAny; // true только если есть препятствия и все jumpable
+        }
 
         /// <summary>Проверяет, что другая линия безопасна для смены.</summary>
         private bool IsOtherLaneSafe(ObstacleInfo threat, bool hamsterOnBottom)
