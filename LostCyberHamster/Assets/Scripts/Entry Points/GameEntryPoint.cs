@@ -44,7 +44,14 @@ namespace Assets.Scripts.Entry_Points
 
             Debug.Log("Game loaded");
 
-           
+            // Если интро не было (например, тестовый уровень), игра ещё в OFF — запускаем.
+            // Если интро было, состояние INTRO или PLAYING — Intro.EndIntro() сам вызовет StartGame().
+            var gm = (GameManager)_bundle["gameManager"];
+            if (gm.State == GameState.OFF)
+            {
+                Debug.Log("[GameEntryPoint] No intro — starting game after all tasks loaded.");
+                gm.StartGame();
+            }
         }
 
         private async Task ExecuteTask(ILoadingTask task, Dictionary<string, object> bundle)

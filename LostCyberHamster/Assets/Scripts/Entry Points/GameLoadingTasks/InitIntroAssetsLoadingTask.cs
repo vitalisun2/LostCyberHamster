@@ -28,10 +28,8 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             {
                 LevelController.Instance.LevelData.GameManager.StartIntro();
             }
-            else
-            {
-                LevelController.Instance.LevelData.GameManager.StartGame();
-            }
+            // Если интро нет — НЕ вызываем StartGame() здесь.
+            // GameEntryPoint вызовет StartGame() после завершения ВСЕХ загрузочных задач.
         }
     }
 }
