@@ -614,9 +614,16 @@ Menu: `Tools/Migration/` — 3 шага:
 ### Ключевые константы
 - `SafeMargin = 1.5f` — минимальная дистанция реакции
 - `JumpLandingTravel = 3.8f`, `SuperJumpLandingTravel = 4.6f`
+- `JumpOnBounceTravel = 3.5f` — иммунное расстояние после напрыгивания на SmallAlive (отскок)
 - `LandingCheckTolerance = 0.8f`
 - `LaneSwitchDuration = 0.3f`
 - Скорость игры: `Consts.GameSpeedBase = 3.8f`
+
+### JumpOn bounce-иммунитет
+- При напрыгивании на SmallAlive (JumpOnObstacle) хомяк получает отскок (`transform_jump_on`, 1.817с)
+- Во время отскока состояние JumpOnObstacle — хомяк **неуязвим** (не входит в `CanDamageHamsterState`)
+- Угрозы в зоне `JumpOnBounceTravel` (3.5 юнитов) после цели игнорируются `IsLandingSafe(immuneRange)`
+- Это позволяет боту напрыгивать на собаку, даже если сразу за ней стоит люк (SmallNotAlive)
 
 ### Roof логика
 - `HasRoofObstacle()` проверяет SmallNotAliveRoadAndRoof в зоне BigNotAlive/MediumNotAlive

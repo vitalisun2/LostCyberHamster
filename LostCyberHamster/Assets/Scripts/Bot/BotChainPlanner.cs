@@ -31,6 +31,11 @@ namespace Assets.Scripts.Bot
         private const float SuperJumpLandingTravel = 4.6f; // ~1.2с * GameSpeedBase
         private const float LandingCheckTolerance = 0.8f;
 
+        // JumpOnObstacle (напрыгивание на SmallAlive): отскок длится 1.817с,
+        // но цель находится ~0.85с в анимации. Иммунное расстояние после цели:
+        // (1.817 - 0.85) * GameSpeedBase ≈ 3.5 юнитов.
+        private const float JumpOnBounceTravel = 3.5f;
+
         // Минимальное расстояние, с которого ульту имеет смысл использовать
         private const float UltaMinDistance = 1.0f;
 
@@ -251,7 +256,12 @@ namespace Assets.Scripts.Bot
                 if (pathBlocked) continue; // Попробовать следующую Target
 
                 // Проверяем последствия: безопасно ли приземление после напрыгивания?
-                if (!IsLandingSafe(obs, hamsterOnBottom, hamsterOnRoof, JumpLandingTravel))
+                // JumpOn (SmallAlive): отскок даёт иммунитет на JumpOnBounceTravel после цели.
+                bool isJumpOn = obs.Type == ObstacleTypeEnum.smallAlive && !hamsterOnRoof;
+                float targetLanding = isJumpOn ? JumpOnBounceTravel : JumpLandingTravel;
+                float targetImmune  = isJumpOn ? JumpOnBounceTravel : 0f;
+
+                if (!IsLandingSafe(obs, hamsterOnBottom, hamsterOnRoof, targetLanding, targetImmune))
                 {
                     continue; // Небезопасно — пропускаем эту Target
                 }
@@ -593,16 +603,16 @@ namespace Assets.Scripts.Bot
 
         /// <summary>
         /// Безопасно ли приземление после прыжка через/на объект?
-        /// Проверяет весь путь от source до зоны приземления: нет ли Threat.
-        /// Для маленьких объектов (small*) проверяет только зону приземления (прыжок их перелетает).
-        /// Для больших объектов (big*/medium*) проверяет всю зону, т.к. прыжок их НЕ перелетает.
+        /// Проверяет зону от source до приземления. Параметр immuneRange позволяет
+        /// пропустить угрозы в начале зоны (напр. отскок после JumpOn даёт иммунитет).
         /// </summary>
         private bool IsLandingSafe(ObstacleInfo source,
-            bool hamsterOnBottom, bool hamsterOnRoof, float landingTravel)
+            bool hamsterOnBottom, bool hamsterOnRoof,
+            float landingTravel, float immuneRange = 0f)
         {
             float landingX = source.RightX + landingTravel;
-            // Проверяем от конца source до конца зоны приземления
-            float checkFrom = source.RightX;
+            // Начинаем проверку после зоны иммунитета (если есть)
+            float checkFrom = source.RightX + immuneRange;
             float checkTo = landingX + LandingCheckTolerance;
 
             for (int i = 0; i < _obstacles.Count; i++)
