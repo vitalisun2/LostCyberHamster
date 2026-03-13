@@ -166,7 +166,11 @@ namespace Assets.Scripts.Bot
             _currentPlan.RemoveCompletedFromHead();
 
             // ── 2. Исполнение текущего шага (включая InProgress→Completed) ──
-            _timingPolicy.TryExecuteHead(_currentPlan);
+            bool actionExecutedThisFrame = _timingPolicy.TryExecuteHead(_currentPlan);
+
+            // After action execution, skip replan this frame —
+            // snapshot is stale (e.g. lane not yet switched), replan would oscillate
+            if (actionExecutedThisFrame) return;
 
             // ── 3. Строим snapshot для проверки триггеров ──
             var snapshot = _snapshotBuilder.Build(_hamster, _scanRange);

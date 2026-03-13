@@ -108,6 +108,12 @@ namespace Assets.Scripts.Bot
                 if (ShouldDelayJumpOn(step, target))   return false;
             }
 
+            // Final safety: re-check hamster state right before execution
+            // (state may have changed since the IsControllableState check at top of Update)
+            var preExecState = _hamster.HamsterState.Value;
+            if (preExecState != HamsterStateEnum.Run && preExecState != HamsterStateEnum.RoofRun)
+                return false;
+
             // Выполняем
             ExecuteAction(step);
             step.Status = ChainStepStatus.InProgress;

@@ -417,6 +417,8 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Checks that there are no threats between the hamster's current position
         /// and the landing position after a SwitchLane on the destination lane.
+        /// Extends check zone beyond landing to account for reaction time (~2-3 frames
+        /// at low FPS before the next action can execute).
         /// </summary>
         private static bool IsSwitchLanePathSafe(float preStepX, ProjectedState postState)
         {
@@ -425,8 +427,9 @@ namespace Assets.Scripts.Bot
                 if (obs.Category != ObjectCategory.Threat) continue;
                 if (!IsOnSameLane(obs, postState)) continue;
 
-                // Threat overlaps the full lane switch path?
-                if (obs.RightX >= preStepX - 0.3f && obs.LeftX <= postState.ApproxX + 0.3f)
+                // Threat overlaps the path from switch start to landing + reaction buffer?
+                // Reaction: at ~15fps, 2-3 frames * 3.8m/s * 0.07s/frame ≈ 0.5-0.8 units
+                if (obs.RightX >= preStepX - 0.3f && obs.LeftX <= postState.ApproxX + 1.0f)
                     return false;
             }
             return true;
