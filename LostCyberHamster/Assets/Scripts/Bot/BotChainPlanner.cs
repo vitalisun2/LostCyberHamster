@@ -17,7 +17,6 @@ namespace Assets.Scripts.Bot
     {
         // ──────────────── Константы ────────────────
 
-        private const float ScanBehindMargin = 1.0f;
         private const float SafeMargin = 1.5f;
         private const float LaneSwitchDuration = 0.3f;
         private const float LaneSwitchTravel = LaneSwitchDuration * Consts.GameSpeedBase;
@@ -28,7 +27,6 @@ namespace Assets.Scripts.Bot
 
         // Приблизительные дальности приземления прыжков (в юнитах сдвига сцены)
         private const float JumpLandingTravel = 3.8f;   // ~1с * GameSpeedBase
-        private const float SuperJumpLandingTravel = 4.6f; // ~1.2с * GameSpeedBase
         private const float LandingCheckTolerance = 0.8f;
 
         // JumpOnObstacle (напрыгивание на SmallAlive): отскок длится 1.817с,
@@ -36,8 +34,6 @@ namespace Assets.Scripts.Bot
         // (1.817 - 0.85) * GameSpeedBase ≈ 3.5 юнитов.
         private const float JumpOnBounceTravel = 3.5f;
 
-        // Минимальное расстояние, с которого ульту имеет смысл использовать
-        private const float UltaMinDistance = 1.0f;
 
         // ──────────────── Переиспользуемые буферы ────────────────
 
@@ -60,61 +56,33 @@ namespace Assets.Scripts.Bot
         public IReadOnlyList<ChainStep> Chain => _chain;
 
         // ══════════════════════════════════════════════
-        //  Сканирование
+        //  Загрузка снапшота (Этап 2)
         // ══════════════════════════════════════════════
 
         /// <summary>
-        /// Сканирует спавнер, заполняет внутренний буфер ObstacleInfo[].
+        /// Загружает объекты из снимка сцены в внутренний буфер.
+        /// Выполняет классификацию объектов с учётом текущего состояния хомяка из snapshot.
+        /// Вызывается HamsterBot'ом после получения снимка от SnapshotBuilder.
         /// </summary>
-        public void ScanObstacles(Hamster hamster, float scanRange)
+        public void LoadFromSnapshot(BotSceneSnapshot snapshot)
         {
             _obstacles.Clear();
 
-            var spawner = ObstacleSpawner.Instance;
-            if (spawner == null) return;
+            bool hamsterOnBottom = snapshot.HamsterOnBottom;
+            bool hamsterOnRoof   = snapshot.HamsterOnRoof;
 
-            var spawned = spawner.SpawnedObstacles;
-            float hamsterRightX = hamster.RightX;
-            float hamsterLeftX = hamster.LeftX;
-            float maxX = hamsterRightX + scanRange;
-            float minX = hamsterLeftX - ScanBehindMargin;
-
-            bool hamsterOnBottom = hamster.IsOnBottomLine.Value;
-            bool hamsterOnRoof = IsRoofState(hamster.HamsterState.Value);
-
-            for (int i = 0; i < spawned.Count; i++)
+            // VisibleObjects уже отсортированы по LeftX в SnapshotBuilder
+            foreach (var obs in snapshot.VisibleObjects)
             {
-                var inst = spawned[i];
-                if (inst?.ObstacleScript == null) continue;
-
-                var obs = inst.ObstacleScript;
-                var pos = obs.transform.position;
-                float halfW = obs.ColliderWidth * 0.5f;
-                float leftX = pos.x - halfW;
-                float rightX = pos.x + halfW;
-
-                if (rightX < minX || leftX > maxX) continue;
-
-                var typeEnum = obs.ObstacleType.ObstacleTypeEnum;
-                bool isTopLane = obs.ObstacleType.IsTop;
-                bool isOnRoof = IsOnRoof(pos.y, isTopLane);
-
-                float distance = leftX - hamsterRightX;
-                float timeToReach = distance > 0
-                    ? distance / Consts.GameSpeedBase
-                    : 0f;
-
-                var category = Classify(typeEnum, isTopLane, isOnRoof,
-                    hamsterOnBottom, hamsterOnRoof, distance);
+                var category = Classify(obs.Type, obs.IsTopLane, obs.IsOnRoof,
+                    hamsterOnBottom, hamsterOnRoof, obs.DistanceToHamster);
 
                 _obstacles.Add(new ObstacleInfo(
-                    typeEnum, leftX, rightX, pos.x,
-                    isTopLane, isOnRoof,
-                    distance, timeToReach, category, obs,
-                    stableId: obs.GetInstanceID()));
+                    obs.Type, obs.LeftX, obs.RightX, obs.CenterX,
+                    obs.IsTopLane, obs.IsOnRoof,
+                    obs.DistanceToHamster, obs.TimeToReach,
+                    category, obs.ObstacleRef, obs.StableId));
             }
-
-            _obstacles.Sort((a, b) => a.LeftX.CompareTo(b.LeftX));
         }
 
         // ══════════════════════════════════════════════
