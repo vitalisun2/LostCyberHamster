@@ -19,8 +19,8 @@ namespace Assets.Scripts.Bot
         // Расстояния исполнения шагов (как в BotChainPlanner legacy)
         private const float SafeMargin          = 1.5f;
         private const float JumpLandingTravel   = 3.8f;
-        private const float JumpEnergyCost      = 10;
-        private const float SuperJumpEnergyCost = 20;
+        private const int   JumpEnergyCost      = 10;
+        private const int   SuperJumpEnergyCost = 20;
 
         // Минимальный заряд ульты
         private const int UltaReadyCharge       = 100;
@@ -388,7 +388,7 @@ namespace Assets.Scripts.Bot
             // RemainingObjects в nextState уже содержит актуальный список после проекции
             // Используем его как основу, но оставляем стабильные ID из оригинала
             var remaining = nextState.RemainingObjects;
-            var idSet = new System.Collections.Generic.HashSet<int>(remaining.Count);
+            var idSet = new HashSet<int>(remaining.Count);
             foreach (var o in remaining) idSet.Add(o.StableId);
 
             var result = new List<ObstacleInfo>(remaining.Count);
