@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot
 {
@@ -21,6 +22,10 @@ namespace Assets.Scripts.Bot
         private const float JumpLandingTravel   = 3.8f;
         private const int   JumpEnergyCost      = 10;
         private const int   SuperJumpEnergyCost = 20;
+
+        // SwitchLane — стратегическое действие, выполнять раньше, чем Jump.
+        // Даёт время на Jump/другие действия на целевой полосе после переключения.
+        private const float SwitchLaneExecuteDistance = 4.0f;
 
         // Минимальный заряд ульты
         private const int UltaReadyCharge       = 100;
@@ -335,9 +340,7 @@ namespace Assets.Scripts.Bot
 
         private void AddSwitchLaneVariant(List<ChainStep> variants, ObstacleInfo target, ProjectedState state)
         {
-            // Проверяем, что другая линия чистая (нет угроз в зоне смены)
-            // Упрощённая проверка — полная проверка делается в StateProjector/IsSafeAfterProjection
-            variants.Add(MakeStep(BotAction.SwitchLane, target, SafeMargin, 0,
+            variants.Add(MakeStep(BotAction.SwitchLane, target, SwitchLaneExecuteDistance, 0,
                 $"SwitchLane evade {target.Type}"));
         }
 
@@ -417,8 +420,10 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Checks that there are no threats between the hamster's current position
         /// and the landing position after a SwitchLane on the destination lane.
-        /// Extends check zone beyond landing to account for reaction time (~2-3 frames
-        /// at low FPS before the next action can execute).
+        /// Jumpable threats (small obstacles) only block the immediate landing zone —
+        /// the chain generator will add a Jump for them in subsequent steps.
+        /// Unjumpable threats (big obstacles) use an extended buffer since they
+        /// cannot be resolved by follow-up actions.
         /// </summary>
         private static bool IsSwitchLanePathSafe(float preStepX, ProjectedState postState)
         {
@@ -427,12 +432,24 @@ namespace Assets.Scripts.Bot
                 if (obs.Category != ObjectCategory.Threat) continue;
                 if (!IsOnSameLane(obs, postState)) continue;
 
-                // Threat overlaps the path from switch start to landing + reaction buffer?
-                // Reaction: at ~15fps, 2-3 frames * 3.8m/s * 0.07s/frame ≈ 0.5-0.8 units
-                if (obs.RightX >= preStepX - 0.3f && obs.LeftX <= postState.ApproxX + 1.0f)
+                // Jumpable threats: only block immediate landing zone (chain will handle them)
+                // Unjumpable threats: extended buffer — no follow-up can save us
+                float aheadBuffer = IsJumpableType(obs.Type) ? 0.3f : SafeMargin;
+
+                if (obs.RightX >= preStepX - 0.3f && obs.LeftX <= postState.ApproxX + aheadBuffer)
                     return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Returns true if the obstacle type can be jumped over by the hamster.
+        /// </summary>
+        private static bool IsJumpableType(ObstacleTypeEnum type)
+        {
+            return type == ObstacleTypeEnum.smallNotAliveRoad
+                || type == ObstacleTypeEnum.smallNotAliveRoadAndRoof
+                || type == ObstacleTypeEnum.smallAlive;
         }
 
         private static bool IsOtherLaneSafe(

@@ -94,13 +94,13 @@ namespace Assets.Scripts.Bot
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            if (_enabledOnStart)
+            if (_enabledOnStart || PlayerPrefs.GetInt("BotAutoStart", 0) == 1)
                 TryInitAndEnable();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (!IsEnabled && !_enabledOnStart) return;
+            if (!IsEnabled && !_enabledOnStart && PlayerPrefs.GetInt("BotAutoStart", 0) != 1) return;
 
             _initialized = false;
             _hamster = null;
@@ -250,7 +250,31 @@ namespace Assets.Scripts.Bot
             int targets = 0;
             if (candidates.Count > 0) targets = candidates[0].TargetsDestroyed;
 
-            return $"[Bot#{_replanCount}] REPLAN: {decision}\n" +
+            // Lane info
+            string lane = _hamster != null
+                ? (_hamster.IsOnBottomLine.Value ? "bottom" : "top")
+                : "?";
+
+            // Live distance to head step's target
+            string headDistStr = "";
+            if (steps != null && steps.Count > 0)
+            {
+                var head = steps[0];
+                if (head.TargetObstacle.HasValue)
+                {
+                    var ht = head.TargetObstacle.Value;
+                    float headDist = ht.DistanceToHamster;
+                    if (ht.ObstacleRef != null && _hamster != null)
+                    {
+                        float obsLeftX = ht.ObstacleRef.transform.position.x
+                                       - ht.ObstacleRef.ColliderWidth * 0.5f;
+                        headDist = obsLeftX - _hamster.RightX;
+                    }
+                    headDistStr = $" headDist={headDist:F2}";
+                }
+            }
+
+            return $"[Bot#{_replanCount}] REPLAN: {decision} (lane={lane}{headDistStr})\n" +
                    $"  Candidates: {candidates.Count} generated, {safeCount} safe, best score={bestScore:F2}\n" +
                    $"  Selected: [{actionList}] cost={cost} benefit={targets}target(s)\n" +
                    $"  Plan: {planDetail}";

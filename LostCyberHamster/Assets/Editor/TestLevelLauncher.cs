@@ -18,6 +18,9 @@ namespace LostCyberHamster.Editor
         /// <summary>PlayerPrefs key checked by LoadMainMenuLoadingTask.</summary>
         public const string OverridePrefsKey = "TestLevel_Address";
 
+        /// <summary>PlayerPrefs key: auto-enable HamsterBot when test level loads.</summary>
+        public const string BotAutoStartKey = "BotAutoStart";
+
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string TestLevelAddress = "01_New_York/Morning/test_level";
 
@@ -36,6 +39,11 @@ namespace LostCyberHamster.Editor
                     PlayerPrefs.DeleteKey(OverridePrefsKey);
                     PlayerPrefs.Save();
                 }
+                if (PlayerPrefs.HasKey(BotAutoStartKey))
+                {
+                    PlayerPrefs.DeleteKey(BotAutoStartKey);
+                    PlayerPrefs.Save();
+                }
             }
         }
 
@@ -51,6 +59,7 @@ namespace LostCyberHamster.Editor
 
             // Write override into PlayerPrefs so it survives domain reload on Play
             PlayerPrefs.SetString(OverridePrefsKey, TestLevelAddress);
+            PlayerPrefs.SetInt(BotAutoStartKey, 1);
             PlayerPrefs.Save();
 
             Debug.Log($"[TestLevelLauncher] Override set: {TestLevelAddress}. Starting Bootstrap...");

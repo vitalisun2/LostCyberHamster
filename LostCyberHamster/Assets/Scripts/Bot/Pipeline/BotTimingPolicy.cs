@@ -167,7 +167,15 @@ namespace Assets.Scripts.Bot
             if (step.TargetObstacle.HasValue)
             {
                 var t = step.TargetObstacle.Value;
-                nearInfo = $" | {t.Type}({t.Category}) d={t.DistanceToHamster:F2}";
+                // Use live distance from ObstacleRef when available
+                float dist = t.DistanceToHamster;
+                if (t.ObstacleRef != null)
+                {
+                    float obsLeftX = t.ObstacleRef.transform.position.x
+                                   - t.ObstacleRef.ColliderWidth * 0.5f;
+                    dist = obsLeftX - _hamster.RightX;
+                }
+                nearInfo = $" | {t.Type}({t.Category}) liveDist={dist:F2}";
             }
 
             DebugManager.DiagLog(
