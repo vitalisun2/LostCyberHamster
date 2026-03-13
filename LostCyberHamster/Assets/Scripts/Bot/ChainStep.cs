@@ -1,15 +1,35 @@
 namespace Assets.Scripts.Bot
 {
     /// <summary>
-    /// Один шаг в цепочке действий бота.
+    /// Статус выполнения шага плана.
     /// </summary>
-    public readonly struct ChainStep
+    public enum ChainStepStatus
     {
-        public readonly BotAction Action;
-        public readonly int TargetObstacleIndex;  // Индекс в массиве ObstacleInfo (-1 если нет конкретной цели)
-        public readonly float ExecuteAtDistance;   // На каком расстоянии до объекта выполнить действие
-        public readonly int EnergyCost;
-        public readonly string Reason;
+        Ready,
+        InProgress,
+        Completed
+    }
+
+    /// <summary>
+    /// Один шаг в цепочке действий бота.
+    /// Изменён с struct на class для поддержки мутабельного поля Status.
+    /// </summary>
+    public class ChainStep
+    {
+        public BotAction Action;
+
+        /// <summary>Индекс в массиве ObstacleInfo (-1 если нет конкретной цели). Сохранён для обратной совместимости.</summary>
+        public int TargetObstacleIndex;
+
+        /// <summary>Прямая ссылка на целевой объект (заполняется в новом pipeline, иначе null).</summary>
+        public ObstacleInfo? TargetObstacle;
+
+        /// <summary>На каком расстоянии до объекта выполнить действие.</summary>
+        public float ExecuteAtDistance;
+
+        public int EnergyCost;
+        public string Reason;
+        public ChainStepStatus Status;
 
         public ChainStep(
             BotAction action,
@@ -20,9 +40,11 @@ namespace Assets.Scripts.Bot
         {
             Action = action;
             TargetObstacleIndex = targetObstacleIndex;
+            TargetObstacle = null;
             ExecuteAtDistance = executeAtDistance;
             EnergyCost = energyCost;
             Reason = reason;
+            Status = ChainStepStatus.Ready;
         }
     }
 }

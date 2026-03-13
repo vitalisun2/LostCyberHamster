@@ -110,7 +110,8 @@ namespace Assets.Scripts.Bot
                 _obstacles.Add(new ObstacleInfo(
                     typeEnum, leftX, rightX, pos.x,
                     isTopLane, isOnRoof,
-                    distance, timeToReach, category, obs));
+                    distance, timeToReach, category, obs,
+                    stableId: obs.GetInstanceID()));
             }
 
             _obstacles.Sort((a, b) => a.LeftX.CompareTo(b.LeftX));

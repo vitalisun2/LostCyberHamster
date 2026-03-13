@@ -19,6 +19,11 @@ namespace Assets.Scripts.Bot
         public readonly ObjectCategory Category;
         /// <summary>Ссылка на реальный Obstacle для проверок через CollisionUtils.</summary>
         public readonly Obstacle ObstacleRef;
+        /// <summary>
+        /// Устойчивый идентификатор объекта (Obstacle.GetInstanceID).
+        /// Используется PlanValidator'ом для проверки, что объект всё ещё на экране.
+        /// </summary>
+        public readonly int StableId;
 
         public ObstacleInfo(
             ObstacleTypeEnum type,
@@ -26,7 +31,8 @@ namespace Assets.Scripts.Bot
             bool isTopLane, bool isOnRoof,
             float distanceToHamster, float timeToReach,
             ObjectCategory category,
-            Obstacle obstacleRef)
+            Obstacle obstacleRef,
+            int stableId = 0)
         {
             Type = type;
             LeftX = leftX;
@@ -38,6 +44,7 @@ namespace Assets.Scripts.Bot
             TimeToReach = timeToReach;
             Category = category;
             ObstacleRef = obstacleRef;
+            StableId = stableId;
         }
     }
 
