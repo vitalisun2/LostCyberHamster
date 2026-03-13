@@ -84,7 +84,24 @@ namespace Assets.Scripts.Bot
             if (step.TargetObstacle.HasValue)
             {
                 var target = step.TargetObstacle.Value;
-                if (target.DistanceToHamster > step.ExecuteAtDistance)
+
+                // Live distance from ObstacleRef (snapshot values stale by 1 frame)
+                float distance = target.DistanceToHamster;
+                if (target.ObstacleRef != null)
+                {
+                    float obsLeftX = target.ObstacleRef.transform.position.x
+                                   - target.ObstacleRef.ColliderWidth * 0.5f;
+                    distance = obsLeftX - _hamster.RightX;
+                }
+
+                // Too late: obstacle already behind hamster → skip step
+                if (distance < -0.3f)
+                {
+                    step.Status = ChainStepStatus.Completed;
+                    return false;
+                }
+
+                if (distance > step.ExecuteAtDistance)
                     return false; // ещё далеко
 
                 if (ShouldDelayJumpOver(step, target)) return false;

@@ -111,6 +111,11 @@ namespace Assets.Scripts.Bot
                 // Отсечение: приземление в опасной зоне
                 if (!_projector.IsSafeAfterProjection(nextState)) continue;
 
+                // SwitchLane: verify no threats along the full path on destination lane
+                if (variant.Action == BotAction.SwitchLane &&
+                    !IsSwitchLanePathSafe(state.ApproxX, nextState))
+                    continue;
+
                 // Обновить RemainingObjects по факту шага
                 var updatedObjects = BuildUpdatedObjects(objects, nextState, variant, target);
 
@@ -147,7 +152,7 @@ namespace Assets.Scripts.Bot
                 if (obs.Category != ObjectCategory.Threat &&
                     obs.Category != ObjectCategory.Target) continue;
 
-                if (obs.LeftX < state.ApproxX - 0.5f) continue; // позади хомяка
+                if (obs.LeftX < state.ApproxX - 0.1f) continue; // позади хомяка
 
                 if (!IsOnSameLane(obs, state)) continue;
 
@@ -407,6 +412,24 @@ namespace Assets.Scripts.Bot
                 return obs.IsOnRoof;
             bool hamsterIsTop = !state.OnBottom;
             return !obs.IsOnRoof && obs.IsTopLane == hamsterIsTop;
+        }
+
+        /// <summary>
+        /// Checks that there are no threats between the hamster's current position
+        /// and the landing position after a SwitchLane on the destination lane.
+        /// </summary>
+        private static bool IsSwitchLanePathSafe(float preStepX, ProjectedState postState)
+        {
+            foreach (var obs in postState.RemainingObjects)
+            {
+                if (obs.Category != ObjectCategory.Threat) continue;
+                if (!IsOnSameLane(obs, postState)) continue;
+
+                // Threat overlaps the full lane switch path?
+                if (obs.RightX >= preStepX - 0.3f && obs.LeftX <= postState.ApproxX + 0.3f)
+                    return false;
+            }
+            return true;
         }
 
         private static bool IsOtherLaneSafe(

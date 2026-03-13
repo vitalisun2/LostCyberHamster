@@ -38,7 +38,7 @@ namespace Assets.Scripts.Bot
             ObstacleTypeEnum type, bool isTopLane, bool isOnRoof,
             bool hamsterOnBottom, bool hamsterOnRoof, float distance)
         {
-            if (distance < -0.5f) return ObjectCategory.Neutral;
+            if (distance < -0.2f) return ObjectCategory.Neutral;
 
             switch (type)
             {
