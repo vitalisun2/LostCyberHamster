@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Common.Models;
@@ -62,7 +63,7 @@ namespace Assets.Scripts.Bot
         private bool _initialized;
 
         // Триггеры пересчёта
-        private System.Collections.Generic.HashSet<int> _prevObjectIds = new System.Collections.Generic.HashSet<int>();
+        private HashSet<int> _prevObjectIds = new HashSet<int>();
         private int _framesSinceRecalc;
         private const int MaxFramesWithoutRecalc = 10;
 
@@ -175,7 +176,7 @@ namespace Assets.Scripts.Bot
             _classifier.Classify(snapshot);
             var decision = _planValidator.Validate(snapshot, _currentPlan);
 
-            System.Collections.Generic.List<ChainCandidate> candidates;
+            List<ChainCandidate> candidates;
             if (decision == PlanDecision.KeepTail)
             {
                 var tailState = GetTailProjectedState(snapshot);
@@ -197,7 +198,7 @@ namespace Assets.Scripts.Bot
 
         private string BuildReplanLog(
             PlanDecision decision,
-            System.Collections.Generic.List<ChainCandidate> candidates)
+            List<ChainCandidate> candidates)
         {
             _replanCount++;
 
@@ -272,7 +273,7 @@ namespace Assets.Scripts.Bot
 
         private bool ObjectSetChanged(BotSceneSnapshot snapshot)
         {
-            var currentIds = new System.Collections.Generic.HashSet<int>();
+            var currentIds = new HashSet<int>();
             foreach (var o in snapshot.VisibleObjects) currentIds.Add(o.StableId);
             if (_prevObjectIds.SetEquals(currentIds)) return false;
             _prevObjectIds = currentIds;
