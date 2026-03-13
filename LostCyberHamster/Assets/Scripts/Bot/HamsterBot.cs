@@ -212,7 +212,7 @@ namespace Assets.Scripts.Bot
             }
 
             // Список действий: SwitchLane→Jump→...
-            var sb = new System.Text.StringBuilder();
+            var sb = new StringBuilder();
             var steps = _currentPlan?.Steps;
             if (steps != null && steps.Count > 0)
             {
