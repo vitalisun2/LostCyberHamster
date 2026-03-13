@@ -71,7 +71,9 @@ namespace Assets.Scripts.Bot
         private float _lastWatchdogWarnTime;
         private bool _inUncontrollableState;
         private const float UncontrollableWarnTime = 2f;
-        private float _lastPeriodicLogTime;
+
+        // QA-логирование
+        private int _replanCount;
 
         // ──────────────── Lifecycle ────────────────
 
@@ -190,15 +192,62 @@ namespace Assets.Scripts.Bot
             _lastDecisionText = _currentPlan?.Strategy ?? "—";
             _framesSinceRecalc = 0;
 
-            // Периодический лог
-            if (Time.time - _lastPeriodicLogTime > 3f)
+            DebugManager.DiagLog(BuildReplanLog(decision, candidates));
+        }
+
+        private string BuildReplanLog(
+            PlanDecision decision,
+            System.Collections.Generic.List<ChainCandidate> candidates)
+        {
+            _replanCount++;
+
+            int safeCount = 0;
+            float bestScore = 0f;
+            for (int i = 0; i < candidates.Count; i++)
             {
-                _lastPeriodicLogTime = Time.time;
-                DebugManager.DiagLog(
-                    $"[HamsterBot] REPLAN: {decision} candidates={candidates.Count} " +
-                    $"steps={_currentPlan?.Steps.Count} strategy={_currentPlan?.Strategy} " +
-                    $"state={currentState} pos={_hamster.RightX:F2}");
+                if (candidates[i].AllStepsSafe) safeCount++;
+                if (candidates[i].Score > bestScore) bestScore = candidates[i].Score;
             }
+
+            // Список действий: SwitchLane→Jump→...
+            var sb = new System.Text.StringBuilder();
+            var steps = _currentPlan?.Steps;
+            if (steps != null && steps.Count > 0)
+            {
+                for (int i = 0; i < steps.Count; i++)
+                {
+                    if (i > 0) sb.Append('→');
+                    sb.Append(steps[i].Action);
+                }
+            }
+            else sb.Append("(empty)");
+            string actionList = sb.ToString();
+
+            // Нумерованный список шагов с дистанциями
+            sb.Clear();
+            if (steps != null)
+            {
+                for (int i = 0; i < steps.Count; i++)
+                {
+                    var s = steps[i];
+                    string target = s.TargetObstacle.HasValue
+                        ? s.TargetObstacle.Value.Type.ToString()
+                        : "—";
+                    sb.Append($"[{i + 1}]{s.Action}({target})@d={s.ExecuteAtDistance:F1} ");
+                }
+            }
+            string planDetail = sb.ToString().TrimEnd();
+
+            int cost = _currentPlan?.Steps.Count > 0
+                ? _currentPlan.Steps[0].EnergyCost
+                : 0;
+            int targets = 0;
+            if (candidates.Count > 0) targets = candidates[0].TargetsDestroyed;
+
+            return $"[Bot#{_replanCount}] REPLAN: {decision}\n" +
+                   $"  Candidates: {candidates.Count} generated, {safeCount} safe, best score={bestScore:F2}\n" +
+                   $"  Selected: [{actionList}] cost={cost} benefit={targets}target(s)\n" +
+                   $"  Plan: {planDetail}";
         }
 
         // ──────────────── Replan триггеры ────────────────
@@ -241,9 +290,6 @@ namespace Assets.Scripts.Bot
                 state = projector.Project(state, step, step.TargetObstacle);
             return state;
         }
-
-        // (ShouldDelayJumpOver, ShouldDelayJumpOn, EnsureWorldShiftsCached, ExecuteAction
-        //  перенесены в BotTimingPolicy)
 
         // ──────────────── State Checks ────────────────
 
@@ -340,6 +386,5 @@ namespace Assets.Scripts.Bot
             DebugManager.DiagLog("[HamsterBot] DISABLED.");
         }
 
-        // (ExecuteAction, DelayedSuperJump, DelayedSuperRoofJump перенесены в BotTimingPolicy)
     }
 }
