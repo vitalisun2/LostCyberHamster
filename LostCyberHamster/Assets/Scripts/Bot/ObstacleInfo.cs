@@ -24,6 +24,11 @@ namespace Assets.Scripts.Bot
         /// Используется PlanValidator'ом для проверки, что объект всё ещё на экране.
         /// </summary>
         public readonly int StableId;
+        /// <summary>
+        /// Приоритет сбора коллектибла (только для Category == Bonus).
+        /// Жизнь=4, Энергетик/Пицца=3, Кристалл=2, Монета=1, остальные=0.
+        /// </summary>
+        public readonly int CollectiblePriority;
 
         public ObstacleInfo(
             ObstacleTypeEnum type,
@@ -32,7 +37,8 @@ namespace Assets.Scripts.Bot
             float distanceToHamster, float timeToReach,
             ObjectCategory category,
             Obstacle obstacleRef,
-            int stableId = 0)
+            int stableId = 0,
+            int collectiblePriority = 0)
         {
             Type = type;
             LeftX = leftX;
@@ -45,6 +51,7 @@ namespace Assets.Scripts.Bot
             Category = category;
             ObstacleRef = obstacleRef;
             StableId = stableId;
+            CollectiblePriority = collectiblePriority;
         }
     }
 

@@ -52,6 +52,7 @@ namespace Assets.Scripts.Bot
         private Hamster _hamster;
         private BotChainPlanner _planner;
         private SnapshotBuilder _snapshotBuilder;
+        private ObjectClassifier _classifier;
         private GameManager _gameManager;
         private bool _initialized;
 
@@ -166,6 +167,7 @@ namespace Assets.Scripts.Bot
             if (_dirty)
             {
                 var snapshot = _snapshotBuilder.Build(_hamster, _scanRange);
+                _classifier.Classify(snapshot);
                 _planner.LoadFromSnapshot(snapshot);
                 bool chainBuilt = _planner.BuildChain(_hamster);
                 _dirty = false;
@@ -423,6 +425,7 @@ namespace Assets.Scripts.Bot
 
                 _planner = new BotChainPlanner();
                 _snapshotBuilder = new SnapshotBuilder();
+                _classifier = new ObjectClassifier();
                 _gameManager = LevelController.Instance?.LevelData?.GameManager;
                 _initialized = true;
                 DebugManager.DiagLog("[HamsterBot] Initialized successfully.");

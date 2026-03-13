@@ -61,28 +61,17 @@ namespace Assets.Scripts.Bot
 
         /// <summary>
         /// Загружает объекты из снимка сцены в внутренний буфер.
-        /// Выполняет классификацию объектов с учётом текущего состояния хомяка из snapshot.
-        /// Вызывается HamsterBot'ом после получения снимка от SnapshotBuilder.
+        /// Категории уже проставлены ObjectClassifier'ом до этого вызова.
+        /// <br/>Вызывается HamsterBot'ом после получения классифицированного снимка.
         /// </summary>
         public void LoadFromSnapshot(BotSceneSnapshot snapshot)
         {
             _obstacles.Clear();
 
-            bool hamsterOnBottom = snapshot.HamsterOnBottom;
-            bool hamsterOnRoof   = snapshot.HamsterOnRoof;
-
-            // VisibleObjects уже отсортированы по LeftX в SnapshotBuilder
+            // VisibleObjects уже отсортированы по LeftX в SnapshotBuilder’е.
+            // Category и CollectiblePriority проставлены ObjectClassifier’ом.
             foreach (var obs in snapshot.VisibleObjects)
-            {
-                var category = Classify(obs.Type, obs.IsTopLane, obs.IsOnRoof,
-                    hamsterOnBottom, hamsterOnRoof, obs.DistanceToHamster);
-
-                _obstacles.Add(new ObstacleInfo(
-                    obs.Type, obs.LeftX, obs.RightX, obs.CenterX,
-                    obs.IsTopLane, obs.IsOnRoof,
-                    obs.DistanceToHamster, obs.TimeToReach,
-                    category, obs.ObstacleRef, obs.StableId));
-            }
+                _obstacles.Add(obs);
         }
 
         // ══════════════════════════════════════════════
@@ -363,51 +352,6 @@ namespace Assets.Scripts.Bot
             hamster.AddEnergy(BuyEnergyAmount);
             DebugManager.DiagLog("[BotChainPlanner] Emergency energy purchase: -50 coins, +100 energy");
             return true;
-        }
-
-        // ══════════════════════════════════════════════
-        //  Классификация
-        // ══════════════════════════════════════════════
-
-        private static ObjectCategory Classify(
-            ObstacleTypeEnum type, bool isTopLane, bool isOnRoof,
-            bool hamsterOnBottom, bool hamsterOnRoof, float distance)
-        {
-            if (distance < -0.5f) return ObjectCategory.Neutral;
-
-            switch (type)
-            {
-                case ObstacleTypeEnum.decor:
-                    return ObjectCategory.Neutral;
-
-                case ObstacleTypeEnum.collectableEnergetic:
-                case ObstacleTypeEnum.collectablePizza:
-                case ObstacleTypeEnum.collectableCrystal:
-                case ObstacleTypeEnum.collectableLife:
-                case ObstacleTypeEnum.collectableCoin:
-                    return ObjectCategory.Bonus;
-
-                case ObstacleTypeEnum.smallAlive:
-                    return ObjectCategory.Target;
-
-                case ObstacleTypeEnum.bigAlive:
-                    if (hamsterOnRoof)
-                        return ObjectCategory.Target;
-                    return ObjectCategory.Threat;
-
-                case ObstacleTypeEnum.bigNotAlive:
-                case ObstacleTypeEnum.mediumNotAlive:
-                    return ObjectCategory.Threat;
-
-                case ObstacleTypeEnum.smallNotAliveRoad:
-                    return ObjectCategory.Threat;
-
-                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
-                    return ObjectCategory.Threat;
-
-                default:
-                    return ObjectCategory.Neutral;
-            }
         }
 
         // ══════════════════════════════════════════════
