@@ -637,16 +637,14 @@ Menu: `Tools/Migration/` — 3 шага:
 - BuyEnergy = 50 coins → 100 energy (через `ResourceManager.SpendResource`)
 - BuyUlta = 100 coins → 100% ulta charge
 
-### Дерево решений (BotBrain.Evaluate)
-```
-P1: Dead/Damaged/Shifting → DoNothing
-P2: RoofRun → EvaluateRoofRun
-P3: InJump → EvaluateWhileJumping (SuperJump только для bigAlive)
-P4: UrgentThreat → HandleUrgentThreat
-P5: Purchases → BuyEnergy/BuyUlta (если разрешено стилем)
-P6: Ulta → UseUlta (при кластере или low lives)
-P7: JumpOnSmallAlive → бонус (если энергия > threshold)
-P8: RoofJump → крыша bigNotAlive
-P9: Collectibles → SwitchLane (если безопасно)
-P10: DoNothing
-```
+### Статус документации
+
+Этот раздел описывает **текущее runtime-состояние кода** бота в проекте.
+
+Актуальные документы по боту теперь разделены так:
+
+- `docs/Planning/bot concept brainstrom` — целевой концепт поведения
+- `docs/Planning/bot_architecture.md` — целевая архитектура реализации
+
+Старые документы про `BotBrain`, `BotPlanner`, `PlayStyles` и `Self-Learning`
+удалены как устаревшие относительно текущего курса разработки.
