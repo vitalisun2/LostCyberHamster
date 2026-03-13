@@ -45,15 +45,16 @@ namespace Assets.Tests.EditMode.Bot
             int stableId = 1)
         {
             return new ObstacleInfo(
+                type: type,
                 leftX: leftX, rightX: rightX,
                 centerX: (leftX + rightX) / 2f,
                 isTopLane: isTopLane, isOnRoof: isOnRoof,
                 distanceToHamster: leftX,
                 timeToReach: 0f,
-                type: type,
+                category: category,
+                obstacleRef: null,
                 stableId: stableId,
-                collectiblePriority: 0)
-            { Category = category };
+                collectiblePriority: 0);
         }
 
         // ══════════════════════════════════════════════
@@ -159,7 +160,7 @@ namespace Assets.Tests.EditMode.Bot
             {
                 Assert.IsTrue(c.AllStepsSafe,
                     $"Все кандидаты из генератора должны быть AllStepsSafe=true, " +
-                    $"нарушение: {c.Strategy}");
+                    $"steps={c.Steps.Count} score={c.Score:F1}");
             }
         }
 

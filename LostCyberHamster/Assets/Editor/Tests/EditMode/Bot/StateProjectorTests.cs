@@ -51,6 +51,7 @@ namespace Assets.Tests.EditMode.Bot
             int stableId = 1)
         {
             return new ObstacleInfo(
+                type: type,
                 leftX: leftX,
                 rightX: rightX,
                 centerX: (leftX + rightX) / 2f,
@@ -58,12 +59,10 @@ namespace Assets.Tests.EditMode.Bot
                 isOnRoof: isOnRoof,
                 distanceToHamster: leftX,
                 timeToReach: 0f,
-                type: type,
+                category: category,
+                obstacleRef: null,
                 stableId: stableId,
-                collectiblePriority: 0)
-            {
-                Category = category
-            };
+                collectiblePriority: 0);
         }
 
         private static ChainStep MakeStep(BotAction action, int energyCost = 0,
@@ -176,11 +175,13 @@ namespace Assets.Tests.EditMode.Bot
                 isOnRoof: false, category: ObjectCategory.Threat);
             // Добавляем объект в RemainingObjects чтобы ResolveRoofAutoTransitions нашёл крышу
             target = new ObstacleInfo(
+                type: ObstacleTypeEnum.bigNotAlive,
                 leftX: 1f, rightX: 5f, centerX: 3f,
                 isTopLane: false, isOnRoof: true,
                 distanceToHamster: 1f, timeToReach: 0f,
-                type: ObstacleTypeEnum.bigNotAlive,
-                stableId: 1, collectiblePriority: 0) { Category = ObjectCategory.Threat };
+                category: ObjectCategory.Threat,
+                obstacleRef: null,
+                stableId: 1, collectiblePriority: 0);
 
             var state = MakeState(x: 0f, onBottom: true, energy: 50);
             state.RemainingObjects.Add(target);

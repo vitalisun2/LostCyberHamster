@@ -48,16 +48,17 @@ namespace Assets.Tests.EditMode.Bot
             float leftX = distanceToHamster;
             float rightX = distanceToHamster + 1f;
             return new ObstacleInfo(
+                type: ObstacleTypeEnum.smallAlive,
                 leftX: leftX, rightX: rightX,
                 centerX: leftX + 0.5f,
                 isTopLane: isTopLane,
                 isOnRoof: isOnRoof,
                 distanceToHamster: distanceToHamster,
                 timeToReach: 0f,
-                type: ObstacleTypeEnum.smallAlive,
+                category: category,
+                obstacleRef: null,
                 stableId: stableId,
-                collectiblePriority: 0)
-            { Category = category };
+                collectiblePriority: 0);
         }
 
         /// <summary>Создаёт шаг без конкретной цели (SwitchLane).</summary>
