@@ -98,7 +98,7 @@ namespace Assets.Scripts.Bot
 
             foreach (var obs in snapshot.VisibleObjects)
             {
-                if (obs.Category != ObjectCategory.Threat) continue;
+                  if (obs.Category != ObjectCategory.Threat && obs.Category != ObjectCategory.Target) continue;
 
                 // Угроза спереди, до первого шага хвоста, на той же линии
                 if (obs.DistanceToHamster < 0) continue;

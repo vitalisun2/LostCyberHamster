@@ -156,7 +156,7 @@ namespace Assets.Scripts.Bot
 
             // Удаляем все Threat-объекты в ближайшей зоне (примерно 6 юнитов)
             state.RemainingObjects.RemoveAll(o =>
-                o.Category == ObjectCategory.Threat &&
+                  (o.Category == ObjectCategory.Threat || o.Category == ObjectCategory.Target) &&
                 o.DistanceToHamster >= 0 &&
                 o.DistanceToHamster <= 6f);
         }
@@ -217,7 +217,7 @@ namespace Assets.Scripts.Bot
         {
             foreach (var obs in state.RemainingObjects)
             {
-                if (obs.Category != ObjectCategory.Threat) continue;
+                  if (obs.Category != ObjectCategory.Threat && obs.Category != ObjectCategory.Target) continue;
 
                 // Объект на той же линии?
                 if (!IsOnSameLane(obs, state)) continue;

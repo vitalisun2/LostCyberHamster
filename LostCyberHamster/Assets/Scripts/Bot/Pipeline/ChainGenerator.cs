@@ -264,7 +264,7 @@ namespace Assets.Scripts.Bot
             int nearThreats = 0;
             foreach (var obs in state.RemainingObjects)
             {
-                if (obs.Category != ObjectCategory.Threat) continue;
+                if (obs.Category != ObjectCategory.Threat && obs.Category != ObjectCategory.Target) continue;
                 if (obs.DistanceToHamster < 0 || obs.DistanceToHamster > UltaCheckRange) continue;
                 if (!IsOnSameLane(obs, state)) continue;
                 nearThreats++;
@@ -429,9 +429,7 @@ namespace Assets.Scripts.Bot
         {
             foreach (var obs in postState.RemainingObjects)
             {
-                if (obs.Category != ObjectCategory.Threat) continue;
-                if (!IsOnSameLane(obs, postState)) continue;
-
+                  if (obs.Category != ObjectCategory.Threat && obs.Category != ObjectCategory.Target) continue;
                 // Jumpable threats: only block immediate landing zone (chain will handle them)
                 // Unjumpable threats: extended buffer — no follow-up can save us
                 float aheadBuffer = IsJumpableType(obs.Type) ? 0.3f : SafeMargin;

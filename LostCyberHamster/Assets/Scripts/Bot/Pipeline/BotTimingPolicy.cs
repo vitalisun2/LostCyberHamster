@@ -78,9 +78,10 @@ namespace Assets.Scripts.Bot
                 if (step.Action == BotAction.SwitchLane)
                 {
                     // SwitchLane doesn't change HamsterState — wait for physical animation
-                    bool laneFlipped = _hamster.IsOnBottomLine.Value != _switchLaneWasOnBottom;
-                    bool timeElapsed = Time.time - _switchLaneExecTime >= LaneSwitchDuration;
-                    if (laneFlipped || timeElapsed)
+                    // We wait for IsShifting to become true and then false, using 0.1s minimum delay to let it trigger
+                    bool timeElapsed = Time.time - _switchLaneExecTime >= 0.1f;
+                    bool isShifting = _hamster.IsShifting.Value;
+                    if (timeElapsed && !isShifting)
                         step.Status = ChainStepStatus.Completed;
                 }
                 else
