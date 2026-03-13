@@ -45,25 +45,26 @@ namespace Assets.Scripts.Bot
         private string _lastDecisionText = "—";
 
         [ShowInInspector, ReadOnly]
-        private int _actionsExecuted;
+        private int ActionsExecuted => _timingPolicy?.ActionsExecuted ?? 0;
 
         // ──────────────── Internals ────────────────
 
         private Hamster _hamster;
-        private BotChainPlanner _planner;
         private SnapshotBuilder _snapshotBuilder;
         private ObjectClassifier _classifier;
+        private ChainGenerator _chainGenerator;
+        private ChainScorer _chainScorer;
+        private PlanValidator _planValidator;
+        private PlanSelector _planSelector;
+        private BotTimingPolicy _timingPolicy;
+        private CurrentPlan _currentPlan = new CurrentPlan();
         private GameManager _gameManager;
         private bool _initialized;
 
-        // Dirty flag
-        private bool _dirty = true;
+        // Триггеры пересчёта
+        private System.Collections.Generic.HashSet<int> _prevObjectIds = new System.Collections.Generic.HashSet<int>();
         private int _framesSinceRecalc;
         private const int MaxFramesWithoutRecalc = 10;
-        private int _prevObstacleCount;
-        private HamsterStateEnum _prevState;
-        private int _prevEnergy;
-        private int _prevUlta;
 
         // Watchdog: обнаружение застревания в неконтролируемом состоянии
         private float _uncontrollableStartTime;
@@ -71,10 +72,6 @@ namespace Assets.Scripts.Bot
         private bool _inUncontrollableState;
         private const float UncontrollableWarnTime = 2f;
         private float _lastPeriodicLogTime;
-
-        // World-shift кэш для проверки прыжков через CollisionUtils
-        private float _jumpWorldShift = -1f;
-        private float _roofJumpWorldShift = -1f;
 
         // ──────────────── Lifecycle ────────────────
 
@@ -103,8 +100,8 @@ namespace Assets.Scripts.Bot
 
             _initialized = false;
             _hamster = null;
-            _jumpWorldShift = -1f;
-            _roofJumpWorldShift = -1f;
+            _currentPlan = new CurrentPlan();
+            _prevObjectIds.Clear();
 
             StartCoroutine(ReinitAfterSceneLoad());
         }
@@ -121,8 +118,7 @@ namespace Assets.Scripts.Bot
 
         private void Update()
         {
-            if (!IsEnabled || !_initialized) return;
-            if (_hamster == null) return;
+            if (!IsEnabled || !_initialized || _hamster == null) return;
 
             // Ждём, пока игра реально запустится (после интро)
             if (_gameManager == null || _gameManager.State != GameState.PLAYING)
@@ -134,7 +130,7 @@ namespace Assets.Scripts.Bot
                 return;
             }
 
-            // Не действуем в процессе прыжка/смены линии — ждём приземления
+            // Watchdog: не действуем в процессе прыжка/смены линии
             var currentState = _hamster.HamsterState.Value;
             if (!IsControllableState(currentState))
             {
@@ -162,196 +158,92 @@ namespace Assets.Scripts.Bot
                 DebugManager.DiagLog($"[HamsterBot] Returned to controllable state={currentState} after {Time.time - _uncontrollableStartTime:F1}s");
             }
 
-            CheckDirtyFlag();
+            // ── 1. Удалить завершённые шаги из головы плана ──
+            _currentPlan.RemoveCompletedFromHead();
 
-            if (_dirty)
+            // ── 2. Исполнение текущего шага (включая InProgress→Completed) ──
+            _timingPolicy.TryExecuteHead(_currentPlan);
+
+            // ── 3. Строим snapshot для проверки триггеров ──
+            var snapshot = _snapshotBuilder.Build(_hamster, _scanRange);
+
+            if (!NeedsReplan(snapshot)) return;
+
+            // ── 4. Pipeline пересчёта ──
+            _classifier.Classify(snapshot);
+            var decision = _planValidator.Validate(snapshot, _currentPlan);
+
+            System.Collections.Generic.List<ChainCandidate> candidates;
+            if (decision == PlanDecision.KeepTail)
             {
-                var snapshot = _snapshotBuilder.Build(_hamster, _scanRange);
-                _classifier.Classify(snapshot);
-                _planner.LoadFromSnapshot(snapshot);
-                bool chainBuilt = _planner.BuildChain(_hamster);
-                _dirty = false;
-                _framesSinceRecalc = 0;
-
-                // Периодический лог: состояние и результат сканирования (раз в 3 сек)
-                if (Time.time - _lastPeriodicLogTime > 3f)
-                {
-                    _lastPeriodicLogTime = Time.time;
-                    DebugManager.DiagLog($"[HamsterBot] SCAN: {_planner.Obstacles.Count} obs, chain={chainBuilt}, state={currentState} pos={_hamster.RightX:F2}");
-                }
+                var tailState = GetTailProjectedState(snapshot);
+                candidates = _chainGenerator.Generate(snapshot.VisibleObjects, tailState);
+            }
+            else
+            {
+                var initialState = ProjectedState.FromSnapshot(snapshot);
+                candidates = _chainGenerator.Generate(snapshot.VisibleObjects, initialState);
             }
 
-            // Есть ли шаг для выполнения?
-            if (_planner.Chain.Count > 0)
+            _chainScorer.Score(candidates);
+            _currentPlan = _planSelector.Select(decision, _currentPlan, candidates);
+            _lastDecisionText = _currentPlan?.Strategy ?? "—";
+            _framesSinceRecalc = 0;
+
+            // Периодический лог
+            if (Time.time - _lastPeriodicLogTime > 3f)
             {
-                var step = _planner.Chain[0];
-                if (step.Action != BotAction.None)
-                {
-                    // Проверяем тайминг: объект достаточно близко?
-                    if (step.TargetObstacleIndex >= 0 &&
-                        step.TargetObstacleIndex < _planner.Obstacles.Count)
-                    {
-                        var target = _planner.Obstacles[step.TargetObstacleIndex];
-                        if (target.DistanceToHamster <= step.ExecuteAtDistance)
-                        {
-                            if (ShouldDelayJumpOver(step, target))
-                                return; // ждём — CollisionUtils показывает overlap
-
-                            if (ShouldDelayJumpOn(step, target))
-                                return; // ждём — центр ещё не попадает внутрь цели
-
-                            ExecuteAction(step.Action);
-                            _dirty = true; // пересчитать после действия
-                        }
-                    }
-                    else
-                    {
-                        // Шаг без конкретной цели — выполнить сразу
-                        ExecuteAction(step.Action);
-                        _dirty = true;
-                    }
-                }
+                _lastPeriodicLogTime = Time.time;
+                DebugManager.DiagLog(
+                    $"[HamsterBot] REPLAN: {decision} candidates={candidates.Count} " +
+                    $"steps={_currentPlan?.Steps.Count} strategy={_currentPlan?.Strategy} " +
+                    $"state={currentState} pos={_hamster.RightX:F2}");
             }
         }
 
-        private void CheckDirtyFlag()
+        // ──────────────── Replan триггеры ────────────────
+
+        private bool NeedsReplan(BotSceneSnapshot snapshot)
         {
+            // Нет плана — пересчитать
+            if (_currentPlan.IsEmpty) return true;
+
+            // Завершился головной шаг
+            if (_currentPlan.Head != null &&
+                _currentPlan.Head.Status == ChainStepStatus.Completed)
+                return true;
+
+            // Состав объектов изменился
+            if (ObjectSetChanged(snapshot)) return true;
+
+            // Fallback: давно не пересчитывали
             _framesSinceRecalc++;
-
-            // Fallback
-            if (_framesSinceRecalc >= MaxFramesWithoutRecalc)
-            {
-                _dirty = true;
-                return;
-            }
-
-            // Состояние изменилось
-            var curState = _hamster.HamsterState.Value;
-            if (curState != _prevState)
-            {
-                _prevState = curState;
-                _dirty = true;
-                return;
-            }
-
-            // Энергия изменилась
-            int curEnergy = _hamster.Energy.Value;
-            if (curEnergy != _prevEnergy)
-            {
-                _prevEnergy = curEnergy;
-                _dirty = true;
-                return;
-            }
-
-            // Ульта готова
-            int curUlta = _hamster.UltaChargeAmount.Value;
-            if (curUlta != _prevUlta)
-            {
-                _prevUlta = curUlta;
-                _dirty = true;
-                return;
-            }
-
-            // Изменилось количество объектов на сцене
-            var spawner = ObstacleSpawner.Instance;
-            int count = spawner != null ? spawner.SpawnedObstacles.Count : 0;
-            if (count != _prevObstacleCount)
-            {
-                _prevObstacleCount = count;
-                _dirty = true;
-            }
+            return _framesSinceRecalc >= MaxFramesWithoutRecalc;
         }
 
-        // ──────────────── Jump-Over Collision Check ────────────────
-
-        /// <summary>
-        /// Для JumpOn (Target) — ждёт момент, когда центр хомяка попадёт внутрь цели.
-        /// Использует CollisionUtils.IsHamsterCenterInsideObstacleAtShift —
-        /// ту же проверку, что JumpMechanics.HandleSmallAlive для JumpOnObstacle.
-        /// </summary>
-        private bool ShouldDelayJumpOn(ChainStep step, ObstacleInfo target)
+        private bool ObjectSetChanged(BotSceneSnapshot snapshot)
         {
-            if (step.Action != BotAction.Jump && step.Action != BotAction.RoofJump)
-                return false;
-
-            if (step.Reason == null || !step.Reason.StartsWith("JumpOn"))
-                return false;
-
-            var obsRef = target.ObstacleRef;
-            if (obsRef == null) return false;
-
-            EnsureWorldShiftsCached();
-            float worldShift = step.Action == BotAction.RoofJump
-                ? _roofJumpWorldShift
-                : _jumpWorldShift;
-            if (worldShift <= 0f) return false;
-
-            // Та же проверка, что JumpMechanics: rightTol = hamsterWidth * 0.2
-            float rightTol = _hamster.ColliderWidth * 0.2f;
-            bool wouldLandOn = CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
-                _hamster.transform, worldShift, obsRef, rightTol);
-
-            if (wouldLandOn) return false; // идеальный момент — прыгаем!
-
-            // Failsafe: слишком близко — прыгаем всё равно (лучше damage, чем crash)
-            float realDist = obsRef.transform.position.x
-                - obsRef.ColliderWidth * 0.5f - _hamster.RightX;
-            return realDist > 0.5f;
+            var currentIds = new System.Collections.Generic.HashSet<int>();
+            foreach (var o in snapshot.VisibleObjects) currentIds.Add(o.StableId);
+            if (_prevObjectIds.SetEquals(currentIds)) return false;
+            _prevObjectIds = currentIds;
+            return true;
         }
 
-        /// <summary>
-        /// Проверяет, приведёт ли прыжок прямо сейчас к наложению на препятствие.
-        /// Использует CollisionUtils — ту же логику коллайдеров, что JumpMechanics.
-        /// Не применяется к Target-прыжкам (JumpOn) — там цель приземлиться НА препятствие.
-        /// </summary>
-        private bool ShouldDelayJumpOver(ChainStep step, ObstacleInfo target)
+        private ProjectedState GetTailProjectedState(BotSceneSnapshot snapshot)
         {
-            if (step.Action != BotAction.Jump && step.Action != BotAction.RoofJump)
-                return false;
+            var state = ProjectedState.FromSnapshot(snapshot);
+            var tail = _currentPlan.GetTail();
+            if (tail.Count == 0) return state;
 
-            // JumpOn Target — не задерживать: хотим приземлиться НА цель, а не перепрыгнуть
-            if (step.Reason != null && step.Reason.StartsWith("JumpOn"))
-                return false;
-
-            // Только для перепрыгиваемых мелких препятствий
-            if (target.Type != ObstacleTypeEnum.smallNotAliveRoad &&
-                target.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof &&
-                target.Type != ObstacleTypeEnum.smallAlive)
-                return false;
-
-            var obsRef = target.ObstacleRef;
-            if (obsRef == null) return false;
-
-            EnsureWorldShiftsCached();
-            float worldShift = step.Action == BotAction.RoofJump
-                ? _roofJumpWorldShift
-                : _jumpWorldShift;
-            if (worldShift <= 0f) return false;
-
-            bool wouldOverlap = CollisionUtils.IsOverlapAtShift(
-                _hamster.transform, _hamster.ColliderWidth, worldShift, obsRef);
-
-            if (!wouldOverlap) return false; // безопасно — прыгаем
-
-            // Failsafe: препятствие вплотную — прыгаем всё равно
-            float realDist = obsRef.transform.position.x
-                - obsRef.ColliderWidth * 0.5f - _hamster.RightX;
-            return realDist > 0.1f;
+            var projector = new StateProjector();
+            foreach (var step in tail)
+                state = projector.Project(state, step, step.TargetObstacle);
+            return state;
         }
 
-        private void EnsureWorldShiftsCached()
-        {
-            if (_jumpWorldShift >= 0f) return;
-
-            var ctrl = _hamster.GetComponentInChildren<TransformAnimatorController>();
-            if (ctrl == null) return;
-
-            _jumpWorldShift = HelpMethods.GetWorldShiftForClip(ctrl, "transform_jump");
-            _roofJumpWorldShift = HelpMethods.GetWorldShiftForClip(ctrl, "transform_roof_jump");
-
-            DebugManager.DiagLog(
-                $"[HamsterBot] Cached worldShifts: jump={_jumpWorldShift:F2}, roofJump={_roofJumpWorldShift:F2}");
-        }
+        // (ShouldDelayJumpOver, ShouldDelayJumpOn, EnsureWorldShiftsCached, ExecuteAction
+        //  перенесены в BotTimingPolicy)
 
         // ──────────────── State Checks ────────────────
 
@@ -371,7 +263,7 @@ namespace Assets.Scripts.Bot
             if (_deathHandled) return;
             _deathHandled = true;
 
-            DebugManager.DiagLog($"[HamsterBot] Hamster DIED. Actions executed: {_actionsExecuted}");
+            DebugManager.DiagLog($"[HamsterBot] Hamster DIED. Actions executed: {_timingPolicy?.ActionsExecuted}");
 
             if (_autoRestartOnDeath && LevelController.Instance != null)
             {
@@ -423,16 +315,22 @@ namespace Assets.Scripts.Bot
                     return;
                 }
 
-                _planner = new BotChainPlanner();
-                _snapshotBuilder = new SnapshotBuilder();
-                _classifier = new ObjectClassifier();
-                _gameManager = LevelController.Instance?.LevelData?.GameManager;
-                _initialized = true;
+                _snapshotBuilder  = new SnapshotBuilder();
+                _classifier       = new ObjectClassifier();
+                _chainGenerator   = new ChainGenerator();
+                _chainScorer      = new ChainScorer();
+                _planValidator    = new PlanValidator();
+                _planSelector     = new PlanSelector();
+                _timingPolicy     = new BotTimingPolicy(this, _hamster);
+                _gameManager      = LevelController.Instance?.LevelData?.GameManager;
+                _initialized      = true;
                 DebugManager.DiagLog("[HamsterBot] Initialized successfully.");
             }
 
-            IsEnabled = true;
-            _actionsExecuted = 0;
+            IsEnabled    = true;
+            _currentPlan = new CurrentPlan();
+            _prevObjectIds.Clear();
+            _timingPolicy.Reset();
             DebugManager.DiagLog("[HamsterBot] ENABLED.");
         }
 
@@ -442,81 +340,6 @@ namespace Assets.Scripts.Bot
             DebugManager.DiagLog("[HamsterBot] DISABLED.");
         }
 
-        // ──────────────── Action Execution ────────────────
-
-        private void ExecuteAction(BotAction action)
-        {
-            switch (action)
-            {
-                case BotAction.Jump:
-                    if (_hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
-                        _hamster.RoofJumpRequest.Invoke();
-                    else
-                        _hamster.JumpRequest.Invoke();
-                    break;
-
-                case BotAction.SuperJump:
-                    // SuperJump = double-tap: сначала Jump (→ hamster_jump state),
-                    // потом SuperJump (transition из hamster_jump → transform_super_jump)
-                    _hamster.JumpRequest.Invoke();
-                    StartCoroutine(DelayedSuperJump());
-                    break;
-
-                case BotAction.RoofJump:
-                    _hamster.RoofJumpRequest.Invoke();
-                    break;
-
-                case BotAction.SuperRoofJump:
-                    // SuperRoofJump = double-tap on roof: сначала RoofJump, потом SuperRoofJump
-                    _hamster.RoofJumpRequest.Invoke();
-                    StartCoroutine(DelayedSuperRoofJump());
-                    break;
-
-                case BotAction.SwitchLane:
-                    _hamster.TapRequest.Invoke();
-                    break;
-
-                case BotAction.UseUlta:
-                    _hamster.UltaEvent.Invoke();
-                    break;
-            }
-
-            _actionsExecuted++;
-            _lastDecisionText = action.ToString();
-
-            // Логируем действие + контекст ближайших объектов
-            var obs = _planner?.Obstacles;
-            string nearInfo = "";
-            if (obs != null)
-            {
-                for (int i = 0; i < obs.Count && i < 3; i++)
-                {
-                    var o = obs[i];
-                    if (o.DistanceToHamster < -1f || o.DistanceToHamster > 6f) continue;
-                    nearInfo += $" | {o.Type}({o.Category}) d={o.DistanceToHamster:F2}";
-                }
-            }
-            DebugManager.DiagLog(
-                $"[HamsterBot] EXEC #{_actionsExecuted}: {action} state={_hamster.HamsterState.Value} pos={_hamster.RightX:F2}{nearInfo}");
-        }
-
-        /// <summary>
-        /// SuperJump = double-tap. Ждём 1 кадр (чтобы Animator перешёл в hamster_jump),
-        /// затем вызываем SuperJumpRequest.
-        /// </summary>
-        private IEnumerator DelayedSuperJump()
-        {
-            yield return null;
-            _hamster.SuperJumpRequest.Invoke();
-        }
-
-        /// <summary>
-        /// SuperRoofJump = double-tap on roof. Ждём 1 кадр, затем SuperRoofJumpRequest.
-        /// </summary>
-        private IEnumerator DelayedSuperRoofJump()
-        {
-            yield return null;
-            _hamster.SuperRoofJumpRequest.Invoke();
-        }
+        // (ExecuteAction, DelayedSuperJump, DelayedSuperRoofJump перенесены в BotTimingPolicy)
     }
 }
