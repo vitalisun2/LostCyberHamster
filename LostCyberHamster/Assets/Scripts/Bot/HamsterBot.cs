@@ -114,7 +114,7 @@ namespace Assets.Scripts.Bot
         {
             yield return new WaitForSeconds(0.5f);
 
-            if (!IsEnabled) yield break;
+            if (!IsEnabled && PlayerPrefs.GetInt("BotAutoStart", 0) != 1) yield break;
 
             TryInitAndEnable();
             DebugManager.DiagLog("[HamsterBot] Re-initialized after scene load. Waiting for PLAYING state.");
@@ -143,6 +143,9 @@ namespace Assets.Scripts.Bot
                     _inUncontrollableState = true;
                     _uncontrollableStartTime = Time.time;
                     _lastWatchdogWarnTime = Time.time;
+
+                    if (IsDamageState(currentState))
+                        DebugManager.DiagLog($"[HamsterBot] DAMAGE! state={currentState} lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")}");
                 }
                 else
                 {
@@ -171,6 +174,11 @@ namespace Assets.Scripts.Bot
             // After action execution, skip replan this frame —
             // snapshot is stale (e.g. lane not yet switched), replan would oscillate
             if (actionExecutedThisFrame) return;
+
+            // Don't replan while any step is still in progress
+            // (e.g. SwitchLane physical animation hasn't completed yet)
+            if (_currentPlan.Head != null && _currentPlan.Head.Status == ChainStepStatus.InProgress)
+                return;
 
             // ── 3. Строим snapshot для проверки триггеров ──
             var snapshot = _snapshotBuilder.Build(_hamster, _scanRange);
@@ -328,6 +336,20 @@ namespace Assets.Scripts.Bot
         {
             return state == HamsterStateEnum.Run
                 || state == HamsterStateEnum.RoofRun;
+        }
+
+        private static bool IsDamageState(HamsterStateEnum state)
+        {
+            return state == HamsterStateEnum.JumpDamageForSmallNotAlive
+                || state == HamsterStateEnum.JumpDamageForSmallAlive
+                || state == HamsterStateEnum.JumpDamageForBigAlive
+                || state == HamsterStateEnum.JumpOnRoofDamage
+                || state == HamsterStateEnum.JumpFromRoofDamage
+                || state == HamsterStateEnum.RoofJumpDamage
+                || state == HamsterStateEnum.SuperJumpDamage
+                || state == HamsterStateEnum.SuperJumpOnRoofDamage
+                || state == HamsterStateEnum.SuperRoofJumpDamage
+                || state == HamsterStateEnum.SuperJumpFromRoofDamage;
         }
 
         // ──────────────── Auto-restart on death ────────────────

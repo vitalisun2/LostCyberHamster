@@ -32,6 +32,12 @@ namespace Assets.Scripts.Bot
 
         public int ActionsExecuted { get; private set; }
 
+        // ──────────────── SwitchLane cooldown ────────────────
+        // SwitchLane doesn't change HamsterState — we track completion via timer
+        private const float LaneSwitchDuration = 0.3f;
+        private float _switchLaneExecTime = -1f;
+        private bool  _switchLaneWasOnBottom;
+
         // ══════════════════════════════════════════════
         //  Конструктор
         // ══════════════════════════════════════════════
@@ -48,6 +54,7 @@ namespace Assets.Scripts.Bot
             ActionsExecuted   = 0;
             _jumpWorldShift   = -1f;
             _roofJumpWorldShift = -1f;
+            _switchLaneExecTime = -1f;
         }
 
         // ══════════════════════════════════════════════
@@ -65,12 +72,24 @@ namespace Assets.Scripts.Bot
             var step = plan.Head;
             if (step == null) return false;
 
-            // ── InProgress: ждём завершения (хомяк вернулся в Run/RoofRun) ──
+            // ── InProgress: ждём завершения ──
             if (step.Status == ChainStepStatus.InProgress)
             {
-                var state = _hamster.HamsterState.Value;
-                if (state == HamsterStateEnum.Run || state == HamsterStateEnum.RoofRun)
-                    step.Status = ChainStepStatus.Completed;
+                if (step.Action == BotAction.SwitchLane)
+                {
+                    // SwitchLane doesn't change HamsterState — wait for physical animation
+                    bool laneFlipped = _hamster.IsOnBottomLine.Value != _switchLaneWasOnBottom;
+                    bool timeElapsed = Time.time - _switchLaneExecTime >= LaneSwitchDuration;
+                    if (laneFlipped || timeElapsed)
+                        step.Status = ChainStepStatus.Completed;
+                }
+                else
+                {
+                    // Jump/SuperJump etc: wait for hamster to return to Run/RoofRun
+                    var state = _hamster.HamsterState.Value;
+                    if (state == HamsterStateEnum.Run || state == HamsterStateEnum.RoofRun)
+                        step.Status = ChainStepStatus.Completed;
+                }
                 return false;
             }
 
@@ -113,6 +132,13 @@ namespace Assets.Scripts.Bot
             var preExecState = _hamster.HamsterState.Value;
             if (preExecState != HamsterStateEnum.Run && preExecState != HamsterStateEnum.RoofRun)
                 return false;
+
+            // Track SwitchLane state before execution
+            if (step.Action == BotAction.SwitchLane)
+            {
+                _switchLaneWasOnBottom = _hamster.IsOnBottomLine.Value;
+                _switchLaneExecTime = Time.time;
+            }
 
             // Выполняем
             ExecuteAction(step);
