@@ -580,71 +580,35 @@ Menu: `Tools/Migration/` — 3 шага:
 
 ---
 
-## HamsterBot Architecture (v2 - Chain Planner)
+## HamsterBot Architecture (v3 - Pipeline)
 
-> Полностью переписано. Старая архитектура (31 файл, BotBrain, BotPlanner, Self-Learning) удалена.
+> Актуальная реализация: chain planner на pipeline-компонентах.
 
-### Файлы (6 файлов, ~950 строк)
-| Файл | Назначение |
-|---|---|
-| `HamsterBot.cs` | MonoBehaviour-оркестратор: Singleton, DontDestroyOnLoad, dirty flag, Update loop, ExecuteAction, auto-restart |
-| `HamsterBotUI.cs` | Минимальный OnGUI оверлей "BOT: ON/OFF (F1)" |
-| `BotChainPlanner.cs` | Алгоритм: сканирование, классификация, построение цепочки действий |
-| `BotAction.cs` | Enum: None, SwitchLane, Jump, SuperJump, RoofJump, SuperRoofJump, UseUlta |
-| `ObstacleInfo.cs` | Readonly struct + ObjectCategory (Target, Threat, Bonus, Neutral) |
-| `ChainStep.cs` | Readonly struct: BotAction + delay |
+### Текущее состояние
 
-### Алгоритм (BotChainPlanner)
-1. `ScanObstacles()` — фильтрует SpawnedObstacles по дальности, классифицирует через `Classify()`
-2. `BuildChain()` — приоритетная цепочка:
-   - **Ulta** → 2+ угрозы в кластере ИЛИ 1 жизнь + неизбежная угроза
-   - **Target** → прыжок на SmallAlive (JumpOnObstacle), проверка пути и приземления
-   - **Evasion** → уклонение от ближайшей угрозы (SwitchLane/Jump/SuperJump/RoofJump)
-   - **Bonus** → ценные бонусы (life/energetic/pizza/crystal) на другой полосе, если безопасно
-3. `TryAddBuyEnergyStep()` — покупка энергии за 50 монет при <10 energy
+- Монолитный `BotChainPlanner` больше не используется.
+- Планирование разделено на независимые этапы с явными входами/выходами данных.
+- Runtime-оркестратор выполняет шаги плана и инициирует перепланирование по событиям.
 
-### Dirty Flag система
-Пересчёт цепочки только при изменении: HamsterState, Energy, Ulta, Lives, кол-во препятствий, или каждые 10 кадров.
+### Pipeline компонентов
 
-### Управление уровнями
-- F1 — вкл/выкл бота
-- `_autoRestartOnDeath` — авто-рестарт через `LevelController.Instance.Replay()` с задержкой
-- QA логирование: `LogNoSafePath()` записывает непроходимые ситуации в DiagLog
+1. `SnapshotBuilder` — собирает `BotSceneSnapshot` из живых Unity-объектов.
+2. `ObjectClassifier` — проставляет категории объектам (`Target` / `Threat` / `Collectible` / `Neutral`).
+3. `PlanValidator` — решает `keep tail + extend` или `full rebuild`.
+4. `ChainGenerator` — строит несколько кандидатных цепочек действий.
+5. `ChainScorer` — ранжирует кандидатов по безопасности, цене и выгоде.
+6. `PlanSelector` — выбирает итоговый `CurrentPlan`.
+7. `BotTimingPolicy` — исполняет голову очереди по таймингу.
 
-### Ключевые константы
-- `SafeMargin = 1.5f` — минимальная дистанция реакции
-- `JumpLandingTravel = 3.8f`, `SuperJumpLandingTravel = 4.6f`
-- `JumpOnBounceTravel = 3.5f` — иммунное расстояние после напрыгивания на SmallAlive (отскок)
-- `LandingCheckTolerance = 0.8f`
-- `LaneSwitchDuration = 0.3f`
-- Скорость игры: `Consts.GameSpeedBase = 3.8f`
+`HamsterBot` выступает orchestrator-слоем: хранит текущий план, запускает pipeline и отдаёт исполнение в `BotTimingPolicy`.
 
-### JumpOn bounce-иммунитет
-- При напрыгивании на SmallAlive (JumpOnObstacle) хомяк получает отскок (`transform_jump_on`, 1.817с)
-- Во время отскока состояние JumpOnObstacle — хомяк **неуязвим** (не входит в `CanDamageHamsterState`)
-- Угрозы в зоне `JumpOnBounceTravel` (3.5 юнитов) после цели игнорируются `IsLandingSafe(immuneRange)`
-- Это позволяет боту напрыгивать на собаку, даже если сразу за ней стоит люк (SmallNotAlive)
+### Актуальные документы по боту
 
-### Roof логика
-- `HasRoofObstacle()` проверяет SmallNotAliveRoadAndRoof в зоне BigNotAlive/MediumNotAlive
-- `SelectEvasionTool()` учитывает: на крыше → SuperRoofJump, иначе анализ соседней полосы
+- `docs/Planning/bot concept brainstrom` — поведенческий концепт и приоритеты принятия решений.
+- `docs/Planning/bot_architecture.md` — целевая архитектура, сущности и pipeline.
+- `docs/Planning/bot_implementation_spec.md` — техническая спецификация реализации и статус этапов.
 
-### Energy Economics
-- Jump / RoofJump = 10 energy
-- SuperJump / SuperRoofJump = 20 energy
-- Restore = 1/sec
-- Max = 100
-- BuyEnergy = 50 coins → 100 energy (через `ResourceManager.SpendResource`)
-- BuyUlta = 100 coins → 100% ulta charge
+### Статус архивов
 
-### Статус документации
-
-Этот раздел описывает **текущее runtime-состояние кода** бота в проекте.
-
-Актуальные документы по боту теперь разделены так:
-
-- `docs/Planning/bot concept brainstrom` — целевой концепт поведения
-- `docs/Planning/bot_architecture.md` — целевая архитектура реализации
-
-Старые документы про `BotBrain`, `BotPlanner`, `PlayStyles` и `Self-Learning`
-удалены как устаревшие относительно текущего курса разработки.
+- Промежуточные backup-документы по фазам реализации удалены как неактуальные.
+- Оставлен один канонический файл спецификации: `docs/Planning/bot_implementation_spec.md`.

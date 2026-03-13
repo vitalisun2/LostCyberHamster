@@ -36,6 +36,9 @@
 ### docs/Planning/bot_architecture.md
 Целевая архитектура бота: что сохраняем из текущего кода, какие компоненты нужны, как должны быть разделены runtime-shell и planning-core.
 
+### docs/Planning/bot_implementation_spec.md
+Каноническая техническая спецификация реализации бота (без backup-файлов по фазам). Содержит статус этапов и детали внедрения pipeline.
+
 ### docs/Planning/sprite_loader_refactor_plan.md
 Рефакторинг загрузки спрайтов. Вехи 1-3 завершены (ядро AddressableLoader). Вехи 4-6 в работе: миграция рантайма, редактора, диагностика.
 
