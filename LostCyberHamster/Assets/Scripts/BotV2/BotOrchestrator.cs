@@ -3,6 +3,7 @@ using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
 using Sirenix.OdinInspector;
+using System.Text;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -14,7 +15,7 @@ namespace Assets.Scripts.BotV2
     /// Оркестратор BotV2. Вешается на GameObject в сцене.
     /// Координирует pipeline: Snapshot → Classify → Generate → Select → Execute.
     /// Горячая клавиша F1: вкл/выкл.
-    /// Этап 1: один smallNotAliveRoad, SwitchLane / Jump.
+    /// Этап 2: один Threat, все типы угроз, выбор по энергоэффективности.
     /// </summary>
     public class BotOrchestrator : MonoBehaviour
     {
@@ -48,6 +49,12 @@ namespace Assets.Scripts.BotV2
         private bool      _initialized;
         private ChainStep _activeStep;
         private float _nextInitRetryTime;
+        private BotSceneSnapshot _lastSnapshot;
+        private float _nextInitFailureLogTime;
+        private string _lastNoActionSignature;
+        private float _lastNoActionLogTime = -999f;
+        private int _suppressedNoActionCount;
+        private int _blockedSwitchLaneStableId;
 
         // ──────── Lifecycle ────────
 
@@ -98,7 +105,18 @@ namespace Assets.Scripts.BotV2
 
             var state = _hamster.HamsterState.Value;
             if (state == HamsterStateEnum.Dead) return;
-            if (state != HamsterStateEnum.Run) return;
+
+            // Когда хомяк не в Run (прыжок, суперпрыжок и т.д.),
+            // продолжаем отслеживать активный шаг (stall/completion),
+            // но не планируем новых действий.
+            if (state != HamsterStateEnum.Run)
+            {
+                if (_activeStep != null && _activeStep.Status == ChainStepStatus.InProgress)
+                {
+                    _executor.TryExecute();
+                }
+                return;
+            }
 
             BotLogger.Level = LogLevel;
 
@@ -117,6 +135,7 @@ namespace Assets.Scripts.BotV2
                     // Проверяем, не отменил ли executor шаг прямо сейчас
                     if (_executor.WasCancelled)
                     {
+                        RememberCancelledSwitchLane();
                         _executor.ClearStep();
                         _activeStep = null;
                         // Провалимся ниже в RunPipeline для перепланирования
@@ -147,24 +166,31 @@ namespace Assets.Scripts.BotV2
         private void RunPipeline()
         {
             var snapshot = _snapshotBuilder.Build(_hamster, _scanRange);
+            _lastSnapshot = snapshot;
+            RefreshBlockedSwitchLane(snapshot);
             LogSnapshot(snapshot);
 
             _classifier.Classify(snapshot);
             LogClassify(snapshot);
 
             var candidates = _generator.Generate(snapshot);
+            FilterBlockedSwitchLaneCandidates(candidates);
             LogGenerate(candidates);
 
             var best = _selector.Select(candidates);
             if (best == null)
             {
-                BotLogger.Log(BotLogLevel.Verbose, "[SELECT] no safe actions → None");
+                LogNoSafeActions(snapshot);
                 return;
             }
 
+            ResetNoActionLogState();
             _lastAction = best.Action.ToString();
             BotLogger.Log(BotLogLevel.Normal,
-                $"[SELECT] chose {best.Action} (cost={best.EnergyCost}, reason=\"{best.Reason}\")");
+                $"[SELECT] chose {best.Action} (cost={best.EnergyCost}, reason=\"{best.Reason}\")\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                $"  step: {BotLogger.FormatStep(best)}\n" +
+                $"  visible: {BotLogger.FormatSnapshotObstacles(snapshot.VisibleObjects)}");
 
             _activeStep = best;
             _executor.SetStep(best);
@@ -199,7 +225,11 @@ namespace Assets.Scripts.BotV2
 
             if (_hamster == null || _gameManager == null)
             {
-                DebugManager.DiagLog("[BotOrchestrator] Init failed — Hamster or GameManager not found");
+                if (Time.time >= _nextInitFailureLogTime)
+                {
+                    DebugManager.DiagLog("[BotOrchestrator] Init failed — Hamster or GameManager not found");
+                    _nextInitFailureLogTime = Time.time + 2f;
+                }
                 return;
             }
 
@@ -211,16 +241,67 @@ namespace Assets.Scripts.BotV2
 
             // Логирование урона
             _hamster.DamageEvent.Subscribe(OnDamage);
+            _gameManager.OnFinish += OnGameFinished;
+            GameEventsManager.OnLevelCompleted += OnLevelCompleted;
 
             _initialized = true;
             IsEnabled    = true;
-            DebugManager.DiagLog("[BotOrchestrator] Initialized (Stage 1)");
+            DebugManager.DiagLog("[BotOrchestrator] Initialized (Stage 3)");
         }
 
         private void OnDestroy()
         {
             if (_hamster != null)
                 _hamster.DamageEvent.Unsubscribe(OnDamage);
+
+            if (_gameManager != null)
+                _gameManager.OnFinish -= OnGameFinished;
+
+            GameEventsManager.OnLevelCompleted -= OnLevelCompleted;
+        }
+
+        private void RememberCancelledSwitchLane()
+        {
+            if (_activeStep == null || _activeStep.Action != BotAction.SwitchLane)
+                return;
+
+            int stableId = _activeStep.TargetObstacle.StableId;
+            if (stableId == 0 || stableId == _blockedSwitchLaneStableId)
+                return;
+
+            _blockedSwitchLaneStableId = stableId;
+            BotLogger.Log(BotLogLevel.Normal,
+                $"[SELECT] block SwitchLane for obstacle id={stableId} after live cancellation");
+        }
+
+        private void RefreshBlockedSwitchLane(BotSceneSnapshot snapshot)
+        {
+            if (_blockedSwitchLaneStableId == 0)
+                return;
+
+            for (int index = 0; index < snapshot.VisibleObjects.Count; index++)
+            {
+                var obstacle = snapshot.VisibleObjects[index];
+                if (obstacle.StableId != _blockedSwitchLaneStableId)
+                    continue;
+
+                if (obstacle.DistanceToHamster >= 0f)
+                    return;
+
+                break;
+            }
+
+            _blockedSwitchLaneStableId = 0;
+        }
+
+        private void FilterBlockedSwitchLaneCandidates(List<ChainStep> candidates)
+        {
+            if (_blockedSwitchLaneStableId == 0)
+                return;
+
+            candidates.RemoveAll(candidate =>
+                candidate.Action == BotAction.SwitchLane &&
+                candidate.TargetObstacle.StableId == _blockedSwitchLaneStableId);
         }
 
         // ──────── Damage log ────────
@@ -228,20 +309,49 @@ namespace Assets.Scripts.BotV2
         private void OnDamage()
         {
             var step = _activeStep;
-            string stepInfo = step == null
-                ? "none"
-                : $"{step.Action} status={step.Status} executeAt={step.ExecuteAtDistance:F1}";
-
-            string hamsterLane = _hamster.IsOnBottomLine.Value ? "bottom" : "top";
             string killerInfo = FindNearestThreatInfo();
 
             DebugManager.DiagLog(
                 $"[DAMAGE] ===\n" +
-                $"  hamster: lane={hamsterLane} state={_hamster.HamsterState.Value}" +
-                $" energy={_hamster.Energy.Value} lives={_hamster.Lives.Value}\n" +
-                $"  active step: {stepInfo}\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                $"  active step: {BotLogger.FormatStep(step)}\n" +
+                $"  last snapshot: {BotLogger.FormatSnapshotObstacles(_lastSnapshot?.VisibleObjects)}\n" +
+                $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, step?.TargetObstacle.StableId ?? 0)}\n" +
                 $"  killer (nearest same-lane threat): {killerInfo}\n" +
                 $"[DAMAGE] ===");
+
+            if (_hamster.Lives.Value <= 0)
+            {
+                DebugManager.DiagLog(
+                    $"[TEST RESULT] FAIL\n" +
+                    $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                    $"  active step: {BotLogger.FormatStep(step)}\n" +
+                    $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, step?.TargetObstacle.StableId ?? 0)}");
+            }
+        }
+
+        private void OnGameFinished()
+        {
+            string finishWarning = _activeStep != null || _hamster.HamsterState.Value != HamsterStateEnum.Run
+                ? $"\n  warning: finish while state={_hamster.HamsterState.Value} activeStep={BotLogger.FormatStep(_activeStep)}"
+                : string.Empty;
+
+            DebugManager.DiagLog(
+                $"[TEST FINISH] state={_gameManager.State} lastAction={_lastAction}\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}{finishWarning}\n" +
+                $"  last snapshot: {BotLogger.FormatSnapshotObstacles(_lastSnapshot?.VisibleObjects)}");
+        }
+
+        private void OnLevelCompleted(int levelId, int stars)
+        {
+            string finishWarning = _activeStep != null || _hamster.HamsterState.Value != HamsterStateEnum.Run
+                ? $"\n  warning: completed while state={_hamster.HamsterState.Value} activeStep={BotLogger.FormatStep(_activeStep)}"
+                : string.Empty;
+
+            DebugManager.DiagLog(
+                $"[TEST RESULT] WIN level={levelId} stars={stars}\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}{finishWarning}\n" +
+                $"  last snapshot: {BotLogger.FormatSnapshotObstacles(_lastSnapshot?.VisibleObjects)}");
         }
 
         private string FindNearestThreatInfo()
@@ -294,7 +404,8 @@ namespace Assets.Scripts.BotV2
         private void LogSnapshot(BotSceneSnapshot s)
         {
             BotLogger.Log(BotLogLevel.Verbose,
-                $"[SNAPSHOT] hamster=(lane={(s.HamsterOnBottom ? "bottom" : "top")} energy={s.Energy} lives={s.Lives}) visible={s.VisibleObjects.Count}");
+                $"[SNAPSHOT] hamster=(lane={(s.HamsterOnBottom ? "bottom" : "top")} energy={s.Energy} lives={s.Lives}) visible={s.VisibleObjects.Count}\n" +
+                $"  objects: {BotLogger.FormatSnapshotObstacles(s.VisibleObjects)}");
         }
 
         private void LogClassify(BotSceneSnapshot s)
@@ -313,7 +424,60 @@ namespace Assets.Scripts.BotV2
             if (BotLogger.Level != BotLogLevel.Verbose) return;
             foreach (var s in steps)
                 BotLogger.Log(BotLogLevel.Verbose,
-                    $"[GENERATE] action={s.Action} cost={s.EnergyCost} dist={s.ExecuteAtDistance:F1}");
+                    $"[GENERATE] {BotLogger.FormatStep(s)}");
+        }
+
+        private void LogNoSafeActions(BotSceneSnapshot snapshot)
+        {
+            string signature = BuildNoActionSignature(snapshot);
+            bool unchanged = signature == _lastNoActionSignature;
+
+            if (unchanged && Time.time - _lastNoActionLogTime < 1f)
+            {
+                _suppressedNoActionCount++;
+                return;
+            }
+
+            string repeatedSuffix = unchanged && _suppressedNoActionCount > 0
+                ? $" (unchanged x{_suppressedNoActionCount + 1})"
+                : string.Empty;
+
+            BotLogger.Log(BotLogLevel.Normal,
+                $"[SELECT] no safe actions → None{repeatedSuffix}\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                $"  visible: {BotLogger.FormatSnapshotObstacles(snapshot.VisibleObjects)}");
+
+            _lastNoActionSignature = signature;
+            _lastNoActionLogTime = Time.time;
+            _suppressedNoActionCount = 0;
+        }
+
+        private static string BuildNoActionSignature(BotSceneSnapshot snapshot)
+        {
+            var builder = new StringBuilder();
+            builder.Append(snapshot.HamsterOnBottom ? 'B' : 'T');
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obstacle = snapshot.VisibleObjects[i];
+                builder.Append('|');
+                builder.Append(obstacle.StableId);
+                builder.Append(':');
+                builder.Append(obstacle.Type);
+                builder.Append(':');
+                builder.Append(obstacle.Category);
+                builder.Append(':');
+                builder.Append(obstacle.IsTopLane ? 'T' : 'B');
+            }
+
+            return builder.ToString();
+        }
+
+        private void ResetNoActionLogState()
+        {
+            _lastNoActionSignature = null;
+            _suppressedNoActionCount = 0;
+            _lastNoActionLogTime = -999f;
         }
     }
 }

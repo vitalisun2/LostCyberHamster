@@ -14,6 +14,7 @@ namespace Assets.Scripts.BotV2
         public float ExecuteAtDistance;
 
         public int EnergyCost;
+        public int ProfitScore;
         public string Reason;
         public ChainStepStatus Status;
 
@@ -22,12 +23,14 @@ namespace Assets.Scripts.BotV2
             ObstacleInfo targetObstacle,
             float executeAtDistance,
             int energyCost,
-            string reason)
+            string reason,
+            int profitScore = 0)
         {
             Action = action;
             TargetObstacle = targetObstacle;
             ExecuteAtDistance = executeAtDistance;
             EnergyCost = energyCost;
+            ProfitScore = profitScore;
             Reason = reason;
             Status = ChainStepStatus.Ready;
         }

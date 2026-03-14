@@ -6,7 +6,67 @@
     "location": "01_New_York",
     "patternSequence": [
         {
-            "ref": "small_jumps",
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s3_threat_small_top",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s3_threat_medium_bottom",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s3_target_small_top",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s3_collect_energy_bottom",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s3_target_small_bottom",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s3_collect_life_top",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
             "spriteSeed": 0,
             "overrides": []
         }

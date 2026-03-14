@@ -9909,6 +9909,214 @@
                     "y": -1.8000000715255738
                 }
             ]
+        },
+        {
+            "name": "bot_s2_small_top",
+            "description": "BotV2 Stage 2: smallNotAliveRoad на верхней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s2_small_roof_bottom",
+            "description": "BotV2 Stage 2: smallNotAliveRoadAndRoof на нижней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 3,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s2_big_not_alive_top",
+            "description": "BotV2 Stage 2: bigNotAlive на верхней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 4,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s2_medium_bottom",
+            "description": "BotV2 Stage 2: mediumNotAlive на нижней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 11,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s2_big_alive_top",
+            "description": "BotV2 Stage 2: bigAlive на верхней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 1,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s2_small_bottom",
+            "description": "BotV2 Stage 2: smallNotAliveRoad на нижней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s2_small_roof_top",
+            "description": "BotV2 Stage 2: smallNotAliveRoadAndRoof на верхней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 3,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s2_big_not_alive_bottom",
+            "description": "BotV2 Stage 2: bigNotAlive на нижней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 4,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s2_medium_top",
+            "description": "BotV2 Stage 2: mediumNotAlive на верхней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 11,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s2_big_alive_bottom",
+            "description": "BotV2 Stage 2: bigAlive на нижней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 1,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_threat_small_top",
+            "description": "BotV2 Stage 3: Threat (smallNotAliveRoad) на верхней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_threat_medium_bottom",
+            "description": "BotV2 Stage 3: Threat (mediumNotAlive) на нижней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 11,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_target_small_top",
+            "description": "BotV2 Stage 3: Target (smallAlive) на верхней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_target_small_bottom",
+            "description": "BotV2 Stage 3: Target (smallAlive) на нижней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_collect_energy_bottom",
+            "description": "BotV2 Stage 3: Collectible (energetic) на нижней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 5,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_collect_life_top",
+            "description": "BotV2 Stage 3: Collectible (life) на верхней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 8,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                }
+            ]
         }
     ]
 }

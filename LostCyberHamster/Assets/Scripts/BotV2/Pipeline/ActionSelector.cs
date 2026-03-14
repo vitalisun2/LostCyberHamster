@@ -4,8 +4,7 @@ namespace Assets.Scripts.BotV2
 {
     /// <summary>
     /// Выбирает лучший шаг из набора безопасных кандидатов.
-    /// Этап 1: выбираем по минимальной стоимости энергии.
-    /// SwitchLane (0) предпочтительнее Jump (10).
+    /// Этап 3: приоритеты выбора — профит, затем энергоэффективность.
     /// </summary>
     public class ActionSelector
     {
@@ -16,8 +15,23 @@ namespace Assets.Scripts.BotV2
             ChainStep best = null;
             for (int i = 0; i < candidates.Count; i++)
             {
-                if (best == null || candidates[i].EnergyCost < best.EnergyCost)
-                    best = candidates[i];
+                var candidate = candidates[i];
+                if (best == null)
+                {
+                    best = candidate;
+                    continue;
+                }
+
+                if (candidate.ProfitScore > best.ProfitScore)
+                {
+                    best = candidate;
+                    continue;
+                }
+
+                if (candidate.ProfitScore == best.ProfitScore && candidate.EnergyCost < best.EnergyCost)
+                {
+                    best = candidate;
+                }
             }
             return best;
         }

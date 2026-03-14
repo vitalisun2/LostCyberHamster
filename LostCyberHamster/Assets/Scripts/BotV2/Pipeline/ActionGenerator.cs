@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using Assets.Scripts.Common;
+using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.BotV2
 {
     /// <summary>
-    /// Генерирует список безопасных действий для ближайшей угрозы на линии хомяка.
-    /// Этап 2: один объект, все типы Threat, выбор по энергоэффективности.
+    /// Генерирует список безопасных действий для ближайшего релевантного объекта.
+    /// Этап 3: один объект, все категории (Threat/Target/Collectible).
     /// Работает только со snapshot-данными.
     /// </summary>
     public class ActionGenerator
@@ -16,6 +17,9 @@ namespace Assets.Scripts.BotV2
         private const float SuperJumpFireDist  = 1.5f;
         private const int JumpEnergyCost       = 10;
         private const int SuperJumpEnergyCost  = 20;
+        private const int ThreatProfitScore = 0;
+        private const int TargetProfitScore = 100;
+        private const int CollectibleBaseProfitScore = 40;
 
         /// <summary>Примерное расстояние, на которое хомяк улетает при Jump.</summary>
         private const float JumpLandingOffset = 3.8f;
@@ -25,41 +29,62 @@ namespace Assets.Scripts.BotV2
         {
             var result = new List<ChainStep>();
 
-            // Ищем ближайшую угрозу на линии хомяка
-            ObstacleInfo? nearest = FindNearestThreatOnHamsterLane(snapshot);
-            if (nearest == null) return result;
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var target = snapshot.VisibleObjects[i];
+                if (!IsRelevantForDecision(snapshot, target))
+                    continue;
 
-            var threat = nearest.Value;
+                AddVariantsForObject(result, snapshot, target);
+                if (result.Count > 0)
+                    break;
+            }
 
+            return result;
+        }
+
+        private static void AddVariantsForObject(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo target)
+        {
+            switch (target.Category)
+            {
+                case ObjectCategory.Threat:
+                    AddThreatVariants(result, snapshot, target);
+                    break;
+
+                case ObjectCategory.Target:
+                    AddTargetVariants(result, snapshot, target);
+                    break;
+
+                case ObjectCategory.Collectible:
+                    AddCollectibleVariants(result, snapshot, target);
+                    break;
+            }
+        }
+
+        private static void AddThreatVariants(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo threat)
+        {
             if (ShouldGenerateSwitchLane(threat))
             {
-                if (TryBuildSwitchLaneStep(snapshot, threat, out ChainStep switchLaneStep))
+                if (TryBuildSwitchLaneStep(snapshot, threat, out ChainStep switchLaneStep, ThreatProfitScore))
                 {
                     result.Add(switchLaneStep);
                 }
             }
 
-            AddActionVariants(result, snapshot, threat);
-
-            return result;
-        }
-
-        private static void AddActionVariants(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo threat)
-        {
             switch (threat.Type)
             {
-                case Assets.Scripts.Common.Models.ObstacleTypeEnum.smallNotAliveRoad:
-                    AddJumpVariant(result, snapshot, threat, "Jump smallNotAliveRoad");
-                    AddSuperJumpVariant(result, snapshot, threat, "SuperJump smallNotAliveRoad");
+                case ObstacleTypeEnum.smallNotAliveRoad:
+                    AddJumpVariant(result, snapshot, threat, "Jump smallNotAliveRoad", ThreatProfitScore);
+                    AddSuperJumpVariant(result, snapshot, threat, "SuperJump smallNotAliveRoad", ThreatProfitScore);
                     break;
 
-                case Assets.Scripts.Common.Models.ObstacleTypeEnum.smallNotAliveRoadAndRoof:
-                    AddJumpVariant(result, snapshot, threat, "Jump smallNotAliveRoadAndRoof");
-                    AddSuperJumpVariant(result, snapshot, threat, "SuperJump smallNotAliveRoadAndRoof");
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                    AddJumpVariant(result, snapshot, threat, "Jump smallNotAliveRoadAndRoof", ThreatProfitScore);
+                    AddSuperJumpVariant(result, snapshot, threat, "SuperJump smallNotAliveRoadAndRoof", ThreatProfitScore);
                     break;
 
-                case Assets.Scripts.Common.Models.ObstacleTypeEnum.bigNotAlive:
-                case Assets.Scripts.Common.Models.ObstacleTypeEnum.mediumNotAlive:
+                case ObstacleTypeEnum.bigNotAlive:
+                case ObstacleTypeEnum.mediumNotAlive:
                     if (snapshot.Energy >= JumpEnergyCost)
                     {
                         result.Add(new ChainStep(
@@ -67,34 +92,91 @@ namespace Assets.Scripts.BotV2
                             threat,
                             JumpFireDist,
                             JumpEnergyCost,
-                            $"Jump on roof {threat.Type}"));
+                            $"Jump on roof {threat.Type}",
+                            ThreatProfitScore));
                     }
                     break;
 
-                case Assets.Scripts.Common.Models.ObstacleTypeEnum.bigAlive:
-                    AddSuperJumpVariant(result, snapshot, threat, "SuperJump bigAlive");
+                case ObstacleTypeEnum.bigAlive:
+                    AddSuperJumpVariant(result, snapshot, threat, "SuperJump bigAlive", ThreatProfitScore);
                     break;
+            }
+        }
+
+        private static void AddTargetVariants(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo target)
+        {
+            bool sameLane = IsOnSameLane(snapshot, target);
+
+            if (sameLane)
+            {
+                if (snapshot.Energy >= JumpEnergyCost)
+                {
+                    result.Add(new ChainStep(
+                        BotAction.Jump,
+                        target,
+                        JumpFireDist,
+                        JumpEnergyCost,
+                        $"Jump on target {target.Type}",
+                        TargetProfitScore));
+                }
+
+                if (target.Type == ObstacleTypeEnum.bigAlive && snapshot.Energy >= SuperJumpEnergyCost)
+                {
+                    result.Add(new ChainStep(
+                        BotAction.SuperJump,
+                        target,
+                        SuperJumpFireDist,
+                        SuperJumpEnergyCost,
+                        "SuperJump target bigAlive",
+                        TargetProfitScore - 5));
+                }
+            }
+            else
+            {
+                if (TryBuildSwitchLaneStep(snapshot, target, out ChainStep switchLaneStep, TargetProfitScore - 20))
+                {
+                    switchLaneStep.Reason = "SwitchLane to target";
+                    result.Add(switchLaneStep);
+                }
+            }
+        }
+
+        private static void AddCollectibleVariants(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo collectible)
+        {
+            if (IsOnSameLane(snapshot, collectible))
+                return;
+
+            int collectibleProfit = CollectibleBaseProfitScore + GetCollectiblePriority(collectible.Type);
+            if (TryBuildSwitchLaneStep(snapshot, collectible, out ChainStep switchLaneStep, collectibleProfit))
+            {
+                switchLaneStep.Reason = $"SwitchLane collect {collectible.Type}";
+                result.Add(switchLaneStep);
             }
         }
 
         private static bool ShouldGenerateSwitchLane(ObstacleInfo threat) => true;
 
-        private static bool TryBuildSwitchLaneStep(BotSceneSnapshot snapshot, ObstacleInfo threat, out ChainStep step)
+        private static bool TryBuildSwitchLaneStep(
+            BotSceneSnapshot snapshot,
+            ObstacleInfo target,
+            out ChainStep step,
+            int profitScore)
         {
             step = null;
 
-            if (!TryComputeSwitchLaneExecuteDistance(snapshot, threat, out float executeAtDistance))
+            if (!TryComputeSwitchLaneExecuteDistance(snapshot, target, out float executeAtDistance))
                 return false;
 
-            if (!IsSwitchLaneSafeAtDistance(snapshot, threat, executeAtDistance))
+            if (!IsSwitchLaneSafeAtDistance(snapshot, target, executeAtDistance))
                 return false;
 
             step = new ChainStep(
                 BotAction.SwitchLane,
-                threat,
+                target,
                 executeAtDistance,
                 energyCost: 0,
-                "SwitchLane away from threat (timed window)");
+                "SwitchLane away from threat (timed window)",
+                profitScore);
 
             return true;
         }
@@ -105,7 +187,7 @@ namespace Assets.Scripts.BotV2
         /// </summary>
         private static bool TryComputeSwitchLaneExecuteDistance(
             BotSceneSnapshot snapshot,
-            ObstacleInfo threat,
+            ObstacleInfo target,
             out float executeAtDistance)
         {
             executeAtDistance = 0f;
@@ -142,20 +224,18 @@ namespace Assets.Scripts.BotV2
             float delayedFireDist = SwitchLaneFireDist - requiredDelayDistance;
             executeAtDistance = Clamp(delayedFireDist, SwitchLaneLatestSafeDist, SwitchLaneFireDist);
 
-            // Если угроза уже слишком близко, SwitchLane как стратегия уже не надёжен.
-            if (threat.DistanceToHamster < SwitchLaneLatestSafeDist)
+            if (target.DistanceToHamster < SwitchLaneLatestSafeDist)
                 return false;
 
-            // Не откладываем дальше текущей дистанции до угрозы, чтобы шаг мог исполниться сразу.
-            if (executeAtDistance > threat.DistanceToHamster)
-                executeAtDistance = threat.DistanceToHamster;
+            if (executeAtDistance > target.DistanceToHamster)
+                executeAtDistance = target.DistanceToHamster;
 
             return true;
         }
 
         private static bool IsSwitchLaneSafeAtDistance(
             BotSceneSnapshot snapshot,
-            ObstacleInfo threat,
+            ObstacleInfo target,
             float executeAtDistance)
         {
             float speed = Assets.Scripts.Consts.GameSpeedBase;
@@ -166,7 +246,7 @@ namespace Assets.Scripts.BotV2
             float hamsterRightX = snapshot.HamsterRightX;
             bool targetIsBottom = !snapshot.HamsterOnBottom;
 
-            float distanceDelta = threat.DistanceToHamster - executeAtDistance;
+            float distanceDelta = target.DistanceToHamster - executeAtDistance;
             if (distanceDelta < 0f)
                 distanceDelta = 0f;
             float timeToExecute = distanceDelta / speed;
@@ -175,7 +255,7 @@ namespace Assets.Scripts.BotV2
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
                 var obstacle = snapshot.VisibleObjects[i];
-                if (obstacle.StableId == threat.StableId)
+                if (obstacle.StableId == target.StableId)
                     continue;
                 if (obstacle.Category != ObjectCategory.Threat)
                     continue;
@@ -207,7 +287,12 @@ namespace Assets.Scripts.BotV2
             return value;
         }
 
-        private static void AddJumpVariant(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo threat, string reason)
+        private static void AddJumpVariant(
+            List<ChainStep> result,
+            BotSceneSnapshot snapshot,
+            ObstacleInfo threat,
+            string reason,
+            int profitScore)
         {
             if (snapshot.Energy < JumpEnergyCost)
                 return;
@@ -220,10 +305,16 @@ namespace Assets.Scripts.BotV2
                 threat,
                 JumpFireDist,
                 JumpEnergyCost,
-                reason));
+                reason,
+                profitScore));
         }
 
-        private static void AddSuperJumpVariant(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo threat, string reason)
+        private static void AddSuperJumpVariant(
+            List<ChainStep> result,
+            BotSceneSnapshot snapshot,
+            ObstacleInfo threat,
+            string reason,
+            int profitScore)
         {
             if (snapshot.Energy < SuperJumpEnergyCost)
                 return;
@@ -233,28 +324,45 @@ namespace Assets.Scripts.BotV2
                 threat,
                 SuperJumpFireDist,
                 SuperJumpEnergyCost,
-                reason));
+                reason,
+                profitScore));
         }
 
-        private static ObstacleInfo? FindNearestThreatOnHamsterLane(BotSceneSnapshot snapshot)
+        private static bool IsRelevantForDecision(BotSceneSnapshot snapshot, ObstacleInfo obs)
         {
-            ObstacleInfo? nearest = null;
-            bool hamsterOnBottom = snapshot.HamsterOnBottom;
+            if (obs.Category == ObjectCategory.Neutral)
+                return false;
 
-            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            if (obs.DistanceToHamster < 0f)
+                return false;
+
+            if (obs.Category == ObjectCategory.Threat && !IsOnSameLane(snapshot, obs))
+                return false;
+
+            return true;
+        }
+
+        private static bool IsOnSameLane(BotSceneSnapshot snapshot, ObstacleInfo obstacle)
+        {
+            return snapshot.HamsterOnBottom == !obstacle.IsTopLane;
+        }
+
+        private static int GetCollectiblePriority(ObstacleTypeEnum type)
+        {
+            switch (type)
             {
-                var obs = snapshot.VisibleObjects[i];
-                if (obs.Category != ObjectCategory.Threat) continue;
-                if (obs.DistanceToHamster < 0) continue;
-
-                // Угроза на той же линии: hamsterOnBottom == !obs.IsTopLane
-                bool sameLane = (hamsterOnBottom == !obs.IsTopLane);
-                if (!sameLane) continue;
-
-                if (nearest == null || obs.DistanceToHamster < nearest.Value.DistanceToHamster)
-                    nearest = obs;
+                case ObstacleTypeEnum.collectableLife:
+                    return 8;
+                case ObstacleTypeEnum.collectableEnergetic:
+                case ObstacleTypeEnum.collectablePizza:
+                    return 6;
+                case ObstacleTypeEnum.collectableCrystal:
+                    return 4;
+                case ObstacleTypeEnum.collectableCoin:
+                    return 2;
+                default:
+                    return 1;
             }
-            return nearest;
         }
 
         /// <summary>
