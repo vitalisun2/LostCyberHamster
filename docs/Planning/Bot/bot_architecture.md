@@ -9,7 +9,7 @@
 * [bot concept brainstrom](bot%20concept%20brainstrom) — доменные детали (модель мира, инструменты, переходы)
 
 **Подход:** поэтапная разработка. Бот строится инкрементально по этапам
-из [секции «Этапы отладки бота»](bot%20universal%20algorithm%20brainstrom.md).
+из [bot_implementation_plan.md](bot_implementation_plan.md).
 Каждая секция архитектуры помечена номером этапа, на котором она становится актуальной.
 
 ---
