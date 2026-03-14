@@ -47,6 +47,7 @@ namespace Assets.Scripts.BotV2
 
         private bool      _initialized;
         private ChainStep _activeStep;
+        private float _nextInitRetryTime;
 
         // ──────── Lifecycle ────────
 
@@ -79,7 +80,20 @@ namespace Assets.Scripts.BotV2
         {
             if (IsTogglePressed()) Toggle();
 
-            if (!IsEnabled || !_initialized) return;
+            if (!IsEnabled) return;
+
+            // BotV2 может создаваться в Bootstrap-сцене раньше, чем появятся Hamster/GameManager.
+            // Повторяем TryInit до успешной инициализации.
+            if (!_initialized)
+            {
+                if (Time.time >= _nextInitRetryTime)
+                {
+                    TryInit();
+                    _nextInitRetryTime = Time.time + 0.5f;
+                }
+                return;
+            }
+
             if (_gameManager == null || _gameManager.State != GameState.PLAYING) return;
 
             var state = _hamster.HamsterState.Value;
@@ -157,6 +171,14 @@ namespace Assets.Scripts.BotV2
             }
             IsEnabled = true;
             if (!_initialized) TryInit();
+        }
+
+        /// <summary>
+        /// Переключение бота через глобальный хоткей (F1) из KeyboardMechanics.
+        /// </summary>
+        public void ToggleEnabledFromHotkey()
+        {
+            Toggle();
         }
 
         private void TryInit()

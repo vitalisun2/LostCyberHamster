@@ -64,14 +64,9 @@ namespace Assets.Scripts.System.Resources
             if (!_disposed && _handle.IsValid())
             {
                 Debug.LogWarning($"[AddressableSetLease<{typeof(T).Name}>] Disposed by GC. Ensure Dispose() is called explicitly.");
-                try
-                {
-                    Addressables.Release(_handle);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"[AddressableSetLease<{typeof(T).Name}>] Failed to release handle in finalizer: {ex.Message}");
-                }
+                // В finalizer мы не на main thread, поэтому вызывать Unity API (Addressables.Release)
+                // здесь нельзя: это приводит к InvalidOperationException.
+                // Осознанно пропускаем release и оставляем диагностический warning.
             }
         }
 #endif
