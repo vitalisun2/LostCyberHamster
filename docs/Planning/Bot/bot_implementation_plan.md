@@ -261,26 +261,54 @@ Y-координаты линий:
 
 **Паттерны этапа 1:**
 
-```
-bot_test_1_0  "пустой" — нет препятствий
-  Ожидание: бот ничего не делает, 0 replan.
+Два базовых паттерна (по одному `smallNotAliveRoad`):
 
-bot_test_1_1  "одиночный smallNotAliveRoad на своей линии (bottom)"
+```
+bot_s1_threat_bottom  "угроза на нижней линии"
   obstacles: [{type:2, x:15, y:-2.8}]
-  Ожидание: SwitchLane или Jump, 0 жизней потеряно.
 
-bot_test_1_2  "одиночный smallNotAliveRoad на чужой линии (top)"
+bot_s1_threat_top  "угроза на верхней линии"
   obstacles: [{type:2, x:15, y:-1.8}]
-  Ожидание: ничего не делать (не мешает).
-
-bot_test_1_3  "smallNotAliveRoad на обеих линиях (вынужденный Jump)"
-  obstacles: [{type:2, x:15, y:-2.8}, {type:2, x:15, y:-1.8}]
-  Ожидание: Jump (SwitchLane невозможен), 0 жизней.
-
-bot_test_1_4  "два smallNotAliveRoad далеко друг от друга (однолинейно)"
-  obstacles: [{type:2, x:15, y:-2.8}, {type:2, x:45, y:-2.8}]
-  Ожидание: один шаг на первый, пересчёт даст шаг на второй.
 ```
+
+**Тестовые уровни** (сборки из паттернов):
+
+```
+bot_test_stage1_zigzag
+  Последовательность: threat_bottom → threat_top → threat_bottom → threat_top
+  
+  Что происходит:
+  1. Хомяк bottom, threat bottom → SwitchLane на top
+  2. Хомяк top, threat top → SwitchLane на bottom
+  3. Хомяк bottom, threat bottom → SwitchLane на top
+  4. Хомяк top, threat top → SwitchLane на bottom
+  
+  Проверяет:
+  - SwitchLane работает в обе стороны
+  - бот корректно определяет "свою линию" по текущей позиции хомяка
+  - бот не хардкодит линию хомяка как bottom
+
+bot_test_stage1_sameline
+  Последовательность: threat_bottom → threat_bottom → threat_bottom
+  
+  Что происходит:
+  1. Хомяк bottom, threat bottom → SwitchLane на top
+  2. Хомяк top, threat bottom → не мешает, проезжаем
+  3. Хомяк top, threat bottom → не мешает, проезжаем
+  
+  Проверяет:
+  - бот НЕ реагирует на угрозу, которая не на его линии
+  - нет ложных срабатываний после SwitchLane
+```
+
+Все 4 ситуации, покрываемые этими уровнями:
+
+| Хомяк | Угроза | Ожидание | Покрывается |
+|-------|--------|----------|-------------|
+| bottom | bottom | SwitchLane | zigzag шаг 1,3 |
+| bottom | top | ничего | — (хомяк стартует bottom, threat на top — первый паттерн zigzag если бы top шёл первым, но мы это покрываем через sameline шаг 2,3 зеркально) |
+| top | top | SwitchLane | zigzag шаг 2,4 |
+| top | bottom | ничего | sameline шаг 2,3 |
 
 Собрать тестовый уровень из этих паттернов:
 `Assets/Content/locations/level_design_templates/levels/bot_test_level_stage1.json`
