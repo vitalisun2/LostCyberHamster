@@ -15,6 +15,8 @@ namespace Assets.Scripts.BotV2
     public class StepExecutor
     {
         private const float SwitchLaneLateCancelDistance = ActionGenerator.SwitchLaneLatestSafeDist;
+        private const float JumpOnRightToleranceRatio = 0.2f;
+        private const float JumpOnLateFallbackDistance = 0.5f;
 
         private readonly Hamster _hamster;
         private ChainStep _step;
@@ -120,6 +122,9 @@ namespace Assets.Scripts.BotV2
                     $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
                 return;
             }
+
+            if (ShouldDelayJumpOnTarget())
+                return;
 
             if (ShouldDelayJumpOver())
                 return;
@@ -238,6 +243,51 @@ namespace Assets.Scripts.BotV2
 
             BotLogger.Log(BotLogLevel.Verbose,
                 $"[EXECUTE] {_step.Action} delayed — overlap predicted, liveDist={liveDist:F2}\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                $"  step: {BotLogger.FormatStep(_step)}\n" +
+                $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
+            return true;
+        }
+
+        private bool ShouldDelayJumpOnTarget()
+        {
+            if (_step == null || _step.Action != BotAction.Jump)
+                return false;
+
+            var target = _step.TargetObstacle;
+            if (target.Category != ObjectCategory.Target)
+                return false;
+
+            if (target.Type != ObstacleTypeEnum.smallAlive)
+                return false;
+
+            var liveObstacle = FindLiveObstacle(target.StableId);
+            if (liveObstacle == null)
+                return false;
+
+            EnsureJumpWorldShiftCached();
+            if (_jumpWorldShift <= 0f)
+                return false;
+
+            float rightTolerance = _hamster.ColliderWidth * JumpOnRightToleranceRatio;
+            bool wouldLandOn = CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
+                _hamster.transform,
+                _jumpWorldShift,
+                liveObstacle,
+                rightTolerance);
+
+            if (wouldLandOn)
+                return false;
+
+            float liveDist = liveObstacle.transform.position.x
+                           - liveObstacle.ColliderWidth * 0.5f
+                           - _hamster.RightX;
+
+            if (liveDist <= JumpOnLateFallbackDistance)
+                return false;
+
+            BotLogger.Log(BotLogLevel.Verbose,
+                $"[EXECUTE] Jump delayed — waiting JumpOn window, liveDist={liveDist:F2}\n" +
                 $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
                 $"  step: {BotLogger.FormatStep(_step)}\n" +
                 $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
