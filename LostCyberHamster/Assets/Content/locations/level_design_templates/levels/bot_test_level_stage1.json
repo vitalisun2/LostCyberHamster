@@ -16,12 +16,7 @@
             "overrides": []
         },
         {
-            "ref": "bot_s1_threat_top",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s1_threat_bottom",
+            "ref": "relief",
             "spriteSeed": 0,
             "overrides": []
         },
@@ -41,7 +36,37 @@
             "overrides": []
         },
         {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s1_threat_top",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
             "ref": "bot_s1_threat_bottom",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s1_threat_bottom",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
             "spriteSeed": 0,
             "overrides": []
         },

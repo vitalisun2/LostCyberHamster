@@ -12,9 +12,6 @@ namespace Assets.Scripts.BotV2
         private const float SwitchLaneFireDist = 4.0f;
         private const float JumpFireDist       = 1.5f;
 
-        /// <summary>Зона впереди, где ищем угрозы при проверке безопасности другой линии.</summary>
-        private const float SafeZone = 3.0f;
-
         /// <summary>Примерное расстояние, на которое хомяк улетает при Jump.</summary>
         private const float JumpLandingOffset = 3.8f;
         private const float JumpLandingMargin = 1.2f;
@@ -77,7 +74,8 @@ namespace Assets.Scripts.BotV2
         }
 
         /// <summary>
-        /// Проверяет, нет ли угроз на линии checkBottom в зоне впереди хомяка.
+        /// Проверяет, нет ли угроз на целевой линии среди всех видимых объектов.
+        /// Спецификация: "другая линия безопасна (нет Threat в зоне видимости)".
         /// </summary>
         private static bool IsOtherLaneSafe(BotSceneSnapshot snapshot, bool checkOnBottom, int excludeId)
         {
@@ -91,8 +89,8 @@ namespace Assets.Scripts.BotV2
                 bool obsOnBottom = !obs.IsTopLane;
                 if (obsOnBottom != checkOnBottom) continue;
 
-                if (obs.DistanceToHamster < SafeZone)
-                    return false;
+                // Любая видимая угроза на целевой линии делает SwitchLane небезопасным
+                return false;
             }
             return true;
         }

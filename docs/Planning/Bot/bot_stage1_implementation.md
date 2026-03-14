@@ -100,10 +100,10 @@ Jump
 
 Для этапа 1 — два варианта действий на ближайшую угрозу на линии хомяка:
 
-* `SwitchLane` — если другая линия безопасна (нет Threat в зоне видимости)
+* `SwitchLane` — если другая линия безопасна (нет Threat **среди всех видимых объектов**, а не только в фиксированной зоне)
 * `Jump` — если тип перепрыгиваемый, есть ≥10 энергии, зона приземления (~3.8 юнитов) свободна
 
-Тайминг огня:
+Тайминг исполнения:
 * `SwitchLane`: `ExecuteAtDistance = 4.0`
 * `Jump`: `ExecuteAtDistance = 1.5`
 
@@ -124,11 +124,17 @@ Jump
 (= `Obstacle.GetInstanceID()`).
 
 Состояния шага:
-* `Ready` → проверяем дистанцию → огонь → `InProgress`
+* `Ready` → проверяем дистанцию → перепроверка безопасности → исполнение → `InProgress`
 * `InProgress` → ждём завершения действия → `Completed`
 
+**Перепроверка безопасности перед исполнением:**
+* `SwitchLane`: непосредственно перед исполнением проверяем, нет ли угроз
+  на целевой линии по живым данным из `ObstacleSpawner`. Если целевая линия
+  стала опасной — шаг отменяется (`WasCancelled = true`), оркестратор
+  перезапускает pipeline.
+
 Признаки завершения:
-* `SwitchLane`: `!IsShifting` спустя 0.1 с после огня
+* `SwitchLane`: `!IsShifting` спустя 0.1 с после исполнения
 * `Jump`: `HamsterState == Run`
 
 ---
@@ -224,16 +230,19 @@ bot_s1_threat_top  "угроза на верхней линии"
 
 **Тестовый уровень:** `Assets/Content/locations/level_design_templates/levels/bot_test_level_stage1.json`
 
+**Важно:** между каждым паттерном угрозы стоит `relief`-прокладка, чтобы гарантировать
+контракт этапа 1 (на экране не более одного объекта).
+
 Два сценария в одном уровне:
 
-`zigzag` — чередование угроз:
+`zigzag` — чередование угроз (с relief между каждым):
 ```
-bot_s1_threat_bottom → bot_s1_threat_top → bot_s1_threat_bottom → bot_s1_threat_top
+relief → bottom → relief → top → relief → bottom → relief → top
 ```
 
-`sameline` — угрозы на одной линии:
+`sameline` — угрозы на одной линии (с relief между каждым):
 ```
-bot_s1_threat_bottom → bot_s1_threat_bottom → bot_s1_threat_bottom
+relief → bottom → relief → bottom → relief → bottom → relief
 ```
 
 Покрываемые ситуации:

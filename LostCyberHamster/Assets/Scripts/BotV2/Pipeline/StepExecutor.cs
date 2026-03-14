@@ -1,3 +1,4 @@
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -16,6 +17,9 @@ namespace Assets.Scripts.BotV2
 
         private float _switchLaneExecTime;
 
+        /// <summary>Шаг был отменён из-за изменившейся обстановки. Оркестратор перепланирует.</summary>
+        public bool WasCancelled { get; private set; }
+
         public bool HasActiveStep => _step != null && _step.Status != ChainStepStatus.Completed;
 
         public StepExecutor(Hamster hamster)
@@ -26,6 +30,7 @@ namespace Assets.Scripts.BotV2
         public void SetStep(ChainStep step)
         {
             _step = step;
+            WasCancelled = false;
         }
 
         public void ClearStep()
@@ -65,6 +70,17 @@ namespace Assets.Scripts.BotV2
 
             // Финальная проверка состояния хомяка
             if (_hamster.HamsterState.Value != HamsterStateEnum.Run) return;
+
+            // Перепроверка безопасности SwitchLane перед исполнением:
+            // целевая линия могла стать опасной после планирования
+            if (_step.Action == BotAction.SwitchLane && !IsTargetLaneSafeNow())
+            {
+                _step.Status = ChainStepStatus.Completed;
+                WasCancelled = true;
+                BotLogger.Log(BotLogLevel.Normal,
+                    $"[EXECUTE] SwitchLane CANCELLED — target lane no longer safe, dist={dist:F2}");
+                return;
+            }
 
             Fire(dist);
         }
@@ -134,6 +150,45 @@ namespace Assets.Scripts.BotV2
 
             // Объект не найден (уже убран со сцены)
             return target.DistanceToHamster;
+        }
+
+        /// <summary>
+        /// Живая проверка: нет ли угроз на целевой линии (той, куда хомяк переключается).
+        /// Проверяет все видимые smallNotAliveRoad впереди хомяка на другой линии.
+        /// </summary>
+        private bool IsTargetLaneSafeNow()
+        {
+            var spawner = ObstacleSpawner.Instance;
+            if (spawner == null) return true;
+
+            bool hamsterOnBottom = _hamster.IsOnBottomLine.Value;
+            // Целевая линия — противоположная текущей
+            bool targetIsBottom = !hamsterOnBottom;
+
+            var spawned = spawner.SpawnedObstacles;
+            for (int i = 0; i < spawned.Count; i++)
+            {
+                var inst = spawned[i];
+                if (inst?.ObstacleScript == null) continue;
+                var obs = inst.ObstacleScript;
+
+                // Этап 1: только smallNotAliveRoad — угроза
+                if (obs.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.smallNotAliveRoad) continue;
+
+                // Проверяем линию объекта
+                bool obsOnBottom = !obs.ObstacleType.IsTop;
+                if (obsOnBottom != targetIsBottom) continue;
+
+                // Объект впереди хомяка?
+                float leftX = obs.transform.position.x - obs.ColliderWidth * 0.5f;
+                float dist = leftX - _hamster.RightX;
+                if (dist < -0.3f) continue; // позади — не опасен
+
+                // Угроза на целевой линии впереди — небезопасно
+                return false;
+            }
+
+            return true;
         }
     }
 }

@@ -109,11 +109,22 @@ namespace Assets.Scripts.BotV2
                 {
                     _executor.ClearStep();
                     _activeStep = null;
+                    // Если шаг был отменён (целевая линия стала опасной) — сразу перепланируем
                 }
                 else
                 {
                     _executor.TryExecute();
-                    return;
+                    // Проверяем, не отменил ли executor шаг прямо сейчас
+                    if (_executor.WasCancelled)
+                    {
+                        _executor.ClearStep();
+                        _activeStep = null;
+                        // Провалимся ниже в RunPipeline для перепланирования
+                    }
+                    else
+                    {
+                        return;
+                    }
                 }
             }
 
@@ -221,35 +232,61 @@ namespace Assets.Scripts.BotV2
                 ? "none"
                 : $"{step.Action} status={step.Status} executeAt={step.ExecuteAtDistance:F1}";
 
-            float threatDist = GetNearestThreatDist();
+            string hamsterLane = _hamster.IsOnBottomLine.Value ? "bottom" : "top";
+            string killerInfo = FindNearestThreatInfo();
 
             DebugManager.DiagLog(
                 $"[DAMAGE] ===\n" +
-                $"  hamster: lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")}" +
+                $"  hamster: lane={hamsterLane} state={_hamster.HamsterState.Value}" +
                 $" energy={_hamster.Energy.Value} lives={_hamster.Lives.Value}\n" +
                 $"  active step: {stepInfo}\n" +
-                $"  nearest threat dist: {threatDist:F2}\n" +
+                $"  killer (nearest same-lane threat): {killerInfo}\n" +
                 $"[DAMAGE] ===");
         }
 
-        private float GetNearestThreatDist()
+        private string FindNearestThreatInfo()
         {
             var spawner = Assets.Scripts.System.ObstacleSpawner.Instance;
-            if (spawner == null) return -1f;
+            if (spawner == null) return "spawner=null";
 
-            float minDist = float.MaxValue;
+            bool hamsterOnBottom = _hamster.IsOnBottomLine.Value;
+            float hamsterRightX = _hamster.RightX;
+
+            string nearestSameLane = "none";
+            float minDistSame = float.MaxValue;
+            string nearestAnyLane = "none";
+            float minDistAny = float.MaxValue;
+
             foreach (var inst in spawner.SpawnedObstacles)
             {
                 if (inst?.ObstacleScript == null) continue;
-                if (inst.ObstacleScript.ObstacleType.ObstacleTypeEnum !=
+                var obs = inst.ObstacleScript;
+                if (obs.ObstacleType.ObstacleTypeEnum !=
                     Assets.Scripts.Common.Models.ObstacleTypeEnum.smallNotAliveRoad) continue;
 
-                float leftX = inst.ObstacleScript.transform.position.x
-                            - inst.ObstacleScript.ColliderWidth * 0.5f;
-                float dist = leftX - _hamster.RightX;
-                if (dist < minDist) minDist = dist;
+                float leftX = obs.transform.position.x - obs.ColliderWidth * 0.5f;
+                float dist = leftX - hamsterRightX;
+                string lane = obs.ObstacleType.IsTop ? "top" : "bottom";
+                string info = $"{obs.ObstacleType.ObstacleTypeEnum} lane={lane} dist={dist:F2}";
+
+                if (Mathf.Abs(dist) < Mathf.Abs(minDistAny))
+                {
+                    minDistAny = dist;
+                    nearestAnyLane = info;
+                }
+
+                bool sameLane = (hamsterOnBottom && !obs.ObstacleType.IsTop) ||
+                                (!hamsterOnBottom && obs.ObstacleType.IsTop);
+                if (sameLane && Mathf.Abs(dist) < Mathf.Abs(minDistSame))
+                {
+                    minDistSame = dist;
+                    nearestSameLane = info;
+                }
             }
-            return minDist == float.MaxValue ? -1f : minDist;
+
+            return nearestSameLane != "none"
+                ? nearestSameLane
+                : $"no same-lane threat, nearest any: {nearestAnyLane}";
         }
 
         // ──────── Verbose logging ────────
