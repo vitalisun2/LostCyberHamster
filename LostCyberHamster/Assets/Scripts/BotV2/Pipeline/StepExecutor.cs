@@ -1,4 +1,6 @@
+using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -12,10 +14,16 @@ namespace Assets.Scripts.BotV2
     /// </summary>
     public class StepExecutor
     {
+        private const float SwitchLaneLateCancelDistance = 1.5f;
+
         private readonly Hamster _hamster;
         private ChainStep _step;
 
         private float _switchLaneExecTime;
+        private float _jumpWorldShift = -1f;
+        private float _stepStartedAt = -1f;
+        private float _nextStallLogAt = -1f;
+        private float _nextSwitchLaneUnsafeLogAt = -1f;
 
         /// <summary>Шаг был отменён из-за изменившейся обстановки. Оркестратор перепланирует.</summary>
         public bool WasCancelled { get; private set; }
@@ -31,11 +39,17 @@ namespace Assets.Scripts.BotV2
         {
             _step = step;
             WasCancelled = false;
+            _stepStartedAt = -1f;
+            _nextStallLogAt = -1f;
+            _nextSwitchLaneUnsafeLogAt = -1f;
         }
 
         public void ClearStep()
         {
             _step = null;
+            _stepStartedAt = -1f;
+            _nextStallLogAt = -1f;
+            _nextSwitchLaneUnsafeLogAt = -1f;
         }
 
         /// <summary>
@@ -49,6 +63,7 @@ namespace Assets.Scripts.BotV2
             // InProgress: ждём завершения действия
             if (_step.Status == ChainStepStatus.InProgress)
             {
+                LogIfActionLooksStuck();
                 CheckCompletion();
                 return;
             }
@@ -61,7 +76,10 @@ namespace Assets.Scripts.BotV2
             {
                 _step.Status = ChainStepStatus.Completed;
                 BotLogger.Log(BotLogLevel.Normal,
-                    $"[EXECUTE] {_step.Action} SKIPPED (too late) dist={dist:F2}");
+                    $"[EXECUTE] {_step.Action} SKIPPED (too late) dist={dist:F2}\n" +
+                    $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                    $"  step: {BotLogger.FormatStep(_step)}\n" +
+                    $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
                 return;
             }
 
@@ -72,15 +90,39 @@ namespace Assets.Scripts.BotV2
             if (_hamster.HamsterState.Value != HamsterStateEnum.Run) return;
 
             // Перепроверка безопасности SwitchLane перед исполнением:
-            // целевая линия могла стать опасной после планирования
-            if (_step.Action == BotAction.SwitchLane && !IsTargetLaneSafeNow())
+            // отменяем только если live-данные показывают столкновение во время смещения
+            // или в момент завершения lane switch.
+            if (_step.Action == BotAction.SwitchLane && !IsSwitchLaneImmediatelySafeNow())
             {
+                if (dist > SwitchLaneLateCancelDistance)
+                {
+                    if (_nextSwitchLaneUnsafeLogAt < 0f || Time.time >= _nextSwitchLaneUnsafeLogAt)
+                    {
+                        _nextSwitchLaneUnsafeLogAt = Time.time + 0.5f;
+                        BotLogger.Log(BotLogLevel.Verbose,
+                            $"[EXECUTE] SwitchLane WAIT — target lane still unsafe, dist={dist:F2}\n" +
+                            $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                            $"  step: {BotLogger.FormatStep(_step)}\n" +
+                            $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
+                    }
+                    return;
+                }
+
                 _step.Status = ChainStepStatus.Completed;
                 WasCancelled = true;
+                _stepStartedAt = -1f;
+                _nextStallLogAt = -1f;
+                _nextSwitchLaneUnsafeLogAt = -1f;
                 BotLogger.Log(BotLogLevel.Normal,
-                    $"[EXECUTE] SwitchLane CANCELLED — target lane no longer safe, dist={dist:F2}");
+                    $"[EXECUTE] SwitchLane CANCELLED — still unsafe near deadline, dist={dist:F2}\n" +
+                    $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                    $"  step: {BotLogger.FormatStep(_step)}\n" +
+                    $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
                 return;
             }
+
+            if (ShouldDelayJumpOver())
+                return;
 
             Fire(dist);
         }
@@ -94,7 +136,10 @@ namespace Assets.Scripts.BotV2
                 {
                     _step.Status = ChainStepStatus.Completed;
                     BotLogger.Log(BotLogLevel.Normal,
-                        $"[RESULT] SwitchLane completed → lane={(  _hamster.IsOnBottomLine.Value ? "bottom" : "top")} lives={_hamster.Lives.Value}");
+                        $"[RESULT] SwitchLane completed\n" +
+                        $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                        $"  step: {BotLogger.FormatStep(_step)}\n" +
+                        $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
                 }
             }
             else
@@ -104,7 +149,10 @@ namespace Assets.Scripts.BotV2
                 {
                     _step.Status = ChainStepStatus.Completed;
                     BotLogger.Log(BotLogLevel.Normal,
-                        $"[RESULT] {_step.Action} completed → lane={(  _hamster.IsOnBottomLine.Value ? "bottom" : "top")} lives={_hamster.Lives.Value}");
+                        $"[RESULT] {_step.Action} completed\n" +
+                        $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                        $"  step: {BotLogger.FormatStep(_step)}\n" +
+                        $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
                 }
             }
         }
@@ -120,11 +168,19 @@ namespace Assets.Scripts.BotV2
                 case BotAction.Jump:
                     _hamster.JumpRequest.Invoke();
                     break;
+                case BotAction.SuperJump:
+                    _hamster.SuperJumpRequest.Invoke();
+                    break;
             }
 
             _step.Status = ChainStepStatus.InProgress;
+            _stepStartedAt = Time.time;
+            _nextStallLogAt = Time.time + GetStallThreshold(_step.Action);
             BotLogger.Log(BotLogLevel.Normal,
-                $"[EXECUTE] {_step.Action}: liveDist={liveDist:F2} → FIRE");
+                $"[EXECUTE] {_step.Action}: liveDist={liveDist:F2} → FIRE\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                $"  step: {BotLogger.FormatStep(_step)}\n" +
+                $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
         }
 
         /// <summary>
@@ -133,18 +189,11 @@ namespace Assets.Scripts.BotV2
         /// </summary>
         private float GetLiveDistance(ObstacleInfo target)
         {
-            var spawner = ObstacleSpawner.Instance;
-            if (spawner == null) return target.DistanceToHamster;
-
-            var spawned = spawner.SpawnedObstacles;
-            for (int i = 0; i < spawned.Count; i++)
+            var liveObstacle = FindLiveObstacle(target.StableId);
+            if (liveObstacle != null)
             {
-                var inst = spawned[i];
-                if (inst?.ObstacleScript == null) continue;
-                if (inst.ObstacleScript.GetInstanceID() != target.StableId) continue;
-
-                float leftX = inst.ObstacleScript.transform.position.x
-                            - inst.ObstacleScript.ColliderWidth * 0.5f;
+                float leftX = liveObstacle.transform.position.x
+                            - liveObstacle.ColliderWidth * 0.5f;
                 return leftX - _hamster.RightX;
             }
 
@@ -152,43 +201,119 @@ namespace Assets.Scripts.BotV2
             return target.DistanceToHamster;
         }
 
-        /// <summary>
-        /// Живая проверка: нет ли угроз на целевой линии (той, куда хомяк переключается).
-        /// Проверяет все видимые smallNotAliveRoad впереди хомяка на другой линии.
-        /// </summary>
-        private bool IsTargetLaneSafeNow()
+        private bool ShouldDelayJumpOver()
+        {
+            if (_step == null || (_step.Action != BotAction.Jump && _step.Action != BotAction.SuperJump))
+                return false;
+
+            var type = _step.TargetObstacle.Type;
+            if (type != ObstacleTypeEnum.smallNotAliveRoad &&
+                type != ObstacleTypeEnum.smallNotAliveRoadAndRoof &&
+                type != ObstacleTypeEnum.smallAlive)
+                return false;
+
+            var liveObstacle = FindLiveObstacle(_step.TargetObstacle.StableId);
+            if (liveObstacle == null)
+                return false;
+
+            EnsureJumpWorldShiftCached();
+            if (_jumpWorldShift <= 0f)
+                return false;
+
+            bool wouldOverlap = CollisionUtils.IsOverlapAtShift(
+                _hamster.transform,
+                _hamster.ColliderWidth,
+                _jumpWorldShift,
+                liveObstacle);
+
+            if (!wouldOverlap)
+                return false;
+
+            float liveDist = liveObstacle.transform.position.x
+                           - liveObstacle.ColliderWidth * 0.5f
+                           - _hamster.RightX;
+
+            if (liveDist <= 0.1f)
+                return false;
+
+            BotLogger.Log(BotLogLevel.Verbose,
+                $"[EXECUTE] {_step.Action} delayed — overlap predicted, liveDist={liveDist:F2}\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                $"  step: {BotLogger.FormatStep(_step)}\n" +
+                $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
+            return true;
+        }
+
+        private void EnsureJumpWorldShiftCached()
+        {
+            if (_jumpWorldShift >= 0f)
+                return;
+
+            var ctrl = _hamster.GetComponentInChildren<TransformAnimatorController>();
+            if (ctrl == null)
+                return;
+
+            _jumpWorldShift = HelpMethods.GetWorldShiftForClip(ctrl, "transform_jump");
+        }
+
+        private static Obstacle FindLiveObstacle(int stableId)
         {
             var spawner = ObstacleSpawner.Instance;
-            if (spawner == null) return true;
-
-            bool hamsterOnBottom = _hamster.IsOnBottomLine.Value;
-            // Целевая линия — противоположная текущей
-            bool targetIsBottom = !hamsterOnBottom;
+            if (spawner == null)
+                return null;
 
             var spawned = spawner.SpawnedObstacles;
             for (int i = 0; i < spawned.Count; i++)
             {
                 var inst = spawned[i];
-                if (inst?.ObstacleScript == null) continue;
-                var obs = inst.ObstacleScript;
+                if (inst?.ObstacleScript == null)
+                    continue;
 
-                // Этап 1: только smallNotAliveRoad — угроза
-                if (obs.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.smallNotAliveRoad) continue;
-
-                // Проверяем линию объекта
-                bool obsOnBottom = !obs.ObstacleType.IsTop;
-                if (obsOnBottom != targetIsBottom) continue;
-
-                // Объект впереди хомяка?
-                float leftX = obs.transform.position.x - obs.ColliderWidth * 0.5f;
-                float dist = leftX - _hamster.RightX;
-                if (dist < -0.3f) continue; // позади — не опасен
-
-                // Угроза на целевой линии впереди — небезопасно
-                return false;
+                if (inst.ObstacleScript.GetInstanceID() == stableId)
+                    return inst.ObstacleScript;
             }
 
-            return true;
+            return null;
+        }
+
+        /// <summary>
+        /// Живая проверка immediate safety для SwitchLane.
+        /// Возвращает false только если сам манёвр приведёт к столкновению во время shift
+        /// или ровно в момент его завершения.
+        /// </summary>
+        private bool IsSwitchLaneImmediatelySafeNow()
+        {
+            return SwitchLaneSafety.IsImmediatelySafe(_hamster, _step?.TargetObstacle.StableId ?? 0);
+        }
+
+        private void LogIfActionLooksStuck()
+        {
+            if (_step == null || _stepStartedAt < 0f || Time.time < _nextStallLogAt)
+                return;
+
+            float elapsed = Time.time - _stepStartedAt;
+            _nextStallLogAt = Time.time + 1f;
+
+            BotLogger.Log(BotLogLevel.Normal,
+                $"[STALL] {_step.Action} still in progress after {elapsed:F2}s\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                $"  step: {BotLogger.FormatStep(_step)}\n" +
+                $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
+        }
+
+        private static float GetStallThreshold(BotAction action)
+        {
+            switch (action)
+            {
+                case BotAction.SwitchLane:
+                    return 0.6f;
+                case BotAction.Jump:
+                    return 2f;
+                case BotAction.SuperJump:
+                    return 2.5f;
+                default:
+                    return 2f;
+            }
         }
     }
 }

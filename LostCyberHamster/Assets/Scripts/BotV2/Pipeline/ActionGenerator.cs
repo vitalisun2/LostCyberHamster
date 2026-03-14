@@ -11,13 +11,11 @@ namespace Assets.Scripts.BotV2
     public class ActionGenerator
     {
         private const float SwitchLaneFireDist = 4.0f;
-        private const float SwitchLaneMinSafeDist = 2.4f;
+        private const float SwitchLaneMinSafeDist = 1.5f;
         private const float JumpFireDist       = 1.5f;
         private const float SuperJumpFireDist  = 1.5f;
         private const int JumpEnergyCost       = 10;
         private const int SuperJumpEnergyCost  = 20;
-        private const float LaneSwitchDuration = 0.3f;
-        private const float LaneSwitchTravel = LaneSwitchDuration * Assets.Scripts.Consts.GameSpeedBase;
 
         /// <summary>Примерное расстояние, на которое хомяк улетает при Jump.</summary>
         private const float JumpLandingOffset = 3.8f;
@@ -191,9 +189,11 @@ namespace Assets.Scripts.BotV2
                 if (projectedRightX < hamsterLeftX)
                     continue;
 
-                float sweptLeftX = projectedLeftX - LaneSwitchTravel;
-                float sweptRightX = projectedRightX;
-                if (CollisionUtils.IsOverlap(hamsterLeftX, hamsterRightX, sweptLeftX, sweptRightX))
+                if (SwitchLaneSafety.WouldHitDuringTargetLanePhase(
+                    hamsterLeftX,
+                    hamsterRightX,
+                    projectedLeftX,
+                    projectedRightX))
                     return false;
             }
 
