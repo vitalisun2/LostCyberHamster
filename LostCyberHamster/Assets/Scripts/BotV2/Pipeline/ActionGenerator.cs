@@ -11,7 +11,7 @@ namespace Assets.Scripts.BotV2
     public class ActionGenerator
     {
         private const float SwitchLaneFireDist = 4.0f;
-        private const float SwitchLaneMinSafeDist = 1.5f;
+        internal const float SwitchLaneLatestSafeDist = 1.5f;
         private const float JumpFireDist       = 1.5f;
         private const float SuperJumpFireDist  = 1.5f;
         private const int JumpEnergyCost       = 10;
@@ -140,10 +140,10 @@ namespace Assets.Scripts.BotV2
             }
 
             float delayedFireDist = SwitchLaneFireDist - requiredDelayDistance;
-            executeAtDistance = Clamp(delayedFireDist, SwitchLaneMinSafeDist, SwitchLaneFireDist);
+            executeAtDistance = Clamp(delayedFireDist, SwitchLaneLatestSafeDist, SwitchLaneFireDist);
 
             // Если угроза уже слишком близко, SwitchLane как стратегия уже не надёжен.
-            if (threat.DistanceToHamster < SwitchLaneMinSafeDist)
+            if (threat.DistanceToHamster < SwitchLaneLatestSafeDist)
                 return false;
 
             // Не откладываем дальше текущей дистанции до угрозы, чтобы шаг мог исполниться сразу.

@@ -14,7 +14,7 @@ namespace Assets.Scripts.BotV2
     /// </summary>
     public class StepExecutor
     {
-        private const float SwitchLaneLateCancelDistance = 1.5f;
+        private const float SwitchLaneLateCancelDistance = ActionGenerator.SwitchLaneLatestSafeDist;
 
         private readonly Hamster _hamster;
         private ChainStep _step;
