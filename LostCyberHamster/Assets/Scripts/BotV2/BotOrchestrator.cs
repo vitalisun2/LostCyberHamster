@@ -16,7 +16,7 @@ namespace Assets.Scripts.BotV2
     public class BotOrchestrator : MonoBehaviour
     {
         [Title("BotV2 Settings")]
-        [SerializeField] private bool _enabledOnStart;
+        [SerializeField] private bool _enabledOnStart = true;
 
         [SerializeField, Range(5f, 30f)]
         [Tooltip("Дальность сканирования (мировых единиц)")]
@@ -49,7 +49,27 @@ namespace Assets.Scripts.BotV2
 
         private void Start()
         {
-            if (_enabledOnStart) TryInit();
+            if (!BotV2Bootstrap.UseBotV2AsPrimary)
+            {
+                enabled = false;
+                return;
+            }
+
+            if (_enabledOnStart)
+                EnableAsPrimary();
+        }
+
+        /// <summary>
+        /// Включает BotV2 в режиме основного бота.
+        /// Вызывается bootstrap-инициализацией после загрузки сцены.
+        /// </summary>
+        public void EnableAsPrimary()
+        {
+            enabled = true;
+            IsEnabled = true;
+
+            if (!_initialized)
+                TryInit();
         }
 
         private void Update()

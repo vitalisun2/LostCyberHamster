@@ -256,6 +256,17 @@ bot_s1_threat_bottom → bot_s1_threat_bottom → bot_s1_threat_bottom
 
 ---
 
+## Подключение как основной бот
+
+Чтобы результат этапа 1 был сразу рабочим в игре:
+
+1. `BotV2Bootstrap` автоматически подключает `BotOrchestrator` после загрузки сцены.
+2. Legacy `HamsterBot` отключается при старте, если `BotV2PrimaryEnabled = 1`.
+3. По умолчанию `BotV2PrimaryEnabled = 1`, то есть основной бот — BotV2.
+4. Для временного возврата к legacy можно выставить `PlayerPrefs["BotV2PrimaryEnabled"] = 0`.
+
+---
+
 ## Правила отладки
 
 ### Принцип изоляции

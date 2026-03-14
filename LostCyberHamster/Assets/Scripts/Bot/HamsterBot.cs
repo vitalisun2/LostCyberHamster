@@ -8,6 +8,7 @@ using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
+using Assets.Scripts.BotV2;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -92,6 +93,14 @@ namespace Assets.Scripts.Bot
 
         private void Start()
         {
+            if (BotV2Bootstrap.UseBotV2AsPrimary)
+            {
+                enabled = false;
+                IsEnabled = false;
+                DebugManager.DiagLog("[HamsterBot] Disabled: BotV2 is primary.");
+                return;
+            }
+
             SceneManager.sceneLoaded += OnSceneLoaded;
 
             if (_enabledOnStart || PlayerPrefs.GetInt("BotAutoStart", 0) == 1)

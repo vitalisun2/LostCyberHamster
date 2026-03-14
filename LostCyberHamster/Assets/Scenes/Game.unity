@@ -696,6 +696,7 @@ GameObject:
   - component: {fileID: 1858864217}
   - component: {fileID: 1858864216}
   - component: {fileID: 1858864215}
+  - component: {fileID: 1858864218}
   m_Layer: 0
   m_Name: '[HamsterBot]'
   m_TagString: Untagged
@@ -710,7 +711,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1858864214}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 71ca0fb134e53de418c6a0a6f593dfa5, type: 3}
   m_Name: 
@@ -722,7 +723,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1858864214}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 00f60a3f0aa3fb54da68538ece455bbc, type: 3}
   m_Name: 
@@ -735,6 +736,21 @@ MonoBehaviour:
   _autoRestartOnDeath: 1
   _autoNextOnWin: 1
   _autoActionDelay: 2
+--- !u!114 &1858864218
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1858864214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35b65b83e3f968047a61f06fd253c3cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.BotV2.BotOrchestrator
+  _enabledOnStart: 1
+  _scanRange: 15
+  LogLevel: 0
 --- !u!4 &1858864217
 Transform:
   m_ObjectHideFlags: 0
