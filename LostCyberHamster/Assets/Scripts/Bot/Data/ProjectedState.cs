@@ -17,6 +17,8 @@ namespace Assets.Scripts.Bot
         /// <summary>Примерная X-позиция правого края хомяка после проекции.</summary>
         public float ApproxX;
 
+        public float HamsterWidth;
+
         public int Energy;
         public int UltaCharge;
 
@@ -33,6 +35,7 @@ namespace Assets.Scripts.Bot
                 OnBottom    = snapshot.HamsterOnBottom,
                 OnRoof      = snapshot.HamsterOnRoof,
                 ApproxX     = snapshot.HamsterRightX,
+                HamsterWidth = snapshot.HamsterWidth,
                 Energy      = snapshot.Energy,
                 UltaCharge  = snapshot.UltaCharge,
                 RemainingObjects = new List<ObstacleInfo>(snapshot.VisibleObjects)
@@ -49,6 +52,7 @@ namespace Assets.Scripts.Bot
                 OnBottom         = OnBottom,
                 OnRoof           = OnRoof,
                 ApproxX          = ApproxX,
+                HamsterWidth     = HamsterWidth,
                 Energy           = Energy,
                 UltaCharge       = UltaCharge,
                 RemainingObjects = new List<ObstacleInfo>(RemainingObjects)

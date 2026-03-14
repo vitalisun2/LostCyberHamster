@@ -122,6 +122,11 @@ namespace Assets.Scripts.Bot
 
         private void Update()
         {
+            if (!_initialized && PlayerPrefs.GetInt("BotAutoStart", 0) == 1)
+            {
+                TryInitAndEnable(suppressLog: true);
+            }
+
             if (!IsEnabled || !_initialized || _hamster == null) return;
 
             // Ждём, пока игра реально запустится (после интро)
@@ -402,14 +407,15 @@ namespace Assets.Scripts.Bot
 
         // ──────────────── Init / Enable / Disable ────────────────
 
-        private void TryInitAndEnable()
+        private void TryInitAndEnable(bool suppressLog = false)
         {
             if (!_initialized)
             {
                 _hamster = FindObjectOfType<Hamster>();
                 if (_hamster == null)
                 {
-                    Debug.LogWarning("[HamsterBot] Hamster not found in scene. Bot disabled.");
+                    if (!suppressLog) 
+                        Debug.LogWarning("[HamsterBot] Hamster not found in scene. Bot disabled.");
                     return;
                 }
 

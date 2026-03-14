@@ -4,38 +4,33 @@ using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using UnityEngine;
-using Vues.GameCore;
 
-namespace Assets.Scripts.Bot
+namespace Assets.Scripts.BotV2
 {
     /// <summary>
-    /// Единственный компонент бота с прямым доступом к Unity-объектам.
-    /// Строит снимок состояния сцены (BotSceneSnapshot) по запросу HamsterBot'а.
-    /// Все остальные компоненты пайплайна работают только со snapshot-данными.
+    /// Единственный компонент BotV2 с прямым доступом к Unity-объектам.
+    /// Читает Hamster и ObstacleSpawner, строит BotSceneSnapshot.
+    /// Все остальные компоненты pipeline работают только со snapshot-данными.
     /// </summary>
     public class SnapshotBuilder
     {
         private const float ScanBehindMargin = 1.0f;
 
         /// <summary>
-        /// Читает состояние хомяка и сцены, строит и возвращает BotSceneSnapshot.
-        /// ObstacleInfo создаются с Category = Neutral — классификация выполняется отдельно.
+        /// Строит снимок состояния сцены.
+        /// ObstacleInfo создаются с Category = Neutral — классификация выполняется ObjectClassifier'ом.
         /// </summary>
         public BotSceneSnapshot Build(Hamster hamster, float scanRange)
         {
             var snapshot = new BotSceneSnapshot();
-
             snapshot.HamsterOnBottom = hamster.IsOnBottomLine.Value;
             snapshot.HamsterOnRoof   = IsRoofState(hamster.HamsterState.Value);
             snapshot.HamsterRightX   = hamster.RightX;
-            snapshot.HamsterWidth    = hamster.ColliderWidth;
             snapshot.Energy          = hamster.Energy.Value;
             snapshot.Lives           = hamster.Lives.Value;
-            snapshot.UltaCharge      = hamster.UltaChargeAmount.Value;
-            snapshot.Coins           = ResourceManager.GetCurrentBalance(ResourceType.Coins);
+            snapshot.SnapshotTime    = Time.time;
 
             ScanObstacles(hamster, scanRange, snapshot);
-
             return snapshot;
         }
 
@@ -44,14 +39,11 @@ namespace Assets.Scripts.Bot
             var spawner = ObstacleSpawner.Instance;
             if (spawner == null) return;
 
-            var spawned = spawner.SpawnedObstacles;
             float hamsterRightX = hamster.RightX;
-            float hamsterLeftX  = hamster.LeftX;
             float maxX = hamsterRightX + scanRange;
-            float minX = hamsterLeftX  - ScanBehindMargin;
+            float minX = hamster.LeftX - ScanBehindMargin;
 
-            var list = snapshot.VisibleObjects;
-
+            var spawned = spawner.SpawnedObstacles;
             for (int i = 0; i < spawned.Count; i++)
             {
                 var inst = spawned[i];
@@ -65,24 +57,18 @@ namespace Assets.Scripts.Bot
 
                 if (rightX < minX || leftX > maxX) continue;
 
-                var typeEnum  = obs.ObstacleType.ObstacleTypeEnum;
-                bool isTopLane = obs.ObstacleType.IsTop;
-                bool isOnRoof  = IsOnRoof(pos.y, isTopLane);
+                float dist = leftX - hamsterRightX;
 
-                float distance    = leftX - hamsterRightX;
-                float timeToReach = distance > 0 ? distance / Consts.GameSpeedBase : 0f;
-
-                // Category = Neutral: классификация — задача ObjectClassifier (Этап 3)
-                list.Add(new ObstacleInfo(
-                    typeEnum, leftX, rightX, pos.x,
-                    isTopLane, isOnRoof,
-                    distance, timeToReach,
+                snapshot.VisibleObjects.Add(new ObstacleInfo(
+                    obs.ObstacleType.ObstacleTypeEnum,
+                    obs.ObstacleType.IsTop,
+                    leftX, rightX, pos.x,
+                    dist,
                     ObjectCategory.Neutral,
-                    obs,
-                    stableId: obs.GetInstanceID()));
+                    obs.GetInstanceID()));
             }
 
-            list.Sort((a, b) => a.LeftX.CompareTo(b.LeftX));
+            snapshot.VisibleObjects.Sort((a, b) => a.LeftX.CompareTo(b.LeftX));
         }
 
         private static bool IsRoofState(HamsterStateEnum state)
@@ -92,12 +78,6 @@ namespace Assets.Scripts.Bot
                 || state == HamsterStateEnum.RoofJumpDamage
                 || state == HamsterStateEnum.SuperRoofJump
                 || state == HamsterStateEnum.SuperRoofJumpDamage;
-        }
-
-        private static bool IsOnRoof(float yPos, bool isTopLane)
-        {
-            float roofY = isTopLane ? Consts.ObstacleRoofY0Pos : Consts.ObstacleRoofY1Pos;
-            return Mathf.Abs(yPos - roofY) < Consts.ObstacleLineTolerance;
         }
     }
 }

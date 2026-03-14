@@ -1,0 +1,59 @@
+{
+    "skyTexture": "",
+    "background2Texture": "bg_2_new_york_morning",
+    "backgroundTexture": "bg_new_york_morning",
+    "roadTexture": "",
+    "location": "01_New_York",
+    "patternSequence": [
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s1_threat_bottom",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s1_threat_top",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s1_threat_bottom",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s1_threat_top",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s1_threat_bottom",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s1_threat_bottom",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s1_threat_bottom",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        }
+    ]
+}

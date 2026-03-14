@@ -35,6 +35,7 @@ namespace Assets.Tests.EditMode.Bot
             return new ProjectedState
             {
                 ApproxX          = x,
+                HamsterWidth     = 1.4f,
                 OnBottom         = onBottom,
                 OnRoof           = onRoof,
                 Energy           = energy,

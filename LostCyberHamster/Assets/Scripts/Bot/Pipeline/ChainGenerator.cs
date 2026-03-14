@@ -429,12 +429,15 @@ namespace Assets.Scripts.Bot
         {
             foreach (var obs in postState.RemainingObjects)
             {
-                  if (obs.Category != ObjectCategory.Threat && obs.Category != ObjectCategory.Target) continue;
-                // Jumpable threats: only block immediate landing zone (chain will handle them)
-                // Unjumpable threats: extended buffer — no follow-up can save us
-                float aheadBuffer = IsJumpableType(obs.Type) ? 0.3f : SafeMargin;
+                if (obs.Category != ObjectCategory.Threat && obs.Category != ObjectCategory.Target) continue;
+                if (!IsOnSameLane(obs, postState)) continue;
 
-                if (obs.RightX >= preStepX - 0.3f && obs.LeftX <= postState.ApproxX + aheadBuffer)
+                // Any obstacle on the destination lane must give us enough room to land AND safely execute the next action (like jump).
+                // We consider the entire horizontal sweep of the hamster during the switch, plus the SafeMargin after landing.
+                float minSweepX = preStepX - postState.HamsterWidth;
+                float maxSweepX = postState.ApproxX + SafeMargin;
+
+                if (Assets.Scripts.Common.CollisionUtils.IsOverlap(minSweepX, maxSweepX, obs.LeftX, obs.RightX))
                     return false;
             }
             return true;

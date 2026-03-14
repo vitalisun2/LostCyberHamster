@@ -21,6 +21,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - levels
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f1e8b8901fb183e47be311bb218c836a
+    m_Address: bot_test_level_stage1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
   m_SchemaSet:

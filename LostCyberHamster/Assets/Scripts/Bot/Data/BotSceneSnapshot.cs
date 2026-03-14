@@ -17,6 +17,8 @@ namespace Assets.Scripts.Bot
         /// <summary>Правый край хомяка в мировых координатах (для расчёта расстояний).</summary>
         public float HamsterRightX;
 
+        public float HamsterWidth;
+
         public int Energy;
         public int Lives;
         public int UltaCharge;

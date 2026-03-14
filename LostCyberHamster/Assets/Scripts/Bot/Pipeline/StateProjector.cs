@@ -213,8 +213,12 @@ namespace Assets.Scripts.Bot
         /// Проверяет, нет ли Threat непосредственно по траектории хомяка
         /// в проецируемом состоянии. Учитывает иммунные зоны.
         /// </summary>
-        public bool IsSafeAfterProjection(ProjectedState state, float checkRadius = 0.5f)
+        public bool IsSafeAfterProjection(ProjectedState state)
         {
+            // ApproxX - это правый край хомяка (Hamster.RightX) в конечной точке
+            float rightBound = state.ApproxX;
+            float leftBound = state.ApproxX - state.HamsterWidth;
+
             foreach (var obs in state.RemainingObjects)
             {
                   if (obs.Category != ObjectCategory.Threat && obs.Category != ObjectCategory.Target) continue;
@@ -222,9 +226,8 @@ namespace Assets.Scripts.Bot
                 // Объект на той же линии?
                 if (!IsOnSameLane(obs, state)) continue;
 
-                // Объект в проверяемой зоне вокруг ApproxX?
-                if (obs.LeftX <= state.ApproxX + checkRadius &&
-                    obs.RightX >= state.ApproxX - checkRadius)
+                // Пересечение баундинг-боксов
+                if (Assets.Scripts.Common.CollisionUtils.IsOverlap(leftBound, rightBound, obs.LeftX, obs.RightX))
                     return false;
             }
             return true;
