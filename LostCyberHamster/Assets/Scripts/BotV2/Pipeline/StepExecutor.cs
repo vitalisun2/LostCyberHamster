@@ -16,7 +16,7 @@ namespace Assets.Scripts.BotV2
     {
         private const float SwitchLaneLateCancelDistance = ActionGenerator.SwitchLaneLatestSafeDist;
         private const float JumpOnRightToleranceRatio = 0.2f;
-        private const float JumpOnLateFallbackDistance = 0.5f;
+        private const float JumpOnLateFallbackDistance = 0.1f;
 
         private readonly Hamster _hamster;
         private ChainStep _step;
@@ -209,6 +209,9 @@ namespace Assets.Scripts.BotV2
         private bool ShouldDelayJumpOver()
         {
             if (_step == null || (_step.Action != BotAction.Jump && _step.Action != BotAction.SuperJump))
+                return false;
+
+            if (_step.TargetObstacle.Category == ObjectCategory.Target)
                 return false;
 
             var type = _step.TargetObstacle.Type;
