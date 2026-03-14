@@ -4,6 +4,9 @@ using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
 using Sirenix.OdinInspector;
 using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace Assets.Scripts.BotV2
 {
@@ -74,7 +77,7 @@ namespace Assets.Scripts.BotV2
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F1)) Toggle();
+            if (IsTogglePressed()) Toggle();
 
             if (!IsEnabled || !_initialized) return;
             if (_gameManager == null || _gameManager.State != GameState.PLAYING) return;
@@ -102,6 +105,17 @@ namespace Assets.Scripts.BotV2
 
             RunPipeline();
         }
+
+            private static bool IsTogglePressed()
+            {
+        #if ENABLE_INPUT_SYSTEM
+                return Keyboard.current != null && Keyboard.current.f1Key.wasPressedThisFrame;
+        #elif ENABLE_LEGACY_INPUT_MANAGER
+                return Input.GetKeyDown(KeyCode.F1);
+        #else
+                return false;
+        #endif
+            }
 
         // ──────── Pipeline ────────
 
