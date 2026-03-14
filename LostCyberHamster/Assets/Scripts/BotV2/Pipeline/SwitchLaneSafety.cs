@@ -16,15 +16,18 @@ namespace Assets.Scripts.BotV2
     {
         private const float LaneSwitchDuration = 0.3f;
         private const float LaneSwitchTravel = LaneSwitchDuration * Assets.Scripts.Consts.GameSpeedBase;
+        private const float LaneSwitchSafetyPadding = 0.15f;
 
         public static bool IsImmediatelySafe(BotSceneSnapshot snapshot, int excludeStableId = 0)
         {
             float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
+            bool sourceIsBottom = snapshot.HamsterOnBottom;
             bool targetIsBottom = !snapshot.HamsterOnBottom;
 
             return IsImmediatelySafe(
                 hamsterLeftX,
                 snapshot.HamsterRightX,
+                sourceIsBottom,
                 targetIsBottom,
                 snapshot.VisibleObjects,
                 excludeStableId);
@@ -38,6 +41,7 @@ namespace Assets.Scripts.BotV2
 
             float hamsterLeftX = hamster.LeftX;
             float hamsterRightX = hamster.RightX;
+            bool sourceIsBottom = hamster.IsOnBottomLine.Value;
             bool targetIsBottom = !hamster.IsOnBottomLine.Value;
 
             var spawned = spawner.SpawnedObstacles;
@@ -55,7 +59,7 @@ namespace Assets.Scripts.BotV2
                     continue;
 
                 bool obstacleOnBottom = !obstacle.ObstacleType.IsTop;
-                if (obstacleOnBottom != targetIsBottom)
+                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
                     continue;
 
                 float leftX = obstacle.transform.position.x - obstacle.ColliderWidth * 0.5f;
@@ -63,7 +67,12 @@ namespace Assets.Scripts.BotV2
                 if (rightX < hamsterLeftX)
                     continue;
 
-                if (WouldHitDuringTargetLanePhase(hamsterLeftX, hamsterRightX, leftX, rightX))
+                if (obstacleOnBottom == sourceIsBottom &&
+                    WouldHitDuringSourceLanePhase(hamsterLeftX, hamsterRightX, leftX, rightX))
+                    return false;
+
+                if (obstacleOnBottom == targetIsBottom &&
+                    WouldHitDuringTargetLanePhase(hamsterLeftX, hamsterRightX, leftX, rightX))
                     return false;
             }
 
@@ -79,6 +88,7 @@ namespace Assets.Scripts.BotV2
                 case ObstacleTypeEnum.bigNotAlive:
                 case ObstacleTypeEnum.mediumNotAlive:
                 case ObstacleTypeEnum.bigAlive:
+                case ObstacleTypeEnum.smallAlive:
                     return true;
                 default:
                     return false;
@@ -88,6 +98,7 @@ namespace Assets.Scripts.BotV2
         private static bool IsImmediatelySafe(
             float hamsterLeftX,
             float hamsterRightX,
+            bool sourceIsBottom,
             bool targetIsBottom,
             IReadOnlyList<ObstacleInfo> obstacles,
             int excludeStableId)
@@ -95,24 +106,38 @@ namespace Assets.Scripts.BotV2
             for (int i = 0; i < obstacles.Count; i++)
             {
                 var obstacle = obstacles[i];
-                if (obstacle.Category != ObjectCategory.Threat)
+                if (!IsHazardForSwitchLane(obstacle))
                     continue;
 
                 if (excludeStableId != 0 && obstacle.StableId == excludeStableId)
                     continue;
 
                 bool obstacleOnBottom = !obstacle.IsTopLane;
-                if (obstacleOnBottom != targetIsBottom)
+                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
                     continue;
 
                 if (obstacle.RightX < hamsterLeftX)
                     continue;
 
-                if (WouldHitDuringTargetLanePhase(hamsterLeftX, hamsterRightX, obstacle.LeftX, obstacle.RightX))
+                if (obstacleOnBottom == sourceIsBottom &&
+                    WouldHitDuringSourceLanePhase(hamsterLeftX, hamsterRightX, obstacle.LeftX, obstacle.RightX))
+                    return false;
+
+                if (obstacleOnBottom == targetIsBottom &&
+                    WouldHitDuringTargetLanePhase(hamsterLeftX, hamsterRightX, obstacle.LeftX, obstacle.RightX))
                     return false;
             }
 
             return true;
+        }
+
+        internal static bool IsHazardForSwitchLane(ObstacleInfo obstacle)
+        {
+            if (obstacle.Category == ObjectCategory.Threat)
+                return true;
+
+            // smallAlive может быть смертельно опасным при боковом смещении без прыжка.
+            return obstacle.Type == ObstacleTypeEnum.smallAlive;
         }
 
         internal static bool WouldHitDuringTargetLanePhase(
@@ -125,7 +150,24 @@ namespace Assets.Scripts.BotV2
             // пересекает X-интервал хомяка, столкновение возможно в окне смещения.
             float sweptLeftX = obstacleLeftX - LaneSwitchTravel;
             float sweptRightX = obstacleRightX;
-            return CollisionUtils.IsOverlap(hamsterLeftX, hamsterRightX, sweptLeftX, sweptRightX);
+            float paddedHamsterLeftX = hamsterLeftX - LaneSwitchSafetyPadding;
+            float paddedHamsterRightX = hamsterRightX + LaneSwitchSafetyPadding;
+            return CollisionUtils.IsOverlap(paddedHamsterLeftX, paddedHamsterRightX, sweptLeftX, sweptRightX);
+        }
+
+        internal static bool WouldHitDuringSourceLanePhase(
+            float hamsterLeftX,
+            float hamsterRightX,
+            float obstacleLeftX,
+            float obstacleRightX)
+        {
+            // На исходной линии до завершения смещения хомяк всё ещё уязвим.
+            // Используем тот же swept-interval по окну lane switch.
+            float sweptLeftX = obstacleLeftX - LaneSwitchTravel;
+            float sweptRightX = obstacleRightX;
+            float paddedHamsterLeftX = hamsterLeftX - LaneSwitchSafetyPadding;
+            float paddedHamsterRightX = hamsterRightX + LaneSwitchSafetyPadding;
+            return CollisionUtils.IsOverlap(paddedHamsterLeftX, paddedHamsterRightX, sweptLeftX, sweptRightX);
         }
     }
 }

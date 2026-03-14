@@ -246,7 +246,7 @@ namespace Assets.Scripts.BotV2
 
             _initialized = true;
             IsEnabled    = true;
-            DebugManager.DiagLog("[BotOrchestrator] Initialized (Stage 3)");
+            DebugManager.DiagLog("[BotOrchestrator] Initialized (Stage 4)");
         }
 
         private void OnDestroy()
@@ -263,6 +263,9 @@ namespace Assets.Scripts.BotV2
         private void RememberCancelledSwitchLane()
         {
             if (_activeStep == null || _activeStep.Action != BotAction.SwitchLane)
+                return;
+
+            if (_activeStep.TargetObstacle.Category == ObjectCategory.Collectible)
                 return;
 
             int stableId = _activeStep.TargetObstacle.StableId;

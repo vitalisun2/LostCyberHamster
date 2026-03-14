@@ -10117,6 +10117,796 @@
                     "y": -1.8000000715255738
                 }
             ]
+        },
+        {
+            "name": "bot_s3_threat_small_bottom",
+            "description": "BotV2 Stage 3: Threat (smallNotAliveRoad) на нижней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_threat_medium_top",
+            "description": "BotV2 Stage 3: Threat (mediumNotAlive) на верхней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 11,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_target_small_top_close",
+            "description": "BotV2 Stage 3: Target (smallAlive) на верхней линии (ближе)",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 13.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_target_small_bottom_far",
+            "description": "BotV2 Stage 3: Target (smallAlive) на нижней линии (дальше)",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 17.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_collect_coin_bottom",
+            "description": "BotV2 Stage 3: Collectible (coin) на нижней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 9,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s3_collect_crystal_top",
+            "description": "BotV2 Stage 3: Collectible (crystal) на верхней линии",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 7,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_threat_small_top_plus_far_coin_bottom",
+            "description": "BotV2 Stage 4: ближайшая угроза сверху + дальняя монета снизу",
+            "nextObstacleId": 2,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 9,
+                    "x": 24.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_target_small_bottom_plus_far_threat_top",
+            "description": "BotV2 Stage 4: ближайшая цель снизу + дальняя угроза сверху",
+            "nextObstacleId": 2,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 11,
+                    "x": 24.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_collect_life_top_plus_far_threat_bottom",
+            "description": "BotV2 Stage 4: ближайшая жизнь сверху + дальняя угроза снизу",
+            "nextObstacleId": 2,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 8,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 24.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_target_small_top_plus_far_crystal_bottom",
+            "description": "BotV2 Stage 4: ближайшая цель сверху + дальний кристалл снизу",
+            "nextObstacleId": 2,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 7,
+                    "x": 24.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_threat_medium_top_plus_far_collect_bottom",
+            "description": "BotV2 Stage 4: ближайшая средняя угроза сверху + дальняя энергия снизу",
+            "nextObstacleId": 2,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 11,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 5,
+                    "x": 24.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_target_small_bottom_close_plus_far_threat_top",
+            "description": "BotV2 Stage 4: близкая цель снизу + дальняя угроза сверху",
+            "nextObstacleId": 2,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 13.5,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 24.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_collect_energy_top_plus_far_threat_bottom",
+            "description": "BotV2 Stage 4: ближайшая энергия сверху + дальняя угроза снизу",
+            "nextObstacleId": 2,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 5,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 11,
+                    "x": 24.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_target_small_top_close_plus_far_threat_bottom",
+            "description": "BotV2 Stage 4: близкая цель сверху + дальняя угроза снизу",
+            "nextObstacleId": 2,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 13.5,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 24.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_dense_top_target_vs_bottom_medium_overlap",
+            "description": "BotV2 Stage 4 Dense: target сверху и medium threat снизу в одном X-кластере, без касаний объектов",
+            "nextObstacleId": 3,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 11,
+                    "x": 15.2,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 2,
+                    "type": 9,
+                    "x": 18.8,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_dense_bottom_target_vs_top_medium_overlap",
+            "description": "BotV2 Stage 4 Dense: target снизу и medium threat сверху в одном X-кластере, без касаний объектов",
+            "nextObstacleId": 3,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 11,
+                    "x": 15.2,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 2,
+                    "type": 7,
+                    "x": 18.8,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_dense_top_threat_vs_bottom_target_overlap",
+            "description": "BotV2 Stage 4 Dense: threat сверху и target снизу в одном X-кластере",
+            "nextObstacleId": 3,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 0,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 2,
+                    "type": 5,
+                    "x": 16.2,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_dense_bottom_threat_vs_top_target_overlap",
+            "description": "BotV2 Stage 4 Dense: threat снизу и target сверху в одном X-кластере",
+            "nextObstacleId": 3,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 0,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 2,
+                    "type": 8,
+                    "x": 16.2,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_dense_top_medium_with_bottom_collect_overlap",
+            "description": "BotV2 Stage 4 Dense: medium threat сверху и collectable снизу с безопасным one-step окном",
+            "nextObstacleId": 3,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 11,
+                    "x": 15.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 5,
+                    "x": 18.2,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 21.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_dense_bottom_medium_with_top_collect_overlap",
+            "description": "BotV2 Stage 4 Dense: medium threat снизу и collectable сверху с безопасным one-step окном",
+            "nextObstacleId": 3,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 11,
+                    "x": 15.0,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 8,
+                    "x": 18.2,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 21.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_dense_dual_targets_with_cross_threat_top",
+            "description": "BotV2 Stage 4 Dense: две цели и cross-lane threat без наложения в одной линии",
+            "nextObstacleId": 3,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 14.8,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 0,
+                    "x": 16.8,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 2,
+                    "type": 11,
+                    "x": 20.5,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_dense_dual_targets_with_cross_threat_bottom",
+            "description": "BotV2 Stage 4 Dense: две цели и cross-lane threat (зеркально), без наложения",
+            "nextObstacleId": 3,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 14.8,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 0,
+                    "x": 16.8,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 2,
+                    "type": 11,
+                    "x": 20.5,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_01_top_small_threat_bottom_target_coin",
+            "description": "BotV2 Stage 4 v2: small threat сверху, target+coin снизу с безопасным one-step окном",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 0, "x": 14.2, "y": -2.799999952316284 },
+                { "id": 2, "type": 9, "x": 18.6, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_02_bottom_small_threat_top_target_crystal",
+            "description": "BotV2 Stage 4 v2: small threat снизу, target+crystal сверху в one-step решении",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 14.2, "y": -1.8000000715255738 },
+                { "id": 2, "type": 8, "x": 18.6, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_03_top_medium_bottom_life_then_target",
+            "description": "BotV2 Stage 4 v2: medium threat сверху, снизу life и потом target без касаний",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 11, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 7, "x": 19.5, "y": -2.799999952316284 },
+                { "id": 2, "type": 0, "x": 23.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_04_bottom_medium_top_energy_then_target",
+            "description": "BotV2 Stage 4 v2: medium threat снизу, сверху energy и потом target без касаний",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 11, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 5, "x": 19.5, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 23.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_05_top_target_bottom_threat_top_coin",
+            "description": "BotV2 Stage 4 v2: target сверху, дальняя small threat снизу и coin сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.5, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 18.5, "y": -2.799999952316284 },
+                { "id": 2, "type": 9, "x": 21.5, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_06_bottom_target_top_threat_bottom_crystal",
+            "description": "BotV2 Stage 4 v2: target снизу, дальняя small threat сверху и crystal снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.5, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 18.5, "y": -1.8000000715255738 },
+                { "id": 2, "type": 8, "x": 21.5, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_07_top_life_bottom_medium_top_target",
+            "description": "BotV2 Stage 4 v2: life сверху, medium threat снизу и target сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 7, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 11, "x": 20.0, "y": -2.799999952316284 },
+                { "id": 2, "type": 0, "x": 24.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_08_bottom_energy_top_medium_bottom_target",
+            "description": "BotV2 Stage 4 v2: energy снизу, medium threat сверху и target снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 5, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 11, "x": 20.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 24.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_09_top_target_bottom_medium_top_small_threat",
+            "description": "BotV2 Stage 4 v2: target сверху, medium снизу в одном X и дальняя small threat сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 11, "x": 15.6, "y": -2.799999952316284 },
+                { "id": 2, "type": 2, "x": 21.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_10_bottom_target_top_medium_bottom_small_threat",
+            "description": "BotV2 Stage 4 v2: target снизу, medium сверху в одном X и дальняя small threat снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 11, "x": 15.6, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 21.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_11_top_threat_bottom_target_bottom_energy",
+            "description": "BotV2 Stage 4 v2: threat сверху, target снизу и energy снизу с безопасным интервалом",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 0, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 2, "type": 5, "x": 19.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v2_12_bottom_threat_top_target_top_life",
+            "description": "BotV2 Stage 4 v2: threat снизу, target сверху и life сверху с безопасным интервалом",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 7, "x": 19.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_01_top_small_threat_bottom_target_bottom_coin",
+            "description": "BotV2 Stage 4 v3: small threat сверху, target+coin снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 0, "x": 14.4, "y": -2.799999952316284 },
+                { "id": 2, "type": 9, "x": 19.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_02_bottom_small_threat_top_target_top_crystal",
+            "description": "BotV2 Stage 4 v3: small threat снизу, target+crystal сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 14.4, "y": -1.8000000715255738 },
+                { "id": 2, "type": 8, "x": 19.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_03_top_medium_bottom_life_bottom_target",
+            "description": "BotV2 Stage 4 v3: medium сверху, life и target снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 11, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 7, "x": 19.6, "y": -2.799999952316284 },
+                { "id": 2, "type": 0, "x": 23.2, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_04_bottom_medium_top_energy_top_target",
+            "description": "BotV2 Stage 4 v3: medium снизу, energy и target сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 11, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 5, "x": 19.6, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 23.2, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_05_top_target_bottom_small_threat_top_energy",
+            "description": "BotV2 Stage 4 v3: target сверху, small threat снизу, energy сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.6, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 18.7, "y": -2.799999952316284 },
+                { "id": 2, "type": 5, "x": 22.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_06_bottom_target_top_small_threat_bottom_energy",
+            "description": "BotV2 Stage 4 v3: target снизу, small threat сверху, energy снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.6, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 18.7, "y": -1.8000000715255738 },
+                { "id": 2, "type": 5, "x": 22.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_07_top_threat_bottom_target_bottom_crystal",
+            "description": "BotV2 Stage 4 v3: threat сверху, target+crystal снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 0, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 2, "type": 8, "x": 19.3, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_08_bottom_threat_top_target_top_coin",
+            "description": "BotV2 Stage 4 v3: threat снизу, target+coin сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 9, "x": 19.3, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_09_top_medium_bottom_target_top_coin",
+            "description": "BotV2 Stage 4 v3: medium сверху, target снизу, coin сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 11, "x": 15.2, "y": -1.8000000715255738 },
+                { "id": 1, "type": 0, "x": 15.4, "y": -2.799999952316284 },
+                { "id": 2, "type": 9, "x": 21.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_10_bottom_medium_top_target_bottom_crystal",
+            "description": "BotV2 Stage 4 v3: medium снизу, target сверху, crystal снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 11, "x": 15.2, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 15.4, "y": -1.8000000715255738 },
+                { "id": 2, "type": 8, "x": 21.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_11_top_life_bottom_medium_top_target",
+            "description": "BotV2 Stage 4 v3: life сверху, medium снизу, target сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 7, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 11, "x": 20.2, "y": -2.799999952316284 },
+                { "id": 2, "type": 0, "x": 24.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_12_bottom_energy_top_medium_bottom_target",
+            "description": "BotV2 Stage 4 v3: energy снизу, medium сверху, target снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 5, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 11, "x": 20.2, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 24.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_13_top_small_threat_bottom_target_top_crystal_far",
+            "description": "BotV2 Stage 4 v3: small threat сверху, target снизу, дальний crystal сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.3, "y": -1.8000000715255738 },
+                { "id": 1, "type": 0, "x": 14.5, "y": -2.799999952316284 },
+                { "id": 2, "type": 8, "x": 22.4, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_14_bottom_small_threat_top_target_bottom_coin_far",
+            "description": "BotV2 Stage 4 v3: small threat снизу, target сверху, дальний coin снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.3, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 14.5, "y": -1.8000000715255738 },
+                { "id": 2, "type": 9, "x": 22.4, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_15_top_target_bottom_medium_bottom_energy_far",
+            "description": "BotV2 Stage 4 v3: target сверху, medium снизу, дальний energy снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.8, "y": -1.8000000715255738 },
+                { "id": 1, "type": 11, "x": 15.4, "y": -2.799999952316284 },
+                { "id": 2, "type": 5, "x": 22.6, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_16_bottom_target_top_medium_top_life_far",
+            "description": "BotV2 Stage 4 v3: target снизу, medium сверху, дальний life сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.8, "y": -2.799999952316284 },
+                { "id": 1, "type": 11, "x": 15.4, "y": -1.8000000715255738 },
+                { "id": 2, "type": 7, "x": 22.6, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_17_top_medium_bottom_target_bottom_life_far",
+            "description": "BotV2 Stage 4 v3: medium сверху, target снизу, дальний life снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 11, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 0, "x": 15.2, "y": -2.799999952316284 },
+                { "id": 2, "type": 7, "x": 21.8, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_18_bottom_medium_top_target_top_energy_far",
+            "description": "BotV2 Stage 4 v3: medium снизу, target сверху, дальний energy сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 11, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 15.2, "y": -1.8000000715255738 },
+                { "id": 2, "type": 5, "x": 21.8, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_19_top_target_bottom_threat_bottom_coin_far",
+            "description": "BotV2 Stage 4 v3: target сверху, threat снизу, дальний coin снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 18.6, "y": -2.799999952316284 },
+                { "id": 2, "type": 9, "x": 22.2, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_20_bottom_target_top_threat_top_crystal_far",
+            "description": "BotV2 Stage 4 v3: target снизу, threat сверху, дальний crystal сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 18.6, "y": -1.8000000715255738 },
+                { "id": 2, "type": 8, "x": 22.2, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_21_top_small_threat_bottom_target_bottom_crystal_far",
+            "description": "BotV2 Stage 4 v3: small threat сверху, target снизу, дальний crystal снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.6, "y": -1.8000000715255738 },
+                { "id": 1, "type": 0, "x": 14.9, "y": -2.799999952316284 },
+                { "id": 2, "type": 8, "x": 20.6, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_22_bottom_small_threat_top_target_top_coin_far",
+            "description": "BotV2 Stage 4 v3: small threat снизу, target сверху, дальний coin сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.6, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 14.9, "y": -1.8000000715255738 },
+                { "id": 2, "type": 9, "x": 20.6, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_23_top_target_bottom_medium_top_life_far",
+            "description": "BotV2 Stage 4 v3: target сверху, medium снизу, дальний life сверху",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.8, "y": -1.8000000715255738 },
+                { "id": 1, "type": 11, "x": 15.5, "y": -2.799999952316284 },
+                { "id": 2, "type": 7, "x": 21.7, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v3_24_bottom_target_top_medium_bottom_energy_far",
+            "description": "BotV2 Stage 4 v3: target снизу, medium сверху, дальний energy снизу",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.8, "y": -2.799999952316284 },
+                { "id": 1, "type": 11, "x": 15.5, "y": -1.8000000715255738 },
+                { "id": 2, "type": 5, "x": 21.7, "y": -2.799999952316284 }
+            ]
         }
     ]
 }

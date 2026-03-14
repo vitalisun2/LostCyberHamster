@@ -26,6 +26,7 @@ namespace Assets.Scripts.BotV2
             snapshot.HamsterOnBottom = hamster.IsOnBottomLine.Value;
             snapshot.HamsterOnRoof   = IsRoofState(hamster.HamsterState.Value);
             snapshot.HamsterRightX   = hamster.RightX;
+            snapshot.HamsterWidth    = hamster.ColliderWidth;
             snapshot.Energy          = hamster.Energy.Value;
             snapshot.Lives           = hamster.Lives.Value;
             snapshot.SnapshotTime    = Time.time;

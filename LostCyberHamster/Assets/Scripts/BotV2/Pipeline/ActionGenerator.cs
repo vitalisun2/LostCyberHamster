@@ -13,13 +13,20 @@ namespace Assets.Scripts.BotV2
     {
         private const float SwitchLaneFireDist = 4.0f;
         internal const float SwitchLaneLatestSafeDist = 1.5f;
+        private const float DecisionClusterDistanceWindow = 3.5f;
+        private const float LifeCollectibleExtraWindow = 8f;
+        private const float LifeCollectibleMaxSwitchFireDist = 8f;
+        private const float LifeCollectibleMinGenerateDist = 0.8f;
+        private const float LifeUrgentSourceThreatDistance = 5.5f;
+        private const float ThreatSwitchMinExecuteDist = 2.2f;
+        private const float OpportunisticSwitchMinExecuteDist = 2.4f;
         private const float JumpFireDist       = 1.5f;
         private const float SuperJumpFireDist  = 1.5f;
-        private const int JumpEnergyCost       = 10;
+        internal const int JumpEnergyCost      = 10;
         private const int SuperJumpEnergyCost  = 20;
         private const int ThreatProfitScore = 0;
         private const int TargetProfitScore = 100;
-        private const int CollectibleBaseProfitScore = 40;
+        private const int CollectibleBaseProfitScore = 30;
 
         /// <summary>Примерное расстояние, на которое хомяк улетает при Jump.</summary>
         private const float JumpLandingOffset = 3.8f;
@@ -28,6 +35,7 @@ namespace Assets.Scripts.BotV2
         public List<ChainStep> Generate(BotSceneSnapshot snapshot)
         {
             var result = new List<ChainStep>();
+            float firstRelevantDistance = float.MaxValue;
 
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
@@ -35,9 +43,21 @@ namespace Assets.Scripts.BotV2
                 if (!IsRelevantForDecision(snapshot, target))
                     continue;
 
+                if (firstRelevantDistance == float.MaxValue)
+                    firstRelevantDistance = target.DistanceToHamster;
+
+                if (target.DistanceToHamster > firstRelevantDistance + DecisionClusterDistanceWindow)
+                {
+                    bool isDistantLifeCollectible =
+                        target.Category == ObjectCategory.Collectible &&
+                        target.Type == ObstacleTypeEnum.collectableLife &&
+                        target.DistanceToHamster <= firstRelevantDistance + LifeCollectibleExtraWindow;
+
+                    if (!isDistantLifeCollectible)
+                        continue;
+                }
+
                 AddVariantsForObject(result, snapshot, target);
-                if (result.Count > 0)
-                    break;
             }
 
             return result;
@@ -63,12 +83,10 @@ namespace Assets.Scripts.BotV2
 
         private static void AddThreatVariants(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo threat)
         {
-            if (ShouldGenerateSwitchLane(threat))
+            if (TryBuildSwitchLaneStep(snapshot, threat, out ChainStep switchLaneStep, ThreatProfitScore))
             {
-                if (TryBuildSwitchLaneStep(snapshot, threat, out ChainStep switchLaneStep, ThreatProfitScore))
-                {
+                if (switchLaneStep.ExecuteAtDistance >= ThreatSwitchMinExecuteDist)
                     result.Add(switchLaneStep);
-                }
             }
 
             switch (threat.Type)
@@ -93,7 +111,8 @@ namespace Assets.Scripts.BotV2
                             JumpFireDist,
                             JumpEnergyCost,
                             $"Jump on roof {threat.Type}",
-                            ThreatProfitScore));
+                            ThreatProfitScore,
+                            DecisionRank.ThreatSafety));
                     }
                     break;
 
@@ -117,7 +136,8 @@ namespace Assets.Scripts.BotV2
                         JumpFireDist,
                         JumpEnergyCost,
                         $"Jump on target {target.Type}",
-                        TargetProfitScore));
+                        TargetProfitScore,
+                        DecisionRank.Target));
                 }
 
                 if (target.Type == ObstacleTypeEnum.bigAlive && snapshot.Energy >= SuperJumpEnergyCost)
@@ -128,13 +148,17 @@ namespace Assets.Scripts.BotV2
                         SuperJumpFireDist,
                         SuperJumpEnergyCost,
                         "SuperJump target bigAlive",
-                        TargetProfitScore - 5));
+                        TargetProfitScore - 5,
+                        DecisionRank.Target));
                 }
             }
             else
             {
                 if (TryBuildSwitchLaneStep(snapshot, target, out ChainStep switchLaneStep, TargetProfitScore - 20))
                 {
+                    if (switchLaneStep.ExecuteAtDistance < OpportunisticSwitchMinExecuteDist)
+                        return;
+
                     switchLaneStep.Reason = "SwitchLane to target";
                     result.Add(switchLaneStep);
                 }
@@ -149,12 +173,13 @@ namespace Assets.Scripts.BotV2
             int collectibleProfit = CollectibleBaseProfitScore + GetCollectiblePriority(collectible.Type);
             if (TryBuildSwitchLaneStep(snapshot, collectible, out ChainStep switchLaneStep, collectibleProfit))
             {
+                switchLaneStep.Rank = collectible.Type == ObstacleTypeEnum.collectableLife
+                    ? DecisionRank.LifeCollectible
+                    : DecisionRank.OtherCollectible;
                 switchLaneStep.Reason = $"SwitchLane collect {collectible.Type}";
                 result.Add(switchLaneStep);
             }
         }
-
-        private static bool ShouldGenerateSwitchLane(ObstacleInfo threat) => true;
 
         private static bool TryBuildSwitchLaneStep(
             BotSceneSnapshot snapshot,
@@ -167,7 +192,10 @@ namespace Assets.Scripts.BotV2
             if (!TryComputeSwitchLaneExecuteDistance(snapshot, target, out float executeAtDistance))
                 return false;
 
-            if (!IsSwitchLaneSafeAtDistance(snapshot, target, executeAtDistance))
+            bool safeAtSnapshot = IsSwitchLaneSafeAtDistance(snapshot, target, executeAtDistance);
+            bool allowLiveRecheckForLife = target.Category == ObjectCategory.Collectible &&
+                                           target.Type == ObstacleTypeEnum.collectableLife;
+            if (!safeAtSnapshot && !allowLiveRecheckForLife)
                 return false;
 
             step = new ChainStep(
@@ -176,7 +204,8 @@ namespace Assets.Scripts.BotV2
                 executeAtDistance,
                 energyCost: 0,
                 "SwitchLane away from threat (timed window)",
-                profitScore);
+                profitScore,
+                ResolveDecisionRank(target));
 
             return true;
         }
@@ -195,6 +224,23 @@ namespace Assets.Scripts.BotV2
             float speed = Assets.Scripts.Consts.GameSpeedBase;
             if (speed <= 0f)
                 return false;
+
+            if (target.Category == ObjectCategory.Collectible &&
+                target.Type == ObstacleTypeEnum.collectableLife)
+            {
+                // Для life: если в текущей полосе есть близкая угроза, перестраиваемся сразу,
+                // не дожидаясь приближения collectable по дистанции.
+                if (TryGetNearestSameLaneThreatDistance(snapshot, out float nearestThreatDistance) &&
+                    nearestThreatDistance <= LifeUrgentSourceThreatDistance)
+                {
+                    executeAtDistance = target.DistanceToHamster;
+                    return target.DistanceToHamster >= LifeCollectibleMinGenerateDist;
+                }
+
+                // В обычной ситуации начинаем проверять переключение заметно раньше базового окна.
+                executeAtDistance = Clamp(target.DistanceToHamster, LifeCollectibleMinGenerateDist, LifeCollectibleMaxSwitchFireDist);
+                return target.DistanceToHamster >= LifeCollectibleMinGenerateDist;
+            }
 
             float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
             bool targetIsBottom = !snapshot.HamsterOnBottom;
@@ -244,6 +290,7 @@ namespace Assets.Scripts.BotV2
 
             float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
             float hamsterRightX = snapshot.HamsterRightX;
+            bool sourceIsBottom = snapshot.HamsterOnBottom;
             bool targetIsBottom = !snapshot.HamsterOnBottom;
 
             float distanceDelta = target.DistanceToHamster - executeAtDistance;
@@ -255,13 +302,13 @@ namespace Assets.Scripts.BotV2
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
                 var obstacle = snapshot.VisibleObjects[i];
-                if (obstacle.StableId == target.StableId)
+                if (obstacle.StableId == target.StableId && !SwitchLaneSafety.IsHazardForSwitchLane(obstacle))
                     continue;
-                if (obstacle.Category != ObjectCategory.Threat)
+                if (!SwitchLaneSafety.IsHazardForSwitchLane(obstacle))
                     continue;
 
                 bool obstacleOnBottom = !obstacle.IsTopLane;
-                if (obstacleOnBottom != targetIsBottom)
+                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
                     continue;
 
                 float projectedLeftX = obstacle.LeftX - worldShift;
@@ -269,15 +316,49 @@ namespace Assets.Scripts.BotV2
                 if (projectedRightX < hamsterLeftX)
                     continue;
 
-                if (SwitchLaneSafety.WouldHitDuringTargetLanePhase(
-                    hamsterLeftX,
-                    hamsterRightX,
-                    projectedLeftX,
-                    projectedRightX))
-                    return false;
+                if (obstacleOnBottom == sourceIsBottom)
+                {
+                    if (SwitchLaneSafety.WouldHitDuringSourceLanePhase(
+                        hamsterLeftX,
+                        hamsterRightX,
+                        projectedLeftX,
+                        projectedRightX))
+                        return false;
+                }
+
+                if (obstacleOnBottom == targetIsBottom)
+                {
+                    if (SwitchLaneSafety.WouldHitDuringTargetLanePhase(
+                        hamsterLeftX,
+                        hamsterRightX,
+                        projectedLeftX,
+                        projectedRightX))
+                        return false;
+                }
             }
 
             return true;
+        }
+
+        private static bool TryGetNearestSameLaneThreatDistance(BotSceneSnapshot snapshot, out float nearestDistance)
+        {
+            nearestDistance = float.MaxValue;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obstacle = snapshot.VisibleObjects[i];
+                if (obstacle.Category != ObjectCategory.Threat)
+                    continue;
+                if (obstacle.DistanceToHamster < 0f)
+                    continue;
+                if (!IsOnSameLane(snapshot, obstacle))
+                    continue;
+
+                if (obstacle.DistanceToHamster < nearestDistance)
+                    nearestDistance = obstacle.DistanceToHamster;
+            }
+
+            return nearestDistance < float.MaxValue;
         }
 
         private static float Clamp(float value, float min, float max)
@@ -306,7 +387,8 @@ namespace Assets.Scripts.BotV2
                 JumpFireDist,
                 JumpEnergyCost,
                 reason,
-                profitScore));
+                profitScore,
+                DecisionRank.ThreatSafety));
         }
 
         private static void AddSuperJumpVariant(
@@ -325,7 +407,8 @@ namespace Assets.Scripts.BotV2
                 SuperJumpFireDist,
                 SuperJumpEnergyCost,
                 reason,
-                profitScore));
+                profitScore,
+                DecisionRank.ThreatSafety));
         }
 
         private static bool IsRelevantForDecision(BotSceneSnapshot snapshot, ObstacleInfo obs)
@@ -347,19 +430,34 @@ namespace Assets.Scripts.BotV2
             return snapshot.HamsterOnBottom == !obstacle.IsTopLane;
         }
 
+        private static DecisionRank ResolveDecisionRank(ObstacleInfo target)
+        {
+            switch (target.Category)
+            {
+                case ObjectCategory.Target:
+                    return DecisionRank.Target;
+                case ObjectCategory.Collectible:
+                    return target.Type == ObstacleTypeEnum.collectableLife
+                        ? DecisionRank.LifeCollectible
+                        : DecisionRank.OtherCollectible;
+                default:
+                    return DecisionRank.ThreatSafety;
+            }
+        }
+
         private static int GetCollectiblePriority(ObstacleTypeEnum type)
         {
             switch (type)
             {
                 case ObstacleTypeEnum.collectableLife:
-                    return 8;
+                    return 20;
+                case ObstacleTypeEnum.collectableCrystal:
+                    return 14;
                 case ObstacleTypeEnum.collectableEnergetic:
                 case ObstacleTypeEnum.collectablePizza:
-                    return 6;
-                case ObstacleTypeEnum.collectableCrystal:
-                    return 4;
+                    return 8;
                 case ObstacleTypeEnum.collectableCoin:
-                    return 2;
+                    return 3;
                 default:
                     return 1;
             }

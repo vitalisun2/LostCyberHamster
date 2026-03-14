@@ -17,6 +17,9 @@ namespace Assets.Scripts.BotV2
         /// <summary>Правый край хомяка в мировых координатах.</summary>
         public float HamsterRightX;
 
+        /// <summary>Ширина коллайдера хомяка в мировых единицах.</summary>
+        public float HamsterWidth;
+
         public int Energy;
         public int Lives;
 

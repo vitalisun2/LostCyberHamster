@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace LostCyberHamster.Editor
 {
@@ -58,11 +59,44 @@ namespace LostCyberHamster.Editor
         [MenuItem("Tools/Test Level/Launch", priority = 50)]
         private static void LaunchTestLevel()
         {
-            if (EditorApplication.isPlaying)
+            if (!TryLaunchTestLevel(interactive: true, out var errorMessage))
             {
-                EditorUtility.DisplayDialog("Test Level",
-                    "Exit Play mode first.", "OK");
-                return;
+                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
+            }
+        }
+
+        /// <summary>
+        /// Запускает test level без UI-диалогов, чтобы этим можно было безопасно управлять из automation bridge.
+        /// </summary>
+        public static bool TryLaunchTestLevelAutomation(out string errorMessage)
+        {
+            return TryLaunchTestLevel(interactive: false, out errorMessage);
+        }
+
+        private static bool TryLaunchTestLevel(bool interactive, out string errorMessage)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                errorMessage = "Exit Play mode first.";
+                return false;
+            }
+
+            if (!interactive && HasDirtyOpenScenes())
+            {
+                errorMessage = "Automation launch requires all open scenes to be saved first.";
+                return false;
+            }
+
+            if (interactive && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                errorMessage = "Launch cancelled because modified scenes were not saved.";
+                return false;
+            }
+
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(BootstrapScenePath) == null)
+            {
+                errorMessage = $"Bootstrap scene not found: {BootstrapScenePath}";
+                return false;
             }
 
             // Write override into PlayerPrefs so it survives domain reload on Play
@@ -72,10 +106,23 @@ namespace LostCyberHamster.Editor
             PlayerPrefs.Save();
 
             Debug.Log($"[TestLevelLauncher] Override set: {TestLevelAddress}. Starting Bootstrap...");
-
-            EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
             EditorSceneManager.OpenScene(BootstrapScenePath);
             EditorApplication.isPlaying = true;
+            errorMessage = null;
+            return true;
+        }
+
+        private static bool HasDirtyOpenScenes()
+        {
+            for (var index = 0; index < SceneManager.sceneCount; index++)
+            {
+                if (SceneManager.GetSceneAt(index).isDirty)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

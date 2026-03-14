@@ -42,7 +42,7 @@ namespace Assets.Scripts.BotV2
             if (step == null)
                 return "step=none";
 
-            return $"action={step.Action} status={step.Status} reason=\"{step.Reason}\" profit={step.ProfitScore} execAt={step.ExecuteAtDistance:F2} target={FormatSnapshotObstacle(step.TargetObstacle)}";
+            return $"action={step.Action} status={step.Status} rank={step.Rank} reason=\"{step.Reason}\" profit={step.ProfitScore} execAt={step.ExecuteAtDistance:F2} target={FormatSnapshotObstacle(step.TargetObstacle)}";
         }
 
         public static string FormatSnapshotObstacles(IReadOnlyList<ObstacleInfo> obstacles)

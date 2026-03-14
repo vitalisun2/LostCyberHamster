@@ -80,6 +80,26 @@ public class LevelTilemapEditor : EditorWindow
     private List<Bounds> _patternBounds = new();
 
     private const float PatternGap = 2f;
+    private const float PatternFrameHorizontalPadding = 1.5f;
+    private const float PatternFrameVerticalPadding = 0.75f;
+    private const float MinPatternFrameWidth = 6f;
+    private const float MinPatternFrameHeight = 4f;
+    private const float DefaultPatternFrameCenterY = -2.3f;
+    private const float PatternBoundaryInset = 0.15f;
+    private const float PatternBoundaryLineThickness = 4f;
+    private static readonly Color PatternBoundaryColor = new Color(0.12f, 0.95f, 0.18f, 1f);
+    private static readonly Color SelectedPatternBoundaryColor = new Color(0.25f, 1f, 0.25f, 1f);
+
+    private readonly List<PatternOverlaySlot> _patternOverlaySlots = new();
+
+    private struct PatternOverlaySlot
+    {
+        public int PatternIndex;
+        public float LeftX;
+        public float RightX;
+        public string Name;
+        public bool IsRelief;
+    }
 
     private string _levelsDirectory;
     private string _levelDesignTemplatesDirectory;
@@ -139,9 +159,12 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager?.ReleaseObstacleSprites();
         UnsubscribeEvents();
         
-        // Don't restore scene during assembly reload or domain reload
-        if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+        // Не восстанавливаем сцену во время компиляции/обновления и переходов playmode,
+        // чтобы не конфликтовать с внутренними перечислителями Hierarchy/Search.
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating ||
+            EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isPlaying)
         {
+            _hiddenRootObjects.Clear();
             return;
         }
         
@@ -158,7 +181,14 @@ public class LevelTilemapEditor : EditorWindow
             {
                 if (obj != null)
                 {
-                    obj.SetActive(true);
+                    try
+                    {
+                        obj.SetActive(true);
+                    }
+                    catch (MissingReferenceException)
+                    {
+                        // Object мог быть уничтожен Unity при перезагрузке/очистке сцены.
+                    }
                 }
             }
         }
@@ -251,6 +281,7 @@ public class LevelTilemapEditor : EditorWindow
             changedTilemap.SetTile(cellPosition, null);
             var finalCellPos = changedTilemap.WorldToCell(finalWorldPos);
             changedTilemap.SetTile(finalCellPos, tile);
+            ApplyExactTileWorldPosition(changedTilemap, finalCellPos, finalWorldPos);
         }
     }
 
@@ -299,7 +330,7 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private ObstacleModel CreateObstacleModelFromCell(Tilemap tilemap, Vector3Int cellPos, Tile tile)
     {
-        var worldPos = tilemap.GetCellCenterWorld(cellPos);
+        var worldPos = GetExactTileWorldPosition(tilemap, cellPos);
         return new ObstacleModel
         {
             spriteName = tile.name,
@@ -721,15 +752,7 @@ public class LevelTilemapEditor : EditorWindow
             totalWidth = 0f;
             foreach (var pattern in _currentLevelInfo.patterns)
             {
-                if (pattern.obstacles == null || pattern.obstacles.Count == 0) continue;
-                float maxX = float.MinValue;
-                float minX = float.MaxValue;
-                foreach (var obs in pattern.obstacles)
-                {
-                    if (obs.x > maxX) maxX = obs.x;
-                    if (obs.x < minX) minX = obs.x;
-                }
-                totalWidth += maxX - minX + PatternGap;
+                totalWidth += GetPatternDisplayWidth(pattern);
             }
         }
 
@@ -830,6 +853,7 @@ public class LevelTilemapEditor : EditorWindow
 
         var positions = new List<Vector3Int>();
         var tiles = new List<TileBase>();
+        var worldPositions = new List<Vector3>();
 
         foreach (var obstacle in CurrentPattern.obstacles)
         {
@@ -845,6 +869,7 @@ public class LevelTilemapEditor : EditorWindow
 
                 positions.Add(cellPos);
                 tiles.Add(tile);
+                worldPositions.Add(worldPos);
             }
             else
             {
@@ -853,6 +878,11 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         _tilemapInScene.SetTiles(positions.ToArray(), tiles.ToArray());
+
+        for (int i = 0; i < positions.Count; i++)
+        {
+            ApplyExactTileWorldPosition(_tilemapInScene, positions[i], worldPositions[i]);
+        }
 
         // Restore decorations after clearing tilemap (they are level-wide, not per-pattern)
         if (!IsTemplateMode)
@@ -877,29 +907,35 @@ public class LevelTilemapEditor : EditorWindow
         _tilemapInScene.ClearAllTiles();
         _cellToPatternMap.Clear();
         _patternBounds.Clear();
+        _patternOverlaySlots.Clear();
 
         var positions = new List<Vector3Int>();
         var tiles = new List<TileBase>();
+        var worldPositions = new List<Vector3>();
         float cumulativeOffset = 0f;
 
         for (int p = 0; p < _currentLevelInfo.patterns.Count; p++)
         {
             var pattern = _currentLevelInfo.patterns[p];
+            float patternWidth = GetPatternDisplayWidth(pattern);
+            float slotStartX = cumulativeOffset;
+            _patternOverlaySlots.Add(new PatternOverlaySlot
+            {
+                PatternIndex = p,
+                LeftX = slotStartX,
+                RightX = slotStartX + patternWidth,
+                Name = pattern.name,
+                IsRelief = string.Equals(pattern.name, "relief", StringComparison.OrdinalIgnoreCase)
+            });
+
             if (pattern.obstacles == null || pattern.obstacles.Count == 0)
             {
-                _patternBounds.Add(new Bounds());
+                _patternBounds.Add(CreatePatternFrameBounds(new Bounds(), false, slotStartX, patternWidth));
+                cumulativeOffset += patternWidth;
                 continue;
             }
 
-            float minX = float.MaxValue;
-            float maxX = float.MinValue;
-            foreach (var obs in pattern.obstacles)
-            {
-                if (obs.x < minX) minX = obs.x;
-                if (obs.x > maxX) maxX = obs.x;
-            }
-
-            float patternWidth = maxX - minX + PatternGap;
+            ComputePatternXRange(pattern, out float minX, out _);
             float patternOffset = cumulativeOffset - minX;
 
             bool boundsInitialized = false;
@@ -918,8 +954,8 @@ public class LevelTilemapEditor : EditorWindow
                 var worldPos = new Vector3(obstacle.x + patternOffset, obstacle.y, 0f);
                 var cellPos = _tilemapInScene.WorldToCell(worldPos);
 
-                // Вычисляем bounds спрайта для framing
-                var spriteBounds = new Bounds(worldPos, new Vector3(sprite.bounds.size.x, sprite.bounds.size.y, 0f));
+                // Учитываем sprite pivot/center: worldPos не всегда совпадает с геометрическим центром спрайта.
+                var spriteBounds = BuildSpriteWorldBounds(sprite, worldPos);
                 if (!boundsInitialized)
                 {
                     patternBounds = spriteBounds;
@@ -932,19 +968,44 @@ public class LevelTilemapEditor : EditorWindow
 
                 positions.Add(cellPos);
                 tiles.Add(tile);
+                worldPositions.Add(worldPos);
                 _cellToPatternMap[cellPos] = (p, o);
             }
 
-            _patternBounds.Add(patternBounds);
+            _patternBounds.Add(CreatePatternFrameBounds(patternBounds, boundsInitialized, slotStartX, patternWidth));
             cumulativeOffset += patternWidth;
         }
 
         _tilemapInScene.SetTiles(positions.ToArray(), tiles.ToArray());
 
+        for (int i = 0; i < positions.Count; i++)
+        {
+            ApplyExactTileWorldPosition(_tilemapInScene, positions[i], worldPositions[i]);
+        }
+
         LoadDecorationsToTilemap();
 
         EditorUtility.SetDirty(_tilemapInScene.gameObject);
         _isTilemapBulkOperation = false;
+    }
+
+    private static void ApplyExactTileWorldPosition(Tilemap tilemap, Vector3Int cellPos, Vector3 worldPos)
+    {
+        var cellWorldPos = tilemap.CellToWorld(cellPos);
+        var localOffset = worldPos - cellWorldPos;
+        var matrix = Matrix4x4.Translate(localOffset);
+        tilemap.SetTransformMatrix(cellPos, matrix);
+    }
+
+    private static Vector3 GetExactTileWorldPosition(Tilemap tilemap, Vector3Int cellPos)
+    {
+        var baseWorldPos = tilemap.CellToWorld(cellPos);
+        var matrix = tilemap.GetTransformMatrix(cellPos);
+        var offset = matrix.GetColumn(3);
+        return new Vector3(
+            baseWorldPos.x + offset.x,
+            baseWorldPos.y + offset.y,
+            baseWorldPos.z + offset.z);
     }
 
     /// <summary>
@@ -967,14 +1028,7 @@ public class LevelTilemapEditor : EditorWindow
         float maxWidth = 0f;
         foreach (var pattern in patterns)
         {
-            if (pattern.obstacles == null || pattern.obstacles.Count == 0) continue;
-            float minX = float.MaxValue, maxX = float.MinValue;
-            foreach (var obs in pattern.obstacles)
-            {
-                if (obs.x < minX) minX = obs.x;
-                if (obs.x > maxX) maxX = obs.x;
-            }
-            float width = maxX - minX + PatternGap;
+            float width = GetPatternDisplayWidth(pattern);
             if (width > maxWidth) maxWidth = width;
         }
         return maxWidth;
@@ -987,15 +1041,128 @@ public class LevelTilemapEditor : EditorWindow
     {
         if (_tilemapInScene == null) return;
 
-        _tilemapInScene.CompressBounds();
-        var cellBounds = _tilemapInScene.cellBounds;
-        if (cellBounds.size == Vector3Int.zero) return;
-
-        var worldMin = _tilemapInScene.CellToWorld(cellBounds.min);
-        var worldMax = _tilemapInScene.CellToWorld(cellBounds.max);
-        var bounds = new Bounds((worldMin + worldMax) / 2f, worldMax - worldMin);
+        if (!TryGetExactTilemapBounds(_tilemapInScene, out var bounds))
+            return;
 
         FrameToBounds(bounds);
+    }
+
+    private static float GetPatternDisplayWidth(Pattern pattern)
+    {
+        if (pattern?.obstacles == null || pattern.obstacles.Count == 0)
+            return PatternGap;
+
+        ComputePatternXRange(pattern, out float minX, out float maxX);
+
+        return maxX - minX + PatternGap;
+    }
+
+    private static void ComputePatternXRange(Pattern pattern, out float minX, out float maxX)
+    {
+        minX = float.MaxValue;
+        maxX = float.MinValue;
+
+        if (pattern?.obstacles == null || pattern.obstacles.Count == 0)
+        {
+            minX = 0f;
+            maxX = 0f;
+            return;
+        }
+
+        for (int i = 0; i < pattern.obstacles.Count; i++)
+        {
+            var obstacle = pattern.obstacles[i];
+            float leftX = obstacle.x;
+            float rightX = obstacle.x;
+
+            if (!string.IsNullOrEmpty(obstacle.spriteName))
+            {
+                var sprite = SpriteLoader.LoadSpriteSync(obstacle.spriteName);
+                if (sprite != null)
+                {
+                    var center = sprite.bounds.center.x;
+                    var extent = sprite.bounds.extents.x;
+                    leftX = obstacle.x + center - extent;
+                    rightX = obstacle.x + center + extent;
+                }
+            }
+
+            if (leftX < minX) minX = leftX;
+            if (rightX > maxX) maxX = rightX;
+        }
+
+        if (minX == float.MaxValue || maxX == float.MinValue)
+        {
+            minX = 0f;
+            maxX = 0f;
+        }
+    }
+
+    private static Bounds CreatePatternFrameBounds(Bounds spriteBounds, bool hasSpriteBounds, float slotStartX, float patternWidth)
+    {
+        var slotBounds = new Bounds(
+            new Vector3(slotStartX + patternWidth * 0.5f, DefaultPatternFrameCenterY, 0f),
+            new Vector3(Mathf.Max(patternWidth, MinPatternFrameWidth), MinPatternFrameHeight, 0f));
+
+        if (!hasSpriteBounds)
+            return slotBounds;
+
+        slotBounds.Encapsulate(spriteBounds);
+        slotBounds.Expand(new Vector3(PatternFrameHorizontalPadding * 2f, PatternFrameVerticalPadding * 2f, 0f));
+
+        if (slotBounds.size.x < MinPatternFrameWidth)
+        {
+            slotBounds.size = new Vector3(MinPatternFrameWidth, slotBounds.size.y, slotBounds.size.z);
+        }
+
+        if (slotBounds.size.y < MinPatternFrameHeight)
+        {
+            slotBounds.size = new Vector3(slotBounds.size.x, MinPatternFrameHeight, slotBounds.size.z);
+        }
+
+        return slotBounds;
+    }
+
+    private static bool TryGetExactTilemapBounds(Tilemap tilemap, out Bounds bounds)
+    {
+        bounds = default;
+
+        var cellBounds = tilemap.cellBounds;
+        bool initialized = false;
+        foreach (var cellPos in cellBounds.allPositionsWithin)
+        {
+            if (!tilemap.HasTile(cellPos))
+                continue;
+
+            var sprite = tilemap.GetSprite(cellPos);
+            if (sprite == null)
+                continue;
+
+            var worldPos = GetExactTileWorldPosition(tilemap, cellPos);
+            var spriteBounds = BuildSpriteWorldBounds(sprite, worldPos);
+            if (!initialized)
+            {
+                bounds = spriteBounds;
+                initialized = true;
+            }
+            else
+            {
+                bounds.Encapsulate(spriteBounds);
+            }
+        }
+
+        if (!initialized)
+            return false;
+
+        bounds.Expand(new Vector3(PatternFrameHorizontalPadding * 2f, PatternFrameVerticalPadding * 2f, 0f));
+        return true;
+    }
+
+    private static Bounds BuildSpriteWorldBounds(Sprite sprite, Vector3 worldPos)
+    {
+        var localCenter = sprite.bounds.center;
+        var worldCenter = new Vector3(worldPos.x + localCenter.x, worldPos.y + localCenter.y, worldPos.z + localCenter.z);
+        return new Bounds(worldCenter, new Vector3(sprite.bounds.size.x, sprite.bounds.size.y, 0f));
     }
 
     /// <summary>
@@ -1025,10 +1192,12 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void OnSceneGUI(SceneView sceneView)
     {
-        if (_tilemapInScene == null || _cellToPatternMap.Count == 0)
+        if (IsTemplateMode)
             return;
 
-        if (IsTemplateMode)
+        DrawPatternBoundsOverlay();
+
+        if (_tilemapInScene == null || _cellToPatternMap.Count == 0)
             return;
 
         var evt = Event.current;
@@ -1046,6 +1215,55 @@ public class LevelTilemapEditor : EditorWindow
         var (patternIndex, obstacleIndex) = mapping;
         HandleTileClicked(patternIndex, obstacleIndex);
         evt.Use();
+    }
+
+    private void DrawPatternBoundsOverlay()
+    {
+        if (_patternOverlaySlots.Count == 0)
+            return;
+
+        if (_currentLevelInfo?.patterns == null)
+            return;
+
+        if (!TryGetExactTilemapBounds(_tilemapInScene, out var worldBounds))
+            return;
+
+        float minY = worldBounds.min.y - 0.35f;
+        float maxY = worldBounds.max.y + 0.35f;
+
+        Handles.zTest = UnityEngine.Rendering.CompareFunction.LessEqual;
+
+        for (int i = 0; i < _patternOverlaySlots.Count; i++)
+        {
+            var slot = _patternOverlaySlots[i];
+            if (slot.IsRelief)
+                continue;
+
+            bool isSelected = slot.PatternIndex == _selectedPatternIndex;
+            var borderColor = isSelected ? SelectedPatternBoundaryColor : PatternBoundaryColor;
+            float lineThickness = isSelected ? PatternBoundaryLineThickness + 0.5f : PatternBoundaryLineThickness;
+
+            float leftX = slot.LeftX - PatternBoundaryInset;
+            float rightX = slot.RightX + PatternBoundaryInset;
+
+            var bottomLeft = new Vector3(leftX, minY, 0f);
+            var topLeft = new Vector3(leftX, maxY, 0f);
+            var bottomRight = new Vector3(rightX, minY, 0f);
+            var topRight = new Vector3(rightX, maxY, 0f);
+
+            Handles.color = borderColor;
+            Handles.DrawAAPolyLine(lineThickness, bottomLeft, topLeft);
+            Handles.DrawAAPolyLine(lineThickness, bottomRight, topRight);
+
+            if (isSelected)
+            {
+                string label = $"{slot.PatternIndex + 1}: {slot.Name}";
+                var labelPos = new Vector3((leftX + rightX) * 0.5f, maxY + 0.2f, 0f);
+                Handles.Label(labelPos, label);
+            }
+        }
+
+        Handles.color = Color.white;
     }
 
     /// <summary>

@@ -15,8 +15,11 @@ namespace Assets.Scripts.BotV2
     public class StepExecutor
     {
         private const float SwitchLaneLateCancelDistance = ActionGenerator.SwitchLaneLatestSafeDist;
+        private const float LifeCollectibleLateCancelDistance = 0.7f;
         private const float JumpOnRightToleranceRatio = 0.2f;
         private const float JumpOnLateFallbackDistance = 0.1f;
+        private const float JumpAfterSwitchMinDist = 0.8f;
+        private const float JumpAfterSwitchMaxDist = 2.4f;
 
         private readonly Hamster _hamster;
         private ChainStep _step;
@@ -26,6 +29,8 @@ namespace Assets.Scripts.BotV2
         private float _stepStartedAt = -1f;
         private float _nextStallLogAt = -1f;
         private float _nextSwitchLaneUnsafeLogAt = -1f;
+        private bool _tryJumpAfterSwitchLane;
+        private bool _jumpAfterSwitchLaneFired;
 
         /// <summary>Шаг был отменён из-за изменившейся обстановки. Оркестратор перепланирует.</summary>
         public bool WasCancelled { get; private set; }
@@ -44,6 +49,8 @@ namespace Assets.Scripts.BotV2
             _stepStartedAt = -1f;
             _nextStallLogAt = -1f;
             _nextSwitchLaneUnsafeLogAt = -1f;
+            _tryJumpAfterSwitchLane = false;
+            _jumpAfterSwitchLaneFired = false;
         }
 
         public void ClearStep()
@@ -52,6 +59,8 @@ namespace Assets.Scripts.BotV2
             _stepStartedAt = -1f;
             _nextStallLogAt = -1f;
             _nextSwitchLaneUnsafeLogAt = -1f;
+            _tryJumpAfterSwitchLane = false;
+            _jumpAfterSwitchLaneFired = false;
         }
 
         /// <summary>
@@ -65,6 +74,7 @@ namespace Assets.Scripts.BotV2
             // InProgress: ждём завершения действия
             if (_step.Status == ChainStepStatus.InProgress)
             {
+                TryFireJumpAfterSwitchLane();
                 LogIfActionLooksStuck();
                 CheckCompletion();
                 return;
@@ -96,7 +106,11 @@ namespace Assets.Scripts.BotV2
             // или в момент завершения lane switch.
             if (_step.Action == BotAction.SwitchLane && !IsSwitchLaneImmediatelySafeNow())
             {
-                if (dist > SwitchLaneLateCancelDistance)
+                float lateCancelDistance = IsLifeCollectibleSwitchLane()
+                    ? LifeCollectibleLateCancelDistance
+                    : SwitchLaneLateCancelDistance;
+
+                if (dist > lateCancelDistance)
                 {
                     if (_nextSwitchLaneUnsafeLogAt < 0f || Time.time >= _nextSwitchLaneUnsafeLogAt)
                     {
@@ -169,6 +183,8 @@ namespace Assets.Scripts.BotV2
                 case BotAction.SwitchLane:
                     _hamster.TapRequest.Invoke();
                     _switchLaneExecTime = Time.time;
+                    _tryJumpAfterSwitchLane = ShouldTryJumpAfterSwitchLane();
+                    _jumpAfterSwitchLaneFired = false;
                     break;
                 case BotAction.Jump:
                     _hamster.JumpRequest.Invoke();
@@ -186,6 +202,82 @@ namespace Assets.Scripts.BotV2
                 $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
                 $"  step: {BotLogger.FormatStep(_step)}\n" +
                 $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
+        }
+
+        private bool ShouldTryJumpAfterSwitchLane()
+        {
+            if (_step == null || _step.Action != BotAction.SwitchLane)
+                return false;
+
+            if (_hamster.Energy.Value < ActionGenerator.JumpEnergyCost)
+                return false;
+
+            if (_step.TargetObstacle.Category == ObjectCategory.Target &&
+                _step.TargetObstacle.Type == ObstacleTypeEnum.smallAlive)
+                return true;
+
+            return FindCloseSameLaneSmallAlive(out _);
+        }
+
+        private void TryFireJumpAfterSwitchLane()
+        {
+            if (!_tryJumpAfterSwitchLane || _jumpAfterSwitchLaneFired)
+                return;
+
+            if (_step == null || _step.Action != BotAction.SwitchLane)
+                return;
+
+            if (_hamster.Energy.Value < ActionGenerator.JumpEnergyCost)
+                return;
+
+            if (_hamster.HamsterState.Value != HamsterStateEnum.Run)
+                return;
+
+            if (!FindCloseSameLaneSmallAlive(out float liveDist))
+                return;
+
+            _hamster.JumpRequest.Invoke();
+            _jumpAfterSwitchLaneFired = true;
+            BotLogger.Log(BotLogLevel.Normal,
+                $"[EXECUTE] Jump-after-switch: liveDist={liveDist:F2} → FIRE\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                $"  step: {BotLogger.FormatStep(_step)}\n" +
+                $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
+        }
+
+        private bool FindCloseSameLaneSmallAlive(out float bestDist)
+        {
+            bestDist = float.MaxValue;
+            var spawner = ObstacleSpawner.Instance;
+            if (spawner == null)
+                return false;
+
+            bool hamsterOnBottom = _hamster.IsOnBottomLine.Value;
+            var spawned = spawner.SpawnedObstacles;
+            for (int i = 0; i < spawned.Count; i++)
+            {
+                var inst = spawned[i];
+                if (inst?.ObstacleScript == null)
+                    continue;
+
+                var obstacle = inst.ObstacleScript;
+                if (obstacle.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.smallAlive)
+                    continue;
+
+                bool obstacleOnBottom = !obstacle.ObstacleType.IsTop;
+                if (obstacleOnBottom != hamsterOnBottom)
+                    continue;
+
+                float leftX = obstacle.transform.position.x - obstacle.ColliderWidth * 0.5f;
+                float dist = leftX - _hamster.RightX;
+                if (dist < JumpAfterSwitchMinDist || dist > JumpAfterSwitchMaxDist)
+                    continue;
+
+                if (dist < bestDist)
+                    bestDist = dist;
+            }
+
+            return bestDist != float.MaxValue;
         }
 
         /// <summary>
@@ -336,7 +428,15 @@ namespace Assets.Scripts.BotV2
         /// </summary>
         private bool IsSwitchLaneImmediatelySafeNow()
         {
-            return SwitchLaneSafety.IsImmediatelySafe(_hamster, _step?.TargetObstacle.StableId ?? 0);
+            return SwitchLaneSafety.IsImmediatelySafe(_hamster, 0);
+        }
+
+        private bool IsLifeCollectibleSwitchLane()
+        {
+            return _step != null &&
+                   _step.Action == BotAction.SwitchLane &&
+                   _step.TargetObstacle.Category == ObjectCategory.Collectible &&
+                   _step.TargetObstacle.Type == ObstacleTypeEnum.collectableLife;
         }
 
         private void LogIfActionLooksStuck()
