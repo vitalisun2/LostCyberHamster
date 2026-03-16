@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.System;
 using Sirenix.OdinInspector;
 using System.Text;
@@ -1125,15 +1126,15 @@ namespace Assets.Scripts.BotV2
             GL.Begin(GL.LINES);
 
             bool hamBottom = _hamster != null && _hamster.IsOnBottomLine.Value;
-            DrawStepIndicator(_previewFirstStep, hamBottom);
+            DrawStepIndicator(_previewFirstStep, hamBottom, stepAlpha: 1.0f);
             if (_previewSecondStep != null)
-                DrawStepIndicator(_previewSecondStep, _previewStep1LaneAfter);
+                DrawStepIndicator(_previewSecondStep, _previewStep1LaneAfter, stepAlpha: 0.6f);
 
             GL.End();
             GL.PopMatrix();
         }
 
-        private static void DrawStepIndicator(ChainStep step, bool hamOnBottom)
+        private static void DrawStepIndicator(ChainStep step, bool hamOnBottom, float stepAlpha = 1.0f)
         {
             var spawner = ObstacleSpawner.Instance;
             float obsLeft   = step.TargetObstacle.LeftX;
@@ -1159,23 +1160,64 @@ namespace Assets.Scripts.BotV2
             float laneY = hamOnBottom
                 ? Assets.Scripts.Consts.ObstacleY1Pos + 0.95f
                 : Assets.Scripts.Consts.ObstacleY0Pos + 0.95f;
+            float roofY = hamOnBottom
+                ? Assets.Scripts.Consts.ObstacleRoofY1Pos + 0.15f
+                : Assets.Scripts.Consts.ObstacleRoofY0Pos + 0.15f;
 
-            Color color = GetStepColor(step.Action);
-            GL.Color(color);
+            Color baseColor = GetStepColor(step.Action);
+            GL.Color(new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * stepAlpha));
 
-            if (step.Action == BotAction.Jump || step.Action == BotAction.SuperJump)
+            bool isJumpOn = step.Action == BotAction.Jump &&
+                            (step.TargetObstacle.Category == ObjectCategory.Target ||
+                             step.TargetObstacle.Type == ObstacleTypeEnum.bigNotAlive ||
+                             step.TargetObstacle.Type == ObstacleTypeEnum.mediumNotAlive);
+
+            if (step.Action == BotAction.SuperJump)
             {
-                float arcH  = step.Action == BotAction.SuperJump ? 1.4f : 1.0f;
-                float landX = obsRight + 1.2f;
-                var a = new Vector3(obsLeft,   laneY,        0f);
-                var m = new Vector3(obsCenter, laneY + arcH, 0f);
-                var b = new Vector3(landX,     laneY,        0f);
-                GL.Vertex(a); GL.Vertex(m);
-                GL.Vertex(m); GL.Vertex(b);
-                // arrowhead at b
-                Vector3 dir = (b - m).normalized;
-                GL.Vertex(b); GL.Vertex(b + (Vector3)(Quaternion.Euler(0,0, 150f) * dir) * 0.4f);
-                GL.Vertex(b); GL.Vertex(b + (Vector3)(Quaternion.Euler(0,0,-150f) * dir) * 0.4f);
+                // Single large arc — peak 2.62 from transform_super_jump.anim
+                float startX = obsLeft - 0.3f;
+                float endX   = obsRight + 2.0f;
+                float midX   = (startX + obsRight) * 0.5f;
+                DrawQuadBezierArc(
+                    new Vector3(startX, laneY, 0f),
+                    new Vector3(midX, laneY + 2.62f, 0f),
+                    new Vector3(endX, laneY, 0f), 12);
+                DrawArrowhead(new Vector3(endX, laneY, 0f), new Vector3(midX, laneY + 2.62f, 0f), 0.45f);
+            }
+            else if (isJumpOn)
+            {
+                // Two arcs (напрыгивание) — from transform_jump_on.anim:
+                //   Arc1 peak = +1.42, valley = +0.80, Arc2 peak = +2.40, land at roofY
+                float startX = obsLeft - 0.3f;
+                float midX   = obsCenter;
+                float valleyY = laneY + 0.80f;
+                float endX   = obsRight - 0.2f;
+
+                // Arc 1: ground → valley on top of obstacle front
+                DrawQuadBezierArc(
+                    new Vector3(startX, laneY, 0f),
+                    new Vector3((startX + midX) * 0.5f, laneY + 1.42f, 0f),
+                    new Vector3(midX, valleyY, 0f), 8);
+                // Arc 2: valley → roof landing
+                DrawQuadBezierArc(
+                    new Vector3(midX, valleyY, 0f),
+                    new Vector3((midX + endX) * 0.5f, laneY + 2.40f, 0f),
+                    new Vector3(endX, roofY, 0f), 8);
+                DrawArrowhead(
+                    new Vector3(endX, roofY, 0f),
+                    new Vector3((midX + endX) * 0.5f, laneY + 2.40f, 0f), 0.40f);
+            }
+            else if (step.Action == BotAction.Jump)
+            {
+                // Jump over small obstacle — peak 1.42 from transform_jump.anim
+                float startX = obsLeft - 0.3f;
+                float endX   = obsRight + 1.5f;
+                float midX   = (startX + obsRight) * 0.5f;
+                DrawQuadBezierArc(
+                    new Vector3(startX, laneY, 0f),
+                    new Vector3(midX, laneY + 1.42f, 0f),
+                    new Vector3(endX, laneY, 0f), 10);
+                DrawArrowhead(new Vector3(endX, laneY, 0f), new Vector3(midX, laneY + 1.42f, 0f), 0.40f);
             }
             else if (step.Action == BotAction.SwitchLane)
             {
@@ -1183,17 +1225,36 @@ namespace Assets.Scripts.BotV2
                 float botY    = Assets.Scripts.Consts.ObstacleY1Pos + 0.95f;
                 float targetY = hamOnBottom ? topY : botY;
                 float xPos    = obsLeft - 0.2f;
-                var from = new Vector3(xPos, laneY,    0f);
-                var to   = new Vector3(xPos, targetY,  0f);
+                var from = new Vector3(xPos, laneY,   0f);
+                var to   = new Vector3(xPos, targetY, 0f);
                 GL.Vertex(from); GL.Vertex(to);
-                // arrowhead
                 Vector3 dir = (to - from).normalized;
-                GL.Vertex(to); GL.Vertex(to + (Vector3)(Quaternion.Euler(0,0, 150f) * dir) * 0.35f);
-                GL.Vertex(to); GL.Vertex(to + (Vector3)(Quaternion.Euler(0,0,-150f) * dir) * 0.35f);
-                // horizontal tick marks at both lanes
+                GL.Vertex(to); GL.Vertex(to + (Vector3)(Quaternion.Euler(0f, 0f,  150f) * dir) * 0.35f);
+                GL.Vertex(to); GL.Vertex(to + (Vector3)(Quaternion.Euler(0f, 0f, -150f) * dir) * 0.35f);
                 GL.Vertex(new Vector3(xPos - 0.25f, laneY,    0f)); GL.Vertex(new Vector3(xPos + 0.25f, laneY,    0f));
                 GL.Vertex(new Vector3(xPos - 0.25f, targetY,  0f)); GL.Vertex(new Vector3(xPos + 0.25f, targetY,  0f));
             }
+        }
+
+        private static void DrawQuadBezierArc(Vector3 p0, Vector3 ctrl, Vector3 p2, int segments)
+        {
+            Vector3 prev = p0;
+            for (int i = 1; i <= segments; i++)
+            {
+                float t = i / (float)segments;
+                float u = 1f - t;
+                Vector3 pt = u * u * p0 + 2f * u * t * ctrl + t * t * p2;
+                GL.Vertex(prev);
+                GL.Vertex(pt);
+                prev = pt;
+            }
+        }
+
+        private static void DrawArrowhead(Vector3 end, Vector3 approachCtrl, float size)
+        {
+            Vector3 dir = (end - approachCtrl).normalized;
+            GL.Vertex(end); GL.Vertex(end + (Vector3)(Quaternion.Euler(0f, 0f,  150f) * dir) * size);
+            GL.Vertex(end); GL.Vertex(end + (Vector3)(Quaternion.Euler(0f, 0f, -150f) * dir) * size);
         }
 
         private static Color GetStepColor(BotAction action)
