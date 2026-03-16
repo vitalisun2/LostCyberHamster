@@ -47,10 +47,18 @@ namespace Assets.Scripts.BotV2
         private bool _showPlannedTrajectory = true;
 
         [SerializeField]
-        private Color _trajectoryColor = new Color(0.2f, 1f, 0.3f, 0.9f);
+        [Tooltip("Принудительно включает визуализацию траектории в play mode")]
+        private bool _forceTrajectoryInPlayMode = true;
 
-        [SerializeField, Range(0.01f, 0.2f)]
-        private float _trajectoryLineWidth = 0.06f;
+        [SerializeField]
+        [Tooltip("Показывать текстовый HUD с текущим планом")]
+        private bool _showTrajectoryHud = true;
+
+        [SerializeField]
+        private Color _trajectoryColor = new Color(0.25f, 1f, 0.25f, 0.95f);
+
+        [SerializeField, Range(0.01f, 0.25f)]
+        private float _trajectoryLineWidth = 0.11f;
 
         [Title("Runtime"), ReadOnly]
         [ShowInInspector] public bool IsEnabled { get; private set; }
@@ -106,9 +114,14 @@ namespace Assets.Scripts.BotV2
         private int _energySpentDuringBotActions;
         private float _lastActionFiredAt = -999f;
         private string _lastActionFiredLabel = "None";
-        private readonly List<Vector3> _trajectoryPoints = new List<Vector3>(4);
-        private LineRenderer _trajectoryLine;
-        private Material _trajectoryMaterial;
+        private readonly List<Vector3> _trajectoryPoints = new List<Vector3>(8);
+        private readonly List<Vector3> _trajectoryStep1Points = new List<Vector3>(8);
+        private readonly List<Vector3> _trajectoryStep2Points = new List<Vector3>(8);
+        private Material _glMaterial;
+        private ChainStep _previewFirstStep;
+        private ChainStep _previewSecondStep;
+        private string _trajectoryHudText = "Plan: none";
+        private GUIStyle _trajectoryHudStyle;
 
         // ──────── Lifecycle ────────
 
@@ -132,6 +145,8 @@ namespace Assets.Scripts.BotV2
         {
             enabled = true;
             IsEnabled = true;
+            if (_forceTrajectoryInPlayMode)
+                _showPlannedTrajectory = true;
             ResetPipelineTriggerState();
 
             if (!_initialized)
@@ -1042,21 +1057,39 @@ namespace Assets.Scripts.BotV2
         private void UpdateTrajectoryPreview(BotSceneSnapshot snapshot, ChainStep first, ChainStep second)
         {
             _trajectoryPoints.Clear();
+            _trajectoryStep1Points.Clear();
+            _trajectoryStep2Points.Clear();
+            _previewFirstStep = first;
+            _previewSecondStep = second;
 
             if (!_showPlannedTrajectory || snapshot == null || first == null)
+            {
+                _trajectoryHudText = "Plan: none";
                 return;
+            }
 
             bool currentBottom = snapshot.HamsterOnBottom;
             float currentX = snapshot.HamsterRightX;
 
-            _trajectoryPoints.Add(ToTrajectoryPoint(currentX, currentBottom));
+            Vector3 start = ToTrajectoryPoint(currentX, currentBottom);
+            _trajectoryPoints.Add(start);
 
-            AppendStepTrajectoryPoint(snapshot, first, ref currentX, ref currentBottom);
+            Vector3 step1End = AppendStepTrajectoryPoint(snapshot, first, ref currentX, ref currentBottom);
+            BuildStepPolyline(_trajectoryStep1Points, start, step1End, first.Action);
+
             if (second != null)
-                AppendStepTrajectoryPoint(snapshot, second, ref currentX, ref currentBottom);
+            {
+                Vector3 step2Start = step1End;
+                Vector3 step2End = AppendStepTrajectoryPoint(snapshot, second, ref currentX, ref currentBottom);
+                BuildStepPolyline(_trajectoryStep2Points, step2Start, step2End, second.Action);
+            }
+
+            _trajectoryHudText = second == null
+                ? $"Plan: {first.Action} ({first.Rank})"
+                : $"Plan: {first.Action} -> {second.Action} ({first.Rank}/{second.Rank})";
         }
 
-        private void AppendStepTrajectoryPoint(
+        private Vector3 AppendStepTrajectoryPoint(
             BotSceneSnapshot snapshot,
             ChainStep step,
             ref float currentX,
@@ -1094,68 +1127,168 @@ namespace Assets.Scripts.BotV2
 
             currentX = nextX;
             currentBottom = nextBottom;
-            _trajectoryPoints.Add(ToTrajectoryPoint(currentX, currentBottom));
+
+            Vector3 point = ToTrajectoryPoint(currentX, currentBottom);
+            _trajectoryPoints.Add(point);
+            return point;
         }
 
         private static Vector3 ToTrajectoryPoint(float hamsterRightX, bool hamsterOnBottom)
         {
             float y = hamsterOnBottom ? Assets.Scripts.Consts.ObstacleY1Pos : Assets.Scripts.Consts.ObstacleY0Pos;
-            return new Vector3(hamsterRightX, y + 0.85f, 0f);
+            return new Vector3(hamsterRightX, y + 0.95f, 0f);
+        }
+
+        private static void BuildStepPolyline(List<Vector3> destination, Vector3 start, Vector3 end, BotAction action)
+        {
+            destination.Clear();
+            destination.Add(start);
+
+            Vector3 direction = end - start;
+            if (direction.sqrMagnitude < 0.0001f)
+                return;
+
+            if (action == BotAction.Jump || action == BotAction.SuperJump)
+            {
+                float arcHeight = action == BotAction.SuperJump ? 1.2f : 0.85f;
+                Vector3 mid = (start + end) * 0.5f + Vector3.up * arcHeight;
+                destination.Add(mid);
+            }
+
+            destination.Add(end);
+
+            // Arrow head
+            Vector3 dir = (end - start).normalized;
+            Vector3 leftWing = Quaternion.Euler(0f, 0f, 150f) * dir;
+            Vector3 rightWing = Quaternion.Euler(0f, 0f, -150f) * dir;
+            float wingLength = 0.45f;
+
+            destination.Add(end + leftWing * wingLength);
+            destination.Add(end);
+            destination.Add(end + rightWing * wingLength);
         }
 
         private void UpdateTrajectoryRenderer()
         {
-            if (!_showPlannedTrajectory)
-            {
-                if (_trajectoryLine != null)
-                    _trajectoryLine.enabled = false;
-                return;
-            }
-
-            if (_trajectoryPoints.Count < 2)
-            {
-                if (_trajectoryLine != null)
-                    _trajectoryLine.enabled = false;
-                return;
-            }
-
-            EnsureTrajectoryRenderer();
-            _trajectoryLine.enabled = true;
-            _trajectoryLine.startColor = _trajectoryColor;
-            _trajectoryLine.endColor = _trajectoryColor;
-            _trajectoryLine.startWidth = _trajectoryLineWidth;
-            _trajectoryLine.endWidth = _trajectoryLineWidth;
-            _trajectoryLine.positionCount = _trajectoryPoints.Count;
-            _trajectoryLine.SetPositions(_trajectoryPoints.ToArray());
+            if (_showPlannedTrajectory)
+                EnsureGLMaterial();
         }
 
-        private void EnsureTrajectoryRenderer()
+        private void EnsureGLMaterial()
         {
-            if (_trajectoryLine != null)
+            if (_glMaterial != null)
                 return;
 
-            var lineObject = new GameObject("BotV2_TrajectoryOverlay");
-            lineObject.transform.SetParent(transform, false);
+            Shader shader = Shader.Find("Hidden/Internal-Colored");
+            if (shader == null)
+            {
+                DebugManager.DiagLog("[BotOrchestrator] Hidden/Internal-Colored shader not found!");
+                return;
+            }
 
-            _trajectoryLine = lineObject.AddComponent<LineRenderer>();
-            _trajectoryLine.textureMode = LineTextureMode.Stretch;
-            _trajectoryLine.alignment = LineAlignment.View;
-            _trajectoryLine.numCapVertices = 4;
-            _trajectoryLine.numCornerVertices = 3;
-            _trajectoryLine.sortingOrder = 500;
-            _trajectoryLine.useWorldSpace = true;
+            _glMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+            _glMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            _glMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            _glMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
+            _glMaterial.SetInt("_ZWrite", 0);
+            _glMaterial.SetInt("_ZTest", (int)UnityEngine.Rendering.CompareFunction.Always);
 
-            if (_trajectoryMaterial == null)
-                _trajectoryMaterial = new Material(Shader.Find("Sprites/Default"));
+            DebugManager.DiagLog("[BotOrchestrator] Trajectory GL material created (ZTest=Always)");
+        }
 
-            _trajectoryLine.material = _trajectoryMaterial;
+        private void OnRenderObject()
+        {
+            if (!_showPlannedTrajectory || !IsEnabled || _glMaterial == null)
+                return;
+
+            bool hasStep1 = _trajectoryStep1Points != null && _trajectoryStep1Points.Count >= 2;
+            bool hasStep2 = _trajectoryStep2Points != null && _trajectoryStep2Points.Count >= 2;
+
+            if (!hasStep1 && !hasStep2)
+                return;
+
+            _glMaterial.SetPass(0);
+            GL.PushMatrix();
+            GL.Begin(GL.LINES);
+
+            if (hasStep1)
+            {
+                Color c1 = GetStepColor(_previewFirstStep?.Action ?? BotAction.None);
+                GL.Color(c1);
+                for (int i = 0; i < _trajectoryStep1Points.Count - 1; i++)
+                {
+                    GL.Vertex(_trajectoryStep1Points[i]);
+                    GL.Vertex(_trajectoryStep1Points[i + 1]);
+                }
+            }
+
+            if (hasStep2)
+            {
+                Color c2 = GetStepColor(_previewSecondStep?.Action ?? BotAction.None);
+                GL.Color(c2);
+                for (int i = 0; i < _trajectoryStep2Points.Count - 1; i++)
+                {
+                    GL.Vertex(_trajectoryStep2Points[i]);
+                    GL.Vertex(_trajectoryStep2Points[i + 1]);
+                }
+            }
+
+            GL.End();
+            GL.PopMatrix();
+        }
+
+        private static Color GetStepColor(BotAction action)
+        {
+            switch (action)
+            {
+                case BotAction.SwitchLane:
+                    return new Color(0.25f, 0.95f, 1f, 1f);
+                case BotAction.Jump:
+                    return new Color(1f, 0.95f, 0.2f, 1f);
+                case BotAction.SuperJump:
+                    return new Color(1f, 0.55f, 0.2f, 1f);
+                default:
+                    return new Color(0.8f, 0.8f, 0.8f, 0.95f);
+            }
         }
 
         private void ClearTrajectoryPreview()
         {
             _trajectoryPoints.Clear();
-            if (_trajectoryLine != null)
-                _trajectoryLine.enabled = false;
+            _trajectoryStep1Points.Clear();
+            _trajectoryStep2Points.Clear();
+            _previewFirstStep = null;
+            _previewSecondStep = null;
+            _trajectoryHudText = "Plan: none";
+        }
+
+        private void OnGUI()
+        {
+            if (!_showTrajectoryHud || !IsEnabled)
+                return;
+
+            if (_trajectoryHudStyle == null)
+            {
+                _trajectoryHudStyle = new GUIStyle(GUI.skin.box)
+                {
+                    fontSize = 20,
+                    alignment = TextAnchor.MiddleLeft,
+                    normal = { textColor = Color.white }
+                };
+            }
+
+            string text = _trajectoryHudText;
+            if (_previewFirstStep != null)
+            {
+                string step1 = $"Step1: {_previewFirstStep.Action} ({_previewFirstStep.TargetObstacle.Category})";
+                string step2 = _previewSecondStep != null
+                    ? $"Step2: {_previewSecondStep.Action} ({_previewSecondStep.TargetObstacle.Category})"
+                    : "Step2: none";
+                text = $"{text}\n{step1}\n{step2}";
+            }
+
+            var rect = new Rect(20f, 20f, 760f, 100f);
+            GUI.Box(rect, text, _trajectoryHudStyle);
         }
     }
 }
