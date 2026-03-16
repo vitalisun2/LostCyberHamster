@@ -1109,6 +1109,39 @@ namespace Assets.Scripts.BotV2
             DebugManager.DiagLog("[BotOrchestrator] Trajectory GL material created (ZTest=Always)");
         }
 
+        // ─── Animation keyframe data ─── [time, y, outSlope, inSlope]
+        // Source: transform_jump.anim (duration 1.0 s)
+        private static readonly float[,] s_JumpKF =
+        {
+            {  0.000f,  0.000f,  7.477f,   0.000f },
+            {  0.133f,  0.880f,  4.302f,   4.302f },
+            {  0.433f,  1.424f,  0.184f,   0.184f },
+            {  0.850f,  0.800f, -3.687f,  -3.687f },
+            {  1.000f,  0.000f,  0.000f,  -6.478f },
+        };
+        // Source: transform_super_jump.anim (duration 1.2 s, starts elevated y=1.27)
+        private static readonly float[,] s_SuperJumpKF =
+        {
+            {  0.000f,  1.273f,  6.081f,   0.000f  },
+            {  0.183f,  2.139f,  3.021f,   3.021f  },
+            {  0.583f,  2.619f, -0.498f,  -0.498f  },
+            {  1.000f,  1.584f, -5.314f,  -5.314f  },
+            {  1.200f,  0.000f,  0.000f, -10.197f  },
+        };
+        // Source: transform_jump_on.anim (duration 1.817 s, two-arc, tangent break at t=0.85)
+        private static readonly float[,] s_JumpOnKF =
+        {
+            {  0.000f,  0.000f,  7.477f,   0.000f  },
+            {  0.133f,  0.880f,  4.302f,   4.302f  },
+            {  0.433f,  1.424f,  0.184f,   0.184f  },
+            {  0.850f,  0.800f,  8.339f,  -2.670f  }, // tangent break: landing on obstacle
+            {  1.017f,  1.912f,  4.663f,   4.663f  },
+            {  1.150f,  2.316f,  1.619f,   1.619f  },
+            {  1.283f,  2.400f, -0.162f,  -0.162f  },
+            {  1.617f,  1.528f, -5.968f,  -5.968f  },
+            {  1.817f,  0.000f,  0.000f,  -7.640f  }, // y=0 remapped to roofY
+        };
+
         private void OnRenderObject()
         {
             if (!_showPlannedTrajectory || !IsEnabled || _glMaterial == null)
@@ -1136,10 +1169,11 @@ namespace Assets.Scripts.BotV2
 
         private static void DrawStepIndicator(ChainStep step, bool hamOnBottom, float stepAlpha = 1.0f)
         {
+            const float JumpFireDist = 1.5f;
+
             var spawner = ObstacleSpawner.Instance;
             float obsLeft   = step.TargetObstacle.LeftX;
             float obsRight  = step.TargetObstacle.RightX;
-            float obsCenter = step.TargetObstacle.CenterX;
 
             if (spawner != null)
             {
@@ -1150,9 +1184,9 @@ namespace Assets.Scripts.BotV2
                     if (inst?.ObstacleScript == null) continue;
                     if (inst.ObstacleScript.GetInstanceID() != step.TargetObstacle.StableId) continue;
                     float hw = inst.ObstacleScript.ColliderWidth * 0.5f;
-                    obsCenter = inst.ObstacleScript.transform.position.x;
-                    obsLeft   = obsCenter - hw;
-                    obsRight  = obsCenter + hw;
+                    float cx = inst.ObstacleScript.transform.position.x;
+                    obsLeft  = cx - hw;
+                    obsRight = cx + hw;
                     break;
                 }
             }
@@ -1164,60 +1198,36 @@ namespace Assets.Scripts.BotV2
                 ? Assets.Scripts.Consts.ObstacleRoofY1Pos + 0.15f
                 : Assets.Scripts.Consts.ObstacleRoofY0Pos + 0.15f;
 
-            Color baseColor = GetStepColor(step.Action);
-            GL.Color(new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * stepAlpha));
+            Color c = GetStepColor(step.Action);
+            GL.Color(new Color(c.r, c.g, c.b, c.a * stepAlpha));
 
             bool isJumpOn = step.Action == BotAction.Jump &&
                             (step.TargetObstacle.Category == ObjectCategory.Target ||
                              step.TargetObstacle.Type == ObstacleTypeEnum.bigNotAlive ||
                              step.TargetObstacle.Type == ObstacleTypeEnum.mediumNotAlive);
 
+            float speed = Assets.Scripts.Consts.GameSpeedBase;
+
             if (step.Action == BotAction.SuperJump)
             {
-                // Single large arc — peak 2.62 from transform_super_jump.anim
-                float startX = obsLeft - 0.3f;
-                float endX   = obsRight + 2.0f;
-                float midX   = (startX + obsRight) * 0.5f;
-                DrawQuadBezierArc(
-                    new Vector3(startX, laneY, 0f),
-                    new Vector3(midX, laneY + 2.62f, 0f),
-                    new Vector3(endX, laneY, 0f), 12);
-                DrawArrowhead(new Vector3(endX, laneY, 0f), new Vector3(midX, laneY + 2.62f, 0f), 0.45f);
+                float fireX = obsLeft - JumpFireDist;
+                float endX  = fireX + s_SuperJumpKF[s_SuperJumpKF.GetLength(0) - 1, 0] * speed;
+                DrawHermiteTrajectory(s_SuperJumpKF, fireX, endX, laneY, laneY, 8, out Vector3 preEnd);
+                DrawArrowhead(new Vector3(endX, laneY, 0f), preEnd, 0.45f);
             }
             else if (isJumpOn)
             {
-                // Two arcs (напрыгивание) — from transform_jump_on.anim:
-                //   Arc1 peak = +1.42, valley = +0.80, Arc2 peak = +2.40, land at roofY
-                float startX = obsLeft - 0.3f;
-                float midX   = obsCenter;
-                float valleyY = laneY + 0.80f;
-                float endX   = obsRight - 0.2f;
-
-                // Arc 1: ground → valley on top of obstacle front
-                DrawQuadBezierArc(
-                    new Vector3(startX, laneY, 0f),
-                    new Vector3((startX + midX) * 0.5f, laneY + 1.42f, 0f),
-                    new Vector3(midX, valleyY, 0f), 8);
-                // Arc 2: valley → roof landing
-                DrawQuadBezierArc(
-                    new Vector3(midX, valleyY, 0f),
-                    new Vector3((midX + endX) * 0.5f, laneY + 2.40f, 0f),
-                    new Vector3(endX, roofY, 0f), 8);
-                DrawArrowhead(
-                    new Vector3(endX, roofY, 0f),
-                    new Vector3((midX + endX) * 0.5f, laneY + 2.40f, 0f), 0.40f);
+                float fireX = obsLeft - JumpFireDist;
+                float endX  = fireX + s_JumpOnKF[s_JumpOnKF.GetLength(0) - 1, 0] * speed;
+                DrawHermiteTrajectory(s_JumpOnKF, fireX, endX, laneY, roofY, 8, out Vector3 preEnd);
+                DrawArrowhead(new Vector3(endX, roofY, 0f), preEnd, 0.40f);
             }
             else if (step.Action == BotAction.Jump)
             {
-                // Jump over small obstacle — peak 1.42 from transform_jump.anim
-                float startX = obsLeft - 0.3f;
-                float endX   = obsRight + 1.5f;
-                float midX   = (startX + obsRight) * 0.5f;
-                DrawQuadBezierArc(
-                    new Vector3(startX, laneY, 0f),
-                    new Vector3(midX, laneY + 1.42f, 0f),
-                    new Vector3(endX, laneY, 0f), 10);
-                DrawArrowhead(new Vector3(endX, laneY, 0f), new Vector3(midX, laneY + 1.42f, 0f), 0.40f);
+                float fireX = obsLeft - JumpFireDist;
+                float endX  = fireX + s_JumpKF[s_JumpKF.GetLength(0) - 1, 0] * speed;
+                DrawHermiteTrajectory(s_JumpKF, fireX, endX, laneY, laneY, 8, out Vector3 preEnd);
+                DrawArrowhead(new Vector3(endX, laneY, 0f), preEnd, 0.40f);
             }
             else if (step.Action == BotAction.SwitchLane)
             {
@@ -1231,28 +1241,69 @@ namespace Assets.Scripts.BotV2
                 Vector3 dir = (to - from).normalized;
                 GL.Vertex(to); GL.Vertex(to + (Vector3)(Quaternion.Euler(0f, 0f,  150f) * dir) * 0.35f);
                 GL.Vertex(to); GL.Vertex(to + (Vector3)(Quaternion.Euler(0f, 0f, -150f) * dir) * 0.35f);
-                GL.Vertex(new Vector3(xPos - 0.25f, laneY,    0f)); GL.Vertex(new Vector3(xPos + 0.25f, laneY,    0f));
-                GL.Vertex(new Vector3(xPos - 0.25f, targetY,  0f)); GL.Vertex(new Vector3(xPos + 0.25f, targetY,  0f));
+                GL.Vertex(new Vector3(xPos - 0.25f, laneY,   0f)); GL.Vertex(new Vector3(xPos + 0.25f, laneY,   0f));
+                GL.Vertex(new Vector3(xPos - 0.25f, targetY, 0f)); GL.Vertex(new Vector3(xPos + 0.25f, targetY, 0f));
             }
         }
 
-        private static void DrawQuadBezierArc(Vector3 p0, Vector3 ctrl, Vector3 p2, int segments)
+        /// <summary>
+        /// Рисует кубическую Hermite-кривую через ключевые кадры анимации.
+        /// kf: строки = {time, y, outSlope, inSlope}. X параметризован через gameSpeed.
+        /// Последний кадр y заменяется landingY (для точного приземления).
+        /// </summary>
+        private static void DrawHermiteTrajectory(
+            float[,] kf, float startX, float endX,
+            float baseY, float landingY,
+            int segsPerSpan, out Vector3 preEndPoint)
         {
-            Vector3 prev = p0;
-            for (int i = 1; i <= segments; i++)
+            int   n      = kf.GetLength(0);
+            float tMax   = kf[n - 1, 0];
+            float xSpan  = endX - startX;
+            float yLand  = landingY - baseY;
+
+            preEndPoint = new Vector3(startX, baseY, 0f);
+
+            for (int i = 0; i < n - 1; i++)
             {
-                float t = i / (float)segments;
-                float u = 1f - t;
-                Vector3 pt = u * u * p0 + 2f * u * t * ctrl + t * t * p2;
-                GL.Vertex(prev);
-                GL.Vertex(pt);
-                prev = pt;
+                float t0   = kf[i,   0];
+                float y0   = kf[i,   1];
+                float oSlp = kf[i,   2];  // outSlope (departure tangent)
+                float t1   = kf[i+1, 0];
+                float y1   = kf[i+1, 1];
+                float iSlp = kf[i+1, 3];  // inSlope (arrival tangent)
+                bool  last = i == n - 2;
+
+                float yEnd = last ? yLand : y1;
+                float dt   = t1 - t0;
+                float m0   = oSlp * dt;
+                float m1   = iSlp * dt;
+
+                Vector3 prev = new Vector3(startX + (t0 / tMax) * xSpan, baseY + y0, 0f);
+
+                for (int j = 1; j <= segsPerSpan; j++)
+                {
+                    float s   = j / (float)segsPerSpan;
+                    float s2  = s * s;
+                    float s3  = s2 * s;
+                    float yVal = (2*s3 - 3*s2 + 1)*y0 + (s3 - 2*s2 + s)*m0
+                               + (-2*s3 + 3*s2)*yEnd + (s3 - s2)*m1;
+                    float t   = t0 + s * dt;
+                    Vector3 pt = new Vector3(startX + (t / tMax) * xSpan, baseY + yVal, 0f);
+
+                    GL.Vertex(prev);
+                    GL.Vertex(pt);
+
+                    if (last && j == segsPerSpan - 1)
+                        preEndPoint = prev;
+
+                    prev = pt;
+                }
             }
         }
 
-        private static void DrawArrowhead(Vector3 end, Vector3 approachCtrl, float size)
+        private static void DrawArrowhead(Vector3 end, Vector3 approachPoint, float size)
         {
-            Vector3 dir = (end - approachCtrl).normalized;
+            Vector3 dir = (end - approachPoint).normalized;
             GL.Vertex(end); GL.Vertex(end + (Vector3)(Quaternion.Euler(0f, 0f,  150f) * dir) * size);
             GL.Vertex(end); GL.Vertex(end + (Vector3)(Quaternion.Euler(0f, 0f, -150f) * dir) * size);
         }
