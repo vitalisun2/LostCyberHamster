@@ -1,4 +1,4 @@
-﻿{
+{
     "skyTexture": "sky_new_york_morning",
     "background2Texture": "bg_2_new_york_morning",
     "backgroundTexture": "bg_new_york_morning",
@@ -242,6 +242,26 @@
         },
         {
             "ref": "bot_s4_v3_24_bottom_target_top_medium_bottom_energy_far",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s4_v4_03_top_big_safe_runfromroof",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bot_s4_v4_04_bottom_medium_safe_runfromroof",
             "spriteSeed": 0,
             "overrides": []
         },

@@ -103,7 +103,7 @@ namespace Assets.Scripts.BotV2
 
                 case ObstacleTypeEnum.bigNotAlive:
                 case ObstacleTypeEnum.mediumNotAlive:
-                    if (snapshot.Energy >= JumpEnergyCost)
+                    if (snapshot.Energy >= JumpEnergyCost && IsRunFromRoofSafe(snapshot, threat))
                     {
                         result.Add(new ChainStep(
                             BotAction.Jump,
@@ -461,6 +461,34 @@ namespace Assets.Scripts.BotV2
                 default:
                     return 1;
             }
+        }
+
+        /// <summary>
+        /// Проверяет, свободна ли зона автоспуска с крыши (~1.9u после конца крыши).
+        /// Если в этой зоне есть Threat на той же линии — JumpOnRoof небезопасен.
+        /// </summary>
+        private static bool IsRunFromRoofSafe(BotSceneSnapshot snapshot, ObstacleInfo roofObject)
+        {
+            const float RunFromRoofVulnerabilityDistance = 1.9f;
+
+            float dangerZoneStart = roofObject.RightX;
+            float dangerZoneEnd = roofObject.RightX + RunFromRoofVulnerabilityDistance;
+            bool roofOnBottom = !roofObject.IsTopLane;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (obs.StableId == roofObject.StableId) continue;
+                if (obs.Category != ObjectCategory.Threat) continue;
+
+                bool obsOnBottom = !obs.IsTopLane;
+                if (obsOnBottom != roofOnBottom) continue;
+
+                if (obs.LeftX < dangerZoneEnd && obs.RightX > dangerZoneStart)
+                    return false;
+            }
+
+            return true;
         }
 
         /// <summary>

@@ -10907,6 +10907,42 @@
                 { "id": 1, "type": 11, "x": 15.5, "y": -1.8000000715255738 },
                 { "id": 2, "type": 5, "x": 21.7, "y": -2.799999952316284 }
             ]
+        },
+        {
+            "name": "bot_s4_v4_01_top_big_then_small_threat_runfromroof",
+            "description": "BotV2 Stage 4 v4: bigNotAlive сверху + smallNotAliveRoad сразу после в зоне RunFromRoof. Бот должен выбрать SwitchLane вместо JumpOnRoof.",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 4, "x": 12.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 16.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v4_02_bottom_medium_then_small_threat_runfromroof",
+            "description": "BotV2 Stage 4 v4: mediumNotAlive снизу + smallNotAliveRoad сразу после в зоне RunFromRoof. Бот должен выбрать SwitchLane вместо JumpOnRoof.",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 11, "x": 12.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 15.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s4_v4_03_top_big_safe_runfromroof",
+            "description": "BotV2 Stage 4 v4: bigNotAlive сверху, зона RunFromRoof чистая. Бот может безопасно JumpOnRoof.",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 4, "x": 12.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 22.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s4_v4_04_bottom_medium_safe_runfromroof",
+            "description": "BotV2 Stage 4 v4: mediumNotAlive снизу, зона RunFromRoof чистая. Бот может безопасно JumpOnRoof.",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 11, "x": 12.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 22.0, "y": -2.799999952316284 }
+            ]
         }
     ]
 }
