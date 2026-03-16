@@ -10,6 +10,13 @@ public static class DebugManager
     private static string _diagLogPath;
     private static bool _fileLoggingEnabled = true;
 
+    public enum DiagChannel
+    {
+        BotEvents,
+        Economy,
+        Stability
+    }
+
     static DebugManager()
     {
         // Initialize diagnostic log file path
@@ -29,11 +36,7 @@ public static class DebugManager
         }
         
         // Clear old log on startup
-        if (File.Exists(_diagLogPath))
-        {
-            File.Delete(_diagLogPath);
-        }
-        
+        SafeDelete(_diagLogPath);
         WriteDiagLogToFile($"=== Diagnostic Log Started at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
     }
 
@@ -48,10 +51,20 @@ public static class DebugManager
     /// </summary>
     public static void DiagLog(string message)
     {
-        var formattedMessage = $"[DIAG] {message}";
+        DiagLog(message, DiagChannel.BotEvents);
+    }
+
+    public static void DiagLog(string message, DiagChannel channel)
+    {
+        string channelTag = GetChannelTag(channel);
+        var formattedMessage = $"[DIAG][CH={channelTag}] {message}";
         Debug.Log(formattedMessage);
         WriteDiagLogToFile($"[{DateTime.Now:HH:mm:ss.fff}] {formattedMessage}");
     }
+
+    public static void DiagEconomy(string message) => DiagLog(message, DiagChannel.Economy);
+
+    public static void DiagStability(string message) => DiagLog(message, DiagChannel.Stability);
 
     /// <summary>
     /// Get the full path to the diagnostic log file.
@@ -84,11 +97,21 @@ public static class DebugManager
     /// </summary>
     public static void ClearDiagLog()
     {
-        if (File.Exists(_diagLogPath))
-        {
-            File.Delete(_diagLogPath);
-        }
+        SafeDelete(_diagLogPath);
         WriteDiagLogToFile($"=== Log Cleared at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
+    }
+
+    private static string GetChannelTag(DiagChannel channel)
+    {
+        switch (channel)
+        {
+            case DiagChannel.Economy:
+                return "ECO";
+            case DiagChannel.Stability:
+                return "STAB";
+            default:
+                return "BOT";
+        }
     }
 
     private static void WriteDiagLogToFile(string message)
@@ -104,6 +127,12 @@ public static class DebugManager
             Debug.LogError($"[DebugManager] Failed to write to diagnostic log: {ex.Message}");
             _fileLoggingEnabled = false; // Disable if writing fails
         }
+    }
+
+    private static void SafeDelete(string path)
+    {
+        if (!File.Exists(path)) return;
+        File.Delete(path);
     }
 
     public static void OnEnable()

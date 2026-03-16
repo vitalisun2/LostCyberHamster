@@ -6,6 +6,7 @@ using Assets.Scripts.GameManagerLogic;
 using Sirenix.OdinInspector;
 using System.Text;
 using UnityEngine;
+using Vues.GameCore;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -75,6 +76,25 @@ namespace Assets.Scripts.BotV2
         private bool _hasPlannedManagedState;
         private HamsterStateEnum _plannedManagedState;
 
+        private int _runStartCoins;
+        private int _runStartCrystals;
+        private int _runStartEnergy;
+        private int _runStartLives;
+        private int _coinsCollectedDuringRun;
+        private int _coinsSpentDuringRun;
+        private int _crystalsCollectedDuringRun;
+        private int _crystalsSpentDuringRun;
+        private int _energyAddedDuringRun;
+        private int _energySpentDuringRun;
+        private int _livesAddedDuringRun;
+        private int _livesLostDuringRun;
+        private int _actionsFiredDuringRun;
+        private int _actionsCompletedDuringRun;
+        private int _actionsCancelledDuringRun;
+        private int _energySpentDuringBotActions;
+        private float _lastActionFiredAt = -999f;
+        private string _lastActionFiredLabel = "None";
+
         // ──────── Lifecycle ────────
 
         private void Start()
@@ -127,6 +147,8 @@ namespace Assets.Scripts.BotV2
 
             var state = _hamster.HamsterState.Value;
             if (state == HamsterStateEnum.Dead) return;
+
+            TrackUnattributedEnergyAndLives();
 
             var snapshot = _snapshotBuilder.Build(_hamster, _scanRange);
             _lastSnapshot = snapshot;
@@ -239,6 +261,7 @@ namespace Assets.Scripts.BotV2
                 if (Time.time >= _nextInitFailureLogTime)
                 {
                     DebugManager.DiagLog("[BotOrchestrator] Init failed — Hamster or GameManager not found");
+                    DebugManager.DiagStability("[BotOrchestrator] Init failed — Hamster or GameManager not found");
                     _nextInitFailureLogTime = Time.time + 2f;
                 }
                 return;
@@ -250,10 +273,20 @@ namespace Assets.Scripts.BotV2
             _selector        = new ActionSelector();
             _executor        = new StepExecutor(_hamster);
 
+            ResetEconomyTracking();
+
             // Логирование урона
             _hamster.DamageEvent.Subscribe(OnDamage);
             _gameManager.OnFinish += OnGameFinished;
             GameEventsManager.OnLevelCompleted += OnLevelCompleted;
+            GameEventsManager.OnCoinCollected += OnCoinCollected;
+            GameEventsManager.OnCoinsSpent += OnCoinsSpent;
+            GameEventsManager.OnCrystalsCollected += OnCrystalsCollected;
+            GameEventsManager.OnCrystalsSpent += OnCrystalsSpent;
+            GameEventsManager.OnEnergyAdded += OnEnergyAdded;
+            GameEventsManager.OnEnergySpent += OnEnergySpent;
+            GameEventsManager.OnLivesAdded += OnLivesAdded;
+            GameEventsManager.OnLivesLost += OnLivesLost;
 
             _initialized = true;
             IsEnabled    = true;
@@ -270,6 +303,14 @@ namespace Assets.Scripts.BotV2
                 _gameManager.OnFinish -= OnGameFinished;
 
             GameEventsManager.OnLevelCompleted -= OnLevelCompleted;
+            GameEventsManager.OnCoinCollected -= OnCoinCollected;
+            GameEventsManager.OnCoinsSpent -= OnCoinsSpent;
+            GameEventsManager.OnCrystalsCollected -= OnCrystalsCollected;
+            GameEventsManager.OnCrystalsSpent -= OnCrystalsSpent;
+            GameEventsManager.OnEnergyAdded -= OnEnergyAdded;
+            GameEventsManager.OnEnergySpent -= OnEnergySpent;
+            GameEventsManager.OnLivesAdded -= OnLivesAdded;
+            GameEventsManager.OnLivesLost -= OnLivesLost;
         }
 
         private void RememberCancelledSwitchLane()
@@ -344,9 +385,20 @@ namespace Assets.Scripts.BotV2
                 return false;
             }
 
+            var statusBeforeExecute = _activeStep.Status;
             _executor.TryExecute();
+
+            if (statusBeforeExecute == ChainStepStatus.Ready && _activeStep != null && _activeStep.Status == ChainStepStatus.InProgress)
+            {
+                RegisterActionFired(_activeStep);
+            }
+
             if (_executor.WasCancelled)
             {
+                _actionsCancelledDuringRun++;
+                DebugManager.DiagEconomy(
+                    $"[ACTION CANCELLED] action={_activeStep.Action} reason=live_safety_recheck " +
+                    $"energy={_hamster.Energy.Value} lives={_hamster.Lives.Value}");
                 RememberCancelledSwitchLane();
                 CompleteActiveStep(PipelineTrigger.StepCancelled);
                 return false;
@@ -354,6 +406,9 @@ namespace Assets.Scripts.BotV2
 
             if (_activeStep.Status == ChainStepStatus.Completed)
             {
+                _actionsCompletedDuringRun++;
+                DebugManager.DiagEconomy(
+                    $"[ACTION COMPLETED] action={_activeStep.Action} energy={_hamster.Energy.Value} lives={_hamster.Lives.Value}");
                 CompleteActiveStep(PipelineTrigger.StepCompleted);
                 return false;
             }
@@ -489,6 +544,8 @@ namespace Assets.Scripts.BotV2
                 $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, step?.TargetObstacle.StableId ?? 0)}\n" +
                 $"  killer (nearest same-lane threat): {killerInfo}\n" +
                 $"[DAMAGE] ===");
+            DebugManager.DiagStability(
+                $"[DAMAGE] hamster={BotLogger.FormatHamster(_hamster)} killer={killerInfo} activeStep={BotLogger.FormatStep(step)}");
 
             if (_hamster.Lives.Value <= 0)
             {
@@ -497,6 +554,8 @@ namespace Assets.Scripts.BotV2
                     $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
                     $"  active step: {BotLogger.FormatStep(step)}\n" +
                     $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, step?.TargetObstacle.StableId ?? 0)}");
+                DebugManager.DiagStability("[TEST RESULT] FAIL");
+                LogEconomyResult("FAIL", levelId: null, stars: null);
             }
         }
 
@@ -510,6 +569,7 @@ namespace Assets.Scripts.BotV2
                 $"[TEST FINISH] state={_gameManager.State} lastAction={_lastAction}\n" +
                 $"  hamster: {BotLogger.FormatHamster(_hamster)}{finishWarning}\n" +
                 $"  last snapshot: {BotLogger.FormatSnapshotObstacles(_lastSnapshot?.VisibleObjects)}");
+            LogEconomyResult("FINISH", levelId: null, stars: null);
         }
 
         private void OnLevelCompleted(int levelId, int stars)
@@ -522,6 +582,241 @@ namespace Assets.Scripts.BotV2
                 $"[TEST RESULT] WIN level={levelId} stars={stars}\n" +
                 $"  hamster: {BotLogger.FormatHamster(_hamster)}{finishWarning}\n" +
                 $"  last snapshot: {BotLogger.FormatSnapshotObstacles(_lastSnapshot?.VisibleObjects)}");
+            DebugManager.DiagStability($"[TEST RESULT] WIN level={levelId} stars={stars}");
+            LogEconomyResult("WIN", levelId, stars);
+        }
+
+        private void ResetEconomyTracking()
+        {
+            _runStartCoins = ResourceManager.GetCurrentBalance(ResourceType.Coins);
+            _runStartCrystals = ResourceManager.GetCurrentBalance(ResourceType.Crystals);
+            _runStartEnergy = _hamster != null ? _hamster.Energy.Value : 0;
+            _runStartLives = _hamster != null ? _hamster.Lives.Value : 0;
+            _coinsCollectedDuringRun = 0;
+            _coinsSpentDuringRun = 0;
+            _crystalsCollectedDuringRun = 0;
+            _crystalsSpentDuringRun = 0;
+            _energyAddedDuringRun = 0;
+            _energySpentDuringRun = 0;
+            _livesAddedDuringRun = 0;
+            _livesLostDuringRun = 0;
+            _actionsFiredDuringRun = 0;
+            _actionsCompletedDuringRun = 0;
+            _actionsCancelledDuringRun = 0;
+            _energySpentDuringBotActions = 0;
+            _lastActionFiredAt = -999f;
+            _lastActionFiredLabel = "None";
+
+            DebugManager.DiagEconomy(
+                $"[RUN START] coins={_runStartCoins} crystals={_runStartCrystals} energy={_runStartEnergy} lives={_runStartLives}");
+        }
+
+        private void OnCoinCollected(int amount)
+        {
+            if (amount > 0)
+            {
+                _coinsCollectedDuringRun += amount;
+                int after = ResourceManager.GetCurrentBalance(ResourceType.Coins);
+                int before = after - amount;
+                DebugManager.DiagEconomy(
+                    $"[COINS +] amount={amount} before={before} after={after} context={GetRecentActionContext(0.75f)}");
+            }
+        }
+
+        private void OnCoinsSpent(int amount)
+        {
+            if (amount > 0)
+            {
+                _coinsSpentDuringRun += amount;
+                int after = ResourceManager.GetCurrentBalance(ResourceType.Coins);
+                int before = after + amount;
+                DebugManager.DiagEconomy(
+                    $"[COINS -] amount={amount} before={before} after={after} context={GetRecentActionContext(0.75f)}");
+            }
+        }
+
+        private void OnCrystalsCollected(int amount)
+        {
+            if (amount > 0)
+            {
+                _crystalsCollectedDuringRun += amount;
+                int after = ResourceManager.GetCurrentBalance(ResourceType.Crystals);
+                int before = after - amount;
+                DebugManager.DiagEconomy(
+                    $"[CRYSTALS +] amount={amount} before={before} after={after} context={GetRecentActionContext(0.75f)}");
+            }
+        }
+
+        private void OnCrystalsSpent(int amount)
+        {
+            if (amount > 0)
+            {
+                _crystalsSpentDuringRun += amount;
+                int after = ResourceManager.GetCurrentBalance(ResourceType.Crystals);
+                int before = after + amount;
+                DebugManager.DiagEconomy(
+                    $"[CRYSTALS -] amount={amount} before={before} after={after} context={GetRecentActionContext(0.75f)}");
+            }
+        }
+
+        private void OnEnergyAdded(int amount)
+        {
+            if (amount > 0)
+            {
+                _energyAddedDuringRun += amount;
+                int after = _hamster.Energy.Value;
+                int before = after - amount;
+                DebugManager.DiagEconomy(
+                    $"[ENERGY +] amount={amount} before={before} after={after} context={GetRecentActionContext(0.75f)}");
+            }
+        }
+
+        private void OnEnergySpent(int amount)
+        {
+            if (amount > 0)
+            {
+                _energySpentDuringRun += amount;
+                if (IsRecentAction(0.75f))
+                    _energySpentDuringBotActions += amount;
+
+                int after = _hamster.Energy.Value;
+                int before = after + amount;
+                DebugManager.DiagEconomy(
+                    $"[ENERGY -] amount={amount} before={before} after={after} context={GetRecentActionContext(0.75f)}");
+            }
+        }
+
+        private void OnLivesAdded(int amount)
+        {
+            if (amount > 0)
+            {
+                _livesAddedDuringRun += amount;
+                int after = _hamster.Lives.Value;
+                int before = after - amount;
+                DebugManager.DiagEconomy(
+                    $"[LIVES +] amount={amount} before={before} after={after} context={GetRecentActionContext(1.2f)}");
+            }
+        }
+
+        private void OnLivesLost(int amount)
+        {
+            if (amount > 0)
+            {
+                _livesLostDuringRun += amount;
+                int after = _hamster.Lives.Value;
+                int before = after + amount;
+                DebugManager.DiagEconomy(
+                    $"[LIVES -] amount={amount} before={before} after={after} context={GetRecentActionContext(1.2f)}");
+            }
+        }
+
+        private void RegisterActionFired(ChainStep step)
+        {
+            _actionsFiredDuringRun++;
+            _lastActionFiredAt = Time.time;
+            _lastActionFiredLabel = step.Action.ToString();
+
+            DebugManager.DiagEconomy(
+                $"[ACTION FIRE] action={step.Action} rank={step.Rank} expectedEnergyCost={step.EnergyCost} " +
+                $"target={step.TargetObstacle.Type}/{step.TargetObstacle.Category} energy={_hamster.Energy.Value} lives={_hamster.Lives.Value}");
+        }
+
+        private bool IsRecentAction(float seconds)
+        {
+            return Time.time - _lastActionFiredAt <= seconds;
+        }
+
+        private string GetRecentActionContext(float seconds)
+        {
+            return IsRecentAction(seconds) ? _lastActionFiredLabel : "None";
+        }
+
+        private void TrackUnattributedEnergyAndLives()
+        {
+            if (_hamster == null)
+                return;
+
+            // Эти изменения могут происходить вне событий (например, пассивный regen энергии).
+            int expectedEnergy = _runStartEnergy + _energyAddedDuringRun - _energySpentDuringRun;
+            int actualEnergy = _hamster.Energy.Value;
+            int energyDrift = actualEnergy - expectedEnergy;
+            if (energyDrift != 0)
+            {
+                if (energyDrift > 0)
+                    _energyAddedDuringRun += energyDrift;
+                else
+                    _energySpentDuringRun += -energyDrift;
+
+                DebugManager.DiagEconomy(
+                    $"[ENERGY DRIFT] delta={energyDrift:+#;-#;0} source=unattributed actual={actualEnergy} expected={expectedEnergy}");
+            }
+
+            int expectedLives = _runStartLives + _livesAddedDuringRun - _livesLostDuringRun;
+            int actualLives = _hamster.Lives.Value;
+            int livesDrift = actualLives - expectedLives;
+            if (livesDrift != 0)
+            {
+                if (livesDrift > 0)
+                    _livesAddedDuringRun += livesDrift;
+                else
+                    _livesLostDuringRun += -livesDrift;
+
+                DebugManager.DiagEconomy(
+                    $"[LIVES DRIFT] delta={livesDrift:+#;-#;0} source=unattributed actual={actualLives} expected={expectedLives}");
+            }
+        }
+
+        private void LogEconomyResult(string result, int? levelId, int? stars)
+        {
+            string levelPart = levelId.HasValue ? $" level={levelId.Value}" : string.Empty;
+            string starsPart = stars.HasValue ? $" stars={stars.Value}" : string.Empty;
+            float economicScore = CalculateEconomicScore();
+
+            DebugManager.DiagEconomy(
+                $"[RUN RESULT] result={result}{levelPart}{starsPart}\n" +
+                BuildEconomySummary() + "\n" +
+                $"  actionStats: fired={_actionsFiredDuringRun} completed={_actionsCompletedDuringRun} cancelled={_actionsCancelledDuringRun}\n" +
+                $"  score: economicScore={economicScore:F2} energySpentByBotActions={_energySpentDuringBotActions}");
+        }
+
+        private string BuildEconomySummary()
+        {
+            int endCoins = ResourceManager.GetCurrentBalance(ResourceType.Coins);
+            int endCrystals = ResourceManager.GetCurrentBalance(ResourceType.Crystals);
+            int endEnergy = _hamster != null ? _hamster.Energy.Value : 0;
+            int endLives = _hamster != null ? _hamster.Lives.Value : 0;
+
+            return $"  economy: " +
+                   $"coins {FormatResourceSummary(_runStartCoins, endCoins, _coinsCollectedDuringRun, _coinsSpentDuringRun)}; " +
+                   $"crystals {FormatResourceSummary(_runStartCrystals, endCrystals, _crystalsCollectedDuringRun, _crystalsSpentDuringRun)}; " +
+                   $"energy {FormatResourceSummary(_runStartEnergy, endEnergy, _energyAddedDuringRun, _energySpentDuringRun)}; " +
+                   $"lives {FormatResourceSummary(_runStartLives, endLives, _livesAddedDuringRun, _livesLostDuringRun)}";
+        }
+
+        private float CalculateEconomicScore()
+        {
+            int endCoins = ResourceManager.GetCurrentBalance(ResourceType.Coins);
+            int endCrystals = ResourceManager.GetCurrentBalance(ResourceType.Crystals);
+            int endEnergy = _hamster != null ? _hamster.Energy.Value : 0;
+            int endLives = _hamster != null ? _hamster.Lives.Value : 0;
+
+            int netCoins = endCoins - _runStartCoins;
+            int netCrystals = endCrystals - _runStartCrystals;
+            int netEnergy = endEnergy - _runStartEnergy;
+            int netLives = endLives - _runStartLives;
+
+            // Простая линейная сводка для сравнения прогонов между собой.
+            return netCoins * 1.0f +
+                   netCrystals * 2.0f +
+                   netEnergy * 0.2f +
+                   netLives * 8.0f -
+                   _actionsCancelledDuringRun * 0.5f;
+        }
+
+        private static string FormatResourceSummary(int start, int end, int collected, int spent)
+        {
+            int net = end - start;
+            return $"start={start} end={end} net={net:+#;-#;0} collected={collected} spent={spent}";
         }
 
         private string FindNearestThreatInfo()
