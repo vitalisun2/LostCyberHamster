@@ -32,8 +32,8 @@ function Get-TaggedLogLines {
 
     $lines = Get-Content -Path $Path -ErrorAction Stop
     if ($SelectedChannel -ne "ALL") {
-        $needle = "[CH=$SelectedChannel]"
-        $lines = $lines | Where-Object { $_ -like "*$needle*" }
+        $needlePattern = [regex]::Escape("[CH=$SelectedChannel]")
+        $lines = $lines | Where-Object { $_ -match $needlePattern }
     }
 
     if (-not [string]::IsNullOrWhiteSpace($SelectedEvent)) {
@@ -59,9 +59,9 @@ if ($SummaryOnly) {
     }
 
     foreach ($line in $lines) {
-        if ($line -like "*[CH=STAB]*") { $channelCounts.STAB++; continue }
-        if ($line -like "*[CH=BOT]*")  { $channelCounts.BOT++; continue }
-        if ($line -like "*[CH=ECO]*")  { $channelCounts.ECO++; continue }
+        if ($line -match [regex]::Escape("[CH=STAB]")) { $channelCounts.STAB++; continue }
+        if ($line -match [regex]::Escape("[CH=BOT]"))  { $channelCounts.BOT++; continue }
+        if ($line -match [regex]::Escape("[CH=ECO]"))  { $channelCounts.ECO++; continue }
 
         if ($mode -eq "split") {
             $channelCounts.OTHER++
