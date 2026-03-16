@@ -10988,6 +10988,24 @@
                 { "id": 0, "type": 0, "x": 14.0, "y": -2.799999952316284 },
                 { "id": 1, "type": 2, "x": 21.0, "y": -2.799999952316284 }
             ]
+        },
+        {
+            "name": "bot_s8_dynamic_target_then_threat",
+            "description": "BotV2 Stage 8: во время Jump на Target появляется Threat; новый объект должен учитываться после завершения шага",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 25.5, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s8_dynamic_threat_then_collectible",
+            "description": "BotV2 Stage 8: во время Jump через Threat появляется Collectible на другой линии; текущий шаг не должен прерываться",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 5, "x": 25.0, "y": -2.799999952316284 }
+            ]
         }
     ]
 }

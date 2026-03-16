@@ -11,7 +11,7 @@
       "overrides": []
     },
     {
-      "ref": "bot_s7_threat_to_collectible",
+      "ref": "bot_s8_dynamic_target_then_threat",
       "spriteSeed": 0,
       "overrides": []
     },
@@ -21,17 +21,7 @@
       "overrides": []
     },
     {
-      "ref": "bot_s7_threat_to_target",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "relief",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "bot_s7_target_to_threat",
+      "ref": "bot_s8_dynamic_threat_then_collectible",
       "spriteSeed": 0,
       "overrides": []
     },
