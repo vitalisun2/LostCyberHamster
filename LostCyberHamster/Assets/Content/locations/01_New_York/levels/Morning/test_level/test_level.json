@@ -11,12 +11,7 @@
       "overrides": []
     },
     {
-      "ref": "relief",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "bot_s6_seq_small_bottom",
+      "ref": "bot_s7_threat_to_collectible",
       "spriteSeed": 0,
       "overrides": []
     },
@@ -26,17 +21,17 @@
       "overrides": []
     },
     {
-      "ref": "relief",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "bot_s6_seq_small_top",
+      "ref": "bot_s7_threat_to_target",
       "spriteSeed": 0,
       "overrides": []
     },
     {
       "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s7_target_to_threat",
       "spriteSeed": 0,
       "overrides": []
     },
