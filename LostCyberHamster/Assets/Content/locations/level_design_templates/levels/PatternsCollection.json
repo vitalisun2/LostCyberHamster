@@ -11116,6 +11116,158 @@
                 { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
                 { "id": 1, "type": 3, "x": 19.6, "y": -2.799999952316284 }
             ]
+        },
+        {
+            "name": "bot_s10_trap_jump_into_big_bottom",
+            "description": "BotV2 Stage 10: Jump через small на нижней линии ведёт в ловушку с bigNotAlive",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 4, "x": 18.4, "y": -2.799999952316284 },
+                { "id": 2, "type": 2, "x": 19.2, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s10_trap_jump_into_big_top",
+            "description": "BotV2 Stage 10: зеркальная ловушка на верхней линии",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 4, "x": 18.4, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 19.2, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s10_trap_roof_then_medium_bottom",
+            "description": "BotV2 Stage 10: Jump через smallRoadAndRoof приводит к mediumNotAlive впереди",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 3, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 11, "x": 18.6, "y": -2.799999952316284 },
+                { "id": 2, "type": 2, "x": 19.5, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s10_trap_roof_then_medium_top",
+            "description": "BotV2 Stage 10: зеркальный кейс roof+medium",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 3, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 11, "x": 18.6, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 19.5, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s10_switch_is_zero_energy_bottom",
+            "description": "BotV2 Stage 10: при равной безопасности должен предпочесть SwitchLane вместо Jump",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.2, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 21.4, "y": -2.799999952316284 },
+                { "id": 2, "type": 2, "x": 23.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s11_profit_target_over_plain_bottom",
+            "description": "BotV2 Stage 11: две безопасные цепочки, но цепочка с Target должна быть выше",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 19.2, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 22.2, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s11_profit_target_over_plain_top",
+            "description": "BotV2 Stage 11: зеркальный кейс target priority",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 0, "x": 19.2, "y": -2.799999952316284 },
+                { "id": 2, "type": 2, "x": 22.2, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s11_profit_coin_chain_bottom",
+            "description": "BotV2 Stage 11: безопасная цепочка с collectableCoin должна выигрывать у plain threat chain",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 9, "x": 19.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 22.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s11_life_priority_chain",
+            "description": "BotV2 Stage 11: collectableLife в безопасной цепочке должен быть в приоритете",
+            "nextObstacleId": 4,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 8, "x": 18.6, "y": -1.8000000715255738 },
+                { "id": 2, "type": 9, "x": 20.0, "y": -1.8000000715255738 },
+                { "id": 3, "type": 2, "x": 23.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s12_dense_mixed_zigzag_a",
+            "description": "BotV2 Stage 12: плотная mixed-сцена, нужна устойчивая двухшаговая зигзаг-цепочка",
+            "nextObstacleId": 5,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 13.8, "y": -2.799999952316284 },
+                { "id": 1, "type": 3, "x": 17.9, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 20.5, "y": -2.799999952316284 },
+                { "id": 3, "type": 2, "x": 22.4, "y": -1.8000000715255738 },
+                { "id": 4, "type": 9, "x": 24.2, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s12_dense_mixed_zigzag_b",
+            "description": "BotV2 Stage 12: плотная mixed-сцена (зеркало)",
+            "nextObstacleId": 5,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 13.8, "y": -1.8000000715255738 },
+                { "id": 1, "type": 3, "x": 17.9, "y": -2.799999952316284 },
+                { "id": 2, "type": 0, "x": 20.5, "y": -1.8000000715255738 },
+                { "id": 3, "type": 2, "x": 22.4, "y": -2.799999952316284 },
+                { "id": 4, "type": 9, "x": 24.2, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s12_dense_near_windows_bottom",
+            "description": "BotV2 Stage 12: близкие окна исполнения в нижней линии",
+            "nextObstacleId": 5,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 17.6, "y": -1.8000000715255738 },
+                { "id": 2, "type": 11, "x": 19.8, "y": -2.799999952316284 },
+                { "id": 3, "type": 9, "x": 21.2, "y": -1.8000000715255738 },
+                { "id": 4, "type": 2, "x": 23.4, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s12_dense_near_windows_top",
+            "description": "BotV2 Stage 12: близкие окна исполнения в верхней линии",
+            "nextObstacleId": 5,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 17.6, "y": -2.799999952316284 },
+                { "id": 2, "type": 11, "x": 19.8, "y": -1.8000000715255738 },
+                { "id": 3, "type": 9, "x": 21.2, "y": -2.799999952316284 },
+                { "id": 4, "type": 2, "x": 23.4, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s12_dense_target_collectible_mix",
+            "description": "BotV2 Stage 12: dense-набор с конкуренцией Target/Collectible/Threat",
+            "nextObstacleId": 6,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 13.9, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 17.8, "y": -1.8000000715255738 },
+                { "id": 2, "type": 9, "x": 19.4, "y": -1.8000000715255738 },
+                { "id": 3, "type": 3, "x": 20.9, "y": -2.799999952316284 },
+                { "id": 4, "type": 8, "x": 22.8, "y": -1.8000000715255738 },
+                { "id": 5, "type": 2, "x": 24.6, "y": -2.799999952316284 }
+            ]
         }
     ]
 }

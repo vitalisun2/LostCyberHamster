@@ -14,6 +14,7 @@ namespace Assets.Scripts.BotV2
         private const float SuperJumpLandingTravel = 4.6f;
         private const float LandingPostFactor = 0.4f;
         private const float PassedObstacleMargin = 0.4f;
+        private const float ImminentThreatDistance = 4.5f;
 
         public List<ChainCandidate> Generate(
             BotSceneSnapshot snapshot,
@@ -37,16 +38,27 @@ namespace Assets.Scripts.BotV2
                 classifier.Classify(projectedSnapshot);
 
                 var secondCandidates = actionGenerator.Generate(projectedSnapshot);
-                var secondThreatSteps = FilterSecondThreatSteps(projectedSnapshot, first, secondCandidates);
-                var second = actionSelector.Select(secondThreatSteps);
+                var secondSteps = FilterSecondSteps(first, secondCandidates);
+                var second = actionSelector.Select(secondSteps);
                 if (second == null)
                     continue;
+
+                // Stage 10: не допускаем цепочки, где после шага 1 есть близкая угроза,
+                // а шаг 2 не является защитным действием.
+                if (HasImminentSameLaneThreat(projectedSnapshot) &&
+                    second.Rank != DecisionRank.ThreatSafety)
+                    continue;
+
+                int totalProfit = first.ProfitScore + second.ProfitScore;
+                DecisionRank bestRank = first.Rank < second.Rank ? first.Rank : second.Rank;
 
                 result.Add(new ChainCandidate
                 {
                     FirstStep = first,
                     SecondStep = second,
-                    TotalEnergyCost = first.EnergyCost + second.EnergyCost
+                    TotalEnergyCost = first.EnergyCost + second.EnergyCost,
+                    TotalProfitScore = totalProfit,
+                    BestRank = bestRank
                 });
             }
 
@@ -58,14 +70,19 @@ namespace Assets.Scripts.BotV2
         {
             if (first == null)
                 return false;
-            if (first.TargetObstacle.Category != ObjectCategory.Threat)
-                return false;
-            if (!IsChainThreatType(first.TargetObstacle.Type))
+            if (first.TargetObstacle.Category == ObjectCategory.Neutral)
                 return false;
             if (!IsChainAction(first.Action))
                 return false;
 
-            return IsOnSameLane(snapshot, first.TargetObstacle);
+            if (first.TargetObstacle.Category == ObjectCategory.Threat)
+            {
+                if (!IsChainThreatType(first.TargetObstacle.Type))
+                    return false;
+                return IsOnSameLane(snapshot, first.TargetObstacle);
+            }
+
+            return true;
         }
 
         private static ProjectedState ProjectAfterFirstStep(BotSceneSnapshot snapshot, ChainStep first)
@@ -135,8 +152,7 @@ namespace Assets.Scripts.BotV2
             };
         }
 
-        private static List<ChainStep> FilterSecondThreatSteps(
-            BotSceneSnapshot projectedSnapshot,
+        private static List<ChainStep> FilterSecondSteps(
             ChainStep first,
             List<ChainStep> secondCandidates)
         {
@@ -151,13 +167,13 @@ namespace Assets.Scripts.BotV2
                     continue;
                 if (second.TargetObstacle.StableId == first.TargetObstacle.StableId)
                     continue;
-                if (second.TargetObstacle.Category != ObjectCategory.Threat)
-                    continue;
-                if (!IsChainThreatType(second.TargetObstacle.Type))
+                if (second.TargetObstacle.Category == ObjectCategory.Neutral)
                     continue;
                 if (!IsChainAction(second.Action))
                     continue;
-                if (!IsOnSameLane(projectedSnapshot, second.TargetObstacle))
+
+                if (second.TargetObstacle.Category == ObjectCategory.Threat &&
+                    !IsChainThreatType(second.TargetObstacle.Type))
                     continue;
 
                 result.Add(second);
@@ -168,18 +184,34 @@ namespace Assets.Scripts.BotV2
 
         private static int CompareCandidates(ChainCandidate a, ChainCandidate b)
         {
-            if (a.SecondStep.Rank != b.SecondStep.Rank)
-                return a.SecondStep.Rank.CompareTo(b.SecondStep.Rank);
+            if (a.BestRank != b.BestRank)
+                return a.BestRank.CompareTo(b.BestRank);
 
-            int profitA = a.FirstStep.ProfitScore + a.SecondStep.ProfitScore;
-            int profitB = b.FirstStep.ProfitScore + b.SecondStep.ProfitScore;
-            if (profitA != profitB)
-                return profitB.CompareTo(profitA);
+            if (a.TotalProfitScore != b.TotalProfitScore)
+                return b.TotalProfitScore.CompareTo(a.TotalProfitScore);
 
             if (a.TotalEnergyCost != b.TotalEnergyCost)
                 return a.TotalEnergyCost.CompareTo(b.TotalEnergyCost);
 
             return a.FirstStep.ExecuteAtDistance.CompareTo(b.FirstStep.ExecuteAtDistance);
+        }
+
+        private static bool HasImminentSameLaneThreat(BotSceneSnapshot snapshot)
+        {
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obstacle = snapshot.VisibleObjects[i];
+                if (obstacle.Category != ObjectCategory.Threat)
+                    continue;
+                if (obstacle.DistanceToHamster < 0f || obstacle.DistanceToHamster > ImminentThreatDistance)
+                    continue;
+                if (!IsOnSameLane(snapshot, obstacle))
+                    continue;
+
+                return true;
+            }
+
+            return false;
         }
 
         private static bool IsOnSameLane(BotSceneSnapshot snapshot, ObstacleInfo obstacle)

@@ -41,6 +41,17 @@ namespace Assets.Scripts.BotV2
         [SerializeField]
         public BotLogLevel LogLevel = BotLogLevel.Normal;
 
+        [Title("Visual Debug")]
+        [SerializeField]
+        [Tooltip("Показывать траекторию выбранного one-step/two-step плана в Game view")]
+        private bool _showPlannedTrajectory = true;
+
+        [SerializeField]
+        private Color _trajectoryColor = new Color(0.2f, 1f, 0.3f, 0.9f);
+
+        [SerializeField, Range(0.01f, 0.2f)]
+        private float _trajectoryLineWidth = 0.06f;
+
         [Title("Runtime"), ReadOnly]
         [ShowInInspector] public bool IsEnabled { get; private set; }
 
@@ -95,6 +106,9 @@ namespace Assets.Scripts.BotV2
         private int _energySpentDuringBotActions;
         private float _lastActionFiredAt = -999f;
         private string _lastActionFiredLabel = "None";
+        private readonly List<Vector3> _trajectoryPoints = new List<Vector3>(4);
+        private LineRenderer _trajectoryLine;
+        private Material _trajectoryMaterial;
 
         // ──────── Lifecycle ────────
 
@@ -172,9 +186,13 @@ namespace Assets.Scripts.BotV2
 
             var trigger = ConsumePipelineTrigger();
             if (trigger == PipelineTrigger.None)
+            {
+                UpdateTrajectoryRenderer();
                 return;
+            }
 
             RunPipeline(snapshot, trigger);
+            UpdateTrajectoryRenderer();
         }
 
         private static bool IsTogglePressed()
@@ -208,17 +226,18 @@ namespace Assets.Scripts.BotV2
 
             ChainStep oneStepBest = _selector.Select(candidates);
             ChainStep bestChainFirst = null;
+            ChainCandidate bestChain = null;
             var chainCandidates = _chainGenerator.Generate(snapshot, candidates, _classifier, _generator, _selector);
             if (chainCandidates.Count > 0)
             {
-                var bestChain = chainCandidates[0];
+                bestChain = chainCandidates[0];
                 bestChainFirst = bestChain.FirstStep;
                 BotLogger.Log(BotLogLevel.Normal,
                     $"[CHAIN] selected two-step: first={bestChain.FirstStep.Action}/{bestChain.FirstStep.TargetObstacle.Type} " +
                     $"second={bestChain.SecondStep.Action}/{bestChain.SecondStep.TargetObstacle.Type} totalEnergy={bestChain.TotalEnergyCost}");
             }
 
-            ChainStep best = SelectBestPlannedStep(oneStepBest, bestChainFirst);
+            ChainStep best = SelectBestPlannedStep(oneStepBest, bestChain);
             if (bestChainFirst != null && best != bestChainFirst)
             {
                 BotLogger.Log(BotLogLevel.Normal,
@@ -229,9 +248,15 @@ namespace Assets.Scripts.BotV2
             if (best == null)
             {
                 _lastAction = "None";
+                ClearTrajectoryPreview();
                 LogNoSafeActions(snapshot);
                 return;
             }
+
+            if (bestChain != null && best == bestChainFirst)
+                UpdateTrajectoryPreview(snapshot, bestChain.FirstStep, bestChain.SecondStep);
+            else
+                UpdateTrajectoryPreview(snapshot, best, null);
 
             ResetNoActionLogState();
             _lastAction = best.Action.ToString();
@@ -247,12 +272,31 @@ namespace Assets.Scripts.BotV2
             _executor.SetStep(best);
         }
 
-        private static ChainStep SelectBestPlannedStep(ChainStep oneStepBest, ChainStep chainFirst)
+        private static ChainStep SelectBestPlannedStep(ChainStep oneStepBest, ChainCandidate bestChain)
         {
+            ChainStep chainFirst = bestChain?.FirstStep;
+
             if (oneStepBest == null)
                 return chainFirst;
             if (chainFirst == null)
                 return oneStepBest;
+
+            // Stage 10: threat-сценарии предпочитают валидную двухшаговую цепочку,
+            // чтобы не падать в ловушечный one-step fallback.
+            bool oneStepThreat = oneStepBest.Rank == DecisionRank.ThreatSafety;
+            bool chainThreat = bestChain.BestRank == DecisionRank.ThreatSafety;
+            if (oneStepThreat && chainThreat)
+                return chainFirst;
+
+            // Stage 11: ранжирование по цепочке целиком.
+            if (bestChain.BestRank != oneStepBest.Rank)
+                return bestChain.BestRank.CompareTo(oneStepBest.Rank) < 0 ? chainFirst : oneStepBest;
+
+            if (bestChain.TotalProfitScore != oneStepBest.ProfitScore)
+                return bestChain.TotalProfitScore > oneStepBest.ProfitScore ? chainFirst : oneStepBest;
+
+            if (bestChain.TotalEnergyCost != oneStepBest.EnergyCost)
+                return bestChain.TotalEnergyCost < oneStepBest.EnergyCost ? chainFirst : oneStepBest;
 
             int compare = CompareStepPriority(chainFirst, oneStepBest);
             return compare >= 0 ? chainFirst : oneStepBest;
@@ -993,6 +1037,125 @@ namespace Assets.Scripts.BotV2
             _lastNoActionSignature = null;
             _suppressedNoActionCount = 0;
             _lastNoActionLogTime = -999f;
+        }
+
+        private void UpdateTrajectoryPreview(BotSceneSnapshot snapshot, ChainStep first, ChainStep second)
+        {
+            _trajectoryPoints.Clear();
+
+            if (!_showPlannedTrajectory || snapshot == null || first == null)
+                return;
+
+            bool currentBottom = snapshot.HamsterOnBottom;
+            float currentX = snapshot.HamsterRightX;
+
+            _trajectoryPoints.Add(ToTrajectoryPoint(currentX, currentBottom));
+
+            AppendStepTrajectoryPoint(snapshot, first, ref currentX, ref currentBottom);
+            if (second != null)
+                AppendStepTrajectoryPoint(snapshot, second, ref currentX, ref currentBottom);
+        }
+
+        private void AppendStepTrajectoryPoint(
+            BotSceneSnapshot snapshot,
+            ChainStep step,
+            ref float currentX,
+            ref bool currentBottom)
+        {
+            const float jumpLandingTravel = 3.8f;
+            const float superJumpLandingTravel = 4.6f;
+            const float landingPostFactor = 0.4f;
+
+            bool nextBottom = currentBottom;
+            float nextX = currentX;
+
+            if (step.Action == BotAction.SwitchLane)
+            {
+                float advanceDistance = step.TargetObstacle.DistanceToHamster - step.ExecuteAtDistance;
+                if (advanceDistance < 0f)
+                    advanceDistance = 0f;
+
+                nextX = currentX + advanceDistance;
+
+                // Threat: lane switch away from obstacle lane. Other categories: switch to obstacle lane.
+                if (step.TargetObstacle.Category == ObjectCategory.Threat)
+                    nextBottom = step.TargetObstacle.IsTopLane;
+                else
+                    nextBottom = !step.TargetObstacle.IsTopLane;
+            }
+            else if (step.Action == BotAction.Jump || step.Action == BotAction.SuperJump)
+            {
+                float landingTravel = step.Action == BotAction.SuperJump
+                    ? superJumpLandingTravel
+                    : jumpLandingTravel;
+
+                nextX = step.TargetObstacle.RightX + landingTravel * landingPostFactor;
+            }
+
+            currentX = nextX;
+            currentBottom = nextBottom;
+            _trajectoryPoints.Add(ToTrajectoryPoint(currentX, currentBottom));
+        }
+
+        private static Vector3 ToTrajectoryPoint(float hamsterRightX, bool hamsterOnBottom)
+        {
+            float y = hamsterOnBottom ? Assets.Scripts.Consts.ObstacleY1Pos : Assets.Scripts.Consts.ObstacleY0Pos;
+            return new Vector3(hamsterRightX, y + 0.85f, 0f);
+        }
+
+        private void UpdateTrajectoryRenderer()
+        {
+            if (!_showPlannedTrajectory)
+            {
+                if (_trajectoryLine != null)
+                    _trajectoryLine.enabled = false;
+                return;
+            }
+
+            if (_trajectoryPoints.Count < 2)
+            {
+                if (_trajectoryLine != null)
+                    _trajectoryLine.enabled = false;
+                return;
+            }
+
+            EnsureTrajectoryRenderer();
+            _trajectoryLine.enabled = true;
+            _trajectoryLine.startColor = _trajectoryColor;
+            _trajectoryLine.endColor = _trajectoryColor;
+            _trajectoryLine.startWidth = _trajectoryLineWidth;
+            _trajectoryLine.endWidth = _trajectoryLineWidth;
+            _trajectoryLine.positionCount = _trajectoryPoints.Count;
+            _trajectoryLine.SetPositions(_trajectoryPoints.ToArray());
+        }
+
+        private void EnsureTrajectoryRenderer()
+        {
+            if (_trajectoryLine != null)
+                return;
+
+            var lineObject = new GameObject("BotV2_TrajectoryOverlay");
+            lineObject.transform.SetParent(transform, false);
+
+            _trajectoryLine = lineObject.AddComponent<LineRenderer>();
+            _trajectoryLine.textureMode = LineTextureMode.Stretch;
+            _trajectoryLine.alignment = LineAlignment.View;
+            _trajectoryLine.numCapVertices = 4;
+            _trajectoryLine.numCornerVertices = 3;
+            _trajectoryLine.sortingOrder = 500;
+            _trajectoryLine.useWorldSpace = true;
+
+            if (_trajectoryMaterial == null)
+                _trajectoryMaterial = new Material(Shader.Find("Sprites/Default"));
+
+            _trajectoryLine.material = _trajectoryMaterial;
+        }
+
+        private void ClearTrajectoryPreview()
+        {
+            _trajectoryPoints.Clear();
+            if (_trajectoryLine != null)
+                _trajectoryLine.enabled = false;
         }
     }
 }
