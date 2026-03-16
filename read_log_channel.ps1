@@ -30,17 +30,32 @@ function Get-TaggedLogLines {
 
     if (-not (Test-Path $Path)) { return @() }
 
-    $lines = Get-Content -Path $Path -ErrorAction Stop
-    if ($SelectedChannel -ne "ALL") {
-        $needlePattern = [regex]::Escape("[CH=$SelectedChannel]")
-        $lines = $lines | Where-Object { $_ -match $needlePattern }
+    $allLines = @(Get-Content -Path $Path -ErrorAction Stop)
+    $result = New-Object System.Collections.Generic.List[string]
+
+    $currentChannel = ""
+    $includeCurrentBlock = $false
+
+    foreach ($line in $allLines) {
+        if ($line -match "\[CH=(?<ch>STAB|BOT|ECO)\]") {
+            $currentChannel = $Matches.ch
+
+            $channelMatch = ($SelectedChannel -eq "ALL" -or $currentChannel -eq $SelectedChannel)
+            $eventMatch = ([string]::IsNullOrWhiteSpace($SelectedEvent) -or ($line -match $SelectedEvent))
+            $includeCurrentBlock = $channelMatch -and $eventMatch
+
+            if ($includeCurrentBlock) {
+                $result.Add($line)
+            }
+            continue
+        }
+
+        if ($includeCurrentBlock) {
+            $result.Add($line)
+        }
     }
 
-    if (-not [string]::IsNullOrWhiteSpace($SelectedEvent)) {
-        $lines = $lines | Where-Object { $_ -match $SelectedEvent }
-    }
-
-    return @($lines)
+    return @($result)
 }
 
 $mode = "tagged"
@@ -51,6 +66,11 @@ $lines = @(Get-TaggedLogLines -Path $diagPath -SelectedChannel $Channel -Selecte
 $lines = @($lines)
 
 if ($SummaryOnly) {
+    $summaryLines = $lines
+    if ($mode -eq "tagged" -and (Test-Path $diagPath)) {
+        $summaryLines = @(Get-Content -Path $diagPath -ErrorAction Stop)
+    }
+
     $channelCounts = [ordered]@{
         STAB = 0
         BOT  = 0
@@ -58,20 +78,26 @@ if ($SummaryOnly) {
         OTHER = 0
     }
 
-    foreach ($line in $lines) {
-        if ($line -match [regex]::Escape("[CH=STAB]")) { $channelCounts.STAB++; continue }
-        if ($line -match [regex]::Escape("[CH=BOT]"))  { $channelCounts.BOT++; continue }
-        if ($line -match [regex]::Escape("[CH=ECO]"))  { $channelCounts.ECO++; continue }
+    $lastTaggedChannel = ""
 
-        if ($mode -eq "split") {
-            $channelCounts.OTHER++
-        } else {
-            $channelCounts.OTHER++
+    foreach ($line in $summaryLines) {
+        if ($line -match [regex]::Escape("[CH=STAB]")) { $channelCounts.STAB++; $lastTaggedChannel = "STAB"; continue }
+        if ($line -match [regex]::Escape("[CH=BOT]"))  { $channelCounts.BOT++;  $lastTaggedChannel = "BOT";  continue }
+        if ($line -match [regex]::Escape("[CH=ECO]"))  { $channelCounts.ECO++;  $lastTaggedChannel = "ECO";  continue }
+
+        if ($mode -eq "tagged") {
+            switch ($lastTaggedChannel) {
+                "STAB" { $channelCounts.STAB++; continue }
+                "BOT"  { $channelCounts.BOT++;  continue }
+                "ECO"  { $channelCounts.ECO++;  continue }
+            }
         }
+
+        $channelCounts.OTHER++
     }
 
     Write-Output ("mode={0}" -f $mode)
-    Write-Output ("total={0}" -f $lines.Count)
+    Write-Output ("total={0}" -f $summaryLines.Count)
     Write-Output ("stab={0}" -f $channelCounts.STAB)
     Write-Output ("bot={0}" -f $channelCounts.BOT)
     Write-Output ("eco={0}" -f $channelCounts.ECO)
