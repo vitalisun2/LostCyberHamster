@@ -4,8 +4,9 @@ using Assets.Scripts.Common.Models;
 namespace Assets.Scripts.BotV2
 {
     /// <summary>
-    /// Stage 9: генерация двухшаговых цепочек на одной линии.
-    /// Использует one-step ActionGenerator поверх проецированного состояния и выбирает валидный второй шаг.
+    /// Stage 9: генерация двухшаговых цепочек с учётом обеих линий.
+    /// Использует one-step ActionGenerator поверх проецированного состояния
+    /// и выбирает валидный второй шаг, включая межлинейный переход (SwitchLane).
     /// </summary>
     public class ChainGenerator
     {
@@ -61,7 +62,7 @@ namespace Assets.Scripts.BotV2
                 return false;
             if (!IsChainThreatType(first.TargetObstacle.Type))
                 return false;
-            if (first.Action != BotAction.Jump && first.Action != BotAction.SuperJump)
+            if (!IsChainAction(first.Action))
                 return false;
 
             return IsOnSameLane(snapshot, first.TargetObstacle);
@@ -69,12 +70,27 @@ namespace Assets.Scripts.BotV2
 
         private static ProjectedState ProjectAfterFirstStep(BotSceneSnapshot snapshot, ChainStep first)
         {
-            float travel = first.Action == BotAction.SuperJump ? SuperJumpLandingTravel : JumpLandingTravel;
-            float projectedRightX = first.TargetObstacle.RightX + (travel * LandingPostFactor);
+            bool projectedHamsterOnBottom = snapshot.HamsterOnBottom;
+            float projectedRightX;
+
+            if (first.Action == BotAction.SwitchLane)
+            {
+                projectedHamsterOnBottom = !snapshot.HamsterOnBottom;
+                float advanceDistance = first.TargetObstacle.DistanceToHamster - first.ExecuteAtDistance;
+                if (advanceDistance < 0f)
+                    advanceDistance = 0f;
+
+                projectedRightX = snapshot.HamsterRightX + advanceDistance;
+            }
+            else
+            {
+                float travel = first.Action == BotAction.SuperJump ? SuperJumpLandingTravel : JumpLandingTravel;
+                projectedRightX = first.TargetObstacle.RightX + (travel * LandingPostFactor);
+            }
 
             var state = new ProjectedState
             {
-                HamsterOnBottom = snapshot.HamsterOnBottom,
+                HamsterOnBottom = projectedHamsterOnBottom,
                 HamsterRightX = projectedRightX,
                 HamsterWidth = snapshot.HamsterWidth,
                 Energy = snapshot.Energy - first.EnergyCost,
@@ -84,7 +100,7 @@ namespace Assets.Scripts.BotV2
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
                 var obstacle = snapshot.VisibleObjects[i];
-                if (obstacle.StableId == first.TargetObstacle.StableId)
+                if (obstacle.StableId == first.TargetObstacle.StableId && first.Action != BotAction.SwitchLane)
                     continue;
                 if (obstacle.RightX < projectedRightX - PassedObstacleMargin)
                     continue;
@@ -139,7 +155,7 @@ namespace Assets.Scripts.BotV2
                     continue;
                 if (!IsChainThreatType(second.TargetObstacle.Type))
                     continue;
-                if (second.Action != BotAction.Jump && second.Action != BotAction.SuperJump)
+                if (!IsChainAction(second.Action))
                     continue;
                 if (!IsOnSameLane(projectedSnapshot, second.TargetObstacle))
                     continue;
@@ -175,6 +191,13 @@ namespace Assets.Scripts.BotV2
         {
             return type == ObstacleTypeEnum.smallNotAliveRoad ||
                    type == ObstacleTypeEnum.smallNotAliveRoadAndRoof;
+        }
+
+        private static bool IsChainAction(BotAction action)
+        {
+            return action == BotAction.Jump ||
+                   action == BotAction.SuperJump ||
+                   action == BotAction.SwitchLane;
         }
     }
 }

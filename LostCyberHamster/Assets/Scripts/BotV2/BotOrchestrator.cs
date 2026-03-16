@@ -206,19 +206,25 @@ namespace Assets.Scripts.BotV2
             FilterBlockedSwitchLaneCandidates(candidates);
             LogGenerate(candidates);
 
-            ChainStep best = null;
+            ChainStep oneStepBest = _selector.Select(candidates);
+            ChainStep bestChainFirst = null;
             var chainCandidates = _chainGenerator.Generate(snapshot, candidates, _classifier, _generator, _selector);
             if (chainCandidates.Count > 0)
             {
                 var bestChain = chainCandidates[0];
-                best = bestChain.FirstStep;
+                bestChainFirst = bestChain.FirstStep;
                 BotLogger.Log(BotLogLevel.Normal,
                     $"[CHAIN] selected two-step: first={bestChain.FirstStep.Action}/{bestChain.FirstStep.TargetObstacle.Type} " +
                     $"second={bestChain.SecondStep.Action}/{bestChain.SecondStep.TargetObstacle.Type} totalEnergy={bestChain.TotalEnergyCost}");
             }
 
-            if (best == null)
-                best = _selector.Select(candidates);
+            ChainStep best = SelectBestPlannedStep(oneStepBest, bestChainFirst);
+            if (bestChainFirst != null && best != bestChainFirst)
+            {
+                BotLogger.Log(BotLogLevel.Normal,
+                    $"[CHAIN] fallback to better one-step: action={oneStepBest.Action} " +
+                    $"cost={oneStepBest.EnergyCost} reason=\"{oneStepBest.Reason}\"");
+            }
 
             if (best == null)
             {
@@ -239,6 +245,32 @@ namespace Assets.Scripts.BotV2
             _plannedManagedState = _hamster.HamsterState.Value;
             _hasPlannedManagedState = IsManagedState(_plannedManagedState);
             _executor.SetStep(best);
+        }
+
+        private static ChainStep SelectBestPlannedStep(ChainStep oneStepBest, ChainStep chainFirst)
+        {
+            if (oneStepBest == null)
+                return chainFirst;
+            if (chainFirst == null)
+                return oneStepBest;
+
+            int compare = CompareStepPriority(chainFirst, oneStepBest);
+            return compare >= 0 ? chainFirst : oneStepBest;
+        }
+
+        // >0 означает, что a лучше b; <0 — хуже; 0 — эквивалентны.
+        private static int CompareStepPriority(ChainStep a, ChainStep b)
+        {
+            if (a.Rank != b.Rank)
+                return b.Rank.CompareTo(a.Rank);
+
+            if (a.ProfitScore != b.ProfitScore)
+                return a.ProfitScore.CompareTo(b.ProfitScore);
+
+            if (a.EnergyCost != b.EnergyCost)
+                return b.EnergyCost.CompareTo(a.EnergyCost);
+
+            return a.ExecuteAtDistance.CompareTo(b.ExecuteAtDistance);
         }
 
         // ──────── Init / Toggle ────────

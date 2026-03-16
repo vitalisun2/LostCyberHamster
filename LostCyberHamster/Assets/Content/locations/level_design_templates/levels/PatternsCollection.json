@@ -11024,6 +11024,98 @@
                 { "id": 0, "type": 3, "x": 14.0, "y": -1.8000000715255738 },
                 { "id": 1, "type": 2, "x": 16.0, "y": -1.8000000715255738 }
             ]
+        },
+        {
+            "name": "bot_s9_dual_lane_jump_then_switch_bottom",
+            "description": "BotV2 Stage 9 dual-lane: шаг 1 Jump на нижней линии, шаг 2 SwitchLane на верхнюю",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 20.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s9_dual_lane_jump_then_switch_top",
+            "description": "BotV2 Stage 9 dual-lane: шаг 1 Jump на верхней линии, шаг 2 SwitchLane на нижнюю",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 20.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s9_dual_lane_switch_then_jump_bottom",
+            "description": "BotV2 Stage 9 dual-lane: шаг 1 SwitchLane с нижней линии, шаг 2 Jump на верхней",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 18.8, "y": -1.8000000715255738 },
+                { "id": 2, "type": 5, "x": 24.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s9_dual_lane_switch_then_jump_top",
+            "description": "BotV2 Stage 9 dual-lane: шаг 1 SwitchLane с верхней линии, шаг 2 Jump на нижней",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 18.8, "y": -2.799999952316284 },
+                { "id": 2, "type": 5, "x": 24.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s9_dual_lane_switch_switch_back_bottom",
+            "description": "BotV2 Stage 9 dual-lane: шаг 1 SwitchLane вверх, шаг 2 SwitchLane обратно вниз",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 19.2, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s9_dual_lane_switch_switch_back_top",
+            "description": "BotV2 Stage 9 dual-lane: шаг 1 SwitchLane вниз, шаг 2 SwitchLane обратно вверх",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 19.2, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s9_dual_lane_roof_jump_then_switch_bottom",
+            "description": "BotV2 Stage 9 dual-lane: Jump через smallRoadAndRoof, затем SwitchLane",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 3, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 20.4, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s9_dual_lane_roof_jump_then_switch_top",
+            "description": "BotV2 Stage 9 dual-lane: Jump через smallRoadAndRoof на верхней, затем SwitchLane",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 3, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 20.4, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s9_dual_lane_roof_switch_then_jump_bottom",
+            "description": "BotV2 Stage 9 dual-lane: SwitchLane, затем Jump через smallRoadAndRoof на новой линии",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 3, "x": 19.6, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_s9_dual_lane_roof_switch_then_jump_top",
+            "description": "BotV2 Stage 9 dual-lane: SwitchLane, затем Jump через smallRoadAndRoof на нижней линии",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 3, "x": 19.6, "y": -2.799999952316284 }
+            ]
         }
     ]
 }

@@ -11,7 +11,7 @@
       "overrides": []
     },
     {
-      "ref": "bot_s9_chain_jump_jump_bottom",
+      "ref": "bot_s9_dual_lane_jump_then_switch_bottom",
       "spriteSeed": 0,
       "overrides": []
     },
@@ -21,7 +21,87 @@
       "overrides": []
     },
     {
-      "ref": "bot_s9_chain_jump_jump_top",
+      "ref": "bot_s9_dual_lane_jump_then_switch_top",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_dual_lane_switch_then_jump_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_dual_lane_switch_then_jump_top",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_dual_lane_switch_switch_back_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_dual_lane_switch_switch_back_top",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_dual_lane_roof_jump_then_switch_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_dual_lane_roof_jump_then_switch_top",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_dual_lane_roof_switch_then_jump_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_dual_lane_roof_switch_then_jump_top",
       "spriteSeed": 0,
       "overrides": []
     },
