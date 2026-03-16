@@ -81,8 +81,16 @@ namespace Assets.Scripts.BotV2
 
         private static void AddThreatVariants(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo threat)
         {
-            if (TryBuildSwitchLaneStep(snapshot, threat, out ChainStep switchLaneStep, ThreatProfitScore))
+            bool suppressSwitchLaneForChain =
+                (threat.Type == ObstacleTypeEnum.smallNotAliveRoad ||
+                 threat.Type == ObstacleTypeEnum.smallNotAliveRoadAndRoof) &&
+                HasSecondSameLaneThreatNearby(snapshot, threat);
+
+            if (!suppressSwitchLaneForChain &&
+                TryBuildSwitchLaneStep(snapshot, threat, out ChainStep switchLaneStep, ThreatProfitScore))
+            {
                 result.Add(switchLaneStep);
+            }
 
             switch (threat.Type)
             {
@@ -420,6 +428,32 @@ namespace Assets.Scripts.BotV2
         private static bool IsOnSameLane(BotSceneSnapshot snapshot, ObstacleInfo obstacle)
         {
             return snapshot.HamsterOnBottom == !obstacle.IsTopLane;
+        }
+
+        private static bool HasSecondSameLaneThreatNearby(BotSceneSnapshot snapshot, ObstacleInfo primary)
+        {
+            const float maxGap = 8f;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obstacle = snapshot.VisibleObjects[i];
+                if (obstacle.StableId == primary.StableId)
+                    continue;
+                if (obstacle.Category != ObjectCategory.Threat)
+                    continue;
+                if (obstacle.DistanceToHamster < 0f)
+                    continue;
+                if (!IsOnSameLane(snapshot, obstacle))
+                    continue;
+                if (obstacle.LeftX <= primary.LeftX)
+                    continue;
+
+                float gap = obstacle.LeftX - primary.LeftX;
+                if (gap <= maxGap)
+                    return true;
+            }
+
+            return false;
         }
 
         private static DecisionRank ResolveDecisionRank(ObstacleInfo target)

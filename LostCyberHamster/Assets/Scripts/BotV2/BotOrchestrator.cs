@@ -36,7 +36,7 @@ namespace Assets.Scripts.BotV2
 
         [SerializeField, Range(5f, 30f)]
         [Tooltip("Дальность сканирования (мировых единиц)")]
-        private float _scanRange = 15f;
+        private float _scanRange = 20f;
 
         [SerializeField]
         public BotLogLevel LogLevel = BotLogLevel.Normal;
@@ -56,6 +56,7 @@ namespace Assets.Scripts.BotV2
         private ObjectClassifier _classifier;
         private ActionGenerator  _generator;
         private ActionSelector   _selector;
+        private ChainGenerator   _chainGenerator;
         private StepExecutor     _executor;
 
         private bool      _initialized;
@@ -205,7 +206,20 @@ namespace Assets.Scripts.BotV2
             FilterBlockedSwitchLaneCandidates(candidates);
             LogGenerate(candidates);
 
-            var best = _selector.Select(candidates);
+            ChainStep best = null;
+            var chainCandidates = _chainGenerator.Generate(snapshot, candidates, _classifier, _generator, _selector);
+            if (chainCandidates.Count > 0)
+            {
+                var bestChain = chainCandidates[0];
+                best = bestChain.FirstStep;
+                BotLogger.Log(BotLogLevel.Normal,
+                    $"[CHAIN] selected two-step: first={bestChain.FirstStep.Action}/{bestChain.FirstStep.TargetObstacle.Type} " +
+                    $"second={bestChain.SecondStep.Action}/{bestChain.SecondStep.TargetObstacle.Type} totalEnergy={bestChain.TotalEnergyCost}");
+            }
+
+            if (best == null)
+                best = _selector.Select(candidates);
+
             if (best == null)
             {
                 _lastAction = "None";
@@ -271,7 +285,11 @@ namespace Assets.Scripts.BotV2
             _classifier      = new ObjectClassifier();
             _generator       = new ActionGenerator();
             _selector        = new ActionSelector();
+            _chainGenerator  = new ChainGenerator();
             _executor        = new StepExecutor(_hamster);
+
+            if (_scanRange < 20f)
+                _scanRange = 20f;
 
             ResetEconomyTracking();
 
