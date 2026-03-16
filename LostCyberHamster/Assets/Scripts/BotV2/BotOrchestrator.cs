@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
@@ -15,10 +16,20 @@ namespace Assets.Scripts.BotV2
     /// Оркестратор BotV2. Вешается на GameObject в сцене.
     /// Координирует pipeline: Snapshot → Classify → Generate → Select → Execute.
     /// Горячая клавиша F1: вкл/выкл.
-    /// Этап 2: один Threat, все типы угроз, выбор по энергоэффективности.
+    /// Этап 5: event-driven pipeline на триггерах видимости и завершения шага.
     /// </summary>
     public class BotOrchestrator : MonoBehaviour
     {
+        [Flags]
+        private enum PipelineTrigger
+        {
+            None = 0,
+            VisibleObjectsChanged = 1 << 0,
+            StepCompleted = 1 << 1,
+            StepCancelled = 1 << 2,
+            ManagedStateChanged = 1 << 3
+        }
+
         [Title("BotV2 Settings")]
         [SerializeField] private bool _enabledOnStart = true;
 
@@ -55,6 +66,14 @@ namespace Assets.Scripts.BotV2
         private float _lastNoActionLogTime = -999f;
         private int _suppressedNoActionCount;
         private int _blockedSwitchLaneStableId;
+        private PipelineTrigger _pendingPipelineTrigger;
+        private bool _hasVisibleObjectSnapshot;
+        private readonly HashSet<int> _currentVisibleObjectIds = new HashSet<int>();
+        private readonly HashSet<int> _previousVisibleObjectIds = new HashSet<int>();
+        private bool _hasLastManagedState;
+        private HamsterStateEnum _lastManagedState;
+        private bool _hasPlannedManagedState;
+        private HamsterStateEnum _plannedManagedState;
 
         // ──────── Lifecycle ────────
 
@@ -78,6 +97,7 @@ namespace Assets.Scripts.BotV2
         {
             enabled = true;
             IsEnabled = true;
+            ResetPipelineTriggerState();
 
             if (!_initialized)
                 TryInit();
@@ -103,71 +123,57 @@ namespace Assets.Scripts.BotV2
 
             if (_gameManager == null || _gameManager.State != GameState.PLAYING) return;
 
+            BotLogger.Level = LogLevel;
+
             var state = _hamster.HamsterState.Value;
             if (state == HamsterStateEnum.Dead) return;
 
-            // Когда хомяк не в Run (прыжок, суперпрыжок и т.д.),
-            // продолжаем отслеживать активный шаг (stall/completion),
-            // но не планируем новых действий.
-            if (state != HamsterStateEnum.Run)
-            {
-                if (_activeStep != null && _activeStep.Status == ChainStepStatus.InProgress)
-                {
-                    _executor.TryExecute();
-                }
-                return;
-            }
-
-            BotLogger.Level = LogLevel;
-
-            // Исполняем активный шаг или планируем новый
-            if (_activeStep != null)
-            {
-                if (_activeStep.Status == ChainStepStatus.Completed)
-                {
-                    _executor.ClearStep();
-                    _activeStep = null;
-                    // Если шаг был отменён (целевая линия стала опасной) — сразу перепланируем
-                }
-                else
-                {
-                    _executor.TryExecute();
-                    // Проверяем, не отменил ли executor шаг прямо сейчас
-                    if (_executor.WasCancelled)
-                    {
-                        RememberCancelledSwitchLane();
-                        _executor.ClearStep();
-                        _activeStep = null;
-                        // Провалимся ниже в RunPipeline для перепланирования
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-            }
-
-            RunPipeline();
-        }
-
-            private static bool IsTogglePressed()
-            {
-        #if ENABLE_INPUT_SYSTEM
-                return Keyboard.current != null && Keyboard.current.f1Key.wasPressedThisFrame;
-        #elif ENABLE_LEGACY_INPUT_MANAGER
-                return Input.GetKeyDown(KeyCode.F1);
-        #else
-                return false;
-        #endif
-            }
-
-        // ──────── Pipeline ────────
-
-        private void RunPipeline()
-        {
             var snapshot = _snapshotBuilder.Build(_hamster, _scanRange);
             _lastSnapshot = snapshot;
             RefreshBlockedSwitchLane(snapshot);
+
+            if (UpdateVisibleObjectSet(snapshot))
+                QueuePipelineTrigger(PipelineTrigger.VisibleObjectsChanged);
+
+            bool managedStateChanged = UpdateManagedState(state);
+
+            if (UpdateActiveStep(state, managedStateChanged))
+                return;
+
+            state = _hamster.HamsterState.Value;
+            if (!IsManagedState(state))
+                return;
+
+            if (managedStateChanged)
+                QueuePipelineTrigger(PipelineTrigger.ManagedStateChanged);
+
+            var trigger = ConsumePipelineTrigger();
+            if (trigger == PipelineTrigger.None)
+                return;
+
+            RunPipeline(snapshot, trigger);
+        }
+
+        private static bool IsTogglePressed()
+        {
+        #if ENABLE_INPUT_SYSTEM
+            return Keyboard.current != null && Keyboard.current.f1Key.wasPressedThisFrame;
+        #elif ENABLE_LEGACY_INPUT_MANAGER
+            return Input.GetKeyDown(KeyCode.F1);
+        #else
+            return false;
+        #endif
+        }
+
+        // ──────── Pipeline ────────
+
+        private void RunPipeline(BotSceneSnapshot snapshot, PipelineTrigger trigger)
+        {
+            BotLogger.Log(BotLogLevel.Normal,
+                $"[PIPELINE] trigger={FormatPipelineTrigger(trigger)}\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                $"  visible: {BotLogger.FormatSnapshotObstacles(snapshot.VisibleObjects)}");
+
             LogSnapshot(snapshot);
 
             _classifier.Classify(snapshot);
@@ -180,6 +186,7 @@ namespace Assets.Scripts.BotV2
             var best = _selector.Select(candidates);
             if (best == null)
             {
+                _lastAction = "None";
                 LogNoSafeActions(snapshot);
                 return;
             }
@@ -193,6 +200,8 @@ namespace Assets.Scripts.BotV2
                 $"  visible: {BotLogger.FormatSnapshotObstacles(snapshot.VisibleObjects)}");
 
             _activeStep = best;
+            _plannedManagedState = _hamster.HamsterState.Value;
+            _hasPlannedManagedState = IsManagedState(_plannedManagedState);
             _executor.SetStep(best);
         }
 
@@ -203,10 +212,12 @@ namespace Assets.Scripts.BotV2
             if (IsEnabled)
             {
                 IsEnabled = false;
+                ResetPipelineTriggerState();
                 DebugManager.DiagLog("[BotOrchestrator] Disabled");
                 return;
             }
             IsEnabled = true;
+            ResetPipelineTriggerState();
             if (!_initialized) TryInit();
         }
 
@@ -246,7 +257,8 @@ namespace Assets.Scripts.BotV2
 
             _initialized = true;
             IsEnabled    = true;
-            DebugManager.DiagLog("[BotOrchestrator] Initialized (Stage 4)");
+            ResetPipelineTriggerState();
+            DebugManager.DiagLog("[BotOrchestrator] Initialized (Stage 5)");
         }
 
         private void OnDestroy()
@@ -305,6 +317,161 @@ namespace Assets.Scripts.BotV2
             candidates.RemoveAll(candidate =>
                 candidate.Action == BotAction.SwitchLane &&
                 candidate.TargetObstacle.StableId == _blockedSwitchLaneStableId);
+        }
+
+        private bool UpdateActiveStep(HamsterStateEnum state, bool managedStateChanged)
+        {
+            if (_activeStep == null)
+                return false;
+
+            if (_activeStep.Status == ChainStepStatus.Ready &&
+                managedStateChanged &&
+                _hasPlannedManagedState &&
+                IsManagedState(state) &&
+                state != _plannedManagedState)
+            {
+                BotLogger.Log(BotLogLevel.Normal,
+                    $"[PIPELINE] invalidate ready step after state change {_plannedManagedState}→{state}\n" +
+                    $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                    $"  step: {BotLogger.FormatStep(_activeStep)}");
+                CompleteActiveStep(PipelineTrigger.ManagedStateChanged);
+                return false;
+            }
+
+            if (_activeStep.Status == ChainStepStatus.Completed)
+            {
+                CompleteActiveStep(PipelineTrigger.StepCompleted);
+                return false;
+            }
+
+            _executor.TryExecute();
+            if (_executor.WasCancelled)
+            {
+                RememberCancelledSwitchLane();
+                CompleteActiveStep(PipelineTrigger.StepCancelled);
+                return false;
+            }
+
+            if (_activeStep.Status == ChainStepStatus.Completed)
+            {
+                CompleteActiveStep(PipelineTrigger.StepCompleted);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void CompleteActiveStep(PipelineTrigger trigger)
+        {
+            _executor.ClearStep();
+            _activeStep = null;
+            _hasPlannedManagedState = false;
+            QueuePipelineTrigger(trigger);
+        }
+
+        private bool UpdateVisibleObjectSet(BotSceneSnapshot snapshot)
+        {
+            _currentVisibleObjectIds.Clear();
+            for (int index = 0; index < snapshot.VisibleObjects.Count; index++)
+                _currentVisibleObjectIds.Add(snapshot.VisibleObjects[index].StableId);
+
+            if (!_hasVisibleObjectSnapshot)
+            {
+                CopyVisibleObjectIds(_currentVisibleObjectIds, _previousVisibleObjectIds);
+                _hasVisibleObjectSnapshot = true;
+                return true;
+            }
+
+            if (_previousVisibleObjectIds.SetEquals(_currentVisibleObjectIds))
+                return false;
+
+            CopyVisibleObjectIds(_currentVisibleObjectIds, _previousVisibleObjectIds);
+            return true;
+        }
+
+        private void QueuePipelineTrigger(PipelineTrigger trigger)
+        {
+            if (trigger == PipelineTrigger.None)
+                return;
+
+            _pendingPipelineTrigger |= trigger;
+        }
+
+        private PipelineTrigger ConsumePipelineTrigger()
+        {
+            var trigger = _pendingPipelineTrigger;
+            _pendingPipelineTrigger = PipelineTrigger.None;
+            return trigger;
+        }
+
+        private void ResetPipelineTriggerState()
+        {
+            _pendingPipelineTrigger = PipelineTrigger.None;
+            _hasVisibleObjectSnapshot = false;
+            _currentVisibleObjectIds.Clear();
+            _previousVisibleObjectIds.Clear();
+            _hasLastManagedState = false;
+            _hasPlannedManagedState = false;
+            ResetNoActionLogState();
+        }
+
+        private bool UpdateManagedState(HamsterStateEnum state)
+        {
+            if (!IsManagedState(state))
+                return false;
+
+            if (!_hasLastManagedState)
+            {
+                _lastManagedState = state;
+                _hasLastManagedState = true;
+                return false;
+            }
+
+            if (_lastManagedState == state)
+                return false;
+
+            _lastManagedState = state;
+            return true;
+        }
+
+        private static void CopyVisibleObjectIds(HashSet<int> source, HashSet<int> destination)
+        {
+            destination.Clear();
+            foreach (int stableId in source)
+                destination.Add(stableId);
+        }
+
+        private static bool IsManagedState(HamsterStateEnum state)
+        {
+            return state == HamsterStateEnum.Run || state == HamsterStateEnum.RoofRun;
+        }
+
+        private static string FormatPipelineTrigger(PipelineTrigger trigger)
+        {
+            if (trigger == PipelineTrigger.None)
+                return "None";
+
+            var builder = new StringBuilder();
+            AppendTriggerName(builder, trigger, PipelineTrigger.VisibleObjectsChanged, "VisibleObjectsChanged");
+            AppendTriggerName(builder, trigger, PipelineTrigger.StepCompleted, "StepCompleted");
+            AppendTriggerName(builder, trigger, PipelineTrigger.StepCancelled, "StepCancelled");
+            AppendTriggerName(builder, trigger, PipelineTrigger.ManagedStateChanged, "ManagedStateChanged");
+            return builder.ToString();
+        }
+
+        private static void AppendTriggerName(
+            StringBuilder builder,
+            PipelineTrigger trigger,
+            PipelineTrigger flag,
+            string name)
+        {
+            if ((trigger & flag) == 0)
+                return;
+
+            if (builder.Length > 0)
+                builder.Append('+');
+
+            builder.Append(name);
         }
 
         // ──────── Damage log ────────

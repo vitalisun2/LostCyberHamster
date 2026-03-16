@@ -18,8 +18,6 @@ namespace Assets.Scripts.BotV2
         private const float LifeCollectibleMaxSwitchFireDist = 8f;
         private const float LifeCollectibleMinGenerateDist = 0.8f;
         private const float LifeUrgentSourceThreatDistance = 5.5f;
-        private const float ThreatSwitchMinExecuteDist = 2.2f;
-        private const float OpportunisticSwitchMinExecuteDist = 2.4f;
         private const float JumpFireDist       = 1.5f;
         private const float SuperJumpFireDist  = 1.5f;
         internal const int JumpEnergyCost      = 10;
@@ -84,10 +82,7 @@ namespace Assets.Scripts.BotV2
         private static void AddThreatVariants(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo threat)
         {
             if (TryBuildSwitchLaneStep(snapshot, threat, out ChainStep switchLaneStep, ThreatProfitScore))
-            {
-                if (switchLaneStep.ExecuteAtDistance >= ThreatSwitchMinExecuteDist)
-                    result.Add(switchLaneStep);
-            }
+                result.Add(switchLaneStep);
 
             switch (threat.Type)
             {
@@ -156,9 +151,6 @@ namespace Assets.Scripts.BotV2
             {
                 if (TryBuildSwitchLaneStep(snapshot, target, out ChainStep switchLaneStep, TargetProfitScore - 20))
                 {
-                    if (switchLaneStep.ExecuteAtDistance < OpportunisticSwitchMinExecuteDist)
-                        return;
-
                     switchLaneStep.Reason = "SwitchLane to target";
                     result.Add(switchLaneStep);
                 }

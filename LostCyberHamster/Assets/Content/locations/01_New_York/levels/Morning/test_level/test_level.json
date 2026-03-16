@@ -1,279 +1,294 @@
 {
-    "skyTexture": "sky_new_york_morning",
-    "background2Texture": "bg_2_new_york_morning",
-    "backgroundTexture": "bg_new_york_morning",
-    "roadTexture": "rd_new_york_morning",
-    "location": "01_New_York",
-    "patternSequence": [
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_01_top_small_threat_bottom_target_bottom_coin",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_02_bottom_small_threat_top_target_top_crystal",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_03_top_medium_bottom_life_bottom_target",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_04_bottom_medium_top_energy_top_target",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_05_top_target_bottom_small_threat_top_energy",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_06_bottom_target_top_small_threat_bottom_energy",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_07_top_threat_bottom_target_bottom_crystal",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_08_bottom_threat_top_target_top_coin",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_09_top_medium_bottom_target_top_coin",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_10_bottom_medium_top_target_bottom_crystal",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_11_top_life_bottom_medium_top_target",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_12_bottom_energy_top_medium_bottom_target",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_13_top_small_threat_bottom_target_top_crystal_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_14_bottom_small_threat_top_target_bottom_coin_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_15_top_target_bottom_medium_bottom_energy_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_16_bottom_target_top_medium_top_life_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_17_top_medium_bottom_target_bottom_life_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_18_bottom_medium_top_target_top_energy_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_19_top_target_bottom_threat_bottom_coin_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_20_bottom_target_top_threat_top_crystal_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_21_top_small_threat_bottom_target_bottom_crystal_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_22_bottom_small_threat_top_target_top_coin_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_23_top_target_bottom_medium_top_life_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v3_24_bottom_target_top_medium_bottom_energy_far",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v4_03_top_big_safe_runfromroof",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bot_s4_v4_04_bottom_medium_safe_runfromroof",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        }
-    ],
-    "decorationPatterns": [
-        {
-            "decorationTiles": []
-        }
-    ]
+  "skyTexture": "sky_new_york_morning",
+  "background2Texture": "bg_2_new_york_morning",
+  "backgroundTexture": "bg_new_york_morning",
+  "roadTexture": "rd_new_york_morning",
+  "location": "01_New_York",
+  "patternSequence": [
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s1_threat_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s1_threat_top",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s2_small_roof_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s2_big_not_alive_top",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s2_medium_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s2_big_alive_top",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s3_target_small_top",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s3_target_small_bottom_far",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s3_collect_life_top",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s3_collect_coin_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s4_dense_top_target_vs_bottom_medium_overlap",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s4_dense_bottom_threat_vs_top_target_overlap",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s4_v2_09_top_target_bottom_medium_top_small_threat",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s4_v2_10_bottom_target_top_medium_bottom_small_threat",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s4_v3_01_top_small_threat_bottom_target_bottom_coin",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s4_v3_02_bottom_small_threat_top_target_top_crystal",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s4_v4_01_top_big_then_small_threat_runfromroof",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s4_v4_03_top_big_safe_runfromroof",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    }
+  ],
+  "decorationPatterns": [
+    {
+      "decorationTiles": []
+    }
+  ]
 }
