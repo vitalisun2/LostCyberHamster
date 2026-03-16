@@ -10943,6 +10943,24 @@
                 { "id": 0, "type": 11, "x": 12.0, "y": -2.799999952316284 },
                 { "id": 1, "type": 2, "x": 22.0, "y": -2.799999952316284 }
             ]
+        },
+        {
+            "name": "bot_s6_seq_small_bottom",
+            "description": "BotV2 Stage 6: два последовательных smallNotAliveRoad на нижней линии",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 19.6, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_s6_seq_small_top",
+            "description": "BotV2 Stage 6: два последовательных smallNotAliveRoad на верхней линии",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 19.6, "y": -1.8000000715255738 }
+            ]
         }
     ]
 }
