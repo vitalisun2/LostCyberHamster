@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
+using Assets.Scripts.System;
 using Sirenix.OdinInspector;
 using System.Text;
 using UnityEngine;
@@ -114,12 +115,10 @@ namespace Assets.Scripts.BotV2
         private int _energySpentDuringBotActions;
         private float _lastActionFiredAt = -999f;
         private string _lastActionFiredLabel = "None";
-        private readonly List<Vector3> _trajectoryPoints = new List<Vector3>(8);
-        private readonly List<Vector3> _trajectoryStep1Points = new List<Vector3>(8);
-        private readonly List<Vector3> _trajectoryStep2Points = new List<Vector3>(8);
         private Material _glMaterial;
         private ChainStep _previewFirstStep;
         private ChainStep _previewSecondStep;
+        private bool _previewStep1LaneAfter;
         private string _trajectoryHudText = "Plan: none";
         private GUIStyle _trajectoryHudStyle;
 
@@ -1056,9 +1055,6 @@ namespace Assets.Scripts.BotV2
 
         private void UpdateTrajectoryPreview(BotSceneSnapshot snapshot, ChainStep first, ChainStep second)
         {
-            _trajectoryPoints.Clear();
-            _trajectoryStep1Points.Clear();
-            _trajectoryStep2Points.Clear();
             _previewFirstStep = first;
             _previewSecondStep = second;
 
@@ -1068,104 +1064,20 @@ namespace Assets.Scripts.BotV2
                 return;
             }
 
-            bool currentBottom = snapshot.HamsterOnBottom;
-            float currentX = snapshot.HamsterRightX;
-
-            Vector3 start = ToTrajectoryPoint(currentX, currentBottom);
-            _trajectoryPoints.Add(start);
-
-            Vector3 step1End = AppendStepTrajectoryPoint(snapshot, first, ref currentX, ref currentBottom);
-            BuildStepPolyline(_trajectoryStep1Points, start, step1End, first.Action);
-
-            if (second != null)
-            {
-                Vector3 step2Start = step1End;
-                Vector3 step2End = AppendStepTrajectoryPoint(snapshot, second, ref currentX, ref currentBottom);
-                BuildStepPolyline(_trajectoryStep2Points, step2Start, step2End, second.Action);
-            }
+            _previewStep1LaneAfter = GetLaneAfterStep(first, snapshot.HamsterOnBottom);
 
             _trajectoryHudText = second == null
                 ? $"Plan: {first.Action} ({first.Rank})"
                 : $"Plan: {first.Action} -> {second.Action} ({first.Rank}/{second.Rank})";
         }
 
-        private Vector3 AppendStepTrajectoryPoint(
-            BotSceneSnapshot snapshot,
-            ChainStep step,
-            ref float currentX,
-            ref bool currentBottom)
+        private static bool GetLaneAfterStep(ChainStep step, bool currentOnBottom)
         {
-            const float jumpLandingTravel = 3.8f;
-            const float superJumpLandingTravel = 4.6f;
-            const float landingPostFactor = 0.4f;
-
-            bool nextBottom = currentBottom;
-            float nextX = currentX;
-
-            if (step.Action == BotAction.SwitchLane)
-            {
-                float advanceDistance = step.TargetObstacle.DistanceToHamster - step.ExecuteAtDistance;
-                if (advanceDistance < 0f)
-                    advanceDistance = 0f;
-
-                nextX = currentX + advanceDistance;
-
-                // Threat: lane switch away from obstacle lane. Other categories: switch to obstacle lane.
-                if (step.TargetObstacle.Category == ObjectCategory.Threat)
-                    nextBottom = step.TargetObstacle.IsTopLane;
-                else
-                    nextBottom = !step.TargetObstacle.IsTopLane;
-            }
-            else if (step.Action == BotAction.Jump || step.Action == BotAction.SuperJump)
-            {
-                float landingTravel = step.Action == BotAction.SuperJump
-                    ? superJumpLandingTravel
-                    : jumpLandingTravel;
-
-                nextX = step.TargetObstacle.RightX + landingTravel * landingPostFactor;
-            }
-
-            currentX = nextX;
-            currentBottom = nextBottom;
-
-            Vector3 point = ToTrajectoryPoint(currentX, currentBottom);
-            _trajectoryPoints.Add(point);
-            return point;
-        }
-
-        private static Vector3 ToTrajectoryPoint(float hamsterRightX, bool hamsterOnBottom)
-        {
-            float y = hamsterOnBottom ? Assets.Scripts.Consts.ObstacleY1Pos : Assets.Scripts.Consts.ObstacleY0Pos;
-            return new Vector3(hamsterRightX, y + 0.95f, 0f);
-        }
-
-        private static void BuildStepPolyline(List<Vector3> destination, Vector3 start, Vector3 end, BotAction action)
-        {
-            destination.Clear();
-            destination.Add(start);
-
-            Vector3 direction = end - start;
-            if (direction.sqrMagnitude < 0.0001f)
-                return;
-
-            if (action == BotAction.Jump || action == BotAction.SuperJump)
-            {
-                float arcHeight = action == BotAction.SuperJump ? 1.2f : 0.85f;
-                Vector3 mid = (start + end) * 0.5f + Vector3.up * arcHeight;
-                destination.Add(mid);
-            }
-
-            destination.Add(end);
-
-            // Arrow head
-            Vector3 dir = (end - start).normalized;
-            Vector3 leftWing = Quaternion.Euler(0f, 0f, 150f) * dir;
-            Vector3 rightWing = Quaternion.Euler(0f, 0f, -150f) * dir;
-            float wingLength = 0.45f;
-
-            destination.Add(end + leftWing * wingLength);
-            destination.Add(end);
-            destination.Add(end + rightWing * wingLength);
+            if (step.Action != BotAction.SwitchLane)
+                return currentOnBottom;
+            if (step.TargetObstacle.Category == ObjectCategory.Threat)
+                return step.TargetObstacle.IsTopLane;
+            return !step.TargetObstacle.IsTopLane;
         }
 
         private void UpdateTrajectoryRenderer()
@@ -1200,41 +1112,88 @@ namespace Assets.Scripts.BotV2
         {
             if (!_showPlannedTrajectory || !IsEnabled || _glMaterial == null)
                 return;
-
-            bool hasStep1 = _trajectoryStep1Points != null && _trajectoryStep1Points.Count >= 2;
-            bool hasStep2 = _trajectoryStep2Points != null && _trajectoryStep2Points.Count >= 2;
-
-            if (!hasStep1 && !hasStep2)
+            if (_previewFirstStep == null)
                 return;
+
+            Camera cam = Camera.main;
+            if (cam == null) return;
 
             _glMaterial.SetPass(0);
             GL.PushMatrix();
+            GL.LoadProjectionMatrix(cam.projectionMatrix);
+            GL.modelview = cam.worldToCameraMatrix;
             GL.Begin(GL.LINES);
 
-            if (hasStep1)
-            {
-                Color c1 = GetStepColor(_previewFirstStep?.Action ?? BotAction.None);
-                GL.Color(c1);
-                for (int i = 0; i < _trajectoryStep1Points.Count - 1; i++)
-                {
-                    GL.Vertex(_trajectoryStep1Points[i]);
-                    GL.Vertex(_trajectoryStep1Points[i + 1]);
-                }
-            }
-
-            if (hasStep2)
-            {
-                Color c2 = GetStepColor(_previewSecondStep?.Action ?? BotAction.None);
-                GL.Color(c2);
-                for (int i = 0; i < _trajectoryStep2Points.Count - 1; i++)
-                {
-                    GL.Vertex(_trajectoryStep2Points[i]);
-                    GL.Vertex(_trajectoryStep2Points[i + 1]);
-                }
-            }
+            bool hamBottom = _hamster != null && _hamster.IsOnBottomLine.Value;
+            DrawStepIndicator(_previewFirstStep, hamBottom);
+            if (_previewSecondStep != null)
+                DrawStepIndicator(_previewSecondStep, _previewStep1LaneAfter);
 
             GL.End();
             GL.PopMatrix();
+        }
+
+        private static void DrawStepIndicator(ChainStep step, bool hamOnBottom)
+        {
+            var spawner = ObstacleSpawner.Instance;
+            float obsLeft   = step.TargetObstacle.LeftX;
+            float obsRight  = step.TargetObstacle.RightX;
+            float obsCenter = step.TargetObstacle.CenterX;
+
+            if (spawner != null)
+            {
+                var spawned = spawner.SpawnedObstacles;
+                for (int i = 0; i < spawned.Count; i++)
+                {
+                    var inst = spawned[i];
+                    if (inst?.ObstacleScript == null) continue;
+                    if (inst.ObstacleScript.GetInstanceID() != step.TargetObstacle.StableId) continue;
+                    float hw = inst.ObstacleScript.ColliderWidth * 0.5f;
+                    obsCenter = inst.ObstacleScript.transform.position.x;
+                    obsLeft   = obsCenter - hw;
+                    obsRight  = obsCenter + hw;
+                    break;
+                }
+            }
+
+            float laneY = hamOnBottom
+                ? Assets.Scripts.Consts.ObstacleY1Pos + 0.95f
+                : Assets.Scripts.Consts.ObstacleY0Pos + 0.95f;
+
+            Color color = GetStepColor(step.Action);
+            GL.Color(color);
+
+            if (step.Action == BotAction.Jump || step.Action == BotAction.SuperJump)
+            {
+                float arcH  = step.Action == BotAction.SuperJump ? 1.4f : 1.0f;
+                float landX = obsRight + 1.2f;
+                var a = new Vector3(obsLeft,   laneY,        0f);
+                var m = new Vector3(obsCenter, laneY + arcH, 0f);
+                var b = new Vector3(landX,     laneY,        0f);
+                GL.Vertex(a); GL.Vertex(m);
+                GL.Vertex(m); GL.Vertex(b);
+                // arrowhead at b
+                Vector3 dir = (b - m).normalized;
+                GL.Vertex(b); GL.Vertex(b + (Vector3)(Quaternion.Euler(0,0, 150f) * dir) * 0.4f);
+                GL.Vertex(b); GL.Vertex(b + (Vector3)(Quaternion.Euler(0,0,-150f) * dir) * 0.4f);
+            }
+            else if (step.Action == BotAction.SwitchLane)
+            {
+                float topY    = Assets.Scripts.Consts.ObstacleY0Pos + 0.95f;
+                float botY    = Assets.Scripts.Consts.ObstacleY1Pos + 0.95f;
+                float targetY = hamOnBottom ? topY : botY;
+                float xPos    = obsLeft - 0.2f;
+                var from = new Vector3(xPos, laneY,    0f);
+                var to   = new Vector3(xPos, targetY,  0f);
+                GL.Vertex(from); GL.Vertex(to);
+                // arrowhead
+                Vector3 dir = (to - from).normalized;
+                GL.Vertex(to); GL.Vertex(to + (Vector3)(Quaternion.Euler(0,0, 150f) * dir) * 0.35f);
+                GL.Vertex(to); GL.Vertex(to + (Vector3)(Quaternion.Euler(0,0,-150f) * dir) * 0.35f);
+                // horizontal tick marks at both lanes
+                GL.Vertex(new Vector3(xPos - 0.25f, laneY,    0f)); GL.Vertex(new Vector3(xPos + 0.25f, laneY,    0f));
+                GL.Vertex(new Vector3(xPos - 0.25f, targetY,  0f)); GL.Vertex(new Vector3(xPos + 0.25f, targetY,  0f));
+            }
         }
 
         private static Color GetStepColor(BotAction action)
@@ -1254,9 +1213,6 @@ namespace Assets.Scripts.BotV2
 
         private void ClearTrajectoryPreview()
         {
-            _trajectoryPoints.Clear();
-            _trajectoryStep1Points.Clear();
-            _trajectoryStep2Points.Clear();
             _previewFirstStep = null;
             _previewSecondStep = null;
             _trajectoryHudText = "Plan: none";
