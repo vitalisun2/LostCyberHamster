@@ -9,5 +9,7 @@ namespace Assets.Scripts.BotV2
         public ChainStep FirstStep;
         public ChainStep SecondStep;
         public int TotalEnergyCost;
+        public int TotalProfitScore;
+        public DecisionRank BestRank;
     }
 }
