@@ -11,47 +11,7 @@
       "overrides": []
     },
     {
-      "ref": "bot_s12_dense_mixed_zigzag_a",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "relief",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "bot_s12_dense_mixed_zigzag_b",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "relief",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "bot_s12_dense_near_windows_bottom",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "relief",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "bot_s12_dense_near_windows_top",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "relief",
-      "spriteSeed": 0,
-      "overrides": []
-    },
-    {
-      "ref": "bot_s12_dense_target_collectible_mix",
+      "ref": "bot_phase_c_switch_lane_jump",
       "spriteSeed": 0,
       "overrides": []
     },

@@ -29,15 +29,27 @@ namespace Assets.Scripts.BotV2
         private float _stepStartedAt = -1f;
         private float _nextStallLogAt = -1f;
         private float _nextSwitchLaneUnsafeLogAt = -1f;
+        private float _lastIssuedCommandAt = -999f;
         private bool _tryJumpAfterSwitchLane;
         private bool _jumpAfterSwitchLaneFired;
         private bool _pendingSuperJumpUpgrade;
         private bool _pendingSuperRoofJumpUpgrade;
+        private string _lastIssuedCommandLabel = "None";
 
         /// <summary>Шаг был отменён из-за изменившейся обстановки. Оркестратор перепланирует.</summary>
         public bool WasCancelled { get; private set; }
 
         public bool HasActiveStep => _step != null && _step.Status != ChainStepStatus.Completed;
+
+        public bool HasRecentIssuedCommand(float seconds)
+        {
+            return Time.time - _lastIssuedCommandAt <= seconds;
+        }
+
+        public string GetRecentIssuedCommandLabel(float seconds)
+        {
+            return HasRecentIssuedCommand(seconds) ? _lastIssuedCommandLabel : null;
+        }
 
         public StepExecutor(Hamster hamster)
         {
@@ -188,18 +200,21 @@ namespace Assets.Scripts.BotV2
             switch (_step.Action)
             {
                 case BotAction.SwitchLane:
+                    RecordIssuedCommand(BotAction.SwitchLane);
                     _hamster.TapRequest.Invoke();
                     _switchLaneExecTime = Time.time;
                     _tryJumpAfterSwitchLane = ShouldTryJumpAfterSwitchLane();
                     _jumpAfterSwitchLaneFired = false;
                     break;
                 case BotAction.Jump:
+                    RecordIssuedCommand(BotAction.Jump);
                     if (_hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
                         _hamster.RoofJumpRequest.Invoke();
                     else
                         _hamster.JumpRequest.Invoke();
                     break;
                 case BotAction.SuperJump:
+                    RecordIssuedCommand(BotAction.SuperJump);
                     if (_hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
                     {
                         _hamster.RoofJumpRequest.Invoke();
@@ -255,6 +270,7 @@ namespace Assets.Scripts.BotV2
             if (!FindCloseSameLaneSmallAlive(out float liveDist))
                 return;
 
+            RecordIssuedCommand(BotAction.Jump);
             _hamster.JumpRequest.Invoke();
             _jumpAfterSwitchLaneFired = true;
             BotLogger.Log(BotLogLevel.Normal,
@@ -262,6 +278,12 @@ namespace Assets.Scripts.BotV2
                 $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
                 $"  step: {BotLogger.FormatStep(_step)}\n" +
                 $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
+        }
+
+        private void RecordIssuedCommand(BotAction action)
+        {
+            _lastIssuedCommandAt = Time.time;
+            _lastIssuedCommandLabel = action.ToString();
         }
 
         private void TryUpgradePendingSuperJump()

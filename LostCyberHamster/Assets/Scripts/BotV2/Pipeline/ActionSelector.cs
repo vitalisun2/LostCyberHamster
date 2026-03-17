@@ -46,20 +46,9 @@ namespace Assets.Scripts.BotV2
             return best;
         }
 
-        // >0 означает, что a лучше b; <0 — хуже; 0 — эквивалентны.
         private static int Compare(ChainStep a, ChainStep b)
         {
-            if (a.Rank != b.Rank)
-                return b.Rank.CompareTo(a.Rank);
-
-            if (a.ProfitScore != b.ProfitScore)
-                return a.ProfitScore.CompareTo(b.ProfitScore);
-
-            if (a.EnergyCost != b.EnergyCost)
-                return b.EnergyCost.CompareTo(a.EnergyCost);
-
-            // Для стабильности выбора при полном равенстве предпочитаем более раннее исполнение.
-            return a.ExecuteAtDistance.CompareTo(b.ExecuteAtDistance);
+            return ChainStep.ComparePriority(a, b);
         }
 
         private static string DescribeCandidate(string role, ChainStep step)

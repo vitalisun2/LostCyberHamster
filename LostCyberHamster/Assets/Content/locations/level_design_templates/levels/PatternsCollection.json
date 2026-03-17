@@ -11268,6 +11268,258 @@
                 { "id": 4, "type": 8, "x": 22.8, "y": -1.8000000715255738 },
                 { "id": 5, "type": 2, "x": 24.6, "y": -2.799999952316284 }
             ]
+        },
+        {
+            "name": "bot_test_jump_jump_same_line",
+            "description": "Jump→Jump chain on same lane",
+            "nextObstacleId": 4,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 5.0, "y": -2.799999952316284 },
+                { "id": 2, "type": 0, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 0, "x": 11.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_test_jump_jump_alternate",
+            "description": "Jump→Jump with lane alternation",
+            "nextObstacleId": 6,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 5.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 0, "x": 11.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 0, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 0, "x": 17.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_test_switch_jump_chase",
+            "description": "SwitchLane first, then Jump to avoid threat",
+            "nextObstacleId": 8,
+            "obstacles": [
+                { "id": 0, "type": 1, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 1, "x": 3.0, "y": -2.799999952316284 },
+                { "id": 2, "type": 2, "x": 5.0, "y": -1.8000000715255738 },
+                { "id": 3, "type": 1, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 4, "type": 1, "x": 9.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 2, "x": 11.0, "y": -1.8000000715255738 },
+                { "id": 6, "type": 0, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 7, "type": 0, "x": 15.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_test_jump_collect_profit",
+            "description": "Jump on target (box) to collect high-profit bonus",
+            "nextObstacleId": 7,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 3, "x": 4.0, "y": -2.799999952316284 },
+                { "id": 2, "type": 0, "x": 6.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 3, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 4, "type": 0, "x": 10.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 3, "x": 12.0, "y": -2.799999952316284 },
+                { "id": 6, "type": 0, "x": 14.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_test_jump_collect_chain",
+            "description": "Jump→collectible chain (energy, coin, crystal)",
+            "nextObstacleId": 10,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 4.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 5, "x": 6.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 0, "x": 8.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 9, "x": 10.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 0, "x": 12.0, "y": -1.8000000715255738 },
+                { "id": 6, "type": 6, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 7, "type": 0, "x": 16.0, "y": -1.8000000715255738 },
+                { "id": 8, "type": 7, "x": 18.0, "y": -2.799999952316284 },
+                { "id": 9, "type": 0, "x": 20.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_test_threat_vs_collectible",
+            "description": "Enemy threat vs collectible priority",
+            "nextObstacleId": 8,
+            "obstacles": [
+                { "id": 0, "type": 1, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 9, "x": 3.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 1, "x": 5.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 6, "x": 6.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 0, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 5, "x": 9.0, "y": -1.8000000715255738 },
+                { "id": 6, "type": 1, "x": 11.0, "y": -2.799999952316284 },
+                { "id": 7, "type": 7, "x": 12.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_test_energy_depletion",
+            "description": "Multiple jumps to test energy management",
+            "nextObstacleId": 12,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 1.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 3.0, "y": -2.799999952316284 },
+                { "id": 2, "type": 0, "x": 5.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 0, "x": 7.0, "y": -2.799999952316284 },
+                { "id": 4, "type": 0, "x": 9.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 0, "x": 11.0, "y": -2.799999952316284 },
+                { "id": 6, "type": 0, "x": 13.0, "y": -2.799999952316284 },
+                { "id": 7, "type": 0, "x": 15.0, "y": -2.799999952316284 },
+                { "id": 8, "type": 0, "x": 17.0, "y": -2.799999952316284 },
+                { "id": 9, "type": 5, "x": 19.0, "y": -2.799999952316284 },
+                { "id": 10, "type": 0, "x": 21.0, "y": -2.799999952316284 },
+                { "id": 11, "type": 0, "x": 23.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_test_tight_windows",
+            "description": "Close-together obstacles requiring precise timing",
+            "nextObstacleId": 10,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 2.8, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 4.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 2, "x": 4.8, "y": -1.8000000715255738 },
+                { "id": 4, "type": 0, "x": 6.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 0, "x": 6.8, "y": -1.8000000715255738 },
+                { "id": 6, "type": 0, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 7, "type": 0, "x": 8.8, "y": -1.8000000715255738 },
+                { "id": 8, "type": 0, "x": 10.0, "y": -2.799999952316284 },
+                { "id": 9, "type": 0, "x": 10.8, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_test_mixed_threats",
+            "description": "Mix of small and medium threats",
+            "nextObstacleId": 12,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 1, "x": 4.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 6.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 4, "x": 8.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 0, "x": 10.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 1, "x": 12.0, "y": -1.8000000715255738 },
+                { "id": 6, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 7, "type": 4, "x": 16.0, "y": -1.8000000715255738 },
+                { "id": 8, "type": 0, "x": 18.0, "y": -2.799999952316284 },
+                { "id": 9, "type": 1, "x": 20.0, "y": -1.8000000715255738 },
+                { "id": 10, "type": 2, "x": 22.0, "y": -2.799999952316284 },
+                { "id": 11, "type": 4, "x": 24.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_test_target_navigation",
+            "description": "Targets (boxes) interspersed with threats",
+            "nextObstacleId": 12,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 3, "x": 4.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 1, "x": 6.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 3, "x": 8.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 2, "x": 10.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 3, "x": 12.0, "y": -1.8000000715255738 },
+                { "id": 6, "type": 0, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 7, "type": 3, "x": 16.0, "y": -1.8000000715255738 },
+                { "id": 8, "type": 1, "x": 18.0, "y": -2.799999952316284 },
+                { "id": 9, "type": 3, "x": 20.0, "y": -1.8000000715255738 },
+                { "id": 10, "type": 2, "x": 22.0, "y": -2.799999952316284 },
+                { "id": 11, "type": 3, "x": 24.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_phase_a_jump_jump_chain_1",
+            "description": "PHASE A: Jump→Jump on alternating lanes (simple 2-step chain)",
+            "nextObstacleId": 4,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 5.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 0, "x": 11.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_phase_a_jump_jump_chain_2",
+            "description": "PHASE A: Three Jump→Jump sequences for energy tracking",
+            "nextObstacleId": 6,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 4.0, "y": -2.799999952316284 },
+                { "id": 2, "type": 0, "x": 7.0, "y": -1.8000000715255738 },
+                { "id": 3, "type": 0, "x": 9.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 0, "x": 12.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 0, "x": 14.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_phase_b_jump_collect_energy",
+            "description": "PHASE B: Jump followed by energy collectible",
+            "nextObstacleId": 5,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 5, "x": 5.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 5, "x": 11.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 0, "x": 14.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_phase_b_jump_collect_coin",
+            "description": "PHASE B: Jump followed by coin collectible",
+            "nextObstacleId": 5,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 9, "x": 5.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 9, "x": 11.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 0, "x": 14.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_phase_c_switch_lane_jump",
+            "description": "PHASE C: Force SwitchLane to bottom target, then Jump-after-switch and follow-up jumps",
+            "nextObstacleId": 6,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 5.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 2, "x": 11.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 0, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 2, "x": 17.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_phase_d_target_vs_threat",
+            "description": "PHASE D: Target should win over threat when both available",
+            "nextObstacleId": 8,
+            "obstacles": [
+                { "id": 0, "type": 3, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 4.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 3, "x": 7.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 1, "x": 9.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 3, "x": 12.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 0, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 6, "type": 3, "x": 17.0, "y": -2.799999952316284 },
+                { "id": 7, "type": 1, "x": 19.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_phase_e_stress_mixed",
+            "description": "PHASE E: Mixed complex scenario with all learned behaviors",
+            "nextObstacleId": 10,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 2.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 3, "x": 4.0, "y": -2.799999952316284 },
+                { "id": 2, "type": 1, "x": 6.0, "y": -1.8000000715255738 },
+                { "id": 3, "type": 5, "x": 8.0, "y": -2.799999952316284 },
+                { "id": 4, "type": 0, "x": 10.0, "y": -2.799999952316284 },
+                { "id": 5, "type": 9, "x": 12.0, "y": -1.8000000715255738 },
+                { "id": 6, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 7, "type": 3, "x": 16.0, "y": -1.8000000715255738 },
+                { "id": 8, "type": 0, "x": 18.0, "y": -2.799999952316284 },
+                { "id": 9, "type": 0, "x": 20.0, "y": -1.8000000715255738 }
+            ]
         }
     ]
 }

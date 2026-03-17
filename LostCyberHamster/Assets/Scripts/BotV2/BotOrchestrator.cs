@@ -236,28 +236,8 @@ namespace Assets.Scripts.BotV2
             FilterBlockedSwitchLaneCandidates(candidates);
             LogGenerate(candidates);
 
-            ChainStep oneStepBest = _selector.Select(candidates);
-            ChainStep bestChainFirst = null;
-            ChainCandidate bestChain = null;
-            var chainCandidates = _chainGenerator.Generate(snapshot, candidates, _classifier, _generator, _selector);
-            if (chainCandidates.Count > 0)
-            {
-                bestChain = chainCandidates[0];
-                bestChainFirst = bestChain.FirstStep;
-                BotLogger.Log(BotLogLevel.Normal,
-                    $"[CHAIN] selected two-step: first={bestChain.FirstStep.Action}/{bestChain.FirstStep.TargetObstacle.Type} " +
-                    $"second={bestChain.SecondStep.Action}/{bestChain.SecondStep.TargetObstacle.Type} totalEnergy={bestChain.TotalEnergyCost}");
-            }
-
-            ChainStep best = SelectBestPlannedStep(oneStepBest, bestChain);
-            if (bestChainFirst != null && best != bestChainFirst)
-            {
-                BotLogger.Log(BotLogLevel.Normal,
-                    $"[CHAIN] fallback to better one-step: action={oneStepBest.Action} " +
-                    $"cost={oneStepBest.EnergyCost} reason=\"{oneStepBest.Reason}\"");
-            }
-
-            if (best == null)
+            var chains = _chainGenerator.Generate(snapshot, candidates, _classifier, _generator, _selector);
+            if (chains.Count == 0)
             {
                 _lastAction = "None";
                 ClearTrajectoryPreview();
@@ -265,10 +245,20 @@ namespace Assets.Scripts.BotV2
                 return;
             }
 
-            if (bestChain != null && best == bestChainFirst)
-                UpdateTrajectoryPreview(snapshot, bestChain.FirstStep, bestChain.SecondStep);
-            else
-                UpdateTrajectoryPreview(snapshot, best, null);
+            var bestChain = chains[0];
+            ChainStep best = bestChain.FirstStep;
+
+            if (bestChain.SecondStep != null)
+            {
+                BotLogger.Log(BotLogLevel.Normal,
+                    $"[CHAIN] two-step: first={best.Action}/{best.Semantic} " +
+                    $"second={bestChain.SecondStep.Action}/{bestChain.SecondStep.Semantic} " +
+                    $"totalEnergy={bestChain.TotalEnergyCost}");
+            }
+
+            UpdateTrajectoryPreview(
+                snapshot, best, bestChain.SecondStep,
+                bestChain.SecondStepUsesProjectedCoordinates);
 
             ResetNoActionLogState();
             _lastAction = best.Action.ToString();
@@ -282,51 +272,6 @@ namespace Assets.Scripts.BotV2
             _plannedManagedState = _hamster.HamsterState.Value;
             _hasPlannedManagedState = IsManagedState(_plannedManagedState);
             _executor.SetStep(best);
-        }
-
-        private static ChainStep SelectBestPlannedStep(ChainStep oneStepBest, ChainCandidate bestChain)
-        {
-            ChainStep chainFirst = bestChain?.FirstStep;
-
-            if (oneStepBest == null)
-                return chainFirst;
-            if (chainFirst == null)
-                return oneStepBest;
-
-            // Stage 10: threat-сценарии предпочитают валидную двухшаговую цепочку,
-            // чтобы не падать в ловушечный one-step fallback.
-            bool oneStepThreat = oneStepBest.Rank == DecisionRank.ThreatSafety;
-            bool chainThreat = bestChain.BestRank == DecisionRank.ThreatSafety;
-            if (oneStepThreat && chainThreat)
-                return chainFirst;
-
-            // Stage 11: ранжирование по цепочке целиком.
-            if (bestChain.BestRank != oneStepBest.Rank)
-                return bestChain.BestRank.CompareTo(oneStepBest.Rank) < 0 ? chainFirst : oneStepBest;
-
-            if (bestChain.TotalProfitScore != oneStepBest.ProfitScore)
-                return bestChain.TotalProfitScore > oneStepBest.ProfitScore ? chainFirst : oneStepBest;
-
-            if (bestChain.TotalEnergyCost != oneStepBest.EnergyCost)
-                return bestChain.TotalEnergyCost < oneStepBest.EnergyCost ? chainFirst : oneStepBest;
-
-            int compare = CompareStepPriority(chainFirst, oneStepBest);
-            return compare >= 0 ? chainFirst : oneStepBest;
-        }
-
-        // >0 означает, что a лучше b; <0 — хуже; 0 — эквивалентны.
-        private static int CompareStepPriority(ChainStep a, ChainStep b)
-        {
-            if (a.Rank != b.Rank)
-                return b.Rank.CompareTo(a.Rank);
-
-            if (a.ProfitScore != b.ProfitScore)
-                return a.ProfitScore.CompareTo(b.ProfitScore);
-
-            if (a.EnergyCost != b.EnergyCost)
-                return b.EnergyCost.CompareTo(a.EnergyCost);
-
-            return a.ExecuteAtDistance.CompareTo(b.ExecuteAtDistance);
         }
 
         // ──────── Init / Toggle ────────
@@ -836,12 +781,20 @@ namespace Assets.Scripts.BotV2
 
         private bool IsRecentAction(float seconds)
         {
-            return Time.time - _lastActionFiredAt <= seconds;
+            return (_executor != null && _executor.HasRecentIssuedCommand(seconds)) ||
+                   Time.time - _lastActionFiredAt <= seconds;
         }
 
         private string GetRecentActionContext(float seconds)
         {
-            return IsRecentAction(seconds) ? _lastActionFiredLabel : "None";
+            if (_executor != null)
+            {
+                string issuedCommand = _executor.GetRecentIssuedCommandLabel(seconds);
+                if (!string.IsNullOrEmpty(issuedCommand))
+                    return issuedCommand;
+            }
+
+            return Time.time - _lastActionFiredAt <= seconds ? _lastActionFiredLabel : "None";
         }
 
         private void TrackUnattributedEnergyAndLives()
@@ -1058,7 +1011,7 @@ namespace Assets.Scripts.BotV2
             _lastNoActionLogTime = -999f;
         }
 
-        private void UpdateTrajectoryPreview(BotSceneSnapshot snapshot, ChainStep first, ChainStep second)
+        private void UpdateTrajectoryPreview(BotSceneSnapshot snapshot, ChainStep first, ChainStep second, bool secondUsesProjectedCoordinates)
         {
             if (!_showPlannedTrajectory || snapshot == null || first == null)
             {
@@ -1068,7 +1021,7 @@ namespace Assets.Scripts.BotV2
             }
 
             bool step1LaneAfter = GetLaneAfterStep(first, snapshot.HamsterOnBottom);
-            _trajectoryRenderer.UpdatePreview(first, second, step1LaneAfter);
+            _trajectoryRenderer.UpdatePreview(first, second, step1LaneAfter, secondUsesProjectedCoordinates);
 
             _trajectoryHudText = second == null
                 ? $"Plan: {first.Action} ({first.Rank})"
@@ -1127,10 +1080,10 @@ namespace Assets.Scripts.BotV2
             var step1Preview = _trajectoryRenderer.PreviewFirst;
             if (step1Preview != null)
             {
-                string step1 = $"Step1: {step1Preview.Action} ({step1Preview.TargetObstacle.Category})";
+                string step1 = $"Step1: {step1Preview.Action}/{step1Preview.Semantic} ({step1Preview.TargetObstacle.Category})";
                 var step2Preview = _trajectoryRenderer.PreviewSecond;
                 string step2 = step2Preview != null
-                    ? $"Step2: {step2Preview.Action} ({step2Preview.TargetObstacle.Category})"
+                    ? $"Step2: {step2Preview.Action}/{step2Preview.Semantic} ({step2Preview.TargetObstacle.Category})"
                     : "Step2: none";
                 text = $"{text}\n{step1}\n{step2}";
             }

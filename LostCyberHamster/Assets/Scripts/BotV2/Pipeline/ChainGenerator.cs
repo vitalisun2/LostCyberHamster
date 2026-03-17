@@ -4,9 +4,10 @@ using Assets.Scripts.Common.Models;
 namespace Assets.Scripts.BotV2
 {
     /// <summary>
-    /// Stage 9: генерация двухшаговых цепочек с учётом обеих линий.
-    /// Использует one-step ActionGenerator поверх проецированного состояния
-    /// и выбирает валидный второй шаг, включая межлинейный переход (SwitchLane).
+    /// Единый планировщик цепочек.
+    /// Каждый кандидат оборачивается в ChainCandidate.
+    /// Если для шага удаётся спроецировать валидный второй шаг — создаётся двухшаговая цепочка.
+    /// Иначе — одношаговая (SecondStep = null). Оркестратор всегда работает с цепочками.
     /// </summary>
     public class ChainGenerator
     {
@@ -30,33 +31,23 @@ namespace Assets.Scripts.BotV2
             for (int i = 0; i < firstStepCandidates.Count; i++)
             {
                 var first = firstStepCandidates[i];
-                if (!IsFirstStepEligible(snapshot, first))
+                if (first == null)
                     continue;
 
-                var projected = ProjectAfterFirstStep(snapshot, first);
-                var projectedSnapshot = BuildProjectedSnapshot(projected);
-                classifier.Classify(projectedSnapshot);
+                ChainStep second = TryBuildSecondStep(
+                    snapshot, first, classifier, actionGenerator, actionSelector);
 
-                var secondCandidates = actionGenerator.Generate(projectedSnapshot);
-                var secondSteps = FilterSecondSteps(first, secondCandidates);
-                var second = actionSelector.Select(secondSteps);
-                if (second == null)
-                    continue;
-
-                // Stage 10: не допускаем цепочки, где после шага 1 есть близкая угроза,
-                // а шаг 2 не является защитным действием.
-                if (HasImminentSameLaneThreat(projectedSnapshot) &&
-                    second.Rank != DecisionRank.ThreatSafety)
-                    continue;
-
-                int totalProfit = first.ProfitScore + second.ProfitScore;
-                DecisionRank bestRank = first.Rank < second.Rank ? first.Rank : second.Rank;
+                int totalProfit = first.ProfitScore + (second?.ProfitScore ?? 0);
+                DecisionRank bestRank = second != null && second.Rank < first.Rank
+                    ? second.Rank
+                    : first.Rank;
 
                 result.Add(new ChainCandidate
                 {
                     FirstStep = first,
                     SecondStep = second,
-                    TotalEnergyCost = first.EnergyCost + second.EnergyCost,
+                    SecondStepUsesProjectedCoordinates = second != null,
+                    TotalEnergyCost = first.EnergyCost + (second?.EnergyCost ?? 0),
                     TotalProfitScore = totalProfit,
                     BestRank = bestRank
                 });
@@ -66,10 +57,42 @@ namespace Assets.Scripts.BotV2
             return result;
         }
 
-        private static bool IsFirstStepEligible(BotSceneSnapshot snapshot, ChainStep first)
+        private ChainStep TryBuildSecondStep(
+            BotSceneSnapshot snapshot,
+            ChainStep first,
+            ObjectClassifier classifier,
+            ActionGenerator actionGenerator,
+            ActionSelector actionSelector)
         {
-            if (first == null)
-                return false;
+            if (!IsEligibleForSecondStepProjection(snapshot, first))
+                return null;
+
+            var projected = ProjectAfterFirstStep(snapshot, first);
+            var projectedSnapshot = BuildProjectedSnapshot(projected);
+            classifier.Classify(projectedSnapshot);
+
+            var secondCandidates = actionGenerator.Generate(projectedSnapshot);
+            var secondSteps = FilterSecondSteps(first, secondCandidates);
+            var second = actionSelector.Select(secondSteps);
+            if (second == null)
+                return null;
+
+            // Не допускаем второй шаг, если после первого есть близкая угроза,
+            // а второй шаг не является защитным действием.
+            if (HasImminentSameLaneThreat(projectedSnapshot) &&
+                second.Rank != DecisionRank.ThreatSafety)
+                return null;
+
+            return second;
+        }
+
+        /// <summary>
+        /// Определяет, стоит ли пытаться проецировать второй шаг.
+        /// Нейтральные объекты и неподдерживаемые действия не нуждаются в проекции.
+        /// Крупные угрозы (big/medium) исключены: их проекция после прыжка слишком ненадёжна.
+        /// </summary>
+        private static bool IsEligibleForSecondStepProjection(BotSceneSnapshot snapshot, ChainStep first)
+        {
             if (first.TargetObstacle.Category == ObjectCategory.Neutral)
                 return false;
             if (!IsChainAction(first.Action))
@@ -77,7 +100,7 @@ namespace Assets.Scripts.BotV2
 
             if (first.TargetObstacle.Category == ObjectCategory.Threat)
             {
-                if (!IsChainThreatType(first.TargetObstacle.Type))
+                if (!IsSmallRoadThreat(first.TargetObstacle.Type))
                     return false;
                 return IsOnSameLane(snapshot, first.TargetObstacle);
             }
@@ -165,15 +188,13 @@ namespace Assets.Scripts.BotV2
                 var second = secondCandidates[i];
                 if (second == null)
                     continue;
-                if (second.TargetObstacle.StableId == first.TargetObstacle.StableId)
-                    continue;
                 if (second.TargetObstacle.Category == ObjectCategory.Neutral)
                     continue;
                 if (!IsChainAction(second.Action))
                     continue;
 
                 if (second.TargetObstacle.Category == ObjectCategory.Threat &&
-                    !IsChainThreatType(second.TargetObstacle.Type))
+                    !IsSmallRoadThreat(second.TargetObstacle.Type))
                     continue;
 
                 result.Add(second);
@@ -184,16 +205,28 @@ namespace Assets.Scripts.BotV2
 
         private static int CompareCandidates(ChainCandidate a, ChainCandidate b)
         {
-            if (a.BestRank != b.BestRank)
-                return a.BestRank.CompareTo(b.BestRank);
+            // Сначала по первому шагу: ранг → профит → стоимость → дистанция.
+            int cmp = ChainStep.ComparePriority(a.FirstStep, b.FirstStep);
+            if (cmp != 0)
+                return -cmp; // ComparePriority: >0 = a лучше, Sort хочет <0 = a раньше
 
-            if (a.TotalProfitScore != b.TotalProfitScore)
-                return b.TotalProfitScore.CompareTo(a.TotalProfitScore);
+            // При равных первых шагах: наличие второго шага лучше.
+            bool aHas = a.SecondStep != null;
+            bool bHas = b.SecondStep != null;
+            if (aHas != bHas)
+                return aHas ? -1 : 1;
 
-            if (a.TotalEnergyCost != b.TotalEnergyCost)
-                return a.TotalEnergyCost.CompareTo(b.TotalEnergyCost);
+            // Оба с вторым шагом — сравниваем суммарные метрики.
+            if (aHas)
+            {
+                if (a.TotalProfitScore != b.TotalProfitScore)
+                    return b.TotalProfitScore.CompareTo(a.TotalProfitScore);
 
-            return a.FirstStep.ExecuteAtDistance.CompareTo(b.FirstStep.ExecuteAtDistance);
+                if (a.TotalEnergyCost != b.TotalEnergyCost)
+                    return a.TotalEnergyCost.CompareTo(b.TotalEnergyCost);
+            }
+
+            return 0;
         }
 
         private static bool HasImminentSameLaneThreat(BotSceneSnapshot snapshot)
@@ -219,7 +252,11 @@ namespace Assets.Scripts.BotV2
             return snapshot.HamsterOnBottom == !obstacle.IsTopLane;
         }
 
-        private static bool IsChainThreatType(ObstacleTypeEnum type)
+        /// <summary>
+        /// Малые дорожные угрозы, которые можно перепрыгнуть или обогнуть в цепочке.
+        /// Крупные угрозы (big/medium) исключены: их проекция после прыжка слишком ненадёжна.
+        /// </summary>
+        private static bool IsSmallRoadThreat(ObstacleTypeEnum type)
         {
             return type == ObstacleTypeEnum.smallNotAliveRoad ||
                    type == ObstacleTypeEnum.smallNotAliveRoadAndRoof;

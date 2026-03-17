@@ -109,7 +109,8 @@ namespace Assets.Scripts.BotV2
                             JumpEnergyCost,
                             $"Jump on roof {threat.Type}",
                             ThreatProfitScore,
-                            DecisionRank.ThreatSafety));
+                            DecisionRank.ThreatSafety,
+                            StepSemantic.JumpOnRoof));
                     }
                     break;
 
@@ -134,7 +135,10 @@ namespace Assets.Scripts.BotV2
                         JumpEnergyCost,
                         $"Jump on target {target.Type}",
                         TargetProfitScore,
-                        DecisionRank.Target));
+                        DecisionRank.Target,
+                        target.Type == ObstacleTypeEnum.smallAlive
+                            ? StepSemantic.JumpOnBounce
+                            : StepSemantic.JumpOver));
                 }
 
                 if (target.Type == ObstacleTypeEnum.bigAlive && snapshot.Energy >= SuperJumpEnergyCost)
@@ -146,7 +150,8 @@ namespace Assets.Scripts.BotV2
                         SuperJumpEnergyCost,
                         "SuperJump target bigAlive",
                         TargetProfitScore - 5,
-                        DecisionRank.Target));
+                        DecisionRank.Target,
+                        StepSemantic.SuperJumpOver));
                 }
             }
             else
@@ -199,7 +204,8 @@ namespace Assets.Scripts.BotV2
                 energyCost: 0,
                 "SwitchLane away from threat (timed window)",
                 profitScore,
-                ResolveDecisionRank(target));
+                ResolveDecisionRank(target),
+                StepSemantic.SwitchLane);
 
             return true;
         }
@@ -382,7 +388,8 @@ namespace Assets.Scripts.BotV2
                 JumpEnergyCost,
                 reason,
                 profitScore,
-                DecisionRank.ThreatSafety));
+                DecisionRank.ThreatSafety,
+                StepSemantic.JumpOver));
         }
 
         private static void AddSuperJumpVariant(
@@ -402,7 +409,8 @@ namespace Assets.Scripts.BotV2
                 SuperJumpEnergyCost,
                 reason,
                 profitScore,
-                DecisionRank.ThreatSafety));
+                DecisionRank.ThreatSafety,
+                StepSemantic.SuperJumpOver));
         }
 
         private static bool IsRelevantForDecision(BotSceneSnapshot snapshot, ObstacleInfo obs)
