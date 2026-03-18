@@ -11529,6 +11529,249 @@
                 { "id": 8, "type": 0, "x": 18.0, "y": -2.799999952316284 },
                 { "id": 9, "type": 0, "x": 20.0, "y": -1.8000000715255738 }
             ]
+        },
+        {
+            "name": "bot_tree_01_jump_jump_same_lane",
+            "description": "Tree test: два smallRoad на одной линии — цепочка Jump+Jump (depth=2)",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 19.6, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_02_triple_jump_depth3",
+            "description": "Tree test: три smallRoad подряд — цепочка Jump+Jump+Jump (depth=3)",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 19.6, "y": -2.799999952316284 },
+                { "id": 2, "type": 2, "x": 25.2, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_03_switch_then_jump",
+            "description": "Tree test: SwitchLane на верхнюю, затем Jump через угрозу сверху (depth=2)",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 19.2, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_04_zigzag_3step",
+            "description": "Tree test: угрозы чередуются bottom-top-bottom — 3-step зигзаг",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 20.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 26.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_05_trap_jump_into_big",
+            "description": "Tree test: Jump через small приземляет в bigNotAlive — ветка Jump unsafe, нужен SwitchLane",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 4, "x": 18.4, "y": -2.799999952316284 },
+                { "id": 2, "type": 2, "x": 19.2, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_06_trap_roof_into_medium",
+            "description": "Tree test: Jump через smallRoof → medium впереди — unsafe, должен SwitchLane",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 3, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 11, "x": 18.6, "y": -2.799999952316284 },
+                { "id": 2, "type": 2, "x": 19.5, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_07_trap_switch_into_close_threat",
+            "description": "Tree test: SwitchLane ведёт в близкую угрозу сверху — Jump безопаснее",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 15.5, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_08_target_branch_wins",
+            "description": "Tree test: ветка с Target (smallAlive) имеет больший профит, чем plain threat avoidance",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 19.2, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 23.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_09_coin_passive_collect",
+            "description": "Tree test: SwitchLane ветка проходит через монету — пассивный сбор увеличивает профит",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 9, "x": 17.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 22.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_10_life_priority",
+            "description": "Tree test: Life collectible в ветке — максимальный приоритет (rank LifeCollectible)",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 8, "x": 18.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 23.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_11_crystal_beats_coin",
+            "description": "Tree test: ветка с кристаллом дороже ветки с монетой по профиту",
+            "nextObstacleId": 4,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 7, "x": 18.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 9, "x": 20.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 2, "x": 24.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_12_switch_cheaper",
+            "description": "Tree test: SwitchLane (0 energy) предпочтительнее Jump (10 energy) при равной безопасности",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.2, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 21.4, "y": -2.799999952316284 },
+                { "id": 2, "type": 2, "x": 23.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_13_jump_beats_superjump",
+            "description": "Tree test: Jump (10 energy) дешевле SuperJump (20 energy) — предпочитаем Jump",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 20.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_14_roof_over_big",
+            "description": "Tree test: bigNotAlive на линии — только JumpOnRoof или SwitchLane",
+            "nextObstacleId": 1,
+            "obstacles": [
+                { "id": 0, "type": 4, "x": 14.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_15_roof_then_threat",
+            "description": "Tree test: bigNotAlive → JumpOnRoof, затем малая угроза на той же линии",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 4, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 22.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_16_bounce_then_threat",
+            "description": "Tree test: smallAlive target → JumpOnBounce, затем угроза после приземления",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 20.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_17_target_cross_lane",
+            "description": "Tree test: target на другой линии — SwitchLane для профита (profit 80)",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 0, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 2, "x": 20.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_18_dense_4obj_mixed",
+            "description": "Tree test: 4 объекта (threat/target/threat/coin) — оптимальный путь через дерево",
+            "nextObstacleId": 4,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 18.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 21.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 9, "x": 24.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_19_dense_5obj_stress",
+            "description": "Tree test: 5 объектов плотно — stress-тест depth=3+ планирования",
+            "nextObstacleId": 5,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 13.8, "y": -2.799999952316284 },
+                { "id": 1, "type": 3, "x": 17.5, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 20.5, "y": -2.799999952316284 },
+                { "id": 3, "type": 2, "x": 23.0, "y": -1.8000000715255738 },
+                { "id": 4, "type": 9, "x": 25.5, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_20_both_lanes_close",
+            "description": "Tree test: угрозы на обеих линиях с малым расстоянием — тесные окна маневра",
+            "nextObstacleId": 4,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 15.0, "y": -1.8000000715255738 },
+                { "id": 2, "type": 0, "x": 20.0, "y": -2.799999952316284 },
+                { "id": 3, "type": 2, "x": 24.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_21_single_obstacle",
+            "description": "Tree test: один объект — минимальная ветка depth=1",
+            "nextObstacleId": 1,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_22_collectibles_only",
+            "description": "Tree test: только коллекционные предметы, без угроз — чистый сбор",
+            "nextObstacleId": 3,
+            "obstacles": [
+                { "id": 0, "type": 9, "x": 14.0, "y": -1.8000000715255738 },
+                { "id": 1, "type": 7, "x": 20.0, "y": -2.799999952316284 },
+                { "id": 2, "type": 5, "x": 26.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_23_far_recalc",
+            "description": "Tree test: далеко расставленные объекты — пересчёт плана после завершения первого шага",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 0, "x": 30.0, "y": -1.8000000715255738 }
+            ]
+        },
+        {
+            "name": "bot_tree_24_superjump_big_alive",
+            "description": "Tree test: bigAlive на своей линии — SuperJump target (profit 95, energy 20)",
+            "nextObstacleId": 2,
+            "obstacles": [
+                { "id": 0, "type": 1, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 22.0, "y": -2.799999952316284 }
+            ]
+        },
+        {
+            "name": "bot_tree_25_depth4_alternating",
+            "description": "Tree test: 4 угрозы чередуясь bottom-top — depth=4 цепочка переключений",
+            "nextObstacleId": 4,
+            "obstacles": [
+                { "id": 0, "type": 2, "x": 14.0, "y": -2.799999952316284 },
+                { "id": 1, "type": 2, "x": 19.6, "y": -1.8000000715255738 },
+                { "id": 2, "type": 2, "x": 25.2, "y": -2.799999952316284 },
+                { "id": 3, "type": 2, "x": 30.8, "y": -1.8000000715255738 }
+            ]
         }
     ]
 }

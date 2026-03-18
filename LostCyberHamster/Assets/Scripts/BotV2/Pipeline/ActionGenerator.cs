@@ -32,6 +32,11 @@ namespace Assets.Scripts.BotV2
         private const float JumpOnRightToleranceRatio = 0.2f;
         private const float JumpLateFallbackDistance = 0.1f;
 
+        /// <summary>Travel during SwitchLane return-to-control phase (0.47s × GameSpeed).</summary>
+        private const float SwitchLaneReturnControlTravel = 0.47f * Assets.Scripts.Consts.GameSpeedBase;
+        /// <summary>Минимальная дистанция fire SwitchLane к Target: после перестроения должно остаться место для Jump.</summary>
+        private const float SwitchLaneTargetMinFireDist = SwitchLaneReturnControlTravel + JumpFireDist;
+
         public List<ChainStep> Generate(BotSceneSnapshot snapshot)
         {
             var result = new List<ChainStep>();
@@ -68,11 +73,18 @@ namespace Assets.Scripts.BotV2
 
         private static void AddThreatVariants(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo threat)
         {
-            if (IsNearestSameLaneThreat(snapshot, threat) &&
+            bool isNearest = IsNearestSameLaneThreat(snapshot, threat);
+
+            if (isNearest &&
                 TryBuildSwitchLaneStep(snapshot, threat, out ChainStep switchLaneStep, ThreatProfitScore))
             {
                 result.Add(switchLaneStep);
             }
+
+            // Jump/SuperJump для same-lane threat генерируем только для ближайшей:
+            // дальние угрозы обрабатываются на следующих шагах цепочки после проекции.
+            if (!isNearest)
+                return;
 
             switch (threat.Type)
             {
@@ -114,6 +126,11 @@ namespace Assets.Scripts.BotV2
 
             if (sameLane)
             {
+                // Если между хомяком и target есть same-lane threat —
+                // нельзя прыгать, сначала нужно разобраться с ближним threat (через цепочку).
+                if (HasCloserSameLaneThreat(snapshot, target))
+                    return;
+
                 if (snapshot.Energy >= JumpEnergyCost)
                 {
                     if (TryPredictTargetJumpSemantic(snapshot, target, out StepSemantic semantic))
@@ -260,10 +277,14 @@ namespace Assets.Scripts.BotV2
                     requiredDelayDistance = delayDistance;
             }
 
-            float delayedFireDist = SwitchLaneFireDist - requiredDelayDistance;
-            executeAtDistance = Clamp(delayedFireDist, SwitchLaneLatestSafeDist, SwitchLaneFireDist);
+            float minFireDist = target.Category == ObjectCategory.Target
+                ? SwitchLaneTargetMinFireDist
+                : SwitchLaneLatestSafeDist;
 
-            if (target.DistanceToHamster < SwitchLaneLatestSafeDist)
+            float delayedFireDist = SwitchLaneFireDist - requiredDelayDistance;
+            executeAtDistance = Clamp(delayedFireDist, minFireDist, SwitchLaneFireDist);
+
+            if (target.DistanceToHamster < minFireDist)
                 return false;
 
             if (executeAtDistance > target.DistanceToHamster)
@@ -352,6 +373,35 @@ namespace Assets.Scripts.BotV2
             }
 
             return nearestDistance < float.MaxValue;
+        }
+
+        /// <summary>
+        /// Проверяет, есть ли same-lane threat ближе, чем указанный объект.
+        /// Используется для блокировки Jump/SuperJump к далёким целям, когда
+        /// на пути есть необработанная угроза.
+        /// </summary>
+        private static bool HasCloserSameLaneThreat(BotSceneSnapshot snapshot, ObstacleInfo target)
+        {
+            if (target.DistanceToHamster <= 0f)
+                return false;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obstacle = snapshot.VisibleObjects[i];
+                if (obstacle.StableId == target.StableId)
+                    continue;
+                if (obstacle.Category != ObjectCategory.Threat)
+                    continue;
+                if (obstacle.DistanceToHamster < 0f)
+                    continue;
+                if (!IsOnSameLane(snapshot, obstacle))
+                    continue;
+
+                if (obstacle.DistanceToHamster < target.DistanceToHamster)
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsNearestSameLaneThreat(BotSceneSnapshot snapshot, ObstacleInfo threat)
