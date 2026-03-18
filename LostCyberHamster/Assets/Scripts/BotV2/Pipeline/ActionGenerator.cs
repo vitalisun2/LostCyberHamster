@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
+using UnityEngine;
 
 namespace Assets.Scripts.BotV2
 {
@@ -13,8 +14,6 @@ namespace Assets.Scripts.BotV2
     {
         private const float SwitchLaneFireDist = 4.0f;
         internal const float SwitchLaneLatestSafeDist = 1.5f;
-        private const float DecisionClusterDistanceWindow = 3.5f;
-        private const float LifeCollectibleExtraWindow = 8f;
         private const float LifeCollectibleMaxSwitchFireDist = 8f;
         private const float LifeCollectibleMinGenerateDist = 0.8f;
         private const float LifeUrgentSourceThreatDistance = 5.5f;
@@ -29,31 +28,19 @@ namespace Assets.Scripts.BotV2
         /// <summary>Примерное расстояние, на которое хомяк улетает при Jump.</summary>
         private const float JumpLandingOffset = 3.8f;
         private const float JumpLandingMargin = 1.2f;
+        private const float JumpOnBounceTravel = 3.5f;
+        private const float JumpOnRightToleranceRatio = 0.2f;
+        private const float JumpLateFallbackDistance = 0.1f;
 
         public List<ChainStep> Generate(BotSceneSnapshot snapshot)
         {
             var result = new List<ChainStep>();
-            float firstRelevantDistance = float.MaxValue;
 
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
                 var target = snapshot.VisibleObjects[i];
                 if (!IsRelevantForDecision(snapshot, target))
                     continue;
-
-                if (firstRelevantDistance == float.MaxValue)
-                    firstRelevantDistance = target.DistanceToHamster;
-
-                if (target.DistanceToHamster > firstRelevantDistance + DecisionClusterDistanceWindow)
-                {
-                    bool isDistantLifeCollectible =
-                        target.Category == ObjectCategory.Collectible &&
-                        target.Type == ObstacleTypeEnum.collectableLife &&
-                        target.DistanceToHamster <= firstRelevantDistance + LifeCollectibleExtraWindow;
-
-                    if (!isDistantLifeCollectible)
-                        continue;
-                }
 
                 AddVariantsForObject(result, snapshot, target);
             }
@@ -81,7 +68,8 @@ namespace Assets.Scripts.BotV2
 
         private static void AddThreatVariants(List<ChainStep> result, BotSceneSnapshot snapshot, ObstacleInfo threat)
         {
-            if (TryBuildSwitchLaneStep(snapshot, threat, out ChainStep switchLaneStep, ThreatProfitScore))
+            if (IsNearestSameLaneThreat(snapshot, threat) &&
+                TryBuildSwitchLaneStep(snapshot, threat, out ChainStep switchLaneStep, ThreatProfitScore))
             {
                 result.Add(switchLaneStep);
             }
@@ -128,17 +116,22 @@ namespace Assets.Scripts.BotV2
             {
                 if (snapshot.Energy >= JumpEnergyCost)
                 {
+                    if (TryPredictTargetJumpSemantic(snapshot, target, out StepSemantic semantic))
+                    {
+                        string reason = semantic == StepSemantic.JumpOnBounce
+                            ? $"Jump on target {target.Type}"
+                            : $"Jump over target {target.Type}";
+
                     result.Add(new ChainStep(
                         BotAction.Jump,
                         target,
                         JumpFireDist,
                         JumpEnergyCost,
-                        $"Jump on target {target.Type}",
+                            reason,
                         TargetProfitScore,
                         DecisionRank.Target,
-                        target.Type == ObstacleTypeEnum.smallAlive
-                            ? StepSemantic.JumpOnBounce
-                            : StepSemantic.JumpOver));
+                            semantic));
+                    }
                 }
 
                 if (target.Type == ObstacleTypeEnum.bigAlive && snapshot.Energy >= SuperJumpEnergyCost)
@@ -361,6 +354,43 @@ namespace Assets.Scripts.BotV2
             return nearestDistance < float.MaxValue;
         }
 
+        private static bool IsNearestSameLaneThreat(BotSceneSnapshot snapshot, ObstacleInfo threat)
+        {
+            if (threat.Category != ObjectCategory.Threat)
+                return false;
+            if (!IsOnSameLane(snapshot, threat))
+                return false;
+
+            float nearestDistance = float.MaxValue;
+            int nearestId = int.MaxValue;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obstacle = snapshot.VisibleObjects[i];
+                if (obstacle.Category != ObjectCategory.Threat)
+                    continue;
+                if (obstacle.DistanceToHamster < 0f)
+                    continue;
+                if (!IsOnSameLane(snapshot, obstacle))
+                    continue;
+
+                if (obstacle.DistanceToHamster < nearestDistance)
+                {
+                    nearestDistance = obstacle.DistanceToHamster;
+                    nearestId = obstacle.StableId;
+                    continue;
+                }
+
+                if (Mathf.Approximately(obstacle.DistanceToHamster, nearestDistance) &&
+                    obstacle.StableId < nearestId)
+                {
+                    nearestId = obstacle.StableId;
+                }
+            }
+
+            return threat.StableId == nearestId;
+        }
+
         private static float Clamp(float value, float min, float max)
         {
             if (value < min) return min;
@@ -516,6 +546,78 @@ namespace Assets.Scripts.BotV2
                     return false;
             }
             return true;
+        }
+
+        private static bool TryPredictTargetJumpSemantic(
+            BotSceneSnapshot snapshot,
+            ObstacleInfo target,
+            out StepSemantic semantic)
+        {
+            semantic = StepSemantic.JumpOver;
+
+            if (target.Type != ObstacleTypeEnum.smallAlive)
+                return true;
+
+            float latestFireDistance = Mathf.Min(target.DistanceToHamster, JumpFireDist);
+            if (latestFireDistance < JumpLateFallbackDistance)
+                return false;
+
+            float passiveWorldShift = target.DistanceToHamster - latestFireDistance;
+            if (passiveWorldShift < 0f)
+                passiveWorldShift = 0f;
+
+            if (WillJumpLandOnSmallAlive(snapshot, target, passiveWorldShift))
+            {
+                semantic = StepSemantic.JumpOnBounce;
+                return true;
+            }
+
+            if (WillJumpOverSmallAlive(snapshot, target, passiveWorldShift))
+            {
+                semantic = StepSemantic.JumpOver;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool WillJumpLandOnSmallAlive(BotSceneSnapshot snapshot, ObstacleInfo target, float passiveWorldShift)
+        {
+            float rightTolerance = snapshot.HamsterWidth * JumpOnRightToleranceRatio;
+
+            float obstacleLeftAtLanding = target.LeftX - passiveWorldShift - JumpLandingOffset;
+            float obstacleRightAtLanding = target.RightX - passiveWorldShift - JumpLandingOffset + rightTolerance;
+            float hamsterCenterX = snapshot.HamsterRightX - (snapshot.HamsterWidth * 0.5f);
+
+            return hamsterCenterX >= obstacleLeftAtLanding && hamsterCenterX <= obstacleRightAtLanding;
+        }
+
+        private static bool WillJumpOverSmallAlive(BotSceneSnapshot snapshot, ObstacleInfo target, float passiveWorldShift)
+        {
+            float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
+            float hamsterRightX = snapshot.HamsterRightX;
+
+            float obstacleLeftAtFire = target.LeftX - passiveWorldShift;
+            float obstacleRightAtFire = target.RightX - passiveWorldShift;
+            float obstacleLeftAtLanding = obstacleLeftAtFire - JumpLandingOffset;
+            float obstacleRightAtLanding = obstacleRightAtFire - JumpLandingOffset;
+
+            bool clearStart = hamsterRightX < obstacleLeftAtFire;
+            bool clearEnd = hamsterLeftX > obstacleRightAtLanding;
+            bool noLandingOverlap = !RangesOverlap(
+                hamsterLeftX,
+                hamsterRightX,
+                obstacleLeftAtLanding,
+                obstacleRightAtLanding);
+
+            return clearStart && clearEnd && noLandingOverlap;
+        }
+
+        private static bool RangesOverlap(float minA, float maxA, float minB, float maxB)
+        {
+            float start = Mathf.Max(minA, minB);
+            float end = Mathf.Min(maxA, maxB);
+            return start <= end;
         }
     }
 }

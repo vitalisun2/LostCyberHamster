@@ -97,12 +97,6 @@ namespace Assets.Scripts.BotV2
                     return StepSemantic.SuperJumpOver;
 
                 case BotAction.Jump:
-                    if (target.Type == Assets.Scripts.Common.Models.ObstacleTypeEnum.smallAlive &&
-                        target.Category == ObjectCategory.Target)
-                    {
-                        return StepSemantic.JumpOnBounce;
-                    }
-
                     return StepSemantic.JumpOver;
 
                 default:

@@ -11,7 +11,87 @@
       "overrides": []
     },
     {
-      "ref": "bot_phase_c_switch_lane_jump",
+      "ref": "bot_s9_dual_lane_switch_then_jump_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_dual_lane_switch_then_small_alive_jumpover_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_chain_jump_jump_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s9_dual_lane_switch_switch_back_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s10_trap_jump_into_big_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s11_profit_coin_chain_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s11_life_priority_chain",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s12_dense_near_windows_bottom",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "relief",
+      "spriteSeed": 0,
+      "overrides": []
+    },
+    {
+      "ref": "bot_s12_dense_target_collectible_mix",
       "spriteSeed": 0,
       "overrides": []
     },

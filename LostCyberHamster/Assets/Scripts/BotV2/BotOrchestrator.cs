@@ -76,12 +76,11 @@ namespace Assets.Scripts.BotV2
         private SnapshotBuilder  _snapshotBuilder;
         private ObjectClassifier _classifier;
         private ActionGenerator  _generator;
-        private ActionSelector   _selector;
         private ChainGenerator   _chainGenerator;
         private StepExecutor     _executor;
 
         private bool      _initialized;
-        private ChainStep _activeStep;
+        private readonly CurrentPlan _currentPlan = new CurrentPlan();
         private float _nextInitRetryTime;
         private BotSceneSnapshot _lastSnapshot;
         private float _nextInitFailureLogTime;
@@ -119,6 +118,8 @@ namespace Assets.Scripts.BotV2
         private readonly BotTrajectoryRenderer _trajectoryRenderer = new BotTrajectoryRenderer();
         private string _trajectoryHudText = "Plan: none";
         private GUIStyle _trajectoryHudStyle;
+
+        private ChainStep ActiveStep => _currentPlan.Head;
 
         // ──────── Lifecycle ────────
 
@@ -236,29 +237,23 @@ namespace Assets.Scripts.BotV2
             FilterBlockedSwitchLaneCandidates(candidates);
             LogGenerate(candidates);
 
-            var chains = _chainGenerator.Generate(snapshot, candidates, _classifier, _generator, _selector);
-            if (chains.Count == 0)
+            var chains = _chainGenerator.Generate(snapshot, candidates, _classifier, _generator);
+            var bestChain = BranchEvaluator.SelectBest(chains);
+            if (bestChain == null)
             {
                 _lastAction = "None";
+                _currentPlan.Clear();
+                _executor.ClearStep();
+                _hasPlannedManagedState = false;
                 ClearTrajectoryPreview();
                 LogNoSafeActions(snapshot);
                 return;
             }
 
-            var bestChain = chains[0];
-            ChainStep best = bestChain.FirstStep;
+            ChainStep best = bestChain.Steps[0];
+            LogBranchSelection(chains, bestChain);
 
-            if (bestChain.SecondStep != null)
-            {
-                BotLogger.Log(BotLogLevel.Normal,
-                    $"[CHAIN] two-step: first={best.Action}/{best.Semantic} " +
-                    $"second={bestChain.SecondStep.Action}/{bestChain.SecondStep.Semantic} " +
-                    $"totalEnergy={bestChain.TotalEnergyCost}");
-            }
-
-            UpdateTrajectoryPreview(
-                snapshot, best, bestChain.SecondStep,
-                bestChain.SecondStepUsesProjectedCoordinates);
+            UpdateTrajectoryPreview(snapshot, bestChain);
 
             ResetNoActionLogState();
             _lastAction = best.Action.ToString();
@@ -268,10 +263,10 @@ namespace Assets.Scripts.BotV2
                 $"  step: {BotLogger.FormatStep(best)}\n" +
                 $"  visible: {BotLogger.FormatSnapshotObstacles(snapshot.VisibleObjects)}");
 
-            _activeStep = best;
+            _currentPlan.ReplaceFrom(bestChain, $"trigger={FormatPipelineTrigger(trigger)} first={best.Action}");
             _plannedManagedState = _hamster.HamsterState.Value;
             _hasPlannedManagedState = IsManagedState(_plannedManagedState);
-            _executor.SetStep(best);
+            _executor.SetStep(_currentPlan.Head);
         }
 
         // ──────── Init / Toggle ────────
@@ -282,6 +277,9 @@ namespace Assets.Scripts.BotV2
             {
                 IsEnabled = false;
                 ResetPipelineTriggerState();
+                _currentPlan.Clear();
+                _executor?.ClearStep();
+                _hasPlannedManagedState = false;
                 _trajectoryRenderer.ClearPreview();
                 _trajectoryHudText = "Plan: none";
                 DebugManager.DiagLog("[BotOrchestrator] Disabled");
@@ -319,7 +317,6 @@ namespace Assets.Scripts.BotV2
             _snapshotBuilder = new SnapshotBuilder();
             _classifier      = new ObjectClassifier();
             _generator       = new ActionGenerator();
-            _selector        = new ActionSelector();
             _chainGenerator  = new ChainGenerator();
             _executor        = new StepExecutor(_hamster);
 
@@ -370,13 +367,14 @@ namespace Assets.Scripts.BotV2
 
         private void RememberCancelledSwitchLane()
         {
-            if (_activeStep == null || _activeStep.Action != BotAction.SwitchLane)
+            var step = ActiveStep;
+            if (step == null || step.Action != BotAction.SwitchLane)
                 return;
 
-            if (_activeStep.TargetObstacle.Category == ObjectCategory.Collectible)
+            if (step.TargetObstacle.Category == ObjectCategory.Collectible)
                 return;
 
-            int stableId = _activeStep.TargetObstacle.StableId;
+            int stableId = step.TargetObstacle.StableId;
             if (stableId == 0 || stableId == _blockedSwitchLaneStableId)
                 return;
 
@@ -417,10 +415,11 @@ namespace Assets.Scripts.BotV2
 
         private bool UpdateActiveStep(HamsterStateEnum state, bool managedStateChanged)
         {
-            if (_activeStep == null)
+            var step = ActiveStep;
+            if (step == null)
                 return false;
 
-            if (_activeStep.Status == ChainStepStatus.Ready &&
+            if (step.Status == ChainStepStatus.Ready &&
                 managedStateChanged &&
                 _hasPlannedManagedState &&
                 IsManagedState(state) &&
@@ -429,41 +428,43 @@ namespace Assets.Scripts.BotV2
                 BotLogger.Log(BotLogLevel.Normal,
                     $"[PIPELINE] invalidate ready step after state change {_plannedManagedState}→{state}\n" +
                     $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
-                    $"  step: {BotLogger.FormatStep(_activeStep)}");
+                    $"  step: {BotLogger.FormatStep(step)}");
                 CompleteActiveStep(PipelineTrigger.ManagedStateChanged);
                 return false;
             }
 
-            if (_activeStep.Status == ChainStepStatus.Completed)
+            if (step.Status == ChainStepStatus.Completed)
             {
                 CompleteActiveStep(PipelineTrigger.StepCompleted);
                 return false;
             }
 
-            var statusBeforeExecute = _activeStep.Status;
+            var statusBeforeExecute = step.Status;
             _executor.TryExecute();
+            step = ActiveStep;
 
-            if (statusBeforeExecute == ChainStepStatus.Ready && _activeStep != null && _activeStep.Status == ChainStepStatus.InProgress)
+            if (statusBeforeExecute == ChainStepStatus.Ready && step != null && step.Status == ChainStepStatus.InProgress)
             {
-                RegisterActionFired(_activeStep);
+                RegisterActionFired(step);
             }
 
             if (_executor.WasCancelled)
             {
                 _actionsCancelledDuringRun++;
+                step = ActiveStep;
                 DebugManager.DiagEconomy(
-                    $"[ACTION CANCELLED] action={_activeStep.Action} reason=live_safety_recheck " +
+                    $"[ACTION CANCELLED] action={step?.Action.ToString() ?? "None"} reason=live_safety_recheck " +
                     $"energy={_hamster.Energy.Value} lives={_hamster.Lives.Value}");
                 RememberCancelledSwitchLane();
                 CompleteActiveStep(PipelineTrigger.StepCancelled);
                 return false;
             }
 
-            if (_activeStep.Status == ChainStepStatus.Completed)
+            if (step != null && step.Status == ChainStepStatus.Completed)
             {
                 _actionsCompletedDuringRun++;
                 DebugManager.DiagEconomy(
-                    $"[ACTION COMPLETED] action={_activeStep.Action} energy={_hamster.Energy.Value} lives={_hamster.Lives.Value}");
+                    $"[ACTION COMPLETED] action={step.Action} energy={_hamster.Energy.Value} lives={_hamster.Lives.Value}");
                 CompleteActiveStep(PipelineTrigger.StepCompleted);
                 return false;
             }
@@ -474,7 +475,7 @@ namespace Assets.Scripts.BotV2
         private void CompleteActiveStep(PipelineTrigger trigger)
         {
             _executor.ClearStep();
-            _activeStep = null;
+            _currentPlan.Clear();
             _hasPlannedManagedState = false;
             QueuePipelineTrigger(trigger);
         }
@@ -589,7 +590,7 @@ namespace Assets.Scripts.BotV2
         private void OnDamage()
         {
             ClearTrajectoryPreview();
-            var step = _activeStep;
+            var step = ActiveStep;
             string killerInfo = FindNearestThreatInfo();
 
             DebugManager.DiagLog(
@@ -618,8 +619,9 @@ namespace Assets.Scripts.BotV2
         private void OnGameFinished()
         {
             ClearTrajectoryPreview();
-            string finishWarning = _activeStep != null || _hamster.HamsterState.Value != HamsterStateEnum.Run
-                ? $"\n  warning: finish while state={_hamster.HamsterState.Value} activeStep={BotLogger.FormatStep(_activeStep)}"
+            var step = ActiveStep;
+            string finishWarning = step != null || _hamster.HamsterState.Value != HamsterStateEnum.Run
+                ? $"\n  warning: finish while state={_hamster.HamsterState.Value} activeStep={BotLogger.FormatStep(step)}"
                 : string.Empty;
 
             DebugManager.DiagLog(
@@ -632,8 +634,9 @@ namespace Assets.Scripts.BotV2
         private void OnLevelCompleted(int levelId, int stars)
         {
             ClearTrajectoryPreview();
-            string finishWarning = _activeStep != null || _hamster.HamsterState.Value != HamsterStateEnum.Run
-                ? $"\n  warning: completed while state={_hamster.HamsterState.Value} activeStep={BotLogger.FormatStep(_activeStep)}"
+            var step = ActiveStep;
+            string finishWarning = step != null || _hamster.HamsterState.Value != HamsterStateEnum.Run
+                ? $"\n  warning: completed while state={_hamster.HamsterState.Value} activeStep={BotLogger.FormatStep(step)}"
                 : string.Empty;
 
             DebugManager.DiagLog(
@@ -1011,21 +1014,58 @@ namespace Assets.Scripts.BotV2
             _lastNoActionLogTime = -999f;
         }
 
-        private void UpdateTrajectoryPreview(BotSceneSnapshot snapshot, ChainStep first, ChainStep second, bool secondUsesProjectedCoordinates)
+        private static void LogBranchSelection(List<ChainCandidate> allBranches, ChainCandidate selected)
         {
-            if (!_showPlannedTrajectory || snapshot == null || first == null)
+            if (BotLogger.Level == BotLogLevel.Verbose && allBranches.Count > 0)
+            {
+                int logCount = allBranches.Count < 5 ? allBranches.Count : 5;
+                for (int i = 0; i < logCount; i++)
+                {
+                    var c = allBranches[i];
+                    BotLogger.Log(BotLogLevel.Verbose,
+                        $"[BRANCH #{i}] {FormatBranch(c)}{(c == selected ? " ← SELECTED" : "")}");
+                }
+            }
+
+            BotLogger.Log(BotLogLevel.Normal,
+                $"[CHAIN] depth={selected.Steps.Count} {FormatBranch(selected)}");
+        }
+
+        private static string FormatBranch(ChainCandidate c)
+        {
+            var sb = new StringBuilder();
+            sb.Append("steps=");
+            for (int i = 0; i < c.Steps.Count; i++)
+            {
+                if (i > 0) sb.Append("→");
+                sb.Append($"{c.Steps[i].Action}/{c.Steps[i].Semantic}");
+            }
+            var o = c.Outcome;
+            sb.Append($" rank={o.BestRank} profit={o.TotalProfit} energy={o.TotalEnergyCost} netE={o.NetEnergyGain}");
+            if (o.CollectedObjects.Count > 0)
+                sb.Append($" collected={o.CollectedObjects.Count}");
+            return sb.ToString();
+        }
+
+        private void UpdateTrajectoryPreview(BotSceneSnapshot snapshot, ChainCandidate chain)
+        {
+            if (!_showPlannedTrajectory || snapshot == null || chain == null || chain.Steps.Count == 0)
             {
                 _trajectoryRenderer.ClearPreview();
                 _trajectoryHudText = "Plan: none";
                 return;
             }
 
-            bool step1LaneAfter = GetLaneAfterStep(first, snapshot.HamsterOnBottom);
-            _trajectoryRenderer.UpdatePreview(first, second, step1LaneAfter, secondUsesProjectedCoordinates);
+            _trajectoryRenderer.UpdatePreview(chain.Steps, snapshot.HamsterOnBottom);
 
-            _trajectoryHudText = second == null
-                ? $"Plan: {first.Action} ({first.Rank})"
-                : $"Plan: {first.Action} -> {second.Action} ({first.Rank}/{second.Rank})";
+            var sb = new StringBuilder();
+            sb.Append("Plan:");
+            for (int i = 0; i < chain.Steps.Count; i++)
+            {
+                if (i > 0) sb.Append(" ->");
+                sb.Append($" {chain.Steps[i].Action}");
+            }
+            _trajectoryHudText = sb.ToString();
         }
 
         private static bool GetLaneAfterStep(ChainStep step, bool currentOnBottom)
@@ -1077,15 +1117,16 @@ namespace Assets.Scripts.BotV2
             }
 
             string text = _trajectoryHudText;
-            var step1Preview = _trajectoryRenderer.PreviewFirst;
-            if (step1Preview != null)
+            var previewSteps = _trajectoryRenderer.PreviewSteps;
+            if (previewSteps != null && previewSteps.Count > 0)
             {
-                string step1 = $"Step1: {step1Preview.Action}/{step1Preview.Semantic} ({step1Preview.TargetObstacle.Category})";
-                var step2Preview = _trajectoryRenderer.PreviewSecond;
-                string step2 = step2Preview != null
-                    ? $"Step2: {step2Preview.Action}/{step2Preview.Semantic} ({step2Preview.TargetObstacle.Category})"
-                    : "Step2: none";
-                text = $"{text}\n{step1}\n{step2}";
+                var hudSb = new StringBuilder();
+                for (int i = 0; i < previewSteps.Count; i++)
+                {
+                    var s = previewSteps[i];
+                    hudSb.AppendLine($"Step{i + 1}: {s.Action}/{s.Semantic} ({s.TargetObstacle.Category})");
+                }
+                text = $"{text}\n{hudSb}";
             }
 
             var rect = new Rect(20f, 20f, 760f, 100f);

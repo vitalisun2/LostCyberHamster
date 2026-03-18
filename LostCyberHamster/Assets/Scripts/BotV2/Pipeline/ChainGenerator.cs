@@ -4,25 +4,21 @@ using Assets.Scripts.Common.Models;
 namespace Assets.Scripts.BotV2
 {
     /// <summary>
-    /// Единый планировщик цепочек.
-    /// Каждый кандидат оборачивается в ChainCandidate.
-    /// Если для шага удаётся спроецировать валидный второй шаг — создаётся двухшаговая цепочка.
-    /// Иначе — одношаговая (SecondStep = null). Оркестратор всегда работает с цепочками.
+    /// Перечислитель safe ветвей планировщика.
+    /// Строит все допустимые ветви до заданной глубины, не выбирает победителя.
+    /// Выбор лучшей ветви выполняет BranchEvaluator.
     /// </summary>
     public class ChainGenerator
     {
-        private const float JumpLandingTravel = 3.8f;
-        private const float SuperJumpLandingTravel = 4.6f;
-        private const float LandingPostFactor = 0.4f;
-        private const float PassedObstacleMargin = 0.4f;
+        private const int MaxBranchDepth = 5;
         private const float ImminentThreatDistance = 4.5f;
+        private readonly StateProjector _stateProjector = new StateProjector();
 
         public List<ChainCandidate> Generate(
             BotSceneSnapshot snapshot,
             List<ChainStep> firstStepCandidates,
             ObjectClassifier classifier,
-            ActionGenerator actionGenerator,
-            ActionSelector actionSelector)
+            ActionGenerator actionGenerator)
         {
             var result = new List<ChainCandidate>();
             if (firstStepCandidates == null || firstStepCandidates.Count == 0)
@@ -34,56 +30,140 @@ namespace Assets.Scripts.BotV2
                 if (first == null)
                     continue;
 
-                ChainStep second = TryBuildSecondStep(
-                    snapshot, first, classifier, actionGenerator, actionSelector);
-
-                int totalProfit = first.ProfitScore + (second?.ProfitScore ?? 0);
-                DecisionRank bestRank = second != null && second.Rank < first.Rank
-                    ? second.Rank
-                    : first.Rank;
-
-                result.Add(new ChainCandidate
-                {
-                    FirstStep = first,
-                    SecondStep = second,
-                    SecondStepUsesProjectedCoordinates = second != null,
-                    TotalEnergyCost = first.EnergyCost + (second?.EnergyCost ?? 0),
-                    TotalProfitScore = totalProfit,
-                    BestRank = bestRank
-                });
+                ExploreBranch(
+                    snapshot,
+                    classifier,
+                    actionGenerator,
+                    first,
+                    branchStartEnergy: snapshot.Energy,
+                    depth: 1,
+                    stepsSoFar: new List<ChainStep>(),
+                    collectedSoFar: new List<ObstacleInfo>(),
+                    result: result);
             }
 
-            result.Sort(CompareCandidates);
             return result;
         }
 
-        private ChainStep TryBuildSecondStep(
+        private void ExploreBranch(
             BotSceneSnapshot snapshot,
-            ChainStep first,
             ObjectClassifier classifier,
             ActionGenerator actionGenerator,
-            ActionSelector actionSelector)
+            ChainStep step,
+            int branchStartEnergy,
+            int depth,
+            List<ChainStep> stepsSoFar,
+            List<ObstacleInfo> collectedSoFar,
+            List<ChainCandidate> result)
         {
-            if (!IsEligibleForSecondStepProjection(snapshot, first))
-                return null;
+            stepsSoFar.Add(step);
 
-            var projected = ProjectAfterFirstStep(snapshot, first);
-            var projectedSnapshot = BuildProjectedSnapshot(projected);
+            var projection = _stateProjector.Project(snapshot, step);
+            if (!projection.IsSafe || projection.NextState == null)
+                return;
+
+            var branchCollected = new List<ObstacleInfo>(collectedSoFar);
+            if (projection.CollectedObjects != null && projection.CollectedObjects.Count > 0)
+                branchCollected.AddRange(projection.CollectedObjects);
+
+            var projectedSnapshot = projection.NextState.ToSnapshot();
             classifier.Classify(projectedSnapshot);
 
-            var secondCandidates = actionGenerator.Generate(projectedSnapshot);
-            var secondSteps = FilterSecondSteps(first, secondCandidates);
-            var second = actionSelector.Select(secondSteps);
-            if (second == null)
-                return null;
+            var nextSteps = IsEligibleForNextProjection(projectedSnapshot, step)
+                ? FilterNextSteps(actionGenerator.Generate(projectedSnapshot))
+                : new List<ChainStep>();
+            bool hasImminentThreat = HasImminentSameLaneThreat(projectedSnapshot);
+            if (hasImminentThreat)
+            {
+                nextSteps.RemoveAll(candidate => candidate.Rank != DecisionRank.ThreatSafety);
+            }
 
-            // Не допускаем второй шаг, если после первого есть близкая угроза,
-            // а второй шаг не является защитным действием.
-            if (HasImminentSameLaneThreat(projectedSnapshot) &&
-                second.Rank != DecisionRank.ThreatSafety)
-                return null;
+            bool reachedDepthLimit = depth >= MaxBranchDepth;
+            if (reachedDepthLimit || nextSteps.Count == 0)
+            {
+                if (!hasImminentThreat)
+                {
+                    result.Add(BuildCandidate(
+                        stepsSoFar,
+                        branchCollected,
+                        branchStartEnergy,
+                        projection.NextState.Energy));
+                }
 
-            return second;
+                return;
+            }
+
+            for (int i = 0; i < nextSteps.Count; i++)
+            {
+                var next = nextSteps[i];
+                if (next == null)
+                    continue;
+
+                ExploreBranch(
+                    projectedSnapshot,
+                    classifier,
+                    actionGenerator,
+                    next,
+                    branchStartEnergy,
+                    depth + 1,
+                    new List<ChainStep>(stepsSoFar),
+                    new List<ObstacleInfo>(branchCollected),
+                    result);
+            }
+        }
+
+        private static ChainCandidate BuildCandidate(
+            List<ChainStep> steps,
+            List<ObstacleInfo> collectedObjects,
+            int startEnergy,
+            int endEnergy)
+        {
+            int totalProfit = 0;
+            int totalEnergyCost = 0;
+            DecisionRank bestRank = DecisionRank.ThreatSafety;
+            var targetedCollectibleIds = new HashSet<int>();
+
+            for (int i = 0; i < steps.Count; i++)
+            {
+                var step = steps[i];
+                totalProfit += step.ProfitScore;
+                totalEnergyCost += step.EnergyCost;
+
+                if (i == 0 || step.Rank < bestRank)
+                    bestRank = step.Rank;
+
+                if (step.TargetObstacle.Category == ObjectCategory.Collectible)
+                    targetedCollectibleIds.Add(step.TargetObstacle.StableId);
+            }
+
+            for (int i = 0; i < collectedObjects.Count; i++)
+            {
+                var collectible = collectedObjects[i];
+                if (targetedCollectibleIds.Contains(collectible.StableId))
+                    continue;
+
+                totalProfit += GetPassiveCollectibleProfit(collectible.Type);
+                DecisionRank collectibleRank = collectible.Type == ObstacleTypeEnum.collectableLife
+                    ? DecisionRank.LifeCollectible
+                    : DecisionRank.OtherCollectible;
+
+                if (collectibleRank < bestRank)
+                    bestRank = collectibleRank;
+            }
+
+            return new ChainCandidate
+            {
+                Steps = new List<ChainStep>(steps),
+                Outcome = new BranchOutcome
+                {
+                    CollectedObjects = new List<ObstacleInfo>(collectedObjects),
+                    TotalProfit = totalProfit,
+                    TotalEnergyCost = totalEnergyCost,
+                    NetEnergyGain = endEnergy - startEnergy,
+                    BestRank = bestRank,
+                    AllStepsSafe = true
+                }
+            };
         }
 
         /// <summary>
@@ -91,7 +171,7 @@ namespace Assets.Scripts.BotV2
         /// Нейтральные объекты и неподдерживаемые действия не нуждаются в проекции.
         /// Крупные угрозы (big/medium) исключены: их проекция после прыжка слишком ненадёжна.
         /// </summary>
-        private static bool IsEligibleForSecondStepProjection(BotSceneSnapshot snapshot, ChainStep first)
+        private static bool IsEligibleForNextProjection(BotSceneSnapshot snapshot, ChainStep first)
         {
             if (first.TargetObstacle.Category == ObjectCategory.Neutral)
                 return false;
@@ -108,76 +188,7 @@ namespace Assets.Scripts.BotV2
             return true;
         }
 
-        private static ProjectedState ProjectAfterFirstStep(BotSceneSnapshot snapshot, ChainStep first)
-        {
-            bool projectedHamsterOnBottom = snapshot.HamsterOnBottom;
-            float projectedRightX;
-
-            if (first.Action == BotAction.SwitchLane)
-            {
-                projectedHamsterOnBottom = !snapshot.HamsterOnBottom;
-                float advanceDistance = first.TargetObstacle.DistanceToHamster - first.ExecuteAtDistance;
-                if (advanceDistance < 0f)
-                    advanceDistance = 0f;
-
-                projectedRightX = snapshot.HamsterRightX + advanceDistance;
-            }
-            else
-            {
-                float travel = first.Action == BotAction.SuperJump ? SuperJumpLandingTravel : JumpLandingTravel;
-                projectedRightX = first.TargetObstacle.RightX + (travel * LandingPostFactor);
-            }
-
-            var state = new ProjectedState
-            {
-                HamsterOnBottom = projectedHamsterOnBottom,
-                HamsterRightX = projectedRightX,
-                HamsterWidth = snapshot.HamsterWidth,
-                Energy = snapshot.Energy - first.EnergyCost,
-                RemainingObjects = new List<ObstacleInfo>()
-            };
-
-            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
-            {
-                var obstacle = snapshot.VisibleObjects[i];
-                if (obstacle.StableId == first.TargetObstacle.StableId && first.Action != BotAction.SwitchLane)
-                    continue;
-                if (obstacle.RightX < projectedRightX - PassedObstacleMargin)
-                    continue;
-
-                float newDistance = obstacle.LeftX - projectedRightX;
-                state.RemainingObjects.Add(new ObstacleInfo(
-                    obstacle.Type,
-                    obstacle.IsTopLane,
-                    obstacle.LeftX,
-                    obstacle.RightX,
-                    obstacle.CenterX,
-                    newDistance,
-                    ObjectCategory.Neutral,
-                    obstacle.StableId));
-            }
-
-            return state;
-        }
-
-        private static BotSceneSnapshot BuildProjectedSnapshot(ProjectedState state)
-        {
-            return new BotSceneSnapshot
-            {
-                HamsterOnBottom = state.HamsterOnBottom,
-                HamsterOnRoof = false,
-                HamsterRightX = state.HamsterRightX,
-                HamsterWidth = state.HamsterWidth,
-                Energy = state.Energy,
-                Lives = 1,
-                SnapshotTime = 0f,
-                VisibleObjects = state.RemainingObjects
-            };
-        }
-
-        private static List<ChainStep> FilterSecondSteps(
-            ChainStep first,
-            List<ChainStep> secondCandidates)
+        private static List<ChainStep> FilterNextSteps(List<ChainStep> secondCandidates)
         {
             var result = new List<ChainStep>();
             if (secondCandidates == null)
@@ -203,30 +214,22 @@ namespace Assets.Scripts.BotV2
             return result;
         }
 
-        private static int CompareCandidates(ChainCandidate a, ChainCandidate b)
+        private static int GetPassiveCollectibleProfit(ObstacleTypeEnum type)
         {
-            // Сначала по первому шагу: ранг → профит → стоимость → дистанция.
-            int cmp = ChainStep.ComparePriority(a.FirstStep, b.FirstStep);
-            if (cmp != 0)
-                return -cmp; // ComparePriority: >0 = a лучше, Sort хочет <0 = a раньше
-
-            // При равных первых шагах: наличие второго шага лучше.
-            bool aHas = a.SecondStep != null;
-            bool bHas = b.SecondStep != null;
-            if (aHas != bHas)
-                return aHas ? -1 : 1;
-
-            // Оба с вторым шагом — сравниваем суммарные метрики.
-            if (aHas)
+            switch (type)
             {
-                if (a.TotalProfitScore != b.TotalProfitScore)
-                    return b.TotalProfitScore.CompareTo(a.TotalProfitScore);
-
-                if (a.TotalEnergyCost != b.TotalEnergyCost)
-                    return a.TotalEnergyCost.CompareTo(b.TotalEnergyCost);
+                case ObstacleTypeEnum.collectableLife:
+                    return 50;
+                case ObstacleTypeEnum.collectableCrystal:
+                    return 14;
+                case ObstacleTypeEnum.collectableEnergetic:
+                case ObstacleTypeEnum.collectablePizza:
+                    return 10;
+                case ObstacleTypeEnum.collectableCoin:
+                    return 3;
+                default:
+                    return 1;
             }
-
-            return 0;
         }
 
         private static bool HasImminentSameLaneThreat(BotSceneSnapshot snapshot)

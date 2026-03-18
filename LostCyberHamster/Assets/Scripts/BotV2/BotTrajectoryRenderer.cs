@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -13,28 +14,21 @@ namespace Assets.Scripts.BotV2
     {
         private Material _glMaterial;
 
-        private ChainStep _previewFirstStep;
-        private ChainStep _previewSecondStep;
-        private bool _previewStep1LaneAfter;
-        private bool _previewSecondUsesProjectedCoordinates;
+        private List<ChainStep> _previewSteps;
+        private bool _initialHamOnBottom;
 
-        public bool HasPreview    => _previewFirstStep != null;
-        public ChainStep PreviewFirst  => _previewFirstStep;
-        public ChainStep PreviewSecond => _previewSecondStep;
+        public bool HasPreview => _previewSteps != null && _previewSteps.Count > 0;
+        public List<ChainStep> PreviewSteps => _previewSteps;
 
-        public void UpdatePreview(ChainStep first, ChainStep second, bool step1LaneAfter, bool secondUsesProjectedCoordinates)
+        public void UpdatePreview(List<ChainStep> steps, bool hamOnBottom)
         {
-            _previewFirstStep = first;
-            _previewSecondStep = second;
-            _previewStep1LaneAfter = step1LaneAfter;
-            _previewSecondUsesProjectedCoordinates = secondUsesProjectedCoordinates;
+            _previewSteps = steps;
+            _initialHamOnBottom = hamOnBottom;
         }
 
         public void ClearPreview()
         {
-            _previewFirstStep = null;
-            _previewSecondStep = null;
-            _previewSecondUsesProjectedCoordinates = false;
+            _previewSteps = null;
         }
 
         /// <summary>
@@ -42,7 +36,7 @@ namespace Assets.Scripts.BotV2
         /// </summary>
         public void Render(Camera cam, bool hamOnBottom)
         {
-            if (_glMaterial == null || _previewFirstStep == null) return;
+            if (_glMaterial == null || _previewSteps == null || _previewSteps.Count == 0) return;
 
             _glMaterial.SetPass(0);
             GL.PushMatrix();
@@ -50,13 +44,14 @@ namespace Assets.Scripts.BotV2
             GL.modelview = cam.worldToCameraMatrix;
             GL.Begin(GL.LINES);
 
-            DrawStepIndicator(_previewFirstStep, hamOnBottom, useLiveObstaclePosition: true, stepAlpha: 1.0f);
-            if (_previewSecondStep != null)
-                DrawStepIndicator(
-                    _previewSecondStep,
-                    _previewStep1LaneAfter,
-                    useLiveObstaclePosition: !_previewSecondUsesProjectedCoordinates,
-                    stepAlpha: 0.6f);
+            bool currentOnBottom = _initialHamOnBottom;
+            for (int i = 0; i < _previewSteps.Count; i++)
+            {
+                float alpha = 1.0f - i * 0.25f;
+                if (alpha < 0.2f) alpha = 0.2f;
+                DrawStepIndicator(_previewSteps[i], currentOnBottom, useLiveObstaclePosition: i == 0, stepAlpha: alpha);
+                currentOnBottom = GetLaneAfterStep(_previewSteps[i], currentOnBottom);
+            }
 
             GL.End();
             GL.PopMatrix();
@@ -282,6 +277,15 @@ namespace Assets.Scripts.BotV2
                 default:
                     return new Color(0.8f, 0.8f, 0.8f, 0.95f);
             }
+        }
+
+        private static bool GetLaneAfterStep(ChainStep step, bool currentOnBottom)
+        {
+            if (step.Action != BotAction.SwitchLane)
+                return currentOnBottom;
+            if (step.TargetObstacle.Category == ObjectCategory.Threat)
+                return step.TargetObstacle.IsTopLane;
+            return !step.TargetObstacle.IsTopLane;
         }
     }
 }

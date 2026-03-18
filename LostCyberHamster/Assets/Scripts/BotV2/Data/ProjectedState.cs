@@ -9,9 +9,11 @@ namespace Assets.Scripts.BotV2
     public class ProjectedState
     {
         public bool HamsterOnBottom;
+        public bool HamsterOnRoof;
         public float HamsterRightX;
         public float HamsterWidth;
         public int Energy;
+        public int Lives;
         public List<ObstacleInfo> RemainingObjects = new List<ObstacleInfo>();
 
         /// <summary>
@@ -22,9 +24,11 @@ namespace Assets.Scripts.BotV2
             return new ProjectedState
             {
                 HamsterOnBottom = HamsterOnBottom,
+                HamsterOnRoof = HamsterOnRoof,
                 HamsterRightX = HamsterRightX,
                 HamsterWidth = HamsterWidth,
                 Energy = Energy,
+                Lives = Lives,
                 RemainingObjects = new List<ObstacleInfo>(RemainingObjects)
             };
         }
