@@ -34,3 +34,9 @@
 - Если automation bridge завершает play mode без `[TEST RESULT]`, а `diagnostic_log.txt` пустой, сначала читать Unity `Editor.log`: это сильный сигнал compile/editor-level сбоя, а не runtime-поведения бота.
 - Для chain-stage тестов сначала проверять, что все объекты цепочки попадают в один initial snapshot: если второй obstacle не виден в текущем `scanRange`, бот неизбежно свалится в one-step fallback и логика этапа не будет реально протестирована.
 - Для этапов chain-планирования читать BOT вместе с ECO: если в BOT цепочка корректна, но в ECO растёт доля `Jump/SuperJump`, это ранний сигнал, что one-step fallback или live-cancel съедает энергоэффективность и нужны плотные Stage 12 паттерны с близкими окнами.
+
+### Архитектура ActionGenerator
+
+- При добавлении ограничений в ActionGenerator думать о семантическом инварианте, а не о подстройке под конкретный тест-кейс. Пример: ограничение `SwitchLaneTargetMinFireDist` кодирует физический инвариант "SwitchLane к Target нужно место для Jump", а не "в паттерне X бот получает damage".
+- `IsSwitchLaneSafeAtDistance` проверяет только окно transit (0.3с), не post-transit. Post-transit безопасность обеспечивается минимальной дистанцией fire и chain-проекцией. Это важно помнить при анализе DAMAGE — если хомяк врезается ПОСЛЕ transit, причина не в safety check, а в недостаточной минимальной дистанции.
+- `TryComputeSwitchLaneExecuteDistance` учитывает ВСЕ target-lane threats (включая далёкие), что может push'ить executeAt до минимума. Для Target-категории минимум должен быть выше чем для Threat/Collectible.

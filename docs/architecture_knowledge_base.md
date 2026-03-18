@@ -612,3 +612,14 @@ Menu: `Tools/Migration/` — 3 шага:
 
 - Промежуточные backup-документы по фазам реализации удалены как неактуальные.
 - Оставлен один канонический файл спецификации: `docs/Planning/bot_implementation_spec.md`.
+
+### Критичные инварианты ActionGenerator
+
+1. **Nearest-only Jump для same-lane threats**: Jump/SuperJump генерируется ТОЛЬКО для ближайшей same-lane угрозы. Дальние угрозы обрабатываются последующими шагами цепочки после проекции.
+2. **HasCloserSameLaneThreat для targets**: Если между хомяком и cross-lane target есть same-lane threat, Jump/SuperJump к target блокируется — сначала нужно обработать ближайшую угрозу.
+3. **SwitchLaneTargetMinFireDist**: Минимальная дистанция fire SwitchLane для Target-категории (smallAlive) = `SwitchLaneReturnControlTravel + JumpFireDist` (≈3.3). Гарантирует, что после перестроения останется место для последующего Jump. Для Threat и Collectible используется стандартный `SwitchLaneLatestSafeDist` (1.5).
+
+### Тестовые паттерны бота
+
+- 25 паттернов `bot_tree_01..25` в `PatternsCollection.json` — покрывают основные сценарии tree-планирования.
+- Тестовый уровень: `test_level.json` использует все 25 паттернов с relief между ними.
