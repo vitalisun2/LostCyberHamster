@@ -1,7 +1,7 @@
 GAME CODEBASE COMPACT MERGE
-GeneratedAtUtc: 2026-03-21T10:40:24Z
+GeneratedAtUtc: 2026-03-21T10:45:39Z
 SourceRoots: LostCyberHamster\Assets\Scripts, LostCyberHamster\Assets\Editor
-FileCount: 306
+FileCount: 305
 Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)
 
 === FILE START: LostCyberHamster\Assets\Editor\AssetBundlesManager.cs | lines=258 | sha256=9633A0BDDF9E1E4382BD8A69A4186269928CD6580B02E21D717C28A5D3DA0CEA ===
@@ -11525,7 +11525,7 @@ namespace Assets.Scripts.BotV2
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV2\BotLogger.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV2\BotOrchestrator.cs | lines=1167 | sha256=602A2733F7C26F4BD695E6C4F49A20C87FECF309C42D887DF7D2D4A9CC976AF8 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV2\BotOrchestrator.cs | lines=1163 | sha256=4AAB6AFA430E9814E4B761A10B44E9907ECF65DBC4884A8B062F085FFAA43386 ===
 using System;
 using System.Collections.Generic;
 using Assets.Scripts.Gameplay;
@@ -11657,11 +11657,7 @@ namespace Assets.Scripts.BotV2
                 EnableAsPrimary();
         }
 
-        /// <summary>
-        /// Включает BotV2 в режиме основного бота.
-        /// Вызывается bootstrap-инициализацией после загрузки сцены.
-        /// </summary>
-        public void EnableAsPrimary()
+        private void EnableAsPrimary()
         {
             enabled = true;
             IsEnabled = true;
@@ -12988,46 +12984,6 @@ namespace Assets.Scripts.BotV2
     }
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV2\BotTrajectoryRenderer.cs ===
-
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV2\BotV2Bootstrap.cs | lines=37 | sha256=B4D382293590AA7435BA3FBDDA91613D35E78506982AC8F2C3F82C19A9F52C96 ===
-using UnityEngine;
-
-namespace Assets.Scripts.BotV2
-{
-    /// <summary>
-    /// Подключает BotOrchestrator как основной бот при загрузке сцены.
-    /// </summary>
-    public static class BotV2Bootstrap
-    {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void EnsurePrimaryBot()
-        {
-            EnsureOrchestrator().EnableAsPrimary();
-        }
-
-        private static BotOrchestrator EnsureOrchestrator()
-        {
-            var existing = Object.FindObjectOfType<BotOrchestrator>(true);
-            if (existing != null)
-            {
-                existing.enabled = true;
-                return existing;
-            }
-
-            var host = GameObject.Find("[Bot]");
-            if (host == null)
-                host = new GameObject("[Bot]");
-
-            var orchestrator = host.GetComponent<BotOrchestrator>();
-            if (orchestrator == null)
-                orchestrator = host.AddComponent<BotOrchestrator>();
-
-            orchestrator.enabled = true;
-            return orchestrator;
-        }
-    }
-}
-=== FILE END: LostCyberHamster\Assets\Scripts\BotV2\BotV2Bootstrap.cs ===
 
 === FILE START: LostCyberHamster\Assets\Scripts\BotV2\Data\BotAction.cs | lines=13 | sha256=A5CAE5D9E189B6C423ECC1701B93BBCA3403CF5834C7988149BBEABA37ADB746 ===
 namespace Assets.Scripts.BotV2

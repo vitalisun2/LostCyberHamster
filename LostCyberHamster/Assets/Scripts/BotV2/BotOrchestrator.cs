@@ -129,11 +129,7 @@ namespace Assets.Scripts.BotV2
                 EnableAsPrimary();
         }
 
-        /// <summary>
-        /// Включает BotV2 в режиме основного бота.
-        /// Вызывается bootstrap-инициализацией после загрузки сцены.
-        /// </summary>
-        public void EnableAsPrimary()
+        private void EnableAsPrimary()
         {
             enabled = true;
             IsEnabled = true;
