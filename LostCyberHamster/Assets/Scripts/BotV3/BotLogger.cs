@@ -51,10 +51,8 @@ namespace Assets.Scripts.BotV3
                 sb.Append(" [SwitchLane rejected: ");
                 if (obstacle.DistanceToHamster < 1.5f)
                     sb.Append("too close");
-                else if (!SwitchLaneSafety.IsImmediatelySafe(snapshot))
-                    sb.Append("target lane unsafe");
                 else
-                    sb.Append("unknown");
+                    sb.Append("lane unsafe at execute distance");
                 sb.Append("]");
             }
 

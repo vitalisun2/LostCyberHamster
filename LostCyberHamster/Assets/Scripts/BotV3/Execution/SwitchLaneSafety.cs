@@ -110,6 +110,22 @@ namespace Assets.Scripts.BotV3
             }
         }
 
+        /// <summary>
+        /// Только широкие препятствия блокируют target lane.
+        /// Мелкие (smallNotAliveRoad, smallAlive и т.п.) не требуют clearance.
+        /// </summary>
+        private static bool RequiresTargetLaneClearance(ObstacleTypeEnum type)
+        {
+            switch (type)
+            {
+                case ObstacleTypeEnum.bigNotAlive:
+                case ObstacleTypeEnum.mediumNotAlive:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private static bool WouldHitDuringTargetPhase(
             float hamsterLeftX, float hamsterRightX,
             float obstacleLeftX, float obstacleRightX)
@@ -120,6 +136,52 @@ namespace Assets.Scripts.BotV3
                 hamsterLeftX - LaneSwitchSafetyPadding,
                 hamsterRightX + LaneSwitchSafetyPadding,
                 sweptLeftX, sweptRightX);
+        }
+
+        /// <summary>
+        /// Проверяет безопасность SwitchLane с проекцией: сдвигает препятствия назад
+        /// на расстояние, которое мир пройдёт до момента исполнения.
+        /// Используется при планировании (когда executeAt < dist до объекта).
+        /// </summary>
+        public static bool IsSafeAtExecuteDistance(
+            BotSceneSnapshot snapshot,
+            ObstacleInfo target,
+            float executeAtDistance)
+        {
+            float distanceDelta = target.DistanceToHamster - executeAtDistance;
+            if (distanceDelta < 0f)
+                distanceDelta = 0f;
+
+            float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
+            bool sourceIsBottom = snapshot.HamsterOnBottom;
+            bool targetIsBottom = !snapshot.HamsterOnBottom;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obstacle = snapshot.VisibleObjects[i];
+                if (obstacle.StableId == target.StableId) continue;
+                if (!IsHazard(obstacle)) continue;
+
+                bool obstacleOnBottom = !obstacle.IsTopLane;
+                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
+                    continue;
+
+                float projectedLeftX = obstacle.LeftX - distanceDelta;
+                float projectedRightX = obstacle.RightX - distanceDelta;
+                if (projectedRightX < hamsterLeftX)
+                    continue;
+
+                if (obstacleOnBottom == sourceIsBottom &&
+                    WouldHitDuringSourcePhase(hamsterLeftX, snapshot.HamsterRightX, projectedLeftX, projectedRightX))
+                    return false;
+
+                if (obstacleOnBottom == targetIsBottom &&
+                    RequiresTargetLaneClearance(obstacle.Type) &&
+                    WouldHitDuringTargetPhase(hamsterLeftX, snapshot.HamsterRightX, projectedLeftX, projectedRightX))
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool WouldHitDuringSourcePhase(
