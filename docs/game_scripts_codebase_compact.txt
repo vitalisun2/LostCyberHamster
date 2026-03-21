@@ -1,7 +1,7 @@
 GAME CODEBASE COMPACT MERGE
-GeneratedAtUtc: 2026-03-21T11:23:25Z
+GeneratedAtUtc: 2026-03-21T11:27:40Z
 SourceRoots: LostCyberHamster\Assets\Scripts, LostCyberHamster\Assets\Editor
-FileCount: 307
+FileCount: 308
 Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)
 
 === FILE START: LostCyberHamster\Assets\Editor\AssetBundlesManager.cs | lines=258 | sha256=9633A0BDDF9E1E4382BD8A69A4186269928CD6580B02E21D717C28A5D3DA0CEA ===
@@ -15674,7 +15674,7 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=147 | sha256=C1E0A62C15812FE1621F198F79635CA81BA3012F70E26950A7C740E332929C79 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=113 | sha256=E325DA56A2E2A1D41CAD0ECEF76E4E13D64435DD4D06DD695130ED71D1A2AD6F ===
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
@@ -15695,6 +15695,7 @@ namespace Assets.Scripts.BotV3
         public bool Initialized { get; private set; }
 
         private BotHud _hud;
+        private GameEventTracker _eventTracker;
         private float _nextInitRetryTime;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -15770,9 +15771,7 @@ namespace Assets.Scripts.BotV3
             if (Hamster == null || GameManager == null)
                 return;
 
-            Hamster.DamageEvent.Subscribe(OnDamage);
-            GameManager.OnFinish += OnGameFinished;
-            GameEventsManager.OnLevelCompleted += OnLevelCompleted;
+            _eventTracker = new GameEventTracker(Hamster, GameManager);
 
             Initialized = true;
             DebugManager.DiagLog("[BotV3] Initialized");
@@ -15780,40 +15779,7 @@ namespace Assets.Scripts.BotV3
 
         private void OnDestroy()
         {
-            if (Hamster != null)
-                Hamster.DamageEvent.Unsubscribe(OnDamage);
-
-            if (GameManager != null)
-                GameManager.OnFinish -= OnGameFinished;
-
-            GameEventsManager.OnLevelCompleted -= OnLevelCompleted;
-        }
-
-        private void OnDamage()
-        {
-            DebugManager.DiagLog(
-                $"[DAMAGE] lives={Hamster.Lives.Value} " +
-                $"lane={(Hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
-                $"state={Hamster.HamsterState.Value}");
-
-            if (Hamster.Lives.Value <= 0)
-            {
-                DebugManager.DiagLog("[TEST RESULT] FAIL");
-                DebugManager.DiagStability("[TEST RESULT] FAIL");
-            }
-        }
-
-        private void OnGameFinished()
-        {
-            DebugManager.DiagLog(
-                $"[TEST FINISH] state={GameManager.State} " +
-                $"lives={Hamster.Lives.Value}");
-        }
-
-        private void OnLevelCompleted(int levelId, int stars)
-        {
-            DebugManager.DiagLog($"[TEST RESULT] WIN level={levelId} stars={stars}");
-            DebugManager.DiagStability($"[TEST RESULT] WIN level={levelId} stars={stars}");
+            _eventTracker?.Dispose();
         }
 
         private void OnGUI()
@@ -15823,6 +15789,74 @@ namespace Assets.Scripts.BotV3
     }
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\GameEventTracker.cs | lines=65 | sha256=3C6C7A1DF6B8DB175A8D23477D863DCCC47CE808945966BF10ECADE4A94E1BF8 ===
+using Assets.Scripts.Gameplay;
+using Assets.Scripts.Gameplay.Enums;
+using Assets.Scripts.GameManagerLogic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Отслеживает игровые события (damage, finish, level completed) и
+    /// пишет TEST RESULT маркеры для automation bridge.
+    /// Позже сюда ляжет economy tracking.
+    /// </summary>
+    public class GameEventTracker
+    {
+        private readonly Hamster _hamster;
+        private readonly GameManager _gameManager;
+
+        public GameEventTracker(Hamster hamster, GameManager gameManager)
+        {
+            _hamster = hamster;
+            _gameManager = gameManager;
+
+            _hamster.DamageEvent.Subscribe(OnDamage);
+            _gameManager.OnFinish += OnGameFinished;
+            GameEventsManager.OnLevelCompleted += OnLevelCompleted;
+        }
+
+        public void Dispose()
+        {
+            if (_hamster != null)
+                _hamster.DamageEvent.Unsubscribe(OnDamage);
+
+            if (_gameManager != null)
+                _gameManager.OnFinish -= OnGameFinished;
+
+            GameEventsManager.OnLevelCompleted -= OnLevelCompleted;
+        }
+
+        private void OnDamage()
+        {
+            DebugManager.DiagLog(
+                $"[DAMAGE] lives={_hamster.Lives.Value} " +
+                $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
+                $"state={_hamster.HamsterState.Value}");
+
+            if (_hamster.Lives.Value <= 0)
+            {
+                DebugManager.DiagLog("[TEST RESULT] FAIL");
+                DebugManager.DiagStability("[TEST RESULT] FAIL");
+            }
+        }
+
+        private void OnGameFinished()
+        {
+            DebugManager.DiagLog(
+                $"[TEST FINISH] state={_gameManager.State} " +
+                $"lives={_hamster.Lives.Value}");
+        }
+
+        private void OnLevelCompleted(int levelId, int stars)
+        {
+            DebugManager.DiagLog($"[TEST RESULT] WIN level={levelId} stars={stars}");
+            DebugManager.DiagStability($"[TEST RESULT] WIN level={levelId} stars={stars}");
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\GameEventTracker.cs ===
 
 === FILE START: LostCyberHamster\Assets\Scripts\Common\CollisionUtils.cs | lines=306 | sha256=D367391D2A96AE6BAE3231CC385DCA186E90FF847AA187250FBD85E02397B440 ===
 using Assets.Scripts.Gameplay;

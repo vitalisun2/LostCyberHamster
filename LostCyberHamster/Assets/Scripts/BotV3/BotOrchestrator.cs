@@ -18,6 +18,7 @@ namespace Assets.Scripts.BotV3
         public bool Initialized { get; private set; }
 
         private BotHud _hud;
+        private GameEventTracker _eventTracker;
         private float _nextInitRetryTime;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -93,9 +94,7 @@ namespace Assets.Scripts.BotV3
             if (Hamster == null || GameManager == null)
                 return;
 
-            Hamster.DamageEvent.Subscribe(OnDamage);
-            GameManager.OnFinish += OnGameFinished;
-            GameEventsManager.OnLevelCompleted += OnLevelCompleted;
+            _eventTracker = new GameEventTracker(Hamster, GameManager);
 
             Initialized = true;
             DebugManager.DiagLog("[BotV3] Initialized");
@@ -103,40 +102,7 @@ namespace Assets.Scripts.BotV3
 
         private void OnDestroy()
         {
-            if (Hamster != null)
-                Hamster.DamageEvent.Unsubscribe(OnDamage);
-
-            if (GameManager != null)
-                GameManager.OnFinish -= OnGameFinished;
-
-            GameEventsManager.OnLevelCompleted -= OnLevelCompleted;
-        }
-
-        private void OnDamage()
-        {
-            DebugManager.DiagLog(
-                $"[DAMAGE] lives={Hamster.Lives.Value} " +
-                $"lane={(Hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
-                $"state={Hamster.HamsterState.Value}");
-
-            if (Hamster.Lives.Value <= 0)
-            {
-                DebugManager.DiagLog("[TEST RESULT] FAIL");
-                DebugManager.DiagStability("[TEST RESULT] FAIL");
-            }
-        }
-
-        private void OnGameFinished()
-        {
-            DebugManager.DiagLog(
-                $"[TEST FINISH] state={GameManager.State} " +
-                $"lives={Hamster.Lives.Value}");
-        }
-
-        private void OnLevelCompleted(int levelId, int stars)
-        {
-            DebugManager.DiagLog($"[TEST RESULT] WIN level={levelId} stars={stars}");
-            DebugManager.DiagStability($"[TEST RESULT] WIN level={levelId} stars={stars}");
+            _eventTracker?.Dispose();
         }
 
         private void OnGUI()
