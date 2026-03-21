@@ -5,9 +5,9 @@ namespace Assets.Scripts.BotV3
     /// <summary>
     /// Кандидат ветви планировщика: список шагов + агрегированный outcome.
     /// </summary>
-    public class ChainCandidate
+    public class BranchCandidate
     {
-        public List<ChainStep> Steps = new List<ChainStep>();
+        public List<BranchStep> Steps = new List<BranchStep>();
         public BranchOutcome Outcome = new BranchOutcome();
     }
 }

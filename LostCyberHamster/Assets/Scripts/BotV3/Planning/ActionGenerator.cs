@@ -11,9 +11,9 @@ namespace Assets.Scripts.BotV3
         private const float SwitchLaneFireDist = 4.0f;
         internal const float SwitchLaneLatestSafeDist = 1.5f;
 
-        public List<ChainStep> Generate(BotSceneSnapshot snapshot)
+        public List<BranchStep> Generate(BotSceneSnapshot snapshot)
         {
-            var result = new List<ChainStep>();
+            var result = new List<BranchStep>();
 
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
@@ -27,7 +27,7 @@ namespace Assets.Scripts.BotV3
                 if (!IsNearestSameLaneThreat(snapshot, obs))
                     continue;
 
-                if (TryBuildSwitchLaneStep(snapshot, obs, out ChainStep step))
+                if (TryBuildSwitchLaneStep(snapshot, obs, out BranchStep step))
                     result.Add(step);
             }
 
@@ -37,7 +37,7 @@ namespace Assets.Scripts.BotV3
         private static bool TryBuildSwitchLaneStep(
             BotSceneSnapshot snapshot,
             ObstacleInfo threat,
-            out ChainStep step)
+            out BranchStep step)
         {
             step = null;
 
@@ -53,7 +53,7 @@ namespace Assets.Scripts.BotV3
             if (!SwitchLaneSafety.IsImmediatelySafe(snapshot))
                 return false;
 
-            step = new ChainStep(
+            step = new BranchStep(
                 BotAction.SwitchLane,
                 threat,
                 executeAtDistance,

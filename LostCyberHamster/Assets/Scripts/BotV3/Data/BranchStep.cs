@@ -1,11 +1,11 @@
 namespace Assets.Scripts.BotV3
 {
-    public enum ChainStepStatus { Ready, InProgress, Completed }
+    public enum BranchStepStatus { Ready, InProgress, Completed }
 
     /// <summary>
-    /// Один шаг в цепочке действий бота.
+    /// Один шаг в ветви действий бота.
     /// </summary>
-    public class ChainStep
+    public class BranchStep
     {
         public BotAction Action;
         public ObstacleInfo TargetObstacle;
@@ -15,9 +15,9 @@ namespace Assets.Scripts.BotV3
 
         public int EnergyCost;
         public string Reason;
-        public ChainStepStatus Status;
+        public BranchStepStatus Status;
 
-        public ChainStep(
+        public BranchStep(
             BotAction action,
             ObstacleInfo targetObstacle,
             float executeAtDistance,
@@ -29,7 +29,7 @@ namespace Assets.Scripts.BotV3
             ExecuteAtDistance = executeAtDistance;
             EnergyCost = energyCost;
             Reason = reason;
-            Status = ChainStepStatus.Ready;
+            Status = BranchStepStatus.Ready;
         }
     }
 }

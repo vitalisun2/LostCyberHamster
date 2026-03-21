@@ -25,7 +25,7 @@ namespace Assets.Scripts.BotV3
         // Pipeline
         private SnapshotBuilder _snapshotBuilder;
         private ObjectClassifier _classifier;
-        private BotPlanner _planner;
+        private BranchSelector _planner;
         private StepExecutor _executor;
 
         private float _nextInitRetryTime;
@@ -90,7 +90,7 @@ namespace Assets.Scripts.BotV3
             }
         }
 
-        private void ApplyPlan(ChainCandidate best)
+        private void ApplyPlan(BranchCandidate best)
         {
             if (best == null)
             {
@@ -141,7 +141,7 @@ namespace Assets.Scripts.BotV3
             _eventTracker = new GameEventTracker(Hamster, GameManager);
             _snapshotBuilder = new SnapshotBuilder();
             _classifier = new ObjectClassifier();
-            _planner = new BotPlanner();
+            _planner = new BranchSelector();
             _executor = new StepExecutor(Hamster);
 
             Initialized = true;

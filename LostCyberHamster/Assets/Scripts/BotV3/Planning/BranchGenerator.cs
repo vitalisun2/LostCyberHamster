@@ -4,20 +4,20 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Строит ветви планировщика до заданной глубины.
-    /// V3 minimal: SwitchLane chains, depth 1-2.
+    /// V3 minimal: SwitchLane branches, depth 1-2.
     /// </summary>
-    public class ChainGenerator
+    public class BranchGenerator
     {
         private const int MaxBranchDepth = 3;
         private readonly StateProjector _stateProjector = new StateProjector();
 
-        public List<ChainCandidate> Generate(
+        public List<BranchCandidate> Generate(
             BotSceneSnapshot snapshot,
-            List<ChainStep> firstStepCandidates,
+            List<BranchStep> firstStepCandidates,
             ObjectClassifier classifier,
             ActionGenerator actionGenerator)
         {
-            var result = new List<ChainCandidate>();
+            var result = new List<BranchCandidate>();
             if (firstStepCandidates == null || firstStepCandidates.Count == 0)
                 return result;
 
@@ -32,7 +32,7 @@ namespace Assets.Scripts.BotV3
                     actionGenerator,
                     first,
                     depth: 1,
-                    stepsSoFar: new List<ChainStep>(),
+                    stepsSoFar: new List<BranchStep>(),
                     originalSnapshot: snapshot,
                     result: result);
             }
@@ -44,11 +44,11 @@ namespace Assets.Scripts.BotV3
             BotSceneSnapshot snapshot,
             ObjectClassifier classifier,
             ActionGenerator actionGenerator,
-            ChainStep step,
+            BranchStep step,
             int depth,
-            List<ChainStep> stepsSoFar,
+            List<BranchStep> stepsSoFar,
             BotSceneSnapshot originalSnapshot,
-            List<ChainCandidate> result)
+            List<BranchCandidate> result)
         {
             stepsSoFar.Add(step);
 
@@ -76,23 +76,23 @@ namespace Assets.Scripts.BotV3
                     actionGenerator,
                     next,
                     depth + 1,
-                    new List<ChainStep>(stepsSoFar),
+                    new List<BranchStep>(stepsSoFar),
                     originalSnapshot,
                     result);
             }
         }
 
-        private static ChainCandidate BuildCandidate(
-            List<ChainStep> steps,
+        private static BranchCandidate BuildCandidate(
+            List<BranchStep> steps,
             BotSceneSnapshot originalSnapshot)
         {
             int totalEnergyCost = 0;
             for (int i = 0; i < steps.Count; i++)
                 totalEnergyCost += steps[i].EnergyCost;
 
-            return new ChainCandidate
+            return new BranchCandidate
             {
-                Steps = new List<ChainStep>(steps),
+                Steps = new List<BranchStep>(steps),
                 Outcome = new BranchOutcome
                 {
                     TotalEnergyCost = totalEnergyCost,
@@ -101,7 +101,7 @@ namespace Assets.Scripts.BotV3
             };
         }
 
-        private static bool IsIdlePeriodSafe(BotSceneSnapshot snapshot, ChainStep firstStep)
+        private static bool IsIdlePeriodSafe(BotSceneSnapshot snapshot, BranchStep firstStep)
         {
             float waitTravel = firstStep.TargetObstacle.DistanceToHamster - firstStep.ExecuteAtDistance;
             if (waitTravel <= 0f)

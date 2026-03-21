@@ -3,31 +3,31 @@ using System.Text;
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
-    /// Принимает решения: какой план действий выбрать.
-    /// Генерация действий → построение цепочек → оценка → выбор лучшей.
+    /// Выбирает лучшую ветвь действий для текущего снимка.
+    /// Генерация действий -> построение ветвей -> оценка -> выбор лучшей.
     /// Чистый класс — не MonoBehaviour.
     /// </summary>
-    public class BotPlanner
+    public class BranchSelector
     {
         private readonly ActionGenerator _actionGenerator = new ActionGenerator();
-        private readonly ChainGenerator _chainGenerator = new ChainGenerator();
+        private readonly BranchGenerator _branchGenerator = new BranchGenerator();
 
         private int _lastPlanTargetId;
 
         /// <summary>
-        /// Возвращает лучшую цепочку действий для текущего снимка, или null если действовать не нужно.
+        /// Возвращает лучшую ветвь действий для текущего снимка, или null если действовать не нужно.
         /// </summary>
-        public ChainCandidate Replan(BotSceneSnapshot snapshot, ObjectClassifier classifier)
+        public BranchCandidate Replan(BotSceneSnapshot snapshot, ObjectClassifier classifier)
         {
             var actions = _actionGenerator.Generate(snapshot);
-            var chains = _chainGenerator.Generate(snapshot, actions, classifier, _actionGenerator);
-            var best = BranchEvaluator.SelectBest(chains);
+            var branches = _branchGenerator.Generate(snapshot, actions, classifier, _actionGenerator);
+            var best = BranchEvaluator.SelectBest(branches);
 
             if (best == null)
             {
                 if (_lastPlanTargetId != 0)
                 {
-                    DebugManager.DiagLog("[BotV3 PLAN] Cleared — no viable chains");
+                    DebugManager.DiagLog("[BotV3 PLAN] Cleared — no viable branches");
                     _lastPlanTargetId = 0;
                 }
 
@@ -49,21 +49,21 @@ namespace Assets.Scripts.BotV3
             _lastPlanTargetId = 0;
         }
 
-        private static void LogPlanSelected(ChainCandidate chain)
+        private static void LogPlanSelected(BranchCandidate branch)
         {
             var sb = new StringBuilder(128);
             sb.Append("[BotV3 PLAN] Selected: ");
-            for (int i = 0; i < chain.Steps.Count; i++)
+            for (int i = 0; i < branch.Steps.Count; i++)
             {
                 if (i > 0) sb.Append(" -> ");
-                var s = chain.Steps[i];
+                var s = branch.Steps[i];
                 sb.Append(s.Action).Append("(execAt=")
                   .Append(s.ExecuteAtDistance.ToString("F1"))
                   .Append(" reason=\"").Append(s.Reason).Append("\")");
             }
 
-            sb.Append(" | safe=").Append(chain.Outcome.AllStepsSafe)
-              .Append(" energy=").Append(chain.Outcome.TotalEnergyCost);
+            sb.Append(" | safe=").Append(branch.Outcome.AllStepsSafe)
+              .Append(" energy=").Append(branch.Outcome.TotalEnergyCost);
             DebugManager.DiagLog(sb.ToString());
         }
     }

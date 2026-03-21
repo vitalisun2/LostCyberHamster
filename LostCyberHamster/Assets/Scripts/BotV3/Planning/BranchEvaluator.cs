@@ -8,7 +8,7 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public static class BranchEvaluator
     {
-        public static ChainCandidate SelectBest(List<ChainCandidate> candidates)
+        public static BranchCandidate SelectBest(List<BranchCandidate> candidates)
         {
             if (candidates == null || candidates.Count == 0)
                 return null;
@@ -17,7 +17,7 @@ namespace Assets.Scripts.BotV3
             return candidates[0];
         }
 
-        private static int Compare(ChainCandidate a, ChainCandidate b)
+        private static int Compare(BranchCandidate a, BranchCandidate b)
         {
             var oa = a.Outcome;
             var ob = b.Outcome;

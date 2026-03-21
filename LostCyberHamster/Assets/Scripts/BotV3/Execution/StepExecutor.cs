@@ -12,18 +12,18 @@ namespace Assets.Scripts.BotV3
     public class StepExecutor
     {
         private readonly Hamster _hamster;
-        private ChainStep _step;
+        private BranchStep _step;
         private float _switchLaneExecTime;
 
         public bool WasCancelled { get; private set; }
-        public bool HasActiveStep => _step != null && _step.Status != ChainStepStatus.Completed;
+        public bool HasActiveStep => _step != null && _step.Status != BranchStepStatus.Completed;
 
         public StepExecutor(Hamster hamster)
         {
             _hamster = hamster;
         }
 
-        public void SetStep(ChainStep step)
+        public void SetStep(BranchStep step)
         {
             _step = step;
             WasCancelled = false;
@@ -36,10 +36,10 @@ namespace Assets.Scripts.BotV3
 
         public void TryExecute()
         {
-            if (_step == null || _step.Status == ChainStepStatus.Completed)
+            if (_step == null || _step.Status == BranchStepStatus.Completed)
                 return;
 
-            if (_step.Status == ChainStepStatus.InProgress)
+            if (_step.Status == BranchStepStatus.InProgress)
             {
                 CheckCompletion();
                 return;
@@ -49,7 +49,7 @@ namespace Assets.Scripts.BotV3
 
             if (dist < -0.3f)
             {
-                _step.Status = ChainStepStatus.Completed;
+                _step.Status = BranchStepStatus.Completed;
                 DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane SKIPPED (too late) dist={dist:F2}");
                 return;
             }
@@ -66,14 +66,14 @@ namespace Assets.Scripts.BotV3
                 if (dist > ActionGenerator.SwitchLaneLatestSafeDist)
                     return;
 
-                _step.Status = ChainStepStatus.Completed;
+                _step.Status = BranchStepStatus.Completed;
                 WasCancelled = true;
                 DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane CANCELLED — unsafe near deadline, dist={dist:F2}");
                 return;
             }
 
             _hamster.TapRequest.Invoke();
-            _step.Status = ChainStepStatus.InProgress;
+            _step.Status = BranchStepStatus.InProgress;
             _switchLaneExecTime = Time.time;
             DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane FIRE dist={dist:F2} reason={_step.Reason}");
         }
@@ -83,7 +83,7 @@ namespace Assets.Scripts.BotV3
             bool timeElapsed = Time.time - _switchLaneExecTime >= 0.1f;
             if (timeElapsed && !_hamster.IsShifting.Value)
             {
-                _step.Status = ChainStepStatus.Completed;
+                _step.Status = BranchStepStatus.Completed;
                 DebugManager.DiagLog("[BotV3 EXEC] SwitchLane completed");
             }
         }

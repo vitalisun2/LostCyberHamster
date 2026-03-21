@@ -12,12 +12,12 @@ namespace Assets.Scripts.BotV3
             0.47f * Assets.Scripts.Consts.GameSpeedBase;
         private const float PassedObstacleMargin = 0.4f;
 
-        public StepProjectionResult Project(BotSceneSnapshot snapshot, ChainStep step)
+        public StepProjectionResult Project(BotSceneSnapshot snapshot, BranchStep step)
         {
             return Project(PlannerState.FromSnapshot(snapshot), step);
         }
 
-        public StepProjectionResult Project(PlannerState state, ChainStep step)
+        public StepProjectionResult Project(PlannerState state, BranchStep step)
         {
             var nextState = state.Clone();
 
@@ -43,7 +43,7 @@ namespace Assets.Scripts.BotV3
         private static void RebuildRemainingObjects(
             PlannerState previousState,
             PlannerState nextState,
-            ChainStep step)
+            BranchStep step)
         {
             var remaining = new List<ObstacleInfo>();
 
