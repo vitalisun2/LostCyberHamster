@@ -694,48 +694,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1858864217}
-  - component: {fileID: 1858864216}
-  - component: {fileID: 1858864215}
   - component: {fileID: 1858864218}
   m_Layer: 0
-  m_Name: '[HamsterBot]'
+  m_Name: '[Bot]'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1858864215
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1858864214}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 71ca0fb134e53de418c6a0a6f593dfa5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.Bot.HamsterBotUI
---- !u!114 &1858864216
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1858864214}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00f60a3f0aa3fb54da68538ece455bbc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.Bot.HamsterBot
-  _enabledOnStart: 1
-  _actionCooldown: 0.05
-  _scanRange: 15
-  _urgentWindowSec: 0.6
-  _aggressionLevel: 0.7
-  _autoRestartOnDeath: 1
-  _autoNextOnWin: 1
-  _autoActionDelay: 2
 --- !u!114 &1858864218
 MonoBehaviour:
   m_ObjectHideFlags: 0

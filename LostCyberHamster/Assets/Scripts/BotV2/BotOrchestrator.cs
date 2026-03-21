@@ -125,12 +125,6 @@ namespace Assets.Scripts.BotV2
 
         private void Start()
         {
-            if (!BotV2Bootstrap.UseBotV2AsPrimary)
-            {
-                enabled = false;
-                return;
-            }
-
             if (_enabledOnStart)
                 EnableAsPrimary();
         }

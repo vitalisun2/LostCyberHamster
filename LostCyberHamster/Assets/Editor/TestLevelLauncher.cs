@@ -19,11 +19,8 @@ namespace LostCyberHamster.Editor
         /// <summary>PlayerPrefs key checked by LoadMainMenuLoadingTask.</summary>
         public const string OverridePrefsKey = "TestLevel_Address";
 
-        /// <summary>PlayerPrefs key: auto-enable HamsterBot when test level loads.</summary>
+        /// <summary>PlayerPrefs key: auto-enable Bot when test level loads.</summary>
         public const string BotAutoStartKey = "BotAutoStart";
-
-        /// <summary>PlayerPrefs key: make BotV2 primary in runtime bootstrap.</summary>
-        public const string BotV2PrimaryEnabledKey = "BotV2PrimaryEnabled";
 
         /// <summary>PlayerPrefs key: runtime timescale override for automated test runs.</summary>
         public const string TimeScaleOverrideKey = "TestLevel_TimeScale";
@@ -49,11 +46,6 @@ namespace LostCyberHamster.Editor
                 if (PlayerPrefs.HasKey(BotAutoStartKey))
                 {
                     PlayerPrefs.DeleteKey(BotAutoStartKey);
-                    PlayerPrefs.Save();
-                }
-                if (PlayerPrefs.HasKey(BotV2PrimaryEnabledKey))
-                {
-                    PlayerPrefs.DeleteKey(BotV2PrimaryEnabledKey);
                     PlayerPrefs.Save();
                 }
                 if (PlayerPrefs.HasKey(TimeScaleOverrideKey))
@@ -128,7 +120,6 @@ namespace LostCyberHamster.Editor
             // Write override into PlayerPrefs so it survives domain reload on Play
             PlayerPrefs.SetString(OverridePrefsKey, effectiveLevelAddress);
             PlayerPrefs.SetInt(BotAutoStartKey, 1);
-            PlayerPrefs.SetInt(BotV2PrimaryEnabledKey, 1);
             PlayerPrefs.SetInt(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey, interactive ? 0 : 1);
 
             if (timeScaleOverride.HasValue)

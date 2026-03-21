@@ -1,5 +1,4 @@
-﻿using Assets.Scripts.Bot;
-using Assets.Scripts.BotV2;
+﻿using Assets.Scripts.BotV2;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
@@ -86,17 +85,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 OnUlta();
             }
 
-            // HamsterBot hotkey
+            // Bot hotkey
             if (_keyboard.f1Key.wasPressedThisFrame)
             {
-                var botV2 = Object.FindObjectOfType<BotOrchestrator>();
-                if (botV2 != null)
+                var bot = Object.FindObjectOfType<BotOrchestrator>();
+                if (bot != null)
                 {
-                    botV2.ToggleEnabledFromHotkey();
-                }
-                else if (HamsterBot.Instance != null)
-                {
-                    HamsterBot.Instance.ToggleEnabled();
+                    bot.ToggleEnabledFromHotkey();
                 }
             }
         }
