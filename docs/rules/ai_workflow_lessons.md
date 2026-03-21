@@ -40,3 +40,20 @@
 - При добавлении ограничений в ActionGenerator думать о семантическом инварианте, а не о подстройке под конкретный тест-кейс. Пример: ограничение `SwitchLaneTargetMinFireDist` кодирует физический инвариант "SwitchLane к Target нужно место для Jump", а не "в паттерне X бот получает damage".
 - `IsSwitchLaneSafeAtDistance` проверяет только окно transit (0.3с), не post-transit. Post-transit безопасность обеспечивается минимальной дистанцией fire и chain-проекцией. Это важно помнить при анализе DAMAGE — если хомяк врезается ПОСЛЕ transit, причина не в safety check, а в недостаточной минимальной дистанции.
 - `TryComputeSwitchLaneExecuteDistance` учитывает ВСЕ target-lane threats (включая далёкие), что может push'ить executeAt до минимума. Для Target-категории минимум должен быть выше чем для Threat/Collectible.
+
+### Изучение runtime перед реализацией (критически важно)
+
+- **Перед реализацией любой игровой механики в боте** обязательно изучить, как эта механика работает в runtime (game engine): механику коллизий, state transitions, animation events, как и когда переключаются флаги. Не копировать вслепую константы и логику из предыдущих версий бота — они могут содержать те же ошибки или костыли.
+- **Пример неэффективности**: SwitchLaneSafety содержала WouldHitDuringSourcePhase, но в runtime `IsOnBottomLine` переключается мгновенно при TapRequest (TapMechanics.OnTap), а CollisionController проверяет `IsOnSameLine(IsOnBottomLine, obstacle)`. Значит source-lane препятствия **не могут навредить** после TapRequest — source phase check был лишним. Одно изучение TapMechanics + CollisionController сразу дало бы правильное решение, вместо 5 итераций с хаками.
+- **Конкретное правило**: прежде чем писать prediction/safety check для действия бота, прочитать полностью runtime-обработчик этого действия (Mechanics + Controller + AnimationEvents). Найти: что триггерит коллизию, какие флаги проверяются, когда они переключаются.
+
+### Архитектурная чистота vs костыли
+
+- **Никогда не добавлять фильтры по типу препятствия** (RequiresTargetLaneClearance, IsSmallObstacle и т.п.) для обхода некорректной safety-логики. Если safety check выдаёт ложные срабатывания — проблема в модели, а не в типе препятствия.
+- **Разделять ответственности планирования и исполнения**: планирование решает ЧТО делать (SwitchLane vs Jump по критериям энергоэффективности), исполнение решает КОГДА стрелять (live safety checks каждый кадр). Не дублировать execution-time safety checks на этапе планирования — это приводит к ложным отказам и костылям.
+- **Пример неэффективности**: ActionGenerator проверял IsSafeAtExecuteDistance → IsImmediatelySafe → отвергал SwitchLane для zigzag → генерировал Jump → тратил энергию. Правильное решение: убрать safety check из планирования, оставить live-проверку в StepExecutor.
+
+### Эффективность итераций
+
+- **Не делать больше 2 попыток фикса одной проблемы** без глубокого изучения runtime. Если два подхода не сработали — остановиться, изучить game engine mechanics, составить полную картину, и только потом делать fix.
+- **При изменении физических констант** (JumpFireDist, swept zones, travel distances) сначала проверить, как эти значения используются в game engine (JumpMechanics.CalculateJumpState, CollisionController). Не подбирать значения эмпирически через запуск-проверка-правка циклы.
