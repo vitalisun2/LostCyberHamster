@@ -803,13 +803,13 @@ public class LevelTilemapUi
     {
         if (_patternNameField != null)
         {
-            _patternNameField.value = patternName;
+            _patternNameField.SetValueWithoutNotify(patternName ?? string.Empty);
         }
     }
 
     public void UpdatePatternDescriptionField(string desc)
     {
         if (_patternDescriptionField != null)
-            _patternDescriptionField.value = desc ?? "";
+            _patternDescriptionField.SetValueWithoutNotify(desc ?? "");
     }
 }

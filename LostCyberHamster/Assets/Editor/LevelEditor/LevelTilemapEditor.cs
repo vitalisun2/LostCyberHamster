@@ -1441,19 +1441,79 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void RemovePattern()
     {
-        if (_selectedPatternIndex < 0) return;
+        if (_currentLevelInfo == null ||
+            _selectedPatternIndex < 0 ||
+            _selectedPatternIndex >= _currentLevelInfo.patterns.Count)
+        {
+            return;
+        }
 
         var selectedIndex = _selectedPatternIndex;
+        var removedDisplayedIndex = string.IsNullOrEmpty(_patternSearchFilter)
+            ? selectedIndex
+            : Math.Max(_filteredPatternIndices.IndexOf(selectedIndex), 0);
         var patternToRemove = _currentLevelInfo.patterns[selectedIndex];
 
         _currentLevelInfo.patterns.RemoveAt(selectedIndex);
+        RefreshFilteredPatternCache();
 
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+        var visiblePatternNames = _filteredPatternIndices
+            .Select(i => _allPatternNames[i])
+            .ToList();
 
-        _uiManager.UpdatePatternsList(patternNames);
-        _selectedPatternIndex = Math.Min(selectedIndex, _currentLevelInfo.patterns.Count - 1);
+        if (visiblePatternNames.Count == 0)
+        {
+            _selectedPatternIndex = -1;
+            _uiManager.UpdatePatternsList(visiblePatternNames, -1);
+            ClearSelectedPatternView();
+            Debug.Log($"Удален паттерн: {patternToRemove.name}");
+            return;
+        }
+
+        var selectedDisplayedIndex = Math.Min(removedDisplayedIndex, visiblePatternNames.Count - 1);
+        _selectedPatternIndex = _filteredPatternIndices[selectedDisplayedIndex];
+
+        _uiManager.UpdatePatternsList(visiblePatternNames, selectedDisplayedIndex);
+        SyncSelectedPatternView();
 
         Debug.Log($"Удален паттерн: {patternToRemove.name}");
+    }
+
+    private void ClearSelectedPatternView()
+    {
+        _uiManager.UpdatePatternNameField(string.Empty);
+        _uiManager.UpdatePatternDescriptionField(string.Empty);
+
+        if (_tilemapInScene == null)
+        {
+            return;
+        }
+
+        _isTilemapBulkOperation = true;
+        _tilemapInScene.ClearAllTiles();
+        _isTilemapBulkOperation = false;
+
+        _cellToPatternMap.Clear();
+        _patternBounds.Clear();
+        _patternOverlaySlots.Clear();
+    }
+
+    private void SyncSelectedPatternView()
+    {
+        if (CurrentPattern == null)
+        {
+            ClearSelectedPatternView();
+            return;
+        }
+
+        _uiManager.UpdatePatternNameField(CurrentPattern.name);
+        _uiManager.UpdatePatternDescriptionField(CurrentPattern.desсription);
+        AddTilesToTilemap();
+
+        if (IsTemplateMode)
+        {
+            FrameCurrentTilemapBounds();
+        }
     }
 
     /// <summary>
@@ -1628,21 +1688,7 @@ public class LevelTilemapEditor : EditorWindow
     {
         if (_currentLevelInfo == null) return;
 
-        _allPatternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-
-        if (string.IsNullOrEmpty(_patternSearchFilter))
-        {
-            _filteredPatternIndices = Enumerable.Range(0, _allPatternNames.Count).ToList();
-        }
-        else
-        {
-            _filteredPatternIndices = new List<int>();
-            for (int i = 0; i < _allPatternNames.Count; i++)
-            {
-                if (_allPatternNames[i].IndexOf(_patternSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
-                    _filteredPatternIndices.Add(i);
-            }
-        }
+        RefreshFilteredPatternCache();
 
         var filteredNames = _filteredPatternIndices.Select(i => _allPatternNames[i]).ToList();
         _uiManager.UpdatePatternsList(filteredNames);
@@ -1661,6 +1707,32 @@ public class LevelTilemapEditor : EditorWindow
         // Select first filtered if current is not visible
         if (_filteredPatternIndices.Count > 0)
             _uiManager.SelectFirstPattern();
+    }
+
+    private void RefreshFilteredPatternCache()
+    {
+        if (_currentLevelInfo == null)
+        {
+            _allPatternNames.Clear();
+            _filteredPatternIndices.Clear();
+            return;
+        }
+
+        _allPatternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+
+        if (string.IsNullOrEmpty(_patternSearchFilter))
+        {
+            _filteredPatternIndices = Enumerable.Range(0, _allPatternNames.Count).ToList();
+        }
+        else
+        {
+            _filteredPatternIndices = new List<int>();
+            for (int i = 0; i < _allPatternNames.Count; i++)
+            {
+                if (_allPatternNames[i].IndexOf(_patternSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                    _filteredPatternIndices.Add(i);
+            }
+        }
     }
 
 
