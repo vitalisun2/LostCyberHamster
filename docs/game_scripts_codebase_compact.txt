@@ -1,5 +1,5 @@
 GAME CODEBASE COMPACT MERGE
-GeneratedAtUtc: 2026-03-21T11:09:24Z
+GeneratedAtUtc: 2026-03-21T11:17:00Z
 SourceRoots: LostCyberHamster\Assets\Scripts, LostCyberHamster\Assets\Editor
 FileCount: 307
 Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)
@@ -15620,7 +15620,7 @@ namespace Assets.Scripts.BotV2
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV2\Pipeline\SwitchLaneSafety.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs | lines=39 | sha256=BAD82A8FC5D0AC7803351E4837049A3343FF2C33811F393A32D0A7D4829B5E58 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs | lines=46 | sha256=1728CD05D4B38B06AB0A85B361B932FA3B2652BE4DF948150B163DE9AB3FACAA ===
 using UnityEngine;
 
 namespace Assets.Scripts.BotV3
@@ -15628,6 +15628,7 @@ namespace Assets.Scripts.BotV3
     /// <summary>
     /// Отрисовка HUD бота (OnGUI). Обычный класс — не MonoBehaviour.
     /// Оркестратор создаёт экземпляр и вызывает Draw() из своего OnGUI.
+    /// Вся логика форматирования текста — здесь.
     /// </summary>
     public class BotHud
     {
@@ -15654,15 +15655,21 @@ namespace Assets.Scripts.BotV3
                 };
             }
 
-            string text = $"BotV3 | {_orchestrator.HudText}";
+            string text = FormatHudText();
             var rect = new Rect(20f, 20f, 760f, 100f);
             GUI.Box(rect, text, _style);
+        }
+
+        private string FormatHudText()
+        {
+            // По мере портирования pipeline сюда добавятся план, шаги, состояние
+            return "BotV3 | Plan: none";
         }
     }
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=76 | sha256=FD9A3B4ADA93E6167C1A6CB9C5B5462E815E25BA4AECEDA2B0E358370AF1D00D ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=60 | sha256=AA7A42CB29056D6979B953CA22D7C3D74B4EE65C11A645D7BC59C8CA5C3F490B ===
 using UnityEngine;
 
 namespace Assets.Scripts.BotV3
@@ -15676,8 +15683,7 @@ namespace Assets.Scripts.BotV3
     {
         public bool IsEnabled { get; private set; }
 
-        private string _hudText = "Plan: none";
-        private GUIStyle _hudStyle;
+        private BotHud _hud;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
@@ -15694,6 +15700,7 @@ namespace Assets.Scripts.BotV3
 
         private void Start()
         {
+            _hud = new BotHud(this);
             Enable();
         }
 
@@ -15708,34 +15715,18 @@ namespace Assets.Scripts.BotV3
         private void Enable()
         {
             IsEnabled = true;
-            _hudText = "BotV3: enabled | Plan: none";
             Debug.Log("[BotV3] Enabled");
         }
 
         private void Disable()
         {
             IsEnabled = false;
-            _hudText = "BotV3: disabled";
             Debug.Log("[BotV3] Disabled");
         }
 
         private void OnGUI()
         {
-            if (!IsEnabled)
-                return;
-
-            if (_hudStyle == null)
-            {
-                _hudStyle = new GUIStyle(GUI.skin.box)
-                {
-                    fontSize = 20,
-                    alignment = TextAnchor.MiddleLeft,
-                    normal = { textColor = Color.white }
-                };
-            }
-
-            var rect = new Rect(20f, 20f, 760f, 100f);
-            GUI.Box(rect, _hudText, _hudStyle);
+            _hud?.Draw();
         }
     }
 }

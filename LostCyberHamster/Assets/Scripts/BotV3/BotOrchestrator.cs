@@ -10,7 +10,6 @@ namespace Assets.Scripts.BotV3
     public class BotOrchestrator : MonoBehaviour
     {
         public bool IsEnabled { get; private set; }
-        public string HudText { get; private set; } = "Plan: none";
 
         private BotHud _hud;
 
@@ -44,7 +43,6 @@ namespace Assets.Scripts.BotV3
         private void Enable()
         {
             IsEnabled = true;
-            HudText = "Plan: none";
             Debug.Log("[BotV3] Enabled");
         }
 

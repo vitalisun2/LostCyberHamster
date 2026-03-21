@@ -5,6 +5,7 @@ namespace Assets.Scripts.BotV3
     /// <summary>
     /// Отрисовка HUD бота (OnGUI). Обычный класс — не MonoBehaviour.
     /// Оркестратор создаёт экземпляр и вызывает Draw() из своего OnGUI.
+    /// Вся логика форматирования текста — здесь.
     /// </summary>
     public class BotHud
     {
@@ -31,9 +32,15 @@ namespace Assets.Scripts.BotV3
                 };
             }
 
-            string text = $"BotV3 | {_orchestrator.HudText}";
+            string text = FormatHudText();
             var rect = new Rect(20f, 20f, 760f, 100f);
             GUI.Box(rect, text, _style);
+        }
+
+        private string FormatHudText()
+        {
+            // По мере портирования pipeline сюда добавятся план, шаги, состояние
+            return "BotV3 | Plan: none";
         }
     }
 }
