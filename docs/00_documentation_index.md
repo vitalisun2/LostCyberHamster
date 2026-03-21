@@ -54,3 +54,15 @@
 
 ### GameDesignDocWithGuidHistory/Addressables.md
 Принципы организации Addressables: группы по локациям, shared-группы, правила именования.
+
+---
+
+## Инструменты разработчика
+
+Скрипты в корне репозитория. Подробнее — в секции «Инструменты разработчика» в README.md.
+
+### codebase_compact.ps1
+Генерация + наблюдение за `.cs` файлами. Автоматически обновляет `docs/game_scripts_codebase_compact.txt` — сжатый снимок всего C#-кода для использования с LLM. Запускается автоматически при открытии проекта в VS Code (через `.vscode/tasks.json`).
+
+### docs/game_scripts_codebase_compact.txt
+Автогенерируемый файл со снимком всех `.cs` файлов из `Assets/Scripts` и `Assets/Editor`. Не редактировать вручную.
