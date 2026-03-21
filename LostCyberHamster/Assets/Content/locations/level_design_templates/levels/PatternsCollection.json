@@ -9938,6 +9938,84 @@
                     "y": -1.8
                 }
             ]
+        },
+        {
+            "name": "v3_jump_small_bottom",
+            "desсription": "BotV3 test: small obstacle on bottom + big obstacle blocking top lane, expect Jump over small (SwitchLane unsafe)",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 13.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_jump_vs_switchlane",
+            "desсription": "BotV3 test: small obstacle on bottom, top lane clear, expect SwitchLane (0 energy) preferred over Jump (10 energy)",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_jump_chain",
+            "desсription": "BotV3 test: two small obstacles on bottom, big on top between them, expect SwitchLane first then Jump second (or Jump both)",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 12.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 20.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 28.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_jump_no_energy",
+            "desсription": "BotV3 test: small obstacle on bottom, top blocked, but preceded by energetic to ensure energy; tests energy-aware Jump",
+            "obstacles": [
+                {
+                    "spriteName": "energetic",
+                    "type": 5,
+                    "x": 5.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 18.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 16.0,
+                    "y": -1.8
+                }
+            ]
         }
     ]
 }

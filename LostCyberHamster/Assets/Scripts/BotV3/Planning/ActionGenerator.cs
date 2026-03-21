@@ -35,11 +35,16 @@ namespace Assets.Scripts.BotV3
                 if (!IsNearestSameLaneThreat(snapshot, obs))
                     continue;
 
-                if (TryBuildSwitchLaneStep(snapshot, obs, out BranchStep switchStep))
-                    result.Add(switchStep);
+                bool hasSwitchLane = TryBuildSwitchLaneStep(snapshot, obs, out BranchStep switchStep);
+                bool hasJump = TryBuildJumpStep(snapshot, obs, out BranchStep jumpStep);
 
-                if (TryBuildJumpStep(snapshot, obs, out BranchStep jumpStep))
+                if (hasSwitchLane)
+                    result.Add(switchStep);
+                if (hasJump)
                     result.Add(jumpStep);
+
+                if (hasSwitchLane || hasJump)
+                    BotLogger.LogActionCandidates(obs, hasSwitchLane, hasJump, snapshot);
             }
 
             return result;

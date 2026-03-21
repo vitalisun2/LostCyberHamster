@@ -30,5 +30,35 @@ namespace Assets.Scripts.BotV3
         {
             DebugManager.DiagLog("[BotV3 PLAN] Cleared — no viable branches");
         }
+
+        public static void LogActionCandidates(
+            ObstacleInfo obstacle,
+            bool hasSwitchLane,
+            bool hasJump,
+            BotSceneSnapshot snapshot)
+        {
+            var sb = new StringBuilder(128);
+            sb.Append("[BotV3 GEN] ").Append(obstacle.Type)
+              .Append(" dist=").Append(obstacle.DistanceToHamster.ToString("F1"))
+              .Append(" lane=").Append(obstacle.IsTopLane ? "top" : "bottom")
+              .Append(" hamster=").Append(snapshot.HamsterOnBottom ? "bottom" : "top")
+              .Append(" energy=").Append(snapshot.Energy)
+              .Append(" | SwitchLane=").Append(hasSwitchLane)
+              .Append(" Jump=").Append(hasJump);
+
+            if (!hasSwitchLane)
+            {
+                sb.Append(" [SwitchLane rejected: ");
+                if (obstacle.DistanceToHamster < 1.5f)
+                    sb.Append("too close");
+                else if (!SwitchLaneSafety.IsImmediatelySafe(snapshot))
+                    sb.Append("target lane unsafe");
+                else
+                    sb.Append("unknown");
+                sb.Append("]");
+            }
+
+            DebugManager.DiagLog(sb.ToString());
+        }
     }
 }

@@ -25,6 +25,18 @@
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
 
     { "ref": "v3_tight_zigzag", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+
+    { "ref": "v3_jump_vs_switchlane", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+
+    { "ref": "v3_jump_small_bottom", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+
+    { "ref": "v3_jump_no_energy", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+
+    { "ref": "v3_jump_chain", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] }
   ],
   "decorationPatterns": [

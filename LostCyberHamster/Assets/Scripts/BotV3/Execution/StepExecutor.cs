@@ -1,3 +1,6 @@
+using Assets.Scripts.Common;
+using Assets.Scripts.Common.Models;
+using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -11,9 +14,14 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public class StepExecutor
     {
+        private const float JumpMinCompletionDelay = 0.3f;
+        private const float JumpLateFallbackDistance = 0.1f;
+
         private readonly Hamster _hamster;
         private BranchStep _step;
         private float _switchLaneExecTime;
+        private float _jumpExecTime;
+        private float _jumpWorldShift = -1f;
 
         public bool WasCancelled { get; private set; }
         public bool HasActiveStep => _step != null && _step.Status != BranchStepStatus.Completed;
@@ -75,6 +83,9 @@ namespace Assets.Scripts.BotV3
                 }
             }
 
+            if (_step.Action == BotAction.Jump && ShouldDelayJumpOver())
+                return;
+
             Fire(dist);
         }
 
@@ -92,6 +103,7 @@ namespace Assets.Scripts.BotV3
                         _hamster.RoofJumpRequest.Invoke();
                     else
                         _hamster.JumpRequest.Invoke();
+                    _jumpExecTime = Time.time;
                     break;
             }
 
@@ -112,12 +124,66 @@ namespace Assets.Scripts.BotV3
             }
             else if (_step.Action == BotAction.Jump)
             {
+                if (Time.time - _jumpExecTime < JumpMinCompletionDelay)
+                    return;
+
                 if (!IsActiveJumpState(_hamster.HamsterState.Value))
                 {
                     _step.Status = BranchStepStatus.Completed;
                     DebugManager.DiagLog($"[BotV3 EXEC] Jump completed (state={_hamster.HamsterState.Value})");
                 }
             }
+        }
+
+        /// <summary>
+        /// Задерживает прыжок, пока IsOverlapAtShift показывает коллизию.
+        /// Когда хомяк достаточно близко, jump world shift перенесёт его ЗА препятствие.
+        /// При дистанции <= JumpLateFallbackDistance прыгаем в любом случае.
+        /// </summary>
+        private bool ShouldDelayJumpOver()
+        {
+            var target = _step.TargetObstacle;
+            if (target.Type != ObstacleTypeEnum.smallNotAliveRoad &&
+                target.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
+                return false;
+
+            var liveObstacle = FindLiveObstacle(target.StableId);
+            if (liveObstacle == null)
+                return false;
+
+            EnsureJumpWorldShiftCached();
+            if (_jumpWorldShift <= 0f)
+                return false;
+
+            bool wouldOverlap = CollisionUtils.IsOverlapAtShift(
+                _hamster.transform,
+                _hamster.ColliderWidth,
+                _jumpWorldShift,
+                liveObstacle);
+
+            if (!wouldOverlap)
+                return false;
+
+            float liveDist = liveObstacle.transform.position.x
+                           - liveObstacle.ColliderWidth * 0.5f
+                           - _hamster.RightX;
+
+            if (liveDist <= JumpLateFallbackDistance)
+                return false;
+
+            return true;
+        }
+
+        private void EnsureJumpWorldShiftCached()
+        {
+            if (_jumpWorldShift >= 0f)
+                return;
+
+            var ctrl = _hamster.GetComponentInChildren<TransformAnimatorController>();
+            if (ctrl == null)
+                return;
+
+            _jumpWorldShift = HelpMethods.GetWorldShiftForClip(ctrl, "transform_jump");
         }
 
         private static bool IsActiveJumpState(HamsterStateEnum state)
@@ -158,6 +224,25 @@ namespace Assets.Scripts.BotV3
             }
 
             return target.DistanceToHamster;
+        }
+
+        private static Obstacle FindLiveObstacle(int stableId)
+        {
+            var spawner = ObstacleSpawner.Instance;
+            if (spawner == null)
+                return null;
+
+            var spawned = spawner.SpawnedObstacles;
+            for (int i = 0; i < spawned.Count; i++)
+            {
+                var inst = spawned[i];
+                if (inst?.ObstacleScript == null) continue;
+
+                if (inst.ObstacleScript.GetInstanceID() == stableId)
+                    return inst.ObstacleScript;
+            }
+
+            return null;
         }
     }
 }
