@@ -1,5 +1,5 @@
 GAME CODEBASE COMPACT MERGE
-GeneratedAtUtc: 2026-03-21T11:27:40Z
+GeneratedAtUtc: 2026-03-21T11:31:25Z
 SourceRoots: LostCyberHamster\Assets\Scripts, LostCyberHamster\Assets\Editor
 FileCount: 308
 Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)
@@ -15674,7 +15674,7 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=113 | sha256=E325DA56A2E2A1D41CAD0ECEF76E4E13D64435DD4D06DD695130ED71D1A2AD6F ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=113 | sha256=DDA559AC0D2A35854796F6BCB7031EB973260AFCB37CE69B57511303D2349E25 ===
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
@@ -15765,8 +15765,8 @@ namespace Assets.Scripts.BotV3
 
         private void TryInit()
         {
-            Hamster = FindObjectOfType<Hamster>();
-            GameManager = FindObjectOfType<GameManager>();
+            Hamster = FindAnyObjectByType<Hamster>();
+            GameManager = FindAnyObjectByType<GameManager>();
 
             if (Hamster == null || GameManager == null)
                 return;

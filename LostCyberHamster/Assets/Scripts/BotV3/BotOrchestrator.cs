@@ -88,8 +88,8 @@ namespace Assets.Scripts.BotV3
 
         private void TryInit()
         {
-            Hamster = FindObjectOfType<Hamster>();
-            GameManager = FindObjectOfType<GameManager>();
+            Hamster = FindAnyObjectByType<Hamster>();
+            GameManager = FindAnyObjectByType<GameManager>();
 
             if (Hamster == null || GameManager == null)
                 return;
