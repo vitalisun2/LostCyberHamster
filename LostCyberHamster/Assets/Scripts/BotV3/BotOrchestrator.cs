@@ -7,8 +7,8 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Оркестратор BotV3. Вешается на GameObject в сцене.
+    /// Pipeline: Snapshot → Classify → Generate → Chain → Evaluate → Execute.
     /// Горячая клавиша F1: вкл/выкл.
-    /// Логика pipeline будет добавляться поэтапно.
     /// </summary>
     public class BotOrchestrator : MonoBehaviour
     {
@@ -16,9 +16,19 @@ namespace Assets.Scripts.BotV3
         public Hamster Hamster { get; private set; }
         public GameManager GameManager { get; private set; }
         public bool Initialized { get; private set; }
+        public BotSceneSnapshot LastSnapshot { get; private set; }
+        public CurrentPlan Plan { get; } = new CurrentPlan();
 
         private BotHud _hud;
         private GameEventTracker _eventTracker;
+
+        // Pipeline
+        private SnapshotBuilder _snapshotBuilder;
+        private ObjectClassifier _classifier;
+        private ActionGenerator _actionGenerator;
+        private ChainGenerator _chainGenerator;
+        private StepExecutor _executor;
+
         private float _nextInitRetryTime;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -61,7 +71,38 @@ namespace Assets.Scripts.BotV3
             if (Hamster.HamsterState.Value == HamsterStateEnum.Dead)
                 return;
 
-            // Pipeline будет здесь
+            // 1. Perceive
+            LastSnapshot = _snapshotBuilder.Build(Hamster);
+            _classifier.Classify(LastSnapshot);
+
+            // 2. Execute active step (if any)
+            _executor.TryExecute();
+
+            // 3. Plan — replan when no active step or step was cancelled
+            if (!_executor.HasActiveStep || _executor.WasCancelled)
+            {
+                Plan.RemoveCompletedFromHead();
+                Replan();
+            }
+        }
+
+        private void Replan()
+        {
+            var actions = _actionGenerator.Generate(LastSnapshot);
+            var chains = _chainGenerator.Generate(LastSnapshot, actions, _classifier, _actionGenerator);
+            var best = BranchEvaluator.SelectBest(chains);
+
+            if (best == null)
+            {
+                Plan.Clear();
+                _executor.ClearStep();
+                return;
+            }
+
+            Plan.ReplaceFrom(best, "SwitchLane threat avoidance");
+
+            if (Plan.Head != null)
+                _executor.SetStep(Plan.Head);
         }
 
         public void ToggleEnabledFromHotkey()
@@ -83,6 +124,8 @@ namespace Assets.Scripts.BotV3
         private void Disable()
         {
             IsEnabled = false;
+            Plan.Clear();
+            _executor?.ClearStep();
             DebugManager.DiagLog("[BotV3] Disabled");
         }
 
@@ -95,6 +138,11 @@ namespace Assets.Scripts.BotV3
                 return;
 
             _eventTracker = new GameEventTracker(Hamster, GameManager);
+            _snapshotBuilder = new SnapshotBuilder();
+            _classifier = new ObjectClassifier();
+            _actionGenerator = new ActionGenerator();
+            _chainGenerator = new ChainGenerator();
+            _executor = new StepExecutor(Hamster);
 
             Initialized = true;
             DebugManager.DiagLog("[BotV3] Initialized");

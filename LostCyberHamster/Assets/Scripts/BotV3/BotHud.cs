@@ -1,3 +1,4 @@
+using System.Text;
 using Assets.Scripts.Gameplay;
 using UnityEngine;
 
@@ -11,6 +12,7 @@ namespace Assets.Scripts.BotV3
     public class BotHud
     {
         private readonly BotOrchestrator _orchestrator;
+        private readonly StringBuilder _sb = new StringBuilder(128);
         private GUIStyle _style;
 
         public BotHud(BotOrchestrator orchestrator)
@@ -45,7 +47,38 @@ namespace Assets.Scripts.BotV3
 
             Hamster hamster = _orchestrator.Hamster;
             string lane = hamster.IsOnBottomLine.Value ? "bottom" : "top";
-            return $"BotV3 | lane={lane} energy={hamster.Energy.Value} lives={hamster.Lives.Value} | Plan: none";
+
+            _sb.Clear();
+            _sb.Append($"BotV3 | lane={lane} energy={hamster.Energy.Value} lives={hamster.Lives.Value}");
+
+            var snapshot = _orchestrator.LastSnapshot;
+            if (snapshot != null)
+            {
+                int threats = 0;
+                for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+                {
+                    if (snapshot.VisibleObjects[i].Category == ObjectCategory.Threat)
+                        threats++;
+                }
+                _sb.Append($" | T:{threats}");
+            }
+
+            var plan = _orchestrator.Plan;
+            if (plan.IsEmpty)
+            {
+                _sb.Append(" | Plan: none");
+            }
+            else
+            {
+                _sb.Append(" |");
+                for (int i = 0; i < plan.Steps.Count; i++)
+                {
+                    if (i > 0) _sb.Append(" ->");
+                    _sb.Append($" {plan.Steps[i].Action}");
+                }
+            }
+
+            return _sb.ToString();
         }
     }
 }
