@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.BotV2;
+﻿using Assets.Scripts.BotV3;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
@@ -88,10 +88,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
             // Bot hotkey
             if (_keyboard.f1Key.wasPressedThisFrame)
             {
-                var bot = Object.FindObjectOfType<BotOrchestrator>();
+                var bot = Object.FindObjectOfType<BotController>();
                 if (bot != null)
                 {
-                    bot.ToggleEnabledFromHotkey();
+                    bot.ToggleFromHotkey();
                 }
             }
         }
