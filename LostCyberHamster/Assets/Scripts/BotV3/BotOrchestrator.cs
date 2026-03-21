@@ -3,12 +3,16 @@ using UnityEngine;
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
-    /// Точка входа BotV3. Минимальный каркас: запуск, toggle по F1.
+    /// Оркестратор BotV3. Вешается на GameObject в сцене.
+    /// Горячая клавиша F1: вкл/выкл.
     /// Логика pipeline будет добавляться поэтапно.
     /// </summary>
     public class BotOrchestrator : MonoBehaviour
     {
         public bool IsEnabled { get; private set; }
+        public string HudText { get; private set; } = "Plan: none";
+
+        private BotHud _hud;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
@@ -25,6 +29,7 @@ namespace Assets.Scripts.BotV3
 
         private void Start()
         {
+            _hud = new BotHud(this);
             Enable();
         }
 
@@ -39,6 +44,7 @@ namespace Assets.Scripts.BotV3
         private void Enable()
         {
             IsEnabled = true;
+            HudText = "Plan: none";
             Debug.Log("[BotV3] Enabled");
         }
 
@@ -46,6 +52,11 @@ namespace Assets.Scripts.BotV3
         {
             IsEnabled = false;
             Debug.Log("[BotV3] Disabled");
+        }
+
+        private void OnGUI()
+        {
+            _hud?.Draw();
         }
     }
 }

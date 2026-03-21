@@ -1,7 +1,7 @@
 GAME CODEBASE COMPACT MERGE
-GeneratedAtUtc: 2026-03-21T10:58:23Z
+GeneratedAtUtc: 2026-03-21T11:09:24Z
 SourceRoots: LostCyberHamster\Assets\Scripts, LostCyberHamster\Assets\Editor
-FileCount: 306
+FileCount: 307
 Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)
 
 === FILE START: LostCyberHamster\Assets\Editor\AssetBundlesManager.cs | lines=258 | sha256=9633A0BDDF9E1E4382BD8A69A4186269928CD6580B02E21D717C28A5D3DA0CEA ===
@@ -15620,18 +15620,64 @@ namespace Assets.Scripts.BotV2
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV2\Pipeline\SwitchLaneSafety.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=51 | sha256=68F221AEEB69126DFDA987047B4666706E4FD6C14E2D71875A091D489B5EFEB5 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs | lines=39 | sha256=BAD82A8FC5D0AC7803351E4837049A3343FF2C33811F393A32D0A7D4829B5E58 ===
 using UnityEngine;
 
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
-    /// Точка входа BotV3. Минимальный каркас: запуск, toggle по F1.
+    /// Отрисовка HUD бота (OnGUI). Обычный класс — не MonoBehaviour.
+    /// Оркестратор создаёт экземпляр и вызывает Draw() из своего OnGUI.
+    /// </summary>
+    public class BotHud
+    {
+        private readonly BotOrchestrator _orchestrator;
+        private GUIStyle _style;
+
+        public BotHud(BotOrchestrator orchestrator)
+        {
+            _orchestrator = orchestrator;
+        }
+
+        public void Draw()
+        {
+            if (!_orchestrator.IsEnabled)
+                return;
+
+            if (_style == null)
+            {
+                _style = new GUIStyle(GUI.skin.box)
+                {
+                    fontSize = 20,
+                    alignment = TextAnchor.MiddleLeft,
+                    normal = { textColor = Color.white }
+                };
+            }
+
+            string text = $"BotV3 | {_orchestrator.HudText}";
+            var rect = new Rect(20f, 20f, 760f, 100f);
+            GUI.Box(rect, text, _style);
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=76 | sha256=FD9A3B4ADA93E6167C1A6CB9C5B5462E815E25BA4AECEDA2B0E358370AF1D00D ===
+using UnityEngine;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Оркестратор BotV3. Вешается на GameObject в сцене.
+    /// Горячая клавиша F1: вкл/выкл.
     /// Логика pipeline будет добавляться поэтапно.
     /// </summary>
     public class BotOrchestrator : MonoBehaviour
     {
         public bool IsEnabled { get; private set; }
+
+        private string _hudText = "Plan: none";
+        private GUIStyle _hudStyle;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
@@ -15662,13 +15708,34 @@ namespace Assets.Scripts.BotV3
         private void Enable()
         {
             IsEnabled = true;
+            _hudText = "BotV3: enabled | Plan: none";
             Debug.Log("[BotV3] Enabled");
         }
 
         private void Disable()
         {
             IsEnabled = false;
+            _hudText = "BotV3: disabled";
             Debug.Log("[BotV3] Disabled");
+        }
+
+        private void OnGUI()
+        {
+            if (!IsEnabled)
+                return;
+
+            if (_hudStyle == null)
+            {
+                _hudStyle = new GUIStyle(GUI.skin.box)
+                {
+                    fontSize = 20,
+                    alignment = TextAnchor.MiddleLeft,
+                    normal = { textColor = Color.white }
+                };
+            }
+
+            var rect = new Rect(20f, 20f, 760f, 100f);
+            GUI.Box(rect, _hudText, _hudStyle);
         }
     }
 }
