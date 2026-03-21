@@ -8,6 +8,17 @@ namespace Assets.Scripts.BotV3
     /// <summary>
     /// Проверки безопасности SwitchLane: не столкнётся ли хомяк
     /// во время смещения между линиями.
+    ///
+    /// Модель коллизий в runtime:
+    ///   1. TapRequest → IsOnBottomLine мгновенно переключается на target lane.
+    ///   2. CollisionController.ProcessTrigerEnter проверяет IsOnSameLine(IsOnBottomLine, obstacle).
+    ///   3. Source-lane препятствия: IsOnSameLine сразу false → коллизии невозможны.
+    ///   4. Target-lane препятствия: IsOnSameLine true, но физическое пересечение trigger'ов
+    ///      происходит только когда collider хомяка достигнет target Y.
+    ///
+    /// IsImmediatelySafe используется в StepExecutor перед fire для live-проверки.
+    /// На этапе планирования (ActionGenerator) safety check не нужен — StepExecutor
+    /// откладывает fire пока live-проверка не пройдёт.
     /// </summary>
     internal static class SwitchLaneSafety
     {
@@ -18,10 +29,13 @@ namespace Assets.Scripts.BotV3
             (LaneSwitchDuration + ReturnControlDuration) * Assets.Scripts.Consts.GameSpeedBase;
         private const float LaneSwitchSafetyPadding = 0.15f;
 
+        /// <summary>
+        /// Проверяет, безопасно ли выполнить SwitchLane прямо сейчас.
+        /// Snapshot-версия для BranchGenerator idle-period checks.
+        /// </summary>
         public static bool IsImmediatelySafe(BotSceneSnapshot snapshot)
         {
             float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
-            bool sourceIsBottom = snapshot.HamsterOnBottom;
             bool targetIsBottom = !snapshot.HamsterOnBottom;
 
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
@@ -30,24 +44,23 @@ namespace Assets.Scripts.BotV3
                 if (!IsHazard(obstacle)) continue;
 
                 bool obstacleOnBottom = !obstacle.IsTopLane;
-                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
+                if (obstacleOnBottom != targetIsBottom)
                     continue;
 
                 if (obstacle.RightX < hamsterLeftX)
                     continue;
 
-                if (obstacleOnBottom == sourceIsBottom &&
-                    WouldHitDuringSourcePhase(hamsterLeftX, snapshot.HamsterRightX, obstacle.LeftX, obstacle.RightX))
-                    return false;
-
-                if (obstacleOnBottom == targetIsBottom &&
-                    WouldHitDuringTargetPhase(hamsterLeftX, snapshot.HamsterRightX, obstacle.LeftX, obstacle.RightX))
+                if (WouldHitDuringTargetPhase(hamsterLeftX, snapshot.HamsterRightX, obstacle.LeftX, obstacle.RightX))
                     return false;
             }
 
             return true;
         }
 
+        /// <summary>
+        /// Проверяет, безопасно ли выполнить SwitchLane прямо сейчас.
+        /// Live-версия для StepExecutor (читает ObstacleSpawner напрямую).
+        /// </summary>
         public static bool IsImmediatelySafe(Hamster hamster)
         {
             var spawner = ObstacleSpawner.Instance;
@@ -55,8 +68,7 @@ namespace Assets.Scripts.BotV3
 
             float hamsterLeftX = hamster.LeftX;
             float hamsterRightX = hamster.RightX;
-            bool sourceIsBottom = hamster.IsOnBottomLine.Value;
-            bool targetIsBottom = !sourceIsBottom;
+            bool targetIsBottom = !hamster.IsOnBottomLine.Value;
 
             var spawned = spawner.SpawnedObstacles;
             for (int i = 0; i < spawned.Count; i++)
@@ -68,19 +80,14 @@ namespace Assets.Scripts.BotV3
                 if (!IsThreatType(obs.ObstacleType.ObstacleTypeEnum)) continue;
 
                 bool obstacleOnBottom = !obs.ObstacleType.IsTop;
-                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
+                if (obstacleOnBottom != targetIsBottom)
                     continue;
 
                 float leftX = obs.transform.position.x - obs.ColliderWidth * 0.5f;
                 float rightX = obs.transform.position.x + obs.ColliderWidth * 0.5f;
                 if (rightX < hamsterLeftX) continue;
 
-                if (obstacleOnBottom == sourceIsBottom &&
-                    WouldHitDuringSourcePhase(hamsterLeftX, hamsterRightX, leftX, rightX))
-                    return false;
-
-                if (obstacleOnBottom == targetIsBottom &&
-                    WouldHitDuringTargetPhase(hamsterLeftX, hamsterRightX, leftX, rightX))
+                if (WouldHitDuringTargetPhase(hamsterLeftX, hamsterRightX, leftX, rightX))
                     return false;
             }
 
@@ -110,85 +117,11 @@ namespace Assets.Scripts.BotV3
             }
         }
 
-        /// <summary>
-        /// Только широкие препятствия блокируют target lane.
-        /// Мелкие (smallNotAliveRoad, smallAlive и т.п.) не требуют clearance.
-        /// </summary>
-        private static bool RequiresTargetLaneClearance(ObstacleTypeEnum type)
-        {
-            switch (type)
-            {
-                case ObstacleTypeEnum.bigNotAlive:
-                case ObstacleTypeEnum.mediumNotAlive:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
         private static bool WouldHitDuringTargetPhase(
             float hamsterLeftX, float hamsterRightX,
             float obstacleLeftX, float obstacleRightX)
         {
             float sweptLeftX = obstacleLeftX - TargetLaneFullTravel;
-            float sweptRightX = obstacleRightX;
-            return CollisionUtils.IsOverlap(
-                hamsterLeftX - LaneSwitchSafetyPadding,
-                hamsterRightX + LaneSwitchSafetyPadding,
-                sweptLeftX, sweptRightX);
-        }
-
-        /// <summary>
-        /// Проверяет безопасность SwitchLane с проекцией: сдвигает препятствия назад
-        /// на расстояние, которое мир пройдёт до момента исполнения.
-        /// Используется при планировании (когда executeAt < dist до объекта).
-        /// </summary>
-        public static bool IsSafeAtExecuteDistance(
-            BotSceneSnapshot snapshot,
-            ObstacleInfo target,
-            float executeAtDistance)
-        {
-            float distanceDelta = target.DistanceToHamster - executeAtDistance;
-            if (distanceDelta < 0f)
-                distanceDelta = 0f;
-
-            float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
-            bool sourceIsBottom = snapshot.HamsterOnBottom;
-            bool targetIsBottom = !snapshot.HamsterOnBottom;
-
-            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
-            {
-                var obstacle = snapshot.VisibleObjects[i];
-                if (obstacle.StableId == target.StableId) continue;
-                if (!IsHazard(obstacle)) continue;
-
-                bool obstacleOnBottom = !obstacle.IsTopLane;
-                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
-                    continue;
-
-                float projectedLeftX = obstacle.LeftX - distanceDelta;
-                float projectedRightX = obstacle.RightX - distanceDelta;
-                if (projectedRightX < hamsterLeftX)
-                    continue;
-
-                if (obstacleOnBottom == sourceIsBottom &&
-                    WouldHitDuringSourcePhase(hamsterLeftX, snapshot.HamsterRightX, projectedLeftX, projectedRightX))
-                    return false;
-
-                if (obstacleOnBottom == targetIsBottom &&
-                    RequiresTargetLaneClearance(obstacle.Type) &&
-                    WouldHitDuringTargetPhase(hamsterLeftX, snapshot.HamsterRightX, projectedLeftX, projectedRightX))
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static bool WouldHitDuringSourcePhase(
-            float hamsterLeftX, float hamsterRightX,
-            float obstacleLeftX, float obstacleRightX)
-        {
-            float sweptLeftX = obstacleLeftX - LaneSwitchTravel;
             float sweptRightX = obstacleRightX;
             return CollisionUtils.IsOverlap(
                 hamsterLeftX - LaneSwitchSafetyPadding,

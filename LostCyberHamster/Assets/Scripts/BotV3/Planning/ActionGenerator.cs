@@ -66,9 +66,6 @@ namespace Assets.Scripts.BotV3
             if (executeAtDistance < SwitchLaneLatestSafeDist)
                 executeAtDistance = SwitchLaneLatestSafeDist;
 
-            if (!SwitchLaneSafety.IsSafeAtExecuteDistance(snapshot, threat, executeAtDistance))
-                return false;
-
             step = new BranchStep(
                 BotAction.SwitchLane,
                 threat,
