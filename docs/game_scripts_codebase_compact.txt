@@ -1,7 +1,7 @@
 GAME CODEBASE COMPACT MERGE
-GeneratedAtUtc: 2026-03-21T11:31:25Z
+GeneratedAtUtc: 2026-03-21T15:57:56Z
 SourceRoots: LostCyberHamster\Assets\Scripts, LostCyberHamster\Assets\Editor
-FileCount: 308
+FileCount: 326
 Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)
 
 === FILE START: LostCyberHamster\Assets\Editor\AssetBundlesManager.cs | lines=258 | sha256=9633A0BDDF9E1E4382BD8A69A4186269928CD6580B02E21D717C28A5D3DA0CEA ===
@@ -1905,7 +1905,7 @@ public readonly struct LevelFileDescriptor : IEquatable<LevelFileDescriptor>
 }
 === FILE END: LostCyberHamster\Assets\Editor\LevelEditor\LevelFileDescriptor.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Editor\LevelEditor\LevelTilemapEditor.cs | lines=1809 | sha256=C8A1B85D5359C4F699D3860F7BC5C94A25A93BA0BE7962C074DD22229B1764B0 ===
+=== FILE START: LostCyberHamster\Assets\Editor\LevelEditor\LevelTilemapEditor.cs | lines=1881 | sha256=D2ED50FD4932EA6858DF80A2EA27865DAC1254E87F4C771B2A623CD4087D4F13 ===
 using Assets.Editor.LevelEditor;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts;
@@ -3345,19 +3345,79 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void RemovePattern()
     {
-        if (_selectedPatternIndex < 0) return;
+        if (_currentLevelInfo == null ||
+            _selectedPatternIndex < 0 ||
+            _selectedPatternIndex >= _currentLevelInfo.patterns.Count)
+        {
+            return;
+        }
 
         var selectedIndex = _selectedPatternIndex;
+        var removedDisplayedIndex = string.IsNullOrEmpty(_patternSearchFilter)
+            ? selectedIndex
+            : Math.Max(_filteredPatternIndices.IndexOf(selectedIndex), 0);
         var patternToRemove = _currentLevelInfo.patterns[selectedIndex];
 
         _currentLevelInfo.patterns.RemoveAt(selectedIndex);
+        RefreshFilteredPatternCache();
 
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+        var visiblePatternNames = _filteredPatternIndices
+            .Select(i => _allPatternNames[i])
+            .ToList();
 
-        _uiManager.UpdatePatternsList(patternNames);
-        _selectedPatternIndex = Math.Min(selectedIndex, _currentLevelInfo.patterns.Count - 1);
+        if (visiblePatternNames.Count == 0)
+        {
+            _selectedPatternIndex = -1;
+            _uiManager.UpdatePatternsList(visiblePatternNames, -1);
+            ClearSelectedPatternView();
+            Debug.Log($"Удален паттерн: {patternToRemove.name}");
+            return;
+        }
+
+        var selectedDisplayedIndex = Math.Min(removedDisplayedIndex, visiblePatternNames.Count - 1);
+        _selectedPatternIndex = _filteredPatternIndices[selectedDisplayedIndex];
+
+        _uiManager.UpdatePatternsList(visiblePatternNames, selectedDisplayedIndex);
+        SyncSelectedPatternView();
 
         Debug.Log($"Удален паттерн: {patternToRemove.name}");
+    }
+
+    private void ClearSelectedPatternView()
+    {
+        _uiManager.UpdatePatternNameField(string.Empty);
+        _uiManager.UpdatePatternDescriptionField(string.Empty);
+
+        if (_tilemapInScene == null)
+        {
+            return;
+        }
+
+        _isTilemapBulkOperation = true;
+        _tilemapInScene.ClearAllTiles();
+        _isTilemapBulkOperation = false;
+
+        _cellToPatternMap.Clear();
+        _patternBounds.Clear();
+        _patternOverlaySlots.Clear();
+    }
+
+    private void SyncSelectedPatternView()
+    {
+        if (CurrentPattern == null)
+        {
+            ClearSelectedPatternView();
+            return;
+        }
+
+        _uiManager.UpdatePatternNameField(CurrentPattern.name);
+        _uiManager.UpdatePatternDescriptionField(CurrentPattern.desсription);
+        AddTilesToTilemap();
+
+        if (IsTemplateMode)
+        {
+            FrameCurrentTilemapBounds();
+        }
     }
 
     /// <summary>
@@ -3532,21 +3592,7 @@ public class LevelTilemapEditor : EditorWindow
     {
         if (_currentLevelInfo == null) return;
 
-        _allPatternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-
-        if (string.IsNullOrEmpty(_patternSearchFilter))
-        {
-            _filteredPatternIndices = Enumerable.Range(0, _allPatternNames.Count).ToList();
-        }
-        else
-        {
-            _filteredPatternIndices = new List<int>();
-            for (int i = 0; i < _allPatternNames.Count; i++)
-            {
-                if (_allPatternNames[i].IndexOf(_patternSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
-                    _filteredPatternIndices.Add(i);
-            }
-        }
+        RefreshFilteredPatternCache();
 
         var filteredNames = _filteredPatternIndices.Select(i => _allPatternNames[i]).ToList();
         _uiManager.UpdatePatternsList(filteredNames);
@@ -3565,6 +3611,32 @@ public class LevelTilemapEditor : EditorWindow
         // Select first filtered if current is not visible
         if (_filteredPatternIndices.Count > 0)
             _uiManager.SelectFirstPattern();
+    }
+
+    private void RefreshFilteredPatternCache()
+    {
+        if (_currentLevelInfo == null)
+        {
+            _allPatternNames.Clear();
+            _filteredPatternIndices.Clear();
+            return;
+        }
+
+        _allPatternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+
+        if (string.IsNullOrEmpty(_patternSearchFilter))
+        {
+            _filteredPatternIndices = Enumerable.Range(0, _allPatternNames.Count).ToList();
+        }
+        else
+        {
+            _filteredPatternIndices = new List<int>();
+            for (int i = 0; i < _allPatternNames.Count; i++)
+            {
+                if (_allPatternNames[i].IndexOf(_patternSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                    _filteredPatternIndices.Add(i);
+            }
+        }
     }
 
     /// <summary>
@@ -3717,7 +3789,7 @@ public class LevelTilemapEditor : EditorWindow
 }
 === FILE END: LostCyberHamster\Assets\Editor\LevelEditor\LevelTilemapEditor.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Editor\LevelEditor\LevelTilemapUi.cs | lines=812 | sha256=57B64644C42C22438E2205914CFE31522A466D1EB2B4877812ADAAF976E89DAC ===
+=== FILE START: LostCyberHamster\Assets\Editor\LevelEditor\LevelTilemapUi.cs | lines=812 | sha256=924E472A8E8D1878F8D6CB4D053577A465C1A9595D78AD394F610154E1D53681 ===
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -4520,14 +4592,14 @@ public class LevelTilemapUi
     {
         if (_patternNameField != null)
         {
-            _patternNameField.value = patternName;
+            _patternNameField.SetValueWithoutNotify(patternName ?? string.Empty);
         }
     }
 
     public void UpdatePatternDescriptionField(string desc)
     {
         if (_patternDescriptionField != null)
-            _patternDescriptionField.value = desc ?? "";
+            _patternDescriptionField.SetValueWithoutNotify(desc ?? "");
     }
 }
 === FILE END: LostCyberHamster\Assets\Editor\LevelEditor\LevelTilemapUi.cs ===
@@ -15620,7 +15692,8 @@ namespace Assets.Scripts.BotV2
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV2\Pipeline\SwitchLaneSafety.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs | lines=51 | sha256=3216A098F27C2FBBC842F0BEA364D0C6336E4034193BADC673D74E7C2A744A20 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs | lines=84 | sha256=6371FCB7E2CD41599729FA405BD620547604ED8D90EB5DF45B19834AA1A7FEB9 ===
+using System.Text;
 using Assets.Scripts.Gameplay;
 using UnityEngine;
 
@@ -15634,6 +15707,7 @@ namespace Assets.Scripts.BotV3
     public class BotHud
     {
         private readonly BotOrchestrator _orchestrator;
+        private readonly StringBuilder _sb = new StringBuilder(128);
         private GUIStyle _style;
 
         public BotHud(BotOrchestrator orchestrator)
@@ -15668,13 +15742,44 @@ namespace Assets.Scripts.BotV3
 
             Hamster hamster = _orchestrator.Hamster;
             string lane = hamster.IsOnBottomLine.Value ? "bottom" : "top";
-            return $"BotV3 | lane={lane} energy={hamster.Energy.Value} lives={hamster.Lives.Value} | Plan: none";
+
+            _sb.Clear();
+            _sb.Append($"BotV3 | lane={lane} energy={hamster.Energy.Value} lives={hamster.Lives.Value}");
+
+            var snapshot = _orchestrator.LastSnapshot;
+            if (snapshot != null)
+            {
+                int threats = 0;
+                for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+                {
+                    if (snapshot.VisibleObjects[i].Category == ObjectCategory.Threat)
+                        threats++;
+                }
+                _sb.Append($" | T:{threats}");
+            }
+
+            var plan = _orchestrator.Plan;
+            if (plan.IsEmpty)
+            {
+                _sb.Append(" | Plan: none");
+            }
+            else
+            {
+                _sb.Append(" |");
+                for (int i = 0; i < plan.Steps.Count; i++)
+                {
+                    if (i > 0) _sb.Append(" ->");
+                    _sb.Append($" {plan.Steps[i].Action}");
+                }
+            }
+
+            return _sb.ToString();
         }
     }
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=113 | sha256=DDA559AC0D2A35854796F6BCB7031EB973260AFCB37CE69B57511303D2349E25 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=161 | sha256=DD1E385048A80DDEEB2C4E35447C972AEAA6AF363AB1765F0576E9A910DCDC39 ===
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
@@ -15684,8 +15789,8 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Оркестратор BotV3. Вешается на GameObject в сцене.
+    /// Pipeline: Snapshot → Classify → Generate → Chain → Evaluate → Execute.
     /// Горячая клавиша F1: вкл/выкл.
-    /// Логика pipeline будет добавляться поэтапно.
     /// </summary>
     public class BotOrchestrator : MonoBehaviour
     {
@@ -15693,9 +15798,19 @@ namespace Assets.Scripts.BotV3
         public Hamster Hamster { get; private set; }
         public GameManager GameManager { get; private set; }
         public bool Initialized { get; private set; }
+        public BotSceneSnapshot LastSnapshot { get; private set; }
+        public CurrentPlan Plan { get; } = new CurrentPlan();
 
         private BotHud _hud;
         private GameEventTracker _eventTracker;
+
+        // Pipeline
+        private SnapshotBuilder _snapshotBuilder;
+        private ObjectClassifier _classifier;
+        private ActionGenerator _actionGenerator;
+        private ChainGenerator _chainGenerator;
+        private StepExecutor _executor;
+
         private float _nextInitRetryTime;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -15738,7 +15853,38 @@ namespace Assets.Scripts.BotV3
             if (Hamster.HamsterState.Value == HamsterStateEnum.Dead)
                 return;
 
-            // Pipeline будет здесь
+            // 1. Perceive
+            LastSnapshot = _snapshotBuilder.Build(Hamster);
+            _classifier.Classify(LastSnapshot);
+
+            // 2. Execute active step (if any)
+            _executor.TryExecute();
+
+            // 3. Plan — replan when no active step or step was cancelled
+            if (!_executor.HasActiveStep || _executor.WasCancelled)
+            {
+                Plan.RemoveCompletedFromHead();
+                Replan();
+            }
+        }
+
+        private void Replan()
+        {
+            var actions = _actionGenerator.Generate(LastSnapshot);
+            var chains = _chainGenerator.Generate(LastSnapshot, actions, _classifier, _actionGenerator);
+            var best = BranchEvaluator.SelectBest(chains);
+
+            if (best == null)
+            {
+                Plan.Clear();
+                _executor.ClearStep();
+                return;
+            }
+
+            Plan.ReplaceFrom(best, "SwitchLane threat avoidance");
+
+            if (Plan.Head != null)
+                _executor.SetStep(Plan.Head);
         }
 
         public void ToggleEnabledFromHotkey()
@@ -15760,6 +15906,8 @@ namespace Assets.Scripts.BotV3
         private void Disable()
         {
             IsEnabled = false;
+            Plan.Clear();
+            _executor?.ClearStep();
             DebugManager.DiagLog("[BotV3] Disabled");
         }
 
@@ -15772,6 +15920,11 @@ namespace Assets.Scripts.BotV3
                 return;
 
             _eventTracker = new GameEventTracker(Hamster, GameManager);
+            _snapshotBuilder = new SnapshotBuilder();
+            _classifier = new ObjectClassifier();
+            _actionGenerator = new ActionGenerator();
+            _chainGenerator = new ChainGenerator();
+            _executor = new StepExecutor(Hamster);
 
             Initialized = true;
             DebugManager.DiagLog("[BotV3] Initialized");
@@ -15789,6 +15942,549 @@ namespace Assets.Scripts.BotV3
     }
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\BotAction.cs | lines=8 | sha256=7419804687B6B3864FA559E1AD720F75B1E3B94CE83C83B783FF9D8BCEB921D8 ===
+namespace Assets.Scripts.BotV3
+{
+    public enum BotAction
+    {
+        None,
+        SwitchLane
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\BotAction.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\BotSceneSnapshot.cs | lines=25 | sha256=3469E939CFD7548113E94D131D15A97A90DB298785C154DB7BA80F3027D0CB3B ===
+using System.Collections.Generic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Снимок состояния сцены в момент запуска pipeline.
+    /// Строится SnapshotBuilder'ом — единственной точкой доступа к Unity-объектам.
+    /// </summary>
+    public class BotSceneSnapshot
+    {
+        public bool HamsterOnBottom;
+        public bool HamsterOnRoof;
+        public float HamsterRightX;
+        public float HamsterWidth;
+        public int Energy;
+        public int Lives;
+        public float SnapshotTime;
+
+        /// <summary>
+        /// Видимые объекты, отсортированные по LeftX.
+        /// Category = Neutral по умолчанию — классификация выполняется ObjectClassifier'ом.
+        /// </summary>
+        public List<ObstacleInfo> VisibleObjects = new List<ObstacleInfo>();
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\BotSceneSnapshot.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\BranchOutcome.cs | lines=11 | sha256=086A847E77D74D12F71655B5BEC9F11E3636A8F62E4430B07831ED4C70E9BABC ===
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Агрегированный результат ветви планировщика.
+    /// </summary>
+    public class BranchOutcome
+    {
+        public int TotalEnergyCost;
+        public bool AllStepsSafe = true;
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\BranchOutcome.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\ChainCandidate.cs | lines=13 | sha256=3C4D401412A168F9B6FF3B46F296A271947BB4EE9E10C03B337076ABEB186096 ===
+using System.Collections.Generic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Кандидат ветви планировщика: список шагов + агрегированный outcome.
+    /// </summary>
+    public class ChainCandidate
+    {
+        public List<ChainStep> Steps = new List<ChainStep>();
+        public BranchOutcome Outcome = new BranchOutcome();
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\ChainCandidate.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\ChainStep.cs | lines=35 | sha256=1AB53549147E8D20F6BAA558BAF4F5AA2383CA68019B6B4C7D79D9595D4E039A ===
+namespace Assets.Scripts.BotV3
+{
+    public enum ChainStepStatus { Ready, InProgress, Completed }
+
+    /// <summary>
+    /// Один шаг в цепочке действий бота.
+    /// </summary>
+    public class ChainStep
+    {
+        public BotAction Action;
+        public ObstacleInfo TargetObstacle;
+
+        /// <summary>При какой дистанции до объекта выполнить действие.</summary>
+        public float ExecuteAtDistance;
+
+        public int EnergyCost;
+        public string Reason;
+        public ChainStepStatus Status;
+
+        public ChainStep(
+            BotAction action,
+            ObstacleInfo targetObstacle,
+            float executeAtDistance,
+            int energyCost,
+            string reason)
+        {
+            Action = action;
+            TargetObstacle = targetObstacle;
+            ExecuteAtDistance = executeAtDistance;
+            EnergyCost = energyCost;
+            Reason = reason;
+            Status = ChainStepStatus.Ready;
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\ChainStep.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\CurrentPlan.cs | lines=37 | sha256=89A8C3680A50BAF5B35102D82FA3E364E9DA45D6F8939324A076C5F4CC29D967 ===
+using System.Collections.Generic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Текущий активный план: выбранная цепочка шагов.
+    /// Исполняется только head, хвост доступен для дебага.
+    /// </summary>
+    public class CurrentPlan
+    {
+        public List<ChainStep> Steps { get; } = new List<ChainStep>();
+        public string Strategy { get; private set; }
+
+        public ChainStep Head => Steps.Count > 0 ? Steps[0] : null;
+        public bool IsEmpty => Steps.Count == 0;
+
+        public void ReplaceFrom(ChainCandidate chain, string strategy)
+        {
+            Steps.Clear();
+            if (chain?.Steps != null)
+                Steps.AddRange(chain.Steps);
+            Strategy = strategy;
+        }
+
+        public void RemoveCompletedFromHead()
+        {
+            while (Steps.Count > 0 && Steps[0].Status == ChainStepStatus.Completed)
+                Steps.RemoveAt(0);
+        }
+
+        public void Clear()
+        {
+            Steps.Clear();
+            Strategy = null;
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\CurrentPlan.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\ObjectCategory.cs | lines=13 | sha256=4C4D5068498F2187AF1E9BE5413392F83034C501AEA794581A188B7EF922AD20 ===
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Категория объекта для принятия решений ботом.
+    /// </summary>
+    public enum ObjectCategory
+    {
+        Threat,
+        Target,
+        Collectible,
+        Neutral
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\ObjectCategory.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\ObstacleInfo.cs | lines=37 | sha256=654E086E13FEE6DD7B7D278728E3A1D698EF1641D569E9E962D5E74055FDBA6E ===
+using Assets.Scripts.Common.Models;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Снимок данных об одном видимом объекте сцены.
+    /// </summary>
+    public readonly struct ObstacleInfo
+    {
+        public readonly ObstacleTypeEnum Type;
+        public readonly bool IsTopLane;
+        public readonly float LeftX;
+        public readonly float RightX;
+        public readonly float CenterX;
+        public readonly float DistanceToHamster;
+        public readonly ObjectCategory Category;
+        public readonly int StableId;
+
+        public ObstacleInfo(
+            ObstacleTypeEnum type,
+            bool isTopLane,
+            float leftX, float rightX, float centerX,
+            float distanceToHamster,
+            ObjectCategory category,
+            int stableId)
+        {
+            Type = type;
+            IsTopLane = isTopLane;
+            LeftX = leftX;
+            RightX = rightX;
+            CenterX = centerX;
+            DistanceToHamster = distanceToHamster;
+            Category = category;
+            StableId = stableId;
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\ObstacleInfo.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\PlannerState.cs | lines=62 | sha256=DEC57AF7BCA41EB5C277F99D65CDAA8741C75FFF5516054B02B9D3B45C8FEB87 ===
+using System.Collections.Generic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Состояние планировщика для проекции следующего шага
+    /// без обращения к Unity-объектам.
+    /// </summary>
+    public class PlannerState
+    {
+        public bool HamsterOnBottom;
+        public bool HamsterOnRoof;
+        public float HamsterRightX;
+        public float HamsterWidth;
+        public int Energy;
+        public int Lives;
+        public List<ObstacleInfo> RemainingObjects = new List<ObstacleInfo>();
+
+        public PlannerState Clone()
+        {
+            return new PlannerState
+            {
+                HamsterOnBottom = HamsterOnBottom,
+                HamsterOnRoof = HamsterOnRoof,
+                HamsterRightX = HamsterRightX,
+                HamsterWidth = HamsterWidth,
+                Energy = Energy,
+                Lives = Lives,
+                RemainingObjects = new List<ObstacleInfo>(RemainingObjects)
+            };
+        }
+
+        public static PlannerState FromSnapshot(BotSceneSnapshot snapshot)
+        {
+            return new PlannerState
+            {
+                HamsterOnBottom = snapshot.HamsterOnBottom,
+                HamsterOnRoof = snapshot.HamsterOnRoof,
+                HamsterRightX = snapshot.HamsterRightX,
+                HamsterWidth = snapshot.HamsterWidth,
+                Energy = snapshot.Energy,
+                Lives = snapshot.Lives,
+                RemainingObjects = new List<ObstacleInfo>(snapshot.VisibleObjects)
+            };
+        }
+
+        public BotSceneSnapshot ToSnapshot()
+        {
+            return new BotSceneSnapshot
+            {
+                HamsterOnBottom = HamsterOnBottom,
+                HamsterOnRoof = HamsterOnRoof,
+                HamsterRightX = HamsterRightX,
+                HamsterWidth = HamsterWidth,
+                Energy = Energy,
+                Lives = Lives,
+                SnapshotTime = 0f,
+                VisibleObjects = new List<ObstacleInfo>(RemainingObjects)
+            };
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\PlannerState.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\StepProjectionResult.cs | lines=15 | sha256=7D3F5C55CFA5764ECF64FBEFA76E7FF5B77DFFF41D9BC1F0945F71C17F73FEDF ===
+using System.Collections.Generic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Результат применения одного шага к состоянию планировщика.
+    /// </summary>
+    public class StepProjectionResult
+    {
+        public bool IsSafe;
+        public PlannerState NextState;
+        public List<int> ConsumedObjectIds = new List<int>();
+        public string DebugReason;
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\StepProjectionResult.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Execution\StepExecutor.cs | lines=114 | sha256=893D25D497B0FB6537B7AD76D362BCAE9A733BE88BD97BACD674CCD99DA67433 ===
+using Assets.Scripts.Gameplay;
+using Assets.Scripts.Gameplay.Enums;
+using Assets.Scripts.System;
+using UnityEngine;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Ждёт нужной дистанции до объекта и отправляет игровую команду.
+    /// V3 minimal: только SwitchLane (TapRequest).
+    /// </summary>
+    public class StepExecutor
+    {
+        private readonly Hamster _hamster;
+        private ChainStep _step;
+        private float _switchLaneExecTime;
+
+        public bool WasCancelled { get; private set; }
+        public bool HasActiveStep => _step != null && _step.Status != ChainStepStatus.Completed;
+
+        public StepExecutor(Hamster hamster)
+        {
+            _hamster = hamster;
+        }
+
+        public void SetStep(ChainStep step)
+        {
+            _step = step;
+            WasCancelled = false;
+        }
+
+        public void ClearStep()
+        {
+            _step = null;
+        }
+
+        public void TryExecute()
+        {
+            if (_step == null || _step.Status == ChainStepStatus.Completed)
+                return;
+
+            if (_step.Status == ChainStepStatus.InProgress)
+            {
+                CheckCompletion();
+                return;
+            }
+
+            float dist = GetLiveDistance(_step.TargetObstacle);
+
+            if (dist < -0.3f)
+            {
+                _step.Status = ChainStepStatus.Completed;
+                DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane SKIPPED (too late) dist={dist:F2}");
+                return;
+            }
+
+            if (dist > _step.ExecuteAtDistance)
+                return;
+
+            if (_hamster.HamsterState.Value != HamsterStateEnum.Run &&
+                _hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
+                return;
+
+            if (!SwitchLaneSafety.IsImmediatelySafe(_hamster))
+            {
+                if (dist > ActionGenerator.SwitchLaneLatestSafeDist)
+                    return;
+
+                _step.Status = ChainStepStatus.Completed;
+                WasCancelled = true;
+                DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane CANCELLED — unsafe near deadline, dist={dist:F2}");
+                return;
+            }
+
+            _hamster.TapRequest.Invoke();
+            _step.Status = ChainStepStatus.InProgress;
+            _switchLaneExecTime = Time.time;
+            DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane FIRE dist={dist:F2} reason={_step.Reason}");
+        }
+
+        private void CheckCompletion()
+        {
+            bool timeElapsed = Time.time - _switchLaneExecTime >= 0.1f;
+            if (timeElapsed && !_hamster.IsShifting.Value)
+            {
+                _step.Status = ChainStepStatus.Completed;
+                DebugManager.DiagLog("[BotV3 EXEC] SwitchLane completed");
+            }
+        }
+
+        private float GetLiveDistance(ObstacleInfo target)
+        {
+            var spawner = ObstacleSpawner.Instance;
+            if (spawner == null)
+                return target.DistanceToHamster;
+
+            var spawned = spawner.SpawnedObstacles;
+            for (int i = 0; i < spawned.Count; i++)
+            {
+                var inst = spawned[i];
+                if (inst?.ObstacleScript == null) continue;
+
+                if (inst.ObstacleScript.GetInstanceID() == target.StableId)
+                {
+                    float leftX = inst.ObstacleScript.transform.position.x
+                                - inst.ObstacleScript.ColliderWidth * 0.5f;
+                    return leftX - _hamster.RightX;
+                }
+            }
+
+            return target.DistanceToHamster;
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Execution\StepExecutor.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Execution\SwitchLaneSafety.cs | lines=137 | sha256=52A5280371196F9B389C86422B1F984CD8571CCD7B87A1F12BD60C70FA4568C9 ===
+using Assets.Scripts.Common;
+using Assets.Scripts.Common.Models;
+using Assets.Scripts.Gameplay;
+using Assets.Scripts.System;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Проверки безопасности SwitchLane: не столкнётся ли хомяк
+    /// во время смещения между линиями.
+    /// </summary>
+    internal static class SwitchLaneSafety
+    {
+        private const float LaneSwitchDuration = 0.3f;
+        private const float LaneSwitchTravel = LaneSwitchDuration * Assets.Scripts.Consts.GameSpeedBase;
+        private const float ReturnControlDuration = 0.47f;
+        private const float TargetLaneFullTravel =
+            (LaneSwitchDuration + ReturnControlDuration) * Assets.Scripts.Consts.GameSpeedBase;
+        private const float LaneSwitchSafetyPadding = 0.15f;
+
+        public static bool IsImmediatelySafe(BotSceneSnapshot snapshot)
+        {
+            float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
+            bool sourceIsBottom = snapshot.HamsterOnBottom;
+            bool targetIsBottom = !snapshot.HamsterOnBottom;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obstacle = snapshot.VisibleObjects[i];
+                if (!IsHazard(obstacle)) continue;
+
+                bool obstacleOnBottom = !obstacle.IsTopLane;
+                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
+                    continue;
+
+                if (obstacle.RightX < hamsterLeftX)
+                    continue;
+
+                if (obstacleOnBottom == sourceIsBottom &&
+                    WouldHitDuringSourcePhase(hamsterLeftX, snapshot.HamsterRightX, obstacle.LeftX, obstacle.RightX))
+                    return false;
+
+                if (obstacleOnBottom == targetIsBottom &&
+                    WouldHitDuringTargetPhase(hamsterLeftX, snapshot.HamsterRightX, obstacle.LeftX, obstacle.RightX))
+                    return false;
+            }
+
+            return true;
+        }
+
+        public static bool IsImmediatelySafe(Hamster hamster)
+        {
+            var spawner = ObstacleSpawner.Instance;
+            if (spawner == null) return true;
+
+            float hamsterLeftX = hamster.LeftX;
+            float hamsterRightX = hamster.RightX;
+            bool sourceIsBottom = hamster.IsOnBottomLine.Value;
+            bool targetIsBottom = !sourceIsBottom;
+
+            var spawned = spawner.SpawnedObstacles;
+            for (int i = 0; i < spawned.Count; i++)
+            {
+                var inst = spawned[i];
+                if (inst?.ObstacleScript == null) continue;
+
+                var obs = inst.ObstacleScript;
+                if (!IsThreatType(obs.ObstacleType.ObstacleTypeEnum)) continue;
+
+                bool obstacleOnBottom = !obs.ObstacleType.IsTop;
+                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
+                    continue;
+
+                float leftX = obs.transform.position.x - obs.ColliderWidth * 0.5f;
+                float rightX = obs.transform.position.x + obs.ColliderWidth * 0.5f;
+                if (rightX < hamsterLeftX) continue;
+
+                if (obstacleOnBottom == sourceIsBottom &&
+                    WouldHitDuringSourcePhase(hamsterLeftX, hamsterRightX, leftX, rightX))
+                    return false;
+
+                if (obstacleOnBottom == targetIsBottom &&
+                    WouldHitDuringTargetPhase(hamsterLeftX, hamsterRightX, leftX, rightX))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsHazard(ObstacleInfo obstacle)
+        {
+            if (obstacle.Category == ObjectCategory.Threat)
+                return true;
+            return obstacle.Type == ObstacleTypeEnum.smallAlive;
+        }
+
+        private static bool IsThreatType(ObstacleTypeEnum type)
+        {
+            switch (type)
+            {
+                case ObstacleTypeEnum.smallNotAliveRoad:
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                case ObstacleTypeEnum.bigNotAlive:
+                case ObstacleTypeEnum.mediumNotAlive:
+                case ObstacleTypeEnum.bigAlive:
+                case ObstacleTypeEnum.smallAlive:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool WouldHitDuringTargetPhase(
+            float hamsterLeftX, float hamsterRightX,
+            float obstacleLeftX, float obstacleRightX)
+        {
+            float sweptLeftX = obstacleLeftX - TargetLaneFullTravel;
+            float sweptRightX = obstacleRightX;
+            return CollisionUtils.IsOverlap(
+                hamsterLeftX - LaneSwitchSafetyPadding,
+                hamsterRightX + LaneSwitchSafetyPadding,
+                sweptLeftX, sweptRightX);
+        }
+
+        private static bool WouldHitDuringSourcePhase(
+            float hamsterLeftX, float hamsterRightX,
+            float obstacleLeftX, float obstacleRightX)
+        {
+            float sweptLeftX = obstacleLeftX - LaneSwitchTravel;
+            float sweptRightX = obstacleRightX;
+            return CollisionUtils.IsOverlap(
+                hamsterLeftX - LaneSwitchSafetyPadding,
+                hamsterRightX + LaneSwitchSafetyPadding,
+                sweptLeftX, sweptRightX);
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Execution\SwitchLaneSafety.cs ===
 
 === FILE START: LostCyberHamster\Assets\Scripts\BotV3\GameEventTracker.cs | lines=65 | sha256=3C6C7A1DF6B8DB175A8D23477D863DCCC47CE808945966BF10ECADE4A94E1BF8 ===
 using Assets.Scripts.Gameplay;
@@ -15857,6 +16553,485 @@ namespace Assets.Scripts.BotV3
     }
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\GameEventTracker.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Perception\ObjectClassifier.cs | lines=58 | sha256=42F3BEF0ED49F67D5CD5B60B85FCA58FE1C565176A29672AFA03420146A13DCC ===
+using Assets.Scripts.Common.Models;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Классифицирует объекты снимка по категориям: Threat/Target/Collectible/Neutral.
+    /// Работает только со snapshot-данными, без обращения к Unity-объектам.
+    /// </summary>
+    public class ObjectClassifier
+    {
+        public void Classify(BotSceneSnapshot snapshot)
+        {
+            var list = snapshot.VisibleObjects;
+            for (int i = 0; i < list.Count; i++)
+            {
+                var obs = list[i];
+                var cat = ClassifyObject(obs.Type, obs.DistanceToHamster, snapshot.HamsterOnRoof);
+                if (cat == obs.Category) continue;
+
+                list[i] = new ObstacleInfo(
+                    obs.Type, obs.IsTopLane,
+                    obs.LeftX, obs.RightX, obs.CenterX,
+                    obs.DistanceToHamster,
+                    cat, obs.StableId);
+            }
+        }
+
+        private static ObjectCategory ClassifyObject(ObstacleTypeEnum type, float distance, bool hamsterOnRoof)
+        {
+            if (distance < -0.2f) return ObjectCategory.Neutral;
+
+            switch (type)
+            {
+                case ObstacleTypeEnum.collectableEnergetic:
+                case ObstacleTypeEnum.collectablePizza:
+                case ObstacleTypeEnum.collectableCrystal:
+                case ObstacleTypeEnum.collectableLife:
+                case ObstacleTypeEnum.collectableCoin:
+                    return ObjectCategory.Collectible;
+
+                case ObstacleTypeEnum.smallAlive:
+                    return ObjectCategory.Target;
+
+                case ObstacleTypeEnum.bigAlive:
+                    return hamsterOnRoof ? ObjectCategory.Target : ObjectCategory.Threat;
+
+                case ObstacleTypeEnum.bigNotAlive:
+                case ObstacleTypeEnum.mediumNotAlive:
+                case ObstacleTypeEnum.smallNotAliveRoad:
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                    return ObjectCategory.Threat;
+
+                default:
+                    return ObjectCategory.Neutral;
+            }
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Perception\ObjectClassifier.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Perception\SnapshotBuilder.cs | lines=84 | sha256=0EE3672B006F406AD4DF881E00476F5569843B5F48890846FF9E52E10C39E983 ===
+using Assets.Scripts.Gameplay;
+using Assets.Scripts.Gameplay.Enums;
+using Assets.Scripts.System;
+using UnityEngine;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Единственный компонент pipeline с прямым доступом к Unity-объектам.
+    /// Читает Hamster и ObstacleSpawner, строит BotSceneSnapshot.
+    /// Видимость определяется границами камеры — бот видит ровно то, что видит игрок.
+    /// </summary>
+    public class SnapshotBuilder
+    {
+        public BotSceneSnapshot Build(Hamster hamster)
+        {
+            var snapshot = new BotSceneSnapshot
+            {
+                HamsterOnBottom = hamster.IsOnBottomLine.Value,
+                HamsterOnRoof = IsRoofState(hamster.HamsterState.Value),
+                HamsterRightX = hamster.RightX,
+                HamsterWidth = hamster.ColliderWidth,
+                Energy = hamster.Energy.Value,
+                Lives = hamster.Lives.Value,
+                SnapshotTime = Time.time
+            };
+
+            ScanObstacles(hamster, snapshot);
+            return snapshot;
+        }
+
+        private static void ScanObstacles(Hamster hamster, BotSceneSnapshot snapshot)
+        {
+            var spawner = ObstacleSpawner.Instance;
+            if (spawner == null) return;
+
+            var cam = Camera.main;
+            if (cam == null) return;
+
+            float camX = cam.transform.position.x;
+            float halfWidth = cam.orthographicSize * cam.aspect;
+            float screenLeftX = camX - halfWidth;
+            float screenRightX = camX + halfWidth;
+
+            float hamsterRightX = hamster.RightX;
+
+            var spawned = spawner.SpawnedObstacles;
+            for (int i = 0; i < spawned.Count; i++)
+            {
+                var inst = spawned[i];
+                if (inst?.ObstacleScript == null) continue;
+
+                var obs = inst.ObstacleScript;
+                var pos = obs.transform.position;
+                float halfW = obs.ColliderWidth * 0.5f;
+                float leftX = pos.x - halfW;
+                float rightX = pos.x + halfW;
+
+                if (rightX < screenLeftX || leftX > screenRightX) continue;
+
+                float dist = leftX - hamsterRightX;
+
+                snapshot.VisibleObjects.Add(new ObstacleInfo(
+                    obs.ObstacleType.ObstacleTypeEnum,
+                    obs.ObstacleType.IsTop,
+                    leftX, rightX, pos.x,
+                    dist,
+                    ObjectCategory.Neutral,
+                    obs.GetInstanceID()));
+            }
+
+            snapshot.VisibleObjects.Sort((a, b) => a.LeftX.CompareTo(b.LeftX));
+        }
+
+        private static bool IsRoofState(HamsterStateEnum state)
+        {
+            return state == HamsterStateEnum.RoofRun
+                || state == HamsterStateEnum.RoofJump
+                || state == HamsterStateEnum.RoofJumpDamage
+                || state == HamsterStateEnum.SuperRoofJump
+                || state == HamsterStateEnum.SuperRoofJumpDamage;
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Perception\SnapshotBuilder.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\ActionGenerator.cs | lines=87 | sha256=D841DA66056E0D1A8946D1176464B1F9561987F882BA331426FF217EF77BB7C9 ===
+using System.Collections.Generic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Генерирует возможные действия для видимых объектов.
+    /// V3 minimal: только SwitchLane для same-lane Threats.
+    /// </summary>
+    public class ActionGenerator
+    {
+        private const float SwitchLaneFireDist = 4.0f;
+        internal const float SwitchLaneLatestSafeDist = 1.5f;
+
+        public List<ChainStep> Generate(BotSceneSnapshot snapshot)
+        {
+            var result = new List<ChainStep>();
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (obs.Category != ObjectCategory.Threat)
+                    continue;
+                if (obs.DistanceToHamster < 0f)
+                    continue;
+                if (!IsOnSameLane(snapshot, obs))
+                    continue;
+                if (!IsNearestSameLaneThreat(snapshot, obs))
+                    continue;
+
+                if (TryBuildSwitchLaneStep(snapshot, obs, out ChainStep step))
+                    result.Add(step);
+            }
+
+            return result;
+        }
+
+        private static bool TryBuildSwitchLaneStep(
+            BotSceneSnapshot snapshot,
+            ObstacleInfo threat,
+            out ChainStep step)
+        {
+            step = null;
+
+            if (threat.DistanceToHamster < SwitchLaneLatestSafeDist)
+                return false;
+
+            float executeAtDistance = SwitchLaneFireDist;
+            if (executeAtDistance > threat.DistanceToHamster)
+                executeAtDistance = threat.DistanceToHamster;
+            if (executeAtDistance < SwitchLaneLatestSafeDist)
+                executeAtDistance = SwitchLaneLatestSafeDist;
+
+            if (!SwitchLaneSafety.IsImmediatelySafe(snapshot))
+                return false;
+
+            step = new ChainStep(
+                BotAction.SwitchLane,
+                threat,
+                executeAtDistance,
+                energyCost: 0,
+                $"SwitchLane avoid {threat.Type}");
+
+            return true;
+        }
+
+        private static bool IsNearestSameLaneThreat(BotSceneSnapshot snapshot, ObstacleInfo threat)
+        {
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (obs.Category != ObjectCategory.Threat) continue;
+                if (obs.DistanceToHamster < 0f) continue;
+                if (!IsOnSameLane(snapshot, obs)) continue;
+
+                if (obs.DistanceToHamster < threat.DistanceToHamster)
+                    return false;
+            }
+
+            return true;
+        }
+
+        internal static bool IsOnSameLane(BotSceneSnapshot snapshot, ObstacleInfo obstacle)
+        {
+            return snapshot.HamsterOnBottom == !obstacle.IsTopLane;
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Planning\ActionGenerator.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\BranchEvaluator.cs | lines=34 | sha256=A11C924CF9C0169B5C9128F5933F1723C347BA1D99CBE54FA2CC942756BCEFF3 ===
+using System.Collections.Generic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Оценка и выбор лучшей ветви планировщика.
+    /// V3 minimal: AllStepsSafe → TotalEnergyCost → длина ветви.
+    /// </summary>
+    public static class BranchEvaluator
+    {
+        public static ChainCandidate SelectBest(List<ChainCandidate> candidates)
+        {
+            if (candidates == null || candidates.Count == 0)
+                return null;
+
+            candidates.Sort(Compare);
+            return candidates[0];
+        }
+
+        private static int Compare(ChainCandidate a, ChainCandidate b)
+        {
+            var oa = a.Outcome;
+            var ob = b.Outcome;
+
+            if (oa.AllStepsSafe != ob.AllStepsSafe)
+                return oa.AllStepsSafe ? -1 : 1;
+
+            if (oa.TotalEnergyCost != ob.TotalEnergyCost)
+                return oa.TotalEnergyCost.CompareTo(ob.TotalEnergyCost);
+
+            return b.Steps.Count.CompareTo(a.Steps.Count);
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Planning\BranchEvaluator.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\ChainGenerator.cs | lines=125 | sha256=AF1F03EAA3CA9ABDF09FC42652187B13104C5984B3F375982C0F087248A66F38 ===
+using System.Collections.Generic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Строит ветви планировщика до заданной глубины.
+    /// V3 minimal: SwitchLane chains, depth 1-2.
+    /// </summary>
+    public class ChainGenerator
+    {
+        private const int MaxBranchDepth = 3;
+        private readonly StateProjector _stateProjector = new StateProjector();
+
+        public List<ChainCandidate> Generate(
+            BotSceneSnapshot snapshot,
+            List<ChainStep> firstStepCandidates,
+            ObjectClassifier classifier,
+            ActionGenerator actionGenerator)
+        {
+            var result = new List<ChainCandidate>();
+            if (firstStepCandidates == null || firstStepCandidates.Count == 0)
+                return result;
+
+            for (int i = 0; i < firstStepCandidates.Count; i++)
+            {
+                var first = firstStepCandidates[i];
+                if (first == null) continue;
+
+                ExploreBranch(
+                    snapshot,
+                    classifier,
+                    actionGenerator,
+                    first,
+                    depth: 1,
+                    stepsSoFar: new List<ChainStep>(),
+                    originalSnapshot: snapshot,
+                    result: result);
+            }
+
+            return result;
+        }
+
+        private void ExploreBranch(
+            BotSceneSnapshot snapshot,
+            ObjectClassifier classifier,
+            ActionGenerator actionGenerator,
+            ChainStep step,
+            int depth,
+            List<ChainStep> stepsSoFar,
+            BotSceneSnapshot originalSnapshot,
+            List<ChainCandidate> result)
+        {
+            stepsSoFar.Add(step);
+
+            var projection = _stateProjector.Project(snapshot, step);
+            if (!projection.IsSafe || projection.NextState == null)
+                return;
+
+            var projectedSnapshot = projection.NextState.ToSnapshot();
+            classifier.Classify(projectedSnapshot);
+
+            result.Add(BuildCandidate(stepsSoFar, originalSnapshot));
+
+            if (depth >= MaxBranchDepth)
+                return;
+
+            var nextSteps = actionGenerator.Generate(projectedSnapshot);
+            for (int i = 0; i < nextSteps.Count; i++)
+            {
+                var next = nextSteps[i];
+                if (next == null) continue;
+
+                ExploreBranch(
+                    projectedSnapshot,
+                    classifier,
+                    actionGenerator,
+                    next,
+                    depth + 1,
+                    new List<ChainStep>(stepsSoFar),
+                    originalSnapshot,
+                    result);
+            }
+        }
+
+        private static ChainCandidate BuildCandidate(
+            List<ChainStep> steps,
+            BotSceneSnapshot originalSnapshot)
+        {
+            int totalEnergyCost = 0;
+            for (int i = 0; i < steps.Count; i++)
+                totalEnergyCost += steps[i].EnergyCost;
+
+            return new ChainCandidate
+            {
+                Steps = new List<ChainStep>(steps),
+                Outcome = new BranchOutcome
+                {
+                    TotalEnergyCost = totalEnergyCost,
+                    AllStepsSafe = IsIdlePeriodSafe(originalSnapshot, steps[0])
+                }
+            };
+        }
+
+        private static bool IsIdlePeriodSafe(BotSceneSnapshot snapshot, ChainStep firstStep)
+        {
+            float waitTravel = firstStep.TargetObstacle.DistanceToHamster - firstStep.ExecuteAtDistance;
+            if (waitTravel <= 0f)
+                return true;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obstacle = snapshot.VisibleObjects[i];
+                if (obstacle.Category != ObjectCategory.Threat) continue;
+                if (!ActionGenerator.IsOnSameLane(snapshot, obstacle)) continue;
+                if (obstacle.DistanceToHamster <= 0f) continue;
+                if (obstacle.StableId == firstStep.TargetObstacle.StableId) continue;
+
+                if (obstacle.DistanceToHamster < waitTravel)
+                    return false;
+            }
+
+            return true;
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Planning\ChainGenerator.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\StateProjector.cs | lines=73 | sha256=F57A9627E23D1C6C22599990DBF42C9E5A942F3703897C93B3972EDB460411DE ===
+using System.Collections.Generic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Проецирует состояние планировщика после применения шага.
+    /// V3 minimal: только SwitchLane проекция.
+    /// </summary>
+    public class StateProjector
+    {
+        private const float SwitchLaneReturnControlTravel =
+            0.47f * Assets.Scripts.Consts.GameSpeedBase;
+        private const float PassedObstacleMargin = 0.4f;
+
+        public StepProjectionResult Project(BotSceneSnapshot snapshot, ChainStep step)
+        {
+            return Project(PlannerState.FromSnapshot(snapshot), step);
+        }
+
+        public StepProjectionResult Project(PlannerState state, ChainStep step)
+        {
+            var nextState = state.Clone();
+
+            nextState.HamsterOnBottom = !state.HamsterOnBottom;
+            nextState.HamsterOnRoof = false;
+
+            float advanceDistance = step.TargetObstacle.DistanceToHamster - step.ExecuteAtDistance;
+            if (advanceDistance < 0f)
+                advanceDistance = 0f;
+
+            nextState.HamsterRightX += advanceDistance + SwitchLaneReturnControlTravel;
+
+            RebuildRemainingObjects(state, nextState, step);
+
+            return new StepProjectionResult
+            {
+                IsSafe = true,
+                NextState = nextState,
+                DebugReason = step.Reason
+            };
+        }
+
+        private static void RebuildRemainingObjects(
+            PlannerState previousState,
+            PlannerState nextState,
+            ChainStep step)
+        {
+            var remaining = new List<ObstacleInfo>();
+
+            for (int i = 0; i < previousState.RemainingObjects.Count; i++)
+            {
+                var obstacle = previousState.RemainingObjects[i];
+
+                bool wasPassed = obstacle.RightX < nextState.HamsterRightX - PassedObstacleMargin;
+                if (wasPassed)
+                    continue;
+
+                float newDistance = obstacle.LeftX - nextState.HamsterRightX;
+                remaining.Add(new ObstacleInfo(
+                    obstacle.Type,
+                    obstacle.IsTopLane,
+                    obstacle.LeftX,
+                    obstacle.RightX,
+                    obstacle.CenterX,
+                    newDistance,
+                    ObjectCategory.Neutral,
+                    obstacle.StableId));
+            }
+
+            nextState.RemainingObjects = remaining;
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Planning\StateProjector.cs ===
 
 === FILE START: LostCyberHamster\Assets\Scripts\Common\CollisionUtils.cs | lines=306 | sha256=D367391D2A96AE6BAE3231CC385DCA186E90FF847AA187250FBD85E02397B440 ===
 using Assets.Scripts.Gameplay;
