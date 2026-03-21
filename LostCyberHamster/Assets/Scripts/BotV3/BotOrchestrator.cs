@@ -7,7 +7,7 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Оркестратор BotV3. Вешается на GameObject в сцене.
-    /// Pipeline: Snapshot → Classify → Generate → Chain → Evaluate → Execute.
+    /// Pipeline: Snapshot → Classify → Execute → Plan.
     /// Горячая клавиша F1: вкл/выкл.
     /// </summary>
     public class BotOrchestrator : MonoBehaviour
@@ -25,8 +25,7 @@ namespace Assets.Scripts.BotV3
         // Pipeline
         private SnapshotBuilder _snapshotBuilder;
         private ObjectClassifier _classifier;
-        private ActionGenerator _actionGenerator;
-        private ChainGenerator _chainGenerator;
+        private BotPlanner _planner;
         private StepExecutor _executor;
 
         private float _nextInitRetryTime;
@@ -71,6 +70,11 @@ namespace Assets.Scripts.BotV3
             if (Hamster.HamsterState.Value == HamsterStateEnum.Dead)
                 return;
 
+            RunPipeline();
+        }
+
+        private void RunPipeline()
+        {
             // 1. Perceive
             LastSnapshot = _snapshotBuilder.Build(Hamster);
             _classifier.Classify(LastSnapshot);
@@ -82,16 +86,12 @@ namespace Assets.Scripts.BotV3
             if (!_executor.HasActiveStep || _executor.WasCancelled)
             {
                 Plan.RemoveCompletedFromHead();
-                Replan();
+                ApplyPlan(_planner.Replan(LastSnapshot, _classifier));
             }
         }
 
-        private void Replan()
+        private void ApplyPlan(ChainCandidate best)
         {
-            var actions = _actionGenerator.Generate(LastSnapshot);
-            var chains = _chainGenerator.Generate(LastSnapshot, actions, _classifier, _actionGenerator);
-            var best = BranchEvaluator.SelectBest(chains);
-
             if (best == null)
             {
                 Plan.Clear();
@@ -126,6 +126,7 @@ namespace Assets.Scripts.BotV3
             IsEnabled = false;
             Plan.Clear();
             _executor?.ClearStep();
+            _planner?.Reset();
             DebugManager.DiagLog("[BotV3] Disabled");
         }
 
@@ -140,8 +141,7 @@ namespace Assets.Scripts.BotV3
             _eventTracker = new GameEventTracker(Hamster, GameManager);
             _snapshotBuilder = new SnapshotBuilder();
             _classifier = new ObjectClassifier();
-            _actionGenerator = new ActionGenerator();
-            _chainGenerator = new ChainGenerator();
+            _planner = new BotPlanner();
             _executor = new StepExecutor(Hamster);
 
             Initialized = true;
