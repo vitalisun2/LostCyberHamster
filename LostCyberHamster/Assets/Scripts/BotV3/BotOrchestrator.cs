@@ -1,3 +1,6 @@
+using Assets.Scripts.Gameplay;
+using Assets.Scripts.Gameplay.Enums;
+using Assets.Scripts.GameManagerLogic;
 using UnityEngine;
 
 namespace Assets.Scripts.BotV3
@@ -10,8 +13,12 @@ namespace Assets.Scripts.BotV3
     public class BotOrchestrator : MonoBehaviour
     {
         public bool IsEnabled { get; private set; }
+        public Hamster Hamster { get; private set; }
+        public GameManager GameManager { get; private set; }
+        public bool Initialized { get; private set; }
 
         private BotHud _hud;
+        private float _nextInitRetryTime;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
@@ -32,6 +39,30 @@ namespace Assets.Scripts.BotV3
             Enable();
         }
 
+        private void Update()
+        {
+            if (!IsEnabled)
+                return;
+
+            if (!Initialized)
+            {
+                if (Time.time >= _nextInitRetryTime)
+                {
+                    TryInit();
+                    _nextInitRetryTime = Time.time + 0.5f;
+                }
+                return;
+            }
+
+            if (GameManager == null || GameManager.State != GameState.PLAYING)
+                return;
+
+            if (Hamster.HamsterState.Value == HamsterStateEnum.Dead)
+                return;
+
+            // Pipeline будет здесь
+        }
+
         public void ToggleEnabledFromHotkey()
         {
             if (IsEnabled)
@@ -43,13 +74,69 @@ namespace Assets.Scripts.BotV3
         private void Enable()
         {
             IsEnabled = true;
-            Debug.Log("[BotV3] Enabled");
+            if (!Initialized)
+                TryInit();
+            DebugManager.DiagLog("[BotV3] Enabled");
         }
 
         private void Disable()
         {
             IsEnabled = false;
-            Debug.Log("[BotV3] Disabled");
+            DebugManager.DiagLog("[BotV3] Disabled");
+        }
+
+        private void TryInit()
+        {
+            Hamster = FindObjectOfType<Hamster>();
+            GameManager = FindObjectOfType<GameManager>();
+
+            if (Hamster == null || GameManager == null)
+                return;
+
+            Hamster.DamageEvent.Subscribe(OnDamage);
+            GameManager.OnFinish += OnGameFinished;
+            GameEventsManager.OnLevelCompleted += OnLevelCompleted;
+
+            Initialized = true;
+            DebugManager.DiagLog("[BotV3] Initialized");
+        }
+
+        private void OnDestroy()
+        {
+            if (Hamster != null)
+                Hamster.DamageEvent.Unsubscribe(OnDamage);
+
+            if (GameManager != null)
+                GameManager.OnFinish -= OnGameFinished;
+
+            GameEventsManager.OnLevelCompleted -= OnLevelCompleted;
+        }
+
+        private void OnDamage()
+        {
+            DebugManager.DiagLog(
+                $"[DAMAGE] lives={Hamster.Lives.Value} " +
+                $"lane={(Hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
+                $"state={Hamster.HamsterState.Value}");
+
+            if (Hamster.Lives.Value <= 0)
+            {
+                DebugManager.DiagLog("[TEST RESULT] FAIL");
+                DebugManager.DiagStability("[TEST RESULT] FAIL");
+            }
+        }
+
+        private void OnGameFinished()
+        {
+            DebugManager.DiagLog(
+                $"[TEST FINISH] state={GameManager.State} " +
+                $"lives={Hamster.Lives.Value}");
+        }
+
+        private void OnLevelCompleted(int levelId, int stars)
+        {
+            DebugManager.DiagLog($"[TEST RESULT] WIN level={levelId} stars={stars}");
+            DebugManager.DiagStability($"[TEST RESULT] WIN level={levelId} stars={stars}");
         }
 
         private void OnGUI()

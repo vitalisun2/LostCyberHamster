@@ -1,3 +1,4 @@
+using Assets.Scripts.Gameplay;
 using UnityEngine;
 
 namespace Assets.Scripts.BotV3
@@ -39,8 +40,12 @@ namespace Assets.Scripts.BotV3
 
         private string FormatHudText()
         {
-            // По мере портирования pipeline сюда добавятся план, шаги, состояние
-            return "BotV3 | Plan: none";
+            if (!_orchestrator.Initialized)
+                return "BotV3 | Waiting for init...";
+
+            Hamster hamster = _orchestrator.Hamster;
+            string lane = hamster.IsOnBottomLine.Value ? "bottom" : "top";
+            return $"BotV3 | lane={lane} energy={hamster.Energy.Value} lives={hamster.Lives.Value} | Plan: none";
         }
     }
 }
