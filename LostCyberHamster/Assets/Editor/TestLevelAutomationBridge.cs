@@ -37,6 +37,8 @@ namespace LostCyberHamster.Editor
             public string requestId;
             public string command;
             public string createdAtUtc;
+            public string levelAddress;
+            public float timeScale;
         }
 
         [Serializable]
@@ -225,7 +227,7 @@ namespace LostCyberHamster.Editor
 
             DebugManager.ClearDiagLog();
 
-            if (!TestLevelLauncher.TryLaunchTestLevelAutomation(out var launchError))
+            if (!TestLevelLauncher.TryLaunchTestLevelAutomation(request.levelAddress, request.timeScale, out var launchError))
             {
                 WriteResponse(new BridgeResponse
                 {
@@ -238,6 +240,7 @@ namespace LostCyberHamster.Editor
                     diagnosticLogPath = DebugManager.GetDiagLogPath()
                 });
                 ClearActiveRequest();
+                return;
             }
         }
 

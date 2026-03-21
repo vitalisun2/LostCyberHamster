@@ -1,6 +1,8 @@
 param(
     [int]$TimeoutSeconds = 120,
-    [int]$PollMilliseconds = 250
+    [int]$PollMilliseconds = 250,
+    [string]$LevelAddress = '01_New_York/Morning/test_level',
+    [float]$TimeScale = 0
 )
 
 Set-StrictMode -Version Latest
@@ -18,7 +20,11 @@ function Invoke-UnityAutomationCommand {
         [string]$Command,
 
         [Parameter(Mandatory = $true)]
-        [string]$RunningMessage
+        [string]$RunningMessage,
+
+        [string]$LevelAddress,
+
+        [float]$TimeScale = 0
     )
 
     $requestId = [Guid]::NewGuid().ToString('N')
@@ -26,6 +32,14 @@ function Invoke-UnityAutomationCommand {
         requestId = $requestId
         command = $Command
         createdAtUtc = [DateTime]::UtcNow.ToString('o')
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($LevelAddress)) {
+        $request.levelAddress = $LevelAddress
+    }
+
+    if ($TimeScale -gt 0) {
+        $request.timeScale = $TimeScale
     }
 
     $request | ConvertTo-Json | Set-Content -Path $requestPath -Encoding UTF8
@@ -102,7 +116,11 @@ if (-not $recompileCompleted) {
     Write-Host '[warn] Explicit recompilation command is still unavailable; continuing after focus-based refresh fallback.'
 }
 
-$launchResponse = Invoke-UnityAutomationCommand -Command 'launch_test_level' -RunningMessage 'test level launch'
+$launchResponse = Invoke-UnityAutomationCommand `
+    -Command 'launch_test_level' `
+    -RunningMessage 'test level launch' `
+    -LevelAddress $LevelAddress `
+    -TimeScale $TimeScale
 
 Write-Host "Result: $($launchResponse.testResult)"
 Write-Host "Diagnostic log: $($launchResponse.diagnosticLogPath)"

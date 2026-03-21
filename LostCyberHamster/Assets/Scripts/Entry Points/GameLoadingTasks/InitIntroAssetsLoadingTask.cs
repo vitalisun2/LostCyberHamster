@@ -24,9 +24,13 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             LevelController.Instance.LevelData.IntroObject = (GameObject)bundle["introObject"];
             var hasIntroSprites = await LevelController.Instance.LoadIntroData();
 
-            if (hasIntroSprites)
+            if (hasIntroSprites && !AutomationRuntimePrefs.ShouldSkipIntro())
             {
                 LevelController.Instance.LevelData.GameManager.StartIntro();
+            }
+            else if (hasIntroSprites)
+            {
+                Debug.Log("[InitIntroAssetsLoadingTask] Automation skip-intro enabled. StartIntro() suppressed.");
             }
             // Если интро нет — НЕ вызываем StartGame() здесь.
             // GameEntryPoint вызовет StartGame() после завершения ВСЕХ загрузочных задач.

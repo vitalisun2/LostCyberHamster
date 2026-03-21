@@ -25,6 +25,9 @@ namespace LostCyberHamster.Editor
         /// <summary>PlayerPrefs key: make BotV2 primary in runtime bootstrap.</summary>
         public const string BotV2PrimaryEnabledKey = "BotV2PrimaryEnabled";
 
+        /// <summary>PlayerPrefs key: runtime timescale override for automated test runs.</summary>
+        public const string TimeScaleOverrideKey = "TestLevel_TimeScale";
+
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string TestLevelAddress = "01_New_York/Morning/test_level";
 
@@ -53,13 +56,23 @@ namespace LostCyberHamster.Editor
                     PlayerPrefs.DeleteKey(BotV2PrimaryEnabledKey);
                     PlayerPrefs.Save();
                 }
+                if (PlayerPrefs.HasKey(TimeScaleOverrideKey))
+                {
+                    PlayerPrefs.DeleteKey(TimeScaleOverrideKey);
+                    PlayerPrefs.Save();
+                }
+                if (PlayerPrefs.HasKey(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey))
+                {
+                    PlayerPrefs.DeleteKey(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey);
+                    PlayerPrefs.Save();
+                }
             }
         }
 
         [MenuItem("Tools/Test Level/Launch", priority = 50)]
         private static void LaunchTestLevel()
         {
-            if (!TryLaunchTestLevel(interactive: true, out var errorMessage))
+            if (!TryLaunchTestLevel(interactive: true, TestLevelAddress, null, out var errorMessage))
             {
                 EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
             }
@@ -68,12 +81,21 @@ namespace LostCyberHamster.Editor
         /// <summary>
         /// Запускает test level без UI-диалогов, чтобы этим можно было безопасно управлять из automation bridge.
         /// </summary>
-        public static bool TryLaunchTestLevelAutomation(out string errorMessage)
+        public static bool TryLaunchTestLevelAutomation(string levelAddress, float timeScale, out string errorMessage)
         {
-            return TryLaunchTestLevel(interactive: false, out errorMessage);
+            float? timeScaleOverride = timeScale > 0f ? timeScale : null;
+            return TryLaunchTestLevel(
+                interactive: false,
+                levelAddress,
+                timeScaleOverride,
+                out errorMessage);
         }
 
-        private static bool TryLaunchTestLevel(bool interactive, out string errorMessage)
+        private static bool TryLaunchTestLevel(
+            bool interactive,
+            string levelAddress,
+            float? timeScaleOverride,
+            out string errorMessage)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
@@ -99,13 +121,27 @@ namespace LostCyberHamster.Editor
                 return false;
             }
 
+            string effectiveLevelAddress = string.IsNullOrWhiteSpace(levelAddress)
+                ? TestLevelAddress
+                : levelAddress.Trim();
+
             // Write override into PlayerPrefs so it survives domain reload on Play
-            PlayerPrefs.SetString(OverridePrefsKey, TestLevelAddress);
+            PlayerPrefs.SetString(OverridePrefsKey, effectiveLevelAddress);
             PlayerPrefs.SetInt(BotAutoStartKey, 1);
             PlayerPrefs.SetInt(BotV2PrimaryEnabledKey, 1);
+            PlayerPrefs.SetInt(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey, interactive ? 0 : 1);
+
+            if (timeScaleOverride.HasValue)
+                PlayerPrefs.SetFloat(TimeScaleOverrideKey, Mathf.Clamp(timeScaleOverride.Value, 0.1f, 2.0f));
+            else if (PlayerPrefs.HasKey(TimeScaleOverrideKey))
+                PlayerPrefs.DeleteKey(TimeScaleOverrideKey);
+
             PlayerPrefs.Save();
 
-            Debug.Log($"[TestLevelLauncher] Override set: {TestLevelAddress}. Starting Bootstrap...");
+            string timeScalePart = timeScaleOverride.HasValue
+                ? $", timeScale={timeScaleOverride.Value:F2}"
+                : string.Empty;
+            Debug.Log($"[TestLevelLauncher] Override set: {effectiveLevelAddress}{timeScalePart}. Starting Bootstrap...");
             EditorSceneManager.OpenScene(BootstrapScenePath);
             EditorApplication.isPlaying = true;
             errorMessage = null;
