@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
@@ -17,7 +15,7 @@ namespace Assets.Scripts.BotV3
         /// <summary>
         /// Возвращает лучшую ветвь действий для текущего снимка, или null если действовать не нужно.
         /// </summary>
-        public BranchCandidate Replan(BotSceneSnapshot snapshot, ObjectClassifier classifier)
+        public BranchCandidate FindBestBranch(BotSceneSnapshot snapshot, ObjectClassifier classifier)
         {
             var actions = _actionGenerator.Generate(snapshot);
             var branches = _branchGenerator.Generate(snapshot, actions, classifier, _actionGenerator);
@@ -27,7 +25,7 @@ namespace Assets.Scripts.BotV3
             {
                 if (_lastPlanTargetId != 0)
                 {
-                    DebugManager.DiagLog("[BotV3 PLAN] Cleared — no viable branches");
+                    BotLogger.LogPlanCleared();
                     _lastPlanTargetId = 0;
                 }
 
@@ -38,7 +36,7 @@ namespace Assets.Scripts.BotV3
             if (newTargetId != _lastPlanTargetId)
             {
                 _lastPlanTargetId = newTargetId;
-                LogPlanSelected(best);
+                BotLogger.LogPlanSelected(best);
             }
 
             return best;
@@ -47,24 +45,6 @@ namespace Assets.Scripts.BotV3
         public void Reset()
         {
             _lastPlanTargetId = 0;
-        }
-
-        private static void LogPlanSelected(BranchCandidate branch)
-        {
-            var sb = new StringBuilder(128);
-            sb.Append("[BotV3 PLAN] Selected: ");
-            for (int i = 0; i < branch.Steps.Count; i++)
-            {
-                if (i > 0) sb.Append(" -> ");
-                var s = branch.Steps[i];
-                sb.Append(s.Action).Append("(execAt=")
-                  .Append(s.ExecuteAtDistance.ToString("F1"))
-                  .Append(" reason=\"").Append(s.Reason).Append("\")");
-            }
-
-            sb.Append(" | safe=").Append(branch.Outcome.AllStepsSafe)
-              .Append(" energy=").Append(branch.Outcome.TotalEnergyCost);
-            DebugManager.DiagLog(sb.ToString());
         }
     }
 }

@@ -86,7 +86,7 @@ namespace Assets.Scripts.BotV3
             if (!_executor.HasActiveStep || _executor.WasCancelled)
             {
                 Plan.RemoveCompletedFromHead();
-                ApplyPlan(_planner.Replan(LastSnapshot, _classifier));
+                ApplyPlan(_planner.FindBestBranch(LastSnapshot, _classifier));
             }
         }
 
@@ -99,7 +99,7 @@ namespace Assets.Scripts.BotV3
                 return;
             }
 
-            Plan.ReplaceFrom(best, "SwitchLane threat avoidance");
+            Plan.ReplaceFrom(best, best.Steps[0].Reason);
 
             if (Plan.Head != null)
                 _executor.SetStep(Plan.Head);

@@ -7,7 +7,7 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Ждёт нужной дистанции до объекта и отправляет игровую команду.
-    /// V3 minimal: только SwitchLane (TapRequest).
+    /// Поддерживает SwitchLane и Jump.
     /// </summary>
     public class StepExecutor
     {
@@ -50,7 +50,7 @@ namespace Assets.Scripts.BotV3
             if (dist < -0.3f)
             {
                 _step.Status = BranchStepStatus.Completed;
-                DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane SKIPPED (too late) dist={dist:F2}");
+                DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} SKIPPED (too late) dist={dist:F2}");
                 return;
             }
 
@@ -61,30 +61,79 @@ namespace Assets.Scripts.BotV3
                 _hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
                 return;
 
-            if (!SwitchLaneSafety.IsImmediatelySafe(_hamster))
+            if (_step.Action == BotAction.SwitchLane)
             {
-                if (dist > ActionGenerator.SwitchLaneLatestSafeDist)
-                    return;
+                if (!SwitchLaneSafety.IsImmediatelySafe(_hamster))
+                {
+                    if (dist > ActionGenerator.SwitchLaneLatestSafeDist)
+                        return;
 
-                _step.Status = BranchStepStatus.Completed;
-                WasCancelled = true;
-                DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane CANCELLED — unsafe near deadline, dist={dist:F2}");
-                return;
+                    _step.Status = BranchStepStatus.Completed;
+                    WasCancelled = true;
+                    DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane CANCELLED — unsafe near deadline, dist={dist:F2}");
+                    return;
+                }
             }
 
-            _hamster.TapRequest.Invoke();
+            Fire(dist);
+        }
+
+        private void Fire(float dist)
+        {
+            switch (_step.Action)
+            {
+                case BotAction.SwitchLane:
+                    _hamster.TapRequest.Invoke();
+                    _switchLaneExecTime = Time.time;
+                    break;
+
+                case BotAction.Jump:
+                    if (_hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
+                        _hamster.RoofJumpRequest.Invoke();
+                    else
+                        _hamster.JumpRequest.Invoke();
+                    break;
+            }
+
             _step.Status = BranchStepStatus.InProgress;
-            _switchLaneExecTime = Time.time;
-            DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane FIRE dist={dist:F2} reason={_step.Reason}");
+            DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} FIRE dist={dist:F2} reason={_step.Reason}");
         }
 
         private void CheckCompletion()
         {
-            bool timeElapsed = Time.time - _switchLaneExecTime >= 0.1f;
-            if (timeElapsed && !_hamster.IsShifting.Value)
+            if (_step.Action == BotAction.SwitchLane)
             {
-                _step.Status = BranchStepStatus.Completed;
-                DebugManager.DiagLog("[BotV3 EXEC] SwitchLane completed");
+                bool timeElapsed = Time.time - _switchLaneExecTime >= 0.1f;
+                if (timeElapsed && !_hamster.IsShifting.Value)
+                {
+                    _step.Status = BranchStepStatus.Completed;
+                    DebugManager.DiagLog("[BotV3 EXEC] SwitchLane completed");
+                }
+            }
+            else if (_step.Action == BotAction.Jump)
+            {
+                if (!IsActiveJumpState(_hamster.HamsterState.Value))
+                {
+                    _step.Status = BranchStepStatus.Completed;
+                    DebugManager.DiagLog($"[BotV3 EXEC] Jump completed (state={_hamster.HamsterState.Value})");
+                }
+            }
+        }
+
+        private static bool IsActiveJumpState(HamsterStateEnum state)
+        {
+            switch (state)
+            {
+                case HamsterStateEnum.Jump:
+                case HamsterStateEnum.JumpOver:
+                case HamsterStateEnum.JumpOnObstacle:
+                case HamsterStateEnum.JumpOnRoof:
+                case HamsterStateEnum.JumpFromRoof:
+                case HamsterStateEnum.JumpOnObstacleFromRoof:
+                case HamsterStateEnum.RoofJump:
+                    return true;
+                default:
+                    return false;
             }
         }
 
