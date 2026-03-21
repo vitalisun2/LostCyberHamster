@@ -125,6 +125,129 @@ namespace Assets.Tests.EditMode.BotV2
                 "ThreatSafety SwitchLane должен быть привязан к ближайшей угрозе, чтобы исполниться вовремя");
         }
 
+        [Test]
+        public void Generate_BigAliveWithPassiveCoin_PrefersSwitchLaneOverSuperJump()
+        {
+            var snapshot = new Assets.Scripts.BotV2.BotSceneSnapshot
+            {
+                HamsterOnBottom = false,
+                HamsterOnRoof = false,
+                HamsterRightX = -2.96f,
+                HamsterWidth = 1.64f,
+                Energy = 100,
+                Lives = 3,
+                VisibleObjects = new List<Assets.Scripts.BotV2.ObstacleInfo>
+                {
+                    MakeObstacle(ObstacleTypeEnum.collectableCoin, true, -1.28f, -0.48f, 1.68f, 301),
+                    MakeObstacle(ObstacleTypeEnum.bigAlive, true, 17.02f, 18.02f, 19.98f, 302)
+                }
+            };
+
+            _classifier.Classify(snapshot);
+            var firstSteps = _actionGenerator.Generate(snapshot);
+            var chains = _chainGenerator.Generate(snapshot, firstSteps, _classifier, _actionGenerator);
+            var bestChain = Assets.Scripts.BotV2.BranchEvaluator.SelectBest(chains);
+
+            Assert.IsNotNull(bestChain, "Planner должен построить safe ветви для кейса bigAlive + passive coin");
+            Assert.AreEqual(Assets.Scripts.BotV2.BotAction.SwitchLane, bestChain.Steps[0].Action,
+                "Если passive coin подбирается в обеих ветках, planner должен выбрать нулевой по энергии SwitchLane, а не SuperJump");
+        }
+
+        [Test]
+        public void Generate_BigAliveWithJumpableThreatOnTargetLane_BuildsSwitchLaneChain()
+        {
+            var snapshot = new Assets.Scripts.BotV2.BotSceneSnapshot
+            {
+                HamsterOnBottom = true,
+                HamsterOnRoof = false,
+                HamsterRightX = -2.96f,
+                HamsterWidth = 1.64f,
+                Energy = 100,
+                Lives = 3,
+                VisibleObjects = new List<Assets.Scripts.BotV2.ObstacleInfo>
+                {
+                    MakeObstacle(ObstacleTypeEnum.bigAlive, false, 5.44f, 6.44f, 8.40f, 401),
+                    MakeObstacle(ObstacleTypeEnum.smallNotAliveRoad, false, 7.84f, 9.24f, 10.80f, 402),
+                    MakeObstacle(ObstacleTypeEnum.smallNotAliveRoad, true, 8.04f, 9.44f, 11.00f, 403),
+                    MakeObstacle(ObstacleTypeEnum.bigAlive, false, 15.04f, 16.04f, 18.00f, 404)
+                }
+            };
+
+            _classifier.Classify(snapshot);
+            var firstSteps = _actionGenerator.Generate(snapshot);
+            var chains = _chainGenerator.Generate(snapshot, firstSteps, _classifier, _actionGenerator);
+
+            var switchLaneChain = chains.Find(chain =>
+                chain.Steps.Count >= 2 &&
+                chain.Steps[0].Action == Assets.Scripts.BotV2.BotAction.SwitchLane &&
+                chain.Steps[0].TargetObstacle.StableId == 401 &&
+                chain.Steps[1].Action == Assets.Scripts.BotV2.BotAction.Jump &&
+                chain.Steps[1].TargetObstacle.StableId == 403);
+
+            Assert.IsNotNull(switchLaneChain,
+                "Если на целевой линии впереди только прыгаемая угроза, planner должен строить цепочку SwitchLane -> Jump, а не откладывать перестроение до дедлайна");
+        }
+
+        [Test]
+        public void Generate_LateUnsafeSwitchLane_DoesNotBeatSameLaneJump()
+        {
+            var snapshot = new Assets.Scripts.BotV2.BotSceneSnapshot
+            {
+                HamsterOnBottom = false,
+                HamsterOnRoof = false,
+                HamsterRightX = -2.96f,
+                HamsterWidth = 1.64f,
+                Energy = 85,
+                Lives = 3,
+                VisibleObjects = new List<Assets.Scripts.BotV2.ObstacleInfo>
+                {
+                    MakeObstacle(ObstacleTypeEnum.smallNotAliveRoad, true, 0.71f, 2.11f, 3.67f, 501),
+                    MakeObstacle(ObstacleTypeEnum.bigAlive, false, 3.16f, 4.16f, 6.12f, 502),
+                    MakeObstacle(ObstacleTypeEnum.bigAlive, false, -3.04f, -2.04f, -0.08f, 503),
+                    MakeObstacle(ObstacleTypeEnum.smallNotAliveRoadAndRoof, true, 3.76f, 5.16f, 6.72f, 504)
+                }
+            };
+
+            _classifier.Classify(snapshot);
+            var firstSteps = _actionGenerator.Generate(snapshot);
+            var chains = _chainGenerator.Generate(snapshot, firstSteps, _classifier, _actionGenerator);
+            var bestChain = Assets.Scripts.BotV2.BranchEvaluator.SelectBest(chains);
+
+            Assert.IsNotNull(bestChain, "Planner должен строить safe ветви для кейса с late unsafe SwitchLane");
+            Assert.AreEqual(Assets.Scripts.BotV2.BotAction.Jump, bestChain.Steps[0].Action,
+                "Если целевая линия не успевает очиститься до безопасного дедлайна SwitchLane, planner не должен выбирать поздний SwitchLane вместо прыжка по текущей линии");
+        }
+
+        [Test]
+        public void Generate_DistantSmallRoadWithSoonClearingOtherLane_PrefersSwitchLane()
+        {
+            var snapshot = new Assets.Scripts.BotV2.BotSceneSnapshot
+            {
+                HamsterOnBottom = true,
+                HamsterOnRoof = false,
+                HamsterRightX = -2.96f,
+                HamsterWidth = 1.64f,
+                Energy = 100,
+                Lives = 3,
+                VisibleObjects = new List<Assets.Scripts.BotV2.ObstacleInfo>
+                {
+                    MakeObstacle(ObstacleTypeEnum.bigAlive, true, -0.74f, 0.26f, 2.22f, 601),
+                    MakeObstacle(ObstacleTypeEnum.smallNotAliveRoad, false, 13.26f, 14.66f, 16.22f, 602)
+                }
+            };
+
+            _classifier.Classify(snapshot);
+            var firstSteps = _actionGenerator.Generate(snapshot);
+            var chains = _chainGenerator.Generate(snapshot, firstSteps, _classifier, _actionGenerator);
+            var bestChain = Assets.Scripts.BotV2.BranchEvaluator.SelectBest(chains);
+
+            Assert.IsNotNull(bestChain, "Planner должен строить safe ветви для кейса с дальним smallNotAliveRoad");
+            Assert.AreEqual(Assets.Scripts.BotV2.BotAction.SwitchLane, bestChain.Steps[0].Action,
+                "Если целевая линия освободится задолго до дедлайна same-lane smallNotAliveRoad, planner должен экономить энергию и выбирать SwitchLane");
+            Assert.AreEqual(602, bestChain.Steps[0].TargetObstacle.StableId,
+                "ThreatSafety SwitchLane должен привязываться к same-lane угрозе, а не теряться из-за временного blocker на целевой линии");
+        }
+
         private static Assets.Scripts.BotV2.ObstacleInfo MakeObstacle(
             ObstacleTypeEnum type,
             bool isTopLane,

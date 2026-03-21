@@ -100,7 +100,7 @@ namespace Assets.Scripts.BotV2
 
                 case ObstacleTypeEnum.bigNotAlive:
                 case ObstacleTypeEnum.mediumNotAlive:
-                    if (snapshot.Energy >= JumpEnergyCost && IsRunFromRoofSafe(snapshot, threat))
+                    if (snapshot.Energy >= JumpEnergyCost && IsRoofSurfaceClear(snapshot, threat) && IsRunFromRoofSafe(snapshot, threat))
                     {
                         result.Add(new ChainStep(
                             BotAction.Jump,
@@ -115,7 +115,9 @@ namespace Assets.Scripts.BotV2
                     break;
 
                 case ObstacleTypeEnum.bigAlive:
-                    AddSuperJumpVariant(result, snapshot, threat, "SuperJump bigAlive", ThreatProfitScore);
+                    // bigAlive ground threats are handled exclusively via SwitchLane
+                    // (generated above). SuperJump on bigAlive causes SuperJumpDamage
+                    // state from which the pipeline cannot recover.
                     break;
             }
         }
@@ -263,6 +265,8 @@ namespace Assets.Scripts.BotV2
                     continue;
                 if (obstacle.DistanceToHamster < 0f)
                     continue;
+                if (!RequiresTargetLaneClearance(obstacle))
+                    continue;
 
                 bool obstacleOnBottom = !obstacle.IsTopLane;
                 if (obstacleOnBottom != targetIsBottom)
@@ -281,16 +285,49 @@ namespace Assets.Scripts.BotV2
                 ? SwitchLaneTargetMinFireDist
                 : SwitchLaneLatestSafeDist;
 
-            float delayedFireDist = SwitchLaneFireDist - requiredDelayDistance;
-            executeAtDistance = Clamp(delayedFireDist, minFireDist, SwitchLaneFireDist);
+            float maxFireDistAllowedByClearance = target.DistanceToHamster - requiredDelayDistance;
+            if (maxFireDistAllowedByClearance < minFireDist)
+                return false;
 
             if (target.DistanceToHamster < minFireDist)
                 return false;
 
-            if (executeAtDistance > target.DistanceToHamster)
-                executeAtDistance = target.DistanceToHamster;
+            float preferredFireDist = target.Category == ObjectCategory.Target
+                ? SwitchLaneTargetMinFireDist
+                : SwitchLaneFireDist;
+
+            executeAtDistance = preferredFireDist;
+            if (executeAtDistance > maxFireDistAllowedByClearance)
+                executeAtDistance = maxFireDistAllowedByClearance;
+            if (executeAtDistance < minFireDist)
+                executeAtDistance = minFireDist;
 
             return true;
+        }
+
+        private static bool RequiresTargetLaneClearance(ObstacleInfo obstacle)
+        {
+            switch (obstacle.Type)
+            {
+                // bigNotAlive/mediumNotAlive are wide obstacles that genuinely block
+                // the target lane for extended periods.
+                case ObstacleTypeEnum.bigNotAlive:
+                case ObstacleTypeEnum.mediumNotAlive:
+                    return true;
+
+                // bigAlive has a narrow collider (~1u) comparable to small obstacles.
+                // The detailed IsSwitchLaneSafeAtDistance check handles collision
+                // during the lane switch animation; blocking here is overly
+                // conservative and forces unnecessary Jumps that deplete energy.
+                case ObstacleTypeEnum.bigAlive:
+                case ObstacleTypeEnum.smallNotAliveRoad:
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                case ObstacleTypeEnum.smallAlive:
+                    return false;
+
+                default:
+                    return true;
+            }
         }
 
         private static bool IsSwitchLaneSafeAtDistance(
@@ -543,6 +580,29 @@ namespace Assets.Scripts.BotV2
                 default:
                     return 1;
             }
+        }
+
+        /// <summary>
+        /// Проверяет, что на поверхности крыши bigNotAlive нет smallNotAliveRoadAndRoof.
+        /// </summary>
+        private static bool IsRoofSurfaceClear(BotSceneSnapshot snapshot, ObstacleInfo roofObject)
+        {
+            bool roofOnBottom = !roofObject.IsTopLane;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (obs.StableId == roofObject.StableId) continue;
+                if (obs.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof) continue;
+
+                bool obsOnBottom = !obs.IsTopLane;
+                if (obsOnBottom != roofOnBottom) continue;
+
+                if (obs.LeftX < roofObject.RightX && obs.RightX > roofObject.LeftX)
+                    return false;
+            }
+
+            return true;
         }
 
         /// <summary>

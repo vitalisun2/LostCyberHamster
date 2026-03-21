@@ -54,6 +54,42 @@ namespace Assets.Tests.EditMode.BotV2
         }
 
         [Test]
+        public void Project_SwitchLaneAwayFromThreat_StillCollectsSourceLaneCoinBeforeShift()
+        {
+            var snapshot = new BotSceneSnapshot
+            {
+                HamsterOnBottom = false,
+                HamsterOnRoof = false,
+                HamsterRightX = -2.96f,
+                HamsterWidth = 1.64f,
+                Energy = 100,
+                Lives = 3,
+                VisibleObjects = new List<ObstacleInfo>
+                {
+                    MakeObstacle(ObstacleTypeEnum.collectableCoin, true, -1.28f, -0.48f, 1.68f, ObjectCategory.Collectible, 31),
+                    MakeObstacle(ObstacleTypeEnum.bigAlive, true, 17.02f, 18.02f, 19.98f, ObjectCategory.Threat, 32)
+                }
+            };
+
+            var step = new ChainStep(
+                BotAction.SwitchLane,
+                snapshot.VisibleObjects[1],
+                executeAtDistance: 4.0f,
+                energyCost: 0,
+                reason: "SwitchLane away from threat",
+                profitScore: 0,
+                rank: DecisionRank.ThreatSafety,
+                semantic: StepSemantic.SwitchLane);
+
+            var projection = _projector.Project(snapshot, step);
+
+            Assert.IsTrue(projection.IsSafe);
+            Assert.AreEqual(1, projection.CollectedObjects.Count,
+                "При длинном добеге до SwitchLane должен учитываться collectible, собранный на исходной линии до манёвра");
+            Assert.AreEqual(31, projection.CollectedObjects[0].StableId);
+        }
+
+        [Test]
         public void Project_JumpOnSmallAlive_ConsumesTargetAndMovesToBounceLanding()
         {
             var snapshot = new BotSceneSnapshot

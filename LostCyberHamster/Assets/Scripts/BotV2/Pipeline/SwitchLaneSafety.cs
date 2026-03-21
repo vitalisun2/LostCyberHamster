@@ -16,6 +16,13 @@ namespace Assets.Scripts.BotV2
     {
         private const float LaneSwitchDuration = 0.3f;
         private const float LaneSwitchTravel = LaneSwitchDuration * Assets.Scripts.Consts.GameSpeedBase;
+        /// <summary>
+        /// After the lane switch animation completes, the hamster remains on the
+        /// target lane without control for the return-to-control phase (0.47s).
+        /// The target lane vulnerability covers both the animation and this phase.
+        /// </summary>
+        private const float ReturnControlDuration = 0.47f;
+        private const float TargetLaneFullTravel = (LaneSwitchDuration + ReturnControlDuration) * Assets.Scripts.Consts.GameSpeedBase;
         private const float LaneSwitchSafetyPadding = 0.15f;
 
         public static bool IsImmediatelySafe(BotSceneSnapshot snapshot, int excludeStableId = 0)
@@ -146,9 +153,10 @@ namespace Assets.Scripts.BotV2
             float obstacleLeftX,
             float obstacleRightX)
         {
-            // Во время lane switch мир сдвигается влево. Если swept-interval препятствия
-            // пересекает X-интервал хомяка, столкновение возможно в окне смещения.
-            float sweptLeftX = obstacleLeftX - LaneSwitchTravel;
+            // The hamster is vulnerable on the target lane from the moment the lane
+            // switch animation begins until the return-to-control phase ends.
+            // Use the full vulnerability travel for the swept interval.
+            float sweptLeftX = obstacleLeftX - TargetLaneFullTravel;
             float sweptRightX = obstacleRightX;
             float paddedHamsterLeftX = hamsterLeftX - LaneSwitchSafetyPadding;
             float paddedHamsterRightX = hamsterRightX + LaneSwitchSafetyPadding;

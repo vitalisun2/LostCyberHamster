@@ -106,6 +106,7 @@ namespace Assets.Scripts.BotV2
             StepProjectionResult result)
         {
             var remaining = new List<ObstacleInfo>();
+            float executeStartRightX = GetExecuteStartRightX(previousState, step, previousRightX);
 
             for (int i = 0; i < previousState.RemainingObjects.Count; i++)
             {
@@ -118,7 +119,13 @@ namespace Assets.Scripts.BotV2
                 }
 
                 bool wasPassed = obstacle.RightX < nextState.HamsterRightX - PassedObstacleMargin;
-                bool wasCollected = IsCollectedDuringProjection(previousState, nextState, previousRightX, obstacle);
+                bool wasCollected = IsCollectedDuringProjection(
+                    previousState,
+                    nextState,
+                    step,
+                    previousRightX,
+                    executeStartRightX,
+                    obstacle);
 
                 if (wasCollected)
                 {
@@ -148,27 +155,59 @@ namespace Assets.Scripts.BotV2
             nextState.RemainingObjects = remaining;
         }
 
+        private static float GetExecuteStartRightX(PlannerState previousState, ChainStep step, float previousRightX)
+        {
+            float advanceDistance = step.TargetObstacle.DistanceToHamster - step.ExecuteAtDistance;
+            if (advanceDistance < 0f)
+                advanceDistance = 0f;
+
+            return previousRightX + advanceDistance;
+        }
+
         private static bool IsCollectedDuringProjection(
             PlannerState previousState,
             PlannerState nextState,
+            ChainStep step,
             float previousRightX,
+            float executeStartRightX,
             ObstacleInfo obstacle)
         {
             if (obstacle.Category != ObjectCategory.Collectible)
                 return false;
 
+            bool collectibleOnBottom = !obstacle.IsTopLane;
+
+            // До исполнения шага хомяк продолжает бежать по исходной линии.
+            if (collectibleOnBottom == previousState.HamsterOnBottom &&
+                OverlapsTravelWindow(previousRightX, executeStartRightX, obstacle))
+            {
+                return true;
+            }
+
+            if (step.Action == BotAction.SwitchLane)
+            {
+                // После SwitchLane до конца проекции хомяк уже на целевой линии.
+                if (collectibleOnBottom == nextState.HamsterOnBottom &&
+                    OverlapsTravelWindow(executeStartRightX, nextState.HamsterRightX, obstacle))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
             if (nextState.HamsterOnRoof)
                 return false;
 
-            bool collectibleOnBottom = !obstacle.IsTopLane;
-            if (collectibleOnBottom != nextState.HamsterOnBottom)
-                return false;
+            return collectibleOnBottom == nextState.HamsterOnBottom &&
+                   OverlapsTravelWindow(executeStartRightX, nextState.HamsterRightX, obstacle);
+        }
 
-            bool overlapsTravelWindow =
-                obstacle.RightX >= previousRightX - PassedObstacleMargin &&
-                obstacle.LeftX <= nextState.HamsterRightX + PassedObstacleMargin;
-
-            return overlapsTravelWindow;
+        private static bool OverlapsTravelWindow(float fromRightX, float toRightX, ObstacleInfo obstacle)
+        {
+            float windowStart = fromRightX - PassedObstacleMargin;
+            float windowEnd = toRightX + PassedObstacleMargin;
+            return obstacle.RightX >= windowStart && obstacle.LeftX <= windowEnd;
         }
     }
 }

@@ -241,6 +241,9 @@ namespace Assets.Scripts.BotV2
             var bestChain = BranchEvaluator.SelectBest(chains);
             if (bestChain == null)
             {
+                if (TryReuseCurrentPlanTail(snapshot, trigger))
+                    return;
+
                 _lastAction = "None";
                 _currentPlan.Clear();
                 _executor.ClearStep();
@@ -475,9 +478,43 @@ namespace Assets.Scripts.BotV2
         private void CompleteActiveStep(PipelineTrigger trigger)
         {
             _executor.ClearStep();
-            _currentPlan.Clear();
             _hasPlannedManagedState = false;
+
+            if (trigger == PipelineTrigger.StepCompleted)
+                _currentPlan.RemoveCompletedFromHead();
+            else
+                _currentPlan.Clear();
+
             QueuePipelineTrigger(trigger);
+        }
+
+        private bool TryReuseCurrentPlanTail(BotSceneSnapshot snapshot, PipelineTrigger trigger)
+        {
+            var head = _currentPlan.Head;
+            if (head == null || head.Status != ChainStepStatus.Ready)
+                return false;
+
+            ResetNoActionLogState();
+            _lastAction = head.Action.ToString();
+            UpdateTrajectoryPreview(snapshot, BuildCurrentPlanCandidate());
+            _plannedManagedState = _hamster.HamsterState.Value;
+            _hasPlannedManagedState = IsManagedState(_plannedManagedState);
+            _executor.SetStep(head);
+
+            BotLogger.Log(BotLogLevel.Normal,
+                $"[SELECT] keep tail {head.Action} (replan unavailable, trigger={FormatPipelineTrigger(trigger)})\n" +
+                $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
+                $"  step: {BotLogger.FormatStep(head)}\n" +
+                $"  visible: {BotLogger.FormatSnapshotObstacles(snapshot.VisibleObjects)}");
+
+            return true;
+        }
+
+        private ChainCandidate BuildCurrentPlanCandidate()
+        {
+            var chain = new ChainCandidate();
+            chain.Steps.AddRange(_currentPlan.Steps);
+            return chain;
         }
 
         private bool UpdateVisibleObjectSet(BotSceneSnapshot snapshot)

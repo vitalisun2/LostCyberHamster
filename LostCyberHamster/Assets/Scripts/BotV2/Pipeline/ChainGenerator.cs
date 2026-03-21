@@ -39,6 +39,7 @@ namespace Assets.Scripts.BotV2
                     depth: 1,
                     stepsSoFar: new List<ChainStep>(),
                     collectedSoFar: new List<ObstacleInfo>(),
+                    originalSnapshot: snapshot,
                     result: result);
             }
 
@@ -54,6 +55,7 @@ namespace Assets.Scripts.BotV2
             int depth,
             List<ChainStep> stepsSoFar,
             List<ObstacleInfo> collectedSoFar,
+            BotSceneSnapshot originalSnapshot,
             List<ChainCandidate> result)
         {
             stepsSoFar.Add(step);
@@ -78,18 +80,21 @@ namespace Assets.Scripts.BotV2
                 nextSteps.RemoveAll(candidate => candidate.Rank != DecisionRank.ThreatSafety);
             }
 
+            // Always add the chain candidate. The projected imminent threat (if any)
+            // will be handled by the bot's reactive pipeline after this step completes.
+            // AllStepsSafe reflects only the idle-period safety of the first step,
+            // not post-step projected threats — this ensures energy-free SwitchLane
+            // chains are not penalised relative to energy-costly Jump chains.
+            result.Add(BuildCandidate(
+                stepsSoFar,
+                branchCollected,
+                branchStartEnergy,
+                projection.NextState.Energy,
+                originalSnapshot));
+
             bool reachedDepthLimit = depth >= MaxBranchDepth;
             if (reachedDepthLimit || nextSteps.Count == 0)
             {
-                if (!hasImminentThreat)
-                {
-                    result.Add(BuildCandidate(
-                        stepsSoFar,
-                        branchCollected,
-                        branchStartEnergy,
-                        projection.NextState.Energy));
-                }
-
                 return;
             }
 
@@ -108,6 +113,7 @@ namespace Assets.Scripts.BotV2
                     depth + 1,
                     new List<ChainStep>(stepsSoFar),
                     new List<ObstacleInfo>(branchCollected),
+                    originalSnapshot,
                     result);
             }
         }
@@ -116,7 +122,8 @@ namespace Assets.Scripts.BotV2
             List<ChainStep> steps,
             List<ObstacleInfo> collectedObjects,
             int startEnergy,
-            int endEnergy)
+            int endEnergy,
+            BotSceneSnapshot originalSnapshot)
         {
             int totalProfit = 0;
             int totalEnergyCost = 0;
@@ -161,15 +168,17 @@ namespace Assets.Scripts.BotV2
                     TotalEnergyCost = totalEnergyCost,
                     NetEnergyGain = endEnergy - startEnergy,
                     BestRank = bestRank,
-                    AllStepsSafe = true
+                    AllStepsSafe = IsIdlePeriodSafe(originalSnapshot, steps[0])
                 }
             };
         }
 
         /// <summary>
-        /// Определяет, стоит ли пытаться проецировать второй шаг.
-        /// Нейтральные объекты и неподдерживаемые действия не нуждаются в проекции.
-        /// Крупные угрозы (big/medium) исключены: их проекция после прыжка слишком ненадёжна.
+        /// Определяет, стоит ли пытаться проецировать следующий шаг.
+        /// SwitchLane всегда допускает продолжение: проекция чисто геометрическая
+        /// (смена полосы + advance), не зависит от типа целевого препятствия.
+        /// Для Jump/SuperJump крупные road-угрозы (big/medium roofs) по-прежнему
+        /// исключены из-за ненадёжности проекции приземления.
         /// </summary>
         private static bool IsEligibleForNextProjection(BotSceneSnapshot snapshot, ChainStep first)
         {
@@ -178,9 +187,13 @@ namespace Assets.Scripts.BotV2
             if (!IsChainAction(first.Action))
                 return false;
 
+            // SwitchLane projection is purely geometric and always reliable.
+            if (first.Action == BotAction.SwitchLane)
+                return true;
+
             if (first.TargetObstacle.Category == ObjectCategory.Threat)
             {
-                if (!IsSmallRoadThreat(first.TargetObstacle.Type))
+                if (!IsChainableThreat(first.TargetObstacle.Type))
                     return false;
                 return IsOnSameLane(snapshot, first.TargetObstacle);
             }
@@ -205,7 +218,7 @@ namespace Assets.Scripts.BotV2
                     continue;
 
                 if (second.TargetObstacle.Category == ObjectCategory.Threat &&
-                    !IsSmallRoadThreat(second.TargetObstacle.Type))
+                    !IsChainableThreat(second.TargetObstacle.Type))
                     continue;
 
                 result.Add(second);
@@ -232,6 +245,36 @@ namespace Assets.Scripts.BotV2
             }
         }
 
+        /// <summary>
+        /// Проверяет, переживёт ли хомяк период ожидания перед исполнением первого шага.
+        /// Если цель далеко и executeAt мал, мир прокрутится на (target.dist - executeAt) единиц
+        /// до момента fire. Любая same-lane threat ближе этого расстояния доедет до хомяка раньше.
+        /// </summary>
+        private static bool IsIdlePeriodSafe(BotSceneSnapshot snapshot, ChainStep firstStep)
+        {
+            float waitTravel = firstStep.TargetObstacle.DistanceToHamster - firstStep.ExecuteAtDistance;
+            if (waitTravel <= 0f)
+                return true;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obstacle = snapshot.VisibleObjects[i];
+                if (obstacle.Category != ObjectCategory.Threat)
+                    continue;
+                if (!IsOnSameLane(snapshot, obstacle))
+                    continue;
+                if (obstacle.DistanceToHamster <= 0f)
+                    continue;
+                if (obstacle.StableId == firstStep.TargetObstacle.StableId)
+                    continue;
+
+                if (obstacle.DistanceToHamster < waitTravel)
+                    return false;
+            }
+
+            return true;
+        }
+
         private static bool HasImminentSameLaneThreat(BotSceneSnapshot snapshot)
         {
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
@@ -256,13 +299,15 @@ namespace Assets.Scripts.BotV2
         }
 
         /// <summary>
-        /// Малые дорожные угрозы, которые можно перепрыгнуть или обогнуть в цепочке.
-        /// Крупные угрозы (big/medium) исключены: их проекция после прыжка слишком ненадёжна.
+        /// Угрозы, которые planner умеет надёжно продолжать в цепочке.
+        /// small road остаются базовым случаем; bigAlive включён отдельно,
+        /// потому что его SuperJump теперь синхронизирован с реальным исполнением.
         /// </summary>
-        private static bool IsSmallRoadThreat(ObstacleTypeEnum type)
+        private static bool IsChainableThreat(ObstacleTypeEnum type)
         {
             return type == ObstacleTypeEnum.smallNotAliveRoad ||
-                   type == ObstacleTypeEnum.smallNotAliveRoadAndRoof;
+                   type == ObstacleTypeEnum.smallNotAliveRoadAndRoof ||
+                   type == ObstacleTypeEnum.bigAlive;
         }
 
         private static bool IsChainAction(BotAction action)

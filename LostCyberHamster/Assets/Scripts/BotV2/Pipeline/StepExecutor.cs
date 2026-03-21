@@ -27,8 +27,6 @@ namespace Assets.Scripts.BotV2
         private float _nextStallLogAt = -1f;
         private float _nextSwitchLaneUnsafeLogAt = -1f;
         private float _lastIssuedCommandAt = -999f;
-        private bool _pendingSuperJumpUpgrade;
-        private bool _pendingSuperRoofJumpUpgrade;
         private string _lastIssuedCommandLabel = "None";
 
         /// <summary>Шаг был отменён из-за изменившейся обстановки. Оркестратор перепланирует.</summary>
@@ -58,8 +56,6 @@ namespace Assets.Scripts.BotV2
             _stepStartedAt = -1f;
             _nextStallLogAt = -1f;
             _nextSwitchLaneUnsafeLogAt = -1f;
-            _pendingSuperJumpUpgrade = false;
-            _pendingSuperRoofJumpUpgrade = false;
         }
 
         public void ClearStep()
@@ -68,8 +64,6 @@ namespace Assets.Scripts.BotV2
             _stepStartedAt = -1f;
             _nextStallLogAt = -1f;
             _nextSwitchLaneUnsafeLogAt = -1f;
-            _pendingSuperJumpUpgrade = false;
-            _pendingSuperRoofJumpUpgrade = false;
         }
 
         /// <summary>
@@ -83,7 +77,6 @@ namespace Assets.Scripts.BotV2
             // InProgress: ждём завершения действия
             if (_step.Status == ChainStepStatus.InProgress)
             {
-                TryUpgradePendingSuperJump();
                 LogIfActionLooksStuck();
                 CheckCompletion();
                 return;
@@ -146,7 +139,7 @@ namespace Assets.Scripts.BotV2
                 return;
             }
 
-            if (ShouldDelayJumpOnTarget())
+            if (ShouldDelayJumpOnTargetBounce())
                 return;
 
             if (ShouldDelayJumpOver())
@@ -173,11 +166,11 @@ namespace Assets.Scripts.BotV2
             else
             {
                 var state = _hamster.HamsterState.Value;
-                if (IsManagedState(state))
+                if (!IsActiveJumpState(state))
                 {
                     _step.Status = ChainStepStatus.Completed;
                     BotLogger.Log(BotLogLevel.Normal,
-                        $"[RESULT] {_step.Action} completed\n" +
+                        $"[RESULT] {_step.Action} completed (state={state})\n" +
                         $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
                         $"  step: {BotLogger.FormatStep(_step)}\n" +
                         $"  live obstacles: {BotLogger.FormatLiveObstacles(_hamster, _step.TargetObstacle.StableId)}");
@@ -204,15 +197,9 @@ namespace Assets.Scripts.BotV2
                 case BotAction.SuperJump:
                     RecordIssuedCommand(BotAction.SuperJump);
                     if (_hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
-                    {
-                        _hamster.RoofJumpRequest.Invoke();
-                        _pendingSuperRoofJumpUpgrade = true;
-                    }
+                        _hamster.SuperRoofJumpRequest.Invoke();
                     else
-                    {
-                        _hamster.JumpRequest.Invoke();
-                        _pendingSuperJumpUpgrade = true;
-                    }
+                        _hamster.SuperJumpRequest.Invoke();
                     break;
             }
 
@@ -230,29 +217,6 @@ namespace Assets.Scripts.BotV2
         {
             _lastIssuedCommandAt = Time.time;
             _lastIssuedCommandLabel = action.ToString();
-        }
-
-        private void TryUpgradePendingSuperJump()
-        {
-            if (_pendingSuperJumpUpgrade && CanUpgradeToSuperJump(_hamster.HamsterState.Value))
-            {
-                _hamster.SuperJumpRequest.Invoke();
-                _pendingSuperJumpUpgrade = false;
-                BotLogger.Log(BotLogLevel.Verbose,
-                    $"[EXECUTE] SuperJump upgrade → FIRE\n" +
-                    $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
-                    $"  step: {BotLogger.FormatStep(_step)}");
-            }
-
-            if (_pendingSuperRoofJumpUpgrade && CanUpgradeToSuperRoofJump(_hamster.HamsterState.Value))
-            {
-                _hamster.SuperRoofJumpRequest.Invoke();
-                _pendingSuperRoofJumpUpgrade = false;
-                BotLogger.Log(BotLogLevel.Verbose,
-                    $"[EXECUTE] SuperRoofJump upgrade → FIRE\n" +
-                    $"  hamster: {BotLogger.FormatHamster(_hamster)}\n" +
-                    $"  step: {BotLogger.FormatStep(_step)}");
-            }
         }
 
         /// <summary>
@@ -278,7 +242,8 @@ namespace Assets.Scripts.BotV2
             if (_step == null || (_step.Action != BotAction.Jump && _step.Action != BotAction.SuperJump))
                 return false;
 
-            if (_step.TargetObstacle.Category == ObjectCategory.Target)
+            if (_step.Semantic != StepSemantic.JumpOver &&
+                _step.Semantic != StepSemantic.SuperJumpOver)
                 return false;
 
             var type = _step.TargetObstacle.Type;
@@ -319,9 +284,12 @@ namespace Assets.Scripts.BotV2
             return true;
         }
 
-        private bool ShouldDelayJumpOnTarget()
+        private bool ShouldDelayJumpOnTargetBounce()
         {
             if (_step == null || _step.Action != BotAction.Jump)
+                return false;
+
+            if (_step.Semantic != StepSemantic.JumpOnBounce)
                 return false;
 
             var target = _step.TargetObstacle;
@@ -444,12 +412,12 @@ namespace Assets.Scripts.BotV2
             }
         }
 
-        private static bool IsManagedState(HamsterStateEnum state)
-        {
-            return state == HamsterStateEnum.Run || state == HamsterStateEnum.RoofRun;
-        }
-
-        private static bool CanUpgradeToSuperJump(HamsterStateEnum state)
+        /// <summary>
+        /// Хомяк ещё находится в воздухе / в активной фазе прыжка.
+        /// Любое другое состояние (Run, RoofRun, *Damage, Dead и т.д.)
+        /// означает, что действие Jump/SuperJump завершилось.
+        /// </summary>
+        private static bool IsActiveJumpState(HamsterStateEnum state)
         {
             switch (state)
             {
@@ -457,29 +425,26 @@ namespace Assets.Scripts.BotV2
                 case HamsterStateEnum.JumpOver:
                 case HamsterStateEnum.JumpOnObstacle:
                 case HamsterStateEnum.JumpOnRoof:
-                case HamsterStateEnum.JumpDamageForSmallAlive:
-                case HamsterStateEnum.JumpDamageForSmallNotAlive:
-                case HamsterStateEnum.JumpDamageForBigAlive:
-                case HamsterStateEnum.JumpOnRoofDamage:
+                case HamsterStateEnum.JumpFromRoof:
+                case HamsterStateEnum.JumpOnObstacleFromRoof:
+                case HamsterStateEnum.RoofJump:
+                case HamsterStateEnum.SuperJump:
+                case HamsterStateEnum.SuperJumpOver:
+                case HamsterStateEnum.SuperJumpOnObstacle:
+                case HamsterStateEnum.SuperJumpOnRoof:
+                case HamsterStateEnum.SuperRoofJump:
+                case HamsterStateEnum.SuperJumpFromRoof:
+                case HamsterStateEnum.SuperJumpOnObstacleFromRoof:
                     return true;
                 default:
                     return false;
             }
         }
 
-        private static bool CanUpgradeToSuperRoofJump(HamsterStateEnum state)
+        private static bool IsManagedState(HamsterStateEnum state)
         {
-            switch (state)
-            {
-                case HamsterStateEnum.RoofJump:
-                case HamsterStateEnum.RoofJumpDamage:
-                case HamsterStateEnum.JumpFromRoof:
-                case HamsterStateEnum.JumpFromRoofDamage:
-                case HamsterStateEnum.JumpOnObstacleFromRoof:
-                    return true;
-                default:
-                    return false;
-            }
+            return state == HamsterStateEnum.Run || state == HamsterStateEnum.RoofRun;
         }
+
     }
 }
