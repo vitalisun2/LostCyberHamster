@@ -1,5 +1,5 @@
 GAME CODEBASE COMPACT MERGE
-GeneratedAtUtc: 2026-03-21T10:53:34Z
+GeneratedAtUtc: 2026-03-21T10:58:23Z
 SourceRoots: LostCyberHamster\Assets\Scripts, LostCyberHamster\Assets\Editor
 FileCount: 306
 Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)
@@ -15620,7 +15620,7 @@ namespace Assets.Scripts.BotV2
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV2\Pipeline\SwitchLaneSafety.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotController.cs | lines=51 | sha256=D3D970AF8FB042D51F9B7B5BCD0D630B2188A7D21F6BB2CF5A5E879FA9E6258F ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=51 | sha256=68F221AEEB69126DFDA987047B4666706E4FD6C14E2D71875A091D489B5EFEB5 ===
 using UnityEngine;
 
 namespace Assets.Scripts.BotV3
@@ -15629,21 +15629,21 @@ namespace Assets.Scripts.BotV3
     /// Точка входа BotV3. Минимальный каркас: запуск, toggle по F1.
     /// Логика pipeline будет добавляться поэтапно.
     /// </summary>
-    public class BotController : MonoBehaviour
+    public class BotOrchestrator : MonoBehaviour
     {
         public bool IsEnabled { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
         {
-            if (FindObjectOfType<BotController>(true) != null)
+            if (FindAnyObjectByType<BotOrchestrator>(FindObjectsInactive.Include) != null)
                 return;
 
             var host = GameObject.Find("[Bot]");
             if (host == null)
                 host = new GameObject("[Bot]");
 
-            host.AddComponent<BotController>();
+            host.AddComponent<BotOrchestrator>();
         }
 
         private void Start()
@@ -15651,7 +15651,7 @@ namespace Assets.Scripts.BotV3
             Enable();
         }
 
-        public void ToggleFromHotkey()
+        public void ToggleEnabledFromHotkey()
         {
             if (IsEnabled)
                 Disable();
@@ -15672,7 +15672,7 @@ namespace Assets.Scripts.BotV3
         }
     }
 }
-=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotController.cs ===
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs ===
 
 === FILE START: LostCyberHamster\Assets\Scripts\Common\CollisionUtils.cs | lines=306 | sha256=D367391D2A96AE6BAE3231CC385DCA186E90FF847AA187250FBD85E02397B440 ===
 using Assets.Scripts.Gameplay;
@@ -20529,7 +20529,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 }
 === FILE END: LostCyberHamster\Assets\Scripts\GameEngine\Mechanics\JumpMechanics.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\GameEngine\Mechanics\KeyboardMechanics.cs | lines=157 | sha256=76FF3BD5A1F28DC6917AD42A222657837105F6A682BA9DF3ED24122D2C65735C ===
+=== FILE START: LostCyberHamster\Assets\Scripts\GameEngine\Mechanics\KeyboardMechanics.cs | lines=157 | sha256=3251D0C4F854A5956D176CB53A69954D36F86EEFB25544A30BDBEDCFA036DE33 ===
 using Assets.Scripts.BotV3;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameManagerLogic;
@@ -20620,10 +20620,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
             // Bot hotkey
             if (_keyboard.f1Key.wasPressedThisFrame)
             {
-                var bot = Object.FindObjectOfType<BotController>();
+                var bot = Object.FindObjectOfType<BotOrchestrator>();
                 if (bot != null)
                 {
-                    bot.ToggleFromHotkey();
+                    bot.ToggleEnabledFromHotkey();
                 }
             }
         }

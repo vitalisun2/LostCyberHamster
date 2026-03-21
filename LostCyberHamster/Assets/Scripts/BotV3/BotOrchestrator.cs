@@ -6,21 +6,21 @@ namespace Assets.Scripts.BotV3
     /// Точка входа BotV3. Минимальный каркас: запуск, toggle по F1.
     /// Логика pipeline будет добавляться поэтапно.
     /// </summary>
-    public class BotController : MonoBehaviour
+    public class BotOrchestrator : MonoBehaviour
     {
         public bool IsEnabled { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
         {
-            if (FindAnyObjectByType<BotController>(FindObjectsInactive.Include) != null)
+            if (FindAnyObjectByType<BotOrchestrator>(FindObjectsInactive.Include) != null)
                 return;
 
             var host = GameObject.Find("[Bot]");
             if (host == null)
                 host = new GameObject("[Bot]");
 
-            host.AddComponent<BotController>();
+            host.AddComponent<BotOrchestrator>();
         }
 
         private void Start()
@@ -28,7 +28,7 @@ namespace Assets.Scripts.BotV3
             Enable();
         }
 
-        public void ToggleFromHotkey()
+        public void ToggleEnabledFromHotkey()
         {
             if (IsEnabled)
                 Disable();
