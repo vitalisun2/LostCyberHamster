@@ -1,7 +1,7 @@
 GAME CODEBASE COMPACT MERGE
-GeneratedAtUtc: 2026-03-21T15:57:56Z
+GeneratedAtUtc: 2026-03-22T08:30:39Z
 SourceRoots: LostCyberHamster\Assets\Scripts, LostCyberHamster\Assets\Editor
-FileCount: 326
+FileCount: 328
 Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)
 
 === FILE START: LostCyberHamster\Assets\Editor\AssetBundlesManager.cs | lines=258 | sha256=9633A0BDDF9E1E4382BD8A69A4186269928CD6580B02E21D717C28A5D3DA0CEA ===
@@ -15779,7 +15779,72 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotHud.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=161 | sha256=DD1E385048A80DDEEB2C4E35447C972AEAA6AF363AB1765F0576E9A910DCDC39 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotLogger.cs | lines=62 | sha256=E32189695F64E5B33E2AB47E438D3B8563CA0057D8154B40AC85C0F817E47C75 ===
+using System.Text;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Централизованное логирование BotV3.
+    /// Форматирует и выводит диагностические сообщения через DebugManager.
+    /// </summary>
+    public static class BotLogger
+    {
+        public static void LogPlanSelected(BranchCandidate branch)
+        {
+            var sb = new StringBuilder(128);
+            sb.Append("[BotV3 PLAN] Selected: ");
+            for (int i = 0; i < branch.Steps.Count; i++)
+            {
+                if (i > 0) sb.Append(" -> ");
+                var s = branch.Steps[i];
+                sb.Append(s.Action).Append("(execAt=")
+                  .Append(s.ExecuteAtDistance.ToString("F1"))
+                  .Append(" reason=\"").Append(s.Reason).Append("\")");
+            }
+
+            sb.Append(" | safe=").Append(branch.Outcome.AllStepsSafe)
+              .Append(" energy=").Append(branch.Outcome.TotalEnergyCost);
+            DebugManager.DiagLog(sb.ToString());
+        }
+
+        public static void LogPlanCleared()
+        {
+            DebugManager.DiagLog("[BotV3 PLAN] Cleared — no viable branches");
+        }
+
+        public static void LogActionCandidates(
+            ObstacleInfo obstacle,
+            bool hasSwitchLane,
+            bool hasJump,
+            BotSceneSnapshot snapshot)
+        {
+            var sb = new StringBuilder(128);
+            sb.Append("[BotV3 GEN] ").Append(obstacle.Type)
+              .Append(" dist=").Append(obstacle.DistanceToHamster.ToString("F1"))
+              .Append(" lane=").Append(obstacle.IsTopLane ? "top" : "bottom")
+              .Append(" hamster=").Append(snapshot.HamsterOnBottom ? "bottom" : "top")
+              .Append(" energy=").Append(snapshot.Energy)
+              .Append(" | SwitchLane=").Append(hasSwitchLane)
+              .Append(" Jump=").Append(hasJump);
+
+            if (!hasSwitchLane)
+            {
+                sb.Append(" [SwitchLane rejected: ");
+                if (obstacle.DistanceToHamster < 1.5f)
+                    sb.Append("too close");
+                else
+                    sb.Append("lane unsafe at execute distance");
+                sb.Append("]");
+            }
+
+            DebugManager.DiagLog(sb.ToString());
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotLogger.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs | lines=161 | sha256=B29A36A682E4950619B693ACD120F9F1E46E4464E56EC5F94DE33B7E1025DC45 ===
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
@@ -15789,7 +15854,7 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Оркестратор BotV3. Вешается на GameObject в сцене.
-    /// Pipeline: Snapshot → Classify → Generate → Chain → Evaluate → Execute.
+    /// Pipeline: Snapshot → Classify → Execute → Plan.
     /// Горячая клавиша F1: вкл/выкл.
     /// </summary>
     public class BotOrchestrator : MonoBehaviour
@@ -15807,8 +15872,7 @@ namespace Assets.Scripts.BotV3
         // Pipeline
         private SnapshotBuilder _snapshotBuilder;
         private ObjectClassifier _classifier;
-        private ActionGenerator _actionGenerator;
-        private ChainGenerator _chainGenerator;
+        private BranchSelector _planner;
         private StepExecutor _executor;
 
         private float _nextInitRetryTime;
@@ -15853,6 +15917,11 @@ namespace Assets.Scripts.BotV3
             if (Hamster.HamsterState.Value == HamsterStateEnum.Dead)
                 return;
 
+            RunPipeline();
+        }
+
+        private void RunPipeline()
+        {
             // 1. Perceive
             LastSnapshot = _snapshotBuilder.Build(Hamster);
             _classifier.Classify(LastSnapshot);
@@ -15864,16 +15933,12 @@ namespace Assets.Scripts.BotV3
             if (!_executor.HasActiveStep || _executor.WasCancelled)
             {
                 Plan.RemoveCompletedFromHead();
-                Replan();
+                ApplyPlan(_planner.FindBestBranch(LastSnapshot, _classifier));
             }
         }
 
-        private void Replan()
+        private void ApplyPlan(BranchCandidate best)
         {
-            var actions = _actionGenerator.Generate(LastSnapshot);
-            var chains = _chainGenerator.Generate(LastSnapshot, actions, _classifier, _actionGenerator);
-            var best = BranchEvaluator.SelectBest(chains);
-
             if (best == null)
             {
                 Plan.Clear();
@@ -15881,7 +15946,7 @@ namespace Assets.Scripts.BotV3
                 return;
             }
 
-            Plan.ReplaceFrom(best, "SwitchLane threat avoidance");
+            Plan.ReplaceFrom(best, best.Steps[0].Reason);
 
             if (Plan.Head != null)
                 _executor.SetStep(Plan.Head);
@@ -15908,6 +15973,7 @@ namespace Assets.Scripts.BotV3
             IsEnabled = false;
             Plan.Clear();
             _executor?.ClearStep();
+            _planner?.Reset();
             DebugManager.DiagLog("[BotV3] Disabled");
         }
 
@@ -15922,8 +15988,7 @@ namespace Assets.Scripts.BotV3
             _eventTracker = new GameEventTracker(Hamster, GameManager);
             _snapshotBuilder = new SnapshotBuilder();
             _classifier = new ObjectClassifier();
-            _actionGenerator = new ActionGenerator();
-            _chainGenerator = new ChainGenerator();
+            _planner = new BranchSelector();
             _executor = new StepExecutor(Hamster);
 
             Initialized = true;
@@ -15943,13 +16008,14 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\BotOrchestrator.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\BotAction.cs | lines=8 | sha256=7419804687B6B3864FA559E1AD720F75B1E3B94CE83C83B783FF9D8BCEB921D8 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\BotAction.cs | lines=9 | sha256=3F2B542A5784FC29685C9442CB6E8F924B245D1A166275A25DE1156E1DDC6127 ===
 namespace Assets.Scripts.BotV3
 {
     public enum BotAction
     {
         None,
-        SwitchLane
+        SwitchLane,
+        Jump
     }
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\BotAction.cs ===
@@ -15982,6 +16048,22 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\BotSceneSnapshot.cs ===
 
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\BranchCandidate.cs | lines=13 | sha256=E2F33B52AD47BADF92C0F07BE106155E3E33FCB139FA39167DEFA9678107D402 ===
+using System.Collections.Generic;
+
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Кандидат ветви планировщика: список шагов + агрегированный outcome.
+    /// </summary>
+    public class BranchCandidate
+    {
+        public List<BranchStep> Steps = new List<BranchStep>();
+        public BranchOutcome Outcome = new BranchOutcome();
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\BranchCandidate.cs ===
+
 === FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\BranchOutcome.cs | lines=11 | sha256=086A847E77D74D12F71655B5BEC9F11E3636A8F62E4430B07831ED4C70E9BABC ===
 namespace Assets.Scripts.BotV3
 {
@@ -15996,31 +16078,15 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\BranchOutcome.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\ChainCandidate.cs | lines=13 | sha256=3C4D401412A168F9B6FF3B46F296A271947BB4EE9E10C03B337076ABEB186096 ===
-using System.Collections.Generic;
-
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\BranchStep.cs | lines=35 | sha256=B599A2F398FA1613B94E109396E2698B1FF40BE457DE85334C6CEAFE8C6CC6D9 ===
 namespace Assets.Scripts.BotV3
 {
-    /// <summary>
-    /// Кандидат ветви планировщика: список шагов + агрегированный outcome.
-    /// </summary>
-    public class ChainCandidate
-    {
-        public List<ChainStep> Steps = new List<ChainStep>();
-        public BranchOutcome Outcome = new BranchOutcome();
-    }
-}
-=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\ChainCandidate.cs ===
-
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\ChainStep.cs | lines=35 | sha256=1AB53549147E8D20F6BAA558BAF4F5AA2383CA68019B6B4C7D79D9595D4E039A ===
-namespace Assets.Scripts.BotV3
-{
-    public enum ChainStepStatus { Ready, InProgress, Completed }
+    public enum BranchStepStatus { Ready, InProgress, Completed }
 
     /// <summary>
-    /// Один шаг в цепочке действий бота.
+    /// Один шаг в ветви действий бота.
     /// </summary>
-    public class ChainStep
+    public class BranchStep
     {
         public BotAction Action;
         public ObstacleInfo TargetObstacle;
@@ -16030,9 +16096,9 @@ namespace Assets.Scripts.BotV3
 
         public int EnergyCost;
         public string Reason;
-        public ChainStepStatus Status;
+        public BranchStepStatus Status;
 
-        public ChainStep(
+        public BranchStep(
             BotAction action,
             ObstacleInfo targetObstacle,
             float executeAtDistance,
@@ -16044,30 +16110,30 @@ namespace Assets.Scripts.BotV3
             ExecuteAtDistance = executeAtDistance;
             EnergyCost = energyCost;
             Reason = reason;
-            Status = ChainStepStatus.Ready;
+            Status = BranchStepStatus.Ready;
         }
     }
 }
-=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\ChainStep.cs ===
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\BranchStep.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\CurrentPlan.cs | lines=37 | sha256=89A8C3680A50BAF5B35102D82FA3E364E9DA45D6F8939324A076C5F4CC29D967 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Data\CurrentPlan.cs | lines=37 | sha256=32BD80A3D055DB0015E9B08480F78008AA4FCA29F91646660E92084DCEE37233 ===
 using System.Collections.Generic;
 
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
-    /// Текущий активный план: выбранная цепочка шагов.
+    /// Текущий активный план: выбранная ветвь шагов.
     /// Исполняется только head, хвост доступен для дебага.
     /// </summary>
     public class CurrentPlan
     {
-        public List<ChainStep> Steps { get; } = new List<ChainStep>();
+        public List<BranchStep> Steps { get; } = new List<BranchStep>();
         public string Strategy { get; private set; }
 
-        public ChainStep Head => Steps.Count > 0 ? Steps[0] : null;
+        public BranchStep Head => Steps.Count > 0 ? Steps[0] : null;
         public bool IsEmpty => Steps.Count == 0;
 
-        public void ReplaceFrom(ChainCandidate chain, string strategy)
+        public void ReplaceFrom(BranchCandidate chain, string strategy)
         {
             Steps.Clear();
             if (chain?.Steps != null)
@@ -16077,7 +16143,7 @@ namespace Assets.Scripts.BotV3
 
         public void RemoveCompletedFromHead()
         {
-            while (Steps.Count > 0 && Steps[0].Status == ChainStepStatus.Completed)
+            while (Steps.Count > 0 && Steps[0].Status == BranchStepStatus.Completed)
                 Steps.RemoveAt(0);
         }
 
@@ -16229,7 +16295,10 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\StepProjectionResult.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Execution\StepExecutor.cs | lines=114 | sha256=893D25D497B0FB6537B7AD76D362BCAE9A733BE88BD97BACD674CCD99DA67433 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Execution\StepExecutor.cs | lines=248 | sha256=CC26B5AE849D7AE6F386F3BE540CA32257914AA8ADBE8F4D4B59AC4392BFF82D ===
+using Assets.Scripts.Common;
+using Assets.Scripts.Common.Models;
+using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -16239,23 +16308,28 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Ждёт нужной дистанции до объекта и отправляет игровую команду.
-    /// V3 minimal: только SwitchLane (TapRequest).
+    /// Поддерживает SwitchLane и Jump.
     /// </summary>
     public class StepExecutor
     {
+        private const float JumpMinCompletionDelay = 0.3f;
+        private const float JumpLateFallbackDistance = 0.1f;
+
         private readonly Hamster _hamster;
-        private ChainStep _step;
+        private BranchStep _step;
         private float _switchLaneExecTime;
+        private float _jumpExecTime;
+        private float _jumpWorldShift = -1f;
 
         public bool WasCancelled { get; private set; }
-        public bool HasActiveStep => _step != null && _step.Status != ChainStepStatus.Completed;
+        public bool HasActiveStep => _step != null && _step.Status != BranchStepStatus.Completed;
 
         public StepExecutor(Hamster hamster)
         {
             _hamster = hamster;
         }
 
-        public void SetStep(ChainStep step)
+        public void SetStep(BranchStep step)
         {
             _step = step;
             WasCancelled = false;
@@ -16268,10 +16342,10 @@ namespace Assets.Scripts.BotV3
 
         public void TryExecute()
         {
-            if (_step == null || _step.Status == ChainStepStatus.Completed)
+            if (_step == null || _step.Status == BranchStepStatus.Completed)
                 return;
 
-            if (_step.Status == ChainStepStatus.InProgress)
+            if (_step.Status == BranchStepStatus.InProgress)
             {
                 CheckCompletion();
                 return;
@@ -16281,8 +16355,8 @@ namespace Assets.Scripts.BotV3
 
             if (dist < -0.3f)
             {
-                _step.Status = ChainStepStatus.Completed;
-                DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane SKIPPED (too late) dist={dist:F2}");
+                _step.Status = BranchStepStatus.Completed;
+                DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} SKIPPED (too late) dist={dist:F2}");
                 return;
             }
 
@@ -16293,30 +16367,137 @@ namespace Assets.Scripts.BotV3
                 _hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
                 return;
 
-            if (!SwitchLaneSafety.IsImmediatelySafe(_hamster))
+            if (_step.Action == BotAction.SwitchLane)
             {
-                if (dist > ActionGenerator.SwitchLaneLatestSafeDist)
-                    return;
+                if (!SwitchLaneSafety.IsImmediatelySafe(_hamster))
+                {
+                    if (dist > ActionGenerator.SwitchLaneLatestSafeDist)
+                        return;
 
-                _step.Status = ChainStepStatus.Completed;
-                WasCancelled = true;
-                DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane CANCELLED — unsafe near deadline, dist={dist:F2}");
-                return;
+                    _step.Status = BranchStepStatus.Completed;
+                    WasCancelled = true;
+                    DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane CANCELLED — unsafe near deadline, dist={dist:F2}");
+                    return;
+                }
             }
 
-            _hamster.TapRequest.Invoke();
-            _step.Status = ChainStepStatus.InProgress;
-            _switchLaneExecTime = Time.time;
-            DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane FIRE dist={dist:F2} reason={_step.Reason}");
+            if (_step.Action == BotAction.Jump && ShouldDelayJumpOver())
+                return;
+
+            Fire(dist);
+        }
+
+        private void Fire(float dist)
+        {
+            switch (_step.Action)
+            {
+                case BotAction.SwitchLane:
+                    _hamster.TapRequest.Invoke();
+                    _switchLaneExecTime = Time.time;
+                    break;
+
+                case BotAction.Jump:
+                    if (_hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
+                        _hamster.RoofJumpRequest.Invoke();
+                    else
+                        _hamster.JumpRequest.Invoke();
+                    _jumpExecTime = Time.time;
+                    break;
+            }
+
+            _step.Status = BranchStepStatus.InProgress;
+            DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} FIRE dist={dist:F2} reason={_step.Reason}");
         }
 
         private void CheckCompletion()
         {
-            bool timeElapsed = Time.time - _switchLaneExecTime >= 0.1f;
-            if (timeElapsed && !_hamster.IsShifting.Value)
+            if (_step.Action == BotAction.SwitchLane)
             {
-                _step.Status = ChainStepStatus.Completed;
-                DebugManager.DiagLog("[BotV3 EXEC] SwitchLane completed");
+                bool timeElapsed = Time.time - _switchLaneExecTime >= 0.1f;
+                if (timeElapsed && !_hamster.IsShifting.Value)
+                {
+                    _step.Status = BranchStepStatus.Completed;
+                    DebugManager.DiagLog("[BotV3 EXEC] SwitchLane completed");
+                }
+            }
+            else if (_step.Action == BotAction.Jump)
+            {
+                if (Time.time - _jumpExecTime < JumpMinCompletionDelay)
+                    return;
+
+                if (!IsActiveJumpState(_hamster.HamsterState.Value))
+                {
+                    _step.Status = BranchStepStatus.Completed;
+                    DebugManager.DiagLog($"[BotV3 EXEC] Jump completed (state={_hamster.HamsterState.Value})");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Задерживает прыжок, пока IsOverlapAtShift показывает коллизию.
+        /// Когда хомяк достаточно близко, jump world shift перенесёт его ЗА препятствие.
+        /// При дистанции <= JumpLateFallbackDistance прыгаем в любом случае.
+        /// </summary>
+        private bool ShouldDelayJumpOver()
+        {
+            var target = _step.TargetObstacle;
+            if (target.Type != ObstacleTypeEnum.smallNotAliveRoad &&
+                target.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
+                return false;
+
+            var liveObstacle = FindLiveObstacle(target.StableId);
+            if (liveObstacle == null)
+                return false;
+
+            EnsureJumpWorldShiftCached();
+            if (_jumpWorldShift <= 0f)
+                return false;
+
+            bool wouldOverlap = CollisionUtils.IsOverlapAtShift(
+                _hamster.transform,
+                _hamster.ColliderWidth,
+                _jumpWorldShift,
+                liveObstacle);
+
+            if (!wouldOverlap)
+                return false;
+
+            float liveDist = liveObstacle.transform.position.x
+                           - liveObstacle.ColliderWidth * 0.5f
+                           - _hamster.RightX;
+
+            if (liveDist <= JumpLateFallbackDistance)
+                return false;
+
+            return true;
+        }
+
+        private void EnsureJumpWorldShiftCached()
+        {
+            if (_jumpWorldShift >= 0f)
+                return;
+
+            var ctrl = _hamster.GetComponentInChildren<TransformAnimatorController>();
+            if (ctrl == null)
+                return;
+
+            _jumpWorldShift = HelpMethods.GetWorldShiftForClip(ctrl, "transform_jump");
+        }
+
+        private static bool IsActiveJumpState(HamsterStateEnum state)
+        {
+            switch (state)
+            {
+                case HamsterStateEnum.Jump:
+                case HamsterStateEnum.JumpOver:
+                case HamsterStateEnum.JumpOnObstacle:
+                case HamsterStateEnum.JumpOnRoof:
+                case HamsterStateEnum.JumpFromRoof:
+                case HamsterStateEnum.JumpOnObstacleFromRoof:
+                case HamsterStateEnum.RoofJump:
+                    return true;
+                default:
+                    return false;
             }
         }
 
@@ -16342,11 +16523,30 @@ namespace Assets.Scripts.BotV3
 
             return target.DistanceToHamster;
         }
+
+        private static Obstacle FindLiveObstacle(int stableId)
+        {
+            var spawner = ObstacleSpawner.Instance;
+            if (spawner == null)
+                return null;
+
+            var spawned = spawner.SpawnedObstacles;
+            for (int i = 0; i < spawned.Count; i++)
+            {
+                var inst = spawned[i];
+                if (inst?.ObstacleScript == null) continue;
+
+                if (inst.ObstacleScript.GetInstanceID() == stableId)
+                    return inst.ObstacleScript;
+            }
+
+            return null;
+        }
     }
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Execution\StepExecutor.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Execution\SwitchLaneSafety.cs | lines=137 | sha256=52A5280371196F9B389C86422B1F984CD8571CCD7B87A1F12BD60C70FA4568C9 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Execution\SwitchLaneSafety.cs | lines=132 | sha256=4FBBE28FE3246BE7A9A4FF1216058AEB1F84255496ED091710026D8339BF09CD ===
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay;
@@ -16357,6 +16557,17 @@ namespace Assets.Scripts.BotV3
     /// <summary>
     /// Проверки безопасности SwitchLane: не столкнётся ли хомяк
     /// во время смещения между линиями.
+    ///
+    /// Модель коллизий в runtime:
+    ///   1. TapRequest → IsOnBottomLine мгновенно переключается на target lane.
+    ///   2. CollisionController.ProcessTrigerEnter проверяет IsOnSameLine(IsOnBottomLine, obstacle).
+    ///   3. Source-lane препятствия: IsOnSameLine сразу false → коллизии невозможны.
+    ///   4. Target-lane препятствия: IsOnSameLine true, но физическое пересечение trigger'ов
+    ///      происходит только когда collider хомяка достигнет target Y.
+    ///
+    /// IsImmediatelySafe используется в StepExecutor перед fire для live-проверки.
+    /// На этапе планирования (ActionGenerator) safety check не нужен — StepExecutor
+    /// откладывает fire пока live-проверка не пройдёт.
     /// </summary>
     internal static class SwitchLaneSafety
     {
@@ -16367,10 +16578,13 @@ namespace Assets.Scripts.BotV3
             (LaneSwitchDuration + ReturnControlDuration) * Assets.Scripts.Consts.GameSpeedBase;
         private const float LaneSwitchSafetyPadding = 0.15f;
 
+        /// <summary>
+        /// Проверяет, безопасно ли выполнить SwitchLane прямо сейчас.
+        /// Snapshot-версия для BranchGenerator idle-period checks.
+        /// </summary>
         public static bool IsImmediatelySafe(BotSceneSnapshot snapshot)
         {
             float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
-            bool sourceIsBottom = snapshot.HamsterOnBottom;
             bool targetIsBottom = !snapshot.HamsterOnBottom;
 
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
@@ -16379,24 +16593,23 @@ namespace Assets.Scripts.BotV3
                 if (!IsHazard(obstacle)) continue;
 
                 bool obstacleOnBottom = !obstacle.IsTopLane;
-                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
+                if (obstacleOnBottom != targetIsBottom)
                     continue;
 
                 if (obstacle.RightX < hamsterLeftX)
                     continue;
 
-                if (obstacleOnBottom == sourceIsBottom &&
-                    WouldHitDuringSourcePhase(hamsterLeftX, snapshot.HamsterRightX, obstacle.LeftX, obstacle.RightX))
-                    return false;
-
-                if (obstacleOnBottom == targetIsBottom &&
-                    WouldHitDuringTargetPhase(hamsterLeftX, snapshot.HamsterRightX, obstacle.LeftX, obstacle.RightX))
+                if (WouldHitDuringTargetPhase(hamsterLeftX, snapshot.HamsterRightX, obstacle.LeftX, obstacle.RightX))
                     return false;
             }
 
             return true;
         }
 
+        /// <summary>
+        /// Проверяет, безопасно ли выполнить SwitchLane прямо сейчас.
+        /// Live-версия для StepExecutor (читает ObstacleSpawner напрямую).
+        /// </summary>
         public static bool IsImmediatelySafe(Hamster hamster)
         {
             var spawner = ObstacleSpawner.Instance;
@@ -16404,8 +16617,7 @@ namespace Assets.Scripts.BotV3
 
             float hamsterLeftX = hamster.LeftX;
             float hamsterRightX = hamster.RightX;
-            bool sourceIsBottom = hamster.IsOnBottomLine.Value;
-            bool targetIsBottom = !sourceIsBottom;
+            bool targetIsBottom = !hamster.IsOnBottomLine.Value;
 
             var spawned = spawner.SpawnedObstacles;
             for (int i = 0; i < spawned.Count; i++)
@@ -16417,19 +16629,14 @@ namespace Assets.Scripts.BotV3
                 if (!IsThreatType(obs.ObstacleType.ObstacleTypeEnum)) continue;
 
                 bool obstacleOnBottom = !obs.ObstacleType.IsTop;
-                if (obstacleOnBottom != sourceIsBottom && obstacleOnBottom != targetIsBottom)
+                if (obstacleOnBottom != targetIsBottom)
                     continue;
 
                 float leftX = obs.transform.position.x - obs.ColliderWidth * 0.5f;
                 float rightX = obs.transform.position.x + obs.ColliderWidth * 0.5f;
                 if (rightX < hamsterLeftX) continue;
 
-                if (obstacleOnBottom == sourceIsBottom &&
-                    WouldHitDuringSourcePhase(hamsterLeftX, hamsterRightX, leftX, rightX))
-                    return false;
-
-                if (obstacleOnBottom == targetIsBottom &&
-                    WouldHitDuringTargetPhase(hamsterLeftX, hamsterRightX, leftX, rightX))
+                if (WouldHitDuringTargetPhase(hamsterLeftX, hamsterRightX, leftX, rightX))
                     return false;
             }
 
@@ -16464,18 +16671,6 @@ namespace Assets.Scripts.BotV3
             float obstacleLeftX, float obstacleRightX)
         {
             float sweptLeftX = obstacleLeftX - TargetLaneFullTravel;
-            float sweptRightX = obstacleRightX;
-            return CollisionUtils.IsOverlap(
-                hamsterLeftX - LaneSwitchSafetyPadding,
-                hamsterRightX + LaneSwitchSafetyPadding,
-                sweptLeftX, sweptRightX);
-        }
-
-        private static bool WouldHitDuringSourcePhase(
-            float hamsterLeftX, float hamsterRightX,
-            float obstacleLeftX, float obstacleRightX)
-        {
-            float sweptLeftX = obstacleLeftX - LaneSwitchTravel;
             float sweptRightX = obstacleRightX;
             return CollisionUtils.IsOverlap(
                 hamsterLeftX - LaneSwitchSafetyPadding,
@@ -16702,23 +16897,31 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Perception\SnapshotBuilder.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\ActionGenerator.cs | lines=87 | sha256=D841DA66056E0D1A8946D1176464B1F9561987F882BA331426FF217EF77BB7C9 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\ActionGenerator.cs | lines=162 | sha256=AAC873E5B62AF62175F09C2099971AD913108CB4FE17820D99394FD76A8684E7 ===
 using System.Collections.Generic;
+using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Генерирует возможные действия для видимых объектов.
-    /// V3 minimal: только SwitchLane для same-lane Threats.
+    /// SwitchLane для same-lane Threats, Jump для малых препятствий.
     /// </summary>
     public class ActionGenerator
     {
         private const float SwitchLaneFireDist = 4.0f;
         internal const float SwitchLaneLatestSafeDist = 1.5f;
 
-        public List<ChainStep> Generate(BotSceneSnapshot snapshot)
+        private const float JumpFireDist = 1.5f;
+        internal const int JumpEnergyCost = 10;
+
+        /// <summary>Примерное расстояние, на которое хомяк улетает при Jump.</summary>
+        internal const float JumpLandingOffset = 3.8f;
+        private const float JumpLandingMargin = 1.2f;
+
+        public List<BranchStep> Generate(BotSceneSnapshot snapshot)
         {
-            var result = new List<ChainStep>();
+            var result = new List<BranchStep>();
 
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
@@ -16732,8 +16935,16 @@ namespace Assets.Scripts.BotV3
                 if (!IsNearestSameLaneThreat(snapshot, obs))
                     continue;
 
-                if (TryBuildSwitchLaneStep(snapshot, obs, out ChainStep step))
-                    result.Add(step);
+                bool hasSwitchLane = TryBuildSwitchLaneStep(snapshot, obs, out BranchStep switchStep);
+                bool hasJump = TryBuildJumpStep(snapshot, obs, out BranchStep jumpStep);
+
+                if (hasSwitchLane)
+                    result.Add(switchStep);
+                if (hasJump)
+                    result.Add(jumpStep);
+
+                if (hasSwitchLane || hasJump)
+                    BotLogger.LogActionCandidates(obs, hasSwitchLane, hasJump, snapshot);
             }
 
             return result;
@@ -16742,7 +16953,7 @@ namespace Assets.Scripts.BotV3
         private static bool TryBuildSwitchLaneStep(
             BotSceneSnapshot snapshot,
             ObstacleInfo threat,
-            out ChainStep step)
+            out BranchStep step)
         {
             step = null;
 
@@ -16755,15 +16966,74 @@ namespace Assets.Scripts.BotV3
             if (executeAtDistance < SwitchLaneLatestSafeDist)
                 executeAtDistance = SwitchLaneLatestSafeDist;
 
-            if (!SwitchLaneSafety.IsImmediatelySafe(snapshot))
-                return false;
-
-            step = new ChainStep(
+            step = new BranchStep(
                 BotAction.SwitchLane,
                 threat,
                 executeAtDistance,
                 energyCost: 0,
                 $"SwitchLane avoid {threat.Type}");
+
+            return true;
+        }
+
+        private static bool TryBuildJumpStep(
+            BotSceneSnapshot snapshot,
+            ObstacleInfo threat,
+            out BranchStep step)
+        {
+            step = null;
+
+            if (!IsSmallObstacle(threat.Type))
+                return false;
+
+            if (snapshot.Energy < JumpEnergyCost)
+                return false;
+
+            if (!IsLandingClear(snapshot, snapshot.HamsterOnBottom, threat.StableId))
+                return false;
+
+            float executeAtDistance = JumpFireDist;
+            if (executeAtDistance > threat.DistanceToHamster)
+                executeAtDistance = threat.DistanceToHamster;
+
+            step = new BranchStep(
+                BotAction.Jump,
+                threat,
+                executeAtDistance,
+                JumpEnergyCost,
+                $"Jump over {threat.Type}");
+
+            return true;
+        }
+
+        private static bool IsSmallObstacle(ObstacleTypeEnum type)
+        {
+            return type == ObstacleTypeEnum.smallNotAliveRoad
+                || type == ObstacleTypeEnum.smallNotAliveRoadAndRoof;
+        }
+
+        /// <summary>
+        /// Проверяет, свободна ли зона приземления прыжка.
+        /// </summary>
+        private static bool IsLandingClear(BotSceneSnapshot snapshot, bool hamsterOnBottom, int excludeId)
+        {
+            float checkFrom = snapshot.HamsterRightX + JumpLandingOffset - JumpLandingMargin;
+            float checkTo = snapshot.HamsterRightX + JumpLandingOffset + JumpLandingMargin;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (obs.StableId == excludeId) continue;
+                if (obs.Category != ObjectCategory.Threat) continue;
+                if (obs.DistanceToHamster < 0) continue;
+
+                bool obsOnBottom = !obs.IsTopLane;
+                if (obsOnBottom != hamsterOnBottom) continue;
+
+                float absLeftX = snapshot.HamsterRightX + obs.DistanceToHamster;
+                if (absLeftX >= checkFrom && absLeftX <= checkTo)
+                    return false;
+            }
 
             return true;
         }
@@ -16792,7 +17062,7 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Planning\ActionGenerator.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\BranchEvaluator.cs | lines=34 | sha256=A11C924CF9C0169B5C9128F5933F1723C347BA1D99CBE54FA2CC942756BCEFF3 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\BranchEvaluator.cs | lines=34 | sha256=85DBC04390EF3C22B12943501995C5B10AA007ADEEB80CCA0EEF1B90AAE6DAA4 ===
 using System.Collections.Generic;
 
 namespace Assets.Scripts.BotV3
@@ -16803,7 +17073,7 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public static class BranchEvaluator
     {
-        public static ChainCandidate SelectBest(List<ChainCandidate> candidates)
+        public static BranchCandidate SelectBest(List<BranchCandidate> candidates)
         {
             if (candidates == null || candidates.Count == 0)
                 return null;
@@ -16812,7 +17082,7 @@ namespace Assets.Scripts.BotV3
             return candidates[0];
         }
 
-        private static int Compare(ChainCandidate a, ChainCandidate b)
+        private static int Compare(BranchCandidate a, BranchCandidate b)
         {
             var oa = a.Outcome;
             var ob = b.Outcome;
@@ -16829,27 +17099,27 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Planning\BranchEvaluator.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\ChainGenerator.cs | lines=125 | sha256=AF1F03EAA3CA9ABDF09FC42652187B13104C5984B3F375982C0F087248A66F38 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\BranchGenerator.cs | lines=125 | sha256=352DABDE06DC8FF91A795EFB8AE29AA9EB1CCCC5330C845C9F13734B2A0DF82B ===
 using System.Collections.Generic;
 
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Строит ветви планировщика до заданной глубины.
-    /// V3 minimal: SwitchLane chains, depth 1-2.
+    /// V3 minimal: SwitchLane branches, depth 1-2.
     /// </summary>
-    public class ChainGenerator
+    public class BranchGenerator
     {
         private const int MaxBranchDepth = 3;
         private readonly StateProjector _stateProjector = new StateProjector();
 
-        public List<ChainCandidate> Generate(
+        public List<BranchCandidate> Generate(
             BotSceneSnapshot snapshot,
-            List<ChainStep> firstStepCandidates,
+            List<BranchStep> firstStepCandidates,
             ObjectClassifier classifier,
             ActionGenerator actionGenerator)
         {
-            var result = new List<ChainCandidate>();
+            var result = new List<BranchCandidate>();
             if (firstStepCandidates == null || firstStepCandidates.Count == 0)
                 return result;
 
@@ -16864,7 +17134,7 @@ namespace Assets.Scripts.BotV3
                     actionGenerator,
                     first,
                     depth: 1,
-                    stepsSoFar: new List<ChainStep>(),
+                    stepsSoFar: new List<BranchStep>(),
                     originalSnapshot: snapshot,
                     result: result);
             }
@@ -16876,11 +17146,11 @@ namespace Assets.Scripts.BotV3
             BotSceneSnapshot snapshot,
             ObjectClassifier classifier,
             ActionGenerator actionGenerator,
-            ChainStep step,
+            BranchStep step,
             int depth,
-            List<ChainStep> stepsSoFar,
+            List<BranchStep> stepsSoFar,
             BotSceneSnapshot originalSnapshot,
-            List<ChainCandidate> result)
+            List<BranchCandidate> result)
         {
             stepsSoFar.Add(step);
 
@@ -16908,23 +17178,23 @@ namespace Assets.Scripts.BotV3
                     actionGenerator,
                     next,
                     depth + 1,
-                    new List<ChainStep>(stepsSoFar),
+                    new List<BranchStep>(stepsSoFar),
                     originalSnapshot,
                     result);
             }
         }
 
-        private static ChainCandidate BuildCandidate(
-            List<ChainStep> steps,
+        private static BranchCandidate BuildCandidate(
+            List<BranchStep> steps,
             BotSceneSnapshot originalSnapshot)
         {
             int totalEnergyCost = 0;
             for (int i = 0; i < steps.Count; i++)
                 totalEnergyCost += steps[i].EnergyCost;
 
-            return new ChainCandidate
+            return new BranchCandidate
             {
-                Steps = new List<ChainStep>(steps),
+                Steps = new List<BranchStep>(steps),
                 Outcome = new BranchOutcome
                 {
                     TotalEnergyCost = totalEnergyCost,
@@ -16933,7 +17203,7 @@ namespace Assets.Scripts.BotV3
             };
         }
 
-        private static bool IsIdlePeriodSafe(BotSceneSnapshot snapshot, ChainStep firstStep)
+        private static bool IsIdlePeriodSafe(BotSceneSnapshot snapshot, BranchStep firstStep)
         {
             float waitTravel = firstStep.TargetObstacle.DistanceToHamster - firstStep.ExecuteAtDistance;
             if (waitTravel <= 0f)
@@ -16955,40 +17225,96 @@ namespace Assets.Scripts.BotV3
         }
     }
 }
-=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Planning\ChainGenerator.cs ===
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Planning\BranchGenerator.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\StateProjector.cs | lines=73 | sha256=F57A9627E23D1C6C22599990DBF42C9E5A942F3703897C93B3972EDB460411DE ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\BranchSelector.cs | lines=50 | sha256=0B70F34886EFF3162C68DB1B884A95A6A4B00B51ED563848BBFA9631F2032B63 ===
+namespace Assets.Scripts.BotV3
+{
+    /// <summary>
+    /// Выбирает лучшую ветвь действий для текущего снимка.
+    /// Генерация действий -> построение ветвей -> оценка -> выбор лучшей.
+    /// Чистый класс — не MonoBehaviour.
+    /// </summary>
+    public class BranchSelector
+    {
+        private readonly ActionGenerator _actionGenerator = new ActionGenerator();
+        private readonly BranchGenerator _branchGenerator = new BranchGenerator();
+
+        private int _lastPlanTargetId;
+
+        /// <summary>
+        /// Возвращает лучшую ветвь действий для текущего снимка, или null если действовать не нужно.
+        /// </summary>
+        public BranchCandidate FindBestBranch(BotSceneSnapshot snapshot, ObjectClassifier classifier)
+        {
+            var actions = _actionGenerator.Generate(snapshot);
+            var branches = _branchGenerator.Generate(snapshot, actions, classifier, _actionGenerator);
+            var best = BranchEvaluator.SelectBest(branches);
+
+            if (best == null)
+            {
+                if (_lastPlanTargetId != 0)
+                {
+                    BotLogger.LogPlanCleared();
+                    _lastPlanTargetId = 0;
+                }
+
+                return null;
+            }
+
+            int newTargetId = best.Steps[0].TargetObstacle.StableId;
+            if (newTargetId != _lastPlanTargetId)
+            {
+                _lastPlanTargetId = newTargetId;
+                BotLogger.LogPlanSelected(best);
+            }
+
+            return best;
+        }
+
+        public void Reset()
+        {
+            _lastPlanTargetId = 0;
+        }
+    }
+}
+=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Planning\BranchSelector.cs ===
+
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\StateProjector.cs | lines=102 | sha256=26B0A52DE86405EF9BBD98043E7EB54F023127FCB07A0C07999B9EDE80A60CBB ===
 using System.Collections.Generic;
 
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Проецирует состояние планировщика после применения шага.
-    /// V3 minimal: только SwitchLane проекция.
+    /// Поддерживает SwitchLane и Jump проекции.
     /// </summary>
     public class StateProjector
     {
         private const float SwitchLaneReturnControlTravel =
             0.47f * Assets.Scripts.Consts.GameSpeedBase;
+        private const float JumpLandingTravel = 3.8f;
+        private const float LandingPostFactor = 0.4f;
         private const float PassedObstacleMargin = 0.4f;
 
-        public StepProjectionResult Project(BotSceneSnapshot snapshot, ChainStep step)
+        public StepProjectionResult Project(BotSceneSnapshot snapshot, BranchStep step)
         {
             return Project(PlannerState.FromSnapshot(snapshot), step);
         }
 
-        public StepProjectionResult Project(PlannerState state, ChainStep step)
+        public StepProjectionResult Project(PlannerState state, BranchStep step)
         {
             var nextState = state.Clone();
 
-            nextState.HamsterOnBottom = !state.HamsterOnBottom;
-            nextState.HamsterOnRoof = false;
-
-            float advanceDistance = step.TargetObstacle.DistanceToHamster - step.ExecuteAtDistance;
-            if (advanceDistance < 0f)
-                advanceDistance = 0f;
-
-            nextState.HamsterRightX += advanceDistance + SwitchLaneReturnControlTravel;
+            switch (step.Action)
+            {
+                case BotAction.SwitchLane:
+                    ProjectSwitchLane(nextState, state, step);
+                    break;
+                case BotAction.Jump:
+                    ProjectJump(nextState, step);
+                    break;
+            }
 
             RebuildRemainingObjects(state, nextState, step);
 
@@ -17000,16 +17326,42 @@ namespace Assets.Scripts.BotV3
             };
         }
 
+        private static void ProjectSwitchLane(PlannerState nextState, PlannerState previousState, BranchStep step)
+        {
+            nextState.HamsterOnBottom = !previousState.HamsterOnBottom;
+            nextState.HamsterOnRoof = false;
+
+            float advanceDistance = step.TargetObstacle.DistanceToHamster - step.ExecuteAtDistance;
+            if (advanceDistance < 0f)
+                advanceDistance = 0f;
+
+            nextState.HamsterRightX += advanceDistance + SwitchLaneReturnControlTravel;
+        }
+
+        private static void ProjectJump(PlannerState nextState, BranchStep step)
+        {
+            nextState.HamsterOnRoof = false;
+            nextState.Energy -= step.EnergyCost;
+            if (nextState.Energy < 0)
+                nextState.Energy = 0;
+
+            nextState.HamsterRightX = step.TargetObstacle.RightX
+                                    + (JumpLandingTravel * LandingPostFactor);
+        }
+
         private static void RebuildRemainingObjects(
             PlannerState previousState,
             PlannerState nextState,
-            ChainStep step)
+            BranchStep step)
         {
             var remaining = new List<ObstacleInfo>();
 
             for (int i = 0; i < previousState.RemainingObjects.Count; i++)
             {
                 var obstacle = previousState.RemainingObjects[i];
+
+                if (step.Action == BotAction.Jump && obstacle.StableId == step.TargetObstacle.StableId)
+                    continue;
 
                 bool wasPassed = obstacle.RightX < nextState.HamsterRightX - PassedObstacleMargin;
                 if (wasPassed)
