@@ -18,6 +18,7 @@ namespace Assets.Scripts.BotV3
         private const float JumpLateFallbackDistance = 0.1f;
         private const float TooLateThreshold = -0.3f;
         private const float SwitchLaneMinElapsed = 0.1f;
+        private const float SwitchLaneDeadlineDist = 0.5f;
 
         private readonly Hamster _hamster;
         private BranchStep _step;
@@ -71,18 +72,15 @@ namespace Assets.Scripts.BotV3
                 _hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
                 return;
 
-            if (_step.Action == BotAction.SwitchLane)
+            if (_step.Action == BotAction.SwitchLane && !IsSwitchLaneEndPositionSafe())
             {
-                if (!SwitchLaneSafety.IsImmediatelySafe(_hamster))
+                if (dist <= SwitchLaneDeadlineDist)
                 {
-                    if (dist > ActionGenerator.SwitchLaneLatestSafeDist)
-                        return;
-
                     _step.Status = BranchStepStatus.Completed;
                     WasCancelled = true;
-                    DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane CANCELLED — unsafe near deadline, dist={dist:F2}");
-                    return;
+                    DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane CANCELLED — end position unsafe at deadline, dist={dist:F2}");
                 }
+                return;
             }
 
             if (_step.Action == BotAction.Jump && ShouldDelayJumpOver())
@@ -226,6 +224,67 @@ namespace Assets.Scripts.BotV3
             }
 
             return target.DistanceToHamster;
+        }
+
+        /// <summary>
+        /// Live-проверка безопасности SwitchLane перед fire.
+        /// Runtime: IsOnBottomLine переключается мгновенно при TapRequest,
+        /// поэтому коллизии с target-lane threats возможны сразу — с текущей
+        /// позиции и до конечной (current + SwitchLaneFullTravel).
+        /// Проверяем: нет ли target-lane threat в этом интервале.
+        /// </summary>
+        private bool IsSwitchLaneEndPositionSafe()
+        {
+            var spawner = ObstacleSpawner.Instance;
+            if (spawner == null) return true;
+
+            float hamsterLeftX = _hamster.LeftX;
+            float hamsterRightX = _hamster.RightX;
+            float transitTravel = BotPhysicsConsts.SwitchLaneFullTravel;
+            bool targetIsBottom = !_hamster.IsOnBottomLine.Value;
+
+            var spawned = spawner.SpawnedObstacles;
+            for (int i = 0; i < spawned.Count; i++)
+            {
+                var inst = spawned[i];
+                if (inst?.ObstacleScript == null) continue;
+
+                var obs = inst.ObstacleScript;
+                if (!IsThreatType(obs.ObstacleType.ObstacleTypeEnum)) continue;
+
+                bool obstacleOnBottom = !obs.ObstacleType.IsTop;
+                if (obstacleOnBottom != targetIsBottom) continue;
+
+                float obsLeftX = obs.transform.position.x - obs.ColliderWidth * 0.5f;
+                float obsRightX = obs.transform.position.x + obs.ColliderWidth * 0.5f;
+
+                if (obsRightX < hamsterLeftX) continue;
+
+                float sweptLeftX = obsLeftX - transitTravel;
+                if (CollisionUtils.IsOverlap(
+                    hamsterLeftX - BotPhysicsConsts.SafetyPadding,
+                    hamsterRightX + BotPhysicsConsts.SafetyPadding,
+                    sweptLeftX, obsRightX))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsThreatType(ObstacleTypeEnum type)
+        {
+            switch (type)
+            {
+                case ObstacleTypeEnum.smallNotAliveRoad:
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                case ObstacleTypeEnum.bigNotAlive:
+                case ObstacleTypeEnum.mediumNotAlive:
+                case ObstacleTypeEnum.bigAlive:
+                case ObstacleTypeEnum.smallAlive:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static Obstacle FindLiveObstacle(int stableId)

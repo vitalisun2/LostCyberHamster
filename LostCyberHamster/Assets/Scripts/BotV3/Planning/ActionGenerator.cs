@@ -10,7 +10,7 @@ namespace Assets.Scripts.BotV3
     public class ActionGenerator
     {
         private const float SwitchLaneFireDist = 4.0f;
-        internal const float SwitchLaneLatestSafeDist = 1.5f;
+        private const float SwitchLaneMinDist = 1.5f;
 
         private const float JumpFireDist = 1.5f;
         internal const int JumpEnergyCost = 10;
@@ -59,7 +59,7 @@ namespace Assets.Scripts.BotV3
             step = null;
             rejectReason = null;
 
-            if (threat.DistanceToHamster < SwitchLaneLatestSafeDist)
+            if (threat.DistanceToHamster < SwitchLaneMinDist)
             {
                 rejectReason = "too close";
                 return false;
@@ -68,8 +68,8 @@ namespace Assets.Scripts.BotV3
             float executeAtDistance = SwitchLaneFireDist;
             if (executeAtDistance > threat.DistanceToHamster)
                 executeAtDistance = threat.DistanceToHamster;
-            if (executeAtDistance < SwitchLaneLatestSafeDist)
-                executeAtDistance = SwitchLaneLatestSafeDist;
+            if (executeAtDistance < SwitchLaneMinDist)
+                executeAtDistance = SwitchLaneMinDist;
 
             step = new BranchStep(
                 BotAction.SwitchLane,

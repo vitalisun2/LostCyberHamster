@@ -102,9 +102,9 @@ namespace Assets.Scripts.BotV3
         }
 
         /// <summary>
-        /// Проверяет, не окажется ли хомяк в зоне threat после проецированного шага.
-        /// Для SwitchLane: проверяет target-lane threats в swept zone (transit + return control).
-        /// Для Jump: проверяет same-lane threats в зоне приземления.
+        /// Проверяет, не окажется ли хомяк в зоне threat в конечной позиции после шага.
+        /// Безопасность = отсутствие overlap с threat в момент завершения шага.
+        /// Промежуточные пересечения во время transit не учитываются (не вызывают damage в runtime).
         /// </summary>
         private static bool IsProjectedPositionSafe(
             PlannerState previousState,

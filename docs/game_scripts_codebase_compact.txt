@@ -1,7 +1,7 @@
 GAME CODEBASE COMPACT MERGE
-GeneratedAtUtc: 2026-03-22T10:18:45Z
+GeneratedAtUtc: 2026-03-22T13:54:26Z
 SourceRoots: LostCyberHamster\Assets\Scripts, LostCyberHamster\Assets\Editor
-FileCount: 330
+FileCount: 329
 Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)
 
 === FILE START: LostCyberHamster\Assets\Editor\AssetBundlesManager.cs | lines=258 | sha256=9633A0BDDF9E1E4382BD8A69A4186269928CD6580B02E21D717C28A5D3DA0CEA ===
@@ -16331,7 +16331,7 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Data\StepProjectionResult.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Execution\StepExecutor.cs | lines=250 | sha256=555916A1DC5AF07EA538DD7B98E02323189A5B2939018AC4C1B7C690700382C9 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Execution\StepExecutor.cs | lines=248 | sha256=00E92D8B0D2D1AAAE877BE3035826BA5FF7DE2DE2F2BDE5338FD2658A72F206A ===
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
@@ -16352,6 +16352,7 @@ namespace Assets.Scripts.BotV3
         private const float JumpLateFallbackDistance = 0.1f;
         private const float TooLateThreshold = -0.3f;
         private const float SwitchLaneMinElapsed = 0.1f;
+        private const float SwitchLaneDeadlineDist = 0.5f;
 
         private readonly Hamster _hamster;
         private BranchStep _step;
@@ -16405,18 +16406,15 @@ namespace Assets.Scripts.BotV3
                 _hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
                 return;
 
-            if (_step.Action == BotAction.SwitchLane)
+            if (_step.Action == BotAction.SwitchLane && !IsSwitchLaneEndPositionSafe())
             {
-                if (!SwitchLaneSafety.IsImmediatelySafe(_hamster))
+                if (dist <= SwitchLaneDeadlineDist)
                 {
-                    if (dist > ActionGenerator.SwitchLaneLatestSafeDist)
-                        return;
-
                     _step.Status = BranchStepStatus.Completed;
                     WasCancelled = true;
-                    DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane CANCELLED — unsafe near deadline, dist={dist:F2}");
-                    return;
+                    DebugManager.DiagLog($"[BotV3 EXEC] SwitchLane CANCELLED — end position unsafe at deadline, dist={dist:F2}");
                 }
+                return;
             }
 
             if (_step.Action == BotAction.Jump && ShouldDelayJumpOver())
@@ -16583,101 +16581,6 @@ namespace Assets.Scripts.BotV3
     }
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Execution\StepExecutor.cs ===
-
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Execution\SwitchLaneSafety.cs | lines=92 | sha256=3E708480FDA4C0A451697B54548BA04FD5A45B57B959C695773D46D50BE3D8E2 ===
-using Assets.Scripts.Common;
-using Assets.Scripts.Common.Models;
-using Assets.Scripts.Gameplay;
-using Assets.Scripts.System;
-
-namespace Assets.Scripts.BotV3
-{
-    /// <summary>
-    /// Проверки безопасности SwitchLane: не столкнётся ли хомяк
-    /// во время смещения между линиями.
-    ///
-    /// Модель коллизий в runtime:
-    ///   1. TapRequest → IsOnBottomLine мгновенно переключается на target lane.
-    ///   2. CollisionController.ProcessTrigerEnter проверяет IsOnSameLine(IsOnBottomLine, obstacle).
-    ///   3. Source-lane препятствия: IsOnSameLine сразу false → коллизии невозможны.
-    ///   4. Target-lane препятствия: IsOnSameLine true, но физическое пересечение trigger'ов
-    ///      происходит только когда collider хомяка достигнет target Y.
-    ///
-    /// IsImmediatelySafe используется в StepExecutor перед fire для live-проверки.
-    /// На этапе планирования (ActionGenerator) safety check не нужен — StepExecutor
-    /// откладывает fire пока live-проверка не пройдёт.
-    /// </summary>
-    internal static class SwitchLaneSafety
-    {
-        private const float TargetLaneFullTravel = BotPhysicsConsts.SwitchLaneFullTravel;
-
-        /// <summary>
-        /// Проверяет, безопасно ли выполнить SwitchLane прямо сейчас.
-        /// Live-версия для StepExecutor (читает ObstacleSpawner напрямую).
-        /// </summary>
-        public static bool IsImmediatelySafe(Hamster hamster)
-        {
-            var spawner = ObstacleSpawner.Instance;
-            if (spawner == null) return true;
-
-            float hamsterLeftX = hamster.LeftX;
-            float hamsterRightX = hamster.RightX;
-            bool targetIsBottom = !hamster.IsOnBottomLine.Value;
-
-            var spawned = spawner.SpawnedObstacles;
-            for (int i = 0; i < spawned.Count; i++)
-            {
-                var inst = spawned[i];
-                if (inst?.ObstacleScript == null) continue;
-
-                var obs = inst.ObstacleScript;
-                if (!IsThreatType(obs.ObstacleType.ObstacleTypeEnum)) continue;
-
-                bool obstacleOnBottom = !obs.ObstacleType.IsTop;
-                if (obstacleOnBottom != targetIsBottom)
-                    continue;
-
-                float leftX = obs.transform.position.x - obs.ColliderWidth * 0.5f;
-                float rightX = obs.transform.position.x + obs.ColliderWidth * 0.5f;
-                if (rightX < hamsterLeftX) continue;
-
-                if (WouldHitDuringTargetPhase(hamsterLeftX, hamsterRightX, leftX, rightX))
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static bool IsThreatType(ObstacleTypeEnum type)
-        {
-            switch (type)
-            {
-                case ObstacleTypeEnum.smallNotAliveRoad:
-                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
-                case ObstacleTypeEnum.bigNotAlive:
-                case ObstacleTypeEnum.mediumNotAlive:
-                case ObstacleTypeEnum.bigAlive:
-                case ObstacleTypeEnum.smallAlive:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        private static bool WouldHitDuringTargetPhase(
-            float hamsterLeftX, float hamsterRightX,
-            float obstacleLeftX, float obstacleRightX)
-        {
-            float sweptLeftX = obstacleLeftX - TargetLaneFullTravel;
-            float sweptRightX = obstacleRightX;
-            return CollisionUtils.IsOverlap(
-                hamsterLeftX - BotPhysicsConsts.SafetyPadding,
-                hamsterRightX + BotPhysicsConsts.SafetyPadding,
-                sweptLeftX, sweptRightX);
-        }
-    }
-}
-=== FILE END: LostCyberHamster\Assets\Scripts\BotV3\Execution\SwitchLaneSafety.cs ===
 
 === FILE START: LostCyberHamster\Assets\Scripts\BotV3\GameEventTracker.cs | lines=66 | sha256=F7FC23CD9ED7E17A7624B88D1A15D74CF953A69668A3AE75EAE6534CDF91783D ===
 using System;
@@ -16898,7 +16801,7 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Perception\SnapshotBuilder.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\ActionGenerator.cs | lines=158 | sha256=621D13B8F8C9ECAEEE6905153C687A26724A372FA365599CD9A3F09791A55280 ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\ActionGenerator.cs | lines=163 | sha256=5005BC8F51E8F4621E80F856FA4D7340D37BC3596915D700D04E92DDBDE54CAE ===
 using System.Collections.Generic;
 using Assets.Scripts.Common.Models;
 
@@ -16911,7 +16814,7 @@ namespace Assets.Scripts.BotV3
     public class ActionGenerator
     {
         private const float SwitchLaneFireDist = 4.0f;
-        internal const float SwitchLaneLatestSafeDist = 1.5f;
+        private const float SwitchLaneMinDist = 1.5f;
 
         private const float JumpFireDist = 1.5f;
         internal const int JumpEnergyCost = 10;
@@ -16954,18 +16857,23 @@ namespace Assets.Scripts.BotV3
         private static bool TryBuildSwitchLaneStep(
             BotSceneSnapshot snapshot,
             ObstacleInfo threat,
-            out BranchStep step)
+            out BranchStep step,
+            out string rejectReason)
         {
             step = null;
+            rejectReason = null;
 
-            if (threat.DistanceToHamster < SwitchLaneLatestSafeDist)
+            if (threat.DistanceToHamster < SwitchLaneMinDist)
+            {
+                rejectReason = "too close";
                 return false;
+            }
 
             float executeAtDistance = SwitchLaneFireDist;
             if (executeAtDistance > threat.DistanceToHamster)
                 executeAtDistance = threat.DistanceToHamster;
-            if (executeAtDistance < SwitchLaneLatestSafeDist)
-                executeAtDistance = SwitchLaneLatestSafeDist;
+            if (executeAtDistance < SwitchLaneMinDist)
+                executeAtDistance = SwitchLaneMinDist;
 
             step = new BranchStep(
                 BotAction.SwitchLane,
@@ -17281,7 +17189,7 @@ namespace Assets.Scripts.BotV3
 }
 === FILE END: LostCyberHamster\Assets\Scripts\BotV3\Planning\BranchSelector.cs ===
 
-=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\StateProjector.cs | lines=160 | sha256=A15DED9D406EBCA74D980DBA0D4176FCF1E8940A2C5622B428C269115D880C2C ===
+=== FILE START: LostCyberHamster\Assets\Scripts\BotV3\Planning\StateProjector.cs | lines=160 | sha256=8E8B19295D17F9D557427C392AF356D7490A1EE570356ACB66D320CDFEA03135 ===
 using System.Collections.Generic;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
@@ -17386,9 +17294,9 @@ namespace Assets.Scripts.BotV3
         }
 
         /// <summary>
-        /// Проверяет, не окажется ли хомяк в зоне threat после проецированного шага.
-        /// Для SwitchLane: проверяет target-lane threats в swept zone (transit + return control).
-        /// Для Jump: проверяет same-lane threats в зоне приземления.
+        /// Проверяет, не окажется ли хомяк в зоне threat в конечной позиции после шага.
+        /// Безопасность = отсутствие overlap с threat в момент завершения шага.
+        /// Промежуточные пересечения во время transit не учитываются (не вызывают damage в runtime).
         /// </summary>
         private static bool IsProjectedPositionSafe(
             PlannerState previousState,

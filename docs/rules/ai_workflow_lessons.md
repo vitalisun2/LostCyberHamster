@@ -50,8 +50,8 @@
 ### Архитектурная чистота vs костыли
 
 - **Никогда не добавлять фильтры по типу препятствия** (RequiresTargetLaneClearance, IsSmallObstacle и т.п.) для обхода некорректной safety-логики. Если safety check выдаёт ложные срабатывания — проблема в модели, а не в типе препятствия.
-- **Разделять ответственности планирования и исполнения**: планирование решает ЧТО делать (SwitchLane vs Jump по критериям энергоэффективности), исполнение решает КОГДА стрелять (live safety checks каждый кадр). Не дублировать execution-time safety checks на этапе планирования — это приводит к ложным отказам и костылям.
-- **Пример неэффективности**: ActionGenerator проверял IsSafeAtExecuteDistance → IsImmediatelySafe → отвергал SwitchLane для zigzag → генерировал Jump → тратил энергию. Правильное решение: убрать safety check из планирования, оставить live-проверку в StepExecutor.
+- **SwitchLane: IsOnBottomLine переключается мгновенно при TapRequest** — коллизии с target-lane threats возможны сразу, а не только в конечной позиции. Поэтому для SwitchLane нужна проверка всего интервала от текущей позиции до конечной (swept zone). Эта проверка делается live в StepExecutor перед fire (IsSwitchLaneEndPositionSafe), а на этапе планирования — приблизительная проверка конечной позиции в StateProjector.
+- **Planning и execution проверяют разное**: planning (StateProjector) проверяет конечную позицию по snapshot-данным — грубая оценка. Execution (StepExecutor) проверяет swept zone по live-данным каждый кадр — точная проверка перед fire. Если live-check не проходит до deadline — шаг отменяется.
 
 ### Эффективность итераций
 
