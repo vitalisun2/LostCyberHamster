@@ -35,6 +35,7 @@ namespace Assets.Scripts.BotV3
             ObstacleInfo obstacle,
             bool hasSwitchLane,
             bool hasJump,
+            string switchLaneRejectReason,
             BotSceneSnapshot snapshot)
         {
             var sb = new StringBuilder(128);
@@ -46,14 +47,9 @@ namespace Assets.Scripts.BotV3
               .Append(" | SwitchLane=").Append(hasSwitchLane)
               .Append(" Jump=").Append(hasJump);
 
-            if (!hasSwitchLane)
+            if (!hasSwitchLane && switchLaneRejectReason != null)
             {
-                sb.Append(" [SwitchLane rejected: ");
-                if (obstacle.DistanceToHamster < 1.5f)
-                    sb.Append("too close");
-                else
-                    sb.Append("lane unsafe at execute distance");
-                sb.Append("]");
+                sb.Append(" [SwitchLane rejected: ").Append(switchLaneRejectReason).Append("]");
             }
 
             DebugManager.DiagLog(sb.ToString());

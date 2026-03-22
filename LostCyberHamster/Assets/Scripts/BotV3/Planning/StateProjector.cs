@@ -1,16 +1,16 @@
 using System.Collections.Generic;
+using Assets.Scripts.Common;
+using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Проецирует состояние планировщика после применения шага.
     /// Поддерживает SwitchLane и Jump проекции.
+    /// После проекции проверяет, не попадёт ли хомяк в threat на целевой позиции.
     /// </summary>
     public class StateProjector
     {
-        private const float SwitchLaneReturnControlTravel =
-            0.47f * Assets.Scripts.Consts.GameSpeedBase;
-        private const float JumpLandingTravel = 3.8f;
         private const float LandingPostFactor = 0.4f;
         private const float PassedObstacleMargin = 0.4f;
 
@@ -35,9 +35,11 @@ namespace Assets.Scripts.BotV3
 
             RebuildRemainingObjects(state, nextState, step);
 
+            bool safe = IsProjectedPositionSafe(state, nextState, step);
+
             return new StepProjectionResult
             {
-                IsSafe = true,
+                IsSafe = safe,
                 NextState = nextState,
                 DebugReason = step.Reason
             };
@@ -52,7 +54,7 @@ namespace Assets.Scripts.BotV3
             if (advanceDistance < 0f)
                 advanceDistance = 0f;
 
-            nextState.HamsterRightX += advanceDistance + SwitchLaneReturnControlTravel;
+            nextState.HamsterRightX += advanceDistance + BotPhysicsConsts.SwitchLaneReturnControlTravel;
         }
 
         private static void ProjectJump(PlannerState nextState, BranchStep step)
@@ -63,7 +65,7 @@ namespace Assets.Scripts.BotV3
                 nextState.Energy = 0;
 
             nextState.HamsterRightX = step.TargetObstacle.RightX
-                                    + (JumpLandingTravel * LandingPostFactor);
+                                    + (BotPhysicsConsts.JumpLandingOffset * LandingPostFactor);
         }
 
         private static void RebuildRemainingObjects(
@@ -97,6 +99,62 @@ namespace Assets.Scripts.BotV3
             }
 
             nextState.RemainingObjects = remaining;
+        }
+
+        /// <summary>
+        /// Проверяет, не окажется ли хомяк в зоне threat после проецированного шага.
+        /// Для SwitchLane: проверяет target-lane threats в swept zone (transit + return control).
+        /// Для Jump: проверяет same-lane threats в зоне приземления.
+        /// </summary>
+        private static bool IsProjectedPositionSafe(
+            PlannerState previousState,
+            PlannerState nextState,
+            BranchStep step)
+        {
+            float hamsterLeftX = nextState.HamsterRightX - nextState.HamsterWidth;
+            float hamsterRightX = nextState.HamsterRightX;
+
+            for (int i = 0; i < previousState.RemainingObjects.Count; i++)
+            {
+                var obstacle = previousState.RemainingObjects[i];
+                if (obstacle.StableId == step.TargetObstacle.StableId)
+                    continue;
+                if (!IsThreatType(obstacle.Type))
+                    continue;
+
+                bool obstacleOnBottom = !obstacle.IsTopLane;
+                bool targetLaneIsBottom = nextState.HamsterOnBottom;
+                if (obstacleOnBottom != targetLaneIsBottom)
+                    continue;
+
+                if (obstacle.RightX < hamsterLeftX - BotPhysicsConsts.SafetyPadding)
+                    continue;
+
+                if (CollisionUtils.IsOverlap(
+                    hamsterLeftX - BotPhysicsConsts.SafetyPadding,
+                    hamsterRightX + BotPhysicsConsts.SafetyPadding,
+                    obstacle.LeftX,
+                    obstacle.RightX))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsThreatType(ObstacleTypeEnum type)
+        {
+            switch (type)
+            {
+                case ObstacleTypeEnum.smallNotAliveRoad:
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                case ObstacleTypeEnum.bigNotAlive:
+                case ObstacleTypeEnum.mediumNotAlive:
+                case ObstacleTypeEnum.bigAlive:
+                case ObstacleTypeEnum.smallAlive:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

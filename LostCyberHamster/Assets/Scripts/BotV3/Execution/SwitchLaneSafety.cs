@@ -22,40 +22,7 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     internal static class SwitchLaneSafety
     {
-        private const float LaneSwitchDuration = 0.3f;
-        private const float LaneSwitchTravel = LaneSwitchDuration * Assets.Scripts.Consts.GameSpeedBase;
-        private const float ReturnControlDuration = 0.47f;
-        private const float TargetLaneFullTravel =
-            (LaneSwitchDuration + ReturnControlDuration) * Assets.Scripts.Consts.GameSpeedBase;
-        private const float LaneSwitchSafetyPadding = 0.15f;
-
-        /// <summary>
-        /// Проверяет, безопасно ли выполнить SwitchLane прямо сейчас.
-        /// Snapshot-версия для BranchGenerator idle-period checks.
-        /// </summary>
-        public static bool IsImmediatelySafe(BotSceneSnapshot snapshot)
-        {
-            float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
-            bool targetIsBottom = !snapshot.HamsterOnBottom;
-
-            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
-            {
-                var obstacle = snapshot.VisibleObjects[i];
-                if (!IsHazard(obstacle)) continue;
-
-                bool obstacleOnBottom = !obstacle.IsTopLane;
-                if (obstacleOnBottom != targetIsBottom)
-                    continue;
-
-                if (obstacle.RightX < hamsterLeftX)
-                    continue;
-
-                if (WouldHitDuringTargetPhase(hamsterLeftX, snapshot.HamsterRightX, obstacle.LeftX, obstacle.RightX))
-                    return false;
-            }
-
-            return true;
-        }
+        private const float TargetLaneFullTravel = BotPhysicsConsts.SwitchLaneFullTravel;
 
         /// <summary>
         /// Проверяет, безопасно ли выполнить SwitchLane прямо сейчас.
@@ -94,13 +61,6 @@ namespace Assets.Scripts.BotV3
             return true;
         }
 
-        private static bool IsHazard(ObstacleInfo obstacle)
-        {
-            if (obstacle.Category == ObjectCategory.Threat)
-                return true;
-            return obstacle.Type == ObstacleTypeEnum.smallAlive;
-        }
-
         private static bool IsThreatType(ObstacleTypeEnum type)
         {
             switch (type)
@@ -124,8 +84,8 @@ namespace Assets.Scripts.BotV3
             float sweptLeftX = obstacleLeftX - TargetLaneFullTravel;
             float sweptRightX = obstacleRightX;
             return CollisionUtils.IsOverlap(
-                hamsterLeftX - LaneSwitchSafetyPadding,
-                hamsterRightX + LaneSwitchSafetyPadding,
+                hamsterLeftX - BotPhysicsConsts.SafetyPadding,
+                hamsterRightX + BotPhysicsConsts.SafetyPadding,
                 sweptLeftX, sweptRightX);
         }
     }

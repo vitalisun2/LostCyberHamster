@@ -1,3 +1,4 @@
+using System;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
@@ -9,7 +10,7 @@ namespace Assets.Scripts.BotV3
     /// пишет TEST RESULT маркеры для automation bridge.
     /// Позже сюда ляжет economy tracking.
     /// </summary>
-    public class GameEventTracker
+    public class GameEventTracker : IDisposable
     {
         private readonly Hamster _hamster;
         private readonly GameManager _gameManager;

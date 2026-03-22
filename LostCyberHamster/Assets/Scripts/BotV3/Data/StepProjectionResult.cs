@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
@@ -9,7 +7,6 @@ namespace Assets.Scripts.BotV3
     {
         public bool IsSafe;
         public PlannerState NextState;
-        public List<int> ConsumedObjectIds = new List<int>();
         public string DebugReason;
     }
 }

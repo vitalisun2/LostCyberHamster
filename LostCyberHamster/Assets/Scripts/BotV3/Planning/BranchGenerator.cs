@@ -10,6 +10,7 @@ namespace Assets.Scripts.BotV3
     {
         private const int MaxBranchDepth = 3;
         private readonly StateProjector _stateProjector = new StateProjector();
+        private readonly BranchStep[] _stepBuffer = new BranchStep[MaxBranchDepth];
 
         public List<BranchCandidate> Generate(
             BotSceneSnapshot snapshot,
@@ -31,8 +32,7 @@ namespace Assets.Scripts.BotV3
                     classifier,
                     actionGenerator,
                     first,
-                    depth: 1,
-                    stepsSoFar: new List<BranchStep>(),
+                    depth: 0,
                     originalSnapshot: snapshot,
                     result: result);
             }
@@ -46,11 +46,11 @@ namespace Assets.Scripts.BotV3
             ActionGenerator actionGenerator,
             BranchStep step,
             int depth,
-            List<BranchStep> stepsSoFar,
             BotSceneSnapshot originalSnapshot,
             List<BranchCandidate> result)
         {
-            stepsSoFar.Add(step);
+            _stepBuffer[depth] = step;
+            int stepCount = depth + 1;
 
             var projection = _stateProjector.Project(snapshot, step);
             if (!projection.IsSafe || projection.NextState == null)
@@ -59,9 +59,9 @@ namespace Assets.Scripts.BotV3
             var projectedSnapshot = projection.NextState.ToSnapshot();
             classifier.Classify(projectedSnapshot);
 
-            result.Add(BuildCandidate(stepsSoFar, originalSnapshot));
+            result.Add(BuildCandidate(_stepBuffer, stepCount, originalSnapshot));
 
-            if (depth >= MaxBranchDepth)
+            if (stepCount >= MaxBranchDepth)
                 return;
 
             var nextSteps = actionGenerator.Generate(projectedSnapshot);
@@ -75,28 +75,32 @@ namespace Assets.Scripts.BotV3
                     classifier,
                     actionGenerator,
                     next,
-                    depth + 1,
-                    new List<BranchStep>(stepsSoFar),
+                    stepCount,
                     originalSnapshot,
                     result);
             }
         }
 
         private static BranchCandidate BuildCandidate(
-            List<BranchStep> steps,
+            BranchStep[] buffer,
+            int count,
             BotSceneSnapshot originalSnapshot)
         {
+            var steps = new List<BranchStep>(count);
             int totalEnergyCost = 0;
-            for (int i = 0; i < steps.Count; i++)
-                totalEnergyCost += steps[i].EnergyCost;
+            for (int i = 0; i < count; i++)
+            {
+                steps.Add(buffer[i]);
+                totalEnergyCost += buffer[i].EnergyCost;
+            }
 
             return new BranchCandidate
             {
-                Steps = new List<BranchStep>(steps),
+                Steps = steps,
                 Outcome = new BranchOutcome
                 {
                     TotalEnergyCost = totalEnergyCost,
-                    AllStepsSafe = IsIdlePeriodSafe(originalSnapshot, steps[0])
+                    AllStepsSafe = IsIdlePeriodSafe(originalSnapshot, buffer[0])
                 }
             };
         }
@@ -111,7 +115,7 @@ namespace Assets.Scripts.BotV3
             {
                 var obstacle = snapshot.VisibleObjects[i];
                 if (obstacle.Category != ObjectCategory.Threat) continue;
-                if (!ActionGenerator.IsOnSameLane(snapshot, obstacle)) continue;
+                if (!snapshot.IsOnSameLane(obstacle)) continue;
                 if (obstacle.DistanceToHamster <= 0f) continue;
                 if (obstacle.StableId == firstStep.TargetObstacle.StableId) continue;
 

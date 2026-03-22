@@ -16,7 +16,7 @@ namespace Assets.Scripts.BotV3
         internal const int JumpEnergyCost = 10;
 
         /// <summary>Примерное расстояние, на которое хомяк улетает при Jump.</summary>
-        internal const float JumpLandingOffset = 3.8f;
+        internal const float JumpLandingOffset = BotPhysicsConsts.JumpLandingOffset;
         private const float JumpLandingMargin = 1.2f;
 
         public List<BranchStep> Generate(BotSceneSnapshot snapshot)
@@ -30,12 +30,12 @@ namespace Assets.Scripts.BotV3
                     continue;
                 if (obs.DistanceToHamster < 0f)
                     continue;
-                if (!IsOnSameLane(snapshot, obs))
+                if (!snapshot.IsOnSameLane(obs))
                     continue;
                 if (!IsNearestSameLaneThreat(snapshot, obs))
                     continue;
 
-                bool hasSwitchLane = TryBuildSwitchLaneStep(snapshot, obs, out BranchStep switchStep);
+                bool hasSwitchLane = TryBuildSwitchLaneStep(snapshot, obs, out BranchStep switchStep, out string switchRejectReason);
                 bool hasJump = TryBuildJumpStep(snapshot, obs, out BranchStep jumpStep);
 
                 if (hasSwitchLane)
@@ -44,7 +44,7 @@ namespace Assets.Scripts.BotV3
                     result.Add(jumpStep);
 
                 if (hasSwitchLane || hasJump)
-                    BotLogger.LogActionCandidates(obs, hasSwitchLane, hasJump, snapshot);
+                    BotLogger.LogActionCandidates(obs, hasSwitchLane, hasJump, switchRejectReason, snapshot);
             }
 
             return result;
@@ -53,12 +53,17 @@ namespace Assets.Scripts.BotV3
         private static bool TryBuildSwitchLaneStep(
             BotSceneSnapshot snapshot,
             ObstacleInfo threat,
-            out BranchStep step)
+            out BranchStep step,
+            out string rejectReason)
         {
             step = null;
+            rejectReason = null;
 
             if (threat.DistanceToHamster < SwitchLaneLatestSafeDist)
+            {
+                rejectReason = "too close";
                 return false;
+            }
 
             float executeAtDistance = SwitchLaneFireDist;
             if (executeAtDistance > threat.DistanceToHamster)
@@ -145,7 +150,7 @@ namespace Assets.Scripts.BotV3
                 var obs = snapshot.VisibleObjects[i];
                 if (obs.Category != ObjectCategory.Threat) continue;
                 if (obs.DistanceToHamster < 0f) continue;
-                if (!IsOnSameLane(snapshot, obs)) continue;
+                if (!snapshot.IsOnSameLane(obs)) continue;
 
                 if (obs.DistanceToHamster < threat.DistanceToHamster)
                     return false;
@@ -154,9 +159,5 @@ namespace Assets.Scripts.BotV3
             return true;
         }
 
-        internal static bool IsOnSameLane(BotSceneSnapshot snapshot, ObstacleInfo obstacle)
-        {
-            return snapshot.HamsterOnBottom == !obstacle.IsTopLane;
-        }
     }
 }

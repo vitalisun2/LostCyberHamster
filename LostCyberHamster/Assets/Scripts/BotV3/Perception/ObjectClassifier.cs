@@ -25,9 +25,11 @@ namespace Assets.Scripts.BotV3
             }
         }
 
+        private const float BehindHamsterThreshold = -0.2f;
+
         private static ObjectCategory ClassifyObject(ObstacleTypeEnum type, float distance, bool hamsterOnRoof)
         {
-            if (distance < -0.2f) return ObjectCategory.Neutral;
+            if (distance < BehindHamsterThreshold) return ObjectCategory.Neutral;
 
             switch (type)
             {

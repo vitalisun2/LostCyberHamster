@@ -16,6 +16,8 @@ namespace Assets.Scripts.BotV3
     {
         private const float JumpMinCompletionDelay = 0.3f;
         private const float JumpLateFallbackDistance = 0.1f;
+        private const float TooLateThreshold = -0.3f;
+        private const float SwitchLaneMinElapsed = 0.1f;
 
         private readonly Hamster _hamster;
         private BranchStep _step;
@@ -55,7 +57,7 @@ namespace Assets.Scripts.BotV3
 
             float dist = GetLiveDistance(_step.TargetObstacle);
 
-            if (dist < -0.3f)
+            if (dist < TooLateThreshold)
             {
                 _step.Status = BranchStepStatus.Completed;
                 DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} SKIPPED (too late) dist={dist:F2}");
@@ -115,7 +117,7 @@ namespace Assets.Scripts.BotV3
         {
             if (_step.Action == BotAction.SwitchLane)
             {
-                bool timeElapsed = Time.time - _switchLaneExecTime >= 0.1f;
+                bool timeElapsed = Time.time - _switchLaneExecTime >= SwitchLaneMinElapsed;
                 if (timeElapsed && !_hamster.IsShifting.Value)
                 {
                     _step.Status = BranchStepStatus.Completed;

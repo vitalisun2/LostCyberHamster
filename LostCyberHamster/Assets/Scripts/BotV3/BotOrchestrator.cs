@@ -28,6 +28,7 @@ namespace Assets.Scripts.BotV3
         private BranchSelector _planner;
         private StepExecutor _executor;
 
+        private const float InitRetryInterval = 0.5f;
         private float _nextInitRetryTime;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -59,7 +60,7 @@ namespace Assets.Scripts.BotV3
                 if (Time.time >= _nextInitRetryTime)
                 {
                     TryInit();
-                    _nextInitRetryTime = Time.time + 0.5f;
+                    _nextInitRetryTime = Time.time + InitRetryInterval;
                 }
                 return;
             }

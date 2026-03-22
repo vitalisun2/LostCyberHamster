@@ -6,14 +6,8 @@ namespace Assets.Scripts.BotV3
     /// Снимок состояния сцены в момент запуска pipeline.
     /// Строится SnapshotBuilder'ом — единственной точкой доступа к Unity-объектам.
     /// </summary>
-    public class BotSceneSnapshot
+    public class BotSceneSnapshot : BotStateBase
     {
-        public bool HamsterOnBottom;
-        public bool HamsterOnRoof;
-        public float HamsterRightX;
-        public float HamsterWidth;
-        public int Energy;
-        public int Lives;
         public float SnapshotTime;
 
         /// <summary>
@@ -21,5 +15,13 @@ namespace Assets.Scripts.BotV3
         /// Category = Neutral по умолчанию — классификация выполняется ObjectClassifier'ом.
         /// </summary>
         public List<ObstacleInfo> VisibleObjects = new List<ObstacleInfo>();
+
+        /// <summary>
+        /// Проверяет, находится ли препятствие на той же линии, что и хомяк.
+        /// </summary>
+        public bool IsOnSameLane(ObstacleInfo obstacle)
+        {
+            return HamsterOnBottom == !obstacle.IsTopLane;
+        }
     }
 }
