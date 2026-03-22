@@ -19,7 +19,7 @@ namespace Assets.Scripts.BotV3
                 HamsterOnBottom = hamster.IsOnBottomLine.Value,
                 HamsterOnRoof = IsRoofState(hamster.HamsterState.Value),
                 HamsterRightX = hamster.RightX,
-                HamsterWidth = hamster.ColliderWidth,
+                HamsterWidth = hamster.RightX - hamster.LeftX,
                 Energy = hamster.Energy.Value,
                 Lives = hamster.Lives.Value,
                 SnapshotTime = Time.time
@@ -52,9 +52,9 @@ namespace Assets.Scripts.BotV3
 
                 var obs = inst.ObstacleScript;
                 var pos = obs.transform.position;
-                float halfW = obs.ColliderWidth * 0.5f;
-                float leftX = pos.x - halfW;
-                float rightX = pos.x + halfW;
+                var obsBounds = obs.GetComponentInChildren<BoxCollider2D>().bounds;
+                float leftX = obsBounds.min.x;
+                float rightX = obsBounds.max.x;
 
                 if (rightX < screenLeftX || leftX > screenRightX) continue;
 

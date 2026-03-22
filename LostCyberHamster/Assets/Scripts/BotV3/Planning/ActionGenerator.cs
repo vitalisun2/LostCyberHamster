@@ -6,6 +6,7 @@ namespace Assets.Scripts.BotV3
     /// <summary>
     /// Генерирует возможные действия для видимых объектов.
     /// SwitchLane для same-lane Threats, Jump для малых препятствий.
+    /// Каждый шаг включает FireWorldShift и CompletionWorldShift.
     /// </summary>
     public class ActionGenerator
     {
@@ -15,8 +16,6 @@ namespace Assets.Scripts.BotV3
         private const float JumpFireDist = 1.5f;
         internal const int JumpEnergyCost = 10;
 
-        /// <summary>Примерное расстояние, на которое хомяк улетает при Jump.</summary>
-        internal const float JumpLandingOffset = BotPhysicsConsts.JumpLandingOffset;
         private const float JumpLandingMargin = 1.2f;
 
         public List<BranchStep> Generate(BotSceneSnapshot snapshot)
@@ -71,10 +70,31 @@ namespace Assets.Scripts.BotV3
             if (executeAtDistance < SwitchLaneMinDist)
                 executeAtDistance = SwitchLaneMinDist;
 
+            // Найти минимальный worldShift, при котором target lane свободна от overlap
+            float minClearanceShift = GetTargetLaneClearanceShift(snapshot);
+            float fireWorldShift = threat.DistanceToHamster - executeAtDistance;
+
+            if (fireWorldShift < minClearanceShift)
+            {
+                // Сдвигаем fire позже — ждём пока obstacle проедет
+                fireWorldShift = minClearanceShift;
+                executeAtDistance = threat.DistanceToHamster - fireWorldShift;
+
+                if (executeAtDistance < SwitchLaneMinDist)
+                {
+                    rejectReason = "target lane blocked until too close";
+                    return false;
+                }
+            }
+
+            float completionWorldShift = fireWorldShift + BotPhysicsConsts.SwitchLaneFullTravel;
+
             step = new BranchStep(
                 BotAction.SwitchLane,
                 threat,
                 executeAtDistance,
+                fireWorldShift,
+                completionWorldShift,
                 energyCost: 0,
                 $"SwitchLane avoid {threat.Type}");
 
@@ -94,17 +114,23 @@ namespace Assets.Scripts.BotV3
             if (snapshot.Energy < JumpEnergyCost)
                 return false;
 
-            if (!IsLandingClear(snapshot, snapshot.HamsterOnBottom, threat.StableId))
-                return false;
-
             float executeAtDistance = JumpFireDist;
             if (executeAtDistance > threat.DistanceToHamster)
                 executeAtDistance = threat.DistanceToHamster;
+
+            float fireWorldShift = threat.DistanceToHamster - executeAtDistance;
+            float completionWorldShift = fireWorldShift + BotPhysicsConsts.JumpLandingOffset;
+
+            // Проверяем зону приземления в спроецированном мире
+            if (!IsLandingClear(snapshot, snapshot.HamsterOnBottom, threat.StableId, completionWorldShift))
+                return false;
 
             step = new BranchStep(
                 BotAction.Jump,
                 threat,
                 executeAtDistance,
+                fireWorldShift,
+                completionWorldShift,
                 JumpEnergyCost,
                 $"Jump over {threat.Type}");
 
@@ -118,12 +144,16 @@ namespace Assets.Scripts.BotV3
         }
 
         /// <summary>
-        /// Проверяет, свободна ли зона приземления прыжка.
+        /// Проверяет, свободна ли зона приземления прыжка в спроецированном мире.
         /// </summary>
-        private static bool IsLandingClear(BotSceneSnapshot snapshot, bool hamsterOnBottom, int excludeId)
+        private static bool IsLandingClear(
+            BotSceneSnapshot snapshot,
+            bool hamsterOnBottom,
+            int excludeId,
+            float completionWorldShift)
         {
-            float checkFrom = snapshot.HamsterRightX + JumpLandingOffset - JumpLandingMargin;
-            float checkTo = snapshot.HamsterRightX + JumpLandingOffset + JumpLandingMargin;
+            float hamsterRightX = snapshot.HamsterRightX;
+            float hamsterLeftX = hamsterRightX - snapshot.HamsterWidth;
 
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
@@ -135,12 +165,50 @@ namespace Assets.Scripts.BotV3
                 bool obsOnBottom = !obs.IsTopLane;
                 if (obsOnBottom != hamsterOnBottom) continue;
 
-                float absLeftX = snapshot.HamsterRightX + obs.DistanceToHamster;
-                if (absLeftX >= checkFrom && absLeftX <= checkTo)
+                float shiftedLeftX = obs.LeftX - completionWorldShift;
+                float shiftedRightX = obs.RightX - completionWorldShift;
+
+                if (Common.CollisionUtils.IsOverlap(
+                    hamsterLeftX - BotPhysicsConsts.SafetyPadding,
+                    hamsterRightX + BotPhysicsConsts.SafetyPadding,
+                    shiftedLeftX, shiftedRightX))
                     return false;
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Определяет, на сколько мир должен сдвинуться, чтобы target lane
+        /// была свободна от overlap с хомяком по X.
+        /// Возвращает 0, если target lane уже свободна.
+        /// </summary>
+        private static float GetTargetLaneClearanceShift(BotSceneSnapshot snapshot)
+        {
+            float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
+            float hamsterRightX = snapshot.HamsterRightX;
+            bool targetIsBottom = !snapshot.HamsterOnBottom;
+            float maxShift = 0f;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (obs.Category != ObjectCategory.Threat) continue;
+
+                bool obsOnBottom = !obs.IsTopLane;
+                if (obsOnBottom != targetIsBottom) continue;
+
+                // Overlap пропадёт когда obs.RightX - shift < hamsterLeftX
+                // shift > obs.RightX - hamsterLeftX
+                if (obs.RightX > hamsterLeftX && obs.LeftX < hamsterRightX)
+                {
+                    float needed = obs.RightX - hamsterLeftX;
+                    if (needed > maxShift)
+                        maxShift = needed;
+                }
+            }
+
+            return maxShift;
         }
 
         private static bool IsNearestSameLaneThreat(BotSceneSnapshot snapshot, ObstacleInfo threat)
@@ -158,6 +226,5 @@ namespace Assets.Scripts.BotV3
 
             return true;
         }
-
     }
 }

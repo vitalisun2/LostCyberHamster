@@ -146,7 +146,10 @@ namespace Assets.Scripts.BotV3
             _executor = new StepExecutor(Hamster);
 
             Initialized = true;
-            DebugManager.DiagLog("[BotV3] Initialized");
+            float worldWidth = Hamster.RightX - Hamster.LeftX;
+            DebugManager.DiagLog(
+                $"[BotV3] Initialized | hamster LeftX={Hamster.LeftX:F2} RightX={Hamster.RightX:F2}" +
+                $" worldWidth={worldWidth:F2} ColliderWidth(size.x)={Hamster.ColliderWidth:F2}");
         }
 
         private void OnDestroy()

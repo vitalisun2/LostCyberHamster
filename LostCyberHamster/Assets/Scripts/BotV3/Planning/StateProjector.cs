@@ -5,136 +5,165 @@ using Assets.Scripts.Common.Models;
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
-    /// Проецирует состояние планировщика после применения шага.
-    /// Поддерживает SwitchLane и Jump проекции.
-    /// После проекции проверяет, не попадёт ли хомяк в threat на целевой позиции.
+    /// Проецирует состояние мира на две контрольные точки шага:
+    ///   1. Fire moment — мир сдвинулся на FireWorldShift, проверяем безопасность начала шага.
+    ///   2. Completion moment — мир сдвинулся на CompletionWorldShift, проверяем результат шага.
+    ///
+    /// Хомяк стоит на месте по X. Obstacles сдвигаются влево на worldShift.
     /// </summary>
     public class StateProjector
     {
-        private const float LandingPostFactor = 0.4f;
         private const float PassedObstacleMargin = 0.4f;
 
+        /// <summary>
+        /// Проецирует шаг: проверяет safety на fire и completion, возвращает completion state.
+        /// </summary>
         public StepProjectionResult Project(BotSceneSnapshot snapshot, BranchStep step)
         {
-            return Project(PlannerState.FromSnapshot(snapshot), step);
-        }
+            // 1. Fire safety: проецируем snapshot на момент fire, проверяем target lane
+            var fireSnapshot = ProjectSnapshot(snapshot, step.FireWorldShift);
+            bool fireIsSafe = IsSafeAtFire(fireSnapshot, step);
 
-        public StepProjectionResult Project(PlannerState state, BranchStep step)
-        {
-            var nextState = state.Clone();
-
-            switch (step.Action)
+            if (!fireIsSafe)
             {
-                case BotAction.SwitchLane:
-                    ProjectSwitchLane(nextState, state, step);
-                    break;
-                case BotAction.Jump:
-                    ProjectJump(nextState, step);
-                    break;
+                LogUnsafe("FIRE", fireSnapshot, step, step.FireWorldShift);
+                return new StepProjectionResult { IsSafe = false, DebugReason = step.Reason };
             }
 
-            RebuildRemainingObjects(state, nextState, step);
+            // 2. Completion: проецируем snapshot на момент завершения шага
+            var completionSnapshot = ProjectSnapshot(snapshot, step.CompletionWorldShift);
+            ApplyStepEffects(completionSnapshot, step);
 
-            bool safe = IsProjectedPositionSafe(state, nextState, step);
+            bool completionIsSafe = IsSafeAtCompletion(completionSnapshot, step);
+
+            if (!completionIsSafe)
+            {
+                LogUnsafe("COMPLETION", completionSnapshot, step, step.CompletionWorldShift);
+                return new StepProjectionResult { IsSafe = false, DebugReason = step.Reason };
+            }
 
             return new StepProjectionResult
             {
-                IsSafe = safe,
-                NextState = nextState,
+                IsSafe = true,
+                NextState = PlannerState.FromSnapshot(completionSnapshot),
                 DebugReason = step.Reason
             };
         }
 
-        private static void ProjectSwitchLane(PlannerState nextState, PlannerState previousState, BranchStep step)
+        /// <summary>
+        /// Проецирует snapshot: сдвигает все obstacles влево на worldShift,
+        /// убирает уехавшие за хомяка, пересчитывает distance.
+        /// Хомяк остаётся на месте.
+        /// </summary>
+        private static BotSceneSnapshot ProjectSnapshot(BotSceneSnapshot source, float worldShift)
         {
-            nextState.HamsterOnBottom = !previousState.HamsterOnBottom;
-            nextState.HamsterOnRoof = false;
+            var projected = new BotSceneSnapshot();
+            projected.CopyFrom(source);
+            projected.SnapshotTime = source.SnapshotTime;
 
-            float advanceDistance = step.TargetObstacle.DistanceToHamster - step.ExecuteAtDistance;
-            if (advanceDistance < 0f)
-                advanceDistance = 0f;
+            float hamsterRightX = source.HamsterRightX;
 
-            nextState.HamsterRightX += advanceDistance + BotPhysicsConsts.SwitchLaneReturnControlTravel;
-        }
-
-        private static void ProjectJump(PlannerState nextState, BranchStep step)
-        {
-            nextState.HamsterOnRoof = false;
-            nextState.Energy -= step.EnergyCost;
-            if (nextState.Energy < 0)
-                nextState.Energy = 0;
-
-            nextState.HamsterRightX = step.TargetObstacle.RightX
-                                    + (BotPhysicsConsts.JumpLandingOffset * LandingPostFactor);
-        }
-
-        private static void RebuildRemainingObjects(
-            PlannerState previousState,
-            PlannerState nextState,
-            BranchStep step)
-        {
-            var remaining = new List<ObstacleInfo>();
-
-            for (int i = 0; i < previousState.RemainingObjects.Count; i++)
+            for (int i = 0; i < source.VisibleObjects.Count; i++)
             {
-                var obstacle = previousState.RemainingObjects[i];
+                var obs = source.VisibleObjects[i];
 
-                if (step.Action == BotAction.Jump && obstacle.StableId == step.TargetObstacle.StableId)
+                float newLeftX = obs.LeftX - worldShift;
+                float newRightX = obs.RightX - worldShift;
+                float newCenterX = obs.CenterX - worldShift;
+
+                if (newRightX < hamsterRightX - source.HamsterWidth - PassedObstacleMargin)
                     continue;
 
-                bool wasPassed = obstacle.RightX < nextState.HamsterRightX - PassedObstacleMargin;
-                if (wasPassed)
-                    continue;
+                float newDistance = newLeftX - hamsterRightX;
 
-                float newDistance = obstacle.LeftX - nextState.HamsterRightX;
-                remaining.Add(new ObstacleInfo(
-                    obstacle.Type,
-                    obstacle.IsTopLane,
-                    obstacle.LeftX,
-                    obstacle.RightX,
-                    obstacle.CenterX,
-                    newDistance,
-                    ObjectCategory.Neutral,
-                    obstacle.StableId));
+                projected.VisibleObjects.Add(new ObstacleInfo(
+                    obs.Type, obs.IsTopLane,
+                    newLeftX, newRightX, newCenterX,
+                    newDistance, obs.Category, obs.StableId));
             }
 
-            nextState.RemainingObjects = remaining;
+            return projected;
         }
 
         /// <summary>
-        /// Проверяет, не окажется ли хомяк в зоне threat в конечной позиции после шага.
-        /// Безопасность = отсутствие overlap с threat в момент завершения шага.
-        /// Промежуточные пересечения во время transit не учитываются (не вызывают damage в runtime).
+        /// Применяет эффекты шага к snapshot (меняет lane, energy).
+        /// Не меняет позиции — они уже спроецированы.
         /// </summary>
-        private static bool IsProjectedPositionSafe(
-            PlannerState previousState,
-            PlannerState nextState,
-            BranchStep step)
+        private static void ApplyStepEffects(BotSceneSnapshot snapshot, BranchStep step)
         {
-            float hamsterLeftX = nextState.HamsterRightX - nextState.HamsterWidth;
-            float hamsterRightX = nextState.HamsterRightX;
-
-            for (int i = 0; i < previousState.RemainingObjects.Count; i++)
+            switch (step.Action)
             {
-                var obstacle = previousState.RemainingObjects[i];
-                if (obstacle.StableId == step.TargetObstacle.StableId)
-                    continue;
-                if (!IsThreatType(obstacle.Type))
-                    continue;
+                case BotAction.SwitchLane:
+                    snapshot.HamsterOnBottom = !snapshot.HamsterOnBottom;
+                    snapshot.HamsterOnRoof = false;
+                    break;
 
-                bool obstacleOnBottom = !obstacle.IsTopLane;
-                bool targetLaneIsBottom = nextState.HamsterOnBottom;
-                if (obstacleOnBottom != targetLaneIsBottom)
-                    continue;
+                case BotAction.Jump:
+                    snapshot.HamsterOnRoof = false;
+                    snapshot.Energy -= step.EnergyCost;
+                    if (snapshot.Energy < 0) snapshot.Energy = 0;
+                    // Убираем target obstacle (перепрыгнули)
+                    snapshot.VisibleObjects.RemoveAll(o => o.StableId == step.TargetObstacle.StableId);
+                    break;
+            }
+        }
 
-                if (obstacle.RightX < hamsterLeftX - BotPhysicsConsts.SafetyPadding)
-                    continue;
+        /// <summary>
+        /// Безопасно ли начать шаг в этот момент?
+        /// SwitchLane: нет overlap на target lane по X с хомяком.
+        /// Jump: always safe at fire (проверка приземления — в completion).
+        /// </summary>
+        /// <summary>
+        /// Безопасно ли начать SwitchLane в этот момент?
+        /// Проецированный snapshot на момент fire: проверяем overlap
+        /// хомяка с каждым target-lane threat.
+        /// </summary>
+        private static bool IsSafeAtFire(BotSceneSnapshot snapshot, BranchStep step)
+        {
+            if (step.Action != BotAction.SwitchLane)
+                return true;
+
+            bool targetIsBottom = !snapshot.HamsterOnBottom;
+            float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
+            float hamsterRightX = snapshot.HamsterRightX;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (!IsThreatType(obs.Type)) continue;
+
+                bool obsOnBottom = !obs.IsTopLane;
+                if (obsOnBottom != targetIsBottom) continue;
+
+                if (CollisionUtils.IsOverlap(hamsterLeftX, hamsterRightX, obs.LeftX, obs.RightX))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Безопасен ли результат шага?
+        /// Проверяет: на lane хомяка (после применения эффектов) нет overlap с threats.
+        /// </summary>
+        private static bool IsSafeAtCompletion(BotSceneSnapshot snapshot, BranchStep step)
+        {
+            float hamsterLeftX = snapshot.HamsterRightX - snapshot.HamsterWidth;
+            float hamsterRightX = snapshot.HamsterRightX;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (obs.StableId == step.TargetObstacle.StableId) continue;
+                if (!IsThreatType(obs.Type)) continue;
+
+                bool obsOnBottom = !obs.IsTopLane;
+                if (obsOnBottom != snapshot.HamsterOnBottom) continue;
 
                 if (CollisionUtils.IsOverlap(
                     hamsterLeftX - BotPhysicsConsts.SafetyPadding,
                     hamsterRightX + BotPhysicsConsts.SafetyPadding,
-                    obstacle.LeftX,
-                    obstacle.RightX))
+                    obs.LeftX, obs.RightX))
                     return false;
             }
 
@@ -155,6 +184,17 @@ namespace Assets.Scripts.BotV3
                 default:
                     return false;
             }
+        }
+
+        private static void LogUnsafe(string phase, BotSceneSnapshot snapshot, BranchStep step, float worldShift)
+        {
+            string lane = snapshot.HamsterOnBottom ? "bottom" : "top";
+            if (phase == "COMPLETION" && step.Action == BotAction.SwitchLane)
+                lane = !snapshot.HamsterOnBottom ? "bottom" : "top";
+
+            DebugManager.DiagLog(
+                $"[BotV3 PROJ] UNSAFE {step.Action} at {phase}" +
+                $" → targetLane={lane} worldShift={worldShift:F2}");
         }
     }
 }
