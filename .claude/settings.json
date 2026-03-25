@@ -4,5 +4,9 @@
       "Bash(git mv:*)",
       "Bash(find /c/Personal/crystal-wave/repos/LostCyberHamster_2025 -name *.ps1 -o -name *.bat -o -name *.sh)"
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash .claude/statusline-command.sh"
   }
 }
