@@ -1,5 +1,5 @@
 GAME CODEBASE COMPACT MERGE
-GeneratedAtUtc: 2026-03-22T15:05:48Z
+GeneratedAtUtc: 2026-03-25T14:52:24Z
 SourceRoots: LostCyberHamster\Assets\Scripts, LostCyberHamster\Assets\Editor
 FileCount: 329
 Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)
