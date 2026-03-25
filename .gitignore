@@ -114,5 +114,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Claude Code local settings
+# Claude Code local settings and worktrees
 .claude/settings.local.json
+.claude/worktrees/
