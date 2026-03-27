@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
@@ -7,7 +8,7 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Оркестратор BotV3. Вешается на GameObject в сцене.
-    /// Pipeline: Snapshot → Classify → Execute → Plan.
+    /// Executor тикает каждый кадр, planner запускается только по runtime-триггерам.
     /// Горячая клавиша F1: вкл/выкл.
     /// </summary>
     public class BotOrchestrator : MonoBehaviour
@@ -36,6 +37,10 @@ namespace Assets.Scripts.BotV3
 
         private const float InitRetryInterval = 0.5f;
         private float _nextInitRetryTime;
+        private bool _replanRequested = true;
+        private bool _hasVisibleObjectsBaseline;
+        private readonly HashSet<int> _visibleObjectIds = new HashSet<int>();
+        private readonly HashSet<int> _visibleObjectIdsScratch = new HashSet<int>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
@@ -77,28 +82,44 @@ namespace Assets.Scripts.BotV3
             if (Hamster.HamsterState.Value == HamsterStateEnum.Dead)
                 return;
 
-            RunPipeline();
+            TickRuntime();
         }
 
-        private void RunPipeline()
+        private void TickRuntime()
         {
-            // 1. Perceive
-            LastSnapshot = _snapshotBuilder.Build(Hamster);
-            _classifier.Classify(LastSnapshot);
+            BotSceneSnapshot liveSnapshot = _snapshotBuilder.Build(Hamster);
+            if (UpdateVisibleObjectsBaseline(liveSnapshot))
+                _replanRequested = true;
 
-            // 2. Если шаг уже в процессе, сначала даём executor'у шанс завершить его.
             if (_executor.IsStepInProgress)
             {
-                _executor.TryExecute();
+                if (_executor.TryExecute() == StepExecutionTickResult.StepCompleted)
+                {
+                    Plan.RemoveCompletedFromHead();
+                    _replanRequested = true;
+                }
 
-                if (_executor.IsStepInProgress && !_executor.WasCancelled)
+                if (_executor.IsStepInProgress)
                     return;
             }
 
-            // 3. Для шага в Ready сначала перепланируем по live snapshot, затем исполняем head.
+            if (_replanRequested)
+                Replan(liveSnapshot);
+
+            if (_executor.TryExecute() == StepExecutionTickResult.StepCompleted)
+            {
+                Plan.RemoveCompletedFromHead();
+                _replanRequested = true;
+            }
+        }
+
+        private void Replan(BotSceneSnapshot liveSnapshot)
+        {
+            _classifier.Classify(liveSnapshot);
+            LastSnapshot = liveSnapshot;
             Plan.RemoveCompletedFromHead();
-            ApplyPlan(LastSnapshot, _planner.FindBestBranch(LastSnapshot, _classifier));
-            _executor.TryExecute();
+            ApplyPlan(liveSnapshot, _planner.FindBestBranch(liveSnapshot, _classifier));
+            _replanRequested = false;
         }
 
         private void ApplyPlan(BotSceneSnapshot snapshot, BranchCandidate best)
@@ -131,6 +152,7 @@ namespace Assets.Scripts.BotV3
         private void Enable()
         {
             IsEnabled = true;
+            ResetRuntimeTracking();
             if (!Initialized)
                 TryInit();
             DebugManager.DiagLog("[BotV3] Enabled");
@@ -143,6 +165,7 @@ namespace Assets.Scripts.BotV3
             _branchRenderer.ClearPreview();
             _executor?.ClearStep();
             _planner?.Reset();
+            ResetRuntimeTracking();
             DebugManager.DiagLog("[BotV3] Disabled");
         }
 
@@ -159,12 +182,44 @@ namespace Assets.Scripts.BotV3
             _classifier = new ObjectClassifier();
             _planner = new BranchSelector();
             _executor = new StepExecutor(Hamster);
+            ResetRuntimeTracking();
 
             Initialized = true;
             float worldWidth = Hamster.RightX - Hamster.LeftX;
             DebugManager.DiagLog(
                 $"[BotV3] Initialized | hamster LeftX={Hamster.LeftX:F2} RightX={Hamster.RightX:F2}" +
                 $" worldWidth={worldWidth:F2} ColliderWidth(size.x)={Hamster.ColliderWidth:F2}");
+        }
+
+        private bool UpdateVisibleObjectsBaseline(BotSceneSnapshot snapshot)
+        {
+            _visibleObjectIdsScratch.Clear();
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+                _visibleObjectIdsScratch.Add(snapshot.VisibleObjects[i].StableId);
+
+            bool changed = !_hasVisibleObjectsBaseline
+                || _visibleObjectIds.Count != _visibleObjectIdsScratch.Count
+                || !_visibleObjectIds.SetEquals(_visibleObjectIdsScratch);
+
+            if (!changed)
+                return false;
+
+            _visibleObjectIds.Clear();
+            foreach (int stableId in _visibleObjectIdsScratch)
+                _visibleObjectIds.Add(stableId);
+
+            _hasVisibleObjectsBaseline = true;
+            return true;
+        }
+
+        private void ResetRuntimeTracking()
+        {
+            LastSnapshot = null;
+            _replanRequested = true;
+            _hasVisibleObjectsBaseline = false;
+            _visibleObjectIds.Clear();
+            _visibleObjectIdsScratch.Clear();
         }
 
         private void OnDestroy()

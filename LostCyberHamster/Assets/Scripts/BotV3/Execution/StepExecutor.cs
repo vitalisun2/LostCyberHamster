@@ -8,6 +8,12 @@ using UnityEngine;
 
 namespace Assets.Scripts.BotV3
 {
+    public enum StepExecutionTickResult
+    {
+        None,
+        StepCompleted
+    }
+
     /// <summary>
     /// Ждёт нужной дистанции до объекта и отправляет игровую команду.
     /// Поддерживает SwitchLane и Jump.
@@ -20,7 +26,6 @@ namespace Assets.Scripts.BotV3
         private float _jumpExecTime;
         private float _jumpWorldShift = -1f;
 
-        public bool WasCancelled { get; private set; }
         public bool HasActiveStep => _step != null && _step.Status != BranchStepStatus.Completed;
         public bool IsStepInProgress => _step != null && _step.Status == BranchStepStatus.InProgress;
 
@@ -32,7 +37,6 @@ namespace Assets.Scripts.BotV3
         public void SetStep(BranchStep step)
         {
             _step = step;
-            WasCancelled = false;
         }
 
         public void ClearStep()
@@ -40,35 +44,33 @@ namespace Assets.Scripts.BotV3
             _step = null;
         }
 
-        public void TryExecute()
+        public StepExecutionTickResult TryExecute()
         {
             if (_step == null || _step.Status == BranchStepStatus.Completed)
-                return;
+                return StepExecutionTickResult.None;
 
             if (_step.Status == BranchStepStatus.InProgress)
-            {
-                TryCompleteInProgressStep();
-                return;
-            }
+                return TryCompleteInProgressStep();
 
             float dist = GetLiveDistance(_step.TargetObstacle);
 
             if (dist < BotExecutionConsts.StepTooLateThreshold)
             {
                 MarkStepSkippedAsTooLate(dist);
-                return;
+                return StepExecutionTickResult.StepCompleted;
             }
 
             if (ShouldWaitForFire(dist))
-                return;
+                return StepExecutionTickResult.None;
 
             if (!CanFireInCurrentHamsterState())
-                return;
+                return StepExecutionTickResult.None;
 
             if (_step.Action == BotAction.Jump && ShouldDelayJumpOver())
-                return;
+                return StepExecutionTickResult.None;
 
             Fire(dist);
+            return StepExecutionTickResult.None;
         }
 
         private void Fire(float dist)
@@ -110,39 +112,40 @@ namespace Assets.Scripts.BotV3
             DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} SKIPPED (too late) dist={dist:F2}");
         }
 
-        private void TryCompleteInProgressStep()
+        private StepExecutionTickResult TryCompleteInProgressStep()
         {
             if (_step.Action == BotAction.SwitchLane)
-            {
-                TryCompleteSwitchLane();
-            }
-            else if (_step.Action == BotAction.Jump)
-            {
-                TryCompleteJump();
-            }
+                return TryCompleteSwitchLane();
+
+            if (_step.Action == BotAction.Jump)
+                return TryCompleteJump();
+
+            return StepExecutionTickResult.None;
         }
 
-        private void TryCompleteSwitchLane()
+        private StepExecutionTickResult TryCompleteSwitchLane()
         {
             bool timeElapsed = Time.time - _switchLaneExecTime >= BotExecutionConsts.SwitchLaneMinElapsed;
             if (!timeElapsed || _hamster.IsShifting.Value)
-                return;
+                return StepExecutionTickResult.None;
 
             ValidateSwitchLaneCompletionContract();
             _step.MarkCompleted();
             DebugManager.DiagLog("[BotV3 EXEC] SwitchLane completed");
+            return StepExecutionTickResult.StepCompleted;
         }
 
-        private void TryCompleteJump()
+        private StepExecutionTickResult TryCompleteJump()
         {
             if (Time.time - _jumpExecTime < BotExecutionConsts.JumpMinCompletionDelay)
-                return;
+                return StepExecutionTickResult.None;
 
             if (IsActiveJumpState(_hamster.HamsterState.Value))
-                return;
+                return StepExecutionTickResult.None;
 
             _step.MarkCompleted();
             DebugManager.DiagLog($"[BotV3 EXEC] Jump completed (state={_hamster.HamsterState.Value})");
+            return StepExecutionTickResult.StepCompleted;
         }
 
         /// <summary>
