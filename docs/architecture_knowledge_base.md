@@ -8,7 +8,7 @@
 - [Data Flow](#data-flow)
 - [Important Constants](#important-constants)
 - [Lessons Learned](#lessons-learned)
-- [HamsterBot Architecture](#hamsterbot-architecture-v2---chain-planner)
+- [HamsterBot Architecture](#hamsterbot-architecture-v3---pipeline)
 
 ---
 
@@ -604,14 +604,14 @@ Menu: `Tools/Migration/` — 3 шага:
 
 ### Актуальные документы по боту
 
-- `docs/Planning/bot concept brainstrom` — поведенческий концепт и приоритеты принятия решений.
-- `docs/Planning/bot_architecture.md` — целевая архитектура, сущности и pipeline.
-- `docs/Planning/bot_implementation_spec.md` — техническая спецификация реализации и статус этапов.
+- `docs/Planning/Bot/bot concept brainstrom` — поведенческий концепт и приоритеты принятия решений.
+- `docs/Planning/Bot/bot_architecture.md` — целевая архитектура, сущности и pipeline.
+- `docs/Planning/bot_implementation_plan.md` — план реализации и актуальный статус этапов.
 
 ### Статус архивов
 
 - Промежуточные backup-документы по фазам реализации удалены как неактуальные.
-- Оставлен один канонический файл спецификации: `docs/Planning/bot_implementation_spec.md`.
+- Канонический документ со статусом внедрения: `docs/Planning/bot_implementation_plan.md`.
 
 ### Критичные инварианты ActionGenerator
 

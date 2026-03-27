@@ -13,7 +13,7 @@ description: "Использовать для итеративной работ�
 1. Понять требования этапа по `docs/Planning/Bot/`.
 2. Реализовать минимально достаточные изменения в коде и тестовом уровне.
 3. Запустить тестовый уровень доступным способом.
-4. Прочитать `LostCyberHamster/EditorLogs/diagnostic_log.txt` и оценить результат.
+4. Прочитать `EditorLogs/diagnostic_log.txt` и оценить результат.
 5. Если найден дефект — сделать следующую итерацию.
 
 ## Ограничения
@@ -24,8 +24,8 @@ description: "Использовать для итеративной работ�
 
 ## Правила работы
 
-- Сначала читать `docs/architecture_knowledge_base.md`, `docs/Planning/Bot/bot_implementation_plan.md` и релевантный stage-документ.
-- Для тестового прогона считать основным launch-path уровень `Assets/Content/locations/01_New_York/levels/Morning/test_level/test_level.json`.
+- Сначала читать `docs/architecture_knowledge_base.md`, `docs/Planning/bot_implementation_plan.md` и релевантный stage-документ.
+- Для тестового прогона считать основным launch-path уровень `LostCyberHamster/Assets/Content/locations/01_New_York/levels/Morning/test_level/test_level.json`.
 - Stage-specific сценарии оформлять через bot-паттерны в `PatternsCollection.json`, а `test_level.json` собирать под текущую задачу из этих паттернов.
 - После каждой итерации явно отделять: ошибка решения, ошибка тайминга, ошибка логирования, ошибка тестового контента.
 - После завершения задачи делать короткую ретроспективу и обновлять `docs/rules/ai_workflow_lessons.md`, если появился новый устойчивый процессный урок.

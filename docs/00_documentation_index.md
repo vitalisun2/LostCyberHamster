@@ -1,68 +1,95 @@
 # Documentation Index
 
-Краткий справочник по документации проекта.
+Краткий актуальный справочник по документации проекта.
+
+---
+
+## Источники истины по процессу
+
+### AGENTS.md
+Главный документ по workflow репозитория: типы задач, worktree-модель, правила ветвления, валидация, отчётность и стиль коммуникации.
+
+### docs/rules/ai_workflow_lessons.md
+Накопленные практические уроки по работе в этом репозитории. Читать перед существенными задачами.
+
+### docs/rules/agent_tools.md
+Каталог проектных инструментов: automation bridge, log reader, test level launcher, редакторские утилиты и PowerShell-скрипты.
+
+### docs/rules/ai_workflow.md
+Итерационный цикл выполнения задач, требования к тестированию, логам и отчётам.
 
 ---
 
 ## Справочные документы
 
-### docs/01_repo_settings.md
-Правила работы с ветками (main/develop/feature/bugfix), установка git-хуков.
-
 ### docs/02_game_description.md
-Описание геймплея: управление, энергия, жизни, ульта, типы препятствий, бонусы, уровни и локации, магазин.
+Краткое описание геймплея и базовых игровых сущностей.
 
 ### docs/architecture_knowledge_base.md
-Ключевая база знаний проекта. Naming conventions, Addressables, система анимаций препятствий, Level Tilemap Editor, Data Flow, константы, Lessons Learned, план расширения на новые локации.
-
-**Обязательно читать перед сложными задачами** (упомянуто в `.github/copilot-instructions.md`).
+Ключевая база знаний проекта: naming conventions, Addressables, редактор уровней, data flow, runtime-декор, бот и устойчивые архитектурные выводы.
 
 ### docs/hamster_collision_test_scenarios.md
-Чек-лист для ручного тестирования всех типов столкновений хомяка: Jump, Roof Jump, Roof Run, Super Jump, Super Roof Jump.
+Чек-лист для ручного тестирования всех основных типов столкновений хомяка.
+
+### README.md
+Общее описание репозитория и короткий developer-facing обзор.
 
 ---
 
-## Активные планы
+## Планы и спецификации
 
 ### docs/Planning/Milestone New York.md
-Дорожная карта первой локации: визуал, UI, экономика, геймдизайн, уровни для всех частей дня.
+Высокоуровневая дорожная карта контента и задач по первой локации.
 
 ### docs/Planning/GameEconomy.md
-Экономическая модель: монеты, кристаллы, баланс, рекомендации по улучшению.
+Документ по экономике игры: ресурсы, баланс и идеи по улучшению.
 
-### docs/Planning/bot concept brainstrom
-Основной концептуальный документ по боту: цели, приоритеты, правила выбора шагов, достижимость целей, событийнoе перепланирование, короткий горизонт планирования.
+### docs/Planning/Bot/bot concept brainstrom
+Концептуальный документ по боту: цели, поведенческие приоритеты и модель принятия решений.
 
-### docs/Planning/bot_architecture.md
-Целевая архитектура бота: что сохраняем из текущего кода, какие компоненты нужны, как должны быть разделены runtime-shell и planning-core.
+### docs/Planning/Bot/bot universal algorithm brainstrom.md
+Краткий алгоритмический скелет decision loop для бота.
 
-### docs/Planning/bot_implementation_spec.md
-Каноническая техническая спецификация реализации бота (без backup-файлов по фазам). Содержит статус этапов и детали внедрения pipeline.
+### docs/Planning/Bot/bot_architecture.md
+Целевая архитектура бота и распределение ответственности между pipeline-компонентами.
+
+### docs/Planning/bot_implementation_plan.md
+Канонический план реализации бота и текущий статус этапов.
+
+### docs/Planning/level_assembly_refactor.md
+Подробная спецификация reference-based сборки уровней и миграции форматов.
+
+### docs/Planning/level_editor_ui_refactor_spec.md
+Техническое задание по UI-рефакторингу Level Tilemap Editor.
 
 ### docs/Planning/sprite_loader_refactor_plan.md
-Рефакторинг загрузки спрайтов. Вехи 1-3 завершены (ядро AddressableLoader). Вехи 4-6 в работе: миграция рантайма, редактора, диагностика.
+План рефакторинга загрузки спрайтов и миграции на общее ядро Addressables.
+
+### docs/Planning/current/README.md
+Placeholder-документ для каталога активного плана. Одноразовые завершённые планы в `current/` не хранятся.
 
 ---
 
-## Прочая документация
+## Внешние и исторические материалы
 
 ### .github/copilot-instructions.md
-Инструкции для AI-ассистента: правила работы, Unity API, workflow, отладка.
-
-### LostCyberHamster/refactor_plan.md
-Рефакторинг системы уровней на иерархическую структуру (Location/PartOfDay/Level). Шаги 1-5 завершены, шаг 6 (фича-флаг) почти готов.
+Короткая точка входа для Copilot, перенаправляющая к `AGENTS.md`.
 
 ### GameDesignDocWithGuidHistory/Addressables.md
-Принципы организации Addressables: группы по локациям, shared-группы, правила именования.
+Исторический документ по организации Addressables.
+
+### LostCyberHamster/refactor_plan.md
+Исторический план старого рефакторинга уровней внутри Unity-проекта.
 
 ---
 
 ## Инструменты разработчика
 
-Скрипты в корне репозитория. Подробнее — в секции «Инструменты разработчика» в README.md.
-
 ### codebase_compact.ps1
-Генерация + наблюдение за `.cs` файлами. Автоматически обновляет `docs/game_scripts_codebase_compact.txt` — сжатый снимок всего C#-кода для использования с LLM. Запускается автоматически при открытии проекта в VS Code (через `.vscode/tasks.json`).
+Скрипт для генерации сжатого снимка C#-кода.
 
-### docs/game_scripts_codebase_compact.txt
-Автогенерируемый файл со снимком всех `.cs` файлов из `Assets/Scripts` и `Assets/Editor`. Не редактировать вручную.
+### read_log_channel.ps1
+Унифицированное чтение каналов логов `STAB`, `BOT`, `ECO`.
+
+### invoke_open_unity_test_level.ps1
+Сценарий полного цикла: рекомпиляция, запуск тестового уровня и ожидание результата.

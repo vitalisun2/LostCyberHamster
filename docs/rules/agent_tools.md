@@ -9,7 +9,7 @@
 Файловый IPC-механизм для управления Unity Editor извне.
 
 **Файлы:**
-- Реализация: `Assets/Editor/TestLevelAutomationBridge.cs`
+- Реализация: `LostCyberHamster/Assets/Editor/TestLevelAutomationBridge.cs`
 - PowerShell-обёртка: `invoke_open_unity_test_level.ps1`
 
 **Как вызвать:**
@@ -21,7 +21,7 @@
 Скрипт сам отправляет `recompile_scripts`, ждёт компиляцию, затем запускает тест.
 
 Вариант B — ручной запрос через JSON:
-- Создать файл `LostCyberHamster/EditorLogs/automation/test_level_request.json`:
+- Создать файл `EditorLogs/automation/test_level_request.json`:
   ```json
   {"requestId": "<unique_id>", "command": "launch_test_level", "createdAtUtc": "<ISO_datetime>"}
   ```
@@ -43,24 +43,24 @@
 ## 2. Test Level Launcher (из Unity Editor)
 
 **Меню:** `Tools → Test Level → Launch`
-**Файл:** `Assets/Editor/TestLevelLauncher.cs`
+**Файл:** `LostCyberHamster/Assets/Editor/TestLevelLauncher.cs`
 
-Запускает тестовый уровень `01_New_York/Morning/test_level` с автовключением BotV2. PlayerPrefs автоматически очищаются при выходе из Play Mode.
+Запускает тестовый уровень `01_New_York/Morning/test_level` с автовключением бота. PlayerPrefs автоматически очищаются при выходе из Play Mode.
 
 ---
 
 ## 3. Diagnostic Log (единый файл + каналы)
 
 **Путь:**
-- `LostCyberHamster/EditorLogs/diagnostic_log.txt`
+- `EditorLogs/diagnostic_log.txt`
 
 **Теги каналов в строке:**
 - `[CH=STAB]` — стабильность (fail/win, критические сигналы).
 - `[CH=BOT]` — событийный поток бота (pipeline/select/execute/result).
 - `[CH=ECO]` — экономические события и итог ранa.
 
-**Файл логгера:** `Assets/Scripts/GameEngine/DebugManager.cs`
-**Просмотрщик:** `Assets/Editor/DiagnosticLogViewer.cs`
+**Файл логгера:** `LostCyberHamster/Assets/Scripts/GameEngine/DebugManager.cs`
+**Просмотрщик:** `LostCyberHamster/Assets/Editor/DiagnosticLogViewer.cs`
 
 **Меню:**
 - `Tools → Diagnostics → View Diagnostic Log` — открыть лог.
@@ -76,8 +76,8 @@
 
 ## 4. Тестовые паттерны и уровни
 
-**Коллекция паттернов:** `Assets/Content/locations/level_design_templates/levels/PatternsCollection.json`
-**Тестовый уровень:** `Assets/Content/locations/01_New_York/levels/Morning/test_level/test_level.json`
+**Коллекция паттернов:** `LostCyberHamster/Assets/Content/locations/level_design_templates/levels/PatternsCollection.json`
+**Тестовый уровень:** `LostCyberHamster/Assets/Content/locations/01_New_York/levels/Morning/test_level/test_level.json`
 
 **Структура паттерна:**
 ```json
@@ -100,7 +100,7 @@
 ## 5. Level Tilemap Editor
 
 **Меню:** `Tools → Level Tilemap Editor`
-**Файл:** `Assets/Editor/LevelEditor/LevelTilemapEditor.cs`
+**Файл:** `LostCyberHamster/Assets/Editor/LevelEditor/LevelTilemapEditor.cs`
 
 Визуальный редактор уровней: размещение препятствий на tilemap, поиск/фильтрация паттернов, управление sprite overrides.
 
@@ -127,7 +127,7 @@
 
 ## 8. Player Data
 
-- `Tools → Player Data → Export JSON` — экспорт расшифрованных данных игрока в `Temp/PlayerData.json`.
+- `Tools → Player Data → Export JSON` — экспорт расшифрованных данных игрока в `LostCyberHamster/Temp/PlayerData.json`.
 - `Tools → Player Data → Reset` — сброс прогресса к дефолтам.
 
 ---
