@@ -71,8 +71,7 @@
 
 ## Игровые события
 
-Игровые события определены в GameEventsManager. 
-https://github.com/vues-dev/LostCyberHamster/blob/develop/LostCyberHamster/Assets/Scripts/GameEngine/GameEventsManager.cs
+Игровые события определены в `LostCyberHamster/Assets/Scripts/GameEngine/GameEventsManager.cs`.
 
 
 События передают информацию о важных моментах (начало уровня, покупка, сбор монет, активация ульты и т.д.) между разными системами игры (UI, аналитика, менеджеры ресурсов и т.п.), чтобы не создавать жёстких связей.
