@@ -80,15 +80,19 @@ namespace Assets.Scripts.BotV3
             LastSnapshot = _snapshotBuilder.Build(Hamster);
             _classifier.Classify(LastSnapshot);
 
-            // 2. Execute active step (if any)
-            _executor.TryExecute();
-
-            // 3. Plan — replan when no active step or step was cancelled
-            if (!_executor.HasActiveStep || _executor.WasCancelled)
+            // 2. Если шаг уже в процессе, сначала даём executor'у шанс завершить его.
+            if (_executor.IsStepInProgress)
             {
-                Plan.RemoveCompletedFromHead();
-                ApplyPlan(_planner.FindBestBranch(LastSnapshot, _classifier));
+                _executor.TryExecute();
+
+                if (_executor.IsStepInProgress && !_executor.WasCancelled)
+                    return;
             }
+
+            // 3. Для шага в Ready сначала перепланируем по live snapshot, затем исполняем head.
+            Plan.RemoveCompletedFromHead();
+            ApplyPlan(_planner.FindBestBranch(LastSnapshot, _classifier));
+            _executor.TryExecute();
         }
 
         private void ApplyPlan(BranchCandidate best)

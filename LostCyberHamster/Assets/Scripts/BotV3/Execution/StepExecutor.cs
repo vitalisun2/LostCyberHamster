@@ -18,6 +18,7 @@ namespace Assets.Scripts.BotV3
         private const float JumpLateFallbackDistance = 0.1f;
         private const float TooLateThreshold = -0.3f;
         private const float SwitchLaneMinElapsed = 0.1f;
+        private const float SwitchLaneCompletionTolerance = 0.12f;
 
         private readonly Hamster _hamster;
         private BranchStep _step;
@@ -27,6 +28,7 @@ namespace Assets.Scripts.BotV3
 
         public bool WasCancelled { get; private set; }
         public bool HasActiveStep => _step != null && _step.Status != BranchStepStatus.Completed;
+        public bool IsStepInProgress => _step != null && _step.Status == BranchStepStatus.InProgress;
 
         public StepExecutor(Hamster hamster)
         {
@@ -106,6 +108,7 @@ namespace Assets.Scripts.BotV3
                 bool timeElapsed = Time.time - _switchLaneExecTime >= SwitchLaneMinElapsed;
                 if (timeElapsed && !_hamster.IsShifting.Value)
                 {
+                    ValidateSwitchLaneCompletionContract();
                     _step.Status = BranchStepStatus.Completed;
                     DebugManager.DiagLog("[BotV3 EXEC] SwitchLane completed");
                 }
@@ -231,6 +234,25 @@ namespace Assets.Scripts.BotV3
             }
 
             return null;
+        }
+
+        private void ValidateSwitchLaneCompletionContract()
+        {
+            float plannedTravel = _step.CompletionWorldShift - _step.FireWorldShift;
+            if (plannedTravel <= 0f)
+                return;
+
+            float expectedDuration = plannedTravel / BotPhysicsConsts.GameSpeedBase;
+            float actualDuration = Time.time - _switchLaneExecTime;
+            float delta = actualDuration - expectedDuration;
+
+            if (Mathf.Abs(delta) <= SwitchLaneCompletionTolerance)
+                return;
+
+            Debug.LogError(
+                $"[BotV3 CONTRACT] SwitchLane completion drift detected. " +
+                $"planned={expectedDuration:F3}s actual={actualDuration:F3}s delta={delta:F3}s " +
+                $"reason={_step.Reason}");
         }
     }
 }

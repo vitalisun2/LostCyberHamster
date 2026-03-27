@@ -13,11 +13,11 @@ namespace Assets.Scripts.BotV3
             if (candidates == null || candidates.Count == 0)
                 return null;
 
-            candidates.Sort(Compare);
+            candidates.Sort(CompareCandidates);
             return candidates[0];
         }
 
-        private static int Compare(BranchCandidate a, BranchCandidate b)
+        public static int CompareCandidates(BranchCandidate a, BranchCandidate b)
         {
             var oa = a.Outcome;
             var ob = b.Outcome;
@@ -28,7 +28,11 @@ namespace Assets.Scripts.BotV3
             if (oa.TotalEnergyCost != ob.TotalEnergyCost)
                 return oa.TotalEnergyCost.CompareTo(ob.TotalEnergyCost);
 
-            return b.Steps.Count.CompareTo(a.Steps.Count);
+            int depthCompare = a.Steps.Count.CompareTo(b.Steps.Count);
+            if (depthCompare != 0)
+                return depthCompare;
+
+            return a.Steps[0].FireWorldShift.CompareTo(b.Steps[0].FireWorldShift);
         }
     }
 }

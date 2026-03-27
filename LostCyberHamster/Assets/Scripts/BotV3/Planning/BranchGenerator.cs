@@ -9,14 +9,14 @@ namespace Assets.Scripts.BotV3
     public class BranchGenerator
     {
         private const int MaxBranchDepth = 3;
-        private readonly StateProjector _stateProjector = new StateProjector();
         private readonly BranchStep[] _stepBuffer = new BranchStep[MaxBranchDepth];
 
         public List<BranchCandidate> Generate(
             BotSceneSnapshot snapshot,
             List<BranchStep> firstStepCandidates,
             ObjectClassifier classifier,
-            ActionGenerator actionGenerator)
+            ActionGenerator actionGenerator,
+            ProblemResolver problemResolver)
         {
             var result = new List<BranchCandidate>();
             if (firstStepCandidates == null || firstStepCandidates.Count == 0)
@@ -31,6 +31,7 @@ namespace Assets.Scripts.BotV3
                     snapshot,
                     classifier,
                     actionGenerator,
+                    problemResolver,
                     first,
                     depth: 0,
                     originalSnapshot: snapshot,
@@ -44,6 +45,7 @@ namespace Assets.Scripts.BotV3
             BotSceneSnapshot snapshot,
             ObjectClassifier classifier,
             ActionGenerator actionGenerator,
+            ProblemResolver problemResolver,
             BranchStep step,
             int depth,
             BotSceneSnapshot originalSnapshot,
@@ -52,19 +54,28 @@ namespace Assets.Scripts.BotV3
             _stepBuffer[depth] = step;
             int stepCount = depth + 1;
 
-            var projection = _stateProjector.Project(snapshot, step);
+            var projection = actionGenerator.Project(snapshot, step);
             if (!projection.IsSafe || projection.NextState == null)
                 return;
 
             var projectedSnapshot = projection.NextState.ToSnapshot();
             classifier.Classify(projectedSnapshot);
 
-            result.Add(BuildCandidate(_stepBuffer, stepCount, originalSnapshot));
-
             if (stepCount >= MaxBranchDepth)
+            {
+                result.Add(BuildCandidate(_stepBuffer, stepCount, originalSnapshot));
                 return;
+            }
 
-            var nextSteps = actionGenerator.Generate(projectedSnapshot);
+            var nextProblem = problemResolver.ResolveNext(projectedSnapshot);
+            if (nextProblem == null)
+            {
+                result.Add(BuildCandidate(_stepBuffer, stepCount, originalSnapshot));
+                return;
+            }
+
+            var nextSteps = actionGenerator.Generate(projectedSnapshot, nextProblem, $"projection:d{stepCount}");
+            int resultCountBeforeChildren = result.Count;
             for (int i = 0; i < nextSteps.Count; i++)
             {
                 var next = nextSteps[i];
@@ -74,10 +85,16 @@ namespace Assets.Scripts.BotV3
                     projectedSnapshot,
                     classifier,
                     actionGenerator,
+                    problemResolver,
                     next,
                     stepCount,
                     originalSnapshot,
                     result);
+            }
+
+            if (result.Count == resultCountBeforeChildren)
+            {
+                result.Add(BuildCandidate(_stepBuffer, stepCount, originalSnapshot));
             }
         }
 
@@ -100,9 +117,18 @@ namespace Assets.Scripts.BotV3
                 Outcome = new BranchOutcome
                 {
                     TotalEnergyCost = totalEnergyCost,
-                    AllStepsSafe = IsIdlePeriodSafe(originalSnapshot, buffer[0])
+                    AllStepsSafe = IsIdlePeriodSafe(originalSnapshot, buffer[0]),
+                    FreeRunAfterFirstStep = ComputeFreeRunAfterFirstStep(buffer, count)
                 }
             };
+        }
+
+        private static float ComputeFreeRunAfterFirstStep(BranchStep[] buffer, int count)
+        {
+            if (count < 2 || buffer[1] == null)
+                return float.PositiveInfinity;
+
+            return buffer[1].FireWorldShift;
         }
 
         private static bool IsIdlePeriodSafe(BotSceneSnapshot snapshot, BranchStep firstStep)

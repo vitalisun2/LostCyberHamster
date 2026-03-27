@@ -6,37 +6,45 @@
   "location": "01_New_York",
   "patternSequence": [
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
-
-    { "ref": "v3_single_bottom", "spriteSeed": 0, "overrides": [] },
-    { "ref": "v3_single_top", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_01_bottom_small_clear_switch", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
-
-    { "ref": "v3_single_top", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_02_top_small_clear_switch", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
-
-    { "ref": "v3_zigzag_2", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_03_bottom_delayed_switch", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
-
-    { "ref": "v3_zigzag_3", "spriteSeed": 0, "overrides": [] },
-    { "ref": "v3_single_top", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_04_top_delayed_switch", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
-
-    { "ref": "v3_both_blocked", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_05_bottom_late_window", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
-
-    { "ref": "v3_tight_zigzag", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_06_top_late_window", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
-
-    { "ref": "v3_jump_vs_switchlane", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_07_bottom_split_window", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
-
-    { "ref": "v3_jump_small_bottom", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_08_top_split_window", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
-
-    { "ref": "v3_jump_no_energy", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_09_bottom_jump_blocked", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] },
-
-    { "ref": "v3_jump_chain", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_10_bottom_other_lane_noop", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_11_bottom_big_alive_switch", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_12_top_jump_blocked", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_13_top_other_lane_noop", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_14_top_big_alive_switch", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_15_bottom_big_notalive_switch", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_16_top_big_notalive_switch", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_17_bottom_medium_switch", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_18_top_medium_switch", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_19_bottom_legit_zigzag", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] },
+    { "ref": "v3_cov_20_top_legit_zigzag", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] }
   ],
   "decorationPatterns": [

@@ -9833,7 +9833,7 @@
         },
         {
             "name": "v3_single_bottom",
-            "desсription": "BotV3 test: single threat on bottom lane, expect SwitchLane to top",
+            "desсription": "BotV3 test: single bottom-lane threat, expect immediate SwitchLane to top",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
@@ -9845,7 +9845,7 @@
         },
         {
             "name": "v3_single_top",
-            "desсription": "BotV3 test: single threat on top lane, SwitchLane if on top / no action if on bottom",
+            "desсription": "BotV3 test: single top-lane threat, expect immediate SwitchLane to bottom",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
@@ -9856,26 +9856,62 @@
             ]
         },
         {
-            "name": "v3_zigzag_2",
-            "desсription": "BotV3 test: zigzag 2-step, threats bottom then top, expect chain of 2 SwitchLanes",
+            "name": "v3_switch_window_bottom",
+            "desсription": "BotV3 test: bottom small obstacle plus early top blocker, expect delayed SwitchLane window to beat Jump",
             "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 6.0,
+                    "y": -1.8
+                },
                 {
                     "spriteName": "obstacle_new_york_manhole",
                     "type": 2,
-                    "x": 10.0,
+                    "x": 16.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_switch_window_top",
+            "desсription": "BotV3 test: top small obstacle plus early bottom blocker, expect delayed SwitchLane window to beat Jump",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 6.0,
                     "y": -2.8
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
                     "type": 2,
-                    "x": 25.0,
+                    "x": 16.0,
                     "y": -1.8
                 }
             ]
         },
         {
+            "name": "v3_late_window_bottom",
+            "desсription": "BotV3 test: late but valid SwitchLane window on top lane must still be found before source collision",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_2",
+                    "type": 11,
+                    "x": 9.5,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
             "name": "v3_zigzag_3",
-            "desсription": "BotV3 test: zigzag 3-step, max chain depth, expect 3 SwitchLanes",
+            "desсription": "BotV3 test: three-step zigzag, expect planner depth 3 with alternating SwitchLane decisions",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
@@ -9898,50 +9934,8 @@
             ]
         },
         {
-            "name": "v3_both_blocked",
-            "desсription": "BotV3 test: threats on both lanes, SwitchLane blocked by safety check, expect damage",
-            "obstacles": [
-                {
-                    "spriteName": "life",
-                    "type": 8,
-                    "x": 5.0,
-                    "y": -2.8
-                },
-                {
-                    "spriteName": "obstacle_new_york_manhole",
-                    "type": 2,
-                    "x": 20.0,
-                    "y": -2.8
-                },
-                {
-                    "spriteName": "obstacle_new_york_manhole",
-                    "type": 2,
-                    "x": 17.0,
-                    "y": -1.8
-                }
-            ]
-        },
-        {
-            "name": "v3_tight_zigzag",
-            "desсription": "BotV3 test: zigzag with tight 8-unit spacing, tests chain planning under pressure",
-            "obstacles": [
-                {
-                    "spriteName": "obstacle_new_york_manhole",
-                    "type": 2,
-                    "x": 10.0,
-                    "y": -2.8
-                },
-                {
-                    "spriteName": "obstacle_new_york_manhole",
-                    "type": 2,
-                    "x": 18.0,
-                    "y": -1.8
-                }
-            ]
-        },
-        {
             "name": "v3_jump_small_bottom",
-            "desсription": "BotV3 test: small obstacle on bottom + big obstacle blocking top lane, expect Jump over small (SwitchLane unsafe)",
+            "desсription": "BotV3 test: bottom small obstacle with blocked top lane, expect Jump fallback",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
@@ -9958,8 +9952,26 @@
             ]
         },
         {
+            "name": "v3_jump_small_top",
+            "desсription": "BotV3 test: top small obstacle with blocked bottom lane, expect Jump fallback",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 13.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
             "name": "v3_jump_vs_switchlane",
-            "desсription": "BotV3 test: small obstacle on bottom, top lane clear, expect SwitchLane (0 energy) preferred over Jump (10 energy)",
+            "desсription": "BotV3 test: bottom small obstacle with clear top lane, expect immediate SwitchLane over Jump",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
@@ -9971,7 +9983,7 @@
         },
         {
             "name": "v3_jump_chain",
-            "desсription": "BotV3 test: two small obstacles on bottom, big on top between them, expect SwitchLane first then Jump second (or Jump both)",
+            "desсription": "BotV3 test: bottom small then top blocker then bottom small, expect multi-step planning across SwitchLane and Jump choices",
             "obstacles": [
                 {
                     "spriteName": "obstacle_new_york_manhole",
@@ -9994,14 +10006,338 @@
             ]
         },
         {
-            "name": "v3_jump_no_energy",
-            "desсription": "BotV3 test: small obstacle on bottom, top blocked, but preceded by energetic to ensure energy; tests energy-aware Jump",
+            "name": "v3_both_blocked",
+            "desсription": "BotV3 test: both lanes blocked near the decision point, planner should reject unsafe SwitchLane options",
             "obstacles": [
                 {
-                    "spriteName": "energetic",
-                    "type": 5,
+                    "spriteName": "life",
+                    "type": 8,
                     "x": 5.0,
                     "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 20.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 17.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_01_bottom_small_clear_switch",
+            "desсription": "entry bottom: immediate free SwitchLane upward over small threat",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_02_top_small_clear_switch",
+            "desсription": "entry top: immediate free SwitchLane downward over small threat",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_03_bottom_delayed_switch",
+            "desсription": "entry bottom: early blocker on top creates delayed SwitchLane window",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 6.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 16.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_04_top_delayed_switch",
+            "desсription": "entry top: early blocker on bottom creates delayed SwitchLane window",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 6.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 16.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_05_bottom_late_window",
+            "desсription": "entry bottom: narrow late SwitchLane window on top must still be found",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_2",
+                    "type": 11,
+                    "x": 9.5,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_06_top_late_window",
+            "desсription": "entry top: narrow late SwitchLane window on bottom must still be found",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_2",
+                    "type": 11,
+                    "x": 9.5,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_07_bottom_split_window",
+            "desсription": "entry bottom: split safe windows on top should produce one justified late SwitchLane",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 12.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 20.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 28.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_08_top_split_window",
+            "desсription": "entry top: mirrored split-window case should avoid unnecessary zigzag",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 12.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 20.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 28.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_09_bottom_jump_blocked",
+            "desсription": "entry bottom: top lane blocked for whole window, so Jump is required",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 13.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_10_bottom_other_lane_noop",
+            "desсription": "entry bottom: visible threat only on top lane should not trigger any action",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_11_bottom_big_alive_switch",
+            "desсription": "entry bottom: bigAlive threat is switch-only and should move bot upward",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_businessman",
+                    "type": 1,
+                    "x": 15.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_12_top_jump_blocked",
+            "desсription": "entry top: bottom lane blocked for whole window, so Jump is required",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 13.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_13_top_other_lane_noop",
+            "desсription": "entry top: visible threat only on bottom lane should not trigger any action",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 15.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_14_top_big_alive_switch",
+            "desсription": "entry top: bigAlive threat is switch-only and should move bot downward",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_businessman",
+                    "type": 1,
+                    "x": 15.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_15_bottom_big_notalive_switch",
+            "desсription": "entry bottom: bigNotAlive threat should be solved by free SwitchLane",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 15.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_16_top_big_notalive_switch",
+            "desсription": "entry top: mirrored bigNotAlive switch-only case",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 15.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_17_bottom_medium_switch",
+            "desсription": "entry bottom: mediumNotAlive threat should be solved by SwitchLane",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_2",
+                    "type": 11,
+                    "x": 15.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_18_top_medium_switch",
+            "desсription": "entry top: mirrored mediumNotAlive switch-only case",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_car_2",
+                    "type": 11,
+                    "x": 15.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_19_bottom_legit_zigzag",
+            "desсription": "entry bottom: close alternating threats require a real three-step zigzag",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 10.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 18.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 26.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "v3_cov_20_top_legit_zigzag",
+            "desсription": "entry top: mirrored close alternating threats require a real three-step zigzag",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 10.0,
+                    "y": -1.8
                 },
                 {
                     "spriteName": "obstacle_new_york_manhole",
@@ -10010,9 +10346,9 @@
                     "y": -2.8
                 },
                 {
-                    "spriteName": "obstacle_new_york_car_1",
-                    "type": 4,
-                    "x": 16.0,
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 26.0,
                     "y": -1.8
                 }
             ]

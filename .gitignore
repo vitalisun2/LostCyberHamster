@@ -117,3 +117,6 @@ Desktop.ini
 # Claude Code local settings and shared worktrees
 .claude/settings.local.json
 .worktrees/
+
+# Generated compact codebase dumps
+/docs/*codebase_compact*.txt

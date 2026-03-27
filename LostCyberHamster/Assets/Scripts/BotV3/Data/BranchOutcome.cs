@@ -7,5 +7,6 @@ namespace Assets.Scripts.BotV3
     {
         public int TotalEnergyCost;
         public bool AllStepsSafe = true;
+        public float FreeRunAfterFirstStep = float.PositiveInfinity;
     }
 }

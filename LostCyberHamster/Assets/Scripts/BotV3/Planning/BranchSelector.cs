@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
@@ -9,6 +11,7 @@ namespace Assets.Scripts.BotV3
     {
         private readonly ActionGenerator _actionGenerator = new ActionGenerator();
         private readonly BranchGenerator _branchGenerator = new BranchGenerator();
+        private readonly ProblemResolver _problemResolver = new ProblemResolver();
 
         private int _lastPlanTargetId;
 
@@ -17,9 +20,20 @@ namespace Assets.Scripts.BotV3
         /// </summary>
         public BranchCandidate FindBestBranch(BotSceneSnapshot snapshot, ObjectClassifier classifier)
         {
-            var actions = _actionGenerator.Generate(snapshot);
-            var branches = _branchGenerator.Generate(snapshot, actions, classifier, _actionGenerator);
-            var best = BranchEvaluator.SelectBest(branches);
+            var problem = _problemResolver.ResolveNext(snapshot);
+            if (problem == null)
+            {
+                if (_lastPlanTargetId != 0)
+                {
+                    BotLogger.LogPlanCleared();
+                    _lastPlanTargetId = 0;
+                }
+
+                return null;
+            }
+
+            var actions = _actionGenerator.Generate(snapshot, problem, "root");
+            var best = SelectBestActionBranch(snapshot, classifier, actions);
 
             if (best == null)
             {
@@ -45,6 +59,24 @@ namespace Assets.Scripts.BotV3
         public void Reset()
         {
             _lastPlanTargetId = 0;
+        }
+
+        private BranchCandidate SelectBestActionBranch(
+            BotSceneSnapshot snapshot,
+            ObjectClassifier classifier,
+            List<BranchStep> actions = null)
+        {
+            if (actions == null)
+            {
+                var problem = _problemResolver.ResolveNext(snapshot);
+                if (problem == null)
+                    return null;
+
+                actions = _actionGenerator.Generate(snapshot, problem);
+            }
+
+            var branches = _branchGenerator.Generate(snapshot, actions, classifier, _actionGenerator, _problemResolver);
+            return BranchEvaluator.SelectBest(branches);
         }
     }
 }
