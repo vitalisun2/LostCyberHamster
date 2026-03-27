@@ -7,12 +7,10 @@ namespace Assets.Scripts.BotV3
     /// Стратегия построения и проекции Jump.
     /// На первом этапе сохраняет текущую семантику одного канонического fire.
     /// </summary>
-    public class JumpStrategy : IActionStrategy
+    public class JumpStrategy
     {
         private const float JumpFireDist = 1.5f;
         private const int JumpEnergyCost = 10;
-
-        public BotAction Action => BotAction.Jump;
 
         public bool CanSolve(ProblemDescriptor problem)
         {
@@ -74,8 +72,7 @@ namespace Assets.Scripts.BotV3
                 JumpEnergyCost,
                 $"Jump over {target.Type}");
 
-            step.EarliestFireWorldShift = fireWorldShift;
-            step.LatestFireWorldShift = fireWorldShift;
+            step.SetFireWindow(fireWorldShift, fireWorldShift);
             return true;
         }
 

@@ -9,27 +9,27 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public class BranchStep
     {
-        public BotAction Action;
-        public ObstacleInfo TargetObstacle;
+        public BotAction Action { get; }
+        public ObstacleInfo TargetObstacle { get; }
 
         /// <summary>При какой дистанции до объекта выполнить действие.</summary>
-        public float ExecuteAtDistance;
+        public float ExecuteAtDistance { get; }
 
         /// <summary>Сдвиг мира от snapshot до момента fire.</summary>
-        public float FireWorldShift;
+        public float FireWorldShift { get; }
 
         /// <summary>Сдвиг мира от snapshot до завершения шага (fire + transit).</summary>
-        public float CompletionWorldShift;
+        public float CompletionWorldShift { get; }
 
         /// <summary>Начало допустимого окна fire.</summary>
-        public float EarliestFireWorldShift;
+        public float EarliestFireWorldShift { get; private set; }
 
         /// <summary>Конец допустимого окна fire.</summary>
-        public float LatestFireWorldShift;
+        public float LatestFireWorldShift { get; private set; }
 
-        public int EnergyCost;
-        public string Reason;
-        public BranchStepStatus Status;
+        public int EnergyCost { get; }
+        public string Reason { get; }
+        public BranchStepStatus Status { get; private set; }
 
         public BranchStep(
             BotAction action,
@@ -50,6 +50,22 @@ namespace Assets.Scripts.BotV3
             EnergyCost = energyCost;
             Reason = reason;
             Status = BranchStepStatus.Ready;
+        }
+
+        public void SetFireWindow(float earliestFireWorldShift, float latestFireWorldShift)
+        {
+            EarliestFireWorldShift = earliestFireWorldShift;
+            LatestFireWorldShift = latestFireWorldShift;
+        }
+
+        public void MarkInProgress()
+        {
+            Status = BranchStepStatus.InProgress;
+        }
+
+        public void MarkCompleted()
+        {
+            Status = BranchStepStatus.Completed;
         }
     }
 }

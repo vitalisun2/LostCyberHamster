@@ -5,8 +5,13 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public class BranchOutcome
     {
-        public int TotalEnergyCost;
-        public bool AllStepsSafe = true;
-        public float FreeRunAfterFirstStep = float.PositiveInfinity;
+        public int TotalEnergyCost { get; }
+        public bool AllStepsSafe { get; }
+
+        public BranchOutcome(int totalEnergyCost, bool allStepsSafe)
+        {
+            TotalEnergyCost = totalEnergyCost;
+            AllStepsSafe = allStepsSafe;
+        }
     }
 }

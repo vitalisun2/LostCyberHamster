@@ -17,26 +17,23 @@ namespace Assets.Scripts.BotV3
     {
         public ProblemKind Kind { get; }
         public ObstacleInfo SourceObstacle { get; }
-        public float DecisionWorldShift { get; }
         public string Reason { get; }
 
         public ProblemDescriptor(
             ProblemKind kind,
             ObstacleInfo sourceObstacle,
-            float decisionWorldShift,
             string reason)
         {
             Kind = kind;
             SourceObstacle = sourceObstacle;
-            DecisionWorldShift = decisionWorldShift;
             Reason = reason;
         }
     }
 
     /// <summary>
     /// Находит следующий обязательный decision point в snapshot.
-    /// Для threat-only этапа это первая same-lane угроза, которая при чистом run
-    /// приводит к реальному overlap с хомяком.
+    /// Для threat-only этапа это ближайшая same-lane угроза,
+    /// создающая следующий обязательный decision point.
     /// </summary>
     public class ProblemResolver
     {
@@ -80,7 +77,6 @@ namespace Assets.Scripts.BotV3
             return new ProblemDescriptor(
                 ProblemKind.ThreatCollision,
                 nextThreat,
-                nextDecisionShift,
                 $"Threat collision: {nextThreat.Type}");
         }
     }

@@ -171,7 +171,9 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.bigAlive, true, -0.20f, 2.40f, 2.76f, 902)
                 });
 
-            var strategy = new SwitchLaneStrategy(SwitchLaneTimingMode.Earliest);
+            _classifier.Classify(snapshot);
+
+            var strategy = new SwitchLaneStrategy();
             var projector = new ProjectedWorld();
             var step = new BranchStep(
                 BotAction.SwitchLane,

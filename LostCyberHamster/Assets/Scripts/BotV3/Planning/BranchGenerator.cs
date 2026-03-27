@@ -4,7 +4,7 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Строит ветви планировщика до заданной глубины.
-    /// V3 minimal: SwitchLane branches, depth 1-2.
+    /// Для каждого safe шага проецирует мир, находит следующую проблему и продолжает ветку рекурсивно.
     /// </summary>
     public class BranchGenerator
     {
@@ -114,21 +114,10 @@ namespace Assets.Scripts.BotV3
             return new BranchCandidate
             {
                 Steps = steps,
-                Outcome = new BranchOutcome
-                {
-                    TotalEnergyCost = totalEnergyCost,
-                    AllStepsSafe = IsIdlePeriodSafe(originalSnapshot, buffer[0]),
-                    FreeRunAfterFirstStep = ComputeFreeRunAfterFirstStep(buffer, count)
-                }
+                Outcome = new BranchOutcome(
+                    totalEnergyCost,
+                    IsIdlePeriodSafe(originalSnapshot, buffer[0]))
             };
-        }
-
-        private static float ComputeFreeRunAfterFirstStep(BranchStep[] buffer, int count)
-        {
-            if (count < 2 || buffer[1] == null)
-                return float.PositiveInfinity;
-
-            return buffer[1].FireWorldShift;
         }
 
         private static bool IsIdlePeriodSafe(BotSceneSnapshot snapshot, BranchStep firstStep)

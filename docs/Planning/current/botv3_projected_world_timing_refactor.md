@@ -106,6 +106,8 @@
 - Автопрогон test level прошёл (`WIN level=3 stars=3`).
 - Собран coverage `test_level` из 20 `v3_cov_*` паттернов для `SwitchLane` / `Jump` / `NoOp` edge-cases.
 - Coverage-автопрогон на 20 паттернах прошёл без урона (`WIN level=3 stars=3`).
+- Выполнен readability-refactor BotV3 без изменения поведения: убран `IActionStrategy`-indirection для timing-вариантов `SwitchLane`, упрощён `ActionGenerator`, `BranchStep` переведён на property-based API, runtime-константы executor'а вынесены в `BotExecutionConsts`.
+- После readability-refactor coverage-автопрогон снова подтверждён (`WIN level=3 stars=3`, `damage_count=0`).
 
 Следующий шаг:
 

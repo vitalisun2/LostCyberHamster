@@ -27,6 +27,7 @@
 - Для `SwitchLane` недостаточно моделировать только первое safe-window на target-линии. Если target-lane obstacle даёт split windows (`safe -> unsafe -> safe`), planner обязан видеть и позднее окно; иначе появляются искусственные zigzag-цепочки и ложный выигрыш `Jump`.
 - Для `ThreatSafety`-шага `SwitchLane` target obstacle должен быть ближайшей same-lane угрозой, потому что executor сверяет live distance именно с target объекта; если привязать шаг к дальней угрозе, бот дождётся её окна и погибнет об ближнюю.
 - Для chain-этапов заранее фиксировать, что межлинейность — это свойство самой запланированной последовательности шагов (например, zigzag 2-step), а не отдельная «моментная» смена линии вне цепочки.
+- Для planner safety нельзя автоматически приравнивать `ObjectCategory.Threat` к полному множеству runtime-опасных объектов. Классификатор может помечать часть коллизионно-опасных типов как `Target`, поэтому projection/swept safety для `SwitchLane` и `Jump` нужно сверять с runtime-dangerous type set, а не только с semantic category.
 
 ### Тестирование
 

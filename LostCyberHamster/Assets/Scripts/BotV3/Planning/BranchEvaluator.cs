@@ -4,7 +4,7 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Оценка и выбор лучшей ветви планировщика.
-    /// V3 minimal: AllStepsSafe → TotalEnergyCost → длина ветви.
+    /// Порядок сравнения: safety -> energy -> branch depth -> first fire timing.
     /// </summary>
     public static class BranchEvaluator
     {

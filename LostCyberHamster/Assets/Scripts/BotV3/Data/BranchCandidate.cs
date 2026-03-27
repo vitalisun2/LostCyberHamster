@@ -8,6 +8,6 @@ namespace Assets.Scripts.BotV3
     public class BranchCandidate
     {
         public List<BranchStep> Steps = new List<BranchStep>();
-        public BranchOutcome Outcome = new BranchOutcome();
+        public BranchOutcome Outcome = new BranchOutcome(0, true);
     }
 }

@@ -30,11 +30,8 @@ namespace Assets.Scripts.BotV3
             }
 
             sb.Append(" | safe=").Append(branch.Outcome.AllStepsSafe)
-              .Append(" slack=")
-              .Append(float.IsPositiveInfinity(branch.Outcome.FreeRunAfterFirstStep)
-                  ? "inf"
-                  : branch.Outcome.FreeRunAfterFirstStep.ToString("F1"))
-              .Append(" energy=").Append(branch.Outcome.TotalEnergyCost);
+              .Append(" energy=").Append(branch.Outcome.TotalEnergyCost)
+              .Append(" depth=").Append(branch.Steps.Count);
             DebugManager.DiagLog(sb.ToString());
         }
 

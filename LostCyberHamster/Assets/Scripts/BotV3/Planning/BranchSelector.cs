@@ -64,17 +64,8 @@ namespace Assets.Scripts.BotV3
         private BranchCandidate SelectBestActionBranch(
             BotSceneSnapshot snapshot,
             ObjectClassifier classifier,
-            List<BranchStep> actions = null)
+            List<BranchStep> actions)
         {
-            if (actions == null)
-            {
-                var problem = _problemResolver.ResolveNext(snapshot);
-                if (problem == null)
-                    return null;
-
-                actions = _actionGenerator.Generate(snapshot, problem);
-            }
-
             var branches = _branchGenerator.Generate(snapshot, actions, classifier, _actionGenerator, _problemResolver);
             return BranchEvaluator.SelectBest(branches);
         }

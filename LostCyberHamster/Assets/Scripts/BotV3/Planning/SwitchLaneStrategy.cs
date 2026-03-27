@@ -11,18 +11,11 @@ namespace Assets.Scripts.BotV3
 
     /// <summary>
     /// Стратегия построения и проекции SwitchLane через окно допустимого fire.
+    /// Стратегия одна, а timing-вариант передаётся параметром при построении кандидата.
     /// </summary>
-    public class SwitchLaneStrategy : IActionStrategy
+    public class SwitchLaneStrategy
     {
         private const float IntervalEpsilon = 0.001f;
-        private readonly SwitchLaneTimingMode _timingMode;
-
-        public BotAction Action => BotAction.SwitchLane;
-
-        public SwitchLaneStrategy(SwitchLaneTimingMode timingMode)
-        {
-            _timingMode = timingMode;
-        }
 
         public bool CanSolve(ProblemDescriptor problem)
         {
@@ -32,7 +25,7 @@ namespace Assets.Scripts.BotV3
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
             ProblemDescriptor problem,
-            ProjectedWorld projectedWorld,
+            SwitchLaneTimingMode timingMode,
             out BranchStep step,
             out string rejectReason)
         {
@@ -46,10 +39,19 @@ namespace Assets.Scripts.BotV3
 
             var target = problem.SourceObstacle;
 
-            if (!TryResolveFireWindow(snapshot, target, out float earliestFireShift, out float latestFireShift, out rejectReason))
+            if (!TryResolveFireWindow(
+                    snapshot,
+                    target,
+                    timingMode,
+                    out float earliestFireShift,
+                    out float latestFireShift,
+                    out rejectReason))
                 return false;
 
-            float fireWorldShift = ChooseCanonicalFireShift(earliestFireShift, latestFireShift);
+            float fireWorldShift = ChooseCanonicalFireShift(
+                earliestFireShift,
+                latestFireShift,
+                timingMode);
             if (!float.IsFinite(fireWorldShift))
             {
                 rejectReason = "timing variant collapsed";
@@ -71,27 +73,8 @@ namespace Assets.Scripts.BotV3
                 energyCost: 0,
                 $"SwitchLane avoid {target.Type}");
 
-            step.EarliestFireWorldShift = earliestFireShift;
-            step.LatestFireWorldShift = latestFireShift;
+            step.SetFireWindow(earliestFireShift, latestFireShift);
             return true;
-        }
-
-        private float ChooseCanonicalFireShift(float earliestFireShift, float latestFireShift)
-        {
-            switch (_timingMode)
-            {
-                case SwitchLaneTimingMode.Earliest:
-                    return earliestFireShift;
-
-                case SwitchLaneTimingMode.Latest:
-                    if (latestFireShift <= earliestFireShift + IntervalEpsilon)
-                        return float.NaN;
-
-                    return latestFireShift - IntervalEpsilon;
-
-                default:
-                    return earliestFireShift;
-            }
         }
 
         public StepProjectionResult Project(
@@ -125,9 +108,31 @@ namespace Assets.Scripts.BotV3
             };
         }
 
+        private static float ChooseCanonicalFireShift(
+            float earliestFireShift,
+            float latestFireShift,
+            SwitchLaneTimingMode timingMode)
+        {
+            switch (timingMode)
+            {
+                case SwitchLaneTimingMode.Earliest:
+                    return earliestFireShift;
+
+                case SwitchLaneTimingMode.Latest:
+                    if (latestFireShift <= earliestFireShift + IntervalEpsilon)
+                        return float.NaN;
+
+                    return latestFireShift - IntervalEpsilon;
+
+                default:
+                    return earliestFireShift;
+            }
+        }
+
         private bool TryResolveFireWindow(
             BotSceneSnapshot snapshot,
             ObstacleInfo target,
+            SwitchLaneTimingMode timingMode,
             out float earliestFireShift,
             out float latestFireShift,
             out string rejectReason)
@@ -150,7 +155,7 @@ namespace Assets.Scripts.BotV3
                 return false;
             }
 
-            var selectedWindow = _timingMode == SwitchLaneTimingMode.Earliest
+            var selectedWindow = timingMode == SwitchLaneTimingMode.Earliest
                 ? safeWindows[0]
                 : safeWindows[safeWindows.Count - 1];
 
@@ -193,7 +198,9 @@ namespace Assets.Scripts.BotV3
             return windows;
         }
 
-        private static List<UnsafeInterval> CollectUnsafeIntervals(BotSceneSnapshot snapshot, float sourceDeadlineShift)
+        private static List<UnsafeInterval> CollectUnsafeIntervals(
+            BotSceneSnapshot snapshot,
+            float sourceDeadlineShift)
         {
             var intervals = new List<UnsafeInterval>();
 

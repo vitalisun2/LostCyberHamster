@@ -14,12 +14,6 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public class StepExecutor
     {
-        private const float JumpMinCompletionDelay = 0.3f;
-        private const float JumpLateFallbackDistance = 0.1f;
-        private const float TooLateThreshold = -0.3f;
-        private const float SwitchLaneMinElapsed = 0.1f;
-        private const float SwitchLaneCompletionTolerance = 0.12f;
-
         private readonly Hamster _hamster;
         private BranchStep _step;
         private float _switchLaneExecTime;
@@ -53,24 +47,22 @@ namespace Assets.Scripts.BotV3
 
             if (_step.Status == BranchStepStatus.InProgress)
             {
-                CheckCompletion();
+                TryCompleteInProgressStep();
                 return;
             }
 
             float dist = GetLiveDistance(_step.TargetObstacle);
 
-            if (dist < TooLateThreshold)
+            if (dist < BotExecutionConsts.StepTooLateThreshold)
             {
-                _step.Status = BranchStepStatus.Completed;
-                DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} SKIPPED (too late) dist={dist:F2}");
+                MarkStepSkippedAsTooLate(dist);
                 return;
             }
 
-            if (dist > _step.ExecuteAtDistance)
+            if (ShouldWaitForFire(dist))
                 return;
 
-            if (_hamster.HamsterState.Value != HamsterStateEnum.Run &&
-                _hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
+            if (!CanFireInCurrentHamsterState())
                 return;
 
             if (_step.Action == BotAction.Jump && ShouldDelayJumpOver())
@@ -97,33 +89,60 @@ namespace Assets.Scripts.BotV3
                     break;
             }
 
-            _step.Status = BranchStepStatus.InProgress;
+            _step.MarkInProgress();
             DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} FIRE dist={dist:F2} reason={_step.Reason}");
         }
 
-        private void CheckCompletion()
+        private bool ShouldWaitForFire(float dist)
+        {
+            return dist > _step.ExecuteAtDistance;
+        }
+
+        private bool CanFireInCurrentHamsterState()
+        {
+            return _hamster.HamsterState.Value == HamsterStateEnum.Run
+                || _hamster.HamsterState.Value == HamsterStateEnum.RoofRun;
+        }
+
+        private void MarkStepSkippedAsTooLate(float dist)
+        {
+            _step.MarkCompleted();
+            DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} SKIPPED (too late) dist={dist:F2}");
+        }
+
+        private void TryCompleteInProgressStep()
         {
             if (_step.Action == BotAction.SwitchLane)
             {
-                bool timeElapsed = Time.time - _switchLaneExecTime >= SwitchLaneMinElapsed;
-                if (timeElapsed && !_hamster.IsShifting.Value)
-                {
-                    ValidateSwitchLaneCompletionContract();
-                    _step.Status = BranchStepStatus.Completed;
-                    DebugManager.DiagLog("[BotV3 EXEC] SwitchLane completed");
-                }
+                TryCompleteSwitchLane();
             }
             else if (_step.Action == BotAction.Jump)
             {
-                if (Time.time - _jumpExecTime < JumpMinCompletionDelay)
-                    return;
-
-                if (!IsActiveJumpState(_hamster.HamsterState.Value))
-                {
-                    _step.Status = BranchStepStatus.Completed;
-                    DebugManager.DiagLog($"[BotV3 EXEC] Jump completed (state={_hamster.HamsterState.Value})");
-                }
+                TryCompleteJump();
             }
+        }
+
+        private void TryCompleteSwitchLane()
+        {
+            bool timeElapsed = Time.time - _switchLaneExecTime >= BotExecutionConsts.SwitchLaneMinElapsed;
+            if (!timeElapsed || _hamster.IsShifting.Value)
+                return;
+
+            ValidateSwitchLaneCompletionContract();
+            _step.MarkCompleted();
+            DebugManager.DiagLog("[BotV3 EXEC] SwitchLane completed");
+        }
+
+        private void TryCompleteJump()
+        {
+            if (Time.time - _jumpExecTime < BotExecutionConsts.JumpMinCompletionDelay)
+                return;
+
+            if (IsActiveJumpState(_hamster.HamsterState.Value))
+                return;
+
+            _step.MarkCompleted();
+            DebugManager.DiagLog($"[BotV3 EXEC] Jump completed (state={_hamster.HamsterState.Value})");
         }
 
         /// <summary>
@@ -159,7 +178,7 @@ namespace Assets.Scripts.BotV3
                            - liveObstacle.ColliderWidth * 0.5f
                            - _hamster.RightX;
 
-            if (liveDist <= JumpLateFallbackDistance)
+            if (liveDist <= BotExecutionConsts.JumpLateFallbackDistance)
                 return false;
 
             return true;
@@ -174,7 +193,7 @@ namespace Assets.Scripts.BotV3
             if (ctrl == null)
                 return;
 
-            _jumpWorldShift = HelpMethods.GetWorldShiftForClip(ctrl, "transform_jump");
+            _jumpWorldShift = HelpMethods.GetWorldShiftForClip(ctrl, BotExecutionConsts.JumpClipName);
         }
 
         private static bool IsActiveJumpState(HamsterStateEnum state)
@@ -246,7 +265,7 @@ namespace Assets.Scripts.BotV3
             float actualDuration = Time.time - _switchLaneExecTime;
             float delta = actualDuration - expectedDuration;
 
-            if (Mathf.Abs(delta) <= SwitchLaneCompletionTolerance)
+            if (Mathf.Abs(delta) <= BotExecutionConsts.SwitchLaneCompletionTolerance)
                 return;
 
             Debug.LogError(
