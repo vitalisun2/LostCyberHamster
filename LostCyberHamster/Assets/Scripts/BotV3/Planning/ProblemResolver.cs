@@ -46,7 +46,7 @@ namespace Assets.Scripts.BotV3
             float hamsterRightX = snapshot.HamsterRightX + BotPhysicsConsts.SafetyPadding;
 
             ObstacleInfo nextThreat = default;
-            float nextDecisionShift = float.PositiveInfinity;
+            float minDistToThreat = float.PositiveInfinity;
             bool foundThreat = false;
 
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
@@ -59,14 +59,14 @@ namespace Assets.Scripts.BotV3
                 if (obstacle.RightX < hamsterLeftX)
                     continue;
 
-                float decisionShift = obstacle.LeftX - hamsterRightX;
-                if (decisionShift < 0f)
-                    decisionShift = 0f;
+                float distToThreat = obstacle.LeftX - hamsterRightX;
+                if (distToThreat < 0f)
+                    distToThreat = 0f;
 
-                if (decisionShift < nextDecisionShift)
+                if (distToThreat < minDistToThreat)
                 {
                     nextThreat = obstacle;
-                    nextDecisionShift = decisionShift;
+                    minDistToThreat = distToThreat;
                     foundThreat = true;
                 }
             }
