@@ -36,6 +36,7 @@ namespace Assets.Scripts.BotV3
         private SnapshotBuilder _snapshotBuilder;
         private ObjectClassifier _classifier;
         private BranchSelector _planner;
+        private StepExecutor _executor;
         private BotPlanRuntime _planRuntime;
 
         private float _nextInitRetryTime;
@@ -91,15 +92,15 @@ namespace Assets.Scripts.BotV3
         {
             BotSceneSnapshot liveSnapshot = RefreshSceneState();
 
-            _planRuntime.PollCompletion();
+            _executor.PollCompletion();
 
-            if (_planRuntime.IsStepInProgress)
+            if (_executor.IsStepInProgress)
                 return;
 
             if (_replanRequested)
                 Replan(liveSnapshot);
 
-            _planRuntime.TryFire();
+            _executor.TryFire();
         }
 
         private BotSceneSnapshot RefreshSceneState()
@@ -113,11 +114,14 @@ namespace Assets.Scripts.BotV3
         {
             var classifiedSnapshot = _classifier.Classify(liveSnapshot);
             LastSnapshot = classifiedSnapshot;
-            _planRuntime.RemoveCompletedFromHead();
-            _planRuntime.ApplyPlan(
+            var head = _planRuntime.ApplyPlan(
                 classifiedSnapshot,
                 _planner.FindBestBranch(classifiedSnapshot, _classifier),
                 Hamster != null && Hamster.IsOnBottomLine.Value);
+            if (head != null)
+                _executor.SetStep(head);
+            else
+                _executor.ClearStep();
             _replanRequested = false;
         }
 
@@ -141,7 +145,8 @@ namespace Assets.Scripts.BotV3
         private void Disable()
         {
             IsEnabled = false;
-            _planRuntime?.ClearRuntime();
+            _planRuntime?.Clear();
+            _executor?.ClearStep();
             _planRuntime?.ResetSelectionTracking();
             ResetRuntimeTracking();
             DebugManager.DiagLog("[BotV3] Disabled");
@@ -159,8 +164,9 @@ namespace Assets.Scripts.BotV3
             _snapshotBuilder = new SnapshotBuilder();
             _classifier = new ObjectClassifier();
             _planner = new BranchSelector();
-            _planRuntime = new BotPlanRuntime(Plan, new StepExecutor(Hamster), _branchRenderer);
-            _planRuntime.OnStepCompleted += RequestReplan;
+            _executor = new StepExecutor(Hamster);
+            _executor.OnStepCompleted += RequestReplan;
+            _planRuntime = new BotPlanRuntime(Plan, _branchRenderer);
             ResetRuntimeTracking();
 
             Initialized = true;
@@ -180,8 +186,8 @@ namespace Assets.Scripts.BotV3
         private void OnDestroy()
         {
             _visibleObjectBaseline.OnBaselineChanged -= RequestReplan;
-            if (_planRuntime != null)
-                _planRuntime.OnStepCompleted -= RequestReplan;
+            if (_executor != null)
+                _executor.OnStepCompleted -= RequestReplan;
             _eventTracker?.Dispose();
             _planRuntime?.Dispose();
             if (_planRuntime == null)
