@@ -32,7 +32,7 @@ namespace Assets.Scripts.BotV3
                 return null;
             }
 
-            var actions = _actionGenerator.Generate(snapshot, problem, "root");
+            var actions = _actionGenerator.Generate(snapshot, problem, BranchLogScopes.Root);
             var best = SelectBestActionBranch(snapshot, classifier, actions);
 
             if (best == null)

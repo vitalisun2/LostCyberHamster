@@ -7,7 +7,13 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public class BranchCandidate
     {
-        public List<BranchStep> Steps = new List<BranchStep>();
-        public BranchOutcome Outcome = new BranchOutcome(0, true);
+        public List<BranchStep> Steps { get; }
+        public BranchOutcome Outcome { get; }
+
+        public BranchCandidate(List<BranchStep> steps, BranchOutcome outcome)
+        {
+            Steps = steps ?? new List<BranchStep>();
+            Outcome = outcome ?? new BranchOutcome(0, true);
+        }
     }
 }
