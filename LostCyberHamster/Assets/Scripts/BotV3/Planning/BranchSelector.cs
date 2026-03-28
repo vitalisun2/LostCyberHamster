@@ -13,8 +13,6 @@ namespace Assets.Scripts.BotV3
         private readonly BranchGenerator _branchGenerator = new BranchGenerator();
         private readonly ProblemResolver _problemResolver = new ProblemResolver();
 
-        private int _lastPlanTargetId;
-
         /// <summary>
         /// Возвращает лучшую ветвь действий для текущего снимка, или null если действовать не нужно.
         /// </summary>
@@ -22,43 +20,10 @@ namespace Assets.Scripts.BotV3
         {
             var problem = _problemResolver.ResolveNext(snapshot);
             if (problem == null)
-            {
-                if (_lastPlanTargetId != 0)
-                {
-                    BotLogger.LogPlanCleared();
-                    _lastPlanTargetId = 0;
-                }
-
                 return null;
-            }
 
             var actions = _actionGenerator.Generate(snapshot, problem, BranchLogScopes.Root);
-            var best = SelectBestActionBranch(snapshot, classifier, actions);
-
-            if (best == null)
-            {
-                if (_lastPlanTargetId != 0)
-                {
-                    BotLogger.LogPlanCleared();
-                    _lastPlanTargetId = 0;
-                }
-
-                return null;
-            }
-
-            int newTargetId = best.Steps[0].TargetObstacle.StableId;
-            if (newTargetId != _lastPlanTargetId)
-            {
-                _lastPlanTargetId = newTargetId;
-                BotLogger.LogPlanSelected(best);
-            }
-
-            return best;
-        }
-
-        public void Reset()
-        {
-            _lastPlanTargetId = 0;
+            return SelectBestActionBranch(snapshot, classifier, actions);
         }
 
         private BranchCandidate SelectBestActionBranch(

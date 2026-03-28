@@ -8,24 +8,44 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public class ObjectClassifier
     {
-        public void Classify(BotSceneSnapshot snapshot)
+        public BotSceneSnapshot Classify(BotSceneSnapshot snapshot)
         {
-            var list = snapshot.VisibleObjects;
-            for (int i = 0; i < list.Count; i++)
-            {
-                var obs = list[i];
-                var cat = ClassifyObject(obs.Type, obs.DistanceToHamster, snapshot.HamsterOnRoof);
-                if (cat == obs.Category) continue;
+            var classifiedSnapshot = CreateSnapshotShell(snapshot, snapshot.VisibleObjects.Count);
+            var source = snapshot.VisibleObjects;
 
-                list[i] = new ObstacleInfo(
-                    obs.Type, obs.IsTopLane,
-                    obs.LeftX, obs.RightX, obs.CenterX,
-                    obs.DistanceToHamster,
-                    cat, obs.StableId);
+            for (int i = 0; i < source.Count; i++)
+            {
+                var obs = source[i];
+                var cat = ClassifyObject(obs.Type, obs.DistanceToHamster, snapshot.HamsterOnRoof);
+                classifiedSnapshot.VisibleObjects.Add(cat == obs.Category ? obs : WithCategory(obs, cat));
             }
+
+            return classifiedSnapshot;
         }
 
         private const float BehindHamsterThreshold = -0.2f;
+
+        private static BotSceneSnapshot CreateSnapshotShell(BotSceneSnapshot source, int visibleObjectsCapacity)
+        {
+            var snapshot = new BotSceneSnapshot();
+            snapshot.CopyFrom(source);
+            snapshot.SnapshotTime = source.SnapshotTime;
+            snapshot.VisibleObjects = new System.Collections.Generic.List<ObstacleInfo>(visibleObjectsCapacity);
+            return snapshot;
+        }
+
+        private static ObstacleInfo WithCategory(ObstacleInfo obstacle, ObjectCategory category)
+        {
+            return new ObstacleInfo(
+                obstacle.Type,
+                obstacle.IsTopLane,
+                obstacle.LeftX,
+                obstacle.RightX,
+                obstacle.CenterX,
+                obstacle.DistanceToHamster,
+                category,
+                obstacle.StableId);
+        }
 
         private static ObjectCategory ClassifyObject(ObstacleTypeEnum type, float distance, bool hamsterOnRoof)
         {

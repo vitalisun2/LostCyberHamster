@@ -97,8 +97,7 @@ namespace Assets.Scripts.BotV3
                 return false;
             }
 
-            projectedSnapshot = projection.NextState.ToSnapshot();
-            classifier.Classify(projectedSnapshot);
+            projectedSnapshot = classifier.Classify(projection.NextState.ToSnapshot());
             return true;
         }
 

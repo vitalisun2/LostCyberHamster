@@ -13,6 +13,8 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public class BotOrchestrator : MonoBehaviour
     {
+        private const float InitRetryInterval = 0.5f;
+
         [Header("Visual Debug")]
         [SerializeField]
         [Tooltip("Показывать всю выбранную ветку BotV3 стрелками в Game view")]
@@ -27,20 +29,17 @@ namespace Assets.Scripts.BotV3
 
         private BotHud _hud;
         private readonly BotBranchRenderer _branchRenderer = new BotBranchRenderer();
+        private readonly VisibleObjectBaselineTracker _visibleObjectBaseline = new VisibleObjectBaselineTracker();
         private GameEventTracker _eventTracker;
 
         // Pipeline
         private SnapshotBuilder _snapshotBuilder;
         private ObjectClassifier _classifier;
         private BranchSelector _planner;
-        private StepExecutor _executor;
+        private BotPlanRuntime _planRuntime;
 
-        private const float InitRetryInterval = 0.5f;
         private float _nextInitRetryTime;
         private bool _replanRequested = true;
-        private bool _hasVisibleObjectsBaseline;
-        private readonly HashSet<int> _visibleObjectIds = new HashSet<int>();
-        private readonly HashSet<int> _visibleObjectIdsScratch = new HashSet<int>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
@@ -88,57 +87,41 @@ namespace Assets.Scripts.BotV3
         private void TickRuntime()
         {
             BotSceneSnapshot liveSnapshot = _snapshotBuilder.Build(Hamster);
-            if (UpdateVisibleObjectsBaseline(liveSnapshot))
+            if (_visibleObjectBaseline.Update(liveSnapshot))
                 _replanRequested = true;
 
-            if (_executor.IsStepInProgress)
+            if (_planRuntime.IsStepInProgress)
             {
-                if (_executor.TryExecute() == StepExecutionTickResult.StepCompleted)
+                if (_planRuntime.TryExecute() == StepExecutionTickResult.StepCompleted)
                 {
-                    Plan.RemoveCompletedFromHead();
+                    _planRuntime.RemoveCompletedFromHead();
                     _replanRequested = true;
                 }
 
-                if (_executor.IsStepInProgress)
+                if (_planRuntime.IsStepInProgress)
                     return;
             }
 
             if (_replanRequested)
                 Replan(liveSnapshot);
 
-            if (_executor.TryExecute() == StepExecutionTickResult.StepCompleted)
+            if (_planRuntime.TryExecute() == StepExecutionTickResult.StepCompleted)
             {
-                Plan.RemoveCompletedFromHead();
+                _planRuntime.RemoveCompletedFromHead();
                 _replanRequested = true;
             }
         }
 
         private void Replan(BotSceneSnapshot liveSnapshot)
         {
-            _classifier.Classify(liveSnapshot);
-            LastSnapshot = liveSnapshot;
-            Plan.RemoveCompletedFromHead();
-            ApplyPlan(liveSnapshot, _planner.FindBestBranch(liveSnapshot, _classifier));
+            var classifiedSnapshot = _classifier.Classify(liveSnapshot);
+            LastSnapshot = classifiedSnapshot;
+            _planRuntime.RemoveCompletedFromHead();
+            _planRuntime.ApplyPlan(
+                classifiedSnapshot,
+                _planner.FindBestBranch(classifiedSnapshot, _classifier),
+                Hamster != null && Hamster.IsOnBottomLine.Value);
             _replanRequested = false;
-        }
-
-        private void ApplyPlan(BotSceneSnapshot snapshot, BranchCandidate best)
-        {
-            if (best == null || best.Steps == null || best.Steps.Count == 0)
-            {
-                Plan.Clear();
-                _executor.ClearStep();
-                _branchRenderer.ClearPreview();
-                return;
-            }
-
-            Plan.ReplaceFrom(best, best.Steps[0].Reason);
-            _branchRenderer.UpdatePreview(
-                Plan.Steps,
-                snapshot != null ? snapshot.HamsterOnBottom : Hamster != null && Hamster.IsOnBottomLine.Value);
-
-            if (Plan.Head != null)
-                _executor.SetStep(Plan.Head);
         }
 
         public void ToggleEnabledFromHotkey()
@@ -161,10 +144,8 @@ namespace Assets.Scripts.BotV3
         private void Disable()
         {
             IsEnabled = false;
-            Plan.Clear();
-            _branchRenderer.ClearPreview();
-            _executor?.ClearStep();
-            _planner?.Reset();
+            _planRuntime?.ClearRuntime();
+            _planRuntime?.ResetSelectionTracking();
             ResetRuntimeTracking();
             DebugManager.DiagLog("[BotV3] Disabled");
         }
@@ -181,7 +162,7 @@ namespace Assets.Scripts.BotV3
             _snapshotBuilder = new SnapshotBuilder();
             _classifier = new ObjectClassifier();
             _planner = new BranchSelector();
-            _executor = new StepExecutor(Hamster);
+            _planRuntime = new BotPlanRuntime(Plan, new StepExecutor(Hamster), _branchRenderer);
             ResetRuntimeTracking();
 
             Initialized = true;
@@ -191,41 +172,19 @@ namespace Assets.Scripts.BotV3
                 $" worldWidth={worldWidth:F2} ColliderWidth(size.x)={Hamster.ColliderWidth:F2}");
         }
 
-        private bool UpdateVisibleObjectsBaseline(BotSceneSnapshot snapshot)
-        {
-            _visibleObjectIdsScratch.Clear();
-
-            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
-                _visibleObjectIdsScratch.Add(snapshot.VisibleObjects[i].StableId);
-
-            bool changed = !_hasVisibleObjectsBaseline
-                || _visibleObjectIds.Count != _visibleObjectIdsScratch.Count
-                || !_visibleObjectIds.SetEquals(_visibleObjectIdsScratch);
-
-            if (!changed)
-                return false;
-
-            _visibleObjectIds.Clear();
-            foreach (int stableId in _visibleObjectIdsScratch)
-                _visibleObjectIds.Add(stableId);
-
-            _hasVisibleObjectsBaseline = true;
-            return true;
-        }
-
         private void ResetRuntimeTracking()
         {
             LastSnapshot = null;
             _replanRequested = true;
-            _hasVisibleObjectsBaseline = false;
-            _visibleObjectIds.Clear();
-            _visibleObjectIdsScratch.Clear();
+            _visibleObjectBaseline.Reset();
         }
 
         private void OnDestroy()
         {
             _eventTracker?.Dispose();
-            _branchRenderer.Dispose();
+            _planRuntime?.Dispose();
+            if (_planRuntime == null)
+                _branchRenderer.Dispose();
         }
 
         private void OnGUI()
@@ -235,14 +194,14 @@ namespace Assets.Scripts.BotV3
 
         private void OnRenderObject()
         {
-            if (!_showPlannedTrajectory || !IsEnabled || !_branchRenderer.HasPreview)
+            if (!_showPlannedTrajectory || !IsEnabled || _planRuntime == null || !_planRuntime.HasPreview)
                 return;
 
             Camera mainCamera = Camera.main;
             if (mainCamera == null || Camera.current != mainCamera)
                 return;
 
-            _branchRenderer.Render(mainCamera);
+            _planRuntime.Render(mainCamera);
         }
     }
 }
