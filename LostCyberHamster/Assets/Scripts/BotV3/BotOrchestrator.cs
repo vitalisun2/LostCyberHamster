@@ -57,6 +57,7 @@ namespace Assets.Scripts.BotV3
         private void Start()
         {
             _hud = new BotHud(this);
+            _visibleObjectBaseline.OnBaselineChanged += HandleBaselineChanged;
             Enable();
         }
 
@@ -84,6 +85,11 @@ namespace Assets.Scripts.BotV3
             TickRuntime();
         }
 
+        private void HandleBaselineChanged()
+        {
+            _replanRequested = true;
+        }
+
         private void HandleStepCompleted()
         {
             _planRuntime.RemoveCompletedFromHead();
@@ -108,9 +114,7 @@ namespace Assets.Scripts.BotV3
         private BotSceneSnapshot RefreshSceneState()
         {
             BotSceneSnapshot liveSnapshot = _snapshotBuilder.Build(Hamster);
-            if (_visibleObjectBaseline.Update(liveSnapshot))
-                _replanRequested = true;
-
+            _visibleObjectBaseline.Update(liveSnapshot);
             return liveSnapshot;
         }
 
@@ -184,6 +188,7 @@ namespace Assets.Scripts.BotV3
 
         private void OnDestroy()
         {
+            _visibleObjectBaseline.OnBaselineChanged -= HandleBaselineChanged;
             if (_planRuntime != null)
                 _planRuntime.OnStepCompleted -= HandleStepCompleted;
             _eventTracker?.Dispose();
