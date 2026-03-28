@@ -58,7 +58,6 @@ namespace Assets.Scripts.BotV3
         private void Start()
         {
             _hud = new BotHud(this);
-            _visibleObjectBaseline.OnBaselineChanged += RequestReplan;
             Enable();
         }
 
@@ -166,6 +165,7 @@ namespace Assets.Scripts.BotV3
             _planner = new BranchSelector();
             _executor = new StepExecutor(Hamster);
             _executor.OnStepCompleted += RequestReplan;
+            _visibleObjectBaseline.OnBaselineChanged += RequestReplan;
             _planRuntime = new BotPlanRuntime(Plan, _branchRenderer);
             ResetRuntimeTracking();
 
