@@ -14,6 +14,7 @@ namespace Assets.Scripts.BotV3
 
         private int _lastPlanTargetId;
 
+        public bool IsStepInProgress => _executor.IsStepInProgress;
         public bool HasPreview => _branchRenderer.HasPreview;
 
         public event Action OnStepCompleted
@@ -29,8 +30,7 @@ namespace Assets.Scripts.BotV3
             _branchRenderer = branchRenderer;
         }
 
-        /// <summary>Возвращает true, если шаг всё ещё выполняется.</summary>
-        public bool PollCompletion() => _executor.PollCompletion();
+        public void PollCompletion() => _executor.PollCompletion();
 
         public void TryFire() => _executor.TryFire();
 

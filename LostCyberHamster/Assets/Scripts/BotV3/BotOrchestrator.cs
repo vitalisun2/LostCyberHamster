@@ -57,7 +57,7 @@ namespace Assets.Scripts.BotV3
         private void Start()
         {
             _hud = new BotHud(this);
-            _visibleObjectBaseline.OnBaselineChanged += HandleBaselineChanged;
+            _visibleObjectBaseline.OnBaselineChanged += RequestReplan;
             Enable();
         }
 
@@ -85,22 +85,15 @@ namespace Assets.Scripts.BotV3
             TickRuntime();
         }
 
-        private void HandleBaselineChanged()
-        {
-            _replanRequested = true;
-        }
-
-        private void HandleStepCompleted()
-        {
-            _planRuntime.RemoveCompletedFromHead();
-            _replanRequested = true;
-        }
+        private void RequestReplan() => _replanRequested = true;
 
         private void TickRuntime()
         {
             BotSceneSnapshot liveSnapshot = RefreshSceneState();
 
-            if (_planRuntime.PollCompletion())
+            _planRuntime.PollCompletion();
+
+            if (_planRuntime.IsStepInProgress)
                 return;
 
             if (_replanRequested)
@@ -167,7 +160,7 @@ namespace Assets.Scripts.BotV3
             _classifier = new ObjectClassifier();
             _planner = new BranchSelector();
             _planRuntime = new BotPlanRuntime(Plan, new StepExecutor(Hamster), _branchRenderer);
-            _planRuntime.OnStepCompleted += HandleStepCompleted;
+            _planRuntime.OnStepCompleted += RequestReplan;
             ResetRuntimeTracking();
 
             Initialized = true;
@@ -186,9 +179,9 @@ namespace Assets.Scripts.BotV3
 
         private void OnDestroy()
         {
-            _visibleObjectBaseline.OnBaselineChanged -= HandleBaselineChanged;
+            _visibleObjectBaseline.OnBaselineChanged -= RequestReplan;
             if (_planRuntime != null)
-                _planRuntime.OnStepCompleted -= HandleStepCompleted;
+                _planRuntime.OnStepCompleted -= RequestReplan;
             _eventTracker?.Dispose();
             _planRuntime?.Dispose();
             if (_planRuntime == null)
