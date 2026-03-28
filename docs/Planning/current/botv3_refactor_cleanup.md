@@ -15,7 +15,7 @@
 1. `recompile_scripts`
 2. autoplay test level
 3. фиксация результата автопроверки
-4. остановка на ручной просмотр пользователя
+4. анализ логов и переход к следующему шагу, если нет серьёзной регрессии
 
 ## Объём текущей волны
 
@@ -30,7 +30,7 @@
 
 ### Step 2. Semantic cleanup SwitchLane
 
-Статус: `implemented, awaiting manual review`
+Статус: `completed`
 
 - Удалить `SwitchLaneTimingMode.Latest`.
 - Убрать двойную генерацию `SwitchLane`-кандидатов в `ActionGenerator`.
@@ -46,7 +46,7 @@
 
 ### Step 3. Structural cleanup planning pipeline
 
-Статус: `next`
+Статус: `completed`
 
 - Разбить `BranchGenerator.ExploreBranch()` на приватные хелперы.
 - Вынести строковые scope-константы.
@@ -54,7 +54,7 @@
 
 ### Step 4. Structural cleanup execution pipeline
 
-Статус: `pending`
+Статус: `next`
 
 - Разбить `StepExecutor.TryExecute()` на pending/in-progress paths без смены runtime-логики.
 
@@ -92,10 +92,12 @@
 1. Если менялись `.cs` файлы, запустить `recompile_scripts`.
 2. Запустить autoplay test level.
 3. Проверить, что bridge завершился успешно и есть финальный `[TEST RESULT]`.
-4. Остановиться и передать изменения на ручной просмотр пользователю.
+4. Проверить логи на новые `[BotV3 CONTRACT]`, `Debug.LogError` и явные аномалии planner/runtime sequence.
+5. Если серьёзной регрессии нет, коммитить шаг и переходить дальше в автопилоте.
 
 ## Рабочие заметки
 
 - `CanSolve` уже отсутствует в текущем `BotV3` и из объёма исключён.
 - `Assets/Editor/Tests/EditMode/Bot/*` не подключены к текущему дешёвому CLI-контуру, поэтому обязательная быстрая проверка на каждом шаге строится вокруг Unity automation bridge.
 - Основной рабочий branch этой задачи: `task/botv3-refactor-cleanup`.
+- По отдельному подтверждению пользователя сессия переведена в режим автопилота: шаги выполняются подряд с commit + Unity smoke после каждого шага.
