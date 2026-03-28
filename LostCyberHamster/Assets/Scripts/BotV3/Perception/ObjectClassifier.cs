@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.BotV3
@@ -30,7 +31,7 @@ namespace Assets.Scripts.BotV3
             var snapshot = new BotSceneSnapshot();
             snapshot.CopyFrom(source);
             snapshot.SnapshotTime = source.SnapshotTime;
-            snapshot.VisibleObjects = new System.Collections.Generic.List<ObstacleInfo>(visibleObjectsCapacity);
+            snapshot.VisibleObjects = new List<ObstacleInfo>(visibleObjectsCapacity);
             return snapshot;
         }
 
