@@ -52,6 +52,11 @@ namespace Assets.Scripts.BotV3
             if (_step.Status == BranchStepStatus.InProgress)
                 return TryCompleteInProgressStep();
 
+            return TryExecutePendingStep();
+        }
+
+        private StepExecutionTickResult TryExecutePendingStep()
+        {
             float dist = GetLiveDistance(_step.TargetObstacle);
 
             if (dist < BotExecutionConsts.StepTooLateThreshold)
