@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Assets.Scripts.BotV3
@@ -16,6 +17,12 @@ namespace Assets.Scripts.BotV3
         public bool IsStepInProgress => _executor.IsStepInProgress;
         public bool HasPreview => _branchRenderer.HasPreview;
 
+        public event Action OnStepCompleted
+        {
+            add => _executor.OnStepCompleted += value;
+            remove => _executor.OnStepCompleted -= value;
+        }
+
         public BotPlanRuntime(CurrentPlan plan, StepExecutor executor, BotBranchRenderer branchRenderer)
         {
             _plan = plan;
@@ -23,11 +30,9 @@ namespace Assets.Scripts.BotV3
             _branchRenderer = branchRenderer;
         }
 
-        /// <summary>Возвращает true, если шаг завершён.</summary>
-        public bool TryExecute()
-        {
-            return _executor.TryExecute();
-        }
+        public void PollCompletion() => _executor.PollCompletion();
+
+        public void TryFire() => _executor.TryFire();
 
         public void RemoveCompletedFromHead()
         {

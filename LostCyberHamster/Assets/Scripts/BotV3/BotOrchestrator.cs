@@ -84,30 +84,25 @@ namespace Assets.Scripts.BotV3
             TickRuntime();
         }
 
+        private void HandleStepCompleted()
+        {
+            _planRuntime.RemoveCompletedFromHead();
+            _replanRequested = true;
+        }
+
         private void TickRuntime()
         {
             BotSceneSnapshot liveSnapshot = RefreshSceneState();
 
-            if (_planRuntime.IsStepInProgress)
-            {
-                if (_planRuntime.TryExecute())
-                {
-                    _planRuntime.RemoveCompletedFromHead();
-                    _replanRequested = true;
-                }
+            _planRuntime.PollCompletion();
 
-                if (_planRuntime.IsStepInProgress)
-                    return;
-            }
+            if (_planRuntime.IsStepInProgress)
+                return;
 
             if (_replanRequested)
                 Replan(liveSnapshot);
 
-            if (_planRuntime.TryExecute())
-            {
-                _planRuntime.RemoveCompletedFromHead();
-                _replanRequested = true;
-            }
+            _planRuntime.TryFire();
         }
 
         private BotSceneSnapshot RefreshSceneState()
@@ -170,6 +165,7 @@ namespace Assets.Scripts.BotV3
             _classifier = new ObjectClassifier();
             _planner = new BranchSelector();
             _planRuntime = new BotPlanRuntime(Plan, new StepExecutor(Hamster), _branchRenderer);
+            _planRuntime.OnStepCompleted += HandleStepCompleted;
             ResetRuntimeTracking();
 
             Initialized = true;
@@ -188,6 +184,8 @@ namespace Assets.Scripts.BotV3
 
         private void OnDestroy()
         {
+            if (_planRuntime != null)
+                _planRuntime.OnStepCompleted -= HandleStepCompleted;
             _eventTracker?.Dispose();
             _planRuntime?.Dispose();
             if (_planRuntime == null)

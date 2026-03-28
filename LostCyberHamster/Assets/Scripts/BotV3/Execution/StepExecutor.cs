@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
@@ -8,6 +9,7 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Тонкий диспетчер: следит за дистанцией, делегирует Fire/IsCompleted handler'у действия.
+    /// Стреляет OnStepCompleted при завершении (нормальном или skip too-late).
     /// </summary>
     public class StepExecutor
     {
@@ -15,6 +17,8 @@ namespace Assets.Scripts.BotV3
         private readonly Dictionary<BotAction, IActionHandler> _handlers;
         private BranchStep _step;
         private IActionHandler _activeHandler;
+
+        public event Action OnStepCompleted;
 
         public bool IsStepInProgress => _step != null && _step.Status == BranchStepStatus.InProgress;
 
@@ -41,58 +45,57 @@ namespace Assets.Scripts.BotV3
         }
 
         /// <summary>
-        /// Тикает каждый кадр. Возвращает true, если шаг завершён.
+        /// Опрашивает завершение шага в процессе. Вызывать только когда IsStepInProgress == true.
+        /// Стреляет OnStepCompleted, если шаг завершился.
         /// </summary>
-        public bool TryExecute()
+        public void PollCompletion()
         {
-            if (_step == null || _step.Status == BranchStepStatus.Completed)
-                return false;
+            if (_step == null || _step.Status != BranchStepStatus.InProgress)
+                return;
 
-            if (_step.Status == BranchStepStatus.InProgress)
-                return TryComplete();
+            if (_activeHandler == null || !_activeHandler.IsCompleted(_hamster, _step))
+                return;
 
-            return TryFire();
+            _step.MarkCompleted();
+            DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} completed");
+            OnStepCompleted?.Invoke();
         }
 
-        private bool TryFire()
+        /// <summary>
+        /// Пытается запустить шаг (только из Pending). Стреляет OnStepCompleted при skip too-late.
+        /// </summary>
+        public void TryFire()
         {
+            if (_step == null || _step.Status != BranchStepStatus.Ready)
+                return;
+
             float dist = LiveObstacleFinder.GetDistance(_step.TargetObstacle, _hamster.RightX);
 
             if (dist < BotExecutionConsts.StepTooLateThreshold)
             {
                 _step.MarkCompleted();
                 DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} SKIPPED (too late) dist={dist:F2}");
-                return true;
+                OnStepCompleted?.Invoke();
+                return;
             }
 
             if (dist > _step.ExecuteAtDistance)
-                return false;
+                return;
 
             if (!CanFire())
-                return false;
+                return;
 
             var handler = GetHandler(_step.Action);
             if (handler == null)
-                return false;
+                return;
 
             if (handler.ShouldDelay(_hamster, _step))
-                return false;
+                return;
 
             handler.Fire(_hamster, _step);
             _activeHandler = handler;
             _step.MarkInProgress();
             DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} FIRE dist={dist:F2} reason={_step.Reason}");
-            return false;
-        }
-
-        private bool TryComplete()
-        {
-            if (_activeHandler == null || !_activeHandler.IsCompleted(_hamster, _step))
-                return false;
-
-            _step.MarkCompleted();
-            DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} completed");
-            return true;
         }
 
         private bool CanFire()
