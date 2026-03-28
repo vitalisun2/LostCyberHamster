@@ -17,7 +17,7 @@ namespace Assets.Scripts.BotV3
         public void ReplaceFrom(BranchCandidate chain, string strategy)
         {
             Steps.Clear();
-            if (chain?.Steps != null)
+            if (chain != null)
                 Steps.AddRange(chain.Steps);
             Strategy = strategy;
         }

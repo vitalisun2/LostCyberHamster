@@ -8,9 +8,14 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public static class BotLogger
     {
+        private const int DefaultBuilderCapacity = 128;
+
+        [System.ThreadStatic]
+        private static StringBuilder _sharedBuilder;
+
         public static void LogPlanSelected(BranchCandidate branch)
         {
-            var sb = new StringBuilder(128);
+            var sb = AcquireBuilder();
             sb.Append("[BotV3 PLAN] Selected: ");
             for (int i = 0; i < branch.Steps.Count; i++)
             {
@@ -57,7 +62,7 @@ namespace Assets.Scripts.BotV3
             BotSceneSnapshot snapshot,
             string logScope)
         {
-            var sb = new StringBuilder(128);
+            var sb = AcquireBuilder();
             sb.Append("[BotV3 GEN] ").Append(obstacle.Type)
               .Append(" id=").Append(obstacle.StableId)
               .Append(" dist=").Append(obstacle.DistanceToHamster.ToString("F1"))
@@ -70,12 +75,22 @@ namespace Assets.Scripts.BotV3
               .Append(" | SwitchLane=").Append(hasSwitchLane)
               .Append(" Jump=").Append(hasJump);
 
-            if (!hasSwitchLane && switchLaneRejectReason != null)
+            if (!hasSwitchLane && !string.IsNullOrEmpty(switchLaneRejectReason))
             {
                 sb.Append(" [SwitchLane rejected: ").Append(switchLaneRejectReason).Append("]");
             }
 
             DebugManager.DiagLog(sb.ToString());
+        }
+
+        private static StringBuilder AcquireBuilder()
+        {
+            if (_sharedBuilder == null)
+                _sharedBuilder = new StringBuilder(DefaultBuilderCapacity);
+            else
+                _sharedBuilder.Clear();
+
+            return _sharedBuilder;
         }
     }
 }
