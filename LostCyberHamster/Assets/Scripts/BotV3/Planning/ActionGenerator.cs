@@ -34,29 +34,20 @@ namespace Assets.Scripts.BotV3
             if (snapshot == null || problem == null)
                 return result;
 
-            var added = new Dictionary<BotAction, bool>();
-            var rejectReasons = new Dictionary<BotAction, string>();
+            var candidates = new List<(BotAction action, bool added, string rejectReason)>();
 
             foreach (var strategy in _strategies)
             {
                 bool success = strategy.TryBuildStep(
                     snapshot, problem, _projectedWorld,
                     out BranchStep step, out string rejectReason);
-                added[strategy.Action] = success;
-                rejectReasons[strategy.Action] = rejectReason;
+                candidates.Add((strategy.Action, success, rejectReason));
                 if (success)
                     result.Add(step);
             }
 
             if (result.Count > 0)
-            {
-                added.TryGetValue(BotAction.SwitchLane, out bool hasSwitchLane);
-                added.TryGetValue(BotAction.Jump, out bool hasJump);
-                rejectReasons.TryGetValue(BotAction.SwitchLane, out string switchRejectReason);
-                BotLogger.LogActionCandidates(
-                    problem.SourceObstacle, hasSwitchLane, hasJump,
-                    switchRejectReason, snapshot, logScope);
-            }
+                LogCandidates(problem.SourceObstacle, candidates, snapshot, logScope);
 
             return result;
         }
@@ -71,6 +62,15 @@ namespace Assets.Scripts.BotV3
                 IsSafe = false,
                 DebugReason = $"No strategy for action {step.Action}"
             };
+        }
+
+        private static void LogCandidates(
+            ObstacleInfo obstacle,
+            List<(BotAction action, bool added, string rejectReason)> candidates,
+            BotSceneSnapshot snapshot,
+            string logScope)
+        {
+            BotLogger.LogActionCandidates(obstacle, candidates, snapshot, logScope);
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 
 namespace Assets.Scripts.BotV3
@@ -52,9 +53,7 @@ namespace Assets.Scripts.BotV3
 
         public static void LogActionCandidates(
             ObstacleInfo obstacle,
-            bool hasSwitchLane,
-            bool hasJump,
-            string switchLaneRejectReason,
+            IReadOnlyList<(BotAction action, bool added, string rejectReason)> candidates,
             BotSceneSnapshot snapshot,
             string logScope)
         {
@@ -68,13 +67,14 @@ namespace Assets.Scripts.BotV3
               .Append(" hamster=").Append(snapshot.HamsterOnBottom ? "bottom" : "top")
               .Append(" energy=").Append(snapshot.Energy)
               .Append(" scope=").Append(string.IsNullOrEmpty(logScope) ? "unspecified" : logScope)
-              .Append(" | SwitchLane=").Append(hasSwitchLane)
-              .Append(" Jump=").Append(hasJump);
+              .Append(" |");
 
-            if (!hasSwitchLane && !string.IsNullOrEmpty(switchLaneRejectReason))
-            {
-                sb.Append(" [SwitchLane rejected: ").Append(switchLaneRejectReason).Append("]");
-            }
+            foreach (var (action, added, _) in candidates)
+                sb.Append(' ').Append(action).Append('=').Append(added);
+
+            foreach (var (action, added, rejectReason) in candidates)
+                if (!added && !string.IsNullOrEmpty(rejectReason))
+                    sb.Append(" [").Append(action).Append(" rejected: ").Append(rejectReason).Append(']');
 
             DebugManager.DiagLog(sb.ToString());
         }
