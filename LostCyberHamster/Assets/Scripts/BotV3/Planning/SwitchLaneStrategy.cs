@@ -99,7 +99,7 @@ namespace Assets.Scripts.BotV3
                 return false;
             }
 
-            if (!TryFindFirstSafeFireShift(snapshot, sourceDeadlineShift, out fireWorldShift))
+            if (!TryFindFirstSafeFireShift(snapshot, sourceDeadlineShift, target, out fireWorldShift))
             {
                 rejectReason = "no safe fire shift";
                 return false;
@@ -112,6 +112,7 @@ namespace Assets.Scripts.BotV3
         private static bool TryFindFirstSafeFireShift(
             BotSceneSnapshot snapshot,
             float sourceDeadlineShift,
+            ObstacleInfo sourceTarget,
             out float fireWorldShift)
         {
             var blockingIntervals = CollectBlockingIntervals(snapshot, sourceDeadlineShift);
@@ -124,7 +125,8 @@ namespace Assets.Scripts.BotV3
             blockingIntervals.Sort((a, b) => a.Start.CompareTo(b.Start));
 
             var firstInterval = blockingIntervals[0];
-            if (firstInterval.Start > IntervalEpsilon)
+            if (firstInterval.Start > IntervalEpsilon
+                && !HasCloserThreatOnTargetLane(snapshot, 0f, sourceTarget))
             {
                 fireWorldShift = 0f;
                 return true;
@@ -148,6 +150,34 @@ namespace Assets.Scripts.BotV3
             }
 
             fireWorldShift = 0f;
+            return false;
+        }
+
+        private static bool HasCloserThreatOnTargetLane(
+            BotSceneSnapshot snapshot,
+            float fireWorldShift,
+            ObstacleInfo sourceTarget)
+        {
+            float completionShift = fireWorldShift + BotPhysicsConsts.SwitchLaneDecisionTravel;
+            bool targetLaneBottom = !snapshot.HamsterOnBottom;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (!ProjectedWorld.IsThreatType(obs.Type))
+                    continue;
+
+                bool obsOnBottom = !obs.IsTopLane;
+                if (obsOnBottom != targetLaneBottom)
+                    continue;
+
+                if (obs.DistanceToHamster - completionShift < 0f)
+                    continue;
+
+                if (obs.DistanceToHamster < sourceTarget.DistanceToHamster)
+                    return true;
+            }
+
             return false;
         }
 
