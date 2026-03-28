@@ -4,13 +4,26 @@ namespace Assets.Scripts.BotV3
 {
     /// <summary>
     /// Генерирует шаги только для одной текущей проблемы.
-    /// Здесь находится orchestration между problem, action strategies и логированием кандидатов.
+    /// Делегирует построение и проекцию конкретным IActionStrategy.
     /// </summary>
     public class ActionGenerator
     {
         private readonly ProjectedWorld _projectedWorld = new ProjectedWorld();
-        private readonly SwitchLaneStrategy _switchLaneStrategy = new SwitchLaneStrategy();
-        private readonly JumpStrategy _jumpStrategy = new JumpStrategy();
+        private readonly List<IActionStrategy> _strategies;
+        private readonly Dictionary<BotAction, IActionStrategy> _strategyByAction;
+
+        public ActionGenerator()
+        {
+            _strategies = new List<IActionStrategy>
+            {
+                new SwitchLaneStrategy(),
+                new JumpStrategy(),
+            };
+
+            _strategyByAction = new Dictionary<BotAction, IActionStrategy>();
+            foreach (var strategy in _strategies)
+                _strategyByAction[strategy.Action] = strategy;
+        }
 
         public List<BranchStep> Generate(
             BotSceneSnapshot snapshot,
@@ -21,64 +34,43 @@ namespace Assets.Scripts.BotV3
             if (snapshot == null || problem == null)
                 return result;
 
-            var obstacle = problem.SourceObstacle;
-            string switchRejectReason = TryAddSwitchLaneCandidate(snapshot, problem, result, out bool hasSwitchLane);
-            TryAddJumpCandidate(snapshot, problem, result, out bool hasJump);
+            var added = new Dictionary<BotAction, bool>();
+            var rejectReasons = new Dictionary<BotAction, string>();
 
-            if (hasSwitchLane || hasJump)
-                BotLogger.LogActionCandidates(obstacle, hasSwitchLane, hasJump, switchRejectReason, snapshot, logScope);
+            foreach (var strategy in _strategies)
+            {
+                bool success = strategy.TryBuildStep(
+                    snapshot, problem, _projectedWorld,
+                    out BranchStep step, out string rejectReason);
+                added[strategy.Action] = success;
+                rejectReasons[strategy.Action] = rejectReason;
+                if (success)
+                    result.Add(step);
+            }
+
+            if (result.Count > 0)
+            {
+                added.TryGetValue(BotAction.SwitchLane, out bool hasSwitchLane);
+                added.TryGetValue(BotAction.Jump, out bool hasJump);
+                rejectReasons.TryGetValue(BotAction.SwitchLane, out string switchRejectReason);
+                BotLogger.LogActionCandidates(
+                    problem.SourceObstacle, hasSwitchLane, hasJump,
+                    switchRejectReason, snapshot, logScope);
+            }
 
             return result;
         }
 
         public StepProjectionResult Project(BotSceneSnapshot snapshot, BranchStep step)
         {
-            switch (step.Action)
+            if (_strategyByAction.TryGetValue(step.Action, out var strategy))
+                return strategy.Project(snapshot, step, _projectedWorld);
+
+            return new StepProjectionResult
             {
-                case BotAction.SwitchLane:
-                    return _switchLaneStrategy.Project(snapshot, step, _projectedWorld);
-
-                case BotAction.Jump:
-                    return _jumpStrategy.Project(snapshot, step, _projectedWorld);
-
-                default:
-                    return new StepProjectionResult
-                    {
-                        IsSafe = false,
-                        DebugReason = $"No strategy for action {step.Action}"
-                    };
-            }
-        }
-
-        private string TryAddSwitchLaneCandidate(
-            BotSceneSnapshot snapshot,
-            ProblemDescriptor problem,
-            List<BranchStep> result,
-            out bool hasSwitchLane)
-        {
-            hasSwitchLane = _switchLaneStrategy.TryBuildStep(
-                snapshot,
-                problem,
-                out BranchStep step,
-                out string rejectReason);
-            if (hasSwitchLane)
-                result.Add(step);
-
-            return rejectReason;
-        }
-
-        private void TryAddJumpCandidate(
-            BotSceneSnapshot snapshot,
-            ProblemDescriptor problem,
-            List<BranchStep> result,
-            out bool hasJump)
-        {
-            hasJump = false;
-            if (!_jumpStrategy.TryBuildStep(snapshot, problem, _projectedWorld, out BranchStep step, out _))
-                return;
-
-            result.Add(step);
-            hasJump = true;
+                IsSafe = false,
+                DebugReason = $"No strategy for action {step.Action}"
+            };
         }
     }
 }

@@ -7,13 +7,16 @@ namespace Assets.Scripts.BotV3
     /// Стратегия построения и проекции SwitchLane через один ближайший safe fire shift.
     /// Planner не строит окна и timing-варианты: ему нужен только первый допустимый момент перестроения.
     /// </summary>
-    public class SwitchLaneStrategy
+    public class SwitchLaneStrategy : IActionStrategy
     {
         private const float IntervalEpsilon = 0.001f;
+
+        public BotAction Action => BotAction.SwitchLane;
 
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
             ProblemDescriptor problem,
+            ProjectedWorld projectedWorld,
             out BranchStep step,
             out string rejectReason)
         {
