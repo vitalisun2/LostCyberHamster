@@ -100,9 +100,7 @@ namespace Assets.Scripts.BotV3
         {
             BotSceneSnapshot liveSnapshot = RefreshSceneState();
 
-            _planRuntime.PollCompletion();
-
-            if (_planRuntime.IsStepInProgress)
+            if (_planRuntime.PollCompletion())
                 return;
 
             if (_replanRequested)

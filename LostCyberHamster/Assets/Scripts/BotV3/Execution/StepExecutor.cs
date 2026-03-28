@@ -20,8 +20,6 @@ namespace Assets.Scripts.BotV3
 
         public event Action OnStepCompleted;
 
-        public bool IsStepInProgress => _step != null && _step.Status == BranchStepStatus.InProgress;
-
         public StepExecutor(Hamster hamster)
         {
             _hamster = hamster;
@@ -45,20 +43,22 @@ namespace Assets.Scripts.BotV3
         }
 
         /// <summary>
-        /// Опрашивает завершение шага в процессе. Вызывать только когда IsStepInProgress == true.
-        /// Стреляет OnStepCompleted, если шаг завершился.
+        /// Опрашивает завершение шага в процессе.
+        /// Возвращает true, если шаг всё ещё выполняется; false — если не в процессе или только что завершился.
+        /// Стреляет OnStepCompleted при завершении.
         /// </summary>
-        public void PollCompletion()
+        public bool PollCompletion()
         {
             if (_step == null || _step.Status != BranchStepStatus.InProgress)
-                return;
+                return false;
 
             if (_activeHandler == null || !_activeHandler.IsCompleted(_hamster, _step))
-                return;
+                return true;
 
             _step.MarkCompleted();
             DebugManager.DiagLog($"[BotV3 EXEC] {_step.Action} completed");
             OnStepCompleted?.Invoke();
+            return false;
         }
 
         /// <summary>
