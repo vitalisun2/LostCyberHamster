@@ -5,7 +5,7 @@ using NUnit.Framework;
 
 namespace Assets.Tests.EditMode.BotV3
 {
-    public class BotV3PlannerWindowTests
+    public class BotV3PlannerFireShiftTests
     {
         private const float SwitchLaneDecisionTravel = 0.45f * global::Assets.Scripts.Consts.GameSpeedBase;
         private const float SwitchLaneFullTravel = 0.77f * global::Assets.Scripts.Consts.GameSpeedBase;
@@ -27,7 +27,7 @@ namespace Assets.Tests.EditMode.BotV3
         }
 
         [Test]
-        public void Generate_DistantSmallRoadWithSoonClearingOtherLane_PrefersEarliestSwitchLaneMoment()
+        public void Generate_DistantSmallRoadWithSoonClearingOtherLane_UsesNearestSafeSwitchLaneShift()
         {
             var snapshot = MakeSnapshot(
                 hamOnBottom: true,
@@ -37,7 +37,7 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 13.26f, 14.66f, 16.22f, 602)
                 });
 
-            _classifier.Classify(snapshot);
+            snapshot = _classifier.Classify(snapshot);
             var best = _branchSelector.FindBestBranch(snapshot, _classifier);
 
             Assert.IsNotNull(best, "Planner должен найти safe ветвь.");
@@ -45,8 +45,6 @@ namespace Assets.Tests.EditMode.BotV3
                 "Если целевая линия скоро освободится, planner должен экономить энергию и выбирать SwitchLane.");
             Assert.Greater(best.Steps[0].FireWorldShift, 0f,
                 "Если target lane занята в текущем кадре, fire должен сдвигаться к ближайшему safe моменту в будущем.");
-            Assert.AreEqual(best.Steps[0].EarliestFireWorldShift, best.Steps[0].LatestFireWorldShift,
-                "После упрощения planner хранит один канонический safe момент вместо диапазона fire.");
         }
 
         [Test]
@@ -60,7 +58,7 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 0.71f, 2.11f, 3.67f, 702)
                 });
 
-            _classifier.Classify(snapshot);
+            snapshot = _classifier.Classify(snapshot);
             var best = _branchSelector.FindBestBranch(snapshot, _classifier);
 
             Assert.IsNotNull(best, "Planner должен найти хотя бы ветку с Jump.");
@@ -80,7 +78,7 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 37.04f, 38.44f, 40.0f, 803)
                 });
 
-            _classifier.Classify(snapshot);
+            snapshot = _classifier.Classify(snapshot);
             var problem = _problemResolver.ResolveNext(snapshot);
             var firstSteps = _actionGenerator.Generate(snapshot, problem);
             var branches = _branchGenerator.Generate(snapshot, firstSteps, _classifier, _actionGenerator, _problemResolver);
@@ -100,7 +98,7 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, true, 15.0f, 16.4f, 18.0f, 851)
                 });
 
-            _classifier.Classify(snapshot);
+            snapshot = _classifier.Classify(snapshot);
             var problem = _problemResolver.ResolveNext(snapshot);
 
             Assert.IsNull(problem,
@@ -119,7 +117,7 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, true, 12.0f, 13.4f, 15.0f, 863)
                 });
 
-            _classifier.Classify(snapshot);
+            snapshot = _classifier.Classify(snapshot);
             var problem = _problemResolver.ResolveNext(snapshot);
             var steps = _actionGenerator.Generate(snapshot, problem);
 
@@ -130,7 +128,7 @@ namespace Assets.Tests.EditMode.BotV3
         }
 
         [Test]
-        public void Generate_SplitSwitchLaneWindow_ProducesSingleCanonicalSwitchLaneCandidate()
+        public void Generate_SplitTargetLaneBlockingIntervals_ProducesSingleSwitchLaneCandidate()
         {
             var root = MakeSnapshot(
                 hamOnBottom: true,
@@ -141,12 +139,12 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 37.04f, 38.44f, 40.0f, 873)
                 });
 
-            _classifier.Classify(root);
+            root = _classifier.Classify(root);
 
             var switched = new ProjectedWorld().ProjectSnapshot(root, SwitchLaneDecisionTravel);
             switched.HamsterOnBottom = false;
             switched.HamsterOnRoof = false;
-            _classifier.Classify(switched);
+            switched = _classifier.Classify(switched);
 
             var problem = _problemResolver.ResolveNext(switched);
             var steps = _actionGenerator.Generate(switched, problem);
@@ -157,8 +155,6 @@ namespace Assets.Tests.EditMode.BotV3
 
             Assert.AreEqual(1, switchLaneSteps.Count,
                 "После упрощения planner должен строить только один канонический SwitchLane-кандидат для текущей проблемы.");
-            Assert.AreEqual(switchLaneSteps[0].EarliestFireWorldShift, switchLaneSteps[0].LatestFireWorldShift,
-                "Канонический SwitchLane-кандидат хранит один safe fire moment без late-window варианта.");
         }
 
         [Test]
@@ -172,7 +168,7 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.bigAlive, true, -0.20f, 2.40f, 2.76f, 902)
                 });
 
-            _classifier.Classify(snapshot);
+            snapshot = _classifier.Classify(snapshot);
 
             var strategy = new SwitchLaneStrategy();
             var projector = new ProjectedWorld();

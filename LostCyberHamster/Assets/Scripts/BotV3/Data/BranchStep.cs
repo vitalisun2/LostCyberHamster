@@ -21,12 +21,6 @@ namespace Assets.Scripts.BotV3
         /// <summary>Сдвиг мира от snapshot до завершения шага (fire + transit).</summary>
         public float CompletionWorldShift { get; }
 
-        /// <summary>Начало допустимого окна fire.</summary>
-        public float EarliestFireWorldShift { get; private set; }
-
-        /// <summary>Конец допустимого окна fire.</summary>
-        public float LatestFireWorldShift { get; private set; }
-
         public int EnergyCost { get; }
         public string Reason { get; }
         public BranchStepStatus Status { get; private set; }
@@ -45,17 +39,9 @@ namespace Assets.Scripts.BotV3
             ExecuteAtDistance = executeAtDistance;
             FireWorldShift = fireWorldShift;
             CompletionWorldShift = completionWorldShift;
-            EarliestFireWorldShift = fireWorldShift;
-            LatestFireWorldShift = fireWorldShift;
             EnergyCost = energyCost;
             Reason = reason;
             Status = BranchStepStatus.Ready;
-        }
-
-        public void SetFireWindow(float earliestFireWorldShift, float latestFireWorldShift)
-        {
-            EarliestFireWorldShift = earliestFireWorldShift;
-            LatestFireWorldShift = latestFireWorldShift;
         }
 
         public void MarkInProgress()

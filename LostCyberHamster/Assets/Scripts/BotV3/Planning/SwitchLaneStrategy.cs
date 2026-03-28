@@ -4,8 +4,8 @@ using Assets.Scripts.Common;
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
-    /// Стратегия построения и проекции SwitchLane через один ближайший safe fire moment.
-    /// Planner не строит набор timing-вариантов: ему нужен первый допустимый момент перестроения.
+    /// Стратегия построения и проекции SwitchLane через один ближайший safe fire shift.
+    /// Planner не строит окна и timing-варианты: ему нужен только первый допустимый момент перестроения.
     /// </summary>
     public class SwitchLaneStrategy
     {
@@ -27,15 +27,13 @@ namespace Assets.Scripts.BotV3
 
             var target = problem.SourceObstacle;
 
-            if (!TryResolveFireWindow(
+            if (!TryResolveSafeFireShift(
                     snapshot,
                     target,
-                    out float earliestFireShift,
-                    out float latestFireShift,
+                    out float fireWorldShift,
                     out rejectReason))
                 return false;
 
-            float fireWorldShift = earliestFireShift;
             float executeAtDistance = target.DistanceToHamster - fireWorldShift;
             if (executeAtDistance < 0f)
                 executeAtDistance = 0f;
@@ -50,8 +48,6 @@ namespace Assets.Scripts.BotV3
                 completionWorldShift,
                 energyCost: 0,
                 $"SwitchLane avoid {target.Type}");
-
-            step.SetFireWindow(earliestFireShift, latestFireShift);
             return true;
         }
 
@@ -86,63 +82,60 @@ namespace Assets.Scripts.BotV3
             };
         }
 
-        private static bool TryResolveFireWindow(
+        private static bool TryResolveSafeFireShift(
             BotSceneSnapshot snapshot,
             ObstacleInfo target,
-            out float earliestFireShift,
-            out float latestFireShift,
+            out float fireWorldShift,
             out string rejectReason)
         {
             float sourceDeadlineShift = target.DistanceToHamster - BotPhysicsConsts.SafetyPadding;
             if (sourceDeadlineShift <= 0f)
             {
-                earliestFireShift = 0f;
-                latestFireShift = 0f;
+                fireWorldShift = 0f;
                 rejectReason = "source deadline passed";
                 return false;
             }
 
-            if (!TryFindEarliestSafeFireShift(snapshot, sourceDeadlineShift, out earliestFireShift))
+            if (!TryFindFirstSafeFireShift(snapshot, sourceDeadlineShift, out fireWorldShift))
             {
-                latestFireShift = 0f;
-                rejectReason = "no safe fire window";
+                rejectReason = "no safe fire shift";
                 return false;
             }
 
-            // Для текущей модели planner-а сохраняем один канонический safe момент.
-            latestFireShift = earliestFireShift;
             rejectReason = null;
             return true;
         }
 
-        private static bool TryFindEarliestSafeFireShift(
+        private static bool TryFindFirstSafeFireShift(
             BotSceneSnapshot snapshot,
             float sourceDeadlineShift,
             out float fireWorldShift)
         {
-            var unsafeIntervals = CollectUnsafeIntervals(snapshot, sourceDeadlineShift);
-            if (unsafeIntervals.Count == 0)
+            var blockingIntervals = CollectBlockingIntervals(snapshot, sourceDeadlineShift);
+            if (blockingIntervals.Count == 0)
             {
                 fireWorldShift = 0f;
                 return true;
             }
 
-            unsafeIntervals.Sort((a, b) => a.Start.CompareTo(b.Start));
+            blockingIntervals.Sort((a, b) => a.Start.CompareTo(b.Start));
+
+            var firstInterval = blockingIntervals[0];
+            if (firstInterval.Start > IntervalEpsilon)
+            {
+                fireWorldShift = 0f;
+                return true;
+            }
 
             float cursor = 0f;
-            for (int i = 0; i < unsafeIntervals.Count; i++)
+            for (int i = 0; i < blockingIntervals.Count; i++)
             {
-                var interval = unsafeIntervals[i];
-                if (interval.End <= cursor + IntervalEpsilon)
-                    continue;
-
+                var interval = blockingIntervals[i];
                 if (interval.Start > cursor + IntervalEpsilon)
-                {
-                    fireWorldShift = cursor;
-                    return true;
-                }
+                    break;
 
-                cursor = interval.End;
+                if (interval.End > cursor)
+                    cursor = interval.End;
             }
 
             if (cursor <= sourceDeadlineShift - IntervalEpsilon)
@@ -155,11 +148,11 @@ namespace Assets.Scripts.BotV3
             return false;
         }
 
-        private static List<UnsafeInterval> CollectUnsafeIntervals(
+        private static List<BlockingInterval> CollectBlockingIntervals(
             BotSceneSnapshot snapshot,
             float sourceDeadlineShift)
         {
-            var intervals = new List<UnsafeInterval>();
+            var intervals = new List<BlockingInterval>();
 
             float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot) - BotPhysicsConsts.SafetyPadding;
             float hamsterRightX = snapshot.HamsterRightX + BotPhysicsConsts.SafetyPadding;
@@ -190,7 +183,7 @@ namespace Assets.Scripts.BotV3
                 if (unsafeEnd - unsafeStart <= IntervalEpsilon)
                     continue;
 
-                intervals.Add(new UnsafeInterval(unsafeStart, unsafeEnd));
+                intervals.Add(new BlockingInterval(unsafeStart, unsafeEnd));
             }
 
             return intervals;
@@ -222,12 +215,12 @@ namespace Assets.Scripts.BotV3
             return true;
         }
 
-        private readonly struct UnsafeInterval
+        private readonly struct BlockingInterval
         {
             public readonly float Start;
             public readonly float End;
 
-            public UnsafeInterval(float start, float end)
+            public BlockingInterval(float start, float end)
             {
                 Start = start;
                 End = end;

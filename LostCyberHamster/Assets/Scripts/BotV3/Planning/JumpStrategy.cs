@@ -66,8 +66,6 @@ namespace Assets.Scripts.BotV3
                 completionWorldShift,
                 JumpEnergyCost,
                 $"Jump over {target.Type}");
-
-            step.SetFireWindow(fireWorldShift, fireWorldShift);
             return true;
         }
 

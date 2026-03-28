@@ -25,10 +25,6 @@ namespace Assets.Scripts.BotV3
                   .Append(s.ExecuteAtDistance.ToString("F1"))
                   .Append(", fire=")
                   .Append(s.FireWorldShift.ToString("F1"))
-                  .Append(", window=")
-                  .Append(s.EarliestFireWorldShift.ToString("F1"))
-                  .Append("..")
-                  .Append(s.LatestFireWorldShift.ToString("F1"))
                   .Append(", id=")
                   .Append(s.TargetObstacle.StableId)
                   .Append(" reason=\"").Append(s.Reason).Append("\")");
