@@ -10,7 +10,7 @@ namespace Assets.Scripts.BotV3
     {
         private const int DefaultBuilderCapacity = 128;
 
-        [System.ThreadStatic]
+        [global::System.ThreadStatic]
         private static StringBuilder _sharedBuilder;
 
         public static void LogPlanSelected(BranchCandidate branch)
