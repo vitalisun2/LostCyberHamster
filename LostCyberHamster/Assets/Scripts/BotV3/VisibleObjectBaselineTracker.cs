@@ -5,7 +5,7 @@ namespace Assets.Scripts.BotV3
     /// <summary>
     /// Отслеживает смену набора видимых obstacle ids, чтобы runtime мог триггерить replan только по факту изменений.
     /// </summary>
-    public class VisibleObjectBaselineTracker
+    internal class VisibleObjectBaselineTracker
     {
         private bool _hasBaseline;
         private readonly HashSet<int> _visibleObjectIds = new HashSet<int>();

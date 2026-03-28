@@ -5,7 +5,7 @@ namespace Assets.Scripts.BotV3
     /// <summary>
     /// Координирует runtime-план: выбор/очистку текущей ветви, executor и preview-render state.
     /// </summary>
-    public class BotPlanRuntime
+    internal class BotPlanRuntime
     {
         private readonly CurrentPlan _plan;
         private readonly StepExecutor _executor;
