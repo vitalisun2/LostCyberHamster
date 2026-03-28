@@ -18,7 +18,7 @@ namespace Assets.Scripts.BotV3
             string logScope = null)
         {
             var result = new List<BranchStep>();
-            if (snapshot == null || problem == null || problem.SourceObstacle == null)
+            if (snapshot == null || problem == null)
                 return result;
 
             var obstacle = problem.SourceObstacle;
