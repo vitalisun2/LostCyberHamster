@@ -59,9 +59,6 @@ namespace Assets.Scripts.BotV3
             hasSwitchLane = false;
             string rejectReason = null;
 
-            if (!_switchLaneStrategy.CanSolve(problem))
-                return rejectReason;
-
             if (TryAddSwitchLaneCandidate(snapshot, problem, SwitchLaneTimingMode.Earliest, result, out string earliestRejectReason))
                 hasSwitchLane = true;
             else
@@ -101,9 +98,6 @@ namespace Assets.Scripts.BotV3
             out bool hasJump)
         {
             hasJump = false;
-            if (!_jumpStrategy.CanSolve(problem))
-                return;
-
             if (!_jumpStrategy.TryBuildStep(snapshot, problem, _projectedWorld, out BranchStep step, out _))
                 return;
 

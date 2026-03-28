@@ -17,11 +17,6 @@ namespace Assets.Scripts.BotV3
     {
         private const float IntervalEpsilon = 0.001f;
 
-        public bool CanSolve(ProblemDescriptor problem)
-        {
-            return problem != null && problem.Kind == ProblemKind.ThreatCollision;
-        }
-
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
             ProblemDescriptor problem,
@@ -31,7 +26,7 @@ namespace Assets.Scripts.BotV3
         {
             step = null;
 
-            if (!CanSolve(problem))
+            if (problem == null || problem.Kind != ProblemKind.ThreatCollision)
             {
                 rejectReason = "unsupported problem";
                 return false;
