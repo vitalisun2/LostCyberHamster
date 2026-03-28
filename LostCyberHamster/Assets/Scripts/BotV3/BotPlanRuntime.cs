@@ -23,7 +23,8 @@ namespace Assets.Scripts.BotV3
             _branchRenderer = branchRenderer;
         }
 
-        public StepExecutionTickResult TryExecute()
+        /// <summary>Возвращает true, если шаг завершён.</summary>
+        public bool TryExecute()
         {
             return _executor.TryExecute();
         }

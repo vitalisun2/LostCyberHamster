@@ -90,7 +90,7 @@ namespace Assets.Scripts.BotV3
 
             if (_planRuntime.IsStepInProgress)
             {
-                if (_planRuntime.TryExecute() == StepExecutionTickResult.StepCompleted)
+                if (_planRuntime.TryExecute())
                 {
                     _planRuntime.RemoveCompletedFromHead();
                     _replanRequested = true;
@@ -103,7 +103,7 @@ namespace Assets.Scripts.BotV3
             if (_replanRequested)
                 Replan(liveSnapshot);
 
-            if (_planRuntime.TryExecute() == StepExecutionTickResult.StepCompleted)
+            if (_planRuntime.TryExecute())
             {
                 _planRuntime.RemoveCompletedFromHead();
                 _replanRequested = true;
