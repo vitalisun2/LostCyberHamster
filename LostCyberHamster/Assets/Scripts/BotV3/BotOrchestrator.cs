@@ -86,9 +86,7 @@ namespace Assets.Scripts.BotV3
 
         private void TickRuntime()
         {
-            BotSceneSnapshot liveSnapshot = _snapshotBuilder.Build(Hamster);
-            if (_visibleObjectBaseline.Update(liveSnapshot))
-                _replanRequested = true;
+            BotSceneSnapshot liveSnapshot = RefreshSceneState();
 
             if (_planRuntime.IsStepInProgress)
             {
@@ -110,6 +108,15 @@ namespace Assets.Scripts.BotV3
                 _planRuntime.RemoveCompletedFromHead();
                 _replanRequested = true;
             }
+        }
+
+        private BotSceneSnapshot RefreshSceneState()
+        {
+            BotSceneSnapshot liveSnapshot = _snapshotBuilder.Build(Hamster);
+            if (_visibleObjectBaseline.Update(liveSnapshot))
+                _replanRequested = true;
+
+            return liveSnapshot;
         }
 
         private void Replan(BotSceneSnapshot liveSnapshot)
