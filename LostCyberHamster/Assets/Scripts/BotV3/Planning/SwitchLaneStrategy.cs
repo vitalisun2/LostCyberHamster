@@ -3,15 +3,9 @@ using Assets.Scripts.Common;
 
 namespace Assets.Scripts.BotV3
 {
-    public enum SwitchLaneTimingMode
-    {
-        Earliest,
-        Latest
-    }
-
     /// <summary>
-    /// Стратегия построения и проекции SwitchLane через окно допустимого fire.
-    /// Стратегия одна, а timing-вариант передаётся параметром при построении кандидата.
+    /// Стратегия построения и проекции SwitchLane через один ближайший safe fire moment.
+    /// Planner не строит набор timing-вариантов: ему нужен первый допустимый момент перестроения.
     /// </summary>
     public class SwitchLaneStrategy
     {
@@ -20,7 +14,6 @@ namespace Assets.Scripts.BotV3
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
             ProblemDescriptor problem,
-            SwitchLaneTimingMode timingMode,
             out BranchStep step,
             out string rejectReason)
         {
@@ -37,22 +30,12 @@ namespace Assets.Scripts.BotV3
             if (!TryResolveFireWindow(
                     snapshot,
                     target,
-                    timingMode,
                     out float earliestFireShift,
                     out float latestFireShift,
                     out rejectReason))
                 return false;
 
-            float fireWorldShift = ChooseCanonicalFireShift(
-                earliestFireShift,
-                latestFireShift,
-                timingMode);
-            if (!float.IsFinite(fireWorldShift))
-            {
-                rejectReason = "timing variant collapsed";
-                return false;
-            }
-
+            float fireWorldShift = earliestFireShift;
             float executeAtDistance = target.DistanceToHamster - fireWorldShift;
             if (executeAtDistance < 0f)
                 executeAtDistance = 0f;
@@ -103,31 +86,9 @@ namespace Assets.Scripts.BotV3
             };
         }
 
-        private static float ChooseCanonicalFireShift(
-            float earliestFireShift,
-            float latestFireShift,
-            SwitchLaneTimingMode timingMode)
-        {
-            switch (timingMode)
-            {
-                case SwitchLaneTimingMode.Earliest:
-                    return earliestFireShift;
-
-                case SwitchLaneTimingMode.Latest:
-                    if (latestFireShift <= earliestFireShift + IntervalEpsilon)
-                        return float.NaN;
-
-                    return latestFireShift - IntervalEpsilon;
-
-                default:
-                    return earliestFireShift;
-            }
-        }
-
-        private bool TryResolveFireWindow(
+        private static bool TryResolveFireWindow(
             BotSceneSnapshot snapshot,
             ObstacleInfo target,
-            SwitchLaneTimingMode timingMode,
             out float earliestFireShift,
             out float latestFireShift,
             out string rejectReason)
@@ -141,35 +102,29 @@ namespace Assets.Scripts.BotV3
                 return false;
             }
 
-            var safeWindows = CollectSafeWindows(snapshot, sourceDeadlineShift);
-            if (safeWindows.Count == 0)
+            if (!TryFindEarliestSafeFireShift(snapshot, sourceDeadlineShift, out earliestFireShift))
             {
-                earliestFireShift = 0f;
                 latestFireShift = 0f;
                 rejectReason = "no safe fire window";
                 return false;
             }
 
-            var selectedWindow = timingMode == SwitchLaneTimingMode.Earliest
-                ? safeWindows[0]
-                : safeWindows[safeWindows.Count - 1];
-
-            earliestFireShift = selectedWindow.Start;
-            latestFireShift = selectedWindow.End;
+            // Для текущей модели planner-а сохраняем один канонический safe момент.
+            latestFireShift = earliestFireShift;
             rejectReason = null;
             return true;
         }
 
-        private static List<SafeWindow> CollectSafeWindows(
+        private static bool TryFindEarliestSafeFireShift(
             BotSceneSnapshot snapshot,
-            float sourceDeadlineShift)
+            float sourceDeadlineShift,
+            out float fireWorldShift)
         {
-            var windows = new List<SafeWindow>();
             var unsafeIntervals = CollectUnsafeIntervals(snapshot, sourceDeadlineShift);
             if (unsafeIntervals.Count == 0)
             {
-                windows.Add(new SafeWindow(0f, sourceDeadlineShift));
-                return windows;
+                fireWorldShift = 0f;
+                return true;
             }
 
             unsafeIntervals.Sort((a, b) => a.Start.CompareTo(b.Start));
@@ -182,15 +137,22 @@ namespace Assets.Scripts.BotV3
                     continue;
 
                 if (interval.Start > cursor + IntervalEpsilon)
-                    windows.Add(new SafeWindow(cursor, interval.Start));
+                {
+                    fireWorldShift = cursor;
+                    return true;
+                }
 
                 cursor = interval.End;
             }
 
             if (cursor <= sourceDeadlineShift - IntervalEpsilon)
-                windows.Add(new SafeWindow(cursor, sourceDeadlineShift));
+            {
+                fireWorldShift = cursor;
+                return true;
+            }
 
-            return windows;
+            fireWorldShift = 0f;
+            return false;
         }
 
         private static List<UnsafeInterval> CollectUnsafeIntervals(
@@ -266,18 +228,6 @@ namespace Assets.Scripts.BotV3
             public readonly float End;
 
             public UnsafeInterval(float start, float end)
-            {
-                Start = start;
-                End = end;
-            }
-        }
-
-        private readonly struct SafeWindow
-        {
-            public readonly float Start;
-            public readonly float End;
-
-            public SafeWindow(float start, float end)
             {
                 Start = start;
                 End = end;

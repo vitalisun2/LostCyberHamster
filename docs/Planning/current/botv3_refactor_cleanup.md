@@ -30,16 +30,23 @@
 
 ### Step 2. Semantic cleanup SwitchLane
 
-Статус: `next`
+Статус: `implemented, awaiting manual review`
 
 - Удалить `SwitchLaneTimingMode.Latest`.
 - Убрать двойную генерацию `SwitchLane`-кандидатов в `ActionGenerator`.
 - Заменить логику списка окон в `SwitchLaneStrategy` на поиск одного earliest-safe момента.
 - Обновить planner tests под новую норму поведения.
 
+Результат текущей реализации:
+
+- `ActionGenerator` строит один канонический `SwitchLane`-кандидат для текущей проблемы.
+- `SwitchLaneStrategy` ищет один ближайший допустимый fire moment вместо списка safe windows.
+- `Latest` timing-вариант удалён из planner-контракта.
+- Planner tests переписаны под норму `single canonical switch candidate`.
+
 ### Step 3. Structural cleanup planning pipeline
 
-Статус: `pending`
+Статус: `next`
 
 - Разбить `BranchGenerator.ExploreBranch()` на приватные хелперы.
 - Вынести строковые scope-константы.

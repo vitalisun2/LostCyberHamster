@@ -27,7 +27,7 @@ namespace Assets.Tests.EditMode.BotV3
         }
 
         [Test]
-        public void Generate_DistantSmallRoadWithSoonClearingOtherLane_PrefersSwitchLaneWindow()
+        public void Generate_DistantSmallRoadWithSoonClearingOtherLane_PrefersEarliestSwitchLaneMoment()
         {
             var snapshot = MakeSnapshot(
                 hamOnBottom: true,
@@ -44,9 +44,9 @@ namespace Assets.Tests.EditMode.BotV3
             Assert.AreEqual(BotAction.SwitchLane, best.Steps[0].Action,
                 "Если целевая линия скоро освободится, planner должен экономить энергию и выбирать SwitchLane.");
             Assert.Greater(best.Steps[0].FireWorldShift, 0f,
-                "Для delayed window SwitchLane fire должен оказаться в будущем, а не в текущем кадре.");
-            Assert.Greater(best.Steps[0].LatestFireWorldShift, best.Steps[0].EarliestFireWorldShift,
-                "У SwitchLane должен сохраняться ненулевой диапазон допустимого fire.");
+                "Если target lane занята в текущем кадре, fire должен сдвигаться к ближайшему safe моменту в будущем.");
+            Assert.AreEqual(best.Steps[0].EarliestFireWorldShift, best.Steps[0].LatestFireWorldShift,
+                "После упрощения planner хранит один канонический safe момент вместо диапазона fire.");
         }
 
         [Test]
@@ -65,7 +65,7 @@ namespace Assets.Tests.EditMode.BotV3
 
             Assert.IsNotNull(best, "Planner должен найти хотя бы ветку с Jump.");
             Assert.AreEqual(BotAction.Jump, best.Steps[0].Action,
-                "Если safe window для SwitchLane не существует до дедлайна, planner должен выбрать Jump.");
+                "Если nearest safe момент для SwitchLane не существует до дедлайна, planner должен выбрать Jump.");
         }
 
         [Test]
@@ -130,7 +130,7 @@ namespace Assets.Tests.EditMode.BotV3
         }
 
         [Test]
-        public void Generate_SplitSwitchLaneWindow_ExposesLateWindowCandidate()
+        public void Generate_SplitSwitchLaneWindow_ProducesSingleCanonicalSwitchLaneCandidate()
         {
             var root = MakeSnapshot(
                 hamOnBottom: true,
@@ -151,13 +151,14 @@ namespace Assets.Tests.EditMode.BotV3
             var problem = _problemResolver.ResolveNext(switched);
             var steps = _actionGenerator.Generate(switched, problem);
 
-            bool hasLateSwitchCandidate = steps.Exists(step =>
+            var switchLaneSteps = steps.FindAll(step =>
                 step.Action == BotAction.SwitchLane &&
-                step.TargetObstacle.StableId == 872 &&
-                step.EarliestFireWorldShift > 3f);
+                step.TargetObstacle.StableId == 872);
 
-            Assert.IsTrue(hasLateSwitchCandidate,
-                "Если у SwitchLane есть несколько safe окон, planner должен видеть не только раннее, но и позднее окно.");
+            Assert.AreEqual(1, switchLaneSteps.Count,
+                "После упрощения planner должен строить только один канонический SwitchLane-кандидат для текущей проблемы.");
+            Assert.AreEqual(switchLaneSteps[0].EarliestFireWorldShift, switchLaneSteps[0].LatestFireWorldShift,
+                "Канонический SwitchLane-кандидат хранит один safe fire moment без late-window варианта.");
         }
 
         [Test]
