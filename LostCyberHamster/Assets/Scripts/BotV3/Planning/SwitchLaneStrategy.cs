@@ -132,8 +132,8 @@ namespace Assets.Scripts.BotV3
                 return true;
             }
 
-            float cursor = 0f;
-            for (int i = 0; i < blockingIntervals.Count; i++)
+            float cursor = blockingIntervals[0].End;
+            for (int i = 1; i < blockingIntervals.Count; i++)
             {
                 var interval = blockingIntervals[i];
                 if (interval.Start > cursor + IntervalEpsilon)
