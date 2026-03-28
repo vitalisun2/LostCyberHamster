@@ -8,9 +8,9 @@
 
 | Агент | Механизм |
 |---|---|
-| Codex | Читает `AGENTS.md` автоматически |
-| Claude Code | Читает `CLAUDE.md`, который ссылается на `AGENTS.md` |
-| GitHub Copilot | Читает `.github/copilot-instructions.md`, который ссылается на `AGENTS.md` |
+| Codex | Читает `docs/rules/AGENTS.md` (настроить путь в конфигурации Codex) |
+| Claude Code | Читает `CLAUDE.md`, который ссылается на `docs/rules/AGENTS.md` |
+| GitHub Copilot | Читает `.github/copilot-instructions.md`, который ссылается на `docs/rules/AGENTS.md` |
 
 ## Что читать перед работой
 

@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions для LostCyberHamster
 
-> **Workflow rules**: Read and follow `AGENTS.md` at the repository root — it is the single source of truth for task isolation, worktrees, branch naming (`task/<slug>`), parallel execution, and merge discipline.
+> **Workflow rules**: Read and follow `docs/rules/AGENTS.md` — it is the single source of truth for task isolation, worktrees, branch naming (`task/<slug>`), parallel execution, and merge discipline.
 
 ## Общие правила взаимодействия
 

@@ -6,7 +6,7 @@
 
 ## Источники истины по процессу
 
-### AGENTS.md
+### docs/rules/AGENTS.md
 Главный документ по workflow репозитория: типы задач, worktree-модель, правила ветвления, валидация, отчётность и стиль коммуникации.
 
 ### docs/rules/ai_workflow_lessons.md
@@ -73,7 +73,7 @@ Placeholder-документ для каталога активного план
 ## Внешние и исторические материалы
 
 ### .github/copilot-instructions.md
-Короткая точка входа для Copilot, перенаправляющая к `AGENTS.md`.
+Короткая точка входа для Copilot, перенаправляющая к `docs/rules/AGENTS.md`.
 
 ### GameDesignDocWithGuidHistory/Addressables.md
 Исторический документ по организации Addressables.
