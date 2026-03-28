@@ -16,10 +16,13 @@ namespace Assets.Scripts.System
         Listeners.IGameIntroListener,
         Listeners.IGameFinishListener
     {
-    [SerializeField]
-    [FormerlySerializedAs("timeScale")]
-    [Range(0.1f, 2.0f)] // Настройка диапазона для удобства в инспекторе
-    private float _timeScale = 1.0f; // Скорость рантайма
+        private const float DefaultTimeScale = 1.0f;
+        private const float BotEnabledDefaultTimeScale = 2.0f;
+
+        [SerializeField]
+        [FormerlySerializedAs("timeScale")]
+        [Range(0.1f, 2.0f)] // Настройка диапазона для удобства в инспекторе
+        private float _timeScale = DefaultTimeScale; // Скорость рантайма
 
         public LevelData LevelData { get; private set; } = new();
         public bool IsLevelLoaded { get; private set; }
@@ -27,8 +30,9 @@ namespace Assets.Scripts.System
         public static LevelController Instance { get; private set; }
 
         private Intro _introComponent;
+        private global::Assets.Scripts.BotV3.BotOrchestrator _botOrchestrator;
 
-    private void Awake()
+        private void Awake()
         {
             if (Instance != null && Instance != this)
             {
@@ -40,7 +44,7 @@ namespace Assets.Scripts.System
             DontDestroyOnLoad(gameObject);
 
             // Устанавливаем начальную скорость игры
-            Time.timeScale = 1f;
+            Time.timeScale = DefaultTimeScale;
         }
 
         private void Update()
@@ -49,7 +53,7 @@ namespace Assets.Scripts.System
             if (Instance?.LevelData?.GameManager == null) return;
 
             // Обновляем скорость игры, если изменено значение в инспекторе
-            var newTs = _timeScale * Instance.LevelData.GameManager.TimeScaleCoefficient;
+            var newTs = GetConfiguredTimeScale() * Instance.LevelData.GameManager.TimeScaleCoefficient;
             if (!Mathf.Approximately(Time.timeScale, newTs))
                 Time.timeScale = newTs;
 
@@ -206,6 +210,25 @@ namespace Assets.Scripts.System
             return hasIntroSprites;
         }
 
+        private float GetConfiguredTimeScale()
+        {
+            if (!Mathf.Approximately(_timeScale, DefaultTimeScale))
+                return _timeScale;
+
+            var bot = GetBotOrchestrator();
+            if (bot != null && bot.IsEnabled)
+                return BotEnabledDefaultTimeScale;
+
+            return _timeScale;
+        }
+
+        private global::Assets.Scripts.BotV3.BotOrchestrator GetBotOrchestrator()
+        {
+            if (_botOrchestrator == null)
+                _botOrchestrator = FindAnyObjectByType<global::Assets.Scripts.BotV3.BotOrchestrator>(FindObjectsInactive.Include);
+
+            return _botOrchestrator;
+        }
     }
 }
 
