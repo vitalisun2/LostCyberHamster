@@ -1,16 +1,12 @@
-using System.Collections.Generic;
-using Assets.Scripts.Common;
-
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
-    /// Стратегия построения и проекции SwitchLane через один ближайший safe fire shift.
-    /// Planner не строит окна и timing-варианты: ему нужен только первый допустимый момент перестроения.
+    /// Стратегия построения и проекции SwitchLane через первый безопасный момент перестроения.
+    /// Планировщик ищет момент, после которого целевая полоса свободна от угроз ближе источника.
+    /// Project() только вычисляет состояние мира после завершения шага.
     /// </summary>
     public class SwitchLaneStrategy : IActionStrategy
     {
-        private const float IntervalEpsilon = 0.001f;
-
         public BotAction Action => BotAction.SwitchLane;
 
         public bool TryBuildStep(
@@ -30,12 +26,11 @@ namespace Assets.Scripts.BotV3
 
             var target = problem.SourceObstacle;
 
-            if (!TryResolveSafeFireShift(
-                    snapshot,
-                    target,
-                    out float fireWorldShift,
-                    out rejectReason))
+            if (!TryFindSafeFireShift(snapshot, target, out float fireWorldShift))
+            {
+                rejectReason = "no safe fire shift";
                 return false;
+            }
 
             float executeAtDistance = target.DistanceToHamster - fireWorldShift;
             if (executeAtDistance < 0f)
@@ -51,6 +46,7 @@ namespace Assets.Scripts.BotV3
                 completionWorldShift,
                 energyCost: 0,
                 $"SwitchLane avoid {target.Type}");
+            rejectReason = null;
             return true;
         }
 
@@ -59,20 +55,6 @@ namespace Assets.Scripts.BotV3
             BranchStep step,
             ProjectedWorld projectedWorld)
         {
-            var fireSnapshot = projectedWorld.ProjectSnapshot(snapshot, step.FireWorldShift);
-            if (!IsTargetLaneSweptSafe(fireSnapshot))
-            {
-                DebugManager.DiagLog(
-                    $"[BotV3 PROJ] UNSAFE SwitchLane swept interval" +
-                    $" → worldShift={step.FireWorldShift:F2}");
-
-                return new StepProjectionResult
-                {
-                    IsSafe = false,
-                    DebugReason = step.Reason
-                };
-            }
-
             var completionSnapshot = projectedWorld.ProjectSnapshot(snapshot, step.CompletionWorldShift);
             completionSnapshot.HamsterOnBottom = !completionSnapshot.HamsterOnBottom;
             completionSnapshot.HamsterOnRoof = false;
@@ -85,179 +67,49 @@ namespace Assets.Scripts.BotV3
             };
         }
 
-        private static bool TryResolveSafeFireShift(
+        /// <summary>
+        /// Ищет первый безопасный момент для перестроения.
+        /// Собирает угрозы на целевой полосе ближе источника, вычисляет момент,
+        /// когда все они пройдут мимо хомяка, и проверяет что этот момент до дедлайна.
+        /// Дедлайн — успеть нажать до source target; после fire лейн переключается мгновенно.
+        /// </summary>
+        private static bool TryFindSafeFireShift(
             BotSceneSnapshot snapshot,
-            ObstacleInfo target,
-            out float fireWorldShift,
-            out string rejectReason)
-        {
-            float sourceDeadlineShift = target.DistanceToHamster - BotPhysicsConsts.SafetyPadding;
-            if (sourceDeadlineShift <= 0f)
-            {
-                fireWorldShift = 0f;
-                rejectReason = "source deadline passed";
-                return false;
-            }
-
-            if (!TryFindFirstSafeFireShift(snapshot, sourceDeadlineShift, target, out fireWorldShift))
-            {
-                rejectReason = "no safe fire shift";
-                return false;
-            }
-
-            rejectReason = null;
-            return true;
-        }
-
-        private static bool TryFindFirstSafeFireShift(
-            BotSceneSnapshot snapshot,
-            float sourceDeadlineShift,
             ObstacleInfo sourceTarget,
             out float fireWorldShift)
         {
-            var blockingIntervals = CollectBlockingIntervals(snapshot, sourceDeadlineShift);
-            if (blockingIntervals.Count == 0)
+            float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot) - BotPhysicsConsts.SafetyPadding;
+            bool targetLaneBottom = !snapshot.HamsterOnBottom;
+            float sourceDeadlineShift = sourceTarget.DistanceToHamster - BotPhysicsConsts.SafetyPadding;
+
+            float fireShift = 0f;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
-                fireWorldShift = 0f;
-                return true;
+                var obs = snapshot.VisibleObjects[i];
+                if (!ProjectedWorld.IsThreatType(obs.Type))
+                    continue;
+
+                bool obsOnBottom = !obs.IsTopLane;
+                if (obsOnBottom != targetLaneBottom)
+                    continue;
+
+                if (obs.LeftX >= sourceTarget.LeftX)
+                    continue;
+
+                float clearShift = obs.RightX - hamsterLeftX;
+                if (clearShift > fireShift)
+                    fireShift = clearShift;
             }
 
-            blockingIntervals.Sort((a, b) => a.Start.CompareTo(b.Start));
-
-            var firstInterval = blockingIntervals[0];
-            if (firstInterval.Start > IntervalEpsilon
-                && !HasCloserThreatOnTargetLane(snapshot, 0f, sourceTarget))
+            if (fireShift <= sourceDeadlineShift)
             {
-                fireWorldShift = 0f;
-                return true;
-            }
-
-            float cursor = blockingIntervals[0].End;
-            for (int i = 1; i < blockingIntervals.Count; i++)
-            {
-                var interval = blockingIntervals[i];
-                if (interval.Start > cursor + IntervalEpsilon)
-                    break;
-
-                if (interval.End > cursor)
-                    cursor = interval.End;
-            }
-
-            if (cursor <= sourceDeadlineShift - IntervalEpsilon)
-            {
-                fireWorldShift = cursor;
+                fireWorldShift = fireShift;
                 return true;
             }
 
             fireWorldShift = 0f;
             return false;
-        }
-
-        private static bool HasCloserThreatOnTargetLane(
-            BotSceneSnapshot snapshot,
-            float fireWorldShift,
-            ObstacleInfo sourceTarget)
-        {
-            float completionShift = fireWorldShift + BotPhysicsConsts.SwitchLaneDecisionTravel;
-            bool targetLaneBottom = !snapshot.HamsterOnBottom;
-
-            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
-            {
-                var obs = snapshot.VisibleObjects[i];
-                if (!ProjectedWorld.IsThreatType(obs.Type))
-                    continue;
-
-                bool obsOnBottom = !obs.IsTopLane;
-                if (obsOnBottom != targetLaneBottom)
-                    continue;
-
-                if (obs.DistanceToHamster - completionShift < 0f)
-                    continue;
-
-                if (obs.DistanceToHamster < sourceTarget.DistanceToHamster)
-                    return true;
-            }
-
-            return false;
-        }
-
-        private static List<BlockingInterval> CollectBlockingIntervals(
-            BotSceneSnapshot snapshot,
-            float sourceDeadlineShift)
-        {
-            var intervals = new List<BlockingInterval>();
-
-            float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot) - BotPhysicsConsts.SafetyPadding;
-            float hamsterRightX = snapshot.HamsterRightX + BotPhysicsConsts.SafetyPadding;
-            bool targetLaneBottom = !snapshot.HamsterOnBottom;
-
-            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
-            {
-                var obs = snapshot.VisibleObjects[i];
-                if (!ProjectedWorld.IsThreatType(obs.Type))
-                    continue;
-
-                bool obsOnBottom = !obs.IsTopLane;
-                if (obsOnBottom != targetLaneBottom)
-                    continue;
-
-                float unsafeStart = obs.LeftX - BotPhysicsConsts.SwitchLaneDecisionTravel - hamsterRightX;
-                float unsafeEnd = obs.RightX - hamsterLeftX;
-
-                if (unsafeEnd <= 0f || unsafeStart >= sourceDeadlineShift)
-                    continue;
-
-                if (unsafeStart < 0f)
-                    unsafeStart = 0f;
-
-                if (unsafeEnd > sourceDeadlineShift)
-                    unsafeEnd = sourceDeadlineShift;
-
-                if (unsafeEnd - unsafeStart <= IntervalEpsilon)
-                    continue;
-
-                intervals.Add(new BlockingInterval(unsafeStart, unsafeEnd));
-            }
-
-            return intervals;
-        }
-
-        private static bool IsTargetLaneSweptSafe(BotSceneSnapshot fireSnapshot)
-        {
-            float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(fireSnapshot) - BotPhysicsConsts.SafetyPadding;
-            float hamsterRightX = fireSnapshot.HamsterRightX + BotPhysicsConsts.SafetyPadding;
-            bool targetLaneBottom = !fireSnapshot.HamsterOnBottom;
-
-            for (int i = 0; i < fireSnapshot.VisibleObjects.Count; i++)
-            {
-                var obs = fireSnapshot.VisibleObjects[i];
-                if (!ProjectedWorld.IsThreatType(obs.Type))
-                    continue;
-
-                bool obsOnBottom = !obs.IsTopLane;
-                if (obsOnBottom != targetLaneBottom)
-                    continue;
-
-                float sweptLeftX = obs.LeftX - BotPhysicsConsts.SwitchLaneDecisionTravel;
-                float sweptRightX = obs.RightX;
-
-                if (CollisionUtils.IsOverlap(hamsterLeftX, hamsterRightX, sweptLeftX, sweptRightX))
-                    return false;
-            }
-
-            return true;
-        }
-
-        private readonly struct BlockingInterval
-        {
-            public readonly float Start;
-            public readonly float End;
-
-            public BlockingInterval(float start, float end)
-            {
-                Start = start;
-                End = end;
-            }
         }
     }
 }

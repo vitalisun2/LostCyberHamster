@@ -8,7 +8,6 @@ namespace Assets.Tests.EditMode.BotV3
     public class BotV3PlannerFireShiftTests
     {
         private const float SwitchLaneDecisionTravel = 0.45f * global::Assets.Scripts.Consts.GameSpeedBase;
-        private const float SwitchLaneFullTravel = 0.77f * global::Assets.Scripts.Consts.GameSpeedBase;
 
         private ObjectClassifier _classifier;
         private ProblemResolver _problemResolver;
@@ -158,7 +157,7 @@ namespace Assets.Tests.EditMode.BotV3
         }
 
         [Test]
-        public void Project_ManualImmediateSwitchLaneIntoOccupiedTargetLane_IsUnsafe()
+        public void TryBuildStep_TargetLaneOccupiedImmediately_ShiftsFireMomentBeyondOccupant()
         {
             var snapshot = MakeSnapshot(
                 hamOnBottom: true,
@@ -169,22 +168,13 @@ namespace Assets.Tests.EditMode.BotV3
                 });
 
             snapshot = _classifier.Classify(snapshot);
+            var problem = _problemResolver.ResolveNext(snapshot);
+            var steps = _actionGenerator.Generate(snapshot, problem);
 
-            var strategy = new SwitchLaneStrategy();
-            var projector = new ProjectedWorld();
-            var step = new BranchStep(
-                BotAction.SwitchLane,
-                snapshot.VisibleObjects[0],
-                executeAtDistance: 13.0f,
-                fireWorldShift: 0f,
-                completionWorldShift: SwitchLaneFullTravel,
-                energyCost: 0,
-                reason: "manual immediate switch");
-
-            var projection = strategy.Project(snapshot, step, projector);
-
-            Assert.IsFalse(projection.IsSafe,
-                "Проекция должна отбрасывать немедленный SwitchLane, если target lane занята в swept-окне.");
+            var switchLane = steps.Find(s => s.Action == BotAction.SwitchLane);
+            Assert.IsNotNull(switchLane, "SwitchLane должен быть сгенерирован: после освобождения target lane остаётся достаточно места.");
+            Assert.Greater(switchLane.FireWorldShift, 0f,
+                "Если target lane занята прямо сейчас, планировщик должен сдвинуть fire момент за правый край занятого объекта.");
         }
 
         private static BotSceneSnapshot MakeSnapshot(bool hamOnBottom, ObstacleInfo[] objects)
