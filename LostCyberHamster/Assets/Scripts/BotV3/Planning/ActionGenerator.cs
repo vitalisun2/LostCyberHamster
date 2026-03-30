@@ -9,19 +9,18 @@ namespace Assets.Scripts.BotV3
     public class ActionGenerator
     {
         private readonly ProjectedWorld _projectedWorld = new ProjectedWorld();
-        private readonly List<IActionStrategy> _strategies;
         private readonly Dictionary<BotAction, IActionStrategy> _strategyByAction;
 
         public ActionGenerator()
         {
-            _strategies = new List<IActionStrategy>
+            var strategies = new IActionStrategy[]
             {
                 new SwitchLaneStrategy(),
                 new JumpStrategy(),
             };
 
             _strategyByAction = new Dictionary<BotAction, IActionStrategy>();
-            foreach (var strategy in _strategies)
+            foreach (var strategy in strategies)
                 _strategyByAction[strategy.Action] = strategy;
         }
 
@@ -36,7 +35,7 @@ namespace Assets.Scripts.BotV3
 
             var candidates = new List<(BotAction action, bool added, string rejectReason)>();
 
-            foreach (var strategy in _strategies)
+            foreach (var strategy in _strategyByAction.Values)
             {
                 bool success = strategy.TryBuildStep(
                     snapshot, problem, _projectedWorld,
