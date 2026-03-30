@@ -24,8 +24,5 @@ namespace Assets.Scripts.BotV3
 
         /// <summary>Примерное расстояние, на которое хомяк улетает при Jump (world units).</summary>
         public const float JumpLandingOffset = 3.8f;
-
-        /// <summary>Padding вокруг коллайдера для safety проверок.</summary>
-        public const float SafetyPadding = 0.15f;
     }
 }
