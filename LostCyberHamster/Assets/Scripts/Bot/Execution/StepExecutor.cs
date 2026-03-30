@@ -91,7 +91,8 @@ namespace Assets.Scripts.Bot
             if (handler == null)
                 return;
 
-            if (handler.ShouldDelay(_hamster, _step))
+            if (handler is IPreFireDelayHandler delayHandler &&
+                delayHandler.ShouldDelay(_hamster, _step))
                 return;
 
             handler.Fire(_hamster, _step);

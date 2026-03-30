@@ -12,7 +12,7 @@ namespace Assets.Scripts.Bot
     /// Обработчик действия Jump: отправляет JumpRequest и ждёт приземления.
     /// Умеет задерживать прыжок, пока зона приземления занята (ShouldDelay).
     /// </summary>
-    internal class JumpHandler : IActionHandler
+    internal class JumpHandler : IActionHandler, IPreFireDelayHandler
     {
         private float _execTime;
         private float _jumpWorldShift = -1f;
