@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
@@ -17,6 +18,7 @@ namespace LostCyberHamster.Editor
     {
         private const string LaunchCommand = "launch_test_level";
         private const string RecompileCommand = "recompile_scripts";
+        private const string RegenerateProjectFilesCommand = "regenerate_project_files";
         private const string RequestIdSessionKey = "TestLevelAutomationBridge.RequestId";
         private const string CommandSessionKey = "TestLevelAutomationBridge.Command";
         private const string ResultSessionKey = "TestLevelAutomationBridge.Result";
@@ -158,7 +160,8 @@ namespace LostCyberHamster.Editor
             }
 
             if (!string.Equals(request.command, LaunchCommand, StringComparison.Ordinal) &&
-                !string.Equals(request.command, RecompileCommand, StringComparison.Ordinal))
+                !string.Equals(request.command, RecompileCommand, StringComparison.Ordinal) &&
+                !string.Equals(request.command, RegenerateProjectFilesCommand, StringComparison.Ordinal))
             {
                 WriteResponse(new BridgeResponse
                 {
@@ -214,6 +217,28 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
+            if (string.Equals(request.command, RegenerateProjectFilesCommand, StringComparison.Ordinal))
+            {
+                var syncVsType = Type.GetType("UnityEditor.SyncVS, UnityEditor");
+                var syncSolutionMethod = syncVsType?.GetMethod("SyncSolution",
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                syncSolutionMethod?.Invoke(null, null);
+
+                WriteResponse(new BridgeResponse
+                {
+                    requestId = request.requestId,
+                    command = request.command,
+                    state = "completed",
+                    testResult = string.Empty,
+                    message = "Unity project files regenerated.",
+                    updatedAtUtc = DateTime.UtcNow.ToString("O"),
+                    diagnosticLogPath = DebugManager.GetDiagLogPath()
+                });
+
+                ClearActiveRequest();
+                return;
+            }
+
             WriteResponse(new BridgeResponse
             {
                 requestId = request.requestId,
@@ -257,6 +282,9 @@ namespace LostCyberHamster.Editor
                 MonitorCompilationRequest();
                 return;
             }
+
+            // regenerate_project_files completes synchronously in TryProcessIncomingRequest,
+            // so no monitoring is needed here.
 
             if (!string.IsNullOrEmpty(GetStoredResult()))
             {
