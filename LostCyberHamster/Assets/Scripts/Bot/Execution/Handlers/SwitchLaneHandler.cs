@@ -28,8 +28,6 @@ namespace Assets.Scripts.Bot
             return true;
         }
 
-        public bool ShouldDelay(Hamster hamster, BranchStep step) => false;
-
         /// <summary>
         /// Проверяет, что фактическая длительность SwitchLane совпадает с запланированной.
         /// </summary>
