@@ -30,7 +30,7 @@ namespace Assets.Scripts.System
         public static LevelController Instance { get; private set; }
 
         private Intro _introComponent;
-        private global::Assets.Scripts.BotV3.BotOrchestrator _botOrchestrator;
+        private global::Assets.Scripts.Bot.BotOrchestrator _botOrchestrator;
 
         private void Awake()
         {
@@ -222,10 +222,10 @@ namespace Assets.Scripts.System
             return _timeScale;
         }
 
-        private global::Assets.Scripts.BotV3.BotOrchestrator GetBotOrchestrator()
+        private global::Assets.Scripts.Bot.BotOrchestrator GetBotOrchestrator()
         {
             if (_botOrchestrator == null)
-                _botOrchestrator = FindAnyObjectByType<global::Assets.Scripts.BotV3.BotOrchestrator>(FindObjectsInactive.Include);
+                _botOrchestrator = FindAnyObjectByType<global::Assets.Scripts.Bot.BotOrchestrator>(FindObjectsInactive.Include);
 
             return _botOrchestrator;
         }

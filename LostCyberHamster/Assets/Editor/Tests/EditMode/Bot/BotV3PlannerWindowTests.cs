@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Assets.Scripts.BotV3;
+using Assets.Scripts.Bot;
 using Assets.Scripts.Common.Models;
 using NUnit.Framework;
 
