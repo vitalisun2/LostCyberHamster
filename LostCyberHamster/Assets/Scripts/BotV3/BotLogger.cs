@@ -14,9 +14,14 @@ namespace Assets.Scripts.BotV3
         [global::System.ThreadStatic]
         private static StringBuilder _sharedBuilder;
 
+        /// <summary>
+        /// Логирует выбранную ветку: цепочка шагов + агрегированные метрики.
+        /// </summary>
         public static void LogPlanSelected(BranchCandidate branch)
         {
             var sb = AcquireBuilder();
+
+            // Цепочка шагов с параметрами
             sb.Append("[BotV3 PLAN] Selected: ");
             for (int i = 0; i < branch.Steps.Count; i++)
             {
@@ -31,6 +36,7 @@ namespace Assets.Scripts.BotV3
                   .Append(" reason=\"").Append(s.Reason).Append("\")");
             }
 
+            // Агрегированные метрики ветки
             sb.Append(" | safe=").Append(branch.Outcome.AllStepsSafe)
               .Append(" energy=").Append(branch.Outcome.TotalEnergyCost)
               .Append(" depth=").Append(branch.Steps.Count);
@@ -51,6 +57,9 @@ namespace Assets.Scripts.BotV3
                 $" deferUntil={decisionWorldShift:F1}");
         }
 
+        /// <summary>
+        /// Логирует кандидатов действий для препятствия: контекст, результаты стратегий, причины отказов.
+        /// </summary>
         public static void LogActionCandidates(
             ObstacleInfo obstacle,
             IReadOnlyList<(BotAction action, bool added, string rejectReason)> candidates,
@@ -58,6 +67,8 @@ namespace Assets.Scripts.BotV3
             string logScope)
         {
             var sb = AcquireBuilder();
+
+            // Контекст препятствия и состояния хомяка
             sb.Append("[BotV3 GEN] ").Append(obstacle.Type)
               .Append(" id=").Append(obstacle.StableId)
               .Append(" dist=").Append(obstacle.DistanceToHamster.ToString("F1"))
@@ -69,9 +80,11 @@ namespace Assets.Scripts.BotV3
               .Append(" scope=").Append(string.IsNullOrEmpty(logScope) ? "unspecified" : logScope)
               .Append(" |");
 
+            // Краткий статус каждого кандидата
             foreach (var (action, added, _) in candidates)
                 sb.Append(' ').Append(action).Append('=').Append(added);
 
+            // Причины отказа для отклонённых
             foreach (var (action, added, rejectReason) in candidates)
                 if (!added && !string.IsNullOrEmpty(rejectReason))
                     sb.Append(" [").Append(action).Append(" rejected: ").Append(rejectReason).Append(']');

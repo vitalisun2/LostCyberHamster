@@ -12,6 +12,9 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public class SnapshotBuilder
     {
+        /// <summary>
+        /// Строит snapshot: состояние хомяка + видимые объекты в пределах камеры.
+        /// </summary>
         public BotSceneSnapshot Build(Hamster hamster)
         {
             var snapshot = new BotSceneSnapshot
@@ -29,11 +32,15 @@ namespace Assets.Scripts.BotV3
             return snapshot;
         }
 
+        /// <summary>
+        /// Сканирует spawned-препятствия в пределах камеры и добавляет в snapshot.
+        /// </summary>
         private static void ScanObstacles(Hamster hamster, BotSceneSnapshot snapshot)
         {
             var spawner = ObstacleSpawner.Instance;
             if (spawner == null) return;
 
+            // Определить видимую область камеры
             var cam = Camera.main;
             if (cam == null) return;
 
@@ -44,6 +51,7 @@ namespace Assets.Scripts.BotV3
 
             float hamsterRightX = hamster.RightX;
 
+            // Собрать видимые препятствия
             var spawned = spawner.SpawnedObstacles;
             for (int i = 0; i < spawned.Count; i++)
             {
@@ -69,6 +77,7 @@ namespace Assets.Scripts.BotV3
                     obs.GetInstanceID()));
             }
 
+            // Отсортировать по LeftX для стабильного порядка обработки
             snapshot.VisibleObjects.Sort((a, b) => a.LeftX.CompareTo(b.LeftX));
         }
 

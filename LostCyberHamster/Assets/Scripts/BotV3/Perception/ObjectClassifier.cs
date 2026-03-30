@@ -9,6 +9,9 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public class ObjectClassifier
     {
+        /// <summary>
+        /// Создаёт новый snapshot с классифицированными объектами.
+        /// </summary>
         public BotSceneSnapshot Classify(BotSceneSnapshot snapshot)
         {
             var classifiedSnapshot = CreateSnapshotShell(snapshot, snapshot.VisibleObjects.Count);

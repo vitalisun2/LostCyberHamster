@@ -10,14 +10,19 @@ namespace Assets.Scripts.BotV3
     {
         private const float PassedObstacleMargin = 0.4f;
 
+        /// <summary>
+        /// Проецирует snapshot на заданный worldShift: сдвигает координаты объектов и отбрасывает пройденные.
+        /// </summary>
         public BotSceneSnapshot ProjectSnapshot(BotSceneSnapshot source, float worldShift)
         {
+            // Создать projected snapshot с базовым состоянием хомяка
             var projected = new BotSceneSnapshot();
             projected.CopyFrom(source);
             projected.SnapshotTime = source.SnapshotTime;
 
             float hamsterRightX = source.HamsterRightX;
 
+            // Сдвинуть координаты объектов и отбросить пройденные
             for (int i = 0; i < source.VisibleObjects.Count; i++)
             {
                 var obs = source.VisibleObjects[i];

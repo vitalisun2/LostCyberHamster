@@ -38,11 +38,13 @@ namespace Assets.Scripts.BotV3
 
         private void OnDamage()
         {
+            // Логировать факт получения урона
             DebugManager.DiagLog(
                 $"[DAMAGE] lives={_hamster.Lives.Value} " +
                 $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
                 $"state={_hamster.HamsterState.Value}");
 
+            // Зафиксировать FAIL при гибели
             if (_hamster.Lives.Value <= 0)
             {
                 DebugManager.DiagLog("[TEST RESULT] FAIL");

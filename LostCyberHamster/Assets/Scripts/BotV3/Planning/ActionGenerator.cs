@@ -24,6 +24,9 @@ namespace Assets.Scripts.BotV3
                 _strategyByAction[strategy.Action] = strategy;
         }
 
+        /// <summary>
+        /// Генерирует шаги-кандидаты для заданной проблемы, опрашивая все стратегии.
+        /// </summary>
         public List<BranchStep> Generate(
             BotSceneSnapshot snapshot,
             ProblemDescriptor problem,
@@ -33,6 +36,7 @@ namespace Assets.Scripts.BotV3
             if (snapshot == null || problem == null)
                 return result;
 
+            // Опросить каждую стратегию
             var candidates = new List<(BotAction action, bool added, string rejectReason)>();
 
             foreach (var strategy in _strategyByAction.Values)
@@ -45,6 +49,7 @@ namespace Assets.Scripts.BotV3
                     result.Add(step);
             }
 
+            // Залогировать результаты
             if (result.Count > 0)
                 LogCandidates(problem.SourceObstacle, candidates, snapshot, logScope);
 

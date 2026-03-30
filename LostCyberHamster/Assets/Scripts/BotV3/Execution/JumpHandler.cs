@@ -40,11 +40,13 @@ namespace Assets.Scripts.BotV3
 
         public bool ShouldDelay(Hamster hamster, BranchStep step)
         {
+            // Только для малых неживых препятствий
             var target = step.TargetObstacle;
             if (target.Type != ObstacleTypeEnum.smallNotAliveRoad &&
                 target.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
                 return false;
 
+            // Найти live instance и закешировать jump shift
             var liveObstacle = LiveObstacleFinder.Find(target.StableId);
             if (liveObstacle == null)
                 return false;
@@ -53,6 +55,7 @@ namespace Assets.Scripts.BotV3
             if (_jumpWorldShift <= 0f)
                 return false;
 
+            // Проверить, будет ли overlap в зоне приземления
             bool wouldOverlap = CollisionUtils.IsOverlapAtShift(
                 hamster.transform,
                 hamster.ColliderWidth,
@@ -62,6 +65,7 @@ namespace Assets.Scripts.BotV3
             if (!wouldOverlap)
                 return false;
 
+            // Отложить, если ещё есть запас дистанции
             float liveDist = liveObstacle.transform.position.x
                            - liveObstacle.ColliderWidth * 0.5f
                            - hamster.RightX;

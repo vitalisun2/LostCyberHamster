@@ -173,12 +173,17 @@ namespace Assets.Scripts.BotV3
                     IsIdlePeriodSafe(originalSnapshot, buffer[0])));
         }
 
+        /// <summary>
+        /// Проверяет, нет ли same-lane угроз в зоне ожидания до первого fire.
+        /// </summary>
         private static bool IsIdlePeriodSafe(BotSceneSnapshot snapshot, BranchStep firstStep)
         {
+            // Вычислить расстояние ожидания до fire
             float waitTravel = firstStep.TargetObstacle.DistanceToHamster - firstStep.ExecuteAtDistance;
             if (waitTravel <= 0f)
                 return true;
 
+            // Проверить, нет ли угроз ближе порога fire
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
                 var obstacle = snapshot.VisibleObjects[i];

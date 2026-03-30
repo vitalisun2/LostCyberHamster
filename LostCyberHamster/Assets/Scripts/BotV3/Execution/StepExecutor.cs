@@ -68,6 +68,7 @@ namespace Assets.Scripts.BotV3
             if (_step == null || _step.Status != BranchStepStatus.Ready)
                 return;
 
+            // Пропустить, если момент упущен
             float dist = LiveObstacleFinder.GetDistance(_step.TargetObstacle, _hamster.RightX);
 
             if (dist < BotExecutionConsts.StepTooLateThreshold)
@@ -78,12 +79,14 @@ namespace Assets.Scripts.BotV3
                 return;
             }
 
+            // Ждать, пока дистанция не достигнет порога
             if (dist > _step.ExecuteAtDistance)
                 return;
 
             if (!CanFire())
                 return;
 
+            // Запустить действие через handler
             var handler = GetHandler(_step.Action);
             if (handler == null)
                 return;
