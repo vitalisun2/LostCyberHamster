@@ -37,11 +37,15 @@ namespace Assets.Scripts.BotV3
     /// </summary>
     public class ProblemResolver
     {
+        /// <summary>
+        /// Находит ближайшую same-lane угрозу, ещё не пройденную хомяком.
+        /// </summary>
         public ProblemDescriptor ResolveNext(BotSceneSnapshot snapshot)
         {
             if (snapshot == null)
                 return null;
 
+            // Найти ближайшую same-lane угрозу
             float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot) - BotPhysicsConsts.SafetyPadding;
             float hamsterRightX = snapshot.HamsterRightX + BotPhysicsConsts.SafetyPadding;
 
@@ -74,6 +78,7 @@ namespace Assets.Scripts.BotV3
             if (!foundThreat)
                 return null;
 
+            // Создать дескриптор проблемы
             return new ProblemDescriptor(
                 ProblemKind.ThreatCollision,
                 nextThreat,

@@ -9,6 +9,9 @@ namespace Assets.Scripts.BotV3
     {
         public BotAction Action => BotAction.SwitchLane;
 
+        /// <summary>
+        /// Пробует построить шаг SwitchLane: валидация проблемы → поиск безопасного момента → создание шага.
+        /// </summary>
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
             ProblemDescriptor problem,
@@ -18,6 +21,7 @@ namespace Assets.Scripts.BotV3
         {
             step = null;
 
+            // Валидация типа проблемы
             if (problem == null || problem.Kind != ProblemKind.ThreatCollision)
             {
                 rejectReason = "unsupported problem";
@@ -26,12 +30,14 @@ namespace Assets.Scripts.BotV3
 
             var target = problem.SourceObstacle;
 
+            // Найти первый безопасный момент для перестроения
             if (!TryFindSafeFireShift(snapshot, target, out float fireWorldShift))
             {
                 rejectReason = "no safe fire shift";
                 return false;
             }
 
+            // Создать шаг с рассчитанным таймингом
             float executeAtDistance = target.DistanceToHamster - fireWorldShift;
             if (executeAtDistance < 0f)
                 executeAtDistance = 0f;
@@ -82,6 +88,7 @@ namespace Assets.Scripts.BotV3
             bool targetLaneBottom = !snapshot.HamsterOnBottom;
             float sourceDeadlineShift = sourceTarget.DistanceToHamster - BotPhysicsConsts.SafetyPadding;
 
+            // Найти максимальный shift, при котором все угрозы на целевой полосе уже пройдут
             float fireShift = 0f;
 
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
@@ -102,6 +109,7 @@ namespace Assets.Scripts.BotV3
                     fireShift = clearShift;
             }
 
+            // Проверить, что момент fire до дедлайна source target
             if (fireShift <= sourceDeadlineShift)
             {
                 fireWorldShift = fireShift;

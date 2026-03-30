@@ -28,6 +28,7 @@ namespace Assets.Scripts.BotV3
         {
             _plan.RemoveCompletedFromHead();
 
+            // Нет ветки — очистить план и preview
             if (best == null || best.Steps.Count == 0)
             {
                 LogPlanClearedIfNeeded();
@@ -36,6 +37,7 @@ namespace Assets.Scripts.BotV3
                 return null;
             }
 
+            // Применить новый план и обновить preview
             LogPlanSelectedIfChanged(best);
             _plan.ReplaceFrom(best, best.Steps[0].Reason);
             _branchRenderer.UpdatePreview(

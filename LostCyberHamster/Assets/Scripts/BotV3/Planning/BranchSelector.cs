@@ -18,10 +18,12 @@ namespace Assets.Scripts.BotV3
         /// </summary>
         public BranchCandidate FindBestBranch(BotSceneSnapshot snapshot, ObjectClassifier classifier)
         {
+            // Определить ближайшую проблему
             var problem = _problemResolver.ResolveNext(snapshot);
             if (problem == null)
                 return null;
 
+            // Сгенерировать кандидатов и выбрать лучшую ветку
             var actions = _actionGenerator.Generate(snapshot, problem, BranchLogScopes.Root);
             return SelectBestActionBranch(snapshot, classifier, actions);
         }

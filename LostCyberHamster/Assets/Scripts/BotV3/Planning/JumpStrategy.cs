@@ -14,6 +14,9 @@ namespace Assets.Scripts.BotV3
 
         public BotAction Action => BotAction.Jump;
 
+        /// <summary>
+        /// Пробует построить шаг Jump: валидация условий → расчёт тайминга → проверка зоны приземления.
+        /// </summary>
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
             ProblemDescriptor problem,
@@ -24,6 +27,7 @@ namespace Assets.Scripts.BotV3
             step = null;
             rejectReason = null;
 
+            // Валидация: тип проблемы, размер препятствия, энергия
             if (problem == null || problem.Kind != ProblemKind.ThreatCollision)
             {
                 rejectReason = "unsupported problem";
@@ -44,6 +48,7 @@ namespace Assets.Scripts.BotV3
                 return false;
             }
 
+            // Рассчитать тайминг fire и completion
             float executeAtDistance = JumpFireDist;
             if (executeAtDistance > target.DistanceToHamster)
                 executeAtDistance = target.DistanceToHamster;
@@ -51,6 +56,7 @@ namespace Assets.Scripts.BotV3
             float fireWorldShift = target.DistanceToHamster - executeAtDistance;
             float completionWorldShift = fireWorldShift + BotPhysicsConsts.JumpLandingOffset;
 
+            // Проверить, что зона приземления свободна
             var completionSnapshot = projectedWorld.ProjectSnapshot(snapshot, completionWorldShift);
             ApplyJumpEffects(completionSnapshot, target.StableId);
 
@@ -60,6 +66,7 @@ namespace Assets.Scripts.BotV3
                 return false;
             }
 
+            // Создать шаг
             step = new BranchStep(
                 BotAction.Jump,
                 target,

@@ -20,11 +20,15 @@ namespace Assets.Scripts.BotV3
             _orchestrator = orchestrator;
         }
 
+        /// <summary>
+        /// Отрисовывает HUD-панель бота, если бот включён.
+        /// </summary>
         public void Draw()
         {
             if (!_orchestrator.IsEnabled)
                 return;
 
+            // Ленивая инициализация стиля
             if (_style == null)
             {
                 _style = new GUIStyle(GUI.skin.box)
@@ -35,22 +39,28 @@ namespace Assets.Scripts.BotV3
                 };
             }
 
+            // Форматировать и отрисовать
             string text = FormatHudText();
             var rect = new Rect(20f, 20f, 760f, 100f);
             GUI.Box(rect, text, _style);
         }
 
+        /// <summary>
+        /// Форматирует строку HUD: lane, energy, threats, plan.
+        /// </summary>
         private string FormatHudText()
         {
             if (!_orchestrator.Initialized)
                 return "BotV3 | Waiting for init...";
 
+            // Базовая информация о хомяке
             Hamster hamster = _orchestrator.Hamster;
             string lane = hamster.IsOnBottomLine.Value ? "bottom" : "top";
 
             _sb.Clear();
             _sb.Append($"BotV3 | lane={lane} energy={hamster.Energy.Value} lives={hamster.Lives.Value}");
 
+            // Количество угроз из snapshot
             var snapshot = _orchestrator.LastSnapshot;
             if (snapshot != null)
             {
@@ -63,6 +73,7 @@ namespace Assets.Scripts.BotV3
                 _sb.Append($" | T:{threats}");
             }
 
+            // Текущий план
             var plan = _orchestrator.Plan;
             if (plan.IsEmpty)
             {

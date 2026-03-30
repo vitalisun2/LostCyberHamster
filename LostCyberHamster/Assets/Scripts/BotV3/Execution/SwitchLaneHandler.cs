@@ -30,8 +30,12 @@ namespace Assets.Scripts.BotV3
 
         public bool ShouldDelay(Hamster hamster, BranchStep step) => false;
 
+        /// <summary>
+        /// Проверяет, что фактическая длительность SwitchLane совпадает с запланированной.
+        /// </summary>
         private void ValidateCompletionContract(BranchStep step)
         {
+            // Вычислить ожидаемую и фактическую длительность
             float plannedTravel = step.CompletionWorldShift - step.FireWorldShift;
             if (plannedTravel <= 0f)
                 return;
@@ -40,6 +44,7 @@ namespace Assets.Scripts.BotV3
             float actualDuration = Time.time - _execTime;
             float delta = actualDuration - expectedDuration;
 
+            // Логировать ошибку, если дрифт за пределами допуска
             if (Mathf.Abs(delta) <= BotExecutionConsts.SwitchLaneCompletionTolerance)
                 return;
 

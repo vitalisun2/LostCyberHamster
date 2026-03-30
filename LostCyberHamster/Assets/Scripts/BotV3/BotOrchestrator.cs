@@ -66,6 +66,7 @@ namespace Assets.Scripts.BotV3
             if (!IsEnabled)
                 return;
 
+            // Попытка инициализации, если ещё не готов
             if (!Initialized)
             {
                 if (Time.time >= _nextInitRetryTime)
@@ -76,6 +77,7 @@ namespace Assets.Scripts.BotV3
                 return;
             }
 
+            // Работать только в активной игре с живым хомяком
             if (GameManager == null || GameManager.State != GameState.PLAYING)
                 return;
 
@@ -87,15 +89,20 @@ namespace Assets.Scripts.BotV3
 
         private void RequestReplan() => _replanRequested = true;
 
+        /// <summary>
+        /// Один тик runtime: обновить snapshot, дождаться завершения текущего шага, перепланировать и запустить.
+        /// </summary>
         private void TickRuntime()
         {
             BotSceneSnapshot liveSnapshot = RefreshSceneState();
 
+            // Ждать завершения текущего шага
             _executor.PollCompletion();
 
             if (_executor.IsStepInProgress)
                 return;
 
+            // Перепланировать и попытаться запустить следующий шаг
             if (_replanRequested)
                 Replan(liveSnapshot);
 
@@ -109,14 +116,22 @@ namespace Assets.Scripts.BotV3
             return liveSnapshot;
         }
 
+        /// <summary>
+        /// Запускает pipeline планирования: classify → plan → передать шаг executor'у.
+        /// </summary>
         private void Replan(BotSceneSnapshot liveSnapshot)
         {
+            // Классифицировать объекты snapshot
             var classifiedSnapshot = _classifier.Classify(liveSnapshot);
             LastSnapshot = classifiedSnapshot;
+
+            // Найти лучшую ветку и применить план
             var head = _planRuntime.ApplyPlan(
                 classifiedSnapshot,
                 _planner.FindBestBranch(classifiedSnapshot, _classifier),
                 Hamster != null && Hamster.IsOnBottomLine.Value);
+
+            // Передать head-шаг executor'у
             if (head != null)
                 _executor.SetStep(head);
             else
@@ -151,14 +166,19 @@ namespace Assets.Scripts.BotV3
             DebugManager.DiagLog("[BotV3] Disabled");
         }
 
+        /// <summary>
+        /// Ищет зависимости в сцене (Hamster, GameManager) и создаёт pipeline.
+        /// </summary>
         private void TryInit()
         {
+            // Найти runtime-зависимости
             Hamster = FindAnyObjectByType<Hamster>();
             GameManager = FindAnyObjectByType<GameManager>();
 
             if (Hamster == null || GameManager == null)
                 return;
 
+            // Создать pipeline и подписаться на события
             _eventTracker = new GameEventTracker(Hamster, GameManager);
             _snapshotBuilder = new SnapshotBuilder();
             _classifier = new ObjectClassifier();

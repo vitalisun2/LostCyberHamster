@@ -21,14 +21,19 @@ namespace Assets.Scripts.BotV3
 
         public bool HasPreview => _previewSteps.Count > 0;
 
+        /// <summary>
+        /// Обновляет preview-шаги: находит первый изменившийся индекс и пересобирает хвост.
+        /// </summary>
         public void UpdatePreview(IReadOnlyList<BranchStep> steps, bool hamsterOnBottom)
         {
+            // Пустой план — очистить preview
             if (steps == null || steps.Count == 0)
             {
                 ClearPreview();
                 return;
             }
 
+            // Найти первый изменившийся шаг
             int firstChangedIndex = FindFirstChangedIndex(steps);
             if (firstChangedIndex < 0)
                 return;
@@ -36,6 +41,7 @@ namespace Assets.Scripts.BotV3
             if (firstChangedIndex == 0)
                 _initialHamsterOnBottom = hamsterOnBottom;
 
+            // Пересобрать preview начиная с изменившегося индекса
             if (firstChangedIndex < _previewSteps.Count)
                 _previewSteps.RemoveRange(firstChangedIndex, _previewSteps.Count - firstChangedIndex);
 
@@ -81,6 +87,9 @@ namespace Assets.Scripts.BotV3
             _glMaterial = null;
         }
 
+        /// <summary>
+        /// Рисует все preview-шаги через GL.LINES.
+        /// </summary>
         public void Render(Camera camera)
         {
             if (camera == null || _previewSteps.Count == 0)
@@ -90,12 +99,14 @@ namespace Assets.Scripts.BotV3
             if (_glMaterial == null)
                 return;
 
+            // Настроить GL-контекст
             _glMaterial.SetPass(0);
             GL.PushMatrix();
             GL.LoadProjectionMatrix(camera.projectionMatrix);
             GL.modelview = camera.worldToCameraMatrix;
             GL.Begin(GL.LINES);
 
+            // Нарисовать каждый шаг с убывающей прозрачностью
             bool currentOnBottom = _initialHamsterOnBottom;
             float cumulativeWorldShiftBeforeStep = 0f;
             for (int i = 0; i < _previewSteps.Count; i++)
@@ -144,12 +155,16 @@ namespace Assets.Scripts.BotV3
             }
         }
 
+        /// <summary>
+        /// Определяет bounds препятствия: сначала по live instance, если не найден — по snapshot с поправкой на время.
+        /// </summary>
         private bool TryResolveObstacleBounds(
             PreviewStep step,
             float cumulativeWorldShiftBeforeStep,
             out float leftX,
             out float rightX)
         {
+            // Попытка получить актуальные координаты из live instance
             var spawner = ObstacleSpawner.Instance;
             if (spawner != null)
             {
@@ -171,6 +186,7 @@ namespace Assets.Scripts.BotV3
                 }
             }
 
+            // Fallback: экстраполяция из snapshot-позиции с учётом прошедшего времени
             float elapsedShift = Mathf.Max(0f, Time.time - _previewStartTime) * BotPhysicsConsts.GameSpeedBase;
             leftX = step.TargetObstacle.LeftX + cumulativeWorldShiftBeforeStep - elapsedShift;
             rightX = step.TargetObstacle.RightX + cumulativeWorldShiftBeforeStep - elapsedShift;
@@ -180,6 +196,9 @@ namespace Assets.Scripts.BotV3
                    !float.IsInfinity(rightX);
         }
 
+        /// <summary>
+        /// Рисует глиф SwitchLane: вертикальная стрелка между полосами + засечки.
+        /// </summary>
         private static void DrawSwitchLaneGlyph(float xPos, bool hamsterOnBottom)
         {
             float fromY = GetLaneY(hamsterOnBottom);
@@ -188,6 +207,7 @@ namespace Assets.Scripts.BotV3
             var from = new Vector3(xPos, fromY, 0f);
             var to = new Vector3(xPos, toY, 0f);
 
+            // Основная линия + наконечник стрелки
             GL.Vertex(from);
             GL.Vertex(to);
 
@@ -197,6 +217,7 @@ namespace Assets.Scripts.BotV3
             GL.Vertex(to);
             GL.Vertex(to + (Vector3)(Quaternion.Euler(0f, 0f, -150f) * direction) * 0.35f);
 
+            // Засечки на начальной и конечной полосах
             GL.Vertex(new Vector3(xPos - 0.24f, fromY, 0f));
             GL.Vertex(new Vector3(xPos + 0.24f, fromY, 0f));
             GL.Vertex(new Vector3(xPos - 0.24f, toY, 0f));
@@ -271,6 +292,9 @@ namespace Assets.Scripts.BotV3
             }
         }
 
+        /// <summary>
+        /// Находит индекс первого шага, отличающегося от текущего preview. Возвращает -1 если нет изменений.
+        /// </summary>
         private int FindFirstChangedIndex(IReadOnlyList<BranchStep> steps)
         {
             int commonCount = Mathf.Min(_previewSteps.Count, steps.Count);
