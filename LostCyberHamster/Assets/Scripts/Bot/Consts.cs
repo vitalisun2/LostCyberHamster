@@ -26,7 +26,6 @@ namespace Assets.Scripts.Bot
         public const float JumpLandingOffset = 3.8f;
 
         // Execution
-        public const float JumpMinCompletionDelay = 0.3f;
         public const float JumpLateFallbackDistance = 0.1f;
         public const float StepTooLateThreshold = -0.3f;
         public const float SwitchLaneMinElapsed = 0.1f;
