@@ -3,43 +3,37 @@ using UnityEngine;
 namespace Assets.Scripts.BotV3
 {
     /// <summary>
-    /// Координирует runtime-план: выбор/очистку текущей ветви, executor и preview-render state.
+    /// Координирует план и preview-рендер: применяет новую ветку, очищает состояние, логирует выбор.
+    /// Не знает про executor — управление шагами на стороне вызывающего.
     /// </summary>
     internal class BotPlanRuntime
     {
         private readonly CurrentPlan _plan;
-        private readonly StepExecutor _executor;
         private readonly BotBranchRenderer _branchRenderer;
 
         private int _lastPlanTargetId;
 
-        public bool IsStepInProgress => _executor.IsStepInProgress;
         public bool HasPreview => _branchRenderer.HasPreview;
 
-        public BotPlanRuntime(CurrentPlan plan, StepExecutor executor, BotBranchRenderer branchRenderer)
+        public BotPlanRuntime(CurrentPlan plan, BotBranchRenderer branchRenderer)
         {
             _plan = plan;
-            _executor = executor;
             _branchRenderer = branchRenderer;
         }
 
-        public StepExecutionTickResult TryExecute()
-        {
-            return _executor.TryExecute();
-        }
-
-        public void RemoveCompletedFromHead()
+        /// <summary>
+        /// Применяет новый план. Возвращает head-шаг для передачи executor'у, или null если план пуст.
+        /// </summary>
+        public BranchStep ApplyPlan(BotSceneSnapshot snapshot, BranchCandidate best, bool hamsterOnBottomFallback)
         {
             _plan.RemoveCompletedFromHead();
-        }
 
-        public void ApplyPlan(BotSceneSnapshot snapshot, BranchCandidate best, bool hamsterOnBottomFallback)
-        {
             if (best == null || best.Steps.Count == 0)
             {
                 LogPlanClearedIfNeeded();
-                ClearRuntime();
-                return;
+                _plan.Clear();
+                _branchRenderer.ClearPreview();
+                return null;
             }
 
             LogPlanSelectedIfChanged(best);
@@ -48,14 +42,12 @@ namespace Assets.Scripts.BotV3
                 _plan.Steps,
                 snapshot != null ? snapshot.HamsterOnBottom : hamsterOnBottomFallback);
 
-            if (_plan.Head != null)
-                _executor.SetStep(_plan.Head);
+            return _plan.Head;
         }
 
-        public void ClearRuntime()
+        public void Clear()
         {
             _plan.Clear();
-            _executor.ClearStep();
             _branchRenderer.ClearPreview();
         }
 

@@ -7,10 +7,12 @@ namespace Assets.Scripts.BotV3
     /// Стратегия построения и проекции Jump.
     /// На первом этапе сохраняет текущую семантику одного канонического fire.
     /// </summary>
-    public class JumpStrategy
+    public class JumpStrategy : IActionStrategy
     {
         private const float JumpFireDist = 1.5f;
         private const int JumpEnergyCost = 10;
+
+        public BotAction Action => BotAction.Jump;
 
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
