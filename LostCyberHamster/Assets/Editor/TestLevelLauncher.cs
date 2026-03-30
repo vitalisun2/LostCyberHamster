@@ -26,7 +26,7 @@ namespace LostCyberHamster.Editor
         public const string TimeScaleOverrideKey = "TestLevel_TimeScale";
 
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
-        private const string TestLevelAddress = "01_New_York/Morning/test_level";
+        private const string TestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_switchlane";
 
         static TestLevelLauncher()
         {
@@ -123,7 +123,7 @@ namespace LostCyberHamster.Editor
             PlayerPrefs.SetInt(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey, interactive ? 0 : 1);
 
             if (timeScaleOverride.HasValue)
-                PlayerPrefs.SetFloat(TimeScaleOverrideKey, Mathf.Clamp(timeScaleOverride.Value, 0.1f, 2.0f));
+                PlayerPrefs.SetFloat(TimeScaleOverrideKey, Mathf.Clamp(timeScaleOverride.Value, 0.1f, 4.0f));
             else if (PlayerPrefs.HasKey(TimeScaleOverrideKey))
                 PlayerPrefs.DeleteKey(TimeScaleOverrideKey);
 

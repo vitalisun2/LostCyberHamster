@@ -29,12 +29,16 @@
 1. Создать worktree + ветку task/<slug>
 2. Реализовать изменения внутри worktree
 3. Проверить затронутые файлы: summary методов и комментарии логических единиц (см. code_conventions.md)
-4. Провалидировать и закоммитить в task/<slug>
-5. Подтянуть task/<slug> в integration-ветку и проверить в Unity
-6. Если проверка не прошла — доработать в worktree, повторить 3-5
-7. Смержить task/<slug> в main (по одной задаче за раз)
-8. Обновить integration-ветку от main
-9. Удалить worktree, локальную ветку и remote-ветку
+4. Провалидировать:
+   a. Компиляция (recompile_scripts)
+   b. Прогнать все тестовые уровни (invoke_open_unity_test_level.ps1 для каждого)
+   c. Прочитать логи (STAB → BOT → ECO), убедиться в отсутствии регрессий
+5. Закоммитить в task/<slug>
+6. Подтянуть task/<slug> в integration-ветку и проверить в Unity
+7. Если проверка не прошла — доработать в worktree, повторить 3-6
+8. Смержить task/<slug> в main (по одной задаче за раз)
+9. Обновить integration-ветку от main
+10. Удалить worktree, локальную ветку и remote-ветку
 ```
 
 ### Unity integration branch
@@ -62,11 +66,22 @@
 3. Проверить затронутые файлы: summary методов и комментарии логических единиц (см. code_conventions.md)
 4. Провалидировать:
    a. Компиляция (recompile_scripts)
-   b. Прогнать тестовый уровень (invoke_open_unity_test_level.ps1)
+   b. Прогнать все тестовые уровни (invoke_open_unity_test_level.ps1 для каждого)
    c. Прочитать логи (STAB → BOT → ECO), убедиться в отсутствии регрессий
 5. Закоммитить и запушить в task/refactoring
 6. Смержить task/refactoring в main, запушить main
 ```
+
+### Тестовые уровни бота
+
+Все тестовые уровни организованы по принципу: тип препятствия × категория угрозы × действие. Каждый паттерн покрывает конкретный edge-case с 2-3 вариациями.
+
+| Уровень | Адрес | Что тестирует |
+|---|---|---|
+| test_threat_small_notalive_road_switchlane | `01_New_York/Morning/test_threat_small_notalive_road_switchlane` | Threat smallNotAliveRoad + SwitchLane |
+| test_threat_small_notalive_road_jump | `01_New_York/Morning/test_threat_small_notalive_road_jump` | Threat smallNotAliveRoad + Jump |
+
+При валидации прогонять **все** тестовые уровни из таблицы. Дефолтная скорость при включённом боте: `BotEnabledDefaultTimeScale = 4.0`.
 
 ### Критерий завершения задачи (обязательно)
 

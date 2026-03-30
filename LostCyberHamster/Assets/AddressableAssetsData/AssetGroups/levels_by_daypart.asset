@@ -64,8 +64,24 @@ MonoBehaviour:
     - levels_daypart_Morning
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7a71b90924cf1f548957da7e0d281277
+    m_Address: 01_New_York/Morning/test_threat_small_notalive_road_switchlane
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a9f96f93e944bfe42bd4f62e007aa2b7
     m_Address: 01_New_York/Morning/level_01/intro_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cf41625be9348324494101c8834f0e37
+    m_Address: 01_New_York/Morning/test_threat_small_notalive_road_jump
     m_ReadOnly: 0
     m_SerializedLabels:
     - levels_daypart

@@ -1,7 +1,7 @@
 param(
     [int]$TimeoutSeconds = 120,
     [int]$PollMilliseconds = 250,
-    [string]$LevelAddress = '01_New_York/Morning/test_level',
+    [string]$LevelAddress = '01_New_York/Morning/test_threat_small_notalive_road_switchlane',
     [float]$TimeScale = 0
 )
 
