@@ -30,6 +30,7 @@
 **Команды:**
 - `launch_test_level` — запуск тестового уровня с ботом.
 - `recompile_scripts` — принудительная перекомпиляция скриптов (обязательно после правок .cs-файлов).
+- `regenerate_project_files` — пересоздать .csproj/.sln (вызывает `SyncVS.SyncSolution()` через рефлексию). Нужно после добавления или удаления .cs-файлов, чтобы Visual Studio Solution Explorer отразил актуальную структуру. `invoke_open_unity_test_level.ps1` вызывает это автоматически.
 
 **Результат:**
 - `test_level_response.json` с полями: `state` (running/completed/failed/busy), `testResult` (WIN/FAIL/UNKNOWN), `diagnosticLogPath`.

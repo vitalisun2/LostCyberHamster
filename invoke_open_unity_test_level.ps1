@@ -116,6 +116,15 @@ if (-not $recompileCompleted) {
     Write-Host '[warn] Explicit recompilation command is still unavailable; continuing after focus-based refresh fallback.'
 }
 
+# Regenerate .csproj/.sln so that Visual Studio Solution Explorer stays in sync
+# with the actual file structure (handles added/deleted .cs files).
+try {
+    [void](Invoke-UnityAutomationCommand -Command 'regenerate_project_files' -RunningMessage 'project files regeneration')
+}
+catch {
+    Write-Host "[warn] regenerate_project_files failed: $($_.Exception.Message)"
+}
+
 $launchResponse = Invoke-UnityAutomationCommand `
     -Command 'launch_test_level' `
     -RunningMessage 'test level launch' `
