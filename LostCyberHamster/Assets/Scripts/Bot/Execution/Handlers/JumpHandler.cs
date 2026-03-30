@@ -14,7 +14,6 @@ namespace Assets.Scripts.Bot
     /// </summary>
     internal class JumpHandler : IActionHandler, IPreFireDelayHandler
     {
-        private float _execTime;
         private float _jumpWorldShift = -1f;
 
         public void Fire(Hamster hamster, BranchStep step)
@@ -23,19 +22,11 @@ namespace Assets.Scripts.Bot
                 hamster.RoofJumpRequest.Invoke();
             else
                 hamster.JumpRequest.Invoke();
-
-            _execTime = Time.time;
         }
 
         public bool IsCompleted(Hamster hamster, BranchStep step)
         {
-            if (Time.time - _execTime < BotConsts.JumpMinCompletionDelay)
-                return false;
-
-            if (IsActiveJumpState(hamster.HamsterState.Value))
-                return false;
-
-            return true;
+            return !IsActiveJumpState(hamster.HamsterState.Value);
         }
 
         public bool ShouldDelay(Hamster hamster, BranchStep step)
@@ -96,6 +87,14 @@ namespace Assets.Scripts.Bot
                 case HamsterStateEnum.JumpFromRoof:
                 case HamsterStateEnum.JumpOnObstacleFromRoof:
                 case HamsterStateEnum.RoofJump:
+                // Damage-исходы прыжка: состояние устанавливается в момент Fire,
+                // но анимация ещё не завершена — ждём animation event.
+                case HamsterStateEnum.JumpDamageForSmallNotAlive:
+                case HamsterStateEnum.JumpDamageForSmallAlive:
+                case HamsterStateEnum.JumpDamageForBigAlive:
+                case HamsterStateEnum.JumpOnRoofDamage:
+                case HamsterStateEnum.JumpFromRoofDamage:
+                case HamsterStateEnum.RoofJumpDamage:
                     return true;
                 default:
                     return false;
