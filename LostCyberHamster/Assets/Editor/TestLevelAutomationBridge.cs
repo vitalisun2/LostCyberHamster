@@ -219,10 +219,22 @@ namespace LostCyberHamster.Editor
 
             if (string.Equals(request.command, RegenerateProjectFilesCommand, StringComparison.Ordinal))
             {
-                var syncVsType = Type.GetType("UnityEditor.SyncVS, UnityEditor");
-                var syncSolutionMethod = syncVsType?.GetMethod("SyncSolution",
-                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-                syncSolutionMethod?.Invoke(null, null);
+                if (!TryRegenerateProjectFiles(out var regenerateMessage))
+                {
+                    WriteResponse(new BridgeResponse
+                    {
+                        requestId = request.requestId,
+                        command = request.command,
+                        state = "failed",
+                        testResult = string.Empty,
+                        message = regenerateMessage,
+                        updatedAtUtc = DateTime.UtcNow.ToString("O"),
+                        diagnosticLogPath = DebugManager.GetDiagLogPath()
+                    });
+
+                    ClearActiveRequest();
+                    return;
+                }
 
                 WriteResponse(new BridgeResponse
                 {
@@ -230,7 +242,7 @@ namespace LostCyberHamster.Editor
                     command = request.command,
                     state = "completed",
                     testResult = string.Empty,
-                    message = "Unity project files regenerated.",
+                    message = regenerateMessage,
                     updatedAtUtc = DateTime.UtcNow.ToString("O"),
                     diagnosticLogPath = DebugManager.GetDiagLogPath()
                 });
@@ -356,6 +368,54 @@ namespace LostCyberHamster.Editor
             catch (Exception exception)
             {
                 errorMessage = $"Failed to read automation request: {exception.Message}";
+                return false;
+            }
+        }
+
+        private static bool TryRegenerateProjectFiles(out string message)
+        {
+            message = null;
+
+            var installationType = Type.GetType("Microsoft.Unity.VisualStudio.Editor.VisualStudioForWindowsInstallation, Unity.VisualStudio.Editor");
+            if (installationType == null)
+            {
+                message = "Unable to regenerate project files: VisualStudioForWindowsInstallation type was not found.";
+                return false;
+            }
+
+            var generatorField = installationType.GetField("_generator", BindingFlags.NonPublic | BindingFlags.Static);
+            var projectGenerator = generatorField?.GetValue(null);
+            if (projectGenerator == null)
+            {
+                message = "Unable to regenerate project files: Visual Studio package generator instance was not found.";
+                return false;
+            }
+
+            var syncMethod = projectGenerator.GetType().GetMethod("Sync", BindingFlags.Public | BindingFlags.Instance);
+            if (syncMethod == null)
+            {
+                message = $"Unable to regenerate project files: Sync() was not found on generator type '{projectGenerator.GetType().FullName}'.";
+                return false;
+            }
+
+            try
+            {
+                syncMethod.Invoke(projectGenerator, null);
+                message = $"Unity project files regenerated through {projectGenerator.GetType().Name}.Sync().";
+                return true;
+            }
+            catch (TargetInvocationException exception)
+            {
+                var inner = exception.InnerException;
+                var detail = inner == null
+                    ? exception.ToString()
+                    : $"{inner.GetType().FullName}: {inner.Message}{Environment.NewLine}{inner.StackTrace}";
+                message = $"Failed to regenerate project files: {detail}";
+                return false;
+            }
+            catch (Exception exception)
+            {
+                message = $"Failed to regenerate project files: {exception}";
                 return false;
             }
         }
