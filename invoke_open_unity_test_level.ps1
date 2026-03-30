@@ -14,6 +14,108 @@ $requestPath = Join-Path $automationPath 'test_level_request.json'
 $responsePath = Join-Path $automationPath 'test_level_response.json'
 New-Item -ItemType Directory -Path $automationPath -Force | Out-Null
 
+function Initialize-RunningObjectTableHelper {
+    if ('VisualStudioRunningObjectTableHelper' -as [type]) {
+        return
+    }
+
+    $typeDefinition = @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+
+public static class VisualStudioRunningObjectTableHelper
+{
+    [DllImport("ole32.dll")]
+    private static extern int CreateBindCtx(uint reserved, out IBindCtx ppbc);
+
+    [DllImport("ole32.dll")]
+    private static extern int GetRunningObjectTable(uint reserved, out IRunningObjectTable pprot);
+
+    public static List<string> GetMonikerNames()
+    {
+        var result = new List<string>();
+        GetRunningObjectTable(0, out var rot);
+        rot.EnumRunning(out var enumMoniker);
+        var monikers = new IMoniker[1];
+        while (enumMoniker.Next(1, monikers, IntPtr.Zero) == 0)
+        {
+            CreateBindCtx(0, out var ctx);
+            monikers[0].GetDisplayName(ctx, null, out var name);
+            result.Add(name);
+        }
+
+        return result;
+    }
+
+    public static object GetObject(string displayName)
+    {
+        GetRunningObjectTable(0, out var rot);
+        rot.EnumRunning(out var enumMoniker);
+        var monikers = new IMoniker[1];
+        while (enumMoniker.Next(1, monikers, IntPtr.Zero) == 0)
+        {
+            CreateBindCtx(0, out var ctx);
+            monikers[0].GetDisplayName(ctx, null, out var name);
+            if (!string.Equals(name, displayName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            rot.GetObject(monikers[0], out var comObject);
+            return comObject;
+        }
+
+        return null;
+    }
+}
+'@
+
+    Add-Type -TypeDefinition $typeDefinition
+}
+
+function Reload-RunningVisualStudioSolution {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$SolutionPath
+    )
+
+    Initialize-RunningObjectTableHelper
+
+    $expectedSolutionPath = [System.IO.Path]::GetFullPath($SolutionPath)
+    $monikers = [VisualStudioRunningObjectTableHelper]::GetMonikerNames() | Where-Object { $_ -like '!VisualStudio.DTE.*' }
+
+    foreach ($moniker in $monikers) {
+        $dte = $null
+        try {
+            $dte = [VisualStudioRunningObjectTableHelper]::GetObject($moniker)
+            if ($null -eq $dte) {
+                continue
+            }
+
+            $openSolutionRaw = $dte.Solution.FullName
+            if ([string]::IsNullOrWhiteSpace($openSolutionRaw)) {
+                continue
+            }
+
+            $openSolutionPath = [System.IO.Path]::GetFullPath($openSolutionRaw)
+            if (-not [string]::Equals($openSolutionPath, $expectedSolutionPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+                continue
+            }
+
+            $dte.Solution.Close($false)
+            Start-Sleep -Milliseconds 500
+            $dte.Solution.Open($expectedSolutionPath)
+            Write-Host "[completed] Reloaded open Visual Studio solution."
+            return
+        }
+        catch {
+            Write-Host "[warn] Visual Studio reload failed for moniker '$moniker': $($_.Exception.Message)"
+        }
+    }
+
+    Write-Host '[info] No running Visual Studio instance was found for this solution.'
+}
+
 function Invoke-UnityAutomationCommand {
     param(
         [Parameter(Mandatory = $true)]
@@ -120,6 +222,7 @@ if (-not $recompileCompleted) {
 # with the actual file structure (handles added/deleted .cs files).
 try {
     [void](Invoke-UnityAutomationCommand -Command 'regenerate_project_files' -RunningMessage 'project files regeneration')
+    Reload-RunningVisualStudioSolution -SolutionPath (Join-Path $projectPath 'LostCyberHamster.sln')
 }
 catch {
     Write-Host "[warn] regenerate_project_files failed: $($_.Exception.Message)"
