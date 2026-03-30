@@ -75,6 +75,12 @@
 - **Tech Done:** изменения внесены и валидация пройдена.
 - **Workflow Done:** git-цикл доведён до конца по выбранному workflow.
 
+Дополнительно обязателен **Promotion Check Done**:
+
+- Проверены новые/обновлённые пункты в `ai_workflow_lessons.md`.
+- Зрелые lessons перенесены в файл-владелец темы в `docs/rules/`.
+- В `ai_workflow_lessons.md` выставлен статус (`incubating` или `promoted`) для новых/обновлённых lessons.
+
 Для `task/refactoring` закрытие задачи допустимо только после всех пунктов:
 
 1. `git status --short` пуст на текущей ветке.
@@ -145,3 +151,4 @@ Unity YAML-ассеты практически не мержатся. Один �
 - Хэш коммита.
 - Успешность push.
 - Подтверждение `Tech Done` и `Workflow Done`.
+- Подтверждение `Promotion Check Done` (`promoted X / kept incubating Y`).
