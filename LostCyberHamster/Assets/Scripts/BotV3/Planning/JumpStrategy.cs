@@ -138,8 +138,8 @@ namespace Assets.Scripts.BotV3
                 if (obsOnBottom != snapshot.HamsterOnBottom) continue;
 
                 if (CollisionUtils.IsOverlap(
-                    hamsterLeftX - BotPhysicsConsts.SafetyPadding,
-                    hamsterRightX + BotPhysicsConsts.SafetyPadding,
+                    hamsterLeftX,
+                    hamsterRightX,
                     obs.LeftX,
                     obs.RightX))
                     return false;

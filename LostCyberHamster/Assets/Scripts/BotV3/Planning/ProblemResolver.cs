@@ -46,8 +46,8 @@ namespace Assets.Scripts.BotV3
                 return null;
 
             // Найти ближайшую same-lane угрозу
-            float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot) - BotPhysicsConsts.SafetyPadding;
-            float hamsterRightX = snapshot.HamsterRightX + BotPhysicsConsts.SafetyPadding;
+            float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot);
+            float hamsterRightX = snapshot.HamsterRightX;
 
             ObstacleInfo nextThreat = default;
             float distToThreat = float.PositiveInfinity;

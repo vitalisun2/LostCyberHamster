@@ -84,9 +84,9 @@ namespace Assets.Scripts.BotV3
             ObstacleInfo sourceTarget,
             out float fireWorldShift)
         {
-            float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot) - BotPhysicsConsts.SafetyPadding;
+            float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot);
             bool targetLaneBottom = !snapshot.HamsterOnBottom;
-            float sourceDeadlineShift = sourceTarget.DistanceToHamster - BotPhysicsConsts.SafetyPadding;
+            float sourceDeadlineShift = sourceTarget.DistanceToHamster;
 
             // Найти максимальный shift, при котором все угрозы на целевой полосе уже пройдут
             float fireShift = 0f;
