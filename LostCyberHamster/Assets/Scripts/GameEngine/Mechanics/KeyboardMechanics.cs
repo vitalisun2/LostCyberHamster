@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.BotV3;
+using Assets.Scripts.Bot;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
