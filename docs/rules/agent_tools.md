@@ -78,23 +78,17 @@
 ## 4. Тестовые паттерны и уровни
 
 **Коллекция паттернов:** `LostCyberHamster/Assets/Content/locations/level_design_templates/levels/PatternsCollection.json`
-**Тестовый уровень:** `LostCyberHamster/Assets/Content/locations/01_New_York/levels/Morning/test_level/test_level.json`
 
-**Структура паттерна:**
-```json
-{
-  "name": "bot_s4_roof_then_small_threat",
-  "description": "...",
-  "nextObstacleId": 7,
-  "obstacles": [
-    {"id": 0, "type": 2, "x": 22.2, "y": -2.8}
-  ]
-}
-```
+**Тестовые уровни (полный список в `workflow.md`, секция «Тестовые уровни бота»):**
 
+| Уровень | Адрес |
+|---|---|
+| Threat smallNotAliveRoad + SwitchLane | `01_New_York/Morning/test_threat_small_notalive_road_switchlane` |
+| Threat smallNotAliveRoad + Jump | `01_New_York/Morning/test_threat_small_notalive_road_jump` |
+
+**Именование тестовых паттернов:** `test_threat_{obstacle_type}_{action}_{NN}_{description}`.
 **Координаты:** `y = -1.8` (top lane), `y = -2.8` (bottom lane).
-**Именование stage-паттернов:** `bot_s{N}_{описание}`.
-**Ссылка из test_level.json:** `{"ref": "имя_паттерна", "spriteSeed": 0, "overrides": []}`.
+**Ссылка из level JSON:** `{"ref": "имя_паттерна", "spriteSeed": 0, "overrides": []}`.
 
 ---
 

@@ -17,11 +17,11 @@ namespace Assets.Scripts.System
         Listeners.IGameFinishListener
     {
         private const float DefaultTimeScale = 1.0f;
-        private const float BotEnabledDefaultTimeScale = 2.0f;
+        private const float BotEnabledDefaultTimeScale = 4.0f;
 
         [SerializeField]
         [FormerlySerializedAs("timeScale")]
-        [Range(0.1f, 2.0f)] // Настройка диапазона для удобства в инспекторе
+        [Range(0.1f, 4.0f)] // Настройка диапазона для удобства в инспекторе
         private float _timeScale = DefaultTimeScale; // Скорость рантайма
 
         public LevelData LevelData { get; private set; } = new();
