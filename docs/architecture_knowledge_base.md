@@ -580,46 +580,56 @@ Menu: `Tools/Migration/` — 3 шага:
 
 ---
 
-## HamsterBot Architecture (v3 - Pipeline)
+## Bot Architecture (v3 — Pipeline)
 
-> Актуальная реализация: chain planner на pipeline-компонентах.
+**Папка:** `Assets/Scripts/Bot/`
+**Оркестратор:** `BotOrchestrator.cs` (MonoBehaviour, event-driven)
 
-### Текущее состояние
+### Pipeline
 
-- Монолитный `BotChainPlanner` больше не используется.
-- Планирование разделено на независимые этапы с явными входами/выходами данных.
-- Runtime-оркестратор выполняет шаги плана и инициирует перепланирование по событиям.
+```
+SnapshotBuilder → ObjectClassifier → ProblemResolver
+    → ActionGenerator → BranchGenerator → BranchEvaluator → StepExecutor
+```
 
-### Pipeline компонентов
+1. **`SnapshotBuilder`** (`Perception/`) — собирает `BotSceneSnapshot` из живых Unity-объектов (хомяк, ObstacleSpawner, scanRange).
+2. **`ObjectClassifier`** (`Perception/`) — проставляет категории: `Target` / `Threat` / `Collectible` / `Neutral`.
+3. **`ProblemResolver`** (`Planning/`) — находит ближайшую same-lane угрозу → `ProblemDescriptor(ThreatCollision)`.
+4. **`ActionGenerator`** (`Planning/`) — опрашивает все `IActionStrategy`, возвращает список `BranchStep`-кандидатов.
+5. **`BranchGenerator`** (`Planning/`) — раскрывает first-step кандидатов в многошаговые цепочки через `ProjectedWorld`.
+6. **`BranchEvaluator`** (через `BranchSelector`) — выбирает лучшую цепочку (безопасность → ранг → профит → энергия).
+7. **`StepExecutor`** — исполняет шаги по live-дистанции; возможна отмена при изменении безопасности.
 
-1. `SnapshotBuilder` — собирает `BotSceneSnapshot` из живых Unity-объектов.
-2. `ObjectClassifier` — проставляет категории объектам (`Target` / `Threat` / `Collectible` / `Neutral`).
-3. `PlanValidator` — решает `keep tail + extend` или `full rebuild`.
-4. `ChainGenerator` — строит несколько кандидатных цепочек действий.
-5. `ChainScorer` — ранжирует кандидатов по безопасности, цене и выгоде.
-6. `PlanSelector` — выбирает итоговый `CurrentPlan`.
-7. `BotTimingPolicy` — исполняет голову очереди по таймингу.
+**Триггеры пересчёта** (в `BotOrchestrator`):
+- `VisibleObjectsChanged` — изменился набор видимых объектов
+- `StepCompleted` / `StepCancelled` — шаг завершён или отменён
+- `ManagedStateChanged` — смена состояния хомяка (Run ↔ RoofRun)
 
-`HamsterBot` выступает orchestrator-слоем: хранит текущий план, запускает pipeline и отдаёт исполнение в `BotTimingPolicy`.
+### Классификация объектов
+
+| Тип | Категория | Условие |
+|---|---|---|
+| `smallAlive` | Target | всегда |
+| `bigAlive` | Target | хомяк на крыше |
+| `bigAlive` | Threat | хомяк не на крыше |
+| `bigNotAlive`, `mediumNotAlive`, `smallNotAliveRoad`, `smallNotAliveRoadAndRoof` | Threat | всегда |
+| collectables (energetic, pizza, crystal, life, coin) | Collectible | всегда |
+
+### Зарегистрированные стратегии
+
+| Стратегия | Файл | Генерирует | Ограничение |
+|---|---|---|---|
+| `SwitchLaneStrategy` | `Strategies/SwitchLaneStrategy.cs` | `SwitchLane` | все Threat-типы |
+| `JumpStrategy` | `Strategies/JumpStrategy.cs` | `Jump` | только `smallNotAliveRoad` + `smallNotAliveRoadAndRoof` |
+
+### Ключевые константы
+
+- `JumpFireDist = 1.5f` — дистанция, при которой стреляет Jump
+- `BotConsts.JumpLandingOffset` — смещение мира к моменту приземления
+- `BotConsts.SwitchLaneDecisionTravel` — смещение к завершению перестроения
+- `ProjectedWorld.GetHamsterLeftX()` — левый край хомяка (HamsterRightX − HamsterWidth)
 
 ### Актуальные документы по боту
 
-- `docs/Planning/Bot/bot concept brainstrom` — поведенческий концепт и приоритеты принятия решений.
-- `docs/Planning/Bot/bot_architecture.md` — целевая архитектура, сущности и pipeline.
-- `docs/Planning/bot_implementation_plan.md` — план реализации и актуальный статус этапов.
-
-### Статус архивов
-
-- Промежуточные backup-документы по фазам реализации удалены как неактуальные.
-- Канонический документ со статусом внедрения: `docs/Planning/bot_implementation_plan.md`.
-
-### Критичные инварианты ActionGenerator
-
-1. **Nearest-only Jump для same-lane threats**: Jump/SuperJump генерируется ТОЛЬКО для ближайшей same-lane угрозы. Дальние угрозы обрабатываются последующими шагами цепочки после проекции.
-2. **HasCloserSameLaneThreat для targets**: Если между хомяком и cross-lane target есть same-lane threat, Jump/SuperJump к target блокируется — сначала нужно обработать ближайшую угрозу.
-3. **SwitchLaneTargetMinFireDist**: Минимальная дистанция fire SwitchLane для Target-категории (smallAlive) = `SwitchLaneReturnControlTravel + JumpFireDist` (≈3.3). Гарантирует, что после перестроения останется место для последующего Jump. Для Threat и Collectible используется стандартный `SwitchLaneLatestSafeDist` (1.5).
-
-### Тестовые паттерны бота
-
-- 25 паттернов `bot_tree_01..25` в `PatternsCollection.json` — покрывают основные сценарии tree-планирования.
-- Тестовый уровень: `test_level.json` использует все 25 паттернов с relief между ними.
+- `docs/Planning/bot_implementation_plan.md` — поэтапный roadmap (этапы 1–15), статус выполнения.
+- `docs/Planning/in-progress/bot_current_state.md` — текущие возможности бота и тестируемые сценарии.
