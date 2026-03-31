@@ -100,7 +100,13 @@ namespace Assets.Scripts.Bot
             _executor.PollCompletion();
 
             if (_executor.IsStepInProgress)
+            {
+                // Шаг в процессе — обновить preview если видимые объекты изменились,
+                // но не передавать новый шаг executor'у, чтобы не прерывать текущий.
+                if (_replanRequested)
+                    ReplanPreviewOnly(liveSnapshot);
                 return;
+            }
 
             // Перепланировать и попытаться запустить следующий шаг
             if (_replanRequested)
@@ -114,6 +120,20 @@ namespace Assets.Scripts.Bot
             BotSceneSnapshot liveSnapshot = _snapshotBuilder.Build(Hamster);
             _visibleObjectBaseline.Update(liveSnapshot);
             return liveSnapshot;
+        }
+
+        /// <summary>
+        /// Обновляет preview пока шаг в процессе: переплановывает, но не трогает executor.
+        /// </summary>
+        private void ReplanPreviewOnly(BotSceneSnapshot liveSnapshot)
+        {
+            var classifiedSnapshot = _classifier.Classify(liveSnapshot);
+            LastSnapshot = classifiedSnapshot;
+            _planRuntime.ApplyPlan(
+                classifiedSnapshot,
+                _planner.FindBestBranch(classifiedSnapshot, _classifier),
+                Hamster != null && Hamster.IsOnBottomLine.Value);
+            _replanRequested = false;
         }
 
         /// <summary>
