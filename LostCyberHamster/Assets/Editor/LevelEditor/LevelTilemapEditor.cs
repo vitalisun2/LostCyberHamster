@@ -377,11 +377,20 @@ public class LevelTilemapEditor : EditorWindow
             if (!tile.name.StartsWith("decor", StringComparison.OrdinalIgnoreCase))
                 continue;
 
+            // Extract rotation and scale from the tilemap transform matrix
+            var matrix = _tilemapInScene.GetTransformMatrix(cellPos);
+            var scale = matrix.lossyScale;
+            var rotation = Quaternion.LookRotation(matrix.GetColumn(2), matrix.GetColumn(1));
+            float zRotation = rotation.eulerAngles.z;
+
             decorationTiles.Add(new DecorationTile
             {
                 name = tile.name,
                 xPos = cellPos.x,
-                yPos = cellPos.y
+                yPos = cellPos.y,
+                rotation = zRotation,
+                scaleX = scale.x,
+                scaleY = scale.y
             });
         }
 
@@ -451,6 +460,17 @@ public class LevelTilemapEditor : EditorWindow
 
             var cellPos = new Vector3Int(decorTile.xPos, decorTile.yPos, 0);
             _tilemapInScene.SetTile(cellPos, tile);
+
+            // Restore rotation and scale via transform matrix
+            if (decorTile.rotation != 0f || decorTile.scaleX != 1f || decorTile.scaleY != 1f)
+            {
+                var matrix = Matrix4x4.TRS(
+                    Vector3.zero,
+                    Quaternion.Euler(0f, 0f, decorTile.rotation),
+                    new Vector3(decorTile.scaleX, decorTile.scaleY, 1f));
+                _tilemapInScene.SetTransformMatrix(cellPos, matrix);
+            }
+
             loadedCount++;
         }
 
