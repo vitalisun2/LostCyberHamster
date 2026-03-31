@@ -26,7 +26,11 @@ namespace LostCyberHamster.Editor
         public const string TimeScaleOverrideKey = "TestLevel_TimeScale";
 
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
-        private const string TestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_switchlane";
+        private const string SwitchLaneTestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_switchlane";
+        private const string JumpTestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_jump";
+
+        /// <summary>Default timescale when launching via Tools menu (interactive).</summary>
+        private const float ToolsDefaultTimeScale = 2.0f;
 
         static TestLevelLauncher()
         {
@@ -61,13 +65,18 @@ namespace LostCyberHamster.Editor
             }
         }
 
-        [MenuItem("Tools/Test Level/Launch", priority = 50)]
-        private static void LaunchTestLevel()
+        [MenuItem("Tools/Test Level/Launch SwitchLane", priority = 50)]
+        private static void LaunchSwitchLane()
         {
-            if (!TryLaunchTestLevel(interactive: true, TestLevelAddress, null, out var errorMessage))
-            {
+            if (!TryLaunchTestLevel(interactive: true, SwitchLaneTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
                 EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
-            }
+        }
+
+        [MenuItem("Tools/Test Level/Launch Jump", priority = 51)]
+        private static void LaunchJump()
+        {
+            if (!TryLaunchTestLevel(interactive: true, JumpTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
+                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
         }
 
         /// <summary>
@@ -114,7 +123,7 @@ namespace LostCyberHamster.Editor
             }
 
             string effectiveLevelAddress = string.IsNullOrWhiteSpace(levelAddress)
-                ? TestLevelAddress
+                ? SwitchLaneTestLevelAddress
                 : levelAddress.Trim();
 
             // Write override into PlayerPrefs so it survives domain reload on Play

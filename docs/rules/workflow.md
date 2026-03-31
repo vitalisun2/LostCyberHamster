@@ -81,7 +81,9 @@
 | test_threat_small_notalive_road_switchlane | `01_New_York/Morning/test_threat_small_notalive_road_switchlane` | Threat smallNotAliveRoad + SwitchLane |
 | test_threat_small_notalive_road_jump | `01_New_York/Morning/test_threat_small_notalive_road_jump` | Threat smallNotAliveRoad + Jump |
 
-При валидации прогонять **все** тестовые уровни из таблицы. Дефолтная скорость при включённом боте: `BotEnabledDefaultTimeScale = 4.0`.
+При валидации прогонять **все** тестовые уровни из таблицы.
+
+Дефолтная скорость: через `Tools` menu — `2.0` (интерактивный просмотр); через automation bridge (`invoke_open_unity_test_level.ps1`) — `4.0` (быстрый прогон).
 
 ### Критерий завершения задачи (обязательно)
 
