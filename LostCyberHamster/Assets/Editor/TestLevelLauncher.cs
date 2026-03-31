@@ -65,14 +65,14 @@ namespace LostCyberHamster.Editor
             }
         }
 
-        [MenuItem("Tools/Test Level/Launch SwitchLane", priority = 50)]
+        [MenuItem("Tools/Test Level/Launch test_threat_small_notalive_road_switchlane", priority = 50)]
         private static void LaunchSwitchLane()
         {
             if (!TryLaunchTestLevel(interactive: true, SwitchLaneTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
                 EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
         }
 
-        [MenuItem("Tools/Test Level/Launch Jump", priority = 51)]
+        [MenuItem("Tools/Test Level/Launch test_threat_small_notalive_road_jump", priority = 51)]
         private static void LaunchJump()
         {
             if (!TryLaunchTestLevel(interactive: true, JumpTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
