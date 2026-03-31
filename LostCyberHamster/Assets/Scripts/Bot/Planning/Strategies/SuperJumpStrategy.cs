@@ -1,3 +1,4 @@
+using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.Bot
