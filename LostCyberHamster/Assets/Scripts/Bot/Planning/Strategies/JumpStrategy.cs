@@ -10,7 +10,6 @@ namespace Assets.Scripts.Bot
     public class JumpStrategy : IActionStrategy
     {
         private const float JumpFireDist = 1.5f;
-        private const int JumpEnergyCost = 10;
 
         public BotAction Action => BotAction.Jump;
 
@@ -42,7 +41,7 @@ namespace Assets.Scripts.Bot
                 return false;
             }
 
-            if (snapshot.Energy < JumpEnergyCost)
+            if (snapshot.Energy < BotConsts.JumpEnergyCost)
             {
                 rejectReason = "not enough energy";
                 return false;
@@ -73,7 +72,7 @@ namespace Assets.Scripts.Bot
                 executeAtDistance,
                 fireWorldShift,
                 completionWorldShift,
-                JumpEnergyCost,
+                BotConsts.JumpEnergyCost,
                 $"Jump over {target.Type}");
             return true;
         }
@@ -116,7 +115,7 @@ namespace Assets.Scripts.Bot
         private static void ApplyJumpEffects(BotSceneSnapshot snapshot, int targetStableId)
         {
             snapshot.HamsterOnRoof = false;
-            snapshot.Energy -= JumpEnergyCost;
+            snapshot.Energy -= BotConsts.JumpEnergyCost;
             if (snapshot.Energy < 0)
                 snapshot.Energy = 0;
 

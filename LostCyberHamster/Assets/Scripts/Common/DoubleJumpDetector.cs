@@ -4,7 +4,7 @@ namespace Assets.Scripts.Common
 {
     public class DoubleJumpDetector
     {
-        private const float DoubleJumpThreshold = 0.3f;
+        internal const float DoubleJumpThreshold = 0.3f;
 
         private float _lastJumpTime = -999f;
         private int _jumpCount;

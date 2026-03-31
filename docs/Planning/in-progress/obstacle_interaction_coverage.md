@@ -217,7 +217,7 @@
 
 | ID | Описание | Статус | Документ |
 |---|---|---|---|
-| T-1 | SuperJump для `bigAlive` (forced) | 📋 В очереди | [task_bot_bigalive_superjump.md](task_bot_bigalive_superjump.md) |
+| T-1 | SuperJump для `bigAlive` (forced) | ✅ Выполнено | [task_bot_bigalive_superjump.md](task_bot_bigalive_superjump.md) |
 | T-2 | JumpOnRoof для `bigNotAlive`/`mediumNotAlive` | 🔮 Запланировано | — |
 | T-3 | Roof coverage: `smallNotAliveRoadAndRoof` на крыше | 🔮 Запланировано | — |
 | T-4 | RunFromRoof safety planning | 🔮 Запланировано | — |
@@ -232,9 +232,9 @@
 
 ### Задачи-угрозы (Threat coverage)
 
-**T-1. SuperJump для bigAlive (forced)**
-См. подробности: [task_bot_bigalive_superjump.md](task_bot_bigalive_superjump.md)
-- Добавить `BotAction.SuperJump`, `SuperJumpStrategy`, `SuperJumpHandler`
+**T-1. SuperJump для bigAlive (forced)** ✅
+Выполнено. Файл задачи удалён, история в git: [task_bot_bigalive_superjump.md](task_bot_bigalive_superjump.md)
+- `BotAction.SuperJump`, `SuperJumpStrategy`, `SuperJumpHandler` реализованы
 - Покрывает: `bigAlive` → SuperJumpOver когда SwitchLane недоступен
 
 **T-2. JumpOnRoof для bigNotAlive / mediumNotAlive**

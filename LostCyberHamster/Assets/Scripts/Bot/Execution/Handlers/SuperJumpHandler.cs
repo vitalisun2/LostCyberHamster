@@ -1,3 +1,4 @@
+using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -8,13 +9,13 @@ namespace Assets.Scripts.Bot
     /// <summary>
     /// Обработчик действия SuperJump: эмулирует двойной тап игрока.
     /// Fire() — первый тап (JumpRequest, Run → hamster_jump).
-    /// Update() — отложенный второй тап (SuperJumpRequest) на середине окна DoubleJumpDetector (0.15 с).
+    /// Update() — отложенный второй тап (SuperJumpRequest) на середине окна DoubleJumpDetector.
     /// </summary>
     internal class SuperJumpHandler : IActionHandler, IUpdatableHandler
     {
-        private const float SecondTapDelay = 0.15f; // половина DoubleJumpDetector.DoubleJumpThreshold (0.3)
+        private const float SecondTapDelay = DoubleJumpDetector.DoubleJumpThreshold / 2f;
 
-        private float _fireTime;
+        private float _fireTime = -999f;
         private bool _secondTapFired;
 
         public void Fire(Hamster hamster, BranchStep step)
