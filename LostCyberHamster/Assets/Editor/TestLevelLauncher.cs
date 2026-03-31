@@ -28,6 +28,7 @@ namespace LostCyberHamster.Editor
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string SwitchLaneTestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_switchlane";
         private const string JumpTestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_jump";
+        private const string SuperJumpBigAliveTestLevelAddress = "01_New_York/Morning/test_threat_bigalive_superjump";
 
         /// <summary>Default timescale when launching via Tools menu for interactive visual inspection.</summary>
         private const float ToolsDefaultTimeScale = 1.0f;
@@ -76,6 +77,13 @@ namespace LostCyberHamster.Editor
         private static void LaunchJump()
         {
             if (!TryLaunchTestLevel(interactive: true, JumpTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
+                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
+        }
+
+        [MenuItem("Tools/Test Level/Launch test_threat_bigalive_superjump", priority = 52)]
+        private static void LaunchSuperJumpBigAlive()
+        {
+            if (!TryLaunchTestLevel(interactive: true, SuperJumpBigAliveTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
                 EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
         }
 

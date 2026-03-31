@@ -88,6 +88,14 @@ MonoBehaviour:
     - levels_daypart_Morning
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dc62ca6c4d394025a30f598dd01e408c
+    m_Address: 01_New_York/Morning/test_threat_bigalive_superjump
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f23755e54d47f814f8c58115d4211060
     m_Address: 01_New_York/Morning/level_02
     m_ReadOnly: 0

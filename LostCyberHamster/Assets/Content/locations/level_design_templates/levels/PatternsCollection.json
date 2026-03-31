@@ -10586,6 +10586,114 @@
                     "y": -2.8
                 }
             ]
+        },
+        {
+            "name": "test_threat_bigalive_superjump_01_forced_bottom",
+            "description": "bigAlive: forced SuperJump from bottom — top lane blocked by bigNotAlive, 3 reps",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_businessman",
+                    "type": 1,
+                    "x": 10.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 8.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_businessman",
+                    "type": 1,
+                    "x": 22.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 20.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_businessman",
+                    "type": 1,
+                    "x": 34.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 32.0,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "test_threat_bigalive_superjump_02_forced_top",
+            "description": "bigAlive: forced SuperJump from top — bottom lane blocked by bigNotAlive, 3 reps",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_businessman",
+                    "type": 1,
+                    "x": 10.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 8.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_businessman",
+                    "type": 1,
+                    "x": 22.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 20.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_businessman",
+                    "type": 1,
+                    "x": 34.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 32.0,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "test_threat_bigalive_superjump_03_superjump_then_jump",
+            "description": "bigAlive: forced SuperJump + immediate smallNotAliveRoad after landing — tests SuperJump+Jump chain",
+            "obstacles": [
+                {
+                    "spriteName": "obstacle_new_york_businessman",
+                    "type": 1,
+                    "x": 10.0,
+                    "y": -2.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_car_1",
+                    "type": 4,
+                    "x": 8.0,
+                    "y": -1.8
+                },
+                {
+                    "spriteName": "obstacle_new_york_manhole",
+                    "type": 2,
+                    "x": 16.0,
+                    "y": -2.8
+                }
+            ]
         }
     ]
 }

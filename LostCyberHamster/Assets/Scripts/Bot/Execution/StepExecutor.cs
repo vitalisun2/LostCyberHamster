@@ -29,6 +29,7 @@ namespace Assets.Scripts.Bot
             {
                 { BotAction.SwitchLane, new SwitchLaneHandler() },
                 { BotAction.Jump, new JumpHandler() },
+                { BotAction.SuperJump, new SuperJumpHandler() },
             };
         }
 

@@ -17,6 +17,7 @@ namespace Assets.Scripts.Bot
             {
                 new SwitchLaneStrategy(),
                 new JumpStrategy(),
+                new SuperJumpStrategy(),
             };
 
             _strategyByAction = new Dictionary<BotAction, IActionStrategy>();
