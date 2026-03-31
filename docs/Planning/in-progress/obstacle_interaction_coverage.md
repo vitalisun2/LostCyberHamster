@@ -20,23 +20,26 @@
 Зарегистрированы в `StepExecutor`: `SwitchLane`, `Jump`.  
 Отсутствует: `SuperJump` — ни стратегии, ни хэндлера нет.
 
+> Важно: `SuperJump` нужен только там, где обычный `Jump` неэффективен или невозможен (напр. `bigAlive`). Для малых препятствий (`smallNotAliveRoad`) SuperJump выполним, но бесполезен — трата энергии без профита.
+
 ---
 
 ## 1. Угрозы (Threat)
 
-### 1.1 smallNotAliveRoad
+### 1.1 smallNotAliveRoad ✅ полностью покрыт
 Расположение: только на дороге (road/bottom или road/top).
 
 ```
 [Хомяк на Road — obstacle на той же дорожке]
 ├── SwitchLane → избегаем, уходим на другую дорожку        ✅
-├── Jump → JumpOver                                         ✅
-└── SuperJump → SuperJumpOver                               ❌
+└── Jump → JumpOver                                         ✅
+    SuperJump физически возможен, но не нужен — тратит энергию без выгоды.
 
 [Хомяк на Roof — smallNotAliveRoad на дороге]
     Хомяк на крыше не пересекается с road-level объектами.
     Угрозой становится при RunFromRoof-спуске на эту дорожку.
     ❌ Бот не учитывает это при планировании спуска с крыши.
+    (Попадает в T-4: RunFromRoof safety planning.)
 ```
 
 ### 1.2 smallNotAliveRoadAndRoof
@@ -195,8 +198,8 @@
 
 | Объект | Позиция хомяка | SwitchLane | Jump | SuperJump | RoofJump | SuperRoofJump |
 |---|---|---|---|---|---|---|
-| smallNotAliveRoad | Road same lane | ✅ | ✅ JumpOver | ❌ | n/a | n/a |
-| smallNotAliveRoadAndRoof | Road same lane | ✅ | ✅ JumpOver | ❌ | n/a | n/a |
+| smallNotAliveRoad | Road same lane | ✅ | ✅ JumpOver | — не нужен | n/a | n/a |
+| smallNotAliveRoadAndRoof | Road same lane | ✅ | ✅ JumpOver | — не нужен | n/a | n/a |
 | smallNotAliveRoadAndRoof | Roof same roof | ⚠️ | ⚠️ RoofJump | n/a | ❌ | ❌ |
 | bigNotAlive | Road same lane | ✅ | ❌ JumpOnRoof | ❌ | n/a | n/a |
 | mediumNotAlive | Road same lane | ✅ | ❌ JumpOnRoof | ❌ | n/a | n/a |
@@ -208,20 +211,33 @@
 
 ---
 
-## Задачи на расширение логики бота
+## Roadmap задач по расширению покрытия
 
-Приоритет — снизу вверх: сначала базовые угрозы, потом target/collectible/roof.
+Задачи увеличивают покрытие ситуаций обработки ботом. Каждая задача = изменения в коде + тестовый уровень.
+
+| ID | Описание | Статус | Документ |
+|---|---|---|---|
+| T-1 | SuperJump для `bigAlive` (forced) | 📋 В очереди | [task_bot_bigalive_superjump.md](task_bot_bigalive_superjump.md) |
+| T-2 | JumpOnRoof для `bigNotAlive`/`mediumNotAlive` | 🔮 Запланировано | — |
+| T-3 | Roof coverage: `smallNotAliveRoadAndRoof` на крыше | 🔮 Запланировано | — |
+| T-4 | RunFromRoof safety planning | 🔮 Запланировано | — |
+| T-5 | Target planning для `smallAlive` | 🔮 Запланировано | — |
+| T-6 | Target planning для `bigAlive` (с крыши) | 🔮 Запланировано | — |
+| T-7 | Сбор Collectible с другой дорожки | 🔮 Запланировано | — |
+| T-8 | Приоритизация Collectible vs Threat | 🔮 Запланировано | — |
+
+---
+
+## Детали задач
 
 ### Задачи-угрозы (Threat coverage)
 
-**T-1. Добавить SuperJump-стратегию**
-- Добавить `BotAction.SuperJump` в enum
-- Реализовать `SuperJumpStrategy : IActionStrategy`
-- Добавить `SuperJumpHandler` → стреляет `SuperJumpRequest` (с дороги) или `SuperRoofJumpRequest` (с крыши)
-- Зарегистрировать в `StepExecutor`
-- Покрывает: `smallNotAliveRoad` (SuperJumpOver), `smallNotAliveRoadAndRoof` (SuperJumpOver), `bigAlive` (SuperJumpOver)
+**T-1. SuperJump для bigAlive (forced)**
+См. подробности: [task_bot_bigalive_superjump.md](task_bot_bigalive_superjump.md)
+- Добавить `BotAction.SuperJump`, `SuperJumpStrategy`, `SuperJumpHandler`
+- Покрывает: `bigAlive` → SuperJumpOver когда SwitchLane недоступен
 
-**T-2. Добавить JumpOnRoof-стратегию для bigNotAlive / mediumNotAlive**
+**T-2. JumpOnRoof для bigNotAlive / mediumNotAlive**
 - Расширить `JumpStrategy` или создать отдельную стратегию
 - `IsSmallObstacle` → заменить на явное разделение: small → JumpOver, big → JumpOnRoof
 - JumpStrategy должна строить шаг с семантикой JumpOnRoof и проекцией `HamsterOnRoof=true`
@@ -229,11 +245,13 @@
 - Покрывает: `bigNotAlive`, `mediumNotAlive` → JumpOnRoof
 
 **T-3. Roof coverage: smallNotAliveRoadAndRoof на крыше**
+
 - Исправить `JumpStrategy.ApplyJumpEffects`: при `HamsterOnRoof=true` не обнулять `HamsterOnRoof`
 - Проекция после RoofJump должна сохранять `HamsterOnRoof=true` если приземление на следующую крышу
 - Добавить тестовый уровень для этого сценария
 
 **T-4. RunFromRoof safety planning**
+
 - При планировании JumpOnRoof проверять, что зона RunFromRoof (~1.9u) чиста от угроз
 - Реализовать в проекции `BranchGenerator`: после JumpOnRoof добавить виртуальный шаг `RunFromRoof`
   и проверит его безопасность
