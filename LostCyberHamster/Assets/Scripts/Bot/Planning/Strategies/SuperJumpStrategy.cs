@@ -11,6 +11,13 @@ namespace Assets.Scripts.Bot
     {
         private const float SuperJumpFireDist = 1.5f;
 
+        private readonly float _landingOffset;
+
+        public SuperJumpStrategy(float landingOffset)
+        {
+            _landingOffset = landingOffset;
+        }
+
         public BotAction Action => BotAction.SuperJump;
 
         /// <summary>
@@ -57,7 +64,7 @@ namespace Assets.Scripts.Bot
                 executeAtDistance = target.DistanceToHamster;
 
             float fireWorldShift = target.DistanceToHamster - executeAtDistance;
-            float completionWorldShift = fireWorldShift + BotConsts.SuperJumpLandingOffset;
+            float completionWorldShift = fireWorldShift + _landingOffset;
 
             var completionSnapshot = projectedWorld.ProjectSnapshot(snapshot, completionWorldShift);
             ApplySuperJumpEffects(completionSnapshot, target.StableId);

@@ -25,11 +25,8 @@ namespace Assets.Scripts.Bot
         /// <summary>Примерное расстояние, на которое хомяк улетает при Jump (world units).</summary>
         public const float JumpLandingOffset = 3.8f;
 
-        /// <summary>Длительность клипа SuperJump (секунды).</summary>
-        public const float SuperJumpClipDuration = 1.2f;
-
-        /// <summary>Расстояние полёта SuperJump (world units): клип × базовая скорость.</summary>
-        public const float SuperJumpLandingOffset = SuperJumpClipDuration * GameSpeedBase;
+        /// <summary>Имя клипа SuperJump для получения runtime shift через GetWorldShiftForClip.</summary>
+        public const string SuperJumpClipName = "transform_super_jump";
 
         /// <summary>Стоимость энергии за обычный Jump.</summary>
         public const int JumpEnergyCost = 10;

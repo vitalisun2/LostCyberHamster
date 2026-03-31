@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Assets.Scripts.Common;
+using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.GameManagerLogic;
@@ -198,11 +200,15 @@ namespace Assets.Scripts.Bot
             if (Hamster == null || GameManager == null)
                 return;
 
+            // Получить runtime shift для SuperJump из анимационного клипа
+            var animController = Hamster.GetComponentInChildren<TransformAnimatorController>();
+            float superJumpShift = HelpMethods.GetWorldShiftForClip(animController, BotConsts.SuperJumpClipName);
+
             // Создать pipeline и подписаться на события
             _eventTracker = new GameEventTracker(Hamster, GameManager);
             _snapshotBuilder = new SnapshotBuilder();
             _classifier = new ObjectClassifier();
-            _planner = new BranchSelector();
+            _planner = new BranchSelector(superJumpShift);
             _executor = new StepExecutor(Hamster);
             _executor.OnStepCompleted += RequestReplan;
             _visibleObjectBaseline.OnBaselineChanged += RequestReplan;

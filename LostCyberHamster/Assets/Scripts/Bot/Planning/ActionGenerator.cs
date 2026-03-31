@@ -11,13 +11,13 @@ namespace Assets.Scripts.Bot
         private readonly ProjectedWorld _projectedWorld = new ProjectedWorld();
         private readonly Dictionary<BotAction, IActionStrategy> _strategyByAction;
 
-        public ActionGenerator()
+        public ActionGenerator(float superJumpLandingOffset = 4.56f)
         {
             var strategies = new IActionStrategy[]
             {
                 new SwitchLaneStrategy(),
                 new JumpStrategy(),
-                new SuperJumpStrategy(),
+                new SuperJumpStrategy(superJumpLandingOffset),
             };
 
             _strategyByAction = new Dictionary<BotAction, IActionStrategy>();

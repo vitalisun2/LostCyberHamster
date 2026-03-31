@@ -9,9 +9,14 @@ namespace Assets.Scripts.Bot
     /// </summary>
     public class BranchSelector
     {
-        private readonly ActionGenerator _actionGenerator = new ActionGenerator();
+        private readonly ActionGenerator _actionGenerator;
         private readonly BranchGenerator _branchGenerator = new BranchGenerator();
         private readonly ProblemResolver _problemResolver = new ProblemResolver();
+
+        public BranchSelector(float superJumpLandingOffset = 4.56f)
+        {
+            _actionGenerator = new ActionGenerator(superJumpLandingOffset);
+        }
 
         /// <summary>
         /// Возвращает лучшую ветвь действий для текущего снимка, или null если действовать не нужно.
