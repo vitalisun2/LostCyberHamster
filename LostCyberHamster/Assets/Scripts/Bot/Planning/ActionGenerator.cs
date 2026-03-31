@@ -11,7 +11,7 @@ namespace Assets.Scripts.Bot
         private readonly ProjectedWorld _projectedWorld = new ProjectedWorld();
         private readonly Dictionary<BotAction, IActionStrategy> _strategyByAction;
 
-        public ActionGenerator(float superJumpLandingOffset = 4.56f)
+        public ActionGenerator(float superJumpLandingOffset = BotConsts.SuperJumpLandingOffsetFallback)
         {
             var strategies = new IActionStrategy[]
             {

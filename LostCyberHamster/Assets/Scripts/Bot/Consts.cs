@@ -28,6 +28,12 @@ namespace Assets.Scripts.Bot
         /// <summary>Имя клипа SuperJump для получения runtime shift через GetWorldShiftForClip.</summary>
         public const string SuperJumpClipName = "transform_super_jump";
 
+        /// <summary>
+        /// Fallback для SuperJump landing offset в EditMode-тестах, где нет runtime AnimatorController.
+        /// В runtime не используется — BotOrchestrator передаёт точное значение из клипа.
+        /// </summary>
+        public const float SuperJumpLandingOffsetFallback = 4.56f;
+
         /// <summary>Стоимость энергии за обычный Jump.</summary>
         public const int JumpEnergyCost = 10;
 
