@@ -141,7 +141,8 @@ namespace Assets.Scripts.System
                     float worldX = tile.xPos * Consts.GridSnapStep;
                     float worldY = tile.yPos * Consts.GridSnapStep;
 
-                    var go = CreateDecorationObject(tile.name, sprite, worldX, worldY);
+                    var go = CreateDecorationObject(tile.name, sprite, worldX, worldY,
+                        tile.rotation, tile.scaleX, tile.scaleY);
 
                     _decorations.Add(new DecorationInstance
                     {
@@ -152,11 +153,14 @@ namespace Assets.Scripts.System
             }
         }
 
-        private GameObject CreateDecorationObject(string name, Sprite sprite, float worldX, float worldY)
+        private GameObject CreateDecorationObject(string name, Sprite sprite, float worldX, float worldY,
+            float rotation, float scaleX, float scaleY)
         {
             var go = new GameObject($"Decor_{name}");
             go.transform.SetParent(_container);
             go.transform.position = new Vector3(worldX, worldY, 0f);
+            go.transform.rotation = Quaternion.Euler(0f, 0f, rotation);
+            go.transform.localScale = new Vector3(scaleX, scaleY, 1f);
 
             var renderer = go.AddComponent<SpriteRenderer>();
             SpriteRendererMaterialHelper.ApplySpriteWithDefaultMaterial(renderer, sprite);
