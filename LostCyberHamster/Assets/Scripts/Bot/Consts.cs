@@ -25,6 +25,12 @@ namespace Assets.Scripts.Bot
         /// <summary>Примерное расстояние, на которое хомяк улетает при Jump (world units).</summary>
         public const float JumpLandingOffset = 3.8f;
 
+        /// <summary>Расстояние полёта SuperJump: клип 1.2s × GameSpeedBase 3.8 = 4.56 world units.</summary>
+        public const float SuperJumpLandingOffset = 4.56f;
+
+        /// <summary>Суммарный расход энергии на SuperJump: JumpRequest (10) + SuperJumpRequest (10).</summary>
+        public const int SuperJumpEnergyCost = 20;
+
         // Execution
         public const float JumpLateFallbackDistance = 0.1f;
         public const float StepTooLateThreshold = -0.3f;

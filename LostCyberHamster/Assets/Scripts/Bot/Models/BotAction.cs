@@ -4,6 +4,7 @@ namespace Assets.Scripts.Bot
     {
         None,
         SwitchLane,
-        Jump
+        Jump,
+        SuperJump
     }
 }

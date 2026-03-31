@@ -6,8 +6,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
     {
         private const int ENERGY_COST_JUMP = 10;
         private const int ENERGY_COST_ROOF_JUMP = 10;
-        private const int ENERGY_COST_SUPER_JUMP = 20;
-        private const int ENERGY_COST_SUPER_ROOF_JUMP = 20;
+        private const int ENERGY_COST_SUPER_JUMP = 10;
+        private const int ENERGY_COST_SUPER_ROOF_JUMP = 10;
 
         private readonly AtomicVariable<int> _energy;
         private readonly AtomicEvent _jumpRequest;
