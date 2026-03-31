@@ -655,6 +655,7 @@ public class LevelTilemapUi
     /// Applies UI visibility based on the current editor mode.
     /// Templates mode: shows pattern editing tools, hides file list and level-only elements.
     /// Level mode: shows file list, daypart, hides pattern editing tools.
+    /// Sprites palette is visible in both modes (templates for obstacles, levels for decor).
     /// </summary>
     public void ApplyModeUI(bool isTemplateMode)
     {
@@ -664,9 +665,11 @@ public class LevelTilemapUi
         SetVisible(_patternButtonsRow, isTemplateMode);
         SetVisible(_obstacleTypeDropdownField, isTemplateMode);
         SetVisible(_isCollectableOnRoofToggle, isTemplateMode);
-        SetVisible(_spritesScrollView, isTemplateMode);
-        SetVisible(_spritesLabel, isTemplateMode);
         SetVisible(_patternSearchField, isTemplateMode);
+
+        // Sprites palette — visible in both modes (templates for obstacles, levels for decor)
+        SetVisible(_spritesScrollView, true);
+        SetVisible(_spritesLabel, true);
 
         // Кнопки up/down скрыты в Templates (порядок неважен)
         SetMoveButtonsVisible(!isTemplateMode);
