@@ -28,7 +28,7 @@ namespace Assets.Scripts.Bot
         /// <summary>Расстояние полёта SuperJump: клип 1.2s × GameSpeedBase 3.8 = 4.56 world units.</summary>
         public const float SuperJumpLandingOffset = 4.56f;
 
-        /// <summary>Стоимость SuperJump в единицах энергии. Должна совпадать с EnergyMechanics.ENERGY_COST_SUPER_JUMP.</summary>
+        /// <summary>Суммарный расход энергии на SuperJump: JumpRequest (10) + SuperJumpRequest (10).</summary>
         public const int SuperJumpEnergyCost = 20;
 
         // Execution

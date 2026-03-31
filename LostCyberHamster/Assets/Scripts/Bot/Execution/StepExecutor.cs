@@ -53,7 +53,16 @@ namespace Assets.Scripts.Bot
             if (_step == null || _step.Status != BranchStepStatus.InProgress)
                 return;
 
-            if (_activeHandler == null || !_activeHandler.IsCompleted(_hamster, _step))
+            if (_activeHandler == null)
+            {
+                DebugManager.DiagLog($"[Bot EXEC] PollCompletion: _activeHandler is null for {_step.Action}!");
+                return;
+            }
+
+            if (_activeHandler is IUpdatableHandler updatable)
+                updatable.Update(_hamster, _step);
+
+            if (!_activeHandler.IsCompleted(_hamster, _step))
                 return;
 
             _step.MarkCompleted();

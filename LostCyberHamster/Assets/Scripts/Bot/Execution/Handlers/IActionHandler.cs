@@ -20,4 +20,13 @@ namespace Assets.Scripts.Bot
     {
         bool ShouldDelay(Hamster hamster, BranchStep step);
     }
+
+    /// <summary>
+    /// Per-frame тик для handler'ов с внутренним состоянием (например, отложенный второй тап).
+    /// Вызывается из StepExecutor.PollCompletion каждый кадр, пока шаг InProgress.
+    /// </summary>
+    internal interface IUpdatableHandler
+    {
+        void Update(Hamster hamster, BranchStep step);
+    }
 }

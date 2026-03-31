@@ -118,6 +118,24 @@ namespace Assets.Scripts.Bot
             snapshot.VisibleObjects.RemoveAll(o => o.StableId == targetStableId);
         }
 
+        /// <summary>
+        /// Возвращает true только для типов, которые приводят к повреждению при приземлении SuperJump.
+        /// bigNotAlive / mediumNotAlive безопасны (результат → SuperJumpOnRoof → RoofRun).
+        /// </summary>
+        private static bool IsSuperJumpLandingUnsafe(ObstacleTypeEnum type)
+        {
+            switch (type)
+            {
+                case ObstacleTypeEnum.bigAlive:
+                case ObstacleTypeEnum.smallAlive:
+                case ObstacleTypeEnum.smallNotAliveRoad:
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private static bool IsLaneClearAtCompletion(BotSceneSnapshot snapshot, int excludeId)
         {
             float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot);
@@ -127,7 +145,7 @@ namespace Assets.Scripts.Bot
             {
                 var obs = snapshot.VisibleObjects[i];
                 if (obs.StableId == excludeId) continue;
-                if (!ProjectedWorld.IsThreatType(obs.Type)) continue;
+                if (!IsSuperJumpLandingUnsafe(obs.Type)) continue;
 
                 bool obsOnBottom = !obs.IsTopLane;
                 if (obsOnBottom != snapshot.HamsterOnBottom) continue;
