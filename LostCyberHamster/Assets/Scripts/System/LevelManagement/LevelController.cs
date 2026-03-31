@@ -24,6 +24,11 @@ namespace Assets.Scripts.System
         [Range(0.1f, 4.0f)] // Настройка диапазона для удобства в инспекторе
         private float _timeScale = DefaultTimeScale; // Скорость рантайма
 
+        // True если timescale был инициализирован из PlayerPrefs override при старте play mode.
+        // В этом случае bot-detection не применяется: _timeScale отражает явное
+        // намерение лаунчера, и пользователь может менять его через инспектор напрямую.
+        private bool _launcherOverrideConsumed;
+
         public LevelData LevelData { get; private set; } = new();
         public bool IsLevelLoaded { get; private set; }
 
@@ -43,8 +48,20 @@ namespace Assets.Scripts.System
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
+            // Если TestLevelLauncher выставил override через PlayerPrefs —
+            // применяем его к _timeScale и сразу удаляем ключ.
+            // Флаг _launcherOverrideConsumed позволяет GetConfiguredTimeScale
+            // пропустить bot-detection и давать пользователю менять _timeScale в инспекторе.
+            if (AutomationRuntimePrefs.TryGetTimeScaleOverride(out float overrideTs))
+            {
+                _timeScale = Mathf.Clamp(overrideTs, 0.1f, 4.0f);
+                _launcherOverrideConsumed = true;
+                PlayerPrefs.DeleteKey(AutomationRuntimePrefs.TimeScaleOverrideKey);
+                PlayerPrefs.Save();
+            }
+
             // Устанавливаем начальную скорость игры
-            Time.timeScale = DefaultTimeScale;
+            Time.timeScale = _timeScale;
         }
 
         private void Update()
@@ -212,13 +229,19 @@ namespace Assets.Scripts.System
 
         private float GetConfiguredTimeScale()
         {
-            // PlayerPrefs override takes highest priority (set by TestLevelLauncher for manual/automation launches).
-            if (AutomationRuntimePrefs.TryGetTimeScaleOverride(out float overrideTs))
-                return overrideTs;
+            // Если при старте был применён override из TestLevelLauncher, _timeScale уже
+            // проинициализирован нужным значением и PlayerPrefs-ключ удалён.
+            // Просто возвращаем _timeScale — это позволяет пользователю менять его
+            // через инспектор в любую сторону без ограничений.
+            if (_launcherOverrideConsumed)
+                return _timeScale;
 
+            // Fallback для запуска без TestLevelLauncher (напрямую через Play):
+            // если пользователь явно изменил поле — уважаем это значение.
             if (!Mathf.Approximately(_timeScale, DefaultTimeScale))
                 return _timeScale;
 
+            // Авто-спидап при включённом боте (только без явного override).
             var bot = GetBotOrchestrator();
             if (bot != null && bot.IsEnabled)
                 return BotEnabledDefaultTimeScale;
