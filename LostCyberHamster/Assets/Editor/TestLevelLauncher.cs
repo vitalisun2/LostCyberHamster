@@ -22,15 +22,15 @@ namespace LostCyberHamster.Editor
         /// <summary>PlayerPrefs key: auto-enable Bot when test level loads.</summary>
         public const string BotAutoStartKey = "BotAutoStart";
 
-        /// <summary>PlayerPrefs key: runtime timescale override for automated test runs.</summary>
-        public const string TimeScaleOverrideKey = "TestLevel_TimeScale";
+        /// <summary>PlayerPrefs key: runtime timescale override. Shared with <see cref="Assets.Scripts.System.AutomationRuntimePrefs"/>.</summary>
+        public static string TimeScaleOverrideKey => Assets.Scripts.System.AutomationRuntimePrefs.TimeScaleOverrideKey;
 
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string SwitchLaneTestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_switchlane";
         private const string JumpTestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_jump";
 
-        /// <summary>Default timescale when launching via Tools menu (interactive).</summary>
-        private const float ToolsDefaultTimeScale = 2.0f;
+        /// <summary>Default timescale when launching via Tools menu for interactive visual inspection.</summary>
+        private const float ToolsDefaultTimeScale = 1.0f;
 
         static TestLevelLauncher()
         {

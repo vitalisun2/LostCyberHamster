@@ -14,9 +14,15 @@
 
 **Как вызвать:**
 
-Вариант A — PowerShell-скрипт (рекомендуется):
+Вариант A — запуск **всех** тестовых уровней разом (рекомендуется для валидации):
 ```powershell
-.\invoke_open_unity_test_level.ps1 -TimeoutSeconds 120 -PollMilliseconds 250
+.\invoke_run_all_test_levels.ps1 -TimeoutSeconds 120
+```
+Прогоняет все уровни из таблицы `workflow.md` (секция «Тестовые уровни бота»), компилирует один раз, печатает SUMMARY.
+
+Вариант B — запуск одного уровня:
+```powershell
+.\invoke_open_unity_test_level.ps1 -LevelAddress '01_New_York/Morning/test_threat_small_notalive_road_switchlane' -TimeoutSeconds 120
 ```
 Скрипт сам отправляет `recompile_scripts`, ждёт компиляцию, затем запускает тест.
 

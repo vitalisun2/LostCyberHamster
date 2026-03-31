@@ -212,6 +212,10 @@ namespace Assets.Scripts.System
 
         private float GetConfiguredTimeScale()
         {
+            // PlayerPrefs override takes highest priority (set by TestLevelLauncher for manual/automation launches).
+            if (AutomationRuntimePrefs.TryGetTimeScaleOverride(out float overrideTs))
+                return overrideTs;
+
             if (!Mathf.Approximately(_timeScale, DefaultTimeScale))
                 return _timeScale;
 
