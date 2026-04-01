@@ -12,14 +12,14 @@ namespace Assets.Scripts.Bot
         SwitchLane,
 
         // === Дорога: прыжки (перепрыгнуть препятствие)
-        JumpOver,           // Перепрыгнуть small препятствие (smallNotAliveRoad, smallNotAliveRoadAndRoof)
-        JumpOnRoof,         // Запрыгнуть на крышу (bigNotAlive, mediumNotAlive)
-        JumpOnTarget,       // Напрыгнуть на alive врага (smallAlive)
+        Jump,               // Прыжок: перепрыгнуть small или запрыгнуть на крышу/врага
+        JumpOnRoof,         // Запрыгнуть на крышу (bigNotAlive, mediumNotAlive) — skeleton
+        JumpOnTarget,       // Напрыгнуть на alive врага (smallAlive) — skeleton
 
         // === Дорога: суперпрыжки
-        SuperJumpOver,      // Перелететь big врага (bigAlive)
-        SuperJumpOnRoof,    // Суперпрыжком запрыгнуть на крышу (bigNotAlive, mediumNotAlive)
-        SuperJumpOnTarget,  // Суперпрыжком напрыгнуть на alive (smallAlive)
+        SuperJump,          // Суперпрыжок: перелететь big врага или запрыгнуть на крышу/врага
+        SuperJumpOnRoof,    // Суперпрыжком запрыгнуть на крышу (bigNotAlive, mediumNotAlive) — skeleton
+        SuperJumpOnTarget,  // Суперпрыжком напрыгнуть на alive (smallAlive) — skeleton
 
         // === Крыша: прыжки на крыше
         RoofJumpOver,       // Перепрыгнуть на крыше (smallNotAliveRoadAndRoof on roof)

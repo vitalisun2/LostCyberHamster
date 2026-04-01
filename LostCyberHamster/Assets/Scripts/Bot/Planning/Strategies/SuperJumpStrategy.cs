@@ -18,7 +18,7 @@ namespace Assets.Scripts.Bot
             _landingOffset = landingOffset;
         }
 
-        public BotAction Action => BotAction.SuperJumpOver;
+        public BotAction Action => BotAction.SuperJump;
 
         /// <summary>
         /// Пробует построить шаг SuperJumpOver: валидация энергии → расчёт тайминга → проверка зоны приземления.
@@ -64,7 +64,7 @@ namespace Assets.Scripts.Bot
             }
 
             step = new BranchStep(
-                BotAction.SuperJumpOver,
+                BotAction.SuperJump,
                 target,
                 executeAtDistance,
                 fireWorldShift,

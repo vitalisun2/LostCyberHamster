@@ -11,7 +11,7 @@ namespace Assets.Scripts.Bot
     {
         private const float JumpFireDist = 1.5f;
 
-        public BotAction Action => BotAction.JumpOver;
+        public BotAction Action => BotAction.Jump;
 
         /// <summary>
         /// Пробует построить шаг JumpOver: валидация энергии → расчёт тайминга → проверка зоны приземления.
@@ -60,7 +60,7 @@ namespace Assets.Scripts.Bot
 
             // Создать шаг
             step = new BranchStep(
-                BotAction.JumpOver,
+                BotAction.Jump,
                 target,
                 executeAtDistance,
                 fireWorldShift,

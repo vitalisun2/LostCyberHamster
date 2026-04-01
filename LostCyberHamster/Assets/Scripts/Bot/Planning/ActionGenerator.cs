@@ -114,40 +114,40 @@ namespace Assets.Scripts.Bot
             // === ДОРОГА (onRoof = false)
             table[(false, ObstacleTypeEnum.smallNotAliveRoad)] = new[]
             {
-                BotAction.JumpOver,
+                BotAction.Jump,
                 BotAction.SwitchLane
             };
 
             table[(false, ObstacleTypeEnum.smallNotAliveRoadAndRoof)] = new[]
             {
-                BotAction.JumpOver,
+                BotAction.Jump,
                 BotAction.SwitchLane
             };
 
             table[(false, ObstacleTypeEnum.bigAlive)] = new[]
             {
-                BotAction.SuperJumpOver,
+                BotAction.SuperJump,
                 BotAction.SwitchLane
             };
 
             table[(false, ObstacleTypeEnum.bigNotAlive)] = new[]
             {
-                BotAction.JumpOnRoof,
-                BotAction.SuperJumpOnRoof,
+                BotAction.Jump,
+                BotAction.SuperJump,
                 BotAction.SwitchLane
             };
 
             table[(false, ObstacleTypeEnum.mediumNotAlive)] = new[]
             {
-                BotAction.JumpOnRoof,
-                BotAction.SuperJumpOnRoof,
+                BotAction.Jump,
+                BotAction.SuperJump,
                 BotAction.SwitchLane
             };
 
             table[(false, ObstacleTypeEnum.smallAlive)] = new[]
             {
-                BotAction.JumpOnTarget,
-                BotAction.SuperJumpOnTarget
+                BotAction.Jump,
+                BotAction.SuperJump
             };
 
             // === КРЫША (onRoof = true)
