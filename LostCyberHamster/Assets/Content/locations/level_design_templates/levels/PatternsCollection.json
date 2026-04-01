@@ -10781,6 +10781,56 @@
           "y": -2.8
         }
       ]
+    },
+    {
+      "name": "test_threat_bigalive_04_switchlane_bottom",
+      "description": "bigAlive on bottom, top lane free — bot should choose SwitchLane over SuperJump, 3 reps",
+      "nextObstacleId": 3,
+      "obstacles": [
+        {
+          "id": 0,
+          "type": 1,
+          "x": 10.0,
+          "y": -2.8
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "x": 22.0,
+          "y": -2.8
+        },
+        {
+          "id": 2,
+          "type": 1,
+          "x": 34.0,
+          "y": -2.8
+        }
+      ]
+    },
+    {
+      "name": "test_threat_bigalive_05_switchlane_top",
+      "description": "bigAlive on top, bottom lane free — bot should choose SwitchLane over SuperJump, 3 reps",
+      "nextObstacleId": 3,
+      "obstacles": [
+        {
+          "id": 0,
+          "type": 1,
+          "x": 10.0,
+          "y": -1.8
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "x": 22.0,
+          "y": -1.8
+        },
+        {
+          "id": 2,
+          "type": 1,
+          "x": 34.0,
+          "y": -1.8
+        }
+      ]
     }
   ]
 }

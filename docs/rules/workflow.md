@@ -114,7 +114,7 @@ Integration-ветка и Unity Editor — разделяемый ресурс. 
 |---|---|---|
 | test_threat_small_notalive_road_switchlane | `01_New_York/Morning/test_threat_small_notalive_road_switchlane` | Threat smallNotAliveRoad + SwitchLane |
 | test_threat_small_notalive_road_jump | `01_New_York/Morning/test_threat_small_notalive_road_jump` | Threat smallNotAliveRoad + Jump |
-| test_threat_bigalive_superjump | `01_New_York/Morning/test_threat_bigalive_superjump` | Threat bigAlive + SuperJump (forced) |
+| test_threat_bigalive | `01_New_York/Morning/test_threat_bigalive` | Threat bigAlive: SwitchLane + SuperJump |
 
 При валидации прогонять **все** тестовые уровни из таблицы.
 
