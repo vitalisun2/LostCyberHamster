@@ -4,24 +4,24 @@ using Assets.Scripts.Common.Models;
 namespace Assets.Scripts.Bot
 {
     /// <summary>
-    /// Стратегия SuperJump: перепрыгнуть препятствие типа bigAlive, когда обычный Jump невозможен.
-    /// Применяется только для bigAlive на дороге (не с крыши — SuperRoofJump отдельная задача).
+    /// Стратегия SuperJumpOver: перепрыгивание bigAlive на дороге.
+    /// Таблица стратегий уже отфильтровала применимые типы и контекст — здесь только бизнес-логика.
     /// </summary>
-    internal class SuperJumpStrategy : IActionStrategy
+    internal class SuperJumpOverStrategy : IActionStrategy
     {
         private const float SuperJumpFireDist = 1.5f;
 
         private readonly float _landingOffset;
 
-        public SuperJumpStrategy(float landingOffset)
+        public SuperJumpOverStrategy(float landingOffset)
         {
             _landingOffset = landingOffset;
         }
 
-        public BotAction Action => BotAction.SuperJump;
+        public BotAction Action => BotAction.SuperJumpOver;
 
         /// <summary>
-        /// Пробует построить шаг SuperJump: валидация условий → расчёт тайминга → проверка зоны приземления.
+        /// Пробует построить шаг SuperJumpOver: валидация энергии → расчёт тайминга → проверка зоны приземления.
         /// </summary>
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
@@ -40,18 +40,6 @@ namespace Assets.Scripts.Bot
             }
 
             var target = problem.SourceObstacle;
-
-            if (target.Type != ObstacleTypeEnum.bigAlive)
-            {
-                rejectReason = "not bigAlive";
-                return false;
-            }
-
-            if (snapshot.HamsterOnRoof)
-            {
-                rejectReason = "on roof — use SuperRoofJump strategy";
-                return false;
-            }
 
             if (snapshot.Energy < BotConsts.SuperJumpEnergyCost)
             {
@@ -76,7 +64,7 @@ namespace Assets.Scripts.Bot
             }
 
             step = new BranchStep(
-                BotAction.SuperJump,
+                BotAction.SuperJumpOver,
                 target,
                 executeAtDistance,
                 fireWorldShift,

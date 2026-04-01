@@ -4,17 +4,17 @@ using Assets.Scripts.Common.Models;
 namespace Assets.Scripts.Bot
 {
     /// <summary>
-    /// Стратегия построения и проекции Jump.
-    /// На первом этапе сохраняет текущую семантику одного канонического fire.
+    /// Стратегия JumpOver: перепрыгивание small препятствий (smallNotAliveRoad, smallNotAliveRoadAndRoof).
+    /// Таблица стратегий уже отфильтровала применимые типы — здесь только бизнес-логика.
     /// </summary>
-    public class JumpStrategy : IActionStrategy
+    public class JumpOverStrategy : IActionStrategy
     {
         private const float JumpFireDist = 1.5f;
 
-        public BotAction Action => BotAction.Jump;
+        public BotAction Action => BotAction.JumpOver;
 
         /// <summary>
-        /// Пробует построить шаг Jump: валидация условий → расчёт тайминга → проверка зоны приземления.
+        /// Пробует построить шаг JumpOver: валидация энергии → расчёт тайминга → проверка зоны приземления.
         /// </summary>
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
@@ -26,7 +26,6 @@ namespace Assets.Scripts.Bot
             step = null;
             rejectReason = null;
 
-            // Валидация: тип проблемы, размер препятствия, энергия
             if (problem == null || problem.Kind != ProblemKind.ThreatCollision)
             {
                 rejectReason = "unsupported problem";
@@ -34,12 +33,6 @@ namespace Assets.Scripts.Bot
             }
 
             var target = problem.SourceObstacle;
-
-            if (!IsSmallObstacle(target.Type))
-            {
-                rejectReason = "not a small obstacle";
-                return false;
-            }
 
             if (snapshot.Energy < BotConsts.JumpEnergyCost)
             {
@@ -67,7 +60,7 @@ namespace Assets.Scripts.Bot
 
             // Создать шаг
             step = new BranchStep(
-                BotAction.Jump,
+                BotAction.JumpOver,
                 target,
                 executeAtDistance,
                 fireWorldShift,
@@ -104,12 +97,6 @@ namespace Assets.Scripts.Bot
                 NextState = PlannerState.FromSnapshot(completionSnapshot),
                 DebugReason = step.Reason
             };
-        }
-
-        private static bool IsSmallObstacle(ObstacleTypeEnum type)
-        {
-            return type == ObstacleTypeEnum.smallNotAliveRoad
-                || type == ObstacleTypeEnum.smallNotAliveRoadAndRoof;
         }
 
         private static void ApplyJumpEffects(BotSceneSnapshot snapshot, int targetStableId)
