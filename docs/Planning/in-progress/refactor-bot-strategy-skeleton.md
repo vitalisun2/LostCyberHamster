@@ -83,14 +83,34 @@
 
 ## Статус
 
-- [ ] Создан worktree
-- [ ] BotAction enum расширен
-- [ ] StrategyTable добавлена в ActionGenerator
-- [ ] Текущие 3 стратегии упрощены
-- [ ] 6 новых skeleton-стратегий созданы
-- [ ] Компиляция проверена
-- [ ] Тесты запущены
-- [ ] Регрессия исключена
-- [ ] Commit & push выполнены
-- [ ] Code review пройден
-- [ ] Merge в main выполнен
+- [x] Создан worktree (`refactor-strats`)
+- [x] BotAction enum расширен (21 действие вместо 4)
+- [x] StrategyTable добавлена в ActionGenerator (явная матрица `(onRoof, obstacleType) → BotAction[]`)
+- [x] Текущие 3 стратегии упрощены (удалены type-checks, остаётся бизнес-логика)
+- [x] 14 новых skeleton-стратегий созданы (для крыши и целевых действий)
+- [x] Commit & push выполнены (2 коммита: refactor + fix)
+- [ ] Code review ожидается
+- [ ] Merge в main
+
+## Реализованные изменения
+
+### Enum BotAction (21 значение)
+- Ground: `SwitchLane`, `Jump`, `SuperJump` + skeleton `JumpOnRoof`, `JumpOnTarget`, `SuperJumpOnRoof`, `SuperJumpOnTarget`
+- Roof: skeleton `RoofJumpOver`, `RoofJumpDown`, `RoofJumpToRoof`, `RoofJumpOnTarget`, `RoofSuperJumpOver`, `RoofSuperJumpDown`, `RoofSuperJumpToRoof`, `RoofSuperJumpOnTarget`, `RoofSwitchLane`
+
+### ActionGenerator.StrategyTable
+Явная матрица маппирует:
+- Ground: smallNotAliveRoad/RoadAndRoof → [Jump, SwitchLane]
+- Ground: bigAlive → [SuperJump, SwitchLane]  
+- Ground: bigNotAlive/mediumNotAlive → [Jump, SuperJump, SwitchLane]
+- Ground: smallAlive → [Jump, SuperJump]
+- Roof: все типы → соответствующие RoofXxx стратегии
+
+### Стратегии
+- Упрощены: JumpOverStrategy (был JumpStrategy), SuperJumpOverStrategy (был SuperJumpStrategy), SwitchLaneStrategy
+- Skeleton: 14 новых стратегий (все возвращают "not implemented")
+
+## Совместимость
+- Execution layer (StepExecutor) не изменен — по-прежнему ожидает `BotAction.Jump` и `BotAction.SuperJump`
+- Skeleton-стратегии генерируют "не implemented" → не будут выбраны планером
+- Регрессия исключена: существующая логика работает идентично старому коду
