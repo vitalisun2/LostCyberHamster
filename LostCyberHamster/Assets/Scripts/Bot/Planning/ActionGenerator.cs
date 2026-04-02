@@ -16,7 +16,9 @@ namespace Assets.Scripts.Bot
         // Таблица: (onRoof, obstacleType) → какие стратегии применимы
         private readonly Dictionary<(bool onRoof, ObstacleTypeEnum type), BotAction[]> _strategyTable;
 
-        public ActionGenerator(float superJumpLandingOffset = BotConsts.SuperJumpLandingOffsetFallback)
+        public ActionGenerator(
+            float superJumpLandingOffset = BotConsts.SuperJumpLandingOffsetFallback,
+            float jumpOnRoofLandingOffset = BotConsts.JumpOnRoofLandingOffsetFallback)
         {
             // Инициализировать все стратегии
             var strategies = new IActionStrategy[]
@@ -27,7 +29,7 @@ namespace Assets.Scripts.Bot
                 new SuperJumpOverStrategy(superJumpLandingOffset),
 
                 // Новые (skeleton)
-                new JumpOnRoofStrategy(),
+                new JumpOnRoofStrategy(jumpOnRoofLandingOffset),
                 new JumpOnTargetStrategy(),
                 new SuperJumpOnRoofStrategy(superJumpLandingOffset),
                 new SuperJumpOnTargetStrategy(superJumpLandingOffset),

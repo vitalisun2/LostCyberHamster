@@ -200,15 +200,16 @@ namespace Assets.Scripts.Bot
             if (Hamster == null || GameManager == null)
                 return;
 
-            // Получить runtime shift для SuperJump из анимационного клипа
+            // Получить runtime shift из анимационных клипов
             var animController = Hamster.GetComponentInChildren<TransformAnimatorController>();
             float superJumpShift = HelpMethods.GetWorldShiftForClip(animController, BotConsts.SuperJumpClipName);
+            float jumpOnRoofShift = HelpMethods.GetWorldShiftForClip(animController, BotConsts.JumpOnRoofClipName);
 
             // Создать pipeline и подписаться на события
             _eventTracker = new GameEventTracker(Hamster, GameManager);
             _snapshotBuilder = new SnapshotBuilder();
             _classifier = new ObjectClassifier();
-            _planner = new BranchSelector(superJumpShift);
+            _planner = new BranchSelector(superJumpShift, jumpOnRoofShift);
             _executor = new StepExecutor(Hamster);
             _executor.OnStepCompleted += RequestReplan;
             _visibleObjectBaseline.OnBaselineChanged += RequestReplan;

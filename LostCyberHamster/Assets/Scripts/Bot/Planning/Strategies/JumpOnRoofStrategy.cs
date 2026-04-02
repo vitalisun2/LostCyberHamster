@@ -10,6 +10,12 @@ namespace Assets.Scripts.Bot
     public class JumpOnRoofStrategy : IActionStrategy
     {
         private const float JumpFireDist = 1.5f;
+        private readonly float _landingOffset;
+
+        public JumpOnRoofStrategy(float jumpOnRoofLandingOffset = BotConsts.JumpOnRoofLandingOffsetFallback)
+        {
+            _landingOffset = jumpOnRoofLandingOffset;
+        }
 
         public BotAction Action => BotAction.JumpOnRoof;
 
@@ -46,7 +52,7 @@ namespace Assets.Scripts.Bot
                 executeAtDistance = target.DistanceToHamster;
 
             float fireWorldShift = target.DistanceToHamster - executeAtDistance;
-            float completionWorldShift = fireWorldShift + BotConsts.JumpLandingOffset;
+            float completionWorldShift = fireWorldShift + _landingOffset;
 
             // Проверить, что на крыше нет smallNotAliveRoadAndRoof в точке приземления
             var completionSnapshot = projectedWorld.ProjectSnapshot(snapshot, completionWorldShift);

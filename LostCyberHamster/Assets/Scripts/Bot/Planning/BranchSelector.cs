@@ -13,9 +13,11 @@ namespace Assets.Scripts.Bot
         private readonly BranchGenerator _branchGenerator = new BranchGenerator();
         private readonly ProblemResolver _problemResolver = new ProblemResolver();
 
-        public BranchSelector(float superJumpLandingOffset = BotConsts.SuperJumpLandingOffsetFallback)
+        public BranchSelector(
+            float superJumpLandingOffset = BotConsts.SuperJumpLandingOffsetFallback,
+            float jumpOnRoofLandingOffset = BotConsts.JumpOnRoofLandingOffsetFallback)
         {
-            _actionGenerator = new ActionGenerator(superJumpLandingOffset);
+            _actionGenerator = new ActionGenerator(superJumpLandingOffset, jumpOnRoofLandingOffset);
         }
 
         /// <summary>
