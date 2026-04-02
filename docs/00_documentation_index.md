@@ -65,7 +65,7 @@
 ### docs/Planning/level_assembly_refactor.md
 Подробная спецификация reference-based сборки уровней и миграции форматов.
 
-### docs/Planning/level_editor_ui_refactor_spec.md
+### docs/Postponed Analysis/level_editor_ui_refactor_spec.md
 Техническое задание по UI-рефакторингу Level Tilemap Editor.
 
 ### docs/Planning/sprite_loader_refactor_plan.md
