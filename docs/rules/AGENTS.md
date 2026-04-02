@@ -23,7 +23,7 @@
 3. `docs/rules/agent_tools.md` — каталог инструментов проекта
 4. `docs/rules/iteration_cycle.md` — итерационный цикл тестирования бота
 5. `docs/rules/code_conventions.md` — конвенции кода и валидация
-6. Активный план в `docs/Planning/current/`, если задача привязана к плану
+6. Активный план в `docs/Planning/in-progress/`, если задача привязана к плану
 7. Релевантные исходники, editor tools, ассеты и тесты
 
 ## Профиль пользователя

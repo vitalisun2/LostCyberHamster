@@ -71,8 +71,8 @@
 ### docs/Planning/sprite_loader_refactor_plan.md
 План рефакторинга загрузки спрайтов и миграции на общее ядро Addressables.
 
-### docs/Planning/current/README.md
-Placeholder-документ для каталога активного плана. Одноразовые завершённые планы в `current/` не хранятся.
+### docs/Planning/in-progress/
+Каталог активных рабочих спецификаций и task-файлов до завершения изменений и merge.
 
 ---
 
