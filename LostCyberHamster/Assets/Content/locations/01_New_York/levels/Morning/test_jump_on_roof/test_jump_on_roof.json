@@ -1,0 +1,21 @@
+{
+  "skyTexture": "sky_new_york_morning",
+  "background2Texture": "bg_2_new_york_morning",
+  "backgroundTexture": "bg_new_york_morning",
+  "roadTexture": "rd_new_york_morning",
+  "location": "01_New_York",
+  "patternSequence": [
+    { "ref": "relief_energy", "spriteSeed": 0, "overrides": [] },
+    { "ref": "test_jump_on_roof_01_forced_bottom", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief_energy", "spriteSeed": 0, "overrides": [] },
+    { "ref": "test_jump_on_roof_02_forced_top", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief_energy", "spriteSeed": 0, "overrides": [] },
+    { "ref": "test_jump_on_roof_03_mixed", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief", "spriteSeed": 0, "overrides": [] }
+  ],
+  "decorationPatterns": [
+    {
+      "decorationTiles": []
+    }
+  ]
+}

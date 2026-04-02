@@ -132,15 +132,13 @@ namespace Assets.Scripts.Bot
 
             table[(false, ObstacleTypeEnum.bigNotAlive)] = new[]
             {
-                BotAction.Jump,
-                BotAction.SuperJump,
+                BotAction.JumpOnRoof,
                 BotAction.SwitchLane
             };
 
             table[(false, ObstacleTypeEnum.mediumNotAlive)] = new[]
             {
-                BotAction.Jump,
-                BotAction.SuperJump,
+                BotAction.JumpOnRoof,
                 BotAction.SwitchLane
             };
 
