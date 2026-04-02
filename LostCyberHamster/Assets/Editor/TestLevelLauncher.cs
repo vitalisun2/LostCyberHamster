@@ -1,6 +1,4 @@
 #if UNITY_EDITOR
-using System.Collections.Generic;
-using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -14,9 +12,6 @@ namespace LostCyberHamster.Editor
     /// scene and enters Play mode. LoadMainMenuLoadingTask detects the
     /// override, sets CurrentLevel, and loads Game instead of Menu.
     /// Override auto-clears when Play Mode exits.
-    ///
-    /// Test levels are discovered automatically by scanning
-    /// Assets/Content/locations for folders named test_*.
     /// </summary>
     [InitializeOnLoad]
     public static class TestLevelLauncher
@@ -31,7 +26,10 @@ namespace LostCyberHamster.Editor
         public static string TimeScaleOverrideKey => Assets.Scripts.System.AutomationRuntimePrefs.TimeScaleOverrideKey;
 
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
-        private const string LocationsRoot = "Assets/Content/locations";
+        private const string SwitchLaneTestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_switchlane";
+        private const string JumpTestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_jump";
+        private const string BigAliveTestLevelAddress = "01_New_York/Morning/test_threat_bigalive";
+        private const string JumpOnRoofTestLevelAddress = "01_New_York/Morning/test_jump_on_roof";
 
         /// <summary>Default timescale when launching via Tools menu for interactive visual inspection.</summary>
         private const float ToolsDefaultTimeScale = 1.0f;
@@ -69,71 +67,32 @@ namespace LostCyberHamster.Editor
             }
         }
 
-        [MenuItem("Tools/Test Level/Select...", priority = 50)]
-        private static void ShowTestLevelMenu()
+        [MenuItem("Tools/Test Level/Launch test_threat_small_notalive_road_switchlane", priority = 50)]
+        private static void LaunchSwitchLane()
         {
-            var levels = DiscoverTestLevels();
-            if (levels.Count == 0)
-            {
-                EditorUtility.DisplayDialog("Test Level", "No test levels found in " + LocationsRoot, "OK");
-                return;
-            }
-
-            var menu = new GenericMenu();
-            foreach (var address in levels)
-            {
-                string captured = address;
-                menu.AddItem(new GUIContent(captured), false, () =>
-                {
-                    if (!TryLaunchTestLevel(interactive: true, captured, ToolsDefaultTimeScale, out var errorMessage))
-                        EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
-                });
-            }
-
-            menu.ShowAsContext();
+            if (!TryLaunchTestLevel(interactive: true, SwitchLaneTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
+                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
         }
 
-        /// <summary>
-        /// Сканирует Assets/Content/locations, находит все папки test_* с JSON-файлом уровня.
-        /// Возвращает отсортированный список адресов вида "01_New_York/Morning/test_jump_on_roof".
-        /// </summary>
-        private static List<string> DiscoverTestLevels()
+        [MenuItem("Tools/Test Level/Launch test_threat_small_notalive_road_jump", priority = 51)]
+        private static void LaunchJump()
         {
-            var result = new List<string>();
-            string fullRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "Content/locations"));
+            if (!TryLaunchTestLevel(interactive: true, JumpTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
+                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
+        }
 
-            if (!Directory.Exists(fullRoot))
-                return result;
+        [MenuItem("Tools/Test Level/Launch test_threat_bigalive", priority = 52)]
+        private static void LaunchBigAlive()
+        {
+            if (!TryLaunchTestLevel(interactive: true, BigAliveTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
+                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
+        }
 
-            // locations/<location>/levels/<daypart>/test_*
-            foreach (string locationDir in Directory.GetDirectories(fullRoot))
-            {
-                string location = Path.GetFileName(locationDir);
-                string levelsDir = Path.Combine(locationDir, "levels");
-                if (!Directory.Exists(levelsDir))
-                    continue;
-
-                foreach (string daypartDir in Directory.GetDirectories(levelsDir))
-                {
-                    string daypart = Path.GetFileName(daypartDir);
-
-                    foreach (string testDir in Directory.GetDirectories(daypartDir))
-                    {
-                        string folderName = Path.GetFileName(testDir);
-                        if (!folderName.StartsWith("test_"))
-                            continue;
-
-                        string jsonPath = Path.Combine(testDir, folderName + ".json");
-                        if (!File.Exists(jsonPath))
-                            continue;
-
-                        result.Add($"{location}/{daypart}/{folderName}");
-                    }
-                }
-            }
-
-            result.Sort();
-            return result;
+        [MenuItem("Tools/Test Level/Launch test_jump_on_roof", priority = 53)]
+        private static void LaunchJumpOnRoof()
+        {
+            if (!TryLaunchTestLevel(interactive: true, JumpOnRoofTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
+                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
         }
 
         /// <summary>
@@ -180,14 +139,8 @@ namespace LostCyberHamster.Editor
             }
 
             string effectiveLevelAddress = string.IsNullOrWhiteSpace(levelAddress)
-                ? string.Empty
+                ? SwitchLaneTestLevelAddress
                 : levelAddress.Trim();
-
-            if (string.IsNullOrEmpty(effectiveLevelAddress))
-            {
-                errorMessage = "Level address is empty.";
-                return false;
-            }
 
             // Write override into PlayerPrefs so it survives domain reload on Play
             PlayerPrefs.SetString(OverridePrefsKey, effectiveLevelAddress);
