@@ -10831,6 +10831,45 @@
           "y": -1.8
         }
       ]
+    },
+    {
+      "name": "test_jump_on_roof_01_forced_bottom",
+      "description": "bigNotAlive: forced JumpOnRoof from bottom — top lane blocked by bigNotAlive, 3 reps",
+      "nextObstacleId": 6,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -2.8 },
+        { "id": 1, "type": 4, "x": 8.0, "y": -1.8 },
+        { "id": 2, "type": 4, "x": 22.0, "y": -2.8 },
+        { "id": 3, "type": 4, "x": 20.0, "y": -1.8 },
+        { "id": 4, "type": 4, "x": 34.0, "y": -2.8 },
+        { "id": 5, "type": 4, "x": 32.0, "y": -1.8 }
+      ]
+    },
+    {
+      "name": "test_jump_on_roof_02_forced_top",
+      "description": "bigNotAlive: forced JumpOnRoof from top — bottom lane blocked by bigNotAlive, 3 reps",
+      "nextObstacleId": 6,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -1.8 },
+        { "id": 1, "type": 4, "x": 8.0, "y": -2.8 },
+        { "id": 2, "type": 4, "x": 22.0, "y": -1.8 },
+        { "id": 3, "type": 4, "x": 20.0, "y": -2.8 },
+        { "id": 4, "type": 4, "x": 34.0, "y": -1.8 },
+        { "id": 5, "type": 4, "x": 32.0, "y": -2.8 }
+      ]
+    },
+    {
+      "name": "test_jump_on_roof_03_mixed",
+      "description": "bigNotAlive: forced JumpOnRoof alternating bottom-top-bottom, 3 reps",
+      "nextObstacleId": 6,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -2.8 },
+        { "id": 1, "type": 4, "x": 8.0, "y": -1.8 },
+        { "id": 2, "type": 4, "x": 22.0, "y": -1.8 },
+        { "id": 3, "type": 4, "x": 20.0, "y": -2.8 },
+        { "id": 4, "type": 4, "x": 34.0, "y": -2.8 },
+        { "id": 5, "type": 4, "x": 32.0, "y": -1.8 }
+      ]
     }
   ]
 }
