@@ -81,9 +81,11 @@ Lock уже удерживается с фазы 2. Повторный захв�
 13. Смержить task/<slug> в main
 14. Запушить main
 15. Обновить integration-ветку от main
-16. Освободить integration lock
-17. Удалить worktree, локальную ветку и remote-ветку
-18. Закрыть PR, если был создан
+16. Запушить integration-ветку
+17. Проверить, что main и integration/unity-live указывают на один и тот же commit
+18. Освободить integration lock
+19. Удалить worktree, локальную ветку и remote-ветку
+20. Закрыть PR, если был создан
 ```
 
 ### Unity integration branch
@@ -91,6 +93,7 @@ Lock уже удерживается с фазы 2. Повторный захв�
 - Unity Editor открыт на основном каталоге, не на task-worktree.
 - Основной каталог для Unity-проверок — локальная integration-ветка (например `integration/unity-live`).
 - `main` не использовать как черновую ветку.
+- После завершения задачи `main` и `integration/unity-live` обязаны быть идентичны локально и на remote: один и тот же commit, оба запушены.
 - Если проверка неуспешна — доработка в worktree; integration-ветка возвращается к чистому состоянию.
 
 ### Integration lock
@@ -127,6 +130,8 @@ Integration-ветка и Unity Editor — разделяемый ресурс. 
 
 - **Tech Done:** изменения внесены и валидация пройдена.
 - **Workflow Done:** git-цикл доведён до конца по выбранному workflow.
+
+Это включает обязательный push всех затронутых веток. Для стандартного workflow задача не считается завершённой, пока `main` и `integration/unity-live` не синхронизированы и не опубликованы на remote.
 
 Дополнительно обязателен **Promotion Check Done**:
 
