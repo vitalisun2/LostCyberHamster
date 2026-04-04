@@ -13,6 +13,14 @@
     { "ref": "test_roof_small_notalive_switchlane_02_clear", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief_energy", "spriteSeed": 0, "overrides": [] },
     { "ref": "test_roof_small_notalive_jump_01_forced_bottom", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief_energy", "spriteSeed": 0, "overrides": [] },
+    { "ref": "test_roof_small_notalive_onroof_mid_bottom", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief_energy", "spriteSeed": 0, "overrides": [] },
+    { "ref": "test_roof_small_notalive_onroof_mid_top", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief_energy", "spriteSeed": 0, "overrides": [] },
+    { "ref": "test_roof_small_notalive_onroof_double_bottom", "spriteSeed": 0, "overrides": [] },
+    { "ref": "relief_energy", "spriteSeed": 0, "overrides": [] },
+    { "ref": "test_roof_small_notalive_onroof_double_top", "spriteSeed": 0, "overrides": [] },
     { "ref": "relief", "spriteSeed": 0, "overrides": [] }
   ],
   "decorationPatterns": [

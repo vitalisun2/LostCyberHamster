@@ -121,7 +121,7 @@ Integration-ветка и Unity Editor — разделяемый ресурс. 
 | test_jump_on_roof | `01_New_York/Morning/test_jump_on_roof` | Threat bigNotAlive: JumpOnRoof (forced) |
 | test_roof_small_notalive | `01_New_York/Morning/test_roof_small_notalive` | Roof: smallNotAliveRoadAndRoof — RoofJumpOver + RoofSwitchLane |
 
-При валидации прогонять **все** тестовые уровни из таблицы.
+**!!! ВАЖНО: при валидации прогонять ТОЛЬКО релевантный тестовый уровень, относящийся к текущей задаче, а НЕ все уровни из таблицы !!!** Прогон всех уровней тратит время и не нужен — регрессии ловятся целевым уровнем. Если задача затрагивает общий код (StepExecutor, ActionGenerator и т.п.), прогнать 1-2 уровня смежных механик для контроля регрессий — но это исключение, а не правило.
 
 Дефолтная скорость: через `Tools` menu — `1.0` (интерактивный визуальный просмотр); через automation bridge — `4.0` (бот включён, применяется автоматически).
 
