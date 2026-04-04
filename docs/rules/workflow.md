@@ -48,7 +48,7 @@ Integration-ветка — стенд для тестирования и виз�
 6.  Захватить integration lock (см. «Integration lock»)
 7.  Синхронизировать integration-ветку от main
 8.  Смержить task/<slug> в integration-ветку
-9.  Прогнать все тестовые уровни (`invoke_run_all_test_levels.ps1`), прочитать логи
+9.  Прогнать релевантный тестовый уровень (относящийся к текущей задаче), прочитать логи
 10. Если автопроверка не прошла:
     a. Откатить integration к main: git reset --hard main
     b. Освободить lock
