@@ -33,7 +33,8 @@ $TestLevels = @(
     '01_New_York/Morning/test_threat_small_notalive_road_switchlane',
     '01_New_York/Morning/test_threat_small_notalive_road_jump',
     '01_New_York/Morning/test_threat_bigalive',
-    '01_New_York/Morning/test_jump_on_roof'
+    '01_New_York/Morning/test_jump_on_roof',
+    '01_New_York/Morning/test_roof_small_notalive'
 )
 
 # ── Automation bridge helper ─────────────────────────────────────────────────

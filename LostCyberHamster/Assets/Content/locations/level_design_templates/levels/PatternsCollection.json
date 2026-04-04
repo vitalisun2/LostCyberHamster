@@ -10925,6 +10925,64 @@
         { "id": 4, "type": 4, "x": 34.0, "y": -2.8 },
         { "id": 5, "type": 4, "x": 32.0, "y": -1.8 }
       ]
+    },
+    {
+      "name": "test_roof_small_notalive_switchlane_01_clear",
+      "description": "on roof (bottom): smallNotAliveRoadAndRoof on same lane, top clear → RoofSwitchLane to top, 1 rep",
+      "nextObstacleId": 3,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -2.8 },
+        { "id": 1, "type": 4, "x": 8.0, "y": -1.8 },
+        { "id": 2, "type": 3, "x": 14.5, "y": -2.8 }
+      ]
+    },
+    {
+      "name": "test_roof_small_notalive_switchlane_02_clear",
+      "description": "on roof (top): smallNotAliveRoadAndRoof on same lane, bottom clear → RoofSwitchLane to bottom, 1 rep",
+      "nextObstacleId": 3,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -1.8 },
+        { "id": 1, "type": 4, "x": 8.0, "y": -2.8 },
+        { "id": 2, "type": 3, "x": 14.5, "y": -1.8 }
+      ]
+    },
+    {
+      "name": "test_roof_small_notalive_jump_01_forced_bottom",
+      "description": "on roof (bottom): forced RoofJumpOver — top lane blocked, 3 reps",
+      "nextObstacleId": 12,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -2.8 },
+        { "id": 1, "type": 4, "x": 8.0, "y": -1.8 },
+        { "id": 2, "type": 3, "x": 14.5, "y": -2.8 },
+        { "id": 3, "type": 4, "x": 12.5, "y": -1.8 },
+        { "id": 4, "type": 4, "x": 26.0, "y": -2.8 },
+        { "id": 5, "type": 4, "x": 24.0, "y": -1.8 },
+        { "id": 6, "type": 3, "x": 30.5, "y": -2.8 },
+        { "id": 7, "type": 4, "x": 28.5, "y": -1.8 },
+        { "id": 8, "type": 4, "x": 42.0, "y": -2.8 },
+        { "id": 9, "type": 4, "x": 40.0, "y": -1.8 },
+        { "id": 10, "type": 3, "x": 46.5, "y": -2.8 },
+        { "id": 11, "type": 4, "x": 44.5, "y": -1.8 }
+      ]
+    },
+    {
+      "name": "test_roof_small_notalive_jump_02_forced_top",
+      "description": "on roof (top): forced RoofJumpOver — bottom lane blocked, 3 reps",
+      "nextObstacleId": 12,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -1.8 },
+        { "id": 1, "type": 4, "x": 8.0, "y": -2.8 },
+        { "id": 2, "type": 3, "x": 14.5, "y": -1.8 },
+        { "id": 3, "type": 4, "x": 12.5, "y": -2.8 },
+        { "id": 4, "type": 4, "x": 26.0, "y": -1.8 },
+        { "id": 5, "type": 4, "x": 24.0, "y": -2.8 },
+        { "id": 6, "type": 3, "x": 30.5, "y": -1.8 },
+        { "id": 7, "type": 4, "x": 28.5, "y": -2.8 },
+        { "id": 8, "type": 4, "x": 42.0, "y": -1.8 },
+        { "id": 9, "type": 4, "x": 40.0, "y": -2.8 },
+        { "id": 10, "type": 3, "x": 46.5, "y": -1.8 },
+        { "id": 11, "type": 4, "x": 44.5, "y": -2.8 }
+      ]
     }
   ]
 }

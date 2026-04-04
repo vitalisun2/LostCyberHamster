@@ -119,6 +119,7 @@ Integration-ветка и Unity Editor — разделяемый ресурс. 
 | test_threat_small_notalive_road_jump | `01_New_York/Morning/test_threat_small_notalive_road_jump` | Threat smallNotAliveRoad + Jump |
 | test_threat_bigalive | `01_New_York/Morning/test_threat_bigalive` | Threat bigAlive: SwitchLane + SuperJump |
 | test_jump_on_roof | `01_New_York/Morning/test_jump_on_roof` | Threat bigNotAlive: JumpOnRoof (forced) |
+| test_roof_small_notalive | `01_New_York/Morning/test_roof_small_notalive` | Roof: smallNotAliveRoadAndRoof — RoofJumpOver + RoofSwitchLane |
 
 При валидации прогонять **все** тестовые уровни из таблицы.
 

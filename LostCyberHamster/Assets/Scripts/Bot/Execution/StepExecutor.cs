@@ -31,6 +31,8 @@ namespace Assets.Scripts.Bot
                 { BotAction.Jump, new JumpHandler() },
                 { BotAction.JumpOnRoof, new JumpHandler() },
                 { BotAction.SuperJump, new SuperJumpHandler() },
+                { BotAction.RoofJumpOver, new JumpHandler() },
+                { BotAction.RoofSwitchLane, new SwitchLaneHandler() },
             };
         }
 
