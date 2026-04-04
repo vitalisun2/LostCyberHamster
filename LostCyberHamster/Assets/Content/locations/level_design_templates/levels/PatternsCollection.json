@@ -10833,6 +10833,61 @@
       ]
     },
     {
+      "name": "test_jump_on_roof_04_switchlane_clear",
+      "description": "bigNotAlive: SwitchLane available — opposite lane clear, bot should SwitchLane (0 energy), 3 reps",
+      "nextObstacleId": 3,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -2.8 },
+        { "id": 1, "type": 4, "x": 22.0, "y": -2.8 },
+        { "id": 2, "type": 4, "x": 34.0, "y": -2.8 }
+      ]
+    },
+    {
+      "name": "test_jump_on_roof_05_switchlane_with_small",
+      "description": "bigNotAlive: SwitchLane available — opposite lane has distant smallNotAliveRoad (not in transit window), 3 reps",
+      "nextObstacleId": 6,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -2.8 },
+        { "id": 1, "type": 2, "x": 18.0, "y": -1.8 },
+        { "id": 2, "type": 4, "x": 22.0, "y": -2.8 },
+        { "id": 3, "type": 2, "x": 30.0, "y": -1.8 },
+        { "id": 4, "type": 4, "x": 34.0, "y": -2.8 },
+        { "id": 5, "type": 2, "x": 42.0, "y": -1.8 }
+      ]
+    },
+    {
+      "name": "test_jump_on_roof_06_blocked_bigalive",
+      "description": "bigNotAlive: forced JumpOnRoof — opposite lane blocked by bigAlive, 3 reps",
+      "nextObstacleId": 6,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -2.8 },
+        { "id": 1, "type": 1, "x": 8.0, "y": -1.8 },
+        { "id": 2, "type": 4, "x": 22.0, "y": -2.8 },
+        { "id": 3, "type": 1, "x": 20.0, "y": -1.8 },
+        { "id": 4, "type": 4, "x": 34.0, "y": -2.8 },
+        { "id": 5, "type": 1, "x": 32.0, "y": -1.8 }
+      ]
+    },
+    {
+      "name": "test_jump_on_roof_07_blocked_small_row",
+      "description": "bigNotAlive: forced JumpOnRoof — opposite lane blocked by 3 smallNotAliveRoad covering transit window, 3 reps",
+      "nextObstacleId": 12,
+      "obstacles": [
+        { "id": 0, "type": 4, "x": 10.0, "y": -2.8 },
+        { "id": 1, "type": 2, "x": 4.0, "y": -1.8 },
+        { "id": 2, "type": 2, "x": 6.0, "y": -1.8 },
+        { "id": 3, "type": 2, "x": 8.0, "y": -1.8 },
+        { "id": 4, "type": 4, "x": 22.0, "y": -2.8 },
+        { "id": 5, "type": 2, "x": 16.0, "y": -1.8 },
+        { "id": 6, "type": 2, "x": 18.0, "y": -1.8 },
+        { "id": 7, "type": 2, "x": 20.0, "y": -1.8 },
+        { "id": 8, "type": 4, "x": 34.0, "y": -2.8 },
+        { "id": 9, "type": 2, "x": 28.0, "y": -1.8 },
+        { "id": 10, "type": 2, "x": 30.0, "y": -1.8 },
+        { "id": 11, "type": 2, "x": 32.0, "y": -1.8 }
+      ]
+    },
+    {
       "name": "test_jump_on_roof_01_forced_bottom",
       "description": "bigNotAlive: forced JumpOnRoof from bottom — top lane blocked by bigNotAlive, 3 reps",
       "nextObstacleId": 6,
