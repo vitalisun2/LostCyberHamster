@@ -31,12 +31,13 @@ namespace Assets.Editor.LevelEditor
         public event Action OnSequenceChanged;
         public event Action<int> OnPatternSelected;
 
-        public PatternSequencePanel(VisualElement parent)
+        public VisualElement Root => _root;
+
+        public PatternSequencePanel()
         {
             _root = new VisualElement();
             _root.style.display = DisplayStyle.None;
             BuildUI();
-            parent.Add(_root);
         }
 
         public void Show(LevelInfoRef levelRef, PatternsCollection patterns)
