@@ -126,8 +126,17 @@ public class LevelTilemapEditor : EditorWindow
     public void CreateGUI()
     {
         _uiManager = new LevelTilemapUi(rootVisualElement, _opeLocation);
-        _patternSequencePanel = new PatternSequencePanel(rootVisualElement);
+        _patternSequencePanel = new PatternSequencePanel();
         _spriteOverridePanel = new SpriteOverridePanel(rootVisualElement);
+
+        // Insert PatternSequencePanel right after the files list section
+        var filesSection = rootVisualElement.Q<ListView>("files-list-view")?.parent;
+        if (filesSection != null)
+        {
+            var container = filesSection.parent;
+            int index = container.IndexOf(filesSection);
+            container.Insert(index + 1, _patternSequencePanel.Root);
+        }
         SubscribeEvents();
         InitializePatternButtons();
         InitializeLevelDesignTemplateDirectory();
