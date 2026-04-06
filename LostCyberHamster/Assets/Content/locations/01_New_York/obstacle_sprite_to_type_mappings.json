@@ -11,14 +11,13 @@
             "type": 1,
             "sprites": [
                 "obstacle_new_york_businessman",
-                "obstacle_new_york_granny",
                 "obstacle_new_york_hipster",
                 "obstacle_new_york_big_alive_1_idle",
                 "obstacle_new_york_big_alive_2_idle",
                 "obstacle_new_york_big_alive_3_idle",
                 "obstacle_new_york_big_alive_4_idle",
                 "obstacle_new_york_big_alive_5_idle",
-                "obstacle_new_york_big_alive_6_idle",
+                "obstacle_new_york_big_alive_6_walk",
                 "obstacle_new_york_big_alive_7_idle"
             ]
         },

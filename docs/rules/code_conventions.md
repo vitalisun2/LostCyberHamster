@@ -62,7 +62,7 @@
 ### Константы размеров (Consts.cs)
 - SMALL_ALIVE: 152×108
 - BIG_ALIVE: 100×212
-- BIG_NOTALIVE: 452×172
+- BIG_NOTALIVE: 388×172
 - SMALL_NOTALIVE: 140×108
 - Все размеры делятся на 4 (ETC2 компрессия).
 

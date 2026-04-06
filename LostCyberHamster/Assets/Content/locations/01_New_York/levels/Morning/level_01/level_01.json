@@ -1,4 +1,4 @@
-﻿{
+{
     "skyTexture": "",
     "background2Texture": "bg_2_new_york_morning",
     "backgroundTexture": "bg_new_york_morning",
@@ -177,7 +177,7 @@
                 },
                 {
                     "obstacleId": 13,
-                    "spriteName": "obstacle_new_york_big_alive_6_idle"
+                    "spriteName": "obstacle_new_york_big_alive_6_walk"
                 },
                 {
                     "obstacleId": 14,
@@ -185,7 +185,7 @@
                 },
                 {
                     "obstacleId": 22,
-                    "spriteName": "obstacle_new_york_big_alive_6_idle"
+                    "spriteName": "obstacle_new_york_big_alive_6_walk"
                 }
             ]
         },
@@ -219,7 +219,7 @@
                 },
                 {
                     "obstacleId": 13,
-                    "spriteName": "obstacle_new_york_big_alive_6_idle"
+                    "spriteName": "obstacle_new_york_big_alive_6_walk"
                 },
                 {
                     "obstacleId": 14,
@@ -227,7 +227,7 @@
                 },
                 {
                     "obstacleId": 22,
-                    "spriteName": "obstacle_new_york_big_alive_6_idle"
+                    "spriteName": "obstacle_new_york_big_alive_6_walk"
                 }
             ]
         },

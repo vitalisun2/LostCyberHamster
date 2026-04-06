@@ -251,7 +251,7 @@ Label: "New York decor sprites"
 ```
 
 ### Универсальный подход (Type 1 → big_alive)
-**Старый подход (специфичные персонажи):**
+**Старый подход (специфичные персонажи, удалён):**
 ```json
 {
   "spriteName": "obstacle_new_york_granny",

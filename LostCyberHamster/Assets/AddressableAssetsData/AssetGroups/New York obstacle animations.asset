@@ -28,7 +28,7 @@ MonoBehaviour:
     - New York obstacle animations
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 567621f361358794fb4dd8ac71bd22c8
-    m_Address: obstacle_new_york_big_alive_6_idle
+    m_Address: obstacle_new_york_big_alive_6_walk
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacle animations
@@ -59,12 +59,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d95eb60424a0f9d409072463dc9564e8
     m_Address: obstacle_new_york_big_alive_5_idle
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - New York obstacle animations
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e7cd0fd5b8db0504dab1938d4c5400e5
-    m_Address: obstacle_new_york_granny_walk
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacle animations

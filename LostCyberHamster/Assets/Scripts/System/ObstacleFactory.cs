@@ -100,7 +100,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         /// Examples:
         /// - "obstacle_new_york_people_1_idle" → "obstacle_new_york_people_1"
         /// - "obstacle_new_york_people_2_walk" → "obstacle_new_york_people_2"
-        /// - "obstacle_new_york_granny" → "obstacle_new_york_granny" (unchanged)
+        /// - "obstacle_new_york_businessman" → "obstacle_new_york_businessman" (unchanged)
         /// </summary>
         private static string GetBaseObstacleName(string spriteName)
         {

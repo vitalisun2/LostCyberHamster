@@ -52,7 +52,7 @@ MonoBehaviour:
     - New York obstacles sprites
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9c5f94e51a6f24d4498f4b3716574403
-    m_Address: obstacle_new_york_big_alive_6_idle
+    m_Address: obstacle_new_york_big_alive_6_walk
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
@@ -95,12 +95,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e5b046f7d4962b04f98b8144332bca33
     m_Address: obstacle_new_york_hipster
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - New York obstacles sprites
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ef71812a0991cd64e8ce65017b19fd3c
-    m_Address: obstacle_new_york_granny
     m_ReadOnly: 0
     m_SerializedLabels:
     - New York obstacles sprites
