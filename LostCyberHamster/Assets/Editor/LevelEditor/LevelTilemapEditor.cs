@@ -110,6 +110,7 @@ public class LevelTilemapEditor : EditorWindow
     // Scene management for non-intrusive workflow
     private string _originalScenePath;
     private List<GameObject> _hiddenRootObjects = new();
+    private bool _isActive;
 
     /// <summary>
     /// Открывает окно редактора LevelTilemapEditor.
@@ -144,11 +145,19 @@ public class LevelTilemapEditor : EditorWindow
 
     private void OnEnable()
     {
-        // Save current scene path for restoration
+        ActivateSceneIsolation();
+    }
+
+    /// <summary>
+    /// Прячет объекты текущей сцены и переводит редактор в активный режим.
+    /// </summary>
+    private void ActivateSceneIsolation()
+    {
+        if (_isActive) return;
+
         var currentScene = SceneManager.GetActiveScene();
         _originalScenePath = currentScene.path;
-        
-        // Hide all existing root objects in the scene
+
         _hiddenRootObjects.Clear();
         foreach (var rootObject in currentScene.GetRootGameObjects())
         {
@@ -160,14 +169,49 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         SceneView.duringSceneGui += OnSceneGUI;
+        _isActive = true;
     }
 
     private void OnDisable()
     {
+        Deactivate();
+        UnsubscribeEvents();
+    }
+
+    /// <summary>
+    /// Деактивирует редактор: очищает тайлмап, освобождает ресурсы, восстанавливает исходную сцену.
+    /// Окно при этом не закрывается.
+    /// </summary>
+    private void Deactivate()
+    {
+        if (!_isActive) return;
+
         SceneView.duringSceneGui -= OnSceneGUI;
         _uiManager?.ReleaseObstacleSprites();
-        UnsubscribeEvents();
-        
+        SpriteLoader.ReleaseSpritesAndClearCache();
+
+        _tilemapInScene = null;
+        _currentLevelInfo = null;
+        _currentLevelRef = null;
+        _patternsCollection = null;
+        _locationTheme = null;
+        _selectedFile = null;
+        _selectedPatternIndex = -1;
+        _isCollectableOnRoof = false;
+        _selectedLevelDescriptor = null;
+        _allLevelDescriptors.Clear();
+        _visibleLevelDescriptors.Clear();
+        _selectedDaypart = PartOfDayEnum.Morning;
+        _currentLocationName = null;
+        _levelsDirectory = null;
+        _cellToPatternMap.Clear();
+        _patternBounds.Clear();
+        _patternOverlaySlots.Clear();
+        _allPatternNames.Clear();
+        _filteredPatternIndices.Clear();
+
+        _isActive = false;
+
         // Не восстанавливаем сцену во время компиляции/обновления и переходов playmode,
         // чтобы не конфликтовать с внутренними перечислителями Hierarchy/Search.
         if (EditorApplication.isCompiling || EditorApplication.isUpdating ||
@@ -176,7 +220,7 @@ public class LevelTilemapEditor : EditorWindow
             _hiddenRootObjects.Clear();
             return;
         }
-        
+
         // Restore scene by reloading without saving changes
         if (!string.IsNullOrEmpty(_originalScenePath))
         {
@@ -185,7 +229,6 @@ public class LevelTilemapEditor : EditorWindow
         }
         else
         {
-            // If no scene was open, restore visibility of hidden objects
             foreach (var obj in _hiddenRootObjects)
             {
                 if (obj != null)
@@ -201,7 +244,7 @@ public class LevelTilemapEditor : EditorWindow
                 }
             }
         }
-        
+
         _hiddenRootObjects.Clear();
     }
 
@@ -560,6 +603,8 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void HandleLocationChanged(string newValue)
     {
+        ActivateSceneIsolation();
+
         _currentLocationName = newValue;
 
     _uiManager.SetObstaclesSpritesListView(newValue, _spritesExt);
@@ -1606,27 +1651,13 @@ public class LevelTilemapEditor : EditorWindow
     }
 
     /// <summary>
-    /// Сброс редактора до исходного состояния.
+    /// Деактивирует редактор: восстанавливает исходную сцену и пересоздаёт UI в idle-состоянии.
+    /// Повторная активация произойдёт при выборе локации.
     /// </summary>
     private void HandleResetClicked()
     {
-        if (_tilemapInScene != null)
-        {
-            DestroyImmediate(_tilemapInScene.gameObject);
-            _tilemapInScene = null;
-        }
-
-        _currentLevelInfo = null;
-        _selectedFile = null;
-        _selectedPatternIndex = -1;
-        _isCollectableOnRoof = false;
-        _selectedLevelDescriptor = null;
-        _allLevelDescriptors.Clear();
-        _visibleLevelDescriptors.Clear();
-        _selectedDaypart = PartOfDayEnum.Morning;
-
-    _uiManager.ReleaseObstacleSprites();
-        SpriteLoader.ReleaseSpritesAndClearCache();
+        UnsubscribeEvents();
+        Deactivate();
 
         rootVisualElement.Clear();
         CreateGUI();
