@@ -1595,7 +1595,10 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void UpdateSpritesInfoInCurrentLocation(string newValue)
     {
-        _spritesDirectory = Path.Combine(Consts.LocationsPath, newValue, "sprites");
+        var effectiveLocation = string.Equals(newValue, Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase)
+            ? Consts.TemplatesFallbackLocation
+            : newValue;
+        _spritesDirectory = Path.Combine(Consts.LocationsPath, effectiveLocation, "sprites");
         var sprites = Directory.GetFiles(_spritesDirectory, $"*.{_spritesExt}", SearchOption.AllDirectories);
 
         _spritesNames = sprites.Select(Path.GetFileNameWithoutExtension).ToList();
