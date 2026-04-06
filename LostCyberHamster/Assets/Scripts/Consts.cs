@@ -201,7 +201,7 @@ namespace Assets.Scripts
         public const int SMALL_NOTALIVE_WIDTH = 140;
         public const int SMALL_NOTALIVE_HEIGHT = 108;
 
-        public const int BIG_NOTALIVE_WIDTH = 452;
+        public const int BIG_NOTALIVE_WIDTH = 390;
         public const int BIG_NOTALIVE_HEIGHT = 172;
 
         public const int MEDIUM_NOTALIVE_WIDTH = 344;
