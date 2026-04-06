@@ -20,11 +20,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6de5bf6d7612c7046800ac0fb8d0cb86
-    m_Address: level_design_templates/obstacle_sprite_to_type_mappings
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cba079467daf37c499c75f6d362af46d
     m_Address: 02_Paris/obstacle_sprite_to_type_mappings
     m_ReadOnly: 0
