@@ -62,6 +62,7 @@ public static class TilePlacementStrategies
             case ObstacleTypeEnum.smallAlive:
             case ObstacleTypeEnum.bigAlive:
             case ObstacleTypeEnum.bigNotAlive:
+            case ObstacleTypeEnum.mediumNotAlive:
             case ObstacleTypeEnum.smallNotAliveRoad:
                 return CreateObstacleStrategy();
 
