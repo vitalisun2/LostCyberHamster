@@ -13,7 +13,7 @@ public class SnapToRoofRule : ITilePlacementRule
         var mainLineY = isCloserToY0 ? Consts.ObstacleY0Pos : Consts.ObstacleY1Pos;
         var otherLineY = isCloserToY0 ? Consts.ObstacleY1Pos : Consts.ObstacleY0Pos;
 
-        // 1) Пробуем «привязаться» к BigNotAlive на ближайшей линии
+        // 1) Пробуем «привязаться» к BigNotAlive / MediumNotAlive на ближайшей линии
         if (TrySnapCollectable(tilemap, tile, ref position, mainLineY))
         {
             return true;
@@ -26,13 +26,13 @@ public class SnapToRoofRule : ITilePlacementRule
         }
 
         // 3) Ни на одной линии не нашли, куда поместить collectable
-        Debug.Log("[SnapToRoofRule] Не нашли подходящий BigNotAlive. Collectable не ставим.");
+        Debug.Log("[SnapToRoofRule] Не нашли подходящий BigNotAlive / MediumNotAlive. Collectable не ставим.");
         return false;
     }
 
     /// <summary>
-    /// Пытается поставить collectable на крышу BigNotAlive, если он 
-    /// полностью влезает по горизонтали. Возвращает true при успехе.
+    /// Пытается поставить collectable на крышу BigNotAlive или MediumNotAlive,
+    /// если он полностью влезает по горизонтали. Возвращает true при успехе.
     /// </summary>
     private bool TrySnapCollectable(
         Tilemap tilemap,
@@ -52,7 +52,7 @@ public class SnapToRoofRule : ITilePlacementRule
             if (!ObstacleSpriteTypeMappingsManager.TryGetType(existingTile.sprite.name, out var obstacleType))
                 continue;
 
-            if (obstacleType != ObstacleTypeEnum.bigNotAlive)
+            if (obstacleType != ObstacleTypeEnum.bigNotAlive && obstacleType != ObstacleTypeEnum.mediumNotAlive)
                 continue;
 
             // Проверяем, что этот объект на нужной линии
@@ -60,7 +60,7 @@ public class SnapToRoofRule : ITilePlacementRule
             if (Mathf.Abs(existingPivotPos.y - lineY) > 0.001f)
                 continue;
 
-            // Берём границы BigNotAlive
+            // Берём границы родительского тайла
             var (oldXMin, oldXMax, oldTopY) = GetSpriteWorldBounds(existingTile, existingPivotPos);
 
             // Проверяем полное вхождение по горизонтали
@@ -78,7 +78,7 @@ public class SnapToRoofRule : ITilePlacementRule
             return true;
         }
 
-        // Ни один BigNotAlive на этой линии не подошёл
+        // Ни один BigNotAlive / MediumNotAlive на этой линии не подошёл
         return false;
     }
 
