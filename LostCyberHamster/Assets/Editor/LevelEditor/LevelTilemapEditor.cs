@@ -15,6 +15,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
 using Unity.VisualScripting;
+using System.Text.RegularExpressions;
 
 public class LevelTilemapEditor : EditorWindow
 {
@@ -89,6 +90,7 @@ public class LevelTilemapEditor : EditorWindow
     private const float PatternBoundaryLineThickness = 4f;
     private static readonly Color PatternBoundaryColor = new Color(0.12f, 0.95f, 0.18f, 1f);
     private static readonly Color SelectedPatternBoundaryColor = new Color(0.25f, 1f, 0.25f, 1f);
+    private static readonly Regex PatternNameSuffixRegex = new Regex(@"^(.*?)(\d+)$", RegexOptions.Compiled);
 
     private readonly List<PatternOverlaySlot> _patternOverlaySlots = new();
 
@@ -561,6 +563,12 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void HandleCreateLevelClicked()
     {
+        if (string.IsNullOrWhiteSpace(_currentLocationName) || string.IsNullOrWhiteSpace(_levelsDirectory))
+        {
+            EditorUtility.DisplayDialog("Location Required", "Выбери локацию перед созданием уровня.", "OK");
+            return;
+        }
+
         if (IsTemplateMode)
         {
             CreateLevelPromptWindow.Show(
@@ -1543,9 +1551,15 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void AddNewPattern()
     {
+        if (_currentLevelInfo == null)
+        {
+            Debug.LogWarning("Невозможно добавить паттерн: информация об уровне отсутствует.");
+            return;
+        }
+
         var newPattern = new Pattern
         {
-            name = $"Pattern {_currentLevelInfo.patterns.Count + 1}",
+            name = GenerateNewPatternName(),
             desсription = string.Empty,
             obstacles = new List<ObstacleModel>()
         };
@@ -1554,10 +1568,48 @@ public class LevelTilemapEditor : EditorWindow
 
         var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
 
-        _uiManager.UpdatePatternsList(patternNames);
         _selectedPatternIndex = _currentLevelInfo.patterns.Count - 1;
+        _uiManager.UpdatePatternsList(patternNames, _selectedPatternIndex);
+        _uiManager.UpdatePatternNameField(newPattern.name);
+        _uiManager.UpdatePatternDescriptionField(newPattern.desсription);
 
         Debug.Log($"Добавлен новый паттерн: {newPattern.name}");
+    }
+
+    private string GenerateNewPatternName()
+    {
+        var basePatternName = CurrentPattern?.name;
+        if (string.IsNullOrWhiteSpace(basePatternName))
+            basePatternName = $"Pattern {_currentLevelInfo.patterns.Count + 1}";
+
+        var candidateName = GetIncrementedPatternName(basePatternName);
+        var existingNames = new HashSet<string>(
+            _currentLevelInfo.patterns
+                .Where(pattern => !string.IsNullOrWhiteSpace(pattern?.name))
+                .Select(pattern => pattern.name),
+            StringComparer.OrdinalIgnoreCase);
+
+        while (existingNames.Contains(candidateName))
+        {
+            candidateName = GetIncrementedPatternName(candidateName);
+        }
+
+        return candidateName;
+    }
+
+    private static string GetIncrementedPatternName(string sourceName)
+    {
+        if (string.IsNullOrWhiteSpace(sourceName))
+            return "Pattern 1";
+
+        var match = PatternNameSuffixRegex.Match(sourceName.Trim());
+        if (!match.Success)
+            return $"{sourceName.Trim()}_1";
+
+        var prefix = match.Groups[1].Value;
+        var digits = match.Groups[2].Value;
+        var incrementedValue = (int.Parse(digits) + 1).ToString(new string('0', digits.Length));
+        return prefix + incrementedValue;
     }
 
     /// <summary>
