@@ -19,21 +19,9 @@
 .create-level-row {
     flex-grow: 1;
     flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 12px;
+    align-items: center;
+    justify-content: flex-start;
     margin: 8px;
     min-height: 30px;
-}
-
-.level-name-container {
-    flex-grow: 1;
-    flex-direction: row;
-    align-items: flex-end;
-}
-
-.level-name-field {
-    flex-grow: 1;
-    min-width: 220px;
 }
 

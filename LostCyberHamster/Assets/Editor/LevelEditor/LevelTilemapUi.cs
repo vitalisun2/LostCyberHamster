@@ -25,8 +25,6 @@ public class LevelTilemapUi
     private string _selectedSprite;
     private Toggle _isCollectableOnRoofToggle;
     private Button _resetButton;
-    private VisualElement _templateLevelNameParent;// #template-level-name-parent
-    private TextField _templateLevelNameField;  // #template-level-name
     private TextField _patternNameField;
     private TextField _patternDescriptionField;
     private TextField _patternSearchField;
@@ -46,9 +44,6 @@ public class LevelTilemapUi
     };
 
     private const string _collectableSpritesTag = "collectable sprites";
-    public string TemplateLevelName => _templateLevelNameField?.value;
-    public string LevelName => _templateLevelNameField?.value;
-
     public string CurrentPatternDescription => _patternDescriptionField?.value ?? "";
 
 
@@ -64,7 +59,6 @@ public class LevelTilemapUi
     public event Action<string> OnPatternDescriptionChanged;
     public event Action<PartOfDayEnum> OnDaypartChanged;
     public event Action<string> OnPatternSearchChanged;
-    public event Action<string> OnLevelNameChanged;
 
     public LevelTilemapUi(VisualElement root,
         string opeLocation)
@@ -94,12 +88,6 @@ public class LevelTilemapUi
         _patternsList = _root.Q<ListView>("patterns-list-view");
         _isCollectableOnRoofToggle = root.Q<Toggle>("IsCollectableOnRoofToggle");
         _resetButton = _root.Q<Button>("reset-btn");
-        _templateLevelNameParent = root.Q<VisualElement>("template-level-name-parent");
-        _templateLevelNameField = root.Q<TextField>("template-level-name");
-        if (_templateLevelNameParent != null)
-        {
-            _templateLevelNameParent.style.display = DisplayStyle.None;
-        }
         _patternNameField = root.Q<TextField>("selected-pattern-name");
         _patternDescriptionField = root.Q<TextField>("selected-pattern-description");
         _patternSearchField = root.Q<TextField>("pattern-search-field");
@@ -194,24 +182,6 @@ public class LevelTilemapUi
         {
             _patternDescriptionField.RegisterValueChangedCallback(
                 e => OnPatternDescriptionChanged?.Invoke(e.newValue));
-        }
-
-        if (_templateLevelNameField != null)
-        {
-            _templateLevelNameField.RegisterCallback<FocusOutEvent>(_ =>
-            {
-                OnLevelNameChanged?.Invoke(_templateLevelNameField.value);
-            });
-
-            _templateLevelNameField.RegisterCallback<KeyDownEvent>(evt =>
-            {
-                if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
-                {
-                    OnLevelNameChanged?.Invoke(_templateLevelNameField.value);
-                    _templateLevelNameField.Blur();
-                    evt.StopPropagation();
-                }
-            });
         }
 
     }
@@ -642,16 +612,6 @@ public class LevelTilemapUi
         _daypartRadioGroup.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
-    public void SetTemplateNameFieldVisible(bool isVisible)
-    {
-        if (_templateLevelNameParent == null)
-        {
-            return;
-        }
-
-        _templateLevelNameParent.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
-    }
-
     public void SetFilesListVisible(bool isVisible)
     {
         if (_filesList?.parent == null)
@@ -680,7 +640,6 @@ public class LevelTilemapUi
     public void ApplyModeUI(bool isTemplateMode)
     {
         // Templates-only elements
-        SetVisible(_templateLevelNameParent, true);
         SetVisible(_patternsSection, isTemplateMode);
         SetVisible(_patternButtonsRow, isTemplateMode);
         SetVisible(_obstacleTypeDropdownField, isTemplateMode);
@@ -842,9 +801,4 @@ public class LevelTilemapUi
             _patternDescriptionField.SetValueWithoutNotify(desc ?? "");
     }
 
-    public void UpdateLevelNameField(string levelName)
-    {
-        if (_templateLevelNameField != null)
-            _templateLevelNameField.SetValueWithoutNotify(levelName ?? string.Empty);
-    }
 }

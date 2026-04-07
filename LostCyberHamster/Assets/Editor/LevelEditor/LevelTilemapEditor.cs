@@ -47,7 +47,6 @@ public class LevelTilemapEditor : EditorWindow
     private int _selectedPatternIndex = -1;
     private Tilemap _tilemapInScene;
     private bool _isCollectableOnRoof;
-    private bool _isRenamingLevel;
 
     private bool IsTemplateMode => string.Equals(_currentLocationName,
         Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
@@ -562,30 +561,24 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void HandleCreateLevelClicked()
     {
-        string createdLevelPath = null;
-
         if (IsTemplateMode)
         {
-            var newLevelInfo = CreateDefaultLevelInfo();
-            var templateName = _uiManager.TemplateLevelName;
-            if (string.IsNullOrWhiteSpace(templateName))
-            {
-                EditorUtility.DisplayDialog("Template name required", "Введите имя шаблона перед созданием файла.", "OK");
-                return;
-            }
-
-            createdLevelPath = LevelDataManager.CreateNewTemplate(newLevelInfo, templateName, _levelsDirectory, _spritesNames);
+            CreateLevelPromptWindow.Show(
+                "Create Template",
+                "Template Name",
+                "new_template",
+                "OK",
+                CreateTemplateWithName);
         }
         else
         {
-            var newLevelRef = CreateDefaultLevelInfoRef();
-            createdLevelPath = LevelDataManager.CreateNewLevelRef(newLevelRef, _levelsDirectory, _selectedDaypart, _uiManager.LevelName, _spritesNames);
+            CreateLevelPromptWindow.Show(
+                "Create Level",
+                "Level Name",
+                LevelDataManager.GetNextAvailableLevelKey(_levelsDirectory),
+                "OK",
+                CreateLevelWithName);
         }
-
-       
-        AssetDatabase.Refresh();
-        RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
-        TrySelectLevelByPath(createdLevelPath);
     }
 
     private LevelInfo CreateDefaultLevelInfo()
@@ -784,6 +777,36 @@ public class LevelTilemapEditor : EditorWindow
         return true;
     }
 
+    private void CreateTemplateWithName(string templateName)
+    {
+        if (string.IsNullOrWhiteSpace(templateName))
+            return;
+
+        var newLevelInfo = CreateDefaultLevelInfo();
+        var createdLevelPath = LevelDataManager.CreateNewTemplate(newLevelInfo, templateName, _levelsDirectory, _spritesNames);
+        FinalizeCreatedLevel(createdLevelPath);
+    }
+
+    private void CreateLevelWithName(string levelName)
+    {
+        if (string.IsNullOrWhiteSpace(levelName))
+            return;
+
+        var newLevelRef = CreateDefaultLevelInfoRef();
+        var createdLevelPath = LevelDataManager.CreateNewLevelRef(newLevelRef, _levelsDirectory, _selectedDaypart, levelName, _spritesNames);
+        FinalizeCreatedLevel(createdLevelPath);
+    }
+
+    private void FinalizeCreatedLevel(string createdLevelPath)
+    {
+        if (string.IsNullOrWhiteSpace(createdLevelPath))
+            return;
+
+        AssetDatabase.Refresh();
+        RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
+        TrySelectLevelByPath(createdLevelPath);
+    }
+
     /// <summary>
     /// Обработка выбора нового спрайта в UI.
     /// </summary>
@@ -874,7 +897,6 @@ public class LevelTilemapEditor : EditorWindow
             _currentLevelInfo = ResolveTemplatesForDisplay(_patternsCollection, _locationTheme);
             _patternSequencePanel.Hide();
             _spriteOverridePanel.Hide();
-            _uiManager.UpdateLevelNameField(_uiManager.TemplateLevelName);
         }
         else
         {
@@ -890,7 +912,6 @@ public class LevelTilemapEditor : EditorWindow
             _currentLevelInfo = LevelResolver.Resolve(_currentLevelRef, _patternsCollection, _locationTheme);
             _patternSequencePanel.Show(_currentLevelRef, _patternsCollection);
             _spriteOverridePanel.Hide();
-            _uiManager.UpdateLevelNameField(LevelDataManager.GetLevelKeyFromFilePath(_selectedFile));
         }
 
         // Вычисляем общую ширину уровня.
@@ -1909,7 +1930,6 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.OnPatternDescriptionChanged += HandlePatternDescriptionChanged;
         _uiManager.OnDaypartChanged += HandleDaypartChanged;
         _uiManager.OnPatternSearchChanged += HandlePatternSearchChanged;
-        _uiManager.OnLevelNameChanged += HandleLevelNameChanged;
 
         _patternSequencePanel.OnSequenceChanged += HandlePatternSequenceChanged;
         _patternSequencePanel.OnPatternSelected += ZoomToPattern;
@@ -1937,7 +1957,6 @@ public class LevelTilemapEditor : EditorWindow
             _uiManager.OnPatternDescriptionChanged -= HandlePatternDescriptionChanged;
             _uiManager.OnDaypartChanged -= HandleDaypartChanged;
             _uiManager.OnPatternSearchChanged -= HandlePatternSearchChanged;
-            _uiManager.OnLevelNameChanged -= HandleLevelNameChanged;
         }
 
         if (_patternSequencePanel != null)
@@ -2018,51 +2037,6 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         _patternsCollection.patterns = syncedTemplates;
-    }
-
-    private void HandleLevelNameChanged(string newLevelName)
-    {
-        if (_isRenamingLevel)
-            return;
-
-        if (IsTemplateMode || string.IsNullOrWhiteSpace(_selectedFile) || _selectedLevelDescriptor == null)
-            return;
-
-        var currentLevelKey = LevelDataManager.GetLevelKeyFromFilePath(_selectedFile);
-        var normalizedLevelKey = LevelDataManager.NormalizeLevelKey(newLevelName);
-        if (string.IsNullOrWhiteSpace(normalizedLevelKey))
-        {
-            _uiManager.UpdateLevelNameField(currentLevelKey);
-            return;
-        }
-
-        if (string.Equals(currentLevelKey, normalizedLevelKey, StringComparison.OrdinalIgnoreCase))
-        {
-            _uiManager.UpdateLevelNameField(currentLevelKey);
-            return;
-        }
-
-        try
-        {
-            _isRenamingLevel = true;
-            var renamedPath = LevelDataManager.RenameLevel(_selectedFile, _levelsDirectory, _selectedDaypart, normalizedLevelKey);
-            AssetDatabase.Refresh();
-            RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
-
-            if (!TrySelectLevelByPath(renamedPath))
-            {
-                _uiManager.UpdateLevelNameField(normalizedLevelKey);
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Failed to rename level: {ex.Message}");
-            _uiManager.UpdateLevelNameField(currentLevelKey);
-        }
-        finally
-        {
-            _isRenamingLevel = false;
-        }
     }
 
     private static PatternTemplate BuildTemplateFromResolvedPattern(Pattern resolvedPattern, PatternTemplate template)

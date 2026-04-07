@@ -1,9 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <ui:DropdownField label="location" name="location-dropdown" style="margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px;" />
     <ui:VisualElement name="create-level-row" class="create-level-row">
-        <ui:VisualElement name="template-level-name-parent" class="level-name-container" style="display: none;">
-            <ui:TextField label="Level Name" name="template-level-name" enabled="true" hide-placeholder-on-focus="false" class="level-name-field" />
-        </ui:VisualElement>
         <ui:Button text="create level" name="create-level-btn" />
     </ui:VisualElement>
     <ui:VisualElement style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 140px; min-height: 50px; height: auto;">

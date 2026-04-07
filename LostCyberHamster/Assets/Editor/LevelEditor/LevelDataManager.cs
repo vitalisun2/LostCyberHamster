@@ -277,47 +277,6 @@ public static class LevelDataManager
         }
     }
 
-    public static string RenameLevel(string currentFilePath, string levelsDirectory, PartOfDayEnum partOfDay, string requestedLevelName)
-    {
-        if (string.IsNullOrWhiteSpace(currentFilePath))
-            throw new ArgumentException("Current file path is required.", nameof(currentFilePath));
-
-        var currentLevelKey = GetLevelKeyFromFilePath(currentFilePath);
-        if (string.IsNullOrWhiteSpace(currentLevelKey))
-            throw new InvalidOperationException($"Failed to resolve current level key from '{currentFilePath}'.");
-
-        var targetLevelKey = ResolveLevelKey(levelsDirectory, requestedLevelName, currentLevelKey);
-        if (string.Equals(currentLevelKey, targetLevelKey, StringComparison.OrdinalIgnoreCase))
-            return currentFilePath;
-
-        var currentLevelDirectory = Path.GetDirectoryName(currentFilePath);
-        var partDirectory = Path.Combine(levelsDirectory, partOfDay.ToString());
-        Directory.CreateDirectory(partDirectory);
-
-        var currentLevelDirectoryAssetPath = ToAssetPath(currentLevelDirectory);
-        var renameFolderResult = AssetDatabase.RenameAsset(currentLevelDirectoryAssetPath, targetLevelKey);
-        if (!string.IsNullOrEmpty(renameFolderResult))
-            throw new InvalidOperationException($"Failed to rename level folder: {renameFolderResult}");
-
-        var renamedLevelDirectoryAssetPath = ToAssetPath(Path.Combine(partDirectory, targetLevelKey));
-        var originalJsonFileName = Path.GetFileName(currentFilePath);
-        var renamedJsonAssetPath = $"{renamedLevelDirectoryAssetPath}/{originalJsonFileName}";
-        var currentJsonKey = Path.GetFileNameWithoutExtension(currentFilePath);
-
-        if (!string.Equals(currentJsonKey, targetLevelKey, StringComparison.OrdinalIgnoreCase))
-        {
-            var renameJsonResult = AssetDatabase.RenameAsset(renamedJsonAssetPath, targetLevelKey);
-            if (!string.IsNullOrEmpty(renameJsonResult))
-                throw new InvalidOperationException($"Failed to rename level json: {renameJsonResult}");
-        }
-
-        var canonicalJsonAssetPath = $"{renamedLevelDirectoryAssetPath}/{targetLevelKey}.json";
-
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-        return ToAbsolutePath(canonicalJsonAssetPath);
-    }
-
     public static string NormalizeLevelKey(string levelName)
     {
         if (string.IsNullOrWhiteSpace(levelName))
@@ -343,6 +302,11 @@ public static class LevelDataManager
             return levelDirectory;
 
         return Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
+    }
+
+    public static string GetNextAvailableLevelKey(string levelsDirectory)
+    {
+        return GenerateNextLevelKey(levelsDirectory);
     }
 
     private static string ResolveLevelKey(string levelsDirectory, string requestedLevelName, string currentLevelKeyToIgnore = null)
