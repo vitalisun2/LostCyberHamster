@@ -60,6 +60,83 @@ namespace Assets.EditorTools
 
         private const int FrameRate = 5; // Procreate export setting: 5 FPS
 
+        private static readonly System.Text.RegularExpressions.Regex UnderscoreFrameSuffix =
+            new(@"_(\d+)$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        [MenuItem("Tools/Obstacle Animations/Validate Sub-sprite Naming", priority = 510)]
+        public static void ValidateSubSpriteNaming()
+        {
+            if (Application.isPlaying)
+            {
+                Debug.LogWarning("[ObstacleAnimationImporter] Cannot run while in Play Mode.");
+                return;
+            }
+
+            var locationsRoot = ContentLocationsRoot;
+            if (!Directory.Exists(locationsRoot))
+            {
+                Debug.LogWarning($"[ObstacleAnimationImporter] Locations root not found: {locationsRoot}");
+                return;
+            }
+
+            int totalFixed = 0;
+            var spritePaths = Directory.GetFiles(locationsRoot, "*.png", SearchOption.AllDirectories);
+
+            foreach (var spritePath in spritePaths)
+            {
+                var assetPath = spritePath.Replace("\\", "/");
+                // Make path relative to project root
+                var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "..")).Replace("\\", "/");
+                if (assetPath.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase))
+                    assetPath = assetPath[(projectRoot.Length + 1)..];
+
+                var baseName = Path.GetFileNameWithoutExtension(assetPath);
+
+                // Check if corresponding .anim exists — this is an animated asset
+                if (!AnimationExists(baseName))
+                    continue;
+
+                var importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+                if (importer == null || importer.spriteImportMode != SpriteImportMode.Multiple)
+                    continue;
+
+                var spritesheet = importer.spritesheet;
+                if (spritesheet == null || spritesheet.Length == 0)
+                    continue;
+
+                bool needsFix = false;
+                var fixedMetas = new SpriteMetaData[spritesheet.Length];
+
+                for (int i = 0; i < spritesheet.Length; i++)
+                {
+                    fixedMetas[i] = spritesheet[i];
+                    var name = spritesheet[i].name;
+
+                    // Check if sub-sprite name uses underscore suffix instead of dash
+                    if (name.StartsWith(baseName, StringComparison.Ordinal) &&
+                        UnderscoreFrameSuffix.IsMatch(name))
+                    {
+                        var fixedName = UnderscoreFrameSuffix.Replace(name, "-$1");
+                        fixedMetas[i].name = fixedName;
+                        needsFix = true;
+                        Debug.Log($"[ObstacleAnimationImporter] Fixing sub-sprite name: '{name}' → '{fixedName}' in {assetPath}");
+                    }
+                }
+
+                if (needsFix)
+                {
+                    importer.spritesheet = fixedMetas;
+                    importer.SaveAndReimport();
+                    totalFixed++;
+                }
+            }
+
+            if (totalFixed > 0)
+                Debug.Log($"[ObstacleAnimationImporter] Validation complete. Fixed {totalFixed} sprite sheet(s).");
+            else
+                Debug.Log("[ObstacleAnimationImporter] Validation complete. All sub-sprite names follow the dash convention.");
+        }
+
         [MenuItem("Tools/Obstacle Animations/Import From Dropbox", priority = 500)]
         [MenuItem("Assets/Obstacle Animations/Import From Dropbox", priority = 10)]
         public static void ImportFromDropboxMenu()

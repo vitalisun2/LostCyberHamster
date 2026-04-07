@@ -10,12 +10,12 @@ public static class ObstacleSpriteTypeMappingsManager
     private static string _currentLocation;
 
     private static readonly System.Text.RegularExpressions.Regex _frameSuffixRegex =
-        new(@"(?:[-_]\d+)$", System.Text.RegularExpressions.RegexOptions.Compiled);
+        new(@"-\d+$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private static string NormalizeSpriteName(string spriteName)
     {
         var shortName = System.IO.Path.GetFileNameWithoutExtension(spriteName.ToLower());
-        // Убираем суффикс кадра (-0, -1, _0, _1, ...) из имён sub-sprite анимаций
+        // Убираем суффикс кадра (-0, -1, ...) из имён sub-sprite анимаций
         return _frameSuffixRegex.Replace(shortName, "");
     }
 

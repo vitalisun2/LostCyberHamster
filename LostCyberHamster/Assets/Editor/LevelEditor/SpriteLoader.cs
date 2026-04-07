@@ -9,10 +9,11 @@ public static class SpriteLoader
     private static readonly Dictionary<string, Sprite> _spriteCache = new();
     private static readonly Dictionary<string, AsyncOperationHandle> _handleCache = new();
 
-    private static readonly Regex _frameSuffixRegex = new(@"(?:[-_]\d+)$", RegexOptions.Compiled);
+    private static readonly Regex _frameSuffixRegex = new(@"-\d+$", RegexOptions.Compiled);
 
     /// <summary>
-    /// Удаляет суффикс кадра (-0, -1, _0, _1, ...) из имени спрайта.
+    /// Удаляет суффикс кадра анимации (-0, -1, ...) из имени спрайта.
+    /// Конвенция: кадры анимации всегда через дефис (ObstacleAnimationImporter).
     /// </summary>
     public static string StripFrameSuffix(string spriteName)
     {
@@ -39,26 +40,18 @@ public static class SpriteLoader
         if (_spriteCache.TryGetValue(spriteName, out var cachedSprite))
             return cachedSprite;
 
-        var normalizedName = StripFrameSuffix(spriteName);
-        if (!string.Equals(normalizedName, spriteName) && _spriteCache.TryGetValue(normalizedName, out cachedSprite))
-            return cachedSprite;
-
-        var addressableKey = string.IsNullOrWhiteSpace(normalizedName) ? spriteName : normalizedName;
-
         // Адресуемся к Addressables и ждём завершения
-        var handle = Addressables.LoadAssetAsync<Sprite>(addressableKey);
+        var handle = Addressables.LoadAssetAsync<Sprite>(spriteName);
         var loadedSprite = handle.WaitForCompletion();
 
         if (loadedSprite != null)
         {
-            _spriteCache[addressableKey] = loadedSprite;
-            _handleCache[addressableKey] = handle;
-            if (!string.Equals(spriteName, addressableKey))
-                _spriteCache[spriteName] = loadedSprite;
+            _spriteCache[spriteName] = loadedSprite;
+            _handleCache[spriteName] = handle;
             return loadedSprite;
         }
 
-        Debug.LogError($"Не удалось синхронно загрузить спрайт: {addressableKey}");
+        Debug.LogError($"Не удалось синхронно загрузить спрайт: {spriteName}");
         return null;
     }
 
