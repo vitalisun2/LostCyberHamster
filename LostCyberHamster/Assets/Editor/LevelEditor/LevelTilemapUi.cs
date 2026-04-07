@@ -47,6 +47,7 @@ public class LevelTilemapUi
 
     private const string _collectableSpritesTag = "collectable sprites";
     public string TemplateLevelName => _templateLevelNameField?.value;
+    public string LevelName => _templateLevelNameField?.value;
 
     public string CurrentPatternDescription => _patternDescriptionField?.value ?? "";
 
@@ -63,6 +64,7 @@ public class LevelTilemapUi
     public event Action<string> OnPatternDescriptionChanged;
     public event Action<PartOfDayEnum> OnDaypartChanged;
     public event Action<string> OnPatternSearchChanged;
+    public event Action<string> OnLevelNameChanged;
 
     public LevelTilemapUi(VisualElement root,
         string opeLocation)
@@ -192,6 +194,24 @@ public class LevelTilemapUi
         {
             _patternDescriptionField.RegisterValueChangedCallback(
                 e => OnPatternDescriptionChanged?.Invoke(e.newValue));
+        }
+
+        if (_templateLevelNameField != null)
+        {
+            _templateLevelNameField.RegisterCallback<FocusOutEvent>(_ =>
+            {
+                OnLevelNameChanged?.Invoke(_templateLevelNameField.value);
+            });
+
+            _templateLevelNameField.RegisterCallback<KeyDownEvent>(evt =>
+            {
+                if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
+                {
+                    OnLevelNameChanged?.Invoke(_templateLevelNameField.value);
+                    _templateLevelNameField.Blur();
+                    evt.StopPropagation();
+                }
+            });
         }
 
     }
@@ -660,7 +680,7 @@ public class LevelTilemapUi
     public void ApplyModeUI(bool isTemplateMode)
     {
         // Templates-only elements
-        SetVisible(_templateLevelNameParent, isTemplateMode);
+        SetVisible(_templateLevelNameParent, true);
         SetVisible(_patternsSection, isTemplateMode);
         SetVisible(_patternButtonsRow, isTemplateMode);
         SetVisible(_obstacleTypeDropdownField, isTemplateMode);
@@ -814,5 +834,11 @@ public class LevelTilemapUi
     {
         if (_patternDescriptionField != null)
             _patternDescriptionField.SetValueWithoutNotify(desc ?? "");
+    }
+
+    public void UpdateLevelNameField(string levelName)
+    {
+        if (_templateLevelNameField != null)
+            _templateLevelNameField.SetValueWithoutNotify(levelName ?? string.Empty);
     }
 }

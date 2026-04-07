@@ -47,6 +47,7 @@ public class LevelTilemapEditor : EditorWindow
     private int _selectedPatternIndex = -1;
     private Tilemap _tilemapInScene;
     private bool _isCollectableOnRoof;
+    private bool _isRenamingLevel;
 
     private bool IsTemplateMode => string.Equals(_currentLocationName,
         Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
@@ -578,7 +579,7 @@ public class LevelTilemapEditor : EditorWindow
         else
         {
             var newLevelRef = CreateDefaultLevelInfoRef();
-            createdLevelPath = LevelDataManager.CreateNewLevelRef(newLevelRef, _levelsDirectory, _selectedDaypart, _spritesNames);
+            createdLevelPath = LevelDataManager.CreateNewLevelRef(newLevelRef, _levelsDirectory, _selectedDaypart, _uiManager.LevelName, _spritesNames);
         }
 
        
@@ -861,6 +862,7 @@ public class LevelTilemapEditor : EditorWindow
             _currentLevelInfo = ResolveTemplatesForDisplay(_patternsCollection, _locationTheme);
             _patternSequencePanel.Hide();
             _spriteOverridePanel.Hide();
+            _uiManager.UpdateLevelNameField(_uiManager.TemplateLevelName);
         }
         else
         {
@@ -876,6 +878,7 @@ public class LevelTilemapEditor : EditorWindow
             _currentLevelInfo = LevelResolver.Resolve(_currentLevelRef, _patternsCollection, _locationTheme);
             _patternSequencePanel.Show(_currentLevelRef, _patternsCollection);
             _spriteOverridePanel.Hide();
+            _uiManager.UpdateLevelNameField(LevelDataManager.GetLevelKeyFromFilePath(_selectedFile));
         }
 
         // Вычисляем общую ширину уровня.
@@ -1894,6 +1897,7 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.OnPatternDescriptionChanged += HandlePatternDescriptionChanged;
         _uiManager.OnDaypartChanged += HandleDaypartChanged;
         _uiManager.OnPatternSearchChanged += HandlePatternSearchChanged;
+        _uiManager.OnLevelNameChanged += HandleLevelNameChanged;
 
         _patternSequencePanel.OnSequenceChanged += HandlePatternSequenceChanged;
         _patternSequencePanel.OnPatternSelected += ZoomToPattern;
@@ -1921,6 +1925,7 @@ public class LevelTilemapEditor : EditorWindow
             _uiManager.OnPatternDescriptionChanged -= HandlePatternDescriptionChanged;
             _uiManager.OnDaypartChanged -= HandleDaypartChanged;
             _uiManager.OnPatternSearchChanged -= HandlePatternSearchChanged;
+            _uiManager.OnLevelNameChanged -= HandleLevelNameChanged;
         }
 
         if (_patternSequencePanel != null)
@@ -2001,6 +2006,52 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         _patternsCollection.patterns = syncedTemplates;
+    }
+
+    private void HandleLevelNameChanged(string newLevelName)
+    {
+        if (_isRenamingLevel)
+            return;
+
+        if (IsTemplateMode || string.IsNullOrWhiteSpace(_selectedFile) || _selectedLevelDescriptor == null)
+            return;
+
+        var currentLevelKey = LevelDataManager.GetLevelKeyFromFilePath(_selectedFile);
+        var normalizedLevelKey = LevelDataManager.NormalizeLevelKey(newLevelName);
+        if (string.IsNullOrWhiteSpace(normalizedLevelKey))
+        {
+            _uiManager.UpdateLevelNameField(currentLevelKey);
+            return;
+        }
+
+        if (string.Equals(currentLevelKey, normalizedLevelKey, StringComparison.OrdinalIgnoreCase))
+        {
+            _uiManager.UpdateLevelNameField(currentLevelKey);
+            return;
+        }
+
+        try
+        {
+            _isRenamingLevel = true;
+            var renamedPath = LevelDataManager.RenameLevel(_selectedFile, _levelsDirectory, _selectedDaypart, normalizedLevelKey);
+            AssetDatabase.Refresh();
+            RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
+
+            var index = _visibleLevelDescriptors.FindIndex(d => string.Equals(d.AbsolutePath, renamedPath, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0)
+                _uiManager.SelectFileByIndex(index);
+            else
+                _uiManager.UpdateLevelNameField(normalizedLevelKey);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Failed to rename level: {ex.Message}");
+            _uiManager.UpdateLevelNameField(currentLevelKey);
+        }
+        finally
+        {
+            _isRenamingLevel = false;
+        }
     }
 
     private static PatternTemplate BuildTemplateFromResolvedPattern(Pattern resolvedPattern, PatternTemplate template)

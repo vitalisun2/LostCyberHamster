@@ -13,11 +13,13 @@ using Assets.Editor.LevelEditor;
 using Assets.Editor.LevelEditor.ObstacleSpriteTypeMappingManagement;
 using Assets.Scripts;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using System.Text.RegularExpressions;
 
 public static class LevelDataManager
 {
     private const string MappingFileName   = "obstacle_sprite_to_type_mappings";
     private const string MappingsGroupName = "Mappings";
+    private static readonly Regex _levelKeySanitizer = new Regex(@"[^a-z0-9_]+", RegexOptions.Compiled);
 
     private static readonly IReadOnlyDictionary<string, PartOfDayEnum> _partOfDayFolderMap =
         new Dictionary<string, PartOfDayEnum>(StringComparer.OrdinalIgnoreCase)
@@ -196,7 +198,7 @@ public static class LevelDataManager
         File.WriteAllText(filePath, json, Encoding.UTF8);
     }
 
-    public static string CreateNewLevel(LevelInfo levelInfo, string levelsDirectory, PartOfDayEnum partOfDay, List<string> spritesNames = null)
+    public static string CreateNewLevel(LevelInfo levelInfo, string levelsDirectory, PartOfDayEnum partOfDay, string requestedLevelName = null, List<string> spritesNames = null)
     {
         try
         {
@@ -205,7 +207,7 @@ public static class LevelDataManager
             if (errors.Any())
                 throw new Exception($"Level data is invalid: {string.Join(", ", errors)}");
 
-            var levelKey = GenerateNextLevelKey();
+            var levelKey = ResolveLevelKey(levelsDirectory, requestedLevelName);
             var filePath = BuildCanonicalLevelJsonPath(levelsDirectory, partOfDay, levelKey);
 
             SaveLevel(levelInfo, filePath);
@@ -219,7 +221,7 @@ public static class LevelDataManager
         }
     }
 
-    public static string CreateNewLevelRef(LevelInfoRef levelInfoRef, string levelsDirectory, PartOfDayEnum partOfDay, List<string> spritesNames = null)
+    public static string CreateNewLevelRef(LevelInfoRef levelInfoRef, string levelsDirectory, PartOfDayEnum partOfDay, string requestedLevelName = null, List<string> spritesNames = null)
     {
         try
         {
@@ -234,7 +236,7 @@ public static class LevelDataManager
             if (errors.Any())
                 throw new Exception($"Level data is invalid: {string.Join(", ", errors)}");
 
-            var levelKey = GenerateNextLevelKey();
+            var levelKey = ResolveLevelKey(levelsDirectory, requestedLevelName);
             var filePath = BuildCanonicalLevelJsonPath(levelsDirectory, partOfDay, levelKey);
 
             SaveLevelRef(levelInfoRef, filePath);
@@ -248,14 +250,89 @@ public static class LevelDataManager
         }
     }
 
-    private static string GenerateNextLevelKey()
+    public static string RenameLevel(string currentFilePath, string levelsDirectory, PartOfDayEnum partOfDay, string requestedLevelName)
+    {
+        if (string.IsNullOrWhiteSpace(currentFilePath))
+            throw new ArgumentException("Current file path is required.", nameof(currentFilePath));
+
+        var currentLevelKey = GetLevelKeyFromFilePath(currentFilePath);
+        if (string.IsNullOrWhiteSpace(currentLevelKey))
+            throw new InvalidOperationException($"Failed to resolve current level key from '{currentFilePath}'.");
+
+        var targetLevelKey = ResolveLevelKey(levelsDirectory, requestedLevelName, currentLevelKey);
+        if (string.Equals(currentLevelKey, targetLevelKey, StringComparison.OrdinalIgnoreCase))
+            return currentFilePath;
+
+        var currentLevelDirectory = Path.GetDirectoryName(currentFilePath);
+        var partDirectory = Path.Combine(levelsDirectory, partOfDay.ToString());
+        Directory.CreateDirectory(partDirectory);
+
+        var currentLevelDirectoryAssetPath = ToAssetPath(currentLevelDirectory);
+        var targetLevelDirectoryAssetPath = ToAssetPath(Path.Combine(partDirectory, targetLevelKey));
+        var moveFolderResult = AssetDatabase.MoveAsset(currentLevelDirectoryAssetPath, targetLevelDirectoryAssetPath);
+        if (!string.IsNullOrEmpty(moveFolderResult))
+            throw new InvalidOperationException($"Failed to rename level folder: {moveFolderResult}");
+
+        var movedJsonAssetPath = Path.Combine(targetLevelDirectoryAssetPath, Path.GetFileName(currentFilePath)).Replace('\\', '/');
+        var canonicalJsonAssetPath = ToAssetPath(BuildCanonicalLevelJsonPath(levelsDirectory, partOfDay, targetLevelKey));
+        if (!string.Equals(movedJsonAssetPath, canonicalJsonAssetPath, StringComparison.OrdinalIgnoreCase))
+        {
+            var moveFileResult = AssetDatabase.MoveAsset(movedJsonAssetPath, canonicalJsonAssetPath);
+            if (!string.IsNullOrEmpty(moveFileResult))
+                throw new InvalidOperationException($"Failed to rename level json: {moveFileResult}");
+        }
+
+        AssetDatabase.Refresh();
+        return ToAbsolutePath(canonicalJsonAssetPath);
+    }
+
+    public static string NormalizeLevelKey(string levelName)
+    {
+        if (string.IsNullOrWhiteSpace(levelName))
+            return string.Empty;
+
+        var normalized = levelName.Trim().ToLowerInvariant()
+            .Replace('-', '_')
+            .Replace(' ', '_');
+        normalized = _levelKeySanitizer.Replace(normalized, "_");
+        while (normalized.Contains("__", StringComparison.Ordinal))
+            normalized = normalized.Replace("__", "_", StringComparison.Ordinal);
+
+        return normalized.Trim('_');
+    }
+
+    public static string GetLevelKeyFromFilePath(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            return string.Empty;
+
+        var levelDirectory = Path.GetFileName(Path.GetDirectoryName(filePath));
+        if (!string.IsNullOrWhiteSpace(levelDirectory))
+            return levelDirectory;
+
+        return Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
+    }
+
+    private static string ResolveLevelKey(string levelsDirectory, string requestedLevelName, string currentLevelKeyToIgnore = null)
+    {
+        var normalizedRequested = NormalizeLevelKey(requestedLevelName);
+        if (!string.IsNullOrWhiteSpace(normalizedRequested))
+        {
+            EnsureLevelKeyIsAvailable(levelsDirectory, normalizedRequested, currentLevelKeyToIgnore);
+            return normalizedRequested;
+        }
+
+        return GenerateNextLevelKey(levelsDirectory);
+    }
+
+    private static string GenerateNextLevelKey(string levelsDirectory)
     {
         var highestLevelNumber = 0;
 
         foreach (var descriptor in EnumerateAllLocationLevelFileDescriptors())
         {
-            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(descriptor.AbsolutePath);
-            var parts = fileNameWithoutExtension.Split('_');
+            var levelKey = GetLevelKeyFromFilePath(descriptor.AbsolutePath);
+            var parts = levelKey.Split('_');
             if (parts.Length == 2 && int.TryParse(parts[1], out var levelNumber))
             {
                 if (levelNumber > highestLevelNumber)
@@ -268,12 +345,35 @@ public static class LevelDataManager
         return $"level_{highestLevelNumber + 1:D2}";
     }
 
+    private static void EnsureLevelKeyIsAvailable(string levelsDirectory, string levelKey, string currentLevelKeyToIgnore)
+    {
+        foreach (var descriptor in EnumerateAllLocationLevelFileDescriptors())
+        {
+            var existingKey = GetLevelKeyFromFilePath(descriptor.AbsolutePath);
+            if (string.Equals(existingKey, currentLevelKeyToIgnore, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (string.Equals(existingKey, levelKey, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Level '{levelKey}' already exists.");
+        }
+    }
+
     private static string BuildCanonicalLevelJsonPath(string levelsDirectory, PartOfDayEnum partOfDay, string levelKey)
     {
         var partDirectory = Path.Combine(levelsDirectory, partOfDay.ToString());
         var levelDirectory = Path.Combine(partDirectory, levelKey);
         Directory.CreateDirectory(levelDirectory);
         return Path.Combine(levelDirectory, $"{levelKey}.json");
+    }
+
+    private static string ToAssetPath(string absolutePath)
+    {
+        return NormalizePath(Path.GetRelativePath(Directory.GetCurrentDirectory(), absolutePath));
+    }
+
+    private static string ToAbsolutePath(string assetPath)
+    {
+        return Path.GetFullPath(assetPath.Replace('/', Path.DirectorySeparatorChar));
     }
 
     public static string CreateNewTemplate(LevelInfo levelInfo, string templateName, string levelsDirectory,
