@@ -30,6 +30,12 @@ public static class SpriteLoader
 
     public static Sprite LoadSpriteSync(string spriteName)
     {
+        if (string.IsNullOrWhiteSpace(spriteName))
+        {
+            Debug.LogWarning("SpriteLoader.LoadSpriteSync called with empty sprite key.");
+            return null;
+        }
+
         if (_spriteCache.TryGetValue(spriteName, out var cachedSprite))
             return cachedSprite;
 

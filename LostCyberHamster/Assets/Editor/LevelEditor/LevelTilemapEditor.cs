@@ -1125,6 +1125,12 @@ public class LevelTilemapEditor : EditorWindow
             for (int o = 0; o < pattern.obstacles.Count; o++)
             {
                 var obstacle = pattern.obstacles[o];
+                if (string.IsNullOrWhiteSpace(obstacle.spriteName))
+                {
+                    Debug.LogWarning($"[LevelTilemapEditor] Obstacle without spriteName in pattern '{pattern.name}' (id={o}, type={obstacle.type}).");
+                    continue;
+                }
+
                 var sprite = SpriteLoader.LoadSpriteSync(obstacle.spriteName);
                 if (sprite == null) continue;
 
