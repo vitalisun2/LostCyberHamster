@@ -73,7 +73,6 @@ namespace Assets.Scripts.Bot
                     obs.ObstacleType.IsTop,
                     leftX, rightX, pos.x,
                     dist,
-                    ObjectCategory.Neutral,
                     obs.GetInstanceID()));
             }
 

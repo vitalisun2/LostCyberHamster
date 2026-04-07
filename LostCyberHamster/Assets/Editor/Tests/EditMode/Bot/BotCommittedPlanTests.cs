@@ -63,8 +63,6 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, true, 15.0f, 16.4f, 18.0f, 1201)
                 });
 
-            snapshot = classifier.Classify(snapshot);
-
             var retained = new List<BranchStep>
             {
                 Step(BotAction.SwitchLane, 1202, 0, 0f),
@@ -80,6 +78,21 @@ namespace Assets.Tests.EditMode.BotV3
             Assert.AreEqual(1203, best.Steps[1].TargetObstacle.StableId);
         }
 
+        [Test]
+        public void TryGetCategory_BigAliveDependsOnHamsterRoofState()
+        {
+            var classifier = new ObjectClassifier();
+            var obstacle = Obs(ObstacleTypeEnum.bigAlive, true, 10.0f, 12.0f, 13.0f, 1301);
+            var roadSnapshot = MakeSnapshot(true, new[] { obstacle });
+            var roofSnapshot = MakeSnapshot(true, new[] { obstacle });
+            roofSnapshot.HamsterOnRoof = true;
+
+            Assert.IsTrue(classifier.TryGetCategory(obstacle, roadSnapshot, out var roadCategory));
+            Assert.IsTrue(classifier.TryGetCategory(obstacle, roofSnapshot, out var roofCategory));
+            Assert.AreEqual(ObjectCategory.Threat, roadCategory);
+            Assert.AreEqual(ObjectCategory.Target, roofCategory);
+        }
+
         private static BranchStep Step(BotAction action, int stableId, int energyCost, float fireWorldShift)
         {
             return new BranchStep(
@@ -91,7 +104,6 @@ namespace Assets.Tests.EditMode.BotV3
                     11.4f,
                     10.7f,
                     13.0f,
-                    ObjectCategory.Threat,
                     stableId),
                 executeAtDistance: 1.5f,
                 fireWorldShift: fireWorldShift,
@@ -129,7 +141,6 @@ namespace Assets.Tests.EditMode.BotV3
                 rightX,
                 (leftX + rightX) * 0.5f,
                 distanceToHamster,
-                ObjectCategory.Neutral,
                 stableId);
         }
     }

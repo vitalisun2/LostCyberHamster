@@ -14,21 +14,12 @@ namespace Assets.Scripts.Bot
         /// </summary>
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
-            ProblemDescriptor problem,
+            ObstacleInfo target,
             ProjectedWorld projectedWorld,
             out BranchStep step,
             out string rejectReason)
         {
             step = null;
-
-            // Валидация типа проблемы
-            if (problem == null || problem.Kind != ProblemKind.ThreatCollision)
-            {
-                rejectReason = "unsupported problem";
-                return false;
-            }
-
-            var target = problem.SourceObstacle;
 
             // Найти первый безопасный момент для перестроения
             if (!TryFindSafeFireShift(snapshot, target, out float fireWorldShift))

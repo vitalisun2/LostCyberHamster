@@ -57,15 +57,13 @@ namespace Assets.Scripts.Bot
         /// </summary>
         public List<BranchStep> Generate(
             BotSceneSnapshot snapshot,
-            ProblemDescriptor problem,
+            ObstacleInfo target,
             string logScope = null)
         {
             var result = new List<BranchStep>();
-            if (snapshot == null || problem == null)
+            if (snapshot == null)
                 return result;
 
-            // Получить список применимых стратегий из таблицы
-            var target = problem.SourceObstacle;
             var tableKey = (snapshot.HamsterOnRoof, target.Type);
 
             if (!_strategyTable.TryGetValue(tableKey, out var applicableActions))
@@ -82,7 +80,7 @@ namespace Assets.Scripts.Bot
                 if (_strategyByAction.TryGetValue(action, out var strategy))
                 {
                     bool success = strategy.TryBuildStep(
-                        snapshot, problem, _projectedWorld,
+                        snapshot, target, _projectedWorld,
                         out BranchStep step, out string rejectReason);
                     candidates.Add((action, success, rejectReason));
                     if (success)
@@ -92,7 +90,7 @@ namespace Assets.Scripts.Bot
 
             // Залогировать результаты
             if (result.Count > 0)
-                LogCandidates(problem.SourceObstacle, candidates, snapshot, logScope);
+                LogCandidates(target, candidates, snapshot, logScope);
 
             return result;
         }

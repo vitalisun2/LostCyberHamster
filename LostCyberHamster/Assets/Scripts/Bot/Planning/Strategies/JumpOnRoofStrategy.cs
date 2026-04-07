@@ -24,21 +24,13 @@ namespace Assets.Scripts.Bot
         /// </summary>
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
-            ProblemDescriptor problem,
+            ObstacleInfo target,
             ProjectedWorld projectedWorld,
             out BranchStep step,
             out string rejectReason)
         {
             step = null;
             rejectReason = null;
-
-            if (problem == null || problem.Kind != ProblemKind.ThreatCollision)
-            {
-                rejectReason = "unsupported problem";
-                return false;
-            }
-
-            var target = problem.SourceObstacle;
 
             if (snapshot.Energy < BotConsts.JumpEnergyCost)
             {

@@ -12,6 +12,13 @@
 - заменить текущий план только если новый branch стал строго лучше;
 - увеличить глубину lookahead с `3` до `5`.
 
+Дополнение текущей ветки:
+
+- planner category больше не хранится внутри `ObstacleInfo`;
+- категория вычисляется по запросу как функция `obstacle + snapshot`;
+- `ProblemKind` убран;
+- `ProblemResolver` теперь ищет и возвращает ближайшую same-lane угрозу напрямую.
+
 ## Что зафиксировано по коду
 
 ### Текущее состояние runtime
@@ -43,8 +50,8 @@
   - `ActionGenerator`
   - `BranchGenerator`
   - `BranchEvaluator`
-- `ProblemResolver` сейчас решает только одну ближайшую `same-lane` проблему типа `ThreatCollision`.
-- `ObjectClassifier` уже умеет размечать `Target` и `Collectible`, но `ProblemResolver` их пока не поднимает в problem model.
+- `ObjectClassifier` не мутирует snapshot, а вычисляет planner-категорию объекта по запросу.
+- `ProblemResolver` сейчас решает только одну задачу: найти ближайшую `same-lane` угрозу.
 - `BranchGenerator` строит ветви глубиной только `3`.
 - `BranchEvaluator` сравнивает ветви в порядке:
   - safety
@@ -65,7 +72,7 @@
   - walking-объекты;
   - `Target` как самостоятельную planner-задачу;
   - collectible-логики и их бонусную экономику;
-  - расширение problem model за пределы текущего `ThreatCollision`.
+  - отдельную problem-модель поверх nearest-threat planner.
 
 ### Что важно по экономике
 
@@ -192,7 +199,7 @@ Runtime-событие:
 
 ### Не входит в этот рефакторинг
 
-- roof-specific семантика (`Roof` category, отдельные `ProblemKind`);
+- roof-specific семантика;
 - переделка JSON уровней и паттернов;
 - moving `bigAlive`;
 - `Target`/collectible planning;
@@ -209,7 +216,7 @@ Runtime-событие:
    - `AdvancePlan()`
    - если план пуст, запросить full replan
 5. Если executor не в `InProgress` и есть pending replanning:
-   - классифицировать snapshot
+   - оценить snapshot через `ObjectClassifier`
    - найти лучший branch с учётом retainable-tail
    - при необходимости заменить committed plan
    - передать актуальный head в executor

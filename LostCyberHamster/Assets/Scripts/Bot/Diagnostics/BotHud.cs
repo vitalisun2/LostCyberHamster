@@ -12,6 +12,7 @@ namespace Assets.Scripts.Bot
     public class BotHud
     {
         private readonly BotOrchestrator _orchestrator;
+        private readonly ObjectClassifier _classifier = new ObjectClassifier();
         private readonly StringBuilder _sb = new StringBuilder(128);
         private GUIStyle _style;
 
@@ -67,7 +68,7 @@ namespace Assets.Scripts.Bot
                 int threats = 0;
                 for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
                 {
-                    if (snapshot.VisibleObjects[i].Category == ObjectCategory.Threat)
+                    if (_classifier.IsThreat(snapshot.VisibleObjects[i], snapshot))
                         threats++;
                 }
                 _sb.Append($" | T:{threats}");

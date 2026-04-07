@@ -43,7 +43,6 @@ namespace Assets.Scripts.Bot
                     newRightX,
                     newCenterX,
                     newDistance,
-                    obs.Category,
                     obs.StableId));
             }
 

@@ -147,13 +147,12 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private void EvaluatePlan(BotSceneSnapshot liveSnapshot)
         {
-            var classifiedSnapshot = _classifier.Classify(liveSnapshot);
-            LastSnapshot = classifiedSnapshot;
+            LastSnapshot = liveSnapshot;
 
             var head = _planRuntime.CommitPlan(
-                classifiedSnapshot,
+                liveSnapshot,
                 _planner.FindBestBranch(
-                    classifiedSnapshot,
+                    liveSnapshot,
                     _classifier,
                     _planRuntime.SnapshotRetainableSteps()),
                 Hamster != null && Hamster.IsOnBottomLine.Value);

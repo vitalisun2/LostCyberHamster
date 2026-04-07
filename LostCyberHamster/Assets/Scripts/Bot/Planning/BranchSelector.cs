@@ -28,13 +28,10 @@ namespace Assets.Scripts.Bot
             ObjectClassifier classifier,
             List<BranchStep> retainedSteps = null)
         {
-            // Определить ближайшую проблему
-            var problem = _problemResolver.ResolveNext(snapshot);
-            if (problem == null)
+            if (!_problemResolver.TryResolveNextThreat(snapshot, classifier, out var target))
                 return BuildRetainedCandidate(retainedSteps);
 
-            // Сгенерировать кандидатов и выбрать лучшую ветку
-            var actions = _actionGenerator.Generate(snapshot, problem, BranchLogScopes.Root);
+            var actions = _actionGenerator.Generate(snapshot, target, BranchLogScopes.Root);
             return SelectBestActionBranch(snapshot, classifier, actions, retainedSteps);
         }
 
