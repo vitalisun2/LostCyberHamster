@@ -42,10 +42,10 @@
 ## Валидация
 
 - C# скрипты: проверка компиляции.
-- Gameplay, бот, тестовые уровни: итерационный цикл из `docs/rules/iteration_cycle.md`.
+- Gameplay, бот, тестовые уровни: ручная проверка пользователя по `docs/rules/iteration_cycle.md`; агент не запускает автопрогон по умолчанию.
 - EditMode/PlayMode тесты, если есть.
 - Addressables, build config: sync/build валидация, если доступна.
-- Проверка в Unity Editor — на integration-ветке в основном каталоге, не в task-worktree.
+- Проверка в Unity Editor — пользователем на integration-ветке в основном каталоге, не в task-worktree.
 - Не считать задачу выполненной, если валидация не пройдена.
 
 ## Unity Editor API
