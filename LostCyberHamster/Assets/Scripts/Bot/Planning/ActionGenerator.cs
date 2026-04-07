@@ -20,28 +20,27 @@ namespace Assets.Scripts.Bot
             float superJumpLandingOffset = BotConsts.SuperJumpLandingOffsetFallback,
             float jumpOnRoofLandingOffset = BotConsts.JumpOnRoofLandingOffsetFallback)
         {
-            // Инициализировать все стратегии
+            // Временно оставляем только SwitchLane для ручной отладки planner'а.
             var strategies = new IActionStrategy[]
             {
-                // Существующие (переименованные)
                 new SwitchLaneStrategy(),
-                new JumpOverStrategy(),
-                new SuperJumpOverStrategy(superJumpLandingOffset),
 
-                // Новые (skeleton)
-                new JumpOnRoofStrategy(jumpOnRoofLandingOffset),
-                new JumpOnTargetStrategy(),
-                new SuperJumpOnRoofStrategy(superJumpLandingOffset),
-                new SuperJumpOnTargetStrategy(superJumpLandingOffset),
-                new RoofJumpOverStrategy(),
-                new RoofJumpDownStrategy(),
-                new RoofJumpToRoofStrategy(),
-                new RoofJumpOnTargetStrategy(),
-                new RoofSuperJumpOverStrategy(),
-                new RoofSuperJumpDownStrategy(),
-                new RoofSuperJumpToRoofStrategy(),
-                new RoofSuperJumpOnTargetStrategy(),
-                new RoofSwitchLaneStrategy(),
+                // Temporarily disabled while validating SwitchLane only:
+                // new JumpOverStrategy(),
+                // new SuperJumpOverStrategy(superJumpLandingOffset),
+                // new JumpOnRoofStrategy(jumpOnRoofLandingOffset),
+                // new JumpOnTargetStrategy(),
+                // new SuperJumpOnRoofStrategy(superJumpLandingOffset),
+                // new SuperJumpOnTargetStrategy(superJumpLandingOffset),
+                // new RoofJumpOverStrategy(),
+                // new RoofJumpDownStrategy(),
+                // new RoofJumpToRoofStrategy(),
+                // new RoofJumpOnTargetStrategy(),
+                // new RoofSuperJumpOverStrategy(),
+                // new RoofSuperJumpDownStrategy(),
+                // new RoofSuperJumpToRoofStrategy(),
+                // new RoofSuperJumpOnTargetStrategy(),
+                // new RoofSwitchLaneStrategy(),
             };
 
             _strategyByAction = new Dictionary<BotAction, IActionStrategy>();
@@ -111,74 +110,69 @@ namespace Assets.Scripts.Bot
         {
             var table = new Dictionary<(bool onRoof, ObstacleTypeEnum type), BotAction[]>();
 
-            // === ДОРОГА (onRoof = false)
+            // Временно оставляем только road-level SwitchLane кейсы для ручной отладки.
             table[(false, ObstacleTypeEnum.smallNotAliveRoad)] = new[]
             {
-                BotAction.Jump,
                 BotAction.SwitchLane
             };
 
             table[(false, ObstacleTypeEnum.smallNotAliveRoadAndRoof)] = new[]
             {
-                BotAction.Jump,
                 BotAction.SwitchLane
             };
 
             table[(false, ObstacleTypeEnum.bigAlive)] = new[]
             {
-                BotAction.SuperJump,
                 BotAction.SwitchLane
             };
 
             table[(false, ObstacleTypeEnum.bigNotAlive)] = new[]
             {
-                BotAction.JumpOnRoof,
                 BotAction.SwitchLane
             };
 
             table[(false, ObstacleTypeEnum.mediumNotAlive)] = new[]
             {
-                BotAction.JumpOnRoof,
                 BotAction.SwitchLane
             };
 
-            table[(false, ObstacleTypeEnum.smallAlive)] = new[]
-            {
-                BotAction.Jump,
-                BotAction.SuperJump
-            };
-
-            // === КРЫША (onRoof = true)
-            table[(true, ObstacleTypeEnum.smallNotAliveRoadAndRoof)] = new[]
-            {
-                BotAction.RoofJumpOver,
-                BotAction.RoofSuperJumpOver,
-                BotAction.RoofSwitchLane
-            };
-
-            table[(true, ObstacleTypeEnum.smallAlive)] = new[]
-            {
-                BotAction.RoofJumpOnTarget,
-                BotAction.RoofSuperJumpOnTarget
-            };
-
-            table[(true, ObstacleTypeEnum.bigAlive)] = new[]
-            {
-                BotAction.RoofJumpOnTarget,
-                BotAction.RoofSuperJumpOnTarget
-            };
-
-            table[(true, ObstacleTypeEnum.bigNotAlive)] = new[]
-            {
-                BotAction.RoofJumpToRoof,
-                BotAction.RoofSuperJumpToRoof
-            };
-
-            table[(true, ObstacleTypeEnum.mediumNotAlive)] = new[]
-            {
-                BotAction.RoofJumpToRoof,
-                BotAction.RoofSuperJumpToRoof
-            };
+            // Temporarily disabled while validating SwitchLane only:
+            // table[(false, ObstacleTypeEnum.smallAlive)] = new[]
+            // {
+            //     BotAction.Jump,
+            //     BotAction.SuperJump
+            // };
+            //
+            // table[(true, ObstacleTypeEnum.smallNotAliveRoadAndRoof)] = new[]
+            // {
+            //     BotAction.RoofJumpOver,
+            //     BotAction.RoofSuperJumpOver,
+            //     BotAction.RoofSwitchLane
+            // };
+            //
+            // table[(true, ObstacleTypeEnum.smallAlive)] = new[]
+            // {
+            //     BotAction.RoofJumpOnTarget,
+            //     BotAction.RoofSuperJumpOnTarget
+            // };
+            //
+            // table[(true, ObstacleTypeEnum.bigAlive)] = new[]
+            // {
+            //     BotAction.RoofJumpOnTarget,
+            //     BotAction.RoofSuperJumpOnTarget
+            // };
+            //
+            // table[(true, ObstacleTypeEnum.bigNotAlive)] = new[]
+            // {
+            //     BotAction.RoofJumpToRoof,
+            //     BotAction.RoofSuperJumpToRoof
+            // };
+            //
+            // table[(true, ObstacleTypeEnum.mediumNotAlive)] = new[]
+            // {
+            //     BotAction.RoofJumpToRoof,
+            //     BotAction.RoofSuperJumpToRoof
+            // };
 
             return table;
         }

@@ -16,3 +16,12 @@
     flex-wrap: wrap;
 }
 
+.create-level-row {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 8px;
+    min-height: 30px;
+}
+

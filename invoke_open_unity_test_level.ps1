@@ -14,6 +14,67 @@ $requestPath = Join-Path $automationPath 'test_level_request.json'
 $responsePath = Join-Path $automationPath 'test_level_response.json'
 New-Item -ItemType Directory -Path $automationPath -Force | Out-Null
 
+function Initialize-WindowActivationHelper {
+    if ('WindowActivationHelper' -as [type]) {
+        return
+    }
+
+    $typeDefinition = @'
+using System;
+using System.Runtime.InteropServices;
+
+public static class WindowActivationHelper
+{
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    public static extern bool BringWindowToTop(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsIconic(IntPtr hWnd);
+}
+'@
+
+    Add-Type -TypeDefinition $typeDefinition
+}
+
+function TryWakeUnityEditorWindow {
+    Initialize-WindowActivationHelper
+
+    $candidateProcesses = Get-Process | Where-Object {
+        $_.MainWindowHandle -ne 0 -and (
+            $_.ProcessName -like 'Unity*' -or
+            $_.MainWindowTitle -like '*Unity*' -or
+            $_.MainWindowTitle -like '*LostCyberHamster*'
+        )
+    } | Sort-Object {
+        if ($_.MainWindowTitle -like '*LostCyberHamster*') { 0 } else { 1 }
+    }
+
+    foreach ($process in $candidateProcesses) {
+        try {
+            if ([WindowActivationHelper]::IsIconic($process.MainWindowHandle)) {
+                [WindowActivationHelper]::ShowWindowAsync($process.MainWindowHandle, 9) | Out-Null
+            }
+
+            [WindowActivationHelper]::BringWindowToTop($process.MainWindowHandle) | Out-Null
+            [WindowActivationHelper]::SetForegroundWindow($process.MainWindowHandle) | Out-Null
+            Write-Host "[info] Woke Unity window: $($process.MainWindowTitle)"
+            return $true
+        }
+        catch {
+            Write-Host "[warn] Failed to wake Unity window '$($process.MainWindowTitle)': $($_.Exception.Message)"
+        }
+    }
+
+    Write-Host '[warn] Unity window wake-up fallback could not find an active Unity editor window.'
+    return $false
+}
+
 function Initialize-RunningObjectTableHelper {
     if ('VisualStudioRunningObjectTableHelper' -as [type]) {
         return
@@ -148,6 +209,8 @@ function Invoke-UnityAutomationCommand {
 
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     $lastState = $null
+    $wakeAttempted = $false
+    $wakeAt = (Get-Date).AddMilliseconds([Math]::Max($PollMilliseconds * 4, 1000))
 
     while ((Get-Date) -lt $deadline) {
         if (Test-Path $responsePath) {
@@ -178,6 +241,13 @@ function Invoke-UnityAutomationCommand {
             }
         }
 
+        if (-not $wakeAttempted -and (Get-Date) -ge $wakeAt) {
+            # Some Unity Editor sessions do not process the file-queue until the window is activated.
+            # Wake the editor once so the automation bridge can pick up the request without a manual click.
+            [void](TryWakeUnityEditorWindow)
+            $wakeAttempted = $true
+        }
+
         Start-Sleep -Milliseconds $PollMilliseconds
     }
 
@@ -195,8 +265,8 @@ function Invoke-UnityAutomationCommand {
     throw "Timeout waiting for Unity automation response during '$RunningMessage'. Ensure the project is open in Unity and scripts compiled successfully."
 }
 
-# Request recompilation; the bridge calls AssetDatabase.Refresh() internally,
-# so no window focus or SendKeys needed.
+# Request recompilation through the bridge. If Unity does not pick up the request
+# while unfocused, the launcher wakes the editor window once as a fallback.
 $recompileCompleted = $false
 for ($attempt = 1; $attempt -le 5 -and -not $recompileCompleted; $attempt++) {
     Start-Sleep -Seconds 2
@@ -215,7 +285,7 @@ for ($attempt = 1; $attempt -le 5 -and -not $recompileCompleted; $attempt++) {
 }
 
 if (-not $recompileCompleted) {
-    Write-Host '[warn] Explicit recompilation command is still unavailable; continuing after focus-based refresh fallback.'
+    Write-Host '[warn] Explicit recompilation command is still unavailable after fallback wake-up attempts.'
 }
 
 # Regenerate .csproj/.sln so that Visual Studio Solution Explorer stays in sync
