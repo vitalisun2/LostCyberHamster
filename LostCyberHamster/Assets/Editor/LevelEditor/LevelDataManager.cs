@@ -46,7 +46,7 @@ public static class LevelDataManager
         }
 
         var descriptors = new List<LevelFileDescriptor>();
-        var files = Directory.GetFiles(levelsDirectory, $"*.{extension}", SearchOption.AllDirectories);
+        var files = EnumerateLevelFiles(levelsDirectory, extension);
 
         foreach (var absolutePath in files)
         {
@@ -107,6 +107,27 @@ public static class LevelDataManager
     private static string NormalizePath(string path)
     {
         return path.Replace('\\', '/');
+    }
+
+    private static IEnumerable<string> EnumerateLevelFiles(string levelsDirectory, string extension)
+    {
+        var normalizedExtension = string.IsNullOrWhiteSpace(extension)
+            ? ".json"
+            : "." + extension.TrimStart('.');
+
+        var assetDirectoryPath = TryToAssetPath(levelsDirectory);
+        if (!string.IsNullOrEmpty(assetDirectoryPath) && AssetDatabase.IsValidFolder(assetDirectoryPath))
+        {
+            return AssetDatabase
+                .FindAssets(string.Empty, new[] { assetDirectoryPath })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(assetPath => assetPath.EndsWith(normalizedExtension, StringComparison.OrdinalIgnoreCase))
+                .Select(ToAbsolutePath)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        return Directory.GetFiles(levelsDirectory, $"*{normalizedExtension}", SearchOption.AllDirectories);
     }
 
     [Obsolete("Use GetLevelFileDescriptors for both locations and level design templates.")]
@@ -185,6 +206,12 @@ public static class LevelDataManager
     /// </summary>
     public static LevelInfoRef LoadLevelRef(string filePath)
     {
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+        {
+            Debug.LogWarning($"Level json file not found: {filePath}");
+            return null;
+        }
+
         var json = File.ReadAllText(filePath, Encoding.UTF8);
         return JsonUtility.FromJson<LevelInfoRef>(json);
     }
@@ -282,7 +309,8 @@ public static class LevelDataManager
                 throw new InvalidOperationException($"Failed to rename level json: {moveFileResult}");
         }
 
-        AssetDatabase.Refresh();
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         return ToAbsolutePath(canonicalJsonAssetPath);
     }
 
@@ -383,6 +411,18 @@ public static class LevelDataManager
 
         var relativePath = normalizedAbsolutePath.Substring(assetsRootWithSeparator.Length);
         return "Assets/" + NormalizePath(relativePath);
+    }
+
+    private static string TryToAssetPath(string absolutePath)
+    {
+        try
+        {
+            return ToAssetPath(absolutePath);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     private static string ToAbsolutePath(string assetPath)
