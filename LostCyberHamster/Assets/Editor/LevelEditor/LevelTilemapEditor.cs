@@ -892,6 +892,8 @@ public class LevelTilemapEditor : EditorWindow
             {
                 totalWidth += GetPatternDisplayWidth(pattern);
             }
+            if (totalWidth <= 0f)
+                totalWidth = DefaultTilemapWidth;
         }
 
         // Создаём сцену с фоном и дорогой по naming convention
@@ -1994,6 +1996,17 @@ public class LevelTilemapEditor : EditorWindow
             return;
 
         _currentLevelInfo = LevelResolver.Resolve(_currentLevelRef, _patternsCollection, _locationTheme);
+
+        float totalWidth = 0f;
+        foreach (var pattern in _currentLevelInfo.patterns)
+            totalWidth += GetPatternDisplayWidth(pattern);
+        if (totalWidth <= 0f)
+            totalWidth = DefaultTilemapWidth;
+
+        var daypartSlug = _selectedDaypart.ToString().ToLowerInvariant();
+        var tilemapGameObject = SceneCreator.CreateSceneWithTilemap((int)totalWidth, _currentLocationName, daypartSlug);
+        _tilemapInScene = tilemapGameObject.GetComponent<Tilemap>();
+
         RenderAllPatternsToTilemap();
     }
 
