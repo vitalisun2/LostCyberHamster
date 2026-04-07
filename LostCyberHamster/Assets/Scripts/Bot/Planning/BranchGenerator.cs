@@ -68,6 +68,9 @@ namespace Assets.Scripts.Bot
                 return;
             }
 
+            if (IsThreatRepeatedInCurrentChain(nextThreat, stepCount))
+                return;
+
             if (TryExploreChildBranches(
                 projectedSnapshot,
                 classifier,
@@ -79,7 +82,8 @@ namespace Assets.Scripts.Bot
                 result))
                 return;
 
-            AddCurrentCandidate(result, stepCount, originalSnapshot, classifier);
+            // Угроза найдена, но ни одна стратегия не может её обработать —
+            // ветка не решает проблему, не добавляем.
         }
 
         private static bool TryProjectSnapshot(
@@ -107,6 +111,21 @@ namespace Assets.Scripts.Bot
             out ObstacleInfo nextThreat)
         {
             return problemResolver.TryResolveNextThreat(projectedSnapshot, classifier, out nextThreat);
+        }
+
+        /// <summary>
+        /// Повтор той же угрозы в одной ветке означает ложный oscillation/zigzag.
+        /// Такие ветки не должны считаться safe кандидатами.
+        /// </summary>
+        private bool IsThreatRepeatedInCurrentChain(ObstacleInfo nextThreat, int stepCount)
+        {
+            for (int i = 0; i < stepCount; i++)
+            {
+                if (_stepBuffer[i].TargetObstacle.StableId == nextThreat.StableId)
+                    return true;
+            }
+
+            return false;
         }
 
         private bool TryExploreChildBranches(

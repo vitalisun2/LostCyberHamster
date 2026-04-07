@@ -13,7 +13,7 @@ namespace Assets.Tests.EditMode.BotV3
         public void AdvanceCompletedHead_RemovesCompletedHeadAndPromotesNextReadyStep()
         {
             var first = Step(BotAction.SwitchLane, 1001, 0, 0f);
-            var second = Step(BotAction.Jump, 1002, 10, 1f);
+            var second = Step(BotAction.JumpOver, 1002, 10, 1f);
             var plan = new CurrentPlan();
             plan.ReplaceFrom(
                 new BranchCandidate(
@@ -66,7 +66,7 @@ namespace Assets.Tests.EditMode.BotV3
             var retained = new List<BranchStep>
             {
                 Step(BotAction.SwitchLane, 1202, 0, 0f),
-                Step(BotAction.Jump, 1203, 10, 1f)
+                Step(BotAction.JumpOver, 1203, 10, 1f)
             };
 
             var best = selector.FindBestBranch(snapshot, classifier, retained);

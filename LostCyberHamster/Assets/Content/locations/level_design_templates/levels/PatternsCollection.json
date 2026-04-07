@@ -8909,56 +8909,38 @@
         },
         {
             "name": "test_switch_lane_01",
-            "description": "",
-            "nextObstacleId": 19,
+            "description": "SwitchLane avoid smallNotAliveRoad",
+            "nextObstacleId": 1,
             "obstacles": [
                 {
-                    "id": 17,
+                    "id": 0,
                     "type": 2,
                     "x": 8.40000057220459,
-                    "y": -2.799999952316284
-                },
-                {
-                    "id": 18,
-                    "type": 3,
-                    "x": 16.399999618530275,
                     "y": -1.8000000715255738
                 }
             ]
         },
         {
             "name": "test_switch_lane_02",
-            "description": "",
-            "nextObstacleId": 2,
+            "description": "SwitchLane avoid smallNotAliveRoadAndRoof",
+            "nextObstacleId": 1,
             "obstacles": [
                 {
                     "id": 0,
-                    "type": 2,
-                    "x": 16.600000381469728,
-                    "y": -2.799999952316284
-                },
-                {
-                    "id": 1,
                     "type": 3,
                     "x": 8.40000057220459,
-                    "y": -1.8000000715255738
+                    "y": -2.799999952316284
                 }
             ]
         },
         {
             "name": "test_switch_lane_03",
-            "description": "",
-            "nextObstacleId": 2,
+            "description": "SwitchLane avoid bigAlive",
+            "nextObstacleId": 1,
             "obstacles": [
                 {
                     "id": 0,
-                    "type": 3,
-                    "x": 16.200000762939454,
-                    "y": -2.799999952316284
-                },
-                {
-                    "id": 1,
-                    "type": 2,
+                    "type": 1,
                     "x": 8.800000190734864,
                     "y": -1.8000000715255738
                 }
@@ -8966,19 +8948,101 @@
         },
         {
             "name": "test_switch_lane_04",
+            "description": "SwitchLane avoid bigNotAlive",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 4,
+                    "x": 9.199999809265137,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "test_switch_lane_05",
+            "description": "SwitchLane avoid mediumNotAlive",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 11,
+                    "x": 8.600000381469727,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "test_switch_lane_06",
+            "description": "SwitchLane zigzag: 5 threats alternating lanes",
+            "nextObstacleId": 5,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 8.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 3,
+                    "x": 14.0,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 2,
+                    "type": 1,
+                    "x": 20.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 3,
+                    "type": 4,
+                    "x": 26.0,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 4,
+                    "type": 11,
+                    "x": 32.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "test_jump_over_01",
             "description": "",
             "nextObstacleId": 2,
             "obstacles": [
                 {
                     "id": 0,
                     "type": 2,
-                    "x": 9.199999809265137,
+                    "x": 13.0,
                     "y": -2.799999952316284
                 },
                 {
                     "id": 1,
+                    "type": 2,
+                    "x": 13.199999809265137,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "test_jump_over_02",
+            "description": "",
+            "nextObstacleId": 2,
+            "obstacles": [
+                {
+                    "id": 0,
                     "type": 3,
-                    "x": 16.600000381469728,
+                    "x": 12.800000190734864,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 1,
+                    "x": 12.800000190734864,
                     "y": -1.8000000715255738
                 }
             ]

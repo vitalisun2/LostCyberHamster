@@ -59,8 +59,34 @@ namespace Assets.Tests.EditMode.BotV3
             var best = _branchSelector.FindBestBranch(snapshot, _classifier);
 
             Assert.IsNotNull(best, "Planner должен найти хотя бы ветку с Jump.");
-            Assert.AreEqual(BotAction.Jump, best.Steps[0].Action,
+            Assert.AreEqual(BotAction.JumpOver, best.Steps[0].Action,
                 "Если nearest safe момент для SwitchLane не существует до дедлайна, planner должен выбрать Jump.");
+        }
+
+        [Test]
+        public void Generate_BigAliveThenBottomSmall_PrefersSwitchLaneThenJumpOver()
+        {
+            var snapshot = MakeSnapshot(
+                hamOnBottom: false,
+                objects: new[]
+                {
+                    Obs(ObstacleTypeEnum.bigAlive, true, 5.49f, 6.49f, 8.45f, 1001),
+                    Obs(ObstacleTypeEnum.smallNotAliveRoadAndRoof, false, 5.49f, 6.89f, 8.45f, 1002)
+                });
+
+            var best = _branchSelector.FindBestBranch(snapshot, _classifier);
+
+            Assert.IsNotNull(best, "Planner должен найти safe ветвь для bigAlive + bottom small.");
+            Assert.AreEqual(2, best.Steps.Count,
+                "В этом сценарии planner должен выбрать двухшаговую цепочку без ложного zigzag возврата.");
+            Assert.AreEqual(BotAction.SwitchLane, best.Steps[0].Action,
+                "Первый шаг должен уводить хомяка с линии bigAlive.");
+            Assert.AreEqual(1001, best.Steps[0].TargetObstacle.StableId,
+                "Первый шаг должен решать исходную угрозу на текущей линии.");
+            Assert.AreEqual(BotAction.JumpOver, best.Steps[1].Action,
+                "После ухода с bigAlive planner должен перепрыгивать small на целевой линии, а не возвращаться под исходную угрозу.");
+            Assert.AreEqual(1002, best.Steps[1].TargetObstacle.StableId,
+                "Второй шаг должен решать small obstacle на целевой линии.");
         }
 
         [Test]

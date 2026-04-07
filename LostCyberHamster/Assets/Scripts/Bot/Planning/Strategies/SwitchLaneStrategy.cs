@@ -1,3 +1,5 @@
+using Assets.Scripts.Common;
+
 namespace Assets.Scripts.Bot
 {
     /// <summary>
@@ -56,6 +58,15 @@ namespace Assets.Scripts.Bot
             completionSnapshot.HamsterOnBottom = !completionSnapshot.HamsterOnBottom;
             completionSnapshot.HamsterOnRoof = false;
 
+            if (!IsLaneClearAtCompletion(completionSnapshot))
+            {
+                return new StepProjectionResult
+                {
+                    IsSafe = false,
+                    DebugReason = step.Reason
+                };
+            }
+
             return new StepProjectionResult
             {
                 IsSafe = true,
@@ -66,8 +77,9 @@ namespace Assets.Scripts.Bot
 
         /// <summary>
         /// Ищет первый безопасный момент для перестроения.
-        /// Собирает угрозы на целевой полосе ближе источника, вычисляет момент,
-        /// когда все они пройдут мимо хомяка, и проверяет что этот момент до дедлайна.
+        /// Угрозы на целевой полосе блокируют switch, только если хомяк физически столкнётся
+        /// с ними во время transition. Далёкие угрозы пропускаются — они будут обработаны
+        /// на следующем шаге ветки (branching).
         /// Дедлайн — успеть нажать до source target; после fire лейн переключается мгновенно.
         /// </summary>
         private static bool TryFindSafeFireShift(
@@ -76,28 +88,45 @@ namespace Assets.Scripts.Bot
             out float fireWorldShift)
         {
             float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot);
+            float hamsterRightX = snapshot.HamsterRightX;
             bool targetLaneBottom = !snapshot.HamsterOnBottom;
             float sourceDeadlineShift = sourceTarget.DistanceToHamster;
 
-            // Найти максимальный shift, при котором все угрозы на целевой полосе уже пройдут
+            // Найти минимальный fireShift, при котором ни одна угроза на целевой полосе
+            // не столкнётся с хомяком во время transition.
+            // Итерируем до стабилизации: рост fireShift может приблизить далёкие угрозы.
             float fireShift = 0f;
+            bool changed = true;
 
-            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            while (changed)
             {
-                var obs = snapshot.VisibleObjects[i];
-                if (!ProjectedWorld.IsThreatType(obs.Type))
-                    continue;
+                changed = false;
 
-                bool obsOnBottom = !obs.IsTopLane;
-                if (obsOnBottom != targetLaneBottom)
-                    continue;
+                for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+                {
+                    var obs = snapshot.VisibleObjects[i];
+                    if (!ProjectedWorld.IsThreatType(obs.Type))
+                        continue;
 
-                if (obs.LeftX >= sourceTarget.LeftX)
-                    continue;
+                    bool obsOnBottom = !obs.IsTopLane;
+                    if (obsOnBottom != targetLaneBottom)
+                        continue;
 
-                float clearShift = obs.RightX - hamsterLeftX;
-                if (clearShift > fireShift)
-                    fireShift = clearShift;
+                    if (obs.LeftX >= sourceTarget.LeftX)
+                        continue;
+
+                    // Пропустить угрозы, которые не достигнут хомяка за время transition
+                    float gapAtFire = obs.LeftX - fireShift - hamsterRightX;
+                    if (gapAtFire > BotConsts.SwitchLaneDecisionTravel)
+                        continue;
+
+                    float clearShift = obs.RightX - hamsterLeftX;
+                    if (clearShift > fireShift)
+                    {
+                        fireShift = clearShift;
+                        changed = true;
+                    }
+                }
             }
 
             // Проверить, что момент fire до дедлайна source target
@@ -109,6 +138,31 @@ namespace Assets.Scripts.Bot
 
             fireWorldShift = 0f;
             return false;
+        }
+
+        /// <summary>
+        /// Проверяет, что на целевой полосе нет коллизий с хомяком в момент завершения перехода.
+        /// </summary>
+        private static bool IsLaneClearAtCompletion(BotSceneSnapshot snapshot)
+        {
+            float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot);
+            float hamsterRightX = snapshot.HamsterRightX;
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (!ProjectedWorld.IsThreatType(obs.Type))
+                    continue;
+
+                bool obsOnBottom = !obs.IsTopLane;
+                if (obsOnBottom != snapshot.HamsterOnBottom)
+                    continue;
+
+                if (CollisionUtils.IsOverlap(hamsterLeftX, hamsterRightX, obs.LeftX, obs.RightX))
+                    return false;
+            }
+
+            return true;
         }
     }
 }

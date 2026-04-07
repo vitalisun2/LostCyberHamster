@@ -146,7 +146,7 @@ namespace Assets.Scripts.Bot
                     DrawSwitchLaneGlyph(fireX, hamsterOnBottom);
                     break;
 
-                case BotAction.Jump:
+                case BotAction.JumpOver:
                 default:
                     float endX = Mathf.Max(obstacleRightX + 1.6f, fireX + 2.0f);
                     DrawQuadraticArc(fireX, laneY, endX, laneY, 1.3f, out Vector3 preEnd);
@@ -285,7 +285,7 @@ namespace Assets.Scripts.Bot
             {
                 case BotAction.SwitchLane:
                     return new Color(0.25f, 0.95f, 1f, 1f);
-                case BotAction.Jump:
+                case BotAction.JumpOver:
                     return new Color(1f, 0.95f, 0.2f, 1f);
                 default:
                     return new Color(0.85f, 0.85f, 0.85f, 1f);

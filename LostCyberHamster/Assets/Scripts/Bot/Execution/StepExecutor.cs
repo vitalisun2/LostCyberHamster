@@ -28,7 +28,7 @@ namespace Assets.Scripts.Bot
             _handlers = new Dictionary<BotAction, IActionHandler>
             {
                 { BotAction.SwitchLane, new SwitchLaneHandler() },
-                { BotAction.Jump, new JumpHandler() },
+                { BotAction.JumpOver, new JumpHandler() },
                 { BotAction.JumpOnRoof, new JumpHandler() },
                 { BotAction.SuperJump, new SuperJumpHandler() },
                 { BotAction.RoofJumpOver, new JumpHandler() },

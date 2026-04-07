@@ -24,9 +24,9 @@ namespace Assets.Scripts.Bot
             var strategies = new IActionStrategy[]
             {
                 new SwitchLaneStrategy(),
+                new JumpOverStrategy(),
 
-                // Temporarily disabled while validating SwitchLane only:
-                // new JumpOverStrategy(),
+                // Temporarily disabled while validating SwitchLane + JumpOver only:
                 // new SuperJumpOverStrategy(superJumpLandingOffset),
                 // new JumpOnRoofStrategy(jumpOnRoofLandingOffset),
                 // new JumpOnTargetStrategy(),
@@ -113,12 +113,14 @@ namespace Assets.Scripts.Bot
             // Временно оставляем только road-level SwitchLane кейсы для ручной отладки.
             table[(false, ObstacleTypeEnum.smallNotAliveRoad)] = new[]
             {
-                BotAction.SwitchLane
+                BotAction.SwitchLane,
+                BotAction.JumpOver
             };
 
             table[(false, ObstacleTypeEnum.smallNotAliveRoadAndRoof)] = new[]
             {
-                BotAction.SwitchLane
+                BotAction.SwitchLane,
+                BotAction.JumpOver
             };
 
             table[(false, ObstacleTypeEnum.bigAlive)] = new[]
