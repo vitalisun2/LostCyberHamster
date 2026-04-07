@@ -295,19 +295,23 @@ public static class LevelDataManager
         Directory.CreateDirectory(partDirectory);
 
         var currentLevelDirectoryAssetPath = ToAssetPath(currentLevelDirectory);
-        var targetLevelDirectoryAssetPath = ToAssetPath(Path.Combine(partDirectory, targetLevelKey));
-        var moveFolderResult = AssetDatabase.MoveAsset(currentLevelDirectoryAssetPath, targetLevelDirectoryAssetPath);
-        if (!string.IsNullOrEmpty(moveFolderResult))
-            throw new InvalidOperationException($"Failed to rename level folder: {moveFolderResult}");
+        var renameFolderResult = AssetDatabase.RenameAsset(currentLevelDirectoryAssetPath, targetLevelKey);
+        if (!string.IsNullOrEmpty(renameFolderResult))
+            throw new InvalidOperationException($"Failed to rename level folder: {renameFolderResult}");
 
-        var movedJsonAssetPath = Path.Combine(targetLevelDirectoryAssetPath, Path.GetFileName(currentFilePath)).Replace('\\', '/');
-        var canonicalJsonAssetPath = ToAssetPath(BuildCanonicalLevelJsonPath(levelsDirectory, partOfDay, targetLevelKey));
-        if (!string.Equals(movedJsonAssetPath, canonicalJsonAssetPath, StringComparison.OrdinalIgnoreCase))
+        var renamedLevelDirectoryAssetPath = ToAssetPath(Path.Combine(partDirectory, targetLevelKey));
+        var originalJsonFileName = Path.GetFileName(currentFilePath);
+        var renamedJsonAssetPath = $"{renamedLevelDirectoryAssetPath}/{originalJsonFileName}";
+        var currentJsonKey = Path.GetFileNameWithoutExtension(currentFilePath);
+
+        if (!string.Equals(currentJsonKey, targetLevelKey, StringComparison.OrdinalIgnoreCase))
         {
-            var moveFileResult = AssetDatabase.MoveAsset(movedJsonAssetPath, canonicalJsonAssetPath);
-            if (!string.IsNullOrEmpty(moveFileResult))
-                throw new InvalidOperationException($"Failed to rename level json: {moveFileResult}");
+            var renameJsonResult = AssetDatabase.RenameAsset(renamedJsonAssetPath, targetLevelKey);
+            if (!string.IsNullOrEmpty(renameJsonResult))
+                throw new InvalidOperationException($"Failed to rename level json: {renameJsonResult}");
         }
+
+        var canonicalJsonAssetPath = $"{renamedLevelDirectoryAssetPath}/{targetLevelKey}.json";
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
