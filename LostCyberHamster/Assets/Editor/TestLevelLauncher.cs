@@ -75,6 +75,8 @@ namespace LostCyberHamster.Editor
                 EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
         }
 
+        // Temporarily hidden while validating SwitchLane-only planner behavior.
+        /*
         [MenuItem("Tools/Test Level/Launch test_threat_small_notalive_road_jump", priority = 51)]
         private static void LaunchJump()
         {
@@ -102,6 +104,7 @@ namespace LostCyberHamster.Editor
             if (!TryLaunchTestLevel(interactive: true, RoofSmallNotAliveTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
                 EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
         }
+        */
 
         /// <summary>
         /// Запускает test level без UI-диалогов, чтобы этим можно было безопасно управлять из automation bridge.

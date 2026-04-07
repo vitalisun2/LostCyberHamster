@@ -238,6 +238,54 @@ public static class LevelDataManager
         }
     }
 
+    public static string CreateNewLevelRef(LevelInfoRef levelInfoRef, string levelsDirectory, List<string> spritesNames = null)
+    {
+        try
+        {
+            var errors = ValidateLevelInfo(new LevelInfo
+            {
+                skyTexture = levelInfoRef?.skyTexture,
+                background2Texture = levelInfoRef?.background2Texture,
+                backgroundTexture = levelInfoRef?.backgroundTexture,
+                roadTexture = levelInfoRef?.roadTexture
+            }, spritesNames);
+
+            if (errors.Any())
+                throw new Exception($"Level data is invalid: {string.Join(", ", errors)}");
+
+            var existingDescriptors = EnumerateAllLocationLevelFileDescriptors();
+
+            var highestLevelNumber = 0;
+
+            foreach (var descriptor in existingDescriptors)
+            {
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(descriptor.AbsolutePath);
+                var parts = fileNameWithoutExtension.Split('_');
+                if (parts.Length == 2 && int.TryParse(parts[1], out var levelNumber))
+                {
+                    if (levelNumber > highestLevelNumber)
+                    {
+                        highestLevelNumber = levelNumber;
+                    }
+                }
+            }
+
+            var newLevelNumber = highestLevelNumber + 1;
+            var newLevelFileName = $"level_{newLevelNumber:D2}.json";
+
+            var filePath = Path.Combine(levelsDirectory, newLevelFileName);
+
+            SaveLevelRef(levelInfoRef, filePath);
+
+            return filePath;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Failed to create new level: {ex.Message}");
+            return null;
+        }
+    }
+
     public static string CreateNewTemplate(LevelInfo levelInfo, string templateName, string levelsDirectory,
         List<string> uiManagerInitialSprites)
     {
@@ -409,11 +457,6 @@ public static class LevelDataManager
         {
             errors.Add("LevelInfo is null");
             return errors;
-        }
-
-        if (spritesNames != null && !spritesNames.Contains(levelInfo.backgroundTexture))
-        {
-            errors.Add("Background texture is not set");
         }
 
         return errors;

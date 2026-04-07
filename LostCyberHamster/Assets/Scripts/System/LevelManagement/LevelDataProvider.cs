@@ -670,6 +670,11 @@ public static void ReleaseIntroSprites()
 
         private static async Task<Sprite> LoadBackgroundSpriteWithFallback(string primaryKey)
         {
+            if (string.IsNullOrWhiteSpace(primaryKey))
+            {
+                primaryKey = BuildCurrentBackgroundKey();
+            }
+
             var sprite = await TryLoadSpriteByKey(primaryKey, "background sprite");
             if (sprite != null)
             {
@@ -691,6 +696,21 @@ public static void ReleaseIntroSprites()
             }
 
             return sprite;
+        }
+
+        private static string BuildCurrentBackgroundKey()
+        {
+            var currentLocationName = TryGetCurrentLocationName();
+            var partOfDay = LevelManager.GetCurrentPartOfDay();
+            var primaryKey = LocationAssetFallback.BuildBackgroundKey(currentLocationName, partOfDay);
+
+            if (!string.IsNullOrWhiteSpace(primaryKey))
+            {
+                return primaryKey;
+            }
+
+            var fallbackLocationName = GetFallbackLocationName();
+            return LocationAssetFallback.BuildBackgroundKey(fallbackLocationName, partOfDay);
         }
 
         private static async Task<Sprite> LoadRoadSpriteWithFallback()
