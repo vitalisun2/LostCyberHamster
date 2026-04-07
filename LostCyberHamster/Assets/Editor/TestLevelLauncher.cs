@@ -359,12 +359,10 @@ namespace LostCyberHamster.Editor
                 {
                     using (new EditorGUILayout.VerticalScope("box"))
                     {
-                        EditorGUILayout.LabelField(testLevel.MenuLabel, EditorStyles.boldLabel);
-                        EditorGUILayout.LabelField(testLevel.Address, EditorStyles.miniLabel);
-
                         using (new EditorGUILayout.HorizontalScope())
                         {
-                            GUILayout.FlexibleSpace();
+                            EditorGUILayout.LabelField(testLevel.MenuLabel, EditorStyles.boldLabel);
+
                             if (GUILayout.Button("Launch", GUILayout.Width(90f)))
                             {
                                 try
