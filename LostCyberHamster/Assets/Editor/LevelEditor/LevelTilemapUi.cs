@@ -803,6 +803,11 @@ public class LevelTilemapUi
 
         _filesList.selectedIndex = index;
         _filesList.ScrollToItem(index);
+
+        if (_filesList.itemsSource[index] is LevelFileDescriptor descriptor)
+        {
+            OnFileSelected?.Invoke(descriptor);
+        }
     }
 
     public void SelectFirstPattern()
