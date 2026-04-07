@@ -1578,16 +1578,16 @@ public class LevelTilemapEditor : EditorWindow
 
     private string GenerateNewPatternName()
     {
-        var basePatternName = CurrentPattern?.name;
-        if (string.IsNullOrWhiteSpace(basePatternName))
-            basePatternName = $"Pattern {_currentLevelInfo.patterns.Count + 1}";
-
-        var candidateName = GetIncrementedPatternName(basePatternName);
         var existingNames = new HashSet<string>(
             _currentLevelInfo.patterns
                 .Where(pattern => !string.IsNullOrWhiteSpace(pattern?.name))
                 .Select(pattern => pattern.name),
             StringComparer.OrdinalIgnoreCase);
+
+        var basePatternName = CurrentPattern?.name;
+        var candidateName = string.IsNullOrWhiteSpace(basePatternName)
+            ? "Pattern 01"
+            : GetIncrementedPatternName(basePatternName);
 
         while (existingNames.Contains(candidateName))
         {
@@ -1600,7 +1600,7 @@ public class LevelTilemapEditor : EditorWindow
     private static string GetIncrementedPatternName(string sourceName)
     {
         if (string.IsNullOrWhiteSpace(sourceName))
-            return "Pattern 1";
+            return "Pattern 01";
 
         var match = PatternNameSuffixRegex.Match(sourceName.Trim());
         if (!match.Success)
