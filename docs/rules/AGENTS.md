@@ -19,10 +19,10 @@
 Для исполнительной и существенной аналитической задачи — дополнительно:
 
 1. `docs/rules/ai_workflow_lessons.md` — накопленные уроки (обязательно каждую сессию)
-2. `docs/architecture_knowledge_base.md` — архитектурные решения и паттерны
-3. `docs/rules/agent_tools.md` — каталог инструментов проекта
-4. `docs/rules/iteration_cycle.md` — итерационный цикл тестирования бота
-5. `docs/rules/code_conventions.md` — конвенции кода и валидация
+2. `docs/rules/code_conventions.md` — конвенции кода и валидация
+3. [if-relevant: бот, gameplay, тесты] `docs/rules/iteration_cycle.md` — итерационный цикл тестирования бота
+4. [if-relevant: инструменты, автопрогон, логи] `docs/rules/agent_tools.md` — каталог инструментов проекта
+5. [if-relevant: архитектура, ассеты, новые системы] `docs/architecture_knowledge_base.md` — архитектурные решения и паттерны (читать только релевантные секции)
 6. Активный план в `docs/Planning/in-progress/`, если задача привязана к плану
 7. Релевантные исходники, editor tools, ассеты и тесты
 

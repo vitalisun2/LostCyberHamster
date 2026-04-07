@@ -44,6 +44,8 @@
 **Важно:**
 - Automation bridge ищет маркер `[TEST RESULT]` в `diagnostic_log.txt`.
 - Это же основной рабочий лог; разделение делается тегами канала в строке.
+- При поиске по `EditorLogs` через файловый поиск учитывать игнорируемые пути (`includeIgnoredFiles=true`).
+- Если automation bridge завершает без `[TEST RESULT]` и `diagnostic_log.txt` пустой — читать Unity `Editor.log`: сигнал compile/editor-level сбоя, а не runtime-поведения бота.
 
 ---
 

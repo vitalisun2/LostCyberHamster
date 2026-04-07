@@ -20,66 +20,60 @@
 
 ## Уроки
 
-### Диагностика и отладка бота
+### Promoted
 
-- При анализе логики бота сначала отделять проблему поведения от проблемы логирования: шум в `diagnostic_log.txt` легко маскирует корректное поведение.
-- Перед глубокой правкой сначала локализовать 1 конкретный провал в логе (выбор → исполнение → результат), и только после этого менять алгоритм; не менять сразу несколько правил по гипотезе.
-- Для визуальных багрепортов фиксировать минимальный набор маркеров: lane хомяка, ближайшие 2-3 obstacle type и момент уровня. Это ускоряет привязку к месту в `diagnostic_log.txt`.
-- Для анализа прыжков `HamsterState` — источник истины: если состояние `JumpOver`, это перепрыгивание, а не напрыгивание.
-- Для оценки экономики автопрогона в `[TEST RESULT]`/`[TEST FINISH]` логировать не только факт WIN/FAIL, но и `start/end/net + collected/spent` по монетам и кристаллам; без этого нельзя объективно сравнивать экономическую эффективность прогонов.
-- При разборе прогона читать `diagnostic_log.txt` по каналам: `CH=STAB` (результат и сбои) → `CH=BOT` (причины поведения) → `CH=ECO` (эффективность). Это снижает шум и ускоряет диагностику.
-- Для унификации работы разных агентов (Copilot/Codex/Claude Code) читать логи через `read_log_channel.ps1` с явным выбором канала, а не сырым чтением полного файла.
+#### Диагностика и отладка бота
 
-### Семантика бота
+- [promoted -> docs/rules/iteration_cycle.md] Отделять проблему поведения от проблемы логирования.
+- [promoted -> docs/rules/iteration_cycle.md] Локализовать 1 провал в логе перед глубокой правкой.
+- [promoted -> docs/rules/iteration_cycle.md] Визуальные багрепорты: lane хомяка, 2-3 obstacle type, момент уровня.
+- [promoted -> docs/architecture_knowledge_base.md] HamsterState — источник истины для прыжков.
+- [promoted -> docs/rules/iteration_cycle.md] Логировать start/end/net + collected/spent, не только WIN/FAIL.
+- [promoted -> docs/rules/agent_tools.md] Читать diagnostic_log.txt по каналам: STAB → BOT → ECO.
+- [promoted -> docs/rules/agent_tools.md] Читать логи через read_log_channel.ps1 для унификации между агентами.
 
-- Слово `safe` означает безопасность самого шага в окне исполнения; будущие угрозы после безопасного шага относятся к следующему пересчёту или к chain stages.
-- Для `SwitchLane` правильнее считать окно исполнения по прогнозу освобождения target-линии (динамический `execAt`), а не отбрасывать действие только потому, что линия unsafe в текущем кадре.
-- Для `SwitchLane` недостаточно моделировать только первое safe-window на target-линии. Если target-lane obstacle даёт split windows (`safe -> unsafe -> safe`), planner обязан видеть и позднее окно; иначе появляются искусственные zigzag-цепочки и ложный выигрыш `Jump`.
-- Для `ThreatSafety`-шага `SwitchLane` target obstacle должен быть ближайшей same-lane угрозой, потому что executor сверяет live distance именно с target объекта; если привязать шаг к дальней угрозе, бот дождётся её окна и погибнет об ближнюю.
-- Для chain-этапов заранее фиксировать, что межлинейность — это свойство самой запланированной последовательности шагов (например, zigzag 2-step), а не отдельная «моментная» смена линии вне цепочки.
-- Для planner safety нельзя автоматически приравнивать `ObjectCategory.Threat` к полному множеству runtime-опасных объектов. Классификатор может помечать часть коллизионно-опасных типов как `Target`, поэтому projection/swept safety для `SwitchLane` и `Jump` нужно сверять с runtime-dangerous type set, а не только с semantic category.
+#### Семантика бота
 
-### Тестирование
+- [promoted -> docs/architecture_knowledge_base.md] Семантика safe, SwitchLane windows, ThreatSafety target, chain-этапы, ObjectCategory vs runtime-dangerous set.
 
-- Для regression-наборов собирать компактный representative `test_level`, покрывающий distinct-механики и 2-3 ключевые вариации, вместо длинной последовательности похожих паттернов: меньше таймаутов и проще визуальный разбор.
-- Для поиска по `EditorLogs` через инструменты поиска всегда учитывать игнорируемые пути; при пустой выдаче сразу повторять запрос с `includeIgnoredFiles=true`.
-- Если automation bridge завершает play mode без `[TEST RESULT]`, а `diagnostic_log.txt` пустой, сначала читать Unity `Editor.log`: это сильный сигнал compile/editor-level сбоя, а не runtime-поведения бота.
-- Для chain-stage тестов сначала проверять, что все объекты цепочки попадают в один initial snapshot: если второй obstacle не виден в текущем `scanRange`, бот неизбежно свалится в one-step fallback и логика этапа не будет реально протестирована.
-- Для этапов chain-планирования читать BOT вместе с ECO: если в BOT цепочка корректна, но в ECO растёт доля `Jump/SuperJump`, это ранний сигнал, что one-step fallback или live-cancel съедает энергоэффективность и нужны плотные Stage 12 паттерны с близкими окнами.
+#### Тестирование
 
-### Архитектура ActionGenerator
+- [promoted -> docs/rules/iteration_cycle.md] Собирать компактный representative test_level с distinct-механиками.
+- [promoted -> docs/rules/agent_tools.md] При поиске по EditorLogs учитывать игнорируемые пути (includeIgnoredFiles=true).
+- [promoted -> docs/rules/agent_tools.md] Если automation bridge без [TEST RESULT] и лог пустой — читать Unity Editor.log.
+- [promoted -> docs/architecture_knowledge_base.md] Для chain-stage тестов все объекты цепочки должны попадать в initial snapshot.
+- [promoted -> docs/rules/iteration_cycle.md] Для chain-планирования читать BOT вместе с ECO.
 
-- При добавлении ограничений в ActionGenerator думать о семантическом инварианте, а не о подстройке под конкретный тест-кейс. Пример: ограничение `SwitchLaneTargetMinFireDist` кодирует физический инвариант "SwitchLane к Target нужно место для Jump", а не "в паттерне X бот получает damage".
-- `IsSwitchLaneSafeAtDistance` проверяет только окно transit (0.3с), не post-transit. Post-transit безопасность обеспечивается минимальной дистанцией fire и chain-проекцией. Это важно помнить при анализе DAMAGE — если хомяк врезается ПОСЛЕ transit, причина не в safety check, а в недостаточной минимальной дистанции.
-- `TryComputeSwitchLaneExecuteDistance` учитывает ВСЕ target-lane threats (включая далёкие), что может push'ить executeAt до минимума. Для Target-категории минимум должен быть выше чем для Threat/Collectible.
+#### Архитектура ActionGenerator
 
-### Изучение runtime перед реализацией (критически важно)
+- [promoted -> docs/architecture_knowledge_base.md] Ограничения ActionGenerator, IsSwitchLaneSafeAtDistance, TryComputeSwitchLaneExecuteDistance.
 
-- **Перед реализацией любой игровой механики в боте** обязательно изучить, как эта механика работает в runtime (game engine): механику коллизий, state transitions, animation events, как и когда переключаются флаги. Не копировать вслепую константы и логику из предыдущих версий бота — они могут содержать те же ошибки или костыли.
-- **Пример неэффективности**: SwitchLaneSafety содержала WouldHitDuringSourcePhase, но в runtime `IsOnBottomLine` переключается мгновенно при TapRequest (TapMechanics.OnTap), а CollisionController проверяет `IsOnSameLine(IsOnBottomLine, obstacle)`. Значит source-lane препятствия **не могут навредить** после TapRequest — source phase check был лишним. Одно изучение TapMechanics + CollisionController сразу дало бы правильное решение, вместо 5 итераций с хаками.
-- **Конкретное правило**: прежде чем писать prediction/safety check для действия бота, прочитать полностью runtime-обработчик этого действия (Mechanics + Controller + AnimationEvents). Найти: что триггерит коллизию, какие флаги проверяются, когда они переключаются.
+#### Изучение runtime перед реализацией
 
-### Архитектурная чистота vs костыли
+- [promoted -> docs/rules/code_conventions.md] Перед реализацией игровой механики изучить runtime: коллизии, state transitions, animation events.
+- [promoted -> docs/architecture_knowledge_base.md] Пример: SwitchLaneSafety и source-phase check (IsOnBottomLine + TapRequest).
 
-- **Никогда не добавлять фильтры по типу препятствия** (RequiresTargetLaneClearance, IsSmallObstacle и т.п.) для обхода некорректной safety-логики. Если safety check выдаёт ложные срабатывания — проблема в модели, а не в типе препятствия.
-- **SwitchLane: IsOnBottomLine переключается мгновенно при TapRequest** — коллизии с target-lane threats возможны сразу, а не только в конечной позиции. Поэтому для SwitchLane нужна проверка всего интервала от текущей позиции до конечной (swept zone). Эта проверка делается live в StepExecutor перед fire (IsSwitchLaneEndPositionSafe), а на этапе планирования — приблизительная проверка конечной позиции в StateProjector.
-- **Planning и execution проверяют разное**: planning (StateProjector) проверяет конечную позицию по snapshot-данным — грубая оценка. Execution (StepExecutor) проверяет swept zone по live-данным каждый кадр — точная проверка перед fire. Если live-check не проходит до deadline — шаг отменяется.
+#### Архитектурная чистота vs костыли
 
-### Workflow и правила
+- [promoted -> docs/architecture_knowledge_base.md] Не добавлять фильтры по типу, planning vs execution проверки, swept zone.
 
-- [promoted -> docs/rules/AGENTS.md] По умолчанию отвечать максимально кратко; подробности и длинные разборы давать только по явному запросу пользователя.
-- **Перед любой задачей читать AGENTS.md и релевантные правила** — не после. Workflow рефакторинга (компиляция → тест → коммит → merge) пропущенный в начале обнаруживается только когда пользователь указывает на ошибку.
-- **Не объявлять задачу завершённой до конца git-цикла**: для `task/refactoring` обязательный чеклист перед вызовом task_complete — (1) валидация: recompile + test level WIN, (2) commit, (3) push ветки, (4) merge в main + push main, (5) чистый `git status`, (6) ретроспектива. Каждый пункт выполнять автоматически, не ждать команды пользователя. Если task_complete вызван без этих шагов — это ошибка процесса.
-- [promoted -> docs/rules/workflow.md] **Побочные изменения (автогенерация Unity, Addressables) должны попадать в main, а не только в integration-ветку.** Integration-ветка — стенд для проверки, не конечная точка. После завершения задачи main и integration/unity-live должны быть идентичны и запушены. Если автосгенерированные файлы изменились — коммитить сначала в main (или cherry-pick), затем синхронизировать integration.
-- **При удалении файлов обязательно проверять все тесты** на предмет ссылок на удалённые типы: тест может называться нейтрально (`PlannerContractTests`), но внутри ссылаться на удалённые классы.
-- **После любых изменений .cs файлов запускать `recompile_scripts`** через automation bridge и дожидаться `state: completed` перед запуском тестового уровня.
-- [promoted -> docs/rules/workflow.md] **При валидации запускать только релевантный тестовый уровень**, относящийся к текущей задаче, а не все уровни разом.
+#### Workflow и правила
 
-### Эффективность итераций
+- [promoted -> docs/rules/AGENTS.md] Отвечать максимально кратко; подробности — по запросу.
+- [promoted -> docs/rules/AGENTS.md] Перед задачей читать AGENTS.md и релевантные правила.
+- [promoted -> docs/rules/workflow.md] Побочные изменения (автогенерация) должны попадать в main.
+- [promoted -> docs/rules/workflow.md] При валидации запускать только релевантный тестовый уровень.
+- [promoted -> docs/rules/workflow.md] Не объявлять задачу завершённой до конца git-цикла.
+- [promoted -> docs/rules/code_conventions.md] При удалении файлов проверять тесты на ссылки на удалённые типы.
+- [promoted -> docs/rules/code_conventions.md] После изменений .cs файлов запускать recompile_scripts.
 
-- **Не делать больше 2 попыток фикса одной проблемы** без глубокого изучения runtime. Если два подхода не сработали — остановиться, изучить game engine mechanics, составить полную картину, и только потом делать fix.
-- **При изменении физических констант** (JumpFireDist, swept zones, travel distances) сначала проверить, как эти значения используются в game engine (JumpMechanics.CalculateJumpState, CollisionController). Не подбирать значения эмпирически через запуск-проверка-правка циклы.
+#### Эффективность итераций
 
-### Данные и миграция
+- [promoted -> docs/rules/code_conventions.md] Не делать больше 2 попыток фикса без изучения runtime.
+- [promoted -> docs/rules/code_conventions.md] При изменении физических констант сначала проверить использование в game engine.
 
-- [incubating] **При добавлении обязательных полей в JSON-данные** (ID, ключи) мигрировать существующие файлы данных ДО деплоя кода, зависящего от этих полей. `JsonUtility.FromJson` молча подставляет `default(int) = 0` для отсутствующих полей — если все записи получают одинаковый ID, любой override по ID попадает во все записи.
+### Incubating
+
+#### Данные и миграция
+
+- [incubating] При добавлении обязательных полей в JSON-данные мигрировать существующие файлы ДО деплоя кода. `JsonUtility.FromJson` подставляет `default(int) = 0` для отсутствующих полей.

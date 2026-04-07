@@ -525,6 +525,35 @@ Menu: `Tools/Migration/` — 3 шага:
 
 ---
 
+## Bot Domain Knowledge
+
+Устойчивые выводы по механикам бота, перенесённые из `ai_workflow_lessons.md`.
+
+### Семантика безопасности и планирования
+
+- `safe` означает безопасность шага в окне исполнения; будущие угрозы — следующий пересчёт или chain stages.
+- Для `SwitchLane` считать окно по прогнозу освобождения target-линии (динамический `execAt`), а не отбрасывать если линия unsafe сейчас.
+- `SwitchLane`: моделировать все safe-windows, включая split windows (`safe → unsafe → safe`); иначе — искусственные zigzag-цепочки.
+- `ThreatSafety` `SwitchLane`: target obstacle — ближайшая same-lane угроза; executor сверяет live distance именно с target.
+- Chain-этапы: межлинейность — свойство запланированной последовательности шагов (zigzag 2-step), не отдельная смена линии.
+- `ObjectCategory.Threat` ≠ полное множество runtime-опасных объектов. Классификатор может помечать часть как `Target`. Safety проверки сверять с runtime-dangerous type set.
+- `HamsterState` — источник истины для прыжков: `JumpOver` = перепрыгивание.
+- Chain-stage тесты: все объекты цепочки должны попадать в один initial snapshot (в пределах `scanRange`).
+
+### ActionGenerator
+
+- Ограничения — семантический инвариант, не подстройка под тест-кейс. `SwitchLaneTargetMinFireDist` кодирует «SwitchLane к Target нужно место для Jump».
+- `IsSwitchLaneSafeAtDistance`: только transit (0.3с), не post-transit. Post-transit = минимальная дистанция fire + chain-проекция. Если хомяк врезается ПОСЛЕ transit — причина не в safety check.
+- `TryComputeSwitchLaneExecuteDistance`: учитывает все target-lane threats (включая далёкие). Для Target-категории минимум выше чем для Threat/Collectible.
+
+### SwitchLane механика
+
+- `IsOnBottomLine` переключается мгновенно при `TapRequest` (`TapMechanics.OnTap`). Source-lane препятствия не могут навредить после `TapRequest`.
+- Не добавлять фильтры по типу препятствия для обхода safety-логики. Проблема в модели, а не в типе.
+- Planning (StateProjector) проверяет конечную позицию по snapshot-данным — грубая оценка. Execution (StepExecutor) проверяет swept zone по live-данным каждый кадр — точная проверка. Если live-check не проходит до deadline — шаг отменяется.
+
+---
+
 ## Обновление документации
 
 Этот файл должен обновляться при:
