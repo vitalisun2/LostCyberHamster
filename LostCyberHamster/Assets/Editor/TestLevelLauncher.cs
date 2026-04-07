@@ -71,9 +71,9 @@ namespace LostCyberHamster.Editor
         }
 
         /// <summary>
-        /// Открывает вычисляемый список test-level адресов из Content/locations.
+        /// Открывает окно выбора test-level адреса из Content/locations.
         /// Unity не поддерживает динамическое создание MenuItem из данных на диске,
-        /// поэтому список строится во всплывающем GenericMenu по статическому пункту меню.
+        /// поэтому список строится во вспомогательном окне по статическому пункту меню.
         /// </summary>
         [MenuItem("Tools/Test Level/Launch...", priority = 50)]
         private static void ShowLaunchMenu()
@@ -85,15 +85,7 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
-            // Build a fresh list every time so menu contents reflect current files on disk.
-            var menu = new GenericMenu();
-            foreach (var testLevel in testLevels)
-            {
-                var capturedLevel = testLevel;
-                menu.AddItem(new GUIContent(capturedLevel.MenuLabel), false, () => LaunchInteractive(capturedLevel.Address));
-            }
-
-            menu.ShowAsContext();
+            TestLevelPickerWindow.ShowWindow(testLevels, LaunchInteractive);
         }
 
         /// <summary>
@@ -297,6 +289,107 @@ namespace LostCyberHamster.Editor
             public string Address { get; }
 
             public string MenuLabel { get; }
+        }
+
+        private sealed class TestLevelPickerWindow : EditorWindow
+        {
+            private const float WindowWidth = 640f;
+            private const float WindowHeight = 360f;
+
+            private readonly List<TestLevelEntry> _testLevels = new();
+            private Vector2 _scrollPosition;
+            private Action<string> _onLaunch;
+
+            public static void ShowWindow(IEnumerable<TestLevelEntry> testLevels, Action<string> onLaunch)
+            {
+                var entries = testLevels?.ToList() ?? new List<TestLevelEntry>();
+                if (entries.Count == 0)
+                {
+                    EditorUtility.DisplayDialog("Test Level", $"No test levels found under '{LocationsRootPath}'.", "OK");
+                    return;
+                }
+
+                var window = CreateInstance<TestLevelPickerWindow>();
+                window.titleContent = new GUIContent("Test Levels");
+                window._testLevels.Clear();
+                window._testLevels.AddRange(entries);
+                window._onLaunch = onLaunch;
+                window.minSize = new Vector2(WindowWidth, WindowHeight);
+                window.maxSize = new Vector2(WindowWidth, WindowHeight);
+                window.position = new Rect(
+                    (Screen.currentResolution.width - WindowWidth) * 0.5f,
+                    (Screen.currentResolution.height - WindowHeight) * 0.5f,
+                    WindowWidth,
+                    WindowHeight);
+                window.ShowUtility();
+                window.Focus();
+            }
+
+            private void OnGUI()
+            {
+                EditorGUILayout.LabelField("Test Levels", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox("Выбери test level для запуска через Bootstrap с автовключением бота.", MessageType.Info);
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField($"Found: {_testLevels.Count}", EditorStyles.miniLabel);
+                    GUILayout.FlexibleSpace();
+
+                    if (GUILayout.Button("Refresh", GUILayout.Width(80f)))
+                    {
+                        RefreshLevels();
+                    }
+
+                    if (GUILayout.Button("Close", GUILayout.Width(80f)))
+                    {
+                        Close();
+                    }
+                }
+
+                GUILayout.Space(6f);
+
+                if (_testLevels.Count == 0)
+                {
+                    EditorGUILayout.HelpBox($"No test levels found under '{LocationsRootPath}'.", MessageType.Warning);
+                    return;
+                }
+
+                _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
+                foreach (var testLevel in _testLevels)
+                {
+                    using (new EditorGUILayout.VerticalScope("box"))
+                    {
+                        EditorGUILayout.LabelField(testLevel.MenuLabel, EditorStyles.boldLabel);
+                        EditorGUILayout.LabelField(testLevel.Address, EditorStyles.miniLabel);
+
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            GUILayout.FlexibleSpace();
+                            if (GUILayout.Button("Launch", GUILayout.Width(90f)))
+                            {
+                                try
+                                {
+                                    _onLaunch?.Invoke(testLevel.Address);
+                                }
+                                finally
+                                {
+                                    Close();
+                                }
+
+                                GUIUtility.ExitGUI();
+                            }
+                        }
+                    }
+                }
+
+                EditorGUILayout.EndScrollView();
+            }
+
+            private void RefreshLevels()
+            {
+                _testLevels.Clear();
+                _testLevels.AddRange(DiscoverTestLevels());
+            }
         }
     }
 }

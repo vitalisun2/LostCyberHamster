@@ -52,7 +52,7 @@
 **Меню:** `Tools → Test Level → Launch...`
 **Файл:** `LostCyberHamster/Assets/Editor/TestLevelLauncher.cs`
 
-Открывает вычисляемый список всех `test*.json` уровней из `Assets/Content/locations/*/levels/**` и запускает выбранный test level с автовключением бота. PlayerPrefs автоматически очищаются при выходе из Play Mode.
+Открывает utility-окно со списком всех `test*.json` уровней из `Assets/Content/locations/*/levels/**` и запускает выбранный test level с автовключением бота. PlayerPrefs автоматически очищаются при выходе из Play Mode.
 
 ---
 
