@@ -578,7 +578,7 @@ public class LevelTilemapEditor : EditorWindow
         else
         {
             var newLevelRef = CreateDefaultLevelInfoRef();
-            createdLevelPath = LevelDataManager.CreateNewLevelRef(newLevelRef, _levelsDirectory, _spritesNames);
+            createdLevelPath = LevelDataManager.CreateNewLevelRef(newLevelRef, _levelsDirectory, _selectedDaypart, _spritesNames);
         }
 
        

@@ -196,7 +196,7 @@ public static class LevelDataManager
         File.WriteAllText(filePath, json, Encoding.UTF8);
     }
 
-    public static string CreateNewLevel(LevelInfo levelInfo, string levelsDirectory, List<string> spritesNames = null)
+    public static string CreateNewLevel(LevelInfo levelInfo, string levelsDirectory, PartOfDayEnum partOfDay, List<string> spritesNames = null)
     {
         try
         {
@@ -205,27 +205,8 @@ public static class LevelDataManager
             if (errors.Any())
                 throw new Exception($"Level data is invalid: {string.Join(", ", errors)}");
 
-            var existingDescriptors = EnumerateAllLocationLevelFileDescriptors();
-
-            var highestLevelNumber = 0;
-
-            foreach (var descriptor in existingDescriptors)
-            {
-                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(descriptor.AbsolutePath);
-                var parts = fileNameWithoutExtension.Split('_');
-                if (parts.Length == 2 && int.TryParse(parts[1], out var levelNumber))
-                {
-                    if (levelNumber > highestLevelNumber)
-                    {
-                        highestLevelNumber = levelNumber;
-                    }
-                }
-            }
-
-            var newLevelNumber = highestLevelNumber + 1;
-            var newLevelFileName = $"level_{newLevelNumber:D2}.json";
-
-            var filePath = Path.Combine(levelsDirectory, newLevelFileName);
+            var levelKey = GenerateNextLevelKey();
+            var filePath = BuildCanonicalLevelJsonPath(levelsDirectory, partOfDay, levelKey);
 
             SaveLevel(levelInfo, filePath);
 
@@ -238,7 +219,7 @@ public static class LevelDataManager
         }
     }
 
-    public static string CreateNewLevelRef(LevelInfoRef levelInfoRef, string levelsDirectory, List<string> spritesNames = null)
+    public static string CreateNewLevelRef(LevelInfoRef levelInfoRef, string levelsDirectory, PartOfDayEnum partOfDay, List<string> spritesNames = null)
     {
         try
         {
@@ -253,27 +234,8 @@ public static class LevelDataManager
             if (errors.Any())
                 throw new Exception($"Level data is invalid: {string.Join(", ", errors)}");
 
-            var existingDescriptors = EnumerateAllLocationLevelFileDescriptors();
-
-            var highestLevelNumber = 0;
-
-            foreach (var descriptor in existingDescriptors)
-            {
-                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(descriptor.AbsolutePath);
-                var parts = fileNameWithoutExtension.Split('_');
-                if (parts.Length == 2 && int.TryParse(parts[1], out var levelNumber))
-                {
-                    if (levelNumber > highestLevelNumber)
-                    {
-                        highestLevelNumber = levelNumber;
-                    }
-                }
-            }
-
-            var newLevelNumber = highestLevelNumber + 1;
-            var newLevelFileName = $"level_{newLevelNumber:D2}.json";
-
-            var filePath = Path.Combine(levelsDirectory, newLevelFileName);
+            var levelKey = GenerateNextLevelKey();
+            var filePath = BuildCanonicalLevelJsonPath(levelsDirectory, partOfDay, levelKey);
 
             SaveLevelRef(levelInfoRef, filePath);
 
@@ -284,6 +246,34 @@ public static class LevelDataManager
             Debug.LogError($"Failed to create new level: {ex.Message}");
             return null;
         }
+    }
+
+    private static string GenerateNextLevelKey()
+    {
+        var highestLevelNumber = 0;
+
+        foreach (var descriptor in EnumerateAllLocationLevelFileDescriptors())
+        {
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(descriptor.AbsolutePath);
+            var parts = fileNameWithoutExtension.Split('_');
+            if (parts.Length == 2 && int.TryParse(parts[1], out var levelNumber))
+            {
+                if (levelNumber > highestLevelNumber)
+                {
+                    highestLevelNumber = levelNumber;
+                }
+            }
+        }
+
+        return $"level_{highestLevelNumber + 1:D2}";
+    }
+
+    private static string BuildCanonicalLevelJsonPath(string levelsDirectory, PartOfDayEnum partOfDay, string levelKey)
+    {
+        var partDirectory = Path.Combine(levelsDirectory, partOfDay.ToString());
+        var levelDirectory = Path.Combine(partDirectory, levelKey);
+        Directory.CreateDirectory(levelDirectory);
+        return Path.Combine(levelDirectory, $"{levelKey}.json");
     }
 
     public static string CreateNewTemplate(LevelInfo levelInfo, string templateName, string levelsDirectory,
