@@ -585,15 +585,7 @@ public class LevelTilemapEditor : EditorWindow
        
         AssetDatabase.Refresh();
         RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
-
-        if (!string.IsNullOrEmpty(createdLevelPath))
-        {
-            var index = _visibleLevelDescriptors.FindIndex(d => string.Equals(d.AbsolutePath, createdLevelPath, StringComparison.OrdinalIgnoreCase));
-            if (index >= 0)
-            {
-                _uiManager.SelectFileByIndex(index);
-            }
-        }
+        TrySelectLevelByPath(createdLevelPath);
     }
 
     private LevelInfo CreateDefaultLevelInfo()
@@ -770,6 +762,33 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         _uiManager.SelectFirstFile();
+    }
+
+    private bool TrySelectLevelByPath(string absolutePath)
+    {
+        if (string.IsNullOrWhiteSpace(absolutePath))
+        {
+            return false;
+        }
+
+        var index = _visibleLevelDescriptors.FindIndex(descriptor =>
+            string.Equals(descriptor.AbsolutePath, absolutePath, StringComparison.OrdinalIgnoreCase));
+
+        if (index < 0)
+        {
+            return false;
+        }
+
+        var descriptor = _visibleLevelDescriptors[index];
+        _selectedLevelDescriptor = descriptor;
+        _uiManager.SelectFileByIndex(index);
+
+        if (!string.Equals(_selectedFile, descriptor.AbsolutePath, StringComparison.OrdinalIgnoreCase))
+        {
+            HandleFileSelected(descriptor);
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -2037,11 +2056,10 @@ public class LevelTilemapEditor : EditorWindow
             AssetDatabase.Refresh();
             RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
 
-            var index = _visibleLevelDescriptors.FindIndex(d => string.Equals(d.AbsolutePath, renamedPath, StringComparison.OrdinalIgnoreCase));
-            if (index >= 0)
-                _uiManager.SelectFileByIndex(index);
-            else
+            if (!TrySelectLevelByPath(renamedPath))
+            {
                 _uiManager.UpdateLevelNameField(normalizedLevelKey);
+            }
         }
         catch (Exception ex)
         {

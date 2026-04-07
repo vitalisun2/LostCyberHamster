@@ -108,7 +108,7 @@ public class LevelTilemapUi
         // Section containers for mode visibility
         _patternsSection = root.Q<VisualElement>("VisualElement"); // named container with patterns
         _patternButtonsRow = root.Q<Button>("add-pattern-btn")?.parent;
-        _createLevelRow = root.Q<Button>("create-level-btn")?.parent;
+        _createLevelRow = root.Q<VisualElement>("create-level-row");
         _spritesLabel = root.Q<Label>("sprites-label");
 
 
@@ -802,6 +802,7 @@ public class LevelTilemapUi
         _filesList.selectionChanged += OnFileSelectedInternal;
 
         _filesList.selectedIndex = index;
+        _filesList.ScrollToItem(index);
     }
 
     public void SelectFirstPattern()

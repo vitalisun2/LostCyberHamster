@@ -368,12 +368,40 @@ public static class LevelDataManager
 
     private static string ToAssetPath(string absolutePath)
     {
-        return NormalizePath(Path.GetRelativePath(Directory.GetCurrentDirectory(), absolutePath));
+        if (string.IsNullOrWhiteSpace(absolutePath))
+            return string.Empty;
+
+        var normalizedAbsolutePath = Path.GetFullPath(absolutePath);
+        var assetsRoot = Path.GetFullPath(Application.dataPath);
+
+        if (string.Equals(normalizedAbsolutePath, assetsRoot, StringComparison.OrdinalIgnoreCase))
+            return "Assets";
+
+        var assetsRootWithSeparator = assetsRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!normalizedAbsolutePath.StartsWith(assetsRootWithSeparator, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Path '{absolutePath}' is outside Unity Assets root '{assetsRoot}'.");
+
+        var relativePath = normalizedAbsolutePath.Substring(assetsRootWithSeparator.Length);
+        return "Assets/" + NormalizePath(relativePath);
     }
 
     private static string ToAbsolutePath(string assetPath)
     {
-        return Path.GetFullPath(assetPath.Replace('/', Path.DirectorySeparatorChar));
+        if (string.IsNullOrWhiteSpace(assetPath))
+            return string.Empty;
+
+        var normalizedAssetPath = NormalizePath(assetPath);
+        if (string.Equals(normalizedAssetPath, "Assets", StringComparison.OrdinalIgnoreCase))
+            return Path.GetFullPath(Application.dataPath);
+
+        if (!normalizedAssetPath.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Asset path '{assetPath}' must start with 'Assets/'.");
+
+        var assetsRootParent = Directory.GetParent(Path.GetFullPath(Application.dataPath));
+        if (assetsRootParent == null)
+            throw new InvalidOperationException("Failed to resolve Unity project root from Application.dataPath.");
+
+        return Path.GetFullPath(Path.Combine(assetsRootParent.FullName, normalizedAssetPath.Replace('/', Path.DirectorySeparatorChar)));
     }
 
     public static string CreateNewTemplate(LevelInfo levelInfo, string templateName, string levelsDirectory,
