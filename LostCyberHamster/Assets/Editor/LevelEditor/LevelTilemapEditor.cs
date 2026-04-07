@@ -771,23 +771,16 @@ public class LevelTilemapEditor : EditorWindow
             return false;
         }
 
+        var normalizedTargetPath = Path.GetFullPath(absolutePath);
         var index = _visibleLevelDescriptors.FindIndex(descriptor =>
-            string.Equals(descriptor.AbsolutePath, absolutePath, StringComparison.OrdinalIgnoreCase));
+            string.Equals(Path.GetFullPath(descriptor.AbsolutePath), normalizedTargetPath, StringComparison.OrdinalIgnoreCase));
 
         if (index < 0)
         {
             return false;
         }
 
-        var descriptor = _visibleLevelDescriptors[index];
-        _selectedLevelDescriptor = descriptor;
         _uiManager.SelectFileByIndex(index);
-
-        if (!string.Equals(_selectedFile, descriptor.AbsolutePath, StringComparison.OrdinalIgnoreCase))
-        {
-            HandleFileSelected(descriptor);
-        }
-
         return true;
     }
 
