@@ -6,6 +6,9 @@ namespace Assets.Scripts.Bot
     /// </summary>
     internal static class BotConsts
     {
+        // Planning
+        public const int MaxBranchDepth = 5;
+
         // Physics
         /// <summary>
         /// Runtime decision-ready длительность SwitchLane.

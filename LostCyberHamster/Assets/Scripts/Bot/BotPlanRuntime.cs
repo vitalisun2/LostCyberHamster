@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Assets.Scripts.Bot
@@ -13,6 +14,7 @@ namespace Assets.Scripts.Bot
 
         private int _lastPlanTargetId;
 
+        public bool HasCommittedPlan => !_plan.IsEmpty;
         public bool HasPreview => _branchRenderer.HasPreview;
 
         public BotPlanRuntime(CurrentPlan plan, BotBranchRenderer branchRenderer)
@@ -22,33 +24,48 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Применяет новый план. Возвращает head-шаг для передачи executor'у, или null если план пуст.
+        /// Коммитит новую ветку как текущий committed plan.
         /// </summary>
-        public BranchStep ApplyPlan(BotSceneSnapshot snapshot, BranchCandidate best, bool hamsterOnBottomFallback)
+        public BranchStep CommitPlan(BotSceneSnapshot snapshot, BranchCandidate best, bool hamsterOnBottomFallback)
         {
-            _plan.RemoveCompletedFromHead();
-
-            // Нет ветки — очистить план и preview
             if (best == null || best.Steps.Count == 0)
             {
+                Clear();
+                return null;
+            }
+
+            LogPlanSelectedIfChanged(best);
+            _plan.ReplaceFrom(best, best.Steps[0].Reason);
+            UpdatePreview(snapshot, hamsterOnBottomFallback);
+            return _plan.Head;
+        }
+
+        /// <summary>
+        /// Продвигает committed plan после завершения head-шага.
+        /// </summary>
+        public BranchStep AdvancePlan(BotSceneSnapshot snapshot, bool hamsterOnBottomFallback)
+        {
+            _plan.AdvanceCompletedHead();
+            if (_plan.IsEmpty)
+            {
                 LogPlanClearedIfNeeded();
-                _plan.Clear();
                 _branchRenderer.ClearPreview();
                 return null;
             }
 
-            // Применить новый план и обновить preview
-            LogPlanSelectedIfChanged(best);
-            _plan.ReplaceFrom(best, best.Steps[0].Reason);
-            _branchRenderer.UpdatePreview(
-                _plan.Steps,
-                snapshot != null ? snapshot.HamsterOnBottom : hamsterOnBottomFallback);
-
+            _lastPlanTargetId = _plan.Head.TargetObstacle.StableId;
+            UpdatePreview(snapshot, hamsterOnBottomFallback);
             return _plan.Head;
+        }
+
+        public List<BranchStep> SnapshotRetainableSteps()
+        {
+            return _plan.SnapshotRetainableSteps();
         }
 
         public void Clear()
         {
+            LogPlanClearedIfNeeded();
             _plan.Clear();
             _branchRenderer.ClearPreview();
         }
@@ -66,6 +83,13 @@ namespace Assets.Scripts.Bot
         public void Dispose()
         {
             _branchRenderer.Dispose();
+        }
+
+        private void UpdatePreview(BotSceneSnapshot snapshot, bool hamsterOnBottomFallback)
+        {
+            _branchRenderer.UpdatePreview(
+                _plan.Steps,
+                snapshot != null ? snapshot.HamsterOnBottom : hamsterOnBottomFallback);
         }
 
         private void LogPlanSelectedIfChanged(BranchCandidate best)

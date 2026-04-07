@@ -66,7 +66,7 @@ namespace Assets.Tests.EditMode.BotV3
         }
 
         [Test]
-        public void Generate_ThreeStepZigZag_BuildsDepthThreeBranch()
+        public void Generate_FiveStepZigZag_BuildsDepthFiveBranch()
         {
             var snapshot = MakeSnapshot(
                 hamOnBottom: true,
@@ -74,7 +74,9 @@ namespace Assets.Tests.EditMode.BotV3
                 {
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 7.04f, 8.44f, 10.0f, 801),
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, true, 22.04f, 23.44f, 25.0f, 802),
-                    Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 37.04f, 38.44f, 40.0f, 803)
+                    Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 37.04f, 38.44f, 40.0f, 803),
+                    Obs(ObstacleTypeEnum.smallNotAliveRoad, true, 52.04f, 53.44f, 55.0f, 804),
+                    Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 67.04f, 68.44f, 70.0f, 805)
                 });
 
             snapshot = _classifier.Classify(snapshot);
@@ -82,9 +84,9 @@ namespace Assets.Tests.EditMode.BotV3
             var firstSteps = _actionGenerator.Generate(snapshot, problem);
             var branches = _branchGenerator.Generate(snapshot, firstSteps, _classifier, _actionGenerator, _problemResolver);
 
-            bool hasDepthThree = branches.Exists(branch => branch.Steps.Count >= 3);
-            Assert.IsTrue(hasDepthThree,
-                "Planner должен строить lookahead минимум на три решения вперёд.");
+            bool hasDepthFive = branches.Exists(branch => branch.Steps.Count >= 5);
+            Assert.IsTrue(hasDepthFive,
+                "Planner должен строить lookahead минимум на пять решений вперёд.");
         }
 
         [Test]

@@ -22,6 +22,28 @@ namespace Assets.Scripts.Bot
             Strategy = strategy;
         }
 
+        public BranchStep AdvanceCompletedHead()
+        {
+            RemoveCompletedFromHead();
+            return Head;
+        }
+
+        public List<BranchStep> SnapshotRetainableSteps()
+        {
+            var retainableSteps = new List<BranchStep>(Steps.Count);
+
+            for (int i = 0; i < Steps.Count; i++)
+            {
+                var step = Steps[i];
+                if (step.Status != BranchStepStatus.Ready)
+                    break;
+
+                retainableSteps.Add(step);
+            }
+
+            return retainableSteps;
+        }
+
         public void RemoveCompletedFromHead()
         {
             while (Steps.Count > 0 && Steps[0].Status == BranchStepStatus.Completed)

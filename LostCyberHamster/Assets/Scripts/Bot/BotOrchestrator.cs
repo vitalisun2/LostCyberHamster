@@ -31,7 +31,7 @@ namespace Assets.Scripts.Bot
 
         private BotHud _hud;
         private readonly BotBranchRenderer _branchRenderer = new BotBranchRenderer();
-        private readonly VisibleObjectBaselineTracker _visibleObjectBaseline = new VisibleObjectBaselineTracker();
+        private readonly VisibleObjectAppearanceTracker _visibleObjectTracker = new VisibleObjectAppearanceTracker();
         private GameEventTracker _eventTracker;
 
         // Pipeline
@@ -42,7 +42,8 @@ namespace Assets.Scripts.Bot
         private BotPlanRuntime _planRuntime;
 
         private float _nextInitRetryTime;
-        private bool _replanRequested = true;
+        private bool _planEvaluationRequested = true;
+        private bool _stepCompletedPending;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
@@ -89,30 +90,26 @@ namespace Assets.Scripts.Bot
             TickRuntime();
         }
 
-        private void RequestReplan() => _replanRequested = true;
+        private void RequestPlanEvaluation() => _planEvaluationRequested = true;
+        private void HandleStepCompleted() => _stepCompletedPending = true;
 
         /// <summary>
-        /// Один тик runtime: обновить snapshot, дождаться завершения текущего шага, перепланировать и запустить.
+        /// Один тик runtime: обновить snapshot, продвинуть committed plan, при необходимости оценить замену и запустить head.
         /// </summary>
         private void TickRuntime()
         {
             BotSceneSnapshot liveSnapshot = RefreshSceneState();
 
-            // Ждать завершения текущего шага
             _executor.PollCompletion();
 
-            if (_executor.IsStepInProgress)
-            {
-                // Шаг в процессе — обновить preview если видимые объекты изменились,
-                // но не передавать новый шаг executor'у, чтобы не прерывать текущий.
-                if (_replanRequested)
-                    ReplanPreviewOnly(liveSnapshot);
-                return;
-            }
+            if (_stepCompletedPending)
+                AdvanceCommittedPlan(liveSnapshot);
 
-            // Перепланировать и попытаться запустить следующий шаг
-            if (_replanRequested)
-                Replan(liveSnapshot);
+            if (_executor.IsStepInProgress)
+                return;
+
+            if (_planEvaluationRequested)
+                EvaluatePlan(liveSnapshot);
 
             _executor.TryFire();
         }
@@ -120,45 +117,53 @@ namespace Assets.Scripts.Bot
         private BotSceneSnapshot RefreshSceneState()
         {
             BotSceneSnapshot liveSnapshot = _snapshotBuilder.Build(Hamster);
-            _visibleObjectBaseline.Update(liveSnapshot);
+            _visibleObjectTracker.Update(liveSnapshot);
             return liveSnapshot;
         }
 
         /// <summary>
-        /// Обновляет preview пока шаг в процессе: переплановывает, но не трогает executor.
+        /// Продвигает committed plan после завершения текущего head.
         /// </summary>
-        private void ReplanPreviewOnly(BotSceneSnapshot liveSnapshot)
+        private void AdvanceCommittedPlan(BotSceneSnapshot liveSnapshot)
         {
-            var classifiedSnapshot = _classifier.Classify(liveSnapshot);
-            LastSnapshot = classifiedSnapshot;
-            _planRuntime.ApplyPlan(
-                classifiedSnapshot,
-                _planner.FindBestBranch(classifiedSnapshot, _classifier),
+            _stepCompletedPending = false;
+
+            var head = _planRuntime.AdvancePlan(
+                liveSnapshot,
                 Hamster != null && Hamster.IsOnBottomLine.Value);
-            _replanRequested = false;
+
+            if (head != null)
+            {
+                _executor.SetStep(head);
+                return;
+            }
+
+            _executor.ClearStep();
+            _planEvaluationRequested = true;
         }
 
         /// <summary>
-        /// Запускает pipeline планирования: classify → plan → передать шаг executor'у.
+        /// Оценивает замену текущего плана или строит новый, если committed plan пуст.
         /// </summary>
-        private void Replan(BotSceneSnapshot liveSnapshot)
+        private void EvaluatePlan(BotSceneSnapshot liveSnapshot)
         {
-            // Классифицировать объекты snapshot
             var classifiedSnapshot = _classifier.Classify(liveSnapshot);
             LastSnapshot = classifiedSnapshot;
 
-            // Найти лучшую ветку и применить план
-            var head = _planRuntime.ApplyPlan(
+            var head = _planRuntime.CommitPlan(
                 classifiedSnapshot,
-                _planner.FindBestBranch(classifiedSnapshot, _classifier),
+                _planner.FindBestBranch(
+                    classifiedSnapshot,
+                    _classifier,
+                    _planRuntime.SnapshotRetainableSteps()),
                 Hamster != null && Hamster.IsOnBottomLine.Value);
 
-            // Передать head-шаг executor'у
             if (head != null)
                 _executor.SetStep(head);
             else
                 _executor.ClearStep();
-            _replanRequested = false;
+
+            _planEvaluationRequested = false;
         }
 
         public void ToggleEnabledFromHotkey()
@@ -211,8 +216,8 @@ namespace Assets.Scripts.Bot
             _classifier = new ObjectClassifier();
             _planner = new BranchSelector(superJumpShift, jumpOnRoofShift);
             _executor = new StepExecutor(Hamster);
-            _executor.OnStepCompleted += RequestReplan;
-            _visibleObjectBaseline.OnBaselineChanged += RequestReplan;
+            _executor.OnStepCompleted += HandleStepCompleted;
+            _visibleObjectTracker.OnNewObjectAppeared += RequestPlanEvaluation;
             _planRuntime = new BotPlanRuntime(Plan, _branchRenderer);
             ResetRuntimeTracking();
 
@@ -226,15 +231,16 @@ namespace Assets.Scripts.Bot
         private void ResetRuntimeTracking()
         {
             LastSnapshot = null;
-            _replanRequested = true;
-            _visibleObjectBaseline.Reset();
+            _planEvaluationRequested = true;
+            _stepCompletedPending = false;
+            _visibleObjectTracker.Reset();
         }
 
         private void OnDestroy()
         {
-            _visibleObjectBaseline.OnBaselineChanged -= RequestReplan;
+            _visibleObjectTracker.OnNewObjectAppeared -= RequestPlanEvaluation;
             if (_executor != null)
-                _executor.OnStepCompleted -= RequestReplan;
+                _executor.OnStepCompleted -= HandleStepCompleted;
             _eventTracker?.Dispose();
             _planRuntime?.Dispose();
             if (_planRuntime == null)

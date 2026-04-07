@@ -8,8 +8,7 @@ namespace Assets.Scripts.Bot
     /// </summary>
     public class BranchGenerator
     {
-        private const int MaxBranchDepth = 3;
-        private readonly BranchStep[] _stepBuffer = new BranchStep[MaxBranchDepth];
+        private readonly BranchStep[] _stepBuffer = new BranchStep[BotConsts.MaxBranchDepth];
 
         public List<BranchCandidate> Generate(
             BotSceneSnapshot snapshot,
@@ -57,7 +56,7 @@ namespace Assets.Scripts.Bot
             if (!TryProjectSnapshot(snapshot, classifier, actionGenerator, step, out var projectedSnapshot))
                 return;
 
-            if (stepCount >= MaxBranchDepth)
+            if (stepCount >= BotConsts.MaxBranchDepth)
             {
                 AddCurrentCandidate(result, stepCount, originalSnapshot);
                 return;
