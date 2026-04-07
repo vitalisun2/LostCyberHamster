@@ -7,8 +7,6 @@ namespace Assets.Scripts.Common.Models
     public class LevelInfoRef
     {
         public string skyTexture;
-        public string background2Texture;
-        public string backgroundTexture;
         public string roadTexture;
         public string location;
 

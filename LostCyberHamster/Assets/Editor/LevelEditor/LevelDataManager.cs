@@ -411,11 +411,6 @@ public static class LevelDataManager
             return errors;
         }
 
-        if (spritesNames != null && !spritesNames.Contains(levelInfo.backgroundTexture))
-        {
-            errors.Add("Background texture is not set");
-        }
-
         return errors;
     }
 
