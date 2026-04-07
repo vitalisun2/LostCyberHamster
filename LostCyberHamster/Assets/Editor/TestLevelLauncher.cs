@@ -1,4 +1,8 @@
 #if UNITY_EDITOR
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -26,11 +30,9 @@ namespace LostCyberHamster.Editor
         public static string TimeScaleOverrideKey => Assets.Scripts.System.AutomationRuntimePrefs.TimeScaleOverrideKey;
 
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
-        private const string SwitchLaneTestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_switchlane";
-        private const string JumpTestLevelAddress = "01_New_York/Morning/test_threat_small_notalive_road_jump";
-        private const string BigAliveTestLevelAddress = "01_New_York/Morning/test_threat_bigalive";
-        private const string JumpOnRoofTestLevelAddress = "01_New_York/Morning/test_jump_on_roof";
-        private const string RoofSmallNotAliveTestLevelAddress = "01_New_York/Morning/test_roof_small_notalive";
+        private const string LocationsRootPath = "Assets/Content/locations";
+        private const string LevelsFolderName = "levels";
+        private const string TestLevelPrefix = "test";
 
         /// <summary>Default timescale when launching via Tools menu for interactive visual inspection.</summary>
         private const float ToolsDefaultTimeScale = 1.0f;
@@ -68,43 +70,31 @@ namespace LostCyberHamster.Editor
             }
         }
 
-        [MenuItem("Tools/Test Level/Launch test_threat_small_notalive_road_switchlane", priority = 50)]
-        private static void LaunchSwitchLane()
+        /// <summary>
+        /// Открывает вычисляемый список test-level адресов из Content/locations.
+        /// Unity не поддерживает динамическое создание MenuItem из данных на диске,
+        /// поэтому список строится во всплывающем GenericMenu по статическому пункту меню.
+        /// </summary>
+        [MenuItem("Tools/Test Level/Launch...", priority = 50)]
+        private static void ShowLaunchMenu()
         {
-            if (!TryLaunchTestLevel(interactive: true, SwitchLaneTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
-                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
-        }
+            var testLevels = DiscoverTestLevels();
+            if (testLevels.Count == 0)
+            {
+                EditorUtility.DisplayDialog("Test Level", $"No test levels found under '{LocationsRootPath}'.", "OK");
+                return;
+            }
 
-        // Temporarily hidden while validating SwitchLane-only planner behavior.
-        /*
-        [MenuItem("Tools/Test Level/Launch test_threat_small_notalive_road_jump", priority = 51)]
-        private static void LaunchJump()
-        {
-            if (!TryLaunchTestLevel(interactive: true, JumpTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
-                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
-        }
+            // Build a fresh list every time so menu contents reflect current files on disk.
+            var menu = new GenericMenu();
+            foreach (var testLevel in testLevels)
+            {
+                var capturedLevel = testLevel;
+                menu.AddItem(new GUIContent(capturedLevel.MenuLabel), false, () => LaunchInteractive(capturedLevel.Address));
+            }
 
-        [MenuItem("Tools/Test Level/Launch test_threat_bigalive", priority = 52)]
-        private static void LaunchBigAlive()
-        {
-            if (!TryLaunchTestLevel(interactive: true, BigAliveTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
-                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
+            menu.ShowAsContext();
         }
-
-        [MenuItem("Tools/Test Level/Launch test_jump_on_roof", priority = 53)]
-        private static void LaunchJumpOnRoof()
-        {
-            if (!TryLaunchTestLevel(interactive: true, JumpOnRoofTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
-                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
-        }
-
-        [MenuItem("Tools/Test Level/Launch test_roof_small_notalive", priority = 54)]
-        private static void LaunchRoofSmallNotAlive()
-        {
-            if (!TryLaunchTestLevel(interactive: true, RoofSmallNotAliveTestLevelAddress, ToolsDefaultTimeScale, out var errorMessage))
-                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
-        }
-        */
 
         /// <summary>
         /// Запускает test level без UI-диалогов, чтобы этим можно было безопасно управлять из automation bridge.
@@ -149,9 +139,12 @@ namespace LostCyberHamster.Editor
                 return false;
             }
 
-            string effectiveLevelAddress = string.IsNullOrWhiteSpace(levelAddress)
-                ? SwitchLaneTestLevelAddress
-                : levelAddress.Trim();
+            var effectiveLevelAddress = levelAddress?.Trim();
+            if (string.IsNullOrWhiteSpace(effectiveLevelAddress) && !TryGetDefaultTestLevelAddress(out effectiveLevelAddress))
+            {
+                errorMessage = $"No test levels found under '{LocationsRootPath}'.";
+                return false;
+            }
 
             // Write override into PlayerPrefs so it survives domain reload on Play
             PlayerPrefs.SetString(OverridePrefsKey, effectiveLevelAddress);
@@ -175,6 +168,111 @@ namespace LostCyberHamster.Editor
             return true;
         }
 
+        /// <summary>
+        /// Собирает список test-level адресов из Content/locations/*/levels.
+        /// </summary>
+        private static List<TestLevelEntry> DiscoverTestLevels()
+        {
+            var testLevels = new List<TestLevelEntry>();
+            if (!TryGetLocationsRootAbsolutePath(out var locationsRootAbsolutePath) ||
+                !Directory.Exists(locationsRootAbsolutePath))
+            {
+                return testLevels;
+            }
+
+            // Scan each location independently so addresses keep the location/daypart prefix.
+            foreach (var locationDirectory in Directory.EnumerateDirectories(locationsRootAbsolutePath))
+            {
+                var locationName = Path.GetFileName(locationDirectory);
+                if (string.IsNullOrWhiteSpace(locationName))
+                {
+                    continue;
+                }
+
+                var levelsDirectory = Path.Combine(locationDirectory, LevelsFolderName);
+                if (!Directory.Exists(levelsDirectory))
+                {
+                    continue;
+                }
+
+                foreach (var descriptor in LevelDataManager.GetLevelFileDescriptors(levelsDirectory))
+                {
+                    if (TryBuildTestLevelEntry(locationName, descriptor, out var testLevel))
+                    {
+                        testLevels.Add(testLevel);
+                    }
+                }
+            }
+
+            testLevels.Sort((left, right) => string.CompareOrdinal(left.MenuLabel, right.MenuLabel));
+            return testLevels;
+        }
+
+        private static void LaunchInteractive(string levelAddress)
+        {
+            if (!TryLaunchTestLevel(interactive: true, levelAddress, ToolsDefaultTimeScale, out var errorMessage))
+            {
+                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
+            }
+        }
+
+        private static bool TryGetDefaultTestLevelAddress(out string levelAddress)
+        {
+            levelAddress = DiscoverTestLevels()
+                .Select(level => level.Address)
+                .FirstOrDefault();
+            return !string.IsNullOrWhiteSpace(levelAddress);
+        }
+
+        private static bool TryBuildTestLevelEntry(string locationName, LevelFileDescriptor descriptor, out TestLevelEntry testLevel)
+        {
+            var levelKey = ExtractLevelKey(descriptor.RelativePath);
+            if (!levelKey.StartsWith(TestLevelPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                testLevel = default;
+                return false;
+            }
+
+            var normalizedRelativePath = NormalizePath(descriptor.RelativePath);
+            var relativeDirectory = NormalizePath(Path.GetDirectoryName(normalizedRelativePath));
+            var address = string.IsNullOrWhiteSpace(relativeDirectory)
+                ? $"{locationName}/{levelKey}"
+                : $"{locationName}/{relativeDirectory}";
+
+            testLevel = new TestLevelEntry(address, address);
+            return true;
+        }
+
+        private static string ExtractLevelKey(string relativePath)
+        {
+            var normalizedPath = NormalizePath(relativePath);
+            var directoryName = NormalizePath(Path.GetDirectoryName(normalizedPath));
+            if (!string.IsNullOrWhiteSpace(directoryName))
+            {
+                var segments = directoryName.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                if (segments.Length > 0)
+                {
+                    return segments[^1];
+                }
+            }
+
+            return Path.GetFileNameWithoutExtension(normalizedPath);
+        }
+
+        private static bool TryGetLocationsRootAbsolutePath(out string absolutePath)
+        {
+            var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            absolutePath = Path.GetFullPath(Path.Combine(projectRoot, LocationsRootPath));
+            return !string.IsNullOrWhiteSpace(absolutePath);
+        }
+
+        private static string NormalizePath(string path)
+        {
+            return string.IsNullOrWhiteSpace(path)
+                ? string.Empty
+                : path.Replace('\\', '/');
+        }
+
         private static bool HasDirtyOpenScenes()
         {
             for (var index = 0; index < SceneManager.sceneCount; index++)
@@ -186,6 +284,19 @@ namespace LostCyberHamster.Editor
             }
 
             return false;
+        }
+
+        private readonly struct TestLevelEntry
+        {
+            public TestLevelEntry(string address, string menuLabel)
+            {
+                Address = address;
+                MenuLabel = menuLabel;
+            }
+
+            public string Address { get; }
+
+            public string MenuLabel { get; }
         }
     }
 }

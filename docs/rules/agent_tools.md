@@ -49,10 +49,10 @@
 
 ## 2. Test Level Launcher (из Unity Editor)
 
-**Меню:** `Tools → Test Level → Launch <level_name>` (по одному пункту на каждый тестовый уровень)
+**Меню:** `Tools → Test Level → Launch...`
 **Файл:** `LostCyberHamster/Assets/Editor/TestLevelLauncher.cs`
 
-Запускает указанный тестовый уровень с автовключением бота. PlayerPrefs автоматически очищаются при выходе из Play Mode.
+Открывает вычисляемый список всех `test*.json` уровней из `Assets/Content/locations/*/levels/**` и запускает выбранный test level с автовключением бота. PlayerPrefs автоматически очищаются при выходе из Play Mode.
 
 ---
 
