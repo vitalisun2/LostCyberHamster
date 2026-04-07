@@ -57,8 +57,6 @@ namespace Assets.Tests.EditMode
             return new LevelInfoRef
             {
                 skyTexture = "sky",
-                background2Texture = "bg2",
-                backgroundTexture = "bg",
                 roadTexture = "road",
                 location = "new_york",
                 patternSequence = new List<PatternRef>(refs),
@@ -417,8 +415,6 @@ namespace Assets.Tests.EditMode
             var levelRef = new LevelInfoRef
             {
                 skyTexture = "sky_tex",
-                background2Texture = "bg2_tex",
-                backgroundTexture = "bg_tex",
                 roadTexture = "road_tex",
                 location = "test",
                 patternSequence = new List<PatternRef> { Ref("p") },
@@ -428,8 +424,6 @@ namespace Assets.Tests.EditMode
             var result = LevelResolver.Resolve(levelRef, patterns, theme);
 
             Assert.AreEqual("sky_tex", result.skyTexture);
-            Assert.AreEqual("bg2_tex", result.background2Texture);
-            Assert.AreEqual("bg_tex", result.backgroundTexture);
             Assert.AreEqual("road_tex", result.roadTexture);
             Assert.AreEqual(1, result.decorationPatterns.Count);
             Assert.AreEqual("bush", result.decorationPatterns[0].decorationTiles[0].name);

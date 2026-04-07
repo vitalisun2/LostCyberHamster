@@ -13,11 +13,13 @@ using Assets.Editor.LevelEditor;
 using Assets.Editor.LevelEditor.ObstacleSpriteTypeMappingManagement;
 using Assets.Scripts;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using System.Text.RegularExpressions;
 
 public static class LevelDataManager
 {
     private const string MappingFileName   = "obstacle_sprite_to_type_mappings";
     private const string MappingsGroupName = "Mappings";
+    private static readonly Regex _levelKeySanitizer = new Regex(@"[^a-z0-9_]+", RegexOptions.Compiled);
 
     private static readonly IReadOnlyDictionary<string, PartOfDayEnum> _partOfDayFolderMap =
         new Dictionary<string, PartOfDayEnum>(StringComparer.OrdinalIgnoreCase)
@@ -44,7 +46,7 @@ public static class LevelDataManager
         }
 
         var descriptors = new List<LevelFileDescriptor>();
-        var files = Directory.GetFiles(levelsDirectory, $"*.{extension}", SearchOption.AllDirectories);
+        var files = EnumerateLevelFiles(levelsDirectory, extension);
 
         foreach (var absolutePath in files)
         {
@@ -105,6 +107,27 @@ public static class LevelDataManager
     private static string NormalizePath(string path)
     {
         return path.Replace('\\', '/');
+    }
+
+    private static IEnumerable<string> EnumerateLevelFiles(string levelsDirectory, string extension)
+    {
+        var normalizedExtension = string.IsNullOrWhiteSpace(extension)
+            ? ".json"
+            : "." + extension.TrimStart('.');
+
+        var assetDirectoryPath = TryToAssetPath(levelsDirectory);
+        if (!string.IsNullOrEmpty(assetDirectoryPath) && AssetDatabase.IsValidFolder(assetDirectoryPath))
+        {
+            return AssetDatabase
+                .FindAssets(string.Empty, new[] { assetDirectoryPath })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(assetPath => assetPath.EndsWith(normalizedExtension, StringComparison.OrdinalIgnoreCase))
+                .Select(ToAbsolutePath)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        return Directory.GetFiles(levelsDirectory, $"*{normalizedExtension}", SearchOption.AllDirectories);
     }
 
     [Obsolete("Use GetLevelFileDescriptors for both locations and level design templates.")]
@@ -183,6 +206,12 @@ public static class LevelDataManager
     /// </summary>
     public static LevelInfoRef LoadLevelRef(string filePath)
     {
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+        {
+            Debug.LogWarning($"Level json file not found: {filePath}");
+            return null;
+        }
+
         var json = File.ReadAllText(filePath, Encoding.UTF8);
         return JsonUtility.FromJson<LevelInfoRef>(json);
     }
@@ -196,7 +225,7 @@ public static class LevelDataManager
         File.WriteAllText(filePath, json, Encoding.UTF8);
     }
 
-    public static string CreateNewLevel(LevelInfo levelInfo, string levelsDirectory, List<string> spritesNames = null)
+    public static string CreateNewLevel(LevelInfo levelInfo, string levelsDirectory, PartOfDayEnum partOfDay, string requestedLevelName = null, List<string> spritesNames = null)
     {
         try
         {
@@ -205,27 +234,8 @@ public static class LevelDataManager
             if (errors.Any())
                 throw new Exception($"Level data is invalid: {string.Join(", ", errors)}");
 
-            var existingDescriptors = EnumerateAllLocationLevelFileDescriptors();
-
-            var highestLevelNumber = 0;
-
-            foreach (var descriptor in existingDescriptors)
-            {
-                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(descriptor.AbsolutePath);
-                var parts = fileNameWithoutExtension.Split('_');
-                if (parts.Length == 2 && int.TryParse(parts[1], out var levelNumber))
-                {
-                    if (levelNumber > highestLevelNumber)
-                    {
-                        highestLevelNumber = levelNumber;
-                    }
-                }
-            }
-
-            var newLevelNumber = highestLevelNumber + 1;
-            var newLevelFileName = $"level_{newLevelNumber:D2}.json";
-
-            var filePath = Path.Combine(levelsDirectory, newLevelFileName);
+            var levelKey = ResolveLevelKey(levelsDirectory, requestedLevelName);
+            var filePath = BuildCanonicalLevelJsonPath(levelsDirectory, partOfDay, levelKey);
 
             SaveLevel(levelInfo, filePath);
 
@@ -236,6 +246,168 @@ public static class LevelDataManager
             Debug.LogError($"Failed to create new level: {ex.Message}");
             return null;
         }
+    }
+
+    public static string CreateNewLevelRef(LevelInfoRef levelInfoRef, string levelsDirectory, PartOfDayEnum partOfDay, string requestedLevelName = null, List<string> spritesNames = null)
+    {
+        try
+        {
+            var errors = ValidateLevelInfo(new LevelInfo
+            {
+                skyTexture = levelInfoRef?.skyTexture,
+                roadTexture = levelInfoRef?.roadTexture
+            }, spritesNames);
+
+            if (errors.Any())
+                throw new Exception($"Level data is invalid: {string.Join(", ", errors)}");
+
+            var levelKey = ResolveLevelKey(levelsDirectory, requestedLevelName);
+            var filePath = BuildCanonicalLevelJsonPath(levelsDirectory, partOfDay, levelKey);
+
+            SaveLevelRef(levelInfoRef, filePath);
+
+            return filePath;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Failed to create new level: {ex.Message}");
+            return null;
+        }
+    }
+
+    public static string NormalizeLevelKey(string levelName)
+    {
+        if (string.IsNullOrWhiteSpace(levelName))
+            return string.Empty;
+
+        var normalized = levelName.Trim().ToLowerInvariant()
+            .Replace('-', '_')
+            .Replace(' ', '_');
+        normalized = _levelKeySanitizer.Replace(normalized, "_");
+        while (normalized.Contains("__", StringComparison.Ordinal))
+            normalized = normalized.Replace("__", "_", StringComparison.Ordinal);
+
+        return normalized.Trim('_');
+    }
+
+    public static string GetLevelKeyFromFilePath(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            return string.Empty;
+
+        var levelDirectory = Path.GetFileName(Path.GetDirectoryName(filePath));
+        if (!string.IsNullOrWhiteSpace(levelDirectory))
+            return levelDirectory;
+
+        return Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
+    }
+
+    public static string GetNextAvailableLevelKey(string levelsDirectory)
+    {
+        return GenerateNextLevelKey(levelsDirectory);
+    }
+
+    private static string ResolveLevelKey(string levelsDirectory, string requestedLevelName, string currentLevelKeyToIgnore = null)
+    {
+        var normalizedRequested = NormalizeLevelKey(requestedLevelName);
+        if (!string.IsNullOrWhiteSpace(normalizedRequested))
+        {
+            EnsureLevelKeyIsAvailable(levelsDirectory, normalizedRequested, currentLevelKeyToIgnore);
+            return normalizedRequested;
+        }
+
+        return GenerateNextLevelKey(levelsDirectory);
+    }
+
+    private static string GenerateNextLevelKey(string levelsDirectory)
+    {
+        var highestLevelNumber = 0;
+
+        foreach (var descriptor in EnumerateAllLocationLevelFileDescriptors())
+        {
+            var levelKey = GetLevelKeyFromFilePath(descriptor.AbsolutePath);
+            var parts = levelKey.Split('_');
+            if (parts.Length == 2 && int.TryParse(parts[1], out var levelNumber))
+            {
+                if (levelNumber > highestLevelNumber)
+                {
+                    highestLevelNumber = levelNumber;
+                }
+            }
+        }
+
+        return $"level_{highestLevelNumber + 1:D2}";
+    }
+
+    private static void EnsureLevelKeyIsAvailable(string levelsDirectory, string levelKey, string currentLevelKeyToIgnore)
+    {
+        foreach (var descriptor in EnumerateAllLocationLevelFileDescriptors())
+        {
+            var existingKey = GetLevelKeyFromFilePath(descriptor.AbsolutePath);
+            if (string.Equals(existingKey, currentLevelKeyToIgnore, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (string.Equals(existingKey, levelKey, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Level '{levelKey}' already exists.");
+        }
+    }
+
+    private static string BuildCanonicalLevelJsonPath(string levelsDirectory, PartOfDayEnum partOfDay, string levelKey)
+    {
+        var partDirectory = Path.Combine(levelsDirectory, partOfDay.ToString());
+        var levelDirectory = Path.Combine(partDirectory, levelKey);
+        Directory.CreateDirectory(levelDirectory);
+        return Path.Combine(levelDirectory, $"{levelKey}.json");
+    }
+
+    private static string ToAssetPath(string absolutePath)
+    {
+        if (string.IsNullOrWhiteSpace(absolutePath))
+            return string.Empty;
+
+        var normalizedAbsolutePath = Path.GetFullPath(absolutePath);
+        var assetsRoot = Path.GetFullPath(Application.dataPath);
+
+        if (string.Equals(normalizedAbsolutePath, assetsRoot, StringComparison.OrdinalIgnoreCase))
+            return "Assets";
+
+        var assetsRootWithSeparator = assetsRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!normalizedAbsolutePath.StartsWith(assetsRootWithSeparator, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Path '{absolutePath}' is outside Unity Assets root '{assetsRoot}'.");
+
+        var relativePath = normalizedAbsolutePath.Substring(assetsRootWithSeparator.Length);
+        return "Assets/" + NormalizePath(relativePath);
+    }
+
+    private static string TryToAssetPath(string absolutePath)
+    {
+        try
+        {
+            return ToAssetPath(absolutePath);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private static string ToAbsolutePath(string assetPath)
+    {
+        if (string.IsNullOrWhiteSpace(assetPath))
+            return string.Empty;
+
+        var normalizedAssetPath = NormalizePath(assetPath);
+        if (string.Equals(normalizedAssetPath, "Assets", StringComparison.OrdinalIgnoreCase))
+            return Path.GetFullPath(Application.dataPath);
+
+        if (!normalizedAssetPath.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Asset path '{assetPath}' must start with 'Assets/'.");
+
+        var assetsRootParent = Directory.GetParent(Path.GetFullPath(Application.dataPath));
+        if (assetsRootParent == null)
+            throw new InvalidOperationException("Failed to resolve Unity project root from Application.dataPath.");
+
+        return Path.GetFullPath(Path.Combine(assetsRootParent.FullName, normalizedAssetPath.Replace('/', Path.DirectorySeparatorChar)));
     }
 
     public static string CreateNewTemplate(LevelInfo levelInfo, string templateName, string levelsDirectory,
@@ -409,11 +581,6 @@ public static class LevelDataManager
         {
             errors.Add("LevelInfo is null");
             return errors;
-        }
-
-        if (spritesNames != null && !spritesNames.Contains(levelInfo.backgroundTexture))
-        {
-            errors.Add("Background texture is not set");
         }
 
         return errors;

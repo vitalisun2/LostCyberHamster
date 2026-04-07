@@ -15,6 +15,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
 using Unity.VisualScripting;
+using System.Text.RegularExpressions;
 
 public class LevelTilemapEditor : EditorWindow
 {
@@ -89,6 +90,7 @@ public class LevelTilemapEditor : EditorWindow
     private const float PatternBoundaryLineThickness = 4f;
     private static readonly Color PatternBoundaryColor = new Color(0.12f, 0.95f, 0.18f, 1f);
     private static readonly Color SelectedPatternBoundaryColor = new Color(0.25f, 1f, 0.25f, 1f);
+    private static readonly Regex PatternNameSuffixRegex = new Regex(@"^(.*?)(\d+)$", RegexOptions.Compiled);
 
     private readonly List<PatternOverlaySlot> _patternOverlaySlots = new();
 
@@ -537,10 +539,7 @@ public class LevelTilemapEditor : EditorWindow
         if (IsTemplateMode)
         {
             Debug.Log($"Сохранение PatternsCollection: {_selectedFile}");
-            SyncTemplatesFromLevelInfo();
-            var pcPath = Path.Combine(Consts.LocationsPath, Consts.TemplatesLocationName, "levels", "PatternsCollection.json");
-            var json = JsonUtility.ToJson(_patternsCollection, true);
-            File.WriteAllText(pcPath, json, System.Text.Encoding.UTF8);
+            SavePatternsCollectionToDisk();
         }
         else
         {
@@ -564,38 +563,53 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void HandleCreateLevelClicked()
     {
-        var newLevelInfo = new LevelInfo();
-
-        string createdLevelPath = null;
+        if (string.IsNullOrWhiteSpace(_currentLocationName) || string.IsNullOrWhiteSpace(_levelsDirectory))
+        {
+            EditorUtility.DisplayDialog("Location Required", "Выбери локацию перед созданием уровня.", "OK");
+            return;
+        }
 
         if (IsTemplateMode)
         {
-            var templateName = _uiManager.TemplateLevelName;
-            if (string.IsNullOrWhiteSpace(templateName))
-            {
-                EditorUtility.DisplayDialog("Template name required", "Введите имя шаблона перед созданием файла.", "OK");
-                return;
-            }
-
-            createdLevelPath = LevelDataManager.CreateNewTemplate(newLevelInfo, templateName, _levelsDirectory, _spritesNames);
+            CreateLevelPromptWindow.Show(
+                "Create Template",
+                "Template Name",
+                "new_template",
+                "OK",
+                CreateTemplateWithName);
         }
         else
         {
-            createdLevelPath = LevelDataManager.CreateNewLevel(newLevelInfo, _levelsDirectory, _spritesNames);
+            CreateLevelPromptWindow.Show(
+                "Create Level",
+                "Level Name",
+                LevelDataManager.GetNextAvailableLevelKey(_levelsDirectory),
+                "OK",
+                CreateLevelWithName);
         }
+    }
 
-       
-        AssetDatabase.Refresh();
-        RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
-
-        if (!string.IsNullOrEmpty(createdLevelPath))
+    private LevelInfo CreateDefaultLevelInfo()
+    {
+        return new LevelInfo
         {
-            var index = _visibleLevelDescriptors.FindIndex(d => string.Equals(d.AbsolutePath, createdLevelPath, StringComparison.OrdinalIgnoreCase));
-            if (index >= 0)
-            {
-                _uiManager.SelectFileByIndex(index);
-            }
-        }
+            skyTexture = string.Empty,
+            roadTexture = string.Empty,
+            decorationPatterns = new List<DecorationPattern>(),
+            patterns = new List<Pattern>()
+        };
+    }
+
+    private LevelInfoRef CreateDefaultLevelInfoRef()
+    {
+        return new LevelInfoRef
+        {
+            skyTexture = string.Empty,
+            roadTexture = string.Empty,
+            location = _currentLocationName,
+            patternSequence = new List<PatternRef>(),
+            decorationPatterns = new List<DecorationPattern>()
+        };
     }
 
     /// <summary>
@@ -706,6 +720,56 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         _uiManager.SelectFirstFile();
+    }
+
+    private bool TrySelectLevelByPath(string absolutePath)
+    {
+        if (string.IsNullOrWhiteSpace(absolutePath))
+        {
+            return false;
+        }
+
+        var normalizedTargetPath = Path.GetFullPath(absolutePath);
+        var index = _visibleLevelDescriptors.FindIndex(descriptor =>
+            string.Equals(Path.GetFullPath(descriptor.AbsolutePath), normalizedTargetPath, StringComparison.OrdinalIgnoreCase));
+
+        if (index < 0)
+        {
+            return false;
+        }
+
+        _uiManager.SelectFileByIndex(index);
+        return true;
+    }
+
+    private void CreateTemplateWithName(string templateName)
+    {
+        if (string.IsNullOrWhiteSpace(templateName))
+            return;
+
+        var newLevelInfo = CreateDefaultLevelInfo();
+        var createdLevelPath = LevelDataManager.CreateNewTemplate(newLevelInfo, templateName, _levelsDirectory, _spritesNames);
+        FinalizeCreatedLevel(createdLevelPath);
+    }
+
+    private void CreateLevelWithName(string levelName)
+    {
+        if (string.IsNullOrWhiteSpace(levelName))
+            return;
+
+        var newLevelRef = CreateDefaultLevelInfoRef();
+        var createdLevelPath = LevelDataManager.CreateNewLevelRef(newLevelRef, _levelsDirectory, _selectedDaypart, levelName, _spritesNames);
+        FinalizeCreatedLevel(createdLevelPath);
+    }
+
+    private void FinalizeCreatedLevel(string createdLevelPath)
+    {
+        if (string.IsNullOrWhiteSpace(createdLevelPath))
+            return;
+
+        AssetDatabase.Refresh();
+        RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
+        TrySelectLevelByPath(createdLevelPath);
     }
 
     /// <summary>
@@ -828,6 +892,8 @@ public class LevelTilemapEditor : EditorWindow
             {
                 totalWidth += GetPatternDisplayWidth(pattern);
             }
+            if (totalWidth <= 0f)
+                totalWidth = DefaultTilemapWidth;
         }
 
         // Создаём сцену с фоном и дорогой по naming convention
@@ -1018,6 +1084,12 @@ public class LevelTilemapEditor : EditorWindow
             for (int o = 0; o < pattern.obstacles.Count; o++)
             {
                 var obstacle = pattern.obstacles[o];
+                if (string.IsNullOrWhiteSpace(obstacle.spriteName))
+                {
+                    Debug.LogWarning($"[LevelTilemapEditor] Obstacle without spriteName in pattern '{pattern.name}' (id={o}, type={obstacle.type}).");
+                    continue;
+                }
+
                 var sprite = SpriteLoader.LoadSpriteSync(obstacle.spriteName);
                 if (sprite == null) continue;
 
@@ -1444,9 +1516,15 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void AddNewPattern()
     {
+        if (_currentLevelInfo == null)
+        {
+            Debug.LogWarning("Невозможно добавить паттерн: информация об уровне отсутствует.");
+            return;
+        }
+
         var newPattern = new Pattern
         {
-            name = $"Pattern {_currentLevelInfo.patterns.Count + 1}",
+            name = GenerateNewPatternName(),
             desсription = string.Empty,
             obstacles = new List<ObstacleModel>()
         };
@@ -1455,10 +1533,48 @@ public class LevelTilemapEditor : EditorWindow
 
         var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
 
-        _uiManager.UpdatePatternsList(patternNames);
         _selectedPatternIndex = _currentLevelInfo.patterns.Count - 1;
+        _uiManager.UpdatePatternsList(patternNames, _selectedPatternIndex);
+        _uiManager.UpdatePatternNameField(newPattern.name);
+        _uiManager.UpdatePatternDescriptionField(newPattern.desсription);
 
         Debug.Log($"Добавлен новый паттерн: {newPattern.name}");
+    }
+
+    private string GenerateNewPatternName()
+    {
+        var existingNames = new HashSet<string>(
+            _currentLevelInfo.patterns
+                .Where(pattern => !string.IsNullOrWhiteSpace(pattern?.name))
+                .Select(pattern => pattern.name),
+            StringComparer.OrdinalIgnoreCase);
+
+        var basePatternName = CurrentPattern?.name;
+        var candidateName = string.IsNullOrWhiteSpace(basePatternName)
+            ? "Pattern 01"
+            : GetIncrementedPatternName(basePatternName);
+
+        while (existingNames.Contains(candidateName))
+        {
+            candidateName = GetIncrementedPatternName(candidateName);
+        }
+
+        return candidateName;
+    }
+
+    private static string GetIncrementedPatternName(string sourceName)
+    {
+        if (string.IsNullOrWhiteSpace(sourceName))
+            return "Pattern 01";
+
+        var match = PatternNameSuffixRegex.Match(sourceName.Trim());
+        if (!match.Success)
+            return $"{sourceName.Trim()}_1";
+
+        var prefix = match.Groups[1].Value;
+        var digits = match.Groups[2].Value;
+        var incrementedValue = (int.Parse(digits) + 1).ToString(new string('0', digits.Length));
+        return prefix + incrementedValue;
     }
 
     /// <summary>
@@ -1694,7 +1810,7 @@ public class LevelTilemapEditor : EditorWindow
         if (!string.IsNullOrEmpty(_selectedFile))
         {
             Debug.Log($"[Editor] Saving changes to file: {_selectedFile}");
-            LevelDataManager.SaveLevel(_currentLevelInfo, _selectedFile);
+            SavePatternsCollectionToDisk();
         }
         else
         {
@@ -1712,6 +1828,21 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.UpdatePatternNameField(newName);
 
         Debug.Log($"[Editor] Pattern rename complete: {newName}");
+    }
+
+    private void SavePatternsCollectionToDisk()
+    {
+        if (_patternsCollection == null || _currentLevelInfo == null)
+        {
+            Debug.LogWarning("Cannot save PatternsCollection: template data is not initialized.");
+            return;
+        }
+
+        SyncTemplatesFromLevelInfo();
+
+        var pcPath = Path.Combine(Consts.LocationsPath, Consts.TemplatesLocationName, "levels", "PatternsCollection.json");
+        var json = JsonUtility.ToJson(_patternsCollection, true);
+        File.WriteAllText(pcPath, json, System.Text.Encoding.UTF8);
     }
 
     private void HandlePatternDescriptionChanged(string newDesc)
@@ -1865,6 +1996,17 @@ public class LevelTilemapEditor : EditorWindow
             return;
 
         _currentLevelInfo = LevelResolver.Resolve(_currentLevelRef, _patternsCollection, _locationTheme);
+
+        float totalWidth = 0f;
+        foreach (var pattern in _currentLevelInfo.patterns)
+            totalWidth += GetPatternDisplayWidth(pattern);
+        if (totalWidth <= 0f)
+            totalWidth = DefaultTilemapWidth;
+
+        var daypartSlug = _selectedDaypart.ToString().ToLowerInvariant();
+        var tilemapGameObject = SceneCreator.CreateSceneWithTilemap((int)totalWidth, _currentLocationName, daypartSlug);
+        _tilemapInScene = tilemapGameObject.GetComponent<Tilemap>();
+
         RenderAllPatternsToTilemap();
     }
 
@@ -1913,37 +2055,49 @@ public class LevelTilemapEditor : EditorWindow
         if (_patternsCollection == null || _currentLevelInfo == null)
             return;
 
-        // Only sync the currently selected pattern
-        if (_selectedPatternIndex < 0 || _selectedPatternIndex >= _patternsCollection.patterns.Count)
-            return;
-
-        var template = _patternsCollection.patterns[_selectedPatternIndex];
-        var resolvedPattern = _currentLevelInfo.patterns[_selectedPatternIndex];
-
-        // Rebuild obstacles from resolved pattern — keep existing ids where possible
-        var newObstacles = new List<ObstacleSlot>();
-        int nextId = template.nextObstacleId;
-
-        foreach (var obstacle in resolvedPattern.obstacles)
+        var syncedTemplates = new List<PatternTemplate>(_currentLevelInfo.patterns.Count);
+        for (int index = 0; index < _currentLevelInfo.patterns.Count; index++)
         {
-            // Try to find existing slot by position
-            var existingSlot = template.obstacles.Find(s =>
-                s.type == obstacle.type &&
-                Math.Abs(s.x - obstacle.x) < 0.01f &&
-                Math.Abs(s.y - obstacle.y) < 0.01f);
+            var existingTemplate = index < _patternsCollection.patterns.Count
+                ? _patternsCollection.patterns[index]
+                : new PatternTemplate();
+            syncedTemplates.Add(BuildTemplateFromResolvedPattern(_currentLevelInfo.patterns[index], existingTemplate));
+        }
 
-            newObstacles.Add(new ObstacleSlot
+        _patternsCollection.patterns = syncedTemplates;
+    }
+
+    private static PatternTemplate BuildTemplateFromResolvedPattern(Pattern resolvedPattern, PatternTemplate template)
+    {
+        template ??= new PatternTemplate();
+
+        var existingObstacles = template.obstacles ?? new List<ObstacleSlot>();
+        var newObstacles = new List<ObstacleSlot>();
+        int nextId = Math.Max(template.nextObstacleId, 0);
+
+        if (resolvedPattern?.obstacles != null)
+        {
+            foreach (var obstacle in resolvedPattern.obstacles)
             {
-                id = existingSlot?.id ?? nextId++,
-                type = obstacle.type,
-                x = obstacle.x,
-                y = obstacle.y
-            });
+                var existingSlot = existingObstacles.Find(s =>
+                    s.type == obstacle.type &&
+                    Math.Abs(s.x - obstacle.x) < 0.01f &&
+                    Math.Abs(s.y - obstacle.y) < 0.01f);
+
+                newObstacles.Add(new ObstacleSlot
+                {
+                    id = existingSlot?.id ?? nextId++,
+                    type = obstacle.type,
+                    x = obstacle.x,
+                    y = obstacle.y
+                });
+            }
         }
 
         template.obstacles = newObstacles;
         template.nextObstacleId = nextId;
-        template.name = resolvedPattern.name;
-        template.description = resolvedPattern.desсription ?? "";
+        template.name = resolvedPattern?.name ?? string.Empty;
+        template.description = resolvedPattern?.desсription ?? string.Empty;
+        return template;
     }
 }

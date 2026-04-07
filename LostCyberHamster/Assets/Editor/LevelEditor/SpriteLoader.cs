@@ -12,7 +12,8 @@ public static class SpriteLoader
     private static readonly Regex _frameSuffixRegex = new(@"-\d+$", RegexOptions.Compiled);
 
     /// <summary>
-    /// Удаляет суффикс кадра (-0, -1, ...) из имени спрайта.
+    /// Удаляет суффикс кадра анимации (-0, -1, ...) из имени спрайта.
+    /// Конвенция: кадры анимации всегда через дефис (ObstacleAnimationImporter).
     /// </summary>
     public static string StripFrameSuffix(string spriteName)
     {
@@ -30,6 +31,12 @@ public static class SpriteLoader
 
     public static Sprite LoadSpriteSync(string spriteName)
     {
+        if (string.IsNullOrWhiteSpace(spriteName))
+        {
+            Debug.LogWarning("SpriteLoader.LoadSpriteSync called with empty sprite key.");
+            return null;
+        }
+
         if (_spriteCache.TryGetValue(spriteName, out var cachedSprite))
             return cachedSprite;
 
