@@ -19,6 +19,26 @@ namespace Assets.Scripts.Bot
 
         public static int CompareCandidates(BranchCandidate a, BranchCandidate b)
         {
+            int compare = CompareCandidatesIgnoringFireTiming(a, b);
+            if (compare != 0)
+                return compare;
+
+            return a.Steps[0].FireWorldShift.CompareTo(b.Steps[0].FireWorldShift);
+        }
+
+        public static bool IsStrictlyBetterForReplacement(BranchCandidate candidate, BranchCandidate retained)
+        {
+            if (candidate == null)
+                return false;
+
+            if (retained == null)
+                return true;
+
+            return CompareCandidatesIgnoringFireTiming(candidate, retained) < 0;
+        }
+
+        private static int CompareCandidatesIgnoringFireTiming(BranchCandidate a, BranchCandidate b)
+        {
             var oa = a.Outcome;
             var ob = b.Outcome;
 
@@ -32,7 +52,7 @@ namespace Assets.Scripts.Bot
             if (depthCompare != 0)
                 return depthCompare;
 
-            return a.Steps[0].FireWorldShift.CompareTo(b.Steps[0].FireWorldShift);
+            return 0;
         }
     }
 }

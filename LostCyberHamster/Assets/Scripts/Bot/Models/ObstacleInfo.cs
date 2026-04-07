@@ -13,7 +13,6 @@ namespace Assets.Scripts.Bot
         public readonly float RightX;
         public readonly float CenterX;
         public readonly float DistanceToHamster;
-        public readonly ObjectCategory Category;
         public readonly int StableId;
 
         public ObstacleInfo(
@@ -21,7 +20,6 @@ namespace Assets.Scripts.Bot
             bool isTopLane,
             float leftX, float rightX, float centerX,
             float distanceToHamster,
-            ObjectCategory category,
             int stableId)
         {
             Type = type;
@@ -30,7 +28,6 @@ namespace Assets.Scripts.Bot
             RightX = rightX;
             CenterX = centerX;
             DistanceToHamster = distanceToHamster;
-            Category = category;
             StableId = stableId;
         }
     }

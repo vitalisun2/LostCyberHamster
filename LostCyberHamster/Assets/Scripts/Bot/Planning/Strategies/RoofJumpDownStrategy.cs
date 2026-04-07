@@ -12,7 +12,7 @@ namespace Assets.Scripts.Bot
 
         public bool TryBuildStep(
             BotSceneSnapshot snapshot,
-            ProblemDescriptor problem,
+            ObstacleInfo target,
             ProjectedWorld projectedWorld,
             out BranchStep step,
             out string rejectReason)

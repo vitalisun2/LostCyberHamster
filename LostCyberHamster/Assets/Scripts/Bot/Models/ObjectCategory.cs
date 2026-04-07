@@ -7,7 +7,6 @@ namespace Assets.Scripts.Bot
     {
         Threat,
         Target,
-        Collectible,
-        Neutral
+        Collectible
     }
 }
