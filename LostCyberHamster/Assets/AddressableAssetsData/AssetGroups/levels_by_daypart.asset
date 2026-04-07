@@ -15,22 +15,6 @@ MonoBehaviour:
   m_GroupName: levels_by_daypart
   m_GUID: 84de73c8c0de40f38c6c0703ba6332ec
   m_SerializeEntries:
-  - m_GUID: 0d26785c0d36423cab1ef67b8eec68b2
-    m_Address: 01_New_York/Morning/test_roof_jump_over
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 11e47cdee0e8c3a4998c97c7c31575aa
-    m_Address: 01_New_York/Morning/test_roof_small_notalive
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4975dd3cf1e9a6046818c02f5eb0572d
     m_Address: 01_New_York/Morning/level_01/intro_01
     m_ReadOnly: 0
@@ -41,14 +25,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 500f619b818fc6945a24bd009183cc26
     m_Address: 01_New_York/Morning/level_01/intro_02
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 5c8678256beb0c64b9a5111927c88935
-    m_Address: 01_New_York/Morning/test_jump_on_roof
     m_ReadOnly: 0
     m_SerializedLabels:
     - levels_daypart
@@ -80,14 +56,6 @@ MonoBehaviour:
     - levels_daypart_Morning
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7a71b90924cf1f548957da7e0d281277
-    m_Address: 01_New_York/Morning/test_threat_small_notalive_road_switchlane
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a9f96f93e944bfe42bd4f62e007aa2b7
     m_Address: 01_New_York/Morning/level_01/intro_04
     m_ReadOnly: 0
@@ -96,16 +64,8 @@ MonoBehaviour:
     - levels_daypart_Morning
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: cf41625be9348324494101c8834f0e37
-    m_Address: 01_New_York/Morning/test_threat_small_notalive_road_jump
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: dc62ca6c4d394025a30f598dd01e408c
-    m_Address: 01_New_York/Morning/test_threat_bigalive
+  - m_GUID: c2abce2f16e5be44bb4c199a2fea72d5
+    m_Address: 01_New_York/Morning/test_switch_lane
     m_ReadOnly: 0
     m_SerializedLabels:
     - levels_daypart
