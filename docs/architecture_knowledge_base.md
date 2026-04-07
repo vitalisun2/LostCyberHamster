@@ -588,22 +588,29 @@ Menu: `Tools/Migration/` — 3 шага:
 ### Pipeline
 
 ```
-SnapshotBuilder → ObjectClassifier → ProblemResolver
-    → ActionGenerator → BranchGenerator → BranchEvaluator → StepExecutor
+BotOrchestrator
+  → SnapshotBuilder
+  → BranchSelector
+    → ProblemResolver
+    → ActionGenerator
+    → BranchGenerator
+    → BranchEvaluator
+    → ObjectClassifier
+  → StepExecutor
 ```
 
-1. **`SnapshotBuilder`** (`Perception/`) — собирает `BotSceneSnapshot` из живых Unity-объектов (хомяк, ObstacleSpawner, scanRange).
-2. **`ObjectClassifier`** (`Perception/`) — проставляет категории: `Target` / `Threat` / `Collectible` / `Neutral`.
-3. **`ProblemResolver`** (`Planning/`) — находит ближайшую same-lane угрозу → `ProblemDescriptor(ThreatCollision)`.
-4. **`ActionGenerator`** (`Planning/`) — опрашивает все `IActionStrategy`, возвращает список `BranchStep`-кандидатов.
-5. **`BranchGenerator`** (`Planning/`) — раскрывает first-step кандидатов в многошаговые цепочки через `ProjectedWorld`.
-6. **`BranchEvaluator`** (через `BranchSelector`) — выбирает лучшую цепочку (безопасность → ранг → профит → энергия).
-7. **`StepExecutor`** — исполняет шаги по live-дистанции; возможна отмена при изменении безопасности.
+1. **`SnapshotBuilder`** (`Perception/`) — собирает `BotSceneSnapshot` из живых Unity-объектов.
+2. **`ObjectClassifier`** (`Perception/`) — по запросу вычисляет planner-категорию конкретного obstacle в контексте snapshot: `Threat` / `Target` / `Collectible`.
+3. **`ProblemResolver`** (`Planning/`) — находит ближайшую same-lane угрозу напрямую, без промежуточного `ProblemKind`.
+4. **`ActionGenerator`** (`Planning/`) — опрашивает `IActionStrategy`, возвращает список `BranchStep`-кандидатов для текущей угрозы.
+5. **`BranchGenerator`** (`Planning/`) — раскрывает кандидатов в lookahead-ветви через `ProjectedWorld`.
+6. **`BranchEvaluator`** (через `BranchSelector`) — выбирает лучшую ветвь.
+7. **`StepExecutor`** — исполняет текущий head committed plan по live-дистанции.
 
 **Триггеры пересчёта** (в `BotOrchestrator`):
-- `VisibleObjectsChanged` — изменился набор видимых объектов
-- `StepCompleted` / `StepCancelled` — шаг завершён или отменён
-- `ManagedStateChanged` — смена состояния хомяка (Run ↔ RoofRun)
+- `OnNewObjectAppeared` — в snapshot появился новый visible object
+- `StepCompleted` — шаг завершён, committed plan продвигается на следующий head
+- `PlanExhausted` — после продвижения плана шагов больше не осталось
 
 ### Классификация объектов
 

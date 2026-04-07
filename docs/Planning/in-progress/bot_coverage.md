@@ -6,12 +6,16 @@
 
 ```
 BotOrchestrator (event-driven)
-  -> SnapshotBuilder -> ObjectClassifier -> ProblemResolver
-  -> ActionGenerator (StrategyTable: 17 стратегий)
-  -> BranchGenerator (до 5 шагов) -> BranchEvaluator -> StepExecutor
+  -> SnapshotBuilder
+  -> BranchSelector
+    -> ProblemResolver + ObjectClassifier
+    -> ActionGenerator (StrategyTable)
+    -> BranchGenerator (до 5 шагов)
+    -> BranchEvaluator
+  -> StepExecutor
 ```
 
-Пересчёт: `VisibleObjectsChanged`, `StepCompleted`, `StepCancelled`, `ManagedStateChanged`.
+Переоценка: `OnNewObjectAppeared` и `PlanExhausted`. `StepCompleted` теперь продвигает committed plan, а не делает full replan.
 
 ## Матрица покрытия
 
@@ -70,7 +74,7 @@ BotOrchestrator (event-driven)
 
 ## Ограничения
 
-- `ProblemResolver` обрабатывает только `ThreatCollision` -- collectibles и targets не являются проблемами для планировщика.
+- `ProblemResolver` сейчас ищет только ближайшую угрозу -- collectibles и targets пока не являются самостоятельными planner-задачами.
 - Roof-стратегии -- skeleton, не реализованы.
 - RunFromRoof safety: бот не проверяет зону спуска при планировании JumpOnRoof.
 

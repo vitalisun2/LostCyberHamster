@@ -9,7 +9,7 @@ namespace Assets.Scripts.Bot
 
         bool TryBuildStep(
             BotSceneSnapshot snapshot,
-            ProblemDescriptor problem,
+            ObstacleInfo target,
             ProjectedWorld projectedWorld,
             out BranchStep step,
             out string rejectReason);

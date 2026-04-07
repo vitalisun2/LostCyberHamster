@@ -60,8 +60,6 @@ namespace Assets.Tests.EditMode
             var oldLevelInfo = new LevelInfo
             {
                 skyTexture = "sky_ny",
-                backgroundTexture = "bg_ny",
-                background2Texture = "bg2_ny",
                 roadTexture = "road_ny",
                 patterns = new List<Pattern>
                 {
@@ -92,8 +90,6 @@ namespace Assets.Tests.EditMode
             var levelRef = new LevelInfoRef
             {
                 skyTexture = "sky_ny",
-                backgroundTexture = "bg_ny",
-                background2Texture = "bg2_ny",
                 roadTexture = "road_ny",
                 location = "01_New_York",
                 patternSequence = new List<PatternRef>
@@ -108,7 +104,6 @@ namespace Assets.Tests.EditMode
 
             // Assert — positions, types, sprites match
             Assert.AreEqual(oldLevelInfo.skyTexture, resolved.skyTexture);
-            Assert.AreEqual(oldLevelInfo.backgroundTexture, resolved.backgroundTexture);
             Assert.AreEqual(oldLevelInfo.roadTexture, resolved.roadTexture);
             Assert.AreEqual(oldLevelInfo.patterns.Count, resolved.patterns.Count);
 
@@ -139,8 +134,6 @@ namespace Assets.Tests.EditMode
             var levelRef = new LevelInfoRef
             {
                 skyTexture = "sky_paris",
-                backgroundTexture = "bg_paris",
-                background2Texture = "bg2_paris",
                 roadTexture = "road_paris",
                 location = "02_Paris",
                 patternSequence = new List<PatternRef>
@@ -201,8 +194,6 @@ namespace Assets.Tests.EditMode
             var levelRef = new LevelInfoRef
             {
                 skyTexture = "sky",
-                backgroundTexture = "bg",
-                background2Texture = "bg2",
                 roadTexture = "road",
                 location = "test",
                 patternSequence = new List<PatternRef>

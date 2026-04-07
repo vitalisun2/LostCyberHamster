@@ -36,7 +36,6 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 13.26f, 14.66f, 16.22f, 602)
                 });
 
-            snapshot = _classifier.Classify(snapshot);
             var best = _branchSelector.FindBestBranch(snapshot, _classifier);
 
             Assert.IsNotNull(best, "Planner должен найти safe ветвь.");
@@ -57,7 +56,6 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 0.71f, 2.11f, 3.67f, 702)
                 });
 
-            snapshot = _classifier.Classify(snapshot);
             var best = _branchSelector.FindBestBranch(snapshot, _classifier);
 
             Assert.IsNotNull(best, "Planner должен найти хотя бы ветку с Jump.");
@@ -66,7 +64,7 @@ namespace Assets.Tests.EditMode.BotV3
         }
 
         [Test]
-        public void Generate_ThreeStepZigZag_BuildsDepthThreeBranch()
+        public void Generate_FiveStepZigZag_BuildsDepthFiveBranch()
         {
             var snapshot = MakeSnapshot(
                 hamOnBottom: true,
@@ -74,17 +72,18 @@ namespace Assets.Tests.EditMode.BotV3
                 {
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 7.04f, 8.44f, 10.0f, 801),
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, true, 22.04f, 23.44f, 25.0f, 802),
-                    Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 37.04f, 38.44f, 40.0f, 803)
+                    Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 37.04f, 38.44f, 40.0f, 803),
+                    Obs(ObstacleTypeEnum.smallNotAliveRoad, true, 52.04f, 53.44f, 55.0f, 804),
+                    Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 67.04f, 68.44f, 70.0f, 805)
                 });
 
-            snapshot = _classifier.Classify(snapshot);
-            var problem = _problemResolver.ResolveNext(snapshot);
+            Assert.IsTrue(_problemResolver.TryResolveNextThreat(snapshot, _classifier, out var problem));
             var firstSteps = _actionGenerator.Generate(snapshot, problem);
             var branches = _branchGenerator.Generate(snapshot, firstSteps, _classifier, _actionGenerator, _problemResolver);
 
-            bool hasDepthThree = branches.Exists(branch => branch.Steps.Count >= 3);
-            Assert.IsTrue(hasDepthThree,
-                "Planner должен строить lookahead минимум на три решения вперёд.");
+            bool hasDepthFive = branches.Exists(branch => branch.Steps.Count >= 5);
+            Assert.IsTrue(hasDepthFive,
+                "Planner должен строить lookahead минимум на пять решений вперёд.");
         }
 
         [Test]
@@ -97,10 +96,9 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, true, 15.0f, 16.4f, 18.0f, 851)
                 });
 
-            snapshot = _classifier.Classify(snapshot);
-            var problem = _problemResolver.ResolveNext(snapshot);
+            bool hasProblem = _problemResolver.TryResolveNextThreat(snapshot, _classifier, out _);
 
-            Assert.IsNull(problem,
+            Assert.IsFalse(hasProblem,
                 "Если на текущей линии нет угроз, planner не должен искусственно создавать проблему.");
         }
 
@@ -116,12 +114,10 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, true, 12.0f, 13.4f, 15.0f, 863)
                 });
 
-            snapshot = _classifier.Classify(snapshot);
-            var problem = _problemResolver.ResolveNext(snapshot);
+            Assert.IsTrue(_problemResolver.TryResolveNextThreat(snapshot, _classifier, out var problem));
             var steps = _actionGenerator.Generate(snapshot, problem);
 
-            Assert.IsNotNull(problem, "Должна быть найдена ближайшая same-lane проблема.");
-            Assert.AreEqual(861, problem.SourceObstacle.StableId);
+            Assert.AreEqual(861, problem.StableId);
             Assert.IsTrue(steps.TrueForAll(step => step.TargetObstacle.StableId == 861),
                 "Все шаги в узле должны генерироваться только для текущей проблемы, а не для произвольных visible objects.");
         }
@@ -138,14 +134,11 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 37.04f, 38.44f, 40.0f, 873)
                 });
 
-            root = _classifier.Classify(root);
-
             var switched = new ProjectedWorld().ProjectSnapshot(root, SwitchLaneDecisionTravel);
             switched.HamsterOnBottom = false;
             switched.HamsterOnRoof = false;
-            switched = _classifier.Classify(switched);
 
-            var problem = _problemResolver.ResolveNext(switched);
+            Assert.IsTrue(_problemResolver.TryResolveNextThreat(switched, _classifier, out var problem));
             var steps = _actionGenerator.Generate(switched, problem);
 
             var switchLaneSteps = steps.FindAll(step =>
@@ -167,8 +160,7 @@ namespace Assets.Tests.EditMode.BotV3
                     Obs(ObstacleTypeEnum.bigAlive, true, -0.20f, 2.40f, 2.76f, 902)
                 });
 
-            snapshot = _classifier.Classify(snapshot);
-            var problem = _problemResolver.ResolveNext(snapshot);
+            Assert.IsTrue(_problemResolver.TryResolveNextThreat(snapshot, _classifier, out var problem));
             var steps = _actionGenerator.Generate(snapshot, problem);
 
             var switchLane = steps.Find(s => s.Action == BotAction.SwitchLane);
@@ -206,7 +198,6 @@ namespace Assets.Tests.EditMode.BotV3
                 rightX,
                 (leftX + rightX) * 0.5f,
                 distanceToHamster,
-                ObjectCategory.Neutral,
                 stableId);
         }
     }

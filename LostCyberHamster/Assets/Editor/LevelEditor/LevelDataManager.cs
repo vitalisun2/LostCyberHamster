@@ -255,8 +255,6 @@ public static class LevelDataManager
             var errors = ValidateLevelInfo(new LevelInfo
             {
                 skyTexture = levelInfoRef?.skyTexture,
-                background2Texture = levelInfoRef?.background2Texture,
-                backgroundTexture = levelInfoRef?.backgroundTexture,
                 roadTexture = levelInfoRef?.roadTexture
             }, spritesNames);
 

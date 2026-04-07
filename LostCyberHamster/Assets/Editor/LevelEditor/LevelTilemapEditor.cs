@@ -594,8 +594,6 @@ public class LevelTilemapEditor : EditorWindow
         return new LevelInfo
         {
             skyTexture = string.Empty,
-            background2Texture = ResolveDefaultBackground2Texture(),
-            backgroundTexture = string.Empty,
             roadTexture = string.Empty,
             decorationPatterns = new List<DecorationPattern>(),
             patterns = new List<Pattern>()
@@ -607,52 +605,11 @@ public class LevelTilemapEditor : EditorWindow
         return new LevelInfoRef
         {
             skyTexture = string.Empty,
-            background2Texture = ResolveDefaultBackground2Texture(),
-            backgroundTexture = string.Empty,
             roadTexture = string.Empty,
             location = _currentLocationName,
             patternSequence = new List<PatternRef>(),
             decorationPatterns = new List<DecorationPattern>()
         };
-    }
-
-    private string ResolveDefaultBackground2Texture()
-    {
-        var effectiveLocation = IsTemplateMode
-            ? Consts.TemplatesFallbackLocation
-            : _currentLocationName;
-        var daypartSlug = (IsTemplateMode ? PartOfDayEnum.Morning : _selectedDaypart).ToString().ToLowerInvariant();
-        var locationSlug = LocationAssetFallback.ToLocationSlug(effectiveLocation);
-
-        return ResolveExistingSpriteKey(
-            $"bg_2_{locationSlug}_{daypartSlug}",
-            $"bg_2_{locationSlug}_");
-    }
-
-    private string ResolveExistingSpriteKey(string preferredKey, string fallbackPrefix)
-    {
-        if (_spritesNames == null || _spritesNames.Count == 0)
-        {
-            return preferredKey;
-        }
-
-        if (!string.IsNullOrWhiteSpace(preferredKey) &&
-            _spritesNames.Contains(preferredKey, StringComparer.OrdinalIgnoreCase))
-        {
-            return _spritesNames.First(name => string.Equals(name, preferredKey, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (!string.IsNullOrWhiteSpace(fallbackPrefix))
-        {
-            var fallback = _spritesNames.FirstOrDefault(name =>
-                name.StartsWith(fallbackPrefix, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(fallback))
-            {
-                return fallback;
-            }
-        }
-
-        return preferredKey;
     }
 
     /// <summary>

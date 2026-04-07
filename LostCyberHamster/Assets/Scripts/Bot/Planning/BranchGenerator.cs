@@ -8,8 +8,7 @@ namespace Assets.Scripts.Bot
     /// </summary>
     public class BranchGenerator
     {
-        private const int MaxBranchDepth = 3;
-        private readonly BranchStep[] _stepBuffer = new BranchStep[MaxBranchDepth];
+        private readonly BranchStep[] _stepBuffer = new BranchStep[BotConsts.MaxBranchDepth];
 
         public List<BranchCandidate> Generate(
             BotSceneSnapshot snapshot,
@@ -57,15 +56,15 @@ namespace Assets.Scripts.Bot
             if (!TryProjectSnapshot(snapshot, classifier, actionGenerator, step, out var projectedSnapshot))
                 return;
 
-            if (stepCount >= MaxBranchDepth)
+            if (stepCount >= BotConsts.MaxBranchDepth)
             {
-                AddCurrentCandidate(result, stepCount, originalSnapshot);
+                AddCurrentCandidate(result, stepCount, originalSnapshot, classifier);
                 return;
             }
 
-            if (!TryResolveNextProblem(projectedSnapshot, problemResolver, out var nextProblem))
+            if (!TryResolveNextThreat(projectedSnapshot, classifier, problemResolver, out var nextThreat))
             {
-                AddCurrentCandidate(result, stepCount, originalSnapshot);
+                AddCurrentCandidate(result, stepCount, originalSnapshot, classifier);
                 return;
             }
 
@@ -74,13 +73,13 @@ namespace Assets.Scripts.Bot
                 classifier,
                 actionGenerator,
                 problemResolver,
-                nextProblem,
+                nextThreat,
                 stepCount,
                 originalSnapshot,
                 result))
                 return;
 
-            AddCurrentCandidate(result, stepCount, originalSnapshot);
+            AddCurrentCandidate(result, stepCount, originalSnapshot, classifier);
         }
 
         private static bool TryProjectSnapshot(
@@ -97,17 +96,17 @@ namespace Assets.Scripts.Bot
                 return false;
             }
 
-            projectedSnapshot = classifier.Classify(projection.NextState.ToSnapshot());
+            projectedSnapshot = projection.NextState.ToSnapshot();
             return true;
         }
 
-        private static bool TryResolveNextProblem(
+        private static bool TryResolveNextThreat(
             BotSceneSnapshot projectedSnapshot,
+            ObjectClassifier classifier,
             ProblemResolver problemResolver,
-            out ProblemDescriptor nextProblem)
+            out ObstacleInfo nextThreat)
         {
-            nextProblem = problemResolver.ResolveNext(projectedSnapshot);
-            return nextProblem != null;
+            return problemResolver.TryResolveNextThreat(projectedSnapshot, classifier, out nextThreat);
         }
 
         private bool TryExploreChildBranches(
@@ -115,14 +114,14 @@ namespace Assets.Scripts.Bot
             ObjectClassifier classifier,
             ActionGenerator actionGenerator,
             ProblemResolver problemResolver,
-            ProblemDescriptor nextProblem,
+            ObstacleInfo nextThreat,
             int stepCount,
             BotSceneSnapshot originalSnapshot,
             List<BranchCandidate> result)
         {
             var nextSteps = actionGenerator.Generate(
                 projectedSnapshot,
-                nextProblem,
+                nextThreat,
                 BranchLogScopes.ProjectionAtDepth(stepCount));
             int resultCountBeforeChildren = result.Count;
 
@@ -148,15 +147,17 @@ namespace Assets.Scripts.Bot
         private void AddCurrentCandidate(
             List<BranchCandidate> result,
             int stepCount,
-            BotSceneSnapshot originalSnapshot)
+            BotSceneSnapshot originalSnapshot,
+            ObjectClassifier classifier)
         {
-            result.Add(BuildCandidate(_stepBuffer, stepCount, originalSnapshot));
+            result.Add(BuildCandidate(_stepBuffer, stepCount, originalSnapshot, classifier));
         }
 
         private static BranchCandidate BuildCandidate(
             BranchStep[] buffer,
             int count,
-            BotSceneSnapshot originalSnapshot)
+            BotSceneSnapshot originalSnapshot,
+            ObjectClassifier classifier)
         {
             var steps = new List<BranchStep>(count);
             int totalEnergyCost = 0;
@@ -170,24 +171,25 @@ namespace Assets.Scripts.Bot
                 steps,
                 new BranchOutcome(
                     totalEnergyCost,
-                    IsIdlePeriodSafe(originalSnapshot, buffer[0])));
+                    IsIdlePeriodSafe(originalSnapshot, buffer[0], classifier)));
         }
 
         /// <summary>
         /// Проверяет, нет ли same-lane угроз в зоне ожидания до первого fire.
         /// </summary>
-        private static bool IsIdlePeriodSafe(BotSceneSnapshot snapshot, BranchStep firstStep)
+        private static bool IsIdlePeriodSafe(
+            BotSceneSnapshot snapshot,
+            BranchStep firstStep,
+            ObjectClassifier classifier)
         {
-            // Вычислить расстояние ожидания до fire
             float waitTravel = firstStep.TargetObstacle.DistanceToHamster - firstStep.ExecuteAtDistance;
             if (waitTravel <= 0f)
                 return true;
 
-            // Проверить, нет ли угроз ближе порога fire
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
                 var obstacle = snapshot.VisibleObjects[i];
-                if (obstacle.Category != ObjectCategory.Threat) continue;
+                if (!classifier.IsThreat(obstacle, snapshot)) continue;
                 if (!snapshot.IsOnSameLane(obstacle)) continue;
                 if (obstacle.DistanceToHamster <= 0f) continue;
                 if (obstacle.StableId == firstStep.TargetObstacle.StableId) continue;

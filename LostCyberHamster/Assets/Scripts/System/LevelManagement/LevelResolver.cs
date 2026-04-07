@@ -23,8 +23,6 @@ namespace Assets.Scripts.System.LevelManagement
             var result = new LevelInfo
             {
                 skyTexture = levelRef.skyTexture,
-                background2Texture = levelRef.background2Texture,
-                backgroundTexture = levelRef.backgroundTexture,
                 roadTexture = levelRef.roadTexture,
                 decorationPatterns = levelRef.decorationPatterns ?? new List<DecorationPattern>()
             };

@@ -263,17 +263,17 @@ public static void ReleaseIntroSprites()
                 levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
             }
 
-            var backgroundTexture = await LoadBackgroundSpriteWithFallback(levelData.LevelInfo.backgroundTexture);
+            var backgroundKey = EnvironmentKeyResolver.BuildBackgroundKey();
+            var backgroundSprite = await TryLoadEnvironmentSprite(backgroundKey, "background");
 
-            if (backgroundTexture == null)
+            if (backgroundSprite == null)
             {
                 Debug.LogError("[LevelDataProvider] Unable to load background sprite for the current level.");
                 return;
             }
 
-            LevelDataValidator.ValidateBackgroundTexture(backgroundTexture);
-
-            levelData.BackgroundSprite = backgroundTexture;
+            LevelDataValidator.ValidateBackgroundTexture(backgroundSprite);
+            levelData.BackgroundSprite = backgroundSprite;
         }
 
         private static async Task LoadBackground2Prefab(LevelData levelData)
@@ -284,24 +284,17 @@ public static void ReleaseIntroSprites()
                 levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
             }
 
-            // Background2 is optional - if not configured in JSON, skip
-            if (string.IsNullOrEmpty(levelData.LevelInfo.background2Texture))
-            {
-                Debug.Log("[LevelDataProvider] background2Texture not configured, skipping Background2 loading.");
-                return;
-            }
+            var background2Key = EnvironmentKeyResolver.BuildBackground2Key();
+            var background2Sprite = await TryLoadEnvironmentSprite(background2Key, "background2");
 
-            var background2Texture = await LoadBackgroundSpriteWithFallback(levelData.LevelInfo.background2Texture);
-
-            if (background2Texture == null)
+            if (background2Sprite == null)
             {
                 Debug.LogWarning("[LevelDataProvider] Unable to load background2 sprite, continuing without it.");
                 return;
             }
 
-            LevelDataValidator.ValidateBackgroundTexture(background2Texture);
-
-            levelData.Background2Sprite = background2Texture;
+            LevelDataValidator.ValidateBackgroundTexture(background2Sprite);
+            levelData.Background2Sprite = background2Sprite;
         }
 
         private static async Task LoadRoadPrefab(LevelData levelData)
@@ -312,15 +305,16 @@ public static void ReleaseIntroSprites()
                 levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
             }
 
-            var roadTexture = await LoadRoadSpriteWithFallback();
+            var roadKey = EnvironmentKeyResolver.BuildRoadKey();
+            var roadSprite = await TryLoadEnvironmentSprite(roadKey, "road");
 
-            if (roadTexture == null)
+            if (roadSprite == null)
             {
                 Debug.LogError("[LevelDataProvider] Unable to load road sprite for the current level.");
                 return;
             }
 
-            levelData.RoadSprite = roadTexture;
+            levelData.RoadSprite = roadSprite;
         }
 
         private static async Task LoadSkyPrefab(LevelData levelData)
@@ -331,15 +325,16 @@ public static void ReleaseIntroSprites()
                 levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
             }
 
-            var skyTexture = await LoadSkySpriteWithFallback();
+            var skyKey = EnvironmentKeyResolver.BuildSkyKey();
+            var skySprite = await TryLoadEnvironmentSprite(skyKey, "sky");
 
-            if (skyTexture == null)
+            if (skySprite == null)
             {
                 Debug.LogError("[LevelDataProvider] Unable to load sky sprite for the current level.");
                 return;
             }
 
-            levelData.SkySprite = skyTexture;
+            levelData.SkySprite = skySprite;
         }
 
         private static async Task LoadBonuses(LevelData levelData)
@@ -668,88 +663,21 @@ public static void ReleaseIntroSprites()
             }
         }
 
-        private static async Task<Sprite> LoadBackgroundSpriteWithFallback(string primaryKey)
+        /// <summary>
+        /// Loads an environment sprite by its resolved key. Used for background, background2, road, sky.
+        /// </summary>
+        private static async Task<Sprite> TryLoadEnvironmentSprite(string key, string assetType)
         {
-            if (string.IsNullOrWhiteSpace(primaryKey))
+            if (string.IsNullOrWhiteSpace(key))
             {
-                primaryKey = BuildCurrentBackgroundKey();
-            }
-
-            var sprite = await TryLoadSpriteByKey(primaryKey, "background sprite");
-            if (sprite != null)
-            {
-                return sprite;
-            }
-
-            var fallbackLocationName = GetFallbackLocationName();
-            var partOfDay = LevelManager.GetCurrentPartOfDay();
-            var fallbackKey = LocationAssetFallback.TryBuildFallbackBackgroundKey(primaryKey, fallbackLocationName, partOfDay);
-
-            if (!string.IsNullOrWhiteSpace(fallbackKey) && !string.Equals(fallbackKey, primaryKey, StringComparison.OrdinalIgnoreCase))
-            {
-                var fallbackSprite = await TryLoadSpriteByKey(fallbackKey, "background sprite fallback");
-                if (fallbackSprite != null)
-                {
-                    Debug.LogWarning($"[LevelDataProvider] Background sprite '{primaryKey}' not found. Using fallback '{fallbackKey}'.");
-                    return fallbackSprite;
-                }
-            }
-
-            return sprite;
-        }
-
-        private static string BuildCurrentBackgroundKey()
-        {
-            var currentLocationName = TryGetCurrentLocationName();
-            var partOfDay = LevelManager.GetCurrentPartOfDay();
-            var primaryKey = LocationAssetFallback.BuildBackgroundKey(currentLocationName, partOfDay);
-
-            if (!string.IsNullOrWhiteSpace(primaryKey))
-            {
-                return primaryKey;
-            }
-
-            var fallbackLocationName = GetFallbackLocationName();
-            return LocationAssetFallback.BuildBackgroundKey(fallbackLocationName, partOfDay);
-        }
-
-        private static async Task<Sprite> LoadRoadSpriteWithFallback()
-        {
-            var fallbackLocationName = GetFallbackLocationName();
-            var partOfDay = LevelManager.GetCurrentPartOfDay();
-            var roadKey = LocationAssetFallback.BuildRoadKey(fallbackLocationName, partOfDay);
-
-            if (string.IsNullOrWhiteSpace(roadKey))
-            {
-                Debug.LogError("[LevelDataProvider] Unable to build road texture key.");
+                Debug.LogError($"[LevelDataProvider] Unable to build {assetType} texture key.");
                 return null;
             }
 
-            var sprite = await TryLoadSpriteByKey(roadKey, "road sprite");
+            var sprite = await TryLoadSpriteByKey(key, $"{assetType} sprite");
             if (sprite == null)
             {
-                Debug.LogWarning($"[LevelDataProvider] Road sprite '{roadKey}' not found.");
-            }
-
-            return sprite;
-        }
-
-        private static async Task<Sprite> LoadSkySpriteWithFallback()
-        {
-            var fallbackLocationName = GetFallbackLocationName();
-            var partOfDay = LevelManager.GetCurrentPartOfDay();
-            var skyKey = LocationAssetFallback.BuildSkyKey(fallbackLocationName, partOfDay);
-
-            if (string.IsNullOrWhiteSpace(skyKey))
-            {
-                Debug.LogError("[LevelDataProvider] Unable to build sky texture key.");
-                return null;
-            }
-
-            var sprite = await TryLoadSpriteByKey(skyKey, "sky sprite");
-            if (sprite == null)
-            {
-                Debug.LogWarning($"[LevelDataProvider] Sky sprite '{skyKey}' not found.");
+                Debug.LogWarning($"[LevelDataProvider] {assetType} sprite '{key}' not found.");
             }
 
             return sprite;
