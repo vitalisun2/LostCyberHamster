@@ -3,7 +3,7 @@ using Assets.Scripts.Bot;
 using Assets.Scripts.Common.Models;
 using NUnit.Framework;
 
-namespace Assets.Tests.EditMode.BotV3
+namespace Assets.Tests.EditMode.Bot
 {
     public class BotCommittedPlanTests
     {

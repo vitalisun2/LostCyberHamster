@@ -43,6 +43,7 @@
 - [promoted -> docs/rules/agent_tools.md] Если automation bridge без [TEST RESULT] и лог пустой — читать Unity Editor.log.
 - [promoted -> docs/architecture_knowledge_base.md] Для chain-stage тестов все объекты цепочки должны попадать в initial snapshot.
 - [promoted -> docs/rules/iteration_cycle.md] Для chain-планирования читать BOT вместе с ECO.
+- [promoted -> docs/rules/code_conventions.md] EditMode-тесты для planner держать тонким слоем и не дублировать ими runtime-проверку на test level.
 
 #### Архитектура ActionGenerator
 

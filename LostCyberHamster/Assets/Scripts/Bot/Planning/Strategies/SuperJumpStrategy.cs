@@ -5,7 +5,8 @@ namespace Assets.Scripts.Bot
 {
     /// <summary>
     /// Стратегия SuperJumpOver: перепрыгивание bigAlive на дороге.
-    /// Таблица стратегий уже отфильтровала применимые типы и контекст — здесь только бизнес-логика.
+    /// Таблица стратегий уже отфильтровала применимые типы и контекст —
+    /// здесь только расчёт тайминга и safety-проекция road-case.
     /// </summary>
     internal class SuperJumpOverStrategy : IActionStrategy
     {
@@ -39,6 +40,7 @@ namespace Assets.Scripts.Bot
                 return false;
             }
 
+            // Рассчитать fire/completion для SuperJump из текущего snapshot.
             float executeAtDistance = SuperJumpFireDist;
             if (executeAtDistance > target.DistanceToHamster)
                 executeAtDistance = target.DistanceToHamster;
@@ -46,6 +48,7 @@ namespace Assets.Scripts.Bot
             float fireWorldShift = target.DistanceToHamster - executeAtDistance;
             float completionWorldShift = fireWorldShift + _landingOffset;
 
+            // Проверить projected landing state после применения эффектов шага.
             var completionSnapshot = projectedWorld.ProjectSnapshot(snapshot, completionWorldShift);
             ApplySuperJumpEffects(completionSnapshot, target.StableId);
 
@@ -71,6 +74,7 @@ namespace Assets.Scripts.Bot
             BranchStep step,
             ProjectedWorld projectedWorld)
         {
+            // Восстановить состояние мира на момент приземления.
             var completionSnapshot = projectedWorld.ProjectSnapshot(snapshot, step.CompletionWorldShift);
             ApplySuperJumpEffects(completionSnapshot, step.TargetObstacle.StableId);
 
@@ -106,21 +110,16 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Возвращает true только для типов, которые приводят к повреждению при приземлении SuperJump.
-        /// bigNotAlive / mediumNotAlive безопасны (результат → SuperJumpOnRoof → RoofRun).
+        /// Возвращает true только для runtime-dangerous типов, которые не допускают safe landing.
+        /// bigNotAlive / mediumNotAlive исключаются: для них runtime ведёт в SuperJumpOnRoof.
         /// </summary>
-        private static bool IsSuperJumpLandingUnsafe(ObstacleTypeEnum type)
+        private static bool CausesUnsafeRoadLanding(ObstacleTypeEnum type)
         {
-            switch (type)
-            {
-                case ObstacleTypeEnum.bigAlive:
-                case ObstacleTypeEnum.smallAlive:
-                case ObstacleTypeEnum.smallNotAliveRoad:
-                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
-                    return true;
-                default:
-                    return false;
-            }
+            if (!ProjectedWorld.IsThreatType(type))
+                return false;
+
+            return type != ObstacleTypeEnum.bigNotAlive &&
+                   type != ObstacleTypeEnum.mediumNotAlive;
         }
 
         private static bool IsLaneClearAtCompletion(BotSceneSnapshot snapshot, int excludeId)
@@ -132,7 +131,7 @@ namespace Assets.Scripts.Bot
             {
                 var obs = snapshot.VisibleObjects[i];
                 if (obs.StableId == excludeId) continue;
-                if (!IsSuperJumpLandingUnsafe(obs.Type)) continue;
+                if (!CausesUnsafeRoadLanding(obs.Type)) continue;
 
                 bool obsOnBottom = !obs.IsTopLane;
                 if (obsOnBottom != snapshot.HamsterOnBottom) continue;

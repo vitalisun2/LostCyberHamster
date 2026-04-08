@@ -8,7 +8,7 @@
 - [Data Flow](#data-flow)
 - [Important Constants](#important-constants)
 - [Lessons Learned](#lessons-learned)
-- [HamsterBot Architecture](#hamsterbot-architecture-v3---pipeline)
+- [Bot Architecture](#bot-architecture-pipeline)
 
 ---
 
@@ -609,7 +609,7 @@ Menu: `Tools/Migration/` — 3 шага:
 
 ---
 
-## Bot Architecture (v3 — Pipeline)
+## Bot Architecture Pipeline
 
 **Папка:** `Assets/Scripts/Bot/`
 **Оркестратор:** `BotOrchestrator.cs` (MonoBehaviour, event-driven)
