@@ -3,9 +3,9 @@ using Assets.Scripts.Bot;
 using Assets.Scripts.Common.Models;
 using NUnit.Framework;
 
-namespace Assets.Tests.EditMode.BotV3
+namespace Assets.Tests.EditMode.Bot
 {
-    public class BotV3PlannerFireShiftTests
+    public class BotPlannerFireShiftTests
     {
         private const float SwitchLaneDecisionTravel = 0.45f * global::Assets.Scripts.Consts.GameSpeedBase;
 
@@ -61,6 +61,63 @@ namespace Assets.Tests.EditMode.BotV3
             Assert.IsNotNull(best, "Planner должен найти хотя бы ветку с Jump.");
             Assert.AreEqual(BotAction.JumpOver, best.Steps[0].Action,
                 "Если nearest safe момент для SwitchLane не существует до дедлайна, planner должен выбрать Jump.");
+        }
+
+        [Test]
+        public void Generate_BigAliveWhenLandingSafe_OffersSuperJumpCandidate()
+        {
+            var snapshot = MakeSnapshot(
+                hamOnBottom: true,
+                objects: new[]
+                {
+                    Obs(ObstacleTypeEnum.bigAlive, false, 0.50f, 1.50f, 3.46f, 711)
+                });
+
+            Assert.IsTrue(_problemResolver.TryResolveNextThreat(snapshot, _classifier, out var problem));
+            var steps = _actionGenerator.Generate(snapshot, problem);
+
+            Assert.IsTrue(steps.Exists(step =>
+                    step.Action == BotAction.SuperJump &&
+                    step.TargetObstacle.StableId == 711),
+                "Для bigAlive на дороге planner должен строить SuperJump-кандидат, если projected landing zone свободна.");
+        }
+
+        [Test]
+        public void Generate_BigAliveWithUnsafeLanding_RejectsSuperJumpCandidate()
+        {
+            var snapshot = MakeSnapshot(
+                hamOnBottom: true,
+                objects: new[]
+                {
+                    Obs(ObstacleTypeEnum.bigAlive, false, 0.50f, 1.50f, 3.46f, 721),
+                    Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 2.30f, 3.70f, 5.26f, 722)
+                });
+
+            Assert.IsTrue(_problemResolver.TryResolveNextThreat(snapshot, _classifier, out var problem));
+            var steps = _actionGenerator.Generate(snapshot, problem);
+
+            Assert.IsFalse(steps.Exists(step => step.Action == BotAction.SuperJump),
+                "Planner не должен предлагать SuperJump, если projected landing overlap даёт runtime-dangerous столкновение на дороге.");
+        }
+
+        [Test]
+        public void Generate_BigAliveWithBlockedOtherLane_FallsBackToSuperJump()
+        {
+            var snapshot = MakeSnapshot(
+                hamOnBottom: true,
+                objects: new[]
+                {
+                    Obs(ObstacleTypeEnum.bigAlive, false, 0.50f, 1.50f, 3.46f, 731),
+                    Obs(ObstacleTypeEnum.bigNotAlive, true, -0.30f, 3.60f, 2.66f, 732)
+                });
+
+            var best = _branchSelector.FindBestBranch(snapshot, _classifier);
+
+            Assert.IsNotNull(best, "Planner должен найти safe ветвь для bigAlive, даже когда target lane заблокирована.");
+            Assert.AreEqual(BotAction.SuperJump, best.Steps[0].Action,
+                "Если SwitchLane недоступен до дедлайна bigAlive, planner должен выбирать SuperJump как road-safe альтернативу.");
+            Assert.AreEqual(731, best.Steps[0].TargetObstacle.StableId,
+                "SuperJump должен решать исходную угрозу bigAlive, а не объект на соседней полосе.");
         }
 
         [Test]

@@ -4,8 +4,8 @@
 
 ## Активные стратегии
 
-Включены **2 стратегии**: `SwitchLaneStrategy`, `JumpOverStrategy`.
-Остальные 14 стратегий реализованы как .cs файлы, но закомментированы в `ActionGenerator` для поэтапной отладки.
+Включены **3 стратегии**: `SwitchLaneStrategy`, `JumpOverStrategy`, `SuperJumpOverStrategy`.
+Остальные 13 стратегий реализованы как .cs файлы, но закомментированы в `ActionGenerator` для поэтапной отладки.
 
 ## Pipeline
 
@@ -40,7 +40,7 @@ BotOrchestrator (event-driven)
 | smallNotAliveRoadAndRoof | done | done | n/a | n/a | n/a |
 | bigNotAlive | done | n/a | todo | n/a | todo |
 | mediumNotAlive | done | n/a | todo | n/a | todo |
-| bigAlive | done | n/a | n/a | todo | n/a |
+| bigAlive | done | n/a | n/a | done | n/a |
 | smallAlive (Target) | todo | todo | n/a | todo | n/a |
 
 ### Крыша (HamsterOnRoof = true)
@@ -69,7 +69,7 @@ BotOrchestrator (event-driven)
 | SwitchLane | SwitchLaneHandler | да |
 | JumpOver | JumpHandler | да |
 | JumpOnRoof | JumpHandler | нет (стратегия отключена) |
-| SuperJump | SuperJumpHandler | нет (стратегия отключена) |
+| SuperJump | SuperJumpHandler | да |
 | RoofJumpOver | JumpHandler | нет (стратегия отключена) |
 | RoofSwitchLane | SwitchLaneHandler | нет (стратегия отключена) |
 
@@ -82,8 +82,8 @@ BotOrchestrator (event-driven)
 
 ## Ограничения
 
-- Включены только 2 из 16 стратегий: `SwitchLaneStrategy`, `JumpOverStrategy`. Остальные закомментированы в `ActionGenerator`.
-- Для bigAlive, bigNotAlive, mediumNotAlive на дороге единственный включённый ответ — SwitchLane.
+- Включены только 3 из 16 стратегий: `SwitchLaneStrategy`, `JumpOverStrategy`, `SuperJumpOverStrategy`. Остальные закомментированы в `ActionGenerator`.
+- Для `bigAlive` на дороге включены `SwitchLane` и `SuperJump`; для `bigNotAlive` / `mediumNotAlive` пока остаётся только `SwitchLane`.
 - `ProblemResolver` ищет только ближайшую same-lane угрозу — collectibles и targets не являются planner-задачами.
 - Roof-стратегии отключены.
 - RunFromRoof safety: бот не проверяет зону спуска при планировании.
@@ -92,7 +92,7 @@ BotOrchestrator (event-driven)
 
 | ID | Описание | Статус |
 |---|---|---|
-| T-1 | Включить SuperJump для `bigAlive` | todo |
+| T-1 | Включить SuperJump для `bigAlive` | done |
 | T-2 | Включить JumpOnRoof для `bigNotAlive`/`mediumNotAlive` | todo |
 | T-3 | Включить SuperJumpOnRoof для `bigNotAlive`/`mediumNotAlive` | todo |
 | T-4 | Roof coverage: стратегии на крыше | todo |

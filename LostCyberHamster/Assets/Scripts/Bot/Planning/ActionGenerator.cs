@@ -20,14 +20,14 @@ namespace Assets.Scripts.Bot
             float superJumpLandingOffset = BotConsts.SuperJumpLandingOffsetFallback,
             float jumpOnRoofLandingOffset = BotConsts.JumpOnRoofLandingOffsetFallback)
         {
-            // Временно оставляем только SwitchLane для ручной отладки planner'а.
+            // Пока включены только дорожные стратегии, прошедшие текущий этап валидации.
             var strategies = new IActionStrategy[]
             {
                 new SwitchLaneStrategy(),
                 new JumpOverStrategy(),
+                new SuperJumpOverStrategy(superJumpLandingOffset),
 
-                // Temporarily disabled while validating SwitchLane + JumpOver only:
-                // new SuperJumpOverStrategy(superJumpLandingOffset),
+                // Temporarily disabled while validating road bigAlive only:
                 // new JumpOnRoofStrategy(jumpOnRoofLandingOffset),
                 // new JumpOnTargetStrategy(),
                 // new SuperJumpOnRoofStrategy(superJumpLandingOffset),
@@ -110,7 +110,7 @@ namespace Assets.Scripts.Bot
         {
             var table = new Dictionary<(bool onRoof, ObstacleTypeEnum type), BotAction[]>();
 
-            // Временно оставляем только road-level SwitchLane кейсы для ручной отладки.
+            // Пока покрываем только дорожные кейсы, которые уже синхронизированы с runtime.
             table[(false, ObstacleTypeEnum.smallNotAliveRoad)] = new[]
             {
                 BotAction.SwitchLane,
@@ -125,7 +125,8 @@ namespace Assets.Scripts.Bot
 
             table[(false, ObstacleTypeEnum.bigAlive)] = new[]
             {
-                BotAction.SwitchLane
+                BotAction.SwitchLane,
+                BotAction.SuperJump
             };
 
             table[(false, ObstacleTypeEnum.bigNotAlive)] = new[]
