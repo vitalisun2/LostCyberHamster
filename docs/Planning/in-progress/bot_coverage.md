@@ -79,6 +79,7 @@ BotOrchestrator (event-driven)
 | Перенос commitments через planner projection | done | lookahead видит те же ограничения |
 | Delayed return на committed lane | done | `SwitchLane` умеет ждать release moment |
 | `SwitchLane` safe-window selection | done | выбирается midpoint последнего safe-window по единой геометрии transition |
+| Retained head validation on replan | done | уже выбранный шаг не теряется, если он всё ещё safe на новом snapshot |
 | Timing-window extension beyond `SwitchLane` | todo | другие action families пока используют более простую timing policy |
 | Reward model для ветки | todo | `BranchOutcome` пока не учитывает бонусы |
 

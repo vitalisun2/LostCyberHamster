@@ -111,9 +111,11 @@
 
 - inter-replan `avoidance commitment` memory;
 - перенос commitments через branch projection;
-- delayed return на committed lane.
+- delayed return на committed lane;
 - расширенный planner horizon (`camera + 0.5 screen` вправо);
 - deterministic `mid-safe` selection для `SwitchLane`, синхронизированный с full-transition safety check.
+- единая transition-safe геометрия для `SwitchLane` window calculation и `Project()`;
+- сохранение уже выбранного committed head между replans, если шаг всё ещё safe на новом snapshot.
 
 ### Planned
 
@@ -130,6 +132,7 @@
 
 - `test_switch_lane`
 - `test_jump_over`
+- `test_superjump_over`
 
 ### Нужно добавить
 
@@ -157,6 +160,7 @@
 #### Под Phase 5
 
 - multiple safe switch windows
+- retained-step stability under replans
 - later window strictly better than earliest window
 
 ## Открытые уточнения по roof runtime
