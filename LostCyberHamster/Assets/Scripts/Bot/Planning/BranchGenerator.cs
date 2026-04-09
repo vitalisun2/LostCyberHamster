@@ -53,7 +53,7 @@ namespace Assets.Scripts.Bot
             _stepBuffer[depth] = step;
             int stepCount = depth + 1;
 
-            if (!TryProjectSnapshot(snapshot, classifier, actionGenerator, step, out var projectedSnapshot))
+            if (!TryProjectSnapshot(snapshot, actionGenerator, step, out var projectedSnapshot))
                 return;
 
             if (stepCount >= BotConsts.MaxBranchDepth)
@@ -69,7 +69,10 @@ namespace Assets.Scripts.Bot
             }
 
             if (IsThreatRepeatedInCurrentChain(nextThreat, stepCount))
+            {
+                BotLogger.LogBranchRepeatedThreat(step, nextThreat, stepCount);
                 return;
+            }
 
             if (TryExploreChildBranches(
                 projectedSnapshot,
@@ -84,11 +87,11 @@ namespace Assets.Scripts.Bot
 
             // Угроза найдена, но ни одна стратегия не может её обработать —
             // ветка не решает проблему, не добавляем.
+            BotLogger.LogBranchDeadEnd(step, nextThreat, stepCount);
         }
 
         private static bool TryProjectSnapshot(
             BotSceneSnapshot snapshot,
-            ObjectClassifier classifier,
             ActionGenerator actionGenerator,
             BranchStep step,
             out BotSceneSnapshot projectedSnapshot)
@@ -96,6 +99,9 @@ namespace Assets.Scripts.Bot
             var projection = actionGenerator.Project(snapshot, step);
             if (!projection.IsSafe || projection.NextState == null)
             {
+                BotLogger.LogBranchProjectionRejected(
+                    step,
+                    string.IsNullOrEmpty(projection.DebugReason) ? "unsafe projection" : projection.DebugReason);
                 projectedSnapshot = null;
                 return false;
             }

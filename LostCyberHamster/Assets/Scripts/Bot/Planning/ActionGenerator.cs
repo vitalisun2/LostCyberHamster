@@ -87,8 +87,8 @@ namespace Assets.Scripts.Bot
                 }
             }
 
-            // Залогировать результаты
-            if (result.Count > 0)
+            // Залогировать результаты, включая случаи, когда все кандидаты были отклонены.
+            if (candidates.Count > 0)
                 LogCandidates(target, candidates, snapshot, logScope);
 
             return result;

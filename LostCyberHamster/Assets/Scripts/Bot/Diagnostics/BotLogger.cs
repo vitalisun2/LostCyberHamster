@@ -92,6 +92,56 @@ namespace Assets.Scripts.Bot
             DebugManager.DiagLog(sb.ToString());
         }
 
+        public static void LogBranchProjectionRejected(BranchStep step, string projectionReason)
+        {
+            DebugManager.DiagLog(
+                $"[Bot BRANCH] Reject projection: {step.Action}" +
+                $" id={step.TargetObstacle.StableId}" +
+                $" fire={step.FireWorldShift:F1}" +
+                $" completion={step.CompletionWorldShift:F1}" +
+                $" reason={projectionReason}");
+        }
+
+        public static void LogBranchRepeatedThreat(BranchStep step, ObstacleInfo repeatedThreat, int depth)
+        {
+            DebugManager.DiagLog(
+                $"[Bot BRANCH] Reject repeated threat at depth={depth}" +
+                $" after {step.Action} id={step.TargetObstacle.StableId}" +
+                $" -> repeated id={repeatedThreat.StableId} type={repeatedThreat.Type}");
+        }
+
+        public static void LogBranchDeadEnd(BranchStep step, ObstacleInfo nextThreat, int depth)
+        {
+            DebugManager.DiagLog(
+                $"[Bot BRANCH] Dead end at depth={depth}" +
+                $" after {step.Action} id={step.TargetObstacle.StableId}" +
+                $" -> nextThreat id={nextThreat.StableId} type={nextThreat.Type}");
+        }
+
+        public static void LogSwitchLaneWindow(
+            ObstacleInfo target,
+            float windowStart,
+            float windowEnd,
+            float selectedFireShift)
+        {
+            DebugManager.DiagLog(
+                $"[Bot SWITCH] Window for id={target.StableId} type={target.Type}" +
+                $" start={windowStart:F2} end={windowEnd:F2}" +
+                $" selected={selectedFireShift:F2}");
+        }
+
+        public static void LogSwitchLaneOverlap(BranchStep step, ObstacleInfo blockingObstacle)
+        {
+            DebugManager.DiagLog(
+                $"[Bot SWITCH] Completion overlap after {step.Action}" +
+                $" targetId={step.TargetObstacle.StableId}" +
+                $" blockingId={blockingObstacle.StableId}" +
+                $" blockingType={blockingObstacle.Type}" +
+                $" blockingLane={(blockingObstacle.IsTopLane ? "top" : "bottom")}" +
+                $" left={blockingObstacle.LeftX:F2}" +
+                $" right={blockingObstacle.RightX:F2}");
+        }
+
         private static StringBuilder AcquireBuilder()
         {
             if (_sharedBuilder == null)
