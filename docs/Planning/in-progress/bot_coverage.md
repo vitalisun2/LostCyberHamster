@@ -22,7 +22,7 @@ BotOrchestrator (event-driven)
 - replanning запускается по `OnNewObjectAppeared` и когда committed plan исчерпан;
 - completed step продвигает head, но не делает самостоятельный replan;
 - planner horizon = текущая камера + дополнительная половина экрана вправо;
-- `SwitchLane` выбирает midpoint последнего непрерывного safe-window до дедлайна текущей угрозы;
+- `SwitchLane` выбирает midpoint последнего safe-window, и safety считается по всему интервалу transition;
 - после последних правок работает межплановая память `avoidance commitment` для `SwitchLane`.
 
 ## Активные стратегии
@@ -78,7 +78,7 @@ BotOrchestrator (event-driven)
 | Перенос commitments через replans | done | память живёт в runtime |
 | Перенос commitments через planner projection | done | lookahead видит те же ограничения |
 | Delayed return на committed lane | done | `SwitchLane` умеет ждать release moment |
-| `SwitchLane` safe-window selection | done | выбирается midpoint последнего непрерывного safe-window |
+| `SwitchLane` safe-window selection | done | выбирается midpoint последнего safe-window по единой геометрии transition |
 | Timing-window extension beyond `SwitchLane` | todo | другие action families пока используют более простую timing policy |
 | Reward model для ветки | todo | `BranchOutcome` пока не учитывает бонусы |
 

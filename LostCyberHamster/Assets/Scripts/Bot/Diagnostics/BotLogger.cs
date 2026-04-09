@@ -130,14 +130,20 @@ namespace Assets.Scripts.Bot
                 $" selected={selectedFireShift:F2}");
         }
 
-        public static void LogSwitchLaneOverlap(BranchStep step, ObstacleInfo blockingObstacle)
+        public static void LogSwitchLaneOverlap(
+            BranchStep step,
+            ObstacleInfo blockingObstacle,
+            float unsafeStartShift,
+            float unsafeEndShift)
         {
             DebugManager.DiagLog(
-                $"[Bot SWITCH] Completion overlap after {step.Action}" +
+                $"[Bot SWITCH] Transition overlap after {step.Action}" +
                 $" targetId={step.TargetObstacle.StableId}" +
                 $" blockingId={blockingObstacle.StableId}" +
                 $" blockingType={blockingObstacle.Type}" +
                 $" blockingLane={(blockingObstacle.IsTopLane ? "top" : "bottom")}" +
+                $" unsafeStart={unsafeStartShift:F2}" +
+                $" unsafeEnd={unsafeEndShift:F2}" +
                 $" left={blockingObstacle.LeftX:F2}" +
                 $" right={blockingObstacle.RightX:F2}");
         }

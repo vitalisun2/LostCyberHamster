@@ -32,18 +32,19 @@ namespace Assets.Scripts.Bot
                 return BuildRetainedCandidate(retainedSteps);
 
             var actions = _actionGenerator.Generate(snapshot, target, BranchLogScopes.Root);
-            return SelectBestActionBranch(snapshot, classifier, actions, retainedSteps);
+            return SelectBestActionBranch(snapshot, classifier, target, actions, retainedSteps);
         }
 
         private BranchCandidate SelectBestActionBranch(
             BotSceneSnapshot snapshot,
             ObjectClassifier classifier,
+            ObstacleInfo target,
             List<BranchStep> actions,
             List<BranchStep> retainedSteps)
         {
             var branches = _branchGenerator.Generate(snapshot, actions, classifier, _actionGenerator, _problemResolver);
             var best = BranchEvaluator.SelectBest(branches);
-            var retained = FindMatchingRetainedCandidate(branches, retainedSteps);
+            var retained = BuildValidatedRetainedCandidate(snapshot, target, retainedSteps);
 
             if (retained == null)
                 return best;
@@ -53,41 +54,23 @@ namespace Assets.Scripts.Bot
                 : retained;
         }
 
-        private static BranchCandidate FindMatchingRetainedCandidate(
-            List<BranchCandidate> branches,
+        private BranchCandidate BuildValidatedRetainedCandidate(
+            BotSceneSnapshot snapshot,
+            ObstacleInfo currentTarget,
             List<BranchStep> retainedSteps)
         {
-            if (branches == null || retainedSteps == null || retainedSteps.Count == 0)
+            if (snapshot == null || retainedSteps == null || retainedSteps.Count == 0)
                 return null;
 
-            for (int i = 0; i < branches.Count; i++)
-            {
-                var branch = branches[i];
-                if (MatchesRetainedPrefix(branch, retainedSteps))
-                    return branch;
-            }
+            var retainedHead = retainedSteps[0];
+            if (retainedHead.TargetObstacle.StableId != currentTarget.StableId)
+                return null;
 
-            return null;
-        }
+            var retainedProjection = _actionGenerator.Project(snapshot, retainedHead);
+            if (!retainedProjection.IsSafe)
+                return null;
 
-        private static bool MatchesRetainedPrefix(BranchCandidate branch, List<BranchStep> retainedSteps)
-        {
-            if (branch == null || retainedSteps == null || branch.Steps.Count < retainedSteps.Count)
-                return false;
-
-            for (int i = 0; i < retainedSteps.Count; i++)
-            {
-                var retained = retainedSteps[i];
-                var candidate = branch.Steps[i];
-
-                if (candidate.Action != retained.Action)
-                    return false;
-
-                if (candidate.TargetObstacle.StableId != retained.TargetObstacle.StableId)
-                    return false;
-            }
-
-            return true;
+            return BuildRetainedCandidate(retainedSteps);
         }
 
         private static BranchCandidate BuildRetainedCandidate(List<BranchStep> retainedSteps)

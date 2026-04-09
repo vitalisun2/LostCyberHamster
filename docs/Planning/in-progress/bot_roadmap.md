@@ -113,7 +113,7 @@
 - перенос commitments через branch projection;
 - delayed return на committed lane.
 - расширенный planner horizon (`camera + 0.5 screen` вправо);
-- deterministic `mid-safe` window selection для `SwitchLane`.
+- deterministic `mid-safe` selection для `SwitchLane`, синхронизированный с full-transition safety check.
 
 ### Planned
 

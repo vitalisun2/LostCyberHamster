@@ -4,11 +4,11 @@ using Assets.Scripts.Common;
 namespace Assets.Scripts.Bot
 {
     /// <summary>
-    /// Стратегия построения и проекции SwitchLane через детерминированную точку
-    /// внутри последнего непрерывного safe-window до дедлайна текущей угрозы.
-    /// Планировщик не жмёт earliest или latest, а выбирает mid-safe fire внутри
-    /// самого позднего окна, которое ещё остаётся безопасным.
-    /// Project() только вычисляет состояние мира после завершения шага.
+    /// Стратегия построения и проекции SwitchLane через детерминированный fire
+    /// внутри последнего непрерывного safe-window.
+    /// Безопасность считается одной и той же геометрией и при генерации кандидата,
+    /// и при финальной проекции: во время всего интервала transition на целевой
+    /// полосе не должно возникать overlap с угрозой.
     /// </summary>
     public class SwitchLaneStrategy : IActionStrategy
     {
@@ -64,6 +64,23 @@ namespace Assets.Scripts.Bot
             BranchStep step,
             ProjectedWorld projectedWorld)
         {
+            bool targetLaneBottom = !snapshot.HamsterOnBottom;
+            if (!TryGetBlockingObstacleDuringTransition(
+                    snapshot,
+                    targetLaneBottom,
+                    step.FireWorldShift,
+                    out var blockingObstacle,
+                    out float unsafeStartShift,
+                    out float unsafeEndShift))
+            {
+                BotLogger.LogSwitchLaneOverlap(step, blockingObstacle, unsafeStartShift, unsafeEndShift);
+                return new StepProjectionResult
+                {
+                    IsSafe = false,
+                    DebugReason = step.Reason
+                };
+            }
+
             var completionSnapshot = projectedWorld.ProjectSnapshot(snapshot, step.CompletionWorldShift);
             completionSnapshot.HamsterOnBottom = !completionSnapshot.HamsterOnBottom;
             completionSnapshot.HamsterOnRoof = false;
@@ -71,16 +88,6 @@ namespace Assets.Scripts.Bot
                 step.TargetObstacle.StableId,
                 forbiddenLaneBottom: !step.TargetObstacle.IsTopLane));
             completionSnapshot.PruneInactiveAvoidanceCommitments();
-
-            if (!TryGetBlockingObstacleAtCompletion(completionSnapshot, out var blockingObstacle))
-            {
-                BotLogger.LogSwitchLaneOverlap(step, blockingObstacle);
-                return new StepProjectionResult
-                {
-                    IsSafe = false,
-                    DebugReason = step.Reason
-                };
-            }
 
             return new StepProjectionResult
             {
@@ -92,9 +99,8 @@ namespace Assets.Scripts.Bot
 
         /// <summary>
         /// Ищет канонический fire moment для перестроения.
-        /// Сначала строит safe windows в диапазоне [release, deadline], затем выбирает
-        /// середину последнего непрерывного safe-window. Это даёт боту больше информации,
-        /// чем earliest-safe, но выглядит спокойнее, чем latest-safe.
+        /// Строит safe windows в диапазоне [release, deadline] по полной геометрии
+        /// transition и выбирает точку внутри последнего непрерывного safe-window.
         /// </summary>
         private static bool TryFindCanonicalFireShift(
             BotSceneSnapshot snapshot,
@@ -104,10 +110,10 @@ namespace Assets.Scripts.Bot
             out float selectedWindowEnd)
         {
             bool targetLaneBottom = !snapshot.HamsterOnBottom;
-            float safeWindowStart = GetCommitmentReleaseShift(snapshot, targetLaneBottom);
-            float safeWindowEnd = sourceTarget.DistanceToHamster;
+            float releaseWorldShift = GetCommitmentReleaseShift(snapshot, targetLaneBottom);
+            float deadlineWorldShift = sourceTarget.DistanceToHamster;
 
-            if (safeWindowStart > safeWindowEnd)
+            if (releaseWorldShift > deadlineWorldShift)
             {
                 fireWorldShift = 0f;
                 selectedWindowStart = 0f;
@@ -115,12 +121,15 @@ namespace Assets.Scripts.Bot
                 return false;
             }
 
-            if (!TryFindLatestSafeWindow(snapshot, sourceTarget, safeWindowStart, safeWindowEnd,
-                    targetLaneBottom, out selectedWindowStart, out selectedWindowEnd))
+            if (!TryFindLatestSafeWindow(
+                    snapshot,
+                    releaseWorldShift,
+                    deadlineWorldShift,
+                    targetLaneBottom,
+                    out selectedWindowStart,
+                    out selectedWindowEnd))
             {
                 fireWorldShift = 0f;
-                selectedWindowStart = 0f;
-                selectedWindowEnd = 0f;
                 return false;
             }
 
@@ -128,9 +137,28 @@ namespace Assets.Scripts.Bot
             return true;
         }
 
+        private static float GetCommitmentReleaseShift(BotSceneSnapshot snapshot, bool targetLaneBottom)
+        {
+            float releaseShift = 0f;
+
+            for (int i = 0; i < snapshot.ActiveAvoidanceCommitments.Count; i++)
+            {
+                var commitment = snapshot.ActiveAvoidanceCommitments[i];
+                if (!commitment.AppliesToTargetLane(targetLaneBottom))
+                    continue;
+
+                if (!commitment.TryGetReleaseWorldShift(snapshot, out float currentReleaseShift))
+                    continue;
+
+                if (currentReleaseShift > releaseShift)
+                    releaseShift = currentReleaseShift;
+            }
+
+            return releaseShift;
+        }
+
         private static bool TryFindLatestSafeWindow(
             BotSceneSnapshot snapshot,
-            ObstacleInfo sourceTarget,
             float safeWindowStart,
             float safeWindowEnd,
             bool targetLaneBottom,
@@ -139,7 +167,6 @@ namespace Assets.Scripts.Bot
         {
             var unsafeIntervals = CollectUnsafeIntervals(
                 snapshot,
-                sourceTarget,
                 safeWindowStart,
                 safeWindowEnd,
                 targetLaneBottom);
@@ -187,7 +214,6 @@ namespace Assets.Scripts.Bot
 
         private static List<UnsafeFireInterval> CollectUnsafeIntervals(
             BotSceneSnapshot snapshot,
-            ObstacleInfo sourceTarget,
             float safeWindowStart,
             float safeWindowEnd,
             bool targetLaneBottom)
@@ -204,9 +230,6 @@ namespace Assets.Scripts.Bot
 
                 bool obsOnBottom = !obs.IsTopLane;
                 if (obsOnBottom != targetLaneBottom)
-                    continue;
-
-                if (obs.LeftX >= sourceTarget.LeftX)
                     continue;
 
                 float unsafeStart = obs.LeftX - hamsterRightX - BotConsts.SwitchLaneDecisionTravel;
@@ -241,35 +264,22 @@ namespace Assets.Scripts.Bot
             return windowStart + (windowEnd - windowStart) * ratio;
         }
 
-        private static float GetCommitmentReleaseShift(BotSceneSnapshot snapshot, bool targetLaneBottom)
-        {
-            float releaseShift = 0f;
-
-            for (int i = 0; i < snapshot.ActiveAvoidanceCommitments.Count; i++)
-            {
-                var commitment = snapshot.ActiveAvoidanceCommitments[i];
-                if (!commitment.AppliesToTargetLane(targetLaneBottom))
-                    continue;
-
-                if (!commitment.TryGetReleaseWorldShift(snapshot, out float currentReleaseShift))
-                    continue;
-
-                if (currentReleaseShift > releaseShift)
-                    releaseShift = currentReleaseShift;
-            }
-
-            return releaseShift;
-        }
-
         /// <summary>
-        /// Проверяет, что на целевой полосе нет коллизий с хомяком в момент завершения перехода.
+        /// Проверяет, что в течение всего SwitchLane-transition на целевой полосе
+        /// нет overlap с угрозой. Возвращает первое блокирующее obstacle и unsafe
+        /// fire interval, чтобы builder и projector опирались на одну геометрию.
         /// </summary>
-        private static bool TryGetBlockingObstacleAtCompletion(
+        private static bool TryGetBlockingObstacleDuringTransition(
             BotSceneSnapshot snapshot,
-            out ObstacleInfo blockingObstacle)
+            bool targetLaneBottom,
+            float fireWorldShift,
+            out ObstacleInfo blockingObstacle,
+            out float unsafeStartShift,
+            out float unsafeEndShift)
         {
             float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot);
             float hamsterRightX = snapshot.HamsterRightX;
+            float transitionEndShift = fireWorldShift + BotConsts.SwitchLaneDecisionTravel;
 
             for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
             {
@@ -278,17 +288,27 @@ namespace Assets.Scripts.Bot
                     continue;
 
                 bool obsOnBottom = !obs.IsTopLane;
-                if (obsOnBottom != snapshot.HamsterOnBottom)
+                if (obsOnBottom != targetLaneBottom)
                     continue;
 
-                if (CollisionUtils.IsOverlap(hamsterLeftX, hamsterRightX, obs.LeftX, obs.RightX))
-                {
-                    blockingObstacle = obs;
-                    return false;
-                }
+                float obstacleOverlapStartShift = obs.LeftX - hamsterRightX;
+                float obstacleOverlapEndShift = obs.RightX - hamsterLeftX;
+
+                if (transitionEndShift <= obstacleOverlapStartShift)
+                    continue;
+
+                if (fireWorldShift >= obstacleOverlapEndShift)
+                    continue;
+
+                unsafeStartShift = obstacleOverlapStartShift - BotConsts.SwitchLaneDecisionTravel;
+                unsafeEndShift = obstacleOverlapEndShift;
+                blockingObstacle = obs;
+                return false;
             }
 
             blockingObstacle = default;
+            unsafeStartShift = 0f;
+            unsafeEndShift = 0f;
             return true;
         }
 

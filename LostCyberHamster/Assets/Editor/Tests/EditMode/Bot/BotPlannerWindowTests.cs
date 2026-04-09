@@ -42,7 +42,7 @@ namespace Assets.Tests.EditMode.Bot
             Assert.AreEqual(BotAction.SwitchLane, best.Steps[0].Action,
                 "Если целевая линия скоро освободится, planner должен экономить энергию и выбирать SwitchLane.");
             Assert.AreEqual(10.54f, best.Steps[0].FireWorldShift, 0.01f,
-                "После перехода на mid-safe policy planner должен выбирать середину последнего safe-window, а не earliest safe момент.");
+                "Planner должен выбирать midpoint последнего safe-window, построенного по transition-safe геометрии.");
         }
 
         [Test]
@@ -320,7 +320,7 @@ namespace Assets.Tests.EditMode.Bot
             var switchLane = steps.Find(s => s.Action == BotAction.SwitchLane);
             Assert.IsNotNull(switchLane, "SwitchLane должен быть доступен через последнее непрерывное safe окно.");
             Assert.AreEqual(17.88f, switchLane.FireWorldShift, 0.01f,
-                "Когда на target lane есть разорванные safe windows, planner должен брать середину последнего окна, а не earliest или global midpoint.");
+                "Когда на target lane есть разорванные safe windows, planner должен брать midpoint последнего окна, а не earliest или global midpoint.");
         }
 
         [Test]
