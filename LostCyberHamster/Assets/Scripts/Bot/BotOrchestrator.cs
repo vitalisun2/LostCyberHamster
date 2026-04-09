@@ -117,6 +117,7 @@ namespace Assets.Scripts.Bot
         private BotSceneSnapshot RefreshSceneState()
         {
             BotSceneSnapshot liveSnapshot = _snapshotBuilder.Build(Hamster);
+            _planRuntime?.ApplyPlanningMemory(liveSnapshot);
             _visibleObjectTracker.Update(liveSnapshot);
             return liveSnapshot;
         }
@@ -186,6 +187,7 @@ namespace Assets.Scripts.Bot
         {
             IsEnabled = false;
             _planRuntime?.Clear();
+            _planRuntime?.ResetPlanningMemory();
             _executor?.ClearStep();
             _planRuntime?.ResetSelectionTracking();
             ResetRuntimeTracking();

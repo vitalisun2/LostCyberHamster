@@ -1,103 +1,108 @@
-# Покрытие бота: стратегии и взаимодействия
+# Bot Coverage
 
-Единый документ: что бот умеет, что нет, и что предстоит.
+Документ текущего состояния. Отвечает на вопрос: что бот уже умеет сейчас, что включено в runtime, что ограничено, и какие test levels уже подтверждены.
 
-## Активные стратегии
+Связанный документ с порядком развития: `bot_roadmap.md`.
 
-Включены **3 стратегии**: `SwitchLaneStrategy`, `JumpOverStrategy`, `SuperJumpOverStrategy`.
-Остальные 13 стратегий реализованы как .cs файлы, но закомментированы в `ActionGenerator` для поэтапной отладки.
+## Текущий pipeline
 
-## Pipeline
-
-```
+```text
 BotOrchestrator (event-driven)
   -> SnapshotBuilder
   -> BranchSelector
     -> ProblemResolver + ObjectClassifier
-    -> ActionGenerator (StrategyTable)
-    -> BranchGenerator (до 5 шагов)
+    -> ActionGenerator
+    -> BranchGenerator (lookahead до 5 шагов)
     -> BranchEvaluator
   -> StepExecutor
 ```
 
-Переоценка: `OnNewObjectAppeared` и `PlanExhausted`. `StepCompleted` продвигает committed plan.
+### Что важно про runtime сейчас
 
-## Матрица покрытия
+- replanning запускается по `OnNewObjectAppeared` и когда committed plan исчерпан;
+- completed step продвигает head, но не делает самостоятельный replan;
+- planner horizon = текущая камера + дополнительная половина экрана вправо;
+- `SwitchLane` выбирает midpoint последнего непрерывного safe-window до дедлайна текущей угрозы;
+- после последних правок работает межплановая память `avoidance commitment` для `SwitchLane`.
 
-### Условные обозначения
+## Активные стратегии
 
-| Символ | Значение |
-|---|---|
-| done | Включено и работает: стратегия + handler |
-| todo | Не включено (реализация может существовать, но отключена или отсутствует) |
-| n/a | Действие неприменимо к этой ситуации |
+Сейчас включены и валидируются только дорожные стратегии:
 
-### Дорога (HamsterOnRoof = false)
-
-| Объект | SwitchLane | Jump (JumpOver) | JumpOnRoof | SuperJump (SuperJumpOver) | SuperJumpOnRoof |
-|---|---|---|---|---|---|
-| smallNotAliveRoad | done | done | n/a | n/a | n/a |
-| smallNotAliveRoadAndRoof | done | done | n/a | n/a | n/a |
-| bigNotAlive | done | n/a | todo | n/a | todo |
-| mediumNotAlive | done | n/a | todo | n/a | todo |
-| bigAlive | done | n/a | n/a | done | n/a |
-| smallAlive (Target) | todo | todo | n/a | todo | n/a |
-
-### Крыша (HamsterOnRoof = true)
-
-| Объект | RoofSwitchLane | RoofJumpOver | RoofJumpToRoof | RoofJumpOnTarget | RoofJumpDown | RoofSuperJump* |
-|---|---|---|---|---|---|---|
-| smallNotAliveRoadAndRoof | todo | todo | n/a | n/a | n/a | todo |
-| bigNotAlive | n/a | n/a | todo | n/a | n/a | todo |
-| mediumNotAlive | n/a | n/a | todo | n/a | n/a | todo |
-| smallAlive (Target) | n/a | n/a | n/a | todo | n/a | todo |
-| bigAlive (Target) | n/a | n/a | n/a | todo | n/a | todo |
-| RunFromRoof зона | todo | n/a | n/a | n/a | n/a | n/a |
-
-### Коллектиблы
-
-| Ситуация | Действие | Статус |
+| Стратегия | Статус | Примечание |
 |---|---|---|
-| Collectible на той же дорожке | Автосбор (механика игры) | Работает без участия бота |
-| Collectible на другой дорожке | SwitchLane для сбора | todo |
-| Приоритизация Collectible vs Threat | -- | todo |
+| `SwitchLaneStrategy` | done | активна |
+| `JumpOverStrategy` | done | активна |
+| `SuperJumpOverStrategy` | done | активна для road `bigAlive` |
 
-## StepExecutor: зарегистрированные handlers
+Остальные strategy classes существуют в коде, но пока не включены в `ActionGenerator`.
 
-| Action | Handler | Активно используется |
+## Покрытие по классам ситуаций
+
+### Дорога
+
+| Ситуация | Текущее решение | Статус |
 |---|---|---|
-| SwitchLane | SwitchLaneHandler | да |
-| JumpOver | JumpHandler | да |
-| JumpOnRoof | JumpHandler | нет (стратегия отключена) |
-| SuperJump | SuperJumpHandler | да |
-| RoofJumpOver | JumpHandler | нет (стратегия отключена) |
-| RoofSwitchLane | SwitchLaneHandler | нет (стратегия отключена) |
+| `smallNotAliveRoad` | `SwitchLane`, `JumpOver` | done |
+| `smallNotAliveRoadAndRoof` на дороге | `SwitchLane`, `JumpOver` | done |
+| `bigAlive` на дороге | `SwitchLane`, `SuperJump` | done |
+| `bigNotAlive` на дороге | `SwitchLane` | partial |
+| `mediumNotAlive` на дороге | `SwitchLane` | partial |
+| `smallAlive` на дороге | planner пока не работает с target-case | todo |
+
+### Крыша
+
+| Ситуация | Текущее решение | Статус |
+|---|---|---|
+| Бег по крыше и roof obstacles | roof strategies в коде есть, но не включены | todo |
+| Переход с дороги на крышу | runtime mechanic есть, planner strategy block ещё не включён | todo |
+| Переход между крышами | требует отдельной roof-phase в planner | todo |
+| Спуск с крыши и безопасный escape | поведение частично есть в runtime, planner coverage нужно уточнить и формализовать | todo |
+| Target interactions на крыше | planner пока не поддерживает roof target-case | todo |
+
+### Targets и Collectibles
+
+| Класс | Текущее состояние | Статус |
+|---|---|---|
+| `Target` как planner-задача | верхний resolver ещё не поднимает `Target` как objective | todo |
+| Collectible на текущей линии | подбирается механикой игры без участия planner | done |
+| Collectible на другой линии | planner reward/utility пока не считает | todo |
+| Приоритизация `Collectible vs Threat` | reward model отсутствует | todo |
+
+## Поддерживающие архитектурные слои
+
+| Слой | Статус | Примечание |
+|---|---|---|
+| Расширенный planner horizon вправо | done | бот видит на половину экрана дальше правого края камеры |
+| `avoidance commitment` после `SwitchLane` | done | предотвращает немедленный возврат под уже avoided threat |
+| Перенос commitments через replans | done | память живёт в runtime |
+| Перенос commitments через planner projection | done | lookahead видит те же ограничения |
+| Delayed return на committed lane | done | `SwitchLane` умеет ждать release moment |
+| `SwitchLane` safe-window selection | done | выбирается midpoint последнего непрерывного safe-window |
+| Timing-window extension beyond `SwitchLane` | todo | другие action families пока используют более простую timing policy |
+| Reward model для ветки | todo | `BranchOutcome` пока не учитывает бонусы |
 
 ## Тестовые уровни
 
-| Уровень | Адрес | Что тестирует |
-|---|---|---|
-| test_switch_lane | `01_New_York/Morning/test_switch_lane` | SwitchLane от различных obstacle |
-| test_jump_over | `01_New_York/Morning/test_jump_over` | JumpOver через small препятствия |
+| Уровень | Адрес | Что проверяет | Последний статус |
+|---|---|---|---|
+| `test_switch_lane` | `01_New_York/Morning/test_switch_lane` | дорожные avoidance-case, включая `bigAlive` | WIN |
+| `test_jump_over` | `01_New_York/Morning/test_jump_over` | `JumpOver` через small obstacle | WIN |
+| `test_superjump_over` | `01_New_York/Morning/test_superjump_over` | forced road `SuperJump` против `bigAlive` при опасном нижнем маршруте | WIN |
 
-## Ограничения
+Примечание по качеству regression gates:
 
-- Включены только 3 из 16 стратегий: `SwitchLaneStrategy`, `JumpOverStrategy`, `SuperJumpOverStrategy`. Остальные закомментированы в `ActionGenerator`.
-- Для `bigAlive` на дороге включены `SwitchLane` и `SuperJump`; для `bigNotAlive` / `mediumNotAlive` пока остаётся только `SwitchLane`.
-- `ProblemResolver` ищет только ближайшую same-lane угрозу — collectibles и targets не являются planner-задачами.
-- Roof-стратегии отключены.
-- RunFromRoof safety: бот не проверяет зону спуска при планировании.
+- `test_switch_lane` и `test_superjump_over` сейчас совпадают с intent уровня по логу;
+- `test_jump_over` технически проходит, но уже не является чистым forced-`JumpOver` gate: в позднем фрагменте уровень допускает альтернативный `SuperJump` по `bigAlive`, поэтому его стоит ужесточить или разделить на более изолированные сценарии.
 
-## Roadmap
+## Ограничения текущего состояния
 
-| ID | Описание | Статус |
-|---|---|---|
-| T-1 | Включить SuperJump для `bigAlive` | done |
-| T-2 | Включить JumpOnRoof для `bigNotAlive`/`mediumNotAlive` | todo |
-| T-3 | Включить SuperJumpOnRoof для `bigNotAlive`/`mediumNotAlive` | todo |
-| T-4 | Roof coverage: стратегии на крыше | todo |
-| T-5 | RunFromRoof safety planning | todo |
-| T-6 | Target planning для `smallAlive` | todo |
-| T-7 | Target planning для `bigAlive` (с крыши) | todo |
-| T-8 | Сбор Collectible с другой дорожке | todo |
-| T-9 | Приоритизация Collectible vs Threat | todo |
+- planner по-прежнему threat-centric: ближайшая same-lane угроза остаётся основной planner-задачей;
+- roof coverage не включён;
+- `Target` и `Collectible` пока не участвуют в выборе ветки как самостоятельные planner-objectives;
+- reward model отсутствует;
+- global optimization по уровню не планируется на текущем этапе.
+
+## Что этот документ не делает
+
+Этот документ не задаёт порядок работ. Порядок этапов, архитектурные фазы и planned test coverage теперь живут в `bot_roadmap.md`.

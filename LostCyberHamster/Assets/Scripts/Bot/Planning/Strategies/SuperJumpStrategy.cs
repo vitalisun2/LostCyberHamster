@@ -77,6 +77,7 @@ namespace Assets.Scripts.Bot
             // Восстановить состояние мира на момент приземления.
             var completionSnapshot = projectedWorld.ProjectSnapshot(snapshot, step.CompletionWorldShift);
             ApplySuperJumpEffects(completionSnapshot, step.TargetObstacle.StableId);
+            completionSnapshot.PruneInactiveAvoidanceCommitments();
 
             if (!IsLaneClearAtCompletion(completionSnapshot, step.TargetObstacle.StableId))
             {

@@ -1,0 +1,32 @@
+﻿{
+    "skyTexture": "",
+    "roadTexture": "",
+    "location": "01_New_York",
+    "patternSequence": [
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "test_superjump_over_01",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief_energy",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "test_superjump_over_02",
+            "spriteSeed": 0,
+            "overrides": []
+        }
+    ],
+    "decorationPatterns": [
+        {
+            "decorationTiles": []
+        }
+    ]
+}

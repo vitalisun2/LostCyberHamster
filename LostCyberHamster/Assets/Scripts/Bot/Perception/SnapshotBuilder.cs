@@ -8,12 +8,14 @@ namespace Assets.Scripts.Bot
     /// <summary>
     /// Единственный компонент pipeline с прямым доступом к Unity-объектам.
     /// Читает Hamster и ObstacleSpawner, строит BotSceneSnapshot.
-    /// Видимость определяется границами камеры — бот видит ровно то, что видит игрок.
+    /// Planner horizon строится от границ камеры с дополнительным обзором
+    /// на половину экрана вправо, чтобы бот видел чуть дальше игрока,
+    /// но всё ещё оставался близок к player-like восприятию сцены.
     /// </summary>
     public class SnapshotBuilder
     {
         /// <summary>
-        /// Строит snapshot: состояние хомяка + видимые объекты в пределах камеры.
+        /// Строит snapshot: состояние хомяка + объекты в пределах planner horizon.
         /// </summary>
         public BotSceneSnapshot Build(Hamster hamster)
         {
@@ -33,21 +35,24 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Сканирует spawned-препятствия в пределах камеры и добавляет в snapshot.
+        /// Сканирует spawned-препятствия в пределах planner horizon и добавляет в snapshot.
         /// </summary>
         private static void ScanObstacles(Hamster hamster, BotSceneSnapshot snapshot)
         {
             var spawner = ObstacleSpawner.Instance;
             if (spawner == null) return;
 
-            // Определить видимую область камеры
+            // Определить область planner horizon:
+            // текущий экран плюс дополнительная половина ширины экрана вправо.
             var cam = Camera.main;
             if (cam == null) return;
 
             float camX = cam.transform.position.x;
             float halfWidth = cam.orthographicSize * cam.aspect;
+            float screenWidth = halfWidth * 2f;
+            float extraRightVision = screenWidth * BotConsts.PlannerExtraRightVisionScreenFraction;
             float screenLeftX = camX - halfWidth;
-            float screenRightX = camX + halfWidth;
+            float screenRightX = camX + halfWidth + extraRightVision;
 
             float hamsterRightX = hamster.RightX;
 

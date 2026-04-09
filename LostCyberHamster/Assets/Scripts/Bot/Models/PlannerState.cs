@@ -9,12 +9,14 @@ namespace Assets.Scripts.Bot
     public class PlannerState : BotStateBase
     {
         public List<ObstacleInfo> RemainingObjects = new List<ObstacleInfo>();
+        public List<AvoidanceCommitment> ActiveAvoidanceCommitments = new List<AvoidanceCommitment>();
 
         public PlannerState Clone()
         {
             var clone = new PlannerState();
             clone.CopyFrom(this);
             clone.RemainingObjects = new List<ObstacleInfo>(RemainingObjects);
+            clone.ActiveAvoidanceCommitments = new List<AvoidanceCommitment>(ActiveAvoidanceCommitments);
             return clone;
         }
 
@@ -23,6 +25,7 @@ namespace Assets.Scripts.Bot
             var state = new PlannerState();
             state.CopyFrom(snapshot);
             state.RemainingObjects = new List<ObstacleInfo>(snapshot.VisibleObjects);
+            state.ActiveAvoidanceCommitments = new List<AvoidanceCommitment>(snapshot.ActiveAvoidanceCommitments);
             return state;
         }
 
@@ -32,6 +35,7 @@ namespace Assets.Scripts.Bot
             snapshot.CopyFrom(this);
             snapshot.SnapshotTime = 0f;
             snapshot.VisibleObjects = new List<ObstacleInfo>(RemainingObjects);
+            snapshot.ActiveAvoidanceCommitments = new List<AvoidanceCommitment>(ActiveAvoidanceCommitments);
             return snapshot;
         }
     }

@@ -1,10 +1,13 @@
+using System.Collections.Generic;
 using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot
 {
     /// <summary>
-    /// Стратегия построения и проекции SwitchLane через первый безопасный момент перестроения.
-    /// Планировщик ищет момент, после которого целевая полоса свободна от угроз ближе источника.
+    /// Стратегия построения и проекции SwitchLane через детерминированную точку
+    /// внутри последнего непрерывного safe-window до дедлайна текущей угрозы.
+    /// Планировщик не жмёт earliest или latest, а выбирает mid-safe fire внутри
+    /// самого позднего окна, которое ещё остаётся безопасным.
     /// Project() только вычисляет состояние мира после завершения шага.
     /// </summary>
     public class SwitchLaneStrategy : IActionStrategy
@@ -23,8 +26,8 @@ namespace Assets.Scripts.Bot
         {
             step = null;
 
-            // Найти первый безопасный момент для перестроения
-            if (!TryFindSafeFireShift(snapshot, target, out float fireWorldShift))
+            // Найти канонический safe fire moment для перестроения
+            if (!TryFindCanonicalFireShift(snapshot, target, out float fireWorldShift))
             {
                 rejectReason = "no safe fire shift";
                 return false;
@@ -57,6 +60,10 @@ namespace Assets.Scripts.Bot
             var completionSnapshot = projectedWorld.ProjectSnapshot(snapshot, step.CompletionWorldShift);
             completionSnapshot.HamsterOnBottom = !completionSnapshot.HamsterOnBottom;
             completionSnapshot.HamsterOnRoof = false;
+            completionSnapshot.ActiveAvoidanceCommitments.Add(new AvoidanceCommitment(
+                step.TargetObstacle.StableId,
+                forbiddenLaneBottom: !step.TargetObstacle.IsTopLane));
+            completionSnapshot.PruneInactiveAvoidanceCommitments();
 
             if (!IsLaneClearAtCompletion(completionSnapshot))
             {
@@ -76,68 +83,168 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Ищет первый безопасный момент для перестроения.
-        /// Угрозы на целевой полосе блокируют switch, только если хомяк физически столкнётся
-        /// с ними во время transition. Далёкие угрозы пропускаются — они будут обработаны
-        /// на следующем шаге ветки (branching).
-        /// Дедлайн — успеть нажать до source target; после fire лейн переключается мгновенно.
+        /// Ищет канонический fire moment для перестроения.
+        /// Сначала строит safe windows в диапазоне [release, deadline], затем выбирает
+        /// середину последнего непрерывного safe-window. Это даёт боту больше информации,
+        /// чем earliest-safe, но выглядит спокойнее, чем latest-safe.
         /// </summary>
-        private static bool TryFindSafeFireShift(
+        private static bool TryFindCanonicalFireShift(
             BotSceneSnapshot snapshot,
             ObstacleInfo sourceTarget,
             out float fireWorldShift)
         {
-            float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot);
-            float hamsterRightX = snapshot.HamsterRightX;
             bool targetLaneBottom = !snapshot.HamsterOnBottom;
-            float sourceDeadlineShift = sourceTarget.DistanceToHamster;
+            float safeWindowStart = GetCommitmentReleaseShift(snapshot, targetLaneBottom);
+            float safeWindowEnd = sourceTarget.DistanceToHamster;
 
-            // Найти минимальный fireShift, при котором ни одна угроза на целевой полосе
-            // не столкнётся с хомяком во время transition.
-            // Итерируем до стабилизации: рост fireShift может приблизить далёкие угрозы.
-            float fireShift = 0f;
-            bool changed = true;
-
-            while (changed)
+            if (safeWindowStart > safeWindowEnd)
             {
-                changed = false;
-
-                for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
-                {
-                    var obs = snapshot.VisibleObjects[i];
-                    if (!ProjectedWorld.IsThreatType(obs.Type))
-                        continue;
-
-                    bool obsOnBottom = !obs.IsTopLane;
-                    if (obsOnBottom != targetLaneBottom)
-                        continue;
-
-                    if (obs.LeftX >= sourceTarget.LeftX)
-                        continue;
-
-                    // Пропустить угрозы, которые не достигнут хомяка за время transition
-                    float gapAtFire = obs.LeftX - fireShift - hamsterRightX;
-                    if (gapAtFire > BotConsts.SwitchLaneDecisionTravel)
-                        continue;
-
-                    float clearShift = obs.RightX - hamsterLeftX;
-                    if (clearShift > fireShift)
-                    {
-                        fireShift = clearShift;
-                        changed = true;
-                    }
-                }
+                fireWorldShift = 0f;
+                return false;
             }
 
-            // Проверить, что момент fire до дедлайна source target
-            if (fireShift <= sourceDeadlineShift)
+            if (!TryFindLatestSafeWindow(snapshot, sourceTarget, safeWindowStart, safeWindowEnd,
+                    targetLaneBottom, out float selectedWindowStart, out float selectedWindowEnd))
             {
-                fireWorldShift = fireShift;
+                fireWorldShift = 0f;
+                return false;
+            }
+
+            fireWorldShift = SelectFireShiftInsideWindow(selectedWindowStart, selectedWindowEnd);
+            return true;
+        }
+
+        private static bool TryFindLatestSafeWindow(
+            BotSceneSnapshot snapshot,
+            ObstacleInfo sourceTarget,
+            float safeWindowStart,
+            float safeWindowEnd,
+            bool targetLaneBottom,
+            out float selectedWindowStart,
+            out float selectedWindowEnd)
+        {
+            var unsafeIntervals = CollectUnsafeIntervals(
+                snapshot,
+                sourceTarget,
+                safeWindowStart,
+                safeWindowEnd,
+                targetLaneBottom);
+
+            if (unsafeIntervals.Count == 0)
+            {
+                selectedWindowStart = safeWindowStart;
+                selectedWindowEnd = safeWindowEnd;
                 return true;
             }
 
-            fireWorldShift = 0f;
-            return false;
+            unsafeIntervals.Sort((a, b) => a.StartShift.CompareTo(b.StartShift));
+
+            float currentSafeStart = safeWindowStart;
+            bool hasSafeWindow = false;
+            selectedWindowStart = 0f;
+            selectedWindowEnd = 0f;
+
+            for (int i = 0; i < unsafeIntervals.Count; i++)
+            {
+                var interval = unsafeIntervals[i];
+                if (interval.EndShift <= currentSafeStart)
+                    continue;
+
+                if (interval.StartShift > currentSafeStart)
+                {
+                    selectedWindowStart = currentSafeStart;
+                    selectedWindowEnd = interval.StartShift;
+                    hasSafeWindow = true;
+                }
+
+                if (interval.EndShift > currentSafeStart)
+                    currentSafeStart = interval.EndShift;
+            }
+
+            if (currentSafeStart <= safeWindowEnd)
+            {
+                selectedWindowStart = currentSafeStart;
+                selectedWindowEnd = safeWindowEnd;
+                hasSafeWindow = true;
+            }
+
+            return hasSafeWindow;
+        }
+
+        private static List<UnsafeFireInterval> CollectUnsafeIntervals(
+            BotSceneSnapshot snapshot,
+            ObstacleInfo sourceTarget,
+            float safeWindowStart,
+            float safeWindowEnd,
+            bool targetLaneBottom)
+        {
+            float hamsterLeftX = ProjectedWorld.GetHamsterLeftX(snapshot);
+            float hamsterRightX = snapshot.HamsterRightX;
+            var unsafeIntervals = new List<UnsafeFireInterval>();
+
+            for (int i = 0; i < snapshot.VisibleObjects.Count; i++)
+            {
+                var obs = snapshot.VisibleObjects[i];
+                if (!ProjectedWorld.IsThreatType(obs.Type))
+                    continue;
+
+                bool obsOnBottom = !obs.IsTopLane;
+                if (obsOnBottom != targetLaneBottom)
+                    continue;
+
+                if (obs.LeftX >= sourceTarget.LeftX)
+                    continue;
+
+                float unsafeStart = obs.LeftX - hamsterRightX - BotConsts.SwitchLaneDecisionTravel;
+                float unsafeEnd = obs.RightX - hamsterLeftX;
+
+                if (unsafeEnd <= safeWindowStart || unsafeStart >= safeWindowEnd)
+                    continue;
+
+                if (unsafeStart < safeWindowStart)
+                    unsafeStart = safeWindowStart;
+
+                if (unsafeEnd > safeWindowEnd)
+                    unsafeEnd = safeWindowEnd;
+
+                unsafeIntervals.Add(new UnsafeFireInterval(unsafeStart, unsafeEnd));
+            }
+
+            return unsafeIntervals;
+        }
+
+        private static float SelectFireShiftInsideWindow(float windowStart, float windowEnd)
+        {
+            if (windowEnd <= windowStart)
+                return windowStart;
+
+            float ratio = BotConsts.SwitchLaneWindowSelectionRatio;
+            if (ratio < 0f)
+                ratio = 0f;
+            else if (ratio > 1f)
+                ratio = 1f;
+
+            return windowStart + (windowEnd - windowStart) * ratio;
+        }
+
+        private static float GetCommitmentReleaseShift(BotSceneSnapshot snapshot, bool targetLaneBottom)
+        {
+            float releaseShift = 0f;
+
+            for (int i = 0; i < snapshot.ActiveAvoidanceCommitments.Count; i++)
+            {
+                var commitment = snapshot.ActiveAvoidanceCommitments[i];
+                if (!commitment.AppliesToTargetLane(targetLaneBottom))
+                    continue;
+
+                if (!commitment.TryGetReleaseWorldShift(snapshot, out float currentReleaseShift))
+                    continue;
+
+                if (currentReleaseShift > releaseShift)
+                    releaseShift = currentReleaseShift;
+            }
+
+            return releaseShift;
         }
 
         /// <summary>
@@ -163,6 +270,18 @@ namespace Assets.Scripts.Bot
             }
 
             return true;
+        }
+
+        private readonly struct UnsafeFireInterval
+        {
+            public UnsafeFireInterval(float startShift, float endShift)
+            {
+                StartShift = startShift;
+                EndShift = endShift;
+            }
+
+            public float StartShift { get; }
+            public float EndShift { get; }
         }
     }
 }

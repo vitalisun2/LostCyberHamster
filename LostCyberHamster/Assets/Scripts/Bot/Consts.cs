@@ -8,6 +8,8 @@ namespace Assets.Scripts.Bot
     {
         // Planning
         public const int MaxBranchDepth = 5;
+        public const float PlannerExtraRightVisionScreenFraction = 0.5f;
+        public const float SwitchLaneWindowSelectionRatio = 0.5f;
 
         // Physics
         /// <summary>

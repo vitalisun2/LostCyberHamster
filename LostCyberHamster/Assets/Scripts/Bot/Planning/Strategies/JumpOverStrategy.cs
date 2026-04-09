@@ -69,6 +69,7 @@ namespace Assets.Scripts.Bot
         {
             var completionSnapshot = projectedWorld.ProjectSnapshot(snapshot, step.CompletionWorldShift);
             ApplyJumpEffects(completionSnapshot, step.TargetObstacle.StableId);
+            completionSnapshot.PruneInactiveAvoidanceCommitments();
 
             if (!IsLaneClearAtCompletion(completionSnapshot, step.TargetObstacle.StableId))
             {

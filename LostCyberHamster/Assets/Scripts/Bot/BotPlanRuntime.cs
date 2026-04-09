@@ -11,6 +11,7 @@ namespace Assets.Scripts.Bot
     {
         private readonly CurrentPlan _plan;
         private readonly BotBranchRenderer _branchRenderer;
+        private readonly List<AvoidanceCommitment> _activeAvoidanceCommitments = new List<AvoidanceCommitment>();
 
         private int _lastPlanTargetId;
 
@@ -28,6 +29,8 @@ namespace Assets.Scripts.Bot
         /// </summary>
         public BranchStep CommitPlan(BotSceneSnapshot snapshot, BranchCandidate best, bool hamsterOnBottomFallback)
         {
+            ApplyPlanningMemory(snapshot);
+
             if (best == null || best.Steps.Count == 0)
             {
                 Clear();
@@ -45,7 +48,9 @@ namespace Assets.Scripts.Bot
         /// </summary>
         public BranchStep AdvancePlan(BotSceneSnapshot snapshot, bool hamsterOnBottomFallback)
         {
+            RegisterCommitmentsFromCompletedHead(snapshot);
             _plan.AdvanceCompletedHead();
+            ApplyPlanningMemory(snapshot);
             if (_plan.IsEmpty)
             {
                 LogPlanClearedIfNeeded();
@@ -70,9 +75,23 @@ namespace Assets.Scripts.Bot
             _branchRenderer.ClearPreview();
         }
 
+        public void ApplyPlanningMemory(BotSceneSnapshot snapshot)
+        {
+            if (snapshot == null)
+                return;
+
+            PruneInactiveCommitments(snapshot);
+            snapshot.ReplaceAvoidanceCommitments(_activeAvoidanceCommitments);
+        }
+
         public void ResetSelectionTracking()
         {
             _lastPlanTargetId = 0;
+        }
+
+        public void ResetPlanningMemory()
+        {
+            _activeAvoidanceCommitments.Clear();
         }
 
         public void Render(Camera camera)
@@ -109,6 +128,48 @@ namespace Assets.Scripts.Bot
 
             BotLogger.LogPlanCleared();
             _lastPlanTargetId = 0;
+        }
+
+        private void RegisterCommitmentsFromCompletedHead(BotSceneSnapshot snapshot)
+        {
+            var completedHead = _plan.Head;
+            if (completedHead == null || completedHead.Status != BranchStepStatus.Completed)
+            {
+                PruneInactiveCommitments(snapshot);
+                return;
+            }
+
+            if (completedHead.Action == BotAction.SwitchLane)
+            {
+                AddOrReplaceCommitment(new AvoidanceCommitment(
+                    completedHead.TargetObstacle.StableId,
+                    forbiddenLaneBottom: !completedHead.TargetObstacle.IsTopLane));
+            }
+
+            PruneInactiveCommitments(snapshot);
+        }
+
+        private void AddOrReplaceCommitment(AvoidanceCommitment commitment)
+        {
+            for (int i = _activeAvoidanceCommitments.Count - 1; i >= 0; i--)
+            {
+                if (_activeAvoidanceCommitments[i].ThreatStableId == commitment.ThreatStableId)
+                    _activeAvoidanceCommitments.RemoveAt(i);
+            }
+
+            _activeAvoidanceCommitments.Add(commitment);
+        }
+
+        private void PruneInactiveCommitments(BotSceneSnapshot snapshot)
+        {
+            if (snapshot == null)
+                return;
+
+            snapshot.ReplaceAvoidanceCommitments(_activeAvoidanceCommitments);
+            snapshot.PruneInactiveAvoidanceCommitments();
+
+            _activeAvoidanceCommitments.Clear();
+            _activeAvoidanceCommitments.AddRange(snapshot.ActiveAvoidanceCommitments);
         }
     }
 }

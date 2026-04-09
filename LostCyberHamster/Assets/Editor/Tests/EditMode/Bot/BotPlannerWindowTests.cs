@@ -26,7 +26,7 @@ namespace Assets.Tests.EditMode.Bot
         }
 
         [Test]
-        public void Generate_DistantSmallRoadWithSoonClearingOtherLane_UsesNearestSafeSwitchLaneShift()
+        public void Generate_DistantSmallRoadWithSoonClearingOtherLane_UsesMidPointOfLatestSafeWindow()
         {
             var snapshot = MakeSnapshot(
                 hamOnBottom: true,
@@ -41,8 +41,8 @@ namespace Assets.Tests.EditMode.Bot
             Assert.IsNotNull(best, "Planner должен найти safe ветвь.");
             Assert.AreEqual(BotAction.SwitchLane, best.Steps[0].Action,
                 "Если целевая линия скоро освободится, planner должен экономить энергию и выбирать SwitchLane.");
-            Assert.Greater(best.Steps[0].FireWorldShift, 0f,
-                "Если target lane занята в текущем кадре, fire должен сдвигаться к ближайшему safe моменту в будущем.");
+            Assert.AreEqual(10.54f, best.Steps[0].FireWorldShift, 0.01f,
+                "После перехода на mid-safe policy planner должен выбирать середину последнего safe-window, а не earliest safe момент.");
         }
 
         [Test]
@@ -147,6 +147,76 @@ namespace Assets.Tests.EditMode.Bot
         }
 
         [Test]
+        public void Generate_BigNotAliveWithActiveAvoidanceCommitment_DelaysReturnUntilBigAlivePassed()
+        {
+            var snapshot = MakeSnapshot(
+                hamOnBottom: true,
+                objects: new[]
+                {
+                    Obs(ObstacleTypeEnum.bigAlive, true, -2.44f, -1.44f, 0.52f, 1101),
+                    Obs(ObstacleTypeEnum.bigNotAlive, false, 5.46f, 9.34f, 8.42f, 1102)
+                });
+            snapshot.ActiveAvoidanceCommitments.Add(new AvoidanceCommitment(
+                threatStableId: 1101,
+                forbiddenLaneBottom: false));
+
+            var best = _branchSelector.FindBestBranch(snapshot, _classifier);
+
+            Assert.IsNotNull(best, "Planner должен найти delayed SwitchLane после release committed lane.");
+            Assert.AreEqual(1, best.Steps.Count,
+                "После добавления межплановой памяти бот не должен возвращаться под bigAlive и строить лишнюю двухшаговую компенсацию.");
+            Assert.AreEqual(BotAction.SwitchLane, best.Steps[0].Action);
+            Assert.AreEqual(1102, best.Steps[0].TargetObstacle.StableId);
+            Assert.Greater(best.Steps[0].FireWorldShift, 0f,
+                "Возврат на committed lane должен откладываться до тех пор, пока avoided bigAlive не будет пройден.");
+        }
+
+        [Test]
+        public void Project_SwitchLaneSeedsAvoidanceCommitmentIntoProjectedState()
+        {
+            var snapshot = MakeSnapshot(
+                hamOnBottom: false,
+                objects: new[]
+                {
+                    Obs(ObstacleTypeEnum.bigAlive, true, 5.49f, 6.49f, 8.45f, 1151),
+                    Obs(ObstacleTypeEnum.bigNotAlive, false, 9.46f, 13.34f, 12.42f, 1152)
+                });
+
+            Assert.IsTrue(_problemResolver.TryResolveNextThreat(snapshot, _classifier, out var problem));
+            var steps = _actionGenerator.Generate(snapshot, problem);
+            var switchLane = steps.Find(step => step.Action == BotAction.SwitchLane);
+
+            Assert.IsNotNull(switchLane, "Для исходной угрозы должен существовать road SwitchLane-кандидат.");
+
+            var projection = _actionGenerator.Project(snapshot, switchLane);
+
+            Assert.IsTrue(projection.IsSafe, "Проекция первого SwitchLane должна оставаться safe.");
+            Assert.IsNotNull(projection.NextState);
+            Assert.AreEqual(1, projection.NextState.ActiveAvoidanceCommitments.Count,
+                "После проекции SwitchLane planner должен переносить avoidance memory в следующий узел ветки.");
+            Assert.AreEqual(1151, projection.NextState.ActiveAvoidanceCommitments[0].ThreatStableId);
+        }
+
+        [Test]
+        public void ProjectSnapshot_WhenCommittedThreatPassed_PrunesAvoidanceCommitment()
+        {
+            var snapshot = MakeSnapshot(
+                hamOnBottom: true,
+                objects: new[]
+                {
+                    Obs(ObstacleTypeEnum.bigAlive, true, -2.44f, -1.44f, 0.52f, 1201)
+                });
+            snapshot.ActiveAvoidanceCommitments.Add(new AvoidanceCommitment(
+                threatStableId: 1201,
+                forbiddenLaneBottom: false));
+
+            var projected = new ProjectedWorld().ProjectSnapshot(snapshot, worldShift: 4.0f);
+
+            Assert.AreEqual(0, projected.ActiveAvoidanceCommitments.Count,
+                "Commitment должен сниматься автоматически, когда avoided obstacle ушёл назад.");
+        }
+
+        [Test]
         public void Generate_FiveStepZigZag_BuildsDepthFiveBranch()
         {
             var snapshot = MakeSnapshot(
@@ -233,6 +303,27 @@ namespace Assets.Tests.EditMode.Bot
         }
 
         [Test]
+        public void Generate_TargetLaneHasSeparatedSafeWindows_UsesMidPointOfLatestWindow()
+        {
+            var snapshot = MakeSnapshot(
+                hamOnBottom: true,
+                objects: new[]
+                {
+                    Obs(ObstacleTypeEnum.smallNotAliveRoad, false, 20.04f, 21.44f, 23.0f, 911),
+                    Obs(ObstacleTypeEnum.bigAlive, true, -0.20f, 2.40f, 2.76f, 912),
+                    Obs(ObstacleTypeEnum.smallNotAliveRoad, true, 6.75f, 8.15f, 9.71f, 913)
+                });
+
+            Assert.IsTrue(_problemResolver.TryResolveNextThreat(snapshot, _classifier, out var problem));
+            var steps = _actionGenerator.Generate(snapshot, problem);
+
+            var switchLane = steps.Find(s => s.Action == BotAction.SwitchLane);
+            Assert.IsNotNull(switchLane, "SwitchLane должен быть доступен через последнее непрерывное safe окно.");
+            Assert.AreEqual(17.88f, switchLane.FireWorldShift, 0.01f,
+                "Когда на target lane есть разорванные safe windows, planner должен брать середину последнего окна, а не earliest или global midpoint.");
+        }
+
+        [Test]
         public void TryBuildStep_TargetLaneOccupiedImmediately_ShiftsFireMomentBeyondOccupant()
         {
             var snapshot = MakeSnapshot(
@@ -248,8 +339,8 @@ namespace Assets.Tests.EditMode.Bot
 
             var switchLane = steps.Find(s => s.Action == BotAction.SwitchLane);
             Assert.IsNotNull(switchLane, "SwitchLane должен быть сгенерирован: после освобождения target lane остаётся достаточно места.");
-            Assert.Greater(switchLane.FireWorldShift, 0f,
-                "Если target lane занята прямо сейчас, планировщик должен сдвинуть fire момент за правый край занятого объекта.");
+            Assert.AreEqual(10.0f, switchLane.FireWorldShift, 0.01f,
+                "При одном непрерывном safe окне planner должен выбирать его середину, а не earliest shift сразу за препятствием.");
         }
 
         private static BotSceneSnapshot MakeSnapshot(bool hamOnBottom, ObstacleInfo[] objects)

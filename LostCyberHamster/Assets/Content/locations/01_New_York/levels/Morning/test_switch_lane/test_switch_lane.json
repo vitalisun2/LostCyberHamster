@@ -47,16 +47,6 @@
             "ref": "test_switch_lane_05",
             "spriteSeed": 0,
             "overrides": []
-        },
-        {
-            "ref": "relief",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "test_switch_lane_06",
-            "spriteSeed": 0,
-            "overrides": []
         }
     ],
     "decorationPatterns": [

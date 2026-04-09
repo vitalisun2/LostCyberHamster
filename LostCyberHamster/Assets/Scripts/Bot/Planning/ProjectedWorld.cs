@@ -19,6 +19,7 @@ namespace Assets.Scripts.Bot
             var projected = new BotSceneSnapshot();
             projected.CopyFrom(source);
             projected.SnapshotTime = source.SnapshotTime;
+            projected.ReplaceAvoidanceCommitments(source.ActiveAvoidanceCommitments);
 
             float hamsterRightX = source.HamsterRightX;
 
@@ -45,6 +46,8 @@ namespace Assets.Scripts.Bot
                     newDistance,
                     obs.StableId));
             }
+
+            projected.PruneInactiveAvoidanceCommitments();
 
             return projected;
         }
