@@ -33,6 +33,11 @@ namespace LostCyberHamster.Editor
 
         private static double _nextPollAt;
 
+        private static void RefreshAssetDatabase()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+        }
+
         [Serializable]
         private sealed class BridgeRequest
         {
@@ -134,9 +139,8 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
-            // Force Unity to detect changed .cs files even when editor is not focused.
-            // This eliminates the need for window focus / SendKeys hacks.
-            AssetDatabase.Refresh(ImportAssetOptions.Default);
+            // Force Unity to synchronously import git-added scripts before we inspect the request.
+            RefreshAssetDatabase();
 
             if (!TryReadRequest(out var request, out var errorMessage))
             {
@@ -212,7 +216,7 @@ namespace LostCyberHamster.Editor
                     diagnosticLogPath = DebugManager.GetDiagLogPath()
                 });
 
-                AssetDatabase.Refresh(ImportAssetOptions.Default);
+                RefreshAssetDatabase();
                 CompilationPipeline.RequestScriptCompilation();
                 return;
             }

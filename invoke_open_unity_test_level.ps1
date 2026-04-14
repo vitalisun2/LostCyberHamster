@@ -48,11 +48,10 @@ function TryWakeUnityEditorWindow {
     $candidateProcesses = Get-Process | Where-Object {
         $_.MainWindowHandle -ne 0 -and (
             $_.ProcessName -like 'Unity*' -or
-            $_.MainWindowTitle -like '*Unity*' -or
-            $_.MainWindowTitle -like '*LostCyberHamster*'
+            ($_.MainWindowTitle -like '*Unity*' -and $_.ProcessName -notmatch '^(Code|devenv)$')
         )
     } | Sort-Object {
-        if ($_.MainWindowTitle -like '*LostCyberHamster*') { 0 } else { 1 }
+        if ($_.ProcessName -like 'Unity*') { 0 } else { 1 }
     }
 
     foreach ($process in $candidateProcesses) {
