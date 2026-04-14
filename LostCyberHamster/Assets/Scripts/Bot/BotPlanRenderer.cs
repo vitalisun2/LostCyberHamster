@@ -1,3 +1,4 @@
+using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using UnityEngine;
 
@@ -12,11 +13,12 @@ namespace Assets.Scripts.Bot
 
         public void Render(
             BotPlan plan,
+            BotPerceptionSnapshot snapshot,
             bool initialBottomLine,
             bool hideHeadAction,
             Camera camera)
         {
-            if (plan == null || !plan.HasActions || camera == null)
+            if (plan == null || !plan.HasActions || snapshot == null || camera == null)
                 return;
 
             EnsureMaterial();
@@ -35,7 +37,7 @@ namespace Assets.Scripts.Bot
             {
                 PlannedAction action = plan.Actions[index];
                 float alpha = Mathf.Max(MinTailAlpha, 1f - (index - startIndex) * 0.22f);
-                DrawAction(action, currentBottomLine, alpha);
+                DrawAction(action, snapshot, currentBottomLine, alpha);
 
                 if (action.TargetBottomLine.HasValue)
                     currentBottomLine = action.TargetBottomLine.Value;
@@ -53,14 +55,51 @@ namespace Assets.Scripts.Bot
             _glMaterial = null;
         }
 
-        private void DrawAction(PlannedAction action, bool currentBottomLine, float alpha)
+        private void DrawAction(
+            PlannedAction action,
+            BotPerceptionSnapshot snapshot,
+            bool currentBottomLine,
+            float alpha)
         {
             switch (action.Kind)
             {
                 case BotActionKind.Tap:
-                    DrawSwitchLaneGlyph(action.RenderWorldX, currentBottomLine, alpha);
+                    if (TryGetRenderWorldX(action, snapshot, out float renderWorldX))
+                        DrawSwitchLaneGlyph(renderWorldX, currentBottomLine, alpha);
                     break;
             }
+        }
+
+        private static bool TryGetRenderWorldX(
+            PlannedAction action,
+            BotPerceptionSnapshot snapshot,
+            out float renderWorldX)
+        {
+            float hamsterCenterX = (snapshot.RuntimeState.HamsterLeftX + snapshot.RuntimeState.HamsterRightX) * 0.5f;
+            if (action.TargetObstacleInstanceId.HasValue)
+            {
+                for (int obstacleIndex = 0; obstacleIndex < snapshot.VisibleObstacles.Count; obstacleIndex++)
+                {
+                    VisibleObstacleSnapshot obstacle = snapshot.VisibleObstacles[obstacleIndex];
+                    if (obstacle.InstanceId != action.TargetObstacleInstanceId.Value)
+                        continue;
+
+                    float remainingWorldShift = obstacle.LeftX - action.TriggerX;
+                    if (remainingWorldShift < 0f)
+                    {
+                        renderWorldX = 0f;
+                        return false;
+                    }
+
+                    // Convert remaining world travel into the current road point
+                    // that will be under the hamster when the action starts.
+                    renderWorldX = hamsterCenterX + remainingWorldShift;
+                    return true;
+                }
+            }
+
+            renderWorldX = action.RenderWorldX;
+            return true;
         }
 
         private static void DrawSwitchLaneGlyph(float triggerX, bool currentBottomLine, float alpha)
