@@ -11,6 +11,7 @@ namespace Assets.Scripts.Bot
     public sealed class RuntimeBotController : MonoBehaviour
     {
         private const float InitRetryInterval = 0.5f;
+        private const string HostObjectName = "[Bot]";
 
         private readonly CommittedPlan _committedPlan = new CommittedPlan();
         private readonly VisibilitySnapshotBuilder _snapshotBuilder = new VisibilitySnapshotBuilder();
@@ -34,11 +35,22 @@ namespace Assets.Scripts.Bot
             if (FindAnyObjectByType<RuntimeBotController>(FindObjectsInactive.Include) != null)
                 return;
 
-            GameObject host = GameObject.Find("[Bot V2]");
+            GameObject host = GameObject.Find(HostObjectName);
             if (host == null)
-                host = new GameObject("[Bot V2]");
+                host = new GameObject(HostObjectName);
 
             host.AddComponent<RuntimeBotController>();
+        }
+
+        public void ToggleEnabled()
+        {
+            if (IsEnabled)
+            {
+                Disable();
+                return;
+            }
+
+            Enable();
         }
 
         private void Awake()
@@ -95,6 +107,24 @@ namespace Assets.Scripts.Bot
         {
             _eventTracker?.Dispose();
             _planRenderer.Dispose();
+        }
+
+        private void Enable()
+        {
+            IsEnabled = true;
+            if (!IsInitialized)
+                TryInit();
+
+            DebugManager.DiagLog("[BotV2] Enabled");
+        }
+
+        private void Disable()
+        {
+            IsEnabled = false;
+            LastSnapshot = null;
+            _committedPlan.Clear();
+            _executor.Clear();
+            DebugManager.DiagLog("[BotV2] Disabled");
         }
 
         private void TickBot()

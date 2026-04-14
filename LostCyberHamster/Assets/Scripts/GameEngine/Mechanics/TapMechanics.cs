@@ -57,7 +57,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 if (_isShifting.Value)
                     return;
 
-                _shiftTransformAnimatorController.ShiftToBottomLine();
+                _shiftTransformAnimatorController.ToggleLane();
                 _isOnBottomLine.Value = _shiftTransformAnimatorController.IsShiftedDown();
             }
         }

@@ -88,10 +88,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
             // Bot hotkey
             if (_keyboard.f1Key.wasPressedThisFrame)
             {
-                var bot = Object.FindObjectOfType<BotOrchestrator>();
+                var bot = Object.FindAnyObjectByType<RuntimeBotController>();
                 if (bot != null)
                 {
-                    bot.ToggleEnabledFromHotkey();
+                    bot.ToggleEnabled();
                 }
             }
         }

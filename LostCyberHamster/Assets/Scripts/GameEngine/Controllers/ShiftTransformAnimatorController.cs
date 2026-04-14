@@ -23,7 +23,7 @@ namespace Assets.Scripts.GameEngine.Controllers
             _transitionDownToDefaultHash = Animator.StringToHash(_transitionDownToDefaultName);
         }
 
-        public void ShiftToBottomLine()
+        public void ToggleLane()
         {
             _animator.SetBool("IsShiftedDown", !IsShiftedDown());
         }

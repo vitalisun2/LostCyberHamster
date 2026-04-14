@@ -35,7 +35,7 @@ namespace Assets.Scripts.System
         public static LevelController Instance { get; private set; }
 
         private Intro _introComponent;
-        private global::Assets.Scripts.Bot.BotOrchestrator _botOrchestrator;
+        private global::Assets.Scripts.Bot.RuntimeBotController _botController;
 
         private void Awake()
         {
@@ -242,19 +242,19 @@ namespace Assets.Scripts.System
                 return _timeScale;
 
             // Авто-спидап при включённом боте (только без явного override).
-            var bot = GetBotOrchestrator();
+            var bot = GetBotController();
             if (bot != null && bot.IsEnabled)
                 return BotEnabledDefaultTimeScale;
 
             return _timeScale;
         }
 
-        private global::Assets.Scripts.Bot.BotOrchestrator GetBotOrchestrator()
+        private global::Assets.Scripts.Bot.RuntimeBotController GetBotController()
         {
-            if (_botOrchestrator == null)
-                _botOrchestrator = FindAnyObjectByType<global::Assets.Scripts.Bot.BotOrchestrator>(FindObjectsInactive.Include);
+            if (_botController == null)
+                _botController = FindAnyObjectByType<global::Assets.Scripts.Bot.RuntimeBotController>(FindObjectsInactive.Include);
 
-            return _botOrchestrator;
+            return _botController;
         }
     }
 }
