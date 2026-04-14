@@ -38,5 +38,20 @@ namespace Assets.Scripts.Bot.Perception
         public int? RoofSupportInstanceId { get; }
         public float HamsterLeftX { get; }
         public float HamsterRightX { get; }
+
+        public RuntimeStateSnapshot WithLine(bool isOnBottomLine, bool isOnRoof)
+        {
+            return new RuntimeStateSnapshot(
+                HamsterState,
+                isOnBottomLine,
+                isOnRoof,
+                Energy,
+                Lives,
+                IsDamaged,
+                IsShifting,
+                RoofSupportInstanceId,
+                HamsterLeftX,
+                HamsterRightX);
+        }
     }
 }

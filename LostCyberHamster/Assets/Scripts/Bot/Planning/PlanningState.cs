@@ -14,6 +14,7 @@ namespace Assets.Scripts.Bot.Planning
         public RuntimeStateSnapshot RuntimeState { get; }
         public int NextObstacleIndex { get; }
         public float ProjectionX { get; }
+        public bool IsOnBottomLine => RuntimeState.IsOnBottomLine;
 
         public static PlanningState FromSnapshot(BotPerceptionSnapshot perceptionSnapshot)
         {

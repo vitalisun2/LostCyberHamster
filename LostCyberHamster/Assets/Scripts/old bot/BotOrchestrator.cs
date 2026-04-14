@@ -48,14 +48,7 @@ namespace Assets.Scripts.Bot
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
         {
-            if (FindAnyObjectByType<BotOrchestrator>(FindObjectsInactive.Include) != null)
-                return;
-
-            var host = GameObject.Find("[Bot]");
-            if (host == null)
-                host = new GameObject("[Bot]");
-
-            host.AddComponent<BotOrchestrator>();
+            // Archived bot: auto-attach is disabled.
         }
 
         private void Start()
