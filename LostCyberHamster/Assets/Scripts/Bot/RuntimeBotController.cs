@@ -20,6 +20,7 @@ namespace Assets.Scripts.Bot
         private Hamster _hamster;
         private GameManager _gameManager;
         private PlanBuilder _planBuilder;
+        private RuntimeBotEventTracker _eventTracker;
         private float _nextInitRetryTime;
 
         public bool IsEnabled { get; private set; } = true;
@@ -87,6 +88,7 @@ namespace Assets.Scripts.Bot
 
         private void OnDestroy()
         {
+            _eventTracker?.Dispose();
             _planRenderer.Dispose();
         }
 
@@ -108,13 +110,22 @@ namespace Assets.Scripts.Bot
 
             _committedPlan.Replace(plan);
             _executor.SetPlan(plan);
-            Debug.Log($"[BotV2] Planned {plan.Actions.Count} action(s) on snapshot at {plan.CommittedBoundaryX:F2}.");
+            DebugManager.DiagLog(
+                $"[BotV2 PLAN] actions={plan.Actions.Count} " +
+                $"score={plan.Score:F2} boundaryX={plan.CommittedBoundaryX:F2} " +
+                $"head={plan.Actions[0].Description}");
         }
 
         private void TryInit()
         {
             _hamster = FindAnyObjectByType<Hamster>(FindObjectsInactive.Exclude);
             _gameManager = FindAnyObjectByType<GameManager>(FindObjectsInactive.Exclude);
+
+            if (_hamster == null || _gameManager == null)
+                return;
+
+            if (_eventTracker == null)
+                _eventTracker = new RuntimeBotEventTracker(_hamster, _gameManager);
         }
     }
 }

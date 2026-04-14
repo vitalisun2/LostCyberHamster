@@ -66,6 +66,11 @@ namespace Assets.Scripts.Bot.Execution
             if (collider.bounds.min.x > action.TriggerX)
                 return false;
 
+            DebugManager.DiagLog(
+                $"[BotV2 EXEC] FIRE kind={action.Kind} " +
+                $"triggerX={action.TriggerX:F2} obstacleLeftX={collider.bounds.min.x:F2} " +
+                $"targetLane={(action.TargetBottomLine.HasValue ? (action.TargetBottomLine.Value ? "bottom" : "top") : "n/a")} " +
+                $"desc={action.Description}");
             hamster.TapRequest.Invoke();
             return true;
         }
@@ -81,7 +86,16 @@ namespace Assets.Scripts.Bot.Execution
             if (!action.TargetBottomLine.HasValue)
                 return true;
 
-            return hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value;
+            bool completed = hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value;
+            if (completed)
+            {
+                DebugManager.DiagLog(
+                    $"[BotV2 EXEC] COMPLETE kind={action.Kind} " +
+                    $"lane={(hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
+                    $"desc={action.Description}");
+            }
+
+            return completed;
         }
 
         private void AdvanceHead()

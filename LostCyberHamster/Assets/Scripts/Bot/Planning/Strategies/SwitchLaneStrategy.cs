@@ -9,6 +9,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
     {
         private const float SwitchLaneDecisionDuration = 0.45f;
         private const float SwitchLaneDecisionTravel = SwitchLaneDecisionDuration * Assets.Scripts.Consts.GameSpeedBase;
+        private const float ExecutionLeadDistance = 0.18f;
         private const float LatestFireSafetyMargin = 0.05f;
         private const float FireSelectionMargin = 0.02f;
 
@@ -25,7 +26,10 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 return false;
 
             RuntimeStateSnapshot runtimeState = planningState.RuntimeState;
-            float latestFireShift = targetObstacle.LeftX - runtimeState.HamsterRightX - LatestFireSafetyMargin;
+            float latestFireShift = targetObstacle.LeftX
+                - runtimeState.HamsterRightX
+                - LatestFireSafetyMargin
+                - ExecutionLeadDistance;
             if (latestFireShift <= 0f)
                 return false;
 
