@@ -105,11 +105,14 @@ namespace Assets.Scripts.Bot
             _executor.Tick(_hamster);
             _committedPlan.Replace(_executor.CurrentPlan);
 
-            if (_executor.IsActionInProgress || _executor.HasPendingActions)
+            if (_executor.IsActionInProgress)
                 return;
 
             BotPlan plan = _planBuilder.Build(LastSnapshot, _committedPlan);
             if (!plan.HasActions)
+                return;
+
+            if (plan.IsEquivalentTo(_executor.CurrentPlan))
                 return;
 
             _committedPlan.Replace(plan);

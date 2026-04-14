@@ -37,7 +37,8 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 return false;
 
             float triggerX = targetObstacle.LeftX - fireShift;
-            float renderWorldX = triggerX + planningState.ProjectionWorldShift;
+            float hamsterCenterX = (runtimeState.HamsterLeftX + runtimeState.HamsterRightX) * 0.5f;
+            float renderWorldX = hamsterCenterX + planningState.ProjectionWorldShift + fireShift;
             action = new PlannedAction(
                 BotActionKind.Tap,
                 triggerX,

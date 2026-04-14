@@ -31,6 +31,20 @@ namespace Assets.Scripts.Bot.Planning
                 - branch.FirstTriggerX;
         }
 
+        public float Score(IReadOnlyList<PlannedAction> actions)
+        {
+            if (actions == null || actions.Count == 0)
+                return 0f;
+
+            int totalEnergyCost = 0;
+            for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
+                totalEnergyCost += actions[actionIndex].EnergyCost;
+
+            return actions.Count * 100f
+                - totalEnergyCost * 10f
+                - actions[0].TriggerX;
+        }
+
         private static int CompareBranches(PlanningBranch left, PlanningBranch right)
         {
             if (ReferenceEquals(left, right))

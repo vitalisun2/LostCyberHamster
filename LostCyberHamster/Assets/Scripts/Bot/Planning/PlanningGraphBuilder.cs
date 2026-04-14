@@ -20,11 +20,16 @@ namespace Assets.Scripts.Bot.Planning
 
         public IReadOnlyList<PlanningBranch> BuildBranches(BotPerceptionSnapshot perceptionSnapshot)
         {
-            if (perceptionSnapshot == null)
+            return BuildBranches(perceptionSnapshot, PlanningState.FromSnapshot(perceptionSnapshot));
+        }
+
+        public IReadOnlyList<PlanningBranch> BuildBranches(BotPerceptionSnapshot perceptionSnapshot, PlanningState rootState)
+        {
+            if (perceptionSnapshot == null || rootState == null)
                 return Array.Empty<PlanningBranch>();
 
             var branches = new List<PlanningBranch>();
-            PlanningGraphNode rootNode = PlanningGraphNode.CreateRoot(PlanningState.FromSnapshot(perceptionSnapshot));
+            PlanningGraphNode rootNode = PlanningGraphNode.CreateRoot(rootState);
             ExploreNode(rootNode, perceptionSnapshot, branches);
             return branches;
         }

@@ -1,7 +1,11 @@
+using System;
+
 namespace Assets.Scripts.Bot.PlanState
 {
     public sealed class PlannedAction
     {
+        private const float EqualityEpsilon = 0.001f;
+
         public PlannedAction(
             BotActionKind kind,
             float triggerX,
@@ -33,5 +37,23 @@ namespace Assets.Scripts.Bot.PlanState
         public bool? TargetBottomLine { get; }
         public int EnergyCost { get; }
         public string Description { get; }
+
+        public bool IsEquivalentTo(PlannedAction other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (other == null)
+                return false;
+
+            return Kind == other.Kind
+                && Math.Abs(TriggerX - other.TriggerX) <= EqualityEpsilon
+                && Math.Abs(RenderWorldX - other.RenderWorldX) <= EqualityEpsilon
+                && Math.Abs(CompletionWorldShift - other.CompletionWorldShift) <= EqualityEpsilon
+                && TargetObstacleIndex == other.TargetObstacleIndex
+                && TargetObstacleInstanceId == other.TargetObstacleInstanceId
+                && TargetBottomLine == other.TargetBottomLine
+                && EnergyCost == other.EnergyCost;
+        }
     }
 }
