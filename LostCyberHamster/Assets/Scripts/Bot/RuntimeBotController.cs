@@ -83,7 +83,12 @@ namespace Assets.Scripts.Bot
             if (camera == null || camera != Camera.main)
                 return;
 
-            _planRenderer.Render(CurrentPlan, LastSnapshot.RuntimeState.IsOnBottomLine, camera);
+            _planRenderer.Render(
+                CurrentPlan,
+                LastSnapshot,
+                _hamster.IsOnBottomLine.Value,
+                _executor.IsActionInProgress,
+                camera);
         }
 
         private void OnDestroy()

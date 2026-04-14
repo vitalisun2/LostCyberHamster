@@ -1,4 +1,5 @@
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Perception;
 using UnityEngine;
 
 namespace Assets.Scripts.Bot
@@ -10,9 +11,14 @@ namespace Assets.Scripts.Bot
 
         private Material _glMaterial;
 
-        public void Render(BotPlan plan, bool initialBottomLine, Camera camera)
+        public void Render(
+            BotPlan plan,
+            BotPerceptionSnapshot snapshot,
+            bool initialBottomLine,
+            bool hideHeadAction,
+            Camera camera)
         {
-            if (plan == null || !plan.HasActions || camera == null)
+            if (plan == null || !plan.HasActions || snapshot == null || camera == null)
                 return;
 
             EnsureMaterial();
@@ -26,11 +32,12 @@ namespace Assets.Scripts.Bot
             GL.Begin(GL.LINES);
 
             bool currentBottomLine = initialBottomLine;
-            for (int index = 0; index < plan.Actions.Count; index++)
+            int startIndex = hideHeadAction ? 1 : 0;
+            for (int index = startIndex; index < plan.Actions.Count; index++)
             {
                 PlannedAction action = plan.Actions[index];
-                float alpha = Mathf.Max(MinTailAlpha, 1f - index * 0.22f);
-                DrawAction(action, currentBottomLine, alpha);
+                float alpha = Mathf.Max(MinTailAlpha, 1f - (index - startIndex) * 0.22f);
+                DrawAction(action, snapshot, currentBottomLine, alpha);
 
                 if (action.TargetBottomLine.HasValue)
                     currentBottomLine = action.TargetBottomLine.Value;
@@ -48,14 +55,33 @@ namespace Assets.Scripts.Bot
             _glMaterial = null;
         }
 
-        private void DrawAction(PlannedAction action, bool currentBottomLine, float alpha)
+        private void DrawAction(
+            PlannedAction action,
+            BotPerceptionSnapshot snapshot,
+            bool currentBottomLine,
+            float alpha)
         {
             switch (action.Kind)
             {
                 case BotActionKind.Tap:
-                    DrawSwitchLaneGlyph(action.TriggerX, currentBottomLine, alpha);
+                    DrawSwitchLaneGlyph(ResolveRenderX(action, snapshot), currentBottomLine, alpha);
                     break;
             }
+        }
+
+        private static float ResolveRenderX(PlannedAction action, BotPerceptionSnapshot snapshot)
+        {
+            if (action.TargetObstacleInstanceId.HasValue)
+            {
+                for (int obstacleIndex = 0; obstacleIndex < snapshot.VisibleObstacles.Count; obstacleIndex++)
+                {
+                    VisibleObstacleSnapshot obstacle = snapshot.VisibleObstacles[obstacleIndex];
+                    if (obstacle.InstanceId == action.TargetObstacleInstanceId.Value)
+                        return obstacle.LeftX;
+                }
+            }
+
+            return action.TriggerX;
         }
 
         private static void DrawSwitchLaneGlyph(float triggerX, bool currentBottomLine, float alpha)
