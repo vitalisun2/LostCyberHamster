@@ -7,16 +7,18 @@ namespace Assets.Scripts.Bot.Planning
     {
         public PlanningState Simulate(PlanningState planningState, PlannedAction action, BotPerceptionSnapshot perceptionSnapshot)
         {
-            RuntimeStateSnapshot runtimeState = planningState.RuntimeState;
-            if (action.TargetBottomLine.HasValue)
-                runtimeState = runtimeState.WithLine(action.TargetBottomLine.Value, isOnRoof: false);
+            if (planningState == null || action == null || perceptionSnapshot == null)
+                return null;
+
+            RuntimeStateSnapshot nextRuntimeState = ApplyActionToRuntimeState(planningState.RuntimeState, action);
+            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
 
             int nextObstacleIndex = perceptionSnapshot.VisibleObstacles.Count;
-            for (int obstacleIndex = 0; obstacleIndex < perceptionSnapshot.VisibleObstacles.Count; obstacleIndex++)
+            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < perceptionSnapshot.VisibleObstacles.Count; obstacleIndex++)
             {
                 VisibleObstacleSnapshot obstacle = perceptionSnapshot.VisibleObstacles[obstacleIndex];
-                float projectedRightX = obstacle.RightX - action.CompletionWorldShift;
-                if (projectedRightX > runtimeState.HamsterLeftX)
+                float projectedRightX = obstacle.RightX - nextProjectionWorldShift;
+                if (projectedRightX > nextRuntimeState.HamsterLeftX)
                 {
                     nextObstacleIndex = obstacleIndex;
                     break;
@@ -24,9 +26,33 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             return new PlanningState(
-                runtimeState,
+                nextRuntimeState,
                 nextObstacleIndex,
-                planningState.ProjectionX + action.CompletionWorldShift);
+                nextProjectionWorldShift);
+        }
+
+        private static RuntimeStateSnapshot ApplyActionToRuntimeState(RuntimeStateSnapshot runtimeState, PlannedAction action)
+        {
+            // Apply line and roof changes produced by the completed action.
+            bool isOnBottomLine = action.TargetBottomLine ?? runtimeState.IsOnBottomLine;
+            bool isOnRoof = action.TargetBottomLine.HasValue ? false : runtimeState.IsOnRoof;
+
+            // Keep projected resources in sync with the action cost.
+            int energy = runtimeState.Energy - action.EnergyCost;
+            if (energy < 0)
+                energy = 0;
+
+            return new RuntimeStateSnapshot(
+                runtimeState.HamsterState,
+                isOnBottomLine,
+                isOnRoof,
+                energy,
+                runtimeState.Lives,
+                runtimeState.IsDamaged,
+                isShifting: false,
+                runtimeState.RoofSupportInstanceId,
+                runtimeState.HamsterLeftX,
+                runtimeState.HamsterRightX);
         }
     }
 }

@@ -4,16 +4,16 @@ namespace Assets.Scripts.Bot.Planning
 {
     public sealed class PlanningState
     {
-        public PlanningState(RuntimeStateSnapshot runtimeState, int nextObstacleIndex, float projectionX)
+        public PlanningState(RuntimeStateSnapshot runtimeState, int nextObstacleIndex, float projectionWorldShift)
         {
             RuntimeState = runtimeState;
             NextObstacleIndex = nextObstacleIndex;
-            ProjectionX = projectionX;
+            ProjectionWorldShift = projectionWorldShift;
         }
 
         public RuntimeStateSnapshot RuntimeState { get; }
         public int NextObstacleIndex { get; }
-        public float ProjectionX { get; }
+        public float ProjectionWorldShift { get; }
         public bool IsOnBottomLine => RuntimeState.IsOnBottomLine;
 
         public static PlanningState FromSnapshot(BotPerceptionSnapshot perceptionSnapshot)
@@ -21,7 +21,7 @@ namespace Assets.Scripts.Bot.Planning
             return new PlanningState(
                 perceptionSnapshot.RuntimeState,
                 nextObstacleIndex: 0,
-                projectionX: perceptionSnapshot.RuntimeState.HamsterRightX);
+                projectionWorldShift: 0f);
         }
     }
 }

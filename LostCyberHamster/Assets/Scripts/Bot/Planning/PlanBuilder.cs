@@ -6,8 +6,7 @@ namespace Assets.Scripts.Bot.Planning
 {
     public sealed class PlanBuilder
     {
-        private readonly ActionGenerator _actionGenerator;
-        private readonly TransitionSimulator _transitionSimulator;
+        private readonly PlanningGraphBuilder _graphBuilder;
         private readonly PlanEvaluator _planEvaluator;
 
         public PlanBuilder(
@@ -15,35 +14,33 @@ namespace Assets.Scripts.Bot.Planning
             TransitionSimulator transitionSimulator,
             PlanEvaluator planEvaluator)
         {
-            _actionGenerator = actionGenerator;
-            _transitionSimulator = transitionSimulator;
+            _graphBuilder = new PlanningGraphBuilder(actionGenerator, transitionSimulator);
             _planEvaluator = planEvaluator;
         }
 
         public BotPlan Build(BotPerceptionSnapshot perceptionSnapshot, CommittedPlan committedPlan)
         {
             if (perceptionSnapshot == null)
-                return BotPlan.Empty(committedPlan.CommittedBoundaryX);
+                return BotPlan.Empty(committedPlan?.CommittedBoundaryX ?? 0f);
 
-            var actions = new List<PlannedAction>();
-            PlanningState planningState = PlanningState.FromSnapshot(perceptionSnapshot);
+            // Expand all reachable branches from the current runtime snapshot.
+            IReadOnlyList<PlanningBranch> branches = _graphBuilder.BuildBranches(perceptionSnapshot);
 
-            for (int depth = 0; depth < perceptionSnapshot.VisibleObstacles.Count; depth++)
-            {
-                IReadOnlyList<PlannedAction> candidates = _actionGenerator.Generate(planningState, perceptionSnapshot);
-                if (candidates.Count == 0)
-                    break;
+            // Select the best complete branch and convert it back to executable actions.
+            PlanningBranch bestBranch = _planEvaluator.SelectBest(branches);
+            if (bestBranch == null || !bestBranch.HasActions)
+                return BotPlan.Empty(GetCommittedBoundaryX(committedPlan, perceptionSnapshot));
 
-                PlannedAction bestAction = _planEvaluator.SelectBest(candidates);
-                if (bestAction == null)
-                    break;
+            float score = _planEvaluator.Score(bestBranch);
+            return new BotPlan(bestBranch.Actions, perceptionSnapshot.ScreenRightEdgeX, score);
+        }
 
-                actions.Add(bestAction);
-                planningState = _transitionSimulator.Simulate(planningState, bestAction, perceptionSnapshot);
-            }
+        private static float GetCommittedBoundaryX(CommittedPlan committedPlan, BotPerceptionSnapshot perceptionSnapshot)
+        {
+            if (committedPlan != null && committedPlan.CommittedBoundaryX > 0f)
+                return committedPlan.CommittedBoundaryX;
 
-            float score = _planEvaluator.Score(actions);
-            return new BotPlan(actions, perceptionSnapshot.ScreenRightEdgeX, score);
+            return perceptionSnapshot != null ? perceptionSnapshot.ScreenRightEdgeX : 0f;
         }
     }
 }

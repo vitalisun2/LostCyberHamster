@@ -21,10 +21,17 @@ namespace Assets.Scripts.Bot.Planning
         public IReadOnlyList<PlannedAction> Generate(PlanningState planningState, BotPerceptionSnapshot perceptionSnapshot)
         {
             var plannedActions = new List<PlannedAction>();
+            if (planningState == null || perceptionSnapshot == null)
+                return plannedActions;
 
-            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < perceptionSnapshot.VisibleObstacles.Count; obstacleIndex++)
+            BotPerceptionSnapshot projectedSnapshot = PlanningSnapshotProjector.Project(perceptionSnapshot, planningState);
+
+            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < projectedSnapshot.VisibleObstacles.Count; obstacleIndex++)
             {
-                VisibleObstacleSnapshot obstacle = perceptionSnapshot.VisibleObstacles[obstacleIndex];
+                VisibleObstacleSnapshot obstacle = projectedSnapshot.VisibleObstacles[obstacleIndex];
+                if (obstacle.RightX <= planningState.RuntimeState.HamsterLeftX)
+                    continue;
+
                 if (!IsThreat(obstacle.ObstacleType))
                     continue;
 
@@ -33,7 +40,7 @@ namespace Assets.Scripts.Bot.Planning
 
                 for (int strategyIndex = 0; strategyIndex < _strategies.Count; strategyIndex++)
                 {
-                    if (_strategies[strategyIndex].TryGenerate(planningState, perceptionSnapshot, obstacle, obstacleIndex, out PlannedAction action))
+                    if (_strategies[strategyIndex].TryGenerate(planningState, projectedSnapshot, obstacle, obstacleIndex, out PlannedAction action))
                         plannedActions.Add(action);
                 }
 
