@@ -46,6 +46,9 @@
 - Это же основной рабочий лог; разделение делается тегами канала в строке.
 - При поиске по `EditorLogs` через файловый поиск учитывать игнорируемые пути (`includeIgnoredFiles=true`).
 - Если automation bridge завершает без `[TEST RESULT]` и `diagnostic_log.txt` пустой — читать Unity `Editor.log`: сигнал compile/editor-level сбоя, а не runtime-поведения бота.
+- Если после добавления новых `.cs` Unity «не видит» их, быстро проверить `Assembly-CSharp.csproj`: отсутствие файла в `<Compile Include="..." />` означает, что editor ещё не импортировал asset.
+- Для новых script assets под `Assets/` не создавать `.meta` вручную; дать Unity сгенерировать их при import/refresh и закоммитить получившиеся `.meta`.
+- Wake-up fallback должен будить реальное окно Unity Editor. Окна VS Code/IDE с названием проекта не гарантируют, что bridge начнёт обрабатывать request-файл.
 
 ---
 

@@ -16,6 +16,7 @@
 ## Файловая структура
 
 - **csproj:** при создании новых .cs файлов — `<Compile Include="..." />` в `Assembly-CSharp.csproj`. При удалении/переименовании — обновлять/удалять записи.
+- Для новых файлов и папок под `Assets/` не писать `.meta` вручную. Дать Unity Editor сгенерировать `.meta`, затем коммитить именно сгенерированные файлы.
 - **Editor tools** в `Assets/Editor/`.
 - **Runtime scripts** в `Assets/Scripts/`.
 

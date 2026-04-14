@@ -41,6 +41,8 @@
 - [promoted -> docs/rules/iteration_cycle.md] Собирать компактный representative test_level с distinct-механиками.
 - [promoted -> docs/rules/agent_tools.md] При поиске по EditorLogs учитывать игнорируемые пути (includeIgnoredFiles=true).
 - [promoted -> docs/rules/agent_tools.md] Если automation bridge без [TEST RESULT] и лог пустой — читать Unity Editor.log.
+- [promoted -> docs/rules/agent_tools.md] Если Unity не видит новые `.cs`, проверять `Assembly-CSharp.csproj`: отсутствие `Compile Include` означает, что asset ещё не импортирован.
+- [promoted -> docs/rules/agent_tools.md] Wake-up fallback для automation должен будить реальное окно Unity Editor, а не IDE с названием проекта.
 - [promoted -> docs/architecture_knowledge_base.md] Для chain-stage тестов все объекты цепочки должны попадать в initial snapshot.
 - [promoted -> docs/rules/iteration_cycle.md] Для chain-планирования читать BOT вместе с ECO.
 - [promoted -> docs/rules/code_conventions.md] EditMode-тесты для planner держать тонким слоем и не дублировать ими runtime-проверку на test level.
@@ -65,6 +67,7 @@
 - [promoted -> docs/rules/workflow.md] Побочные изменения (автогенерация) должны попадать в main.
 - [promoted -> docs/rules/workflow.md] При валидации запускать только релевантный тестовый уровень.
 - [promoted -> docs/rules/workflow.md] Не объявлять задачу завершённой до конца git-цикла.
+- [promoted -> docs/rules/code_conventions.md] Для новых Unity assets/scripts коммитить `.meta`, сгенерированные самим editor, а не писать их вручную.
 - [promoted -> docs/rules/code_conventions.md] При удалении файлов проверять тесты на ссылки на удалённые типы.
 - [promoted -> docs/rules/code_conventions.md] После изменений .cs файлов запускать recompile_scripts.
 
