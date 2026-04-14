@@ -5,6 +5,7 @@ namespace Assets.Scripts.Bot.PlanState
         public PlannedAction(
             BotActionKind kind,
             float triggerX,
+            float renderWorldX,
             float completionWorldShift,
             int targetObstacleIndex,
             int? targetObstacleInstanceId = null,
@@ -14,6 +15,7 @@ namespace Assets.Scripts.Bot.PlanState
         {
             Kind = kind;
             TriggerX = triggerX;
+            RenderWorldX = renderWorldX;
             CompletionWorldShift = completionWorldShift;
             TargetObstacleIndex = targetObstacleIndex;
             TargetObstacleInstanceId = targetObstacleInstanceId;
@@ -24,6 +26,7 @@ namespace Assets.Scripts.Bot.PlanState
 
         public BotActionKind Kind { get; }
         public float TriggerX { get; }
+    public float RenderWorldX { get; }
         public float CompletionWorldShift { get; }
         public int TargetObstacleIndex { get; }
         public int? TargetObstacleInstanceId { get; }

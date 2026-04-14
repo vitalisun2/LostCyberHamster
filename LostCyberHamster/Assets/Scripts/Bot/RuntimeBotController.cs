@@ -85,7 +85,6 @@ namespace Assets.Scripts.Bot
 
             _planRenderer.Render(
                 CurrentPlan,
-                LastSnapshot,
                 _hamster.IsOnBottomLine.Value,
                 _executor.IsActionInProgress,
                 camera);
