@@ -31,6 +31,9 @@ namespace LostCyberHamster.Editor
         private const string LevelsFolderName = "levels";
         private const string TestLevelPrefix = "test";
 
+        /// <summary>Default timescale when launching through the automation bridge.</summary>
+        private const float AutomationDefaultTimeScale = 2.0f;
+
         /// <summary>Default timescale when launching via Tools menu for interactive visual inspection.</summary>
         private const float ToolsDefaultTimeScale = 1.0f;
 
@@ -85,11 +88,11 @@ namespace LostCyberHamster.Editor
         /// </summary>
         public static bool TryLaunchTestLevelAutomation(string levelAddress, float timeScale, out string errorMessage)
         {
-            float? timeScaleOverride = timeScale > 0f ? timeScale : null;
+            float effectiveTimeScale = timeScale > 0f ? timeScale : AutomationDefaultTimeScale;
             return TryLaunchTestLevel(
                 interactive: false,
                 levelAddress,
-                timeScaleOverride,
+                effectiveTimeScale,
                 out errorMessage);
         }
 

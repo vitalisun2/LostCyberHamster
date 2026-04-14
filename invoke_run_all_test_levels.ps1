@@ -10,13 +10,12 @@
 .PARAMETER PollMilliseconds
     Polling interval in milliseconds. Default: 250.
 .PARAMETER TimeScale
-    Explicit Time.timeScale override forwarded to Unity. Default: 0 (no override —
-    bot-enabled logic applies, which defaults to 4x when bot is on).
+    Explicit Time.timeScale override forwarded to Unity. Default: 2.
 #>
 param(
     [int]$TimeoutSeconds = 120,
     [int]$PollMilliseconds = 250,
-    [float]$TimeScale = 0
+    [float]$TimeScale = 2
 )
 
 Set-StrictMode -Version Latest

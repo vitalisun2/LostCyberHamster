@@ -55,6 +55,8 @@ namespace Assets.Scripts.Bot
 
         private void Awake()
         {
+            DontDestroyOnLoad(gameObject);
+
             _planBuilder = new PlanBuilder(
                 new Assets.Scripts.Bot.Planning.ActionGenerator(),
                 new Assets.Scripts.Bot.Planning.TransitionSimulator(),
