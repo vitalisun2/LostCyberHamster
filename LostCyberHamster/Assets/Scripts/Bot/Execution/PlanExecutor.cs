@@ -15,10 +15,10 @@ namespace Assets.Scripts.Bot.Execution
                 { BotActionKind.Tap, new SwitchLaneActionHandler() }
             };
 
-        private bool _isCurrentActionFired;
+        private bool _isActionInProgress;
 
         public BotPlan CurrentPlan { get; private set; } = BotPlan.Empty();
-        public bool IsActionInProgress => _isCurrentActionFired;
+        public bool IsActionInProgress => _isActionInProgress;
         public bool HasPendingActions => CurrentPlan.HasActions;
 
         /// <summary>
@@ -27,7 +27,7 @@ namespace Assets.Scripts.Bot.Execution
         public void SetPlan(BotPlan plan)
         {
             CurrentPlan = plan ?? BotPlan.Empty();
-            _isCurrentActionFired = false;
+            _isActionInProgress = false;
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Assets.Scripts.Bot.Execution
         public void Clear(float committedBoundaryX = 0f)
         {
             CurrentPlan = BotPlan.Empty(committedBoundaryX);
-            _isCurrentActionFired = false;
+            _isActionInProgress = false;
         }
 
         /// <summary>
@@ -51,11 +51,11 @@ namespace Assets.Scripts.Bot.Execution
             IActionExecutionHandler handler = GetRequiredHandler(action);
 
             // Сначала пробуем один раз запустить действие из головы плана.
-            if (!_isCurrentActionFired)
+            if (!_isActionInProgress)
             {
                 ActionFireResult fireResult = handler.TryFire(hamster, action);
                 if (fireResult == ActionFireResult.Fired)
-                    _isCurrentActionFired = true;
+                    _isActionInProgress = true;
                 else if (fireResult == ActionFireResult.Cancelled)
                     AdvanceHead();
 
@@ -93,7 +93,7 @@ namespace Assets.Scripts.Bot.Execution
             if (actions.Count <= 1)
             {
                 CurrentPlan = BotPlan.Empty(CurrentPlan.CommittedBoundaryX);
-                _isCurrentActionFired = false;
+                _isActionInProgress = false;
                 return;
             }
 
@@ -103,7 +103,7 @@ namespace Assets.Scripts.Bot.Execution
                 remainingActions.Add(actions[actionIndex]);
 
             CurrentPlan = new BotPlan(remainingActions, CurrentPlan.CommittedBoundaryX, CurrentPlan.Score);
-            _isCurrentActionFired = false;
+            _isActionInProgress = false;
         }
     }
 }
