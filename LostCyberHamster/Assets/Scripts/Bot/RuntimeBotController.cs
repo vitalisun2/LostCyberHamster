@@ -15,7 +15,7 @@ namespace Assets.Scripts.Bot
         private const string _hostObjectName = "[Bot]";
 
         private readonly CommittedPlan _committedPlan = new CommittedPlan();
-        private readonly VisibilitySnapshotBuilder _snapshotBuilder = new VisibilitySnapshotBuilder();
+        private readonly SnapshotBuilder _snapshotBuilder = new SnapshotBuilder();
         private readonly PlanExecutor _executor = new PlanExecutor();
         private readonly BotPlanRenderer _planRenderer = new BotPlanRenderer();
 

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.Bot.Perception
 {
-    public sealed class VisibilitySnapshotBuilder
+    public sealed class SnapshotBuilder
     {
         private const float ExtraVisionScreenFraction = 0.5f;
 
