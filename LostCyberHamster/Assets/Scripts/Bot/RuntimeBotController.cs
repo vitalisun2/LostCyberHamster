@@ -11,8 +11,8 @@ namespace Assets.Scripts.Bot
 {
     public sealed class RuntimeBotController : MonoBehaviour
     {
-        private const float InitRetryInterval = 0.5f;
-        private const string HostObjectName = "[Bot]";
+        private const float _initRetryInterval = 0.5f;
+        private const string _hostObjectName = "[Bot]";
 
         private readonly CommittedPlan _committedPlan = new CommittedPlan();
         private readonly VisibilitySnapshotBuilder _snapshotBuilder = new VisibilitySnapshotBuilder();
@@ -31,7 +31,7 @@ namespace Assets.Scripts.Bot
         public BotPlan CurrentPlan => _executor.CurrentPlan;
 
         /// <summary>
-        /// Ensures that a single runtime controller instance exists after scene load.
+        /// Гарантирует, что после загрузки сцены в runtime существует ровно один контроллер бота.
         /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
@@ -39,15 +39,15 @@ namespace Assets.Scripts.Bot
             if (FindAnyObjectByType<RuntimeBotController>(FindObjectsInactive.Include) != null)
                 return;
 
-            GameObject host = GameObject.Find(HostObjectName);
+            GameObject host = GameObject.Find(_hostObjectName);
             if (host == null)
-                host = new GameObject(HostObjectName);
+                host = new GameObject(_hostObjectName);
 
             host.AddComponent<RuntimeBotController>();
         }
 
         /// <summary>
-        /// Switches the runtime bot between enabled and disabled states.
+        /// Переключает бота между включённым и выключенным состояниями.
         /// </summary>
         public void ToggleEnabled()
         {
@@ -71,7 +71,7 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Runs one frame of the bot loop when runtime dependencies are ready and gameplay is active.
+        /// Выполняет один кадр цикла бота, когда runtime-зависимости готовы и игровой ран активен.
         /// </summary>
         private void Update()
         {
@@ -126,20 +126,54 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Refreshes perception, advances the current plan, and replaces it only when a better pending plan is needed.
+        /// Выполняет шаг бота: обновляет восприятие, продвигает текущий план и при необходимости активирует новый.
         /// </summary>
         private void TickBot()
         {
-            LastSnapshot = _snapshotBuilder.Build(_hamster);
-            if (LastSnapshot == null)
+            if (!TryCaptureSnapshot())
                 return;
 
-            _executor.Tick(_hamster);
-            _committedPlan.Replace(_executor.CurrentPlan);
-
+            AdvanceCurrentPlan();
             if (_executor.IsActionInProgress)
                 return;
 
+            TryActivateNextPlan();
+        }
+
+        /// <summary>
+        /// Держит контроллер в ожидании, пока не найдены scene-зависимости и пока gameplay не перейдёт в тикаемое состояние.
+        /// </summary>
+        private bool IsReadyForTick()
+        {
+            if (!IsInitialized)
+            {
+                if (Time.time >= _nextInitRetryTime)
+                {
+                    TryResolveRuntimeDependencies();
+                    _nextInitRetryTime = Time.time + _initRetryInterval;
+                }
+
+                return false;
+            }
+
+            return _gameManager.State == GameState.PLAYING
+                && _hamster.HamsterState.Value != HamsterStateEnum.Dead;
+        }
+
+        private bool TryCaptureSnapshot()
+        {
+            LastSnapshot = _snapshotBuilder.Build(_hamster);
+            return LastSnapshot != null;
+        }
+
+        private void AdvanceCurrentPlan()
+        {
+            _executor.Tick(_hamster);
+            _committedPlan.Replace(_executor.CurrentPlan);
+        }
+
+        private void TryActivateNextPlan()
+        {
             BotPlan plan = _planBuilder.Build(LastSnapshot, _committedPlan);
             if (!plan.HasActions || plan.IsEquivalentTo(_executor.CurrentPlan))
                 return;
@@ -150,27 +184,7 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Keeps the controller idle until scene references are resolved and gameplay is in a tickable state.
-        /// </summary>
-        private bool IsReadyForTick()
-        {
-            if (!IsInitialized)
-            {
-                if (Time.time >= _nextInitRetryTime)
-                {
-                    TryResolveRuntimeDependencies();
-                    _nextInitRetryTime = Time.time + InitRetryInterval;
-                }
-
-                return false;
-            }
-
-            return _gameManager.State == GameState.PLAYING
-                && _hamster.HamsterState.Value != HamsterStateEnum.Dead;
-        }
-
-        /// <summary>
-        /// Writes a concise diagnostic line for the newly activated plan.
+        /// Пишет краткую диагностическую строку для только что активированного плана.
         /// </summary>
         private static void LogPlanActivation(BotPlan plan)
         {
@@ -181,7 +195,7 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Resolves the scene dependencies needed by the controller and lazily attaches the event tracker.
+        /// Находит scene-зависимости контроллера и лениво подключает трекер runtime-событий.
         /// </summary>
         private void TryResolveRuntimeDependencies()
         {
