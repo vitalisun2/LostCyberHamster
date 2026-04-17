@@ -10,7 +10,7 @@ namespace Assets.Scripts.Bot.Planning
             if (planningState == null || action == null || perceptionSnapshot == null)
                 return null;
 
-            BotStateSnapshot nextRuntimeState = ApplyActionToRuntimeState(planningState.RuntimeState, action);
+            HamsterSnapshot nextRuntimeState = ApplyActionToRuntimeState(planningState.RuntimeState, action);
             float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
 
             int nextObstacleIndex = perceptionSnapshot.VisibleObstacles.Count;
@@ -31,7 +31,7 @@ namespace Assets.Scripts.Bot.Planning
                 nextProjectionWorldShift);
         }
 
-        private static BotStateSnapshot ApplyActionToRuntimeState(BotStateSnapshot runtimeState, PlannedAction action)
+        private static HamsterSnapshot ApplyActionToRuntimeState(HamsterSnapshot runtimeState, PlannedAction action)
         {
             // Apply line and roof changes produced by the completed action.
             bool isOnBottomLine = action.TargetBottomLine ?? runtimeState.IsOnBottomLine;
@@ -42,7 +42,7 @@ namespace Assets.Scripts.Bot.Planning
             if (energy < 0)
                 energy = 0;
 
-            return new BotStateSnapshot(
+            return new HamsterSnapshot(
                 runtimeState.HamsterState,
                 isOnBottomLine,
                 isOnRoof,

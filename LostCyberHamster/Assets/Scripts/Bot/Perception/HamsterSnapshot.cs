@@ -2,9 +2,9 @@ using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Perception
 {
-    public sealed class BotStateSnapshot
+    public sealed class HamsterSnapshot
     {
-        public BotStateSnapshot(
+        public HamsterSnapshot(
             HamsterStateEnum hamsterState,
             bool isOnBottomLine,
             bool isOnRoof,
@@ -39,9 +39,9 @@ namespace Assets.Scripts.Bot.Perception
         public float HamsterLeftX { get; }
         public float HamsterRightX { get; }
 
-        public BotStateSnapshot WithLine(bool isOnBottomLine, bool isOnRoof)
+        public HamsterSnapshot WithLine(bool isOnBottomLine, bool isOnRoof)
         {
-            return new BotStateSnapshot(
+            return new HamsterSnapshot(
                 HamsterState,
                 isOnBottomLine,
                 isOnRoof,

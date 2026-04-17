@@ -4,14 +4,14 @@ namespace Assets.Scripts.Bot.Planning
 {
     public sealed class PlanningState
     {
-        public PlanningState(BotStateSnapshot runtimeState, int nextObstacleIndex, float projectionWorldShift)
+        public PlanningState(HamsterSnapshot runtimeState, int nextObstacleIndex, float projectionWorldShift)
         {
             RuntimeState = runtimeState;
             NextObstacleIndex = nextObstacleIndex;
             ProjectionWorldShift = projectionWorldShift;
         }
 
-        public BotStateSnapshot RuntimeState { get; }
+        public HamsterSnapshot RuntimeState { get; }
         public int NextObstacleIndex { get; }
         public float ProjectionWorldShift { get; }
         public bool IsOnBottomLine => RuntimeState.IsOnBottomLine;

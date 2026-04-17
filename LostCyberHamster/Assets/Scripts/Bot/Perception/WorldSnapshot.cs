@@ -5,7 +5,7 @@ namespace Assets.Scripts.Bot.Perception
     public sealed class WorldSnapshot
     {
         public WorldSnapshot(
-            BotStateSnapshot runtimeState,
+            HamsterSnapshot runtimeState,
             IReadOnlyList<ObstacleSnapshot> visibleObstacles,
             float screenLeftEdgeX,
             float screenRightEdgeX,
@@ -20,7 +20,7 @@ namespace Assets.Scripts.Bot.Perception
             SnapshotTime = snapshotTime;
         }
 
-        public BotStateSnapshot RuntimeState { get; }
+        public HamsterSnapshot RuntimeState { get; }
         public IReadOnlyList<ObstacleSnapshot> VisibleObstacles { get; }
         public float ScreenLeftEdgeX { get; }
         public float ScreenRightEdgeX { get; }

@@ -25,7 +25,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             if (!CanSwitchLane(planningState, targetObstacle))
                 return false;
 
-            BotStateSnapshot runtimeState = planningState.RuntimeState;
+            HamsterSnapshot runtimeState = planningState.RuntimeState;
             float latestFireShift = targetObstacle.LeftX
                 - runtimeState.HamsterRightX
                 - LatestFireSafetyMargin
@@ -53,7 +53,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
         private static bool CanSwitchLane(PlanningState planningState, ObstacleSnapshot targetObstacle)
         {
-            BotStateSnapshot runtimeState = planningState.RuntimeState;
+            HamsterSnapshot runtimeState = planningState.RuntimeState;
             if (runtimeState.IsOnRoof || runtimeState.IsDamaged || runtimeState.IsShifting)
                 return false;
 
@@ -71,7 +71,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
         private static bool TryFindLatestSafeFireShift(
             WorldSnapshot perceptionSnapshot,
-            BotStateSnapshot runtimeState,
+            HamsterSnapshot runtimeState,
             bool targetBottomLine,
             float latestFireShift,
             out float fireShift)
@@ -96,7 +96,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
         private static List<UnsafeInterval> CollectUnsafeFireIntervals(
             WorldSnapshot perceptionSnapshot,
-            BotStateSnapshot runtimeState,
+            HamsterSnapshot runtimeState,
             bool targetBottomLine,
             float latestFireShift)
         {

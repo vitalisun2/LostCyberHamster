@@ -22,7 +22,7 @@ namespace Assets.Scripts.Bot.Perception
             float visionRightEdgeX = screenRightEdgeX + halfWidth;
 
             List<ObstacleSnapshot> visibleObstacles = CollectVisibleObstacles(screenLeftEdgeX, visionRightEdgeX);
-            BotStateSnapshot runtimeState = BuildRuntimeState(hamster);
+            HamsterSnapshot runtimeState = BuildRuntimeState(hamster);
 
             return new WorldSnapshot(
                 runtimeState,
@@ -33,9 +33,9 @@ namespace Assets.Scripts.Bot.Perception
                 Time.time);
         }
 
-        private static BotStateSnapshot BuildRuntimeState(Hamster hamster)
+        private static HamsterSnapshot BuildRuntimeState(Hamster hamster)
         {
-            return new BotStateSnapshot(
+            return new HamsterSnapshot(
                 hamster.HamsterState.Value,
                 hamster.IsOnBottomLine.Value,
                 IsRoofState(hamster.HamsterState.Value),
