@@ -15,7 +15,8 @@ namespace Assets.Scripts.Bot.Execution
         private readonly IReadOnlyDictionary<BotActionKind, IActionExecutionHandler> _handlers =
             new Dictionary<BotActionKind, IActionExecutionHandler>
             {
-                { BotActionKind.Tap, new SwitchLaneActionHandler() }
+                { BotActionKind.Tap, new SwitchLaneActionHandler() },
+                { BotActionKind.Jump, new JumpActionHandler() }
             };
 
         private bool _isActionInProgress;
