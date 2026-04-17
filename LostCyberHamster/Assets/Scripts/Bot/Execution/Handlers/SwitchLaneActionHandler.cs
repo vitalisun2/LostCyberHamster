@@ -5,8 +5,14 @@ using UnityEngine;
 
 namespace Assets.Scripts.Bot.Execution.Handlers
 {
+    /// <summary>
+    /// Выполняет и отслеживает действие смены линии через одиночный tap.
+    /// </summary>
     internal sealed class SwitchLaneActionHandler : IActionExecutionHandler
     {
+        /// <summary>
+        /// Запускает смену линии, когда препятствие дошло до рассчитанной точки.
+        /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
             // Validate the planned action against the current runtime state first.
@@ -34,6 +40,9 @@ namespace Assets.Scripts.Bot.Execution.Handlers
             return ActionFireResult.Fired;
         }
 
+        /// <summary>
+        /// Проверяет, завершилась ли смена линии для текущего действия.
+        /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
             // Missing runtime state means there is nothing left to wait for.

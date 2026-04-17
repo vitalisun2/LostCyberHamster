@@ -4,12 +4,18 @@ using Assets.Scripts.Bot.PlanState;
 
 namespace Assets.Scripts.Bot.Planning
 {
+    /// <summary>
+    /// Собирает итоговый план из committed-префикса и лучшей новой ветки.
+    /// </summary>
     public sealed class PlanBuilder
     {
         private readonly PlanningGraphBuilder _graphBuilder;
         private readonly TransitionSimulator _transitionSimulator;
         private readonly PlanEvaluator _planEvaluator;
 
+        /// <summary>
+        /// Создает сборщик плана поверх генератора, симулятора и evaluator'а.
+        /// </summary>
         public PlanBuilder(
             ActionGenerator actionGenerator,
             TransitionSimulator transitionSimulator,
@@ -20,6 +26,9 @@ namespace Assets.Scripts.Bot.Planning
             _planEvaluator = planEvaluator;
         }
 
+        /// <summary>
+        /// Строит новый план по текущему snapshot мира и остаткам старого плана.
+        /// </summary>
         public BotPlan Build(WorldSnapshot worldSnapshot, BotPlan committedPlan)
         {
             if (worldSnapshot == null)

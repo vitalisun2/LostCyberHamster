@@ -4,8 +4,14 @@ using Assets.Scripts.Bot.PlanState;
 
 namespace Assets.Scripts.Bot.Planning
 {
+    /// <summary>
+    /// Выбирает лучшую planning-ветку и считает итоговый score плана.
+    /// </summary>
     public sealed class PlanEvaluator
     {
+        /// <summary>
+        /// Возвращает лучшую ветку из набора рассчитанных кандидатов.
+        /// </summary>
         public PlanningBranch SelectBest(IReadOnlyList<PlanningBranch> candidates)
         {
             if (candidates == null || candidates.Count == 0)
@@ -21,6 +27,9 @@ namespace Assets.Scripts.Bot.Planning
             return best;
         }
 
+        /// <summary>
+        /// Считает score итогового плана по последовательности действий.
+        /// </summary>
         public float Score(IReadOnlyList<PlannedAction> actions)
         {
             if (actions == null || actions.Count == 0)

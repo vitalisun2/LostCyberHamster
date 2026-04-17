@@ -2,8 +2,14 @@ using System.Collections.Generic;
 
 namespace Assets.Scripts.Bot.Perception
 {
+    /// <summary>
+    /// Объединяет состояние хомяка и видимые препятствия в один снимок мира.
+    /// </summary>
     public sealed class WorldSnapshot
     {
+        /// <summary>
+        /// Создает полный snapshot мира для planning-слоя.
+        /// </summary>
         public WorldSnapshot(
             HamsterSnapshot hamster,
             IReadOnlyList<ObstacleSnapshot> obstacles,

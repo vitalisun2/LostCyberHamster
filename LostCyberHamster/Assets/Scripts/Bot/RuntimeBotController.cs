@@ -10,6 +10,9 @@ using UnityEngine;
 
 namespace Assets.Scripts.Bot
 {
+    /// <summary>
+    /// Оркестрирует perception, planning и execution бота в рантайме.
+    /// </summary>
     public sealed class RuntimeBotController : MonoBehaviour
     {
         private const float _initRetryInterval = 0.5f;

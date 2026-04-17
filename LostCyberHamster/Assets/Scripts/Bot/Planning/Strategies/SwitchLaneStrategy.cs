@@ -5,6 +5,9 @@ using Assets.Scripts.Bot.PlanState;
 
 namespace Assets.Scripts.Bot.Planning.Strategies
 {
+    /// <summary>
+    /// Планирует смену линии перед blocking-препятствием на дороге.
+    /// </summary>
     public sealed class SwitchLaneStrategy : IPlanningStrategy
     {
         private const float SwitchLaneDecisionDuration = 0.45f;
@@ -13,8 +16,14 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         private const float LatestFireSafetyMargin = 0.05f;
         private const float FireSelectionMargin = 0.02f;
 
+        /// <summary>
+        /// Возвращает тип действия, которое планирует стратегия.
+        /// </summary>
         public BotActionKind ActionKind => BotActionKind.Tap;
 
+        /// <summary>
+        /// Пытается построить действие смены линии для текущей точки решения.
+        /// </summary>
         public bool TryGenerate(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
@@ -57,6 +66,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return true;
         }
 
+        /// <summary>
+        /// Симулирует состояние бота после успешной смены линии.
+        /// </summary>
         public PlanningState Simulate(PlanningState planningState, PlannedAction action, WorldSnapshot worldSnapshot)
         {
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)

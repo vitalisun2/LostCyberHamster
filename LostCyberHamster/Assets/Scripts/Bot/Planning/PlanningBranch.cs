@@ -4,8 +4,14 @@ using Assets.Scripts.Bot.PlanState;
 
 namespace Assets.Scripts.Bot.Planning
 {
+    /// <summary>
+    /// Представляет одну ветку дерева решений как последовательность действий.
+    /// </summary>
     public sealed class PlanningBranch
     {
+        /// <summary>
+        /// Создает ветку из списка действий и накопленных метрик.
+        /// </summary>
         public PlanningBranch(IReadOnlyList<PlannedAction> actions, PlanningBranchMetrics metrics)
         {
             Actions = actions ?? Array.Empty<PlannedAction>();
@@ -19,6 +25,9 @@ namespace Assets.Scripts.Bot.Planning
         public int ActionCount => Metrics.ActionCount;
         public float FirstTriggerX => Metrics.FirstTriggerX ?? 0f;
 
+        /// <summary>
+        /// Собирает ветку из листового узла графа планирования.
+        /// </summary>
         public static PlanningBranch FromLeaf(PlanningGraphNode leafNode)
         {
             var actions = new List<PlannedAction>(leafNode.Metrics.ActionCount);
