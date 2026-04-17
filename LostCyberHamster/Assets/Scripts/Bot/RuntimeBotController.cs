@@ -30,6 +30,9 @@ namespace Assets.Scripts.Bot
         public BotPerceptionSnapshot LastSnapshot { get; private set; }
         public BotPlan CurrentPlan => _executor.CurrentPlan;
 
+        /// <summary>
+        /// Ensures that a single runtime controller instance exists after scene load.
+        /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoAttach()
         {
@@ -43,6 +46,9 @@ namespace Assets.Scripts.Bot
             host.AddComponent<RuntimeBotController>();
         }
 
+        /// <summary>
+        /// Switches the runtime bot between enabled and disabled states.
+        /// </summary>
         public void ToggleEnabled()
         {
             if (IsEnabled)
@@ -58,18 +64,21 @@ namespace Assets.Scripts.Bot
         {
             DontDestroyOnLoad(gameObject);
 
-            _planBuilder = CreatePlanBuilder();
+            _planBuilder = new PlanBuilder(
+                new Assets.Scripts.Bot.Planning.ActionGenerator(),
+                new Assets.Scripts.Bot.Planning.TransitionSimulator(),
+                new Assets.Scripts.Bot.Planning.PlanEvaluator());
         }
 
+        /// <summary>
+        /// Runs one frame of the bot loop when runtime dependencies are ready and gameplay is active.
+        /// </summary>
         private void Update()
         {
             if (!IsEnabled)
                 return;
 
-            if (ShouldWaitForInitialization())
-                return;
-
-            if (!CanTickGameplay())
+            if (!IsReadyForTick())
                 return;
 
             TickBot();
@@ -77,7 +86,11 @@ namespace Assets.Scripts.Bot
 
         private void OnRenderObject()
         {
-            if (!TryGetRenderCamera(out Camera camera))
+            if (!IsInitialized || LastSnapshot == null || !CurrentPlan.HasActions)
+                return;
+
+            Camera camera = Camera.current;
+            if (camera == null || camera != Camera.main)
                 return;
 
             _planRenderer.Render(
@@ -106,95 +119,29 @@ namespace Assets.Scripts.Bot
         private void Disable()
         {
             IsEnabled = false;
-            ResetBotState();
-            DebugManager.DiagLog("[BotV2] Disabled");
-        }
-
-        private void TickBot()
-        {
-            if (!TryRefreshSnapshot())
-                return;
-
-            if (TryContinueCurrentAction())
-                return;
-
-            if (!TryBuildNextPlan(out BotPlan plan))
-                return;
-
-            ApplyPlanIfChanged(plan);
-        }
-
-        private static PlanBuilder CreatePlanBuilder()
-        {
-            return new PlanBuilder(
-                new Assets.Scripts.Bot.Planning.ActionGenerator(),
-                new Assets.Scripts.Bot.Planning.TransitionSimulator(),
-                new Assets.Scripts.Bot.Planning.PlanEvaluator());
-        }
-
-        private bool ShouldWaitForInitialization()
-        {
-            if (IsInitialized)
-                return false;
-
-            TryInitializeOnRetry();
-            return true;
-        }
-
-        private void TryInitializeOnRetry()
-        {
-            if (Time.time < _nextInitRetryTime)
-                return;
-
-            TryResolveRuntimeDependencies();
-            _nextInitRetryTime = Time.time + InitRetryInterval;
-        }
-
-        private bool CanTickGameplay()
-        {
-            return _gameManager.State == GameState.PLAYING
-                && _hamster.HamsterState.Value != HamsterStateEnum.Dead;
-        }
-
-        private bool TryGetRenderCamera(out Camera camera)
-        {
-            camera = Camera.current;
-            return IsInitialized
-                && LastSnapshot != null
-                && CurrentPlan.HasActions
-                && camera != null
-                && camera == Camera.main;
-        }
-
-        private void ResetBotState()
-        {
             LastSnapshot = null;
             _committedPlan.Clear();
             _executor.Clear();
+            DebugManager.DiagLog("[BotV2] Disabled");
         }
 
-        private bool TryRefreshSnapshot()
+        /// <summary>
+        /// Refreshes perception, advances the current plan, and replaces it only when a better pending plan is needed.
+        /// </summary>
+        private void TickBot()
         {
             LastSnapshot = _snapshotBuilder.Build(_hamster);
-            return LastSnapshot != null;
-        }
+            if (LastSnapshot == null)
+                return;
 
-        private bool TryContinueCurrentAction()
-        {
             _executor.Tick(_hamster);
             _committedPlan.Replace(_executor.CurrentPlan);
-            return _executor.IsActionInProgress;
-        }
 
-        private bool TryBuildNextPlan(out BotPlan plan)
-        {
-            plan = _planBuilder.Build(LastSnapshot, _committedPlan);
-            return plan.HasActions;
-        }
+            if (_executor.IsActionInProgress)
+                return;
 
-        private void ApplyPlanIfChanged(BotPlan plan)
-        {
-            if (plan.IsEquivalentTo(_executor.CurrentPlan))
+            BotPlan plan = _planBuilder.Build(LastSnapshot, _committedPlan);
+            if (!plan.HasActions || plan.IsEquivalentTo(_executor.CurrentPlan))
                 return;
 
             _committedPlan.Replace(plan);
@@ -202,6 +149,29 @@ namespace Assets.Scripts.Bot
             LogPlanActivation(plan);
         }
 
+        /// <summary>
+        /// Keeps the controller idle until scene references are resolved and gameplay is in a tickable state.
+        /// </summary>
+        private bool IsReadyForTick()
+        {
+            if (!IsInitialized)
+            {
+                if (Time.time >= _nextInitRetryTime)
+                {
+                    TryResolveRuntimeDependencies();
+                    _nextInitRetryTime = Time.time + InitRetryInterval;
+                }
+
+                return false;
+            }
+
+            return _gameManager.State == GameState.PLAYING
+                && _hamster.HamsterState.Value != HamsterStateEnum.Dead;
+        }
+
+        /// <summary>
+        /// Writes a concise diagnostic line for the newly activated plan.
+        /// </summary>
         private static void LogPlanActivation(BotPlan plan)
         {
             DebugManager.DiagLog(
@@ -210,24 +180,17 @@ namespace Assets.Scripts.Bot
                 $"head={plan.Actions[0].Description}");
         }
 
+        /// <summary>
+        /// Resolves the scene dependencies needed by the controller and lazily attaches the event tracker.
+        /// </summary>
         private void TryResolveRuntimeDependencies()
         {
-            ResolveSceneReferences();
+            _hamster = FindAnyObjectByType<Hamster>(FindObjectsInactive.Exclude);
+            _gameManager = FindAnyObjectByType<GameManager>(FindObjectsInactive.Exclude);
 
             if (!IsInitialized)
                 return;
 
-            EnsureEventTracker();
-        }
-
-        private void ResolveSceneReferences()
-        {
-            _hamster = FindAnyObjectByType<Hamster>(FindObjectsInactive.Exclude);
-            _gameManager = FindAnyObjectByType<GameManager>(FindObjectsInactive.Exclude);
-        }
-
-        private void EnsureEventTracker()
-        {
             if (_eventTracker == null)
                 _eventTracker = new RuntimeBotEventTracker(_hamster, _gameManager);
         }
