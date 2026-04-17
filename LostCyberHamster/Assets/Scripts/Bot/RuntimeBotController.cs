@@ -14,7 +14,6 @@ namespace Assets.Scripts.Bot
         private const float _initRetryInterval = 0.5f;
         private const string _hostObjectName = "[Bot]";
 
-        private readonly CommittedPlan _committedPlan = new CommittedPlan();
         private readonly SnapshotBuilder _snapshotBuilder = new SnapshotBuilder();
         private readonly PlanExecutor _executor = new PlanExecutor();
         private readonly BotPlanRenderer _planRenderer = new BotPlanRenderer();
@@ -65,9 +64,9 @@ namespace Assets.Scripts.Bot
             DontDestroyOnLoad(gameObject);
 
             _planBuilder = new PlanBuilder(
-                new Assets.Scripts.Bot.Planning.ActionGenerator(),
-                new Assets.Scripts.Bot.Planning.TransitionSimulator(),
-                new Assets.Scripts.Bot.Planning.PlanEvaluator());
+                new ActionGenerator(),
+                new TransitionSimulator(),
+                new PlanEvaluator());
         }
 
         /// <summary>
@@ -120,7 +119,6 @@ namespace Assets.Scripts.Bot
         {
             IsEnabled = false;
             LastSnapshot = null;
-            _committedPlan.Clear();
             _executor.Clear();
             DebugManager.DiagLog("[BotV2] Disabled");
         }
@@ -133,8 +131,7 @@ namespace Assets.Scripts.Bot
             if (!TryCaptureSnapshot())
                 return;
 
-            AdvanceCurrentPlan();
-            if (_executor.IsActionInProgress)
+            if (TryAdvanceCurrentPlan())
                 return;
 
             TrySetNewPlan();
@@ -166,19 +163,18 @@ namespace Assets.Scripts.Bot
             return LastSnapshot != null;
         }
 
-        private void AdvanceCurrentPlan()
+        private bool TryAdvanceCurrentPlan()
         {
             _executor.Tick(_hamster);
-            _committedPlan.Replace(_executor.CurrentPlan);
+            return _executor.IsActionInProgress;
         }
 
         private void TrySetNewPlan()
         {
-            BotPlan plan = _planBuilder.Build(LastSnapshot, _committedPlan);
+            BotPlan plan = _planBuilder.Build(LastSnapshot, _executor.CurrentPlan);
             if (!plan.HasActions || plan.IsEquivalentTo(_executor.CurrentPlan))
                 return;
 
-            _committedPlan.Replace(plan);
             _executor.SetPlan(plan);
             LogPlanActivation(plan);
         }

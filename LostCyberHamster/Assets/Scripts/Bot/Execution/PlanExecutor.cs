@@ -19,7 +19,6 @@ namespace Assets.Scripts.Bot.Execution
 
         public BotPlan CurrentPlan { get; private set; } = BotPlan.Empty();
         public bool IsActionInProgress => _isActionInProgress;
-        public bool HasPendingActions => CurrentPlan.HasActions;
 
         /// <summary>
         /// Устанавливает новый план на исполнение и сбрасывает состояние текущего действия.
@@ -33,9 +32,9 @@ namespace Assets.Scripts.Bot.Execution
         /// <summary>
         /// Очищает текущий план и возвращает executor в исходное состояние.
         /// </summary>
-        public void Clear(float committedBoundaryX = 0f)
+        public void Clear()
         {
-            CurrentPlan = BotPlan.Empty(committedBoundaryX);
+            CurrentPlan = BotPlan.Empty();
             _isActionInProgress = false;
         }
 

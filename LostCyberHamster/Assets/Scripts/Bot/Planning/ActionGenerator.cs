@@ -8,13 +8,13 @@ namespace Assets.Scripts.Bot.Planning
 {
     public sealed class ActionGenerator
     {
-        private readonly IReadOnlyList<Assets.Scripts.Bot.Planning.Strategies.IPlanningStrategy> _strategies;
+        private readonly IReadOnlyList<IPlanningStrategy> _strategies;
 
         public ActionGenerator()
         {
-            _strategies = new Assets.Scripts.Bot.Planning.Strategies.IPlanningStrategy[]
+            _strategies = new IPlanningStrategy[]
             {
-                new Assets.Scripts.Bot.Planning.Strategies.SwitchLaneStrategy()
+                new SwitchLaneStrategy()
             };
         }
 
@@ -25,6 +25,8 @@ namespace Assets.Scripts.Bot.Planning
                 return plannedActions;
 
             WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
+            ObstacleSnapshot targetObstacle = null;
+            int targetObstacleIndex = -1;
 
             for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
             {
@@ -38,13 +40,25 @@ namespace Assets.Scripts.Bot.Planning
                 if (obstacle.IsBottomLine != planningState.IsOnBottomLine)
                     continue;
 
-                for (int strategyIndex = 0; strategyIndex < _strategies.Count; strategyIndex++)
-                {
-                    if (_strategies[strategyIndex].TryGenerate(planningState, projectedWorldSnapshot, obstacle, obstacleIndex, out PlannedAction action))
-                        plannedActions.Add(action);
-                }
+                targetObstacle = obstacle;
+                targetObstacleIndex = obstacleIndex;
+                break;
+            }
 
+            if (targetObstacle == null)
                 return plannedActions;
+
+            for (int strategyIndex = 0; strategyIndex < _strategies.Count; strategyIndex++)
+            {
+                if (_strategies[strategyIndex].TryGenerate(
+                    planningState,
+                    projectedWorldSnapshot,
+                    targetObstacle,
+                    targetObstacleIndex,
+                    out PlannedAction action))
+                {
+                    plannedActions.Add(action);
+                }
             }
 
             return plannedActions;

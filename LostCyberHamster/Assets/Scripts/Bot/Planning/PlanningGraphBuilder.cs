@@ -18,11 +18,6 @@ namespace Assets.Scripts.Bot.Planning
             _transitionSimulator = transitionSimulator;
         }
 
-        public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot worldSnapshot)
-        {
-            return BuildBranches(worldSnapshot, PlanningState.FromSnapshot(worldSnapshot));
-        }
-
         public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot worldSnapshot, PlanningState rootState)
         {
             if (worldSnapshot == null || rootState == null)

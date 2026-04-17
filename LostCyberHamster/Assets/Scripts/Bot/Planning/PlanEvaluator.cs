@@ -21,16 +21,6 @@ namespace Assets.Scripts.Bot.Planning
             return best;
         }
 
-        public float Score(PlanningBranch branch)
-        {
-            if (branch == null || !branch.HasActions)
-                return 0f;
-
-            return branch.ActionCount * 100f
-                - branch.TotalEnergyCost * 10f
-                - branch.FirstTriggerX;
-        }
-
         public float Score(IReadOnlyList<PlannedAction> actions)
         {
             if (actions == null || actions.Count == 0)

@@ -39,19 +39,5 @@ namespace Assets.Scripts.Bot.Perception
         public float HamsterLeftX { get; }
         public float HamsterRightX { get; }
 
-        public HamsterSnapshot WithLine(bool isOnBottomLine, bool isOnRoof)
-        {
-            return new HamsterSnapshot(
-                HamsterState,
-                isOnBottomLine,
-                isOnRoof,
-                Energy,
-                Lives,
-                IsDamaged,
-                IsShifting,
-                RoofSupportInstanceId,
-                HamsterLeftX,
-                HamsterRightX);
-        }
     }
 }

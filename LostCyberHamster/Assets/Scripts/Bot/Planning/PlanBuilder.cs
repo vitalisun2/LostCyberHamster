@@ -20,7 +20,7 @@ namespace Assets.Scripts.Bot.Planning
             _planEvaluator = planEvaluator;
         }
 
-        public BotPlan Build(WorldSnapshot worldSnapshot, CommittedPlan committedPlan)
+        public BotPlan Build(WorldSnapshot worldSnapshot, BotPlan committedPlan)
         {
             if (worldSnapshot == null)
                 return BotPlan.Empty(committedPlan?.CommittedBoundaryX ?? 0f);
@@ -52,15 +52,15 @@ namespace Assets.Scripts.Bot.Planning
 
         private PlanningState ProjectCommittedPrefix(
             WorldSnapshot worldSnapshot,
-            CommittedPlan committedPlan,
+            BotPlan committedPlan,
             PlanningState rootState,
             List<PlannedAction> retainedActions)
         {
-            if (committedPlan?.Current == null || !committedPlan.Current.HasActions)
+            if (committedPlan == null || !committedPlan.HasActions)
                 return rootState;
 
             PlanningState currentState = rootState;
-            IReadOnlyList<PlannedAction> currentActions = committedPlan.Current.Actions;
+            IReadOnlyList<PlannedAction> currentActions = committedPlan.Actions;
 
             for (int actionIndex = 0; actionIndex < currentActions.Count; actionIndex++)
             {
@@ -85,7 +85,7 @@ namespace Assets.Scripts.Bot.Planning
                 && action.RenderWorldX <= worldSnapshot.ScreenRightEdgeX;
         }
 
-        private static float GetCommittedBoundaryX(CommittedPlan committedPlan, WorldSnapshot worldSnapshot)
+        private static float GetCommittedBoundaryX(BotPlan committedPlan, WorldSnapshot worldSnapshot)
         {
             if (committedPlan != null && committedPlan.CommittedBoundaryX > 0f)
                 return committedPlan.CommittedBoundaryX;
