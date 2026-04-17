@@ -137,7 +137,7 @@ namespace Assets.Scripts.Bot
             if (_executor.IsActionInProgress)
                 return;
 
-            TryActivateNextPlan();
+            TrySetNewPlan();
         }
 
         /// <summary>
@@ -172,7 +172,7 @@ namespace Assets.Scripts.Bot
             _committedPlan.Replace(_executor.CurrentPlan);
         }
 
-        private void TryActivateNextPlan()
+        private void TrySetNewPlan()
         {
             BotPlan plan = _planBuilder.Build(LastSnapshot, _committedPlan);
             if (!plan.HasActions || plan.IsEquivalentTo(_executor.CurrentPlan))
