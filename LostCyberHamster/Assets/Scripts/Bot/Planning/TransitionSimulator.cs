@@ -1,58 +1,59 @@
+using System;
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Planning.Strategies;
+using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Planning
 {
     public sealed class TransitionSimulator
     {
+        private readonly IReadOnlyDictionary<BotActionKind, IPlanningStrategy> _strategiesByActionKind;
+
+        public TransitionSimulator(IReadOnlyList<IPlanningStrategy> strategies)
+        {
+            var strategiesByActionKind = new Dictionary<BotActionKind, IPlanningStrategy>();
+            for (int strategyIndex = 0; strategyIndex < strategies?.Count; strategyIndex++)
+            {
+                IPlanningStrategy strategy = strategies[strategyIndex];
+                if (strategy == null)
+                    continue;
+
+                if (strategiesByActionKind.ContainsKey(strategy.ActionKind))
+                {
+                    throw new InvalidOperationException(
+                        $"Для planning-действия зарегистрировано больше одной strategy: kind={strategy.ActionKind}");
+                }
+
+                strategiesByActionKind.Add(strategy.ActionKind, strategy);
+            }
+
+            _strategiesByActionKind = strategiesByActionKind;
+        }
+
         public PlanningState Simulate(PlanningState planningState, PlannedAction action, WorldSnapshot worldSnapshot)
         {
             if (planningState == null || action == null || worldSnapshot == null)
                 return null;
 
-            HamsterSnapshot nextHamster = ApplyActionToHamster(planningState.Hamster, action);
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
-
-            int nextObstacleIndex = worldSnapshot.Obstacles.Count;
-            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                float projectedRightX = obstacle.RightX - nextProjectionWorldShift;
-                if (projectedRightX > nextHamster.HamsterLeftX)
-                {
-                    nextObstacleIndex = obstacleIndex;
-                    break;
-                }
-            }
-
-            return new PlanningState(
-                nextHamster,
-                nextObstacleIndex,
-                nextProjectionWorldShift);
+            IPlanningStrategy strategy = GetRequiredStrategy(action);
+            return strategy.Simulate(planningState, action, worldSnapshot);
         }
 
-        private static HamsterSnapshot ApplyActionToHamster(HamsterSnapshot hamster, PlannedAction action)
+        private IPlanningStrategy GetRequiredStrategy(PlannedAction action)
         {
-            // Apply line and roof changes produced by the completed action.
-            bool isOnBottomLine = action.TargetBottomLine ?? hamster.IsOnBottomLine;
-            bool isOnRoof = action.TargetBottomLine.HasValue ? false : hamster.IsOnRoof;
+            if (action == null)
+                throw new InvalidOperationException("План содержит пустое действие для planning-симуляции.");
 
-            // Keep projected resources in sync with the action cost.
-            int energy = hamster.Energy - action.EnergyCost;
-            if (energy < 0)
-                energy = 0;
+            if (_strategiesByActionKind.TryGetValue(action.Kind, out IPlanningStrategy strategy))
+                return strategy;
 
-            return new HamsterSnapshot(
-                hamster.HamsterState,
-                isOnBottomLine,
-                isOnRoof,
-                energy,
-                hamster.Lives,
-                hamster.IsDamaged,
-                isShifting: false,
-                hamster.RoofSupportInstanceId,
-                hamster.HamsterLeftX,
-                hamster.HamsterRightX);
+            string message =
+                $"Для действия бота не зарегистрирована planning-strategy: kind={action.Kind}, desc={action.Description}";
+
+            DebugManager.DiagLog($"[BotV2 PLAN] ERROR {message}");
+            throw new InvalidOperationException(message);
         }
     }
 }

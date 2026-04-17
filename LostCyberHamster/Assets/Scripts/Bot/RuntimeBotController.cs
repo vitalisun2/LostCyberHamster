@@ -1,6 +1,7 @@
 using Assets.Scripts.Bot.Execution;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.Strategies;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
@@ -62,10 +63,14 @@ namespace Assets.Scripts.Bot
         private void Awake()
         {
             DontDestroyOnLoad(gameObject);
+            IPlanningStrategy[] strategies =
+            {
+                new SwitchLaneStrategy()
+            };
 
             _planBuilder = new PlanBuilder(
-                new ActionGenerator(),
-                new TransitionSimulator(),
+                new ActionGenerator(strategies),
+                new TransitionSimulator(strategies),
                 new PlanEvaluator());
         }
 

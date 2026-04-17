@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
-using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.Bot.Planning.Strategies
 {
@@ -13,15 +13,21 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         private const float LatestFireSafetyMargin = 0.05f;
         private const float FireSelectionMargin = 0.02f;
 
+        public BotActionKind ActionKind => BotActionKind.Tap;
+
         public bool TryGenerate(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            ObstacleSnapshot targetObstacle,
-            int targetObstacleIndex,
+            DecisionPoint decisionPoint,
             out PlannedAction action)
         {
             action = null;
 
+            if (decisionPoint == null || decisionPoint.Kind != DecisionPointKind.BlockingGroundObstacle)
+                return false;
+
+            ObstacleSnapshot targetObstacle = decisionPoint.Obstacle;
+            int targetObstacleIndex = decisionPoint.ObstacleIndex;
             if (!CanSwitchLane(planningState, targetObstacle))
                 return false;
 
@@ -51,20 +57,37 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return true;
         }
 
+        public PlanningState Simulate(PlanningState planningState, PlannedAction action, WorldSnapshot worldSnapshot)
+        {
+            if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
+                return null;
+
+            HamsterSnapshot nextHamster = ApplyActionToHamster(planningState.Hamster, action);
+            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+
+            int nextObstacleIndex = worldSnapshot.Obstacles.Count;
+            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                float projectedRightX = obstacle.RightX - nextProjectionWorldShift;
+                if (projectedRightX > nextHamster.HamsterLeftX)
+                {
+                    nextObstacleIndex = obstacleIndex;
+                    break;
+                }
+            }
+
+            return new PlanningState(
+                nextHamster,
+                nextObstacleIndex,
+                nextProjectionWorldShift);
+        }
+
         private static bool CanSwitchLane(PlanningState planningState, ObstacleSnapshot targetObstacle)
         {
             HamsterSnapshot hamster = planningState.Hamster;
             if (hamster.IsOnRoof || hamster.IsDamaged || hamster.IsShifting)
                 return false;
-
-            if (targetObstacle.ObstacleType == ObstacleTypeEnum.collectableCoin
-                || targetObstacle.ObstacleType == ObstacleTypeEnum.collectableCrystal
-                || targetObstacle.ObstacleType == ObstacleTypeEnum.collectableEnergetic
-                || targetObstacle.ObstacleType == ObstacleTypeEnum.collectableLife
-                || targetObstacle.ObstacleType == ObstacleTypeEnum.collectablePizza)
-            {
-                return false;
-            }
 
             return true;
         }
@@ -105,7 +128,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                if (!IsThreat(obstacle.ObstacleType))
+                if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
                     continue;
 
                 if (obstacle.IsBottomLine != targetBottomLine)
@@ -131,16 +154,6 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return unsafeIntervals;
         }
 
-        private static bool IsThreat(ObstacleTypeEnum obstacleType)
-        {
-            return obstacleType == ObstacleTypeEnum.smallAlive
-                || obstacleType == ObstacleTypeEnum.bigAlive
-                || obstacleType == ObstacleTypeEnum.smallNotAliveRoad
-                || obstacleType == ObstacleTypeEnum.smallNotAliveRoadAndRoof
-                || obstacleType == ObstacleTypeEnum.bigNotAlive
-                || obstacleType == ObstacleTypeEnum.mediumNotAlive;
-        }
-
         private readonly struct UnsafeInterval
         {
             public UnsafeInterval(float start, float end)
@@ -151,6 +164,28 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
             public float Start { get; }
             public float End { get; }
+        }
+
+        private static HamsterSnapshot ApplyActionToHamster(HamsterSnapshot hamster, PlannedAction action)
+        {
+            bool isOnBottomLine = action.TargetBottomLine ?? hamster.IsOnBottomLine;
+            bool isOnRoof = action.TargetBottomLine.HasValue ? false : hamster.IsOnRoof;
+
+            int energy = hamster.Energy - action.EnergyCost;
+            if (energy < 0)
+                energy = 0;
+
+            return new HamsterSnapshot(
+                hamster.HamsterState,
+                isOnBottomLine,
+                isOnRoof,
+                energy,
+                hamster.Lives,
+                hamster.IsDamaged,
+                isShifting: false,
+                hamster.RoofSupportInstanceId,
+                hamster.HamsterLeftX,
+                hamster.HamsterRightX);
         }
     }
 }
