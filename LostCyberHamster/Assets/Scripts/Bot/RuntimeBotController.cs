@@ -4,6 +4,7 @@ using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.Gameplay.Enums;
 using UnityEngine;
 
 namespace Assets.Scripts.Bot
@@ -57,10 +58,7 @@ namespace Assets.Scripts.Bot
         {
             DontDestroyOnLoad(gameObject);
 
-            _planBuilder = new PlanBuilder(
-                new Assets.Scripts.Bot.Planning.ActionGenerator(),
-                new Assets.Scripts.Bot.Planning.TransitionSimulator(),
-                new Assets.Scripts.Bot.Planning.PlanEvaluator());
+            _planBuilder = CreatePlanBuilder();
         }
 
         private void Update()
@@ -68,21 +66,10 @@ namespace Assets.Scripts.Bot
             if (!IsEnabled)
                 return;
 
-            if (!IsInitialized)
-            {
-                if (Time.time >= _nextInitRetryTime)
-                {
-                    TryInit();
-                    _nextInitRetryTime = Time.time + InitRetryInterval;
-                }
-
-                return;
-            }
-
-            if (_gameManager.State != GameState.PLAYING)
+            if (ShouldWaitForInitialization())
                 return;
 
-            if (_hamster.HamsterState.Value == Gameplay.Enums.HamsterStateEnum.Dead)
+            if (!CanTickGameplay())
                 return;
 
             TickBot();
@@ -90,11 +77,7 @@ namespace Assets.Scripts.Bot
 
         private void OnRenderObject()
         {
-            if (!IsInitialized || LastSnapshot == null || !CurrentPlan.HasActions)
-                return;
-
-            Camera camera = Camera.current;
-            if (camera == null || camera != Camera.main)
+            if (!TryGetRenderCamera(out Camera camera))
                 return;
 
             _planRenderer.Render(
@@ -115,7 +98,7 @@ namespace Assets.Scripts.Bot
         {
             IsEnabled = true;
             if (!IsInitialized)
-                TryInit();
+                TryResolveRuntimeDependencies();
 
             DebugManager.DiagLog("[BotV2] Enabled");
         }
@@ -123,47 +106,128 @@ namespace Assets.Scripts.Bot
         private void Disable()
         {
             IsEnabled = false;
-            LastSnapshot = null;
-            _committedPlan.Clear();
-            _executor.Clear();
+            ResetBotState();
             DebugManager.DiagLog("[BotV2] Disabled");
         }
 
         private void TickBot()
         {
-            LastSnapshot = _snapshotBuilder.Build(_hamster);
-            if (LastSnapshot == null)
+            if (!TryRefreshSnapshot())
                 return;
 
+            if (TryContinueCurrentAction())
+                return;
+
+            if (!TryBuildNextPlan(out BotPlan plan))
+                return;
+
+            ApplyPlanIfChanged(plan);
+        }
+
+        private static PlanBuilder CreatePlanBuilder()
+        {
+            return new PlanBuilder(
+                new Assets.Scripts.Bot.Planning.ActionGenerator(),
+                new Assets.Scripts.Bot.Planning.TransitionSimulator(),
+                new Assets.Scripts.Bot.Planning.PlanEvaluator());
+        }
+
+        private bool ShouldWaitForInitialization()
+        {
+            if (IsInitialized)
+                return false;
+
+            TryInitializeOnRetry();
+            return true;
+        }
+
+        private void TryInitializeOnRetry()
+        {
+            if (Time.time < _nextInitRetryTime)
+                return;
+
+            TryResolveRuntimeDependencies();
+            _nextInitRetryTime = Time.time + InitRetryInterval;
+        }
+
+        private bool CanTickGameplay()
+        {
+            return _gameManager.State == GameState.PLAYING
+                && _hamster.HamsterState.Value != HamsterStateEnum.Dead;
+        }
+
+        private bool TryGetRenderCamera(out Camera camera)
+        {
+            camera = Camera.current;
+            return IsInitialized
+                && LastSnapshot != null
+                && CurrentPlan.HasActions
+                && camera != null
+                && camera == Camera.main;
+        }
+
+        private void ResetBotState()
+        {
+            LastSnapshot = null;
+            _committedPlan.Clear();
+            _executor.Clear();
+        }
+
+        private bool TryRefreshSnapshot()
+        {
+            LastSnapshot = _snapshotBuilder.Build(_hamster);
+            return LastSnapshot != null;
+        }
+
+        private bool TryContinueCurrentAction()
+        {
             _executor.Tick(_hamster);
             _committedPlan.Replace(_executor.CurrentPlan);
+            return _executor.IsActionInProgress;
+        }
 
-            if (_executor.IsActionInProgress)
-                return;
+        private bool TryBuildNextPlan(out BotPlan plan)
+        {
+            plan = _planBuilder.Build(LastSnapshot, _committedPlan);
+            return plan.HasActions;
+        }
 
-            BotPlan plan = _planBuilder.Build(LastSnapshot, _committedPlan);
-            if (!plan.HasActions)
-                return;
-
+        private void ApplyPlanIfChanged(BotPlan plan)
+        {
             if (plan.IsEquivalentTo(_executor.CurrentPlan))
                 return;
 
             _committedPlan.Replace(plan);
             _executor.SetPlan(plan);
+            LogPlanActivation(plan);
+        }
+
+        private static void LogPlanActivation(BotPlan plan)
+        {
             DebugManager.DiagLog(
                 $"[BotV2 PLAN] actions={plan.Actions.Count} " +
                 $"score={plan.Score:F2} boundaryX={plan.CommittedBoundaryX:F2} " +
                 $"head={plan.Actions[0].Description}");
         }
 
-        private void TryInit()
+        private void TryResolveRuntimeDependencies()
+        {
+            ResolveSceneReferences();
+
+            if (!IsInitialized)
+                return;
+
+            EnsureEventTracker();
+        }
+
+        private void ResolveSceneReferences()
         {
             _hamster = FindAnyObjectByType<Hamster>(FindObjectsInactive.Exclude);
             _gameManager = FindAnyObjectByType<GameManager>(FindObjectsInactive.Exclude);
+        }
 
-            if (_hamster == null || _gameManager == null)
-                return;
-
+        private void EnsureEventTracker()
+        {
             if (_eventTracker == null)
                 _eventTracker = new RuntimeBotEventTracker(_hamster, _gameManager);
         }
