@@ -5,18 +5,18 @@ namespace Assets.Scripts.Bot.Planning
 {
     public sealed class TransitionSimulator
     {
-        public PlanningState Simulate(PlanningState planningState, PlannedAction action, BotPerceptionSnapshot perceptionSnapshot)
+        public PlanningState Simulate(PlanningState planningState, PlannedAction action, WorldSnapshot perceptionSnapshot)
         {
             if (planningState == null || action == null || perceptionSnapshot == null)
                 return null;
 
-            RuntimeStateSnapshot nextRuntimeState = ApplyActionToRuntimeState(planningState.RuntimeState, action);
+            BotStateSnapshot nextRuntimeState = ApplyActionToRuntimeState(planningState.RuntimeState, action);
             float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
 
             int nextObstacleIndex = perceptionSnapshot.VisibleObstacles.Count;
             for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < perceptionSnapshot.VisibleObstacles.Count; obstacleIndex++)
             {
-                VisibleObstacleSnapshot obstacle = perceptionSnapshot.VisibleObstacles[obstacleIndex];
+                ObstacleSnapshot obstacle = perceptionSnapshot.VisibleObstacles[obstacleIndex];
                 float projectedRightX = obstacle.RightX - nextProjectionWorldShift;
                 if (projectedRightX > nextRuntimeState.HamsterLeftX)
                 {
@@ -31,7 +31,7 @@ namespace Assets.Scripts.Bot.Planning
                 nextProjectionWorldShift);
         }
 
-        private static RuntimeStateSnapshot ApplyActionToRuntimeState(RuntimeStateSnapshot runtimeState, PlannedAction action)
+        private static BotStateSnapshot ApplyActionToRuntimeState(BotStateSnapshot runtimeState, PlannedAction action)
         {
             // Apply line and roof changes produced by the completed action.
             bool isOnBottomLine = action.TargetBottomLine ?? runtimeState.IsOnBottomLine;
@@ -42,7 +42,7 @@ namespace Assets.Scripts.Bot.Planning
             if (energy < 0)
                 energy = 0;
 
-            return new RuntimeStateSnapshot(
+            return new BotStateSnapshot(
                 runtimeState.HamsterState,
                 isOnBottomLine,
                 isOnRoof,

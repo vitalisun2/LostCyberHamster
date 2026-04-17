@@ -27,7 +27,7 @@ namespace Assets.Scripts.Bot
 
         public bool IsEnabled { get; private set; } = true;
         public bool IsInitialized => _hamster != null && _gameManager != null;
-        public BotPerceptionSnapshot LastSnapshot { get; private set; }
+        public WorldSnapshot LastSnapshot { get; private set; }
         public BotPlan CurrentPlan => _executor.CurrentPlan;
 
         /// <summary>

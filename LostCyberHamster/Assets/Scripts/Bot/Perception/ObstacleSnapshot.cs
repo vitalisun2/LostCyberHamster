@@ -2,9 +2,9 @@ using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.Bot.Perception
 {
-    public sealed class VisibleObstacleSnapshot
+    public sealed class ObstacleSnapshot
     {
-        public VisibleObstacleSnapshot(
+        public ObstacleSnapshot(
             int instanceId,
             ObstacleTypeEnum obstacleType,
             bool isTopLine,

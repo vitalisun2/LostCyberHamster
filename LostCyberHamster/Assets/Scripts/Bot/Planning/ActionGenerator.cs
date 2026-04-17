@@ -18,17 +18,17 @@ namespace Assets.Scripts.Bot.Planning
             };
         }
 
-        public IReadOnlyList<PlannedAction> Generate(PlanningState planningState, BotPerceptionSnapshot perceptionSnapshot)
+        public IReadOnlyList<PlannedAction> Generate(PlanningState planningState, WorldSnapshot perceptionSnapshot)
         {
             var plannedActions = new List<PlannedAction>();
             if (planningState == null || perceptionSnapshot == null)
                 return plannedActions;
 
-            BotPerceptionSnapshot projectedSnapshot = PlanningSnapshotProjector.Project(perceptionSnapshot, planningState);
+            WorldSnapshot projectedSnapshot = PlanningSnapshotProjector.Project(perceptionSnapshot, planningState);
 
             for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < projectedSnapshot.VisibleObstacles.Count; obstacleIndex++)
             {
-                VisibleObstacleSnapshot obstacle = projectedSnapshot.VisibleObstacles[obstacleIndex];
+                ObstacleSnapshot obstacle = projectedSnapshot.VisibleObstacles[obstacleIndex];
                 if (obstacle.RightX <= planningState.RuntimeState.HamsterLeftX)
                     continue;
 

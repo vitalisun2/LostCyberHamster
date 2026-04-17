@@ -15,8 +15,8 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
         public bool TryGenerate(
             PlanningState planningState,
-            BotPerceptionSnapshot perceptionSnapshot,
-            VisibleObstacleSnapshot targetObstacle,
+            WorldSnapshot perceptionSnapshot,
+            ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
             out PlannedAction action)
         {
@@ -25,7 +25,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             if (!CanSwitchLane(planningState, targetObstacle))
                 return false;
 
-            RuntimeStateSnapshot runtimeState = planningState.RuntimeState;
+            BotStateSnapshot runtimeState = planningState.RuntimeState;
             float latestFireShift = targetObstacle.LeftX
                 - runtimeState.HamsterRightX
                 - LatestFireSafetyMargin
@@ -51,9 +51,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return true;
         }
 
-        private static bool CanSwitchLane(PlanningState planningState, VisibleObstacleSnapshot targetObstacle)
+        private static bool CanSwitchLane(PlanningState planningState, ObstacleSnapshot targetObstacle)
         {
-            RuntimeStateSnapshot runtimeState = planningState.RuntimeState;
+            BotStateSnapshot runtimeState = planningState.RuntimeState;
             if (runtimeState.IsOnRoof || runtimeState.IsDamaged || runtimeState.IsShifting)
                 return false;
 
@@ -70,8 +70,8 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         }
 
         private static bool TryFindLatestSafeFireShift(
-            BotPerceptionSnapshot perceptionSnapshot,
-            RuntimeStateSnapshot runtimeState,
+            WorldSnapshot perceptionSnapshot,
+            BotStateSnapshot runtimeState,
             bool targetBottomLine,
             float latestFireShift,
             out float fireShift)
@@ -95,8 +95,8 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         }
 
         private static List<UnsafeInterval> CollectUnsafeFireIntervals(
-            BotPerceptionSnapshot perceptionSnapshot,
-            RuntimeStateSnapshot runtimeState,
+            WorldSnapshot perceptionSnapshot,
+            BotStateSnapshot runtimeState,
             bool targetBottomLine,
             float latestFireShift)
         {
@@ -104,7 +104,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
             for (int obstacleIndex = 0; obstacleIndex < perceptionSnapshot.VisibleObstacles.Count; obstacleIndex++)
             {
-                VisibleObstacleSnapshot obstacle = perceptionSnapshot.VisibleObstacles[obstacleIndex];
+                ObstacleSnapshot obstacle = perceptionSnapshot.VisibleObstacles[obstacleIndex];
                 if (!IsThreat(obstacle.ObstacleType))
                     continue;
 

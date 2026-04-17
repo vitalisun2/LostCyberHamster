@@ -10,7 +10,7 @@ namespace Assets.Scripts.Bot.Perception
     {
         private const float ExtraVisionScreenFraction = 0.5f;
 
-        public BotPerceptionSnapshot Build(Hamster hamster)
+        public WorldSnapshot Build(Hamster hamster)
         {
             Camera camera = Camera.main;
             if (hamster == null || camera == null)
@@ -21,10 +21,10 @@ namespace Assets.Scripts.Bot.Perception
             float screenRightEdgeX = camera.transform.position.x + halfWidth;
             float visionRightEdgeX = screenRightEdgeX + halfWidth;
 
-            List<VisibleObstacleSnapshot> visibleObstacles = CollectVisibleObstacles(screenLeftEdgeX, visionRightEdgeX);
-            RuntimeStateSnapshot runtimeState = BuildRuntimeState(hamster);
+            List<ObstacleSnapshot> visibleObstacles = CollectVisibleObstacles(screenLeftEdgeX, visionRightEdgeX);
+            BotStateSnapshot runtimeState = BuildRuntimeState(hamster);
 
-            return new BotPerceptionSnapshot(
+            return new WorldSnapshot(
                 runtimeState,
                 visibleObstacles,
                 screenLeftEdgeX,
@@ -33,9 +33,9 @@ namespace Assets.Scripts.Bot.Perception
                 Time.time);
         }
 
-        private static RuntimeStateSnapshot BuildRuntimeState(Hamster hamster)
+        private static BotStateSnapshot BuildRuntimeState(Hamster hamster)
         {
-            return new RuntimeStateSnapshot(
+            return new BotStateSnapshot(
                 hamster.HamsterState.Value,
                 hamster.IsOnBottomLine.Value,
                 IsRoofState(hamster.HamsterState.Value),
@@ -48,9 +48,9 @@ namespace Assets.Scripts.Bot.Perception
                 hamster.RightX);
         }
 
-        private static List<VisibleObstacleSnapshot> CollectVisibleObstacles(float screenLeftEdgeX, float visionRightEdgeX)
+        private static List<ObstacleSnapshot> CollectVisibleObstacles(float screenLeftEdgeX, float visionRightEdgeX)
         {
-            var visibleObstacles = new List<VisibleObstacleSnapshot>();
+            var visibleObstacles = new List<ObstacleSnapshot>();
             ObstacleSpawner spawner = ObstacleSpawner.Instance;
             if (spawner == null)
                 return visibleObstacles;
@@ -70,7 +70,7 @@ namespace Assets.Scripts.Bot.Perception
                 if (bounds.max.x < screenLeftEdgeX || bounds.min.x > visionRightEdgeX)
                     continue;
 
-                visibleObstacles.Add(new VisibleObstacleSnapshot(
+                visibleObstacles.Add(new ObstacleSnapshot(
                     obstacle.GetInstanceID(),
                     obstacle.ObstacleType.ObstacleTypeEnum,
                     obstacle.ObstacleType.IsTop,

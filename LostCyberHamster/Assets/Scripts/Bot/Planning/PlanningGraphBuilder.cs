@@ -18,12 +18,12 @@ namespace Assets.Scripts.Bot.Planning
             _transitionSimulator = transitionSimulator;
         }
 
-        public IReadOnlyList<PlanningBranch> BuildBranches(BotPerceptionSnapshot perceptionSnapshot)
+        public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot perceptionSnapshot)
         {
             return BuildBranches(perceptionSnapshot, PlanningState.FromSnapshot(perceptionSnapshot));
         }
 
-        public IReadOnlyList<PlanningBranch> BuildBranches(BotPerceptionSnapshot perceptionSnapshot, PlanningState rootState)
+        public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot perceptionSnapshot, PlanningState rootState)
         {
             if (perceptionSnapshot == null || rootState == null)
                 return Array.Empty<PlanningBranch>();
@@ -36,7 +36,7 @@ namespace Assets.Scripts.Bot.Planning
 
         private void ExploreNode(
             PlanningGraphNode currentNode,
-            BotPerceptionSnapshot perceptionSnapshot,
+            WorldSnapshot perceptionSnapshot,
             List<PlanningBranch> branches)
         {
             // Stop expanding when the search reached the configured horizon.

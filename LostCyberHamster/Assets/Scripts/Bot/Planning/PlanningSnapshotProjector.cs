@@ -5,16 +5,16 @@ namespace Assets.Scripts.Bot.Planning
 {
     public static class PlanningSnapshotProjector
     {
-        public static BotPerceptionSnapshot Project(BotPerceptionSnapshot sourceSnapshot, PlanningState planningState)
+        public static WorldSnapshot Project(WorldSnapshot sourceSnapshot, PlanningState planningState)
         {
             if (sourceSnapshot == null || planningState == null)
                 return null;
 
-            var projectedObstacles = new List<VisibleObstacleSnapshot>(sourceSnapshot.VisibleObstacles.Count);
+            var projectedObstacles = new List<ObstacleSnapshot>(sourceSnapshot.VisibleObstacles.Count);
             for (int obstacleIndex = 0; obstacleIndex < sourceSnapshot.VisibleObstacles.Count; obstacleIndex++)
             {
-                VisibleObstacleSnapshot obstacle = sourceSnapshot.VisibleObstacles[obstacleIndex];
-                projectedObstacles.Add(new VisibleObstacleSnapshot(
+                ObstacleSnapshot obstacle = sourceSnapshot.VisibleObstacles[obstacleIndex];
+                projectedObstacles.Add(new ObstacleSnapshot(
                     obstacle.InstanceId,
                     obstacle.ObstacleType,
                     obstacle.IsTopLine,
@@ -23,7 +23,7 @@ namespace Assets.Scripts.Bot.Planning
                     obstacle.CenterX - planningState.ProjectionWorldShift));
             }
 
-            return new BotPerceptionSnapshot(
+            return new WorldSnapshot(
                 planningState.RuntimeState,
                 projectedObstacles,
                 sourceSnapshot.ScreenLeftEdgeX,

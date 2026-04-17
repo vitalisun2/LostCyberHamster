@@ -2,11 +2,11 @@ using System.Collections.Generic;
 
 namespace Assets.Scripts.Bot.Perception
 {
-    public sealed class BotPerceptionSnapshot
+    public sealed class WorldSnapshot
     {
-        public BotPerceptionSnapshot(
-            RuntimeStateSnapshot runtimeState,
-            IReadOnlyList<VisibleObstacleSnapshot> visibleObstacles,
+        public WorldSnapshot(
+            BotStateSnapshot runtimeState,
+            IReadOnlyList<ObstacleSnapshot> visibleObstacles,
             float screenLeftEdgeX,
             float screenRightEdgeX,
             float visionRightEdgeX,
@@ -20,8 +20,8 @@ namespace Assets.Scripts.Bot.Perception
             SnapshotTime = snapshotTime;
         }
 
-        public RuntimeStateSnapshot RuntimeState { get; }
-        public IReadOnlyList<VisibleObstacleSnapshot> VisibleObstacles { get; }
+        public BotStateSnapshot RuntimeState { get; }
+        public IReadOnlyList<ObstacleSnapshot> VisibleObstacles { get; }
         public float ScreenLeftEdgeX { get; }
         public float ScreenRightEdgeX { get; }
         public float VisionRightEdgeX { get; }

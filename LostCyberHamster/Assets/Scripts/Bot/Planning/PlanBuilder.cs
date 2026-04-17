@@ -20,7 +20,7 @@ namespace Assets.Scripts.Bot.Planning
             _planEvaluator = planEvaluator;
         }
 
-        public BotPlan Build(BotPerceptionSnapshot perceptionSnapshot, CommittedPlan committedPlan)
+        public BotPlan Build(WorldSnapshot perceptionSnapshot, CommittedPlan committedPlan)
         {
             if (perceptionSnapshot == null)
                 return BotPlan.Empty(committedPlan?.CommittedBoundaryX ?? 0f);
@@ -51,7 +51,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         private PlanningState ProjectCommittedPrefix(
-            BotPerceptionSnapshot perceptionSnapshot,
+            WorldSnapshot perceptionSnapshot,
             CommittedPlan committedPlan,
             PlanningState rootState,
             List<PlannedAction> retainedActions)
@@ -79,13 +79,13 @@ namespace Assets.Scripts.Bot.Planning
             return currentState;
         }
 
-        private static bool ShouldRetainAction(PlannedAction action, BotPerceptionSnapshot perceptionSnapshot)
+        private static bool ShouldRetainAction(PlannedAction action, WorldSnapshot perceptionSnapshot)
         {
             return action.RenderWorldX >= perceptionSnapshot.ScreenLeftEdgeX
                 && action.RenderWorldX <= perceptionSnapshot.ScreenRightEdgeX;
         }
 
-        private static float GetCommittedBoundaryX(CommittedPlan committedPlan, BotPerceptionSnapshot perceptionSnapshot)
+        private static float GetCommittedBoundaryX(CommittedPlan committedPlan, WorldSnapshot perceptionSnapshot)
         {
             if (committedPlan != null && committedPlan.CommittedBoundaryX > 0f)
                 return committedPlan.CommittedBoundaryX;
