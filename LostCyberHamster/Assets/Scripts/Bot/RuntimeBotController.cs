@@ -65,7 +65,8 @@ namespace Assets.Scripts.Bot
             DontDestroyOnLoad(gameObject);
             IPlanningStrategy[] strategies =
             {
-                new SwitchLaneStrategy()
+                new SwitchLaneStrategy(),
+                new JumpOverStrategy()
             };
 
             _planBuilder = new PlanBuilder(
