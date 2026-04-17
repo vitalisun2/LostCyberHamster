@@ -15,7 +15,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
         public bool TryGenerate(
             PlanningState planningState,
-            WorldSnapshot perceptionSnapshot,
+            WorldSnapshot worldSnapshot,
             ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
             out PlannedAction action)
@@ -25,15 +25,15 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             if (!CanSwitchLane(planningState, targetObstacle))
                 return false;
 
-            HamsterSnapshot runtimeState = planningState.RuntimeState;
+            HamsterSnapshot hamster = planningState.Hamster;
             float latestFireShift = targetObstacle.LeftX
-                - runtimeState.HamsterRightX
+                - hamster.HamsterRightX
                 - LatestFireSafetyMargin
                 - ExecutionLeadDistance;
             if (latestFireShift <= 0f)
                 return false;
 
-            if (!TryFindLatestSafeFireShift(perceptionSnapshot, runtimeState, !runtimeState.IsOnBottomLine, latestFireShift, out float fireShift))
+            if (!TryFindLatestSafeFireShift(worldSnapshot, hamster, !hamster.IsOnBottomLine, latestFireShift, out float fireShift))
                 return false;
 
             float triggerX = targetObstacle.LeftX - fireShift;
@@ -45,7 +45,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 completionWorldShift: fireShift + SwitchLaneDecisionTravel,
                 targetObstacleIndex,
                 targetObstacleInstanceId: targetObstacle.InstanceId,
-                targetBottomLine: !runtimeState.IsOnBottomLine,
+                targetBottomLine: !hamster.IsOnBottomLine,
                 energyCost: 0,
                 description: $"Switch lane before {targetObstacle.ObstacleType}");
             return true;
@@ -53,8 +53,8 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
         private static bool CanSwitchLane(PlanningState planningState, ObstacleSnapshot targetObstacle)
         {
-            HamsterSnapshot runtimeState = planningState.RuntimeState;
-            if (runtimeState.IsOnRoof || runtimeState.IsDamaged || runtimeState.IsShifting)
+            HamsterSnapshot hamster = planningState.Hamster;
+            if (hamster.IsOnRoof || hamster.IsDamaged || hamster.IsShifting)
                 return false;
 
             if (targetObstacle.ObstacleType == ObstacleTypeEnum.collectableCoin
@@ -70,13 +70,13 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         }
 
         private static bool TryFindLatestSafeFireShift(
-            WorldSnapshot perceptionSnapshot,
-            HamsterSnapshot runtimeState,
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
             bool targetBottomLine,
             float latestFireShift,
             out float fireShift)
         {
-            var unsafeIntervals = CollectUnsafeFireIntervals(perceptionSnapshot, runtimeState, targetBottomLine, latestFireShift);
+            var unsafeIntervals = CollectUnsafeFireIntervals(worldSnapshot, hamster, targetBottomLine, latestFireShift);
             unsafeIntervals.Sort((left, right) => left.Start.CompareTo(right.Start));
 
             float candidate = latestFireShift;
@@ -95,24 +95,24 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         }
 
         private static List<UnsafeInterval> CollectUnsafeFireIntervals(
-            WorldSnapshot perceptionSnapshot,
-            HamsterSnapshot runtimeState,
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
             bool targetBottomLine,
             float latestFireShift)
         {
             var unsafeIntervals = new List<UnsafeInterval>();
 
-            for (int obstacleIndex = 0; obstacleIndex < perceptionSnapshot.VisibleObstacles.Count; obstacleIndex++)
+            for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
-                ObstacleSnapshot obstacle = perceptionSnapshot.VisibleObstacles[obstacleIndex];
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
                 if (!IsThreat(obstacle.ObstacleType))
                     continue;
 
                 if (obstacle.IsBottomLine != targetBottomLine)
                     continue;
 
-                float overlapStart = obstacle.LeftX - runtimeState.HamsterRightX;
-                float overlapEnd = obstacle.RightX - runtimeState.HamsterLeftX;
+                float overlapStart = obstacle.LeftX - hamster.HamsterRightX;
+                float overlapEnd = obstacle.RightX - hamster.HamsterLeftX;
                 float unsafeStart = overlapStart - SwitchLaneDecisionTravel;
                 float unsafeEnd = overlapEnd;
 

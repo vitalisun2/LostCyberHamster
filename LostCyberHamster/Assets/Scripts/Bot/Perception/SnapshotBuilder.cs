@@ -21,19 +21,19 @@ namespace Assets.Scripts.Bot.Perception
             float screenRightEdgeX = camera.transform.position.x + halfWidth;
             float visionRightEdgeX = screenRightEdgeX + halfWidth;
 
-            List<ObstacleSnapshot> visibleObstacles = CollectVisibleObstacles(screenLeftEdgeX, visionRightEdgeX);
-            HamsterSnapshot runtimeState = BuildRuntimeState(hamster);
+            List<ObstacleSnapshot> obstacles = CollectObstacles(screenLeftEdgeX, visionRightEdgeX);
+            HamsterSnapshot hamsterSnapshot = BuildHamsterSnapshot(hamster);
 
             return new WorldSnapshot(
-                runtimeState,
-                visibleObstacles,
+                hamsterSnapshot,
+                obstacles,
                 screenLeftEdgeX,
                 screenRightEdgeX,
                 visionRightEdgeX,
                 Time.time);
         }
 
-        private static HamsterSnapshot BuildRuntimeState(Hamster hamster)
+        private static HamsterSnapshot BuildHamsterSnapshot(Hamster hamster)
         {
             return new HamsterSnapshot(
                 hamster.HamsterState.Value,
@@ -48,12 +48,12 @@ namespace Assets.Scripts.Bot.Perception
                 hamster.RightX);
         }
 
-        private static List<ObstacleSnapshot> CollectVisibleObstacles(float screenLeftEdgeX, float visionRightEdgeX)
+        private static List<ObstacleSnapshot> CollectObstacles(float screenLeftEdgeX, float visionRightEdgeX)
         {
-            var visibleObstacles = new List<ObstacleSnapshot>();
+            var obstacles = new List<ObstacleSnapshot>();
             ObstacleSpawner spawner = ObstacleSpawner.Instance;
             if (spawner == null)
-                return visibleObstacles;
+                return obstacles;
 
             for (int i = 0; i < spawner.SpawnedObstacles.Count; i++)
             {
@@ -70,7 +70,7 @@ namespace Assets.Scripts.Bot.Perception
                 if (bounds.max.x < screenLeftEdgeX || bounds.min.x > visionRightEdgeX)
                     continue;
 
-                visibleObstacles.Add(new ObstacleSnapshot(
+                obstacles.Add(new ObstacleSnapshot(
                     obstacle.GetInstanceID(),
                     obstacle.ObstacleType.ObstacleTypeEnum,
                     obstacle.ObstacleType.IsTop,
@@ -79,8 +79,8 @@ namespace Assets.Scripts.Bot.Perception
                     bounds.center.x));
             }
 
-            visibleObstacles.Sort((left, right) => left.LeftX.CompareTo(right.LeftX));
-            return visibleObstacles;
+            obstacles.Sort((left, right) => left.LeftX.CompareTo(right.LeftX));
+            return obstacles;
         }
 
         private static bool IsRoofState(HamsterStateEnum hamsterState)

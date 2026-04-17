@@ -10,10 +10,10 @@ namespace Assets.Scripts.Bot.Planning
             if (sourceSnapshot == null || planningState == null)
                 return null;
 
-            var projectedObstacles = new List<ObstacleSnapshot>(sourceSnapshot.VisibleObstacles.Count);
-            for (int obstacleIndex = 0; obstacleIndex < sourceSnapshot.VisibleObstacles.Count; obstacleIndex++)
+            var projectedObstacles = new List<ObstacleSnapshot>(sourceSnapshot.Obstacles.Count);
+            for (int obstacleIndex = 0; obstacleIndex < sourceSnapshot.Obstacles.Count; obstacleIndex++)
             {
-                ObstacleSnapshot obstacle = sourceSnapshot.VisibleObstacles[obstacleIndex];
+                ObstacleSnapshot obstacle = sourceSnapshot.Obstacles[obstacleIndex];
                 projectedObstacles.Add(new ObstacleSnapshot(
                     obstacle.InstanceId,
                     obstacle.ObstacleType,
@@ -24,7 +24,7 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             return new WorldSnapshot(
-                planningState.RuntimeState,
+                planningState.Hamster,
                 projectedObstacles,
                 sourceSnapshot.ScreenLeftEdgeX,
                 sourceSnapshot.ScreenRightEdgeX,

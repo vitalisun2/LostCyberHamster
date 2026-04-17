@@ -4,22 +4,22 @@ namespace Assets.Scripts.Bot.Planning
 {
     public sealed class PlanningState
     {
-        public PlanningState(HamsterSnapshot runtimeState, int nextObstacleIndex, float projectionWorldShift)
+        public PlanningState(HamsterSnapshot hamster, int nextObstacleIndex, float projectionWorldShift)
         {
-            RuntimeState = runtimeState;
+            Hamster = hamster;
             NextObstacleIndex = nextObstacleIndex;
             ProjectionWorldShift = projectionWorldShift;
         }
 
-        public HamsterSnapshot RuntimeState { get; }
+        public HamsterSnapshot Hamster { get; }
         public int NextObstacleIndex { get; }
         public float ProjectionWorldShift { get; }
-        public bool IsOnBottomLine => RuntimeState.IsOnBottomLine;
+        public bool IsOnBottomLine => Hamster.IsOnBottomLine;
 
-        public static PlanningState FromSnapshot(WorldSnapshot perceptionSnapshot)
+        public static PlanningState FromSnapshot(WorldSnapshot worldSnapshot)
         {
             return new PlanningState(
-                perceptionSnapshot.RuntimeState,
+                worldSnapshot.Hamster,
                 nextObstacleIndex: 0,
                 projectionWorldShift: 0f);
         }

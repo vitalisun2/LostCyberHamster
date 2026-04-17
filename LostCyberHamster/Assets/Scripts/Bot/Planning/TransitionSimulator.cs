@@ -5,20 +5,20 @@ namespace Assets.Scripts.Bot.Planning
 {
     public sealed class TransitionSimulator
     {
-        public PlanningState Simulate(PlanningState planningState, PlannedAction action, WorldSnapshot perceptionSnapshot)
+        public PlanningState Simulate(PlanningState planningState, PlannedAction action, WorldSnapshot worldSnapshot)
         {
-            if (planningState == null || action == null || perceptionSnapshot == null)
+            if (planningState == null || action == null || worldSnapshot == null)
                 return null;
 
-            HamsterSnapshot nextRuntimeState = ApplyActionToRuntimeState(planningState.RuntimeState, action);
+            HamsterSnapshot nextHamster = ApplyActionToHamster(planningState.Hamster, action);
             float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
 
-            int nextObstacleIndex = perceptionSnapshot.VisibleObstacles.Count;
-            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < perceptionSnapshot.VisibleObstacles.Count; obstacleIndex++)
+            int nextObstacleIndex = worldSnapshot.Obstacles.Count;
+            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
-                ObstacleSnapshot obstacle = perceptionSnapshot.VisibleObstacles[obstacleIndex];
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
                 float projectedRightX = obstacle.RightX - nextProjectionWorldShift;
-                if (projectedRightX > nextRuntimeState.HamsterLeftX)
+                if (projectedRightX > nextHamster.HamsterLeftX)
                 {
                     nextObstacleIndex = obstacleIndex;
                     break;
@@ -26,33 +26,33 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             return new PlanningState(
-                nextRuntimeState,
+                nextHamster,
                 nextObstacleIndex,
                 nextProjectionWorldShift);
         }
 
-        private static HamsterSnapshot ApplyActionToRuntimeState(HamsterSnapshot runtimeState, PlannedAction action)
+        private static HamsterSnapshot ApplyActionToHamster(HamsterSnapshot hamster, PlannedAction action)
         {
             // Apply line and roof changes produced by the completed action.
-            bool isOnBottomLine = action.TargetBottomLine ?? runtimeState.IsOnBottomLine;
-            bool isOnRoof = action.TargetBottomLine.HasValue ? false : runtimeState.IsOnRoof;
+            bool isOnBottomLine = action.TargetBottomLine ?? hamster.IsOnBottomLine;
+            bool isOnRoof = action.TargetBottomLine.HasValue ? false : hamster.IsOnRoof;
 
             // Keep projected resources in sync with the action cost.
-            int energy = runtimeState.Energy - action.EnergyCost;
+            int energy = hamster.Energy - action.EnergyCost;
             if (energy < 0)
                 energy = 0;
 
             return new HamsterSnapshot(
-                runtimeState.HamsterState,
+                hamster.HamsterState,
                 isOnBottomLine,
                 isOnRoof,
                 energy,
-                runtimeState.Lives,
-                runtimeState.IsDamaged,
+                hamster.Lives,
+                hamster.IsDamaged,
                 isShifting: false,
-                runtimeState.RoofSupportInstanceId,
-                runtimeState.HamsterLeftX,
-                runtimeState.HamsterRightX);
+                hamster.RoofSupportInstanceId,
+                hamster.HamsterLeftX,
+                hamster.HamsterRightX);
         }
     }
 }

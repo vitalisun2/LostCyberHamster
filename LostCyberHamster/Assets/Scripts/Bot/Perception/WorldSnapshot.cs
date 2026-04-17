@@ -5,23 +5,23 @@ namespace Assets.Scripts.Bot.Perception
     public sealed class WorldSnapshot
     {
         public WorldSnapshot(
-            HamsterSnapshot runtimeState,
-            IReadOnlyList<ObstacleSnapshot> visibleObstacles,
+            HamsterSnapshot hamster,
+            IReadOnlyList<ObstacleSnapshot> obstacles,
             float screenLeftEdgeX,
             float screenRightEdgeX,
             float visionRightEdgeX,
             float snapshotTime)
         {
-            RuntimeState = runtimeState;
-            VisibleObstacles = visibleObstacles;
+            Hamster = hamster;
+            Obstacles = obstacles;
             ScreenLeftEdgeX = screenLeftEdgeX;
             ScreenRightEdgeX = screenRightEdgeX;
             VisionRightEdgeX = visionRightEdgeX;
             SnapshotTime = snapshotTime;
         }
 
-        public HamsterSnapshot RuntimeState { get; }
-        public IReadOnlyList<ObstacleSnapshot> VisibleObstacles { get; }
+        public HamsterSnapshot Hamster { get; }
+        public IReadOnlyList<ObstacleSnapshot> Obstacles { get; }
         public float ScreenLeftEdgeX { get; }
         public float ScreenRightEdgeX { get; }
         public float VisionRightEdgeX { get; }

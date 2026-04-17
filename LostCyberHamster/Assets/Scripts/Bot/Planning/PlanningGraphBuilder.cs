@@ -18,25 +18,25 @@ namespace Assets.Scripts.Bot.Planning
             _transitionSimulator = transitionSimulator;
         }
 
-        public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot perceptionSnapshot)
+        public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot worldSnapshot)
         {
-            return BuildBranches(perceptionSnapshot, PlanningState.FromSnapshot(perceptionSnapshot));
+            return BuildBranches(worldSnapshot, PlanningState.FromSnapshot(worldSnapshot));
         }
 
-        public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot perceptionSnapshot, PlanningState rootState)
+        public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot worldSnapshot, PlanningState rootState)
         {
-            if (perceptionSnapshot == null || rootState == null)
+            if (worldSnapshot == null || rootState == null)
                 return Array.Empty<PlanningBranch>();
 
             var branches = new List<PlanningBranch>();
             PlanningGraphNode rootNode = PlanningGraphNode.CreateRoot(rootState);
-            ExploreNode(rootNode, perceptionSnapshot, branches);
+            ExploreNode(rootNode, worldSnapshot, branches);
             return branches;
         }
 
         private void ExploreNode(
             PlanningGraphNode currentNode,
-            WorldSnapshot perceptionSnapshot,
+            WorldSnapshot worldSnapshot,
             List<PlanningBranch> branches)
         {
             // Stop expanding when the search reached the configured horizon.
@@ -47,7 +47,7 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             // Expand all action variants available from the current projected state.
-            IReadOnlyList<PlannedAction> candidates = _actionGenerator.Generate(currentNode.State, perceptionSnapshot);
+            IReadOnlyList<PlannedAction> candidates = _actionGenerator.Generate(currentNode.State, worldSnapshot);
             if (candidates.Count == 0)
             {
                 AddLeafBranch(currentNode, branches);
@@ -61,11 +61,11 @@ namespace Assets.Scripts.Bot.Planning
                 if (candidate == null)
                     continue;
 
-                PlanningState nextState = _transitionSimulator.Simulate(currentNode.State, candidate, perceptionSnapshot);
+                PlanningState nextState = _transitionSimulator.Simulate(currentNode.State, candidate, worldSnapshot);
                 if (nextState == null || CreatesAncestorCycle(currentNode, nextState))
                     continue;
 
-                ExploreNode(currentNode.CreateChild(nextState, candidate), perceptionSnapshot, branches);
+                ExploreNode(currentNode.CreateChild(nextState, candidate), worldSnapshot, branches);
                 expandedAnyChild = true;
             }
 

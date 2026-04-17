@@ -75,12 +75,12 @@ namespace Assets.Scripts.Bot
             WorldSnapshot snapshot,
             out float renderWorldX)
         {
-            float hamsterCenterX = (snapshot.RuntimeState.HamsterLeftX + snapshot.RuntimeState.HamsterRightX) * 0.5f;
+            float hamsterCenterX = (snapshot.Hamster.HamsterLeftX + snapshot.Hamster.HamsterRightX) * 0.5f;
             if (action.TargetObstacleInstanceId.HasValue)
             {
-                for (int obstacleIndex = 0; obstacleIndex < snapshot.VisibleObstacles.Count; obstacleIndex++)
+                for (int obstacleIndex = 0; obstacleIndex < snapshot.Obstacles.Count; obstacleIndex++)
                 {
-                    ObstacleSnapshot obstacle = snapshot.VisibleObstacles[obstacleIndex];
+                    ObstacleSnapshot obstacle = snapshot.Obstacles[obstacleIndex];
                     if (obstacle.InstanceId != action.TargetObstacleInstanceId.Value)
                         continue;
 

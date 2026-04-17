@@ -20,21 +20,21 @@ namespace Assets.Scripts.Bot.Planning
             _planEvaluator = planEvaluator;
         }
 
-        public BotPlan Build(WorldSnapshot perceptionSnapshot, CommittedPlan committedPlan)
+        public BotPlan Build(WorldSnapshot worldSnapshot, CommittedPlan committedPlan)
         {
-            if (perceptionSnapshot == null)
+            if (worldSnapshot == null)
                 return BotPlan.Empty(committedPlan?.CommittedBoundaryX ?? 0f);
 
             var actions = new List<PlannedAction>();
-            PlanningState rootState = PlanningState.FromSnapshot(perceptionSnapshot);
+            PlanningState rootState = PlanningState.FromSnapshot(worldSnapshot);
             PlanningState tailRootState = ProjectCommittedPrefix(
-                perceptionSnapshot,
+                worldSnapshot,
                 committedPlan,
                 rootState,
                 actions);
 
             // Expand only the tail beyond the committed prefix.
-            IReadOnlyList<PlanningBranch> branches = _graphBuilder.BuildBranches(perceptionSnapshot, tailRootState);
+            IReadOnlyList<PlanningBranch> branches = _graphBuilder.BuildBranches(worldSnapshot, tailRootState);
             PlanningBranch bestBranch = _planEvaluator.SelectBest(branches);
 
             if (bestBranch != null && bestBranch.HasActions)
@@ -44,14 +44,14 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             if (actions.Count == 0)
-                return BotPlan.Empty(GetCommittedBoundaryX(committedPlan, perceptionSnapshot));
+                return BotPlan.Empty(GetCommittedBoundaryX(committedPlan, worldSnapshot));
 
             float score = _planEvaluator.Score(actions);
-            return new BotPlan(actions, perceptionSnapshot.ScreenRightEdgeX, score);
+            return new BotPlan(actions, worldSnapshot.ScreenRightEdgeX, score);
         }
 
         private PlanningState ProjectCommittedPrefix(
-            WorldSnapshot perceptionSnapshot,
+            WorldSnapshot worldSnapshot,
             CommittedPlan committedPlan,
             PlanningState rootState,
             List<PlannedAction> retainedActions)
@@ -65,10 +65,10 @@ namespace Assets.Scripts.Bot.Planning
             for (int actionIndex = 0; actionIndex < currentActions.Count; actionIndex++)
             {
                 PlannedAction action = currentActions[actionIndex];
-                if (!ShouldRetainAction(action, perceptionSnapshot))
+                if (!ShouldRetainAction(action, worldSnapshot))
                     break;
 
-                PlanningState nextState = _transitionSimulator.Simulate(currentState, action, perceptionSnapshot);
+                PlanningState nextState = _transitionSimulator.Simulate(currentState, action, worldSnapshot);
                 if (nextState == null)
                     break;
 
@@ -79,18 +79,18 @@ namespace Assets.Scripts.Bot.Planning
             return currentState;
         }
 
-        private static bool ShouldRetainAction(PlannedAction action, WorldSnapshot perceptionSnapshot)
+        private static bool ShouldRetainAction(PlannedAction action, WorldSnapshot worldSnapshot)
         {
-            return action.RenderWorldX >= perceptionSnapshot.ScreenLeftEdgeX
-                && action.RenderWorldX <= perceptionSnapshot.ScreenRightEdgeX;
+            return action.RenderWorldX >= worldSnapshot.ScreenLeftEdgeX
+                && action.RenderWorldX <= worldSnapshot.ScreenRightEdgeX;
         }
 
-        private static float GetCommittedBoundaryX(CommittedPlan committedPlan, WorldSnapshot perceptionSnapshot)
+        private static float GetCommittedBoundaryX(CommittedPlan committedPlan, WorldSnapshot worldSnapshot)
         {
             if (committedPlan != null && committedPlan.CommittedBoundaryX > 0f)
                 return committedPlan.CommittedBoundaryX;
 
-            return perceptionSnapshot != null ? perceptionSnapshot.ScreenRightEdgeX : 0f;
+            return worldSnapshot != null ? worldSnapshot.ScreenRightEdgeX : 0f;
         }
     }
 }

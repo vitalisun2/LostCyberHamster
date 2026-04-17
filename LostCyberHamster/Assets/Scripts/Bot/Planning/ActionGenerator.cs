@@ -18,18 +18,18 @@ namespace Assets.Scripts.Bot.Planning
             };
         }
 
-        public IReadOnlyList<PlannedAction> Generate(PlanningState planningState, WorldSnapshot perceptionSnapshot)
+        public IReadOnlyList<PlannedAction> Generate(PlanningState planningState, WorldSnapshot worldSnapshot)
         {
             var plannedActions = new List<PlannedAction>();
-            if (planningState == null || perceptionSnapshot == null)
+            if (planningState == null || worldSnapshot == null)
                 return plannedActions;
 
-            WorldSnapshot projectedSnapshot = PlanningSnapshotProjector.Project(perceptionSnapshot, planningState);
+            WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
 
-            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < projectedSnapshot.VisibleObstacles.Count; obstacleIndex++)
+            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
             {
-                ObstacleSnapshot obstacle = projectedSnapshot.VisibleObstacles[obstacleIndex];
-                if (obstacle.RightX <= planningState.RuntimeState.HamsterLeftX)
+                ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.RightX <= planningState.Hamster.HamsterLeftX)
                     continue;
 
                 if (!IsThreat(obstacle.ObstacleType))
@@ -40,7 +40,7 @@ namespace Assets.Scripts.Bot.Planning
 
                 for (int strategyIndex = 0; strategyIndex < _strategies.Count; strategyIndex++)
                 {
-                    if (_strategies[strategyIndex].TryGenerate(planningState, projectedSnapshot, obstacle, obstacleIndex, out PlannedAction action))
+                    if (_strategies[strategyIndex].TryGenerate(planningState, projectedWorldSnapshot, obstacle, obstacleIndex, out PlannedAction action))
                         plannedActions.Add(action);
                 }
 

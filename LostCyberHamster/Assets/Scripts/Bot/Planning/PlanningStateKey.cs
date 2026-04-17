@@ -45,13 +45,13 @@ namespace Assets.Scripts.Bot.Planning
                 MidpointRounding.AwayFromZero);
             return new PlanningStateKey(
                 planningState.NextObstacleIndex,
-                (int)planningState.RuntimeState.HamsterState,
-                planningState.RuntimeState.IsOnBottomLine,
-                planningState.RuntimeState.IsOnRoof,
-                planningState.RuntimeState.Energy,
-                planningState.RuntimeState.Lives,
-                planningState.RuntimeState.IsDamaged,
-                planningState.RuntimeState.IsShifting,
+                (int)planningState.Hamster.HamsterState,
+                planningState.Hamster.IsOnBottomLine,
+                planningState.Hamster.IsOnRoof,
+                planningState.Hamster.Energy,
+                planningState.Hamster.Lives,
+                planningState.Hamster.IsDamaged,
+                planningState.Hamster.IsShifting,
                 projectionBucket);
         }
 

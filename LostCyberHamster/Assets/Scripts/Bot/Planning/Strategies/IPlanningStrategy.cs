@@ -7,7 +7,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
     {
         bool TryGenerate(
             PlanningState planningState,
-            WorldSnapshot perceptionSnapshot,
+            WorldSnapshot worldSnapshot,
             ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
             out PlannedAction action);
