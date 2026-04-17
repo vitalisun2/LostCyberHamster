@@ -12,9 +12,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly ShiftTransformAnimatorController _shiftTransformAnimatorController;
         private readonly AtomicVariable<HamsterStateEnum> _hamsterState;
         private readonly AtomicVariable<bool> _isShifting;
-    private readonly AtomicVariable<bool> _isDamaged;
+        private readonly AtomicVariable<bool> _isDamaged;
 
-    private static readonly ProfilerMarker s_TapLogicMarker = new ProfilerMarker("TapLogic");
+        private static readonly ProfilerMarker s_TapLogicMarker = new ProfilerMarker("TapLogic");
 
         public TapMechanics(AtomicEvent tapRequest, AtomicVariable<bool> isOnBottomLine,
             ShiftTransformAnimatorController shiftTransformAnimatorController,
@@ -59,6 +59,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 _shiftTransformAnimatorController.ToggleLane();
                 _isOnBottomLine.Value = _shiftTransformAnimatorController.IsShiftedDown();
+                _isShifting.Value = _shiftTransformAnimatorController.IsShifting();
             }
         }
 

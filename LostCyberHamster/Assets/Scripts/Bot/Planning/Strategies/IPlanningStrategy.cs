@@ -1,6 +1,7 @@
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using System.Collections.Generic;
 
 namespace Assets.Scripts.Bot.Planning.Strategies
 {
@@ -15,13 +16,13 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         BotActionKind ActionKind { get; }
 
         /// <summary>
-        /// Пытается сгенерировать действие для текущей точки решения.
+        /// Добавляет все релевантные кандидаты действий для текущей точки решения.
         /// </summary>
-        bool TryGenerate(
+        void CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             DecisionPoint decisionPoint,
-            out PlannedAction action);
+            List<PlannedAction> actions);
 
         /// <summary>
         /// Симулирует planning-результат успешного выполнения действия.

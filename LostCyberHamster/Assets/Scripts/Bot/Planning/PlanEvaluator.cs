@@ -36,11 +36,17 @@ namespace Assets.Scripts.Bot.Planning
                 return 0f;
 
             int totalEnergyCost = 0;
+            int tapCount = 0;
             for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
+            {
                 totalEnergyCost += actions[actionIndex].EnergyCost;
+                if (actions[actionIndex].Kind == BotActionKind.Tap)
+                    tapCount++;
+            }
 
-            return actions.Count * 100f
-                - totalEnergyCost * 10f
+            return 1000f
+                - totalEnergyCost * 100f
+                - tapCount * 10f
                 - actions[0].TriggerX;
         }
 
@@ -59,7 +65,15 @@ namespace Assets.Scripts.Bot.Planning
             if (compare != 0)
                 return compare;
 
-            compare = right.ActionCount.CompareTo(left.ActionCount);
+            compare = left.TapCount.CompareTo(right.TapCount);
+            if (compare != 0)
+                return compare;
+
+            compare = right.FinalNextObstacleIndex.CompareTo(left.FinalNextObstacleIndex);
+            if (compare != 0)
+                return compare;
+
+            compare = right.FinalProjectionWorldShift.CompareTo(left.FinalProjectionWorldShift);
             if (compare != 0)
                 return compare;
 

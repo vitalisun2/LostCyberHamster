@@ -12,16 +12,25 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Создает ветку из списка действий и накопленных метрик.
         /// </summary>
-        public PlanningBranch(IReadOnlyList<PlannedAction> actions, PlanningBranchMetrics metrics)
+        public PlanningBranch(
+            IReadOnlyList<PlannedAction> actions,
+            PlanningBranchMetrics metrics,
+            int finalNextObstacleIndex,
+            float finalProjectionWorldShift)
         {
             Actions = actions ?? Array.Empty<PlannedAction>();
             Metrics = metrics ?? PlanningBranchMetrics.Empty;
+            FinalNextObstacleIndex = finalNextObstacleIndex;
+            FinalProjectionWorldShift = finalProjectionWorldShift;
         }
 
         public IReadOnlyList<PlannedAction> Actions { get; }
         public PlanningBranchMetrics Metrics { get; }
+        public int FinalNextObstacleIndex { get; }
+        public float FinalProjectionWorldShift { get; }
         public bool HasActions => Actions.Count > 0;
         public int TotalEnergyCost => Metrics.TotalEnergyCost;
+        public int TapCount => Metrics.TapCount;
         public int ActionCount => Metrics.ActionCount;
         public float FirstTriggerX => Metrics.FirstTriggerX ?? 0f;
 
@@ -35,7 +44,11 @@ namespace Assets.Scripts.Bot.Planning
                 actions.Add(current.IncomingAction);
 
             actions.Reverse();
-            return new PlanningBranch(actions, leafNode.Metrics);
+            return new PlanningBranch(
+                actions,
+                leafNode.Metrics,
+                leafNode.State.NextObstacleIndex,
+                leafNode.State.ProjectionWorldShift);
         }
     }
 }

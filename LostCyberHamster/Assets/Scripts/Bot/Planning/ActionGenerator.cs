@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning.Strategies;
+using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -33,21 +34,54 @@ namespace Assets.Scripts.Bot.Planning
 
             WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
             if (!_decisionPointDetector.TryDetect(planningState, projectedWorldSnapshot, out DecisionPoint decisionPoint))
+            {
+                LogNoDecisionPoint(planningState, projectedWorldSnapshot);
                 return plannedActions;
+            }
 
             for (int strategyIndex = 0; strategyIndex < _strategies.Count; strategyIndex++)
             {
-                if (_strategies[strategyIndex].TryGenerate(
+                _strategies[strategyIndex].CollectActions(
                     planningState,
                     projectedWorldSnapshot,
                     decisionPoint,
-                    out PlannedAction action))
-                {
-                    plannedActions.Add(action);
-                }
+                    plannedActions);
+            }
+
+            if (plannedActions.Count == 0)
+            {
+                DebugManager.DiagLog(
+                    $"[BotV2 PLAN] NO_ACTIONS obstacle={decisionPoint.Obstacle.ObstacleType} " +
+                    $"leftX={decisionPoint.Obstacle.LeftX:F2} rightX={decisionPoint.Obstacle.RightX:F2} " +
+                    $"lane={(decisionPoint.Obstacle.IsBottomLine ? "bottom" : "top")} " +
+                    $"projection={planningState.ProjectionWorldShift:F2} " +
+                    $"hamsterLane={(planningState.IsOnBottomLine ? "bottom" : "top")}");
             }
 
             return plannedActions;
+        }
+
+        private static void LogNoDecisionPoint(PlanningState planningState, WorldSnapshot projectedWorldSnapshot)
+        {
+            if (planningState == null || projectedWorldSnapshot == null)
+                return;
+
+            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.RightX <= planningState.Hamster.HamsterLeftX)
+                    continue;
+
+                if (obstacle.IsBottomLine != planningState.IsOnBottomLine)
+                    continue;
+
+                DebugManager.DiagLog(
+                    $"[BotV2 PLAN] NO_DECISION nextSameLane={obstacle.ObstacleType} " +
+                    $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2} " +
+                    $"lane={(obstacle.IsBottomLine ? "bottom" : "top")} " +
+                    $"projection={planningState.ProjectionWorldShift:F2}");
+                return;
+            }
         }
     }
 }

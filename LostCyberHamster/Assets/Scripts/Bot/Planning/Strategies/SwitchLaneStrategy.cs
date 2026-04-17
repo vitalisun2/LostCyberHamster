@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using UnityEngine;
 
 namespace Assets.Scripts.Bot.Planning.Strategies
 {
@@ -22,23 +23,24 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         public BotActionKind ActionKind => BotActionKind.Tap;
 
         /// <summary>
-        /// Пытается построить действие смены линии для текущей точки решения.
+        /// Добавляет кандидаты смены линии для текущей точки решения.
         /// </summary>
-        public bool TryGenerate(
+        public void CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             DecisionPoint decisionPoint,
-            out PlannedAction action)
+            List<PlannedAction> actions)
         {
-            action = null;
+            if (actions == null)
+                return;
 
             if (decisionPoint == null || decisionPoint.Kind != DecisionPointKind.BlockingGroundObstacle)
-                return false;
+                return;
 
             ObstacleSnapshot targetObstacle = decisionPoint.Obstacle;
             int targetObstacleIndex = decisionPoint.ObstacleIndex;
             if (!CanSwitchLane(planningState, targetObstacle))
-                return false;
+                return;
 
             HamsterSnapshot hamster = planningState.Hamster;
             float latestFireShift = targetObstacle.LeftX
@@ -46,24 +48,46 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 - LatestFireSafetyMargin
                 - ExecutionLeadDistance;
             if (latestFireShift <= 0f)
-                return false;
+                return;
 
-            if (!TryFindLatestSafeFireShift(worldSnapshot, hamster, !hamster.IsOnBottomLine, latestFireShift, out float fireShift))
-                return false;
+            List<SafeInterval> safeIntervals = CollectSafeFireIntervals(
+                worldSnapshot,
+                hamster,
+                !hamster.IsOnBottomLine,
+                latestFireShift);
+            for (int intervalIndex = 0; intervalIndex < safeIntervals.Count; intervalIndex++)
+            {
+                SafeInterval interval = safeIntervals[intervalIndex];
+                AddTapCandidate(actions, planningState, targetObstacle, targetObstacleIndex, interval.Start);
+
+                if (Mathf.Abs(interval.End - interval.Start) > FireSelectionMargin)
+                    AddTapCandidate(actions, planningState, targetObstacle, targetObstacleIndex, interval.End);
+            }
+        }
+
+        private static void AddTapCandidate(
+            List<PlannedAction> actions,
+            PlanningState planningState,
+            ObstacleSnapshot targetObstacle,
+            int targetObstacleIndex,
+            float fireShift)
+        {
+            if (actions == null || planningState == null || targetObstacle == null)
+                return;
 
             float triggerX = targetObstacle.LeftX - fireShift;
             float renderWorldX = triggerX + planningState.ProjectionWorldShift;
-            action = new PlannedAction(
+            actions.Add(new PlannedAction(
                 BotActionKind.Tap,
                 triggerX,
                 renderWorldX,
                 completionWorldShift: fireShift + SwitchLaneDecisionTravel,
+                postFireWorldShift: SwitchLaneDecisionTravel,
                 targetObstacleIndex,
                 targetObstacleInstanceId: targetObstacle.InstanceId,
-                targetBottomLine: !hamster.IsOnBottomLine,
+                targetBottomLine: !planningState.IsOnBottomLine,
                 energyCost: 0,
-                description: $"Switch lane before {targetObstacle.ObstacleType}");
-            return true;
+                description: $"Switch lane before {targetObstacle.ObstacleType}"));
         }
 
         /// <summary>
@@ -104,29 +128,35 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return true;
         }
 
-        private static bool TryFindLatestSafeFireShift(
+        private static List<SafeInterval> CollectSafeFireIntervals(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
-            float latestFireShift,
-            out float fireShift)
+            float latestFireShift)
         {
             var unsafeIntervals = CollectUnsafeFireIntervals(worldSnapshot, hamster, targetBottomLine, latestFireShift);
             unsafeIntervals.Sort((left, right) => left.Start.CompareTo(right.Start));
 
-            float candidate = latestFireShift;
-            for (int intervalIndex = unsafeIntervals.Count - 1; intervalIndex >= 0; intervalIndex--)
+            var safeIntervals = new List<SafeInterval>();
+            float safeStart = 0f;
+            for (int intervalIndex = 0; intervalIndex < unsafeIntervals.Count; intervalIndex++)
             {
                 UnsafeInterval interval = unsafeIntervals[intervalIndex];
-                if (candidate > interval.End)
+                if (interval.End < safeStart)
                     continue;
 
-                if (candidate >= interval.Start)
-                    candidate = interval.Start - FireSelectionMargin;
+                float safeEnd = interval.Start - FireSelectionMargin;
+                if (safeEnd >= safeStart)
+                    safeIntervals.Add(new SafeInterval(safeStart, safeEnd));
+
+                if (interval.End + FireSelectionMargin > safeStart)
+                    safeStart = interval.End + FireSelectionMargin;
             }
 
-            fireShift = candidate;
-            return fireShift >= 0f;
+            if (safeStart <= latestFireShift)
+                safeIntervals.Add(new SafeInterval(safeStart, latestFireShift));
+
+            return safeIntervals;
         }
 
         private static List<UnsafeInterval> CollectUnsafeFireIntervals(
@@ -178,10 +208,22 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             public float End { get; }
         }
 
+        private readonly struct SafeInterval
+        {
+            public SafeInterval(float start, float end)
+            {
+                Start = start;
+                End = end;
+            }
+
+            public float Start { get; }
+            public float End { get; }
+        }
+
         private static HamsterSnapshot ApplyActionToHamster(HamsterSnapshot hamster, PlannedAction action)
         {
-            bool isOnBottomLine = action.TargetBottomLine ?? hamster.IsOnBottomLine;
             bool isOnRoof = action.TargetBottomLine.HasValue ? false : hamster.IsOnRoof;
+            bool targetBottomLine = action.TargetBottomLine ?? hamster.IsOnBottomLine;
 
             int energy = hamster.Energy - action.EnergyCost;
             if (energy < 0)
@@ -189,7 +231,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
             return new HamsterSnapshot(
                 hamster.HamsterState,
-                isOnBottomLine,
+                targetBottomLine,
                 isOnRoof,
                 energy,
                 hamster.Lives,

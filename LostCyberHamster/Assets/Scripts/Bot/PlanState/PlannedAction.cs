@@ -17,6 +17,7 @@ namespace Assets.Scripts.Bot.PlanState
             float triggerX,
             float renderWorldX,
             float completionWorldShift,
+            float postFireWorldShift,
             int targetObstacleIndex,
             int? targetObstacleInstanceId = null,
             bool? targetBottomLine = null,
@@ -27,6 +28,7 @@ namespace Assets.Scripts.Bot.PlanState
             TriggerX = triggerX;
             RenderWorldX = renderWorldX;
             CompletionWorldShift = completionWorldShift;
+            PostFireWorldShift = postFireWorldShift;
             TargetObstacleIndex = targetObstacleIndex;
             TargetObstacleInstanceId = targetObstacleInstanceId;
             TargetBottomLine = targetBottomLine;
@@ -38,6 +40,7 @@ namespace Assets.Scripts.Bot.PlanState
         public float TriggerX { get; }
         public float RenderWorldX { get; }
         public float CompletionWorldShift { get; }
+        public float PostFireWorldShift { get; }
         public int TargetObstacleIndex { get; }
         public int? TargetObstacleInstanceId { get; }
         public bool? TargetBottomLine { get; }
@@ -59,6 +62,7 @@ namespace Assets.Scripts.Bot.PlanState
                 && Math.Abs(TriggerX - other.TriggerX) <= EqualityEpsilon
                 && Math.Abs(RenderWorldX - other.RenderWorldX) <= EqualityEpsilon
                 && Math.Abs(CompletionWorldShift - other.CompletionWorldShift) <= EqualityEpsilon
+                && Math.Abs(PostFireWorldShift - other.PostFireWorldShift) <= EqualityEpsilon
                 && TargetObstacleIndex == other.TargetObstacleIndex
                 && TargetObstacleInstanceId == other.TargetObstacleInstanceId
                 && TargetBottomLine == other.TargetBottomLine

@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay.Enums;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Assets.Scripts.Bot.Planning.Strategies
@@ -22,26 +23,27 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         public BotActionKind ActionKind => BotActionKind.Jump;
 
         /// <summary>
-        /// Пытается построить действие прыжка для текущего blocking ground obstacle.
+        /// Добавляет кандидата прыжка для текущего blocking ground obstacle.
         /// </summary>
-        public bool TryGenerate(
+        public void CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             DecisionPoint decisionPoint,
-            out PlannedAction action)
+            List<PlannedAction> actions)
         {
-            action = null;
+            if (actions == null)
+                return;
 
             // В v1 стратегия работает только с обязательным наземным препятствием впереди.
             if (decisionPoint == null || decisionPoint.Kind != DecisionPointKind.BlockingGroundObstacle)
-                return false;
+                return;
 
             ObstacleSnapshot targetObstacle = decisionPoint.Obstacle;
             if (!CanJumpOver(planningState, targetObstacle))
-                return false;
+                return;
 
             if (!TryGetJumpTravel(out float jumpTravel))
-                return false;
+                return;
 
             // Выбираем окно fire так, чтобы к концу jump-клипа obstacle уже осталось позади хомяка.
             HamsterSnapshot hamster = planningState.Hamster;
@@ -51,23 +53,23 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 targetObstacle.LeftX - hamster.HamsterRightX - LatestFireSafetyMargin;
 
             if (latestFireShift < 0f || earliestFireShift > latestFireShift)
-                return false;
+                return;
 
-            float fireShift = Mathf.Max(0f, latestFireShift);
+            float fireShift = Mathf.Max(0f, earliestFireShift);
             float triggerX = targetObstacle.LeftX - fireShift;
             float renderWorldX = triggerX + planningState.ProjectionWorldShift;
 
-            action = new PlannedAction(
+            actions.Add(new PlannedAction(
                 BotActionKind.Jump,
                 triggerX,
                 renderWorldX,
                 completionWorldShift: fireShift + jumpTravel,
+                postFireWorldShift: jumpTravel,
                 targetObstacleIndex: decisionPoint.ObstacleIndex,
                 targetObstacleInstanceId: targetObstacle.InstanceId,
                 targetBottomLine: null,
                 energyCost: JumpEnergyCost,
-                description: $"Jump over {targetObstacle.ObstacleType}");
-            return true;
+                description: $"Jump over {targetObstacle.ObstacleType}"));
         }
 
         /// <summary>

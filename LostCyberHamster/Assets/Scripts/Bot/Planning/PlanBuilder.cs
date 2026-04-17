@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -29,7 +30,7 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Строит новый план по текущему snapshot мира и остаткам старого плана.
         /// </summary>
-        public BotPlan Build(WorldSnapshot worldSnapshot, BotPlan committedPlan)
+        public BotPlan Build(WorldSnapshot worldSnapshot, BotPlan committedPlan, bool retainInProgressHead = false)
         {
             if (worldSnapshot == null)
                 return BotPlan.Empty(committedPlan?.CommittedBoundaryX ?? 0f);
@@ -40,7 +41,8 @@ namespace Assets.Scripts.Bot.Planning
                 worldSnapshot,
                 committedPlan,
                 rootState,
-                actions);
+                actions,
+                retainInProgressHead);
 
             // Expand only the tail beyond the committed prefix.
             IReadOnlyList<PlanningBranch> branches = _graphBuilder.BuildBranches(worldSnapshot, tailRootState);
@@ -63,7 +65,8 @@ namespace Assets.Scripts.Bot.Planning
             WorldSnapshot worldSnapshot,
             BotPlan committedPlan,
             PlanningState rootState,
-            List<PlannedAction> retainedActions)
+            List<PlannedAction> retainedActions,
+            bool retainInProgressHead)
         {
             if (committedPlan == null || !committedPlan.HasActions)
                 return rootState;
@@ -74,10 +77,12 @@ namespace Assets.Scripts.Bot.Planning
             for (int actionIndex = 0; actionIndex < currentActions.Count; actionIndex++)
             {
                 PlannedAction action = currentActions[actionIndex];
-                if (!ShouldRetainAction(action, worldSnapshot))
+                if (!ShouldRetainAction(action, actionIndex, worldSnapshot, retainInProgressHead))
                     break;
 
-                PlanningState nextState = _transitionSimulator.Simulate(currentState, action, worldSnapshot);
+                PlanningState nextState = retainInProgressHead && actionIndex == 0
+                    ? ProjectInProgressHead(currentState, action, worldSnapshot)
+                    : _transitionSimulator.Simulate(currentState, action, worldSnapshot);
                 if (nextState == null)
                     break;
 
@@ -88,8 +93,90 @@ namespace Assets.Scripts.Bot.Planning
             return currentState;
         }
 
-        private static bool ShouldRetainAction(PlannedAction action, WorldSnapshot worldSnapshot)
+        private static PlanningState ProjectInProgressHead(
+            PlanningState planningState,
+            PlannedAction action,
+            WorldSnapshot worldSnapshot)
         {
+            if (planningState == null || action == null || worldSnapshot == null)
+                return null;
+
+            float remainingPostFireShift = action.PostFireWorldShift;
+            if (action.TargetObstacleInstanceId.HasValue)
+            {
+                for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+                {
+                    ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                    if (obstacle.InstanceId != action.TargetObstacleInstanceId.Value)
+                        continue;
+
+                    float shiftSinceFire = action.TriggerX - obstacle.LeftX;
+                    if (shiftSinceFire > 0f)
+                        remainingPostFireShift = action.PostFireWorldShift - shiftSinceFire;
+
+                    break;
+                }
+            }
+
+            if (remainingPostFireShift < 0f)
+                remainingPostFireShift = 0f;
+
+            HamsterSnapshot hamster = planningState.Hamster;
+            HamsterSnapshot nextHamster = action.Kind switch
+            {
+                BotActionKind.Jump => new HamsterSnapshot(
+                    HamsterStateEnum.Run,
+                    hamster.IsOnBottomLine,
+                    isOnRoof: false,
+                    hamster.Energy,
+                    hamster.Lives,
+                    hamster.IsDamaged,
+                    isShifting: false,
+                    roofSupportInstanceId: null,
+                    hamster.HamsterLeftX,
+                    hamster.HamsterRightX),
+                BotActionKind.Tap => new HamsterSnapshot(
+                    hamster.HamsterState,
+                    hamster.IsOnBottomLine,
+                    isOnRoof: false,
+                    hamster.Energy,
+                    hamster.Lives,
+                    hamster.IsDamaged,
+                    isShifting: false,
+                    hamster.RoofSupportInstanceId,
+                    hamster.HamsterLeftX,
+                    hamster.HamsterRightX),
+                _ => hamster
+            };
+
+            float nextProjectionWorldShift = planningState.ProjectionWorldShift + remainingPostFireShift;
+            int nextObstacleIndex = worldSnapshot.Obstacles.Count;
+            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                float projectedRightX = obstacle.RightX - nextProjectionWorldShift;
+                if (projectedRightX > nextHamster.HamsterLeftX)
+                {
+                    nextObstacleIndex = obstacleIndex;
+                    break;
+                }
+            }
+
+            return new PlanningState(
+                nextHamster,
+                nextObstacleIndex,
+                nextProjectionWorldShift);
+        }
+
+        private static bool ShouldRetainAction(
+            PlannedAction action,
+            int actionIndex,
+            WorldSnapshot worldSnapshot,
+            bool retainInProgressHead)
+        {
+            if (retainInProgressHead && actionIndex == 0)
+                return true;
+
             return action.RenderWorldX >= worldSnapshot.ScreenLeftEdgeX
                 && action.RenderWorldX <= worldSnapshot.ScreenRightEdgeX;
         }

@@ -14,6 +14,7 @@ namespace Assets.Scripts.Bot.Planning
 
         private readonly ActionGenerator _actionGenerator;
         private readonly TransitionSimulator _transitionSimulator;
+        private readonly DecisionPointDetector _decisionPointDetector = new DecisionPointDetector();
 
         /// <summary>
         /// Создает построитель графа поверх генератора действий и симулятора.
@@ -34,19 +35,27 @@ namespace Assets.Scripts.Bot.Planning
 
             var branches = new List<PlanningBranch>();
             PlanningGraphNode rootNode = PlanningGraphNode.CreateRoot(rootState);
-            ExploreNode(rootNode, worldSnapshot, branches);
+            var bestMetricsByState = new Dictionary<PlanningStateKey, PlanningBranchMetrics>
+            {
+                [rootNode.StateKey] = rootNode.Metrics
+            };
+
+            ExploreNode(rootNode, worldSnapshot, branches, bestMetricsByState);
             return branches;
         }
 
         private void ExploreNode(
             PlanningGraphNode currentNode,
             WorldSnapshot worldSnapshot,
-            List<PlanningBranch> branches)
+            List<PlanningBranch> branches,
+            Dictionary<PlanningStateKey, PlanningBranchMetrics> bestMetricsByState)
         {
             // Stop expanding when the search reached the configured horizon.
             if (currentNode.Depth >= MaxSearchDepth)
             {
-                AddLeafBranch(currentNode, branches);
+                if (!HasUnresolvedBlockingDecision(currentNode.State, worldSnapshot))
+                    AddLeafBranch(currentNode, branches);
+
                 return;
             }
 
@@ -54,7 +63,9 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlannedAction> candidates = _actionGenerator.Generate(currentNode.State, worldSnapshot);
             if (candidates.Count == 0)
             {
-                AddLeafBranch(currentNode, branches);
+                if (!HasUnresolvedBlockingDecision(currentNode.State, worldSnapshot))
+                    AddLeafBranch(currentNode, branches);
+
                 return;
             }
 
@@ -69,13 +80,27 @@ namespace Assets.Scripts.Bot.Planning
                 if (nextState == null || CreatesAncestorCycle(currentNode, nextState))
                     continue;
 
-                ExploreNode(currentNode.CreateChild(nextState, candidate), worldSnapshot, branches);
+                PlanningGraphNode childNode = currentNode.CreateChild(nextState, candidate);
+                if (IsDominated(childNode, bestMetricsByState))
+                    continue;
+
+                bestMetricsByState[childNode.StateKey] = childNode.Metrics;
+                ExploreNode(childNode, worldSnapshot, branches, bestMetricsByState);
                 expandedAnyChild = true;
             }
 
             // Keep the current chain as a leaf when no candidate produced a valid new state.
-            if (!expandedAnyChild)
+            if (!expandedAnyChild && !HasUnresolvedBlockingDecision(currentNode.State, worldSnapshot))
                 AddLeafBranch(currentNode, branches);
+        }
+
+        private bool HasUnresolvedBlockingDecision(PlanningState planningState, WorldSnapshot worldSnapshot)
+        {
+            WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
+            if (projectedWorldSnapshot == null)
+                return false;
+
+            return _decisionPointDetector.TryDetect(planningState, projectedWorldSnapshot, out _);
         }
 
         private static void AddLeafBranch(PlanningGraphNode leafNode, List<PlanningBranch> branches)
@@ -84,6 +109,17 @@ namespace Assets.Scripts.Bot.Planning
                 return;
 
             branches.Add(PlanningBranch.FromLeaf(leafNode));
+        }
+
+        private static bool IsDominated(
+            PlanningGraphNode candidateNode,
+            Dictionary<PlanningStateKey, PlanningBranchMetrics> bestMetricsByState)
+        {
+            if (candidateNode == null || bestMetricsByState == null)
+                return false;
+
+            return bestMetricsByState.TryGetValue(candidateNode.StateKey, out PlanningBranchMetrics bestMetrics)
+                && bestMetrics.IsCheaperOrEquivalentTo(candidateNode.Metrics);
         }
 
         private static bool CreatesAncestorCycle(PlanningGraphNode currentNode, PlanningState nextState)

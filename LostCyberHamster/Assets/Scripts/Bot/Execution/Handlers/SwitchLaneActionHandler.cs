@@ -19,6 +19,12 @@ namespace Assets.Scripts.Bot.Execution.Handlers
             if (hamster == null || action == null || !action.TargetObstacleInstanceId.HasValue)
                 return ActionFireResult.Cancelled;
 
+            if (hamster.IsShifting.Value)
+                return ActionFireResult.Waiting;
+
+            if (action.TargetBottomLine.HasValue && hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value)
+                return ActionFireResult.Cancelled;
+
             Obstacle obstacle = FindLiveObstacle(action.TargetObstacleInstanceId.Value);
             if (obstacle == null)
                 return ActionFireResult.Cancelled;

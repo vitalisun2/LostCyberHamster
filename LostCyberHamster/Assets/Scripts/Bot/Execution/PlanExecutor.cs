@@ -29,8 +29,15 @@ namespace Assets.Scripts.Bot.Execution
         /// </summary>
         public void SetPlan(BotPlan plan)
         {
+            bool preserveInProgressHead =
+                _isActionInProgress
+                && CurrentPlan.HasActions
+                && plan != null
+                && plan.HasActions
+                && CurrentPlan.Actions[0].IsEquivalentTo(plan.Actions[0]);
+
             CurrentPlan = plan ?? BotPlan.Empty();
-            _isActionInProgress = false;
+            _isActionInProgress = preserveInProgressHead;
         }
 
         /// <summary>

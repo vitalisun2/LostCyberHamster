@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
@@ -11,21 +12,29 @@ namespace Assets.Scripts.Bot.Perception
     /// </summary>
     public sealed class SnapshotBuilder
     {
-        private const float ExtraVisionScreenFraction = 0.5f;
+        private const float _extraVisionScreenFraction = 0.5f;
 
         /// <summary>
         /// Строит snapshot мира по текущему состоянию хомяка и окружения.
         /// </summary>
         public WorldSnapshot Build(Hamster hamster)
         {
+            // Для runtime-планирования обязательно должны быть готовы scene-зависимости.
+            if (hamster == null)
+                throw new InvalidOperationException(
+                    "SnapshotBuilder.Build failed: hamster is null. RuntimeBotController should resolve scene dependencies before ticking.");
+
             Camera camera = Camera.main;
-            if (hamster == null || camera == null)
-                return null;
+            if (camera == null)
+            {
+                throw new InvalidOperationException(
+                    "SnapshotBuilder.Build failed: Camera.main is null. Bot runtime snapshot requires a main camera in the active scene.");
+            }
 
             float halfWidth = camera.orthographicSize * camera.aspect;
             float screenLeftEdgeX = camera.transform.position.x - halfWidth;
             float screenRightEdgeX = camera.transform.position.x + halfWidth;
-            float visionRightEdgeX = screenRightEdgeX + halfWidth;
+            float visionRightEdgeX = screenRightEdgeX + halfWidth * 2f * _extraVisionScreenFraction;
 
             List<ObstacleSnapshot> obstacles = CollectObstacles(screenLeftEdgeX, visionRightEdgeX);
             HamsterSnapshot hamsterSnapshot = BuildHamsterSnapshot(hamster);

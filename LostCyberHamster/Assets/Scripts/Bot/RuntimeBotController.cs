@@ -137,12 +137,8 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private void TickBot()
         {
-            if (!TryCaptureSnapshot())
-                return;
-
-            if (TryAdvanceCurrentPlan())
-                return;
-
+            LastSnapshot = _snapshotBuilder.Build(_hamster);
+            _executor.Tick(_hamster);
             TrySetNewPlan();
         }
 
@@ -166,21 +162,9 @@ namespace Assets.Scripts.Bot
                 && _hamster.HamsterState.Value != HamsterStateEnum.Dead;
         }
 
-        private bool TryCaptureSnapshot()
-        {
-            LastSnapshot = _snapshotBuilder.Build(_hamster);
-            return LastSnapshot != null;
-        }
-
-        private bool TryAdvanceCurrentPlan()
-        {
-            _executor.Tick(_hamster);
-            return _executor.IsActionInProgress;
-        }
-
         private void TrySetNewPlan()
         {
-            BotPlan plan = _planBuilder.Build(LastSnapshot, _executor.CurrentPlan);
+            BotPlan plan = _planBuilder.Build(LastSnapshot, _executor.CurrentPlan, _executor.IsActionInProgress);
             if (!plan.HasActions || plan.IsEquivalentTo(_executor.CurrentPlan))
                 return;
 
