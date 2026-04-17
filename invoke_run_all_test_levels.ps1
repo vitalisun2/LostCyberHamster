@@ -29,11 +29,9 @@ New-Item -ItemType Directory -Path $automationPath -Force | Out-Null
 
 # ── Test levels — keep in sync with workflow.md «Тестовые уровни бота» ──────
 $TestLevels = @(
-    '01_New_York/Morning/test_threat_small_notalive_road_switchlane',
-    '01_New_York/Morning/test_threat_small_notalive_road_jump',
-    '01_New_York/Morning/test_threat_bigalive',
-    '01_New_York/Morning/test_jump_on_roof',
-    '01_New_York/Morning/test_roof_small_notalive'
+    '01_New_York/Morning/test_switch_lane',
+    '01_New_York/Morning/test_jump_over',
+    '01_New_York/Morning/test_superjump_over'
 )
 
 # ── Automation bridge helper ─────────────────────────────────────────────────

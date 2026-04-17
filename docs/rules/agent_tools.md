@@ -94,10 +94,11 @@
 
 | Уровень | Адрес |
 |---|---|
-| Threat smallNotAliveRoad + SwitchLane | `01_New_York/Morning/test_threat_small_notalive_road_switchlane` |
-| Threat smallNotAliveRoad + Jump | `01_New_York/Morning/test_threat_small_notalive_road_jump` |
+| SwitchLane | `01_New_York/Morning/test_switch_lane` |
+| Jump Over | `01_New_York/Morning/test_jump_over` |
+| SuperJump Over | `01_New_York/Morning/test_superjump_over` |
 
-**Именование тестовых паттернов:** `test_threat_{obstacle_type}_{action}_{NN}_{description}`.
+**Именование тестовых паттернов:** `test_{action}_{NN}_{description}`.
 **Координаты:** `y = -1.8` (top lane), `y = -2.8` (bottom lane).
 **Ссылка из level JSON:** `{"ref": "имя_паттерна", "spriteSeed": 0, "overrides": []}`.
 
