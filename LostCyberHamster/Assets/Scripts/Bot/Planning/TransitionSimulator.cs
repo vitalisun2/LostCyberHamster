@@ -7,10 +7,16 @@ using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Planning
 {
+    /// <summary>
+    /// Делегирует симуляцию действий конкретным planning-стратегиям.
+    /// </summary>
     public sealed class TransitionSimulator
     {
         private readonly IReadOnlyDictionary<BotActionKind, IPlanningStrategy> _strategiesByActionKind;
 
+        /// <summary>
+        /// Создает диспетчер planning-симуляции поверх набора стратегий.
+        /// </summary>
         public TransitionSimulator(IReadOnlyList<IPlanningStrategy> strategies)
         {
             var strategiesByActionKind = new Dictionary<BotActionKind, IPlanningStrategy>();
@@ -32,6 +38,9 @@ namespace Assets.Scripts.Bot.Planning
             _strategiesByActionKind = strategiesByActionKind;
         }
 
+        /// <summary>
+        /// Симулирует результат одного запланированного действия.
+        /// </summary>
         public PlanningState Simulate(PlanningState planningState, PlannedAction action, WorldSnapshot worldSnapshot)
         {
             if (planningState == null || action == null || worldSnapshot == null)

@@ -3,8 +3,14 @@ using System.Collections.Generic;
 
 namespace Assets.Scripts.Bot.PlanState
 {
+    /// <summary>
+    /// Хранит последовательность действий и служебные данные текущего плана.
+    /// </summary>
     public sealed class BotPlan
     {
+        /// <summary>
+        /// Создает новый план бота.
+        /// </summary>
         public BotPlan(IReadOnlyList<PlannedAction> actions, float committedBoundaryX, float score = 0f)
         {
             Actions = actions ?? Array.Empty<PlannedAction>();
@@ -17,6 +23,9 @@ namespace Assets.Scripts.Bot.PlanState
         public float Score { get; }
         public bool HasActions => Actions.Count > 0;
 
+        /// <summary>
+        /// Сравнивает планы по последовательности действий без учета служебных полей.
+        /// </summary>
         public bool IsEquivalentTo(BotPlan other)
         {
             if (ReferenceEquals(this, other))
@@ -34,6 +43,9 @@ namespace Assets.Scripts.Bot.PlanState
             return true;
         }
 
+        /// <summary>
+        /// Создает пустой план без действий.
+        /// </summary>
         public static BotPlan Empty(float committedBoundaryX = 0f)
         {
             return new BotPlan(Array.Empty<PlannedAction>(), committedBoundaryX);

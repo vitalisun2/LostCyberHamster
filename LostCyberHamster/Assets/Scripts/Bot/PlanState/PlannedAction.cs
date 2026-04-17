@@ -2,10 +2,16 @@ using System;
 
 namespace Assets.Scripts.Bot.PlanState
 {
+    /// <summary>
+    /// Описывает одно запланированное действие бота и его параметры.
+    /// </summary>
     public sealed class PlannedAction
     {
         private const float EqualityEpsilon = 0.001f;
 
+        /// <summary>
+        /// Создает описание одного действия внутри плана.
+        /// </summary>
         public PlannedAction(
             BotActionKind kind,
             float triggerX,
@@ -38,6 +44,9 @@ namespace Assets.Scripts.Bot.PlanState
         public int EnergyCost { get; }
         public string Description { get; }
 
+        /// <summary>
+        /// Сравнивает два действия по их planning-параметрам.
+        /// </summary>
         public bool IsEquivalentTo(PlannedAction other)
         {
             if (ReferenceEquals(this, other))

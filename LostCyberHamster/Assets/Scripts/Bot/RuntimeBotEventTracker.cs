@@ -4,11 +4,17 @@ using Assets.Scripts.Gameplay;
 
 namespace Assets.Scripts.Bot
 {
+    /// <summary>
+    /// Пишет в диагностику ключевые runtime-события, важные для тестов бота.
+    /// </summary>
     public sealed class RuntimeBotEventTracker : IDisposable
     {
         private readonly Hamster _hamster;
         private readonly GameManager _gameManager;
 
+        /// <summary>
+        /// Подписывается на события урона и завершения уровня.
+        /// </summary>
         public RuntimeBotEventTracker(Hamster hamster, GameManager gameManager)
         {
             _hamster = hamster;
@@ -19,6 +25,9 @@ namespace Assets.Scripts.Bot
             GameEventsManager.OnLevelCompleted += OnLevelCompleted;
         }
 
+        /// <summary>
+        /// Снимает runtime-подписки трекера.
+        /// </summary>
         public void Dispose()
         {
             if (_hamster != null)

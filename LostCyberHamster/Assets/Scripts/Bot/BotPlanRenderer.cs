@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace Assets.Scripts.Bot
 {
+    /// <summary>
+    /// Рисует текущий план бота поверх игрового мира для отладки.
+    /// </summary>
     internal sealed class BotPlanRenderer
     {
         private const float LaneYOffset = 0.95f;
@@ -11,6 +14,9 @@ namespace Assets.Scripts.Bot
 
         private Material _glMaterial;
 
+        /// <summary>
+        /// Отрисовывает последовательность действий текущего плана.
+        /// </summary>
         public void Render(
             BotPlan plan,
             WorldSnapshot snapshot,
@@ -47,6 +53,9 @@ namespace Assets.Scripts.Bot
             GL.PopMatrix();
         }
 
+        /// <summary>
+        /// Освобождает временные ресурсы рендерера.
+        /// </summary>
         public void Dispose()
         {
             if (_glMaterial != null)

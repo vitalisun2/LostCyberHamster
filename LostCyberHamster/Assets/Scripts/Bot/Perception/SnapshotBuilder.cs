@@ -6,10 +6,16 @@ using UnityEngine;
 
 namespace Assets.Scripts.Bot.Perception
 {
+    /// <summary>
+    /// Собирает текущий snapshot мира для бота из runtime-состояния.
+    /// </summary>
     public sealed class SnapshotBuilder
     {
         private const float ExtraVisionScreenFraction = 0.5f;
 
+        /// <summary>
+        /// Строит snapshot мира по текущему состоянию хомяка и окружения.
+        /// </summary>
         public WorldSnapshot Build(Hamster hamster)
         {
             Camera camera = Camera.main;

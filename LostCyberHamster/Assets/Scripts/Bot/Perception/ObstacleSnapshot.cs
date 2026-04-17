@@ -2,8 +2,14 @@ using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.Bot.Perception
 {
+    /// <summary>
+    /// Хранит данные об одном видимом препятствии.
+    /// </summary>
     public sealed class ObstacleSnapshot
     {
+        /// <summary>
+        /// Создает snapshot препятствия для planning-слоя.
+        /// </summary>
         public ObstacleSnapshot(
             int instanceId,
             ObstacleTypeEnum obstacleType,

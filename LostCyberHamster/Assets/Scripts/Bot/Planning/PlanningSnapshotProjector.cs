@@ -3,8 +3,14 @@ using Assets.Scripts.Bot.Perception;
 
 namespace Assets.Scripts.Bot.Planning
 {
+    /// <summary>
+    /// Сдвигает snapshot мира в прогнозируемое будущее состояние.
+    /// </summary>
     public static class PlanningSnapshotProjector
     {
+        /// <summary>
+        /// Проецирует препятствия из исходного snapshot с учетом world shift.
+        /// </summary>
         public static WorldSnapshot Project(WorldSnapshot sourceSnapshot, PlanningState planningState)
         {
             if (sourceSnapshot == null || planningState == null)

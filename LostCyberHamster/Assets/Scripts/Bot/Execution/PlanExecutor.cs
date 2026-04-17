@@ -7,6 +7,9 @@ using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Execution
 {
+    /// <summary>
+    /// Исполняет текущий план бота по одному действию за раз.
+    /// </summary>
     public sealed class PlanExecutor
     {
         private readonly IReadOnlyDictionary<BotActionKind, IActionExecutionHandler> _handlers =

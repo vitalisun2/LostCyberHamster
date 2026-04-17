@@ -5,6 +5,9 @@ using Assets.Scripts.Bot.PlanState;
 
 namespace Assets.Scripts.Bot.Planning
 {
+    /// <summary>
+    /// Строит дерево решений для текущего planning-состояния.
+    /// </summary>
     public sealed class PlanningGraphBuilder
     {
         private const int MaxSearchDepth = 6;
@@ -12,12 +15,18 @@ namespace Assets.Scripts.Bot.Planning
         private readonly ActionGenerator _actionGenerator;
         private readonly TransitionSimulator _transitionSimulator;
 
+        /// <summary>
+        /// Создает построитель графа поверх генератора действий и симулятора.
+        /// </summary>
         public PlanningGraphBuilder(ActionGenerator actionGenerator, TransitionSimulator transitionSimulator)
         {
             _actionGenerator = actionGenerator;
             _transitionSimulator = transitionSimulator;
         }
 
+        /// <summary>
+        /// Строит все достижимые planning-ветки от корневого состояния.
+        /// </summary>
         public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot worldSnapshot, PlanningState rootState)
         {
             if (worldSnapshot == null || rootState == null)

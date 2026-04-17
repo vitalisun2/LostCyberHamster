@@ -2,8 +2,14 @@ using Assets.Scripts.Bot.Perception;
 
 namespace Assets.Scripts.Bot.Planning
 {
+    /// <summary>
+    /// Находит следующую обязательную для реакции ситуацию в projected world snapshot.
+    /// </summary>
     public sealed class DecisionPointDetector
     {
+        /// <summary>
+        /// Пытается найти ближайшую blocking-ситуацию на текущей линии хомяка.
+        /// </summary>
         public bool TryDetect(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,

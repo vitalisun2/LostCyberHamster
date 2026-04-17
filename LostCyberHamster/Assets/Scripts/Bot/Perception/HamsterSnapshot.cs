@@ -2,8 +2,14 @@ using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Perception
 {
+    /// <summary>
+    /// Хранит состояние хомяка в момент построения snapshot.
+    /// </summary>
     public sealed class HamsterSnapshot
     {
+        /// <summary>
+        /// Создает snapshot состояния хомяка для planning-слоя.
+        /// </summary>
         public HamsterSnapshot(
             HamsterStateEnum hamsterState,
             bool isOnBottomLine,
