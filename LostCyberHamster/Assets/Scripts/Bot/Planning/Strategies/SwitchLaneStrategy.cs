@@ -196,30 +196,6 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return unsafeIntervals;
         }
 
-        private readonly struct UnsafeInterval
-        {
-            public UnsafeInterval(float start, float end)
-            {
-                Start = start;
-                End = end;
-            }
-
-            public float Start { get; }
-            public float End { get; }
-        }
-
-        private readonly struct SafeInterval
-        {
-            public SafeInterval(float start, float end)
-            {
-                Start = start;
-                End = end;
-            }
-
-            public float Start { get; }
-            public float End { get; }
-        }
-
         private static HamsterSnapshot ApplyActionToHamster(HamsterSnapshot hamster, PlannedAction action)
         {
             bool isOnRoof = action.TargetBottomLine.HasValue ? false : hamster.IsOnRoof;
