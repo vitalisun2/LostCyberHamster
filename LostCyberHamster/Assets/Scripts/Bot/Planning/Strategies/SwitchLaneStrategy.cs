@@ -98,25 +98,8 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
                 return null;
 
-            HamsterSnapshot nextHamster = ApplyActionToHamster(planningState.Hamster, action);
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
-
-            int nextObstacleIndex = worldSnapshot.Obstacles.Count;
-            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                float projectedRightX = obstacle.RightX - nextProjectionWorldShift;
-                if (projectedRightX > nextHamster.HamsterLeftX)
-                {
-                    nextObstacleIndex = obstacleIndex;
-                    break;
-                }
-            }
-
-            return new PlanningState(
-                nextHamster,
-                nextObstacleIndex,
-                nextProjectionWorldShift);
+            HamsterSnapshot nextHamster = PlanningStateTransition.ApplyLaneSwitch(planningState.Hamster, action);
+            return PlanningStateTransition.Advance(planningState, action, worldSnapshot, nextHamster);
         }
 
         private static bool CanSwitchLane(PlanningState planningState, ObstacleSnapshot targetObstacle)
@@ -196,26 +179,5 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return unsafeIntervals;
         }
 
-        private static HamsterSnapshot ApplyActionToHamster(HamsterSnapshot hamster, PlannedAction action)
-        {
-            bool isOnRoof = action.TargetBottomLine.HasValue ? false : hamster.IsOnRoof;
-            bool targetBottomLine = action.TargetBottomLine ?? hamster.IsOnBottomLine;
-
-            int energy = hamster.Energy - action.EnergyCost;
-            if (energy < 0)
-                energy = 0;
-
-            return new HamsterSnapshot(
-                hamster.HamsterState,
-                targetBottomLine,
-                isOnRoof,
-                energy,
-                hamster.Lives,
-                hamster.IsDamaged,
-                isShifting: false,
-                hamster.RoofSupportInstanceId,
-                hamster.HamsterLeftX,
-                hamster.HamsterRightX);
-        }
     }
 }

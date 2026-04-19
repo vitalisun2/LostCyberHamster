@@ -81,41 +81,8 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 return null;
 
             // После успешного jump-over хомяк остаётся на той же линии и возвращается в обычный Run.
-            HamsterSnapshot hamster = planningState.Hamster;
-            int energy = hamster.Energy - action.EnergyCost;
-            if (energy < 0)
-                energy = 0;
-
-            var nextHamster = new HamsterSnapshot(
-                HamsterStateEnum.Run,
-                hamster.IsOnBottomLine,
-                isOnRoof: false,
-                energy,
-                hamster.Lives,
-                hamster.IsDamaged,
-                isShifting: false,
-                roofSupportInstanceId: null,
-                hamster.HamsterLeftX,
-                hamster.HamsterRightX);
-
-            // Сдвигаем прогноз мира на длительность завершённого прыжка и ищем следующий obstacle.
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
-            int nextObstacleIndex = worldSnapshot.Obstacles.Count;
-            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                float projectedRightX = obstacle.RightX - nextProjectionWorldShift;
-                if (projectedRightX > nextHamster.HamsterLeftX)
-                {
-                    nextObstacleIndex = obstacleIndex;
-                    break;
-                }
-            }
-
-            return new PlanningState(
-                nextHamster,
-                nextObstacleIndex,
-                nextProjectionWorldShift);
+            HamsterSnapshot nextHamster = PlanningStateTransition.ApplyRunAfterOver(planningState.Hamster, action);
+            return PlanningStateTransition.Advance(planningState, action, worldSnapshot, nextHamster);
         }
 
         private static bool CanJumpOver(PlanningState planningState, ObstacleSnapshot targetObstacle)
