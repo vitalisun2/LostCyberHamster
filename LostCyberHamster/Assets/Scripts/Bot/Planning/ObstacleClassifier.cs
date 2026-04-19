@@ -29,5 +29,16 @@ namespace Assets.Scripts.Bot.Planning
                 || obstacleType == ObstacleTypeEnum.smallNotAliveRoad
                 || obstacleType == ObstacleTypeEnum.smallNotAliveRoadAndRoof;
         }
+
+        /// <summary>
+        /// Возвращает true, если препятствие можно перепрыгнуть ground-super-jump.
+        /// </summary>
+        public static bool CanSuperJumpOverOnGround(ObstacleTypeEnum obstacleType)
+        {
+            return obstacleType == ObstacleTypeEnum.bigAlive
+                || obstacleType == ObstacleTypeEnum.smallAlive
+                || obstacleType == ObstacleTypeEnum.smallNotAliveRoad
+                || obstacleType == ObstacleTypeEnum.smallNotAliveRoadAndRoof;
+        }
     }
 }
