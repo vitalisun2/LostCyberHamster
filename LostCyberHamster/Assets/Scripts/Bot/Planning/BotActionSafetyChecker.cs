@@ -17,14 +17,14 @@ namespace Assets.Scripts.Bot.Planning
 
             return action.Kind switch
             {
-                BotActionKind.Jump => IsSafeJump(state, action, world),
-                BotActionKind.SuperJump => IsSafeSuperJump(state, action, world),
-                BotActionKind.Tap => IsSafeTap(state, action),
+                BotActionKind.Jump => IsSafeJumpOver(state, action, world),
+                BotActionKind.SuperJump => IsSafeSuperJumpOver(state, action, world),
+                BotActionKind.Tap => IsSafeSwitchLane(state, action),
                 _ => false
             };
         }
 
-        private static bool IsSafeJump(PlanningState state, PlannedAction action, WorldSnapshot world)
+        private static bool IsSafeJumpOver(PlanningState state, PlannedAction action, WorldSnapshot world)
         {
             HamsterSnapshot hamster = state.Hamster;
             if (hamster.IsOnRoof || hamster.IsShifting)
@@ -61,12 +61,12 @@ namespace Assets.Scripts.Bot.Planning
             return true;
         }
 
-        private static bool IsSafeSuperJump(PlanningState state, PlannedAction action, WorldSnapshot world)
+        private static bool IsSafeSuperJumpOver(PlanningState state, PlannedAction action, WorldSnapshot world)
         {
             return true;
         }
 
-        private static bool IsSafeTap(PlanningState state, PlannedAction action)
+        private static bool IsSafeSwitchLane(PlanningState state, PlannedAction action)
         {
             return action.TargetBottomLine.HasValue
                 && action.TargetBottomLine.Value != state.IsOnBottomLine;
