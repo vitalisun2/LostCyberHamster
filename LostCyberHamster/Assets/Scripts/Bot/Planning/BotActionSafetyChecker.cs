@@ -24,7 +24,7 @@ namespace Assets.Scripts.Bot.Planning
             {
                 BotActionKind.Jump => IsSafeJumpOver(state, action, world),
                 BotActionKind.SuperJump => IsSafeSuperJumpOver(state, action, world),
-                BotActionKind.Tap => IsSafeSwitchLane(state, action),
+                BotActionKind.Tap => true,
                 _ => false
             };
         }
@@ -72,12 +72,6 @@ namespace Assets.Scripts.Bot.Planning
 
             JumpResolveResult result = SuperJumpOutcomeResolver.ResolveSuperJump(obstacles, context);
             return result.State is HamsterStateEnum.SuperJump or HamsterStateEnum.SuperJumpOver;
-        }
-
-        private static bool IsSafeSwitchLane(PlanningState state, PlannedAction action)
-        {
-            return action.TargetBottomLine.HasValue
-                && action.TargetBottomLine.Value != state.IsOnBottomLine;
         }
 
         private static List<JumpObstacleData> BuildProjectedObstacles(
