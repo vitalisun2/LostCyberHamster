@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Planning.Strategies;
 using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Planning
@@ -124,17 +125,8 @@ namespace Assets.Scripts.Bot.Planning
             HamsterSnapshot hamster = planningState.Hamster;
             HamsterSnapshot nextHamster = action.Kind switch
             {
-                BotActionKind.Jump => new HamsterSnapshot(
-                    HamsterStateEnum.Run,
-                    hamster.IsOnBottomLine,
-                    isOnRoof: false,
-                    hamster.Energy,
-                    hamster.Lives,
-                    hamster.IsDamaged,
-                    isShifting: false,
-                    roofSupportInstanceId: null,
-                    hamster.HamsterLeftX,
-                    hamster.HamsterRightX),
+                BotActionKind.Jump => PlanningStateTransition.ApplyRunAfterOver(hamster, action),
+                BotActionKind.SuperJump => PlanningStateTransition.ApplyRunAfterOver(hamster, action),
                 BotActionKind.Tap => new HamsterSnapshot(
                     hamster.HamsterState,
                     hamster.IsOnBottomLine,

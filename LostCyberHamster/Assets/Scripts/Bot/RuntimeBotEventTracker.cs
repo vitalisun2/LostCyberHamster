@@ -42,7 +42,7 @@ namespace Assets.Scripts.Bot
         private void OnDamage()
         {
             DebugManager.DiagLog(
-                $"[BotV2 DAMAGE] lives={_hamster.Lives.Value} " +
+                $"[Bot DAMAGE] lives={_hamster.Lives.Value} " +
                 $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
                 $"state={_hamster.HamsterState.Value}");
 

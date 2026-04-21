@@ -1,28 +1,28 @@
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using UnityEngine;
 
 namespace Assets.Scripts.Bot.Execution.Handlers
 {
     /// <summary>
-    /// Выполняет и отслеживает действие смены линии через одиночный tap.
+    /// Исполняет super jump как двухфазный ввод: сначала Jump, затем SuperJump.
     /// </summary>
-    internal sealed class SwitchLaneActionHandler : IActionExecutionHandler
+    internal sealed class SuperJumpActionHandler : IActionExecutionHandler
     {
-        /// <summary>
-        /// Запускает смену линии, когда препятствие дошло до рассчитанной точки.
-        /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
-            // Validate the planned action against the current runtime state first.
-            if (hamster == null || action == null || !action.TargetObstacleInstanceId.HasValue)
+            if (hamster == null || action == null || action.Kind != BotActionKind.SuperJump)
                 return ActionFireResult.Cancelled;
 
-            if (hamster.IsShifting.Value)
-                return ActionFireResult.Waiting;
+            if (!action.TargetObstacleInstanceId.HasValue)
+                return ActionFireResult.Cancelled;
 
-            if (action.TargetBottomLine.HasValue && hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value)
+            if (hamster.HamsterState.Value != HamsterStateEnum.Run && !hamster.IsDamaged.Value)
+                return ActionFireResult.Cancelled;
+
+            if (hamster.Energy.Value < action.EnergyCost)
                 return ActionFireResult.Cancelled;
 
             Obstacle obstacle = FindLiveObstacle(action.TargetObstacleInstanceId.Value);
@@ -33,44 +33,56 @@ namespace Assets.Scripts.Bot.Execution.Handlers
             if (collider == null)
                 return ActionFireResult.Cancelled;
 
-            // Wait until the obstacle reaches the planned trigger point.
             if (collider.bounds.min.x > action.TriggerX)
                 return ActionFireResult.Waiting;
 
             DebugManager.DiagLog(
                 $"[Bot EXEC] FIRE kind={action.Kind} " +
                 $"triggerX={action.TriggerX:F2} obstacleLeftX={collider.bounds.min.x:F2} " +
-                $"targetLane={(action.TargetBottomLine.HasValue ? (action.TargetBottomLine.Value ? "bottom" : "top") : "n/a")} " +
                 $"desc={action.Description}");
-            hamster.TapRequest.Invoke();
+
+            hamster.JumpRequest.Invoke();
+
+            if (!CanUpgradeToSuperJump(hamster.HamsterState.Value))
+            {
+                DebugManager.DiagLog(
+                    $"[Bot EXEC] CANCEL kind={action.Kind} " +
+                    $"stateAfterJump={hamster.HamsterState.Value} " +
+                    $"desc={action.Description}");
+                return ActionFireResult.Cancelled;
+            }
+
+            hamster.SuperJumpRequest.Invoke();
             return ActionFireResult.Fired;
         }
 
-        /// <summary>
-        /// Проверяет, завершилась ли смена линии для текущего действия.
-        /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
-            // Missing runtime state means there is nothing left to wait for.
             if (hamster == null || action == null)
                 return true;
 
-            if (hamster.IsShifting.Value)
-                return false;
-
-            if (!action.TargetBottomLine.HasValue)
-                return true;
-
-            bool completed = hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value;
+            bool completed = hamster.HamsterState.Value == HamsterStateEnum.Run;
             if (completed)
             {
                 DebugManager.DiagLog(
                     $"[Bot EXEC] COMPLETE kind={action.Kind} " +
-                    $"lane={(hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
+                    $"state={hamster.HamsterState.Value} " +
                     $"desc={action.Description}");
             }
 
             return completed;
+        }
+
+        private static bool CanUpgradeToSuperJump(HamsterStateEnum hamsterState)
+        {
+            return hamsterState == HamsterStateEnum.Jump
+                   || hamsterState == HamsterStateEnum.JumpOver
+                   || hamsterState == HamsterStateEnum.JumpOnObstacle
+                   || hamsterState == HamsterStateEnum.JumpOnRoof
+                   || hamsterState == HamsterStateEnum.JumpDamageForSmallAlive
+                   || hamsterState == HamsterStateEnum.JumpDamageForSmallNotAlive
+                   || hamsterState == HamsterStateEnum.JumpDamageForBigAlive
+                   || hamsterState == HamsterStateEnum.JumpOnRoofDamage;
         }
 
         private static Obstacle FindLiveObstacle(int instanceId)
@@ -79,7 +91,6 @@ namespace Assets.Scripts.Bot.Execution.Handlers
             if (spawner == null)
                 return null;
 
-            // Match the runtime obstacle by instance id inside the live spawner snapshot.
             for (int obstacleIndex = 0; obstacleIndex < spawner.SpawnedObstacles.Count; obstacleIndex++)
             {
                 Obstacle obstacle = spawner.SpawnedObstacles[obstacleIndex]?.ObstacleScript;

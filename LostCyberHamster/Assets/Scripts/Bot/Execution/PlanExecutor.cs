@@ -16,7 +16,8 @@ namespace Assets.Scripts.Bot.Execution
             new Dictionary<BotActionKind, IActionExecutionHandler>
             {
                 { BotActionKind.Tap, new SwitchLaneActionHandler() },
-                { BotActionKind.Jump, new JumpActionHandler() }
+                { BotActionKind.Jump, new JumpActionHandler() },
+                { BotActionKind.SuperJump, new SuperJumpActionHandler() }
             };
 
         private bool _isActionInProgress;
@@ -91,7 +92,7 @@ namespace Assets.Scripts.Bot.Execution
             string message =
                 $"Для действия бота не зарегистрирован handler: kind={action.Kind}, desc={action.Description}";
 
-            DebugManager.DiagLog($"[BotV2 EXEC] ERROR {message}");
+            DebugManager.DiagLog($"[Bot EXEC] ERROR {message}");
             throw new InvalidOperationException(message);
         }
 

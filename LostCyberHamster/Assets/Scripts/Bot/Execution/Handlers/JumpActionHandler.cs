@@ -36,7 +36,7 @@ namespace Assets.Scripts.Bot.Execution.Handlers
                 return ActionFireResult.Waiting;
 
             DebugManager.DiagLog(
-                $"[BotV2 EXEC] FIRE kind={action.Kind} " +
+                $"[Bot EXEC] FIRE kind={action.Kind} " +
                 $"triggerX={action.TriggerX:F2} obstacleLeftX={collider.bounds.min.x:F2} " +
                 $"desc={action.Description}");
             hamster.JumpRequest.Invoke();
@@ -53,7 +53,7 @@ namespace Assets.Scripts.Bot.Execution.Handlers
             if (completed)
             {
                 DebugManager.DiagLog(
-                    $"[BotV2 EXEC] COMPLETE kind={action.Kind} " +
+                    $"[Bot EXEC] COMPLETE kind={action.Kind} " +
                     $"state={hamster.HamsterState.Value} " +
                     $"desc={action.Description}");
             }

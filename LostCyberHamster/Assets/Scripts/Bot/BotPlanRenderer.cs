@@ -11,6 +11,8 @@ namespace Assets.Scripts.Bot
     {
         private const float LaneYOffset = 0.95f;
         private const float MinTailAlpha = 0.3f;
+        private const float SuperJumpWidth = 1.15f;
+        private const float SuperJumpHeight = 1.45f;
 
         private Material _glMaterial;
 
@@ -76,6 +78,10 @@ namespace Assets.Scripts.Bot
                     if (TryGetRenderWorldX(action, snapshot, out float renderWorldX))
                         DrawSwitchLaneGlyph(renderWorldX, currentBottomLine, alpha);
                     break;
+                case BotActionKind.SuperJump:
+                    if (TryGetRenderWorldX(action, snapshot, out float superJumpRenderWorldX))
+                        DrawSuperJumpGlyph(superJumpRenderWorldX, currentBottomLine, alpha);
+                    break;
             }
         }
 
@@ -134,6 +140,46 @@ namespace Assets.Scripts.Bot
             GL.Vertex(new Vector3(triggerX + 0.24f, fromY, 0f));
             GL.Vertex(new Vector3(triggerX - 0.24f, toY, 0f));
             GL.Vertex(new Vector3(triggerX + 0.24f, toY, 0f));
+        }
+
+        private static void DrawSuperJumpGlyph(float triggerX, bool currentBottomLine, float alpha)
+        {
+            float laneY = GetLaneY(currentBottomLine);
+            float halfWidth = SuperJumpWidth * 0.5f;
+
+            Vector3 start = new Vector3(triggerX - halfWidth, laneY, 0f);
+            Vector3 midLeft = new Vector3(triggerX - halfWidth * 0.35f, laneY + SuperJumpHeight * 0.72f, 0f);
+            Vector3 apex = new Vector3(triggerX, laneY + SuperJumpHeight, 0f);
+            Vector3 midRight = new Vector3(triggerX + halfWidth * 0.4f, laneY + SuperJumpHeight * 0.68f, 0f);
+            Vector3 end = new Vector3(triggerX + halfWidth, laneY, 0f);
+            Vector3 landingLeft = new Vector3(triggerX + halfWidth - 0.2f, laneY + 0.18f, 0f);
+            Vector3 landingRight = new Vector3(triggerX + halfWidth + 0.05f, laneY + 0.18f, 0f);
+            Vector3 apexMarkerTop = new Vector3(triggerX, laneY + SuperJumpHeight + 0.35f, 0f);
+
+            Color color = new Color(1f, 0.78f, 0.18f, alpha);
+            GL.Color(color);
+
+            GL.Vertex(start);
+            GL.Vertex(midLeft);
+            GL.Vertex(midLeft);
+            GL.Vertex(apex);
+            GL.Vertex(apex);
+            GL.Vertex(midRight);
+            GL.Vertex(midRight);
+            GL.Vertex(end);
+
+            GL.Vertex(new Vector3(triggerX - 0.18f, laneY, 0f));
+            GL.Vertex(new Vector3(triggerX + 0.18f, laneY, 0f));
+
+            GL.Vertex(end);
+            GL.Vertex(landingLeft);
+            GL.Vertex(end);
+            GL.Vertex(landingRight);
+
+            GL.Vertex(apex);
+            GL.Vertex(apexMarkerTop);
+            GL.Vertex(new Vector3(triggerX - 0.18f, laneY + SuperJumpHeight + 0.16f, 0f));
+            GL.Vertex(new Vector3(triggerX + 0.18f, laneY + SuperJumpHeight + 0.16f, 0f));
         }
 
         private void EnsureMaterial()

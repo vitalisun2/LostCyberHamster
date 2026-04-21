@@ -69,7 +69,8 @@ namespace Assets.Scripts.Bot
             IPlanningStrategy[] strategies =
             {
                 new SwitchLaneStrategy(),
-                new JumpOverStrategy()
+                new JumpOverStrategy(),
+                new SuperJumpOverStrategy()
             };
 
             _planBuilder = new PlanBuilder(
@@ -121,7 +122,7 @@ namespace Assets.Scripts.Bot
             if (!IsInitialized)
                 TryResolveRuntimeDependencies();
 
-            DebugManager.DiagLog("[BotV2] Enabled");
+            DebugManager.DiagLog("[Bot] Enabled");
         }
 
         private void Disable()
@@ -129,7 +130,7 @@ namespace Assets.Scripts.Bot
             IsEnabled = false;
             LastSnapshot = null;
             _executor.Clear();
-            DebugManager.DiagLog("[BotV2] Disabled");
+            DebugManager.DiagLog("[Bot] Disabled");
         }
 
         /// <summary>
@@ -178,7 +179,7 @@ namespace Assets.Scripts.Bot
         private static void LogPlanActivation(BotPlan plan)
         {
             DebugManager.DiagLog(
-                $"[BotV2 PLAN] actions={plan.Actions.Count} " +
+                $"[Bot PLAN] actions={plan.Actions.Count} " +
                 $"score={plan.Score:F2} boundaryX={plan.CommittedBoundaryX:F2} " +
                 $"head={plan.Actions[0].Description}");
         }

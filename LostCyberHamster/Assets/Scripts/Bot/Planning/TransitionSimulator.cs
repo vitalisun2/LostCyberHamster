@@ -61,7 +61,7 @@ namespace Assets.Scripts.Bot.Planning
             string message =
                 $"Для действия бота не зарегистрирована planning-strategy: kind={action.Kind}, desc={action.Description}";
 
-            DebugManager.DiagLog($"[BotV2 PLAN] ERROR {message}");
+            DebugManager.DiagLog($"[Bot PLAN] ERROR {message}");
             throw new InvalidOperationException(message);
         }
     }
