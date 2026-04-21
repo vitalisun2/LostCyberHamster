@@ -32,9 +32,6 @@ namespace Assets.Scripts.Bot.Planning
             if (hamster.IsOnRoof || hamster.IsShifting)
                 return false;
 
-            if (hamster.IsDamaged)
-                return true;
-
             WorldSnapshot projectedWorld = PlanningSnapshotProjector.Project(world, state);
             if (projectedWorld == null)
                 return false;
