@@ -162,7 +162,7 @@ namespace Assets.Scripts.Bot.Planning
                 if (!CollisionUtils.IsRoofObstacle(candidate.ObstacleType))
                     continue;
 
-                if (IsOverlap(small.LeftX, small.RightX, candidate.LeftX, candidate.RightX))
+                if (CollisionUtils.IsOverlap(small.LeftX, small.RightX, candidate.LeftX, candidate.RightX))
                 {
                     roof = candidate;
                     return true;
@@ -196,7 +196,7 @@ namespace Assets.Scripts.Bot.Planning
 
         private static bool IsOverlapAtShift(HamsterSnapshot hamster, float worldShift, ObstacleSnapshot obstacle)
         {
-            return IsOverlap(
+            return CollisionUtils.IsOverlap(
                 hamster.HamsterLeftX,
                 hamster.HamsterRightX,
                 obstacle.LeftX - worldShift,
@@ -207,10 +207,14 @@ namespace Assets.Scripts.Bot.Planning
         {
             float obstacleEndLeft = obstacle.LeftX - worldShift;
             float obstacleEndRight = obstacle.RightX - worldShift;
-            bool clearStart = hamster.HamsterRightX < obstacle.LeftX;
-            bool clearEnd = hamster.HamsterLeftX > obstacleEndRight;
-            bool noOverlap = !IsOverlap(hamster.HamsterLeftX, hamster.HamsterRightX, obstacleEndLeft, obstacleEndRight);
-            return clearStart && clearEnd && noOverlap;
+            return CollisionUtils.IsJumpOverIntervals(
+                hamster.HamsterLeftX,
+                hamster.HamsterRightX,
+                obstacle.LeftX,
+                obstacle.RightX,
+                obstacleEndLeft,
+                obstacleEndRight,
+                0f);
         }
 
         private static bool IsHamsterCenterInsideObstacleAtShift(
@@ -222,11 +226,6 @@ namespace Assets.Scripts.Bot.Planning
             float left = obstacle.LeftX - worldShift;
             float right = obstacle.RightX - worldShift + rightTolerance;
             return HamsterCenterX(hamster) >= left && HamsterCenterX(hamster) <= right;
-        }
-
-        private static bool IsOverlap(float leftA, float rightA, float leftB, float rightB)
-        {
-            return rightA > leftB && rightB > leftA;
         }
 
         private static float HamsterCenterX(HamsterSnapshot hamster)

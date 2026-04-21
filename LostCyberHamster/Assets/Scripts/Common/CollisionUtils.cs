@@ -254,7 +254,7 @@ namespace Assets.Scripts.Common
         // ───────────────────────────────── Служебные методы ─────────────────────────────────
 
         /// <summary>Вспомогательный расчёт «чистого» перелёта через obstacle.</summary>
-        private static bool IsJumpOverIntervals(
+        public static bool IsJumpOverIntervals(
             float hL, float hR,
             float oStartL, float oStartR,
             float oEndL, float oEndR,
