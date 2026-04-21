@@ -47,6 +47,12 @@
 ### docs/Planning/Milestone New York.md
 Высокоуровневая дорожная карта контента и задач по первой локации.
 
+### docs/Planning/gameplay-runtime-bot-spec.md
+Техническая спецификация runtime-правил, влияющих на команды бота и исходы gameplay-действий.
+
+### docs/Planning/in-progress/action-outcome-resolver-refactor-plan.md
+Активный план рефакторинга общего outcome-resolver слоя для runtime mechanics и bot planning safety.
+
 ### docs/Planning/GameEconomy.md
 Документ по экономике игры: ресурсы, баланс и идеи по улучшению.
 
