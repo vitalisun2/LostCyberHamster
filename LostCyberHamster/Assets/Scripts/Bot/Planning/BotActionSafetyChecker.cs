@@ -2,6 +2,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
+using System.Collections.Generic;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -76,7 +77,7 @@ namespace Assets.Scripts.Bot.Planning
             HamsterSnapshot hamster,
             float jumpShift,
             ObstacleSnapshot obstacle,
-            System.Collections.Generic.IReadOnlyList<ObstacleSnapshot> projectedObstacles,
+            IReadOnlyList<ObstacleSnapshot> projectedObstacles,
             float fireShift)
         {
             switch (obstacle.ObstacleType)
@@ -108,7 +109,7 @@ namespace Assets.Scripts.Bot.Planning
             HamsterSnapshot hamster,
             float jumpShift,
             ObstacleSnapshot small,
-            System.Collections.Generic.IReadOnlyList<ObstacleSnapshot> projectedObstacles,
+            IReadOnlyList<ObstacleSnapshot> projectedObstacles,
             float fireShift)
         {
             if (IsJumpOver(hamster, jumpShift, small))
@@ -127,7 +128,7 @@ namespace Assets.Scripts.Bot.Planning
         private static bool IsHitSmallNotAliveOnRoof(
             HamsterSnapshot hamster,
             float worldShift,
-            System.Collections.Generic.IReadOnlyList<ObstacleSnapshot> projectedObstacles,
+            IReadOnlyList<ObstacleSnapshot> projectedObstacles,
             float fireShift)
         {
             for (int obstacleIndex = 0; obstacleIndex < projectedObstacles.Count; obstacleIndex++)
@@ -148,7 +149,7 @@ namespace Assets.Scripts.Bot.Planning
 
         private static bool TryFindRoofUnderSmall(
             ObstacleSnapshot small,
-            System.Collections.Generic.IReadOnlyList<ObstacleSnapshot> projectedObstacles,
+            IReadOnlyList<ObstacleSnapshot> projectedObstacles,
             float fireShift,
             out ObstacleSnapshot roof)
         {
