@@ -32,23 +32,11 @@ namespace Assets.Scripts.Bot.Planning
         private static bool IsSafeJumpOver(PlanningState state, PlannedAction action, WorldSnapshot world)
         {
             HamsterSnapshot hamster = state.Hamster;
-            WorldSnapshot projectedWorld = PlanningSnapshotProjector.Project(world, state);
-            if (projectedWorld == null)
-                return false;
-
             float fireShift = action.CompletionWorldShift - action.PostFireWorldShift;
             float jumpShift = action.PostFireWorldShift;
-            List<JumpObstacleData> obstacles = new(projectedWorld.Obstacles.Count);
-            for (int obstacleIndex = 0; obstacleIndex < projectedWorld.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = projectedWorld.Obstacles[obstacleIndex];
-                obstacles.Add(new JumpObstacleData(
-                    obstacle.ObstacleType,
-                    obstacle.IsBottomLine,
-                    obstacle.LeftX - fireShift,
-                    obstacle.RightX - fireShift,
-                    obstacle.CenterX - fireShift));
-            }
+            List<JumpObstacleData> obstacles = BuildProjectedObstacles(state, world, fireShift);
+            if (obstacles == null)
+                return false;
 
             JumpResolveContext context = new(
                 hamster.IsOnBottomLine,
@@ -66,13 +54,54 @@ namespace Assets.Scripts.Bot.Planning
 
         private static bool IsSafeSuperJumpOver(PlanningState state, PlannedAction action, WorldSnapshot world)
         {
-            return true;
+            HamsterSnapshot hamster = state.Hamster;
+            float fireShift = action.CompletionWorldShift - action.PostFireWorldShift;
+            float superJumpShift = action.PostFireWorldShift;
+            List<JumpObstacleData> obstacles = BuildProjectedObstacles(state, world, fireShift);
+            if (obstacles == null)
+                return false;
+
+            JumpResolveContext context = new(
+                hamster.IsOnBottomLine,
+                hamster.HamsterLeftX,
+                hamster.HamsterRightX,
+                hamster.CenterX,
+                hamster.Width,
+                superJumpShift,
+                superJumpShift);
+
+            JumpResolveResult result = SuperJumpOutcomeResolver.ResolveSuperJump(obstacles, context);
+            return result.State is HamsterStateEnum.SuperJump or HamsterStateEnum.SuperJumpOver;
         }
 
         private static bool IsSafeSwitchLane(PlanningState state, PlannedAction action)
         {
             return action.TargetBottomLine.HasValue
                 && action.TargetBottomLine.Value != state.IsOnBottomLine;
+        }
+
+        private static List<JumpObstacleData> BuildProjectedObstacles(
+            PlanningState state,
+            WorldSnapshot world,
+            float fireShift)
+        {
+            WorldSnapshot projectedWorld = PlanningSnapshotProjector.Project(world, state);
+            if (projectedWorld == null)
+                return null;
+
+            List<JumpObstacleData> obstacles = new(projectedWorld.Obstacles.Count);
+            for (int obstacleIndex = 0; obstacleIndex < projectedWorld.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = projectedWorld.Obstacles[obstacleIndex];
+                obstacles.Add(new JumpObstacleData(
+                    obstacle.ObstacleType,
+                    obstacle.IsBottomLine,
+                    obstacle.LeftX - fireShift,
+                    obstacle.RightX - fireShift,
+                    obstacle.CenterX - fireShift));
+            }
+
+            return obstacles;
         }
     }
 }

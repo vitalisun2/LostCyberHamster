@@ -57,10 +57,10 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskParallel.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanBuilder.cs" />
-    <Compile Include="Assets\Scripts\Bot\Planning\BotActionSafetyChecker.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitRoadLoadingTask.cs" />
     <Compile Include="Assets\Scripts\UI\Components\CrystalStorageUI.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoint.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\BotActionSafetyChecker.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UnspawnOutOfBoundsMechanics.cs" />
     <Compile Include="Assets\Scripts\Installers\ProjectInstaller.cs" />
     <Compile Include="Assets\Scripts\System\DecorationSpawner.cs" />
@@ -72,6 +72,7 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinManager.cs" />
     <Compile Include="Assets\Scripts\Common\Models\ObstacleTypeEnum.cs" />
     <Compile Include="Assets\Scripts\System\Models\EffectAssetData.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResolveContext.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\ScrollRepeatMechanic.cs" />
     <Compile Include="Assets\Scripts\System\Resources\AddressableLocationsLease.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenController.cs" />
@@ -92,10 +93,6 @@
     <Compile Include="Assets\Scripts\Bot\Planning\Strategies\JumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\Strategies\UnsafeInterval.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitAudioManagerLoadingTask copy.cs" />
-    <Compile Include="Assets\Scripts\GameEngine\Mechanics\JumpOutcomeResolver.cs" />
-    <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpObstacleData.cs" />
-    <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResolveContext.cs" />
-    <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResolveResult.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResult.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\AuthenticateUserLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Data\LevelProgressKeyAdapters.cs" />
@@ -132,6 +129,7 @@
     <Compile Include="Assets\Scripts\System\AutomationRuntimePrefs.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelCatalogService.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\QuestSystem\QuestManager.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperJumpOutcomeResolver.cs" />
     <Compile Include="Assets\Scripts\System\UserSettings.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitLocationsListLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\HamsterAnimationEventsMechanics.cs" />
@@ -164,6 +162,7 @@
     <Compile Include="Assets\Scripts\UI\Modals\WinModalController.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\JumpMechanics.cs" />
     <Compile Include="Assets\Scripts\Common\Models\ObstacleSlot.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\JumpOutcomeResolver.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperJumpMechanics.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\EnergyMechanics.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelDataValidator.cs" />
@@ -270,6 +269,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\DeathMechanics.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LocationInfoList.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\HomeScreenController.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpObstacleData.cs" />
     <Compile Include="Assets\Scripts\Gameplay\BoomEffect.cs" />
     <Compile Include="Assets\Scripts\Common\Models\CatalogBundle.cs" />
     <Compile Include="Assets\Scripts\UI\Components\QuestItem.cs" />
@@ -322,6 +322,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UltaChargeMechanics.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiPauseMechanics.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\DailyTasksScreenController.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResolveResult.cs" />
     <Compile Include="Assets\Scripts\SharedCore\UI\UIElements\LocalizedButton.cs" />
     <Compile Include="Assets\Scripts\Common\Models\Catalog.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiWinModalMechanics.cs" />
