@@ -15,8 +15,6 @@ namespace Assets.Scripts.Bot.Planning.Strategies
     {
         private const string JumpClipName = "transform_jump";
         private const int JumpEnergyCost = 10;
-        private const float LatestFireSafetyMargin = 0.03f;
-        private const float EarliestClearanceMargin = 0.02f;
 
         private float? _jumpTravel;
 
@@ -45,17 +43,16 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             if (!TryGetJumpTravel(out float jumpTravel))
                 return;
 
-            // Выбираем окно fire так, чтобы к концу jump-клипа obstacle уже осталось позади хомяка.
-            HamsterSnapshot hamster = planningState.Hamster;
-            float earliestFireShift =
-                targetObstacle.RightX - hamster.HamsterLeftX - jumpTravel + EarliestClearanceMargin;
-            float latestFireShift =
-                targetObstacle.LeftX - hamster.HamsterRightX - LatestFireSafetyMargin;
-
-            if (latestFireShift < 0f || earliestFireShift > latestFireShift)
+            // Ищем момент запуска только там, где shared resolver подтверждает exact JumpOver.
+            if (!ActionWindowFinder.TryFindJumpOverFireShift(
+                    planningState,
+                    worldSnapshot,
+                    targetObstacle,
+                    decisionPoint.ObstacleIndex,
+                    jumpTravel,
+                    out float fireShift))
                 return;
 
-            float fireShift = Mathf.Max(0f, earliestFireShift);
             float triggerX = targetObstacle.LeftX - fireShift;
             float renderWorldX = triggerX + planningState.ProjectionWorldShift;
 

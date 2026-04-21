@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning.Strategies;
-using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -14,6 +13,7 @@ namespace Assets.Scripts.Bot.Planning
         private readonly PlanningGraphBuilder _graphBuilder;
         private readonly TransitionSimulator _transitionSimulator;
         private readonly PlanEvaluator _planEvaluator;
+        private readonly RetainedActionRevalidator _retainedActionRevalidator = new RetainedActionRevalidator();
 
         /// <summary>
         /// Создает сборщик плана поверх генератора, симулятора и evaluator'а.
@@ -81,6 +81,16 @@ namespace Assets.Scripts.Bot.Planning
                 if (!ShouldRetainAction(action, actionIndex, worldSnapshot, retainInProgressHead))
                     break;
 
+                bool isBoundaryRetainedAction = IsBoundaryRetainedAction(
+                    currentActions,
+                    actionIndex,
+                    worldSnapshot,
+                    retainInProgressHead);
+                if (isBoundaryRetainedAction
+                    && !(retainInProgressHead && actionIndex == 0)
+                    && !_retainedActionRevalidator.IsStillValid(currentState, action, worldSnapshot))
+                    break;
+
                 PlanningState nextState = retainInProgressHead && actionIndex == 0
                     ? ProjectInProgressHead(currentState, action, worldSnapshot)
                     : _transitionSimulator.Simulate(currentState, action, worldSnapshot);
@@ -93,7 +103,25 @@ namespace Assets.Scripts.Bot.Planning
 
             return currentState;
         }
+        private static bool IsBoundaryRetainedAction(
+            IReadOnlyList<PlannedAction> actions,
+            int actionIndex,
+            WorldSnapshot worldSnapshot,
+            bool retainInProgressHead)
+        {
+            if (actions == null)
+                return false;
 
+            int nextActionIndex = actionIndex + 1;
+            if (nextActionIndex >= actions.Count)
+                return true;
+
+            return !ShouldRetainAction(
+                actions[nextActionIndex],
+                nextActionIndex,
+                worldSnapshot,
+                retainInProgressHead);
+        }
         private static PlanningState ProjectInProgressHead(
             PlanningState planningState,
             PlannedAction action,

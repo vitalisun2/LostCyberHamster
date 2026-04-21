@@ -1,4 +1,5 @@
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -11,8 +12,16 @@ namespace Assets.Scripts.Bot.Execution.Handlers
     /// </summary>
     internal sealed class SuperJumpActionHandler : IActionExecutionHandler
     {
+        private const float UpgradeDelaySeconds = DoubleJumpDetector.DoubleJumpThreshold * 0.5f;
+
+        private bool _isUpgradeScheduled;
+        private float _upgradeReadyTime;
+
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
+            // Новый запуск всегда сбрасывает хвост от предыдущей двухфазной попытки.
+            ResetUpgradeSchedule();
+
             if (hamster == null || action == null || action.Kind != BotActionKind.SuperJump)
                 return ActionFireResult.Cancelled;
 
@@ -52,18 +61,36 @@ namespace Assets.Scripts.Bot.Execution.Handlers
                 return ActionFireResult.Cancelled;
             }
 
-            hamster.SuperJumpRequest.Invoke();
+            // Второй тап отправляем в середине допустимого окна double-jump.
+            _isUpgradeScheduled = true;
+            _upgradeReadyTime = Time.time + UpgradeDelaySeconds;
             return ActionFireResult.Fired;
         }
 
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
             if (hamster == null || action == null)
+            {
+                ResetUpgradeSchedule();
                 return true;
+            }
+
+            // Пока delay не истёк, удерживаем действие в первой фазе jump.
+            if (_isUpgradeScheduled)
+            {
+                if (Time.time < _upgradeReadyTime)
+                    return false;
+
+                if (CanUpgradeToSuperJump(hamster.HamsterState.Value))
+                    hamster.SuperJumpRequest.Invoke();
+
+                ResetUpgradeSchedule();
+            }
 
             bool completed = hamster.HamsterState.Value == HamsterStateEnum.Run;
             if (completed)
             {
+                ResetUpgradeSchedule();
                 DebugManager.DiagLog(
                     $"[Bot EXEC] COMPLETE kind={action.Kind} " +
                     $"state={hamster.HamsterState.Value} " +
@@ -83,6 +110,12 @@ namespace Assets.Scripts.Bot.Execution.Handlers
                    || hamsterState == HamsterStateEnum.JumpDamageForSmallNotAlive
                    || hamsterState == HamsterStateEnum.JumpDamageForBigAlive
                    || hamsterState == HamsterStateEnum.JumpOnRoofDamage;
+        }
+
+        private void ResetUpgradeSchedule()
+        {
+            _isUpgradeScheduled = false;
+            _upgradeReadyTime = 0f;
         }
 
         private static Obstacle FindLiveObstacle(int instanceId)

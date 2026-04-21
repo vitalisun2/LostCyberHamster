@@ -60,7 +60,6 @@
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitRoadLoadingTask.cs" />
     <Compile Include="Assets\Scripts\UI\Components\CrystalStorageUI.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoint.cs" />
-    <Compile Include="Assets\Scripts\Bot\Planning\BotActionSafetyChecker.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UnspawnOutOfBoundsMechanics.cs" />
     <Compile Include="Assets\Scripts\Installers\ProjectInstaller.cs" />
     <Compile Include="Assets\Scripts\System\DecorationSpawner.cs" />
@@ -90,6 +89,7 @@
     <Compile Include="Assets\Scripts\SharedCore\UI\UIElements\SlideToggle.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\EnvironmentKeyResolver.cs" />
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskSequence.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\Strategies\ActionWindowFinder.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\Strategies\JumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\Strategies\UnsafeInterval.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitAudioManagerLoadingTask copy.cs" />
@@ -201,6 +201,7 @@
     <Compile Include="Assets\Scripts\Common\Models\SpriteOverride.cs" />
     <Compile Include="Assets\Scripts\Entry Points\MenuEntryPoint.cs" />
     <Compile Include="Assets\Scripts\Ads\AdsInitializationListener.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\RetainedActionRevalidator.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperRoofJumpMechanics.cs" />
     <Compile Include="Assets\Scripts\Gameplay\EnergeticBonus.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\Ultas\ElectricStrikeUlta.cs" />

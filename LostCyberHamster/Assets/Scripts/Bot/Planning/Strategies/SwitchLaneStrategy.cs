@@ -16,6 +16,8 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         private const float ExecutionLeadDistance = 0.18f;
         private const float LatestFireSafetyMargin = 0.05f;
         private const float FireSelectionMargin = 0.02f;
+        private const float InteriorSelectionRatio = 0.5f;
+        private const float RuntimeFireDelayBudget = Assets.Scripts.Consts.GameSpeedBase / Assets.Scripts.Consts.FPS;
 
         /// <summary>
         /// Возвращает тип действия, которое планирует стратегия.
@@ -43,11 +45,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 return;
 
             HamsterSnapshot hamster = planningState.Hamster;
-            float latestFireShift = targetObstacle.LeftX
-                - hamster.HamsterRightX
-                - LatestFireSafetyMargin
-                - ExecutionLeadDistance;
-            if (latestFireShift <= 0f)
+            if (!TryGetLatestFireShift(hamster, targetObstacle, out float latestFireShift))
                 return;
 
             List<SafeInterval> safeIntervals = CollectSafeFireIntervals(
@@ -58,11 +56,20 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             for (int intervalIndex = 0; intervalIndex < safeIntervals.Count; intervalIndex++)
             {
                 SafeInterval interval = safeIntervals[intervalIndex];
-                AddTapCandidate(actions, planningState, targetObstacle, targetObstacleIndex, interval.Start);
+                if (!TrySelectInteriorFireShift(interval, out float selectedFireShift))
+                    continue;
 
-                if (Mathf.Abs(interval.End - interval.Start) > FireSelectionMargin)
-                    AddTapCandidate(actions, planningState, targetObstacle, targetObstacleIndex, interval.End);
+                AddTapCandidate(actions, planningState, targetObstacle, targetObstacleIndex, selectedFireShift);
             }
+        }
+
+        private static bool TrySelectInteriorFireShift(SafeInterval interval, out float fireShift)
+        {
+            return interval.TrySelectInteriorPoint(
+                RuntimeFireDelayBudget,
+                InteriorSelectionRatio,
+                out fireShift,
+                FireSelectionMargin);
         }
 
         private static void AddTapCandidate(
@@ -102,7 +109,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return PlanningStateTransition.Advance(planningState, action, worldSnapshot, nextHamster);
         }
 
-        private static bool CanSwitchLane(PlanningState planningState, ObstacleSnapshot targetObstacle)
+        internal static bool CanSwitchLane(PlanningState planningState, ObstacleSnapshot targetObstacle)
         {
             HamsterSnapshot hamster = planningState.Hamster;
             if (hamster.IsOnRoof || hamster.IsDamaged || hamster.IsShifting)
@@ -111,7 +118,19 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return true;
         }
 
-        private static List<SafeInterval> CollectSafeFireIntervals(
+        internal static bool TryGetLatestFireShift(
+            HamsterSnapshot hamster,
+            ObstacleSnapshot targetObstacle,
+            out float latestFireShift)
+        {
+            latestFireShift = targetObstacle.LeftX
+                - hamster.HamsterRightX
+                - LatestFireSafetyMargin
+                - ExecutionLeadDistance;
+            return latestFireShift > 0f;
+        }
+
+        internal static List<SafeInterval> CollectSafeFireIntervals(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,

@@ -12,7 +12,7 @@ namespace Assets.Scripts.Bot.Perception
     /// </summary>
     public sealed class SnapshotBuilder
     {
-        private const float _extraVisionScreenFraction = 0.5f;
+        private const float _extraVisionScreenFraction = 1f;
 
         /// <summary>
         /// Строит snapshot мира по текущему состоянию хомяка и окружения.

@@ -40,5 +40,14 @@ namespace Assets.Scripts.Bot.Planning
                 || obstacleType == ObstacleTypeEnum.smallNotAliveRoad
                 || obstacleType == ObstacleTypeEnum.smallNotAliveRoadAndRoof;
         }
+
+        /// <summary>
+        /// Возвращает true для дорожных small-obstacle типов, которые можно перелететь одной chain-over дугой.
+        /// </summary>
+        public static bool IsRoadSmallOverChainObstacle(ObstacleTypeEnum obstacleType)
+        {
+            return obstacleType == ObstacleTypeEnum.smallNotAliveRoad
+                || obstacleType == ObstacleTypeEnum.smallNotAliveRoadAndRoof;
+        }
     }
 }

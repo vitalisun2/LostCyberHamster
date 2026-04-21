@@ -11,6 +11,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
     {
         private const string _superJumpClipName = "transform_super_jump";
         private const int _superJumpEnergyCost = 20;
+        private const float _midUpgradeDelayShift = DoubleJumpDetector.DoubleJumpThreshold * 0.5f * Assets.Scripts.Consts.GameSpeedBase;
 
         private float? _superJumpTravel;
 
@@ -44,14 +45,16 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             if (!CanSuperJumpOver(planningState, targetObstacle))
                 return;
 
-            // Берём фактическую длину runtime-клипа super jump.
+            // Берём фактическую длину super jump вместе с задержкой второго тапа в середине runtime-окна.
             if (!TryGetSuperJumpTravel(out float superJumpTravel))
                 return;
 
-            // Ищем окно запуска, которое даст runtime-результат SuperJumpOver.
-            if (!TryComputeSuperJumpOverFireShift(
-                    planningState.Hamster,
+            // Ищем момент запуска только там, где shared resolver подтверждает exact SuperJumpOver.
+            if (!ActionWindowFinder.TryFindSuperJumpOverFireShift(
+                    planningState,
+                    worldSnapshot,
                     targetObstacle,
+                    decisionPoint.ObstacleIndex,
                     superJumpTravel,
                     out float fireShift))
                 return;
@@ -101,31 +104,6 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return ObstacleClassifier.CanSuperJumpOverOnGround(targetObstacle.ObstacleType);
         }
 
-        private static bool TryComputeSuperJumpOverFireShift(
-            HamsterSnapshot hamster,
-            ObstacleSnapshot targetObstacle,
-            float superJumpTravel,
-            out float fireShift)
-        {
-            // Первый валидный старт: obstacle успеет оказаться позади к концу клипа.
-            float firstValidFireShift =
-                targetObstacle.RightX - hamster.HamsterLeftX - superJumpTravel;
-
-            // Последний валидный старт: obstacle ещё впереди хомяка на момент fire.
-            float lastValidFireShift =
-                targetObstacle.LeftX - hamster.HamsterRightX;
-
-            if (lastValidFireShift < 0f || firstValidFireShift > lastValidFireShift)
-            {
-                fireShift = 0f;
-                return false;
-            }
-
-            // Выбираем самый ранний доступный запуск внутри окна.
-            fireShift = Mathf.Max(0f, firstValidFireShift);
-            return true;
-        }
-
         private bool TryGetSuperJumpTravel(out float superJumpTravel)
         {
             // Возвращаем кеш.
@@ -139,8 +117,8 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
             Guard.NotNull((controller, nameof(TransformAnimatorController)));
 
-            // Кешируем длину клипа.
-            _superJumpTravel = HelpMethods.GetWorldShiftForClip(controller, _superJumpClipName);
+            // Кешируем полный пролёт: средний delay между тапами + длина самого super jump клипа.
+            _superJumpTravel = HelpMethods.GetWorldShiftForClip(controller, _superJumpClipName) + _midUpgradeDelayShift;
             superJumpTravel = _superJumpTravel.Value;
             return true;
         }
