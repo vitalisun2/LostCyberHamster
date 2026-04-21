@@ -1,5 +1,6 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay.Enums;
@@ -14,8 +15,10 @@ namespace Assets.Scripts.Bot.Planning
     {
         public bool IsSafe(PlanningState state, PlannedAction action, WorldSnapshot world)
         {
-            if (state == null || action == null || world == null)
-                return false;
+            Guard.NotNull(
+                (state, nameof(state)),
+                (action, nameof(action)),
+                (world, nameof(world)));
 
             return action.Kind switch
             {
@@ -29,17 +32,11 @@ namespace Assets.Scripts.Bot.Planning
         private static bool IsSafeJumpOver(PlanningState state, PlannedAction action, WorldSnapshot world)
         {
             HamsterSnapshot hamster = state.Hamster;
-            if (hamster.IsOnRoof || hamster.IsShifting)
-                return false;
-
             WorldSnapshot projectedWorld = PlanningSnapshotProjector.Project(world, state);
             if (projectedWorld == null)
                 return false;
 
             float fireShift = action.CompletionWorldShift - action.PostFireWorldShift;
-            if (fireShift < 0f)
-                return false;
-
             float jumpShift = action.PostFireWorldShift;
             List<JumpObstacleData> obstacles = new(projectedWorld.Obstacles.Count);
             for (int obstacleIndex = 0; obstacleIndex < projectedWorld.Obstacles.Count; obstacleIndex++)

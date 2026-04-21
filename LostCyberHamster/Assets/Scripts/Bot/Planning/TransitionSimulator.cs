@@ -13,6 +13,7 @@ namespace Assets.Scripts.Bot.Planning
     public sealed class TransitionSimulator
     {
         private readonly IReadOnlyDictionary<BotActionKind, IPlanningStrategy> _strategiesByActionKind;
+        private readonly BotActionSafetyChecker _safetyChecker = new BotActionSafetyChecker();
 
         /// <summary>
         /// Создает диспетчер planning-симуляции поверх набора стратегий.
@@ -44,6 +45,9 @@ namespace Assets.Scripts.Bot.Planning
         public PlanningState Simulate(PlanningState planningState, PlannedAction action, WorldSnapshot worldSnapshot)
         {
             if (planningState == null || action == null || worldSnapshot == null)
+                return null;
+
+            if (!_safetyChecker.IsSafe(planningState, action, worldSnapshot))
                 return null;
 
             IPlanningStrategy strategy = GetRequiredStrategy(action);
