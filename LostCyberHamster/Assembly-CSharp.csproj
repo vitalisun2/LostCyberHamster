@@ -92,6 +92,10 @@
     <Compile Include="Assets\Scripts\Bot\Planning\Strategies\JumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\Strategies\UnsafeInterval.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitAudioManagerLoadingTask copy.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\JumpOutcomeResolver.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpObstacleData.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResolveContext.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResolveResult.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResult.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\AuthenticateUserLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Data\LevelProgressKeyAdapters.cs" />
