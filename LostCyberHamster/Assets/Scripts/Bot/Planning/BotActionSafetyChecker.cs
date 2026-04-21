@@ -60,8 +60,8 @@ namespace Assets.Scripts.Bot.Planning
                 hamster.IsOnBottomLine,
                 hamster.HamsterLeftX,
                 hamster.HamsterRightX,
-                HamsterCenterX(hamster),
-                HamsterWidth(hamster),
+                hamster.CenterX,
+                hamster.Width,
                 jumpShift,
                 jumpShift,
                 damageBigAliveWithoutYByReach: true);
@@ -79,16 +79,6 @@ namespace Assets.Scripts.Bot.Planning
         {
             return action.TargetBottomLine.HasValue
                 && action.TargetBottomLine.Value != state.IsOnBottomLine;
-        }
-
-        private static float HamsterCenterX(HamsterSnapshot hamster)
-        {
-            return (hamster.HamsterLeftX + hamster.HamsterRightX) * 0.5f;
-        }
-
-        private static float HamsterWidth(HamsterSnapshot hamster)
-        {
-            return hamster.HamsterRightX - hamster.HamsterLeftX;
         }
     }
 }

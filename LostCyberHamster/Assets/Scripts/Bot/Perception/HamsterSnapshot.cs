@@ -44,6 +44,8 @@ namespace Assets.Scripts.Bot.Perception
         public int? RoofSupportInstanceId { get; }
         public float HamsterLeftX { get; }
         public float HamsterRightX { get; }
+        public float CenterX => (HamsterLeftX + HamsterRightX) * 0.5f;
+        public float Width => HamsterRightX - HamsterLeftX;
 
     }
 }
