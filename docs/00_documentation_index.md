@@ -47,11 +47,8 @@
 ### docs/Planning/Milestone New York.md
 Высокоуровневая дорожная карта контента и задач по первой локации.
 
-### docs/Planning/gameplay-runtime-bot-spec.md
-Техническая спецификация runtime-правил, влияющих на команды бота и исходы gameplay-действий.
-
-### docs/Planning/in-progress/action-outcome-resolver-refactor-plan.md
-Активный план рефакторинга общего outcome-resolver слоя для runtime mechanics и bot planning safety.
+### docs/Planning/hamster-obstacle-runtime-spec.md
+Справочная спецификация runtime-логики взаимодействия хомяка с obstacle: линии, столкновения, прыжки, урон, энергия и награды.
 
 ### docs/Planning/GameEconomy.md
 Документ по экономике игры: ресурсы, баланс и идеи по улучшению.
@@ -79,6 +76,9 @@
 
 ### docs/Planning/in-progress/
 Каталог активных рабочих спецификаций и task-файлов до завершения изменений и merge.
+
+### docs/Planning/in-progress/tap-outcome-resolver-and-switch-lane-window-plan.md
+План унификации runtime tap semantics и bot switch-lane window search через `TapOutcomeResolver` и `ActionWindowFinder`.
 
 ---
 

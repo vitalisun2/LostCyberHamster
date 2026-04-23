@@ -1,14 +1,14 @@
-# LostCyberHamster: runtime gameplay spec for bot
+# LostCyberHamster: runtime hamster-obstacle interaction spec
 
 ## 1. Назначение документа
 
-Документ фиксирует runtime-правила, по которым бот принимает решения во время уровня в состоянии `PLAYING`.
+Документ фиксирует runtime-правила взаимодействия хомяка с obstacle во время уровня в состоянии `PLAYING`.
 
 Это точная техническая спецификация для:
 
 - описания поведения runtime;
-- проектирования bot logic;
-- верификации того, что логика бота совпадает с кодом игры.
+- верификации того, что справочная документация совпадает с кодом игры;
+- проектирования систем, которым нужно повторять или учитывать эти runtime-правила.
 
 Документ описывает только те части gameplay, которые влияют на выбор и исход команд `Tap`, `Jump`, `SuperJump`, `RoofJump` и `SuperRoofJump`.
 
@@ -86,7 +86,7 @@
 
 ### 4.1. Поля runtime-state
 
-Для бота значимы следующие поля:
+Для runtime-взаимодействия с obstacle значимы следующие поля:
 
 - `HamsterState`;
 - `IsOnBottomLine`;
@@ -112,7 +112,7 @@
 
 Если запрос принят:
 
-- `ShiftTransformAnimatorController.ShiftToBottomLine()` инвертирует animator bool `IsShiftedDown`;
+- `ShiftTransformAnimatorController.ToggleLane()` инвертирует animator bool `IsShiftedDown`;
 - после этого `IsOnBottomLine` сразу записывается из нового значения `IsShiftedDown()`;
 - визуальный переход между линиями идет анимацией, но логическая линия меняется в тот же кадр.
 
@@ -154,22 +154,19 @@
 - состояния `Jump`, `JumpOver`, `JumpOnObstacle`, `JumpOnRoof`, `JumpDamageForSmallAlive`, `JumpDamageForSmallNotAlive`, `JumpDamageForBigAlive`, `JumpOnRoofDamage` вызывают `SuperJumpRequest`;
 - состояния `RoofJump`, `RoofJumpDamage`, `JumpFromRoof`, `JumpFromRoofDamage`, `JumpOnObstacleFromRoof` вызывают `SuperRoofJumpRequest`.
 
-Bot execution layer эмулирует road super jump через `SuperJumpHandler`:
-
-- в `Fire()` отправляется `JumpRequest`;
-- через `0.15` секунды, то есть через `DoubleJumpThreshold / 2`, отправляется `SuperJumpRequest`.
+Этот раздел описывает только runtime keyboard flow. Другие input/execution layers находятся вне области этой спецификации и могут поддерживать подмножество команд.
 
 ## 5. Глобальные runtime-правила
 
 ### 5.1. Какие obstacles участвуют в расчете прыжка
 
-`CollisionUtils.GetValidObstaclesAhead()` включает в расчет только obstacles, которые одновременно:
+`CollisionUtils.GetValidObstaclesAhead()` возвращает только obstacles, которые одновременно:
 
 - находятся на той же логической линии, что и хомяк;
 - имеют `transform.position.x > hamster.position.x`;
 - еще не despawn'нуты и присутствуют в `ObstacleSpawner.Instance.SpawnedObstacles`.
 
-Проверка прекращается, когда после смещения на длину текущего jump-клипа левая граница следующего obstacle остается правее правой границы хомяка.
+Ранний выход по reach выполняется уже в конкретных mechanics/resolver: проверка прекращается, когда после смещения на длину текущего jump-клипа левая граница следующего obstacle остается правее правой границы хомяка.
 
 ### 5.2. Общие правила trigger-collision
 
