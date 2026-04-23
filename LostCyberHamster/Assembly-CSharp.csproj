@@ -90,6 +90,7 @@
     <Compile Include="Assets\Scripts\System\LevelManagement\EnvironmentKeyResolver.cs" />
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskSequence.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\Strategies\ActionWindowFinder.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\Strategies\JumpToRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\Strategies\JumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\Strategies\UnsafeInterval.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitAudioManagerLoadingTask copy.cs" />
