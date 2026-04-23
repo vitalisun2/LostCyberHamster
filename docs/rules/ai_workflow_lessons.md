@@ -69,7 +69,7 @@
 - [promoted -> docs/rules/workflow.md] Не объявлять задачу завершённой до конца git-цикла.
 - [promoted -> docs/rules/code_conventions.md] Для новых Unity assets/scripts коммитить `.meta`, сгенерированные самим editor, а не писать их вручную.
 - [promoted -> docs/rules/code_conventions.md] При удалении файлов проверять тесты на ссылки на удалённые типы.
-- [promoted -> docs/rules/code_conventions.md] После изменений .cs файлов запускать recompile_scripts.
+- [promoted -> docs/rules/code_conventions.md] После изменений .cs файлов запускать recompile_scripts только по явному запросу пользователя.
 
 #### Эффективность итераций
 
