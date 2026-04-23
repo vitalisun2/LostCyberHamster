@@ -11,12 +11,12 @@ namespace Assets.Scripts.Bot.Planning.Strategies
     public sealed class JumpToRoofStrategy : IPlanningStrategy
     {
         /// <summary>
-        /// Возвращает тип действия, который стратегия будет использовать для roof landing.
+        /// Тип действия для roof landing.
         /// </summary>
         public BotActionKind ActionKind => BotActionKind.Jump;
 
         /// <summary>
-        /// Собирает кандидаты обычного прыжка, которые должны завершиться посадкой хомяка на крышу obstacle.
+        /// Собирает кандидаты прыжка на крышу.
         /// </summary>
         public void CollectActions(
             PlanningState planningState,
@@ -28,7 +28,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         }
 
         /// <summary>
-        /// Симулирует planning-состояние после успешного landing на крышу и перехода в RoofRun.
+        /// Симулирует переход в RoofRun.
         /// </summary>
         public PlanningState Simulate(
             PlanningState planningState,
@@ -39,7 +39,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         }
 
         /// <summary>
-        /// Проверяет, допускает ли текущее planning-состояние обычный прыжок с посадкой на крышу target obstacle.
+        /// Проверяет допустимость прыжка на крышу.
         /// </summary>
         private static bool CanJumpToRoof(PlanningState planningState, ObstacleSnapshot targetObstacle)
         {
@@ -47,7 +47,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         }
 
         /// <summary>
-        /// Возвращает длину runtime jump-клипа, чтобы стратегия искала fire window в том же тайминге, что и gameplay.
+        /// Возвращает длину jump-клипа.
         /// </summary>
         private bool TryGetJumpTravel(out float jumpTravel)
         {
@@ -55,7 +55,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         }
 
         /// <summary>
-        /// Создаёт planned action для roof landing после того, как будет найден корректный fire shift.
+        /// Строит action для прыжка на крышу.
         /// </summary>
         private static PlannedAction BuildJumpToRoofAction(
             PlanningState planningState,
