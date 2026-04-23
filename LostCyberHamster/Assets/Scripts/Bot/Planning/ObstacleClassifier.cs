@@ -8,6 +8,15 @@ namespace Assets.Scripts.Bot.Planning
     public static class ObstacleClassifier
     {
         /// <summary>
+        /// Возвращает true, если obstacle имеет собственную крышу, по которой может бежать хомяк.
+        /// </summary>
+        public static bool IsObstacleWithRoof(ObstacleTypeEnum obstacleType)
+        {
+            return obstacleType == ObstacleTypeEnum.bigNotAlive
+                || obstacleType == ObstacleTypeEnum.mediumNotAlive;
+        }
+
+        /// <summary>
         /// Возвращает true, если объект опасен при прямом контакте на земле.
         /// </summary>
         public static bool DamagesOnGroundContact(ObstacleTypeEnum obstacleType)

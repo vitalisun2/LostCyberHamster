@@ -32,8 +32,8 @@ namespace Assets.Scripts.Bot.Planning
                 if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
                     continue;
 
-                // Roof obstacles выделяем в отдельную decision point, чтобы landing на крышу не смешивался с обычным ground block.
-                if (ObstacleClassifier.IsRoofObstacle(obstacle.ObstacleType))
+                // Obstacles with roof выделяем в отдельную decision point, чтобы landing на крышу не смешивался с обычным ground block.
+                if (ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType))
                 {
                     decisionPoint = new DecisionPoint(
                         DecisionPointKind.RoofLanding,
