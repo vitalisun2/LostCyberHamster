@@ -12,22 +12,19 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly ShiftTransformAnimatorController _shiftTransformAnimatorController;
         private readonly AtomicVariable<HamsterStateEnum> _hamsterState;
         private readonly AtomicVariable<bool> _isShifting;
-        private readonly AtomicVariable<bool> _isDamaged;
 
         private static readonly ProfilerMarker s_TapLogicMarker = new ProfilerMarker("TapLogic");
 
         public TapMechanics(AtomicEvent tapRequest, AtomicVariable<bool> isOnBottomLine,
             ShiftTransformAnimatorController shiftTransformAnimatorController,
             AtomicVariable<HamsterStateEnum> hamsterState,
-            AtomicVariable<bool> isShifting,
-            AtomicVariable<bool> isDamaged)
+            AtomicVariable<bool> isShifting)
         {
             _tapRequest = tapRequest;
             _isOnBottomLine = isOnBottomLine;
             _shiftTransformAnimatorController = shiftTransformAnimatorController;
             _hamsterState = hamsterState;
             _isShifting = isShifting;
-            _isDamaged = isDamaged;
         }
 
         public void OnUpdate()
@@ -49,14 +46,15 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             using (s_TapLogicMarker.Auto())
             {
-                if (_hamsterState.Value != HamsterStateEnum.Run &&
-                    _hamsterState.Value != HamsterStateEnum.RoofRun &&
-                    !_isDamaged.Value)
+                // Игнорируем tap, если общее runtime-правило его отклоняет.
+                if (!TapOutcomeResolver.CanAcceptTap(
+                    _hamsterState.Value,
+                    _isShifting.Value))
+                {
                     return;
+                }
 
-                if (_isShifting.Value)
-                    return;
-
+                // Запускаем смену линии и синхронизируем публичное состояние.
                 _shiftTransformAnimatorController.ToggleLane();
                 _isOnBottomLine.Value = _shiftTransformAnimatorController.IsShiftedDown();
                 _isShifting.Value = _shiftTransformAnimatorController.IsShifting();

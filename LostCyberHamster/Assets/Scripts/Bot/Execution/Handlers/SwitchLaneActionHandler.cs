@@ -1,4 +1,6 @@
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Common;
+using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
 using UnityEngine;
@@ -15,16 +17,31 @@ namespace Assets.Scripts.Bot.Execution.Handlers
         /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
-            // Validate the planned action against the current runtime state first.
-            if (hamster == null || action == null || !action.TargetObstacleInstanceId.HasValue)
+            // Проверяем исполнимость запланированного tap.
+            Guard.NotNull(
+                (hamster, nameof(hamster)),
+                (action, nameof(action)));
+
+            if (!action.TargetObstacleInstanceId.HasValue)
                 return ActionFireResult.Cancelled;
 
-            if (hamster.IsShifting.Value)
-                return ActionFireResult.Waiting;
-
-            if (action.TargetBottomLine.HasValue && hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value)
+            if (!action.TargetBottomLine.HasValue)
                 return ActionFireResult.Cancelled;
 
+            if (!TapOutcomeResolver.CanAcceptTap(
+                    hamster.HamsterState.Value,
+                    hamster.IsShifting.Value))
+            {
+                return hamster.IsShifting.Value
+                    ? ActionFireResult.Waiting
+                    : ActionFireResult.Cancelled;
+            }
+
+            bool targetBottomLineAfterTap = !hamster.IsOnBottomLine.Value;
+            if (targetBottomLineAfterTap != action.TargetBottomLine.Value)
+                return ActionFireResult.Cancelled;
+
+            // Ждём live obstacle в рассчитанной точке запуска.
             Obstacle obstacle = FindLiveObstacle(action.TargetObstacleInstanceId.Value);
             if (obstacle == null)
                 return ActionFireResult.Cancelled;
@@ -33,10 +50,10 @@ namespace Assets.Scripts.Bot.Execution.Handlers
             if (collider == null)
                 return ActionFireResult.Cancelled;
 
-            // Wait until the obstacle reaches the planned trigger point.
             if (collider.bounds.min.x > action.TriggerX)
                 return ActionFireResult.Waiting;
 
+            // Отправляем tap в runtime.
             DebugManager.DiagLog(
                 $"[Bot EXEC] FIRE kind={action.Kind} " +
                 $"triggerX={action.TriggerX:F2} obstacleLeftX={collider.bounds.min.x:F2} " +
@@ -51,10 +68,7 @@ namespace Assets.Scripts.Bot.Execution.Handlers
         /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
-            // Missing runtime state means there is nothing left to wait for.
-            if (hamster == null || action == null)
-                return true;
-
+            // Проверяем, достигнут ли ожидаемый результат.
             if (hamster.IsShifting.Value)
                 return false;
 
@@ -75,11 +89,11 @@ namespace Assets.Scripts.Bot.Execution.Handlers
 
         private static Obstacle FindLiveObstacle(int instanceId)
         {
+            // Ищем runtime obstacle по instance id.
             ObstacleSpawner spawner = ObstacleSpawner.Instance;
             if (spawner == null)
                 return null;
 
-            // Match the runtime obstacle by instance id inside the live spawner snapshot.
             for (int obstacleIndex = 0; obstacleIndex < spawner.SpawnedObstacles.Count; obstacleIndex++)
             {
                 Obstacle obstacle = spawner.SpawnedObstacles[obstacleIndex]?.ObstacleScript;

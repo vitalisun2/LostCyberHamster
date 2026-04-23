@@ -96,8 +96,7 @@ namespace Assets.Scripts.Gameplay
                 IsOnBottomLine,
                 _shiftTransformAnimatorController,
                 HamsterState,
-                IsShifting,
-                IsDamaged);
+                IsShifting);
 
             CollectCoinsOrBonusAction = new CollectCoinsOrBonusAction(this);
 

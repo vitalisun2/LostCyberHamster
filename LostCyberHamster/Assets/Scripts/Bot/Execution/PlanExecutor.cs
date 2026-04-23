@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Execution.Handlers;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
 
@@ -55,7 +56,9 @@ namespace Assets.Scripts.Bot.Execution
         /// </summary>
         public void Tick(Hamster hamster)
         {
-            if (hamster == null || !CurrentPlan.HasActions)
+            Guard.NotNull((hamster, nameof(hamster)));
+
+            if (!CurrentPlan.HasActions)
                 return;
 
             PlannedAction action = CurrentPlan.Actions[0];
