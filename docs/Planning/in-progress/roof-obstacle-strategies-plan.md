@@ -1,45 +1,51 @@
 # Roof obstacle strategies plan
 
-## 1. Roof landing: `bigNotAlive` / `mediumNotAlive`
+## 1. Current slice: roof landing on `bigNotAlive` / `mediumNotAlive`
 
-Ситуация: хомяк бежит по дороге и должен запрыгнуть на крышу `bigNotAlive` или `mediumNotAlive`.
+Ситуация: хомяк бежит по дороге и должен обычным `Jump` приземлиться на крышу препятствия, получив в runtime исход `JumpOnRoof`.
 
-Что нужно:
+### Что уже сделано
 
-- `JumpToRoofStrategy` для поиска окна обычного `Jump`, который в runtime даёт `JumpOnRoof`;
-- отдельный planning transition в `RoofRun`;
-- отдельный bot handler под landing на крышу, потому что текущий `JumpActionHandler` завершает действие только при возврате в `Run`, а здесь успешный итог - `RoofRun`.
+- выделен отдельный decision point `RoofLanding`, чтобы посадка на крышу не смешивалась с обычным `BlockingGroundObstacle`;
+- добавлена `JumpOnRoofStrategy` с точным поиском fire window, где shared runtime resolver подтверждает именно `JumpOnRoof`;
+- стратегия строит `PlannedAction` c `BotActionKind.JumpOnRoof`, `TriggerX`, `CompletionWorldShift`, `TargetObstacleInstanceId` и стоимостью энергии;
+- добавлен отдельный planning transition в `RoofRun` через `PlanningStateTransition.ApplyRoofRunAfterLanding(...)`;
+- добавлена retained revalidation для `BotActionKind.JumpOnRoof`, чтобы уже выбранное jump-based действие не пересобиралось, если окно и exact runtime outcome всё ещё валидны;
+- `BotActionKind.JumpOnRoof` зарегистрирован в `PlanExecutor`;
+- `JumpOnRoofStrategy` зарегистрирована в `RuntimeBotController`.
 
-Краткая логика:
+### Что означает `planned action for JumpOnRoof`
 
-- детектим впереди roof obstacle на текущей линии;
-- ищем fire window, где runtime-исход равен `JumpOnRoof`;
-- после успешного действия переводим planning state в roof-mode.
+Это не отдельная подсистема, а конкретный результат planning-слоя: стратегия не просто говорит «можно прыгнуть на крышу», а создаёт готовый `PlannedAction`, который потом сможет исполнить execution-слой. В этом action уже лежат точка запуска, ожидаемый world shift до завершения и target obstacle.
 
-## 2. Roof threat jump: `smallNotAliveRoadAndRoof`
+### Что осталось в текущем срезе
 
-Ситуация: хомяк уже на крыше, и впереди на той же крыше или на следующей крыше стоит `smallNotAliveRoadAndRoof`.
+- выполнить полную runtime-валидацию: `recompile_scripts` и прогон всех четырёх test level-ов без регрессии в уже существующих трёх сценариях.
 
-Что нужно:
+## 2. Next slice: roof threat jump for `smallNotAliveRoadAndRoof`
+
+Это отдельная следующая механика, не часть незавершённого roof landing execution.
+
+Что понадобится:
 
 - `RoofJumpStrategy`;
-- `DecisionPointKind` для roof threat;
+- отдельный `DecisionPointKind` для roof threat;
 - runtime handler для `BotActionKind.RoofJump` в `PlanExecutor`.
 
 Краткая логика:
 
 - в roof-mode считаем `smallNotAliveRoadAndRoof` обязательной угрозой;
-- ищем окно обычного `RoofJumpRequest`, где runtime даёт безопасный `RoofJump`;
+- ищем окно `RoofJumpRequest`, где runtime даёт безопасный `RoofJump`;
 - после прыжка остаёмся в `RoofRun` на текущей или следующей roof support.
 
-## 3. Roof threat avoid by lane switch
+## 3. Next slice: roof threat avoid by lane switch
 
-Ситуация: хомяк на крыше и избегает `smallNotAliveRoadAndRoof` не прыжком, а `Tap` на соседнюю линию.
+Это тоже отдельная следующая механика, не часть незавершённого roof landing execution.
 
 Вывод по ресерчу:
 
 - отдельный `roof switch lane` handler не нужен;
-- отдельная roof-aware стратегия нужна.
+- нужна отдельная roof-aware planning логика.
 
 Почему:
 
@@ -48,22 +54,14 @@
 - текущая `SwitchLaneStrategy` не подходит, потому что запрещает `hamster.IsOnRoof`, работает только от `BlockingGroundObstacle` и не моделирует roof outcome;
 - текущий `PlanningStateTransition.ApplyLaneSwitch()` после lane switch сбрасывает `IsOnRoof = false`, а для roof tap итог может быть либо `RoofRun`, либо `RunFromRoof`.
 
-Что нужно:
+Что понадобится:
 
 - отдельная `RoofSwitchLaneStrategy` или отдельная roof-ветка внутри `SwitchLaneStrategy`;
 - roof-aware transition после `Tap`;
 - проверка, остаётся ли после shift roof support на target lane.
 
-Краткая логика:
+## 4. Current status summary
 
-- если рядом есть безопасная roof support, shift остаётся roof-to-roof;
-- если roof support нет, shift становится осознанным переходом в `RunFromRoof`;
-- unsafe window считаем не только по lane overlap, но и по сохранению roof support после shift.
-
-## 4. Итог по ближайшему срезу
-
-Ближайшие три feature-среза:
-
-1. `JumpToRoofStrategy` + handler для landing на `bigNotAlive` / `mediumNotAlive`.
-2. `RoofJumpStrategy` + handler для перепрыгивания `smallNotAliveRoadAndRoof` на крыше.
-3. `RoofSwitchLaneStrategy` без нового handler, но с новой roof-aware planning логикой.
+1. Roof landing: planning и execution подключены end-to-end; осталась только runtime-валидация.
+2. Roof threat jump: не начат.
+3. Roof switch lane: не начат.

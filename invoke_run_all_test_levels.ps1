@@ -31,7 +31,8 @@ New-Item -ItemType Directory -Path $automationPath -Force | Out-Null
 $TestLevels = @(
     '01_New_York/Morning/test_switch_lane',
     '01_New_York/Morning/test_jump_over',
-    '01_New_York/Morning/test_superjump_over'
+    '01_New_York/Morning/test_superjump_over',
+    '01_New_York/Morning/test_jump_on_roof'
 )
 
 # ── Automation bridge helper ─────────────────────────────────────────────────

@@ -7,6 +7,9 @@ using UnityEngine;
 
 namespace Assets.Scripts.Bot.Planning.Strategies
 {
+    /// <summary>
+    /// Строит и симулирует super jump через наземное препятствие.
+    /// </summary>
     public sealed class SuperJumpOverStrategy : IPlanningStrategy
     {
         private const string _superJumpClipName = "transform_super_jump";
@@ -15,7 +18,10 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
         private float? _superJumpTravel;
 
-        public BotActionKind ActionKind => BotActionKind.SuperJump;
+        /// <summary>
+        /// Тип действия стратегии.
+        /// </summary>
+        public BotActionKind ActionKind => BotActionKind.SuperJumpOver;
 
         /// <summary>
         /// Проверяет, можно ли перепрыгнуть текущий obstacle суперпрыжком, и добавляет действие с точкой запуска.
@@ -63,7 +69,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             float obstacleLeftXToFire = targetObstacle.LeftX - fireShift;
             float renderWorldX = obstacleLeftXToFire + planningState.ProjectionWorldShift;
             actions.Add(new PlannedAction(
-                BotActionKind.SuperJump,
+                BotActionKind.SuperJumpOver,
                 obstacleLeftXToFire,
                 renderWorldX,
                 completionWorldShift: fireShift + superJumpTravel,
@@ -75,6 +81,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 description: $"Super jump over {targetObstacle.ObstacleType}"));
         }
 
+            /// <summary>
+            /// Симулирует переход после super jump over.
+            /// </summary>
         public PlanningState Simulate(
             PlanningState planningState,
             PlannedAction action,
@@ -95,6 +104,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return PlanningStateTransition.Advance(planningState, action, worldSnapshot, nextHamster);
         }
 
+        /// <summary>
+        /// Проверяет доступность super jump over.
+        /// </summary>
         private static bool CanSuperJumpOver(PlanningState planningState, ObstacleSnapshot targetObstacle)
         {
             HamsterSnapshot hamster = planningState.Hamster;
@@ -104,6 +116,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return ObstacleClassifier.CanSuperJumpOverOnGround(targetObstacle.ObstacleType);
         }
 
+        /// <summary>
+        /// Возвращает длину super jump-клипа.
+        /// </summary>
         private bool TryGetSuperJumpTravel(out float superJumpTravel)
         {
             // Возвращаем кеш.

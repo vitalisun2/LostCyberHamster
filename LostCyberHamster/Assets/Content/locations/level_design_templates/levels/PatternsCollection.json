@@ -8948,12 +8948,12 @@
         {
             "name": "test_switch_lane_03",
             "description": "SwitchLane avoid bigAlive",
-            "nextObstacleId": 2,
+            "nextObstacleId": 3,
             "obstacles": [
                 {
-                    "id": 1,
-                    "type": 11,
-                    "x": 3.0,
+                    "id": 2,
+                    "type": 1,
+                    "x": 3.799999952316284,
                     "y": -2.799999952316284
                 },
                 {
@@ -8967,12 +8967,18 @@
         {
             "name": "test_switch_lane_04",
             "description": "SwitchLane avoid bigNotAlive",
-            "nextObstacleId": 2,
+            "nextObstacleId": 4,
             "obstacles": [
                 {
-                    "id": 0,
-                    "type": 4,
-                    "x": 9.199999809265137,
+                    "id": 2,
+                    "type": 2,
+                    "x": 7.800000190734863,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 3,
+                    "type": 2,
+                    "x": 9.40000057220459,
                     "y": -2.799999952316284
                 },
                 {
@@ -8986,19 +8992,31 @@
         {
             "name": "test_switch_lane_05",
             "description": "SwitchLane zigzag: 5 threats alternating lanes",
-            "nextObstacleId": 6,
+            "nextObstacleId": 10,
             "obstacles": [
-                {
-                    "id": 1,
-                    "type": 2,
-                    "x": 8.0,
-                    "y": -1.8000000715255738
-                },
                 {
                     "id": 2,
                     "type": 3,
                     "x": 14.0,
                     "y": -2.799999952316284
+                },
+                {
+                    "id": 6,
+                    "type": 3,
+                    "x": 26.399999618530275,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 7,
+                    "type": 3,
+                    "x": 28.0,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 8.0,
+                    "y": -1.8000000715255738
                 },
                 {
                     "id": 3,
@@ -9007,15 +9025,15 @@
                     "y": -1.8000000715255738
                 },
                 {
-                    "id": 4,
-                    "type": 4,
-                    "x": 26.0,
-                    "y": -2.799999952316284
+                    "id": 8,
+                    "type": 2,
+                    "x": 33.60000228881836,
+                    "y": -1.8000000715255738
                 },
                 {
-                    "id": 5,
-                    "type": 11,
-                    "x": 32.0,
+                    "id": 9,
+                    "type": 1,
+                    "x": 35.0,
                     "y": -1.8000000715255738
                 }
             ]

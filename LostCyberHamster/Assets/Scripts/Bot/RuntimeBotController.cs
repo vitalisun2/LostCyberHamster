@@ -70,7 +70,8 @@ namespace Assets.Scripts.Bot
             {
                 new SwitchLaneStrategy(),
                 new JumpOverStrategy(),
-                new SuperJumpOverStrategy()
+                new SuperJumpOverStrategy(),
+                new JumpOnRoofStrategy()
             };
 
             _planBuilder = new PlanBuilder(

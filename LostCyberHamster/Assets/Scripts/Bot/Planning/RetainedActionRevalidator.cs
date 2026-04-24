@@ -43,12 +43,12 @@ namespace Assets.Scripts.Bot.Planning
             // После этого делегируем семантическую проверку конкретному типу действия.
             return action.Kind switch
             {
-                BotActionKind.Tap => IsScheduledTapStillValid(
+                BotActionKind.SwitchLane => IsScheduledTapStillValid(
                     planningState,
                     projectedWorldSnapshot,
                     targetObstacle,
                     action),
-                BotActionKind.Jump => IsScheduledOverStillValid(
+                BotActionKind.JumpOver => IsScheduledJumpOutcomeStillValid(
                     planningState,
                     projectedWorldSnapshot,
                     targetObstacle,
@@ -57,7 +57,7 @@ namespace Assets.Scripts.Bot.Planning
                     HamsterStateEnum.JumpOver,
                     damageBigAliveWithoutYByReach: true,
                     JumpOutcomeResolver.ResolveJump),
-                BotActionKind.SuperJump => IsScheduledOverStillValid(
+                BotActionKind.SuperJumpOver => IsScheduledJumpOutcomeStillValid(
                     planningState,
                     projectedWorldSnapshot,
                     targetObstacle,
@@ -66,10 +66,22 @@ namespace Assets.Scripts.Bot.Planning
                     HamsterStateEnum.SuperJumpOver,
                     damageBigAliveWithoutYByReach: false,
                     SuperJumpOutcomeResolver.ResolveSuperJump),
+                BotActionKind.JumpOnRoof => IsScheduledJumpOutcomeStillValid(
+                    planningState,
+                    projectedWorldSnapshot,
+                    targetObstacle,
+                    targetObstacleIndex,
+                    action,
+                    HamsterStateEnum.JumpOnRoof,
+                    damageBigAliveWithoutYByReach: true,
+                    JumpOutcomeResolver.ResolveJump),
                 _ => false
             };
         }
 
+        /// <summary>
+        /// Проверяет валидность сохранённого tap-действия.
+        /// </summary>
         private static bool IsScheduledTapStillValid(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
@@ -80,7 +92,7 @@ namespace Assets.Scripts.Bot.Planning
                 || projectedWorldSnapshot == null
                 || targetObstacle == null
                 || action == null
-                || action.Kind != BotActionKind.Tap)
+                || action.Kind != BotActionKind.SwitchLane)
             {
                 return false;
             }
@@ -117,7 +129,10 @@ namespace Assets.Scripts.Bot.Planning
             return false;
         }
 
-        private static bool IsScheduledOverStillValid(
+        /// <summary>
+        /// Проверяет валидность сохранённого jump-исхода.
+        /// </summary>
+        private static bool IsScheduledJumpOutcomeStillValid(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot targetObstacle,
@@ -137,14 +152,26 @@ namespace Assets.Scripts.Bot.Planning
 
             HamsterSnapshot hamster = planningState.Hamster;
             float actionTravel = action.PostFireWorldShift;
-                if (!ActionWindowFinder.TryGetSearchWindow(
+            float firstFireShift;
+            float lastFireShift;
+
+            bool hasSearchWindow = expectedState == HamsterStateEnum.JumpOnRoof
+                ? ActionWindowFinder.TryGetRoofLandingSearchWindow(
+                    hamster,
+                    targetObstacle,
+                    actionTravel,
+                    out firstFireShift,
+                    out lastFireShift)
+                : ActionWindowFinder.TryGetSearchWindow(
                     hamster,
                     projectedWorldSnapshot,
                     targetObstacle,
                     targetObstacleIndex,
                     actionTravel,
-                    out float firstFireShift,
-                    out float lastFireShift))
+                    out firstFireShift,
+                    out lastFireShift);
+
+            if (!hasSearchWindow)
                 return false;
 
             float fireShift = targetObstacle.LeftX - action.TriggerX;
@@ -153,7 +180,7 @@ namespace Assets.Scripts.Bot.Planning
 
             List<JumpObstacleData> baseObstacles = ActionWindowFinder.BuildBaseObstacleData(projectedWorldSnapshot);
             List<JumpObstacleData> shiftedObstacles = new(baseObstacles.Count);
-            return ActionWindowFinder.IsExactOverAtShift(
+            return ActionWindowFinder.IsExactJumpOutcomeAtShift(
                 hamster,
                 baseObstacles,
                 shiftedObstacles,
@@ -165,6 +192,9 @@ namespace Assets.Scripts.Bot.Planning
                 resolver);
         }
 
+            /// <summary>
+            /// Находит целевое obstacle для retained-action.
+            /// </summary>
         private static bool TryFindActionTarget(
             WorldSnapshot projectedWorldSnapshot,
             PlannedAction action,

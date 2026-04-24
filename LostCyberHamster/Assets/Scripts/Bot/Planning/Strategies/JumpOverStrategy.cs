@@ -18,7 +18,10 @@ namespace Assets.Scripts.Bot.Planning.Strategies
 
         private float? _jumpTravel;
 
-        public BotActionKind ActionKind => BotActionKind.Jump;
+        /// <summary>
+        /// Тип действия стратегии.
+        /// </summary>
+        public BotActionKind ActionKind => BotActionKind.JumpOver;
 
         /// <summary>
         /// Добавляет кандидата прыжка для текущего blocking ground obstacle.
@@ -57,7 +60,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             float renderWorldX = triggerX + planningState.ProjectionWorldShift;
 
             actions.Add(new PlannedAction(
-                BotActionKind.Jump,
+                BotActionKind.JumpOver,
                 triggerX,
                 renderWorldX,
                 completionWorldShift: fireShift + jumpTravel,
@@ -82,6 +85,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return PlanningStateTransition.Advance(planningState, action, worldSnapshot, nextHamster);
         }
 
+        /// <summary>
+        /// Проверяет доступность jump-over.
+        /// </summary>
         private static bool CanJumpOver(PlanningState planningState, ObstacleSnapshot targetObstacle)
         {
             HamsterSnapshot hamster = planningState.Hamster;
@@ -91,6 +97,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return ObstacleClassifier.CanJumpOverOnGround(targetObstacle.ObstacleType);
         }
 
+        /// <summary>
+        /// Возвращает длину jump-клипа.
+        /// </summary>
         private bool TryGetJumpTravel(out float jumpTravel)
         {
             if (_jumpTravel.HasValue)

@@ -6,9 +6,10 @@ namespace Assets.Scripts.Bot.PlanState
     public enum BotActionKind
     {
         None,
-        Tap,
-        Jump,
-        SuperJump,
+        SwitchLane,
+        JumpOver,
+        SuperJumpOver,
+        JumpOnRoof,
         RoofJump,
         SuperRoofJump
     }

@@ -97,6 +97,7 @@
 | SwitchLane | `01_New_York/Morning/test_switch_lane` |
 | Jump Over | `01_New_York/Morning/test_jump_over` |
 | SuperJump Over | `01_New_York/Morning/test_superjump_over` |
+| Jump On Roof | `01_New_York/Morning/test_jump_on_roof` |
 
 **Именование тестовых паттернов:** `test_{action}_{NN}_{description}`.
 **Координаты:** `y = -1.8` (top lane), `y = -2.8` (bottom lane).

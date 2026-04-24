@@ -40,7 +40,7 @@ namespace Assets.Scripts.Bot.Planning
             for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
             {
                 totalEnergyCost += actions[actionIndex].EnergyCost;
-                if (actions[actionIndex].Kind == BotActionKind.Tap)
+                if (actions[actionIndex].Kind == BotActionKind.SwitchLane)
                     tapCount++;
             }
 
@@ -50,6 +50,9 @@ namespace Assets.Scripts.Bot.Planning
                 - actions[0].TriggerX;
         }
 
+        /// <summary>
+        /// Сравнивает две planning-ветки.
+        /// </summary>
         private static int CompareBranches(PlanningBranch left, PlanningBranch right)
         {
             if (ReferenceEquals(left, right))
@@ -84,6 +87,9 @@ namespace Assets.Scripts.Bot.Planning
             return CompareActionSequences(left.Actions, right.Actions);
         }
 
+        /// <summary>
+        /// Сравнивает последовательности действий.
+        /// </summary>
         private static int CompareActionSequences(IReadOnlyList<PlannedAction> left, IReadOnlyList<PlannedAction> right)
         {
             int actionCount = Math.Min(left.Count, right.Count);

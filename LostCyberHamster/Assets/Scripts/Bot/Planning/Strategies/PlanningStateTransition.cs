@@ -1,3 +1,4 @@
+using System;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
@@ -33,6 +34,32 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         }
 
         /// <summary>
+        /// Возвращает planning-состояние после посадки на крышу target obstacle.
+        /// </summary>
+        public static PlanningState AdvanceAfterRoofLanding(
+            PlanningState planningState,
+            PlannedAction action,
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot nextHamster)
+        {
+            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            int minimumNextObstacleIndex = Math.Max(
+                planningState.NextObstacleIndex,
+                action.TargetObstacleIndex + 1);
+
+            int nextObstacleIndex = FindNextRelevantObstacleIndex(
+                worldSnapshot,
+                minimumNextObstacleIndex,
+                nextProjectionWorldShift,
+                nextHamster.HamsterLeftX);
+
+            return new PlanningState(
+                nextHamster,
+                nextObstacleIndex,
+                nextProjectionWorldShift);
+        }
+
+        /// <summary>
         /// Возвращает состояние хомяка после успешного over-действия с возвратом в Run.
         /// </summary>
         public static HamsterSnapshot ApplyRunAfterOver(HamsterSnapshot hamster, PlannedAction action)
@@ -57,6 +84,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         {
             bool isOnRoof = action.TargetBottomLine.HasValue ? false : hamster.IsOnRoof;
             bool targetBottomLine = action.TargetBottomLine ?? hamster.IsOnBottomLine;
+            int? roofSupportInstanceId = isOnRoof ? hamster.RoofSupportInstanceId : null;
 
             return new HamsterSnapshot(
                 hamster.HamsterState,
@@ -66,11 +94,32 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 hamster.Lives,
                 hamster.IsDamaged,
                 isShifting: false,
-                hamster.RoofSupportInstanceId,
+                roofSupportInstanceId,
                 hamster.HamsterLeftX,
                 hamster.HamsterRightX);
         }
 
+        /// <summary>
+        /// Возвращает состояние хомяка после успешной посадки на крышу.
+        /// </summary>
+        public static HamsterSnapshot ApplyRoofRunAfterLanding(HamsterSnapshot hamster, PlannedAction action)
+        {
+            return new HamsterSnapshot(
+                HamsterStateEnum.RoofRun,
+                hamster.IsOnBottomLine,
+                isOnRoof: true,
+                hamster.Energy - action.EnergyCost,
+                hamster.Lives,
+                hamster.IsDamaged,
+                isShifting: false,
+                action.TargetObstacleInstanceId,
+                hamster.HamsterLeftX,
+                hamster.HamsterRightX);
+        }
+
+            /// <summary>
+            /// Ищет следующий релевантный obstacle.
+            /// </summary>
         private static int FindNextRelevantObstacleIndex(
             WorldSnapshot worldSnapshot,
             int startObstacleIndex,

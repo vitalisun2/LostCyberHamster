@@ -22,7 +22,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         /// <summary>
         /// Возвращает тип действия, которое планирует стратегия.
         /// </summary>
-        public BotActionKind ActionKind => BotActionKind.Tap;
+        public BotActionKind ActionKind => BotActionKind.SwitchLane;
 
         /// <summary>
         /// Добавляет кандидаты смены линии для текущей точки решения.
@@ -63,6 +63,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             }
         }
 
+        /// <summary>
+        /// Выбирает внутреннюю точку safe-окна.
+        /// </summary>
         private static bool TrySelectInteriorFireShift(SafeInterval interval, out float fireShift)
         {
             return interval.TrySelectInteriorPoint(
@@ -72,6 +75,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 FireSelectionMargin);
         }
 
+        /// <summary>
+        /// Добавляет кандидата смены линии.
+        /// </summary>
         private static void AddTapCandidate(
             List<PlannedAction> actions,
             PlanningState planningState,
@@ -85,7 +91,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             float triggerX = targetObstacle.LeftX - fireShift;
             float renderWorldX = triggerX + planningState.ProjectionWorldShift;
             actions.Add(new PlannedAction(
-                BotActionKind.Tap,
+                BotActionKind.SwitchLane,
                 triggerX,
                 renderWorldX,
                 completionWorldShift: fireShift + SwitchLaneDecisionTravel,
@@ -109,6 +115,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return PlanningStateTransition.Advance(planningState, action, worldSnapshot, nextHamster);
         }
 
+        /// <summary>
+        /// Проверяет доступность смены линии.
+        /// </summary>
         internal static bool CanSwitchLane(PlanningState planningState, ObstacleSnapshot targetObstacle)
         {
             HamsterSnapshot hamster = planningState.Hamster;
@@ -118,6 +127,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return true;
         }
 
+        /// <summary>
+        /// Возвращает поздний допустимый fire shift.
+        /// </summary>
         internal static bool TryGetLatestFireShift(
             HamsterSnapshot hamster,
             ObstacleSnapshot targetObstacle,
@@ -130,6 +142,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return latestFireShift > 0f;
         }
 
+        /// <summary>
+        /// Собирает safe-окна для смены линии.
+        /// </summary>
         internal static List<SafeInterval> CollectSafeFireIntervals(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
@@ -161,6 +176,9 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             return safeIntervals;
         }
 
+        /// <summary>
+        /// Собирает unsafe-окна для смены линии.
+        /// </summary>
         private static List<UnsafeInterval> CollectUnsafeFireIntervals(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,

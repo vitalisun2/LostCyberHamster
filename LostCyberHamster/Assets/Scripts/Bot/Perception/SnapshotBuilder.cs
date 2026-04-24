@@ -48,21 +48,32 @@ namespace Assets.Scripts.Bot.Perception
                 Time.time);
         }
 
+        /// <summary>
+        /// Собирает snapshot хомяка.
+        /// </summary>
         private static HamsterSnapshot BuildHamsterSnapshot(Hamster hamster)
         {
+            HamsterStateEnum hamsterState = hamster.HamsterState.Value;
+            bool isOnRoof = IsRoofState(hamsterState);
+
             return new HamsterSnapshot(
-                hamster.HamsterState.Value,
+                hamsterState,
                 hamster.IsOnBottomLine.Value,
-                IsRoofState(hamster.HamsterState.Value),
+                isOnRoof,
                 hamster.Energy.Value,
                 hamster.Lives.Value,
                 hamster.IsDamaged.Value,
                 hamster.IsShifting.Value,
-                hamster.LastObstacle.Value != null ? hamster.LastObstacle.Value.GetInstanceID() : null,
+                isOnRoof && hamster.LastObstacle.Value != null
+                    ? hamster.LastObstacle.Value.GetInstanceID()
+                    : null,
                 hamster.LeftX,
                 hamster.RightX);
         }
 
+            /// <summary>
+            /// Собирает obstacles в зоне видимости.
+            /// </summary>
         private static List<ObstacleSnapshot> CollectObstacles(float screenLeftEdgeX, float visionRightEdgeX)
         {
             var obstacles = new List<ObstacleSnapshot>();
@@ -98,9 +109,14 @@ namespace Assets.Scripts.Bot.Perception
             return obstacles;
         }
 
+        /// <summary>
+        /// Проверяет roof-состояние.
+        /// </summary>
         private static bool IsRoofState(HamsterStateEnum hamsterState)
         {
             return hamsterState == HamsterStateEnum.RoofRun
+                || hamsterState == HamsterStateEnum.JumpOnRoof
+                || hamsterState == HamsterStateEnum.JumpOnRoofDamage
                 || hamsterState == HamsterStateEnum.RoofJump
                 || hamsterState == HamsterStateEnum.RoofJumpDamage
                 || hamsterState == HamsterStateEnum.SuperRoofJump

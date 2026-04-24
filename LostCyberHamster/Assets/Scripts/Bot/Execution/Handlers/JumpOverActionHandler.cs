@@ -1,4 +1,5 @@
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -9,19 +10,32 @@ namespace Assets.Scripts.Bot.Execution.Handlers
     /// <summary>
     /// Исполняет обычный jump-over в рантайме и ждёт возврата хомяка в состояние Run.
     /// </summary>
-    internal sealed class JumpActionHandler : IActionExecutionHandler
+    internal sealed class JumpOverActionHandler : IActionExecutionHandler
     {
+        /// <summary>
+        /// Пытается запустить обычный jump-over.
+        /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
+            // Проверяем обязательный контекст исполнения.
+            Guard.NotNull(
+                (hamster, nameof(hamster)),
+                (action, nameof(action)));
+
             // Сначала проверяем, что runtime ещё позволяет исполнить запланированный прыжок.
-            if (hamster == null || action == null || !action.TargetObstacleInstanceId.HasValue)
+            if (!action.TargetObstacleInstanceId.HasValue)
                 return ActionFireResult.Cancelled;
 
             if (hamster.Energy.Value < action.EnergyCost)
                 return ActionFireResult.Cancelled;
 
-            if (hamster.HamsterState.Value != HamsterStateEnum.Run && !hamster.IsDamaged.Value)
-                return ActionFireResult.Cancelled;
+            // Точный jump-over можно запускать только из базового run-state.
+            if (hamster.HamsterState.Value != HamsterStateEnum.Run)
+            {
+                return hamster.HamsterState.Value == HamsterStateEnum.RunFromRoof
+                    ? ActionFireResult.Waiting
+                    : ActionFireResult.Cancelled;
+            }
 
             Obstacle obstacle = FindLiveObstacle(action.TargetObstacleInstanceId.Value);
             if (obstacle == null)
@@ -43,12 +57,11 @@ namespace Assets.Scripts.Bot.Execution.Handlers
             return ActionFireResult.Fired;
         }
 
+        /// <summary>
+        /// Проверяет завершение обычного jump-over.
+        /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
-            // Если runtime больше не доступен, ждать уже нечего.
-            if (hamster == null || action == null)
-                return true;
-
             bool completed = hamster.HamsterState.Value == HamsterStateEnum.Run;
             if (completed)
             {
@@ -61,6 +74,9 @@ namespace Assets.Scripts.Bot.Execution.Handlers
             return completed;
         }
 
+        /// <summary>
+        /// Ищет живое obstacle по instance id.
+        /// </summary>
         private static Obstacle FindLiveObstacle(int instanceId)
         {
             ObstacleSpawner spawner = ObstacleSpawner.Instance;

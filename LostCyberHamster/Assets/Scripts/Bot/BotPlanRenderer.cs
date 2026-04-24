@@ -66,6 +66,9 @@ namespace Assets.Scripts.Bot
             _glMaterial = null;
         }
 
+        /// <summary>
+        /// Отрисовывает debug-глиф одного действия.
+        /// </summary>
         private void DrawAction(
             PlannedAction action,
             WorldSnapshot snapshot,
@@ -74,17 +77,20 @@ namespace Assets.Scripts.Bot
         {
             switch (action.Kind)
             {
-                case BotActionKind.Tap:
+                case BotActionKind.SwitchLane:
                     if (TryGetRenderWorldX(action, snapshot, out float renderWorldX))
                         DrawSwitchLaneGlyph(renderWorldX, currentBottomLine, alpha);
                     break;
-                case BotActionKind.SuperJump:
+                case BotActionKind.SuperJumpOver:
                     if (TryGetRenderWorldX(action, snapshot, out float superJumpRenderWorldX))
                         DrawSuperJumpGlyph(superJumpRenderWorldX, currentBottomLine, alpha);
                     break;
             }
         }
 
+        /// <summary>
+        /// Возвращает мировую X-координату для рендера действия.
+        /// </summary>
         private static bool TryGetRenderWorldX(
             PlannedAction action,
             WorldSnapshot snapshot,
@@ -117,6 +123,9 @@ namespace Assets.Scripts.Bot
             return true;
         }
 
+        /// <summary>
+        /// Рисует глиф смены линии.
+        /// </summary>
         private static void DrawSwitchLaneGlyph(float triggerX, bool currentBottomLine, float alpha)
         {
             float fromY = GetLaneY(currentBottomLine);
@@ -142,6 +151,9 @@ namespace Assets.Scripts.Bot
             GL.Vertex(new Vector3(triggerX + 0.24f, toY, 0f));
         }
 
+        /// <summary>
+        /// Рисует глиф суперпрыжка.
+        /// </summary>
         private static void DrawSuperJumpGlyph(float triggerX, bool currentBottomLine, float alpha)
         {
             float laneY = GetLaneY(currentBottomLine);
@@ -182,6 +194,9 @@ namespace Assets.Scripts.Bot
             GL.Vertex(new Vector3(triggerX + 0.18f, laneY + SuperJumpHeight + 0.16f, 0f));
         }
 
+        /// <summary>
+        /// Создаёт GL-материал для рендера.
+        /// </summary>
         private void EnsureMaterial()
         {
             if (_glMaterial != null)
@@ -202,6 +217,9 @@ namespace Assets.Scripts.Bot
             _glMaterial.SetInt("_ZTest", (int)UnityEngine.Rendering.CompareFunction.Always);
         }
 
+        /// <summary>
+        /// Возвращает Y-координату линии.
+        /// </summary>
         private static float GetLaneY(bool hamsterOnBottom)
         {
             return hamsterOnBottom

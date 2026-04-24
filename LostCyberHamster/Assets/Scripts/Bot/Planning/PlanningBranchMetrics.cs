@@ -7,6 +7,9 @@ namespace Assets.Scripts.Bot.Planning
     /// </summary>
     public sealed class PlanningBranchMetrics
     {
+        /// <summary>
+        /// Пустые метрики ветки.
+        /// </summary>
         public static PlanningBranchMetrics Empty { get; } = new PlanningBranchMetrics(0, 0, null, 0);
 
         /// <summary>
@@ -20,9 +23,24 @@ namespace Assets.Scripts.Bot.Planning
             ActionCount = actionCount;
         }
 
+        /// <summary>
+        /// Суммарная стоимость энергии.
+        /// </summary>
         public int TotalEnergyCost { get; }
+
+        /// <summary>
+        /// Число смен линий.
+        /// </summary>
         public int TapCount { get; }
+
+        /// <summary>
+        /// Точка запуска первого действия.
+        /// </summary>
         public float? FirstTriggerX { get; }
+
+        /// <summary>
+        /// Число действий в ветке.
+        /// </summary>
         public int ActionCount { get; }
 
         /// <summary>
@@ -32,11 +50,14 @@ namespace Assets.Scripts.Bot.Planning
         {
             return new PlanningBranchMetrics(
                 TotalEnergyCost + action.EnergyCost,
-                TapCount + (action.Kind == BotActionKind.Tap ? 1 : 0),
+                TapCount + (action.Kind == BotActionKind.SwitchLane ? 1 : 0),
                 FirstTriggerX ?? action.TriggerX,
                 ActionCount + 1);
         }
 
+            /// <summary>
+            /// Сравнивает стоимость двух веток.
+            /// </summary>
         public bool IsCheaperOrEquivalentTo(PlanningBranchMetrics other)
         {
             if (other == null)

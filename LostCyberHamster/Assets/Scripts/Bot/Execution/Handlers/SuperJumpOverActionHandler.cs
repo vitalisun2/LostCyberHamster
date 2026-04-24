@@ -10,26 +10,39 @@ namespace Assets.Scripts.Bot.Execution.Handlers
     /// <summary>
     /// Исполняет super jump как двухфазный ввод: сначала Jump, затем SuperJump.
     /// </summary>
-    internal sealed class SuperJumpActionHandler : IActionExecutionHandler
+    internal sealed class SuperJumpOverActionHandler : IActionExecutionHandler
     {
-        private const float UpgradeDelaySeconds = DoubleJumpDetector.DoubleJumpThreshold * 0.5f;
+        private const float _upgradeDelaySeconds = DoubleJumpDetector.DoubleJumpThreshold * 0.5f;
 
         private bool _isUpgradeScheduled;
         private float _upgradeReadyTime;
 
+        /// <summary>
+        /// Пытается запустить super jump over.
+        /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
+            // Проверяем обязательный контекст исполнения.
+            Guard.NotNull(
+                (hamster, nameof(hamster)),
+                (action, nameof(action)));
+
             // Новый запуск всегда сбрасывает хвост от предыдущей двухфазной попытки.
             ResetUpgradeSchedule();
 
-            if (hamster == null || action == null || action.Kind != BotActionKind.SuperJump)
+            if (action.Kind != BotActionKind.SuperJumpOver)
                 return ActionFireResult.Cancelled;
 
             if (!action.TargetObstacleInstanceId.HasValue)
                 return ActionFireResult.Cancelled;
 
-            if (hamster.HamsterState.Value != HamsterStateEnum.Run && !hamster.IsDamaged.Value)
-                return ActionFireResult.Cancelled;
+            // Двухфазный super jump over планируется только из базового run-state.
+            if (hamster.HamsterState.Value != HamsterStateEnum.Run)
+            {
+                return hamster.HamsterState.Value == HamsterStateEnum.RunFromRoof
+                    ? ActionFireResult.Waiting
+                    : ActionFireResult.Cancelled;
+            }
 
             if (hamster.Energy.Value < action.EnergyCost)
                 return ActionFireResult.Cancelled;
@@ -63,18 +76,15 @@ namespace Assets.Scripts.Bot.Execution.Handlers
 
             // Второй тап отправляем в середине допустимого окна double-jump.
             _isUpgradeScheduled = true;
-            _upgradeReadyTime = Time.time + UpgradeDelaySeconds;
+            _upgradeReadyTime = Time.time + _upgradeDelaySeconds;
             return ActionFireResult.Fired;
         }
 
+        /// <summary>
+        /// Проверяет завершение super jump over.
+        /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
-            if (hamster == null || action == null)
-            {
-                ResetUpgradeSchedule();
-                return true;
-            }
-
             // Пока delay не истёк, удерживаем действие в первой фазе jump.
             if (_isUpgradeScheduled)
             {
@@ -100,6 +110,9 @@ namespace Assets.Scripts.Bot.Execution.Handlers
             return completed;
         }
 
+        /// <summary>
+        /// Проверяет доступность апгрейда до super jump.
+        /// </summary>
         private static bool CanUpgradeToSuperJump(HamsterStateEnum hamsterState)
         {
             return hamsterState == HamsterStateEnum.Jump
@@ -112,12 +125,18 @@ namespace Assets.Scripts.Bot.Execution.Handlers
                    || hamsterState == HamsterStateEnum.JumpOnRoofDamage;
         }
 
+        /// <summary>
+        /// Сбрасывает отложенный второй тап.
+        /// </summary>
         private void ResetUpgradeSchedule()
         {
             _isUpgradeScheduled = false;
             _upgradeReadyTime = 0f;
         }
 
+        /// <summary>
+        /// Ищет живое obstacle по instance id.
+        /// </summary>
         private static Obstacle FindLiveObstacle(int instanceId)
         {
             ObstacleSpawner spawner = ObstacleSpawner.Instance;

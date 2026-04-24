@@ -16,14 +16,22 @@ namespace Assets.Scripts.Bot.Execution
         private readonly IReadOnlyDictionary<BotActionKind, IActionExecutionHandler> _handlers =
             new Dictionary<BotActionKind, IActionExecutionHandler>
             {
-                { BotActionKind.Tap, new SwitchLaneActionHandler() },
-                { BotActionKind.Jump, new JumpActionHandler() },
-                { BotActionKind.SuperJump, new SuperJumpActionHandler() }
+                { BotActionKind.SwitchLane, new SwitchLaneActionHandler() },
+                { BotActionKind.JumpOver, new JumpOverActionHandler() },
+                { BotActionKind.SuperJumpOver, new SuperJumpOverActionHandler() },
+                { BotActionKind.JumpOnRoof, new JumpOnRoofActionHandler() }
             };
 
         private bool _isActionInProgress;
 
+        /// <summary>
+        /// Текущий план на исполнении.
+        /// </summary>
         public BotPlan CurrentPlan { get; private set; } = BotPlan.Empty();
+
+        /// <summary>
+        /// Флаг активного действия.
+        /// </summary>
         public bool IsActionInProgress => _isActionInProgress;
 
         /// <summary>
@@ -99,6 +107,9 @@ namespace Assets.Scripts.Bot.Execution
             throw new InvalidOperationException(message);
         }
 
+        /// <summary>
+        /// Сдвигает план после завершения head-action.
+        /// </summary>
         private void AdvanceHead()
         {
             IReadOnlyList<PlannedAction> actions = CurrentPlan.Actions;

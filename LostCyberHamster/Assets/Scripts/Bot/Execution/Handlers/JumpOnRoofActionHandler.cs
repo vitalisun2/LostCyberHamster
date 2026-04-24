@@ -1,6 +1,5 @@
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Common;
-using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -9,40 +8,38 @@ using UnityEngine;
 namespace Assets.Scripts.Bot.Execution.Handlers
 {
     /// <summary>
-    /// Выполняет и отслеживает действие смены линии через одиночный tap.
+    /// Исполняет jump on roof в рантайме и ждёт перехода хомяка в RoofRun.
     /// </summary>
-    internal sealed class SwitchLaneActionHandler : IActionExecutionHandler
+    internal sealed class JumpOnRoofActionHandler : IActionExecutionHandler
     {
         /// <summary>
-        /// Запускает смену линии, когда препятствие дошло до рассчитанной точки.
+        /// Пытается запустить jump on roof.
         /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
-            // Проверяем исполнимость запланированного tap.
+            // Проверяем обязательный контекст исполнения.
             Guard.NotNull(
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 
-            if (!action.TargetObstacleInstanceId.HasValue)
-                return ActionFireResult.Cancelled;
-
-            if (!action.TargetBottomLine.HasValue)
-                return ActionFireResult.Cancelled;
-
-            if (!TapOutcomeResolver.CanAcceptTap(
-                    hamster.HamsterState.Value,
-                    hamster.IsShifting.Value))
+            // Сначала проверяем, что runtime ещё позволяет исполнить запланированную посадку на крышу.
+            if (action.Kind != BotActionKind.JumpOnRoof
+                || !action.TargetObstacleInstanceId.HasValue)
             {
-                return hamster.IsShifting.Value || IsWaitingForRunFromRoof(hamster.HamsterState.Value)
+                return ActionFireResult.Cancelled;
+            }
+
+            if (hamster.Energy.Value < action.EnergyCost)
+                return ActionFireResult.Cancelled;
+
+            // Посадка на крышу остаётся валидной только при старте из run-state.
+            if (hamster.HamsterState.Value != HamsterStateEnum.Run)
+            {
+                return hamster.HamsterState.Value == HamsterStateEnum.RunFromRoof
                     ? ActionFireResult.Waiting
                     : ActionFireResult.Cancelled;
             }
 
-            bool targetBottomLineAfterTap = !hamster.IsOnBottomLine.Value;
-            if (targetBottomLineAfterTap != action.TargetBottomLine.Value)
-                return ActionFireResult.Cancelled;
-
-            // Ждём live obstacle в рассчитанной точке запуска.
             Obstacle obstacle = FindLiveObstacle(action.TargetObstacleInstanceId.Value);
             if (obstacle == null)
                 return ActionFireResult.Cancelled;
@@ -51,51 +48,40 @@ namespace Assets.Scripts.Bot.Execution.Handlers
             if (collider == null)
                 return ActionFireResult.Cancelled;
 
+            // Ждём, пока obstacle дойдёт до заранее рассчитанной точки запуска.
             if (collider.bounds.min.x > action.TriggerX)
                 return ActionFireResult.Waiting;
 
-            // Отправляем tap в runtime.
             DebugManager.DiagLog(
                 $"[Bot EXEC] FIRE kind={action.Kind} " +
                 $"triggerX={action.TriggerX:F2} obstacleLeftX={collider.bounds.min.x:F2} " +
-                $"targetLane={(action.TargetBottomLine.HasValue ? (action.TargetBottomLine.Value ? "bottom" : "top") : "n/a")} " +
                 $"desc={action.Description}");
-            hamster.TapRequest.Invoke();
+            hamster.JumpRequest.Invoke();
             return ActionFireResult.Fired;
         }
 
         /// <summary>
-        /// Проверяет, завершилась ли смена линии для текущего действия.
+        /// Проверяет завершение jump on roof.
         /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
-            // Проверяем, достигнут ли ожидаемый результат.
-            if (hamster.IsShifting.Value)
-                return false;
-
-            if (!action.TargetBottomLine.HasValue)
-                return true;
-
-            bool completed = hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value;
+            bool completed = hamster.HamsterState.Value == HamsterStateEnum.RoofRun;
             if (completed)
             {
                 DebugManager.DiagLog(
                     $"[Bot EXEC] COMPLETE kind={action.Kind} " +
-                    $"lane={(hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
+                    $"state={hamster.HamsterState.Value} " +
                     $"desc={action.Description}");
             }
 
             return completed;
         }
 
-        private static bool IsWaitingForRunFromRoof(HamsterStateEnum hamsterState)
-        {
-            return hamsterState == HamsterStateEnum.RunFromRoof;
-        }
-
+        /// <summary>
+        /// Ищет живое obstacle по instance id.
+        /// </summary>
         private static Obstacle FindLiveObstacle(int instanceId)
         {
-            // Ищем runtime obstacle по instance id.
             ObstacleSpawner spawner = ObstacleSpawner.Instance;
             if (spawner == null)
                 return null;

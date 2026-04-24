@@ -62,6 +62,9 @@ namespace Assets.Scripts.Bot.Planning
             return new BotPlan(actions, worldSnapshot.ScreenRightEdgeX, score);
         }
 
+        /// <summary>
+        /// Проецирует committed-префикс плана.
+        /// </summary>
         private PlanningState ProjectCommittedPrefix(
             WorldSnapshot worldSnapshot,
             BotPlan committedPlan,
@@ -103,6 +106,10 @@ namespace Assets.Scripts.Bot.Planning
 
             return currentState;
         }
+
+        /// <summary>
+        /// Проверяет границу retained-префикса.
+        /// </summary>
         private static bool IsBoundaryRetainedAction(
             IReadOnlyList<PlannedAction> actions,
             int actionIndex,
@@ -122,6 +129,10 @@ namespace Assets.Scripts.Bot.Planning
                 worldSnapshot,
                 retainInProgressHead);
         }
+
+        /// <summary>
+        /// Проецирует незавершённое head-действие.
+        /// </summary>
         private static PlanningState ProjectInProgressHead(
             PlanningState planningState,
             PlannedAction action,
@@ -153,9 +164,10 @@ namespace Assets.Scripts.Bot.Planning
             HamsterSnapshot hamster = planningState.Hamster;
             HamsterSnapshot nextHamster = action.Kind switch
             {
-                BotActionKind.Jump => PlanningStateTransition.ApplyRunAfterOver(hamster, action),
-                BotActionKind.SuperJump => PlanningStateTransition.ApplyRunAfterOver(hamster, action),
-                BotActionKind.Tap => new HamsterSnapshot(
+                BotActionKind.JumpOver => PlanningStateTransition.ApplyRunAfterOver(hamster, action),
+                BotActionKind.SuperJumpOver => PlanningStateTransition.ApplyRunAfterOver(hamster, action),
+                BotActionKind.JumpOnRoof => PlanningStateTransition.ApplyRoofRunAfterLanding(hamster, action),
+                BotActionKind.SwitchLane => new HamsterSnapshot(
                     hamster.HamsterState,
                     hamster.IsOnBottomLine,
                     isOnRoof: false,
@@ -163,7 +175,7 @@ namespace Assets.Scripts.Bot.Planning
                     hamster.Lives,
                     hamster.IsDamaged,
                     isShifting: false,
-                    hamster.RoofSupportInstanceId,
+                    roofSupportInstanceId: null,
                     hamster.HamsterLeftX,
                     hamster.HamsterRightX),
                 _ => hamster
@@ -171,7 +183,11 @@ namespace Assets.Scripts.Bot.Planning
 
             float nextProjectionWorldShift = planningState.ProjectionWorldShift + remainingPostFireShift;
             int nextObstacleIndex = worldSnapshot.Obstacles.Count;
-            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            int startObstacleIndex = planningState.NextObstacleIndex;
+            if (action.Kind == BotActionKind.JumpOnRoof && action.TargetObstacleIndex + 1 > startObstacleIndex)
+                startObstacleIndex = action.TargetObstacleIndex + 1;
+
+            for (int obstacleIndex = startObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
                 float projectedRightX = obstacle.RightX - nextProjectionWorldShift;
@@ -188,6 +204,9 @@ namespace Assets.Scripts.Bot.Planning
                 nextProjectionWorldShift);
         }
 
+        /// <summary>
+        /// Проверяет сохранение действия в префиксе.
+        /// </summary>
         private static bool ShouldRetainAction(
             PlannedAction action,
             int actionIndex,
@@ -201,6 +220,9 @@ namespace Assets.Scripts.Bot.Planning
                 && action.RenderWorldX <= worldSnapshot.ScreenRightEdgeX;
         }
 
+        /// <summary>
+        /// Возвращает committed boundary X.
+        /// </summary>
         private static float GetCommittedBoundaryX(BotPlan committedPlan, WorldSnapshot worldSnapshot)
         {
             if (committedPlan != null && committedPlan.CommittedBoundaryX > 0f)
