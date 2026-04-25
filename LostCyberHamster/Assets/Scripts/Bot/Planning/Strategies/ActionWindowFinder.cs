@@ -17,7 +17,6 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         private const float _searchStep = 0.005f;
         private const float _searchEpsilon = 0.0001f;
         private const float _interiorSelectionRatio = 0.5f;
-        private const float _runtimeFireDelayBudget = Assets.Scripts.Consts.GameSpeedBase / Assets.Scripts.Consts.FPS;
 
         /// <summary>
         /// Резолвит runtime-исход прыжка.
@@ -289,7 +288,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         private static bool TrySelectInteriorFireShift(SafeInterval interval, out float fireShift)
         {
             return interval.TrySelectInteriorPoint(
-                _runtimeFireDelayBudget,
+                lateBudget: 0f,
                 _interiorSelectionRatio,
                 out fireShift,
                 _searchEpsilon);
@@ -334,8 +333,11 @@ namespace Assets.Scripts.Bot.Planning.Strategies
             if (firstFireShift < 0f)
                 firstFireShift = 0f;
 
-            lastFireShift = targetObstacle.RightX - hamster.HamsterLeftX;
-            return lastFireShift >= 0f && firstFireShift <= lastFireShift;
+            float lastRoofOverlapFireShift = targetObstacle.RightX - hamster.HamsterLeftX;
+            float latestBeforeGroundContactFireShift = targetObstacle.LeftX - hamster.HamsterRightX;
+
+            lastFireShift = Math.Min(lastRoofOverlapFireShift, latestBeforeGroundContactFireShift);
+            return lastFireShift > 0f && firstFireShift <= lastFireShift;
         }
 
         /// <summary>

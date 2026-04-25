@@ -14,10 +14,7 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         private const float SwitchLaneDecisionDuration = 0.45f;
         private const float SwitchLaneDecisionTravel = SwitchLaneDecisionDuration * Assets.Scripts.Consts.GameSpeedBase;
         private const float ExecutionLeadDistance = 0.18f;
-        private const float LatestFireSafetyMargin = 0.05f;
-        private const float FireSelectionMargin = 0.02f;
         private const float InteriorSelectionRatio = 0.5f;
-        private const float RuntimeFireDelayBudget = Assets.Scripts.Consts.GameSpeedBase / Assets.Scripts.Consts.FPS;
 
         /// <summary>
         /// Возвращает тип действия, которое планирует стратегия.
@@ -69,10 +66,10 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         private static bool TrySelectInteriorFireShift(SafeInterval interval, out float fireShift)
         {
             return interval.TrySelectInteriorPoint(
-                RuntimeFireDelayBudget,
+                lateBudget: 0f,
                 InteriorSelectionRatio,
                 out fireShift,
-                FireSelectionMargin);
+                epsilon: 0f);
         }
 
         /// <summary>
@@ -137,7 +134,6 @@ namespace Assets.Scripts.Bot.Planning.Strategies
         {
             latestFireShift = targetObstacle.LeftX
                 - hamster.HamsterRightX
-                - LatestFireSafetyMargin
                 - ExecutionLeadDistance;
             return latestFireShift > 0f;
         }
@@ -162,12 +158,12 @@ namespace Assets.Scripts.Bot.Planning.Strategies
                 if (interval.End < safeStart)
                     continue;
 
-                float safeEnd = interval.Start - FireSelectionMargin;
+                float safeEnd = interval.Start;
                 if (safeEnd >= safeStart)
                     safeIntervals.Add(new SafeInterval(safeStart, safeEnd));
 
-                if (interval.End + FireSelectionMargin > safeStart)
-                    safeStart = interval.End + FireSelectionMargin;
+                if (interval.End > safeStart)
+                    safeStart = interval.End;
             }
 
             if (safeStart <= latestFireShift)
