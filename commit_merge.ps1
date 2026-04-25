@@ -19,17 +19,15 @@ try {
 
         git add -A
 
-        # Генерируем сообщение коммита через GitHub Models (gpt-4.1) на основе staged diff
-        $diff = git diff --cached
-        $maxLen = 12000
-        if ($diff.Length -gt $maxLen) { $diff = $diff.Substring(0, $maxLen) + "`n...[truncated]" }
-
-        $prompt = "Write a short git commit message in English, one line up to 72 characters, imperative mood, no period at the end. Output only the message, nothing else.`nDiff:`n$diff"
+        # Генерируем сообщение коммита через GitHub Models (gpt-4.1-mini)
+        # Используем --stat + имена файлов вместо полного diff — кириллица в diff ломает кодировку
+        $stat  = git diff --cached --stat
+        $files = git diff --cached --name-only
+        $prompt = "Write a short git commit message in English, one line up to 72 characters, imperative mood, no period at the end. Output only the message, nothing else.`nChanged files:`n$($files -join "`n")`nStat:`n$stat"
         $commitMsg = ($prompt | gh models run openai/gpt-4.1-mini 2>&1 | Where-Object { $_ -match '\S' -and $_ -notmatch '^та' } | Select-Object -Last 1)
         $commitMsg = "$commitMsg".Trim().Trim('"').Trim()
         if ([string]::IsNullOrWhiteSpace($commitMsg)) {
             Write-Warning "Не удалось сгенерировать сообщение через gh models, использую fallback."
-            $files = git diff --cached --name-only
             $commitMsg = "Update: " + ($files -join ", ")
             if ($commitMsg.Length -gt 72) { $commitMsg = $commitMsg.Substring(0, 69) + "..." }
         }
