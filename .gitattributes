@@ -1,0 +1,70 @@
+# Auto detect text files and normalize to LF
+* text=auto eol=lf
+
+# Unity YAML
+*.cs                text eol=lf
+*.shader            text eol=lf
+*.cginc             text eol=lf
+*.hlsl              text eol=lf
+*.meta              text eol=lf
+*.mat               text eol=lf
+*.prefab            text eol=lf
+*.unity             text eol=lf
+*.asset             text eol=lf
+*.anim              text eol=lf
+*.controller        text eol=lf
+*.overrideController text eol=lf
+*.mask              text eol=lf
+*.mixer             text eol=lf
+*.spriteatlas       text eol=lf
+*.renderTexture     text eol=lf
+*.lighting          text eol=lf
+*.playable          text eol=lf
+*.brush             text eol=lf
+*.terrainlayer      text eol=lf
+*.shadervariants    text eol=lf
+*.inputactions      text eol=lf
+
+# Config / data
+*.json              text eol=lf
+*.xml               text eol=lf
+*.yaml              text eol=lf
+*.yml               text eol=lf
+*.asmdef            text eol=lf
+*.asmref            text eol=lf
+*.txt               text eol=lf
+*.md                text eol=lf
+
+# Scripts
+*.ps1               text eol=lf
+*.sh                text eol=lf
+*.bat               text eol=crlf
+
+# Binary — не трогать переносы строк
+*.png               binary
+*.jpg               binary
+*.jpeg              binary
+*.gif               binary
+*.psd               binary
+*.tif               binary
+*.tiff              binary
+*.bmp               binary
+*.svg               binary
+*.mp3               binary
+*.wav               binary
+*.ogg               binary
+*.mp4               binary
+*.mov               binary
+*.avi               binary
+*.fbx               binary
+*.obj               binary
+*.dll               binary
+*.so                binary
+*.a                 binary
+*.lib               binary
+*.zip               binary
+*.7z                binary
+*.gz                binary
+*.apk               binary
+*.unitypackage      binary
+*.pdf               binary
