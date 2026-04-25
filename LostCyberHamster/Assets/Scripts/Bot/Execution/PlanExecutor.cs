@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using Assets.Scripts.Bot.Execution.Handlers;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
@@ -13,16 +14,30 @@ namespace Assets.Scripts.Bot.Execution
     /// </summary>
     public sealed class PlanExecutor
     {
-        private readonly IReadOnlyDictionary<BotActionKind, IActionExecutionHandler> _handlers =
-            new Dictionary<BotActionKind, IActionExecutionHandler>
-            {
-                { BotActionKind.SwitchLane, new SwitchLaneActionHandler() },
-                { BotActionKind.JumpOver, new JumpOverActionHandler() },
-                { BotActionKind.SuperJumpOver, new SuperJumpOverActionHandler() },
-                { BotActionKind.JumpOnRoof, new JumpOnRoofActionHandler() }
-            };
+        private readonly IReadOnlyDictionary<BotActionKind, IActionExecutionHandler> _handlers;
 
         private bool _isActionInProgress;
+
+        internal PlanExecutor(IReadOnlyList<IPlanningStrategy> strategies)
+        {
+            var handlers = new Dictionary<BotActionKind, IActionExecutionHandler>();
+            for (int strategyIndex = 0; strategyIndex < strategies?.Count; strategyIndex++)
+            {
+                IPlanningStrategy strategy = strategies[strategyIndex];
+                if (strategy?.Executor == null)
+                    continue;
+
+                if (handlers.ContainsKey(strategy.ActionKind))
+                {
+                    throw new InvalidOperationException(
+                        $"Для strategy зарегистрировано больше одного executor: kind={strategy.ActionKind}");
+                }
+
+                handlers.Add(strategy.ActionKind, strategy.Executor);
+            }
+
+            _handlers = handlers;
+        }
 
         /// <summary>
         /// Текущий план на исполнении.

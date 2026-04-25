@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
-using Assets.Scripts.Bot.Planning.Strategies;
+using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Planning
@@ -12,30 +13,30 @@ namespace Assets.Scripts.Bot.Planning
     /// </summary>
     public sealed class TransitionSimulator
     {
-        private readonly IReadOnlyDictionary<BotActionKind, IPlanningStrategy> _strategiesByActionKind;
+        private readonly IReadOnlyDictionary<BotActionKind, ISimulator> _simulatorsByActionKind;
 
         /// <summary>
         /// Создает диспетчер planning-симуляции поверх набора стратегий.
         /// </summary>
-        public TransitionSimulator(IReadOnlyList<IPlanningStrategy> strategies)
+        internal TransitionSimulator(IReadOnlyList<IPlanningStrategy> strategies)
         {
-            var strategiesByActionKind = new Dictionary<BotActionKind, IPlanningStrategy>();
+            var simulatorsByActionKind = new Dictionary<BotActionKind, ISimulator>();
             for (int strategyIndex = 0; strategyIndex < strategies?.Count; strategyIndex++)
             {
                 IPlanningStrategy strategy = strategies[strategyIndex];
-                if (strategy == null)
+                if (strategy?.Simulator == null)
                     continue;
 
-                if (strategiesByActionKind.ContainsKey(strategy.ActionKind))
+                if (simulatorsByActionKind.ContainsKey(strategy.ActionKind))
                 {
                     throw new InvalidOperationException(
-                        $"Для planning-действия зарегистрировано больше одной strategy: kind={strategy.ActionKind}");
+                        $"Для planning-действия зарегистрировано больше одного simulator: kind={strategy.ActionKind}");
                 }
 
-                strategiesByActionKind.Add(strategy.ActionKind, strategy);
+                simulatorsByActionKind.Add(strategy.ActionKind, strategy.Simulator);
             }
 
-            _strategiesByActionKind = strategiesByActionKind;
+            _simulatorsByActionKind = simulatorsByActionKind;
         }
 
         /// <summary>
@@ -46,20 +47,20 @@ namespace Assets.Scripts.Bot.Planning
             if (planningState == null || action == null || worldSnapshot == null)
                 return null;
 
-            IPlanningStrategy strategy = GetRequiredStrategy(action);
-            return strategy.Simulate(planningState, action, worldSnapshot);
+            ISimulator simulator = GetRequiredSimulator(action);
+            return simulator.Simulate(planningState, action, worldSnapshot);
         }
 
-        private IPlanningStrategy GetRequiredStrategy(PlannedAction action)
+        private ISimulator GetRequiredSimulator(PlannedAction action)
         {
             if (action == null)
                 throw new InvalidOperationException("План содержит пустое действие для planning-симуляции.");
 
-            if (_strategiesByActionKind.TryGetValue(action.Kind, out IPlanningStrategy strategy))
-                return strategy;
+            if (_simulatorsByActionKind.TryGetValue(action.Kind, out ISimulator simulator))
+                return simulator;
 
             string message =
-                $"Для действия бота не зарегистрирована planning-strategy: kind={action.Kind}, desc={action.Description}";
+                $"Для действия бота не зарегистрирован simulator: kind={action.Kind}, desc={action.Description}";
 
             DebugManager.DiagLog($"[Bot PLAN] ERROR {message}");
             throw new InvalidOperationException(message);

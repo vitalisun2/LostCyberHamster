@@ -1,21 +1,33 @@
 using System.Collections.Generic;
+using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
-using Assets.Scripts.Bot.Planning.Strategies;
-using Assets.Scripts.GameEngine.Mechanics;
-using Assets.Scripts.GameEngine.Mechanics.Models;
-using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
     /// Проверяет, можно ли сохранить пограничное committed-действие на новом snapshot мира.
     /// </summary>
-    internal sealed class RetainedActionRevalidator
+    public sealed class RetainedActionRevalidator
     {
-        private const float ValidationEpsilon = 0.0001f;
-
         private readonly DecisionPointDetector _decisionPointDetector = new DecisionPointDetector();
+        private readonly IReadOnlyDictionary<BotActionKind, IRetainedActionValidator> _validatorsByKind;
+
+        internal RetainedActionRevalidator(IReadOnlyList<IPlanningStrategy> strategies)
+        {
+            var validatorsByKind = new Dictionary<BotActionKind, IRetainedActionValidator>();
+            for (int strategyIndex = 0; strategyIndex < strategies?.Count; strategyIndex++)
+            {
+                IPlanningStrategy strategy = strategies[strategyIndex];
+                if (strategy?.RetainedValidator == null)
+                    continue;
+
+                validatorsByKind.Add(strategy.ActionKind, strategy.RetainedValidator);
+            }
+
+            _validatorsByKind = validatorsByKind;
+        }
 
         /// <summary>
         /// Возвращает true, если последнее retained-действие всё ещё безопасно и остаётся актуальным.
@@ -40,161 +52,21 @@ namespace Assets.Scripts.Bot.Planning
             if (decisionPoint.Obstacle.InstanceId != targetObstacle.InstanceId)
                 return false;
 
-            // После этого делегируем семантическую проверку конкретному типу действия.
-            return action.Kind switch
-            {
-                BotActionKind.SwitchLane => IsScheduledTapStillValid(
-                    planningState,
-                    projectedWorldSnapshot,
-                    targetObstacle,
-                    action),
-                BotActionKind.JumpOver => IsScheduledJumpOutcomeStillValid(
-                    planningState,
-                    projectedWorldSnapshot,
-                    targetObstacle,
-                    targetObstacleIndex,
-                    action,
-                    HamsterStateEnum.JumpOver,
-                    damageBigAliveWithoutYByReach: true,
-                    JumpOutcomeResolver.ResolveJump),
-                BotActionKind.SuperJumpOver => IsScheduledJumpOutcomeStillValid(
-                    planningState,
-                    projectedWorldSnapshot,
-                    targetObstacle,
-                    targetObstacleIndex,
-                    action,
-                    HamsterStateEnum.SuperJumpOver,
-                    damageBigAliveWithoutYByReach: false,
-                    SuperJumpOutcomeResolver.ResolveSuperJump),
-                BotActionKind.JumpOnRoof => IsScheduledJumpOutcomeStillValid(
-                    planningState,
-                    projectedWorldSnapshot,
-                    targetObstacle,
-                    targetObstacleIndex,
-                    action,
-                    HamsterStateEnum.JumpOnRoof,
-                    damageBigAliveWithoutYByReach: true,
-                    JumpOutcomeResolver.ResolveJump),
-                _ => false
-            };
-        }
-
-        /// <summary>
-        /// Проверяет валидность сохранённого tap-действия.
-        /// </summary>
-        private static bool IsScheduledTapStillValid(
-            PlanningState planningState,
-            WorldSnapshot projectedWorldSnapshot,
-            ObstacleSnapshot targetObstacle,
-            PlannedAction action)
-        {
-            if (planningState == null
-                || projectedWorldSnapshot == null
-                || targetObstacle == null
-                || action == null
-                || action.Kind != BotActionKind.SwitchLane)
-            {
-                return false;
-            }
-
-            HamsterSnapshot hamster = planningState.Hamster;
-            if (!action.TargetBottomLine.HasValue || action.TargetBottomLine.Value == hamster.IsOnBottomLine)
+            if (!_validatorsByKind.TryGetValue(action.Kind, out IRetainedActionValidator validator))
                 return false;
 
-            if (!SwitchLaneStrategy.CanSwitchLane(planningState, targetObstacle))
-                return false;
-
-            if (!SwitchLaneStrategy.TryGetLatestFireShift(hamster, targetObstacle, out float latestFireShift))
-                return false;
-
-            float fireShift = targetObstacle.LeftX - action.TriggerX;
-            if (fireShift < 0f || fireShift > latestFireShift + ValidationEpsilon)
-                return false;
-
-            List<SafeInterval> safeIntervals = SwitchLaneStrategy.CollectSafeFireIntervals(
+            return validator.IsStillValid(new RetainedActionContext(
+                planningState,
                 projectedWorldSnapshot,
-                hamster,
-                action.TargetBottomLine.Value,
-                latestFireShift);
-            for (int intervalIndex = 0; intervalIndex < safeIntervals.Count; intervalIndex++)
-            {
-                SafeInterval interval = safeIntervals[intervalIndex];
-                if (fireShift >= interval.Start - ValidationEpsilon
-                    && fireShift <= interval.End + ValidationEpsilon)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+                decisionPoint,
+                targetObstacle,
+                targetObstacleIndex,
+                action));
         }
 
         /// <summary>
-        /// Проверяет валидность сохранённого jump-исхода.
+        /// Находит целевое obstacle для retained-action.
         /// </summary>
-        private static bool IsScheduledJumpOutcomeStillValid(
-            PlanningState planningState,
-            WorldSnapshot projectedWorldSnapshot,
-            ObstacleSnapshot targetObstacle,
-            int targetObstacleIndex,
-            PlannedAction action,
-            HamsterStateEnum expectedState,
-            bool damageBigAliveWithoutYByReach,
-            ActionWindowFinder.ResolveDelegate resolver)
-        {
-            if (planningState == null
-                || projectedWorldSnapshot == null
-                || targetObstacle == null
-                || action == null)
-            {
-                return false;
-            }
-
-            HamsterSnapshot hamster = planningState.Hamster;
-            float actionTravel = action.PostFireWorldShift;
-            float firstFireShift;
-            float lastFireShift;
-
-            bool hasSearchWindow = expectedState == HamsterStateEnum.JumpOnRoof
-                ? ActionWindowFinder.TryGetRoofLandingSearchWindow(
-                    hamster,
-                    targetObstacle,
-                    actionTravel,
-                    out firstFireShift,
-                    out lastFireShift)
-                : ActionWindowFinder.TryGetSearchWindow(
-                    hamster,
-                    projectedWorldSnapshot,
-                    targetObstacle,
-                    targetObstacleIndex,
-                    actionTravel,
-                    out firstFireShift,
-                    out lastFireShift);
-
-            if (!hasSearchWindow)
-                return false;
-
-            float fireShift = targetObstacle.LeftX - action.TriggerX;
-            if (fireShift < firstFireShift - ValidationEpsilon || fireShift > lastFireShift + ValidationEpsilon)
-                return false;
-
-            List<JumpObstacleData> baseObstacles = ActionWindowFinder.BuildBaseObstacleData(projectedWorldSnapshot);
-            List<JumpObstacleData> shiftedObstacles = new(baseObstacles.Count);
-            return ActionWindowFinder.IsExactJumpOutcomeAtShift(
-                hamster,
-                baseObstacles,
-                shiftedObstacles,
-                fireShift,
-                actionTravel,
-                targetObstacleIndex,
-                expectedState,
-                damageBigAliveWithoutYByReach,
-                resolver);
-        }
-
-            /// <summary>
-            /// Находит целевое obstacle для retained-action.
-            /// </summary>
         private static bool TryFindActionTarget(
             WorldSnapshot projectedWorldSnapshot,
             PlannedAction action,

@@ -29,6 +29,15 @@ namespace Assets.Scripts.Bot.Planning
                 if (obstacle.IsBottomLine != planningState.IsOnBottomLine)
                     continue;
 
+                if (RoofRunProjection.IsPassiveRoofContinuation(planningState, worldSnapshot, obstacle))
+                {
+                    DebugManager.DiagLog(
+                        $"[Bot PLAN] SKIP_ROOF_CONTINUATION obstacle={obstacle.ObstacleType} " +
+                        $"index={obstacleIndex} instanceId={obstacle.InstanceId} " +
+                        $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2}");
+                    continue;
+                }
+
                 if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
                     continue;
 

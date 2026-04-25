@@ -1,7 +1,10 @@
+using Assets.Scripts.Bot.Strategies.Shared;
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Execution;
+using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
-using Assets.Scripts.Bot.Planning.Strategies;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
@@ -19,9 +22,9 @@ namespace Assets.Scripts.Bot
         private const string _hostObjectName = "[Bot]";
 
         private readonly SnapshotBuilder _snapshotBuilder = new SnapshotBuilder();
-        private readonly PlanExecutor _executor = new PlanExecutor();
         private readonly BotPlanRenderer _planRenderer = new BotPlanRenderer();
 
+        private PlanExecutor _executor;
         private Hamster _hamster;
         private GameManager _gameManager;
         private PlanBuilder _planBuilder;
@@ -31,7 +34,7 @@ namespace Assets.Scripts.Bot
         public bool IsEnabled { get; private set; } = true;
         public bool IsInitialized => _hamster != null && _gameManager != null;
         public WorldSnapshot LastSnapshot { get; private set; }
-        public BotPlan CurrentPlan => _executor.CurrentPlan;
+        public BotPlan CurrentPlan => _executor?.CurrentPlan ?? BotPlan.Empty();
 
         /// <summary>
         /// Гарантирует, что после загрузки сцены в runtime существует ровно один контроллер бота.
@@ -66,18 +69,15 @@ namespace Assets.Scripts.Bot
         private void Awake()
         {
             DontDestroyOnLoad(gameObject);
-            IPlanningStrategy[] strategies =
-            {
-                new SwitchLaneStrategy(),
-                new JumpOverStrategy(),
-                new SuperJumpOverStrategy(),
-                new JumpOnRoofStrategy()
-            };
+            IReadOnlyList<IPlanningStrategy> strategies = BotStrategyFactory.CreateAll();
 
+            _executor = new PlanExecutor(strategies);
             _planBuilder = new PlanBuilder(
                 new ActionGenerator(strategies),
                 new TransitionSimulator(strategies),
-                new PlanEvaluator());
+                new PlanEvaluator(),
+                new RetainedActionRevalidator(strategies),
+                new ActionInProgressProjector(strategies));
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace Assets.Scripts.Bot
 
         private void OnRenderObject()
         {
-            if (!IsInitialized || LastSnapshot == null || !CurrentPlan.HasActions)
+            if (_executor == null || !IsInitialized || LastSnapshot == null || !CurrentPlan.HasActions)
                 return;
 
             Camera camera = Camera.current;
@@ -130,7 +130,7 @@ namespace Assets.Scripts.Bot
         {
             IsEnabled = false;
             LastSnapshot = null;
-            _executor.Clear();
+            _executor?.Clear();
             DebugManager.DiagLog("[Bot] Disabled");
         }
 
@@ -139,6 +139,9 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private void TickBot()
         {
+            if (_executor == null || _planBuilder == null)
+                return;
+
             LastSnapshot = _snapshotBuilder.Build(_hamster);
             _executor.Tick(_hamster);
             TrySetNewPlan();
@@ -166,6 +169,9 @@ namespace Assets.Scripts.Bot
 
         private void TrySetNewPlan()
         {
+            if (_executor == null || _planBuilder == null)
+                return;
+
             BotPlan plan = _planBuilder.Build(LastSnapshot, _executor.CurrentPlan, _executor.IsActionInProgress);
             if (!plan.HasActions || plan.IsEquivalentTo(_executor.CurrentPlan))
                 return;

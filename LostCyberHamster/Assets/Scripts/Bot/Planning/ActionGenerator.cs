@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
-using Assets.Scripts.Bot.Planning.Strategies;
+using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Planning
@@ -18,7 +19,7 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Создает генератор действий поверх набора planning-стратегий.
         /// </summary>
-        public ActionGenerator(IReadOnlyList<IPlanningStrategy> strategies)
+        internal ActionGenerator(IReadOnlyList<IPlanningStrategy> strategies)
         {
             _strategies = strategies ?? Array.Empty<IPlanningStrategy>();
         }

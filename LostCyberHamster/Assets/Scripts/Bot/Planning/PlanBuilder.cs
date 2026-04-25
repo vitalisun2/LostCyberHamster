@@ -1,7 +1,9 @@
+using Assets.Scripts.Bot.Strategies.Shared;
 using System.Collections.Generic;
+using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
-using Assets.Scripts.Bot.Planning.Strategies;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -13,7 +15,8 @@ namespace Assets.Scripts.Bot.Planning
         private readonly PlanningGraphBuilder _graphBuilder;
         private readonly TransitionSimulator _transitionSimulator;
         private readonly PlanEvaluator _planEvaluator;
-        private readonly RetainedActionRevalidator _retainedActionRevalidator = new RetainedActionRevalidator();
+        private readonly RetainedActionRevalidator _retainedActionRevalidator;
+        private readonly ActionInProgressProjector _inProgressProjector;
 
         /// <summary>
         /// Создает сборщик плана поверх генератора, симулятора и evaluator'а.
@@ -21,11 +24,15 @@ namespace Assets.Scripts.Bot.Planning
         public PlanBuilder(
             ActionGenerator actionGenerator,
             TransitionSimulator transitionSimulator,
-            PlanEvaluator planEvaluator)
+            PlanEvaluator planEvaluator,
+            RetainedActionRevalidator retainedActionRevalidator,
+            ActionInProgressProjector inProgressProjector)
         {
             _graphBuilder = new PlanningGraphBuilder(actionGenerator, transitionSimulator);
             _transitionSimulator = transitionSimulator;
             _planEvaluator = planEvaluator;
+            _retainedActionRevalidator = retainedActionRevalidator;
+            _inProgressProjector = inProgressProjector;
         }
 
         /// <summary>
@@ -95,7 +102,7 @@ namespace Assets.Scripts.Bot.Planning
                     break;
 
                 PlanningState nextState = retainInProgressHead && actionIndex == 0
-                    ? ProjectInProgressHead(currentState, action, worldSnapshot)
+                    ? _inProgressProjector.Project(currentState, action, worldSnapshot)
                     : _transitionSimulator.Simulate(currentState, action, worldSnapshot);
                 if (nextState == null)
                     break;
@@ -128,80 +135,6 @@ namespace Assets.Scripts.Bot.Planning
                 nextActionIndex,
                 worldSnapshot,
                 retainInProgressHead);
-        }
-
-        /// <summary>
-        /// Проецирует незавершённое head-действие.
-        /// </summary>
-        private static PlanningState ProjectInProgressHead(
-            PlanningState planningState,
-            PlannedAction action,
-            WorldSnapshot worldSnapshot)
-        {
-            if (planningState == null || action == null || worldSnapshot == null)
-                return null;
-
-            float remainingPostFireShift = action.PostFireWorldShift;
-            if (action.TargetObstacleInstanceId.HasValue)
-            {
-                for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
-                {
-                    ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                    if (obstacle.InstanceId != action.TargetObstacleInstanceId.Value)
-                        continue;
-
-                    float shiftSinceFire = action.TriggerX - obstacle.LeftX;
-                    if (shiftSinceFire > 0f)
-                        remainingPostFireShift = action.PostFireWorldShift - shiftSinceFire;
-
-                    break;
-                }
-            }
-
-            if (remainingPostFireShift < 0f)
-                remainingPostFireShift = 0f;
-
-            HamsterSnapshot hamster = planningState.Hamster;
-            HamsterSnapshot nextHamster = action.Kind switch
-            {
-                BotActionKind.JumpOver => PlanningStateTransition.ApplyRunAfterOver(hamster, action),
-                BotActionKind.SuperJumpOver => PlanningStateTransition.ApplyRunAfterOver(hamster, action),
-                BotActionKind.JumpOnRoof => PlanningStateTransition.ApplyRoofRunAfterLanding(hamster, action),
-                BotActionKind.SwitchLane => new HamsterSnapshot(
-                    hamster.HamsterState,
-                    hamster.IsOnBottomLine,
-                    isOnRoof: false,
-                    hamster.Energy,
-                    hamster.Lives,
-                    hamster.IsDamaged,
-                    isShifting: false,
-                    roofSupportInstanceId: null,
-                    hamster.HamsterLeftX,
-                    hamster.HamsterRightX),
-                _ => hamster
-            };
-
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + remainingPostFireShift;
-            int nextObstacleIndex = worldSnapshot.Obstacles.Count;
-            int startObstacleIndex = planningState.NextObstacleIndex;
-            if (action.Kind == BotActionKind.JumpOnRoof && action.TargetObstacleIndex + 1 > startObstacleIndex)
-                startObstacleIndex = action.TargetObstacleIndex + 1;
-
-            for (int obstacleIndex = startObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                float projectedRightX = obstacle.RightX - nextProjectionWorldShift;
-                if (projectedRightX > nextHamster.HamsterLeftX)
-                {
-                    nextObstacleIndex = obstacleIndex;
-                    break;
-                }
-            }
-
-            return new PlanningState(
-                nextHamster,
-                nextObstacleIndex,
-                nextProjectionWorldShift);
         }
 
         /// <summary>
