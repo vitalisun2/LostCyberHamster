@@ -24,7 +24,7 @@ try {
         $maxLen = 12000
         if ($diff.Length -gt $maxLen) { $diff = $diff.Substring(0, $maxLen) + "`n...[truncated]" }
 
-        $prompt = "Напиши короткое сообщение git commit на русском языке, одна строка до 72 символов, без точки в конце, повелительное наклонение. Только сообщение, ничего лишнего.`nDiff:`n$diff"
+        $prompt = "Write a short git commit message in English, one line up to 72 characters, imperative mood, no period at the end. Output only the message, nothing else.`nDiff:`n$diff"
         $commitMsg = ($prompt | gh models run openai/gpt-4.1-mini 2>&1 | Where-Object { $_ -match '\S' -and $_ -notmatch '^та' } | Select-Object -Last 1)
         $commitMsg = "$commitMsg".Trim().Trim('"').Trim()
         if ([string]::IsNullOrWhiteSpace($commitMsg)) {
