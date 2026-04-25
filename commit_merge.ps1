@@ -47,8 +47,10 @@ try {
     git checkout main
     git merge integration/unity-live --no-ff -m "Merge integration/unity-live into main"
     git push origin main
-    git push origin integration/unity-live
+    # Синхронизируем integration/unity-live с main
     git checkout integration/unity-live
+    git merge main --ff-only
+    git push origin integration/unity-live
 
     # Проверка синхронизации
     $mainHash    = git rev-parse main
