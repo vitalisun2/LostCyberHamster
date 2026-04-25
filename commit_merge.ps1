@@ -24,11 +24,9 @@ try {
         $maxLen = 12000
         if ($diff.Length -gt $maxLen) { $diff = $diff.Substring(0, $maxLen) + "`n...[truncated]" }
 
-        $sysPrompt = "Ты пишешь короткие осмысленные сообщения git commit на русском языке. Формат: одна строка, до 72 символов, без префиксов типа feat:/fix:, без точки в конце, повелительное наклонение. Опиши суть изменений по diff."
-        $userPrompt = "Diff:`n$diff"
-
-        $commitMsg = $userPrompt | gh models run --system-prompt $sysPrompt openai/gpt-4.1 2>$null
-        $commitMsg = ($commitMsg -join " ").Trim().Trim('"').Trim()
+        $prompt = "Напиши короткое сообщение git commit на русском языке, одна строка до 72 символов, без точки в конце, повелительное наклонение. Только сообщение, ничего лишнего.`nDiff:`n$diff"
+        $commitMsg = ($prompt | gh models run openai/gpt-4.1-mini 2>&1 | Where-Object { $_ -match '\S' -and $_ -notmatch '^та' } | Select-Object -Last 1)
+        $commitMsg = "$commitMsg".Trim().Trim('"').Trim()
         if ([string]::IsNullOrWhiteSpace($commitMsg)) {
             Write-Warning "Не удалось сгенерировать сообщение через gh models, использую fallback."
             $files = git diff --cached --name-only
@@ -47,10 +45,12 @@ try {
     git checkout main
     git merge integration/unity-live --no-ff -m "Merge integration/unity-live into main"
     git push origin main
+    if ($LASTEXITCODE -ne 0) { Write-Warning "push origin main завершился с ошибкой. Продолжаю..." }
     # Синхронизируем integration/unity-live с main
     git checkout integration/unity-live
     git merge main --ff-only
     git push origin integration/unity-live
+    if ($LASTEXITCODE -ne 0) { Write-Warning "push origin integration/unity-live завершился с ошибкой." }
 
     # Проверка синхронизации
     $mainHash    = git rev-parse main
