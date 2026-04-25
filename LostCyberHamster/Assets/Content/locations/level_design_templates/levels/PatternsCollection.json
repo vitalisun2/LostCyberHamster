@@ -9191,12 +9191,18 @@
         {
             "name": "test_jump_on_roof_03",
             "description": "chosing jump on roof instead of superjump over",
-            "nextObstacleId": 3,
+            "nextObstacleId": 4,
             "obstacles": [
                 {
                     "id": 0,
                     "type": 11,
                     "x": -5.400000095367432,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 3,
+                    "type": 11,
+                    "x": -1.8000000715255738,
                     "y": -2.799999952316284
                 },
                 {
