@@ -35,6 +35,7 @@ public static class SceneCreator
         var tilemap = tilemapGameObject.GetComponent<Tilemap>();
         var tilemapRenderer = tilemapGameObject.GetComponent<TilemapRenderer>();
         tilemapRenderer.mode = TilemapRenderer.Mode.Individual;
+        tilemapRenderer.sortOrder = TilemapRenderer.SortOrder.TopLeft;
         tilemapRenderer.sortingLayerName = "SpecialEffects";
         tilemap.tileAnchor = Vector3.zero;
 

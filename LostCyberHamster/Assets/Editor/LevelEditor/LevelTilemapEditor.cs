@@ -88,6 +88,7 @@ public class LevelTilemapEditor : EditorWindow
     private const float DefaultPatternFrameCenterY = -2.3f;
     private const float PatternBoundaryInset = 0.15f;
     private const float PatternBoundaryLineThickness = 4f;
+    private const float LowerRoadTileZOffset = -0.1f;
     private static readonly Color PatternBoundaryColor = new Color(0.12f, 0.95f, 0.18f, 1f);
     private static readonly Color SelectedPatternBoundaryColor = new Color(0.25f, 1f, 0.25f, 1f);
     private static readonly Regex PatternNameSuffixRegex = new Regex(@"^(.*?)(\d+)$", RegexOptions.Compiled);
@@ -330,13 +331,14 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        if (finalWorldPos != initialWorldPos)
+        var finalCellPos = changedTilemap.WorldToCell(finalWorldPos);
+        if (finalCellPos != cellPosition)
         {
             changedTilemap.SetTile(cellPosition, null);
-            var finalCellPos = changedTilemap.WorldToCell(finalWorldPos);
             changedTilemap.SetTile(finalCellPos, tile);
-            ApplyExactTileWorldPosition(changedTilemap, finalCellPos, finalWorldPos);
         }
+
+        ApplyExactTileWorldPosition(changedTilemap, finalCellPos, finalWorldPos);
     }
 
     /// <summary>
@@ -1139,8 +1141,20 @@ public class LevelTilemapEditor : EditorWindow
     {
         var cellWorldPos = tilemap.CellToWorld(cellPos);
         var localOffset = worldPos - cellWorldPos;
+        localOffset.z = GetRoadTileZOffset(worldPos.y);
         var matrix = Matrix4x4.Translate(localOffset);
         tilemap.SetTransformMatrix(cellPos, matrix);
+    }
+
+    private static float GetRoadTileZOffset(float yPosition)
+    {
+        var distanceToUpperLine = Mathf.Min(
+            Mathf.Abs(yPosition - Consts.ObstacleY0Pos),
+            Mathf.Abs(yPosition - Consts.ObstacleRoofY0Pos));
+        var distanceToLowerLine = Mathf.Min(
+            Mathf.Abs(yPosition - Consts.ObstacleY1Pos),
+            Mathf.Abs(yPosition - Consts.ObstacleRoofY1Pos));
+        return distanceToLowerLine < distanceToUpperLine ? LowerRoadTileZOffset : 0f;
     }
 
     private static Vector3 GetExactTileWorldPosition(Tilemap tilemap, Vector3Int cellPos)
