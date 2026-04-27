@@ -35,7 +35,7 @@ try {
             if ($commitMsg.Length -gt 72) { $commitMsg = $commitMsg.Substring(0, 69) + "..." }
         }
 
-        Write-Host "Commit message: $commitMsg"
+        Write-Host "Commit message: $commitMsg" -ForegroundColor Cyan
         git commit -m $commitMsg
         Write-Host "Commit: $(git log -1 --oneline)"
     } else {
