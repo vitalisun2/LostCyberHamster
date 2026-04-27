@@ -5,7 +5,7 @@ namespace Assets.Scripts.Bot.Planning
     /// </summary>
     public enum DecisionPointKind
     {
-        BlockingGroundObstacle,
+        BlockingObstacle,
         RoofLanding
     }
 }

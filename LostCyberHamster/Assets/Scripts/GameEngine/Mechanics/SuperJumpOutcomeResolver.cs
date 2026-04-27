@@ -79,7 +79,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (!IsOverlapAtShift(context, obstacle))
                 return noHit;
 
-            bool hitSmall = IsHitSmallNotAliveOnRoof(obstacles, context);
+            bool hitSmall = JumpOutcomeResolver.TryFindDamagingRoofOccupantOnRoof(obstacles, obstacleIndex, out int roofHazardIndex)
+                && IsOverlapAtShift(context, obstacles[roofHazardIndex]);
             HamsterStateEnum state = hitSmall
                 ? HamsterStateEnum.SuperJumpOnRoofDamage
                 : HamsterStateEnum.SuperJumpOnRoof;
@@ -150,7 +151,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (TryFindRoofUnderSmall(small, obstacles, out int roofIndex)
                 && IsOverlapAtShift(context, obstacles[roofIndex]))
             {
-                bool hitSmallOnRoof = IsHitSmallNotAliveOnRoof(obstacles, context);
+                bool hitSmallOnRoof = JumpOutcomeResolver.TryFindDamagingRoofOccupantOnRoof(obstacles, roofIndex, out int roofHazardIndex)
+                    && IsOverlapAtShift(context, obstacles[roofHazardIndex]);
                 HamsterStateEnum state = hitSmallOnRoof
                     ? HamsterStateEnum.SuperJumpOnRoofDamage
                     : HamsterStateEnum.SuperJumpOnRoof;
@@ -162,49 +164,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 : new JumpResolveResult(HamsterStateEnum.SuperJumpOver, smallIndex);
         }
 
-        private static bool IsHitSmallNotAliveOnRoof(
-            IReadOnlyList<JumpObstacleData> obstacles,
-            JumpResolveContext context)
-        {
-            for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
-            {
-                JumpObstacleData obstacle = obstacles[obstacleIndex];
-                if (obstacle.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
-                    continue;
-
-                if (!TryFindRoofUnderSmall(obstacle, obstacles, out _))
-                    continue;
-
-                if (IsOverlapAtShift(context, obstacle))
-                    return true;
-            }
-
-            return false;
-        }
-
         private static bool TryFindRoofUnderSmall(
             JumpObstacleData small,
             IReadOnlyList<JumpObstacleData> obstacles,
             out int roofIndex)
         {
-            for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
-            {
-                JumpObstacleData candidate = obstacles[obstacleIndex];
-                if (candidate.IsBottomLine != small.IsBottomLine)
-                    continue;
-
-                if (!CollisionUtils.IsRoofObstacle(candidate.Type))
-                    continue;
-
-                if (CollisionUtils.IsOverlap(small.LeftX, small.RightX, candidate.LeftX, candidate.RightX))
-                {
-                    roofIndex = obstacleIndex;
-                    return true;
-                }
-            }
-
-            roofIndex = _noTarget;
-            return false;
+            return JumpOutcomeResolver.TryFindRoofUnderSmall(small, obstacles, out roofIndex);
         }
 
         private static bool ShouldBreakByReachRight(JumpResolveContext context, JumpObstacleData obstacle)

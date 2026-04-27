@@ -21,7 +21,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
 
             if (planningState == null
                 || decisionPoint == null
-                || decisionPoint.Kind != DecisionPointKind.BlockingGroundObstacle
+                || decisionPoint.Kind != DecisionPointKind.BlockingObstacle
                 || decisionPoint.Obstacle == null)
             {
                 return false;

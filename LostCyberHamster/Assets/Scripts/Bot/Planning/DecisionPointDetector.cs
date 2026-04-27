@@ -1,4 +1,6 @@
 using Assets.Scripts.Bot.Perception;
+using Assets.Scripts.GameEngine.Mechanics;
+using Assets.Scripts.GameEngine.Mechanics.Models;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -41,9 +43,24 @@ namespace Assets.Scripts.Bot.Planning
                 if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
                     continue;
 
-                // Obstacles with roof выделяем в отдельную decision point, чтобы landing на крышу не смешивался с обычным ground block.
+                // Obstacles with roof выделяем в отдельную decision point, чтобы safe roof landing не смешивался с обычной blocking-угрозой.
                 if (ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType))
                 {
+                    if (TryFindRoofLandingHazard(worldSnapshot, obstacleIndex, out ObstacleSnapshot roofHazard))
+                    {
+                        DebugManager.DiagLog(
+                            $"[Bot PLAN] OCCUPIED_ROOF obstacle={obstacle.ObstacleType} " +
+                            $"index={obstacleIndex} instanceId={obstacle.InstanceId} " +
+                            $"occupant={roofHazard.ObstacleType} occupantId={roofHazard.InstanceId} " +
+                            $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2}");
+
+                        decisionPoint = new DecisionPoint(
+                            DecisionPointKind.BlockingObstacle,
+                            obstacle,
+                            obstacleIndex);
+                        return true;
+                    }
+
                     decisionPoint = new DecisionPoint(
                         DecisionPointKind.RoofLanding,
                         obstacle,
@@ -52,13 +69,48 @@ namespace Assets.Scripts.Bot.Planning
                 }
 
                 decisionPoint = new DecisionPoint(
-                    DecisionPointKind.BlockingGroundObstacle,
+                    DecisionPointKind.BlockingObstacle,
                     obstacle,
                     obstacleIndex);
                 return true;
             }
 
             return false;
+        }
+
+        private static bool TryFindRoofLandingHazard(
+            WorldSnapshot worldSnapshot,
+            int roofObstacleIndex,
+            out ObstacleSnapshot roofHazard)
+        {
+            var obstacleData = BuildObstacleData(worldSnapshot);
+            if (JumpOutcomeResolver.TryFindDamagingRoofOccupantOnRoof(obstacleData, roofObstacleIndex, out int occupantIndex)
+                && occupantIndex >= 0
+                && occupantIndex < worldSnapshot.Obstacles.Count)
+            {
+                roofHazard = worldSnapshot.Obstacles[occupantIndex];
+                return true;
+            }
+
+            roofHazard = null;
+            return false;
+        }
+
+        private static JumpObstacleData[] BuildObstacleData(WorldSnapshot worldSnapshot)
+        {
+            var obstacles = new JumpObstacleData[worldSnapshot.Obstacles.Count];
+            for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                obstacles[obstacleIndex] = new JumpObstacleData(
+                    obstacle.ObstacleType,
+                    obstacle.IsBottomLine,
+                    obstacle.LeftX,
+                    obstacle.RightX,
+                    obstacle.CenterX);
+            }
+
+            return obstacles;
         }
     }
 }
