@@ -49,6 +49,30 @@ namespace Assets.Tests.EditMode
                 GetRoofY(Consts.ObstacleY1Pos, Consts.MEDIUM_NOTALIVE_HEIGHT_UNITS)));
         }
 
+        [Test]
+        public void ResolveSortingLayerName_UsesRoofAwareLaneAnchors()
+        {
+            Assert.AreEqual(
+                ObstacleLaneResolver.UpperSpritesSortingLayer,
+                ObstacleLaneResolver.ResolveSortingLayerName(
+                    GetRoofY(Consts.ObstacleY0Pos, Consts.BIG_NOTALIVE_HEIGHT_UNITS)));
+
+            Assert.AreEqual(
+                ObstacleLaneResolver.UpperSpritesSortingLayer,
+                ObstacleLaneResolver.ResolveSortingLayerName(
+                    GetRoofY(Consts.ObstacleY0Pos, Consts.MEDIUM_NOTALIVE_HEIGHT_UNITS)));
+
+            Assert.AreEqual(
+                ObstacleLaneResolver.LowerSpritesSortingLayer,
+                ObstacleLaneResolver.ResolveSortingLayerName(
+                    GetRoofY(Consts.ObstacleY1Pos, Consts.BIG_NOTALIVE_HEIGHT_UNITS)));
+
+            Assert.AreEqual(
+                ObstacleLaneResolver.LowerSpritesSortingLayer,
+                ObstacleLaneResolver.ResolveSortingLayerName(
+                    GetRoofY(Consts.ObstacleY1Pos, Consts.MEDIUM_NOTALIVE_HEIGHT_UNITS)));
+        }
+
         private static void AssertResolves(float yPosition, bool expectedIsTop)
         {
             bool resolved = ObstacleLaneResolver.TryResolveIsTop(yPosition, out bool isTop);
