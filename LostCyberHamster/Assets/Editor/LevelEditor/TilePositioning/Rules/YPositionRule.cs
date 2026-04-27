@@ -15,20 +15,6 @@ public class YPositionRule : ITilePlacementRule
         bool closerToY0 = distanceToY0 < distanceToY1;
         position.y = closerToY0 ? Consts.ObstacleY0Pos : Consts.ObstacleY1Pos;
 
-        // Чтобы сместить Z-координату через TransformMatrix, 
-        // нужно перейти из worldPos в клеточные координаты
-        var cellPos = tilemap.WorldToCell(position);
-
-        // Устанавливаем ZOffset в зависимости от выбранной линии
-        SetTileZOffset(tilemap, tile, cellPos, !closerToY0);
         return true;
-    }
-
-    private void SetTileZOffset(Tilemap tilemap, Tile tile, Vector3Int cellPos, bool isLower)
-    {
-        float zOffset = isLower ? -0.1f : 0f;
-        var matrix = tilemap.GetTransformMatrix(cellPos);
-        matrix *= Matrix4x4.Translate(new Vector3(0f, 0f, zOffset));
-        tilemap.SetTransformMatrix(cellPos, matrix);
     }
 }
