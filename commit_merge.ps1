@@ -11,13 +11,11 @@ try {
         git checkout integration/unity-live
     }
 
-    # Смотрим что изменилось
-    $status = git status --short
-    if ($status) {
-        Write-Host "Изменения:"
-        git diff --stat HEAD
-
-        git add -A
+    # Коммитим только staged-изменения (git add -A не делаем)
+    $staged = git diff --cached --name-only
+    if ($staged) {
+        Write-Host "Staged изменения:"
+        git diff --cached --stat
 
         # Генерируем сообщение коммита через GitHub Models (gpt-4.1-mini)
         # Читаем diff через temp-файл чтобы сохранить UTF-8 (pipe ломает кодировку кириллицы)
@@ -33,8 +31,7 @@ try {
         $commitMsg = "$commitMsg".Trim().Trim('"').Trim()
         if ([string]::IsNullOrWhiteSpace($commitMsg)) {
             Write-Warning "Не удалось сгенерировать сообщение через gh models, использую fallback."
-            $files = git diff --cached --name-only
-            $commitMsg = "Update: " + ($files -join ", ")
+            $commitMsg = "Update: " + ($staged -join ", ")
             if ($commitMsg.Length -gt 72) { $commitMsg = $commitMsg.Substring(0, 69) + "..." }
         }
 
@@ -42,7 +39,8 @@ try {
         git commit -m $commitMsg
         Write-Host "Commit: $(git log -1 --oneline)"
     } else {
-        Write-Host "Нечего коммитить, переходим к merge."
+        Write-Host "Нет staged-изменений. Используй 'git add' чтобы выбрать файлы для коммита."
+        Write-Host "Продолжаю с merge..."
     }
 
     # Merge в main
