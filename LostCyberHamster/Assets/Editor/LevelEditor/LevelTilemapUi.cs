@@ -650,8 +650,8 @@ public class LevelTilemapUi
         SetVisible(_spritesScrollView, true);
         SetVisible(_spritesLabel, true);
 
-        // Кнопки up/down скрыты в Templates (порядок неважен)
-        SetMoveButtonsVisible(!isTemplateMode);
+        // В templates mode порядок паттернов редактируется прямо в общем списке.
+        SetMoveButtonsVisible(isTemplateMode);
 
         // Level-only elements
         SetDaypartSelectorVisible(!isTemplateMode);
