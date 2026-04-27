@@ -1,4 +1,5 @@
 ﻿using Assets.Editor.LevelEditor;
+using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts;
 using Assets.Scripts.System;
@@ -1148,13 +1149,7 @@ public class LevelTilemapEditor : EditorWindow
 
     private static float GetRoadTileZOffset(float yPosition)
     {
-        var distanceToUpperLine = Mathf.Min(
-            Mathf.Abs(yPosition - Consts.ObstacleY0Pos),
-            Mathf.Abs(yPosition - Consts.ObstacleRoofY0Pos));
-        var distanceToLowerLine = Mathf.Min(
-            Mathf.Abs(yPosition - Consts.ObstacleY1Pos),
-            Mathf.Abs(yPosition - Consts.ObstacleRoofY1Pos));
-        return distanceToLowerLine < distanceToUpperLine ? LowerRoadTileZOffset : 0f;
+        return ObstacleLaneResolver.IsBottomLineCloser(yPosition) ? LowerRoadTileZOffset : 0f;
     }
 
     private static Vector3 GetExactTileWorldPosition(Tilemap tilemap, Vector3Int cellPos)

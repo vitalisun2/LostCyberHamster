@@ -118,7 +118,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             if (TryFindRoofUnderSmall(small, obstacles, out int roofIndex))
             {
-                bool hitSmall = IsHitSmallNotAliveOnRoof(obstacles, context);
+                bool hitSmall = TryFindDamagingRoofOccupantOnRoof(obstacles, roofIndex, out int roofHazardIndex)
+                    && IsOverlapAtShift(context, obstacles[roofHazardIndex]);
                 HamsterStateEnum state = hitSmall
                     ? HamsterStateEnum.JumpOnRoofDamage
                     : HamsterStateEnum.JumpOnRoof;
@@ -138,7 +139,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (!IsOverlapAtShift(context, obstacle))
                 return noHit;
 
-            bool hitSmall = IsHitSmallNotAliveOnRoof(obstacles, context);
+            bool hitSmall = TryFindDamagingRoofOccupantOnRoof(obstacles, obstacleIndex, out int roofHazardIndex)
+                && IsOverlapAtShift(context, obstacles[roofHazardIndex]);
             HamsterStateEnum state = hitSmall
                 ? HamsterStateEnum.JumpOnRoofDamage
                 : HamsterStateEnum.JumpOnRoof;
@@ -158,27 +160,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             return hitX || (context.DamageBigAliveWithoutYByReach && IsWithinReach(context, obstacle));
         }
 
-        private static bool IsHitSmallNotAliveOnRoof(
-            IReadOnlyList<JumpObstacleData> obstacles,
-            JumpResolveContext context)
-        {
-            for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
-            {
-                JumpObstacleData obstacle = obstacles[obstacleIndex];
-                if (obstacle.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
-                    continue;
-
-                if (!TryFindRoofUnderSmall(obstacle, obstacles, out _))
-                    continue;
-
-                if (IsOverlapAtShift(context, obstacle))
-                    return true;
-            }
-
-            return false;
-        }
-
-        private static bool TryFindRoofUnderSmall(
+        internal static bool TryFindRoofUnderSmall(
             JumpObstacleData small,
             IReadOnlyList<JumpObstacleData> obstacles,
             out int roofIndex)
@@ -200,6 +182,47 @@ namespace Assets.Scripts.GameEngine.Mechanics
             }
 
             roofIndex = NoTarget;
+            return false;
+        }
+
+        internal static bool TryFindDamagingRoofOccupantOnRoof(
+            IReadOnlyList<JumpObstacleData> obstacles,
+            int roofIndex,
+            out int occupantIndex)
+        {
+            if (obstacles == null || roofIndex < 0 || roofIndex >= obstacles.Count)
+            {
+                occupantIndex = NoTarget;
+                return false;
+            }
+
+            JumpObstacleData roofObstacle = obstacles[roofIndex];
+            if (!CollisionUtils.IsRoofObstacle(roofObstacle.Type))
+            {
+                occupantIndex = NoTarget;
+                return false;
+            }
+
+            for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
+            {
+                JumpObstacleData candidate = obstacles[obstacleIndex];
+                if (candidate.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
+                    continue;
+
+                if (candidate.IsBottomLine != roofObstacle.IsBottomLine)
+                    continue;
+
+                if (!TryFindRoofUnderSmall(candidate, obstacles, out int supportRoofIndex))
+                    continue;
+
+                if (supportRoofIndex != roofIndex)
+                    continue;
+
+                occupantIndex = obstacleIndex;
+                return true;
+            }
+
+            occupantIndex = NoTarget;
             return false;
         }
 

@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Common.Models;
+using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.System;
@@ -44,8 +45,14 @@ namespace Assets.Scripts.Gameplay
 
         public void Init(ObstacleTypeEnum obstacleTypeEnum, GameManager gameManager, string spriteName, AnimationType animationType)
         {
-            var computedIsTop = IsPositionOnTopLine(transform.position.y);
-            ObstacleType = new ObstacleType(computedIsTop, obstacleTypeEnum);
+            if (!ObstacleLaneResolver.TryResolveIsTop(transform.position.y, out bool isTop))
+            {
+                Debug.LogWarning(
+                    $"Obstacle y={transform.position.y:F3} is not close to any known lane anchor. " +
+                    $"Obstacle={obstacleTypeEnum}, sprite={spriteName}");
+            }
+
+            ObstacleType = new ObstacleType(isTop, obstacleTypeEnum);
             Hamster = LevelController.Instance.LevelData.Hamster;
             GameManager = gameManager;
             AnimationType = animationType;
@@ -100,22 +107,6 @@ namespace Assets.Scripts.Gameplay
         private void OnDestroy()
         {
             _unspawnOnJumpedOnMechanics.OnDisable();
-        }
-
-        private bool IsPositionOnTopLine(float yPos)
-        {
-            // расстояние до любой верхней линии (дорога + крыша)
-            var diffTop = Mathf.Min(
-                Mathf.Abs(yPos - Consts.ObstacleY0Pos),
-                Mathf.Abs(yPos - Consts.ObstacleRoofY0Pos));
-
-            // расстояние до любой нижней линии (дорога + крыша)
-            var diffBottom = Mathf.Min(
-                Mathf.Abs(yPos - Consts.ObstacleY1Pos),
-                Mathf.Abs(yPos - Consts.ObstacleRoofY1Pos));
-
-            // верхняя, если ближе к верхним линиям и в пределах tolerance
-            return diffTop <= diffBottom && diffTop <= Consts.ObstacleLineTolerance;
         }
 
         private float GetBoxColliderWidth()
