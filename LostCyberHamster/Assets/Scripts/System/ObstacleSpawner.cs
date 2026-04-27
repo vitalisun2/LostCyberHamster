@@ -23,6 +23,7 @@ namespace Assets.Scripts.System
 
         private readonly float _delayBetweenPatterns = 2.0f;
         private float _timeSinceLastPattern;
+        private int _reliefDelayPatternIndex = -1;
         private int _currentPatternIndex;
         private List<InstantiatedObstacle> _spawnedObstacles = new();
         private EnvironmentRoot _environmentRoot;
@@ -109,10 +110,17 @@ namespace Assets.Scripts.System
             // готовность зависит от того, полностью ли предыдущий паттерн в кадре
             bool readyToSpawn = _currentPatternIndex == 0 || IsPreviousPatternFullyOnScreen();
 
+            if (readyToSpawn && needsDelay && _reliefDelayPatternIndex != _currentPatternIndex)
+            {
+                _reliefDelayPatternIndex = _currentPatternIndex;
+                _timeSinceLastPattern = 0f;
+            }
+
             if (readyToSpawn && (!needsDelay || _timeSinceLastPattern >= _delayBetweenPatterns))
             {
                 SpawnPattern(_currentPatternIndex);
                 _currentPatternIndex++;
+                _reliefDelayPatternIndex = -1;
                 _timeSinceLastPattern = 0f;
             }
         }
