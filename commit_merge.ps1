@@ -29,7 +29,7 @@ try {
         if ($diff.Length -gt $maxLen) { $diff = $diff.Substring(0, $maxLen) + "`n...[truncated]" }
 
         $prompt = "Write a short git commit message in English, one line up to 72 characters, imperative mood, no period at the end. Be specific about what changed — not just which file, but what was added, removed or modified. Output only the message, nothing else.`nDiff:`n$diff"
-        $commitMsg = ($prompt | gh models run openai/gpt-4.1-mini 2>&1 | Where-Object { $_ -match '\S' -and $_ -notmatch '^та' } | Select-Object -Last 1)
+        $commitMsg = ($prompt | gh models run openai/gpt-4.1-mini 2>$null | Where-Object { $_ -match '\S' -and $_ -notmatch '^та' } | Select-Object -Last 1)
         $commitMsg = "$commitMsg".Trim().Trim('"').Trim()
         if ([string]::IsNullOrWhiteSpace($commitMsg)) {
             Write-Warning "Не удалось сгенерировать сообщение через gh models, использую fallback."
