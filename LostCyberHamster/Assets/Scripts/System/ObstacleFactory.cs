@@ -182,7 +182,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
         private static string GetSortingLayer(float yPosition)
         {
-            return Math.Abs(yPosition - Consts.ObstacleY0Pos) < 0.01f ? "UpperSprites" : "LowerSprites";
+            return ObstacleLaneResolver.ResolveSortingLayerName(yPosition);
         }
 
         private static void ShiftUpYPosForBonuses(GameObject obstacleInst, int modelType)

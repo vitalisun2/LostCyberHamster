@@ -5,6 +5,9 @@ namespace Assets.Scripts.Common
 {
     public static class ObstacleLaneResolver
     {
+        public const string UpperSpritesSortingLayer = "UpperSprites";
+        public const string LowerSpritesSortingLayer = "LowerSprites";
+
         private enum Lane
         {
             Top,
@@ -24,6 +27,13 @@ namespace Assets.Scripts.Common
         public static bool IsBottomLineCloser(float yPosition)
         {
             return GetNearestLane(yPosition, out _) == Lane.Bottom;
+        }
+
+        public static string ResolveSortingLayerName(float yPosition)
+        {
+            return IsBottomLineCloser(yPosition)
+                ? LowerSpritesSortingLayer
+                : UpperSpritesSortingLayer;
         }
 
         private static Lane GetNearestLane(float yPosition, out float nearestDistance)
