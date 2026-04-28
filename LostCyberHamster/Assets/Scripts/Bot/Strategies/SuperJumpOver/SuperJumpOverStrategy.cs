@@ -6,6 +6,7 @@ using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
 
@@ -48,8 +49,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             DecisionPoint decisionPoint,
             List<PlannedAction> actions)
         {
-            if (actions == null)
-                return;
+            Guard.NotNull(
+                (planningState, nameof(planningState)),
+                (worldSnapshot, nameof(worldSnapshot)),
+                (decisionPoint, nameof(decisionPoint)),
+                (actions, nameof(actions)));
 
             if (!_specification.IsSatisfiedBy(planningState, decisionPoint, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
                 return;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 
 namespace Assets.Scripts.Bot.Planning
 {

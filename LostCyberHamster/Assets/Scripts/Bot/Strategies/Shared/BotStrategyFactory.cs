@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Strategies.JumpOnRoof;
 using Assets.Scripts.Bot.Strategies.JumpOver;
+using Assets.Scripts.Bot.Strategies.SuperJumpOnRoof;
 using Assets.Scripts.Bot.Strategies.SuperJumpOver;
 using Assets.Scripts.Bot.Strategies.SwitchLane;
 using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
@@ -20,7 +21,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared
                 new SwitchLaneStrategy(),
                 new JumpOverStrategy(),
                 new SuperJumpOverStrategy(),
-                new JumpOnRoofStrategy()
+                new JumpOnRoofStrategy(),
+                new SuperJumpOnRoofStrategy()
             };
         }
     }

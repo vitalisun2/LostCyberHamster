@@ -9078,7 +9078,7 @@
         },
         {
             "name": "test_superjump_over_01",
-            "description": "",
+            "description": "Top lane BigAlive and bottom lane double SmallNotAlive are equivalent for superjump, so the bot prefers superjumping without switching lanes.",
             "nextObstacleId": 3,
             "obstacles": [
                 {
@@ -9103,7 +9103,7 @@
         },
         {
             "name": "test_superjump_over_02",
-            "description": "",
+            "description": "Top lane double SmallNotAlive and bottom lane BigAlive are equivalent for superjump, so the bot prefers superjumping without switching lanes.",
             "nextObstacleId": 3,
             "obstacles": [
                 {
@@ -9128,7 +9128,7 @@
         },
         {
             "name": "test_jump_on_roof_01",
-            "description": "jumping on bigOnAlive",
+            "description": "jumping on bigNotAlive",
             "nextObstacleId": 4,
             "obstacles": [
                 {
@@ -9159,7 +9159,7 @@
         },
         {
             "name": "test_jump_on_roof_02",
-            "description": "jumping on mediumOnAlive",
+            "description": "jumping on mediumNotAlive",
             "nextObstacleId": 16,
             "obstacles": [
                 {
@@ -9190,7 +9190,7 @@
         },
         {
             "name": "test_jump_on_roof_03",
-            "description": "chosing jump on roof instead of superjump over",
+            "description": "chosing jump on roof instead of superjump over - energy saving",
             "nextObstacleId": 11,
             "obstacles": [
                 {
@@ -9215,7 +9215,7 @@
         },
         {
             "name": "test_jump_on_roof_04",
-            "description": "",
+            "description": "not jump on roof because of smallNotAlive on roof - choosing super jump over bigAlive",
             "nextObstacleId": 12,
             "obstacles": [
                 {
@@ -9245,8 +9245,8 @@
             ]
         },
         {
-            "name": "test_super_jump_on_roof_01",
-            "description": "",
+            "name": "test_jump_on_roof_05",
+            "description": "jump over smallNotAlive and jump on roof in one go",
             "nextObstacleId": 10,
             "obstacles": [
                 {
@@ -9282,8 +9282,8 @@
             ]
         },
         {
-            "name": "test_super_jump_on_roof_02",
-            "description": "",
+            "name": "test_super_jump_on_roof_01",
+            "description": "super jump over bigAlive and super jump on roof in one go",
             "nextObstacleId": 8,
             "obstacles": [
                 {
@@ -9314,6 +9314,129 @@
                     "id": 2,
                     "type": 11,
                     "x": -1.399999976158142,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "test_super_jump_on_roof_02",
+            "description": "",
+            "nextObstacleId": 6,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": -6.599999904632568,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": -5.0,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 2,
+                    "type": 11,
+                    "x": -2.4000000953674318,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 3,
+                    "type": 1,
+                    "x": -6.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 4,
+                    "type": 1,
+                    "x": -4.800000190734863,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 5,
+                    "type": 1,
+                    "x": -3.6000001430511476,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "test_super_jump_on_roof_03",
+            "description": "",
+            "nextObstacleId": 5,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": -3.799999952316284,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": -2.200000047683716,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 2,
+                    "type": 2,
+                    "x": -0.6000000238418579,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 3,
+                    "type": 1,
+                    "x": -4.200000286102295,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 4,
+                    "type": 4,
+                    "x": -1.600000023841858,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "test_super_jump_on_roof_04",
+            "description": "",
+            "nextObstacleId": 6,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": -4.400000095367432,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": -2.799999952316284,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 2,
+                    "type": 4,
+                    "x": 0.0,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 3,
+                    "type": 2,
+                    "x": -3.4000000953674318,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 4,
+                    "type": 2,
+                    "x": -1.8000000715255738,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 5,
+                    "type": 2,
+                    "x": -0.20000000298023225,
                     "y": -1.8000000715255738
                 }
             ]

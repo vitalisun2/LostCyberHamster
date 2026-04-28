@@ -142,8 +142,12 @@ namespace Assets.Scripts.Bot
             if (_executor == null || _planBuilder == null)
                 return;
 
+            // Сначала снимаем snapshot для текущего execution-тика.
             LastSnapshot = _snapshotBuilder.Build(_hamster);
             _executor.Tick(_hamster);
+
+            // Затем обновляем snapshot заново, чтобы replanning видел фактическое post-action состояние.
+            LastSnapshot = _snapshotBuilder.Build(_hamster);
             TrySetNewPlan();
         }
 

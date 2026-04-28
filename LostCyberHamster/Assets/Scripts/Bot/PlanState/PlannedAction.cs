@@ -20,6 +20,7 @@ namespace Assets.Scripts.Bot.PlanState
             float postFireWorldShift,
             int targetObstacleIndex,
             int? targetObstacleInstanceId = null,
+            int? triggerObstacleInstanceId = null,
             bool? targetBottomLine = null,
             int energyCost = 0,
             string description = null)
@@ -31,6 +32,7 @@ namespace Assets.Scripts.Bot.PlanState
             PostFireWorldShift = postFireWorldShift;
             TargetObstacleIndex = targetObstacleIndex;
             TargetObstacleInstanceId = targetObstacleInstanceId;
+            TriggerObstacleInstanceId = triggerObstacleInstanceId;
             TargetBottomLine = targetBottomLine;
             EnergyCost = energyCost;
             Description = description;
@@ -43,6 +45,7 @@ namespace Assets.Scripts.Bot.PlanState
         public float PostFireWorldShift { get; }
         public int TargetObstacleIndex { get; }
         public int? TargetObstacleInstanceId { get; }
+        public int? TriggerObstacleInstanceId { get; }
         public bool? TargetBottomLine { get; }
         public int EnergyCost { get; }
         public string Description { get; }
@@ -65,6 +68,7 @@ namespace Assets.Scripts.Bot.PlanState
                 && Math.Abs(PostFireWorldShift - other.PostFireWorldShift) <= EqualityEpsilon
                 && TargetObstacleIndex == other.TargetObstacleIndex
                 && TargetObstacleInstanceId == other.TargetObstacleInstanceId
+                && TriggerObstacleInstanceId == other.TriggerObstacleInstanceId
                 && TargetBottomLine == other.TargetBottomLine
                 && EnergyCost == other.EnergyCost;
         }
