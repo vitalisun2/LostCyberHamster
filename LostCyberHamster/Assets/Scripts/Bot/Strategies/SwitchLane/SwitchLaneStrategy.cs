@@ -5,6 +5,8 @@ using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
 {
@@ -40,8 +42,11 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             DecisionPoint decisionPoint,
             List<PlannedAction> actions)
         {
-            if (actions == null)
-                return;
+            Guard.NotNull(
+                (planningState, nameof(planningState)),
+                (worldSnapshot, nameof(worldSnapshot)),
+                (decisionPoint, nameof(decisionPoint)),
+                (actions, nameof(actions)));
 
             if (!_specification.IsSatisfiedBy(planningState, decisionPoint, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
                 return;
@@ -74,11 +79,11 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 BotActionKind.SwitchLane,
                 triggerX,
                 renderWorldX,
-                completionWorldShift: fireShift + SwitchLaneTiming.DecisionTravel,
-                postFireWorldShift: SwitchLaneTiming.DecisionTravel,
+                completionWorldShift: fireShift,
+                postFireWorldShift: 0f,
                 targetObstacleIndex,
                 targetObstacleInstanceId: targetObstacle.InstanceId,
-                targetBottomLine,
+                targetBottomLine: targetBottomLine,
                 energyCost: 0,
                 description: $"Switch lane before {targetObstacle.ObstacleType}");
         }

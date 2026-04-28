@@ -40,13 +40,14 @@ namespace Assets.Scripts.Bot.Strategies.Shared
         private static float GetRemainingPostFireShift(PlannedAction action, WorldSnapshot worldSnapshot)
         {
             float remainingPostFireShift = action.PostFireWorldShift;
-            if (!action.TargetObstacleInstanceId.HasValue)
+            int? triggerObstacleInstanceId = action.TriggerObstacleInstanceId ?? action.TargetObstacleInstanceId;
+            if (!triggerObstacleInstanceId.HasValue)
                 return remainingPostFireShift;
 
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                if (obstacle.InstanceId != action.TargetObstacleInstanceId.Value)
+                if (obstacle.InstanceId != triggerObstacleInstanceId.Value)
                     continue;
 
                 float shiftSinceFire = action.TriggerX - obstacle.LeftX;

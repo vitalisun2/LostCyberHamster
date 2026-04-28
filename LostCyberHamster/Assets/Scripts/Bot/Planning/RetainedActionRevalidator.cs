@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -49,7 +50,7 @@ namespace Assets.Scripts.Bot.Planning
             if (!_decisionPointDetector.TryDetect(planningState, projectedWorldSnapshot, out DecisionPoint decisionPoint))
                 return false;
 
-            if (decisionPoint.Obstacle.InstanceId != targetObstacle.InstanceId)
+            if (!decisionPoint.MatchesTargetObstacle(targetObstacle))
                 return false;
 
             if (!_validatorsByKind.TryGetValue(action.Kind, out IRetainedActionValidator validator))

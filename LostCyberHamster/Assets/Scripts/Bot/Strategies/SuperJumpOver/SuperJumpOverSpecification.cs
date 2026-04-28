@@ -1,5 +1,6 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 
 namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 {
@@ -21,7 +22,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
             if (planningState == null
                 || decisionPoint == null
-                || decisionPoint.Kind != DecisionPointKind.BlockingObstacle
                 || decisionPoint.Obstacle == null)
             {
                 return false;
@@ -29,6 +29,9 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
             HamsterSnapshot hamster = planningState.Hamster;
             if (hamster.IsOnRoof || hamster.IsShifting || hamster.IsDamaged || hamster.Energy < EnergyCost)
+                return false;
+
+            if (!decisionPoint.IsBlockingThreat())
                 return false;
 
             if (!ObstacleClassifier.CanSuperJumpOverOnGround(decisionPoint.Obstacle.ObstacleType))

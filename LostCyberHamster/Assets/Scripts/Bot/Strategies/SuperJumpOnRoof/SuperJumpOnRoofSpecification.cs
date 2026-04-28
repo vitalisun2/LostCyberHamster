@@ -2,14 +2,14 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 
-namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
+namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
 {
     /// <summary>
-    /// Проверяет применимость прыжка на крышу.
+    /// Проверяет применимость super jump on roof.
     /// </summary>
-    internal sealed class JumpOnRoofSpecification
+    internal sealed class SuperJumpOnRoofSpecification
     {
-        public const int EnergyCost = 10;
+        public const int EnergyCost = 20;
 
         public bool IsSatisfiedBy(
             PlanningState planningState,
@@ -33,18 +33,19 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 
             if (decisionPoint.Kind == DecisionPointKind.BlockingObstacleWithRoofLanding)
             {
-                if (!ObstacleClassifier.CanJumpOverOnGround(decisionPoint.Obstacle.ObstacleType)
+                if (!ObstacleClassifier.CanSuperJumpOverOnGround(decisionPoint.Obstacle.ObstacleType)
                     || !decisionPoint.TryGetRoofLandingTarget(out targetObstacle, out targetObstacleIndex))
                 {
                     return false;
                 }
-            }
-            else if (!decisionPoint.TryGetRoofLandingTarget(out targetObstacle, out targetObstacleIndex))
-            {
-                return false;
+
+                return true;
             }
 
-            return true;
+            if (decisionPoint.Kind != DecisionPointKind.RoofLanding)
+                return false;
+
+            return decisionPoint.TryGetRoofLandingTarget(out targetObstacle, out targetObstacleIndex);
         }
     }
 }

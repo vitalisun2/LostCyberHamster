@@ -10,6 +10,7 @@ namespace Assets.Scripts.Bot.PlanState
         JumpOver,
         SuperJumpOver,
         JumpOnRoof,
+        SuperJumpOnRoof,
         RoofJump,
         SuperRoofJump
     }

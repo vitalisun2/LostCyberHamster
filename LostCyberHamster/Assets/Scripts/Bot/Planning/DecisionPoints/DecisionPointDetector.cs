@@ -1,8 +1,9 @@
 using Assets.Scripts.Bot.Perception;
+using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 
-namespace Assets.Scripts.Bot.Planning
+namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
     /// <summary>
     /// Находит следующую обязательную для реакции ситуацию в projected world snapshot.
@@ -54,10 +55,7 @@ namespace Assets.Scripts.Bot.Planning
                             $"occupant={roofHazard.ObstacleType} occupantId={roofHazard.InstanceId} " +
                             $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2}");
 
-                        decisionPoint = new DecisionPoint(
-                            DecisionPointKind.BlockingObstacle,
-                            obstacle,
-                            obstacleIndex);
+                        decisionPoint = BuildBlockingDecisionPoint(worldSnapshot, obstacle, obstacleIndex);
                         return true;
                     }
 
@@ -68,14 +66,32 @@ namespace Assets.Scripts.Bot.Planning
                     return true;
                 }
 
-                decisionPoint = new DecisionPoint(
-                    DecisionPointKind.BlockingObstacle,
-                    obstacle,
-                    obstacleIndex);
+                decisionPoint = BuildBlockingDecisionPoint(worldSnapshot, obstacle, obstacleIndex);
                 return true;
             }
 
             return false;
+        }
+
+        private static DecisionPoint BuildBlockingDecisionPoint(
+            WorldSnapshot worldSnapshot,
+            ObstacleSnapshot obstacle,
+            int obstacleIndex)
+        {
+            if (TryFindRoofLandingContinuation(worldSnapshot, obstacle, obstacleIndex, out ObstacleSnapshot roofObstacle, out int roofObstacleIndex))
+            {
+                return new DecisionPoint(
+                    DecisionPointKind.BlockingObstacleWithRoofLanding,
+                    obstacle,
+                    obstacleIndex,
+                    roofObstacle,
+                    roofObstacleIndex);
+            }
+
+            return new DecisionPoint(
+                DecisionPointKind.BlockingObstacle,
+                obstacle,
+                obstacleIndex);
         }
 
         private static bool TryFindRoofLandingHazard(
@@ -93,6 +109,36 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             roofHazard = null;
+            return false;
+        }
+
+        private static bool TryFindRoofLandingContinuation(
+            WorldSnapshot worldSnapshot,
+            ObstacleSnapshot obstacle,
+            int obstacleIndex,
+            out ObstacleSnapshot roofObstacle,
+            out int roofObstacleIndex)
+        {
+            roofObstacle = null;
+            roofObstacleIndex = -1;
+
+            if (worldSnapshot == null || obstacle == null)
+                return false;
+
+            for (int candidateIndex = obstacleIndex + 1; candidateIndex < worldSnapshot.Obstacles.Count; candidateIndex++)
+            {
+                ObstacleSnapshot candidate = worldSnapshot.Obstacles[candidateIndex];
+                if (candidate.IsBottomLine != obstacle.IsBottomLine)
+                    continue;
+
+                if (!ObstacleClassifier.IsObstacleWithRoof(candidate.ObstacleType))
+                    continue;
+
+                roofObstacle = candidate;
+                roofObstacleIndex = candidateIndex;
+                return true;
+            }
+
             return false;
         }
 

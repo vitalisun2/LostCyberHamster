@@ -20,10 +20,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Execution
         public ActionFireResult Check(PlannedAction action, out float obstacleLeftX)
         {
             obstacleLeftX = 0f;
-            if (action == null || !action.TargetObstacleInstanceId.HasValue)
+            int? triggerObstacleInstanceId = action?.TriggerObstacleInstanceId ?? action?.TargetObstacleInstanceId;
+            if (!triggerObstacleInstanceId.HasValue)
                 return ActionFireResult.Cancelled;
 
-            Obstacle obstacle = _liveObstacleResolver.Find(action.TargetObstacleInstanceId.Value);
+            Obstacle obstacle = _liveObstacleResolver.Find(triggerObstacleInstanceId.Value);
             if (obstacle == null)
                 return ActionFireResult.Cancelled;
 

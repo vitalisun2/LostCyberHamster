@@ -13,7 +13,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Execution
         {
             DebugManager.DiagLog(
                 $"[Bot EXEC] FIRE kind={action.Kind} " +
-                $"triggerX={action.TriggerX:F2} obstacleLeftX={obstacleLeftX:F2} " +
+                $"triggerX={action.TriggerX:F2} renderX={action.RenderWorldX:F2} obstacleLeftX={obstacleLeftX:F2} " +
                 $"{extra ?? string.Empty}" +
                 $"desc={action.Description}");
         }

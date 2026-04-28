@@ -1,5 +1,6 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 
 namespace Assets.Scripts.Bot.Strategies.JumpOver
 {
@@ -21,7 +22,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
 
             if (planningState == null
                 || decisionPoint == null
-                || decisionPoint.Kind != DecisionPointKind.BlockingObstacle
+                || !decisionPoint.IsBlockingThreat()
                 || decisionPoint.Obstacle == null)
             {
                 return false;

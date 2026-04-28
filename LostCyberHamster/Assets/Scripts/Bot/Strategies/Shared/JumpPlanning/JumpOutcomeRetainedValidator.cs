@@ -1,6 +1,6 @@
 using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
 {
@@ -28,16 +28,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
             if (context == null || context.Action == null || context.Action.Kind != ActionKind)
                 return false;
 
-            var action = new PlannedActionLike(
-                context.Action.TriggerX,
-                context.Action.PostFireWorldShift);
-
             return _fireWindowCalculator.IsScheduledFireShiftStillValid(
                 context.PlanningState,
                 context.ProjectedWorldSnapshot,
                 context.TargetObstacle,
                 context.TargetObstacleIndex,
-                action,
+                context.Action,
                 ValidationEpsilon);
         }
     }

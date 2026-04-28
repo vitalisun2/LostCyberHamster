@@ -82,6 +82,7 @@ namespace Assets.Scripts.Bot
                         DrawSwitchLaneGlyph(renderWorldX, currentBottomLine, alpha);
                     break;
                 case BotActionKind.SuperJumpOver:
+                case BotActionKind.SuperJumpOnRoof:
                     if (TryGetRenderWorldX(action, snapshot, out float superJumpRenderWorldX))
                         DrawSuperJumpGlyph(superJumpRenderWorldX, currentBottomLine, alpha);
                     break;

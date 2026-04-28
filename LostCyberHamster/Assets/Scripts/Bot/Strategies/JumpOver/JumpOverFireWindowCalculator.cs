@@ -38,6 +38,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 targetObstacle,
                 targetObstacleIndex,
                 jumpTravel,
+                preferLatestFireShift: false,
                 out fireShift);
         }
     }

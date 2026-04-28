@@ -4,7 +4,7 @@
     "location": "01_New_York",
     "patternSequence": [
         {
-            "ref": "test_jump_on_roof_01",
+            "ref": "test_super_jump_on_roof_01",
             "spriteSeed": 0,
             "overrides": []
         },
@@ -14,17 +14,7 @@
             "overrides": []
         },
         {
-            "ref": "test_jump_on_roof_02",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "relief_energy",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "test_jump_on_roof_03",
+            "ref": "test_super_jump_on_roof_02",
             "spriteSeed": 0,
             "overrides": []
         },
@@ -34,7 +24,7 @@
             "overrides": []
         },
         {
-            "ref": "test_jump_on_roof_04",
+            "ref": "test_super_jump_on_roof_03",
             "spriteSeed": 0,
             "overrides": []
         },
@@ -44,7 +34,7 @@
             "overrides": []
         },
         {
-            "ref": "test_jump_on_roof_05",
+            "ref": "test_super_jump_on_roof_04",
             "spriteSeed": 0,
             "overrides": []
         }

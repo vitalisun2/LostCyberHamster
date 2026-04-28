@@ -1,27 +1,27 @@
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.Gameplay.Enums;
 
-namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
+namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
 {
     /// <summary>
-    /// Ищет fire shift для посадки на крышу.
+    /// Ищет fire shift для super jump landing на крышу.
     /// </summary>
-    internal sealed class JumpOnRoofFireWindowCalculator
+    internal sealed class SuperJumpOnRoofFireWindowCalculator
     {
         private readonly JumpOutcomeFireWindowCalculator _calculator;
 
-        public JumpOnRoofFireWindowCalculator()
+        public SuperJumpOnRoofFireWindowCalculator()
         {
             _calculator = new JumpOutcomeFireWindowCalculator(
                 new RoofLandingSearchWindowPolicy(),
-                HamsterStateEnum.JumpOnRoof,
-                damageBigAliveWithoutYByReach: true,
-                JumpOutcomeResolver.ResolveJump,
+                HamsterStateEnum.SuperJumpOnRoof,
+                damageBigAliveWithoutYByReach: false,
+                SuperJumpOutcomeResolver.ResolveSuperJump,
                 new GroundContactPreFireSafetyPolicy(),
-                diagnosticPrefix: "JumpOnRoof");
+                diagnosticPrefix: "SuperJumpOnRoof");
         }
 
         public JumpOutcomeFireWindowCalculator OutcomeCalculator => _calculator;
@@ -31,7 +31,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
-            float jumpTravel,
+            float superJumpTravel,
             bool preferLatestFireShift,
             out float fireShift)
         {
@@ -40,7 +40,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 projectedWorldSnapshot,
                 targetObstacle,
                 targetObstacleIndex,
-                jumpTravel,
+                superJumpTravel,
                 preferLatestFireShift,
                 out fireShift);
         }
