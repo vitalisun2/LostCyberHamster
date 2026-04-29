@@ -1,4 +1,4 @@
-using Assets.Scripts.Bot.Diagnostics;
+﻿using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -29,7 +29,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
 
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
-            Guard.NotNull(
+            Guard.ThrowIfNull(
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 

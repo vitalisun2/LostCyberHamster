@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
@@ -44,7 +44,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             DecisionPoint decisionPoint,
             List<PlannedAction> actions)
         {
-            Guard.NotNull(
+            Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
                 (decisionPoint, nameof(decisionPoint)),

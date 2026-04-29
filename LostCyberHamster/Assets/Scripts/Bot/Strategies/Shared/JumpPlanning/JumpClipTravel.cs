@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
@@ -27,7 +27,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
             if (controller == null)
             {
                 if (throwIfMissing)
-                    Guard.NotNull((controller, nameof(TransformAnimatorController)));
+                    Guard.ThrowIfNull((controller, nameof(TransformAnimatorController)));
 
                 travel = 0f;
                 return false;

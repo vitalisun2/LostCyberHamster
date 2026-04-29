@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
@@ -79,7 +79,7 @@ namespace Assets.Scripts.Bot.Execution
         /// </summary>
         public void Tick(Hamster hamster)
         {
-            Guard.NotNull((hamster, nameof(hamster)));
+            Guard.ThrowIfNull((hamster, nameof(hamster)));
 
             if (!CurrentPlan.HasActions)
                 return;

@@ -1,4 +1,4 @@
-using Assets.Scripts.Bot.Perception;
+﻿using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Common;
 
@@ -18,7 +18,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.Policies
             out float firstFireShift,
             out float lastFireShift)
         {
-            Guard.NotNull(
+            Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (targetObstacle, nameof(targetObstacle)));
 

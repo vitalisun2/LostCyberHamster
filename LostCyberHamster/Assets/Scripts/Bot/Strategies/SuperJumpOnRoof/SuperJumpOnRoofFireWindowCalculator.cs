@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
@@ -44,7 +44,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             bool preferLatestFireShift,
             out float fireShift)
         {
-            Guard.NotNull(
+            Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (projectedWorldSnapshot, nameof(projectedWorldSnapshot)),
                 (targetObstacle, nameof(targetObstacle)),
