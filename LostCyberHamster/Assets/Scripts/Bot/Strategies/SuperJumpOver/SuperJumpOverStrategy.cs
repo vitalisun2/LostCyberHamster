@@ -18,18 +18,20 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
     internal sealed class SuperJumpOverStrategy : IPlanningStrategy
     {
         private readonly SuperJumpOverSpecification _specification;
-        private readonly SuperJumpOverFireWindowCalculator _fireWindowCalculator;
+        private readonly SuperJumpOverFireWindowFinder _fireWindowFinder;
+        private readonly IJumpScheduledFireShiftValidator _fireWindowValidator;
         private readonly SuperJumpOverSimulator _simulator;
 
         public SuperJumpOverStrategy()
         {
             _specification = new SuperJumpOverSpecification();
-            _fireWindowCalculator = new SuperJumpOverFireWindowCalculator();
+            _fireWindowFinder = new SuperJumpOverFireWindowFinder();
+            _fireWindowValidator = new SuperJumpOverScheduledFireShiftValidator();
             _simulator = new SuperJumpOverSimulator();
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             Executor = new SuperJumpOverExecutor(triggerGate);
-            RetainedValidator = new JumpOutcomeRetainedValidator(ActionKind, _fireWindowCalculator);
+            RetainedValidator = new JumpOutcomeRetainedValidator(ActionKind, _fireWindowValidator);
             Simulator = _simulator;
         }
 
@@ -62,7 +64,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 return;
             }
 
-            if (!_fireWindowCalculator.TryFindFireShift(
+            if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
                     worldSnapshot,
                     targetObstacle,

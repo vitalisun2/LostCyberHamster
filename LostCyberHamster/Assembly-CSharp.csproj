@@ -134,7 +134,8 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperJumpOutcomeResolver.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\DecisionPoint.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverFireWindowCalculator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverFireWindowFinder.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverScheduledFireShiftValidator.cs" />
     <Compile Include="Assets\Scripts\System\UserSettings.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitLocationsListLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\HamsterAnimationEventsMechanics.cs" />
