@@ -34,6 +34,9 @@
 ### docs/architecture_knowledge_base.md
 Ключевая база знаний проекта: naming conventions, Addressables, редактор уровней, data flow, runtime-декор, бот и устойчивые архитектурные выводы.
 
+### docs/bot_architecture_diagram.md
+Графическая Mermaid-схема runtime-архитектуры бота: pipeline, planning graph, strategy families, shared helpers и зависимости между блоками.
+
 ### docs/hamster_collision_test_scenarios.md
 Чек-лист для ручного тестирования всех основных типов столкновений хомяка.
 
