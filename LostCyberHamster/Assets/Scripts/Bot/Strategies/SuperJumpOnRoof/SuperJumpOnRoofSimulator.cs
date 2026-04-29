@@ -1,8 +1,8 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
-using Assets.Scripts.Bot.Strategies.Shared;
-using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Simulation;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 
 namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof

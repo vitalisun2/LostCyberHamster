@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
