@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.FireWindows
 {
-    internal delegate bool FireMomentCheck(float fireMoment);
+    internal delegate bool StrategyFireSuccessCheck(float fireMoment);
 
     /// <summary>
     /// Сканирует fire window и находит участки, где action успешно проходит проверку.
@@ -13,7 +13,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.FireWindows
             FireWindow window,
             float step,
             float epsilon,
-            FireMomentCheck isFireSuccessful)
+            StrategyFireSuccessCheck isFireSuccessful)
         {
             var intervals = new List<FireInterval>();
             if (step <= 0f || isFireSuccessful == null)

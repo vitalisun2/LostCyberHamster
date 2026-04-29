@@ -47,11 +47,9 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 return false;
 
             List<JumpObstacleData> baseObstacles = BuildBaseObstacles(projectedWorldSnapshot);
-            List<JumpObstacleData> shiftedObstacles = new(baseObstacles.Count);
-            return IsExpectedSuperJumpOverOutcomeAtShift(
+            return IsExpectedOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
-                shiftedObstacles,
                 fireShift,
                 action.PostFireWorldShift,
                 targetObstacleIndex);
@@ -175,12 +173,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         /// <summary>
         /// Строит obstacles в координатах момента fire shift.
         /// </summary>
-        private static void BuildShiftedObstacles(
+        private static List<JumpObstacleData> BuildShiftedObstacles(
             IReadOnlyList<JumpObstacleData> baseObstacles,
-            float fireShift,
-            List<JumpObstacleData> shiftedObstacles)
+            float fireShift)
         {
-            shiftedObstacles.Clear();
+            var shiftedObstacles = new List<JumpObstacleData>(baseObstacles.Count);
             for (int obstacleIndex = 0; obstacleIndex < baseObstacles.Count; obstacleIndex++)
             {
                 JumpObstacleData obstacle = baseObstacles[obstacleIndex];
@@ -194,42 +191,38 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                     obstacle.BottomY,
                     obstacle.TopY));
             }
+
+            return shiftedObstacles;
         }
 
         /// <summary>
         /// Проверяет, что fire shift приводит ровно к SuperJumpOver по ожидаемому obstacle.
         /// </summary>
-        private static bool IsExpectedSuperJumpOverOutcomeAtShift(
+        private static bool IsExpectedOutcomeAtFireShift(
             HamsterSnapshot hamster,
             IReadOnlyList<JumpObstacleData> baseObstacles,
-            List<JumpObstacleData> shiftedObstacles,
             float fireShift,
             float superJumpTravel,
             int targetObstacleIndex)
         {
-            JumpResolveResult result = ResolveSuperJumpAtShift(
+            List<JumpObstacleData> obstaclesAtFireShift = BuildShiftedObstacles(baseObstacles, fireShift);
+            JumpResolveResult result = GetRuntimeOutcome(
                 hamster,
-                baseObstacles,
-                shiftedObstacles,
-                fireShift,
+                obstaclesAtFireShift,
                 superJumpTravel);
 
             return result.State == HamsterStateEnum.SuperJumpOver
-                   && IsTargetMatch(shiftedObstacles, targetObstacleIndex, result.TargetIndex);
+                   && IsExpectedTarget(obstaclesAtFireShift, targetObstacleIndex, result.TargetIndex);
         }
 
         /// <summary>
-        /// Сдвигает obstacles в момент fire shift и запускает runtime super jump resolver.
+        /// Возвращает результат runtime resolver'а для obstacles в момент fire.
         /// </summary>
-        private static JumpResolveResult ResolveSuperJumpAtShift(
+        private static JumpResolveResult GetRuntimeOutcome(
             HamsterSnapshot hamster,
-            IReadOnlyList<JumpObstacleData> baseObstacles,
-            List<JumpObstacleData> shiftedObstacles,
-            float fireShift,
+            IReadOnlyList<JumpObstacleData> shiftedObstacles,
             float superJumpTravel)
         {
-            BuildShiftedObstacles(baseObstacles, fireShift, shiftedObstacles);
-
             JumpResolveContext context = new(
                 hamster.IsOnBottomLine,
                 hamster.HamsterLeftX,
@@ -246,19 +239,19 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         /// <summary>
         /// Проверяет прямое попадание в target или допустимый over-result по цепочке road small obstacles.
         /// </summary>
-        private static bool IsTargetMatch(
+        private static bool IsExpectedTarget(
             IReadOnlyList<JumpObstacleData> shiftedObstacles,
             int targetObstacleIndex,
             int resolvedTargetIndex)
         {
             return resolvedTargetIndex == targetObstacleIndex
-                   || IsRoadSmallChainOverResult(shiftedObstacles, targetObstacleIndex, resolvedTargetIndex);
+                   || IsSameRoadSmallChainTarget(shiftedObstacles, targetObstacleIndex, resolvedTargetIndex);
         }
 
         /// <summary>
         /// Разрешает случай, когда resolver возвращает более поздний obstacle из одной цепочки road small obstacles.
         /// </summary>
-        private static bool IsRoadSmallChainOverResult(
+        private static bool IsSameRoadSmallChainTarget(
             IReadOnlyList<JumpObstacleData> shiftedObstacles,
             int targetObstacleIndex,
             int resolvedTargetIndex)

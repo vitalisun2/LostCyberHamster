@@ -11,7 +11,7 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 {
     /// <summary>
-    /// Ищет fire shift для super jump-over.
+    /// Ищет fire moment для super jump-over.
     /// </summary>
     internal sealed class SuperJumpOverFireWindowFinder
     {
@@ -51,7 +51,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             }
 
             List<JumpObstacleData> baseObstacles = BuildBaseObstacles(projectedWorldSnapshot);
-            List<JumpObstacleData> shiftedObstacles = new(baseObstacles.Count);
             List<FireInterval> successfulIntervals = FireWindowScanner.FindSuccessfulIntervals(
                 fireWindow,
                 _searchStep,
@@ -59,7 +58,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 candidateFireMoment => IsExpectedOutcomeAtFireMoment(
                     planningState.Hamster,
                     baseObstacles,
-                    shiftedObstacles,
                     candidateFireMoment,
                     superJumpTravel,
                     targetObstacleIndex));
@@ -158,27 +156,28 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         }
 
         /// <summary>
-        /// Строит obstacles в координатах момента fire shift.
+        /// Строит obstacles в координатах fire moment.
         /// </summary>
-        private static void BuildShiftedObstacles(
+        private static List<JumpObstacleData> BuildShiftedObstacles(
             IReadOnlyList<JumpObstacleData> baseObstacles,
-            float fireShift,
-            List<JumpObstacleData> shiftedObstacles)
+            float fireMoment)
         {
-            shiftedObstacles.Clear();
+            var shiftedObstacles = new List<JumpObstacleData>(baseObstacles.Count);
             for (int obstacleIndex = 0; obstacleIndex < baseObstacles.Count; obstacleIndex++)
             {
                 JumpObstacleData obstacle = baseObstacles[obstacleIndex];
                 shiftedObstacles.Add(new JumpObstacleData(
                     obstacle.Type,
                     obstacle.IsBottomLine,
-                    obstacle.LeftX - fireShift,
-                    obstacle.RightX - fireShift,
-                    obstacle.CenterX - fireShift,
+                    obstacle.LeftX - fireMoment,
+                    obstacle.RightX - fireMoment,
+                    obstacle.CenterX - fireMoment,
                     obstacle.HasY,
                     obstacle.BottomY,
                     obstacle.TopY));
             }
+
+            return shiftedObstacles;
         }
 
         #endregion
@@ -219,34 +218,28 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         private static bool IsExpectedOutcomeAtFireMoment(
             HamsterSnapshot hamster,
             IReadOnlyList<JumpObstacleData> baseObstacles,
-            List<JumpObstacleData> shiftedObstacles,
             float fireMoment,
             float superJumpTravel,
             int targetObstacleIndex)
         {
-            JumpResolveResult result = GetRuntimeOutcomeAtFireMoment(
+            List<JumpObstacleData> obstaclesAtFireMoment = BuildShiftedObstacles(baseObstacles, fireMoment);
+            JumpResolveResult result = GetRuntimeOutcome(
                 hamster,
-                baseObstacles,
-                shiftedObstacles,
-                fireMoment,
+                obstaclesAtFireMoment,
                 superJumpTravel);
 
             return result.State == HamsterStateEnum.SuperJumpOver
-                   && IsExpectedTarget(shiftedObstacles, targetObstacleIndex, result.TargetIndex);
+                   && IsExpectedTarget(obstaclesAtFireMoment, targetObstacleIndex, result.TargetIndex);
         }
 
         /// <summary>
-        /// Сдвигает obstacles к моменту fire и возвращает результат runtime resolver'а.
+        /// Возвращает результат runtime resolver'а для obstacles в момент fire.
         /// </summary>
-        private static JumpResolveResult GetRuntimeOutcomeAtFireMoment(
+        private static JumpResolveResult GetRuntimeOutcome(
             HamsterSnapshot hamster,
-            IReadOnlyList<JumpObstacleData> baseObstacles,
-            List<JumpObstacleData> shiftedObstacles,
-            float fireMoment,
+            IReadOnlyList<JumpObstacleData> obstaclesAtFireMoment,
             float superJumpTravel)
         {
-            BuildShiftedObstacles(baseObstacles, fireMoment, shiftedObstacles);
-
             JumpResolveContext context = new(
                 hamster.IsOnBottomLine,
                 hamster.HamsterLeftX,
@@ -257,7 +250,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 superJumpTravel,
                 damageBigAliveWithoutYByReach: false);
 
-            return SuperJumpOutcomeResolver.ResolveSuperJump(shiftedObstacles, context);
+            return SuperJumpOutcomeResolver.ResolveSuperJump(obstaclesAtFireMoment, context);
         }
 
         #endregion
