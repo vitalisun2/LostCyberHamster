@@ -1,70 +1,65 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
-using Assets.Scripts.Bot.Strategies.Shared.FireWindows;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay.Enums;
 
-namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
+namespace Assets.Scripts.Bot.Strategies.JumpOver
 {
     /// <summary>
-    /// Ищет fire shift для super jump-over.
+    /// Ищет fire shift для обычного jump-over.
     /// </summary>
-    internal sealed class SuperJumpOverFireWindowFinder
+    internal sealed class JumpOverFireWindowFinder
     {
         private const float _searchStep = 0.005f;
         private const float _searchEpsilon = 0.0001f;
-        private const float _distanceFromIntervalEnd = 0.1f;
-        private const float _firePositionInInterval = 1f;
+        private const float _interiorSelectionRatio = 0.5f;
 
         #region Public API
 
         /// <summary>
-        /// Подбирает момент fire внутри допустимого окна для super jump-over.
+        /// Подбирает fire shift внутри допустимого окна для jump-over.
         /// </summary>
-        public bool TryFindFireMoment(
+        public bool TryFindFireShift(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
-            float superJumpTravel,
-            out float fireMoment)
+            float jumpTravel,
+            out float fireShift)
         {
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (projectedWorldSnapshot, nameof(projectedWorldSnapshot)),
                 (targetObstacle, nameof(targetObstacle)));
 
-            if (!TryGetFireWindow(
+            if (!TryGetFireShiftSearchWindow(
                     planningState,
                     projectedWorldSnapshot,
                     targetObstacle,
                     targetObstacleIndex,
-                    superJumpTravel,
-                    out FireWindow fireWindow))
+                    jumpTravel,
+                    out float firstFireShift,
+                    out float lastFireShift))
             {
-                fireMoment = 0f;
+                fireShift = 0f;
                 return false;
             }
 
             List<JumpObstacleData> baseObstacles = BuildBaseObstacles(projectedWorldSnapshot);
             List<JumpObstacleData> shiftedObstacles = new(baseObstacles.Count);
-            List<FireInterval> successfulIntervals = FireWindowScanner.FindSuccessfulIntervals(
-                fireWindow,
-                _searchStep,
-                _searchEpsilon,
-                candidateFireMoment => IsExpectedOutcomeAtFireMoment(
-                    planningState.Hamster,
-                    baseObstacles,
-                    shiftedObstacles,
-                    candidateFireMoment,
-                    superJumpTravel,
-                    targetObstacleIndex));
-
-            return TrySelectFireMoment(successfulIntervals, out fireMoment);
+            return TrySelectInteriorExpectedOutcomeFireShift(
+                planningState.Hamster,
+                baseObstacles,
+                shiftedObstacles,
+                jumpTravel,
+                targetObstacleIndex,
+                firstFireShift,
+                lastFireShift,
+                out fireShift);
         }
 
         #endregion
@@ -72,15 +67,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         #region Search Window
 
         /// <summary>
-        /// Получает физически допустимое окно запуска super jump-over.
+        /// Получает физически допустимое окно запуска jump-over.
         /// </summary>
-        private static bool TryGetFireWindow(
+        private static bool TryGetFireShiftSearchWindow(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
-            float superJumpTravel,
-            out FireWindow fireWindow)
+            float jumpTravel,
+            out float firstFireShift,
+            out float lastFireShift)
         {
             HamsterSnapshot hamster = planningState.Hamster;
             float chainRightX = GetRoadSmallChainRightX(
@@ -88,12 +84,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 targetObstacle,
                 targetObstacleIndex);
 
-            float firstFireShift = chainRightX - hamster.HamsterLeftX - superJumpTravel;
+            firstFireShift = chainRightX - hamster.HamsterLeftX - jumpTravel;
             if (firstFireShift < 0f)
                 firstFireShift = 0f;
 
-            float lastFireShift = targetObstacle.LeftX - hamster.HamsterRightX;
-            fireWindow = new FireWindow(firstFireShift, lastFireShift);
+            lastFireShift = targetObstacle.LeftX - hamster.HamsterRightX;
             return lastFireShift >= 0f && firstFireShift <= lastFireShift;
         }
 
@@ -183,29 +178,110 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
         #endregion
 
-        #region Fire Moment Selection
+        #region Outcome Interval Search
 
         /// <summary>
-        /// Выбирает поздний fire moment внутри последнего успешного интервала.
+        /// Выбирает внутренний fire shift из интервала, где runtime resolver даёт ожидаемый jump-over outcome.
         /// </summary>
-        private static bool TrySelectFireMoment(
-            IReadOnlyList<FireInterval> successfulIntervals,
-            out float fireMoment)
+        private bool TrySelectInteriorExpectedOutcomeFireShift(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            List<JumpObstacleData> shiftedObstacles,
+            float jumpTravel,
+            int targetObstacleIndex,
+            float firstFireShift,
+            float lastFireShift,
+            out float fireShift)
         {
-            for (int intervalIndex = successfulIntervals.Count - 1; intervalIndex >= 0; intervalIndex--)
+            List<SafeInterval> expectedOutcomeIntervals = FindExpectedOutcomeIntervals(
+                hamster,
+                baseObstacles,
+                shiftedObstacles,
+                jumpTravel,
+                targetObstacleIndex,
+                firstFireShift,
+                lastFireShift);
+
+            return TrySelectInteriorFireShift(expectedOutcomeIntervals, out fireShift);
+        }
+
+        /// <summary>
+        /// Находит все интервалы fire shift, на которых jump resolver попадает в нужный target.
+        /// </summary>
+        private List<SafeInterval> FindExpectedOutcomeIntervals(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            List<JumpObstacleData> shiftedObstacles,
+            float jumpTravel,
+            int targetObstacleIndex,
+            float firstFireShift,
+            float lastFireShift)
+        {
+            var intervals = new List<SafeInterval>();
+            bool isInsideInterval = false;
+            float intervalStart = 0f;
+            float previousShift = firstFireShift;
+
+            for (float candidateFireShift = firstFireShift;
+                  candidateFireShift <= lastFireShift + _searchEpsilon;
+                  candidateFireShift += _searchStep)
             {
-                FireInterval interval = successfulIntervals[intervalIndex];
-                if (interval.TrySelectPoint(
-                        _firePositionInInterval,
-                        _distanceFromIntervalEnd,
-                        _searchEpsilon,
-                        out fireMoment))
+                float clampedFireShift = candidateFireShift > lastFireShift
+                    ? lastFireShift
+                    : candidateFireShift;
+
+                if (IsExpectedJumpOverOutcomeAtShift(
+                        hamster,
+                        baseObstacles,
+                        shiftedObstacles,
+                        clampedFireShift,
+                        jumpTravel,
+                        targetObstacleIndex))
+                {
+                    if (!isInsideInterval)
+                    {
+                        intervalStart = clampedFireShift;
+                        isInsideInterval = true;
+                    }
+                }
+                else if (isInsideInterval)
+                {
+                    intervals.Add(new SafeInterval(intervalStart, previousShift));
+                    isInsideInterval = false;
+                }
+
+                previousShift = clampedFireShift;
+                if (clampedFireShift >= lastFireShift)
+                    break;
+            }
+
+            if (isInsideInterval)
+                intervals.Add(new SafeInterval(intervalStart, previousShift));
+
+            return intervals;
+        }
+
+        /// <summary>
+        /// Выбирает внутреннюю точку внутри последнего подходящего интервала.
+        /// </summary>
+        private static bool TrySelectInteriorFireShift(
+            IReadOnlyList<SafeInterval> expectedOutcomeIntervals,
+            out float fireShift)
+        {
+            for (int intervalIndex = expectedOutcomeIntervals.Count - 1; intervalIndex >= 0; intervalIndex--)
+            {
+                SafeInterval interval = expectedOutcomeIntervals[intervalIndex];
+                if (interval.TrySelectInteriorPoint(
+                        0f,
+                        _interiorSelectionRatio,
+                        out fireShift,
+                        _searchEpsilon))
                 {
                     return true;
                 }
             }
 
-            fireMoment = 0f;
+            fireShift = 0f;
             return false;
         }
 
@@ -214,38 +290,38 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         #region Outcome Resolution
 
         /// <summary>
-        /// Проверяет, что fire moment приводит к ожидаемому outcome по ожидаемому obstacle.
+        /// Проверяет, что fire shift приводит ровно к JumpOver по ожидаемому obstacle.
         /// </summary>
-        private static bool IsExpectedOutcomeAtFireMoment(
+        private static bool IsExpectedJumpOverOutcomeAtShift(
             HamsterSnapshot hamster,
             IReadOnlyList<JumpObstacleData> baseObstacles,
             List<JumpObstacleData> shiftedObstacles,
-            float fireMoment,
-            float superJumpTravel,
+            float fireShift,
+            float jumpTravel,
             int targetObstacleIndex)
         {
-            JumpResolveResult result = GetRuntimeOutcomeAtFireMoment(
+            JumpResolveResult result = ResolveJumpAtShift(
                 hamster,
                 baseObstacles,
                 shiftedObstacles,
-                fireMoment,
-                superJumpTravel);
+                fireShift,
+                jumpTravel);
 
-            return result.State == HamsterStateEnum.SuperJumpOver
-                   && IsExpectedTarget(shiftedObstacles, targetObstacleIndex, result.TargetIndex);
+            return result.State == HamsterStateEnum.JumpOver
+                   && IsTargetMatch(shiftedObstacles, targetObstacleIndex, result.TargetIndex);
         }
 
         /// <summary>
-        /// Сдвигает obstacles к моменту fire и возвращает результат runtime resolver'а.
+        /// Сдвигает obstacles в момент fire shift и запускает runtime jump resolver.
         /// </summary>
-        private static JumpResolveResult GetRuntimeOutcomeAtFireMoment(
+        private static JumpResolveResult ResolveJumpAtShift(
             HamsterSnapshot hamster,
             IReadOnlyList<JumpObstacleData> baseObstacles,
             List<JumpObstacleData> shiftedObstacles,
-            float fireMoment,
-            float superJumpTravel)
+            float fireShift,
+            float jumpTravel)
         {
-            BuildShiftedObstacles(baseObstacles, fireMoment, shiftedObstacles);
+            BuildShiftedObstacles(baseObstacles, fireShift, shiftedObstacles);
 
             JumpResolveContext context = new(
                 hamster.IsOnBottomLine,
@@ -253,11 +329,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 hamster.HamsterRightX,
                 hamster.CenterX,
                 hamster.Width,
-                superJumpTravel,
-                superJumpTravel,
-                damageBigAliveWithoutYByReach: false);
+                jumpTravel,
+                jumpTravel,
+                damageBigAliveWithoutYByReach: true);
 
-            return SuperJumpOutcomeResolver.ResolveSuperJump(shiftedObstacles, context);
+            return JumpOutcomeResolver.ResolveJump(shiftedObstacles, context);
         }
 
         #endregion
@@ -267,19 +343,19 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         /// <summary>
         /// Проверяет прямое попадание в target или допустимый over-result по цепочке road small obstacles.
         /// </summary>
-        private static bool IsExpectedTarget(
+        private static bool IsTargetMatch(
             IReadOnlyList<JumpObstacleData> shiftedObstacles,
             int targetObstacleIndex,
             int resolvedTargetIndex)
         {
             return resolvedTargetIndex == targetObstacleIndex
-                   || IsSameRoadSmallChainTarget(shiftedObstacles, targetObstacleIndex, resolvedTargetIndex);
+                   || IsRoadSmallChainOverResult(shiftedObstacles, targetObstacleIndex, resolvedTargetIndex);
         }
 
         /// <summary>
         /// Разрешает случай, когда resolver возвращает более поздний obstacle из одной цепочки road small obstacles.
         /// </summary>
-        private static bool IsSameRoadSmallChainTarget(
+        private static bool IsRoadSmallChainOverResult(
             IReadOnlyList<JumpObstacleData> shiftedObstacles,
             int targetObstacleIndex,
             int resolvedTargetIndex)
@@ -317,5 +393,40 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
         #endregion
 
+        #region Types
+
+        /// <summary>
+        /// Хранит непрерывный интервал fire shifts с ожидаемым outcome.
+        /// </summary>
+        private readonly struct SafeInterval
+        {
+            public SafeInterval(float start, float end)
+            {
+                Start = start;
+                End = end;
+            }
+
+            private float Start { get; }
+            private float End { get; }
+
+            public bool TrySelectInteriorPoint(
+                float lateBudget,
+                float selectionRatio,
+                out float selectedPoint,
+                float epsilon)
+            {
+                float effectiveEnd = End - lateBudget;
+                if (effectiveEnd <= Start + epsilon)
+                {
+                    selectedPoint = 0f;
+                    return false;
+                }
+
+                selectedPoint = Start + (effectiveEnd - Start) * selectionRatio;
+                return true;
+            }
+        }
+
+        #endregion
     }
 }

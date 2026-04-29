@@ -135,6 +135,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperJumpOutcomeResolver.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\DecisionPoint.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverFireWindowFinder.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverRetainedActionValidator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverScheduledFireShiftValidator.cs" />
     <Compile Include="Assets\Scripts\System\UserSettings.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitLocationsListLoadingTask.cs" />
@@ -143,6 +144,9 @@
     <Compile Include="Assets\Scripts\System\Models\AssetsDataForPreload.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Storages\MoneyStorage.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Models\RetainedActionContext.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\FireWindows\FireWindow.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\FireWindows\FireInterval.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\FireWindows\FireWindowScanner.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitCameraLoadingTask.cs" />
     <Compile Include="Assets\Scripts\System\Rendering\SpriteRendererMaterialHelper.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpCollisionSpec.cs" />
@@ -199,7 +203,9 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\KeyboardMechanics.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\QuestSystem\Quest.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\WorldSnapshot.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverFireWindowCalculator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverFireWindowFinder.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverRetainedActionValidator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverScheduledFireShiftValidator.cs" />
     <Compile Include="Assets\Scripts\Common\Polyfills\IsExternalInit.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverSimulator.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitObstaclesPoolLoadingTask.cs" />

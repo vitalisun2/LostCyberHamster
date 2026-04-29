@@ -2,10 +2,8 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.Policies;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Bot.Strategies.Shared.Timing;
+using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay.Enums;
 
@@ -14,20 +12,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
     /// <summary>
     /// Проверяет, что сохранённый fire shift super jump-over всё ещё валиден.
     /// </summary>
-    internal sealed class SuperJumpOverScheduledFireShiftValidator : IJumpScheduledFireShiftValidator
+    internal sealed class SuperJumpOverScheduledFireShiftValidator
     {
-        private readonly IJumpSearchWindowPolicy _searchWindowPolicy;
-        private readonly JumpOutcomeMatcher _outcomeMatcher;
-
-        public SuperJumpOverScheduledFireShiftValidator()
-        {
-            _searchWindowPolicy = new GroundJumpSearchWindowPolicy();
-            _outcomeMatcher = new JumpOutcomeMatcher(
-                HamsterStateEnum.SuperJumpOver,
-                damageBigAliveWithoutYByReach: false,
-                SuperJumpOutcomeResolver.ResolveSuperJump);
-        }
-
+        /// <summary>
+        /// Проверяет, что action всё ещё может выполнить ожидаемый super jump-over по исходной цели.
+        /// </summary>
         public bool IsScheduledFireShiftStillValid(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
@@ -39,8 +28,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             if (planningState == null || projectedWorldSnapshot == null || targetObstacle == null || action == null)
                 return false;
 
-            // Восстанавливаем допустимое окно для уже сохранённого action.
-            if (!_searchWindowPolicy.TryGetSearchWindow(
+            if (!TryGetFireShiftSearchWindow(
                     planningState,
                     projectedWorldSnapshot,
                     targetObstacle,
@@ -52,23 +40,258 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 return false;
             }
 
-            // Проверяем, что оставшийся fire shift всё ещё лежит внутри окна.
-            if (!JumpScheduledFireShift.TryGetRemaining(projectedWorldSnapshot, targetObstacle, action, out float fireShift))
+            if (!TryGetRemainingFireShift(projectedWorldSnapshot, targetObstacle, action, out float fireShift))
                 return false;
 
             if (fireShift < firstFireShift - validationEpsilon || fireShift > lastFireShift + validationEpsilon)
                 return false;
 
-            // Подтверждаем exact outcome на восстановленном fire shift.
-            List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
+            List<JumpObstacleData> baseObstacles = BuildBaseObstacles(projectedWorldSnapshot);
             List<JumpObstacleData> shiftedObstacles = new(baseObstacles.Count);
-            return _outcomeMatcher.IsExactOutcomeAtShift(
+            return IsExpectedSuperJumpOverOutcomeAtShift(
                 planningState.Hamster,
                 baseObstacles,
                 shiftedObstacles,
                 fireShift,
                 action.PostFireWorldShift,
                 targetObstacleIndex);
+        }
+
+        /// <summary>
+        /// Получает физически допустимое окно запуска super jump-over.
+        /// </summary>
+        private static bool TryGetFireShiftSearchWindow(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            ObstacleSnapshot targetObstacle,
+            int targetObstacleIndex,
+            float superJumpTravel,
+            out float firstFireShift,
+            out float lastFireShift)
+        {
+            HamsterSnapshot hamster = planningState.Hamster;
+            float chainRightX = GetRoadSmallChainRightX(
+                projectedWorldSnapshot,
+                targetObstacle,
+                targetObstacleIndex);
+
+            firstFireShift = chainRightX - hamster.HamsterLeftX - superJumpTravel;
+            if (firstFireShift < 0f)
+                firstFireShift = 0f;
+
+            lastFireShift = targetObstacle.LeftX - hamster.HamsterRightX;
+            return lastFireShift >= 0f && firstFireShift <= lastFireShift;
+        }
+
+        /// <summary>
+        /// Возвращает правую границу target obstacle или всей цепочки road small obstacles.
+        /// </summary>
+        private static float GetRoadSmallChainRightX(
+            WorldSnapshot projectedWorldSnapshot,
+            ObstacleSnapshot targetObstacle,
+            int targetObstacleIndex)
+        {
+            float chainRightX = targetObstacle.RightX;
+            if (projectedWorldSnapshot == null
+                || targetObstacleIndex < 0
+                || targetObstacleIndex >= projectedWorldSnapshot.Obstacles.Count
+                || !ObstacleClassifier.IsRoadSmallOverChainObstacle(targetObstacle.ObstacleType))
+            {
+                return chainRightX;
+            }
+
+            bool isBottomLine = targetObstacle.IsBottomLine;
+            for (int obstacleIndex = targetObstacleIndex + 1; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.IsBottomLine != isBottomLine)
+                    continue;
+
+                if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
+                    continue;
+
+                if (!ObstacleClassifier.IsRoadSmallOverChainObstacle(obstacle.ObstacleType))
+                    break;
+
+                chainRightX = obstacle.RightX;
+            }
+
+            return chainRightX;
+        }
+
+        /// <summary>
+        /// Восстанавливает оставшийся fire shift для retained action по live trigger obstacle.
+        /// </summary>
+        private static bool TryGetRemainingFireShift(
+            WorldSnapshot projectedWorldSnapshot,
+            ObstacleSnapshot targetObstacle,
+            PlannedAction action,
+            out float fireShift)
+        {
+            if (projectedWorldSnapshot == null || targetObstacle == null || action == null)
+            {
+                fireShift = 0f;
+                return false;
+            }
+
+            int? triggerObstacleInstanceId = action.TriggerObstacleInstanceId ?? action.TargetObstacleInstanceId;
+            if (triggerObstacleInstanceId.HasValue)
+            {
+                for (int obstacleIndex = 0; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
+                {
+                    ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                    if (obstacle.InstanceId != triggerObstacleInstanceId.Value)
+                        continue;
+
+                    fireShift = obstacle.LeftX - action.TriggerX;
+                    return true;
+                }
+            }
+
+            fireShift = targetObstacle.LeftX - action.TriggerX;
+            return true;
+        }
+
+        /// <summary>
+        /// Преобразует planning obstacles в immutable base данные runtime resolver'а.
+        /// </summary>
+        private static List<JumpObstacleData> BuildBaseObstacles(WorldSnapshot projectedWorldSnapshot)
+        {
+            var obstacles = new List<JumpObstacleData>(projectedWorldSnapshot.Obstacles.Count);
+            for (int obstacleIndex = 0; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                obstacles.Add(new JumpObstacleData(
+                    obstacle.ObstacleType,
+                    obstacle.IsBottomLine,
+                    obstacle.LeftX,
+                    obstacle.RightX,
+                    obstacle.CenterX));
+            }
+
+            return obstacles;
+        }
+
+        /// <summary>
+        /// Строит obstacles в координатах момента fire shift.
+        /// </summary>
+        private static void BuildShiftedObstacles(
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            float fireShift,
+            List<JumpObstacleData> shiftedObstacles)
+        {
+            shiftedObstacles.Clear();
+            for (int obstacleIndex = 0; obstacleIndex < baseObstacles.Count; obstacleIndex++)
+            {
+                JumpObstacleData obstacle = baseObstacles[obstacleIndex];
+                shiftedObstacles.Add(new JumpObstacleData(
+                    obstacle.Type,
+                    obstacle.IsBottomLine,
+                    obstacle.LeftX - fireShift,
+                    obstacle.RightX - fireShift,
+                    obstacle.CenterX - fireShift,
+                    obstacle.HasY,
+                    obstacle.BottomY,
+                    obstacle.TopY));
+            }
+        }
+
+        /// <summary>
+        /// Проверяет, что fire shift приводит ровно к SuperJumpOver по ожидаемому obstacle.
+        /// </summary>
+        private static bool IsExpectedSuperJumpOverOutcomeAtShift(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            List<JumpObstacleData> shiftedObstacles,
+            float fireShift,
+            float superJumpTravel,
+            int targetObstacleIndex)
+        {
+            JumpResolveResult result = ResolveSuperJumpAtShift(
+                hamster,
+                baseObstacles,
+                shiftedObstacles,
+                fireShift,
+                superJumpTravel);
+
+            return result.State == HamsterStateEnum.SuperJumpOver
+                   && IsTargetMatch(shiftedObstacles, targetObstacleIndex, result.TargetIndex);
+        }
+
+        /// <summary>
+        /// Сдвигает obstacles в момент fire shift и запускает runtime super jump resolver.
+        /// </summary>
+        private static JumpResolveResult ResolveSuperJumpAtShift(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            List<JumpObstacleData> shiftedObstacles,
+            float fireShift,
+            float superJumpTravel)
+        {
+            BuildShiftedObstacles(baseObstacles, fireShift, shiftedObstacles);
+
+            JumpResolveContext context = new(
+                hamster.IsOnBottomLine,
+                hamster.HamsterLeftX,
+                hamster.HamsterRightX,
+                hamster.CenterX,
+                hamster.Width,
+                superJumpTravel,
+                superJumpTravel,
+                damageBigAliveWithoutYByReach: false);
+
+            return SuperJumpOutcomeResolver.ResolveSuperJump(shiftedObstacles, context);
+        }
+
+        /// <summary>
+        /// Проверяет прямое попадание в target или допустимый over-result по цепочке road small obstacles.
+        /// </summary>
+        private static bool IsTargetMatch(
+            IReadOnlyList<JumpObstacleData> shiftedObstacles,
+            int targetObstacleIndex,
+            int resolvedTargetIndex)
+        {
+            return resolvedTargetIndex == targetObstacleIndex
+                   || IsRoadSmallChainOverResult(shiftedObstacles, targetObstacleIndex, resolvedTargetIndex);
+        }
+
+        /// <summary>
+        /// Разрешает случай, когда resolver возвращает более поздний obstacle из одной цепочки road small obstacles.
+        /// </summary>
+        private static bool IsRoadSmallChainOverResult(
+            IReadOnlyList<JumpObstacleData> shiftedObstacles,
+            int targetObstacleIndex,
+            int resolvedTargetIndex)
+        {
+            if (shiftedObstacles == null)
+                return false;
+
+            if (targetObstacleIndex < 0
+                || resolvedTargetIndex < targetObstacleIndex
+                || resolvedTargetIndex >= shiftedObstacles.Count)
+            {
+                return false;
+            }
+
+            JumpObstacleData targetObstacle = shiftedObstacles[targetObstacleIndex];
+            if (!ObstacleClassifier.IsRoadSmallOverChainObstacle(targetObstacle.Type))
+                return false;
+
+            bool isBottomLine = targetObstacle.IsBottomLine;
+            for (int obstacleIndex = targetObstacleIndex; obstacleIndex <= resolvedTargetIndex; obstacleIndex++)
+            {
+                JumpObstacleData obstacle = shiftedObstacles[obstacleIndex];
+                if (obstacle.IsBottomLine != isBottomLine)
+                    continue;
+
+                if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.Type))
+                    continue;
+
+                if (!ObstacleClassifier.IsRoadSmallOverChainObstacle(obstacle.Type))
+                    return false;
+            }
+
+            return true;
         }
     }
 }

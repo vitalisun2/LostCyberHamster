@@ -9,8 +9,14 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
     /// </summary>
     internal sealed class JumpOverSpecification
     {
+        /// <summary>
+        /// Energy cost обычного jump-over.
+        /// </summary>
         public const int EnergyCost = 10;
 
+        /// <summary>
+        /// Проверяет, что decision point можно закрыть обычным jump-over.
+        /// </summary>
         public bool IsSatisfiedBy(
             PlanningState planningState,
             DecisionPoint decisionPoint,

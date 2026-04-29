@@ -12,8 +12,14 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
     /// </summary>
     internal sealed class JumpOverSimulator : ISimulator
     {
+        /// <summary>
+        /// Тип действия, которое умеет симулировать этот simulator.
+        /// </summary>
         public BotActionKind ActionKind => BotActionKind.JumpOver;
 
+        /// <summary>
+        /// Строит planning state после полностью выполненного jump-over.
+        /// </summary>
         public PlanningState Simulate(
             PlanningState planningState,
             PlannedAction action,
@@ -26,6 +32,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
             return PlanningStateTransition.Advance(planningState, action, worldSnapshot, nextHamster);
         }
 
+        /// <summary>
+        /// Строит planning state для action, который уже был fired, но ещё не завершился.
+        /// </summary>
         public PlanningState ProjectInProgress(
             PlanningState planningState,
             PlannedAction action,

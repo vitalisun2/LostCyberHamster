@@ -1,7 +1,6 @@
 ﻿using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
-using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
@@ -16,11 +15,17 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
     {
         private readonly ActionTriggerGate _triggerGate;
 
+        /// <summary>
+        /// Создаёт executor с gate, который проверяет момент runtime fire.
+        /// </summary>
         public JumpOverExecutor(ActionTriggerGate triggerGate)
         {
             _triggerGate = triggerGate;
         }
 
+        /// <summary>
+        /// Пытается выполнить jump-over, если hamster и target obstacle готовы к fire.
+        /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
             Guard.ThrowIfNull(
@@ -40,22 +45,20 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                     : ActionFireResult.Cancelled;
             }
 
-            ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
+            ActionFireResult triggerResult = _triggerGate.Check(action, out _);
             if (triggerResult != ActionFireResult.Fired)
                 return triggerResult;
 
-            HamsterActionLogger.LogFire(action, obstacleLeftX);
             hamster.JumpRequest.Invoke();
             return ActionFireResult.Fired;
         }
 
+        /// <summary>
+        /// Проверяет, что runtime jump-over завершился возвратом в run state.
+        /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
-            bool completed = hamster.HamsterState.Value == HamsterStateEnum.Run;
-            if (completed)
-                HamsterActionLogger.LogComplete(action, hamster.HamsterState.Value);
-
-            return completed;
+            return hamster.HamsterState.Value == HamsterStateEnum.Run;
         }
     }
 }
