@@ -133,18 +133,20 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             HamsterSnapshot hamster = planningState.Hamster;
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
             List<JumpObstacleData> shiftedObstacles = new(baseObstacles.Count);
+            var exactOutcomeEvaluator = new JumpOnRoofExactOutcomeEvaluator(
+                _preFireSafetyPolicy,
+                _outcomeMatcher,
+                hamster,
+                baseObstacles,
+                shiftedObstacles,
+                actionTravel,
+                targetObstacleIndex);
 
             bool selected = JumpFireShiftScanner.TrySelectFireShift(
                 firstFireShift,
                 lastFireShift,
                 preferLatestFireShift,
-                candidateFireShift => IsFeasibleFireShift(
-                    hamster,
-                    baseObstacles,
-                    shiftedObstacles,
-                    candidateFireShift,
-                    actionTravel,
-                    targetObstacleIndex),
+                exactOutcomeEvaluator,
                 out fireShift,
                 out SafeInterval selectedInterval,
                 out int exactIntervalCount);
@@ -186,6 +188,49 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 fireShift,
                 actionTravel,
                 targetObstacleIndex);
+        }
+
+        private sealed class JumpOnRoofExactOutcomeEvaluator : IJumpFireShiftExactOutcomeEvaluator
+        {
+            private readonly IPreFireSafetyPolicy _preFireSafetyPolicy;
+            private readonly JumpOutcomeMatcher _outcomeMatcher;
+            private readonly HamsterSnapshot _hamster;
+            private readonly IReadOnlyList<JumpObstacleData> _baseObstacles;
+            private readonly List<JumpObstacleData> _shiftedObstacles;
+            private readonly float _actionTravel;
+            private readonly int _targetObstacleIndex;
+
+            public JumpOnRoofExactOutcomeEvaluator(
+                IPreFireSafetyPolicy preFireSafetyPolicy,
+                JumpOutcomeMatcher outcomeMatcher,
+                HamsterSnapshot hamster,
+                IReadOnlyList<JumpObstacleData> baseObstacles,
+                List<JumpObstacleData> shiftedObstacles,
+                float actionTravel,
+                int targetObstacleIndex)
+            {
+                _preFireSafetyPolicy = preFireSafetyPolicy;
+                _outcomeMatcher = outcomeMatcher;
+                _hamster = hamster;
+                _baseObstacles = baseObstacles;
+                _shiftedObstacles = shiftedObstacles;
+                _actionTravel = actionTravel;
+                _targetObstacleIndex = targetObstacleIndex;
+            }
+
+            public bool IsExactOutcome(float fireShift)
+            {
+                if (!_preFireSafetyPolicy.CanWaitUntilFire(_hamster, _baseObstacles, fireShift))
+                    return false;
+
+                return _outcomeMatcher.IsExactOutcomeAtShift(
+                    _hamster,
+                    _baseObstacles,
+                    _shiftedObstacles,
+                    fireShift,
+                    _actionTravel,
+                    _targetObstacleIndex);
+            }
         }
     }
 }

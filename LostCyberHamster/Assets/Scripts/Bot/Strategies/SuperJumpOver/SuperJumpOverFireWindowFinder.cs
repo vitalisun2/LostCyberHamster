@@ -1,11 +1,9 @@
 using System.Collections.Generic;
-using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.Policies;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Bot.Strategies.Shared.Timing;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
@@ -22,7 +20,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
         private readonly IJumpSearchWindowPolicy _searchWindowPolicy;
         private readonly JumpOutcomeMatcher _outcomeMatcher;
-        private readonly JumpFireWindowDiagnostics _diagnostics;
 
         public SuperJumpOverFireWindowFinder()
         {
@@ -31,7 +28,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 HamsterStateEnum.SuperJumpOver,
                 damageBigAliveWithoutYByReach: false,
                 SuperJumpOutcomeResolver.ResolveSuperJump);
-            _diagnostics = new JumpFireWindowDiagnostics(null);
         }
 
         /// <summary>
@@ -63,50 +59,69 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                     out float firstFireShift,
                     out float lastFireShift))
             {
-                _diagnostics.LogWindow("NO_WINDOW", planningState.Hamster, targetObstacle, targetObstacleIndex, superJumpTravel, firstFireShift, lastFireShift);
                 fireShift = 0f;
                 return false;
             }
 
-            // Логируем окно и ищем точку fire shift с exact outcome.
-            _diagnostics.LogWindow("WINDOW", planningState.Hamster, targetObstacle, targetObstacleIndex, superJumpTravel, firstFireShift, lastFireShift);
-
+            // Ищем точку fire shift с exact outcome.
             HamsterSnapshot hamster = planningState.Hamster;
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
             List<JumpObstacleData> shiftedObstacles = new(baseObstacles.Count);
+            var exactOutcomeEvaluator = new SuperJumpOverExactOutcomeEvaluator(
+                _outcomeMatcher,
+                hamster,
+                baseObstacles,
+                shiftedObstacles,
+                superJumpTravel,
+                targetObstacleIndex);
 
             bool selected = JumpFireShiftScanner.TrySelectFireShift(
                 firstFireShift,
                 lastFireShift,
                 _preferLatestFireShift,
-                candidateFireShift => _outcomeMatcher.IsExactOutcomeAtShift(
-                    hamster,
-                    baseObstacles,
-                    shiftedObstacles,
-                    candidateFireShift,
-                    superJumpTravel,
-                    targetObstacleIndex),
+                exactOutcomeEvaluator,
                 out fireShift,
-                out SafeInterval selectedInterval,
-                out int exactIntervalCount);
+                out _,
+                out _);
 
-            if (!selected)
+            return selected;
+        }
+
+        private sealed class SuperJumpOverExactOutcomeEvaluator : IJumpFireShiftExactOutcomeEvaluator
+        {
+            private readonly JumpOutcomeMatcher _outcomeMatcher;
+            private readonly HamsterSnapshot _hamster;
+            private readonly IReadOnlyList<JumpObstacleData> _baseObstacles;
+            private readonly List<JumpObstacleData> _shiftedObstacles;
+            private readonly float _superJumpTravel;
+            private readonly int _targetObstacleIndex;
+
+            public SuperJumpOverExactOutcomeEvaluator(
+                JumpOutcomeMatcher outcomeMatcher,
+                HamsterSnapshot hamster,
+                IReadOnlyList<JumpObstacleData> baseObstacles,
+                List<JumpObstacleData> shiftedObstacles,
+                float superJumpTravel,
+                int targetObstacleIndex)
             {
-                _diagnostics.LogNoExactOutcomeInterval(targetObstacle, targetObstacleIndex, exactIntervalCount);
-                return false;
+                _outcomeMatcher = outcomeMatcher;
+                _hamster = hamster;
+                _baseObstacles = baseObstacles;
+                _shiftedObstacles = shiftedObstacles;
+                _superJumpTravel = superJumpTravel;
+                _targetObstacleIndex = targetObstacleIndex;
             }
 
-            _diagnostics.LogExactOutcomeSelection(targetObstacle, targetObstacleIndex, selectedInterval, fireShift);
-            _diagnostics.LogResolvedOutcomeAtSelectedShift(
-                _outcomeMatcher,
-                hamster,
-                baseObstacles,
-                shiftedObstacles,
-                targetObstacle,
-                targetObstacleIndex,
-                fireShift,
-                superJumpTravel);
-            return true;
+            public bool IsExactOutcome(float fireShift)
+            {
+                return _outcomeMatcher.IsExactOutcomeAtShift(
+                    _hamster,
+                    _baseObstacles,
+                    _shiftedObstacles,
+                    fireShift,
+                    _superJumpTravel,
+                    _targetObstacleIndex);
+            }
         }
     }
 }

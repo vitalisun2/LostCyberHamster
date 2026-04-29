@@ -1,7 +1,6 @@
 ﻿using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
-using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
@@ -47,18 +46,14 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             if (hamster.Energy.Value < action.EnergyCost)
                 return ActionFireResult.Cancelled;
 
-            ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
+            ActionFireResult triggerResult = _triggerGate.Check(action, out _);
             if (triggerResult != ActionFireResult.Fired)
                 return triggerResult;
 
-            HamsterActionLogger.LogFire(action, obstacleLeftX);
             hamster.JumpRequest.Invoke();
 
             if (!CanUpgradeToSuperJump(hamster.HamsterState.Value))
-            {
-                HamsterActionLogger.LogCancel(action, $"stateAfterJump={hamster.HamsterState.Value}");
                 return ActionFireResult.Cancelled;
-            }
 
             _isUpgradeScheduled = true;
             _upgradeReadyTime = Time.time + UpgradeDelaySeconds;
@@ -80,10 +75,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
             bool completed = hamster.HamsterState.Value == HamsterStateEnum.Run;
             if (completed)
-            {
                 ResetUpgradeSchedule();
-                HamsterActionLogger.LogComplete(action, hamster.HamsterState.Value);
-            }
 
             return completed;
         }

@@ -1,9 +1,13 @@
-using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Strategies.Shared.Timing;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
 {
+    internal interface IJumpFireShiftExactOutcomeEvaluator
+    {
+        bool IsExactOutcome(float fireShift);
+    }
+
     /// <summary>
     /// Сканирует fire-window и выбирает точку внутри exact-outcome интервала.
     /// </summary>
@@ -18,7 +22,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
             float firstFireShift,
             float lastFireShift,
             bool preferLatestFireShift,
-            Func<float, bool> isExactOutcome,
+            IJumpFireShiftExactOutcomeEvaluator exactOutcomeEvaluator,
             out float fireShift,
             out SafeInterval selectedInterval,
             out int exactIntervalCount)
@@ -36,7 +40,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
                     ? lastFireShift
                     : candidateFireShift;
 
-                if (isExactOutcome(clampedFireShift))
+                if (exactOutcomeEvaluator.IsExactOutcome(clampedFireShift))
                 {
                     if (!isInsideExactInterval)
                     {
