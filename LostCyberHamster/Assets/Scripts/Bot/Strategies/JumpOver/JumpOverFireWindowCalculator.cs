@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
@@ -100,7 +100,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
             bool preferLatestFireShift,
             out float fireShift)
         {
-            Guard.NotNull(
+            Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (projectedWorldSnapshot, nameof(projectedWorldSnapshot)),
                 (targetObstacle, nameof(targetObstacle)),

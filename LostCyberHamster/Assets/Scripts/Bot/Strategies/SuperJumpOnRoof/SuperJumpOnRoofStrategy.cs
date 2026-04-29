@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
@@ -44,7 +44,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             DecisionPoint decisionPoint,
             List<PlannedAction> actions)
         {
-            Guard.NotNull(
+            Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
                 (decisionPoint, nameof(decisionPoint)),

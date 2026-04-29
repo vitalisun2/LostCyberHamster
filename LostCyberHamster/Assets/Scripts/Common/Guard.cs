@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 
 namespace Assets.Scripts.Common
 {
     public static class Guard
     {
-        public static void NotNull(params (object value, string name)[] args)
+        public static void ThrowIfNull(params (object value, string name)[] args)
         {
             for (int i = 0; i < args.Length; i++)
             {
