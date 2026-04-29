@@ -1,6 +1,7 @@
 using System.Collections.Generic;
-using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.Shared.Timing;
 using Assets.Scripts.Bot.PlanState;
 
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
@@ -49,7 +50,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 return false;
             }
 
-            float fireShift = context.TargetObstacle.LeftX - context.Action.TriggerX;
+            float projectedTriggerX = context.Action.TriggerX - context.PlanningState.ProjectionWorldShift;
+            float fireShift = context.TargetObstacle.LeftX - projectedTriggerX;
             if (fireShift < 0f || fireShift > latestFireShift + ValidationEpsilon)
                 return false;
 

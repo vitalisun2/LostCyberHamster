@@ -1,24 +1,24 @@
-using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
 {
     /// <summary>
-    /// Проверяет retained action через ожидаемый jump outcome.
+    /// Проверяет retained jump-action через strategy-specific fire-shift validator.
     /// </summary>
     internal sealed class JumpOutcomeRetainedValidator : IRetainedActionValidator
     {
         private const float ValidationEpsilon = 0.0001f;
 
-        private readonly JumpOutcomeFireWindowCalculator _fireWindowCalculator;
+        private readonly IJumpScheduledFireShiftValidator _fireShiftValidator;
 
         public JumpOutcomeRetainedValidator(
             BotActionKind actionKind,
-            JumpOutcomeFireWindowCalculator fireWindowCalculator)
+            IJumpScheduledFireShiftValidator fireShiftValidator)
         {
             ActionKind = actionKind;
-            _fireWindowCalculator = fireWindowCalculator;
+            _fireShiftValidator = fireShiftValidator;
         }
 
         public BotActionKind ActionKind { get; }
@@ -28,7 +28,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
             if (context == null || context.Action == null || context.Action.Kind != ActionKind)
                 return false;
 
-            return _fireWindowCalculator.IsScheduledFireShiftStillValid(
+            return _fireShiftValidator.IsScheduledFireShiftStillValid(
                 context.PlanningState,
                 context.ProjectedWorldSnapshot,
                 context.TargetObstacle,

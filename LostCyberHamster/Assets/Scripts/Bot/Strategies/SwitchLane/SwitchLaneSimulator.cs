@@ -1,5 +1,5 @@
-using Assets.Scripts.Bot.Strategies.Shared;
-using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Simulation;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
@@ -35,9 +35,10 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 return null;
 
             HamsterSnapshot hamster = planningState.Hamster;
+            bool targetBottomLine = action.TargetBottomLine ?? hamster.IsOnBottomLine;
             HamsterSnapshot nextHamster = new(
                 hamster.HamsterState,
-                hamster.IsOnBottomLine,
+                targetBottomLine,
                 isOnRoof: false,
                 hamster.Energy,
                 hamster.Lives,

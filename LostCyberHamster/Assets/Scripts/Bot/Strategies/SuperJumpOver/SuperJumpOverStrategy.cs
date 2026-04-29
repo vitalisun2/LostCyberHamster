@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Perception;
@@ -18,23 +18,18 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
     internal sealed class SuperJumpOverStrategy : IPlanningStrategy
     {
         private readonly SuperJumpOverSpecification _specification;
-        private readonly JumpClipTravelProvider _travelProvider;
         private readonly SuperJumpOverFireWindowCalculator _fireWindowCalculator;
         private readonly SuperJumpOverSimulator _simulator;
 
         public SuperJumpOverStrategy()
         {
             _specification = new SuperJumpOverSpecification();
-            _travelProvider = new JumpClipTravelProvider(
-                "transform_super_jump",
-                DoubleJumpDetector.DoubleJumpThreshold * 0.5f * Assets.Scripts.Consts.GameSpeedBase,
-                throwIfMissing: true);
             _fireWindowCalculator = new SuperJumpOverFireWindowCalculator();
             _simulator = new SuperJumpOverSimulator();
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             Executor = new SuperJumpOverExecutor(triggerGate);
-            RetainedValidator = new JumpOutcomeRetainedValidator(ActionKind, _fireWindowCalculator.OutcomeCalculator);
+            RetainedValidator = new JumpOutcomeRetainedValidator(ActionKind, _fireWindowCalculator);
             Simulator = _simulator;
         }
 
@@ -58,8 +53,14 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             if (!_specification.IsSatisfiedBy(planningState, decisionPoint, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
                 return;
 
-            if (!_travelProvider.TryGetTravel(out float superJumpTravel))
+            if (!JumpClipTravel.TryGetTravel(
+                    "transform_super_jump",
+                    out float superJumpTravel,
+                    DoubleJumpDetector.DoubleJumpThreshold * 0.5f * Assets.Scripts.Consts.GameSpeedBase,
+                    throwIfMissing: true))
+            {
                 return;
+            }
 
             if (!_fireWindowCalculator.TryFindFireShift(
                     planningState,

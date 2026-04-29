@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
@@ -72,15 +72,15 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             bool targetBottomLine,
             float fireShift)
         {
-            float triggerX = targetObstacle.LeftX - fireShift;
-            float renderWorldX = triggerX + planningState.ProjectionWorldShift;
+            float projectedTriggerX = targetObstacle.LeftX - fireShift;
+            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
 
             return new PlannedAction(
                 BotActionKind.SwitchLane,
                 triggerX,
-                renderWorldX,
-                completionWorldShift: fireShift,
-                postFireWorldShift: 0f,
+                renderWorldX: triggerX,
+                completionWorldShift: fireShift + SwitchLaneTiming.DecisionTravel,
+                postFireWorldShift: SwitchLaneTiming.DecisionTravel,
                 targetObstacleIndex,
                 targetObstacleInstanceId: targetObstacle.InstanceId,
                 targetBottomLine: targetBottomLine,

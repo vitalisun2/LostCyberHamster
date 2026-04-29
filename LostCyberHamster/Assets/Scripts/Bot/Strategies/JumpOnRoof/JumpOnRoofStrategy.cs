@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Perception;
@@ -17,20 +17,18 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
     internal sealed class JumpOnRoofStrategy : IPlanningStrategy
     {
         private readonly JumpOnRoofSpecification _specification;
-        private readonly JumpClipTravelProvider _travelProvider;
         private readonly JumpOnRoofFireWindowCalculator _fireWindowCalculator;
         private readonly JumpOnRoofSimulator _simulator;
 
         public JumpOnRoofStrategy()
         {
             _specification = new JumpOnRoofSpecification();
-            _travelProvider = new JumpClipTravelProvider("transform_jump");
             _fireWindowCalculator = new JumpOnRoofFireWindowCalculator();
             _simulator = new JumpOnRoofSimulator();
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             Executor = new JumpOnRoofExecutor(triggerGate);
-            RetainedValidator = new JumpOutcomeRetainedValidator(ActionKind, _fireWindowCalculator.OutcomeCalculator);
+            RetainedValidator = new JumpOutcomeRetainedValidator(ActionKind, _fireWindowCalculator);
             Simulator = _simulator;
         }
 
@@ -54,7 +52,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             if (!_specification.IsSatisfiedBy(planningState, decisionPoint, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
                 return;
 
-            if (!_travelProvider.TryGetTravel(out float jumpTravel))
+            if (!JumpClipTravel.TryGetTravel("transform_jump", out float jumpTravel))
                 return;
 
             if (!_fireWindowCalculator.TryFindFireShift(

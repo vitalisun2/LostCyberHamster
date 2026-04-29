@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Perception;
@@ -17,20 +17,18 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
     internal sealed class JumpOverStrategy : IPlanningStrategy
     {
         private readonly JumpOverSpecification _specification;
-        private readonly JumpClipTravelProvider _travelProvider;
         private readonly JumpOverFireWindowCalculator _fireWindowCalculator;
         private readonly JumpOverSimulator _simulator;
 
         public JumpOverStrategy()
         {
             _specification = new JumpOverSpecification();
-            _travelProvider = new JumpClipTravelProvider("transform_jump");
             _fireWindowCalculator = new JumpOverFireWindowCalculator();
             _simulator = new JumpOverSimulator();
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             Executor = new JumpOverExecutor(triggerGate);
-            RetainedValidator = new JumpOutcomeRetainedValidator(ActionKind, _fireWindowCalculator.OutcomeCalculator);
+            RetainedValidator = new JumpOutcomeRetainedValidator(ActionKind, _fireWindowCalculator);
             Simulator = _simulator;
         }
 
@@ -54,7 +52,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
             if (!_specification.IsSatisfiedBy(planningState, decisionPoint, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
                 return;
 
-            if (!_travelProvider.TryGetTravel(out float jumpTravel))
+            if (!JumpClipTravel.TryGetTravel("transform_jump", out float jumpTravel))
                 return;
 
             if (!_fireWindowCalculator.TryFindFireShift(

@@ -2,9 +2,9 @@
 .SYNOPSIS
     Runs ALL bot test levels in sequence and prints a pass/fail summary.
 .DESCRIPTION
-    Recompiles scripts once, then launches each test level listed in $TestLevels via the
-    automation bridge. Use this instead of invoke_open_unity_test_level.ps1 for the
-    standard workflow validation step (step 4b in workflow.md).
+    Discovers all test levels under Assets/Content/locations, recompiles scripts once,
+    then launches each level via the automation bridge. Use this instead of
+    invoke_open_unity_test_level.ps1 for the standard workflow validation step.
 .PARAMETER TimeoutSeconds
     Timeout per level in seconds. Default: 120.
 .PARAMETER PollMilliseconds
@@ -27,13 +27,114 @@ $requestPath    = Join-Path $automationPath 'test_level_request.json'
 $responsePath   = Join-Path $automationPath 'test_level_response.json'
 New-Item -ItemType Directory -Path $automationPath -Force | Out-Null
 
-# ── Test levels — keep in sync with workflow.md «Тестовые уровни бота» ──────
-$TestLevels = @(
-    '01_New_York/Morning/test_switch_lane',
-    '01_New_York/Morning/test_jump_over',
-    '01_New_York/Morning/test_superjump_over',
-    '01_New_York/Morning/test_jump_on_roof'
-)
+# ── Test levels — Locations folder is the source of truth ───────────────────
+function Get-TestLevelAddresses {
+    $locationsPath = Join-Path $projectPath 'Assets\Content\locations'
+    if (-not (Test-Path $locationsPath)) {
+        throw "Locations folder not found: $locationsPath"
+    }
+
+    $discovered = Get-ChildItem -Path $locationsPath -Filter 'test*.json' -File -Recurse |
+        ForEach-Object {
+            $relativePath = [System.IO.Path]::GetRelativePath($locationsPath, $_.FullName)
+            $parts = $relativePath -split '[\\/]'
+            if ($parts.Length -lt 5 -or $parts[1] -ne 'levels') {
+                return
+            }
+
+            "$($parts[0])/$($parts[2])/$($parts[3])"
+        } |
+        Sort-Object -Unique
+
+    $preferredOrder = @(
+        '01_New_York/Morning/test_switch_lane',
+        '01_New_York/Morning/test_jump_over',
+        '01_New_York/Morning/test_superjump_over',
+        '01_New_York/Morning/test_jump_on_roof',
+        '01_New_York/Morning/test_super_jump_on_roof'
+    )
+
+    $ordered = [System.Collections.Generic.List[string]]::new()
+    foreach ($levelAddress in $preferredOrder) {
+        if ($discovered -contains $levelAddress) {
+            $ordered.Add($levelAddress)
+        }
+    }
+
+    foreach ($levelAddress in $discovered) {
+        if (-not $ordered.Contains($levelAddress)) {
+            $ordered.Add($levelAddress)
+        }
+    }
+
+    if ($ordered.Count -eq 0) {
+        throw "No test levels found under $locationsPath"
+    }
+
+    return $ordered.ToArray()
+}
+
+$TestLevels = @(Get-TestLevelAddresses)
+Write-Host "Discovered $($TestLevels.Count) test levels."
+
+$ExpectedActionKindsByLevel = @{
+    '01_New_York/Morning/test_switch_lane'        = @('SwitchLane')
+    '01_New_York/Morning/test_jump_over'          = @('JumpOver')
+    '01_New_York/Morning/test_superjump_over'     = @('SuperJumpOver')
+    '01_New_York/Morning/test_jump_on_roof'       = @('JumpOnRoof')
+    '01_New_York/Morning/test_super_jump_on_roof' = @('SuperJumpOnRoof')
+}
+
+function Get-LevelSemanticSummary {
+    param(
+        [Parameter(Mandatory)] [string]$LevelAddress,
+        [string]$DiagnosticLogPath
+    )
+
+    $actionCounts = @{}
+    $damageCount = 0
+    if (-not [string]::IsNullOrWhiteSpace($DiagnosticLogPath) -and (Test-Path $DiagnosticLogPath)) {
+        $logLines = Get-Content -Path $DiagnosticLogPath
+        foreach ($line in $logLines) {
+            if ($line -match '\[Bot DAMAGE\]|\[TEST RESULT\] FAIL') {
+                $damageCount++
+            }
+
+            if ($line -match '\[Bot EXEC\] FIRE kind=([A-Za-z]+)') {
+                $kind = $Matches[1]
+                if (-not $actionCounts.ContainsKey($kind)) {
+                    $actionCounts[$kind] = 0
+                }
+
+                $actionCounts[$kind]++
+            }
+        }
+    }
+
+    $actionSummary = 'none'
+    if ($actionCounts.Count -gt 0) {
+        $actionSummary = ($actionCounts.GetEnumerator() |
+            Sort-Object Name |
+            ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ', '
+    }
+
+    $missingExpectedActions = @()
+    if ($ExpectedActionKindsByLevel.ContainsKey($LevelAddress)) {
+        foreach ($expectedActionKind in $ExpectedActionKindsByLevel[$LevelAddress]) {
+            if (-not $actionCounts.ContainsKey($expectedActionKind)) {
+                $missingExpectedActions += $expectedActionKind
+            }
+        }
+    }
+
+    $semanticResult = if ($damageCount -eq 0 -and $missingExpectedActions.Count -eq 0) { 'OK' } else { 'FAIL' }
+    return [PSCustomObject]@{
+        Result = $semanticResult
+        Actions = $actionSummary
+        DamageMarkers = $damageCount
+        MissingExpectedActions = $missingExpectedActions
+    }
+}
 
 # ── Automation bridge helper ─────────────────────────────────────────────────
 function Invoke-UnityCommand {
@@ -117,6 +218,16 @@ if (-not $recompileCompleted) {
     Write-Host '[warn] Recompilation unavailable; continuing anyway.'
 }
 
+# ── Regenerate project files for IDE/MSBuild after .cs add/delete ────────────
+Write-Host ''
+Write-Host '=== Regenerating project files ==='
+try {
+    [void](Invoke-UnityCommand -Command 'regenerate_project_files' -RunningMessage 'project files regeneration')
+}
+catch {
+    Write-Host "[warn] regenerate_project_files failed: $($_.Exception.Message)"
+}
+
 # ── Run each level ────────────────────────────────────────────────────────────
 $summary = [System.Collections.Generic.List[PSCustomObject]]::new()
 
@@ -131,13 +242,24 @@ foreach ($levelAddress in $TestLevels) {
             -CmdTimeScale  $TimeScale
 
         $testResult = $response.testResult
+        $semanticSummary = Get-LevelSemanticSummary -LevelAddress $levelAddress -DiagnosticLogPath $response.diagnosticLogPath
         Write-Host "Result: $testResult"
+        Write-Host "Actions: $($semanticSummary.Actions)"
+        Write-Host "Damage markers: $($semanticSummary.DamageMarkers)"
+        if ($semanticSummary.MissingExpectedActions.Count -gt 0) {
+            Write-Host "Missing expected actions: $($semanticSummary.MissingExpectedActions -join ', ')"
+        }
         Write-Host "Diagnostic log: $($response.diagnosticLogPath)"
-        $summary.Add([PSCustomObject]@{ Level = $levelAddress; Result = $testResult })
+        $summary.Add([PSCustomObject]@{
+            Level = $levelAddress
+            Result = $testResult
+            Semantic = $semanticSummary.Result
+            Actions = $semanticSummary.Actions
+        })
     }
     catch {
         Write-Host "ERROR: $($_.Exception.Message)"
-        $summary.Add([PSCustomObject]@{ Level = $levelAddress; Result = 'ERROR' })
+        $summary.Add([PSCustomObject]@{ Level = $levelAddress; Result = 'ERROR'; Semantic = 'ERROR'; Actions = 'none' })
     }
 }
 
@@ -147,11 +269,11 @@ Write-Host '========== SUMMARY =========='
 $failCount = 0
 foreach ($item in $summary) {
     $tag = switch ($item.Result) {
-        'WIN'   { 'WIN ' }
+        'WIN'   { if ($item.Semantic -eq 'OK') { 'WIN ' } else { 'SEMF'; $failCount++ } }
         'FAIL'  { 'FAIL'; $failCount++ }
         default { 'ERR '; $failCount++ }
     }
-    Write-Host "[$tag] $($item.Level)"
+    Write-Host "[$tag] $($item.Level) actions=[$($item.Actions)]"
 }
 
 if ($failCount -eq 0) {

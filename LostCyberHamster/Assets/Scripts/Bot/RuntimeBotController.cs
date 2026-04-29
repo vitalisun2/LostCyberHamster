@@ -1,8 +1,14 @@
-using Assets.Scripts.Bot.Strategies.Shared;
+using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 using System.Collections.Generic;
+using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Execution;
-using Assets.Scripts.Bot.Strategies.Shared.Interfaces;
+using Assets.Scripts.Bot.Strategies.JumpOnRoof;
+using Assets.Scripts.Bot.Strategies.JumpOver;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.SuperJumpOnRoof;
+using Assets.Scripts.Bot.Strategies.SuperJumpOver;
+using Assets.Scripts.Bot.Strategies.SwitchLane;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.PlanState;
@@ -69,7 +75,7 @@ namespace Assets.Scripts.Bot
         private void Awake()
         {
             DontDestroyOnLoad(gameObject);
-            IReadOnlyList<IPlanningStrategy> strategies = BotStrategyFactory.CreateAll();
+            IReadOnlyList<IPlanningStrategy> strategies = CreateStrategies();
 
             _executor = new PlanExecutor(strategies);
             _planBuilder = new PlanBuilder(
@@ -78,6 +84,18 @@ namespace Assets.Scripts.Bot
                 new PlanEvaluator(),
                 new RetainedActionRevalidator(strategies),
                 new ActionInProgressProjector(strategies));
+        }
+
+        private static IReadOnlyList<IPlanningStrategy> CreateStrategies()
+        {
+            return new IPlanningStrategy[]
+            {
+                new SwitchLaneStrategy(),
+                new JumpOverStrategy(),
+                new SuperJumpOverStrategy(),
+                new JumpOnRoofStrategy(),
+                new SuperJumpOnRoofStrategy()
+            };
         }
 
         /// <summary>

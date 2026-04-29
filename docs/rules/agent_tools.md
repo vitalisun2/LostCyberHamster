@@ -18,7 +18,7 @@
 ```powershell
 .\invoke_run_all_test_levels.ps1 -TimeoutSeconds 120
 ```
-Прогоняет все уровни из таблицы `workflow.md` (секция «Тестовые уровни бота»), компилирует один раз, печатает SUMMARY.
+Находит все `test*.json` уровни под `Assets/Content/locations`, компилирует один раз, регенерирует project files, печатает SUMMARY и semantic action summary по каждому уровню.
 
 Вариант B — запуск одного уровня:
 ```powershell
@@ -90,7 +90,7 @@
 
 **Коллекция паттернов:** `LostCyberHamster/Assets/Content/locations/level_design_templates/levels/PatternsCollection.json`
 
-**Тестовые уровни (полный список в `workflow.md`, секция «Тестовые уровни бота»):**
+**Тестовые уровни:** источник правды — все `test*.json` под `LostCyberHamster/Assets/Content/locations/**/levels/**`.
 
 | Уровень | Адрес |
 |---|---|
@@ -98,6 +98,7 @@
 | Jump Over | `01_New_York/Morning/test_jump_over` |
 | SuperJump Over | `01_New_York/Morning/test_superjump_over` |
 | Jump On Roof | `01_New_York/Morning/test_jump_on_roof` |
+| Super Jump On Roof | `01_New_York/Morning/test_super_jump_on_roof` |
 
 **Именование тестовых паттернов:** `test_{action}_{NN}_{description}`.
 **Координаты:** `y = -1.8` (top lane), `y = -2.8` (bottom lane).
