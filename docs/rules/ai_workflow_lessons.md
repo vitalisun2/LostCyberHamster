@@ -43,6 +43,7 @@
 - [promoted -> docs/rules/agent_tools.md] Если automation bridge без [TEST RESULT] и лог пустой — читать Unity Editor.log.
 - [promoted -> docs/rules/agent_tools.md] Если Unity не видит новые `.cs`, проверять `Assembly-CSharp.csproj`: отсутствие `Compile Include` означает, что asset ещё не импортирован.
 - [promoted -> docs/rules/agent_tools.md] Wake-up fallback для automation должен будить реальное окно Unity Editor, а не IDE с названием проекта.
+- [promoted -> docs/rules/agent_tools.md] Full bot validation должен брать `test*.json` из `Locations`, а не из hardcoded списка, и печатать semantic action summary.
 - [promoted -> docs/architecture_knowledge_base.md] Для chain-stage тестов все объекты цепочки должны попадать в initial snapshot.
 - [promoted -> docs/rules/iteration_cycle.md] Для chain-планирования читать BOT вместе с ECO.
 - [promoted -> docs/rules/code_conventions.md] EditMode-тесты для planner держать тонким слоем и не дублировать ими runtime-проверку на test level.
