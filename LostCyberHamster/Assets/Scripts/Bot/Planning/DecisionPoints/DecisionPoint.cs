@@ -1,3 +1,4 @@
+using System;
 using Assets.Scripts.Bot.Perception;
 
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
@@ -8,30 +9,53 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
     public sealed class DecisionPoint
     {
         /// <summary>
-        /// Создает новую точку решения для planning-слоя.
+        /// Создаёт новую точку решения из готовой chain.
         /// </summary>
-        public DecisionPoint(
-            DecisionPointKind kind,
-            ObstacleSnapshot obstacle,
-            int obstacleIndex,
-            ObstacleSnapshot roofLandingObstacle = null,
-            int roofLandingObstacleIndex = -1)
+        public DecisionPoint(ObstacleChain chain)
         {
-            Kind = kind;
-            Obstacle = obstacle;
-            ObstacleIndex = obstacleIndex;
-            RoofLandingObstacle = roofLandingObstacle;
-            RoofLandingObstacleIndex = roofLandingObstacleIndex;
+            Chain = chain ?? throw new ArgumentNullException(nameof(chain));
         }
 
-        public DecisionPointKind Kind { get; }
-        public ObstacleSnapshot Obstacle { get; }
-        public int ObstacleIndex { get; }
-        public ObstacleSnapshot RoofLandingObstacle { get; }
-        public int RoofLandingObstacleIndex { get; }
+        public ObstacleChain Chain { get; }
 
         /// <summary>
-        /// Возвращает true, если точка решения содержит явную roof-landing continuation.
+        /// Временный compatibility-доступ к первому obstacle chain.
+        /// </summary>
+        public ObstacleSnapshot Obstacle => Chain?.FirstObstacle;
+
+        /// <summary>
+        /// Временный compatibility-доступ к world index первого obstacle chain.
+        /// </summary>
+        public int ObstacleIndex => Chain?.FirstIndex ?? -1;
+
+        /// <summary>
+        /// Временный compatibility-доступ к первой крыше внутри chain.
+        /// </summary>
+        public ObstacleSnapshot RoofLandingObstacle
+        {
+            get
+            {
+                return Chain != null && Chain.TryFindFirstRoof(out ObstacleSnapshot roofObstacle, out _, out _)
+                    ? roofObstacle
+                    : null;
+            }
+        }
+
+        /// <summary>
+        /// Временный compatibility-доступ к world index первой крыши внутри chain.
+        /// </summary>
+        public int RoofLandingObstacleIndex
+        {
+            get
+            {
+                return Chain != null && Chain.TryFindFirstRoof(out _, out int roofWorldIndex, out _)
+                    ? roofWorldIndex
+                    : -1;
+            }
+        }
+
+        /// <summary>
+        /// Возвращает true, если точка решения содержит roof obstacle в chain.
         /// </summary>
         public bool HasRoofLandingObstacle => RoofLandingObstacle != null && RoofLandingObstacleIndex >= 0;
     }

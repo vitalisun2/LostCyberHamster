@@ -22,7 +22,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
             if (planningState == null
                 || decisionPoint == null
-                || decisionPoint.Obstacle == null)
+                || decisionPoint.Chain == null)
             {
                 return false;
             }
@@ -31,14 +31,12 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             if (hamster.IsOnRoof || hamster.IsShifting || hamster.IsDamaged || hamster.Energy < EnergyCost)
                 return false;
 
-            if (!decisionPoint.IsBlockingThreat())
+            ObstacleSnapshot firstObstacle = decisionPoint.Chain.FirstObstacle;
+            if (!ObstacleClassifier.CanSuperJumpOverOnGround(firstObstacle.ObstacleType))
                 return false;
 
-            if (!ObstacleClassifier.CanSuperJumpOverOnGround(decisionPoint.Obstacle.ObstacleType))
-                return false;
-
-            targetObstacle = decisionPoint.Obstacle;
-            targetObstacleIndex = decisionPoint.ObstacleIndex;
+            targetObstacle = firstObstacle;
+            targetObstacleIndex = decisionPoint.Chain.FirstIndex;
             return true;
         }
     }

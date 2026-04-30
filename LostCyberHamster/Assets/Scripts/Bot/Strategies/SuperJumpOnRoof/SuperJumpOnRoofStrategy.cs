@@ -50,8 +50,15 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                 (decisionPoint, nameof(decisionPoint)),
                 (actions, nameof(actions)));
 
-            if (!_specification.IsSatisfiedBy(planningState, decisionPoint, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
+            if (!_specification.TryGetRoofChain(
+                    planningState,
+                    decisionPoint,
+                    out ObstacleSnapshot targetObstacle,
+                    out int targetObstacleIndex,
+                    out int targetChainIndex))
+            {
                 return;
+            }
 
             float halfDoubleJumpWindowSeconds = DoubleJumpDetector.DoubleJumpThreshold / 2f;
             float upgradeDelayTravel = halfDoubleJumpWindowSeconds * Assets.Scripts.Consts.GameSpeedBase;
@@ -71,13 +78,13 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                     targetObstacle,
                     targetObstacleIndex,
                     superJumpTravel,
-                    preferLatestFireShift: decisionPoint.Kind == DecisionPointKind.BlockingObstacleWithRoofLanding,
+                    preferLatestFireShift: targetChainIndex > 0,
                     out float fireShift))
             {
                 return;
             }
 
-            ObstacleSnapshot triggerObstacle = decisionPoint.Obstacle ?? targetObstacle;
+            ObstacleSnapshot triggerObstacle = decisionPoint.Chain.FirstObstacle;
             actions.Add(BuildAction(planningState, triggerObstacle, targetObstacle, targetObstacleIndex, fireShift, superJumpTravel));
         }
 

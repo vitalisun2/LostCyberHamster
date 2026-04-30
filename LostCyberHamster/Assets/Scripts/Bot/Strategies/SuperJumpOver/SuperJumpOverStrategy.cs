@@ -63,8 +63,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             if (!_fireWindowFinder.TryFindFireMoment(
                     planningState,
                     worldSnapshot,
-                    targetObstacle,
-                    targetObstacleIndex,
+                    decisionPoint.Chain,
                     superJumpTravel,
                     out float fireShift))
             {
@@ -81,13 +80,13 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             float fireShift,
             float superJumpTravel)
         {
-            float triggerX = targetObstacle.LeftX - fireShift;
-            float renderWorldX = triggerX + planningState.ProjectionWorldShift;
+            float projectedTriggerX = targetObstacle.LeftX - fireShift;
+            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
 
             return new PlannedAction(
                 BotActionKind.SuperJumpOver,
                 triggerX,
-                renderWorldX,
+                renderWorldX: triggerX,
                 completionWorldShift: fireShift + superJumpTravel,
                 postFireWorldShift: superJumpTravel,
                 targetObstacleIndex,

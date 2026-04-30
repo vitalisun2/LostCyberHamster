@@ -61,8 +61,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
                     worldSnapshot,
-                    targetObstacle,
-                    targetObstacleIndex,
+                    decisionPoint.Chain,
                     jumpTravel,
                     out float fireShift))
             {
@@ -79,13 +78,13 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
             float fireShift,
             float jumpTravel)
         {
-            float triggerX = targetObstacle.LeftX - fireShift;
-            float renderWorldX = triggerX + planningState.ProjectionWorldShift;
+            float projectedTriggerX = targetObstacle.LeftX - fireShift;
+            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
 
             return new PlannedAction(
                 BotActionKind.JumpOver,
                 triggerX,
-                renderWorldX,
+                renderWorldX: triggerX,
                 completionWorldShift: fireShift + jumpTravel,
                 postFireWorldShift: jumpTravel,
                 targetObstacleIndex,

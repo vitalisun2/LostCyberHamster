@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.JumpOver.Models;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Common;
@@ -21,20 +22,18 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
         public bool TryFindFireShift(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
-            ObstacleSnapshot targetObstacle,
-            int targetObstacleIndex,
+            ObstacleChain chain,
             float jumpTravel,
             out float fireShift)
         {
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (projectedWorldSnapshot, nameof(projectedWorldSnapshot)),
-                (targetObstacle, nameof(targetObstacle)));
+                (chain, nameof(chain)));
 
             if (!JumpOverChainCalculator.TryCalculate(
                     planningState.Hamster,
-                    projectedWorldSnapshot,
-                    targetObstacleIndex,
+                    chain,
                     jumpTravel,
                     out JumpOverChainModel chainWindow))
             {

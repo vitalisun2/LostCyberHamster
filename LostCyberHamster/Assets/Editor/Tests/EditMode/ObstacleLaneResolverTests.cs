@@ -91,7 +91,7 @@ namespace Assets.Tests.EditMode
     public class DecisionPointDetectorTests
     {
         [Test]
-        public void TryDetect_ReturnsBlockingObstacle_WhenRoofHasDamagingOccupant()
+        public void TryDetect_BuildsChainWithOccupiedRoof_WhenRoofHasDamagingOccupant()
         {
             var detector = new DecisionPointDetector();
             var hamster = CreateHamsterSnapshot(isOnBottomLine: false);
@@ -103,12 +103,13 @@ namespace Assets.Tests.EditMode
 
             Assert.IsTrue(detected);
             Assert.NotNull(decisionPoint);
-            Assert.AreEqual(DecisionPointKind.BlockingObstacle, decisionPoint.Kind);
-            Assert.AreEqual(roofObstacle.InstanceId, decisionPoint.Obstacle.InstanceId);
+            Assert.AreEqual(roofObstacle.InstanceId, decisionPoint.Chain.FirstObstacle.InstanceId);
+            Assert.AreEqual(2, decisionPoint.Chain.Count);
+            Assert.IsTrue(decisionPoint.Chain.HasDamagingRoofOccupant(0));
         }
 
         [Test]
-        public void TryDetect_ReturnsRoofLanding_WhenRoofIsClear()
+        public void TryDetect_BuildsClearRoofChain_WhenRoofIsClear()
         {
             var detector = new DecisionPointDetector();
             var hamster = CreateHamsterSnapshot(isOnBottomLine: false);
@@ -119,8 +120,12 @@ namespace Assets.Tests.EditMode
 
             Assert.IsTrue(detected);
             Assert.NotNull(decisionPoint);
-            Assert.AreEqual(DecisionPointKind.RoofLanding, decisionPoint.Kind);
-            Assert.AreEqual(roofObstacle.InstanceId, decisionPoint.Obstacle.InstanceId);
+            Assert.AreEqual(roofObstacle.InstanceId, decisionPoint.Chain.FirstObstacle.InstanceId);
+            Assert.AreEqual(1, decisionPoint.Chain.Count);
+            Assert.IsTrue(decisionPoint.Chain.TryFindFirstRoof(out _, out int roofWorldIndex, out int roofChainIndex));
+            Assert.AreEqual(0, roofWorldIndex);
+            Assert.AreEqual(0, roofChainIndex);
+            Assert.IsFalse(decisionPoint.Chain.HasDamagingRoofOccupant(0));
         }
 
         private static HamsterSnapshot CreateHamsterSnapshot(bool isOnBottomLine)

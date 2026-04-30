@@ -3,30 +3,27 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Strategies.JumpOver.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
-using Assets.Scripts.Gameplay.Enums;
 
-namespace Assets.Scripts.Bot.Strategies.JumpOver
+namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 {
     /// <summary>
-    /// Проверяет, можно ли сохранить ранее выбранный jump-over action.
+    /// Проверяет, можно ли сохранить ранее выбранный jump-on-roof action.
     /// </summary>
-    internal sealed class JumpOverRetainedActionValidator : IRetainedActionValidator
+    internal sealed class JumpOnRoofRetainedActionValidator : IRetainedActionValidator
     {
         private const float _validationEpsilon = 0.0001f;
 
         /// <summary>
         /// Тип действия, которое умеет сохранять validator.
         /// </summary>
-        public BotActionKind ActionKind => BotActionKind.JumpOver;
+        public BotActionKind ActionKind => BotActionKind.JumpOnRoof;
 
         /// <summary>
-        /// Проверяет, что сохранённое действие jump-over всё ещё соответствует текущему planning context.
+        /// Проверяет, что сохранённое действие jump-on-roof всё ещё соответствует текущему planning context.
         /// </summary>
         public bool IsStillValid(RetainedActionContext context)
         {
@@ -51,45 +48,56 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 return false;
             }
 
-            if (decisionPoint.Chain.FirstObstacle.InstanceId != targetObstacle.InstanceId)
-                return false;
-
-            // Пересчитывает допустимое окно chain для текущего мира.
-            if (!JumpOverChainCalculator.TryCalculate(
+            if (!JumpOnRoofFireWindowFinder.TryGetRoofTarget(
                     planningState.Hamster,
                     decisionPoint.Chain,
-                    action.PostFireWorldShift,
-                    out JumpOverChainModel chainWindow))
+                    out ObstacleSnapshot roofObstacle,
+                    out int roofWorldIndex,
+                    out int roofChainIndex)
+                || roofObstacle.InstanceId != targetObstacle.InstanceId)
             {
                 return false;
             }
 
-            // Восстанавливает текущий fire shift retained action.
-                if (!TryGetRemainingFireShift(
+            // Восстанавливает текущий fire shift и начало chain.
+            if (!TryGetRemainingFireShift(
                     projectedWorldSnapshot,
                     targetObstacle,
                     action,
-                    planningState.ProjectionWorldShift,
                     out float fireShift))
-                {
-                return false;
-                }
-
-            // Проверяет, что fire shift остаётся внутри допустимого окна.
-            if (fireShift < chainWindow.FirstFireShift - _validationEpsilon
-                || fireShift > chainWindow.LastFireShift + _validationEpsilon)
             {
                 return false;
             }
 
-            // Сверяет runtime outcome с ожидаемой chain.
+            // Пересчитывает допустимое chain-окно landing для текущего мира.
+            if (!JumpOnRoofFireWindowFinder.TryGetRoofLandingWindow(
+                    planningState.Hamster,
+                    decisionPoint.Chain,
+                    roofObstacle,
+                    roofChainIndex,
+                    action.PostFireWorldShift,
+                    out float firstFireShift,
+                    out float lastFireShift,
+                    out bool _))
+            {
+                return false;
+            }
+
+            // Проверяет, что fire shift остаётся внутри допустимого окна.
+            if (fireShift < firstFireShift - _validationEpsilon
+                || fireShift > lastFireShift + _validationEpsilon)
+            {
+                return false;
+            }
+
+            // Сверяет runtime outcome с ожидаемой посадкой на крышу.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            return CheckRuntimeOutcomeAtFireShift(
+            return JumpOnRoofFireWindowFinder.CheckRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
                 fireShift,
                 action.PostFireWorldShift,
-                chainWindow);
+                roofWorldIndex);
         }
 
         /// <summary>
@@ -99,7 +107,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot targetObstacle,
             PlannedAction action,
-            float projectionWorldShift,
             out float fireShift)
         {
             // Проверяет наличие исходных данных.
@@ -108,9 +115,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 fireShift = 0f;
                 return false;
             }
-
-            // Переводит live trigger action обратно в projected-координату.
-            float projectedTriggerX = action.TriggerX - projectionWorldShift;
 
             // Пытается найти trigger obstacle по instance id.
             int? triggerObstacleInstanceId = action.TriggerObstacleInstanceId ?? action.TargetObstacleInstanceId;
@@ -122,45 +126,14 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                     if (obstacle.InstanceId != triggerObstacleInstanceId.Value)
                         continue;
 
-                    fireShift = obstacle.LeftX - projectedTriggerX;
+                    fireShift = obstacle.LeftX - action.TriggerX;
                     return true;
                 }
             }
 
             // Использует target obstacle как fallback.
-            fireShift = targetObstacle.LeftX - projectedTriggerX;
+            fireShift = targetObstacle.LeftX - action.TriggerX;
             return true;
-        }
-
-        /// <summary>
-        /// Проверяет, что fire shift приводит к ожидаемому runtime outcome по рассчитанной chain.
-        /// </summary>
-        private static bool CheckRuntimeOutcomeAtFireShift(
-            HamsterSnapshot hamster,
-            IReadOnlyList<JumpObstacleData> baseObstacles,
-            float fireShift,
-            float jumpTravel,
-            JumpOverChainModel chainWindow)
-        {
-            // Строит obstacle snapshot на момент fire.
-            var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
-            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
-
-            // Готовит контекст для runtime resolver'а.
-            JumpResolveContext context = new(
-                hamster.IsOnBottomLine,
-                hamster.HamsterLeftX,
-                hamster.HamsterRightX,
-                hamster.CenterX,
-                hamster.Width,
-                jumpTravel,
-                jumpTravel,
-                damageBigAliveWithoutYByReach: true);
-
-            // Сверяет runtime outcome с ожидаемой chain.
-            JumpResolveResult result = JumpOutcomeResolver.ResolveJump(obstaclesAtFireShift, context);
-            return result.State == HamsterStateEnum.JumpOver
-                   && chainWindow.ContainsObstacleIndex(result.TargetIndex);
         }
     }
 }

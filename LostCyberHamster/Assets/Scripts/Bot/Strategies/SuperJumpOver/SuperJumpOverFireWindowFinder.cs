@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.SuperJumpOver.Models;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Mechanics;
@@ -21,20 +22,18 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         public bool TryFindFireMoment(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
-            ObstacleSnapshot targetObstacle,
-            int targetObstacleIndex,
+            ObstacleChain chain,
             float superJumpTravel,
             out float fireMoment)
         {
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (projectedWorldSnapshot, nameof(projectedWorldSnapshot)),
-                (targetObstacle, nameof(targetObstacle)));
+                (chain, nameof(chain)));
 
             if (!SuperJumpOverChainCalculator.TryCalculate(
                     planningState.Hamster,
-                    projectedWorldSnapshot,
-                    targetObstacleIndex,
+                    chain,
                     superJumpTravel,
                     out SuperJumpOverChainModel chainWindow))
             {

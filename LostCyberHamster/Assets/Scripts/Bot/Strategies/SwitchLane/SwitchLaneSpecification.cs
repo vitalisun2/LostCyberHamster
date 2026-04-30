@@ -20,8 +20,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
             if (planningState == null
                 || decisionPoint == null
-                || !decisionPoint.IsBlockingThreat()
-                || decisionPoint.Obstacle == null)
+                || decisionPoint.Chain == null)
             {
                 return false;
             }
@@ -30,8 +29,15 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             if (hamster.IsOnRoof || hamster.IsDamaged || hamster.IsShifting)
                 return false;
 
-            targetObstacle = decisionPoint.Obstacle;
-            targetObstacleIndex = decisionPoint.ObstacleIndex;
+            ObstacleSnapshot firstObstacle = decisionPoint.Chain.FirstObstacle;
+            if (!ObstacleClassifier.DamagesOnGroundContact(firstObstacle.ObstacleType)
+                || IsClearDirectRoofLanding(decisionPoint.Chain))
+            {
+                return false;
+            }
+
+            targetObstacle = firstObstacle;
+            targetObstacleIndex = decisionPoint.Chain.FirstIndex;
             return true;
         }
 
@@ -42,6 +48,16 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
             HamsterSnapshot hamster = planningState.Hamster;
             return !hamster.IsOnRoof && !hamster.IsDamaged && !hamster.IsShifting;
+        }
+
+        /// <summary>
+        /// Возвращает true, если первый obstacle chain является чистой крышей для прямой посадки.
+        /// </summary>
+        private static bool IsClearDirectRoofLanding(ObstacleChain chain)
+        {
+            ObstacleSnapshot firstObstacle = chain.FirstObstacle;
+            return ObstacleClassifier.IsObstacleWithRoof(firstObstacle.ObstacleType)
+                   && !chain.HasDamagingRoofOccupant(0);
         }
     }
 }

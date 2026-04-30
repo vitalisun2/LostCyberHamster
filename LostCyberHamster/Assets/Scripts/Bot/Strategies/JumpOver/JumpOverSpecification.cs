@@ -28,8 +28,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
 
             if (planningState == null
                 || decisionPoint == null
-                || !decisionPoint.IsBlockingThreat()
-                || decisionPoint.Obstacle == null)
+                || decisionPoint.Chain == null)
             {
                 return false;
             }
@@ -38,11 +37,12 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
             if (hamster.IsOnRoof || hamster.IsShifting || hamster.Energy < EnergyCost)
                 return false;
 
-            if (!ObstacleClassifier.CanJumpOverOnGround(decisionPoint.Obstacle.ObstacleType))
+            ObstacleSnapshot firstObstacle = decisionPoint.Chain.FirstObstacle;
+            if (!ObstacleClassifier.CanJumpOverOnGround(firstObstacle.ObstacleType))
                 return false;
 
-            targetObstacle = decisionPoint.Obstacle;
-            targetObstacleIndex = decisionPoint.ObstacleIndex;
+            targetObstacle = firstObstacle;
+            targetObstacleIndex = decisionPoint.Chain.FirstIndex;
             return true;
         }
     }

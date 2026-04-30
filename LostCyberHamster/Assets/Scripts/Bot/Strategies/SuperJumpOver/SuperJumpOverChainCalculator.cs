@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.SuperJumpOver.Models;
 
 namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
@@ -15,8 +16,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         /// </summary>
         public static bool TryCalculate(
             HamsterSnapshot hamster,
-            WorldSnapshot projectedWorldSnapshot,
-            int targetObstacleIndex,
+            ObstacleChain chain,
             float superJumpTravel,
             out SuperJumpOverChainModel window)
         {
@@ -25,15 +25,14 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
             // Проверяем обязательные входные данные.
             if (hamster == null
-                || projectedWorldSnapshot == null
-                || targetObstacleIndex < 0
-                || targetObstacleIndex >= projectedWorldSnapshot.Obstacles.Count)
+                || chain == null
+                || chain.Count <= 0)
             {
                 return false;
             }
 
             // Проверяем, что целевое препятствие подходит для super jump-over.
-            ObstacleSnapshot targetObstacle = projectedWorldSnapshot.Obstacles[targetObstacleIndex];
+            ObstacleSnapshot targetObstacle = chain.FirstObstacle;
             if (!ObstacleClassifier.CanSuperJumpOverOnGround(targetObstacle.ObstacleType))
                 return false;
 
@@ -41,7 +40,8 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             bool isBottomLine = targetObstacle.IsBottomLine;
             float chainLeftX = targetObstacle.LeftX;
             float chainRightX = targetObstacle.RightX;
-            int lastObstacleIndex = targetObstacleIndex;
+            int firstObstacleIndex = chain.FirstIndex;
+            int lastObstacleIndex = firstObstacleIndex;
             int obstacleCount = 1;
 
             // Строим начальное окно для первой obstacle.
@@ -49,11 +49,13 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 return false;
 
             // Расширяем цепочку, пока для неё сохраняется общее окно.
-            for (int obstacleIndex = targetObstacleIndex + 1; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
+            for (int chainIndex = 1; chainIndex < chain.Count; chainIndex++)
             {
-                ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                if (!chain.TryGetAt(chainIndex, out ObstacleSnapshot obstacle, out int obstacleWorldIndex))
+                    return false;
+
                 if (obstacle.IsBottomLine != isBottomLine)
-                    continue;
+                    return false;
 
                 if (!ObstacleClassifier.CanSuperJumpOverOnGround(obstacle.ObstacleType))
                     break;
@@ -71,7 +73,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 }
 
                 chainRightX = candidateChainRightX;
-                lastObstacleIndex = obstacleIndex;
+                lastObstacleIndex = obstacleWorldIndex;
                 obstacleCount++;
                 firstFireShift = candidateFirstFireShift;
                 lastFireShift = candidateLastFireShift;
@@ -83,7 +85,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
             // Возвращаем рассчитанное окно цепочки.
             window = new SuperJumpOverChainModel(
-                targetObstacleIndex,
+                firstObstacleIndex,
                 lastObstacleIndex,
                 obstacleCount,
                 firstFireShift,

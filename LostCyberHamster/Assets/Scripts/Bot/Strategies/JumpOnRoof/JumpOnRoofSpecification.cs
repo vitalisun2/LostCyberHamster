@@ -1,6 +1,5 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
-using Assets.Scripts.Bot.Planning.DecisionPoints;
 
 namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 {
@@ -11,40 +10,19 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
     {
         public const int EnergyCost = 10;
 
-        public bool IsSatisfiedBy(
-            PlanningState planningState,
-            DecisionPoint decisionPoint,
-            out ObstacleSnapshot targetObstacle,
-            out int targetObstacleIndex)
+        /// <summary>
+        /// Проверяет, может ли hamster сейчас выполнить обычный jump-on-roof.
+        /// </summary>
+        public bool IsSatisfiedBy(PlanningState planningState)
         {
-            targetObstacle = null;
-            targetObstacleIndex = -1;
-
-            if (planningState == null
-                || decisionPoint == null
-                || decisionPoint.Obstacle == null)
-            {
+            if (planningState == null)
                 return false;
-            }
 
             HamsterSnapshot hamster = planningState.Hamster;
-            if (hamster.IsOnRoof || hamster.IsShifting || hamster.IsDamaged || hamster.Energy < EnergyCost)
-                return false;
-
-            if (decisionPoint.Kind == DecisionPointKind.BlockingObstacleWithRoofLanding)
-            {
-                if (!ObstacleClassifier.CanJumpOverOnGround(decisionPoint.Obstacle.ObstacleType)
-                    || !decisionPoint.TryGetRoofLandingTarget(out targetObstacle, out targetObstacleIndex))
-                {
-                    return false;
-                }
-            }
-            else if (!decisionPoint.TryGetRoofLandingTarget(out targetObstacle, out targetObstacleIndex))
-            {
-                return false;
-            }
-
-            return true;
+            return !hamster.IsOnRoof
+                   && !hamster.IsShifting
+                   && !hamster.IsDamaged
+                   && hamster.Energy >= EnergyCost;
         }
     }
 }

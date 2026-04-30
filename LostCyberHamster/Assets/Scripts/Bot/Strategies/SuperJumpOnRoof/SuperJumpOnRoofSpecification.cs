@@ -17,12 +17,31 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             out ObstacleSnapshot targetObstacle,
             out int targetObstacleIndex)
         {
+            return TryGetRoofChain(
+                planningState,
+                decisionPoint,
+                out targetObstacle,
+                out targetObstacleIndex,
+                out _);
+        }
+
+        /// <summary>
+        /// Ищет первую доступную roof target внутри текущей obstacle chain для super jump.
+        /// </summary>
+        public bool TryGetRoofChain(
+            PlanningState planningState,
+            DecisionPoint decisionPoint,
+            out ObstacleSnapshot targetObstacle,
+            out int targetObstacleIndex,
+            out int targetChainIndex)
+        {
             targetObstacle = null;
             targetObstacleIndex = -1;
+            targetChainIndex = -1;
 
             if (planningState == null
                 || decisionPoint == null
-                || decisionPoint.Obstacle == null)
+                || decisionPoint.Chain == null)
             {
                 return false;
             }
@@ -31,21 +50,25 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             if (hamster.IsOnRoof || hamster.IsShifting || hamster.IsDamaged || hamster.Energy < EnergyCost)
                 return false;
 
-            if (decisionPoint.Kind == DecisionPointKind.BlockingObstacleWithRoofLanding)
-            {
-                if (!ObstacleClassifier.CanSuperJumpOverOnGround(decisionPoint.Obstacle.ObstacleType)
-                    || !decisionPoint.TryGetRoofLandingTarget(out targetObstacle, out targetObstacleIndex))
-                {
-                    return false;
-                }
-
-                return true;
-            }
-
-            if (decisionPoint.Kind != DecisionPointKind.RoofLanding)
+            if (!decisionPoint.Chain.TryFindFirstRoof(out targetObstacle, out targetObstacleIndex, out targetChainIndex))
                 return false;
 
-            return decisionPoint.TryGetRoofLandingTarget(out targetObstacle, out targetObstacleIndex);
+            if (decisionPoint.Chain.HasDamagingRoofOccupant(targetChainIndex))
+                return false;
+
+            for (int chainIndex = 0; chainIndex < targetChainIndex; chainIndex++)
+            {
+                if (!decisionPoint.Chain.TryGetAt(chainIndex, out ObstacleSnapshot obstacle, out _))
+                    return false;
+
+                if (obstacle.IsBottomLine != targetObstacle.IsBottomLine)
+                    return false;
+
+                if (!ObstacleClassifier.CanSuperJumpOverOnGround(obstacle.ObstacleType))
+                    return false;
+            }
+
+            return true;
         }
     }
 }

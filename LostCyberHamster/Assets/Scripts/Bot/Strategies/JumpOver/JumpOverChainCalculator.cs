@@ -1,5 +1,6 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.JumpOver.Models;
 
 namespace Assets.Scripts.Bot.Strategies.JumpOver
@@ -14,8 +15,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
         /// </summary>
         public static bool TryCalculate(
             HamsterSnapshot hamster,
-            WorldSnapshot projectedWorldSnapshot,
-            int targetObstacleIndex,
+            ObstacleChain chain,
             float jumpTravel,
             out JumpOverChainModel window)
         {
@@ -24,15 +24,14 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
 
             // Проверяем обязательные входные данные.
             if (hamster == null
-                || projectedWorldSnapshot == null
-                || targetObstacleIndex < 0
-                || targetObstacleIndex >= projectedWorldSnapshot.Obstacles.Count)
+                || chain == null
+                || chain.Count <= 0)
             {
                 return false;
             }
 
             // Проверяем, что целевое препятствие подходит для jump-over.
-            ObstacleSnapshot targetObstacle = projectedWorldSnapshot.Obstacles[targetObstacleIndex];
+            ObstacleSnapshot targetObstacle = chain.FirstObstacle;
             if (!ObstacleClassifier.CanJumpOverOnGround(targetObstacle.ObstacleType))
                 return false;
 
@@ -40,7 +39,8 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
             bool isBottomLine = targetObstacle.IsBottomLine;
             float chainLeftX = targetObstacle.LeftX;
             float chainRightX = targetObstacle.RightX;
-            int lastObstacleIndex = targetObstacleIndex;
+            int firstObstacleIndex = chain.FirstIndex;
+            int lastObstacleIndex = firstObstacleIndex;
             int obstacleCount = 1;
 
             // Строим начальное окно для первой obstacle.
@@ -48,11 +48,13 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 return false;
 
             // Расширяем цепочку, пока для неё сохраняется общее окно.
-            for (int obstacleIndex = targetObstacleIndex + 1; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
+            for (int chainIndex = 1; chainIndex < chain.Count; chainIndex++)
             {
-                ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                if (!chain.TryGetAt(chainIndex, out ObstacleSnapshot obstacle, out int obstacleWorldIndex))
+                    return false;
+
                 if (obstacle.IsBottomLine != isBottomLine)
-                    continue;
+                    return false;
 
                 if (!ObstacleClassifier.CanJumpOverOnGround(obstacle.ObstacleType))
                     break;
@@ -70,7 +72,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 }
 
                 chainRightX = candidateChainRightX;
-                lastObstacleIndex = obstacleIndex;
+                lastObstacleIndex = obstacleWorldIndex;
                 obstacleCount++;
                 firstFireShift = candidateFirstFireShift;
                 lastFireShift = candidateLastFireShift;
@@ -82,7 +84,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
 
             // Возвращаем рассчитанное окно цепочки.
             window = new JumpOverChainModel(
-                targetObstacleIndex,
+                firstObstacleIndex,
                 lastObstacleIndex,
                 obstacleCount,
                 firstFireShift,

@@ -2,6 +2,7 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -36,19 +37,27 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             // Извлекает данные planning context.
             PlanningState planningState = context.PlanningState;
             WorldSnapshot projectedWorldSnapshot = context.ProjectedWorldSnapshot;
+            DecisionPoint decisionPoint = context.DecisionPoint;
             ObstacleSnapshot targetObstacle = context.TargetObstacle;
-            int targetObstacleIndex = context.TargetObstacleIndex;
             PlannedAction action = context.Action;
 
             // Проверяет наличие обязательных данных.
-            if (planningState == null || projectedWorldSnapshot == null || targetObstacle == null || action == null)
+            if (planningState == null
+                || projectedWorldSnapshot == null
+                || decisionPoint?.Chain == null
+                || targetObstacle == null
+                || action == null)
+            {
+                return false;
+            }
+
+            if (decisionPoint.Chain.FirstObstacle.InstanceId != targetObstacle.InstanceId)
                 return false;
 
             // Пересчитывает допустимое окно chain для текущего мира.
             if (!SuperJumpOverChainCalculator.TryCalculate(
                     planningState.Hamster,
-                    projectedWorldSnapshot,
-                    targetObstacleIndex,
+                    decisionPoint.Chain,
                     action.PostFireWorldShift,
                     out SuperJumpOverChainModel chainWindow))
             {
@@ -56,8 +65,15 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             }
 
             // Восстанавливает текущий fire shift retained action.
-            if (!TryGetRemainingFireShift(projectedWorldSnapshot, targetObstacle, action, out float fireShift))
+                if (!TryGetRemainingFireShift(
+                    projectedWorldSnapshot,
+                    targetObstacle,
+                    action,
+                    planningState.ProjectionWorldShift,
+                    out float fireShift))
+                {
                 return false;
+                }
 
             // Проверяет, что fire shift остаётся внутри допустимого окна.
             if (fireShift < chainWindow.FirstFireShift - _validationEpsilon
@@ -77,12 +93,13 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         }
 
         /// <summary>
-        /// Восстанавливает оставшийся fire shift для retained action по live trigger obstacle.
+        /// Восстанавливает оставшийся fire shift для retained action в projected-координатах.
         /// </summary>
         private static bool TryGetRemainingFireShift(
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot targetObstacle,
             PlannedAction action,
+            float projectionWorldShift,
             out float fireShift)
         {
             // Проверяет наличие исходных данных.
@@ -92,7 +109,10 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 return false;
             }
 
-            // Пытается найти live trigger obstacle по instance id.
+            // Переводит live trigger action обратно в projected-координату.
+            float projectedTriggerX = action.TriggerX - projectionWorldShift;
+
+            // Пытается найти trigger obstacle по instance id.
             int? triggerObstacleInstanceId = action.TriggerObstacleInstanceId ?? action.TargetObstacleInstanceId;
             if (triggerObstacleInstanceId.HasValue)
             {
@@ -102,13 +122,13 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                     if (obstacle.InstanceId != triggerObstacleInstanceId.Value)
                         continue;
 
-                    fireShift = obstacle.LeftX - action.TriggerX;
+                    fireShift = obstacle.LeftX - projectedTriggerX;
                     return true;
                 }
             }
 
             // Использует target obstacle как fallback.
-            fireShift = targetObstacle.LeftX - action.TriggerX;
+            fireShift = targetObstacle.LeftX - projectedTriggerX;
             return true;
         }
 

@@ -86,12 +86,18 @@ public class AssetBundlesManager
 
         foreach(var dir in directoriesAndBindlesNames.Keys)
         {
+            if (!Directory.Exists(dir))
+            {
+                Debug.LogWarning($"Asset bundle source directory does not exist, skipping: {dir}");
+                continue;
+            }
+
             var files = Directory.GetFiles(dir).Where(x=> !x.EndsWith(".meta"));
 
             foreach(var file in files)
             {
                 Debug.Log("Add: " + file);
-                AssetImporter.GetAtPath(file).SetAssetBundleNameAndVariant(directoriesAndBindlesNames[dir], string.Empty);
+                AssetImporter.GetAtPath(file)?.SetAssetBundleNameAndVariant(directoriesAndBindlesNames[dir], string.Empty);
             }
         }
     }
