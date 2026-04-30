@@ -9,7 +9,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>
+    </RootNamespace>
     <ProjectGuid>{33E884B2-610B-E8DB-1B74-759FE401BDD3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -58,8 +59,8 @@
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskParallel.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanBuilder.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitRoadLoadingTask.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverScheduledFireShiftValidator.cs" />
     <Compile Include="Assets\Scripts\UI\Components\CrystalStorageUI.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverChainCalculator.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UnspawnOutOfBoundsMechanics.cs" />
     <Compile Include="Assets\Scripts\Installers\ProjectInstaller.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOutcomeRetainedValidator.cs" />
@@ -161,7 +162,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverSimulator.cs" />
     <Compile Include="Assets\Scripts\Common\Models\DecorationTile.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimatorController.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\FireWindows\FireWindow.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Simulation\ActionInProgressProjector.cs" />
     <Compile Include="Assets\Scripts\Gameplay\Hamster.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\GameScreenStatusFormatter.cs" />
@@ -208,7 +208,6 @@
     <Compile Include="Assets\Scripts\Gameplay\Obstacle.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\BoomEffectAction.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiPauseScreenMechanics.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\FireWindows\FireWindowScanner.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\RuntimeBotEventTracker.cs" />
     <Compile Include="Assets\Scripts\Installers\Roots\UiRoot.cs" />
     <Compile Include="Assets\Scripts\System\FeatureFlags\DayPartLevelsFeature.cs" />
@@ -292,6 +291,7 @@
     <Compile Include="Assets\Scripts\GameManagement\Data\LevelProgressModels.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningSnapshotProjector.cs" />
     <Compile Include="Assets\Scripts\Gameplay\Models\ObstacleType.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\Models\JumpOverChainModel.cs" />
     <Compile Include="Assets\Scripts\Entry Points\LoadingTaskPipeline.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverRetainedActionValidator.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\HierarchicalLevelCatalog.cs" />
@@ -389,7 +389,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\Policies\GroundContactPreFireSafetyPolicy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\DebugManager.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopItem.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\FireWindows\FireInterval.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\ObstacleSnapshot.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\IJumpScheduledFireShiftValidator.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelData.cs" />
