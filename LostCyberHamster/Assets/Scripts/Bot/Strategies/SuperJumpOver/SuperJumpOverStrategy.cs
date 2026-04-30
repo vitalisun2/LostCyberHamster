@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Globalization;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
@@ -18,25 +17,21 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
     /// </summary>
     internal sealed class SuperJumpOverStrategy : IPlanningStrategy
     {
-        private const string SuperJumpClipName = "transform_super_jump";
-
-        private static readonly Dictionary<string, float> _travelByCacheKey = new();
+        private const string _superJumpClipName = "transform_super_jump";
 
         private readonly SuperJumpOverSpecification _specification;
         private readonly SuperJumpOverFireWindowFinder _fireWindowFinder;
-        private readonly SuperJumpOverScheduledFireShiftValidator _fireWindowValidator;
         private readonly SuperJumpOverSimulator _simulator;
 
         public SuperJumpOverStrategy()
         {
             _specification = new SuperJumpOverSpecification();
             _fireWindowFinder = new SuperJumpOverFireWindowFinder();
-            _fireWindowValidator = new SuperJumpOverScheduledFireShiftValidator();
             _simulator = new SuperJumpOverSimulator();
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             Executor = new SuperJumpOverExecutor(triggerGate);
-            RetainedValidator = new SuperJumpOverRetainedActionValidator(_fireWindowValidator);
+            RetainedValidator = new SuperJumpOverRetainedActionValidator();
             Simulator = _simulator;
         }
 
@@ -107,47 +102,30 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         /// </summary>
         private static bool TryGetSuperJumpTravel(out float superJumpTravel)
         {
-            return TryGetClipTravel(
-                SuperJumpClipName,
-                out superJumpTravel,
-                DoubleJumpDetector.DoubleJumpThreshold * 0.5f * Assets.Scripts.Consts.GameSpeedBase,
-                throwIfMissing: true);
-        }
-
-        /// <summary>
-        /// Возвращает world shift для runtime animation clip.
-        /// </summary>
-        private static bool TryGetClipTravel(
-            string clipName,
-            out float travel,
-            float extraTravel = 0f,
-            bool throwIfMissing = false)
-        {
-            string cacheKey = BuildCacheKey(clipName, extraTravel);
-            if (_travelByCacheKey.TryGetValue(cacheKey, out travel))
-                return true;
-
             TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
             if (controller == null)
             {
-                if (throwIfMissing)
-                    Guard.ThrowIfNull((controller, nameof(TransformAnimatorController)));
-
-                travel = 0f;
+                Guard.ThrowIfNull((controller, nameof(TransformAnimatorController)));
+                superJumpTravel = 0f;
                 return false;
             }
 
-            travel = HelpMethods.GetWorldShiftForClip(controller, clipName) + extraTravel;
-            _travelByCacheKey[cacheKey] = travel;
+            float clipTravel = HelpMethods.GetWorldShiftForClip(controller, _superJumpClipName);
+            float upgradeDelayTravel = GetSuperJumpUpgradeDelayTravel();
+
+            superJumpTravel = clipTravel + upgradeDelayTravel;
             return true;
         }
 
         /// <summary>
-        /// Строит stable cache key для animation clip travel.
+        /// Возвращает дополнительный world travel за задержку между первым jump input и upgrade в super jump.
+        /// Берём середину допустимого double-jump окна как ожидаемый момент второго input.
         /// </summary>
-        private static string BuildCacheKey(string clipName, float extraTravel)
+        private static float GetSuperJumpUpgradeDelayTravel()
         {
-            return clipName + ":" + extraTravel.ToString("R", CultureInfo.InvariantCulture);
+            // Upgrade планируется примерно в середине double-jump window, а не на границе окна.
+            float halfDoubleJumpWindowSeconds = DoubleJumpDetector.DoubleJumpThreshold / 2f;
+            return halfDoubleJumpWindowSeconds * Assets.Scripts.Consts.GameSpeedBase;
         }
     }
 }

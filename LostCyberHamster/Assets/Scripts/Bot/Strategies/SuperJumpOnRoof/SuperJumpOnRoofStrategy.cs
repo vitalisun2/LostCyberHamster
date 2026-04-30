@@ -53,10 +53,13 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             if (!_specification.IsSatisfiedBy(planningState, decisionPoint, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
                 return;
 
+            float halfDoubleJumpWindowSeconds = DoubleJumpDetector.DoubleJumpThreshold / 2f;
+            float upgradeDelayTravel = halfDoubleJumpWindowSeconds * Assets.Scripts.Consts.GameSpeedBase;
+
             if (!JumpClipTravel.TryGetTravel(
                     "transform_super_jump",
                     out float superJumpTravel,
-                    DoubleJumpDetector.DoubleJumpThreshold * 0.5f * Assets.Scripts.Consts.GameSpeedBase,
+                    upgradeDelayTravel,
                     throwIfMissing: true))
             {
                 return;
