@@ -1,26 +1,54 @@
 Set-StrictMode -Off
 $ErrorActionPreference = "Stop"
 
+function Invoke-Git {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments
+    )
+
+    $output = & git @Arguments 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        $details = ($output | Out-String).Trim()
+        if ([string]::IsNullOrWhiteSpace($details)) {
+            $details = "git exited with code $LASTEXITCODE"
+        }
+
+        throw "git $($Arguments -join ' ') failed.`n$details"
+    }
+
+    return @($output)
+}
+
+function Get-GitText {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments
+    )
+
+    return ((Invoke-Git -Arguments $Arguments) -join "`n").Trim()
+}
+
 Push-Location $PSScriptRoot
 
 try {
     # Переключаемся на integration/unity-live если нужно
-    $branch = git branch --show-current
+    $branch = Get-GitText -Arguments @('branch', '--show-current')
     if ($branch -ne "integration/unity-live") {
         Write-Host "Текущая ветка: '$branch'. Переключаюсь на integration/unity-live..."
-        git checkout integration/unity-live
+        Invoke-Git -Arguments @('checkout', 'integration/unity-live') | Out-Null
     }
 
     # Коммитим только staged-изменения (git add -A не делаем)
-    $staged = git diff --cached --name-only
+    $staged = @(Invoke-Git -Arguments @('diff', '--cached', '--name-only'))
     if ($staged) {
         Write-Host "Staged изменения:"
-        git diff --cached --stat
+        Invoke-Git -Arguments @('diff', '--cached', '--stat') | ForEach-Object { Write-Host $_ }
 
         # Генерируем сообщение коммита через GitHub Models (gpt-4.1-mini)
         # Читаем diff через temp-файл чтобы сохранить UTF-8 (pipe ломает кодировку кириллицы)
         $tmpFile = [System.IO.Path]::GetTempFileName()
-        git diff --cached | Out-File -FilePath $tmpFile -Encoding utf8
+        Invoke-Git -Arguments @('diff', '--cached') | Out-File -FilePath $tmpFile -Encoding utf8
         $diff = Get-Content $tmpFile -Encoding utf8 -Raw
         Remove-Item $tmpFile -Force
         $maxLen = 12000
@@ -36,29 +64,42 @@ try {
         }
 
         Write-Host "Commit message: $commitMsg" -ForegroundColor Cyan
-        git commit -m $commitMsg
-        Write-Host "Commit: $(git log -1 --oneline)"
+        Invoke-Git -Arguments @('commit', '-m', $commitMsg) | ForEach-Object { Write-Host $_ }
+        Write-Host "Commit: $(Get-GitText -Arguments @('log', '-1', '--oneline'))"
     } else {
         Write-Host "Нет staged-изменений. Используй 'git add' чтобы выбрать файлы для коммита."
         Write-Host "Продолжаю с merge..."
     }
 
-    # Merge в main
-    git checkout main
-    git merge integration/unity-live --no-ff -m "Merge integration/unity-live into main"
-    git push origin main
-    if ($LASTEXITCODE -ne 0) { Write-Warning "push origin main завершился с ошибкой. Продолжаю..." }
-    # Синхронизируем integration/unity-live с main
-    git checkout integration/unity-live
-    git merge main --ff-only
-    git push origin integration/unity-live
-    if ($LASTEXITCODE -ne 0) { Write-Warning "push origin integration/unity-live завершился с ошибкой." }
+    # Обновляем main через fast-forward без checkout, чтобы не трогать unstaged в unity-live.
+    & git merge-base --is-ancestor main integration/unity-live
+    if ($LASTEXITCODE -eq 1) {
+        $mainHash = Get-GitText -Arguments @('rev-parse', 'main')
+        $liveHash = Get-GitText -Arguments @('rev-parse', 'integration/unity-live')
+        throw "Ветки действительно разошлись: main=$mainHash, unity-live=$liveHash. Нужен ручной merge, fast-forward невозможен."
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "git merge-base --is-ancestor main integration/unity-live failed with exit code $LASTEXITCODE"
+    }
+
+    $mainHash = Get-GitText -Arguments @('rev-parse', 'main')
+    $liveHash = Get-GitText -Arguments @('rev-parse', 'integration/unity-live')
+    if ($mainHash -ne $liveHash) {
+        Write-Host "Fast-forward main -> integration/unity-live ($liveHash)..."
+        Invoke-Git -Arguments @('update-ref', 'refs/heads/main', $liveHash, $mainHash) | Out-Null
+    } else {
+        Write-Host "main уже синхронизирован с integration/unity-live."
+    }
+
+    Invoke-Git -Arguments @('push', 'origin', 'main') | ForEach-Object { Write-Host $_ }
+    Invoke-Git -Arguments @('push', 'origin', 'integration/unity-live') | ForEach-Object { Write-Host $_ }
 
     # Проверка синхронизации
-    $mainHash    = git rev-parse main
-    $liveHash    = git rev-parse integration/unity-live
+    $mainHash    = Get-GitText -Arguments @('rev-parse', 'main')
+    $liveHash    = Get-GitText -Arguments @('rev-parse', 'integration/unity-live')
     if ($mainHash -eq $liveHash) {
-        Write-Host "$(git log -1 --oneline) — main и unity-live синхронизированы ✓"
+        Write-Host "$(Get-GitText -Arguments @('log', '-1', '--oneline', 'integration/unity-live')) — main и unity-live синхронизированы ✓"
     } else {
         Write-Error "Ветки расходятся! main=$mainHash, unity-live=$liveHash"
         exit 1
