@@ -1,6 +1,7 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
 {
@@ -9,15 +10,20 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
     /// </summary>
     internal sealed class SwitchLaneSpecification
     {
+        /// <summary>
+        /// Проверяет, можно ли построить действие смены линии для текущей chain-точки решения.
+        /// </summary>
         public bool IsSatisfiedBy(
             PlanningState planningState,
             DecisionPoint decisionPoint,
             out ObstacleSnapshot targetObstacle,
             out int targetObstacleIndex)
         {
+            // Сбрасывает выходные значения перед проверкой.
             targetObstacle = null;
             targetObstacleIndex = -1;
 
+            // Проверяет наличие обязательного planning-контекста.
             if (planningState == null
                 || decisionPoint == null
                 || decisionPoint.Chain == null)
@@ -25,39 +31,51 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 return false;
             }
 
+            // Отбрасывает состояния, в которых смену линии планировать нельзя.
             HamsterSnapshot hamster = planningState.Hamster;
-            if (hamster.IsOnRoof || hamster.IsDamaged || hamster.IsShifting)
-                return false;
-
-            ObstacleSnapshot firstObstacle = decisionPoint.Chain.FirstObstacle;
-            if (!ObstacleClassifier.DamagesOnGroundContact(firstObstacle.ObstacleType)
-                || IsClearDirectRoofLanding(decisionPoint.Chain))
+            if (!CanPlanSwitchLaneFromState(hamster.HamsterState)
+                || hamster.IsDamaged
+                || hamster.IsShifting)
             {
                 return false;
             }
 
+            // Проверяет, что первый obstacle цепочки требует ground-уклонения.
+            ObstacleSnapshot firstObstacle = decisionPoint.Chain.FirstObstacle;
+            if (!ObstacleClassifier.DamagesOnGroundContact(firstObstacle.ObstacleType))
+            {
+                return false;
+            }
+
+            // Возвращает obstacle-цель для планируемого действия.
             targetObstacle = firstObstacle;
             targetObstacleIndex = decisionPoint.Chain.FirstIndex;
             return true;
         }
 
-        public bool IsSatisfiedBy(PlanningState planningState, ObstacleSnapshot targetObstacle)
+        /// <summary>
+        /// Проверяет, разрешено ли в принципе планировать смену линии в текущем состоянии хомяка.
+        /// </summary>
+        public bool IsSatisfiedBy(PlanningState planningState)
         {
-            if (planningState == null || targetObstacle == null)
+            // Отбрасывает отсутствие planning-состояния.
+            if (planningState == null)
                 return false;
 
+            // Проверяет состояние хомяка на допустимость планирования.
             HamsterSnapshot hamster = planningState.Hamster;
-            return !hamster.IsOnRoof && !hamster.IsDamaged && !hamster.IsShifting;
+            return CanPlanSwitchLaneFromState(hamster.HamsterState)
+                && !hamster.IsDamaged
+                && !hamster.IsShifting;
         }
 
         /// <summary>
-        /// Возвращает true, если первый obstacle chain является чистой крышей для прямой посадки.
+        /// Определяет, допускает ли текущее runtime-состояние запуск планирования смены линии.
         /// </summary>
-        private static bool IsClearDirectRoofLanding(ObstacleChain chain)
+        private static bool CanPlanSwitchLaneFromState(HamsterStateEnum hamsterState)
         {
-            ObstacleSnapshot firstObstacle = chain.FirstObstacle;
-            return ObstacleClassifier.IsObstacleWithRoof(firstObstacle.ObstacleType)
-                   && !chain.HasDamagingRoofOccupant(0);
+            return hamsterState == HamsterStateEnum.Run
+                   || hamsterState == HamsterStateEnum.RoofRun;
         }
     }
 }

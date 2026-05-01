@@ -6,7 +6,6 @@ using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.Gameplay;
-using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
 {
@@ -45,14 +44,13 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     hamster.HamsterState.Value,
                     hamster.IsShifting.Value))
             {
-                return hamster.IsShifting.Value || hamster.HamsterState.Value == HamsterStateEnum.RunFromRoof
+                return hamster.IsShifting.Value
                     ? ActionFireResult.Waiting
                     : ActionFireResult.Cancelled;
             }
 
             // Сверяет ожидаемую линию после tap.
-            bool targetBottomLineAfterTap = !hamster.IsOnBottomLine.Value;
-            if (targetBottomLineAfterTap != action.TargetBottomLine.Value)
+            if (hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value)
                 return ActionFireResult.Cancelled;
 
             // Проверяет окно срабатывания по триггеру.
