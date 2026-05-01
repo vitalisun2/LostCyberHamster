@@ -22,12 +22,17 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             _triggerGate = triggerGate;
         }
 
+        /// <summary>
+        /// Пытается выполнить действие смены линии в допустимый момент.
+        /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
+            // Проверяет обязательные аргументы.
             Guard.ThrowIfNull(
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 
+            // Отбрасывает неподходящие действия.
             if (action.Kind != BotActionKind.SwitchLane
                 || !action.TargetObstacleInstanceId.HasValue
                 || !action.TargetBottomLine.HasValue)
@@ -35,6 +40,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 return ActionFireResult.Cancelled;
             }
 
+            // Проверяет, можно ли сейчас принять tap.
             if (!TapOutcomeResolver.CanAcceptTap(
                     hamster.HamsterState.Value,
                     hamster.IsShifting.Value))
@@ -44,28 +50,38 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     : ActionFireResult.Cancelled;
             }
 
+            // Сверяет ожидаемую линию после tap.
             bool targetBottomLineAfterTap = !hamster.IsOnBottomLine.Value;
             if (targetBottomLineAfterTap != action.TargetBottomLine.Value)
                 return ActionFireResult.Cancelled;
 
+            // Проверяет окно срабатывания по триггеру.
             ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
             if (triggerResult != ActionFireResult.Fired)
                 return triggerResult;
 
+            // Логирует и отправляет tap.
             string targetLane = action.TargetBottomLine.Value ? "bottom" : "top";
             HamsterActionLogger.LogFire(action, obstacleLeftX, $"targetLane={targetLane} ");
             hamster.TapRequest.Invoke();
+
             return ActionFireResult.Fired;
         }
 
+        /// <summary>
+        /// Определяет, завершилась ли смена линии для запланированного действия.
+        /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
+            // Ждёт завершения текущего смещения.
             if (hamster.IsShifting.Value)
                 return false;
 
+            // Завершает действие без целевой линии.
             if (!action.TargetBottomLine.HasValue)
                 return true;
 
+            // Сверяет фактическую линию и пишет лог завершения.
             bool completed = hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value;
             if (completed)
                 HamsterActionLogger.LogComplete(action, hamster.IsOnBottomLine.Value);
