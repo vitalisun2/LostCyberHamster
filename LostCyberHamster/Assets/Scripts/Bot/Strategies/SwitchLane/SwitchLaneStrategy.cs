@@ -21,11 +21,13 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
         public SwitchLaneStrategy()
         {
+            // Создаёт внутренние зависимости стратегии.
             _specification = new SwitchLaneSpecification();
             _fireWindowCalculator = new SwitchLaneFireWindowCalculator();
             _simulator = new SwitchLaneSimulator();
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
+            // Публикует runtime-компоненты стратегии.
             Executor = new SwitchLaneExecutor(triggerGate);
             RetainedValidator = new SwitchLaneRetainedValidator(_specification, _fireWindowCalculator);
             Simulator = _simulator;
@@ -36,35 +38,46 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         public IRetainedActionValidator RetainedValidator { get; }
         public ISimulator Simulator { get; }
 
+        /// <summary>
+        /// Собирает допустимые действия смены линии для текущей точки принятия решения.
+        /// </summary>
         public void CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             DecisionPoint decisionPoint,
             List<PlannedAction> actions)
         {
+            // Проверяет обязательные аргументы.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
                 (decisionPoint, nameof(decisionPoint)),
                 (actions, nameof(actions)));
 
+            // Отбирает obstacle, для которого допустима смена линии.
             if (!_specification.IsSatisfiedBy(planningState, decisionPoint, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
                 return;
 
+            // Вычисляет линию и доступное окно запуска.
             HamsterSnapshot hamster = planningState.Hamster;
             bool targetBottomLine = !hamster.IsOnBottomLine;
             if (!_fireWindowCalculator.TryGetLatestFireShift(hamster, targetObstacle, out float latestFireShift))
                 return;
 
+            // Строит все варианты action в найденном окне.
             IReadOnlyList<float> fireShifts = _fireWindowCalculator.CollectFireShifts(
                 worldSnapshot,
                 hamster,
                 targetBottomLine,
                 latestFireShift);
+
             for (int fireShiftIndex = 0; fireShiftIndex < fireShifts.Count; fireShiftIndex++)
                 actions.Add(BuildAction(planningState, targetObstacle, targetObstacleIndex, targetBottomLine, fireShifts[fireShiftIndex]));
         }
 
+        /// <summary>
+        /// Создаёт запланированное действие смены линии для выбранного момента запуска.
+        /// </summary>
         private static PlannedAction BuildAction(
             PlanningState planningState,
             ObstacleSnapshot targetObstacle,
@@ -72,9 +85,11 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             bool targetBottomLine,
             float fireShift)
         {
+            // Рассчитывает мировую точку срабатывания действия.
             float projectedTriggerX = targetObstacle.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
 
+            // Создаёт action с рассчитанными параметрами исполнения.
             return new PlannedAction(
                 BotActionKind.SwitchLane,
                 triggerX,
