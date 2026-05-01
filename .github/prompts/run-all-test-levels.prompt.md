@@ -1,5 +1,5 @@
 ---
-description: "Прогнать все тестовые уровни бота автопрогоном и вывести итоговый SUMMARY. Используй когда нужно: запустить валидацию, проверить регрессию, прогнать все уровни после правок бота."
+description: "Прогнать все тестовые уровни бота автопрогоном и вывести итоговый SUMMARY. Список уровней брать динамически тем же способом, что и Tools/Test Level/Launch...: источник истины — все test*.json под Assets/Content/locations/**/levels/**. Используй когда нужно: запустить валидацию, проверить регрессию, прогнать все уровни после правок бота."
 name: "Run All Test Levels"
 agent: "agent"
 ---
@@ -14,37 +14,29 @@ agent: "agent"
    .\invoke_run_all_test_levels.ps1 -TimeoutSeconds 120
    ```
 3. Дождись завершения всех уровней.
-4. После завершения каждого уровня прочитай его `diagnosticLogPath` из `test_level_response.json` и выполни два анализа:
+4. Не используй никакой hardcoded-список уровней из этого prompt. Полный список уровней нужно брать динамически тем же способом, что делает `Tools/Test Level/Launch...` в `TestLevelLauncher.cs` и `invoke_run_all_test_levels.ps1`: источник истины — все `test*.json` под `LostCyberHamster/Assets/Content/locations/**/levels/**`.
+5. После завершения прогона проверь, что в итоговом `SUMMARY` скрипта перечислены все динамически найденные test-level адреса. Если нужно перепроверить полноту, ориентируйся на ту же логику discovery, что у launcher-а, а не на этот prompt.
+6. Для каждого уровня используй результат, который уже печатает `invoke_run_all_test_levels.ps1`:
 
-   **A. WIN/FAIL** — по маркеру `[TEST RESULT]` в логе.
+   **A. Статус прогона** — `WIN`, `FAIL`, `ERR` или `SEMF` из итогового `SUMMARY`.
 
-   **B. Покрытие паттернов** — косвенный признак корректности поведения:
-   - Подсчитай **ожидаемое** число целевых паттернов: количество `ref` в `patternSequence` уровня, чей `ref` содержит корень имени уровня (т.е. игнорируй `relief`, `relief_energy` и прочие технические паттерны).
-   - Подсчитай **фактическое** число выполненных целевых действий в логе: строки `[BotV2 EXEC] COMPLETE` с `desc=`, соответствующим целевому действию уровня (см. таблицу ниже).
-   - Проверь: `фактическое == ожидаемое`.
+   **B. Semantic action summary** — строку `actions=[...]` из итогового `SUMMARY` и, при необходимости, детали по `diagnosticLogPath` из `test_level_response.json`.
 
-   | Уровень | Корень (фильтр ref) | Целевая строка в логе |
-   |---|---|---|
-   | test_switch_lane | `test_switch_lane_` | `COMPLETE kind=Tap` + `desc=Switch lane` |
-   | test_jump_over | `test_jump_over_` | `COMPLETE kind=Jump` + `desc=Jump over` |
-   | test_superjump_over | `test_superjump_over_` | `COMPLETE` + `desc=SuperJump over` |
-   | test_jump_on_roof | `test_jump_on_roof_` | `COMPLETE kind=Jump` + `desc=Jump on roof` |
-
-5. Выведи итоговый SUMMARY в формате:
+7. Выведи итоговый SUMMARY в формате:
 
 ```
 SUMMARY
 ─────────────────────────────────────────────────────────────
-test_switch_lane      : WIN    patterns: 5/5 ✓
-test_jump_over        : WIN    patterns: 2/2 ✓
-test_superjump_over   : FAIL   patterns: 1/2 ✗
-test_jump_on_roof     : WIN    patterns: 4/4 ✓
+01_New_York/Morning/test_switch_lane        : WIN  actions=[SwitchLane=5]
+01_New_York/Morning/test_jump_over          : WIN  actions=[JumpOver=2]
+01_New_York/Morning/test_superjump_over     : FAIL actions=[SuperJumpOver=1]
+01_New_York/Morning/test_jump_on_roof       : WIN  actions=[JumpOnRoof=4]
 ─────────────────────────────────────────────────────────────
-Passed: 3 / 4   Pattern coverage: 3 / 4
+Passed: 3 / 4
 ```
 
-6. Если хотя бы один уровень завершился с FAIL, UNKNOWN или patterns < expected:
-   - кратко опиши расхождение: что ожидалось, что получилось, последние строки с `[TEST RESULT]`
+8. Если хотя бы один уровень завершился с `FAIL`, `ERR` или `SEMF`:
+   - кратко опиши расхождение по итогам `SUMMARY` и, если нужно, по `diagnosticLogPath`: какой уровень упал, какой был статус, какие действия зафиксированы
    - **не чини** — только сообщи. Правки — отдельная задача.
 
 ## Важно
@@ -52,4 +44,5 @@ Passed: 3 / 4   Pattern coverage: 3 / 4
 - Выполнять все шаги автономно, без запроса подтверждения у пользователя.
 - Не перекомпилировать скрипты перед прогоном — скрипт делает это сам.
 - Не запускать уровни по одному вручную — только через `invoke_run_all_test_levels.ps1`.
+- Не поддерживать вручную список test-level'ов в этом prompt: новые уровни должны подхватываться автоматически через discovery из `Assets/Content/locations`.
 - После вывода SUMMARY остановиться и ждать инструкций пользователя.
