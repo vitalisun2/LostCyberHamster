@@ -60,6 +60,32 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
         }
 
         /// <summary>
+        /// Возвращает planning-состояние после roof jump over над препятствием на текущей крыше.
+        /// </summary>
+        public static PlanningState AdvanceAfterRoofJumpOver(
+            PlanningState planningState,
+            PlannedAction action,
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot nextHamster)
+        {
+            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            int minimumNextObstacleIndex = Math.Max(
+                planningState.NextObstacleIndex,
+                action.TargetObstacleIndex + 1);
+
+            int nextObstacleIndex = FindNextRelevantObstacleIndex(
+                worldSnapshot,
+                minimumNextObstacleIndex,
+                nextProjectionWorldShift,
+                nextHamster.HamsterLeftX);
+
+            return new PlanningState(
+                nextHamster,
+                nextObstacleIndex,
+                nextProjectionWorldShift);
+        }
+
+        /// <summary>
         /// Возвращает состояние хомяка после успешного over-действия с возвратом в Run.
         /// </summary>
         public static HamsterSnapshot ApplyRunAfterOver(HamsterSnapshot hamster, PlannedAction action)
@@ -113,6 +139,26 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
                 hamster.IsDamaged,
                 isShifting: false,
                 action.TargetObstacleInstanceId,
+                hamster.HamsterLeftX,
+                hamster.HamsterRightX);
+        }
+
+        /// <summary>
+        /// Возвращает состояние хомяка после успешного roof jump over с продолжением RoofRun.
+        /// </summary>
+        public static HamsterSnapshot ApplyRoofRunAfterRoofJumpOver(HamsterSnapshot hamster, PlannedAction action)
+        {
+            int? roofSupportInstanceId = action.ResultRoofSupportInstanceId ?? hamster.RoofSupportInstanceId;
+
+            return new HamsterSnapshot(
+                HamsterStateEnum.RoofRun,
+                hamster.IsOnBottomLine,
+                isOnRoof: true,
+                hamster.Energy - action.EnergyCost,
+                hamster.Lives,
+                hamster.IsDamaged,
+                isShifting: false,
+                roofSupportInstanceId,
                 hamster.HamsterLeftX,
                 hamster.HamsterRightX);
         }

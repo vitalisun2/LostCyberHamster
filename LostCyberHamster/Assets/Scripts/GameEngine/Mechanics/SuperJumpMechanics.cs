@@ -124,8 +124,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     rightX,
                     obstacle.transform.position.x,
                     hasY: true,
-                    bottomY,
-                    topY));
+                    bottomY: bottomY,
+                    topY: topY));
             }
 
             CollisionUtils.GetHamsterXBounds(_characterTransform, out float hamsterLeftX, out float hamsterRightX);

@@ -4,6 +4,7 @@ using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Execution;
 using Assets.Scripts.Bot.Strategies.JumpOnRoof;
 using Assets.Scripts.Bot.Strategies.JumpOver;
+using Assets.Scripts.Bot.Strategies.RoofJumpOver;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.SuperJumpOnRoof;
@@ -94,7 +95,8 @@ namespace Assets.Scripts.Bot
                 new JumpOverStrategy(),
                 new SuperJumpOverStrategy(),
                 new JumpOnRoofStrategy(),
-                new SuperJumpOnRoofStrategy()
+                new SuperJumpOnRoofStrategy(),
+                new RoofJumpOverStrategy()
             };
         }
 

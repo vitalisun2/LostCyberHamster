@@ -97,7 +97,8 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                     obstacle.IsBottomLine,
                     obstacle.LeftX,
                     obstacle.RightX,
-                    obstacle.CenterX);
+                    obstacle.CenterX,
+                    obstacle.InstanceId);
             }
 
             return JumpOutcomeResolver.TryFindDamagingRoofOccupantOnRoof(

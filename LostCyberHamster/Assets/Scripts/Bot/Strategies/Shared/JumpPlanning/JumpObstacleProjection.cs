@@ -20,7 +20,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
                     obstacle.IsBottomLine,
                     obstacle.LeftX,
                     obstacle.RightX,
-                    obstacle.CenterX));
+                    obstacle.CenterX,
+                    obstacle.InstanceId));
             }
 
             return obstacles;
@@ -41,6 +42,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
                     obstacle.LeftX - fireShift,
                     obstacle.RightX - fireShift,
                     obstacle.CenterX - fireShift,
+                    obstacle.InstanceId,
                     obstacle.HasY,
                     obstacle.BottomY,
                     obstacle.TopY));

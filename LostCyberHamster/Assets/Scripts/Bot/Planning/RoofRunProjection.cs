@@ -47,6 +47,52 @@ namespace Assets.Scripts.Bot.Planning
             return gap <= maxPassiveGap;
         }
 
+        public static bool TryFindPassiveRoofSupportForOccupant(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            ObstacleSnapshot occupant,
+            out ObstacleSnapshot support,
+            out int supportIndex)
+        {
+            support = null;
+            supportIndex = -1;
+
+            if (planningState == null || projectedWorldSnapshot == null || occupant == null)
+                return false;
+
+            HamsterSnapshot hamster = planningState.Hamster;
+            if (hamster == null || !hamster.IsOnRoof || !hamster.RoofSupportInstanceId.HasValue)
+                return false;
+
+            if (occupant.IsBottomLine != hamster.IsOnBottomLine)
+                return false;
+
+            for (int obstacleIndex = 0; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot candidate = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                if (!IsSameLaneRoof(hamster, candidate))
+                    continue;
+
+                if (!IsPassiveRoofContinuation(planningState, projectedWorldSnapshot, candidate))
+                    continue;
+
+                if (!Assets.Scripts.Common.CollisionUtils.IsOverlap(
+                        occupant.LeftX,
+                        occupant.RightX,
+                        candidate.LeftX,
+                        candidate.RightX))
+                {
+                    continue;
+                }
+
+                support = candidate;
+                supportIndex = obstacleIndex;
+                return true;
+            }
+
+            return false;
+        }
+
         private static ObstacleSnapshot FindRoofSupport(
             WorldSnapshot projectedWorldSnapshot,
             HamsterSnapshot hamster,

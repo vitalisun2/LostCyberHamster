@@ -11,6 +11,7 @@ namespace Assets.Scripts.Bot.Planning
             int hamsterState,
             bool isOnBottomLine,
             bool isOnRoof,
+            int roofSupportInstanceId,
             int energy,
             int lives,
             bool isDamaged,
@@ -21,6 +22,7 @@ namespace Assets.Scripts.Bot.Planning
             HamsterState = hamsterState;
             IsOnBottomLine = isOnBottomLine;
             IsOnRoof = isOnRoof;
+            RoofSupportInstanceId = roofSupportInstanceId;
             Energy = energy;
             Lives = lives;
             IsDamaged = isDamaged;
@@ -32,6 +34,7 @@ namespace Assets.Scripts.Bot.Planning
         private int HamsterState { get; }
         private bool IsOnBottomLine { get; }
         private bool IsOnRoof { get; }
+        private int RoofSupportInstanceId { get; }
         private int Energy { get; }
         private int Lives { get; }
         private bool IsDamaged { get; }
@@ -48,6 +51,7 @@ namespace Assets.Scripts.Bot.Planning
                 (int)planningState.Hamster.HamsterState,
                 planningState.Hamster.IsOnBottomLine,
                 planningState.Hamster.IsOnRoof,
+                planningState.Hamster.RoofSupportInstanceId ?? -1,
                 planningState.Hamster.Energy,
                 planningState.Hamster.Lives,
                 planningState.Hamster.IsDamaged,
@@ -61,6 +65,7 @@ namespace Assets.Scripts.Bot.Planning
                 && HamsterState == other.HamsterState
                 && IsOnBottomLine == other.IsOnBottomLine
                 && IsOnRoof == other.IsOnRoof
+                && RoofSupportInstanceId == other.RoofSupportInstanceId
                 && Energy == other.Energy
                 && Lives == other.Lives
                 && IsDamaged == other.IsDamaged
@@ -81,6 +86,7 @@ namespace Assets.Scripts.Bot.Planning
                 hash = (hash * 397) ^ HamsterState;
                 hash = (hash * 397) ^ (IsOnBottomLine ? 1 : 0);
                 hash = (hash * 397) ^ (IsOnRoof ? 1 : 0);
+                hash = (hash * 397) ^ RoofSupportInstanceId;
                 hash = (hash * 397) ^ Energy;
                 hash = (hash * 397) ^ Lives;
                 hash = (hash * 397) ^ (IsDamaged ? 1 : 0);

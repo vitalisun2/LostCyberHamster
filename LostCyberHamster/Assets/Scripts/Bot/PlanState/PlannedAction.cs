@@ -23,7 +23,8 @@ namespace Assets.Scripts.Bot.PlanState
             int? triggerObstacleInstanceId = null,
             bool? targetBottomLine = null,
             int energyCost = 0,
-            string description = null)
+            string description = null,
+            int? resultRoofSupportInstanceId = null)
         {
             Kind = kind;
             TriggerX = triggerX;
@@ -36,6 +37,7 @@ namespace Assets.Scripts.Bot.PlanState
             TargetBottomLine = targetBottomLine;
             EnergyCost = energyCost;
             Description = description;
+            ResultRoofSupportInstanceId = resultRoofSupportInstanceId;
         }
 
         public BotActionKind Kind { get; }
@@ -49,6 +51,7 @@ namespace Assets.Scripts.Bot.PlanState
         public bool? TargetBottomLine { get; }
         public int EnergyCost { get; }
         public string Description { get; }
+        public int? ResultRoofSupportInstanceId { get; }
 
         /// <summary>
         /// Сравнивает два действия по их planning-параметрам.
@@ -70,7 +73,8 @@ namespace Assets.Scripts.Bot.PlanState
                 && TargetObstacleInstanceId == other.TargetObstacleInstanceId
                 && TriggerObstacleInstanceId == other.TriggerObstacleInstanceId
                 && TargetBottomLine == other.TargetBottomLine
-                && EnergyCost == other.EnergyCost;
+                && EnergyCost == other.EnergyCost
+                && ResultRoofSupportInstanceId == other.ResultRoofSupportInstanceId;
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using UnityEngine;
@@ -14,6 +15,8 @@ namespace Assets.Scripts.Bot.Diagnostics
         private const float SuperJumpWidth = 1.15f;
         private const float SuperJumpHeight = 1.45f;
 
+        private readonly List<RenderCommand> _renderCommands = new List<RenderCommand>();
+
         private Material _glMaterial;
 
         /// <summary>
@@ -27,6 +30,13 @@ namespace Assets.Scripts.Bot.Diagnostics
             Camera camera)
         {
             if (plan == null || !plan.HasActions || snapshot == null || camera == null)
+            {
+                _renderCommands.Clear();
+                return;
+            }
+
+            BuildRenderCommands(plan, snapshot, initialBottomLine, hideHeadAction, _renderCommands);
+            if (_renderCommands.Count == 0)
                 return;
 
             EnsureMaterial();
@@ -39,20 +49,37 @@ namespace Assets.Scripts.Bot.Diagnostics
             GL.modelview = camera.worldToCameraMatrix;
             GL.Begin(GL.LINES);
 
+            for (int commandIndex = 0; commandIndex < _renderCommands.Count; commandIndex++)
+                DrawCommand(_renderCommands[commandIndex]);
+
+            GL.End();
+            GL.PopMatrix();
+        }
+
+        private static void BuildRenderCommands(
+            BotPlan plan,
+            WorldSnapshot snapshot,
+            bool initialBottomLine,
+            bool hideHeadAction,
+            List<RenderCommand> renderCommands)
+        {
+            renderCommands.Clear();
+
             bool currentBottomLine = initialBottomLine;
             int startIndex = hideHeadAction ? 1 : 0;
+            if (hideHeadAction && plan.Actions[0].TargetBottomLine.HasValue)
+                currentBottomLine = plan.Actions[0].TargetBottomLine.Value;
+
             for (int index = startIndex; index < plan.Actions.Count; index++)
             {
                 PlannedAction action = plan.Actions[index];
                 float alpha = Mathf.Max(MinTailAlpha, 1f - (index - startIndex) * 0.22f);
-                DrawAction(action, snapshot, currentBottomLine, alpha);
+                if (TryBuildRenderCommand(action, snapshot, currentBottomLine, alpha, out RenderCommand command))
+                    renderCommands.Add(command);
 
                 if (action.TargetBottomLine.HasValue)
                     currentBottomLine = action.TargetBottomLine.Value;
             }
-
-            GL.End();
-            GL.PopMatrix();
         }
 
         /// <summary>
@@ -61,31 +88,51 @@ namespace Assets.Scripts.Bot.Diagnostics
         public void Dispose()
         {
             if (_glMaterial != null)
-                Object.Destroy(_glMaterial);
+                UnityEngine.Object.Destroy(_glMaterial);
 
             _glMaterial = null;
+            _renderCommands.Clear();
         }
 
         /// <summary>
-        /// Отрисовывает debug-глиф одного действия.
+        /// Собирает render-команду одного действия.
         /// </summary>
-        private void DrawAction(
+        private static bool TryBuildRenderCommand(
             PlannedAction action,
             WorldSnapshot snapshot,
             bool currentBottomLine,
-            float alpha)
+            float alpha,
+            out RenderCommand command)
         {
+            command = default;
+
             switch (action.Kind)
             {
                 case BotActionKind.SwitchLane:
-                    if (TryGetRenderWorldX(action, snapshot, out float renderWorldX))
-                        DrawSwitchLaneGlyph(renderWorldX, currentBottomLine, alpha);
-                    break;
+                    if (!TryGetRenderWorldX(action, snapshot, out float switchLaneRenderWorldX))
+                        return false;
+
+                    command = new RenderCommand(
+                        BotActionKind.SwitchLane,
+                        switchLaneRenderWorldX,
+                        currentBottomLine,
+                        alpha);
+                    return true;
+
                 case BotActionKind.SuperJumpOver:
                 case BotActionKind.SuperJumpOnRoof:
-                    if (TryGetRenderWorldX(action, snapshot, out float superJumpRenderWorldX))
-                        DrawSuperJumpGlyph(superJumpRenderWorldX, currentBottomLine, alpha);
-                    break;
+                    if (!TryGetRenderWorldX(action, snapshot, out float superJumpRenderWorldX))
+                        return false;
+
+                    command = new RenderCommand(
+                        action.Kind,
+                        superJumpRenderWorldX,
+                        currentBottomLine,
+                        alpha);
+                    return true;
+
+                default:
+                    return false;
             }
         }
 
@@ -97,7 +144,6 @@ namespace Assets.Scripts.Bot.Diagnostics
             WorldSnapshot snapshot,
             out float renderWorldX)
         {
-            float hamsterCenterX = (snapshot.Hamster.HamsterLeftX + snapshot.Hamster.HamsterRightX) * 0.5f;
             if (action.TargetObstacleInstanceId.HasValue)
             {
                 for (int obstacleIndex = 0; obstacleIndex < snapshot.Obstacles.Count; obstacleIndex++)
@@ -115,13 +161,46 @@ namespace Assets.Scripts.Bot.Diagnostics
 
                     // Convert remaining world travel into the current road point
                     // that will be under the hamster when the action starts.
-                    renderWorldX = hamsterCenterX + remainingWorldShift;
+                    renderWorldX = snapshot.Hamster.CenterX + remainingWorldShift;
                     return true;
                 }
+
+                renderWorldX = 0f;
+                return false;
             }
 
             renderWorldX = action.RenderWorldX;
             return true;
+        }
+
+        private static void DrawCommand(RenderCommand command)
+        {
+            switch (command.Kind)
+            {
+                case BotActionKind.SwitchLane:
+                    DrawSwitchLaneGlyph(command.WorldX, command.CurrentBottomLine, command.Alpha);
+                    break;
+                case BotActionKind.SuperJumpOver:
+                case BotActionKind.SuperJumpOnRoof:
+                    DrawSuperJumpGlyph(command.WorldX, command.CurrentBottomLine, command.Alpha);
+                    break;
+            }
+        }
+
+        private readonly struct RenderCommand
+        {
+            public RenderCommand(BotActionKind kind, float worldX, bool currentBottomLine, float alpha)
+            {
+                Kind = kind;
+                WorldX = worldX;
+                CurrentBottomLine = currentBottomLine;
+                Alpha = alpha;
+            }
+
+            public BotActionKind Kind { get; }
+            public float WorldX { get; }
+            public bool CurrentBottomLine { get; }
+            public float Alpha { get; }
         }
 
         /// <summary>

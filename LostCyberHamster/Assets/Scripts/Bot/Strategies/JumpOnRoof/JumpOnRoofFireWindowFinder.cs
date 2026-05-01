@@ -5,6 +5,7 @@ using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Common;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay.Enums;
@@ -122,9 +123,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             if (!chain.TryFindFirstRoof(out targetObstacle, out targetObstacleIndex, out roofChainIndex))
                 return false;
 
-            if (chain.HasDamagingRoofOccupant(roofChainIndex))
-                return false;
-
             if (targetObstacle.IsBottomLine != hamster.IsOnBottomLine)
                 return false;
 
@@ -206,6 +204,12 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 lastFireShift = global::System.Math.Min(lastFireShift, roofRightEdgeLimit);
             }
 
+            if (TryFindDamagingRoofOccupant(chain, roofObstacle, out ObstacleSnapshot roofOccupant))
+            {
+                float occupantLeftEdgeLimit = roofOccupant.LeftX - jumpTravel - hamster.HamsterRightX;
+                lastFireShift = global::System.Math.Min(lastFireShift, occupantLeftEdgeLimit);
+            }
+
             // Делает окно строго внутренним, как в jump-over chain calculators.
             firstFireShift += _windowEpsilon;
             lastFireShift -= _windowEpsilon;
@@ -243,6 +247,42 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             }
 
             return firstFireShift < lastFireShift;
+        }
+
+        private static bool TryFindDamagingRoofOccupant(
+            ObstacleChain chain,
+            ObstacleSnapshot roofObstacle,
+            out ObstacleSnapshot roofOccupant)
+        {
+            roofOccupant = null;
+            if (chain == null || roofObstacle == null)
+                return false;
+
+            for (int chainIndex = 0; chainIndex < chain.Count; chainIndex++)
+            {
+                if (!chain.TryGetAt(chainIndex, out ObstacleSnapshot obstacle, out _))
+                    continue;
+
+                if (obstacle.ObstacleType != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
+                    continue;
+
+                if (obstacle.IsBottomLine != roofObstacle.IsBottomLine)
+                    continue;
+
+                if (!CollisionUtils.IsOverlap(
+                        obstacle.LeftX,
+                        obstacle.RightX,
+                        roofObstacle.LeftX,
+                        roofObstacle.RightX))
+                {
+                    continue;
+                }
+
+                roofOccupant = obstacle;
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
