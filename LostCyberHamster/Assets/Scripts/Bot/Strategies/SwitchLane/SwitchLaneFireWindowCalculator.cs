@@ -11,29 +11,40 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
     /// </summary>
     internal sealed class SwitchLaneFireWindowCalculator
     {
+        /// <summary>
+        /// Вычисляет самый поздний допустимый fire shift для смены линии перед obstacle.
+        /// </summary>
         public bool TryGetLatestFireShift(
             HamsterSnapshot hamster,
             ObstacleSnapshot targetObstacle,
             out float latestFireShift)
         {
+            // Рассчитывает верхнюю границу окна запуска.
             latestFireShift = targetObstacle.LeftX
                 - hamster.HamsterRightX
                 - SwitchLaneTiming.ExecutionLeadDistance;
+
+            // Возвращает признак существования допустимого окна.
             return latestFireShift > 0f;
         }
 
+        /// <summary>
+        /// Собирает representative fire shifts из безопасных интервалов смены линии.
+        /// </summary>
         public IReadOnlyList<float> CollectFireShifts(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
             float latestFireShift)
         {
+            // Собирает все безопасные интервалы запуска.
             List<SafeInterval> safeIntervals = CollectSafeFireIntervals(
                 worldSnapshot,
                 hamster,
                 targetBottomLine,
                 latestFireShift);
 
+            // Выбирает по одной точке внутри каждого безопасного интервала.
             var fireShifts = new List<float>(safeIntervals.Count);
             for (int intervalIndex = 0; intervalIndex < safeIntervals.Count; intervalIndex++)
             {
@@ -51,15 +62,20 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             return fireShifts;
         }
 
+        /// <summary>
+        /// Строит безопасные интервалы запуска смены линии до заданной верхней границы.
+        /// </summary>
         public List<SafeInterval> CollectSafeFireIntervals(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
             float latestFireShift)
         {
+            // Собирает и упорядочивает все опасные интервалы.
             var unsafeIntervals = CollectUnsafeFireIntervals(worldSnapshot, hamster, targetBottomLine, latestFireShift);
             unsafeIntervals.Sort((left, right) => left.Start.CompareTo(right.Start));
 
+            // Вычитает опасные интервалы из полного окна запуска.
             var safeIntervals = new List<SafeInterval>();
             float safeStart = 0f;
             for (int intervalIndex = 0; intervalIndex < unsafeIntervals.Count; intervalIndex++)
@@ -76,20 +92,26 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     safeStart = interval.End;
             }
 
+            // Добавляет хвостовой безопасный интервал после последнего overlap.
             if (safeStart <= latestFireShift)
                 safeIntervals.Add(new SafeInterval(safeStart, latestFireShift));
 
             return safeIntervals;
         }
 
+        /// <summary>
+        /// Собирает интервалы запуска, в которых смена линии приводит к пересечению с опасными obstacle.
+        /// </summary>
         private static List<UnsafeInterval> CollectUnsafeFireIntervals(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
             float latestFireShift)
         {
+            // Подготавливает накопитель опасных интервалов.
             var unsafeIntervals = new List<UnsafeInterval>();
 
+            // Обходит obstacle на целевой линии и строит их overlap-окна.
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
@@ -116,6 +138,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 unsafeIntervals.Add(new UnsafeInterval(unsafeStart, unsafeEnd));
             }
 
+            // Возвращает найденные опасные интервалы запуска.
             return unsafeIntervals;
         }
     }
