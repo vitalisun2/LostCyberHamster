@@ -50,7 +50,7 @@ namespace Assets.Scripts.Bot.Planning
             if (!_decisionPointDetector.TryDetect(planningState, projectedWorldSnapshot, out DecisionPoint decisionPoint))
                 return false;
 
-            if (!decisionPoint.MatchesTargetObstacle(targetObstacle))
+            if (!decisionPoint.Chain.ContainsObstacle(targetObstacle))
                 return false;
 
             if (!_validatorsByKind.TryGetValue(action.Kind, out IRetainedActionValidator validator))
