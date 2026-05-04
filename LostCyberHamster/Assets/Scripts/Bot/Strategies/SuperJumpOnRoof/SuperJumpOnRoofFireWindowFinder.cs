@@ -20,7 +20,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
         private const float _searchEpsilon = 0.0001f;
         private const float _interiorSelectionRatio = 0.5f;
         private const float _lateFireSafetyBudget = 0.1f;
-        private const float _groundContactSafetyMargin = 0.1f;
 
         /// <summary>
         /// Подбирает fire shift и target obstacle внутри допустимого окна для super-jump-on-roof chain.
@@ -277,7 +276,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             float actionTravel,
             int targetObstacleIndex)
         {
-            if (!CanWaitUntilFire(hamster, baseObstacles, fireShift))
+            if (!JumpFireSafety.CanWaitUntilFire(hamster, baseObstacles, fireShift))
                 return false;
 
             JumpResolveResult result = ResolveAtFireShift(
@@ -316,54 +315,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                 damageBigAliveWithoutYByReach: false);
 
             return SuperJumpOutcomeResolver.ResolveSuperJump(shiftedObstacles, context);
-        }
-
-        /// <summary>
-        /// Проверяет, может ли хомяк безопасно дождаться fire shift по земле.
-        /// </summary>
-        private static bool CanWaitUntilFire(
-            HamsterSnapshot hamster,
-            IReadOnlyList<JumpObstacleData> obstacles,
-            float fireShift)
-        {
-            if (hamster == null || obstacles == null)
-                return false;
-
-            for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
-            {
-                JumpObstacleData obstacle = obstacles[obstacleIndex];
-                if (!IsGroundThreatOnHamsterLane(hamster, obstacle))
-                    continue;
-
-                if (HitsHamsterBeforeFire(hamster, obstacle, fireShift))
-                    return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Проверяет ground-угрозу на текущей линии хомяка.
-        /// </summary>
-        private static bool IsGroundThreatOnHamsterLane(HamsterSnapshot hamster, JumpObstacleData obstacle)
-        {
-            return obstacle.IsBottomLine == hamster.IsOnBottomLine
-                   && ObstacleClassifier.DamagesOnGroundContact(obstacle.Type);
-        }
-
-        /// <summary>
-        /// Возвращает true, если obstacle достанет хомяка до выбранного fire shift.
-        /// </summary>
-        private static bool HitsHamsterBeforeFire(
-            HamsterSnapshot hamster,
-            JumpObstacleData obstacle,
-            float fireShift)
-        {
-            if (obstacle.RightX <= hamster.HamsterLeftX)
-                return false;
-
-            float obstacleLeftAtFire = obstacle.LeftX - fireShift;
-            return obstacleLeftAtFire < hamster.HamsterRightX + _groundContactSafetyMargin;
         }
 
         /// <summary>

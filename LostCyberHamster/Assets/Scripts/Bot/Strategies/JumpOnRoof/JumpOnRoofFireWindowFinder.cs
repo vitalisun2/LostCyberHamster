@@ -5,7 +5,6 @@ using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Common;
-using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay.Enums;
@@ -41,13 +40,8 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 (projectedWorldSnapshot, nameof(projectedWorldSnapshot)),
                 (chain, nameof(chain)));
 
-            // Находит валидную целевую крышу внутри chain.
-            if (!TryGetRoofTarget(
-                    planningState.Hamster,
-                    chain,
-                    out targetObstacle,
-                    out targetObstacleIndex,
-                    out int roofChainIndex))
+            // Находит первую целевую крышу внутри chain.
+            if (!chain.TryFindFirstRoof(out targetObstacle, out targetObstacleIndex, out int roofChainIndex))
             {
                 return false;
             }
@@ -66,17 +60,17 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 return false;
             }
 
-                // Выбирает точку внутри математического окна с ранним direct-roof смещением.
-                if (!TrySelectFireShift(
+            // Выбирает точку внутри математического окна с ранним direct-roof смещением.
+            if (!TrySelectFireShift(
                     planningState.Hamster,
                     hasOverObstacles,
                     firstFireShift,
                     lastFireShift,
                     out fireShift,
                     out float directEarlyShift))
-                {
+            {
                 return false;
-                }
+            }
 
             // Проверяет выбранный fire shift через runtime resolver.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
@@ -104,32 +98,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
         }
 
         /// <summary>
-        /// Находит первую roof target внутри chain и отсекает занятую опасным occupant крышу.
-        /// </summary>
-        internal static bool TryGetRoofTarget(
-            HamsterSnapshot hamster,
-            ObstacleChain chain,
-            out ObstacleSnapshot targetObstacle,
-            out int targetObstacleIndex,
-            out int roofChainIndex)
-        {
-            targetObstacle = null;
-            targetObstacleIndex = -1;
-            roofChainIndex = -1;
-
-            if (hamster == null || chain == null)
-                return false;
-
-            if (!chain.TryFindFirstRoof(out targetObstacle, out targetObstacleIndex, out roofChainIndex))
-                return false;
-
-            if (targetObstacle.IsBottomLine != hamster.IsOnBottomLine)
-                return false;
-
-            return true;
-        }
-
-        /// <summary>
         /// Вычисляет допустимое окно fire shift для выбранной roof target внутри chain.
         /// </summary>
         internal static bool TryGetRoofLandingWindow(
@@ -153,6 +121,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             {
                 return false;
             }
+
+            if (chain.HasDamagingRoofOccupant(roofChainIndex))
+                return false;
 
             // Собирает левый край chain и правый край промежуточных over obstacles.
             float chainLeftEdge = roofObstacle.LeftX;
@@ -204,12 +175,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 lastFireShift = global::System.Math.Min(lastFireShift, roofRightEdgeLimit);
             }
 
-            if (TryFindDamagingRoofOccupant(chain, roofObstacle, out ObstacleSnapshot roofOccupant))
-            {
-                float occupantLeftEdgeLimit = roofOccupant.LeftX - jumpTravel - hamster.HamsterRightX;
-                lastFireShift = global::System.Math.Min(lastFireShift, occupantLeftEdgeLimit);
-            }
-
             // Делает окно строго внутренним, как в jump-over chain calculators.
             firstFireShift += _windowEpsilon;
             lastFireShift -= _windowEpsilon;
@@ -247,42 +212,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             }
 
             return firstFireShift < lastFireShift;
-        }
-
-        private static bool TryFindDamagingRoofOccupant(
-            ObstacleChain chain,
-            ObstacleSnapshot roofObstacle,
-            out ObstacleSnapshot roofOccupant)
-        {
-            roofOccupant = null;
-            if (chain == null || roofObstacle == null)
-                return false;
-
-            for (int chainIndex = 0; chainIndex < chain.Count; chainIndex++)
-            {
-                if (!chain.TryGetAt(chainIndex, out ObstacleSnapshot obstacle, out _))
-                    continue;
-
-                if (obstacle.ObstacleType != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
-                    continue;
-
-                if (obstacle.IsBottomLine != roofObstacle.IsBottomLine)
-                    continue;
-
-                if (!CollisionUtils.IsOverlap(
-                        obstacle.LeftX,
-                        obstacle.RightX,
-                        roofObstacle.LeftX,
-                        roofObstacle.RightX))
-                {
-                    continue;
-                }
-
-                roofOccupant = obstacle;
-                return true;
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -343,6 +272,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             float jumpTravel,
             int chainEndIndex)
         {
+            if (!JumpFireSafety.CanWaitUntilFire(hamster, baseObstacles, fireShift))
+                return false;
+
             // Строит obstacle snapshot на момент fire.
             var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
             JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
@@ -363,5 +295,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             return result.State == HamsterStateEnum.JumpOnRoof
                    && result.TargetIndex == chainEndIndex;
         }
+
     }
 }

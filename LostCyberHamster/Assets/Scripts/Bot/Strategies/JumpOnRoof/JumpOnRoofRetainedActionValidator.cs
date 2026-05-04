@@ -48,9 +48,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 return false;
             }
 
-            if (!JumpOnRoofFireWindowFinder.TryGetRoofTarget(
-                    planningState.Hamster,
-                    decisionPoint.Chain,
+            if (!decisionPoint.Chain.TryFindFirstRoof(
                     out ObstacleSnapshot roofObstacle,
                     out int roofWorldIndex,
                     out int roofChainIndex)
