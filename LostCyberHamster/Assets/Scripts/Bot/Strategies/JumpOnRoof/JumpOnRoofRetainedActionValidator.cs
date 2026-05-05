@@ -75,8 +75,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                     roofChainIndex,
                     action.PostFireWorldShift,
                     out float firstFireShift,
-                    out float lastFireShift,
-                    out bool _))
+                    out float lastFireShift))
             {
                 return false;
             }

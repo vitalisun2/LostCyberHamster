@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Assets.Scripts;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
@@ -17,6 +17,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
     internal sealed class JumpOnRoofFireWindowFinder
     {
         private const float _windowEpsilon = 0.0001f;
+        private const float _chainLateFireBudget = 0.1f;
 
         /// <summary>
         /// Подбирает fire shift и target obstacle внутри допустимого окна для jump-on-roof chain.
@@ -54,8 +55,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                     roofChainIndex,
                     jumpTravel,
                     out float firstFireShift,
-                    out float lastFireShift,
-                    out bool hasOverObstacles))
+                    out float lastFireShift))
             {
                 return false;
             }
@@ -63,9 +63,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             // Выбирает точку внутри математического окна с ранним direct-roof смещением.
             if (!TrySelectFireShift(
                     planningState.Hamster,
-                    hasOverObstacles,
                     firstFireShift,
                     lastFireShift,
+                    roofChainIndex > 0,
                     out fireShift,
                     out float directEarlyShift))
             {
@@ -86,7 +86,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 targetObstacle,
                 targetObstacleIndex,
                 roofChainIndex,
-                hasOverObstacles,
                 jumpTravel,
                 firstFireShift,
                 lastFireShift,
@@ -107,13 +106,11 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             int roofChainIndex,
             float jumpTravel,
             out float firstFireShift,
-            out float lastFireShift,
-            out bool hasOverObstacles)
+            out float lastFireShift)
         {
             // Сбрасывает результат и проверяет обязательные данные.
             firstFireShift = 0f;
             lastFireShift = 0f;
-            hasOverObstacles = false;
 
             if (hamster == null
                 || chain == null
@@ -125,41 +122,21 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             if (chain.HasDamagingRoofOccupant(roofChainIndex))
                 return false;
 
-            // Собирает левый край chain и правый край промежуточных over obstacles.
+            // Собирает левый край chain до целевой крыши.
             float chainLeftEdge = roofObstacle.LeftX;
-            float overObstacleRightEdge = 0f;
 
             for (int chainIndex = 0; chainIndex < roofChainIndex; chainIndex++)
             {
                 if (!chain.TryGetAt(chainIndex, out ObstacleSnapshot obstacle, out _))
                     return false;
 
-                if (obstacle.IsBottomLine != roofObstacle.IsBottomLine)
-                    return false;
-
-                if (!ObstacleClassifier.CanJumpOverOnGround(obstacle.ObstacleType))
-                    return false;
-
-                if (!hasOverObstacles || obstacle.LeftX < chainLeftEdge)
+                if (obstacle.LeftX < chainLeftEdge)
                     chainLeftEdge = obstacle.LeftX;
-
-                if (!hasOverObstacles || obstacle.RightX > overObstacleRightEdge)
-                    overObstacleRightEdge = obstacle.RightX;
-
-                hasOverObstacles = true;
             }
 
             // Открывает окно там, где прыжок уже достаёт до левого края крыши.
             float roofLeftEdgeShift = roofObstacle.LeftX - jumpTravel - hamster.HamsterRightX;
             firstFireShift = roofLeftEdgeShift;
-
-            // При наличии over obstacles окно также должно перелетать их правый край.
-            if (hasOverObstacles)
-            {
-                float overObstacleRightEdgeShift = overObstacleRightEdge - jumpTravel - hamster.HamsterLeftX;
-                if (overObstacleRightEdgeShift > firstFireShift)
-                    firstFireShift = overObstacleRightEdgeShift;
-            }
 
             if (firstFireShift < 0f)
                 firstFireShift = 0f;
@@ -168,12 +145,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             float chainLeftEdgeLimit = chainLeftEdge - hamster.HamsterRightX - GetExecutionSafetyShift();
             lastFireShift = chainLeftEdgeLimit;
 
-            // Для chain-over посадки дополнительно не даёт перелететь правый край целевой крыши.
-            if (hasOverObstacles)
-            {
-                float roofRightEdgeLimit = roofObstacle.RightX - jumpTravel - hamster.HamsterLeftX;
-                lastFireShift = global::System.Math.Min(lastFireShift, roofRightEdgeLimit);
-            }
+            // Дополнительно оставляет только сдвиги, где в конце прыжка сохраняется overlap с крышей.
+            float roofRightEdgeLimit = roofObstacle.RightX - jumpTravel - hamster.HamsterLeftX;
+            lastFireShift = global::System.Math.Min(lastFireShift, roofRightEdgeLimit);
 
             // Делает окно строго внутренним, как в jump-over chain calculators.
             firstFireShift += _windowEpsilon;
@@ -187,9 +161,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
         /// </summary>
         private static bool TrySelectFireShift(
             HamsterSnapshot hamster,
-            bool hasOverObstacles,
             float firstFireShift,
             float lastFireShift,
+            bool hasPreRoofObstacle,
             out float fireShift,
             out float directEarlyShift)
         {
@@ -201,11 +175,15 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 return false;
             }
 
-            // Для chain-over остаётся поздняя граница перед левым краем chain.
-            fireShift = lastFireShift;
+            if (hasPreRoofObstacle)
+            {
+                fireShift = lastFireShift - _chainLateFireBudget;
+                return fireShift > firstFireShift;
+            }
 
-            // Для чистой крыши срабатывает на половину ширины хомяка раньше ради более плавной посадки.
-            if (!hasOverObstacles && hamster != null)
+            // Сдвигает fire shift немного раньше поздней границы ради более плавной посадки.
+            fireShift = lastFireShift;
+            if (hamster != null)
             {
                 directEarlyShift = hamster.Width / 2f;
                 fireShift = global::System.Math.Max(firstFireShift, lastFireShift - directEarlyShift);
@@ -235,7 +213,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
             int roofChainIndex,
-            bool hasOverObstacles,
             float jumpTravel,
             float firstFireShift,
             float lastFireShift,
@@ -250,7 +227,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             DebugManager.DiagLog(
                 $"[JumpOnRoof WINDOW] target={targetObstacle.ObstacleType} " +
                 $"targetIndex={targetObstacleIndex} roofChainIndex={roofChainIndex} " +
-                $"hasOverObstacles={hasOverObstacles} jumpTravel={jumpTravel:F3} " +
+                $"jumpTravel={jumpTravel:F3} " +
                 $"first={firstFireShift:F3} last={lastFireShift:F3} selected={fireShift:F3} " +
                 $"directEarlyShift={directEarlyShift:F3} safety={GetExecutionSafetyShift():F3} " +
                 $"projectedTriggerX={projectedTriggerX:F3} " +
