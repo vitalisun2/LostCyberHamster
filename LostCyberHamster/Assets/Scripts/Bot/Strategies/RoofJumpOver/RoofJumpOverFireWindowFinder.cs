@@ -14,8 +14,6 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
     /// </summary>
     internal sealed class RoofJumpOverFireWindowFinder
     {
-        private const float _epsilon = 0.0001f;
-
         public bool TryFindFireShift(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
@@ -71,8 +69,10 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
 
             lastFireShift = hazardObstacle.LeftX - hamster.HamsterRightX;
 
-            firstFireShift += _epsilon;
-            lastFireShift -= _epsilon;
+            float fireWindowBoundaryMargin =
+                JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
+            firstFireShift += fireWindowBoundaryMargin;
+            lastFireShift -= fireWindowBoundaryMargin;
 
             return firstFireShift < lastFireShift;
         }

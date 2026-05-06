@@ -65,15 +65,15 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             }
 
             // Восстанавливает текущий fire shift retained action.
-                if (!TryGetRemainingFireShift(
+            if (!TryGetRemainingFireShift(
                     projectedWorldSnapshot,
                     targetObstacle,
                     action,
                     planningState.ProjectionWorldShift,
                     out float fireShift))
-                {
+            {
                 return false;
-                }
+            }
 
             // Проверяет, что fire shift остаётся внутри допустимого окна.
             if (fireShift < chainWindow.FirstFireShift - _validationEpsilon

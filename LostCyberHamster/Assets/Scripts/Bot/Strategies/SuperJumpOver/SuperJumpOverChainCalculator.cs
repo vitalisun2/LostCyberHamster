@@ -1,6 +1,7 @@
 ﻿using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.SuperJumpOver.Models;
 
 namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
@@ -8,9 +9,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
     internal static class SuperJumpOverChainCalculator
     {
-        private const float Epsilon = 0.0001f;
-        private const float LateFireBudget = 0.1f;
-
         /// <summary>
         /// Вычисляет окно суперпрыжка для цепочки препятствий, начиная с целевого obstacle.
         /// </summary>
@@ -45,8 +43,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             int obstacleCount = 1;
 
             // Строим начальное окно для первой obstacle.
-            if (!TryGetOpenWindow(hamster, chainLeftX, chainRightX, superJumpTravel, out float firstFireShift, out float lastFireShift))
+            if (!TryGetOpenWindow(
+                    hamster,
+                    chainLeftX,
+                    chainRightX,
+                    superJumpTravel,
+                    out float firstFireShift,
+                    out float lastFireShift))
+            {
                 return false;
+            }
 
             // Расширяем цепочку, пока для неё сохраняется общее окно.
             for (int chainIndex = 1; chainIndex < chain.Count; chainIndex++)
@@ -113,9 +119,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             // Вычисляем позднюю границу старта.
             lastFireShift = chainLeftX - hamster.HamsterRightX;
 
-            // Делаем окно строго открытым.
-            firstFireShift += Epsilon;
-            lastFireShift -= Epsilon;
+            // Отступаем внутрь от обеих границ fire-window единым jump margin.
+            float fireWindowBoundaryMargin =
+                JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
+            firstFireShift += fireWindowBoundaryMargin;
+            lastFireShift -= fireWindowBoundaryMargin;
 
             // Проверяем, осталось ли допустимое окно.
             bool hasOpenFireWindow = firstFireShift < lastFireShift;
@@ -138,8 +146,8 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 return true;
             }
 
-            // Смещаем старт ближе к поздней границе для цепочки.
-            fireShift = lastFireShift - LateFireBudget;
+            // Для цепочки выбираем позднюю границу уже суженного окна.
+            fireShift = lastFireShift;
 
             // Проверяем, что выбранный сдвиг не вышел за раннюю границу.
             bool isSelectedFireShiftInsideWindow = fireShift > firstFireShift;
