@@ -1,6 +1,6 @@
 ---
 description: "Workflow-промпт для ведения task checklist и пошагового выполнения задачи. Применяй, когда нужно зафиксировать чек-лист, сохранить его в in-progress и выполнять шаги последовательно с явным описанием следующего шага."
-name: "Task Checklist"
+name: "Make Checklist"
 agent: "agent"
 ---
 
