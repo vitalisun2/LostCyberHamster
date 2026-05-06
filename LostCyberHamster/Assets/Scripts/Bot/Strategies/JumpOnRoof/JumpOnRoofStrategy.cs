@@ -2,13 +2,12 @@
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Common;
-using Assets.Scripts.GameEngine.Controllers;
-using UnityEngine;
 
 namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 {
@@ -17,8 +16,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
     /// </summary>
     internal sealed class JumpOnRoofStrategy : IPlanningStrategy
     {
-        private const string _jumpClipName = "transform_jump";
-
+        private readonly IJumpOnRoofPolicy _policy;
         private readonly JumpOnRoofSpecification _specification;
         private readonly JumpOnRoofFireWindowFinder _fireWindowFinder;
         private readonly JumpOnRoofSimulator _simulator;
@@ -26,18 +24,19 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
         public JumpOnRoofStrategy()
         {
             // Инициализирует зависимости стратегии.
-            _specification = new JumpOnRoofSpecification();
-            _fireWindowFinder = new JumpOnRoofFireWindowFinder();
-            _simulator = new JumpOnRoofSimulator();
+            _policy = new JumpOnRoofPolicy();
+            _specification = new JumpOnRoofSpecification(_policy);
+            _fireWindowFinder = new JumpOnRoofFireWindowFinder(_policy);
+            _simulator = new JumpOnRoofSimulator(_policy);
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             // Публикует обработчики и симулятор наружу.
             Executor = new JumpOnRoofExecutor(triggerGate);
-            RetainedValidator = new JumpOnRoofRetainedActionValidator();
+            RetainedValidator = new JumpOnRoofRetainedActionValidator(_policy, _fireWindowFinder);
             Simulator = _simulator;
         }
 
-        public BotActionKind ActionKind => BotActionKind.JumpOnRoof;
+        public BotActionKind ActionKind => _policy.ActionKind;
         public IActionExecutionHandler Executor { get; }
         public IRetainedActionValidator RetainedValidator { get; }
         public ISimulator Simulator { get; }
@@ -63,7 +62,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 return;
 
             // Получает фактическую дальность прыжка из runtime-анимации.
-            if (!TryGetJumpTravel(out float jumpTravel))
+            if (!_policy.TryGetTravel(out float jumpTravel))
                 return;
 
             // Ищет допустимый момент срабатывания действия.
@@ -81,13 +80,14 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 
             // Добавляет готовое действие в результирующий список.
             ObstacleSnapshot triggerObstacle = decisionPoint.Chain.FirstObstacle;
-            actions.Add(BuildAction(planningState, triggerObstacle, targetObstacle, targetObstacleIndex, fireShift, jumpTravel));
+            actions.Add(BuildAction(_policy, planningState, triggerObstacle, targetObstacle, targetObstacleIndex, fireShift, jumpTravel));
         }
 
         /// <summary>
         /// Создаёт спланированное действие прыжка на крышу с рассчитанными координатами и метаданными цели.
         /// </summary>
         private static PlannedAction BuildAction(
+            IJumpOnRoofPolicy policy,
             PlanningState planningState,
             ObstacleSnapshot triggerObstacle,
             ObstacleSnapshot targetObstacle,
@@ -101,7 +101,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 
             // Формирует итоговое плановое действие.
             return new PlannedAction(
-                BotActionKind.JumpOnRoof,
+                policy.ActionKind,
                 triggerX: projectedTriggerX,
                 renderWorldX,
                 completionWorldShift: fireShift + jumpTravel,
@@ -110,26 +110,8 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 targetObstacleInstanceId: targetObstacle.InstanceId,
                 triggerObstacleInstanceId: triggerObstacle.InstanceId,
                 targetBottomLine: null,
-                energyCost: JumpOnRoofSpecification.EnergyCost,
-                description: $"Jump on roof {targetObstacle.ObstacleType}");
-        }
-
-        /// <summary>
-        /// Возвращает runtime-дистанцию обычного jump animation clip.
-        /// </summary>
-        private static bool TryGetJumpTravel(out float jumpTravel)
-        {
-            // Находит контроллер анимаций в активной сцене.
-            TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
-            if (controller == null)
-            {
-                jumpTravel = 0f;
-                return false;
-            }
-
-            // Считывает world shift для клипа прыжка.
-            jumpTravel = HelpMethods.GetWorldShiftForClip(controller, _jumpClipName);
-            return true;
+                energyCost: policy.EnergyCost,
+                description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}");
         }
     }
 }

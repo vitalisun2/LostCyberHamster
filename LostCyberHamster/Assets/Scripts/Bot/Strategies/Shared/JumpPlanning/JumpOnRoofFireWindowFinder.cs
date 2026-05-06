@@ -1,21 +1,26 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
-using Assets.Scripts.Gameplay.Enums;
 
-namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
 {
     /// <summary>
     /// Подбирает момент срабатывания прыжка для посадки бота на целевую крышу.
     /// </summary>
     internal sealed class JumpOnRoofFireWindowFinder
     {
+        private readonly IJumpOnRoofPolicy _policy;
+
+        public JumpOnRoofFireWindowFinder(IJumpOnRoofPolicy policy)
+        {
+            _policy = policy;
+        }
+
         /// <summary>
         /// Подбирает fire shift и target obstacle внутри допустимого окна для jump-on-roof chain.
         /// </summary>
@@ -69,12 +74,27 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 
             // Проверяет выбранный fire shift через runtime resolver.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            bool hasExpectedOutcome = CheckRuntimeOutcomeAtFireShift(
+            JumpResolveResult selectedOutcome = ResolveRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
                 fireShift,
-                jumpTravel,
-                targetObstacleIndex);
+                jumpTravel);
+            bool hasExpectedOutcome = selectedOutcome.State == _policy.ExpectedRoofState
+                                      && selectedOutcome.TargetIndex == targetObstacleIndex;
+
+            if (!hasExpectedOutcome)
+            {
+                fireShift = firstFireShift;
+
+                selectedOutcome = ResolveRuntimeOutcomeAtFireShift(
+                    planningState.Hamster,
+                    baseObstacles,
+                    fireShift,
+                    jumpTravel);
+                hasExpectedOutcome = selectedOutcome.State == _policy.ExpectedRoofState
+                                      && selectedOutcome.TargetIndex == targetObstacleIndex;
+            }
+
             LogSelection(
                 planningState,
                 chain,
@@ -85,7 +105,8 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 firstFireShift,
                 lastFireShift,
                 fireShift,
-                hasExpectedOutcome);
+                hasExpectedOutcome,
+                selectedOutcome);
 
             return hasExpectedOutcome;
         }
@@ -115,10 +136,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 return false;
             }
 
-            // Проверяет наличие smallNotAliveRoadAndRoof на крыше, который может помешать посадке.
-            if (chain.HasDamagingRoofOccupant(roofChainIndex))
-                return false;
-
             // Вычисляет левую границу fire-window.
             firstFireShift = CalculateFirstFireShift(hamster, roofObstacle, jumpTravel);
 
@@ -131,12 +148,58 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 jumpTravel);
 
             // Отступает внутрь от обеих границ fire-window единым jump margin.
-            firstFireShift += JumpPlanningConstants.FireWindowBoundaryMargin;
-            lastFireShift -= JumpPlanningConstants.FireWindowBoundaryMargin;
+            float fireWindowBoundaryMargin =
+                JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
+            firstFireShift += fireWindowBoundaryMargin;
+            lastFireShift -= fireWindowBoundaryMargin;
 
             bool windowIsInFuture = lastFireShift > 0f;
             bool windowHasRange = firstFireShift < lastFireShift;
             return windowIsInFuture && windowHasRange;
+        }
+
+        /// <summary>
+        /// Проверяет, что fire shift приводит к runtime outcome по целевой крыше.
+        /// </summary>
+        internal bool CheckRuntimeOutcomeAtFireShift(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            float fireShift,
+            float jumpTravel,
+            int targetObstacleIndex)
+        {
+            JumpResolveResult result = ResolveRuntimeOutcomeAtFireShift(
+                hamster,
+                baseObstacles,
+                fireShift,
+                jumpTravel);
+            return result.State == _policy.ExpectedRoofState
+                   && result.TargetIndex == targetObstacleIndex;
+        }
+
+        private JumpResolveResult ResolveRuntimeOutcomeAtFireShift(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            float fireShift,
+            float jumpTravel)
+        {
+            // Строит obstacle snapshot на момент fire.
+            var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
+            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
+
+            // Готовит runtime context для прыжка на крышу.
+            JumpResolveContext context = new(
+                hamster.IsOnBottomLine,
+                hamster.HamsterLeftX,
+                hamster.HamsterRightX,
+                hamster.CenterX,
+                hamster.Width,
+                jumpTravel,
+                jumpTravel,
+                damageBigAliveWithoutYByReach: _policy.DamageBigAliveWithoutYByReach);
+
+            // Сверяет runtime outcome с целевой крышей.
+            return _policy.Resolve(obstaclesAtFireShift, context);
         }
 
         /// <summary>
@@ -185,7 +248,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             float lastFireShift = Math.Min(
                 latestSafeFireShiftBeforeChainContact,
                 latestSafeFireShiftBeforeRoofOvershoot);
-                
+
             return lastFireShift;
         }
 
@@ -212,7 +275,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
         /// <summary>
         /// Пишет численную диагностику выбранного окна jump-on-roof.
         /// </summary>
-        private static void LogSelection(
+        private void LogSelection(
             PlanningState planningState,
             ObstacleChain chain,
             ObstacleSnapshot targetObstacle,
@@ -222,57 +285,29 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             float firstFireShift,
             float lastFireShift,
             float fireShift,
-            bool hasExpectedOutcome)
+            bool hasExpectedOutcome,
+            JumpResolveResult selectedOutcome)
         {
             ObstacleSnapshot triggerObstacle = chain.FirstObstacle;
             float projectedTriggerX = triggerObstacle.LeftX - fireShift;
             float renderWorldX = projectedTriggerX + planningState.ProjectionWorldShift;
+            float fireWindowBoundaryMargin =
+                JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
 
             DebugManager.DiagLog(
-                $"[JumpOnRoof WINDOW] target={targetObstacle.ObstacleType} " +
+                $"[{_policy.LogTag} WINDOW] target={targetObstacle.ObstacleType} " +
                 $"targetIndex={targetObstacleIndex} roofChainIndex={roofChainIndex} " +
-                $"jumpTravel={jumpTravel:F3} " +
+                $"travel={jumpTravel:F3} " +
                 $"first={firstFireShift:F3} last={lastFireShift:F3} selected={fireShift:F3} " +
-                $"boundaryMargin={JumpPlanningConstants.FireWindowBoundaryMargin:F3} " +
+                $"boundaryMargin={fireWindowBoundaryMargin:F3} " +
                 $"projectedTriggerX={projectedTriggerX:F3} " +
                 $"renderWorldX={renderWorldX:F3} triggerLeft={triggerObstacle.LeftX:F3} " +
                 $"targetLeft={targetObstacle.LeftX:F3} targetRight={targetObstacle.RightX:F3} " +
                 $"hamsterLeft={planningState.Hamster.HamsterLeftX:F3} " +
                 $"hamsterRight={planningState.Hamster.HamsterRightX:F3} " +
                 $"projection={planningState.ProjectionWorldShift:F3} " +
+                $"outcome={selectedOutcome.State} outcomeTargetIndex={selectedOutcome.TargetIndex} " +
                 $"expectedOutcome={hasExpectedOutcome}");
         }
-
-        /// <summary>
-        /// Проверяет, что fire shift приводит к runtime outcome JumpOnRoof по целевой крыше.
-        /// </summary>
-        internal static bool CheckRuntimeOutcomeAtFireShift(
-            HamsterSnapshot hamster,
-            IReadOnlyList<JumpObstacleData> baseObstacles,
-            float fireShift,
-            float jumpTravel,
-            int chainEndIndex)
-        {
-            // Строит obstacle snapshot на момент fire.
-            var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
-            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
-
-            // Готовит runtime context для обычного прыжка.
-            JumpResolveContext context = new(
-                hamster.IsOnBottomLine,
-                hamster.HamsterLeftX,
-                hamster.HamsterRightX,
-                hamster.CenterX,
-                hamster.Width,
-                jumpTravel,
-                jumpTravel,
-                damageBigAliveWithoutYByReach: true);
-
-            // Сверяет runtime outcome с целевой крышей в конце chain.
-            JumpResolveResult result = JumpOutcomeResolver.ResolveJump(obstaclesAtFireShift, context);
-            return result.State == HamsterStateEnum.JumpOnRoof
-                   && result.TargetIndex == chainEndIndex;
-        }
-
     }
 }

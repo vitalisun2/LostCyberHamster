@@ -4,26 +4,34 @@ using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 
-namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
 {
     /// <summary>
-    /// Проверяет, можно ли сохранить ранее выбранный super-jump-on-roof action.
+    /// Проверяет, можно ли сохранить ранее выбранное действие запрыгивания на крышу.
     /// </summary>
-    internal sealed class SuperJumpOnRoofRetainedActionValidator : IRetainedActionValidator
+    internal sealed class JumpOnRoofRetainedActionValidator : IRetainedActionValidator
     {
-        private const float _validationEpsilon = 0.0001f;
+        private readonly IJumpOnRoofPolicy _policy;
+        private readonly JumpOnRoofFireWindowFinder _fireWindowFinder;
+
+        public JumpOnRoofRetainedActionValidator(
+            IJumpOnRoofPolicy policy,
+            JumpOnRoofFireWindowFinder fireWindowFinder)
+        {
+            _policy = policy;
+            _fireWindowFinder = fireWindowFinder;
+        }
 
         /// <summary>
         /// Тип действия, которое умеет сохранять validator.
         /// </summary>
-        public BotActionKind ActionKind => BotActionKind.SuperJumpOnRoof;
+        public BotActionKind ActionKind => _policy.ActionKind;
 
         /// <summary>
-        /// Проверяет, что сохранённое действие super-jump-on-roof всё ещё соответствует текущему planning context.
+        /// Проверяет, что сохранённое действие запрыгивания на крышу всё ещё соответствует текущему planning context.
         /// </summary>
         public bool IsStillValid(RetainedActionContext context)
         {
@@ -48,9 +56,8 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                 return false;
             }
 
-            if (!SuperJumpOnRoofFireWindowFinder.TryGetRoofTarget(
-                    planningState.Hamster,
-                    decisionPoint.Chain,
+            // Проверяет, что текущая chain всё ещё ведёт к той же крыше.
+            if (!decisionPoint.Chain.TryFindFirstRoof(
                     out ObstacleSnapshot roofObstacle,
                     out int roofWorldIndex,
                     out _)
@@ -59,57 +66,43 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                 return false;
             }
 
-            // Восстанавливает текущий fire shift относительно trigger obstacle.
-            if (!TryGetRemainingFireShift(
+            // Считает, сколько осталось до сохранённого TriggerX.
+            if (!TryGetRemainingShiftToTrigger(
                     projectedWorldSnapshot,
                     targetObstacle,
                     action,
-                    out float fireShift))
+                    out float remainingShiftToTrigger))
             {
                 return false;
             }
 
-            // Пересчитывает допустимое roof landing окно для текущего мира.
-            if (!SuperJumpOnRoofFireWindowFinder.TryGetRoofLandingWindow(
-                    planningState,
-                    roofObstacle,
-                    action.PostFireWorldShift,
-                    out float firstFireShift,
-                    out float lastFireShift))
-            {
+            // Если trigger уже пройден, retained action больше нельзя удерживать.
+            if (remainingShiftToTrigger < 0f)
                 return false;
-            }
-
-            // Проверяет, что fire shift остаётся внутри допустимого окна.
-            if (fireShift < firstFireShift - _validationEpsilon
-                || fireShift > lastFireShift + _validationEpsilon)
-            {
-                return false;
-            }
 
             // Сверяет runtime outcome с ожидаемой посадкой на крышу.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            return SuperJumpOnRoofFireWindowFinder.CheckRuntimeOutcomeAtFireShift(
+            return _fireWindowFinder.CheckRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
-                fireShift,
+                remainingShiftToTrigger,
                 action.PostFireWorldShift,
                 roofWorldIndex);
         }
 
         /// <summary>
-        /// Восстанавливает оставшийся fire shift для retained action по trigger obstacle.
+        /// Считает оставшееся расстояние от trigger obstacle до сохранённой точки запуска action.
         /// </summary>
-        private static bool TryGetRemainingFireShift(
+        private static bool TryGetRemainingShiftToTrigger(
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot targetObstacle,
             PlannedAction action,
-            out float fireShift)
+            out float remainingShiftToTrigger)
         {
             // Проверяет наличие исходных данных.
             if (projectedWorldSnapshot == null || targetObstacle == null || action == null)
             {
-                fireShift = 0f;
+                remainingShiftToTrigger = 0f;
                 return false;
             }
 
@@ -123,13 +116,13 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                     if (obstacle.InstanceId != triggerObstacleInstanceId.Value)
                         continue;
 
-                    fireShift = obstacle.LeftX - action.TriggerX;
+                    remainingShiftToTrigger = obstacle.LeftX - action.TriggerX;
                     return true;
                 }
             }
 
             // Использует target obstacle как fallback.
-            fireShift = targetObstacle.LeftX - action.TriggerX;
+            remainingShiftToTrigger = targetObstacle.LeftX - action.TriggerX;
             return true;
         }
     }

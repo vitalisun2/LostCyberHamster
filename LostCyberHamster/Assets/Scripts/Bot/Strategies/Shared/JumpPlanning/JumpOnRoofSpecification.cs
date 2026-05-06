@@ -1,17 +1,22 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 
-namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
 {
     /// <summary>
-    /// Проверяет применимость прыжка на крышу.
+    /// Проверяет применимость действия запрыгивания на крышу.
     /// </summary>
     internal sealed class JumpOnRoofSpecification
     {
-        public const int EnergyCost = 10;
+        private readonly IJumpOnRoofPolicy _policy;
+
+        public JumpOnRoofSpecification(IJumpOnRoofPolicy policy)
+        {
+            _policy = policy;
+        }
 
         /// <summary>
-        /// Проверяет, может ли hamster сейчас выполнить обычный jump-on-roof.
+        /// Проверяет, может ли hamster сейчас выполнить действие запрыгивания на крышу.
         /// </summary>
         public bool IsSatisfiedBy(PlanningState planningState)
         {
@@ -22,7 +27,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             return !hamster.IsOnRoof
                    && !hamster.IsShifting
                    && !hamster.IsDamaged
-                   && hamster.Energy >= EnergyCost;
+                   && hamster.Energy >= _policy.EnergyCost;
         }
     }
 }

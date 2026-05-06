@@ -6,9 +6,8 @@ using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Common;
-using Assets.Scripts.GameEngine.Controllers;
-using UnityEngine;
 
 namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
 {
@@ -17,27 +16,27 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
     /// </summary>
     internal sealed class SuperJumpOnRoofStrategy : IPlanningStrategy
     {
-        private const string _superJumpClipName = "transform_super_jump";
-
-        private readonly SuperJumpOnRoofSpecification _specification;
-        private readonly SuperJumpOnRoofFireWindowFinder _fireWindowFinder;
-        private readonly SuperJumpOnRoofSimulator _simulator;
+        private readonly IJumpOnRoofPolicy _policy;
+        private readonly JumpOnRoofSpecification _specification;
+        private readonly JumpOnRoofFireWindowFinder _fireWindowFinder;
+        private readonly JumpOnRoofSimulator _simulator;
 
         public SuperJumpOnRoofStrategy()
         {
             // Инициализирует зависимости стратегии.
-            _specification = new SuperJumpOnRoofSpecification();
-            _fireWindowFinder = new SuperJumpOnRoofFireWindowFinder();
-            _simulator = new SuperJumpOnRoofSimulator();
+            _policy = new SuperJumpOnRoofPolicy();
+            _specification = new JumpOnRoofSpecification(_policy);
+            _fireWindowFinder = new JumpOnRoofFireWindowFinder(_policy);
+            _simulator = new JumpOnRoofSimulator(_policy);
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             // Публикует обработчики и симулятор наружу.
             Executor = new SuperJumpOnRoofExecutor(triggerGate);
-            RetainedValidator = new SuperJumpOnRoofRetainedActionValidator();
+            RetainedValidator = new JumpOnRoofRetainedActionValidator(_policy, _fireWindowFinder);
             Simulator = _simulator;
         }
 
-        public BotActionKind ActionKind => BotActionKind.SuperJumpOnRoof;
+        public BotActionKind ActionKind => _policy.ActionKind;
         public IActionExecutionHandler Executor { get; }
         public IRetainedActionValidator RetainedValidator { get; }
         public ISimulator Simulator { get; }
@@ -63,7 +62,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                 return;
 
             // Получает фактическую дальность super jump из runtime-анимации и upgrade-delay.
-            if (!TryGetSuperJumpTravel(out float superJumpTravel))
+            if (!_policy.TryGetTravel(out float superJumpTravel))
                 return;
 
             // Ищет допустимый момент срабатывания действия.
@@ -81,13 +80,14 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
 
             // Добавляет готовое действие в результирующий список.
             ObstacleSnapshot triggerObstacle = decisionPoint.Chain.FirstObstacle;
-            actions.Add(BuildAction(planningState, triggerObstacle, targetObstacle, targetObstacleIndex, fireShift, superJumpTravel));
+            actions.Add(BuildAction(_policy, planningState, triggerObstacle, targetObstacle, targetObstacleIndex, fireShift, superJumpTravel));
         }
 
         /// <summary>
         /// Создаёт спланированное действие super jump на крышу с рассчитанными координатами и метаданными цели.
         /// </summary>
         private static PlannedAction BuildAction(
+            IJumpOnRoofPolicy policy,
             PlanningState planningState,
             ObstacleSnapshot triggerObstacle,
             ObstacleSnapshot targetObstacle,
@@ -96,13 +96,13 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             float superJumpTravel)
         {
             // Оставляет trigger в абсолютной runtime-линии перед хомяком.
-            float triggerX = triggerObstacle.LeftX - fireShift;
-            float renderWorldX = triggerX + planningState.ProjectionWorldShift;
+            float projectedTriggerX = triggerObstacle.LeftX - fireShift;
+            float renderWorldX = projectedTriggerX + planningState.ProjectionWorldShift;
 
             // Формирует итоговое плановое действие.
             return new PlannedAction(
-                BotActionKind.SuperJumpOnRoof,
-                triggerX,
+                policy.ActionKind,
+                triggerX: projectedTriggerX,
                 renderWorldX,
                 completionWorldShift: fireShift + superJumpTravel,
                 postFireWorldShift: superJumpTravel,
@@ -110,28 +110,8 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                 targetObstacleInstanceId: targetObstacle.InstanceId,
                 triggerObstacleInstanceId: triggerObstacle.InstanceId,
                 targetBottomLine: null,
-                energyCost: SuperJumpOnRoofSpecification.EnergyCost,
-                description: $"Super jump on roof {targetObstacle.ObstacleType}");
-        }
-
-        /// <summary>
-        /// Возвращает runtime-дистанцию super jump с учётом задержки upgrade-запроса.
-        /// </summary>
-        private static bool TryGetSuperJumpTravel(out float superJumpTravel)
-        {
-            // Находит контроллер анимаций в активной сцене.
-            TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
-            if (controller == null)
-            {
-                superJumpTravel = 0f;
-                return false;
-            }
-
-            // Складывает дистанцию super jump clip и путь мира за половину double-jump окна.
-            float halfDoubleJumpWindowSeconds = DoubleJumpDetector.DoubleJumpThreshold / 2f;
-            float upgradeDelayTravel = halfDoubleJumpWindowSeconds * Assets.Scripts.Consts.GameSpeedBase;
-            superJumpTravel = HelpMethods.GetWorldShiftForClip(controller, _superJumpClipName) + upgradeDelayTravel;
-            return true;
+                energyCost: policy.EnergyCost,
+                description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}");
         }
     }
 }

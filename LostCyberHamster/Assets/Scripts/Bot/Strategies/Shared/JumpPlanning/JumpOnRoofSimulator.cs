@@ -1,18 +1,25 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
-using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 
-namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
 {
     /// <summary>
-    /// Симулирует planning-переход super jump on roof.
+    /// Симулирует planning-переход после посадки на крышу.
     /// </summary>
-    internal sealed class SuperJumpOnRoofSimulator : ISimulator
+    internal sealed class JumpOnRoofSimulator : ISimulator
     {
-        public BotActionKind ActionKind => BotActionKind.SuperJumpOnRoof;
+        private readonly IJumpOnRoofPolicy _policy;
+
+        public JumpOnRoofSimulator(IJumpOnRoofPolicy policy)
+        {
+            _policy = policy;
+        }
+
+        public BotActionKind ActionKind => _policy.ActionKind;
 
         public PlanningState Simulate(
             PlanningState planningState,
