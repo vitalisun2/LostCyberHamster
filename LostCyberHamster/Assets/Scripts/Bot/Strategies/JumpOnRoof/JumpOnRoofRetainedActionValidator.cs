@@ -15,8 +15,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
     /// </summary>
     internal sealed class JumpOnRoofRetainedActionValidator : IRetainedActionValidator
     {
-        private const float _validationEpsilon = 0.0001f;
-
         /// <summary>
         /// Тип действия, которое умеет сохранять validator.
         /// </summary>
@@ -48,68 +46,53 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 return false;
             }
 
+            // Проверяет, что текущая chain всё ещё ведёт к той же крыше.
             if (!decisionPoint.Chain.TryFindFirstRoof(
                     out ObstacleSnapshot roofObstacle,
                     out int roofWorldIndex,
-                    out int roofChainIndex)
+                    out _)
                 || roofObstacle.InstanceId != targetObstacle.InstanceId)
             {
                 return false;
             }
 
-            // Восстанавливает текущий fire shift и начало chain.
-            if (!TryGetRemainingFireShift(
+            // Считает, сколько осталось до сохранённого TriggerX.
+            if (!TryGetRemainingShiftToTrigger(
                     projectedWorldSnapshot,
                     targetObstacle,
                     action,
-                    out float fireShift))
+                    out float remainingShiftToTrigger))
             {
                 return false;
             }
 
-            // Пересчитывает допустимое chain-окно landing для текущего мира.
-            if (!JumpOnRoofFireWindowFinder.TryGetRoofLandingWindow(
-                    planningState.Hamster,
-                    decisionPoint.Chain,
-                    roofObstacle,
-                    roofChainIndex,
-                    action.PostFireWorldShift,
-                    out float firstFireShift,
-                    out float lastFireShift))
-            {
+            // Если trigger уже пройден, retained action больше нельзя удерживать.
+            if (remainingShiftToTrigger < 0f)
                 return false;
-            }
-
-            // Проверяет, что fire shift остаётся внутри допустимого окна.
-            if (fireShift < firstFireShift - _validationEpsilon
-                || fireShift > lastFireShift + _validationEpsilon)
-            {
-                return false;
-            }
 
             // Сверяет runtime outcome с ожидаемой посадкой на крышу.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
             return JumpOnRoofFireWindowFinder.CheckRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
-                fireShift,
+                remainingShiftToTrigger,
                 action.PostFireWorldShift,
                 roofWorldIndex);
         }
 
         /// <summary>
-        /// Восстанавливает оставшийся fire shift для retained action в projected-координатах.
+        /// Считает оставшееся расстояние от trigger obstacle до сохранённой точки запуска action.
         /// </summary>
-        private static bool TryGetRemainingFireShift(
+        private static bool TryGetRemainingShiftToTrigger(
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot targetObstacle,
             PlannedAction action,
-            out float fireShift)
+            out float remainingShiftToTrigger)
         {
             // Проверяет наличие исходных данных.
             if (projectedWorldSnapshot == null || targetObstacle == null || action == null)
             {
-                fireShift = 0f;
+                remainingShiftToTrigger = 0f;
                 return false;
             }
 
@@ -123,13 +106,13 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                     if (obstacle.InstanceId != triggerObstacleInstanceId.Value)
                         continue;
 
-                    fireShift = obstacle.LeftX - action.TriggerX;
+                    remainingShiftToTrigger = obstacle.LeftX - action.TriggerX;
                     return true;
                 }
             }
 
             // Использует target obstacle как fallback.
-            fireShift = targetObstacle.LeftX - action.TriggerX;
+            remainingShiftToTrigger = targetObstacle.LeftX - action.TriggerX;
             return true;
         }
     }
