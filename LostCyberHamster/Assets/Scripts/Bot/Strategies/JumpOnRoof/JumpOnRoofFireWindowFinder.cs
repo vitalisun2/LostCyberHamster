@@ -107,46 +107,84 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 
             if (hamster == null
                 || chain == null
-                || roofObstacle == null)
+                || roofObstacle == null
+                || roofChainIndex < 0
+                || roofChainIndex >= chain.Count)
             {
                 return false;
             }
 
+            // Проверяет наличие smallNotAliveRoadAndRoof на крыше, который может помешать посадке.
             if (chain.HasDamagingRoofOccupant(roofChainIndex))
                 return false;
 
-            // Собирает левый край chain до целевой крыши.
-            float chainLeftEdge = roofObstacle.LeftX;
+            // Вычисляет левую границу fire-window.
+            firstFireShift = CalculateFirstFireShift(hamster, roofObstacle, jumpTravel);
 
-            for (int chainIndex = 0; chainIndex < roofChainIndex; chainIndex++)
-            {
-                if (!chain.TryGetAt(chainIndex, out ObstacleSnapshot obstacle, out _))
-                    return false;
-
-                if (obstacle.LeftX < chainLeftEdge)
-                    chainLeftEdge = obstacle.LeftX;
-            }
-
-            // Открывает окно там, где прыжок уже достаёт до левого края крыши.
-            float roofLeftEdgeShift = roofObstacle.LeftX - jumpTravel - hamster.HamsterRightX;
-            firstFireShift = roofLeftEdgeShift;
-
-            if (firstFireShift < 0f)
-                firstFireShift = 0f;
-
-            // Закрывает окно по ground-contact с левым краем chain.
-            float chainLeftEdgeLimit = chainLeftEdge - hamster.HamsterRightX;
-            lastFireShift = chainLeftEdgeLimit;
-
-            // Дополнительно оставляет только сдвиги, где в конце прыжка сохраняется overlap с крышей.
-            float roofRightEdgeLimit = roofObstacle.RightX - jumpTravel - hamster.HamsterLeftX;
-            lastFireShift = global::System.Math.Min(lastFireShift, roofRightEdgeLimit);
+            // Вычисляет правую границу fire-window.
+            lastFireShift = CalculateLastFireShift(
+                hamster,
+                chain,
+                roofObstacle,
+                roofChainIndex,
+                jumpTravel);
 
             // Отступает внутрь от обеих границ fire-window единым jump margin.
             firstFireShift += JumpPlanningConstants.FireWindowBoundaryMargin;
             lastFireShift -= JumpPlanningConstants.FireWindowBoundaryMargin;
 
             return lastFireShift > 0f && firstFireShift < lastFireShift;
+        }
+
+        /// <summary>
+        /// Вычисляет левую границу fire-window по достижимости левого края целевой крыши.
+        /// </summary>
+        private static float CalculateFirstFireShift(
+            HamsterSnapshot hamster,
+            ObstacleSnapshot roofObstacle,
+            float jumpTravel)
+        {
+            // Находит момент, когда прыжок начинает доставать до крыши.
+            float firstFireShift = roofObstacle.LeftX - jumpTravel - hamster.HamsterRightX;
+
+            // Ограничивает окно нулевым минимальным сдвигом.
+            if (firstFireShift < 0f)
+            {
+                firstFireShift = 0f;
+            }
+
+            return firstFireShift;
+        }
+
+        /// <summary>
+        /// Вычисляет правую границу fire-window по obstacle chain и overlap с целевой крышей.
+        /// </summary>
+        private static float CalculateLastFireShift(
+            HamsterSnapshot hamster,
+            ObstacleChain chain,
+            ObstacleSnapshot roofObstacle,
+            int roofChainIndex,
+            float jumpTravel)
+        {
+            // Находит самый левый край chain до целевой крыши.
+            float chainLeftEdge = roofObstacle.LeftX;
+
+            for (int chainIndex = 0; chainIndex < roofChainIndex; chainIndex++)
+            {
+                ObstacleSnapshot obstacle = chain.Obstacles[chainIndex];
+
+                if (obstacle.LeftX < chainLeftEdge)
+                {
+                    chainLeftEdge = obstacle.LeftX;
+                }
+            }
+
+            // Ищет самый поздний безопасный старт: ещё не врезаться в chain и ещё не перелететь крышу.
+            float latestSafeFireShiftBeforeChainContact = chainLeftEdge - hamster.HamsterRightX;
+            float latestSafeFireShiftBeforeRoofOvershoot = roofObstacle.RightX - jumpTravel - hamster.HamsterLeftX;
+            return global::System.Math.Min(
+                latestSafeFireShiftBeforeChainContact,
+                latestSafeFireShiftBeforeRoofOvershoot);
         }
 
         /// <summary>
