@@ -198,12 +198,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             bool hasPreRoofObstacle,
             out float fireShift)
         {
-            if (firstFireShift >= lastFireShift)
-            {
-                fireShift = 0f;
-                return false;
-            }
-
             if (hasPreRoofObstacle)
             {
                 fireShift = lastFireShift;
