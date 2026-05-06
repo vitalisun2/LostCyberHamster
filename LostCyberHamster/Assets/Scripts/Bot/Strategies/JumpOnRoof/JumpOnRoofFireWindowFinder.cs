@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
@@ -133,7 +134,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             firstFireShift += JumpPlanningConstants.FireWindowBoundaryMargin;
             lastFireShift -= JumpPlanningConstants.FireWindowBoundaryMargin;
 
-            return lastFireShift > 0f && firstFireShift < lastFireShift;
+            bool windowIsInFuture = lastFireShift > 0f;
+            bool windowHasRange = firstFireShift < lastFireShift;
+            return windowIsInFuture && windowHasRange;
         }
 
         /// <summary>
@@ -145,14 +148,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             float jumpTravel)
         {
             // Находит момент, когда прыжок начинает доставать до крыши.
-            float firstFireShift = roofObstacle.LeftX - jumpTravel - hamster.HamsterRightX;
-
-            // Ограничивает окно нулевым минимальным сдвигом.
-            if (firstFireShift < 0f)
-            {
-                firstFireShift = 0f;
-            }
-
+            // Отрицательное значение означает «крыша уже достижима прямо сейчас» —
+            // клэмп до 0 нормализует к физическому минимуму «прыгнуть немедленно».
+            float firstFireShift = Math.Max(0f, roofObstacle.LeftX - jumpTravel - hamster.HamsterRightX);
             return firstFireShift;
         }
 
@@ -180,11 +178,15 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             }
 
             // Ищет самый поздний безопасный старт: ещё не врезаться в chain и ещё не перелететь крышу.
+            // Результат может быть отрицательным — это значит дедлайн прыжка уже в прошлом.
+            // Такое окно отсекается в вызывающем методе проверкой lastFireShift > 0.
             float latestSafeFireShiftBeforeChainContact = chainLeftEdge - hamster.HamsterRightX;
             float latestSafeFireShiftBeforeRoofOvershoot = roofObstacle.RightX - jumpTravel - hamster.HamsterLeftX;
-            return global::System.Math.Min(
+            float lastFireShift = Math.Min(
                 latestSafeFireShiftBeforeChainContact,
                 latestSafeFireShiftBeforeRoofOvershoot);
+                
+            return lastFireShift;
         }
 
         /// <summary>
