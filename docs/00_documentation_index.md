@@ -21,6 +21,9 @@
 ### docs/rules/ai_workflow_lessons.md
 Накопленные практические уроки по работе в этом репозитории.
 
+### docs/rules/temporary_current_rules.md
+Временные обязательные правила текущего этапа разработки, включая статус `Bot/` как активной зоны разработки, а не окончательного источника истины.
+
 ### docs/rules/agent_tools.md
 Каталог проектных инструментов: automation bridge, log reader, test level launcher, редакторские утилиты и PowerShell-скрипты.
 

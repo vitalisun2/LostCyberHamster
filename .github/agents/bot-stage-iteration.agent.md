@@ -24,6 +24,7 @@ description: "Использовать для итеративной работ�
 
 ## Правила работы
 
+- Сначала читать `docs/rules/AGENTS.md` и все обязательные файлы из его секции «Что читать перед работой», включая `docs/rules/temporary_current_rules.md`.
 - Сначала читать `docs/architecture_knowledge_base.md`, `docs/Planning/bot_implementation_plan.md` и релевантный stage-документ.
 - Для тестового прогона считать основным launch-path уровень `LostCyberHamster/Assets/Content/locations/01_New_York/levels/Morning/test_level/test_level.json`.
 - Stage-specific сценарии оформлять через bot-паттерны в `PatternsCollection.json`, а `test_level.json` собирать под текущую задачу из этих паттернов.

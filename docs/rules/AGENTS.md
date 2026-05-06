@@ -20,11 +20,12 @@
 
 1. `docs/rules/ai_workflow_lessons.md` — накопленные уроки (обязательно каждую сессию)
 2. `docs/rules/code_conventions.md` — конвенции кода и валидация
-3. [if-relevant: бот, gameplay, тесты] `docs/rules/iteration_cycle.md` — итерационный цикл тестирования бота
-4. [if-relevant: инструменты, автопрогон, логи] `docs/rules/agent_tools.md` — каталог инструментов проекта
-5. [if-relevant: архитектура, ассеты, новые системы] `docs/architecture_knowledge_base.md` — архитектурные решения и паттерны (читать только релевантные секции)
-6. Активный план в `docs/Planning/in-progress/`, если задача привязана к плану
-7. Релевантные исходники, editor tools, ассеты и тесты
+3. `docs/rules/temporary_current_rules.md` — временные обязательные правила текущего этапа разработки
+4. [if-relevant: бот, gameplay, тесты] `docs/rules/iteration_cycle.md` — итерационный цикл тестирования бота
+5. [if-relevant: инструменты, автопрогон, логи] `docs/rules/agent_tools.md` — каталог инструментов проекта
+6. [if-relevant: архитектура, ассеты, новые системы] `docs/architecture_knowledge_base.md` — архитектурные решения и паттерны (читать только релевантные секции)
+7. Активный план в `docs/Planning/in-progress/`, если задача привязана к плану
+8. Релевантные исходники, editor tools, ассеты и тесты
 
 ## Профиль пользователя
 
@@ -80,3 +81,4 @@
 | `code_conventions.md` | Конвенции кода, валидация, Unity-специфика |
 | `agent_tools.md` | Каталог проектных инструментов и автоматизаций |
 | `ai_workflow_lessons.md` | Накопленные практические уроки |
+| `temporary_current_rules.md` | Временные обязательные правила текущего этапа разработки |
