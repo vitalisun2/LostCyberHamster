@@ -191,6 +191,7 @@
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitGameUiLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiHamsterStateMechanics.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\PauseModalController.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpPlanningConstants.cs" />
     <Compile Include="Assets\Scripts\UI\Common\IScreenController.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\ShiftTransformAnimatorController.cs" />
     <Compile Include="Assets\Scripts\Common\Models\PatternsCollection.cs" />

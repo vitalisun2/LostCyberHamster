@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Assets.Scripts;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
@@ -16,9 +15,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
     /// </summary>
     internal sealed class JumpOnRoofFireWindowFinder
     {
-        private const float _windowEpsilon = 0.0001f;
-        private const float _chainLateFireBudget = 0.1f;
-
         /// <summary>
         /// Подбирает fire shift и target obstacle внутри допустимого окна для jump-on-roof chain.
         /// </summary>
@@ -141,17 +137,17 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             if (firstFireShift < 0f)
                 firstFireShift = 0f;
 
-            // Закрывает окно за один frame движения мира до ground-contact с левым краем chain.
-            float chainLeftEdgeLimit = chainLeftEdge - hamster.HamsterRightX - GetExecutionSafetyShift();
+            // Закрывает окно по ground-contact с левым краем chain.
+            float chainLeftEdgeLimit = chainLeftEdge - hamster.HamsterRightX;
             lastFireShift = chainLeftEdgeLimit;
 
             // Дополнительно оставляет только сдвиги, где в конце прыжка сохраняется overlap с крышей.
             float roofRightEdgeLimit = roofObstacle.RightX - jumpTravel - hamster.HamsterLeftX;
             lastFireShift = global::System.Math.Min(lastFireShift, roofRightEdgeLimit);
 
-            // Делает окно строго внутренним, как в jump-over chain calculators.
-            firstFireShift += _windowEpsilon;
-            lastFireShift -= _windowEpsilon;
+            // Отступает внутрь от обеих границ fire-window единым jump margin.
+            firstFireShift += JumpPlanningConstants.FireWindowBoundaryMargin;
+            lastFireShift -= JumpPlanningConstants.FireWindowBoundaryMargin;
 
             return lastFireShift > 0f && firstFireShift < lastFireShift;
         }
@@ -177,7 +173,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 
             if (hasPreRoofObstacle)
             {
-                fireShift = lastFireShift - _chainLateFireBudget;
+                fireShift = lastFireShift;
                 return fireShift > firstFireShift;
             }
 
@@ -190,18 +186,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             }
 
             return firstFireShift < lastFireShift;
-        }
-
-        /// <summary>
-        /// Возвращает запас в world-units на один кадр движения мира перед runtime collision.
-        /// </summary>
-        private static float GetExecutionSafetyShift()
-        {
-            float timeScale = global::UnityEngine.Time.timeScale;
-            if (timeScale <= 0f)
-                timeScale = 1f;
-
-            return Consts.GameSpeedBase * timeScale / Consts.FPS;
         }
 
         /// <summary>
@@ -229,7 +213,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 $"targetIndex={targetObstacleIndex} roofChainIndex={roofChainIndex} " +
                 $"jumpTravel={jumpTravel:F3} " +
                 $"first={firstFireShift:F3} last={lastFireShift:F3} selected={fireShift:F3} " +
-                $"directEarlyShift={directEarlyShift:F3} safety={GetExecutionSafetyShift():F3} " +
+                $"directEarlyShift={directEarlyShift:F3} boundaryMargin={JumpPlanningConstants.FireWindowBoundaryMargin:F3} " +
                 $"projectedTriggerX={projectedTriggerX:F3} " +
                 $"renderWorldX={renderWorldX:F3} triggerLeft={triggerObstacle.LeftX:F3} " +
                 $"targetLeft={targetObstacle.LeftX:F3} targetRight={targetObstacle.RightX:F3} " +
