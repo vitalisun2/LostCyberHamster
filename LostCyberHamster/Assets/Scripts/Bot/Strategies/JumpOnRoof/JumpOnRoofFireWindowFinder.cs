@@ -253,9 +253,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             float jumpTravel,
             int chainEndIndex)
         {
-            if (!JumpFireSafety.CanWaitUntilFire(hamster, baseObstacles, fireShift))
-                return false;
-
             // Строит obstacle snapshot на момент fire.
             var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
             JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
