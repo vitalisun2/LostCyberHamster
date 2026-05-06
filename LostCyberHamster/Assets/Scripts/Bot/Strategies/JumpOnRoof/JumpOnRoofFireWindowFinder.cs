@@ -56,14 +56,12 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 return false;
             }
 
-            // Выбирает точку внутри математического окна с ранним direct-roof смещением.
+            // Выбирает точку внутри уже суженного fire-window.
             if (!TrySelectFireShift(
-                    planningState.Hamster,
                     firstFireShift,
                     lastFireShift,
                     roofChainIndex > 0,
-                    out fireShift,
-                    out float directEarlyShift))
+                    out fireShift))
             {
                 return false;
             }
@@ -86,7 +84,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 firstFireShift,
                 lastFireShift,
                 fireShift,
-                directEarlyShift,
                 hasExpectedOutcome);
 
             return hasExpectedOutcome;
@@ -156,15 +153,11 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
         /// Выбирает точку уже рассчитанного fire-window для jump-on-roof.
         /// </summary>
         private static bool TrySelectFireShift(
-            HamsterSnapshot hamster,
             float firstFireShift,
             float lastFireShift,
             bool hasPreRoofObstacle,
-            out float fireShift,
-            out float directEarlyShift)
+            out float fireShift)
         {
-            directEarlyShift = 0f;
-
             if (firstFireShift >= lastFireShift)
             {
                 fireShift = 0f;
@@ -177,15 +170,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 return fireShift > firstFireShift;
             }
 
-            // Сдвигает fire shift немного раньше поздней границы ради более плавной посадки.
-            fireShift = lastFireShift;
-            if (hamster != null)
-            {
-                directEarlyShift = hamster.Width / 2f;
-                fireShift = global::System.Math.Max(firstFireShift, lastFireShift - directEarlyShift);
-            }
-
-            return firstFireShift < lastFireShift;
+            // Для прямой крыши без препятствий перед ней берёт центр безопасного окна.
+            fireShift = (firstFireShift + lastFireShift) * 0.5f;
+            return true;
         }
 
         /// <summary>
@@ -201,7 +188,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             float firstFireShift,
             float lastFireShift,
             float fireShift,
-            float directEarlyShift,
             bool hasExpectedOutcome)
         {
             ObstacleSnapshot triggerObstacle = chain.FirstObstacle;
@@ -213,7 +199,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 $"targetIndex={targetObstacleIndex} roofChainIndex={roofChainIndex} " +
                 $"jumpTravel={jumpTravel:F3} " +
                 $"first={firstFireShift:F3} last={lastFireShift:F3} selected={fireShift:F3} " +
-                $"directEarlyShift={directEarlyShift:F3} boundaryMargin={JumpPlanningConstants.FireWindowBoundaryMargin:F3} " +
+                $"boundaryMargin={JumpPlanningConstants.FireWindowBoundaryMargin:F3} " +
                 $"projectedTriggerX={projectedTriggerX:F3} " +
                 $"renderWorldX={renderWorldX:F3} triggerLeft={triggerObstacle.LeftX:F3} " +
                 $"targetLeft={targetObstacle.LeftX:F3} targetRight={targetObstacle.RightX:F3} " +
