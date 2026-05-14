@@ -129,6 +129,7 @@
     <Compile Include="Assets\Scripts\GameManagement\ConfigurationManager.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\AddressableExtentions.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverExecutor.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UnspawnOnJumpedOnMechanics.cs" />
     <Compile Include="Assets\Scripts\Analytics\AnalyticsManager.cs" />
     <Compile Include="Assets\Scripts\UI\Components\Healthbar.cs" />
@@ -159,6 +160,8 @@
     <Compile Include="Assets\Scripts\Common\Models\LocationTheme.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverStrategy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneSimulator.cs" />
     <Compile Include="Assets\Scripts\Debug\FeatureFlagToggle.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\RootTask.cs" />

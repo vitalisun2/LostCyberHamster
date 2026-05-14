@@ -12,6 +12,6 @@ namespace Assets.Scripts.Bot.PlanState
         JumpOnRoof,
         SuperJumpOnRoof,
         RoofJumpOver,
-        SuperRoofJump
+        SuperRoofJumpOver
     }
 }

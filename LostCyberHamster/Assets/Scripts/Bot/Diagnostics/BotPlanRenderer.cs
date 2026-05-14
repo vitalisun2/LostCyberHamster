@@ -121,6 +121,7 @@ namespace Assets.Scripts.Bot.Diagnostics
 
                 case BotActionKind.SuperJumpOver:
                 case BotActionKind.SuperJumpOnRoof:
+                case BotActionKind.SuperRoofJumpOver:
                     if (!TryGetRenderWorldX(action, snapshot, out float superJumpRenderWorldX))
                         return false;
 
@@ -182,6 +183,7 @@ namespace Assets.Scripts.Bot.Diagnostics
                     break;
                 case BotActionKind.SuperJumpOver:
                 case BotActionKind.SuperJumpOnRoof:
+                case BotActionKind.SuperRoofJumpOver:
                     DrawSuperJumpGlyph(command.WorldX, command.CurrentBottomLine, command.Alpha);
                     break;
             }

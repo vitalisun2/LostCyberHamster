@@ -7,6 +7,7 @@ using Assets.Scripts.Bot.Strategies.JumpOver;
 using Assets.Scripts.Bot.Strategies.RoofJumpOver;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.SuperRoofJumpOver;
 using Assets.Scripts.Bot.Strategies.SuperJumpOnRoof;
 using Assets.Scripts.Bot.Strategies.SuperJumpOver;
 using Assets.Scripts.Bot.Strategies.SwitchLane;
@@ -96,7 +97,8 @@ namespace Assets.Scripts.Bot
                 new SuperJumpOverStrategy(),
                 new JumpOnRoofStrategy(),
                 new SuperJumpOnRoofStrategy(),
-                new RoofJumpOverStrategy()
+                new RoofJumpOverStrategy(),
+                new SuperRoofJumpOverStrategy()
             };
         }
 
