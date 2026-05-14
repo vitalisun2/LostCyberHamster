@@ -48,7 +48,7 @@ public class LevelTilemapEditor : EditorWindow
     private string _selectedFile;
     private int _selectedPatternIndex = -1;
     private Tilemap _tilemapInScene;
-    private bool _isCollectableOnRoof;
+    private bool _isObjectOnRoof;
 
     private bool IsTemplateMode => string.Equals(_currentLocationName,
         Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
@@ -201,7 +201,7 @@ public class LevelTilemapEditor : EditorWindow
         _locationTheme = null;
         _selectedFile = null;
         _selectedPatternIndex = -1;
-        _isCollectableOnRoof = false;
+        _isObjectOnRoof = false;
         _selectedLevelDescriptor = null;
         _allLevelDescriptors.Clear();
         _visibleLevelDescriptors.Clear();
@@ -322,7 +322,7 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        var strategy = TilePlacementStrategies.GetStrategyForType(obstacleType, _isCollectableOnRoof);
+        var strategy = TilePlacementStrategies.GetStrategyForType(obstacleType, _isObjectOnRoof);
         var initialWorldPos = changedTilemap.CellToWorld(cellPosition);
 
         if (!strategy.TryPlaceTile(changedTilemap, tile, initialWorldPos, out var finalWorldPos))
@@ -975,12 +975,12 @@ public class LevelTilemapEditor : EditorWindow
     }
 
     /// <summary>
-    /// Изменение флажка, указывающего, что коллектабл размещается на крыше.
+    /// Изменение флажка, указывающего, что объект размещается на крыше.
     /// </summary>
-    private void HandleIsCollectableOnRoofToggleChanged(bool newValue)
+    private void HandleIsObjectOnRoofToggleChanged(bool newValue)
     {
-        _isCollectableOnRoof = newValue;
-        Debug.Log($"[LevelTilemapEditor] IsCollectableOnRoof state changed: {_isCollectableOnRoof}");
+        _isObjectOnRoof = newValue;
+        Debug.Log($"[LevelTilemapEditor] IsObjectOnRoof state changed: {_isObjectOnRoof}");
     }
 
     /// <summary>
@@ -1152,15 +1152,12 @@ public class LevelTilemapEditor : EditorWindow
         return ObstacleLaneResolver.IsBottomLineCloser(yPosition) ? LowerRoadTileZOffset : 0f;
     }
 
+    /// <summary>
+    /// Возвращает фактическую world-позицию тайла с учётом transform matrix клетки.
+    /// </summary>
     private static Vector3 GetExactTileWorldPosition(Tilemap tilemap, Vector3Int cellPos)
     {
-        var baseWorldPos = tilemap.CellToWorld(cellPos);
-        var matrix = tilemap.GetTransformMatrix(cellPos);
-        var offset = matrix.GetColumn(3);
-        return new Vector3(
-            baseWorldPos.x + offset.x,
-            baseWorldPos.y + offset.y,
-            baseWorldPos.z + offset.z);
+        return TilemapPositionUtility.GetExactTileWorldPosition(tilemap, cellPos);
     }
 
     /// <summary>
@@ -1950,7 +1947,7 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.OnSpriteSelected += HandleSpriteSelected;
         _uiManager.OnFileSelected += HandleFileSelected;
         _uiManager.OnPatternSelected += HandlePatternSelected;
-        _uiManager.OnIsCollectableOnRoofToggleChanged += HandleIsCollectableOnRoofToggleChanged;
+        _uiManager.OnIsObjectOnRoofToggleChanged += HandleIsObjectOnRoofToggleChanged;
         _uiManager.OnResetClicked += HandleResetClicked;
         _uiManager.OnPatternNameChanged += HandlePatternNameChanged;
         _uiManager.OnPatternDescriptionChanged += HandlePatternDescriptionChanged;
@@ -1977,7 +1974,7 @@ public class LevelTilemapEditor : EditorWindow
             _uiManager.OnSpriteSelected -= HandleSpriteSelected;
             _uiManager.OnFileSelected -= HandleFileSelected;
             _uiManager.OnPatternSelected -= HandlePatternSelected;
-            _uiManager.OnIsCollectableOnRoofToggleChanged -= HandleIsCollectableOnRoofToggleChanged;
+            _uiManager.OnIsObjectOnRoofToggleChanged -= HandleIsObjectOnRoofToggleChanged;
             _uiManager.OnResetClicked -= HandleResetClicked;
             _uiManager.OnPatternNameChanged -= HandlePatternNameChanged;
             _uiManager.OnPatternDescriptionChanged -= HandlePatternDescriptionChanged;

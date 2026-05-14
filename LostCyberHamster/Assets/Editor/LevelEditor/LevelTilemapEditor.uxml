@@ -28,7 +28,7 @@
         <ui:Button text="down" name="move-down-btn" />
     </ui:VisualElement>
     <ui:DropdownField label="obstacle type" name="obstacle-type-dropdown" style="margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px;" />
-    <ui:Toggle label="IsCollectableOnRoof&#x9;" value="false" name="IsCollectableOnRoofToggle" style="margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; flex-direction: row; align-items: auto; justify-content: flex-start; align-self: stretch; flex-wrap: nowrap;" />
+    <ui:Toggle label="Object on Roof" value="false" name="IsObjectOnRoofToggle" style="margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; flex-direction: row; align-items: auto; justify-content: flex-start; align-self: stretch; flex-wrap: nowrap;" />
     <ui:Label text="sprites" name="sprites-label" style="-unity-text-align: upper-center;" />
     <ui:ScrollView name="sprites" mode="Vertical" style="display: flex; min-height: 100px; max-height: 600px; align-items: center; justify-content: space-between; align-self: center; flex-grow: 1; position: relative; flex-wrap: wrap; flex-direction: column;" />
     <ui:VisualElement style="flex-grow: 1; flex-direction: row; max-height: 60px; align-items: center; justify-content: space-around; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px;">

@@ -23,7 +23,7 @@ public class LevelTilemapUi
     private Button _saveJsonButton;
     private Button _createLevelButton;
     private string _selectedSprite;
-    private Toggle _isCollectableOnRoofToggle;
+    private Toggle _isObjectOnRoofToggle;
     private Button _resetButton;
     private TextField _patternNameField;
     private TextField _patternDescriptionField;
@@ -53,7 +53,7 @@ public class LevelTilemapUi
     public event Action<string> OnSpriteSelected;
     public event Action<LevelFileDescriptor> OnFileSelected;
     public event Action<int> OnPatternSelected;
-    public event Action<bool> OnIsCollectableOnRoofToggleChanged;
+    public event Action<bool> OnIsObjectOnRoofToggleChanged;
     public event Action OnResetClicked;
     public event Action<string> OnPatternNameChanged;
     public event Action<string> OnPatternDescriptionChanged;
@@ -86,7 +86,7 @@ public class LevelTilemapUi
         _saveJsonButton = _root.Q<Button>("save-btn");
         _filesList = _root.Q<ListView>("files-list-view");
         _patternsList = _root.Q<ListView>("patterns-list-view");
-        _isCollectableOnRoofToggle = root.Q<Toggle>("IsCollectableOnRoofToggle");
+        _isObjectOnRoofToggle = root.Q<Toggle>("IsObjectOnRoofToggle");
         _resetButton = _root.Q<Button>("reset-btn");
         _patternNameField = root.Q<TextField>("selected-pattern-name");
         _patternDescriptionField = root.Q<TextField>("selected-pattern-description");
@@ -136,7 +136,7 @@ public class LevelTilemapUi
 
     private void InitializeToggles()
     {
-        _isCollectableOnRoofToggle.RegisterValueChangedCallback(evt => OnIsCollectableOnRoofToggleChanged?.Invoke(evt.newValue));
+        _isObjectOnRoofToggle.RegisterValueChangedCallback(evt => OnIsObjectOnRoofToggleChanged?.Invoke(evt.newValue));
     }
 
     private void InitializeListViews()
@@ -643,7 +643,7 @@ public class LevelTilemapUi
         SetVisible(_patternsSection, isTemplateMode);
         SetVisible(_patternButtonsRow, isTemplateMode);
         SetVisible(_obstacleTypeDropdownField, isTemplateMode);
-        SetVisible(_isCollectableOnRoofToggle, isTemplateMode);
+        SetVisible(_isObjectOnRoofToggle, isTemplateMode);
         SetVisible(_patternSearchField, isTemplateMode);
 
         // Sprites palette — visible in both modes (templates for obstacles, levels for decor)

@@ -31,9 +31,9 @@ public static class TilePlacementStrategies
     }
 
     /// <summary>
-    /// Стратегия для собираемых объектов (collectables): привязка к крыше и избегание наложений.
+    /// Стратегия для объектов на крыше: привязка к крыше и избегание наложений.
     /// </summary>
-    public static ITilePlacementStrategy CreateCollectableOnRoofStrategy()
+    public static ITilePlacementStrategy CreateObjectOnRoofStrategy()
     {
         var pipeline = new TilePlacementPipeline();
         pipeline.AddRule(new SnapToRoofRule());
@@ -55,7 +55,7 @@ public static class TilePlacementStrategies
     /// <summary>
     /// Возвращает подходящую стратегию расстановки тайла в зависимости от типа препятствия.
     /// </summary>
-    public static ITilePlacementStrategy GetStrategyForType(ObstacleTypeEnum type, bool isCollectableOnRoof)
+    public static ITilePlacementStrategy GetStrategyForType(ObstacleTypeEnum type, bool isObjectOnRoof)
     {
         switch (type)
         {
@@ -72,7 +72,7 @@ public static class TilePlacementStrategies
             case ObstacleTypeEnum.collectableLife:
             case ObstacleTypeEnum.collectableCoin:
             case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
-                return isCollectableOnRoof ? CreateCollectableOnRoofStrategy() : CreateCollectableOnRoadStrategy();
+                return isObjectOnRoof ? CreateObjectOnRoofStrategy() : CreateCollectableOnRoadStrategy();
 
 
 

@@ -1,37 +1,46 @@
-﻿using UnityEngine;
+﻿using Assets.Scripts;
+using Assets.Scripts.Common.Models;
+using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public class OverlapAvoidanceOnRoofRule : ITilePlacementRule
 {
-    private const float GapBetweenTiles = 0.2f;
-    private const float GridSnapStep = 0.2f;
+    private const float GapBetweenTiles = Consts.GapBetweenTiles;
+    private const float GridSnapStep = Consts.GridSnapStep;
+    private const float RoofLineTolerance = Consts.GridSnapStep * 0.5f + 0.001f;
 
     public bool TryApplyRule(Tilemap tilemap, Tile tile, ref Vector3 position)
     {
-        // 1) Если это не коллектабл — пропускаем
-        if (!IsCollectable(tile))
+        // 1) Если это не объект для крыши — пропускаем
+        if (!IsRoofObject(tile))
         {
             return true;
         }
 
-        // 2) Пытаемся устранить пересечение (по X) сдвигом
+        // 2) Приводим X к той же сетке, с которой работает road-rule
+        SnapHorizontalPositionToGrid(ref position, GridSnapStep);
+
+        // 3) Пытаемся устранить пересечение (по X) сдвигом
         bool didShift = TryResolveOverlapOnce(tilemap, tile, ref position);
 
-        // 3) Если мы сдвигались, то проверяем повторно
+        // 4) После сдвига снова привязываем X и проверяем итоговое положение
+        if (didShift)
+        {
+            SnapHorizontalPositionToGrid(ref position, GridSnapStep);
+        }
+
         if (didShift && OverlapsAnyTile(tilemap, tile, position))
         {
             Debug.LogWarning("[OverlapAvoidanceOnRoofRule] Повторное пересечение. Установка отменена.");
             return false;
         }
 
-        // 4) Привязываем к сетке
-        SnapPositionToGrid(ref position, GridSnapStep);
         return true;
     }
 
     /// <summary>
-    /// Смотрим, нужно ли сдвинуть новый коллектабл, чтобы избежать пересечения
-    /// с уже стоящими коллектаблами на той же «линии крыши».
+    /// Смотрим, нужно ли сдвинуть новый объект, чтобы избежать пересечения
+    /// с уже стоящими объектами на той же «линии крыши».
     /// </summary>
     private bool TryResolveOverlapOnce(Tilemap tilemap, Tile newTile, ref Vector3 newPos)
     {
@@ -39,7 +48,7 @@ public class OverlapAvoidanceOnRoofRule : ITilePlacementRule
         var (newXMin, newXMax) = GetHorizontalBounds(newTile, newPos);
 
         // Получаем «формальную» линию крыши для нового тайла
-        float newRoofLine = ComputeRoofLineY(tilemap, newTile, newPos);
+        float newRoofLine = GetRoofLineY(newPos);
 
         foreach (var posInBounds in tilemap.cellBounds.allPositionsWithin)
         {
@@ -47,16 +56,16 @@ public class OverlapAvoidanceOnRoofRule : ITilePlacementRule
             if (otherTile == null)
                 continue;
 
-            // Только с другими коллектаблами
-            if (!IsCollectable(otherTile))
+            // Только с другими объектами на крыше
+            if (!IsRoofObject(otherTile))
                 continue;
 
             // Координата, по которой вычисляем «линию крыши» для уже стоящего тайла
-            var otherPos = tilemap.CellToWorld(posInBounds);
-            float oldRoofLine = ComputeRoofLineY(tilemap, otherTile, otherPos);
+            var otherPos = TilemapPositionUtility.GetExactTileWorldPosition(tilemap, posInBounds);
+            float oldRoofLine = GetRoofLineY(otherPos);
 
             // Если «линия крыши» у них отличается — пропускаем
-            if (Mathf.Abs(newRoofLine - oldRoofLine) > 0.001f)
+            if (!IsSameRoofLine(newRoofLine, oldRoofLine))
                 continue;
 
             // Теперь проверяем пересечение по X
@@ -90,7 +99,7 @@ public class OverlapAvoidanceOnRoofRule : ITilePlacementRule
     {
         // Координаты X-границ у нового тайла
         var (newXMin, newXMax) = GetHorizontalBounds(newTile, newPos);
-        float newRoofLine = ComputeRoofLineY(tilemap, newTile, newPos);
+        float newRoofLine = GetRoofLineY(newPos);
 
         foreach (var posInBounds in tilemap.cellBounds.allPositionsWithin)
         {
@@ -98,13 +107,13 @@ public class OverlapAvoidanceOnRoofRule : ITilePlacementRule
             if (otherTile == null)
                 continue;
 
-            if (!IsCollectable(otherTile))
+            if (!IsRoofObject(otherTile))
                 continue;
 
-            var otherPos = tilemap.CellToWorld(posInBounds);
-            float oldRoofLine = ComputeRoofLineY(tilemap, otherTile, otherPos);
+            var otherPos = TilemapPositionUtility.GetExactTileWorldPosition(tilemap, posInBounds);
+            float oldRoofLine = GetRoofLineY(otherPos);
 
-            if (Mathf.Abs(newRoofLine - oldRoofLine) > 0.001f)
+            if (!IsSameRoofLine(newRoofLine, oldRoofLine))
                 continue;
 
             var (oldXMin, oldXMax) = GetHorizontalBounds(otherTile, otherPos);
@@ -118,39 +127,25 @@ public class OverlapAvoidanceOnRoofRule : ITilePlacementRule
     }
 
     /// <summary>
-    /// Вычисляем «линию крыши» (или «уровень крыши») так же,
-    /// как это делает SnapToRoofRule.
+    /// Возвращает линию крыши для уже установленного объекта.
     /// </summary>
-    private float ComputeRoofLineY(Tilemap tilemap, Tile tile, Vector3 pivotPos)
+    private static float GetRoofLineY(Vector3 pivotPos)
     {
-        // Если мы предполагаем, что SnapToRoofRule просто ставит объект на pivotPos (top + 0.1f)
-        // То можно считать "roofLine" = pivotPos.y (уже готовая координата)
-        // Или же, если нужно пересчитывать, можно заново определить спрайтовую высоту,
-        // как в SnapToRoofRule, но важнее, чтобы формула совпадала с тем, что делали там.
-
-        // Здесь покажем пример, если мы хотим заново брать "верх объекта" + offset:
-        // Но только если этот объект - collectable, установленный поверх BigNotAlive.
-        // Если у нас нет простой функции, мы можем повторить логику SnapToRoofRule:
-
-        // (1) Получаем сам спрайт
-        // (2) Берём bounds, или rect.height / pivot
-        // (3) Рассчитываем top = pivotPos.y + halfHeight
-        // (4) Возвращаем top + offset. 
-        // ИЛИ, если SnapToRoofRule уже переместил pivotPos.y,
-        // то pivotPos.y сам по себе и есть нужная "линия".
-
-        // Предположим, что SnapToRoofRule итогово ставит pivot на (top + 0.1f).
-        // Тогда у collectable pivotPos.y = "линия крыши" прямо сейчас.
-
-        // Поэтому можно просто вернуть pivotPos.y, 
-        // и это будет "штамп" их положения по вертикали.
         return pivotPos.y;
     }
 
     /// <summary>
-    /// Проверяем, является ли данный тайл коллектиблом (по сути, фильтр по типу).
+    /// Проверяет, относятся ли две Y-позиции к одной линии крыши.
     /// </summary>
-    private bool IsCollectable(Tile tile)
+    private static bool IsSameRoofLine(float leftY, float rightY)
+    {
+        return Mathf.Abs(leftY - rightY) <= RoofLineTolerance;
+    }
+
+    /// <summary>
+    /// Проверяем, является ли данный тайл объектом, который можно ставить на крышу.
+    /// </summary>
+    private bool IsRoofObject(Tile tile)
     {
         if (tile?.sprite == null)
             return false;
@@ -158,8 +153,18 @@ public class OverlapAvoidanceOnRoofRule : ITilePlacementRule
         if (!ObstacleSpriteTypeMappingsManager.TryGetType(tile.sprite.name, out var foundType))
             return false;
 
-        var typeString = foundType.ToString().ToLowerInvariant();
-        return typeString.Contains("collectable");
+        switch (foundType)
+        {
+            case ObstacleTypeEnum.collectableEnergetic:
+            case ObstacleTypeEnum.collectablePizza:
+            case ObstacleTypeEnum.collectableCrystal:
+            case ObstacleTypeEnum.collectableLife:
+            case ObstacleTypeEnum.collectableCoin:
+            case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /// <summary>
@@ -195,11 +200,10 @@ public class OverlapAvoidanceOnRoofRule : ITilePlacementRule
     }
 
     /// <summary>
-    /// Привязка позиции к шагу GridSnapStep (0.2), округляя X/Y.
+    /// Привязка X к шагу GridSnapStep (0.2) без изменения Y, который задаёт линия крыши.
     /// </summary>
-    private static void SnapPositionToGrid(ref Vector3 pos, float step)
+    private static void SnapHorizontalPositionToGrid(ref Vector3 pos, float step)
     {
         pos.x = Mathf.Round(pos.x / step) * step;
-        pos.y = Mathf.Round(pos.y / step) * step;
     }
 }

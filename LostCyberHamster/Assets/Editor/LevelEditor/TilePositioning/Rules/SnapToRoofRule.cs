@@ -14,33 +14,33 @@ public class SnapToRoofRule : ITilePlacementRule
         var otherLineY = isCloserToY0 ? Consts.ObstacleY1Pos : Consts.ObstacleY0Pos;
 
         // 1) Пробуем «привязаться» к BigNotAlive / MediumNotAlive на ближайшей линии
-        if (TrySnapCollectable(tilemap, tile, ref position, mainLineY))
+        if (TrySnapObjectToRoof(tilemap, tile, ref position, mainLineY))
         {
             return true;
         }
 
         // 2) Если не получилось — пробуем другую линию
-        if (TrySnapCollectable(tilemap, tile, ref position, otherLineY))
+        if (TrySnapObjectToRoof(tilemap, tile, ref position, otherLineY))
         {
             return true;
         }
 
-        // 3) Ни на одной линии не нашли, куда поместить collectable
-        Debug.Log("[SnapToRoofRule] Не нашли подходящий BigNotAlive / MediumNotAlive. Collectable не ставим.");
+        // 3) Ни на одной линии не нашли, куда поместить объект
+        Debug.Log("[SnapToRoofRule] Не нашли подходящий BigNotAlive / MediumNotAlive. Объект на крышу не ставим.");
         return false;
     }
 
     /// <summary>
-    /// Пытается поставить collectable на крышу BigNotAlive или MediumNotAlive,
+    /// Пытается поставить объект на крышу BigNotAlive или MediumNotAlive,
     /// если он полностью влезает по горизонтали. Возвращает true при успехе.
     /// </summary>
-    private bool TrySnapCollectable(
+    private bool TrySnapObjectToRoof(
         Tilemap tilemap,
         Tile newTile,
         ref Vector3 newPos,
         float lineY)
     {
-        // Получаем мировые границы collectable (xMin, xMax, top)
+        // Получаем мировые границы нового объекта (xMin, xMax, top)
         var (newXMin, newXMax, _) = GetSpriteWorldBounds(newTile, newPos);
 
         foreach (var cellPos in tilemap.cellBounds.allPositionsWithin)
@@ -56,7 +56,7 @@ public class SnapToRoofRule : ITilePlacementRule
                 continue;
 
             // Проверяем, что этот объект на нужной линии
-            var existingPivotPos = tilemap.CellToWorld(cellPos);
+            var existingPivotPos = TilemapPositionUtility.GetExactTileWorldPosition(tilemap, cellPos);
             if (Mathf.Abs(existingPivotPos.y - lineY) > 0.001f)
                 continue;
 
@@ -72,9 +72,9 @@ public class SnapToRoofRule : ITilePlacementRule
                 continue;
             }
 
-            // Если полностью влезает, «ставим» collectable на крышу
-            newPos.y = oldTopY + 0.1f;
-            Debug.Log($"[SnapToRoofRule] Collectable целиком влез. Ставим на крышу: X={newPos.x:F2}, Y={newPos.y:F2}");
+            // Если полностью влезает, «ставим» объект на крышу
+            newPos.y = oldTopY + Consts.RoofOffset;
+            Debug.Log($"[SnapToRoofRule] Объект целиком влез. Ставим на крышу: X={newPos.x:F2}, Y={newPos.y:F2}");
             return true;
         }
 
