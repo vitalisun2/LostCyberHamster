@@ -136,7 +136,6 @@ namespace Assets.Tests.EditMode
                 isOnRoof: false,
                 energy: 100,
                 lives: 3,
-                isDamaged: false,
                 isShifting: false,
                 roofSupportInstanceId: null,
                 hamsterLeftX: -3.2f,

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
@@ -5,16 +6,29 @@ using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Common.Models;
+using Assets.Scripts.GameEngine.Mechanics.Models;
 
-namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.RoofJumpOver
 {
     /// <summary>
-    /// Проверяет, можно ли сохранить ранее выбранный roof-jump-over action.
+    /// Проверяет, можно ли сохранить ранее выбранный roof jump-over action.
     /// </summary>
     internal sealed class RoofJumpOverRetainedActionValidator : IRetainedActionValidator
     {
-        public BotActionKind ActionKind => BotActionKind.RoofJumpOver;
+        private const float ValidationEpsilon = 0.0001f;
+
+        private readonly IRoofJumpOverPolicy _policy;
+        private readonly RoofJumpOverFireWindowFinder _fireWindowFinder;
+
+        public RoofJumpOverRetainedActionValidator(
+            IRoofJumpOverPolicy policy,
+            RoofJumpOverFireWindowFinder fireWindowFinder)
+        {
+            _policy = policy;
+            _fireWindowFinder = fireWindowFinder;
+        }
+
+        public BotActionKind ActionKind => _policy.ActionKind;
 
         public bool IsStillValid(RetainedActionContext context)
         {
@@ -27,36 +41,34 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
             ObstacleSnapshot targetObstacle = context.TargetObstacle;
             PlannedAction action = context.Action;
 
+            // Проверяет обязательные данные retained action.
             if (planningState == null
                 || projectedWorldSnapshot == null
                 || decisionPoint?.Chain == null
-                || targetObstacle == null)
+                || targetObstacle == null
+                || !action.ResultRoofSupportInstanceId.HasValue)
             {
                 return false;
             }
-
-            if (targetObstacle.ObstacleType != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
-                return false;
 
             if (decisionPoint.Chain.FirstObstacle.InstanceId != targetObstacle.InstanceId)
                 return false;
 
-            if (!action.ResultRoofSupportInstanceId.HasValue)
+            if (!_policy.TryGetTravel(out RoofJumpOverTravel travel))
                 return false;
 
-            if (!RoofRunProjection.TryFindPassiveRoofSupportForOccupant(
+            // Пересчитывает актуальное roof hazard window.
+            if (!RoofJumpOverChainCalculator.TryCalculate(
                     planningState,
                     projectedWorldSnapshot,
-                    targetObstacle,
-                    out ObstacleSnapshot supportObstacle,
-                    out _))
+                    decisionPoint.Chain,
+                    travel,
+                    out RoofJumpOverChainModel chainModel))
             {
                 return false;
             }
 
-            if (supportObstacle.InstanceId != action.ResultRoofSupportInstanceId.Value)
-                return false;
-
+            // Восстанавливает текущий fire shift сохранённого action.
             if (!TryGetRemainingFireShift(
                     projectedWorldSnapshot,
                     targetObstacle,
@@ -67,33 +79,21 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
                 return false;
             }
 
-            if (!RoofJumpOverFireWindowFinder.TryGetOpenWindow(
-                    planningState.Hamster,
-                    targetObstacle,
-                    action.PostFireWorldShift,
-                    out float firstFireShift,
-                    out float lastFireShift))
+            if (fireShift < chainModel.FirstFireShift - ValidationEpsilon
+                || fireShift > chainModel.LastFireShift + ValidationEpsilon)
             {
                 return false;
             }
 
-            if (fireShift < firstFireShift || fireShift > lastFireShift)
-                return false;
-
-            if (!RoofJumpOverStrategy.TryGetRoofJumpOverTravel(
-                    out float roofJumpOverTravel,
-                    out float jumpFromRoofTravel))
-            {
-                return false;
-            }
-
-            return RoofJumpOverFireWindowFinder.CheckRuntimeOutcomeAtFireShift(
-                planningState.Hamster,
-                JumpObstacleProjection.BuildBase(projectedWorldSnapshot),
-                supportObstacle.InstanceId,
+            // Проверяет, что сохранённый fire shift всё ещё внутри окна и даёт тот же support.
+            List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
+            return _fireWindowFinder.CheckRuntimeOutcomeAtFireShift(
+                planningState,
+                projectedWorldSnapshot,
+                baseObstacles,
+                action.ResultRoofSupportInstanceId.Value,
                 fireShift,
-                roofJumpOverTravel,
-                jumpFromRoofTravel);
+                travel);
         }
 
         private static bool TryGetRemainingFireShift(

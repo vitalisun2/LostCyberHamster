@@ -5,14 +5,21 @@ using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 
-namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.RoofJumpOver
 {
     /// <summary>
-    /// Симулирует planning-переход roof jump over с продолжением RoofRun.
+    /// Симулирует planning-переход roof jump-over с продолжением RoofRun.
     /// </summary>
     internal sealed class RoofJumpOverSimulator : ISimulator
     {
-        public BotActionKind ActionKind => BotActionKind.RoofJumpOver;
+        private readonly IRoofJumpOverPolicy _policy;
+
+        public RoofJumpOverSimulator(IRoofJumpOverPolicy policy)
+        {
+            _policy = policy;
+        }
+
+        public BotActionKind ActionKind => _policy.ActionKind;
 
         public PlanningState Simulate(
             PlanningState planningState,

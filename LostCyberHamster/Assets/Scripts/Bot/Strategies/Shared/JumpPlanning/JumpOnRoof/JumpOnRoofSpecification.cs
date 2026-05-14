@@ -26,7 +26,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
             HamsterSnapshot hamster = planningState.Hamster;
             return !hamster.IsOnRoof
                    && !hamster.IsShifting
-                   && !hamster.IsDamaged
                    && hamster.Energy >= _policy.EnergyCost;
         }
     }

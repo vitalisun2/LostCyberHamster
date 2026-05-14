@@ -57,7 +57,6 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 isOnRoof: false,
                 hamster.Energy,
                 hamster.Lives,
-                hamster.IsDamaged,
                 isShifting: false,
                 roofSupportInstanceId: null,
                 hamster.HamsterLeftX,

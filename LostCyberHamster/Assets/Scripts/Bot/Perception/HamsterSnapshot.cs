@@ -16,7 +16,6 @@ namespace Assets.Scripts.Bot.Perception
             bool isOnRoof,
             int energy,
             int lives,
-            bool isDamaged,
             bool isShifting,
             int? roofSupportInstanceId,
             float hamsterLeftX,
@@ -27,7 +26,6 @@ namespace Assets.Scripts.Bot.Perception
             IsOnRoof = isOnRoof;
             Energy = energy;
             Lives = lives;
-            IsDamaged = isDamaged;
             IsShifting = isShifting;
             RoofSupportInstanceId = roofSupportInstanceId;
             HamsterLeftX = hamsterLeftX;
@@ -58,11 +56,6 @@ namespace Assets.Scripts.Bot.Perception
         /// Текущее число жизней.
         /// </summary>
         public int Lives { get; }
-
-        /// <summary>
-        /// Признак полученного урона.
-        /// </summary>
-        public bool IsDamaged { get; }
 
         /// <summary>
         /// Признак смены линии.

@@ -34,7 +34,6 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             // Отбрасывает состояния, в которых смену линии планировать нельзя.
             HamsterSnapshot hamster = planningState.Hamster;
             if (!CanPlanSwitchLaneFromState(hamster.HamsterState)
-                || hamster.IsDamaged
                 || hamster.IsShifting)
             {
                 return false;
@@ -65,7 +64,6 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             // Проверяет состояние хомяка на допустимость планирования.
             HamsterSnapshot hamster = planningState.Hamster;
             return CanPlanSwitchLaneFromState(hamster.HamsterState)
-                && !hamster.IsDamaged
                 && !hamster.IsShifting;
         }
 

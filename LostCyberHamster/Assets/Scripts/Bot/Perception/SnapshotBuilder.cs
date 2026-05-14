@@ -62,7 +62,6 @@ namespace Assets.Scripts.Bot.Perception
                 isOnRoof,
                 hamster.Energy.Value,
                 hamster.Lives.Value,
-                hamster.IsDamaged.Value,
                 hamster.IsShifting.Value,
                 isOnRoof && hamster.LastObstacle.Value != null
                     ? hamster.LastObstacle.Value.GetInstanceID()

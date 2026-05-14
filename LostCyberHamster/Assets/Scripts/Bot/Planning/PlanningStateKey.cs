@@ -14,7 +14,6 @@ namespace Assets.Scripts.Bot.Planning
             int roofSupportInstanceId,
             int energy,
             int lives,
-            bool isDamaged,
             bool isShifting,
             int projectionBucket)
         {
@@ -25,7 +24,6 @@ namespace Assets.Scripts.Bot.Planning
             RoofSupportInstanceId = roofSupportInstanceId;
             Energy = energy;
             Lives = lives;
-            IsDamaged = isDamaged;
             IsShifting = isShifting;
             ProjectionBucket = projectionBucket;
         }
@@ -37,7 +35,6 @@ namespace Assets.Scripts.Bot.Planning
         private int RoofSupportInstanceId { get; }
         private int Energy { get; }
         private int Lives { get; }
-        private bool IsDamaged { get; }
         private bool IsShifting { get; }
         private int ProjectionBucket { get; }
 
@@ -54,7 +51,6 @@ namespace Assets.Scripts.Bot.Planning
                 planningState.Hamster.RoofSupportInstanceId ?? -1,
                 planningState.Hamster.Energy,
                 planningState.Hamster.Lives,
-                planningState.Hamster.IsDamaged,
                 planningState.Hamster.IsShifting,
                 projectionBucket);
         }
@@ -68,7 +64,6 @@ namespace Assets.Scripts.Bot.Planning
                 && RoofSupportInstanceId == other.RoofSupportInstanceId
                 && Energy == other.Energy
                 && Lives == other.Lives
-                && IsDamaged == other.IsDamaged
                 && IsShifting == other.IsShifting
                 && ProjectionBucket == other.ProjectionBucket;
         }
@@ -89,7 +84,6 @@ namespace Assets.Scripts.Bot.Planning
                 hash = (hash * 397) ^ RoofSupportInstanceId;
                 hash = (hash * 397) ^ Energy;
                 hash = (hash * 397) ^ Lives;
-                hash = (hash * 397) ^ (IsDamaged ? 1 : 0);
                 hash = (hash * 397) ^ (IsShifting ? 1 : 0);
                 hash = (hash * 397) ^ ProjectionBucket;
                 return hash;
