@@ -18,6 +18,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot hazardObstacle,
+            ObstacleSnapshot supportObstacle,
             float roofJumpOverTravel,
             float jumpFromRoofTravel,
             out float fireShift)
@@ -25,7 +26,8 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (projectedWorldSnapshot, nameof(projectedWorldSnapshot)),
-                (hazardObstacle, nameof(hazardObstacle)));
+                (hazardObstacle, nameof(hazardObstacle)),
+                (supportObstacle, nameof(supportObstacle)));
 
             if (!TryGetOpenWindow(
                     planningState.Hamster,
@@ -44,7 +46,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
             return CheckRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
-                hazardObstacle.InstanceId,
+                supportObstacle.InstanceId,
                 fireShift,
                 roofJumpOverTravel,
                 jumpFromRoofTravel);
@@ -80,7 +82,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
         internal static bool CheckRuntimeOutcomeAtFireShift(
             HamsterSnapshot hamster,
             IReadOnlyList<JumpObstacleData> baseObstacles,
-            int expectedHazardInstanceId,
+            int expectedSupportInstanceId,
             float fireShift,
             float roofJumpOverTravel,
             float jumpFromRoofTravel)
@@ -101,43 +103,10 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
             if (result.State != HamsterStateEnum.RoofJump)
                 return false;
 
-            if (!TryFindShiftedObstacleIndex(
-                    baseObstacles,
-                    expectedHazardInstanceId,
-                    out int expectedHazardIndex))
+            if (result.TargetIndex < 0 || result.TargetIndex >= obstaclesAtFireShift.Count)
                 return false;
 
-            if (!JumpOutcomeResolver.TryFindRoofUnderSmall(
-                    obstaclesAtFireShift[expectedHazardIndex],
-                    obstaclesAtFireShift,
-                    out int supportIndex))
-                return false;
-
-            if (result.TargetIndex != supportIndex)
-                return false;
-
-            return true;
-        }
-
-        private static bool TryFindShiftedObstacleIndex(
-            IReadOnlyList<JumpObstacleData> baseObstacles,
-            int expectedInstanceId,
-            out int obstacleIndex)
-        {
-            obstacleIndex = -1;
-            if (baseObstacles == null)
-                return false;
-
-            for (int index = 0; index < baseObstacles.Count; index++)
-            {
-                if (baseObstacles[index].InstanceId != expectedInstanceId)
-                    continue;
-
-                obstacleIndex = index;
-                return true;
-            }
-
-            return false;
+            return obstaclesAtFireShift[result.TargetIndex].InstanceId == expectedSupportInstanceId;
         }
     }
 }

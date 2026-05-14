@@ -72,6 +72,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
                     planningState,
                     worldSnapshot,
                     hazardObstacle,
+                    supportObstacle,
                     roofJumpOverTravel,
                     jumpFromRoofTravel,
                     out float fireShift))

@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using Assets.Scripts;
 using Assets.Scripts.Common;
@@ -26,18 +25,11 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private const string CLIP_ROOF_JUMP = "transform_roof_jump";
         private const string CLIP_JUMP_FROM_ROOF = "transform_jump_from_roof";
-        private const float RIGHT_EDGE_TOL_RATIO = 0.2f; // 20 % ширины хомяка
 
         private readonly float _hamsterWidth;
         private readonly float _roofJumpShift;
         private readonly float _jumpFromRoofShift;
-
-        // список препятствий, уже лежащих на нужной линии
-        private IReadOnlyList<Obstacle> _sameLineObstacles;
-
-        private readonly Dictionary<ObstacleTypeEnum, Func<Obstacle, JumpResult>> _handlers;
-        private readonly JumpResult _noHit = new(HamsterStateEnum.JumpFromRoof, null);
-
+        private readonly List<JumpObstacleData> _roofJumpObstacleBuffer = new(32);
 
         public RoofJumpMechanics(AtomicEvent roofJumpRequest,
             AtomicVariable<HamsterStateEnum> hamsterState,
@@ -62,19 +54,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             _roofJumpShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_ROOF_JUMP);
             _jumpFromRoofShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_JUMP_FROM_ROOF);
-
-            // будет заполнено при вычислении состояния прыжка
-            _sameLineObstacles = Array.Empty<Obstacle>();
-
-            _handlers = new()
-            {
-                { ObstacleTypeEnum.bigNotAlive,              HandleBigNotAlive              },
-                { ObstacleTypeEnum.mediumNotAlive,           HandleBigNotAlive              },
-                { ObstacleTypeEnum.bigAlive,                 HandleBigAlive                 },
-                { ObstacleTypeEnum.smallAlive,               HandleSmallAlive               },
-                { ObstacleTypeEnum.smallNotAliveRoad,        HandleSmallNotAliveRoad        },
-                { ObstacleTypeEnum.smallNotAliveRoadAndRoof, HandleSmallNotAliveRoadAndRoof }
-            };
         }
 
         public void OnEnable()
@@ -111,117 +90,43 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _transformAnimatorController.SwapRoofClips(isMedium);
         }
 
+        /// <summary>
+        /// Определяет итог roof jump через общий outcome-resolver и возвращает runtime target obstacle.
+        /// </summary>
         private JumpResult CalculateRoofJumpState()
         {
             var obstacles = CollisionUtils.GetValidObstaclesAhead(_transform, _isOnBottomLine.Value);
-            _sameLineObstacles = obstacles;
-            float reachShift = Mathf.Max(_jumpFromRoofShift, _roofJumpShift); // максимум из двух клипов
+            _roofJumpObstacleBuffer.Clear();
 
-            foreach (var obs in obstacles)
+            for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
             {
-                // ✅ корректный ранний выход по левой грани препятствия
-                if (CollisionUtils.ShouldBreakByReachRight(_transform, _hamsterWidth, reachShift, obs))
-                    break;
+                Obstacle obstacle = obstacles[obstacleIndex];
+                CollisionUtils.GetObstacleXInterval(obstacle, obstacle.ColliderWidth, 0f, out float leftX, out float rightX);
 
-                if (_handlers.TryGetValue(obs.ObstacleType.ObstacleTypeEnum, out var handler))
-                {
-                    var res = handler(obs);
-                    if (res.State != _noHit.State)
-                        return res;
-                }
+                _roofJumpObstacleBuffer.Add(new JumpObstacleData(
+                    obstacle.ObstacleType.ObstacleTypeEnum,
+                    !obstacle.ObstacleType.IsTop,
+                    leftX,
+                    rightX,
+                    obstacle.transform.position.x));
             }
 
-            return _noHit;
+            CollisionUtils.GetHamsterXBounds(_transform, out float hamsterLeftX, out float hamsterRightX);
+            RoofJumpResolveContext context = new(
+                _isOnBottomLine.Value,
+                hamsterLeftX,
+                hamsterRightX,
+                _transform.position.x,
+                _hamsterWidth,
+                _roofJumpShift,
+                _jumpFromRoofShift);
+
+            JumpResolveResult result = RoofJumpOutcomeResolver.ResolveRoofJump(_roofJumpObstacleBuffer, context);
+            Obstacle target = result.TargetIndex >= 0 && result.TargetIndex < obstacles.Count
+                ? obstacles[result.TargetIndex]
+                : null;
+
+            return new JumpResult(result.State, target);
         }
-
-        // ───── Обработчики ─────────────────────────────────────────────────────────
-        // bigNotAlive → RoofJump
-        private JumpResult HandleBigNotAlive(Obstacle obs)
-        {
-            if (!CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _roofJumpShift, obs))
-                return _noHit;
-
-            bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_transform, _hamsterWidth, _roofJumpShift, _sameLineObstacles);
-            var state = hitSmall ? HamsterStateEnum.RoofJumpDamage : HamsterStateEnum.RoofJump;
-
-            return new JumpResult(state, obs);
-        }
-
-        // bigAlive → JumpOnObstacleFromRoof / JumpFromRoofDamage
-        private JumpResult HandleBigAlive(Obstacle obs)
-        {
-            // 1. Центр внутри границ препятствия? → удачный напрыг
-            float rightTol = _hamsterWidth * RIGHT_EDGE_TOL_RATIO;
-            if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
-                    _transform,
-                    _jumpFromRoofShift,
-                    obs,
-                    rightTol))
-                return new JumpResult(HamsterStateEnum.JumpOnObstacleFromRoof, obs);
-
-            // 2. Иначе: есть ли вообще X-пересечение? → урон
-            if (CollisionUtils.IsOverlapAtShift(
-                    _transform,
-                    _hamsterWidth,
-                    _jumpFromRoofShift,
-                    obs))
-                return new JumpResult(HamsterStateEnum.JumpFromRoofDamage, obs);
-
-            // 3. Вообще не задели
-            return _noHit;
-        }
-
-        // smallAlive → JumpOnObstacleFromRoof / JumpFromRoofDamage
-        private JumpResult HandleSmallAlive(Obstacle obs)
-        {
-            // 1. Центр внутри границ препятствия? → удачный напрыг
-            float rightTol = _hamsterWidth * RIGHT_EDGE_TOL_RATIO;
-            if (CollisionUtils.IsHamsterCenterInsideObstacleAtShift(
-                    _transform,
-                    _jumpFromRoofShift,
-                    obs,
-                    rightTol))
-                return new JumpResult(HamsterStateEnum.JumpOnObstacleFromRoof, obs);
-
-            // 2. Иначе: есть ли X-пересечение? → урон
-            if (CollisionUtils.IsOverlapAtShift(
-                    _transform,
-                    _hamsterWidth,
-                    _jumpFromRoofShift,
-                    obs))
-                return new JumpResult(HamsterStateEnum.JumpFromRoofDamage, obs);
-
-            // 3. Вообще не задели
-            return _noHit;
-        }
-
-        // smallNotAliveRoad → JumpFromRoofDamage
-        private JumpResult HandleSmallNotAliveRoad(Obstacle obs)
-        {
-            if (CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, obs))
-                return new JumpResult(HamsterStateEnum.JumpFromRoofDamage, obs);
-
-            return _noHit;
-        }
-
-        // smallNotAliveRoadAndRoof → RoofJump / RoofJumpDamage / JumpFromRoofDamage
-        private JumpResult HandleSmallNotAliveRoadAndRoof(Obstacle small)
-        {
-            bool isOnBigRoof = CollisionUtils.TryFindBigNotAliveUnderSmallNotAlive(
-                                   small, _sameLineObstacles, out var bigUnderSmall);
-
-            if (isOnBigRoof)
-            {
-                bool hitSmall = CollisionUtils.IsHitSmallNotAliveOnRoof(_transform, _hamsterWidth, _roofJumpShift, _sameLineObstacles);
-                return new JumpResult(hitSmall ? HamsterStateEnum.RoofJumpDamage : HamsterStateEnum.RoofJump, bigUnderSmall);
-            }
-
-            // ---- small стоит на дороге (прыгаем «с крыши вниз») ----
-            if (CollisionUtils.IsOverlapAtShift(_transform, _hamsterWidth, _jumpFromRoofShift, small))
-                return new JumpResult(HamsterStateEnum.JumpFromRoofDamage, small);
-
-            return _noHit;
-        }
-
     }
 }

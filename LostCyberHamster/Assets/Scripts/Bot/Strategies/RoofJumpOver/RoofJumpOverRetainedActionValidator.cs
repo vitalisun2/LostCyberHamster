@@ -90,7 +90,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
             return RoofJumpOverFireWindowFinder.CheckRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 JumpObstacleProjection.BuildBase(projectedWorldSnapshot),
-                targetObstacle.InstanceId,
+                supportObstacle.InstanceId,
                 fireShift,
                 roofJumpOverTravel,
                 jumpFromRoofTravel);
