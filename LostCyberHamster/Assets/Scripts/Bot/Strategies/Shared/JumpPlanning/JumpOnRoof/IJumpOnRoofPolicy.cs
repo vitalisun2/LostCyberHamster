@@ -3,7 +3,7 @@ using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay.Enums;
 
-namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
 {
     /// <summary>
     /// Описывает различия между вариантами запрыгивания на крышу.

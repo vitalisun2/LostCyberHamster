@@ -1,7 +1,7 @@
-namespace Assets.Scripts.Bot.Strategies.JumpOver.Models
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
 {
     /// <summary>
-    /// Хранит границы цепочки препятствий для обычного прыжка и выбранные смещения по огню.
+    /// Хранит границы chain препятствий для jump-over и выбранный fire shift.
     /// </summary>
     internal readonly struct JumpOverChainModel
     {
@@ -28,9 +28,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver.Models
         public float LastFireShift { get; }
         public float SelectedFireShift { get; }
 
-        /// <summary>
-        /// Проверяет, входит ли индекс препятствия в диапазон текущей цепочки.
-        /// </summary>
         public bool ContainsObstacleIndex(int obstacleIndex)
         {
             return obstacleIndex >= FirstObstacleIndex && obstacleIndex <= LastObstacleIndex;

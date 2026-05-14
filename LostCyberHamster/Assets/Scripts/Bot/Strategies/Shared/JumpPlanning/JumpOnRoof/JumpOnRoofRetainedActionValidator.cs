@@ -4,10 +4,11 @@ using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 
-namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
 {
     /// <summary>
     /// Проверяет, можно ли сохранить ранее выбранное действие запрыгивания на крышу.

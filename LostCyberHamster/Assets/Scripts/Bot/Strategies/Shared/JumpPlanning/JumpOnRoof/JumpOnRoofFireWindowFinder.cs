@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 
-namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
 {
     /// <summary>
     /// Подбирает момент срабатывания прыжка для посадки бота на целевую крышу.

@@ -5,7 +5,7 @@ using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 
-namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
 {
     /// <summary>
     /// Симулирует planning-переход после посадки на крышу.

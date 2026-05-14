@@ -1,18 +1,25 @@
-using Assets.Scripts.Bot.Strategies.Shared.Simulation;
-using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 
-namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
 {
     /// <summary>
-    /// Симулирует planning-переход super jump-over.
+    /// Симулирует planning-переход после успешного ground jump-over.
     /// </summary>
-    internal sealed class SuperJumpOverSimulator : ISimulator
+    internal sealed class JumpOverSimulator : ISimulator
     {
-        public BotActionKind ActionKind => BotActionKind.SuperJumpOver;
+        private readonly IJumpOverPolicy _policy;
+
+        public JumpOverSimulator(IJumpOverPolicy policy)
+        {
+            _policy = policy;
+        }
+
+        public BotActionKind ActionKind => _policy.ActionKind;
 
         public PlanningState Simulate(
             PlanningState planningState,

@@ -2,23 +2,24 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Strategies.JumpOver.Models;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Common;
-using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
-using Assets.Scripts.Gameplay.Enums;
 
-namespace Assets.Scripts.Bot.Strategies.JumpOver
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
 {
     /// <summary>
-    /// Ищет fire shift для обычного jump-over.
+    /// Подбирает fire shift для ground jump-over chain.
     /// </summary>
     internal sealed class JumpOverFireWindowFinder
     {
-        /// <summary>
-        /// Подбирает fire shift внутри допустимого окна для jump-over.
-        /// </summary>
+        private readonly IJumpOverPolicy _policy;
+
+        public JumpOverFireWindowFinder(IJumpOverPolicy policy)
+        {
+            _policy = policy;
+        }
+
         public bool TryFindFireShift(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
@@ -32,6 +33,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 (chain, nameof(chain)));
 
             if (!JumpOverChainCalculator.TryCalculate(
+                    _policy,
                     planningState.Hamster,
                     chain,
                     jumpTravel,
@@ -51,21 +53,16 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 chainWindow);
         }
 
-        /// <summary>
-        /// Проверяет, что fire shift приводит к ожидаемому runtime outcome по рассчитанной chain.
-        /// </summary>
-        private static bool CheckRuntimeOutcomeAtFireShift(
+        internal bool CheckRuntimeOutcomeAtFireShift(
             HamsterSnapshot hamster,
             IReadOnlyList<JumpObstacleData> baseObstacles,
             float fireShift,
             float jumpTravel,
             JumpOverChainModel chainWindow)
         {
-            // Строит obstacle snapshot на момент fire.
             var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
             JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
 
-            // Готовит контекст для runtime resolver'а.
             JumpResolveContext context = new(
                 hamster.IsOnBottomLine,
                 hamster.HamsterLeftX,
@@ -74,11 +71,10 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 hamster.Width,
                 jumpTravel,
                 jumpTravel,
-                damageBigAliveWithoutYByReach: true);
+                damageBigAliveWithoutYByReach: _policy.DamageBigAliveWithoutYByReach);
 
-            // Сверяет runtime outcome с ожидаемой chain.
-            JumpResolveResult result = JumpOutcomeResolver.ResolveJump(obstaclesAtFireShift, context);
-            return result.State == HamsterStateEnum.JumpOver
+            JumpResolveResult result = _policy.Resolve(obstaclesAtFireShift, context);
+            return result.State == _policy.ExpectedOverState
                    && chainWindow.ContainsObstacleIndex(result.TargetIndex);
         }
     }

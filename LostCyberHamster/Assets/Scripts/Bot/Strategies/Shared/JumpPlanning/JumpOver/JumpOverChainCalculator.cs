@@ -1,40 +1,30 @@
-﻿using Assets.Scripts.Bot.Perception;
-using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
-using Assets.Scripts.Bot.Strategies.SuperJumpOver.Models;
 
-namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
 {
-
-    internal static class SuperJumpOverChainCalculator
+    /// <summary>
+    /// Вычисляет chain и fire window для ground jump-over.
+    /// </summary>
+    internal static class JumpOverChainCalculator
     {
-        /// <summary>
-        /// Вычисляет окно суперпрыжка для цепочки препятствий, начиная с целевого obstacle.
-        /// </summary>
         public static bool TryCalculate(
+            IJumpOverPolicy policy,
             HamsterSnapshot hamster,
             ObstacleChain chain,
-            float superJumpTravel,
-            out SuperJumpOverChainModel window)
+            float jumpTravel,
+            out JumpOverChainModel window)
         {
-            // Сбрасываем результат по умолчанию.
             window = default;
 
-            // Проверяем обязательные входные данные.
-            if (hamster == null
-                || chain == null
-                || chain.Count <= 0)
-            {
+            if (policy == null || hamster == null || chain == null || chain.Count <= 0)
                 return false;
-            }
 
-            // Проверяем, что целевое препятствие подходит для super jump-over.
             ObstacleSnapshot targetObstacle = chain.FirstObstacle;
-            if (!ObstacleClassifier.CanSuperJumpOverOnGround(targetObstacle.ObstacleType))
+            if (!policy.CanJumpOverObstacle(targetObstacle.ObstacleType))
                 return false;
 
-            // Инициализируем цепочку по первому препятствию.
             bool isBottomLine = targetObstacle.IsBottomLine;
             float chainLeftX = targetObstacle.LeftX;
             float chainRightX = targetObstacle.RightX;
@@ -42,19 +32,17 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             int lastObstacleIndex = firstObstacleIndex;
             int obstacleCount = 1;
 
-            // Строим начальное окно для первой obstacle.
             if (!TryGetOpenWindow(
                     hamster,
                     chainLeftX,
                     chainRightX,
-                    superJumpTravel,
+                    jumpTravel,
                     out float firstFireShift,
                     out float lastFireShift))
             {
                 return false;
             }
 
-            // Расширяем цепочку, пока для неё сохраняется общее окно.
             for (int chainIndex = 1; chainIndex < chain.Count; chainIndex++)
             {
                 if (!chain.TryGetAt(chainIndex, out ObstacleSnapshot obstacle, out int obstacleWorldIndex))
@@ -63,7 +51,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 if (obstacle.IsBottomLine != isBottomLine)
                     return false;
 
-                if (!ObstacleClassifier.CanSuperJumpOverOnGround(obstacle.ObstacleType))
+                if (!policy.CanJumpOverObstacle(obstacle.ObstacleType))
                     break;
 
                 float candidateChainRightX = obstacle.RightX > chainRightX ? obstacle.RightX : chainRightX;
@@ -71,7 +59,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                         hamster,
                         chainLeftX,
                         candidateChainRightX,
-                        superJumpTravel,
+                        jumpTravel,
                         out float candidateFirstFireShift,
                         out float candidateLastFireShift))
                 {
@@ -85,12 +73,10 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 lastFireShift = candidateLastFireShift;
             }
 
-            // Выбираем конкретный fire shift внутри найденного окна.
             if (!TrySelectFireShift(obstacleCount, firstFireShift, lastFireShift, out float selectedFireShift))
                 return false;
 
-            // Возвращаем рассчитанное окно цепочки.
-            window = new SuperJumpOverChainModel(
+            window = new JumpOverChainModel(
                 firstObstacleIndex,
                 lastObstacleIndex,
                 obstacleCount,
@@ -100,58 +86,42 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             return true;
         }
 
-        /// <summary>
-        /// Вычисляет допустимое окно сдвига для активации суперпрыжка через цепочку препятствий.
-        /// </summary>
         private static bool TryGetOpenWindow(
             HamsterSnapshot hamster,
             float chainLeftX,
             float chainRightX,
-            float superJumpTravel,
+            float jumpTravel,
             out float firstFireShift,
             out float lastFireShift)
         {
-            // Вычисляем раннюю границу старта.
-            firstFireShift = chainRightX - hamster.HamsterLeftX - superJumpTravel;
+            firstFireShift = chainRightX - hamster.HamsterLeftX - jumpTravel;
             if (firstFireShift < 0f)
                 firstFireShift = 0f;
 
-            // Вычисляем позднюю границу старта.
             lastFireShift = chainLeftX - hamster.HamsterRightX;
 
-            // Отступаем внутрь от обеих границ fire-window единым jump margin.
             float fireWindowBoundaryMargin =
                 JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
             firstFireShift += fireWindowBoundaryMargin;
             lastFireShift -= fireWindowBoundaryMargin;
 
-            // Проверяем, осталось ли допустимое окно.
-            bool hasOpenFireWindow = firstFireShift < lastFireShift;
-            return hasOpenFireWindow;
+            return firstFireShift < lastFireShift;
         }
 
-        /// <summary>
-        /// Выбирает конкретный сдвиг активации суперпрыжка внутри допустимого окна.
-        /// </summary>
         private static bool TrySelectFireShift(
             int obstacleCount,
             float firstFireShift,
             float lastFireShift,
             out float fireShift)
         {
-            // Выбираем середину окна для одиночного препятствия.
             if (obstacleCount <= 1)
             {
                 fireShift = (firstFireShift + lastFireShift) * 0.5f;
                 return true;
             }
 
-            // Для цепочки выбираем позднюю границу уже суженного окна.
             fireShift = lastFireShift;
-
-            // Проверяем, что выбранный сдвиг не вышел за раннюю границу.
-            bool isSelectedFireShiftInsideWindow = fireShift > firstFireShift;
-            return isSelectedFireShiftInsideWindow;
+            return fireShift > firstFireShift;
         }
     }
 }

@@ -1,7 +1,7 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 
-namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
 {
     /// <summary>
     /// Проверяет применимость действия запрыгивания на крышу.

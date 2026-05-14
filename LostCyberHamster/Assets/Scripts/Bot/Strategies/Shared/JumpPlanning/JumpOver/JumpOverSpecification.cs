@@ -2,21 +2,20 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 
-namespace Assets.Scripts.Bot.Strategies.JumpOver
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
 {
     /// <summary>
-    /// Проверяет применимость обычного jump-over.
+    /// Проверяет применимость ground jump-over действия.
     /// </summary>
     internal sealed class JumpOverSpecification
     {
-        /// <summary>
-        /// Energy cost обычного jump-over.
-        /// </summary>
-        public const int EnergyCost = 10;
+        private readonly IJumpOverPolicy _policy;
 
-        /// <summary>
-        /// Проверяет, что decision point можно закрыть обычным jump-over.
-        /// </summary>
+        public JumpOverSpecification(IJumpOverPolicy policy)
+        {
+            _policy = policy;
+        }
+
         public bool IsSatisfiedBy(
             PlanningState planningState,
             DecisionPoint decisionPoint,
@@ -34,11 +33,15 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
             }
 
             HamsterSnapshot hamster = planningState.Hamster;
-            if (hamster.IsOnRoof || hamster.IsShifting || hamster.Energy < EnergyCost)
+            if (hamster.IsOnRoof
+                || hamster.IsShifting
+                || hamster.Energy < _policy.EnergyCost)
+            {
                 return false;
+            }
 
             ObstacleSnapshot firstObstacle = decisionPoint.Chain.FirstObstacle;
-            if (!ObstacleClassifier.CanJumpOverOnGround(firstObstacle.ObstacleType))
+            if (!_policy.CanJumpOverObstacle(firstObstacle.ObstacleType))
                 return false;
 
             targetObstacle = firstObstacle;
