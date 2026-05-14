@@ -2,6 +2,7 @@ using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Execution;
+using Assets.Scripts.Bot.Strategies.JumpFromRoof;
 using Assets.Scripts.Bot.Strategies.JumpOnRoof;
 using Assets.Scripts.Bot.Strategies.JumpOver;
 using Assets.Scripts.Bot.Strategies.RoofJumpOver;
@@ -97,6 +98,7 @@ namespace Assets.Scripts.Bot
                 new SuperJumpOverStrategy(),
                 new JumpOnRoofStrategy(),
                 new SuperJumpOnRoofStrategy(),
+                new JumpFromRoofStrategy(),
                 new RoofJumpOverStrategy(),
                 new SuperRoofJumpOverStrategy()
             };
