@@ -19,6 +19,7 @@
 Для исполнительной и существенной аналитической задачи — дополнительно:
 
 1. `docs/rules/ai_workflow_lessons.md` — накопленные уроки (обязательно каждую сессию)
+2. `docs/rules/architecting_and_coding_principles.md` — общие принципы архитектуры и кодирования
 2. `docs/rules/code_conventions.md` — конвенции кода и валидация
 3. `docs/rules/temporary_current_rules.md` — временные обязательные правила текущего этапа разработки
 4. [if-relevant: бот, gameplay, тесты] `docs/rules/iteration_cycle.md` — итерационный цикл тестирования бота
@@ -77,6 +78,7 @@
 |---|---|
 | `AGENTS.md` | Точка входа, роутинг, профиль, стиль, процесс, мета-правила |
 | `workflow.md` | Ветки, `integration/unity-live`, worktree по запросу, жизненный цикл задачи, git, отчётность |
+| `architecting_and_coding_principles.md` | Общие принципы архитектуры и кодирования |
 | `iteration_cycle.md` | Итерационный цикл тестирования бота (ручной прогон пользователя, логи, фидбэк) |
 | `code_conventions.md` | Конвенции кода, валидация, Unity-специфика |
 | `agent_tools.md` | Каталог проектных инструментов и автоматизаций |
