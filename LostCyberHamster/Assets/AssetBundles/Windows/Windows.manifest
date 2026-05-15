@@ -1,0 +1,29 @@
+ManifestFileVersion: 0
+UnityVersion: 6000.2.6f2
+CRC: 1407144916
+HashAppended: 0
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: ui
+      Dependencies:
+        Dependency_0: shared-sprites
+    Info_1:
+      Name: 01_new_york-sprites
+      Dependencies: {}
+    Info_2:
+      Name: shared-sprites
+      Dependencies: {}
+    Info_3:
+      Name: location-previews
+      Dependencies: {}
+    Info_4:
+      Name: prefabs
+      Dependencies:
+        Dependency_0: shared-sprites
+    Info_5:
+      Name: 02_paris-sprites
+      Dependencies: {}
+    Info_6:
+      Name: level_design_templates-levels
+      Dependencies: {}
