@@ -65,6 +65,7 @@
 
 - [promoted -> docs/rules/AGENTS.md] Отвечать максимально кратко; подробности — по запросу.
 - [promoted -> docs/rules/AGENTS.md] Перед задачей читать AGENTS.md и релевантные правила.
+- [promoted -> docs/rules/agent_efficiency_playbook.md] Неудачные агентские попытки фиксировать в формате: ошибка -> причина -> рабочий ход -> правило.
 - [promoted -> docs/rules/workflow.md] Побочные изменения (автогенерация) должны попадать в main.
 - [promoted -> docs/rules/workflow.md] При валидации запускать только релевантный тестовый уровень.
 - [promoted -> docs/rules/workflow.md] Не объявлять задачу завершённой до конца git-цикла.
