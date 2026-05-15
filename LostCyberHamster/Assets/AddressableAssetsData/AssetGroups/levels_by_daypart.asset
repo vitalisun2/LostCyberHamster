@@ -80,6 +80,14 @@ MonoBehaviour:
     - levels_daypart_Morning
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 950eb140c1c2ff5468ba0dd1b73b302b
+    m_Address: 01_New_York/Morning/test_jump_from_roof
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9c2cfd3913b169341a4b73329d8092c0
     m_Address: 01_New_York/Morning/test_roof_jump_over
     m_ReadOnly: 0
