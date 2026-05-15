@@ -43,14 +43,15 @@
 
 - **Блок 4. SuperJumpFromRoof**
   Подключаем super-версию той же стратегии с другим travel, resolver и input flow.
-  - **4.1.** Policy использует super roof jump travel и `SuperRoofJumpOutcomeResolver`.
-  - **4.2.** Strategy facade остается тем же тонким слоем поверх shared-механики.
-  - **4.3.** Executor делает двухфазный input: roof jump, затем super upgrade.
+  - ✅ **4.1.** Policy использует super roof jump travel и `SuperRoofJumpOutcomeResolver`.
+  - ✅ **4.2.** Strategy facade остается тем же тонким слоем поверх shared-механики.
+  - ✅ **4.3.** Executor делает двухфазный input: roof jump, затем super upgrade.
 
 - **Блок 5. Интеграция и проверка**
-  Включаем готовую ordinary strategy в общий bot pipeline; super-вариант остается на блок 4.
+  Включаем готовые ordinary и super strategies в общий bot pipeline.
   - ✅ **5.1.** Регистрируем ordinary `JumpFromRoofStrategy` в `RuntimeBotController`.
   - ✅ **5.2.** Обновляем project files при необходимости.
+  - ✅ **5.3.** Регистрируем `SuperJumpFromRoofStrategy` в `RuntimeBotController`.
 
 ## Детальная структура
 
@@ -157,7 +158,7 @@
 
 ### Блок 5. Интеграция и проверка
 
-Этот блок включает готовую ordinary strategy в bot runtime. `SuperJumpFromRoofStrategy` не регистрируется до реализации блока 4.
+Этот блок включает готовые ordinary и super strategies в bot runtime.
 
 - **5.1. Зарегистрировать ordinary strategy**
   - **Файл:** `LostCyberHamster/Assets/Scripts/Bot/RuntimeBotController.cs`
@@ -168,3 +169,8 @@
   - **Файл:** `LostCyberHamster/Assembly-CSharp.csproj`
   - **Что меняется:** `<Compile Include="...">` entries.
   - **Суть изменения:** добавить новые runtime scripts, если Unity еще не обновила project files. `.meta` для новых `Assets/` scripts не писать вручную; их должен сгенерировать Unity import.
+
+- **5.3. Зарегистрировать super strategy**
+  - **Файл:** `LostCyberHamster/Assets/Scripts/Bot/RuntimeBotController.cs`
+  - **Что меняется:** `CreateStrategies`.
+  - **Суть изменения:** добавить `SuperJumpFromRoofStrategy` рядом с `JumpFromRoofStrategy`, чтобы super-вариант участвовал в action generation, execution, simulation, retained validation и in-progress projection через общий список strategies.
