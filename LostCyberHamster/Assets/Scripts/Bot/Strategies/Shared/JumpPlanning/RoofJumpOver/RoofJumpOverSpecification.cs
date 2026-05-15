@@ -1,7 +1,6 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.RoofJumpOver
@@ -20,6 +19,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.RoofJumpOver
 
         public bool IsSatisfiedBy(
             PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
             DecisionPoint decisionPoint,
             out ObstacleSnapshot hazardObstacle,
             out int hazardObstacleIndex)
@@ -27,11 +27,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.RoofJumpOver
             hazardObstacle = null;
             hazardObstacleIndex = -1;
 
-            if (planningState == null || decisionPoint?.Chain == null)
+            if (planningState == null || projectedWorldSnapshot == null || decisionPoint?.Chain == null)
                 return false;
 
             HamsterSnapshot hamster = planningState.Hamster;
-            if (hamster.HamsterState != HamsterStateEnum.RoofRun
+            if (hamster == null
+                || hamster.HamsterState != HamsterStateEnum.RoofRun
                 || !hamster.IsOnRoof
                 || !hamster.RoofSupportInstanceId.HasValue
                 || hamster.IsShifting
@@ -41,11 +42,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.RoofJumpOver
             }
 
             ObstacleSnapshot firstObstacle = decisionPoint.Chain.FirstObstacle;
-            if (firstObstacle.ObstacleType != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
+            if (!RoofRunProjection.TryFindDamagingOccupantOnPassiveRoofPath(
+                    planningState,
+                    projectedWorldSnapshot,
+                    firstObstacle,
+                    out _,
+                    out _))
+            {
                 return false;
-
-            if (firstObstacle.IsBottomLine != hamster.IsOnBottomLine)
-                return false;
+            }
 
             hazardObstacle = firstObstacle;
             hazardObstacleIndex = decisionPoint.Chain.FirstIndex;

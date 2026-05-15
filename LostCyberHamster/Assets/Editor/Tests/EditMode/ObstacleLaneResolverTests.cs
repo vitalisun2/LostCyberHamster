@@ -139,7 +139,9 @@ namespace Assets.Tests.EditMode
                 isShifting: false,
                 roofSupportInstanceId: null,
                 hamsterLeftX: -3.2f,
-                hamsterRightX: -2.7f);
+                hamsterRightX: -2.7f,
+                hamsterBottomY: 0f,
+                hamsterTopY: 1f);
         }
 
         private static ObstacleSnapshot CreateObstacleSnapshot(
@@ -155,7 +157,9 @@ namespace Assets.Tests.EditMode
                 isTopLine,
                 leftX,
                 rightX,
-                centerX: (leftX + rightX) * 0.5f);
+                centerX: (leftX + rightX) * 0.5f,
+                bottomY: 0f,
+                topY: 1f);
         }
 
         private static WorldSnapshot CreateWorldSnapshot(

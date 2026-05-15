@@ -99,7 +99,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
                 isShifting: false,
                 roofSupportInstanceId: null,
                 hamster.HamsterLeftX,
-                hamster.HamsterRightX);
+                hamster.HamsterRightX,
+                hamster.HamsterBottomY,
+                hamster.HamsterTopY);
         }
 
         /// <summary>
@@ -120,7 +122,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
                 isShifting: false,
                 roofSupportInstanceId,
                 hamster.HamsterLeftX,
-                hamster.HamsterRightX);
+                hamster.HamsterRightX,
+                hamster.HamsterBottomY,
+                hamster.HamsterTopY);
         }
 
         /// <summary>
@@ -137,7 +141,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
                 isShifting: false,
                 action.TargetObstacleInstanceId,
                 hamster.HamsterLeftX,
-                hamster.HamsterRightX);
+                hamster.HamsterRightX,
+                hamster.HamsterBottomY,
+                hamster.HamsterTopY);
         }
 
         /// <summary>
@@ -156,7 +162,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
                 isShifting: false,
                 roofSupportInstanceId,
                 hamster.HamsterLeftX,
-                hamster.HamsterRightX);
+                hamster.HamsterRightX,
+                hamster.HamsterBottomY,
+                hamster.HamsterTopY);
         }
 
         /// <summary>

@@ -23,6 +23,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
         bool TryGetTravel(out float travel);
 
         /// <summary>
+        /// Переводит planning fire shift в runtime-точку resolver'а и дистанцию resolver'а.
+        /// </summary>
+        void GetResolveInput(
+            float fireShift,
+            float jumpTravel,
+            out float resolveFireShift,
+            out float resolveTravel);
+
+        /// <summary>
         /// Вызывает runtime resolver для конкретного варианта прыжка.
         /// </summary>
         JumpResolveResult Resolve(

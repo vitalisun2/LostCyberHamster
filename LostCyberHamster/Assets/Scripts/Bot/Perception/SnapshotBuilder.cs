@@ -53,6 +53,14 @@ namespace Assets.Scripts.Bot.Perception
         /// </summary>
         private static HamsterSnapshot BuildHamsterSnapshot(Hamster hamster)
         {
+            // Получает runtime bounds collider хомяка.
+            BoxCollider2D collider = hamster.GetComponentInChildren<BoxCollider2D>();
+            if (collider == null)
+                throw new MissingComponentException("SnapshotBuilder.BuildHamsterSnapshot failed: BoxCollider2D is missing on Hamster object.");
+
+            Bounds bounds = collider.bounds;
+
+            // Собирает состояние хомяка.
             HamsterStateEnum hamsterState = hamster.HamsterState.Value;
             bool isOnRoof = IsRoofState(hamsterState);
 
@@ -67,7 +75,9 @@ namespace Assets.Scripts.Bot.Perception
                     ? hamster.LastObstacle.Value.GetInstanceID()
                     : null,
                 hamster.LeftX,
-                hamster.RightX);
+                hamster.RightX,
+                bounds.min.y,
+                bounds.max.y);
         }
 
             /// <summary>
@@ -101,7 +111,9 @@ namespace Assets.Scripts.Bot.Perception
                     obstacle.ObstacleType.IsTop,
                     bounds.min.x,
                     bounds.max.x,
-                    bounds.center.x));
+                    bounds.center.x,
+                    bounds.min.y,
+                    bounds.max.y));
             }
 
             obstacles.Sort((left, right) => left.LeftX.CompareTo(right.LeftX));

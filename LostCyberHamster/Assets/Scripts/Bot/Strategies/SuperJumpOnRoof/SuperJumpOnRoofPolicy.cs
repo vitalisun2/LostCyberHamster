@@ -38,10 +38,24 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             }
 
             // Складывает дистанцию super jump clip и путь мира за половину double-jump окна.
-            float halfDoubleJumpWindowSeconds = DoubleJumpDetector.DoubleJumpThreshold / 2f;
-            float upgradeDelayTravel = halfDoubleJumpWindowSeconds * Assets.Scripts.Consts.GameSpeedBase;
+            float upgradeDelayTravel = GetSuperJumpUpgradeDelayTravel();
             travel = HelpMethods.GetWorldShiftForClip(controller, _superJumpClipName) + upgradeDelayTravel;
             return true;
+        }
+
+        /// <summary>
+        /// Переносит resolver-точку super jump на момент второго input.
+        /// </summary>
+        public void GetResolveInput(
+            float fireShift,
+            float jumpTravel,
+            out float resolveFireShift,
+            out float resolveTravel)
+        {
+            // Сдвигает resolver на задержку upgrade-запроса.
+            float upgradeDelayTravel = GetSuperJumpUpgradeDelayTravel();
+            resolveFireShift = fireShift + upgradeDelayTravel;
+            resolveTravel = jumpTravel - upgradeDelayTravel;
         }
 
         /// <summary>
@@ -52,6 +66,15 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             JumpResolveContext context)
         {
             return SuperJumpOutcomeResolver.ResolveSuperJump(obstacles, context);
+        }
+
+        /// <summary>
+        /// Возвращает путь мира за задержку upgrade-запроса super jump.
+        /// </summary>
+        private static float GetSuperJumpUpgradeDelayTravel()
+        {
+            float halfDoubleJumpWindowSeconds = DoubleJumpDetector.DoubleJumpThreshold / 2f;
+            return halfDoubleJumpWindowSeconds * Assets.Scripts.Consts.GameSpeedBase;
         }
     }
 }

@@ -26,7 +26,9 @@ namespace Assets.Scripts.Bot.Planning
                     obstacle.IsTopLine,
                     obstacle.LeftX - planningState.ProjectionWorldShift,
                     obstacle.RightX - planningState.ProjectionWorldShift,
-                    obstacle.CenterX - planningState.ProjectionWorldShift));
+                    obstacle.CenterX - planningState.ProjectionWorldShift,
+                    obstacle.BottomY,
+                    obstacle.TopY));
             }
 
             return new WorldSnapshot(

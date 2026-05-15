@@ -43,6 +43,20 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
         }
 
         /// <summary>
+        /// Оставляет resolver-точку обычного прыжка равной точке первого input.
+        /// </summary>
+        public void GetResolveInput(
+            float fireShift,
+            float jumpTravel,
+            out float resolveFireShift,
+            out float resolveTravel)
+        {
+            // Передает обычный jump в resolver без смещения.
+            resolveFireShift = fireShift;
+            resolveTravel = jumpTravel;
+        }
+
+        /// <summary>
         /// Вызывает runtime resolver обычного прыжка.
         /// </summary>
         public JumpResolveResult Resolve(

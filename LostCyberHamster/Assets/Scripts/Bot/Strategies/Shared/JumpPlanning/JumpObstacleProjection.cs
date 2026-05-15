@@ -21,7 +21,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
                     obstacle.LeftX,
                     obstacle.RightX,
                     obstacle.CenterX,
-                    obstacle.InstanceId));
+                    obstacle.InstanceId,
+                    hasY: true,
+                    obstacle.BottomY,
+                    obstacle.TopY));
             }
 
             return obstacles;

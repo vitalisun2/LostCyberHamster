@@ -163,6 +163,13 @@ namespace Assets.Scripts.Common
         /// </summary>
         public static float GetWorldShiftForClip(TransformAnimatorController animController, string clipName)
         {
+            AnimationClip clip = FindClipByName(animController, clipName);
+            if (clip != null)
+            {
+                int clipFrames = Mathf.RoundToInt(clip.frameRate * clip.length);
+                return CalculateWorldShiftDistance(clipFrames);
+            }
+
             int frames = animController.GetClipFrameCount(clipName);
             return CalculateWorldShiftDistance(frames);
         }
@@ -172,10 +179,12 @@ namespace Assets.Scripts.Common
         TransformAnimatorController ctrl,
         string clipName)
         {
-            var r = ctrl.Animator?.runtimeAnimatorController;
-            if (r == null) return null;
+            if (ctrl == null)
+                return null;
 
-            return r.animationClips.FirstOrDefault(c => c.name == clipName);
+            return ctrl.TryFindClip(clipName, out AnimationClip clip)
+                ? clip
+                : null;
         }
 
         /// <summary>

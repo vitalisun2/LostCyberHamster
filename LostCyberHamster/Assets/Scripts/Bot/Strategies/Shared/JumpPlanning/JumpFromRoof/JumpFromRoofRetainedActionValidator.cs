@@ -30,12 +30,19 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
         /// </summary>
         private readonly JumpFromRoofFireWindowFinder _fireWindowFinder;
 
+        /// <summary>
+        /// Проверяет, что сохраненное действие все еще принадлежит roof-to-road сценарию.
+        /// </summary>
+        private readonly JumpFromRoofSpecification _specification;
+
         public JumpFromRoofRetainedActionValidator(
             IJumpFromRoofPolicy policy,
-            JumpFromRoofFireWindowFinder fireWindowFinder)
+            JumpFromRoofFireWindowFinder fireWindowFinder,
+            JumpFromRoofSpecification specification)
         {
             _policy = policy;
             _fireWindowFinder = fireWindowFinder;
+            _specification = specification;
         }
 
         /// <summary>
@@ -76,15 +83,21 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             if (!_policy.TryGetTravel(out JumpFromRoofTravel travel))
                 return false;
 
-            // Находит актуальную последнюю passive roof.
-            if (!RoofRunProjection.TryFindLastPassiveRoof(
+            // Повторяет specification-gate, чтобы retained action не обходил semantic applicability.
+            if (!_specification.IsSatisfiedBy(
                     planningState,
                     projectedWorldSnapshot,
-                    out ObstacleSnapshot lastRoof,
-                    out _))
+                    decisionPoint,
+                    travel,
+                    out ObstacleSnapshot specificationTarget,
+                    out _,
+                    out ObstacleSnapshot lastRoof))
             {
                 return false;
             }
+
+            if (specificationTarget.InstanceId != targetObstacle.InstanceId)
+                return false;
 
             // Пересчитывает актуальное fire window.
             if (!JumpFromRoofChainCalculator.TryCalculate(

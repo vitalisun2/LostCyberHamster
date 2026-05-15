@@ -19,7 +19,9 @@ namespace Assets.Scripts.Bot.Perception
             bool isShifting,
             int? roofSupportInstanceId,
             float hamsterLeftX,
-            float hamsterRightX)
+            float hamsterRightX,
+            float hamsterBottomY,
+            float hamsterTopY)
         {
             HamsterState = hamsterState;
             IsOnBottomLine = isOnBottomLine;
@@ -30,6 +32,8 @@ namespace Assets.Scripts.Bot.Perception
             RoofSupportInstanceId = roofSupportInstanceId;
             HamsterLeftX = hamsterLeftX;
             HamsterRightX = hamsterRightX;
+            HamsterBottomY = hamsterBottomY;
+            HamsterTopY = hamsterTopY;
         }
 
         /// <summary>
@@ -78,6 +82,16 @@ namespace Assets.Scripts.Bot.Perception
         public float HamsterRightX { get; }
 
         /// <summary>
+        /// Нижняя граница хомяка.
+        /// </summary>
+        public float HamsterBottomY { get; }
+
+        /// <summary>
+        /// Верхняя граница хомяка.
+        /// </summary>
+        public float HamsterTopY { get; }
+
+        /// <summary>
         /// Центр хомяка по X.
         /// </summary>
         public float CenterX => (HamsterLeftX + HamsterRightX) * 0.5f;
@@ -86,6 +100,11 @@ namespace Assets.Scripts.Bot.Perception
         /// Ширина хомяка.
         /// </summary>
         public float Width => HamsterRightX - HamsterLeftX;
+
+        /// <summary>
+        /// Высота хомяка.
+        /// </summary>
+        public float Height => HamsterTopY - HamsterBottomY;
 
     }
 }

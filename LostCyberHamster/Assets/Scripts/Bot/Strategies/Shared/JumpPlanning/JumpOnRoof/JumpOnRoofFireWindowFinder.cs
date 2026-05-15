@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Common;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 
@@ -15,6 +16,19 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
     /// </summary>
     internal sealed class JumpOnRoofFireWindowFinder
     {
+        /// <summary>
+        /// Количество итераций бинарного поиска ранней resolver-valid точки.
+        /// </summary>
+        private const int _earliestFireShiftSearchIterations = 10;
+
+        /// <summary>
+        /// Доля окна, на которую прыжок смещается позже при наличии препятствий перед крышей.
+        /// </summary>
+        private const float _preRoofObstacleWindowOffsetRatio = 0.2f;
+
+        /// <summary>
+        /// Политика конкретного типа прыжка на крышу.
+        /// </summary>
         private readonly IJumpOnRoofPolicy _policy;
 
         public JumpOnRoofFireWindowFinder(IJumpOnRoofPolicy policy)
@@ -63,37 +77,22 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
                 return false;
             }
 
-            // Выбирает точку внутри уже суженного fire-window.
-            if (!TrySelectFireShift(
-                    firstFireShift,
-                    lastFireShift,
-                    roofChainIndex > 0,
-                    out fireShift))
-            {
-                return false;
-            }
-
-            // Проверяет выбранный fire shift через runtime resolver.
+            // Строит resolver input.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            JumpResolveResult selectedOutcome = ResolveRuntimeOutcomeAtFireShift(
-                planningState.Hamster,
-                baseObstacles,
-                fireShift,
-                jumpTravel);
-            bool hasExpectedOutcome = selectedOutcome.State == _policy.ExpectedRoofState
-                                      && selectedOutcome.TargetIndex == targetObstacleIndex;
 
-            if (!hasExpectedOutcome)
-            {
-                fireShift = firstFireShift;
-
-                selectedOutcome = ResolveRuntimeOutcomeAtFireShift(
+            // Ищет самый ранний resolver-valid fire shift.
+            if (!TryFindEarliestResolverValidFireShift(
                     planningState.Hamster,
                     baseObstacles,
-                    fireShift,
-                    jumpTravel);
-                hasExpectedOutcome = selectedOutcome.State == _policy.ExpectedRoofState
-                                      && selectedOutcome.TargetIndex == targetObstacleIndex;
+                    firstFireShift,
+                    lastFireShift,
+                    jumpTravel,
+                    targetObstacleIndex,
+                    hasPreRoofObstacle: roofChainIndex > 0,
+                    out fireShift,
+                    out JumpResolveResult selectedOutcome))
+            {
+                return false;
             }
 
             LogSelection(
@@ -106,10 +105,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
                 firstFireShift,
                 lastFireShift,
                 fireShift,
-                hasExpectedOutcome,
+                hasExpectedOutcome: true,
                 selectedOutcome);
 
-            return hasExpectedOutcome;
+            return true;
         }
 
         /// <summary>
@@ -178,15 +177,47 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
                    && result.TargetIndex == targetObstacleIndex;
         }
 
+        /// <summary>
+        /// Проверяет, что fire shift сохраняет посадку на крышу по runtime resolver.
+        /// </summary>
+        internal bool CheckSafeRuntimeOutcomeAtFireShift(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            float fireShift,
+            float jumpTravel,
+            int targetObstacleIndex,
+            ObstacleTypeEnum targetObstacleType)
+        {
+            // Получает runtime outcome для текущего retained fire shift.
+            JumpResolveResult outcome = ResolveRuntimeOutcomeAtFireShift(
+                hamster,
+                baseObstacles,
+                fireShift,
+                jumpTravel);
+
+            // Проверяет соответствие runtime outcome целевой крыше.
+            return IsValidFireShift(targetObstacleIndex, outcome);
+        }
+
+        /// <summary>
+        /// Получает runtime outcome для заданного fire shift.
+        /// </summary>
         private JumpResolveResult ResolveRuntimeOutcomeAtFireShift(
             HamsterSnapshot hamster,
             IReadOnlyList<JumpObstacleData> baseObstacles,
             float fireShift,
             float jumpTravel)
         {
-            // Строит obstacle snapshot на момент fire.
+            // Переводит planning fire shift в runtime-точку resolver'а.
+            _policy.GetResolveInput(
+                fireShift,
+                jumpTravel,
+                out float resolveFireShift,
+                out float resolveTravel);
+
+            // Строит obstacle snapshot на момент resolver'а.
             var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
-            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
+            JumpObstacleProjection.BuildShifted(baseObstacles, resolveFireShift, obstaclesAtFireShift);
 
             // Готовит runtime context для прыжка на крышу.
             JumpResolveContext context = new(
@@ -195,8 +226,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
                 hamster.HamsterRightX,
                 hamster.CenterX,
                 hamster.Width,
-                jumpTravel,
-                jumpTravel,
+                resolveTravel,
+                resolveTravel,
                 damageBigAliveWithoutYByReach: _policy.DamageBigAliveWithoutYByReach);
 
             // Сверяет runtime outcome с целевой крышей.
@@ -254,26 +285,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
         }
 
         /// <summary>
-        /// Выбирает точку уже рассчитанного fire-window для jump-on-roof.
-        /// </summary>
-        private static bool TrySelectFireShift(
-            float firstFireShift,
-            float lastFireShift,
-            bool hasPreRoofObstacle,
-            out float fireShift)
-        {
-            if (hasPreRoofObstacle)
-            {
-                fireShift = lastFireShift;
-                return fireShift > firstFireShift;
-            }
-
-            // Для прямой крыши без препятствий перед ней берёт центр безопасного окна.
-            fireShift = (firstFireShift + lastFireShift) * 0.5f;
-            return true;
-        }
-
-        /// <summary>
         /// Пишет численную диагностику выбранного окна jump-on-roof.
         /// </summary>
         private void LogSelection(
@@ -295,7 +306,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
             float fireWindowBoundaryMargin =
                 JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
 
-            DebugManager.DiagLog(
+            DebugManager.DiagLogVerbose(
                 $"[{_policy.LogTag} WINDOW] target={targetObstacle.ObstacleType} " +
                 $"targetIndex={targetObstacleIndex} roofChainIndex={roofChainIndex} " +
                 $"travel={jumpTravel:F3} " +
@@ -310,5 +321,139 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
                 $"outcome={selectedOutcome.State} outcomeTargetIndex={selectedOutcome.TargetIndex} " +
                 $"expectedOutcome={hasExpectedOutcome}");
         }
+
+        /// <summary>
+        /// Ищет самый ранний fire shift, который runtime resolver подтверждает как посадку на целевую крышу.
+        /// </summary>
+        private bool TryFindEarliestResolverValidFireShift(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            float firstFireShift,
+            float lastFireShift,
+            float jumpTravel,
+            int targetObstacleIndex,
+            bool hasPreRoofObstacle,
+            out float fireShift,
+            out JumpResolveResult selectedOutcome)
+        {
+            // Проверяет левую границу окна.
+            fireShift = firstFireShift;
+            selectedOutcome = ResolveRuntimeOutcomeAtFireShift(
+                hamster,
+                baseObstacles,
+                fireShift,
+                jumpTravel);
+            if (IsValidFireShift(targetObstacleIndex, selectedOutcome))
+            {
+                // При obstacle перед крышей не берём край окна: небольшой сдвиг позже снижает риск зацепить obstacle при посадке,
+                // но точку всё равно подтверждает runtime resolver.
+                if (hasPreRoofObstacle)
+                {
+                    float preferredFireShift =
+                        fireShift
+                        + (lastFireShift - fireShift) * _preRoofObstacleWindowOffsetRatio;
+                    if (preferredFireShift > fireShift)
+                    {
+                        JumpResolveResult preferredOutcome = ResolveRuntimeOutcomeAtFireShift(
+                            hamster,
+                            baseObstacles,
+                            preferredFireShift,
+                            jumpTravel);
+                        if (IsValidFireShift(targetObstacleIndex, preferredOutcome))
+                        {
+                            fireShift = preferredFireShift;
+                            selectedOutcome = preferredOutcome;
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+            // Проверяет правую границу окна.
+            float rightFireShift = lastFireShift;
+            JumpResolveResult rightOutcome = ResolveRuntimeOutcomeAtFireShift(
+                hamster,
+                baseObstacles,
+                rightFireShift,
+                jumpTravel);
+            if (!IsValidFireShift(targetObstacleIndex, rightOutcome))
+            {
+                fireShift = rightFireShift;
+                selectedOutcome = rightOutcome;
+                return false;
+            }
+
+            // Сужает границу до первого валидного resolver outcome.
+            float leftFireShift = firstFireShift;
+            selectedOutcome = rightOutcome;
+            for (int iteration = 0; iteration < _earliestFireShiftSearchIterations; iteration++)
+            {
+                float candidateFireShift = (leftFireShift + rightFireShift) * 0.5f;
+                JumpResolveResult candidateOutcome = ResolveRuntimeOutcomeAtFireShift(
+                    hamster,
+                    baseObstacles,
+                    candidateFireShift,
+                    jumpTravel);
+
+                if (IsValidFireShift(targetObstacleIndex, candidateOutcome))
+                {
+                    rightFireShift = candidateFireShift;
+                    selectedOutcome = candidateOutcome;
+                    continue;
+                }
+
+                leftFireShift = candidateFireShift;
+            }
+
+            // Возвращает найденную раннюю валидную точку.
+            fireShift = rightFireShift;
+
+            // При obstacle перед крышей не берём край окна: небольшой сдвиг позже снижает риск зацепить obstacle при посадке,
+            // но точку всё равно подтверждает runtime resolver.
+            if (hasPreRoofObstacle)
+            {
+                float preferredFireShift =
+                    fireShift
+                    + (lastFireShift - fireShift) * _preRoofObstacleWindowOffsetRatio;
+                if (preferredFireShift > fireShift)
+                {
+                    JumpResolveResult preferredOutcome = ResolveRuntimeOutcomeAtFireShift(
+                        hamster,
+                        baseObstacles,
+                        preferredFireShift,
+                        jumpTravel);
+                    if (IsValidFireShift(targetObstacleIndex, preferredOutcome))
+                    {
+                        fireShift = preferredFireShift;
+                        selectedOutcome = preferredOutcome;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Проверяет outcome для выбранного fire shift.
+        /// </summary>
+        private bool IsValidFireShift(
+            int targetObstacleIndex,
+            JumpResolveResult outcome)
+        {
+            return IsExpectedOutcome(outcome, targetObstacleIndex);
+        }
+
+        /// <summary>
+        /// Проверяет, что resolver outcome соответствует целевой крыше.
+        /// </summary>
+        private bool IsExpectedOutcome(
+            JumpResolveResult outcome,
+            int targetObstacleIndex)
+        {
+            return outcome.State == _policy.ExpectedRoofState
+                   && outcome.TargetIndex == targetObstacleIndex;
+        }
+
     }
 }

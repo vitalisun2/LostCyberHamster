@@ -52,7 +52,7 @@ namespace Assets.Scripts.Bot.Planning
 
             if (plannedActions.Count == 0)
             {
-                DebugManager.DiagLog(
+                DebugManager.DiagLogVerbose(
                     $"[Bot PLAN] NO_ACTIONS obstacle={decisionPoint.Obstacle.ObstacleType} " +
                     $"leftX={decisionPoint.Obstacle.LeftX:F2} rightX={decisionPoint.Obstacle.RightX:F2} " +
                     $"lane={(decisionPoint.Obstacle.IsBottomLine ? "bottom" : "top")} " +
@@ -77,7 +77,7 @@ namespace Assets.Scripts.Bot.Planning
                 if (obstacle.IsBottomLine != planningState.IsOnBottomLine)
                     continue;
 
-                DebugManager.DiagLog(
+                DebugManager.DiagLogVerbose(
                     $"[Bot PLAN] NO_DECISION nextSameLane={obstacle.ObstacleType} " +
                     $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2} " +
                     $"lane={(obstacle.IsBottomLine ? "bottom" : "top")} " +

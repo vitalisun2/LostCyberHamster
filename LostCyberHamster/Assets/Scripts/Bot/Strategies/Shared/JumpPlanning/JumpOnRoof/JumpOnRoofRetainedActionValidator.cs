@@ -81,14 +81,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
             if (remainingShiftToTrigger < 0f)
                 return false;
 
-            // Сверяет runtime outcome с ожидаемой посадкой на крышу.
+            // Сверяет runtime outcome и trajectory safety с ожидаемой посадкой на крышу.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            return _fireWindowFinder.CheckRuntimeOutcomeAtFireShift(
+            return _fireWindowFinder.CheckSafeRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
                 remainingShiftToTrigger,
                 action.PostFireWorldShift,
-                roofWorldIndex);
+                roofWorldIndex,
+                roofObstacle.ObstacleType);
         }
 
         /// <summary>

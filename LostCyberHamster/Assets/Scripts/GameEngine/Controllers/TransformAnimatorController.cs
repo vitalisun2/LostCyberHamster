@@ -204,6 +204,41 @@ namespace Assets.Scripts.GameEngine.Controllers
         }
 
         /// <summary>
+        /// Ищет animation clip по имени среди runtime-клипов и editor-only medium roof assets.
+        /// </summary>
+        public bool TryFindClip(string clipName, out AnimationClip clip)
+        {
+            // Проверяет animator.
+            if (_animator == null) _animator = GetComponent<Animator>();
+            clip = null;
+
+            RuntimeAnimatorController controller = _animator.runtimeAnimatorController;
+            if (controller != null)
+            {
+                // Ищет клип среди runtime clips.
+                AnimationClip[] clips = controller.animationClips;
+                for (int clipIndex = 0; clipIndex < clips.Length; clipIndex++)
+                {
+                    AnimationClip candidate = clips[clipIndex];
+                    if (candidate != null && candidate.name == clipName)
+                    {
+                        clip = candidate;
+                        return true;
+                    }
+                }
+            }
+
+#if UNITY_EDITOR
+            // Ищет editor-only medium roof clip asset.
+            const string basePath = "Assets/Animations/Hamster/";
+            clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{basePath}{clipName}.anim");
+            return clip != null;
+#else
+            return false;
+#endif
+        }
+
+        /// <summary>
         /// Переключает roof-клипы аниматора между big (оригинальные) и medium версиями.
         /// Используется механиками перед запуском roof-анимации в зависимости от типа препятствия.
         /// </summary>

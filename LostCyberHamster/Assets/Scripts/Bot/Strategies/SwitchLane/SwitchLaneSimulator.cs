@@ -60,7 +60,9 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 isShifting: false,
                 roofSupportInstanceId: null,
                 hamster.HamsterLeftX,
-                hamster.HamsterRightX);
+                hamster.HamsterRightX,
+                hamster.HamsterBottomY,
+                hamster.HamsterTopY);
 
             // Проецирует остаток head-action до ближайшего planning boundary.
             return InProgressProjectionHelper.Project(

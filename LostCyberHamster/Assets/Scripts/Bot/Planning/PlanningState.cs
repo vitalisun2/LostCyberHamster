@@ -71,7 +71,7 @@ namespace Assets.Scripts.Bot.Planning
                     return 0;
 
                 // Логирует пропуск текущей опоры крыши и возвращает следующий obstacle.
-                DebugManager.DiagLog(
+                DebugManager.DiagLogVerbose(
                     $"[Bot PLAN] SKIP_ROOF_SUPPORT obstacle={obstacle.ObstacleType} " +
                     $"index={obstacleIndex} instanceId={obstacle.InstanceId} " +
                     $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2}");

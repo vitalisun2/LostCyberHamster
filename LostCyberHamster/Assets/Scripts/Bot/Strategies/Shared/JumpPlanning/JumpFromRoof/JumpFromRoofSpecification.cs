@@ -6,7 +6,7 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
 {
     /// <summary>
-    /// Проверяет применимость прыжка с крыши на дорогу перед опасным obstacle.
+    /// Проверяет применимость прыжка с крыши на дорогу перед опасным road obstacle.
     /// </summary>
     internal sealed class JumpFromRoofSpecification
     {
@@ -47,7 +47,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
 
             // Проверяет состояние хомяка.
             HamsterSnapshot hamster = planningState.Hamster;
-            if (hamster.HamsterState != HamsterStateEnum.RoofRun
+            if (hamster == null
+                || hamster.HamsterState != HamsterStateEnum.RoofRun
                 || !hamster.IsOnRoof
                 || !hamster.RoofSupportInstanceId.HasValue
                 || hamster.IsShifting
@@ -66,6 +67,17 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
 
             if (!ObstacleClassifier.DamagesOnGroundContact(firstObstacle.ObstacleType))
                 return false;
+
+            // Не перехватывает roof occupant: это зона ответственности roof jump-over strategies.
+            if (RoofRunProjection.TryFindDamagingOccupantOnPassiveRoofPath(
+                    planningState,
+                    projectedWorldSnapshot,
+                    firstObstacle,
+                    out _,
+                    out _))
+            {
+                return false;
+            }
 
             // Находит последнюю passive roof.
             if (!RoofRunProjection.TryFindLastPassiveRoof(

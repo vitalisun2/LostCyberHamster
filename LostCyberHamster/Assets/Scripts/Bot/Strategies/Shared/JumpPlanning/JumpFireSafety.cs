@@ -10,6 +10,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
     /// </summary>
     internal static class JumpFireSafety
     {
+        /// <summary>
+        /// Минимальный отступ от ground contact перед fire shift.
+        /// </summary>
         private const float _groundContactSafetyMargin = 0.1f;
 
         /// <summary>

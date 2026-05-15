@@ -9,6 +9,7 @@ using Assets.Scripts.Bot.Strategies.RoofJumpOver;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.SuperRoofJumpOver;
+using Assets.Scripts.Bot.Strategies.SuperJumpFromRoof;
 using Assets.Scripts.Bot.Strategies.SuperJumpOnRoof;
 using Assets.Scripts.Bot.Strategies.SuperJumpOver;
 using Assets.Scripts.Bot.Strategies.SwitchLane;
@@ -31,7 +32,6 @@ namespace Assets.Scripts.Bot
         private const string _hostObjectName = "[Bot]";
 
         private readonly SnapshotBuilder _snapshotBuilder = new SnapshotBuilder();
-        private readonly BotPlanRenderer _planRenderer = new BotPlanRenderer();
 
         private PlanExecutor _executor;
         private Hamster _hamster;
@@ -99,6 +99,7 @@ namespace Assets.Scripts.Bot
                 new JumpOnRoofStrategy(),
                 new SuperJumpOnRoofStrategy(),
                 new JumpFromRoofStrategy(),
+                new SuperJumpFromRoofStrategy(),
                 new RoofJumpOverStrategy(),
                 new SuperRoofJumpOverStrategy()
             };
@@ -118,27 +119,9 @@ namespace Assets.Scripts.Bot
             TickBot();
         }
 
-        private void OnRenderObject()
-        {
-            if (_executor == null || !IsInitialized || LastSnapshot == null || !CurrentPlan.HasActions)
-                return;
-
-            Camera camera = Camera.current;
-            if (camera == null || camera != Camera.main)
-                return;
-
-            _planRenderer.Render(
-                CurrentPlan,
-                LastSnapshot,
-                _hamster.IsOnBottomLine.Value,
-                _executor.IsActionInProgress,
-                camera);
-        }
-
         private void OnDestroy()
         {
             _eventTracker?.Dispose();
-            _planRenderer.Dispose();
         }
 
         private void Enable()
@@ -213,7 +196,7 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private static void LogPlanActivation(BotPlan plan)
         {
-            DebugManager.DiagLog(
+            DebugManager.DiagLogVerbose(
                 $"[Bot PLAN] actions={plan.Actions.Count} " +
                 $"score={plan.Score:F2} boundaryX={plan.CommittedBoundaryX:F2} " +
                 $"head={plan.Actions[0].Description}");

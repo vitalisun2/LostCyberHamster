@@ -2,7 +2,6 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
-using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.RoofJumpOver
 {
@@ -102,13 +101,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.RoofJumpOver
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot hazard)
         {
-            if (hazard == null || hazard.ObstacleType != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
-                return false;
-
-            if (hazard.IsBottomLine != planningState.Hamster.IsOnBottomLine)
-                return false;
-
-            return RoofRunProjection.TryFindPassiveRoofSupportForOccupant(
+            return RoofRunProjection.TryFindDamagingOccupantOnPassiveRoofPath(
                 planningState,
                 projectedWorldSnapshot,
                 hazard,

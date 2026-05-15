@@ -11,6 +11,11 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
     public sealed class DecisionPointDetector
     {
         /// <summary>
+        /// Находит roof occupants на текущей passive roof-chain до общего пропуска крыш.
+        /// </summary>
+        private readonly RoofOccupantHazardDetector _roofOccupantHazardDetector = new();
+
+        /// <summary>
         /// Ограничивает количество obstacles в одной chain-ситуации.
         /// </summary>
         private const int _maxChainLength = 3;
@@ -29,6 +34,16 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             if (planningState == null || worldSnapshot == null)
                 return false;
 
+            // Сначала обрабатывает hazards, стоящие на текущей passive roof-chain.
+            if (_roofOccupantHazardDetector.TryDetect(
+                    planningState,
+                    worldSnapshot,
+                    out int roofOccupantHazardIndex))
+            {
+                decisionPoint = new DecisionPoint(BuildChain(planningState, worldSnapshot, roofOccupantHazardIndex));
+                return true;
+            }
+
             // Выбирает стартовый obstacle.
             int firstObstacleIndex = GetFirstDetectionIndex(planningState, worldSnapshot);
 
@@ -44,7 +59,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
 
                 if (RoofRunProjection.IsPassiveRoofContinuation(planningState, worldSnapshot, obstacle))
                 {
-                    DebugManager.DiagLog(
+                    DebugManager.DiagLogVerbose(
                         $"[Bot PLAN] SKIP_ROOF_CONTINUATION obstacle={obstacle.ObstacleType} " +
                         $"index={obstacleIndex} instanceId={obstacle.InstanceId} " +
                         $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2}");
@@ -87,7 +102,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                 int firstIndexAfterPassiveRoofs = lastRoofIndex + 1;
                 if (firstIndexAfterPassiveRoofs > defaultDetectionIndex)
                 {
-                    DebugManager.DiagLog(
+                    DebugManager.DiagLogVerbose(
                         $"[Bot PLAN] SKIP_PASSIVE_ROOF_CHAIN lastRoof={lastRoof.ObstacleType} " +
                         $"index={lastRoofIndex} instanceId={lastRoof.InstanceId} " +
                         $"leftX={lastRoof.LeftX:F2} rightX={lastRoof.RightX:F2}");

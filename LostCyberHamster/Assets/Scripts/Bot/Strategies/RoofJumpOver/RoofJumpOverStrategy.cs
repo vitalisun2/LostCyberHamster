@@ -53,8 +53,9 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
 
             if (!_specification.IsSatisfiedBy(
                     planningState,
+                    worldSnapshot,
                     decisionPoint,
-                    out ObstacleSnapshot hazardObstacle,
+                    out _,
                     out _))
                 return;
 

@@ -1,4 +1,6 @@
 using Assets.Scripts.Bot.Perception;
+using Assets.Scripts.Common;
+using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -147,8 +149,28 @@ namespace Assets.Scripts.Bot.Planning
             if (hamster == null || !hamster.IsOnRoof || !hamster.RoofSupportInstanceId.HasValue)
                 return false;
 
-            // Ищет пересекающуюся passive roof.
-            for (int obstacleIndex = 0; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
+            // Находит границы текущего passive roof path.
+            if (!TryFindRoofSupport(
+                    projectedWorldSnapshot,
+                    hamster,
+                    hamster.RoofSupportInstanceId.Value,
+                    out _,
+                    out int currentSupportIndex))
+            {
+                return false;
+            }
+
+            if (!TryFindLastPassiveRoof(
+                    planningState,
+                    projectedWorldSnapshot,
+                    out _,
+                    out int lastRoofIndex))
+            {
+                return false;
+            }
+
+            // Ищет roof support occupant'а только внутри текущего passive roof path.
+            for (int obstacleIndex = currentSupportIndex; obstacleIndex <= lastRoofIndex; obstacleIndex++)
             {
                 ObstacleSnapshot candidate = projectedWorldSnapshot.Obstacles[obstacleIndex];
                 if (candidate.IsBottomLine != hamster.IsOnBottomLine)
@@ -157,10 +179,7 @@ namespace Assets.Scripts.Bot.Planning
                 if (!ObstacleClassifier.IsObstacleWithRoof(candidate.ObstacleType))
                     continue;
 
-                if (!IsPassiveRoofContinuation(planningState, projectedWorldSnapshot, candidate))
-                    continue;
-
-                if (!Assets.Scripts.Common.CollisionUtils.IsOverlap(
+                if (!CollisionUtils.IsOverlap(
                         occupant.LeftX,
                         occupant.RightX,
                         candidate.LeftX,
@@ -175,6 +194,37 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Ищет support, если obstacle является опасным occupant'ом на текущем passive roof path.
+        /// </summary>
+        public static bool TryFindDamagingOccupantOnPassiveRoofPath(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            ObstacleSnapshot occupant,
+            out ObstacleSnapshot support,
+            out int supportIndex)
+        {
+            // Инициализирует пустой результат.
+            support = null;
+            supportIndex = -1;
+
+            // Проверяет вход и фактические признаки roof occupant.
+            if (planningState == null || projectedWorldSnapshot == null || occupant == null)
+                return false;
+
+            HamsterSnapshot hamster = planningState.Hamster;
+            if (!IsDamagingRoofOccupantCandidate(hamster, occupant))
+                return false;
+
+            // Подтверждает принадлежность occupant текущему passive roof path.
+            return TryFindPassiveRoofSupportForOccupant(
+                planningState,
+                projectedWorldSnapshot,
+                occupant,
+                out support,
+                out supportIndex);
         }
 
         /// <summary>
@@ -232,6 +282,21 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Проверяет фактические признаки опасного occupant'а на roof path без поиска support.
+        /// </summary>
+        private static bool IsDamagingRoofOccupantCandidate(
+            HamsterSnapshot hamster,
+            ObstacleSnapshot occupant)
+        {
+            if (hamster == null || occupant == null)
+                return false;
+
+            return occupant.ObstacleType == ObstacleTypeEnum.smallNotAliveRoadAndRoof
+                && occupant.IsBottomLine == hamster.IsOnBottomLine
+                && occupant.RightX > hamster.HamsterLeftX;
         }
 
         /// <summary>

@@ -16,7 +16,9 @@ namespace Assets.Scripts.Bot.Perception
             bool isTopLine,
             float leftX,
             float rightX,
-            float centerX)
+            float centerX,
+            float bottomY,
+            float topY)
         {
             InstanceId = instanceId;
             ObstacleType = obstacleType;
@@ -24,14 +26,53 @@ namespace Assets.Scripts.Bot.Perception
             LeftX = leftX;
             RightX = rightX;
             CenterX = centerX;
+            BottomY = bottomY;
+            TopY = topY;
         }
 
+        /// <summary>
+        /// Runtime instance id obstacle.
+        /// </summary>
         public int InstanceId { get; }
+
+        /// <summary>
+        /// Тип препятствия.
+        /// </summary>
         public ObstacleTypeEnum ObstacleType { get; }
+
+        /// <summary>
+        /// Признак верхней линии.
+        /// </summary>
         public bool IsTopLine { get; }
+
+        /// <summary>
+        /// Признак нижней линии.
+        /// </summary>
         public bool IsBottomLine => !IsTopLine;
+
+        /// <summary>
+        /// Левая X-граница collider.
+        /// </summary>
         public float LeftX { get; }
+
+        /// <summary>
+        /// Правая X-граница collider.
+        /// </summary>
         public float RightX { get; }
+
+        /// <summary>
+        /// Центр collider по X.
+        /// </summary>
         public float CenterX { get; }
+
+        /// <summary>
+        /// Нижняя Y-граница collider.
+        /// </summary>
+        public float BottomY { get; }
+
+        /// <summary>
+        /// Верхняя Y-граница collider.
+        /// </summary>
+        public float TopY { get; }
     }
 }

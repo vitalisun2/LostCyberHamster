@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using Unity.VisualScripting;
 using UnityEngine;
 using Vues.GameCore;
 
@@ -9,6 +8,7 @@ public static class DebugManager
     private const string DiagLogFileName = "diagnostic_log.txt";
     private static string _diagLogPath;
     private static bool _fileLoggingEnabled = true;
+    private static bool _verboseDiagLoggingEnabled = true;
 
     public enum DiagChannel
     {
@@ -46,20 +46,51 @@ public static class DebugManager
     }
 
     /// <summary>
-    /// Diagnostic log that writes both to Unity console and to file.
-    /// Use this for debugging issues that require examining logs after the fact.
+    /// Diagnostic log that writes important events to the diagnostic file.
     /// </summary>
     public static void DiagLog(string message)
     {
         DiagLog(message, DiagChannel.BotEvents);
     }
 
+    /// <summary>
+    /// Diagnostic log that writes important events to the diagnostic file.
+    /// </summary>
     public static void DiagLog(string message, DiagChannel channel)
+    {
+        WriteDiagLog(message, channel, forceWrite: true);
+    }
+
+    /// <summary>
+    /// Diagnostic log that writes verbose events only when verbose diagnostics are enabled.
+    /// </summary>
+    public static void DiagLogVerbose(string message)
+    {
+        DiagLogVerbose(message, DiagChannel.BotEvents);
+    }
+
+    /// <summary>
+    /// Diagnostic log that writes verbose events only when verbose diagnostics are enabled.
+    /// </summary>
+    public static void DiagLogVerbose(string message, DiagChannel channel)
+    {
+        WriteDiagLog(message, channel, forceWrite: _verboseDiagLoggingEnabled);
+    }
+
+    /// <summary>
+    /// Enables or disables verbose diagnostic file logging.
+    /// </summary>
+    public static void SetVerboseDiagLoggingEnabled(bool enabled)
+    {
+        _verboseDiagLoggingEnabled = enabled;
+    }
+
+    private static void WriteDiagLog(string message, DiagChannel channel, bool forceWrite)
     {
         string channelTag = GetChannelTag(channel);
         var formattedMessage = $"[DIAG][CH={channelTag}] {message}";
-        Debug.Log(formattedMessage);
-        WriteDiagLogToFile($"[{DateTime.Now:HH:mm:ss.fff}] {formattedMessage}");
+        if (forceWrite)
+            WriteDiagLogToFile($"[{DateTime.Now:HH:mm:ss.fff}] {formattedMessage}");
     }
 
     public static void DiagEconomy(string message) => DiagLog(message, DiagChannel.Economy);

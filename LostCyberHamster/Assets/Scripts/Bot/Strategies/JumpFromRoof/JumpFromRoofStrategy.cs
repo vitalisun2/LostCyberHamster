@@ -44,7 +44,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             Executor = new JumpFromRoofExecutor(triggerGate);
-            RetainedValidator = new JumpFromRoofRetainedActionValidator(_policy, _fireWindowFinder);
+            RetainedValidator = new JumpFromRoofRetainedActionValidator(_policy, _fireWindowFinder, _specification);
             Simulator = _simulator;
         }
 

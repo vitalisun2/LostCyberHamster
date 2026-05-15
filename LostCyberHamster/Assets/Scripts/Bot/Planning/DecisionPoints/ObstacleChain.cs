@@ -98,7 +98,10 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                     obstacle.LeftX,
                     obstacle.RightX,
                     obstacle.CenterX,
-                    obstacle.InstanceId);
+                    obstacle.InstanceId,
+                    hasY: true,
+                    obstacle.BottomY,
+                    obstacle.TopY);
             }
 
             return JumpOutcomeResolver.TryFindDamagingRoofOccupantOnRoof(
