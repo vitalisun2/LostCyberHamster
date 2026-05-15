@@ -10,7 +10,7 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Задает максимальный gap между roof-obstacles, который runtime проходит как непрерывный RoofRun.
         /// </summary>
-        private const float PassiveContinuationGapFactor = 0.7f;
+        internal const float PassiveContinuationGapFactor = 0.7f;
 
         /// <summary>
         /// Проверяет, является ли obstacle на текущей линии пассивным продолжением RoofRun.

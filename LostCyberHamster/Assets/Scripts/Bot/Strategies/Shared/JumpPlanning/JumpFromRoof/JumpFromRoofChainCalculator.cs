@@ -139,11 +139,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             // Считает правую границу fire window.
             lastFireShift = chainLeftX - hamster.HamsterRightX;
 
-            // Применяет общий boundary margin.
+            // Применяет margin только к ранней границе.
             float fireWindowBoundaryMargin =
                 JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
             firstFireShift += fireWindowBoundaryMargin;
-            lastFireShift -= fireWindowBoundaryMargin;
 
             // Проверяет, что окно не схлопнулось.
             return firstFireShift < lastFireShift;
@@ -158,12 +157,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             float lastFireShift,
             out float fireShift)
         {
-            if (obstacleCount <= 1)
-            {
-                fireShift = (firstFireShift + lastFireShift) * 0.5f;
-                return true;
-            }
-
+            // Выбирает самый поздний допустимый запуск.
             fireShift = lastFireShift;
             return fireShift > firstFireShift;
         }
