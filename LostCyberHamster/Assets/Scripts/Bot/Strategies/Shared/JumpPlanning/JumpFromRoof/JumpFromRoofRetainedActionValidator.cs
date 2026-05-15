@@ -76,10 +76,21 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             if (!_policy.TryGetTravel(out JumpFromRoofTravel travel))
                 return false;
 
+            // Находит актуальную последнюю passive roof.
+            if (!RoofRunProjection.TryFindLastPassiveRoof(
+                    planningState,
+                    projectedWorldSnapshot,
+                    out ObstacleSnapshot lastRoof,
+                    out _))
+            {
+                return false;
+            }
+
             // Пересчитывает актуальное fire window.
             if (!JumpFromRoofChainCalculator.TryCalculate(
                     planningState,
                     decisionPoint.Chain,
+                    lastRoof,
                     travel,
                     out JumpFromRoofChainModel chainModel))
             {

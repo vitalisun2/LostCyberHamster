@@ -16,6 +16,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
         public static bool TryCalculate(
             PlanningState planningState,
             ObstacleChain chain,
+            ObstacleSnapshot lastRoof,
             JumpFromRoofTravel travel,
             out JumpFromRoofChainModel model)
         {
@@ -23,7 +24,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             model = default;
 
             // Отсекает неполный вход.
-            if (planningState == null || chain == null || chain.Count <= 0)
+            if (planningState == null || chain == null || lastRoof == null || chain.Count <= 0)
                 return false;
 
             // Получает snapshot хомяка.
@@ -44,12 +45,17 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             ObstacleSnapshot lastObstacle = firstObstacle;
             int lastObstacleIndex = firstObstacleIndex;
             int obstacleCount = 1;
+            float latestRoofRunFireShift =
+                lastRoof.RightX
+                + hamster.Width * RoofRunProjection.PassiveContinuationGapFactor
+                - hamster.HamsterRightX;
 
             // Строит начальное fire window.
             if (!TryGetOpenWindow(
                     hamster,
                     chainLeftX,
                     chainRightX,
+                    latestRoofRunFireShift,
                     travel.ActionTravel,
                     out float firstFireShift,
                     out float lastFireShift))
@@ -71,6 +77,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
                         hamster,
                         chainLeftX,
                         candidateChainRightX,
+                        latestRoofRunFireShift,
                         travel.ActionTravel,
                         out float candidateFirstFireShift,
                         out float candidateLastFireShift))
@@ -87,7 +94,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             }
 
             // Выбирает fire shift.
-            if (!TrySelectFireShift(obstacleCount, firstFireShift, lastFireShift, out float selectedFireShift))
+            if (!TrySelectFireShift(firstFireShift, lastFireShift, out float selectedFireShift))
                 return false;
 
             // Возвращает рассчитанную model.
@@ -127,6 +134,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             HamsterSnapshot hamster,
             float chainLeftX,
             float chainRightX,
+            float latestRoofRunFireShift,
             float jumpFromRoofTravel,
             out float firstFireShift,
             out float lastFireShift)
@@ -136,13 +144,13 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             if (firstFireShift < 0f)
                 firstFireShift = 0f;
 
-            // Считает правую границу fire window.
-            lastFireShift = chainLeftX - hamster.HamsterRightX;
-
-            // Применяет margin только к ранней границе.
+            // Применяет общий boundary margin.
             float fireWindowBoundaryMargin =
                 JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
             firstFireShift += fireWindowBoundaryMargin;
+
+            // Считает правую границу fire window по runtime-завершению RoofRun.
+            lastFireShift = latestRoofRunFireShift - fireWindowBoundaryMargin;
 
             // Проверяет, что окно не схлопнулось.
             return firstFireShift < lastFireShift;
@@ -152,7 +160,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
         /// Выбирает точку запуска внутри рассчитанного fire window.
         /// </summary>
         private static bool TrySelectFireShift(
-            int obstacleCount,
             float firstFireShift,
             float lastFireShift,
             out float fireShift)

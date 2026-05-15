@@ -29,6 +29,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
             ObstacleChain chain,
+            ObstacleSnapshot lastRoof,
             JumpFromRoofTravel travel,
             out JumpFromRoofChainModel chainModel,
             out float fireShift)
@@ -40,6 +41,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             if (!JumpFromRoofChainCalculator.TryCalculate(
                     planningState,
                     chain,
+                    lastRoof,
                     travel,
                     out chainModel))
             {

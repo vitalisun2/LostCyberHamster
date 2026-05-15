@@ -95,7 +95,8 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
                     decisionPoint,
                     travel,
                     out _,
-                    out _))
+                    out _,
+                    out ObstacleSnapshot lastRoof))
             {
                 return;
             }
@@ -105,6 +106,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
                     planningState,
                     worldSnapshot,
                     decisionPoint.Chain,
+                    lastRoof,
                     travel,
                     out JumpFromRoofChainModel chainModel,
                     out float fireShift))

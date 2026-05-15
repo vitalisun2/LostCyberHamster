@@ -29,11 +29,13 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             DecisionPoint decisionPoint,
             JumpFromRoofTravel travel,
             out ObstacleSnapshot targetObstacle,
-            out int targetObstacleIndex)
+            out int targetObstacleIndex,
+            out ObstacleSnapshot lastRoof)
         {
             // Инициализирует пустой результат.
             targetObstacle = null;
             targetObstacleIndex = -1;
+            lastRoof = null;
 
             // Отсекает неполный вход.
             if (planningState == null
@@ -69,7 +71,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             if (!RoofRunProjection.TryFindLastPassiveRoof(
                     planningState,
                     projectedWorldSnapshot,
-                    out ObstacleSnapshot lastRoof,
+                    out lastRoof,
                     out _))
             {
                 return false;
