@@ -53,6 +53,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
 
             if (!_specification.IsSatisfiedBy(
                     planningState,
+                    worldSnapshot,
                     decisionPoint,
                     out _,
                     out _))
