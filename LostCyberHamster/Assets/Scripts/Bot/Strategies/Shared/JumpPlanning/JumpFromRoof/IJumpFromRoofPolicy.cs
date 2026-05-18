@@ -14,6 +14,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
         int EnergyCost { get; }
         string DescriptionPrefix { get; }
         HamsterStateEnum ExpectedSuccessState { get; }
+        float BigAliveCollisionPaddingRatio { get; }
 
         bool TryGetTravel(out JumpFromRoofTravel travel);
 

@@ -101,6 +101,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
 
             // Пересчитывает актуальное fire window.
             if (!JumpFromRoofChainCalculator.TryCalculate(
+                    _policy,
                     planningState,
                     decisionPoint.Chain,
                     lastRoof,

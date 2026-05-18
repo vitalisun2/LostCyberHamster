@@ -39,6 +39,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
 
             // Вычисляет chain и допустимое окно запуска.
             if (!JumpFromRoofChainCalculator.TryCalculate(
+                    _policy,
                     planningState,
                     chain,
                     lastRoof,

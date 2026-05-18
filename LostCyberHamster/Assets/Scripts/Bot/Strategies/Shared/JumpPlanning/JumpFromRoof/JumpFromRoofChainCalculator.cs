@@ -15,6 +15,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
         /// Пытается вычислить obstacle chain и fire window для прыжка с крыши.
         /// </summary>
         public static bool TryCalculate(
+            IJumpFromRoofPolicy policy,
             PlanningState planningState,
             ObstacleChain chain,
             ObstacleSnapshot lastRoof,
@@ -25,7 +26,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             model = default;
 
             // Отсекает неполный вход.
-            if (planningState == null || chain == null || lastRoof == null || chain.Count <= 0)
+            if (policy == null || planningState == null || chain == null || lastRoof == null || chain.Count <= 0)
                 return false;
 
             // Получает snapshot хомяка.
@@ -41,7 +42,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             }
 
             // Инициализирует границы chain.
-            float chainLeftX = firstObstacle.LeftX;
             float chainRightX = firstObstacle.RightX;
             ObstacleSnapshot lastObstacle = firstObstacle;
             int lastObstacleIndex = firstObstacleIndex;
@@ -54,8 +54,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             // Строит начальное fire window.
             if (!TryGetOpenWindow(
                     hamster,
-                    firstObstacle,
-                    chainLeftX,
                     chainRightX,
                     latestRoofRunFireShift,
                     travel.ActionTravel,
@@ -77,8 +75,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
                 float candidateChainRightX = obstacle.RightX > chainRightX ? obstacle.RightX : chainRightX;
                 if (!TryGetOpenWindow(
                         hamster,
-                        firstObstacle,
-                        chainLeftX,
                         candidateChainRightX,
                         latestRoofRunFireShift,
                         travel.ActionTravel,
@@ -96,8 +92,17 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
                 lastFireShift = candidateLastFireShift;
             }
 
+            // Сужает окно по pre-fire контакту и runtime-порогу collision для bigAlive.
+            ApplyBigAliveFireWindowLimits(
+                policy,
+                hamster,
+                firstObstacle,
+                lastObstacle,
+                ref firstFireShift,
+                ref lastFireShift);
+
             // Выбирает fire shift.
-            if (!TrySelectFireShift(firstFireShift, lastFireShift, firstObstacle, out float selectedFireShift))
+            if (!TrySelectFireShift(firstFireShift, lastFireShift, out float selectedFireShift))
                 return false;
 
             // Возвращает рассчитанную model.
@@ -135,8 +140,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
         /// </summary>
         private static bool TryGetOpenWindow(
             HamsterSnapshot hamster,
-            ObstacleSnapshot firstObstacle,
-            float chainLeftX,
             float chainRightX,
             float latestRoofRunFireShift,
             float jumpFromRoofTravel,
@@ -156,23 +159,46 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
             // Считает правую границу fire window по runtime-завершению RoofRun.
             float latestSafeFireShift = latestRoofRunFireShift;
 
-            // Для bigAlive нельзя ждать до самого конца RoofRun: CollisionController может дать damage,
-            // пока хомяк ещё считается бегущим по крыше, но уже частично вышел за её правый край.
-            if (firstObstacle?.ObstacleType == ObstacleTypeEnum.bigAlive)
-            {
-                float latestCollisionSafeFireShift = firstObstacle.LeftX - hamster.HamsterRightX;
-                if (latestCollisionSafeFireShift < latestSafeFireShift)
-                    latestSafeFireShift = latestCollisionSafeFireShift;
-
-                // Эвристически отступаем ещё на ширину bigAlive: высокий obstacle может зацепить
-                // хомяка во время JumpFromRoof раньше, чем это видно по X-only outcome resolver.
-                latestSafeFireShift -= firstObstacle.RightX - firstObstacle.LeftX;
-            }
-
             lastFireShift = latestSafeFireShift - fireWindowBoundaryMargin;
 
             // Проверяет, что окно не схлопнулось.
             return firstFireShift < lastFireShift;
+        }
+
+        /// <summary>
+        /// Сужает fire window для bigAlive до контакта в RoofRun и по runtime-порогу jump-damage.
+        /// </summary>
+        private static void ApplyBigAliveFireWindowLimits(
+            IJumpFromRoofPolicy policy,
+            HamsterSnapshot hamster,
+            ObstacleSnapshot firstObstacle,
+            ObstacleSnapshot lastObstacle,
+            ref float firstFireShift,
+            ref float lastFireShift)
+        {
+            // Сужает окно справа, чтобы прыжок был выполнен до контакта с bigAlive в RoofRun.
+            if (firstObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
+            {
+                float fireWindowBoundaryMargin =
+                    JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
+                float latestBeforeFirstBigAlive =
+                    firstObstacle.LeftX - hamster.HamsterRightX - fireWindowBoundaryMargin;
+
+                if (latestBeforeFirstBigAlive < lastFireShift)
+                    lastFireShift = latestBeforeFirstBigAlive;
+            }
+
+            // Вычисляет padding по runtime-порогу collision для bigAlive.
+            float padding = hamster.Width * policy.BigAliveCollisionPaddingRatio;
+            if (padding <= 0f)
+                return;
+
+            // Применяет padding к границам окна в зависимости от типов крайних препятствий.
+            if (firstObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
+                lastFireShift -= padding;
+
+            if (lastObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
+                firstFireShift += padding;
         }
 
         /// <summary>
@@ -181,11 +207,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof
         private static bool TrySelectFireShift(
             float firstFireShift,
             float lastFireShift,
-            ObstacleSnapshot firstObstacle,
             out float fireShift)
         {
-            // Выбирает самый поздний допустимый запуск.
-            fireShift = lastFireShift;
+            // Выбирает середину допустимого окна.
+            fireShift = (firstFireShift + lastFireShift) * 0.5f;
             return fireShift > firstFireShift;
         }
     }

@@ -66,6 +66,11 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
         public HamsterStateEnum ExpectedSuccessState => HamsterStateEnum.JumpFromRoof;
 
         /// <summary>
+        /// Обычный прыжок с крыши не добавляет дополнительный отступ для bigAlive.
+        /// </summary>
+        public float BigAliveCollisionPaddingRatio => 0f;
+
+        /// <summary>
         /// Возвращает runtime-дистанции обычного прыжка с крыши.
         /// </summary>
         public bool TryGetTravel(out JumpFromRoofTravel travel)
