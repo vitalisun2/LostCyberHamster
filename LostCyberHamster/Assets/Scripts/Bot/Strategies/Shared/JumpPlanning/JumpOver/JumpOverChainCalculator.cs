@@ -1,6 +1,7 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
+using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
 {
@@ -30,6 +31,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
             float chainRightX = targetObstacle.RightX;
             int firstObstacleIndex = chain.FirstIndex;
             int lastObstacleIndex = firstObstacleIndex;
+            ObstacleSnapshot lastObstacle = targetObstacle;
             int obstacleCount = 1;
 
             if (!TryGetOpenWindow(
@@ -68,13 +70,24 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
 
                 chainRightX = candidateChainRightX;
                 lastObstacleIndex = obstacleWorldIndex;
+                lastObstacle = obstacle;
                 obstacleCount++;
                 firstFireShift = candidateFirstFireShift;
                 lastFireShift = candidateLastFireShift;
             }
 
-            if (!TrySelectFireShift(obstacleCount, firstFireShift, lastFireShift, out float selectedFireShift))
+            ApplyBigAliveCollisionPadding(
+                policy,
+                hamster,
+                targetObstacle,
+                lastObstacle,
+                ref firstFireShift,
+                ref lastFireShift);
+
+            if (firstFireShift >= lastFireShift)
                 return false;
+
+            float selectedFireShift = (firstFireShift + lastFireShift) * 0.5f;
 
             window = new JumpOverChainModel(
                 firstObstacleIndex,
@@ -108,20 +121,24 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
             return firstFireShift < lastFireShift;
         }
 
-        private static bool TrySelectFireShift(
-            int obstacleCount,
-            float firstFireShift,
-            float lastFireShift,
-            out float fireShift)
+        private static void ApplyBigAliveCollisionPadding(
+            IJumpOverPolicy policy,
+            HamsterSnapshot hamster,
+            ObstacleSnapshot firstObstacle,
+            ObstacleSnapshot lastObstacle,
+            ref float firstFireShift,
+            ref float lastFireShift)
         {
-            if (obstacleCount <= 1)
-            {
-                fireShift = (firstFireShift + lastFireShift) * 0.5f;
-                return true;
-            }
+            float padding = hamster.Width * policy.BigAliveCollisionPaddingRatio;
+            if (padding <= 0f)
+                return;
 
-            fireShift = lastFireShift;
-            return fireShift > firstFireShift;
+            if (firstObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
+                lastFireShift -= padding;
+
+            if (lastObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
+                firstFireShift += padding;
         }
+
     }
 }

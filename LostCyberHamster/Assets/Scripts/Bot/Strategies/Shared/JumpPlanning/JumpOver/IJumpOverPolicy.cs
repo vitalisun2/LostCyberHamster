@@ -16,6 +16,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
         string DescriptionPrefix { get; }
         HamsterStateEnum ExpectedOverState { get; }
         bool DamageBigAliveWithoutYByReach { get; }
+        float BigAliveCollisionPaddingRatio { get; }
 
         bool CanJumpOverObstacle(ObstacleTypeEnum obstacleType);
 

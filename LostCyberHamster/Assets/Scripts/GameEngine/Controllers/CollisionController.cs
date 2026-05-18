@@ -7,12 +7,20 @@ using System.Linq;
 using UnityEngine;
 using Assets.Scripts;
 
+/// <summary>
+/// Обрабатывает триггерные столкновения хомяка с препятствиями и подбираемыми объектами.
+/// </summary>
 public class CollisionController : MonoBehaviour
 {
+    /// <summary>
+    /// Ссылка на хомяка, состояние которого используется при проверке столкновений.
+    /// </summary>
     [SerializeField] private Hamster _hamster;
 
-    // статический список collectable
-    private static readonly List<ObstacleTypeEnum> CollectableTypes = new()
+    /// <summary>
+    /// Типы препятствий, которые считаются подбираемыми объектами.
+    /// </summary>
+    private static readonly List<ObstacleTypeEnum> _collectableTypes = new()
     {
         ObstacleTypeEnum.collectableEnergetic,
         ObstacleTypeEnum.collectablePizza,
@@ -21,27 +29,41 @@ public class CollisionController : MonoBehaviour
         ObstacleTypeEnum.collectableCoin,
     };
 
+    /// <summary>
+    /// Порог перекрытия с BigAlive в некоторых стейтах прыжка 
+    /// </summary>
+    public const float BigAliveJumpDamageOverlapThreshold = 0.3f;
+
+    /// <summary>
+    /// Запускает обработку столкновения при первом входе в триггер препятствия.
+    /// </summary>
     private void OnTriggerEnter2D(Collider2D other)
     {
         ProcessTrigerEnter(other);
     }
 
-    // on trigger stay 2d
+    /// <summary>
+    /// Повторно проверяет столкновение во время нахождения в триггере после смещения с крыши.
+    /// </summary>
     private void OnTriggerStay2D(Collider2D other)
     {
-        if(_hamster.NeedCheckCollisionInRunFromRoofAfterShift.Value)
+        if (_hamster.NeedCheckCollisionInRunFromRoofAfterShift.Value)
         {
             ProcessTrigerEnter(other);
             _hamster.NeedCheckCollisionInRunFromRoofAfterShift.Value = false;
         }
     }
 
-    // processes the collision with the obstacle
+    /// <summary>
+    /// Определяет результат столкновения хомяка с объектом триггера.
+    /// </summary>
     private void ProcessTrigerEnter(Collider2D other)
     {
+        // Прерываем обработку для уже повреждённого хомяка.
         if (_hamster.IsDamaged.Value)
             return;
 
+        // Находим корневой объект препятствия и валидируем его состав.
         var otherRoot = other.transform.parent?.parent?.gameObject;
         if (otherRoot == null)
         {
@@ -56,74 +78,114 @@ public class CollisionController : MonoBehaviour
             return;
         }
 
-        if(!HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle))
+        // Игнорируем объекты на другой линии движения.
+        if (!HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle))
             return;
 
-        // Если можем подбирать
+        // Подбираем бонусы и коллекционные объекты.
         if (IsCollectableState() && IsObstacleCollectable(obstacle))
         {
             HandleCollectable(obstacle);
             return;
         }
 
-        if (CanDamageHamsterState(obstacle) || CanDamageOnRoofRun(obstacle))
+        // Применяем урон, если текущее состояние допускает столкновение.
+        if (HasCollisionInRunState(obstacle) || HasCollisionWithBigAliveInJumpState(obstacle))
         {
             HandleDamage(obstacle);
         }
     }
 
+    /// <summary>
+    /// Проверяет, может ли хомяк подбирать бонусы в текущем состоянии.
+    /// </summary>
     private bool IsCollectableState()
     {
         return !_hamster.IsDamaged.Value && _hamster.HamsterState.Value != HamsterStateEnum.Dead;
     }
 
     /// <summary>
-    /// Проверяет, может ли препятствие нанести урон хомяку в его текущем состоянии.
+    /// Проверяет, должен ли хомяк получать урон от препятствия во время бега.
     /// </summary>
-    private bool CanDamageHamsterState(Obstacle obstacle)
+    private bool HasCollisionInRunState(Obstacle obstacle)
     {
-        var canDamageHamsterState = new[]
-        {
-            HamsterStateEnum.Run,
-            HamsterStateEnum.RunFromRoof,
-            HamsterStateEnum.JumpFromRoof,
-            HamsterStateEnum.SuperJumpFromRoof
-        }.Contains(_hamster.HamsterState.Value);
+        bool result = false;
 
-        return canDamageHamsterState;
+        // Разрешаем обычное столкновение во время бега по земле.
+        if (_hamster.HamsterState.Value == HamsterStateEnum.Run)
+        {
+            result = true;
+        }
+
+        // Разрешаем коллизии с препятствиями, не являющимися крышами, во время бега с крыши или по крыше.
+        if (_hamster.HamsterState.Value == HamsterStateEnum.RunFromRoof
+        || _hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
+        {
+            result = !CollisionUtils.IsRoofObstacle(obstacle.ObstacleType.ObstacleTypeEnum);
+        }
+
+        return result;
     }
 
     /// <summary>
-    /// Проверяет, может ли хомяк получить урон во время бега по крыше.
-    /// Возвращает true, если хомяк находится в состоянии RoofRun и препятствие не является типом bigNotAlive.
+    /// Проверяет, пересекается ли хомяк в прыжке с большим живым препятствием достаточно глубоко для урона.
     /// </summary>
-    private bool CanDamageOnRoofRun(Obstacle obstacle)
+    private bool HasCollisionWithBigAliveInJumpState(Obstacle obstacle)
     {
-        if (_hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
+        // Определяем прыжковые состояния, в которых столкновение может быть опасным.
+        var isDamagableJumpState = new[]
+        {
+            HamsterStateEnum.JumpFromRoof,
+            HamsterStateEnum.SuperJumpFromRoof,
+            HamsterStateEnum.JumpOnRoof,
+            HamsterStateEnum.SuperJumpOnRoof,
+            HamsterStateEnum.JumpOver,
+            HamsterStateEnum.SuperJumpOver,
+        }.Contains(_hamster.HamsterState.Value);
+
+        if (!isDamagableJumpState)
             return false;
 
-        // true, если препятствие НЕ roof-тип (bigNotAlive / mediumNotAlive)
-        return !CollisionUtils.IsRoofObstacle(obstacle.ObstacleType.ObstacleTypeEnum);
+        // Фильтруем все препятствия, кроме большого живого.
+        if (obstacle.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.bigAlive)
+            return false;
+
+        // Сравниваем глубину перекрытия по оси X с порогом урона.
+        CollisionUtils.GetObstacleXInterval(obstacle, obstacle.ColliderWidth, 0f, out float obstacleLeftX, out float obstacleRightX);
+        float overlap = Mathf.Min(_hamster.RightX, obstacleRightX) - Mathf.Max(_hamster.LeftX, obstacleLeftX);
+
+        return overlap > _hamster.ColliderWidth * BigAliveJumpDamageOverlapThreshold;
     }
 
+    /// <summary>
+    /// Проверяет, относится ли препятствие к подбираемым объектам.
+    /// </summary>
     private bool IsObstacleCollectable(Obstacle obstacle)
     {
-        return CollectableTypes.Contains(obstacle.ObstacleType.ObstacleTypeEnum);
+        return _collectableTypes.Contains(obstacle.ObstacleType.ObstacleTypeEnum);
     }
 
+    /// <summary>
+    /// Выдаёт награду за подобранный объект и убирает его со сцены.
+    /// </summary>
     private void HandleCollectable(Obstacle obstacle)
     {
         _hamster.CollectCoinsOrBonusAction.Invoke(obstacle);
         UnspawnObstacle(obstacle);
     }
 
+    /// <summary>
+    /// Наносит урон хомяку и при необходимости уничтожает препятствие после столкновения.
+    /// </summary>
     private void HandleDamage(Obstacle obstacle)
     {
+        // Отправляем событие урона, если защита не активна.
         if (!_hamster.IsProtected.Value)
         {
             _hamster.DamageEvent.Invoke();
         }
 
+        // Удаляем препятствие, если хомяк умеет ломать его при столкновении.
         if (_hamster.IsDestructiveOnCollision.Value)
         {
             UnspawnObstacle(obstacle);
@@ -131,6 +193,9 @@ public class CollisionController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Возвращает препятствие в пул через событие снятия со сцены.
+    /// </summary>
     private static void UnspawnObstacle(Obstacle obstacle)
     {
         obstacle.OnObstacleUnspawned.Invoke(obstacle.gameObject);

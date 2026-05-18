@@ -24,6 +24,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
         public string DescriptionPrefix => "Jump over";
         public HamsterStateEnum ExpectedOverState => HamsterStateEnum.JumpOver;
         public bool DamageBigAliveWithoutYByReach => true;
+        public float BigAliveCollisionPaddingRatio => 0f;
 
         public bool CanJumpOverObstacle(ObstacleTypeEnum obstacleType)
         {
