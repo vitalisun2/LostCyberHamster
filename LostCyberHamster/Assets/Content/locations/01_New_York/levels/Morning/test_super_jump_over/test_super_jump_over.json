@@ -4,12 +4,17 @@
     "location": "01_New_York",
     "patternSequence": [
         {
+            "ref": "test_super_jump_over_01",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
             "ref": "relief",
             "spriteSeed": 0,
             "overrides": []
         },
         {
-            "ref": "test_superjump_over_01",
+            "ref": "test_super_jump_over_02",
             "spriteSeed": 0,
             "overrides": []
         },
@@ -19,7 +24,7 @@
             "overrides": []
         },
         {
-            "ref": "test_superjump_over_02",
+            "ref": "test_super_jump_over_03",
             "spriteSeed": 0,
             "overrides": []
         }

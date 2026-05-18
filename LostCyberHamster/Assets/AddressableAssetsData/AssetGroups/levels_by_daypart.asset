@@ -24,7 +24,7 @@ MonoBehaviour:
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1c3e01b1a885ef94d85c842371c63946
-    m_Address: 01_New_York/Morning/test_superjump_over
+    m_Address: 01_New_York/Morning/test_super_jump_over
     m_ReadOnly: 0
     m_SerializedLabels:
     - levels_daypart
