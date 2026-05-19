@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.GameManagerLogic;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay.Enums;
 using Atomic.Elements;
 using System.Collections.Generic;
@@ -23,6 +24,7 @@ namespace Assets.Scripts.GameEngine.Controllers
         private AnimatorOverrideController _overrideController;
         private Dictionary<string, AnimationClip> _originalRoofClips;
         private Dictionary<string, AnimationClip> _mediumRoofClips;
+        private RoofHeightTransitionCompensator _roofHeightTransitionCompensator;
         private bool _isMediumActive;
 
         /// <summary>
@@ -46,6 +48,18 @@ namespace Assets.Scripts.GameEngine.Controllers
         private void Awake()
         {
             _animator = GetComponent<Animator>();
+            _roofHeightTransitionCompensator = new RoofHeightTransitionCompensator(transform);
+        }
+
+        private void LateUpdate()
+        {
+            if (!_roofHeightTransitionCompensator.IsActive)
+                return;
+
+            if (!_animator.enabled)
+                return;
+
+            _roofHeightTransitionCompensator.ApplyFrame(Time.deltaTime);
         }
 
         public void SetRunAnimationTrigger(AtomicVariable<HamsterStateEnum> hamsterState)
@@ -266,6 +280,64 @@ namespace Assets.Scripts.GameEngine.Controllers
             _isMediumActive = isMedium;
         }
 
+        /// <summary>
+        /// Переключает roof-клипы для Big↔Medium roof-to-roof прыжка и запускает компенсацию разницы высоты.
+        /// </summary>
+        public bool TrySwapRoofClipsWithHeightTransition(
+            ObstacleTypeEnum sourceRoofType,
+            ObstacleTypeEnum targetRoofType,
+            string actionClipName)
+        {
+            if (!TryGetHalfRoofTransitionDuration(actionClipName, targetRoofType, out float duration))
+                return false;
+
+            if (!_roofHeightTransitionCompensator.TryStart(sourceRoofType, targetRoofType, duration))
+                return false;
+
+            // Компенсация применится в LateUpdate поверх target-клипов.
+            SwapRoofClips(targetRoofType == ObstacleTypeEnum.mediumNotAlive);
+            return true;
+        }
+
+        /// <summary>
+        /// Возвращает половину длительности action-клипа для целевой высоты крыши.
+        /// </summary>
+        private bool TryGetHalfRoofTransitionDuration(
+            string actionClipName,
+            ObstacleTypeEnum targetRoofType,
+            out float duration)
+        {
+            // Выбирает версию action-клипа для целевой крыши.
+            string targetClipName = GetRoofClipName(actionClipName, targetRoofType);
+
+            // Ищет целевой animation clip.
+            if (!TryFindClip(targetClipName, out AnimationClip clip) || clip == null)
+            {
+                duration = 0f;
+                return false;
+            }
+
+            // Возвращает половину длительности клипа.
+            duration = clip.length * 0.5f;
+            return duration > 0f;
+        }
+
+        /// <summary>
+        /// Возвращает имя roof-клипа для указанной высоты крыши.
+        /// </summary>
+        private static string GetRoofClipName(string clipName, ObstacleTypeEnum roofType)
+        {
+            // Подменяет big-клип на medium-версию.
+            if (roofType == ObstacleTypeEnum.mediumNotAlive &&
+                RoofClipMapping.TryGetValue(clipName, out string mediumClipName))
+            {
+                return mediumClipName;
+            }
+
+            // Оставляет исходное имя для большой крыши.
+            return clipName;
+        }
+
         private void EnsureOverrideControllerInitialized()
         {
             if (_overrideController != null) return;
@@ -304,7 +376,6 @@ namespace Assets.Scripts.GameEngine.Controllers
 #endif
         }
 
-
         public void OnPause()
         {
             _animator.enabled = false;
@@ -317,6 +388,7 @@ namespace Assets.Scripts.GameEngine.Controllers
 
         public void OnIntro()
         {
+            _roofHeightTransitionCompensator.Reset();
             _animator.enabled = false;
         }
 
@@ -325,11 +397,13 @@ namespace Assets.Scripts.GameEngine.Controllers
             // Rebind сбрасывает stale trigger/state, накопленный во время загрузки
             // (критично для тестового уровня без intro, где animator никогда не выключался)
             _animator.Rebind();
+            _roofHeightTransitionCompensator.Reset();
             _animator.enabled = true;
         }
 
         public void OnFinish()
         {
+            _roofHeightTransitionCompensator.Reset();
             _animator.enabled = false;
         }
     }

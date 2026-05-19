@@ -95,6 +95,12 @@ namespace Assets.Scripts
         /// <summary>Высота среднего неживого препятствия в юнитах.</summary>
         public static readonly float MEDIUM_NOTALIVE_HEIGHT_UNITS = MEDIUM_NOTALIVE_HEIGHT * PIXELS_TO_UNITS_RATIO;
 
+        /// <summary>Начальная Y-позиция transform_roof_run для большой крыши.</summary>
+        public const float BIG_ROOF_RUN_START_Y = 1.55f;
+
+        /// <summary>Начальная Y-позиция transform_medium_roof_run для средней крыши.</summary>
+        public const float MEDIUM_ROOF_RUN_START_Y = 1.2616279f;
+
 
         /// <summary>
         /// Y-позиция верхнего края дороги (необходима для размещения декора выше дороги).

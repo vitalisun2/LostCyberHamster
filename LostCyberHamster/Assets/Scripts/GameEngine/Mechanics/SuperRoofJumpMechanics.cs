@@ -73,6 +73,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             if (_energy.Value < REQUIRED_ENERGY) return;
 
+            Obstacle sourceRoof = _lastObstacle.Value;
             JumpResult result = CalculateRoofSuperJumpState();
             _hamsterState.Value = result.State;
             if (result.Target != null) _lastObstacle.Value = result.Target;
@@ -87,10 +88,29 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 or HamsterStateEnum.SuperJumpFromRoofDamage
                 or HamsterStateEnum.SuperJumpFromRoof)
             {
-                SwapRoofClipsIfNeeded(result);
+                ApplyRoofClips(sourceRoof, result);
                 _transformAnimatorController.SetSuperRoofJumpAnimationTrigger(_hamsterState);
                 _spriteAnimatorController.Jump();
             }
+        }
+
+        private void ApplyRoofClips(Obstacle sourceRoof, JumpResult result)
+        {
+            if (TrySwapRoofClipsWithHeightTransition(sourceRoof, result))
+                return;
+
+            SwapRoofClipsIfNeeded(result);
+        }
+
+        private bool TrySwapRoofClipsWithHeightTransition(Obstacle sourceRoof, JumpResult result)
+        {
+            if (sourceRoof == null || result.Target == null)
+                return false;
+
+            return _transformAnimatorController.TrySwapRoofClipsWithHeightTransition(
+                sourceRoof.ObstacleType.ObstacleTypeEnum,
+                result.Target.ObstacleType.ObstacleTypeEnum,
+                CLIP_SUPER_ROOF_JUMP);
         }
 
         private void SwapRoofClipsIfNeeded(JumpResult result)
