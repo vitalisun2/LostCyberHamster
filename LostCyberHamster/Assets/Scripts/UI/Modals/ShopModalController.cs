@@ -172,8 +172,7 @@ public class ShopController : MonoBehaviour
                     bool success = ShopManager.BuyItem(item);
                     if (success)
                     {
-                        Debug.Log($"Purchased {item.name}.");
-                    }
+                   }
                 }
             };
 
@@ -204,8 +203,7 @@ public class ShopController : MonoBehaviour
     // Simulate watching an ad and rewarding coins
     private void WatchAdForItem(ShopItem item)
     {
-        Debug.Log($"Watching ad for {item.name}...");
-        // Simulate ad-watching completion
+       // Simulate ad-watching completion
         ShopManager.RewardCoinsFromAd(item);
     }
 }

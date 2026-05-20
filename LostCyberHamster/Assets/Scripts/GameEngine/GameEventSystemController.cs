@@ -70,10 +70,8 @@ public class GameEventSystemController : MonoBehaviour
             var go = new GameObject("EventSystem", typeof(EventSystem));
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
             go.AddComponent<InputSystemUIInputModule>();
-            Debug.Log("[UI] EventSystem создан (InputSystemUIInputModule).");
 #else
         go.AddComponent<StandaloneInputModule>();
-        Debug.Log("[UI] EventSystem создан (StandaloneInputModule).");
 #endif
             _globalEventSystem = go;
             Object.DontDestroyOnLoad(go);
@@ -111,6 +109,5 @@ public class GameEventSystemController : MonoBehaviour
         }
 
         Object.DontDestroyOnLoad(keep.gameObject);
-        Debug.Log($"[UI] EventSystem унифицирован. Оставлен: {keep.name}. Удалено лишних: {removed}. Модуль: {keep.currentInputModule?.GetType().Name}");
     }
 }

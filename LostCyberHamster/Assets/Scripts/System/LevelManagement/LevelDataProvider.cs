@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -128,8 +128,7 @@ public static void ReleaseIntroSprites()
         {
             if (_introHandles.Count == 0)
             {
-                Debug.Log("[ReleaseIntroSprites] No intro handles to release.");
-                return;
+               return;
             }
 
             foreach (var handle in _introHandles)
@@ -467,8 +466,7 @@ public static void ReleaseIntroSprites()
                 }
                 catch (InvalidKeyException)
                 {
-                    Debug.Log($"[LevelDataProvider] Addressables label '{candidateLabel}' not found for {description} (this is OK if no animations exist).");
-                }
+               }
                 catch (Exception ex)
                 {
                     Debug.LogWarning($"[LevelDataProvider] Failed to load animation clips for label '{candidateLabel}' ({description}): {ex.Message}");

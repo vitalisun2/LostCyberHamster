@@ -27,22 +27,19 @@ namespace Assets.Scripts.Entry_Points
         private void Construct(List<ILoadingTask> loadingTasks)
         {
             _loadingTasks = loadingTasks;
-            //Debug.Log($"Loading tasks count: {_loadingTasks.Count}");
-        }
+       }
 
         private async void Start()
         {
             int i = 1;
             foreach (var loadingTask in _loadingTasks)
             {
-                Debug.Log($"Loading task {loadingTask.Name} started.");
-                var loadingPercentage = (int)(i++ / (float)_loadingTasks.Count * 100);
+               var loadingPercentage = (int)(i++ / (float)_loadingTasks.Count * 100);
                 await loadingTask.LoadAsync(bundle);
                 _progressBar.value = loadingPercentage;
                 _progressBar.title = $"({loadingPercentage} %)";
 
-                Debug.Log($"Loading task {loadingTask.Name} completed.");
-                // await Task.Delay(1000);
+               // await Task.Delay(1000);
             }
         }
     }

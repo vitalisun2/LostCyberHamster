@@ -12,7 +12,6 @@ namespace Vues.GameCore
 
         public string Decrypt(string data)
         {
-            // UnityEngine.Debug.Log($"Encrypted data: {data}");
             byte[] encryptedBytes = Convert.FromBase64String(data);
 
             using (Aes aes = Aes.Create())

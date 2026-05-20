@@ -21,9 +21,6 @@ namespace Assets.Scripts.Debugging
             {
                 return;
             }
-
-            var safeCategory = string.IsNullOrWhiteSpace(category) ? _defaultCategory : category;
-            Debug.Log($"[{_rootTag}][{safeCategory}] {message}");
         }
 
         public static void LogWarning(string category, string message)

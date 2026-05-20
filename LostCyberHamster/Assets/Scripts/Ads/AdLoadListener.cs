@@ -10,7 +10,6 @@ namespace GameAds
         {
             public void OnUnityAdsAdLoaded(string adUnitId)
             {
-                Debug.Log("Ad Loaded: " + adUnitId);
                 AdLoaded();
             }
 

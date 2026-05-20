@@ -10,8 +10,6 @@ namespace Assets.Scripts.Installers
 
         public override void InstallBindings()
         {
-            Debug.Log("BootstrapSceneInstaller installed");
-
             Container.Bind<ILoadingTask>().To<AuthenticateUserLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitGameRepositoryLoadingTask>().AsTransient();
             //Container.Bind<ILoadingTask>().To<LoadAddressablesLoadingTask>().AsTransient();

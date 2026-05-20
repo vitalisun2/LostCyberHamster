@@ -17,7 +17,7 @@ public static class AuthenticationManager
         // Check if a cached player already exists by checking if the session token exists
         if (!AuthenticationService.Instance.SessionTokenExists)
         {
-            Debug.Log("No cached player found.");
+
             // if not, then do nothing
             return;
         }
@@ -27,10 +27,10 @@ public static class AuthenticationManager
         try
         {
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
-            Debug.Log("Sign in anonymously succeeded!");
+
 
             // Shows how to get the playerID
-            Debug.Log($"PlayerID: {AuthenticationService.Instance.PlayerId}");
+
         }
         catch (AuthenticationException ex)
         {
@@ -54,10 +54,10 @@ public static class AuthenticationManager
         {
             if (PlayerAccountService.Instance.IsSignedIn)
             {
-                Debug.Log("Player is already signed in.");
+
             }
             // Open the browser for Unity Player Account sign-in
-            Debug.Log("Starting Unity Player Account sign-in.");
+
             await PlayerAccountService.Instance.StartSignInAsync();
         }
         catch (Exception ex)
@@ -70,7 +70,7 @@ public static class AuthenticationManager
     // Event handler for when the player completes Unity sign-in
     private static async void OnUnitySignIn()
     {
-        Debug.Log("Unity Player Account sign-in complete.");
+
         // Unsubscribe from the event to prevent duplicate calls
         PlayerAccountService.Instance.SignedIn -= OnUnitySignIn;
 
@@ -88,7 +88,7 @@ public static class AuthenticationManager
         try
         {
             await AuthenticationService.Instance.LinkWithUnityAsync(accessToken);
-            Debug.Log("Account successfully linked to Unity Player Account.");
+
             LinkingCompletedSuccess?.Invoke();
         }
         catch (AuthenticationException ex) when (ex.ErrorCode == AuthenticationErrorCodes.AccountAlreadyLinked)
@@ -113,7 +113,7 @@ public static class AuthenticationManager
         try
         {
             await AuthenticationService.Instance.UnlinkUnityAsync();
-            Debug.Log("Unlink is successful.");
+
         }
         catch (AuthenticationException ex)
         {
@@ -138,12 +138,12 @@ public static class AuthenticationManager
             {
                 if (identity.TypeId == "unity")
                 {
-                    Debug.Log("Player has a Unity Player Account linked.");
+
                     return true;
                 }
             }
 
-            Debug.Log("Player does not have a Unity Player Account linked.");
+
             return false;
         }
         catch (Exception ex)

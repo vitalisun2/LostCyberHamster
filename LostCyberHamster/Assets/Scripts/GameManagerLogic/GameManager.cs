@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Assets.Scripts.Gameplay;
 using Sirenix.OdinInspector;
@@ -147,8 +147,6 @@ namespace Assets.Scripts.GameManagerLogic
 
         public void StartIntro()
         {
-            Debug.Log("Game Intro");
-
             foreach (var listener in _listeners)
             {
                 if (listener is Listeners.IGameIntroListener introListener)
@@ -178,8 +176,6 @@ namespace Assets.Scripts.GameManagerLogic
         [Button]
         public void Finish()
         {
-            Debug.Log("Game Finished");
-
             foreach (var listener in _listeners)
             {
                 if (listener is Listeners.IGameFinishListener finishListener)
@@ -195,9 +191,6 @@ namespace Assets.Scripts.GameManagerLogic
         [Button]
         public void Pause()
         {
-
-            Debug.Log("Game Paused");
-
             foreach (var listener in _listeners)
             {
                 if (listener is Listeners.IGamePauseListener pauseListener)
@@ -213,9 +206,6 @@ namespace Assets.Scripts.GameManagerLogic
         [Button]
         public void Resume()
         {
-
-            Debug.Log("Game Resumed");
-
             foreach (var listener in _listeners)
             {
                 if (listener is Listeners.IGameResumeListener resumeListener)

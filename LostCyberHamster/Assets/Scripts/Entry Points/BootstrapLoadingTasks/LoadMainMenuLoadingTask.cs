@@ -28,7 +28,6 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
                 if (!string.IsNullOrEmpty(levelAddress))
                 {
                     GameDataManager.PlayerData.CurrentLevel = levelAddress;
-                    Debug.Log($"[LoadMainMenuLoadingTask] Test level override: '{levelAddress}'. Skipping menu → Game.");
                     await SceneManager.LoadSceneAsync(GameScene);
                     return;
                 }

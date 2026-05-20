@@ -34,7 +34,6 @@ public class ElectricStrikeSkin : Skin
         }
         else
         {
-            Debug.Log("No obstacles to strike.");
         }
     }
 
@@ -44,8 +43,6 @@ public class ElectricStrikeSkin : Skin
         {
             var hamster = LevelController.Instance.LevelData.Hamster;
             hamster.DestroyObstacleEvent?.Invoke(obstacle);
-
-            Debug.Log("Electric strike destroyed an obstacle!");
 
             // Ждем указанное время перед уничтожением следующего препятствия
             yield return new WaitForSeconds(delay);

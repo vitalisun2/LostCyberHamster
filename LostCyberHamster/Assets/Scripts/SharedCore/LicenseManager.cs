@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using Assets.Scripts.Entry_Points;
 using LostCyberHamster.UI;
@@ -20,8 +20,7 @@ public class LicenseManager : MonoBehaviour
     {
         var uiDocument = GameObject.Find("[UI]").GetComponent<UIDocument>();
         _root = uiDocument.rootVisualElement;
-        Debug.Log("LicenseManager initialized");
-        StartCoroutine(CheckNetworkReachability());
+       StartCoroutine(CheckNetworkReachability());
     }
 
     private IEnumerator CheckNetworkReachability()
@@ -54,15 +53,13 @@ public class LicenseManager : MonoBehaviour
 
     private IEnumerator FetchCurrentTime()
     {
-        Debug.Log("Fetching current time from API...");
-        UnityWebRequest request = UnityWebRequest.Get(_timeApiUrl);
+       UnityWebRequest request = UnityWebRequest.Get(_timeApiUrl);
         yield return request.SendWebRequest();
 
         if (request.result == UnityWebRequest.Result.Success)
         {
             string jsonResponse = request.downloadHandler.text;
             _currentTime = ParseTimeFromResponse(jsonResponse);
-            Debug.Log($"Current Time in Moscow: {_currentTime}");
 
             if (_currentTime > _expirationDate)
             {
@@ -70,8 +67,7 @@ public class LicenseManager : MonoBehaviour
             }
             else
             {
-                Debug.Log("License is valid.");
-            }
+           }
         }
         else
         {
@@ -168,17 +164,14 @@ public class LicenseManager : MonoBehaviour
         switch (Application.internetReachability)
         {
             case NetworkReachability.NotReachable:
-                Debug.Log("No network available");
-                return false;
+               return false;
 
             case NetworkReachability.ReachableViaCarrierDataNetwork:
             case NetworkReachability.ReachableViaLocalAreaNetwork:
-                Debug.Log("Network is available");
-                return true;
+               return true;
 
             default:
-                Debug.Log("Unknown network state");
-                return false;
+               return false;
         }
     }
 }

@@ -42,7 +42,7 @@ public static class DebugManager
 
     public static void Log(string message)
     {
-        Debug.Log(message);
+        return;
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ public static class DebugManager
     /// </summary>
     public static void DiagLog(string message, DiagChannel channel)
     {
-        WriteDiagLog(message, channel, forceWrite: true);
+        return;
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public static class DebugManager
     /// </summary>
     public static void DiagLogVerbose(string message, DiagChannel channel)
     {
-        WriteDiagLog(message, channel, forceWrite: _verboseDiagLoggingEnabled);
+        return;
     }
 
     /// <summary>

@@ -61,8 +61,6 @@ namespace Assets.Scripts.System.FeatureFlags
             {
                 GameDataManager.SaveSettings();
             }
-
-            Debug.Log($"[DayPartLevelsFeature] Day-part levels {(enabled ? "ENABLED" : "DISABLED")}");
             OnFeatureChanged?.Invoke(enabled);
         }
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using LostCyberHamster.UI;
 using UnityEngine;
@@ -19,8 +19,7 @@ namespace Assets.Scripts.Entry_Points
 
         private async Task Awake()
         {
-            Debug.Log("GameSceneEntryPoint Awake");
-            _uiManager = new UIManager(new IScreenController[]
+           _uiManager = new UIManager(new IScreenController[]
             {
                 new GameScreenController(_uiDocument),
                 new PauseModalController(_uiDocument),
@@ -30,30 +29,27 @@ namespace Assets.Scripts.Entry_Points
             });
 
             var gameController = _uiManager.GetController<GameScreenController>();
-            gameController.SetSuperJumpAction(() => Debug.Log("SuperJump"));
-            gameController.SetJumpAction(() => Debug.Log("Jump"));
-            gameController.SetUltraAction(() => Debug.Log("Ultra"));
-            gameController.SetTapAction(() => Debug.Log("Tap"));
+            gameController.SetSuperJumpAction(() => { });
+            gameController.SetJumpAction(() => { });
+            gameController.SetUltraAction(() => { });
+            gameController.SetTapAction(() => { });
 
             var winScreenController = _uiManager.GetController<WinModalController>();
 
             var pauseModalController = _uiManager.GetController<PauseModalController>();
             pauseModalController.SetResumeAction(() => {
-                Debug.Log("Resume");
-                UIManager.OnModalShow(ScreenEnum.LoseModal);
+               UIManager.OnModalShow(ScreenEnum.LoseModal);
                 });
-            pauseModalController.SetRestartAction(() => Debug.Log("Restart"));
+            pauseModalController.SetRestartAction(() => { });
             pauseModalController.SetExitAction(() =>
             {
-                Debug.Log("Exit");
-                winScreenController.SetParamsForInit("Моя игра", "Она мне принадлежит и таким же ...", 2);
+               winScreenController.SetParamsForInit("Моя игра", "Она мне принадлежит и таким же ...", 2);
                 UIManager.OnModalShow(ScreenEnum.WinModal);
             });
 
 
             await _uiManager.LoadScreenAsync(ScreenEnum.IntroScreen);
-            Debug.Log("IntroScreen loaded");
-        }
+       }
 
         private void OnEnable()
         {

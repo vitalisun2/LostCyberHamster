@@ -120,8 +120,6 @@ namespace Vues.GameCore
                 GameDataManager.PlayerData.DailyTasksRefreshDate = currentDate;
                 GameDataManager.PlayerData.DailyTasks = dailyTasks;
                 GameDataManager.SaveData();
-
-                Debug.Log("Daily Tasks refreshed. Count: " + dailyTasks.Count);
             }
 
             DailyTasks = GameDataManager.PlayerData.DailyTasks;

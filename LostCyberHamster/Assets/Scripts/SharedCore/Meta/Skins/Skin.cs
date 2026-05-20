@@ -53,12 +53,6 @@ public abstract class Skin
         if (_ultaTimeLeft > 0)
         {
             _ultaTimeLeft -= Time.deltaTime;
-
-            //debug every second
-            if ((int)_ultaTimeLeft % 1 == 0)
-            {
-                Debug.Log($"Ulta time left: {_ultaTimeLeft}");
-            }
         }
     }
 }

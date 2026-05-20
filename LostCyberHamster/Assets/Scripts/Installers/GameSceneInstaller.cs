@@ -20,8 +20,6 @@ namespace Assets.Scripts.Installers
 
         public override void InstallBindings()
         {
-            Debug.Log("GameSceneInstaller InstallBindings");
-
             Container.Bind<GameManager>().FromInstance(_gameManager).AsSingle();
             Container.Bind<GameObject>().FromInstance(_introObject).AsSingle();
             Container.Bind<Hamster>().FromInstance(_hamsterPrefab).AsSingle();

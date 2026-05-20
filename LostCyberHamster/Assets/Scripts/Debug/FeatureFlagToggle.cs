@@ -43,7 +43,6 @@ namespace Assets.Scripts.Debugging
         private static void ToggleFeature()
         {
             DayPartLevelsFeature.SetEnabled(!DayPartLevelsFeature.IsEnabled, persist: true);
-            Debug.Log($"[FeatureFlagToggle] Day-part levels {(DayPartLevelsFeature.IsEnabled ? "ENABLED" : "DISABLED")}");
         }
     }
 }

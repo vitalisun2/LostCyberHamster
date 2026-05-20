@@ -9,7 +9,6 @@ namespace GameAds
         {
             public void OnInitializationComplete()
             {
-                Debug.Log("Unity Ads initialization complete.");
                 _isInitialized = true;
             }
 

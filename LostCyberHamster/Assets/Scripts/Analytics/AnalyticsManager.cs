@@ -15,7 +15,7 @@ public static class AnalyticsManager
     {
         if (_initialized)
         {
-            Debug.Log("Analytics is already initialized.");
+
             return;
         }
 
@@ -24,7 +24,7 @@ public static class AnalyticsManager
             await UnityServices.InitializeAsync();
             AnalyticsService.Instance.StartDataCollection();
             _initialized = true;
-            Debug.Log("Analytics initialized successfully.");
+
 
             SubscribeToEvents();
         }

@@ -29,14 +29,14 @@ namespace LostCyberHamster.UI
 
         private void OnLinkingCompletedFailed()
         {
-            Debug.Log("Linking failed");
+
             Close();
         }
 
 
         private void OnLinkingCompletedSuccess()
         {
-            Debug.Log("Linking success");
+
             Close();
         }
 

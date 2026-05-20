@@ -90,8 +90,7 @@ namespace Assets.Scripts.System
 
         public void OnFinish()
         {
-            Debug.Log("Level complete screen appeared");
-        }
+       }
 
         public void SetCurrentLevel(string levelName)
         {
@@ -153,12 +152,10 @@ namespace Assets.Scripts.System
 
             if (!string.Equals(normalizedLevelIdentifier, sourceIdentifier, StringComparison.Ordinal))
             {
-                Debug.Log("Current level set to " + normalizedLevelIdentifier + " (source '" + sourceIdentifier + "').");
-            }
+           }
             else
             {
-                Debug.Log("Current level set to " + normalizedLevelIdentifier);
-            }
+           }
         }
 
         [Button]
@@ -185,8 +182,7 @@ namespace Assets.Scripts.System
 
             if (!LevelManager.TryGetNextLevelKey(currentLevelKey, out var nextLevelKey))
             {
-                Debug.Log("All levels completed");
-                return;
+               return;
             }
 
             if (!LevelManager.TryParseLevelNumber(nextLevelKey, out var nextLevelNumber))
@@ -198,8 +194,7 @@ namespace Assets.Scripts.System
             var totalLevels = LevelManager.GetTotalLevelsCount();
             if (nextLevelNumber > totalLevels)
             {
-                Debug.Log("All levels completed");
-                return;
+               return;
             }
 
             SetCurrentLevel(nextLevelKey);

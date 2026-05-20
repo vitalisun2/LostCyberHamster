@@ -40,7 +40,6 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             // Background2 is optional - if not configured, skip
             if (background2Sprite == null)
             {
-                Debug.Log("[InitBackground2LoadingTask] Background2 sprite not configured, skipping.");
                 return;
             }
 

@@ -26,8 +26,6 @@ namespace GameManagement
 
         public static async Task LoadDataAsync()
         {
-            Debug.Log("Loading data...");
-
             var localData = LoadFromPlayerPrefs();
             var cloudData = await LoadFromCloud();
 
@@ -40,15 +38,13 @@ namespace GameManagement
 
             EnsureProgressConsistency();
 
-            Debug.Log("Data loaded." + PlayerData.ToJson());
-        }
+       }
 
         private static PlayerData LoadFromPlayerPrefs()
         {
             if (!PlayerPrefs.HasKey(_playerDataKey))
             {
-                Debug.Log("No data found in PlayerPrefs.");
-                return new PlayerData();
+               return new PlayerData();
             }
 
             var encryptedData = PlayerPrefs.GetString(_playerDataKey);
@@ -68,8 +64,7 @@ namespace GameManagement
                     return PlayerData.FromJson(cloudJson.Value.GetAs<string>());
                 }
 
-                Debug.Log("No cloud data found.");
-            }
+           }
             catch (Exception e)
             {
                 Debug.LogWarning("Failed to load data from Cloud: " + e.Message);
@@ -82,8 +77,7 @@ namespace GameManagement
         {
             PlayerData.LastSaveDate = DateTime.UtcNow.ToString("o");
             var serializedData = PlayerData.ToJson();
-            Debug.Log(serializedData);
-            var encryptedData = _cryptoService.Encrypt(serializedData);
+           var encryptedData = _cryptoService.Encrypt(serializedData);
             PlayerPrefs.SetString(_playerDataKey, encryptedData);
             PlayerPrefs.Save();
         }
@@ -109,8 +103,7 @@ namespace GameManagement
             try
             {
                 await CloudSaveService.Instance.Data.Player.SaveAsync(playerDataDict);
-                Debug.Log("Data successfully saved to Cloud.");
-            }
+           }
             catch (Exception e)
             {
                 Debug.LogWarning("Failed to save data to Cloud: " + e.Message);

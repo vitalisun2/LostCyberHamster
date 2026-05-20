@@ -30,7 +30,6 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             }
             else if (hasIntroSprites)
             {
-                Debug.Log("[InitIntroAssetsLoadingTask] Automation skip-intro enabled. StartIntro() suppressed.");
             }
             // Если интро нет — НЕ вызываем StartGame() здесь.
             // GameEntryPoint вызовет StartGame() после завершения ВСЕХ загрузочных задач.

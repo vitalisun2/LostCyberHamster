@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Common;
+using Assets.Scripts.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -33,8 +33,7 @@ namespace Assets.Scripts.System
         /// <returns></returns>
         public static async Awaitable SaveLocalCatalogAsync(string json)
         {
-            Debug.Log("Сохранение каталога локально");
-            if (!Directory.Exists(Consts.BaseSettingsPath))
+           if (!Directory.Exists(Consts.BaseSettingsPath))
                 Directory.CreateDirectory(Consts.BaseSettingsPath);
             await File.WriteAllTextAsync(_catalogFilePath, json);
         }
@@ -48,8 +47,7 @@ namespace Assets.Scripts.System
             CatalogDictionary.Clear();
             Locations.Clear();
 
-            Debug.Log("Чтение локального каталога");
-            var json = await File.ReadAllTextAsync(_catalogFilePath);
+           var json = await File.ReadAllTextAsync(_catalogFilePath);
             var catalog = JsonUtility.FromJson<Catalog>(json);
 
             foreach (var bundle in catalog.bundles)
@@ -61,8 +59,7 @@ namespace Assets.Scripts.System
             {
                 UserSettings.Locations.Add(locationInfo);
             }
-            Debug.Log("Локальный каталог прочитан");
-        }
+       }
 
         private static async Awaitable DownloadBundles()
         {
@@ -98,20 +95,17 @@ namespace Assets.Scripts.System
 
             if (request.result == UnityWebRequest.Result.ConnectionError)
             {
-                Debug.Log("Нет соединения с сервером: " + request.error);
-                return null;
+               return null;
             }
 
             if (request.result == UnityWebRequest.Result.DataProcessingError)
             {
-                Debug.Log("Ошибка обработки данных: " + request.error);
-                return null;
+               return null;
             }
 
             if (request.result == UnityWebRequest.Result.ProtocolError)
             {
-                Debug.Log("Ошибка на стороне сервера: " + request.error);
-                return null;
+               return null;
             }
 
 

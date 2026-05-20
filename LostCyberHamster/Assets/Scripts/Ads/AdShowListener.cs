@@ -16,19 +16,19 @@ namespace GameAds
 
             public void OnUnityAdsShowStart(string adUnitId)
             {
-                Debug.Log("Ad Started: " + adUnitId);
+
             }
 
             public void OnUnityAdsShowClick(string adUnitId)
             {
-                Debug.Log("Ad Clicked: " + adUnitId);
+
             }
 
             public void OnUnityAdsShowComplete(string adUnitId, UnityAdsShowCompletionState showCompletionState)
             {
                 if (showCompletionState == UnityAdsShowCompletionState.COMPLETED)
                 {
-                    Debug.Log("Ad Completed. Reward the user!");
+
                     AdCompleted();
                 }
             }

@@ -41,7 +41,6 @@ namespace Assets.Scripts.Gameplay
 
         private async Task Initialize()
         {
-            Debug.Log("GameUi Initialize");
             _uiManager = new UIManager(new IScreenController[]
             {
                 new GameScreenController(_uiDocument),
