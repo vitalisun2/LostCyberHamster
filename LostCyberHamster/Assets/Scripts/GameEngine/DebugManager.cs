@@ -8,7 +8,7 @@ public static class DebugManager
     private const string DiagLogFileName = "diagnostic_log.txt";
     private static string _diagLogPath;
     private static bool _fileLoggingEnabled = true;
-    private static bool _verboseDiagLoggingEnabled = true;
+    private static bool _verboseDiagLoggingEnabled = false;
 
     public enum DiagChannel
     {
@@ -58,7 +58,7 @@ public static class DebugManager
     /// </summary>
     public static void DiagLog(string message, DiagChannel channel)
     {
-        return;
+        WriteDiagLog(message, channel, forceWrite: true);
     }
 
     /// <summary>
@@ -74,7 +74,10 @@ public static class DebugManager
     /// </summary>
     public static void DiagLogVerbose(string message, DiagChannel channel)
     {
-        return;
+        if (!_verboseDiagLoggingEnabled)
+            return;
+
+        WriteDiagLog(message, channel, forceWrite: true);
     }
 
     /// <summary>

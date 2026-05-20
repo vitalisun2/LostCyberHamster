@@ -11,22 +11,35 @@ namespace Assets.Scripts.Bot.Diagnostics
     {
         public static void LogFire(PlannedAction action, float obstacleLeftX, string extra = null)
         {
-            return;
+            DebugManager.DiagLog(
+                $"[Bot EXEC] FIRE kind={action.Kind} " +
+                $"triggerX={action.TriggerX:F2} renderX={action.RenderWorldX:F2} obstacleLeftX={obstacleLeftX:F2} " +
+                $"{extra ?? string.Empty}" +
+                $"desc={action.Description}");
         }
 
         public static void LogComplete(PlannedAction action, HamsterStateEnum state)
         {
-            return;
+            DebugManager.DiagLog(
+                $"[Bot EXEC] COMPLETE kind={action.Kind} " +
+                $"state={state} " +
+                $"desc={action.Description}");
         }
 
         public static void LogCancel(PlannedAction action, string extra)
         {
-            return;
+            DebugManager.DiagLog(
+                $"[Bot EXEC] CANCEL kind={action.Kind} " +
+                $"{extra} " +
+                $"desc={action.Description}");
         }
 
         public static void LogComplete(PlannedAction action, bool isBottomLine)
         {
-            return;
+            DebugManager.DiagLog(
+                $"[Bot EXEC] COMPLETE kind={action.Kind} " +
+                $"lane={(isBottomLine ? "bottom" : "top")} " +
+                $"desc={action.Description}");
         }
     }
 }
