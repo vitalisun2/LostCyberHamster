@@ -31,8 +31,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnUltaEvent()
         {
-            Debug.Log("Ulta event received");
-
             if (_ultaChargeAmount.Value < 100)
             {
                 Debug.LogWarning("Ulta charge is not full");

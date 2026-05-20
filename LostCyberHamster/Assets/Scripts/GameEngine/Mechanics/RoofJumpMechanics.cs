@@ -145,14 +145,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 _transform.position.x,
                 _hamsterWidth,
                 _roofJumpShift,
-                _jumpFromRoofShift,
-                logDiagnostics: true);
-
-            DebugManager.DiagLog(
-                $"[RoofJumpShift CONTEXT] hamster=[{hamsterLeftX:F3},{hamsterRightX:F3}] " +
-                $"center={_transform.position.x:F3} roofShift={_roofJumpShift:F3} " +
-                $"jumpFromRoofShift={_jumpFromRoofShift:F3} reachShift={context.ReachShift:F3} " +
-                $"obstacles={_roofJumpObstacleBuffer.Count}");
+                _jumpFromRoofShift);
 
             JumpResolveResult result = RoofJumpOutcomeResolver.ResolveRoofJump(_roofJumpObstacleBuffer, context);
             Obstacle target = result.TargetIndex >= 0 && result.TargetIndex < obstacles.Count

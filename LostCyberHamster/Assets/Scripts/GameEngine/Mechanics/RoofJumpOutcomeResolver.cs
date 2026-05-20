@@ -290,31 +290,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpObstacleData obstacle,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            float roofLeft = obstacle.LeftX - context.RoofJumpShift;
-            float roofRight = obstacle.RightX - context.RoofJumpShift;
-            float jumpFromRoofLeft = obstacle.LeftX - context.JumpFromRoofShift;
-            float jumpFromRoofRight = obstacle.RightX - context.JumpFromRoofShift;
-            bool roofOverlap = CollisionUtils.IsOverlap(
-                context.HamsterLeftX,
-                context.HamsterRightX,
-                roofLeft,
-                roofRight);
-            bool jumpFromRoofOverlap = CollisionUtils.IsOverlap(
-                context.HamsterLeftX,
-                context.HamsterRightX,
-                jumpFromRoofLeft,
-                jumpFromRoofRight);
-
-            DebugManager.DiagLog(
-                $"[RoofJumpShift CAND] idx={obstacleIndex} type={obstacle.Type} " +
-                $"hamster=[{context.HamsterLeftX:F3},{context.HamsterRightX:F3}] " +
-                $"start=[{obstacle.LeftX:F3},{obstacle.RightX:F3}] " +
-                $"roofShift={context.RoofJumpShift:F3} roofEnd=[{roofLeft:F3},{roofRight:F3}] roofOverlap={roofOverlap} " +
-                $"jumpFromRoofShift={context.JumpFromRoofShift:F3} jumpFromRoofEnd=[{jumpFromRoofLeft:F3},{jumpFromRoofRight:F3}] " +
-                $"jumpFromRoofOverlap={jumpFromRoofOverlap}");
+            return;
         }
 
         private static void LogResult(
@@ -324,12 +300,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpResolveResult noHit,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[RoofJumpShift RESULT] idx={obstacleIndex} type={obstacle.Type} " +
-                $"state={result.State} targetIndex={result.TargetIndex} returns={result.State != noHit.State}");
+            return;
         }
 
         private static void LogBreak(
@@ -337,13 +308,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpObstacleData obstacle,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[RoofJumpShift BREAK] idx={obstacleIndex} type={obstacle.Type} " +
-                $"left={obstacle.LeftX:F3} reachShift={context.ReachShift:F3} " +
-                $"hamsterRight={context.HamsterRightX:F3}");
+            return;
         }
 
         private static bool IsHamsterCenterInsideObstacleAtShift(

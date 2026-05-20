@@ -354,32 +354,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpObstacleData obstacle,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            float roofLeft = obstacle.LeftX - context.RoofJumpShift;
-            float roofRight = obstacle.RightX - context.RoofJumpShift;
-            float jumpFromRoofLeft = obstacle.LeftX - context.JumpFromRoofShift;
-            float jumpFromRoofRight = obstacle.RightX - context.JumpFromRoofShift;
-            bool roofOverlap = CollisionUtils.IsOverlap(
-                context.HamsterLeftX,
-                context.HamsterRightX,
-                roofLeft,
-                roofRight);
-            bool jumpFromRoofOverlap = CollisionUtils.IsOverlap(
-                context.HamsterLeftX,
-                context.HamsterRightX,
-                jumpFromRoofLeft,
-                jumpFromRoofRight);
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift CAND] idx={obstacleIndex} type={obstacle.Type} " +
-                $"hamster=[{context.HamsterLeftX:F3},{context.HamsterRightX:F3}] " +
-                $"start=[{obstacle.LeftX:F3},{obstacle.RightX:F3}] " +
-                $"superRoofShift={context.RoofJumpShift:F3} superRoofEnd=[{roofLeft:F3},{roofRight:F3}] " +
-                $"superRoofOverlap={roofOverlap} superJumpFromRoofShift={context.JumpFromRoofShift:F3} " +
-                $"superJumpFromRoofEnd=[{jumpFromRoofLeft:F3},{jumpFromRoofRight:F3}] " +
-                $"superJumpFromRoofOverlap={jumpFromRoofOverlap}");
+            return;
         }
 
         private static void LogResult(
@@ -389,12 +364,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpResolveResult noHit,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift RESULT] idx={obstacleIndex} type={obstacle.Type} " +
-                $"state={result.State} targetIndex={result.TargetIndex} returns={result.State != noHit.State}");
+            return;
         }
 
         private static void LogReturn(
@@ -403,12 +373,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpResolveResult result,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift RETURN] idx={obstacleIndex} type={obstacle.Type} " +
-                $"state={result.State} targetIndex={result.TargetIndex}");
+            return;
         }
 
         private static void LogDeferredDamage(
@@ -417,12 +382,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpResolveResult result,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift DEFER_DAMAGE] idx={obstacleIndex} type={obstacle.Type} " +
-                $"state={result.State} targetIndex={result.TargetIndex}");
+            return;
         }
 
         private static void LogDeferredJumpOnObstacle(
@@ -431,34 +391,21 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpResolveResult result,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift DEFER_JUMP_ON] idx={obstacleIndex} type={obstacle.Type} " +
-                $"state={result.State} targetIndex={result.TargetIndex}");
+            return;
         }
 
         private static void LogDeferredJumpOnObstacleReturn(
             JumpResolveResult result,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift DEFER_JUMP_ON_RETURN] state={result.State} targetIndex={result.TargetIndex}");
+            return;
         }
 
         private static void LogDeferredReturn(
             JumpResolveResult result,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift DEFER_RETURN] state={result.State} targetIndex={result.TargetIndex}");
+            return;
         }
 
         private static void LogBreak(
@@ -466,13 +413,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpObstacleData obstacle,
             RoofJumpResolveContext context)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift BREAK] idx={obstacleIndex} type={obstacle.Type} " +
-                $"left={obstacle.LeftX:F3} reachShift={context.ReachShift:F3} " +
-                $"hamsterRight={context.HamsterRightX:F3}");
+            return;
         }
 
         private static void LogRoofHandler(
@@ -483,12 +424,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             bool hitSmall,
             HamsterStateEnum state)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift ROOF] idx={obstacleIndex} type={obstacle.Type} " +
-                $"superRoofOverlap={roofOverlap} hitSmallOnRoof={hitSmall} state={state}");
+            return;
         }
 
         private static void LogSmallNotAliveRoadHandler(
@@ -497,12 +433,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             RoofJumpResolveContext context,
             bool jumpFromRoofOverlap)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift SMALL_ROAD] idx={obstacleIndex} type={obstacle.Type} " +
-                $"superJumpFromRoofOverlap={jumpFromRoofOverlap}");
+            return;
         }
 
         private static void LogSmallNotAliveRoadAndRoofHandler(
@@ -515,13 +446,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             bool jumpFromRoofOverlap,
             HamsterStateEnum state)
         {
-            if (!context.LogDiagnostics)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperRoofJumpShift SMALL_ROOF] idx={obstacleIndex} type={obstacle.Type} " +
-                $"isOnRoof={isOnRoof} bigUnderSmallIndex={bigUnderSmallIndex} " +
-                $"hitSmallOnRoof={hitSmall} superJumpFromRoofOverlap={jumpFromRoofOverlap} state={state}");
+            return;
         }
 
         private static bool IsHamsterCenterInsideObstacleAtShift(
