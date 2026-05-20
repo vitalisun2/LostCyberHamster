@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.GameEngine.Controllers;
+using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Atomic.Elements;
 using UnityEngine;
@@ -13,7 +14,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicVariable<bool> _isDamaged;
         private readonly AtomicVariable<bool> _needCheckCollisionInRunFromRoofAfterShift;
         private readonly AtomicEvent _jumpOverEvent;
-        private readonly AtomicEvent _destroyObstacleEvent;
+        private readonly AtomicEvent<Obstacle> _destroyObstacleEvent;
+        private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
         private readonly AtomicEvent _damageEvent;
 
         public HamsterAnimationEventsMechanics(TransformAnimatorEventsDispatcher transformAnimatorEventsDispatcher,
@@ -22,7 +24,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             AtomicVariable<bool> isDamaged,
             AtomicVariable<bool> needCheckCollisionInRunFromRoofAfterShift,
             AtomicEvent jumpOverEvent,
-            AtomicEvent destroyObstacleEvent,
+            AtomicEvent<Obstacle> destroyObstacleEvent,
+            AtomicVariable<Obstacle> pendingJumpedOnObstacle,
             AtomicEvent damageEvent)
         {
             _transformAnimatorEventsDispatcher = transformAnimatorEventsDispatcher;
@@ -31,6 +34,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _needCheckCollisionInRunFromRoofAfterShift = needCheckCollisionInRunFromRoofAfterShift;
             _jumpOverEvent = jumpOverEvent;
             _destroyObstacleEvent = destroyObstacleEvent;
+            _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
             _spriteAnimatorEventsDispatcher = spriteAnimatorEventsDispatcher;
             _damageEvent = damageEvent;
         }
@@ -51,13 +55,15 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             if (animEvent == "transform_jumped_on")
             {
-                _destroyObstacleEvent?.Invoke();
+                CompletePendingJumpedOnObstacle();
             }
 
             JumpEvents(animEvent);
 
             if (animEvent == "transform_jump_on_roof_end")
             {
+                _pendingJumpedOnObstacle.Value = null;
+
                 if (_hamsterState.Value == HamsterStateEnum.JumpOnRoofDamage ||
                     _hamsterState.Value == HamsterStateEnum.SuperJumpOnRoofDamage)
                     _damageEvent?.Invoke();
@@ -67,6 +73,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             if (animEvent == "transform_roof_jump_end")
             {
+                _pendingJumpedOnObstacle.Value = null;
+
                 if(_hamsterState.Value == HamsterStateEnum.RoofJumpDamage ||
                    _hamsterState.Value == HamsterStateEnum.SuperRoofJumpDamage)
                     _damageEvent?.Invoke();
@@ -76,6 +84,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             if (animEvent == "transform_jump_from_roof_end")
             {
+                _pendingJumpedOnObstacle.Value = null;
+
                 if (_hamsterState.Value == HamsterStateEnum.JumpFromRoofDamage ||
                     _hamsterState.Value == HamsterStateEnum.SuperJumpFromRoofDamage)
                     _damageEvent?.Invoke();
@@ -88,6 +98,30 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             if (animEvent == "check_collision_in_run_from_roof_after_shift")
                 _needCheckCollisionInRunFromRoofAfterShift.Value = true;
+        }
+
+        private void CompletePendingJumpedOnObstacle()
+        {
+            if (!IsJumpOnObstacleState())
+            {
+                _pendingJumpedOnObstacle.Value = null;
+                return;
+            }
+
+            Obstacle obstacle = _pendingJumpedOnObstacle.Value;
+            if (obstacle == null)
+                return;
+
+            _destroyObstacleEvent?.Invoke(obstacle);
+            _pendingJumpedOnObstacle.Value = null;
+        }
+
+        private bool IsJumpOnObstacleState()
+        {
+            return _hamsterState.Value == HamsterStateEnum.JumpOnObstacle
+                   || _hamsterState.Value == HamsterStateEnum.SuperJumpOnObstacle
+                   || _hamsterState.Value == HamsterStateEnum.JumpOnObstacleFromRoof
+                   || _hamsterState.Value == HamsterStateEnum.SuperJumpOnObstacleFromRoof;
         }
 
         private void JumpEvents(string animEvent)
@@ -107,6 +141,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     _damageEvent?.Invoke();
                 }
 
+                _pendingJumpedOnObstacle.Value = null;
                 _hamsterState.Value = HamsterStateEnum.Run;
             }
 

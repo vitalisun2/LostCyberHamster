@@ -25,6 +25,8 @@ namespace Assets.Scripts.GameEngine.Controllers
         private Dictionary<string, AnimationClip> _originalRoofClips;
         private Dictionary<string, AnimationClip> _mediumRoofClips;
         private RoofHeightTransitionCompensator _roofHeightTransitionCompensator;
+        private bool _hasActiveRoofHeightTransition;
+        private ObstacleTypeEnum _activeRoofHeightTransitionTargetType;
         private bool _isMediumActive;
 
         /// <summary>
@@ -60,6 +62,8 @@ namespace Assets.Scripts.GameEngine.Controllers
                 return;
 
             _roofHeightTransitionCompensator.ApplyFrame(Time.deltaTime);
+            if (!_roofHeightTransitionCompensator.IsActive)
+                ClearActiveRoofHeightTransition();
         }
 
         public void SetRunAnimationTrigger(AtomicVariable<HamsterStateEnum> hamsterState)
@@ -288,15 +292,99 @@ namespace Assets.Scripts.GameEngine.Controllers
             ObstacleTypeEnum targetRoofType,
             string actionClipName)
         {
+            // Начинает новый переход и сбрасывает предыдущий контекст.
+            ClearActiveRoofHeightTransition();
+
+            // Определяет длительность компенсации по action-клипу целевой крыши.
             if (!TryGetHalfRoofTransitionDuration(actionClipName, targetRoofType, out float duration))
                 return false;
 
+            // Запускает компенсацию только для Big↔Medium переходов.
             if (!_roofHeightTransitionCompensator.TryStart(sourceRoofType, targetRoofType, duration))
                 return false;
 
             // Компенсация применится в LateUpdate поверх target-клипов.
+            RegisterActiveRoofHeightTransition(targetRoofType);
             SwapRoofClips(targetRoofType == ObstacleTypeEnum.mediumNotAlive);
             return true;
+        }
+
+        /// <summary>
+        /// Перебазирует активную Big↔Medium компенсацию при upgrade обычного roof jump в super roof jump.
+        /// </summary>
+        public bool TryUpgradeActiveRoofHeightTransition(string actionClipName)
+        {
+            // Проверяет, что первый roof jump уже зарегистрировал Big↔Medium переход.
+            if (!_hasActiveRoofHeightTransition)
+                return false;
+
+            if (!_roofHeightTransitionCompensator.IsActive)
+            {
+                ClearActiveRoofHeightTransition();
+                return false;
+            }
+
+            // Определяет длительность новой компенсации по super-клипу целевой крыши.
+            if (!TryGetHalfRoofTransitionDuration(
+                    actionClipName,
+                    _activeRoofHeightTransitionTargetType,
+                    out float duration))
+            {
+                ClearActiveRoofHeightTransition();
+                return false;
+            }
+
+            // Перебазирует текущую визуальную позицию на raw-позу Animator-а после super transition.
+            if (!_roofHeightTransitionCompensator.TryRebaseToNextAnimatorPose(duration))
+            {
+                ClearActiveRoofHeightTransition();
+                return false;
+            }
+
+            // Подтверждает, что во время super-клипа остаются активны клипы целевой крыши.
+            SwapRoofClips(_activeRoofHeightTransitionTargetType == ObstacleTypeEnum.mediumNotAlive);
+            return true;
+        }
+
+        /// <summary>
+        /// Перебазирует текущую визуальную Y-позицию при смене roof action-клипа без активного Big↔Medium перехода.
+        /// </summary>
+        public bool TryRebaseRoofActionTransition(
+            ObstacleTypeEnum targetRoofType,
+            string actionClipName)
+        {
+            // Сбрасывает stale-контекст Big↔Medium перехода перед независимой перебазировкой.
+            ClearActiveRoofHeightTransition();
+
+            // Определяет длительность компенсации по action-клипу целевой крыши.
+            if (!TryGetHalfRoofTransitionDuration(actionClipName, targetRoofType, out float duration))
+                return false;
+
+            // Сохраняет текущую визуальную высоту до применения нового action-клипа Animator-ом.
+            if (!_roofHeightTransitionCompensator.TryRebaseToNextAnimatorPose(duration))
+                return false;
+
+            // Подтверждает, что новый action использует клипы целевой высоты крыши.
+            SwapRoofClips(targetRoofType == ObstacleTypeEnum.mediumNotAlive);
+            return true;
+        }
+
+        /// <summary>
+        /// Запоминает параметры активного Big↔Medium перехода между крышами.
+        /// </summary>
+        private void RegisterActiveRoofHeightTransition(ObstacleTypeEnum targetRoofType)
+        {
+            _activeRoofHeightTransitionTargetType = targetRoofType;
+            _hasActiveRoofHeightTransition = true;
+        }
+
+        /// <summary>
+        /// Сбрасывает параметры активного Big↔Medium перехода между крышами.
+        /// </summary>
+        private void ClearActiveRoofHeightTransition()
+        {
+            _hasActiveRoofHeightTransition = false;
+            _activeRoofHeightTransitionTargetType = default;
         }
 
         /// <summary>
@@ -389,6 +477,7 @@ namespace Assets.Scripts.GameEngine.Controllers
         public void OnIntro()
         {
             _roofHeightTransitionCompensator.Reset();
+            ClearActiveRoofHeightTransition();
             _animator.enabled = false;
         }
 
@@ -398,12 +487,14 @@ namespace Assets.Scripts.GameEngine.Controllers
             // (критично для тестового уровня без intro, где animator никогда не выключался)
             _animator.Rebind();
             _roofHeightTransitionCompensator.Reset();
+            ClearActiveRoofHeightTransition();
             _animator.enabled = true;
         }
 
         public void OnFinish()
         {
             _roofHeightTransitionCompensator.Reset();
+            ClearActiveRoofHeightTransition();
             _animator.enabled = false;
         }
     }

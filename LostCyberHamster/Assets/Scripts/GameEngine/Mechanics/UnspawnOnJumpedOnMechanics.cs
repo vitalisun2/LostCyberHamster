@@ -33,9 +33,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _hamster.DestroyObstacleEvent.Unsubscribe(OnJumpedOn);
         }
 
-        private void OnJumpedOn()
+        private void OnJumpedOn(Obstacle destroyedObstacle)
         {
-            if(_hamster.LastObstacle.Value != _obstacleScript)
+            if(destroyedObstacle != _obstacleScript)
                 return;
 
             _onObstacleUnspawn.Invoke(_obstacleScript.gameObject);

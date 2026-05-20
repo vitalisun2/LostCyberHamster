@@ -10,6 +10,7 @@ namespace Assets.Scripts.GameEngine.Mechanics.Models
         public readonly float RoofJumpShift;
         public readonly float JumpFromRoofShift;
         public readonly float ReachShift;
+        public readonly bool LogDiagnostics;
 
         public RoofJumpResolveContext(
             bool isBottomLine,
@@ -18,7 +19,8 @@ namespace Assets.Scripts.GameEngine.Mechanics.Models
             float hamsterCenterX,
             float hamsterWidth,
             float roofJumpShift,
-            float jumpFromRoofShift)
+            float jumpFromRoofShift,
+            bool logDiagnostics = false)
         {
             IsBottomLine = isBottomLine;
             HamsterLeftX = hamsterLeftX;
@@ -28,6 +30,7 @@ namespace Assets.Scripts.GameEngine.Mechanics.Models
             RoofJumpShift = roofJumpShift;
             JumpFromRoofShift = jumpFromRoofShift;
             ReachShift = roofJumpShift > jumpFromRoofShift ? roofJumpShift : jumpFromRoofShift;
+            LogDiagnostics = logDiagnostics;
         }
     }
 }

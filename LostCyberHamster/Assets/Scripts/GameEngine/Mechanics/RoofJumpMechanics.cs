@@ -20,6 +20,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private SpriteAnimatorController _spriteAnimatorController;
         private AtomicVariable<bool> _isOnBottomLine;
         private AtomicVariable<Obstacle> _lastObstacle;
+        private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
         private readonly Transform _transform;
         private readonly AtomicVariable<int> _energy;
 
@@ -38,6 +39,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             Transform transform,
             AtomicVariable<bool> isOnBottomLine,
             AtomicVariable<Obstacle> lastObstacle,
+            AtomicVariable<Obstacle> pendingJumpedOnObstacle,
             AtomicVariable<int> energy,
             float hamsterWidthInUnits)
         {
@@ -48,6 +50,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _transform = transform;
             _isOnBottomLine = isOnBottomLine;
             _lastObstacle = lastObstacle;
+            _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
             _energy = energy;
 
             _hamsterWidth = hamsterWidthInUnits;
@@ -75,6 +78,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _hamsterState.Value = result.State;
 
             if (result.Target != null) _lastObstacle.Value = result.Target;
+            _pendingJumpedOnObstacle.Value = result.State == HamsterStateEnum.JumpOnObstacleFromRoof
+                ? result.Target
+                : null;
 
             if (result.State == HamsterStateEnum.JumpOnObstacleFromRoof)
                 GameEventsManager.ObstacleJumpedOn(result.Target!.name);
@@ -139,7 +145,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 _transform.position.x,
                 _hamsterWidth,
                 _roofJumpShift,
-                _jumpFromRoofShift);
+                _jumpFromRoofShift,
+                logDiagnostics: true);
+
+            DebugManager.DiagLog(
+                $"[RoofJumpShift CONTEXT] hamster=[{hamsterLeftX:F3},{hamsterRightX:F3}] " +
+                $"center={_transform.position.x:F3} roofShift={_roofJumpShift:F3} " +
+                $"jumpFromRoofShift={_jumpFromRoofShift:F3} reachShift={context.ReachShift:F3} " +
+                $"obstacles={_roofJumpObstacleBuffer.Count}");
 
             JumpResolveResult result = RoofJumpOutcomeResolver.ResolveRoofJump(_roofJumpObstacleBuffer, context);
             Obstacle target = result.TargetIndex >= 0 && result.TargetIndex < obstacles.Count

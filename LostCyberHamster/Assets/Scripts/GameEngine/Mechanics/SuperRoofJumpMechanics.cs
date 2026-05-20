@@ -13,13 +13,13 @@ using UnityEngine;
 namespace Assets.Scripts.GameEngine.Mechanics
 {
     /// <summary>
-    /// Механика супер-прыжка с крыши (bigNotAlive).
+    /// Механика супер-прыжка с крыши roof-препятствий.
     /// Определяет итоговое состояние хомяка при прыжке и инициирует нужную анимацию.
     /// </summary>
     public sealed class SuperRoofJumpMechanics
     {
         // ─────────────────────── constants ───────────────────────
-        private const int REQUIRED_ENERGY = 20;
+        private const int ENERGY_COST_SUPER_ROOF_JUMP_UPGRADE = 10;
         private const string CLIP_SUPER_ROOF_JUMP = "transform_super_roof_jump";
         private const string CLIP_SUPER_JUMP_FROM_ROOF = "transform_super_jump_from_roof";
 
@@ -30,6 +30,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly SpriteAnimatorController _spriteAnimatorController;
         private readonly AtomicVariable<bool> _isOnBottomLine;
         private readonly AtomicVariable<Obstacle> _lastObstacle;
+        private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
         private readonly Transform _transform;
         private readonly AtomicVariable<int> _energy;
 
@@ -47,6 +48,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             Transform transform,
             AtomicVariable<bool> isOnBottomLine,
             AtomicVariable<Obstacle> lastObstacle,
+            AtomicVariable<Obstacle> pendingJumpedOnObstacle,
             AtomicVariable<int> energy,
             float hamsterWidthInUnits)
         {
@@ -57,6 +59,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _transform = transform;
             _isOnBottomLine = isOnBottomLine;
             _lastObstacle = lastObstacle;
+            _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
             _energy = energy;
 
             _hamsterWidth = hamsterWidthInUnits;
@@ -71,12 +74,15 @@ namespace Assets.Scripts.GameEngine.Mechanics
         // ─────────────────── main entrypoint ─────────────────────
         private void OnRoofSuperJump()
         {
-            if (_energy.Value < REQUIRED_ENERGY) return;
+            if (_energy.Value < ENERGY_COST_SUPER_ROOF_JUMP_UPGRADE) return;
 
             Obstacle sourceRoof = _lastObstacle.Value;
             JumpResult result = CalculateRoofSuperJumpState();
             _hamsterState.Value = result.State;
             if (result.Target != null) _lastObstacle.Value = result.Target;
+            _pendingJumpedOnObstacle.Value = result.State == HamsterStateEnum.SuperJumpOnObstacleFromRoof
+                ? result.Target
+                : null;
 
             if (result.State == HamsterStateEnum.SuperJumpOnObstacleFromRoof)
                 GameEventsManager.ObstacleJumpedOn(result.Target!.name);
@@ -96,10 +102,40 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void ApplyRoofClips(Obstacle sourceRoof, JumpResult result)
         {
+            // Сначала пробует перебазировать компенсацию обычного roof jump на super transition.
+            if (TryUpgradeActiveRoofHeightTransition(result))
+                return;
+
+            // Если активной Big↔Medium компенсации нет, сохраняет Y при смене action-клипа на super roof jump.
+            if (TryRebaseSuperRoofActionTransition(result))
+                return;
+
+            // Если активного перехода нет, запускает обычную Big↔Medium компенсацию.
             if (TrySwapRoofClipsWithHeightTransition(sourceRoof, result))
                 return;
 
+            // Для остальных сценариев оставляет прежнюю логику подмены по target.
             SwapRoofClipsIfNeeded(result);
+        }
+
+        private bool TryUpgradeActiveRoofHeightTransition(JumpResult result)
+        {
+            // Upgrade компенсации нужен только при продолжении roof-to-roof прыжка.
+            if (!IsSuperRoofJumpResult(result))
+                return false;
+
+            return _transformAnimatorController.TryUpgradeActiveRoofHeightTransition(CLIP_SUPER_ROOF_JUMP);
+        }
+
+        private bool TryRebaseSuperRoofActionTransition(JumpResult result)
+        {
+            // Перебазировка нужна только при продолжении roof-to-roof прыжка.
+            if (!IsSuperRoofJumpResult(result) || result.Target == null)
+                return false;
+
+            return _transformAnimatorController.TryRebaseRoofActionTransition(
+                result.Target.ObstacleType.ObstacleTypeEnum,
+                CLIP_SUPER_ROOF_JUMP);
         }
 
         private bool TrySwapRoofClipsWithHeightTransition(Obstacle sourceRoof, JumpResult result)
@@ -111,6 +147,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 sourceRoof.ObstacleType.ObstacleTypeEnum,
                 result.Target.ObstacleType.ObstacleTypeEnum,
                 CLIP_SUPER_ROOF_JUMP);
+        }
+
+        private static bool IsSuperRoofJumpResult(JumpResult result)
+        {
+            return result.State == HamsterStateEnum.SuperRoofJump
+                   || result.State == HamsterStateEnum.SuperRoofJumpDamage;
         }
 
         private void SwapRoofClipsIfNeeded(JumpResult result)
@@ -149,7 +191,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 _transform.position.x,
                 _hamsterWidth,
                 _roofSuperJumpShift,
-                _jumpFromRoofShift);
+                _jumpFromRoofShift,
+                logDiagnostics: true);
+
+            DebugManager.DiagLog(
+                $"[SuperRoofJumpShift CONTEXT] hamster=[{hamsterLeftX:F3},{hamsterRightX:F3}] " +
+                $"center={_transform.position.x:F3} superRoofShift={_roofSuperJumpShift:F3} " +
+                $"superJumpFromRoofShift={_jumpFromRoofShift:F3} reachShift={context.ReachShift:F3} " +
+                $"obstacles={_superRoofJumpObstacleBuffer.Count}");
 
             JumpResolveResult result = SuperRoofJumpOutcomeResolver.ResolveSuperRoofJump(
                 _superRoofJumpObstacleBuffer,

@@ -188,8 +188,7 @@ public class CollisionController : MonoBehaviour
         // Удаляем препятствие, если хомяк умеет ломать его при столкновении.
         if (_hamster.IsDestructiveOnCollision.Value)
         {
-            UnspawnObstacle(obstacle);
-            _hamster.DestroyObstacleEvent?.Invoke();
+            _hamster.DestroyObstacleEvent?.Invoke(obstacle);
         }
     }
 

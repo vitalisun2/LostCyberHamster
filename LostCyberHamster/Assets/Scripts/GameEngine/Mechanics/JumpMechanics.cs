@@ -33,6 +33,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private readonly Transform _characterTransform;
         private readonly AtomicVariable<Obstacle> _lastObstacle;
+        private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
         private readonly float _hamsterWidthInUnits;
         private readonly float _hamsterHeightInUnits;
         private readonly List<JumpObstacleData> _jumpObstacleBuffer = new(32);
@@ -51,6 +52,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             SpriteAnimatorController spriteAnimatorController,
             Transform characterTransform,
             AtomicVariable<Obstacle> lastObstacle,
+            AtomicVariable<Obstacle> pendingJumpedOnObstacle,
             float hamsterWidthInUnits,
             float hamsterHeightInUnits)
         {
@@ -63,6 +65,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _spriteAnimatorController = spriteAnimatorController;
             _characterTransform = characterTransform;
             _lastObstacle = lastObstacle;
+            _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
             _hamsterWidthInUnits = hamsterWidthInUnits;
             _hamsterHeightInUnits = hamsterHeightInUnits;
             _jumpClipWorldShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_JUMP);
@@ -85,6 +88,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 var result = CalculateJumpState();
                 _hamsterState.Value = result.State;
                 if (result.Target != null) _lastObstacle.Value = result.Target;
+                _pendingJumpedOnObstacle.Value = result.State == HamsterStateEnum.JumpOnObstacle
+                    ? result.Target
+                    : null;
 
                 SendJumpEventIfNeeded(result);
 

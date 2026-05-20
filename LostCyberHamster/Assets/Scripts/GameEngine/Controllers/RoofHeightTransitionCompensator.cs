@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Assets.Scripts.GameEngine.Controllers
 {
     /// <summary>
-    /// Компенсирует разницу высоты roof-run клипов при Big↔Medium прыжках с крыши на крышу.
+    /// Компенсирует временный Y-разрыв roof-клипов при Big↔Medium переходах и смене action-клипа.
     /// </summary>
     internal sealed class RoofHeightTransitionCompensator
     {
@@ -33,6 +33,16 @@ namespace Assets.Scripts.GameEngine.Controllers
         /// Время, прошедшее с начала компенсации.
         /// </summary>
         private float _elapsed;
+
+        /// <summary>
+        /// Признак отложенной перебазировки после следующего семпла Animator-а.
+        /// </summary>
+        private bool _isRebasePending;
+
+        /// <summary>
+        /// Визуальная Y-позиция, которую нужно сохранить при смене action-клипа.
+        /// </summary>
+        private float _rebaseAnchorY;
 
         /// <summary>
         /// Возвращает true, если сейчас идёт компенсация высоты.
@@ -70,6 +80,24 @@ namespace Assets.Scripts.GameEngine.Controllers
         }
 
         /// <summary>
+        /// Перебазирует активную компенсацию на следующую raw-позу Animator-а.
+        /// </summary>
+        internal bool TryRebaseToNextAnimatorPose(float duration)
+        {
+            // Проверяет корректность времени компенсации.
+            if (duration <= 0f)
+                return false;
+
+            // Запоминает текущую визуальную позицию до того, как Animator применит новый transition.
+            _rebaseAnchorY = _targetTransform.localPosition.y;
+            _duration = duration;
+            _elapsed = 0f;
+            _isRebasePending = true;
+            _isActive = true;
+            return true;
+        }
+
+        /// <summary>
         /// Применяет текущий кадр компенсации поверх позиции, выставленной Animator-ом.
         /// </summary>
         internal void ApplyFrame(float deltaTime)
@@ -77,6 +105,9 @@ namespace Assets.Scripts.GameEngine.Controllers
             // Пропускает кадр без активной компенсации.
             if (!_isActive)
                 return;
+
+            if (_isRebasePending)
+                ApplyPendingRebase();
 
             // Рассчитывает текущее сглаженное смещение.
             _elapsed += deltaTime;
@@ -102,6 +133,8 @@ namespace Assets.Scripts.GameEngine.Controllers
             _startOffsetY = 0f;
             _duration = 0f;
             _elapsed = 0f;
+            _isRebasePending = false;
+            _rebaseAnchorY = 0f;
         }
 
         /// <summary>
@@ -160,7 +193,20 @@ namespace Assets.Scripts.GameEngine.Controllers
             _startOffsetY = startOffsetY;
             _duration = duration;
             _elapsed = 0f;
+            _isRebasePending = false;
+            _rebaseAnchorY = 0f;
             _isActive = true;
+        }
+
+        /// <summary>
+        /// Рассчитывает новый offset после того, как Animator выставил raw-позицию нового клипа.
+        /// </summary>
+        private void ApplyPendingRebase()
+        {
+            _startOffsetY = _rebaseAnchorY - _targetTransform.localPosition.y;
+            _elapsed = 0f;
+            _isRebasePending = false;
+            _rebaseAnchorY = 0f;
         }
 
         /// <summary>

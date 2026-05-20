@@ -42,18 +42,14 @@ public class ElectricStrikeSkin : Skin
     {
         foreach (var obstacle in obstacles)
         {
-            obstacle.OnObstacleUnspawned.Invoke(obstacle.gameObject);
-            obstacle.BoomEffectAction.Invoke(obstacle.transform.position, obstacle.GameManager);
+            var hamster = LevelController.Instance.LevelData.Hamster;
+            hamster.DestroyObstacleEvent?.Invoke(obstacle);
 
             Debug.Log("Electric strike destroyed an obstacle!");
 
             // Ждем указанное время перед уничтожением следующего препятствия
             yield return new WaitForSeconds(delay);
         }
-
-        // Событие уничтожения всех препятствий
-        var hamster = LevelController.Instance.LevelData.Hamster;
-        hamster.DestroyObstacleEvent?.Invoke();
     }
 
     private List<Obstacle> FindObstaclesOnSameLaneInRange(Hamster hamster)

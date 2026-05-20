@@ -33,6 +33,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly SpriteAnimatorController _spriteAnimatorController;
         private readonly Transform _characterTransform;
         private readonly AtomicVariable<Obstacle> _lastObstacle;
+        private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
 
         // ──────────────────────── cached geometry ──────────────────
         private readonly float _hamsterWidth;
@@ -50,6 +51,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             SpriteAnimatorController spriteAnimatorController,
             Transform characterTransform,
             AtomicVariable<Obstacle> lastObstacle,
+            AtomicVariable<Obstacle> pendingJumpedOnObstacle,
             float hamsterWidthInUnits)
         {
             _superJumpRequest = superJumpRequest;
@@ -61,6 +63,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _spriteAnimatorController = spriteAnimatorController;
             _characterTransform = characterTransform;
             _lastObstacle = lastObstacle;
+            _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
 
             _hamsterWidth = hamsterWidthInUnits;
             _superJumpShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_SUPER_JUMP);
@@ -82,6 +85,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             _hamsterState.Value = result.State;
             if (result.Target != null) _lastObstacle.Value = result.Target;
+            _pendingJumpedOnObstacle.Value = result.State == HamsterStateEnum.SuperJumpOnObstacle
+                ? result.Target
+                : null;
 
             if (result.State == HamsterStateEnum.SuperJumpOnObstacle)
                 GameEventsManager.ObstacleJumpedOn(result.Target!.name);

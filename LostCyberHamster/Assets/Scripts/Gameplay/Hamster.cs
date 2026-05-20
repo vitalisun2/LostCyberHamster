@@ -40,12 +40,13 @@ namespace Assets.Scripts.Gameplay
         public AtomicEvent RoofJumpRequest = new();
         public AtomicEvent SuperRoofJumpRequest = new();
         public AtomicEvent JumpOverEvent = new();
-        public AtomicEvent DestroyObstacleEvent = new();
+        public AtomicEvent<Obstacle> DestroyObstacleEvent = new();
         public AtomicEvent DamageEvent = new();
         public AtomicEvent UltaEvent = new();
         public AtomicEvent TapRequest = new();
 
         public AtomicVariable<Obstacle> LastObstacle = null;
+        public AtomicVariable<Obstacle> PendingJumpedOnObstacle = null;
 
         public AtomicVariable<bool> IsOnBottomLine = new(false);
         public AtomicVariable<int> Lives = new(3);
@@ -110,6 +111,7 @@ namespace Assets.Scripts.Gameplay
                 spriteAnimatorController: _spriteAnimatorController,
                 characterTransform: transform,
                 lastObstacle: LastObstacle,
+                pendingJumpedOnObstacle: PendingJumpedOnObstacle,
                 hamsterWidthInUnits: ColliderWidth,
                 hamsterHeightInUnits: ColliderHeight);
 
@@ -123,6 +125,7 @@ namespace Assets.Scripts.Gameplay
                 spriteAnimatorController: _spriteAnimatorController,
                 characterTransform: transform,
                 lastObstacle: LastObstacle,
+                pendingJumpedOnObstacle: PendingJumpedOnObstacle,
                 hamsterWidthInUnits: ColliderWidth);
 
             _hamsterAnimationEventsMechanics = new HamsterAnimationEventsMechanics(
@@ -133,6 +136,7 @@ namespace Assets.Scripts.Gameplay
                 needCheckCollisionInRunFromRoofAfterShift: NeedCheckCollisionInRunFromRoofAfterShift,
                 jumpOverEvent: JumpOverEvent,
                 destroyObstacleEvent: DestroyObstacleEvent,
+                pendingJumpedOnObstacle: PendingJumpedOnObstacle,
                 damageEvent: DamageEvent);
 
             _roofRunMechanics = new RoofRunMechanics(
@@ -151,6 +155,7 @@ namespace Assets.Scripts.Gameplay
                 transform: transform,
                 isOnBottomLine: IsOnBottomLine,
                 lastObstacle: LastObstacle,
+                pendingJumpedOnObstacle: PendingJumpedOnObstacle,
                 energy: Energy,
                 hamsterWidthInUnits: ColliderWidth);
 
@@ -162,6 +167,7 @@ namespace Assets.Scripts.Gameplay
                 transform: transform,
                 isOnBottomLine: IsOnBottomLine,
                 lastObstacle: LastObstacle,
+                pendingJumpedOnObstacle: PendingJumpedOnObstacle,
                 energy: Energy,
                 hamsterWidthInUnits: ColliderWidth);
 

@@ -37,7 +37,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 // Корректный ранний выход по левой грани препятствия.
                 if (ShouldBreakByReachRight(context, obstacle))
+                {
+                    LogBreak(obstacleIndex, obstacle, context);
                     break;
+                }
+
+                LogCandidate(obstacleIndex, obstacle, context);
 
                 JumpResolveResult result = HandleObstacle(
                     obstacle,
@@ -45,6 +50,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     obstacles,
                     context,
                     noHit);
+                LogResult(obstacleIndex, obstacle, result, noHit, context);
+
                 if (result.State != noHit.State)
                     return result;
             }
@@ -276,6 +283,67 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 context.HamsterRightX,
                 obstacle.LeftX - shift,
                 obstacle.RightX - shift);
+        }
+
+        private static void LogCandidate(
+            int obstacleIndex,
+            JumpObstacleData obstacle,
+            RoofJumpResolveContext context)
+        {
+            if (!context.LogDiagnostics)
+                return;
+
+            float roofLeft = obstacle.LeftX - context.RoofJumpShift;
+            float roofRight = obstacle.RightX - context.RoofJumpShift;
+            float jumpFromRoofLeft = obstacle.LeftX - context.JumpFromRoofShift;
+            float jumpFromRoofRight = obstacle.RightX - context.JumpFromRoofShift;
+            bool roofOverlap = CollisionUtils.IsOverlap(
+                context.HamsterLeftX,
+                context.HamsterRightX,
+                roofLeft,
+                roofRight);
+            bool jumpFromRoofOverlap = CollisionUtils.IsOverlap(
+                context.HamsterLeftX,
+                context.HamsterRightX,
+                jumpFromRoofLeft,
+                jumpFromRoofRight);
+
+            DebugManager.DiagLog(
+                $"[RoofJumpShift CAND] idx={obstacleIndex} type={obstacle.Type} " +
+                $"hamster=[{context.HamsterLeftX:F3},{context.HamsterRightX:F3}] " +
+                $"start=[{obstacle.LeftX:F3},{obstacle.RightX:F3}] " +
+                $"roofShift={context.RoofJumpShift:F3} roofEnd=[{roofLeft:F3},{roofRight:F3}] roofOverlap={roofOverlap} " +
+                $"jumpFromRoofShift={context.JumpFromRoofShift:F3} jumpFromRoofEnd=[{jumpFromRoofLeft:F3},{jumpFromRoofRight:F3}] " +
+                $"jumpFromRoofOverlap={jumpFromRoofOverlap}");
+        }
+
+        private static void LogResult(
+            int obstacleIndex,
+            JumpObstacleData obstacle,
+            JumpResolveResult result,
+            JumpResolveResult noHit,
+            RoofJumpResolveContext context)
+        {
+            if (!context.LogDiagnostics)
+                return;
+
+            DebugManager.DiagLog(
+                $"[RoofJumpShift RESULT] idx={obstacleIndex} type={obstacle.Type} " +
+                $"state={result.State} targetIndex={result.TargetIndex} returns={result.State != noHit.State}");
+        }
+
+        private static void LogBreak(
+            int obstacleIndex,
+            JumpObstacleData obstacle,
+            RoofJumpResolveContext context)
+        {
+            if (!context.LogDiagnostics)
+                return;
+
+            DebugManager.DiagLog(
+                $"[RoofJumpShift BREAK] idx={obstacleIndex} type={obstacle.Type} " +
+                $"left={obstacle.LeftX:F3} reachShift={context.ReachShift:F3} " +
+                $"hamsterRight={context.HamsterRightX:F3}");
         }
 
         private static bool IsHamsterCenterInsideObstacleAtShift(
