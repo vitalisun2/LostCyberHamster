@@ -50,9 +50,9 @@
 <br>
 ---
 
-### Jump From Roof On Roof -
+### Jump From Roof On Roof - 2 препятствий
 
-### Super Jump From Roof On Roof -
+### Super Jump From Roof On Roof - 3 препятствий
 
 <br>
 ---

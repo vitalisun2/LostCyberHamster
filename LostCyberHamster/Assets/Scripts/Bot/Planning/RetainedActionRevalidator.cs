@@ -50,8 +50,11 @@ namespace Assets.Scripts.Bot.Planning
             if (!_decisionPointDetector.TryDetect(planningState, projectedWorldSnapshot, out DecisionPoint decisionPoint))
                 return false;
 
-            if (!decisionPoint.Chain.ContainsObstacle(targetObstacle))
+            if (!decisionPoint.Chain.ContainsObstacle(targetObstacle)
+                && !CanTargetLiveOutsideDecisionChain(action))
+            {
                 return false;
+            }
 
             if (!_validatorsByKind.TryGetValue(action.Kind, out IRetainedActionValidator validator))
                 return false;
@@ -64,6 +67,15 @@ namespace Assets.Scripts.Bot.Planning
                 targetObstacleIndex,
                 action));
         }
+
+            /// <summary>
+            /// Возвращает true для actions, у которых target может лежать дальше текущего blocker chain.
+            /// </summary>
+            private static bool CanTargetLiveOutsideDecisionChain(PlannedAction action)
+            {
+                return action.Kind == BotActionKind.JumpFromRoofOnRoof
+                || action.Kind == BotActionKind.SuperJumpFromRoofOnRoof;
+            }
 
         /// <summary>
         /// Находит целевое obstacle для retained-action.
