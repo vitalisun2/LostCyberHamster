@@ -100,3 +100,38 @@
 - Неудачный ход: можно сосредоточиться на незавершённом helper-методе и не заметить, что `ProcessTrigerEnter` его вообще не вызывает.
 - Рабочий ход: перед patch сделать короткий usage-check и, если method unused, сразу подключить его к controlling branch.
 - Правило: когда правка делается внутри helper/predicate, сначала подтвердить его call site. Не дописывать изолированный метод, если он не участвует в реальном execution path.
+
+### Проверять generic gates после смены target semantics
+
+- Контекст: refactor `JumpFromRoofOnRoof` перевёл action target с blocker/gap model на target roof.
+- Неудачный ход: сначала обновить strategy/finder/validator и пропустить общий `RetainedActionRevalidator`, где target обязан был быть внутри текущей decision chain.
+- Рабочий ход: после смены значения `TargetObstacle` найти все generic gates вокруг retained/execution path и добавить узкое исключение только для roof-to-roof.
+- Правило: если меняется смысл target/trigger/support у `PlannedAction`, сразу проверять общие revalidator/executor/simulation gates, а не только strategy-local code.
+
+### Классифицировать targeted event как command или fact
+
+- Контекст: перевод targetless `DestroyObstacleEvent` на `AtomicEvent<Obstacle>` при сохранении passive obstacle listeners.
+- Неудачный ход: можно передавать target как факт после прямого unspawn и одновременно оставить obstacle listener, получив duplicate-unspawn/boom.
+- Рабочий ход: перед patch явно решить, событие является командой уничтожить target или фактом после уничтожения, и привести все источники к одной модели.
+- Правило: при добавлении payload в gameplay event сначала классифицировать event как command или fact, затем проверять все publisher/subscriber side effects на дублирование.
+
+### Проверять multiplicity обходов после helper extraction
+
+- Контекст: refactor `JumpFromRoofOnRoofFireWindowFinder` разделил поиск blocker и target roof на отдельные helpers.
+- Неудачный ход: каждый helper заново обходил один и тот же хвост obstacle list после `lastRoofIndex`, хотя оба факта нужны одному сценарию.
+- Рабочий ход: схлопнуть поиск в один проход, который одновременно подтверждает run-from-roof blocker и запоминает следующую roof-цель.
+- Правило: после выноса private helpers для одного алгоритма проверить, не размножились ли одинаковые проходы по одной коллекции. Если факты нужны одному решению, собирать их одним scan-ом.
+
+### Читать diagnostic log по пути DebugManager
+
+- Контекст: чтение Unity diagnostic logs после `invoke_open_unity_test_level.ps1`.
+- Неудачный ход: искать `diagnostic_log.txt` в корневом `EditorLogs/`, хотя `DebugManager` в Editor пишет в `LostCyberHamster/EditorLogs/` через `Application.dataPath/../EditorLogs`.
+- Рабочий ход: брать путь из вывода automation script или из `DebugManager.GetDiagLogPath()`, затем фильтровать файл `LostCyberHamster/EditorLogs/diagnostic_log.txt`.
+- Правило: перед ручным чтением diagnostic log в Unity-задачах сверять фактический путь из `DebugManager`/скрипта, а не предполагать расположение по имени папки.
+
+### Не ослаблять общий planner до strategy trace
+
+- Контекст: отладка roof-to-roof planning, где branch не доходил до leaf из-за strategy/runtime reject.
+- Неудачный ход: попытаться разрешить частичную ветку в `PlanningGraphBuilder`, не доказав точный локальный gate.
+- Рабочий ход: проследить цепочку `DecisionPointDetector -> strategy finder -> runtime resolver`, сравнить ordinary/super outcomes и исправить strategy/runtime семантику.
+- Правило: если общий planner отбрасывает branch, сначала доказать ближайший strategy/runtime reject полным trace-ом. Инварианты graph builder ослаблять только после доказательства, что сам invariant неверен, а не потому что leaf не строится.
