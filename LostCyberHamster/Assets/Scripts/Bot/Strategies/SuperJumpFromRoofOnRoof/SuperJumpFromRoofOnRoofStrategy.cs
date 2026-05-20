@@ -85,24 +85,12 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
             }
 
             // Добавляет planned action.
-            DebugManager.DiagLog(
-                $"[SuperJumpFromRoofOnRoof PLAN] ADD target={targetRoof.ObstacleType} " +
-                $"targetIndex={targetRoofIndex} fireShift={fireShift:F3} " +
-                $"energy={planningState.Hamster.Energy} projection={planningState.ProjectionWorldShift:F3}");
             actions.Add(BuildAction(_policy, planningState, targetRoof, targetRoofIndex, fireShift, travel));
         }
 
         private static void LogPlanReject(PlanningState planningState, string reason)
         {
-            HamsterSnapshot hamster = planningState?.Hamster;
-            if (hamster == null)
-                return;
-
-            DebugManager.DiagLog(
-                $"[SuperJumpFromRoofOnRoof PLAN] REJECT reason={reason} " +
-                $"state={hamster.HamsterState} energy={hamster.Energy} " +
-                $"isOnRoof={hamster.IsOnRoof} roofSupport={hamster.RoofSupportInstanceId.HasValue} " +
-                $"isShifting={hamster.IsShifting} projection={planningState.ProjectionWorldShift:F3}");
+            return;
         }
 
         /// <summary>

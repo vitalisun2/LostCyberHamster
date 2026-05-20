@@ -133,8 +133,6 @@ namespace Assets.Scripts.Bot
             IsEnabled = true;
             if (!IsInitialized)
                 TryResolveRuntimeDependencies();
-
-            DebugManager.DiagLog("[Bot] Enabled");
         }
 
         private void Disable()
@@ -142,7 +140,6 @@ namespace Assets.Scripts.Bot
             IsEnabled = false;
             LastSnapshot = null;
             _executor?.Clear();
-            DebugManager.DiagLog("[Bot] Disabled");
         }
 
         /// <summary>

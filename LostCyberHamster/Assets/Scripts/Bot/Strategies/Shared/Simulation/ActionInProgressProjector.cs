@@ -50,8 +50,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
 
             string message =
                 $"Для действия бота не зарегистрирован simulator: kind={action.Kind}, desc={action.Description}";
-
-            DebugManager.DiagLog($"[Bot PLAN] ERROR {message}");
             throw new InvalidOperationException(message);
         }
     }

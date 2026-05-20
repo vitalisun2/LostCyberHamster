@@ -41,29 +41,17 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         private void OnDamage()
         {
-            DebugManager.DiagLog(
-                $"[Bot DAMAGE] lives={_hamster.Lives.Value} " +
-                $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
-                $"state={_hamster.HamsterState.Value}");
-
             if (_hamster.Lives.Value <= 0)
             {
-                DebugManager.DiagLog("[TEST RESULT] FAIL");
-                DebugManager.DiagStability("[TEST RESULT] FAIL");
             }
         }
 
         private void OnGameFinished()
         {
-            DebugManager.DiagLog(
-                $"[TEST FINISH] state={_gameManager.State} " +
-                $"lives={_hamster.Lives.Value}");
         }
 
         private static void OnLevelCompleted(int levelId, int stars)
         {
-            DebugManager.DiagLog($"[TEST RESULT] WIN level={levelId} stars={stars}");
-            DebugManager.DiagStability($"[TEST RESULT] WIN level={levelId} stars={stars}");
         }
     }
 }

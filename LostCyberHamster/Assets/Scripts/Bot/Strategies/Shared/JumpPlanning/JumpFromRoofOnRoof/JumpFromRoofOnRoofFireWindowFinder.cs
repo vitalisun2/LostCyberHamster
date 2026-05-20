@@ -252,15 +252,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             ObstacleSnapshot targetRoof = null,
             float fireShift = 0f)
         {
-            HamsterSnapshot hamster = planningState?.Hamster;
-            if (hamster == null)
-                return;
-
-            DebugManager.DiagLog(
-                $"[{_policy.ActionKind} FIND] REJECT reason={reason} " +
-                $"state={hamster.HamsterState} energy={hamster.Energy} " +
-                $"projection={planningState.ProjectionWorldShift:F3} fireShift={fireShift:F3} " +
-                $"lastRoof={FormatObstacle(lastRoof)} targetRoof={FormatObstacle(targetRoof)}");
+            return;
         }
 
         private void LogRuntimeOutcome(
@@ -270,17 +262,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             float fireShift,
             JumpResolveResult result)
         {
-            if (planningState?.Hamster == null)
-                return;
-
-            string resultTarget = result.TargetIndex >= 0 && result.TargetIndex < obstaclesAtFireShift.Count
-                ? $"{obstaclesAtFireShift[result.TargetIndex].Type}/{obstaclesAtFireShift[result.TargetIndex].InstanceId}"
-                : "none";
-
-            DebugManager.DiagLog(
-                $"[{_policy.ActionKind} FIND] OUTCOME fireShift={fireShift:F3} " +
-                $"state={result.State} targetIndex={result.TargetIndex} target={resultTarget} " +
-                $"expectedState={_policy.ExpectedSuccessState} expectedTarget={expectedTargetRoofInstanceId}");
+            return;
         }
 
         private void LogWindowReject(
@@ -292,19 +274,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             float firstFireShift,
             float lastFireShift)
         {
-            HamsterSnapshot hamster = planningState?.Hamster;
-            if (hamster == null)
-                return;
-
-            float padding = hamster.Width * _policy.BigAliveCollisionPaddingRatio;
-            DebugManager.DiagLog(
-                $"[{_policy.ActionKind} FIND] WINDOW_REJECT " +
-                $"first={firstFireShift:F3} last={lastFireShift:F3} padding={padding:F3} " +
-                $"state={hamster.HamsterState} energy={hamster.Energy} " +
-                $"projection={planningState.ProjectionWorldShift:F3} " +
-                $"lastRoof={FormatObstacle(lastRoof)} targetRoof={FormatObstacle(targetRoof)} " +
-                $"firstObstacle={FormatObstacle(runFromRoofBlocker)} " +
-                $"lastObstacle={FormatObstacle(lastObstacleBeforeTargetRoof)}");
+            return;
         }
 
         private static string FormatObstacle(ObstacleSnapshot obstacle)
@@ -319,29 +289,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot)
         {
-            HamsterSnapshot hamster = planningState?.Hamster;
-            if (hamster == null || projectedWorldSnapshot == null)
-                return;
-
-            int supportId = hamster.RoofSupportInstanceId ?? -1;
-            string supportCandidate = "none";
-            for (int obstacleIndex = 0; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
-                if (obstacle.InstanceId != supportId)
-                    continue;
-
-                supportCandidate =
-                    $"{obstacle.ObstacleType}/{obstacle.InstanceId}/" +
-                    $"lane={(obstacle.IsBottomLine ? "bottom" : "top")}/" +
-                    $"[{obstacle.LeftX:F2},{obstacle.RightX:F2}]";
-                break;
-            }
-
-            DebugManager.DiagLog(
-                $"[{_policy.ActionKind} FIND] SUPPORT_MISS supportId={supportId} " +
-                $"hamsterLane={(hamster.IsOnBottomLine ? "bottom" : "top")} " +
-                $"candidate={supportCandidate} projection={planningState.ProjectionWorldShift:F3}");
+            return;
         }
 
         private void LogTargetSearchMiss(
@@ -353,18 +301,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             float gap,
             float runFromRoofTravel)
         {
-            HamsterSnapshot hamster = planningState?.Hamster;
-            if (hamster == null)
-                return;
-
-            DebugManager.DiagLog(
-                $"[{_policy.ActionKind} FIND] TARGET_MISS detail={detail} " +
-                $"state={hamster.HamsterState} energy={hamster.Energy} " +
-                $"projection={planningState.ProjectionWorldShift:F3} " +
-                $"lastRoof={FormatObstacle(lastRoof)} " +
-                $"firstRoof={FormatObstacle(firstRoofAhead)} " +
-                $"firstDamage={FormatObstacle(firstDamageAhead)} " +
-                $"gap={gap:F3} runTravel={runFromRoofTravel:F3}");
+            return;
         }
 
     }
