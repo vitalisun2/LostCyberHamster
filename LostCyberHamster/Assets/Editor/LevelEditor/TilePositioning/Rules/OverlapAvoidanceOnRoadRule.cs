@@ -63,10 +63,6 @@ public class OverlapAvoidanceOnRoadRule : ITilePlacementRule
 
                 // Применяем сдвиг
                 position.x += shiftX;
-                Debug.Log(
-                    $"[OverlapAvoidanceRule] Первое пересечение с '{otherTile.sprite.name}'. " +
-                    $"Сдвиг = {shiftX:F3}, новая X={position.x:F3}, зазор={Consts.GapBetweenTiles}"
-                );
 
                 return true; // Сдвиг сделан
             }

@@ -151,7 +151,6 @@ namespace Assets.EditorTools
 
             currentPreviewInstances.AddRange(createdInstances);
 
-            Debug.Log($"[ObstacleAnimationPreviewer] Using AnimationMode API for {animatedObjects.Count} objects");
 
             // Select all animated objects for framing
             Selection.objects = animatedObjects.ToArray();
@@ -290,7 +289,6 @@ namespace Assets.EditorTools
                 sceneView.Repaint();
             };
 
-            Debug.Log($"[ObstacleAnimationPreviewer] Created {createdInstances.Count} preview(s)");
         }
 
         private struct PreviewData
@@ -526,7 +524,6 @@ namespace Assets.EditorTools
             var currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             EditorSceneManager.OpenScene(currentScene.path, OpenSceneMode.Single);
             
-            Debug.Log("[ObstacleAnimationPreviewer] Preview cleared by reloading scene.");
         }
     }
 }

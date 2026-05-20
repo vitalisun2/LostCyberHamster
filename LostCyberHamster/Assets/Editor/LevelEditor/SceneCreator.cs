@@ -80,7 +80,6 @@ public static class SceneCreator
         
         if (removedCount > 0)
         {
-            Debug.Log($"[SceneCreator] Removed {removedCount} old scene objects (Grid/Background)");
         }
     }
 

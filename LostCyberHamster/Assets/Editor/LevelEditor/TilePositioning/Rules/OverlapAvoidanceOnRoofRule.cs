@@ -1,4 +1,4 @@
-﻿using Assets.Scripts;
+using Assets.Scripts;
 using Assets.Scripts.Common.Models;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -83,7 +83,6 @@ public class OverlapAvoidanceOnRoofRule : ITilePlacementRule
 
                 // Применяем сдвиг
                 newPos.x += shiftX;
-                Debug.Log($"[OverlapAvoidanceOnRoofRule] Пересечение с '{otherTile.sprite.name}', cдвиг={shiftX:F3}, новаяX={newPos.x:F3}");
                 return true;
             }
         }

@@ -117,12 +117,10 @@ public class EditorHelpMethods : MonoBehaviour
         {
             foreach (var scriptPath in scriptsMissingOnDestroy)
             {
-                Debug.Log(scriptPath);
             }
         }
         else
         {
-            Debug.Log("No scripts with event subscription missing OnDestroy method found.");
         }
     }
 
@@ -162,7 +160,6 @@ public class EditorHelpMethods : MonoBehaviour
             sw.WriteLine("}");
         }
 
-        Debug.Log("Enum generated");
 
         for (int i = 0; i < types.Count; i++)
         {
@@ -201,7 +198,6 @@ public static class GameStateMachine
 
 
 
-        Debug.Log("StateMachine generated");
     }
     */
 }

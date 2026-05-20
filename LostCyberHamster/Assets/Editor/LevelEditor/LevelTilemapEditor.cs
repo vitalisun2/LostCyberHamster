@@ -1,4 +1,4 @@
-﻿using Assets.Editor.LevelEditor;
+using Assets.Editor.LevelEditor;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts;
@@ -229,7 +229,6 @@ public class LevelTilemapEditor : EditorWindow
         if (!string.IsNullOrEmpty(_originalScenePath))
         {
             EditorSceneManager.OpenScene(_originalScenePath, OpenSceneMode.Single);
-            Debug.Log($"[LevelTilemapEditor] Scene restored: {_originalScenePath}");
         }
         else
         {
@@ -464,7 +463,6 @@ public class LevelTilemapEditor : EditorWindow
             decorationTiles = decorationTiles
         });
 
-        DebugManager.DiagLog($"[LevelTilemapEditor] Synced {decorationTiles.Count} decoration tiles to decorationPatterns.");
     }
 
     /// <summary>
@@ -490,14 +488,12 @@ public class LevelTilemapEditor : EditorWindow
 
         if (_currentLevelInfo.decorationPatterns.Count == 0)
         {
-            Debug.Log("[LevelTilemapEditor] No decoration patterns found. Ready for decoration placement on top of obstacles.");
             return;
         }
 
         var decorationPattern = _currentLevelInfo.decorationPatterns[0];
         if (decorationPattern.decorationTiles == null || decorationPattern.decorationTiles.Count == 0)
         {
-            Debug.Log("[LevelTilemapEditor] Decoration pattern has no tiles. Tilemap is empty.");
             return;
         }
 
@@ -531,7 +527,6 @@ public class LevelTilemapEditor : EditorWindow
             loadedCount++;
         }
 
-        DebugManager.DiagLog($"[LevelTilemapEditor] Loaded {loadedCount} decoration tiles to Tilemap.");
     }
 
     /// <summary>
@@ -541,12 +536,10 @@ public class LevelTilemapEditor : EditorWindow
     {
         if (IsTemplateMode)
         {
-            Debug.Log($"Сохранение PatternsCollection: {_selectedFile}");
             SavePatternsCollectionToDisk();
         }
         else
         {
-            Debug.Log($"Сохранение уровня (ref) для локации {_currentLocationName}: {_selectedFile}");
             SyncDecorationsFromTilemap();
 
             if (_currentLevelRef != null)
@@ -980,7 +973,6 @@ public class LevelTilemapEditor : EditorWindow
     private void HandleIsObjectOnRoofToggleChanged(bool newValue)
     {
         _isObjectOnRoof = newValue;
-        Debug.Log($"[LevelTilemapEditor] IsObjectOnRoof state changed: {_isObjectOnRoof}");
     }
 
     /// <summary>
@@ -1493,7 +1485,6 @@ public class LevelTilemapEditor : EditorWindow
         var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
 
         _uiManager.UpdatePatternsList(patternNames, _selectedPatternIndex);
-        Debug.Log($"Паттерн перемещен вверх: {pattern.name}");
     }
 
     /// <summary>
@@ -1514,7 +1505,6 @@ public class LevelTilemapEditor : EditorWindow
 
         _uiManager.UpdatePatternsList(patternNames, _selectedPatternIndex);
 
-        Debug.Log($"Паттерн перемещен вниз: {pattern.name}");
     }
 
     /// <summary>
@@ -1544,7 +1534,6 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.UpdatePatternNameField(newPattern.name);
         _uiManager.UpdatePatternDescriptionField(newPattern.desсription);
 
-        Debug.Log($"Добавлен новый паттерн: {newPattern.name}");
     }
 
     private string GenerateNewPatternName()
@@ -1629,7 +1618,6 @@ public class LevelTilemapEditor : EditorWindow
 
         AddTilesToTilemap();
 
-        Debug.Log($"Создан дубликат паттерна: {duplicatedPattern.name}");
     }
 
     /// <summary>
@@ -1662,7 +1650,6 @@ public class LevelTilemapEditor : EditorWindow
             _selectedPatternIndex = -1;
             _uiManager.UpdatePatternsList(visiblePatternNames, -1);
             ClearSelectedPatternView();
-            Debug.Log($"Удален паттерн: {patternToRemove.name}");
             return;
         }
 
@@ -1672,7 +1659,6 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.UpdatePatternsList(visiblePatternNames, selectedDisplayedIndex);
         SyncSelectedPatternView();
 
-        Debug.Log($"Удален паттерн: {patternToRemove.name}");
     }
 
     private void ClearSelectedPatternView()
@@ -1792,7 +1778,6 @@ public class LevelTilemapEditor : EditorWindow
     {
         if (_currentLocationName != Consts.TemplatesLocationName)
         {
-            Debug.Log("Cannot update pattern name: only available for level_design_templates location");
             return;
         }
 
@@ -1802,7 +1787,6 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        Debug.Log($"[Editor] Renaming pattern from '{_currentLevelInfo.patterns[_selectedPatternIndex].name}' to '{newName}'");
 
         // Save the current selection index
         int indexToSelect = _selectedPatternIndex;
@@ -1815,7 +1799,6 @@ public class LevelTilemapEditor : EditorWindow
         // Save changes to JSON file
         if (!string.IsNullOrEmpty(_selectedFile))
         {
-            Debug.Log($"[Editor] Saving changes to file: {_selectedFile}");
             SavePatternsCollectionToDisk();
         }
         else
@@ -1827,13 +1810,11 @@ public class LevelTilemapEditor : EditorWindow
         var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
 
         // Update UI with pattern names and preserve selection
-        Debug.Log($"[Editor] Updating patterns list, preserving selection at index {indexToSelect}");
         _uiManager.UpdatePatternsList(patternNames, indexToSelect);
 
         // Make sure the pattern name field still shows the updated name
         _uiManager.UpdatePatternNameField(newName);
 
-        Debug.Log($"[Editor] Pattern rename complete: {newName}");
     }
 
     private void SavePatternsCollectionToDisk()
@@ -1855,7 +1836,6 @@ public class LevelTilemapEditor : EditorWindow
     {
         if (_currentLocationName != Consts.TemplatesLocationName)
         {
-            Debug.Log("Cannot update pattern description: only available for level_design_templates location");
             return;
         }
 

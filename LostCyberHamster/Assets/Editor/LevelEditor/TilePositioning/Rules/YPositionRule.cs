@@ -1,4 +1,4 @@
-﻿using Assets.Scripts;
+using Assets.Scripts;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -6,7 +6,6 @@ public class YPositionRule : ITilePlacementRule
 {
     public bool TryApplyRule(Tilemap tilemap, Tile tile, ref Vector3 position)
     {
-        Debug.Log($"[YPositionRule] Checking tile '{tile.sprite.name}' with initial worldPos={position}");
 
         // Определяем, какая из двух константной позиций Y ближе
         float distanceToY0 = Mathf.Abs(position.y - Consts.ObstacleY0Pos);

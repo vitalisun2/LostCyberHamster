@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -156,7 +156,6 @@ public class LevelTilemapUi
             _patternNameField.RegisterCallback<FocusOutEvent>(evt => {
                 if (!string.IsNullOrEmpty(_patternNameField.value))
                 {
-                    Debug.Log($"[UI] Pattern name changed to: {_patternNameField.value}");
                     OnPatternNameChanged?.Invoke(_patternNameField.value);
                 }
             });
@@ -165,7 +164,6 @@ public class LevelTilemapUi
             _patternNameField.RegisterCallback<KeyDownEvent>(evt => {
                 if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
                 {
-                    Debug.Log($"[UI] Enter pressed with pattern name: {_patternNameField.value}");
                     // Fire the event when Enter is pressed
                     OnPatternNameChanged?.Invoke(_patternNameField.value);
                     _patternNameField.Blur(); // Remove focus to trigger FocusOut as well
@@ -284,7 +282,6 @@ public class LevelTilemapUi
         var obstacleLabel = BuildObstacleLabel(effectiveLocation);
         var decorLabel = BuildDecorLabel(effectiveLocation);
         
-        DebugManager.DiagLog($"[LevelTilemapUi] Loading sprites for location '{effectiveLocation}'. Obstacle label: '{obstacleLabel}', Decor label: '{decorLabel}'");
         
         var allSprites = new List<Sprite>();
         
@@ -297,7 +294,6 @@ public class LevelTilemapUi
                 if (_obstacleSpritesLease?.Values != null && _obstacleSpritesLease.Values.Count > 0)
                 {
                     allSprites.AddRange(_obstacleSpritesLease.Values);
-                    DebugManager.DiagLog($"[LevelTilemapUi] Loaded {_obstacleSpritesLease.Values.Count} obstacle sprites.");
                 }
             }
             catch (Exception ex)
@@ -315,7 +311,6 @@ public class LevelTilemapUi
                 if (decorLease?.Values != null && decorLease.Values.Count > 0)
                 {
                     allSprites.AddRange(decorLease.Values);
-                    DebugManager.DiagLog($"[LevelTilemapUi] Loaded {decorLease.Values.Count} decoration sprites.");
                 }
             }
             catch (Exception ex)
@@ -683,7 +678,6 @@ public class LevelTilemapUi
 
     public void UpdatePatternsList(List<string> patternNames, int selectedIndex = 0)
     {
-        Debug.Log($"[UI] Updating patterns list with {patternNames.Count} patterns, selecting index {selectedIndex}");
 
         _patternsList.selectionChanged -= OnPatternSelectedInternal;
         _patternsList.ClearSelection();
@@ -710,7 +704,6 @@ public class LevelTilemapUi
         if (indices.Count > 0)
         {
             int validIndex = Math.Min(selectedIndex, indices.Count - 1);
-            Debug.Log($"[UI] Setting pattern selection to index {validIndex}");
             _patternsList.selectedIndex = validIndex;
         }
 

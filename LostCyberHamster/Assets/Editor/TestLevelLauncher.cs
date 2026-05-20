@@ -147,7 +147,6 @@ namespace LostCyberHamster.Editor
             string timeScalePart = timeScaleOverride.HasValue
                 ? $", timeScale={timeScaleOverride.Value:F2}"
                 : string.Empty;
-            Debug.Log($"[TestLevelLauncher] Override set: {effectiveLevelAddress}{timeScalePart}. Starting Bootstrap...");
             EditorSceneManager.OpenScene(BootstrapScenePath);
             EditorApplication.isPlaying = true;
             errorMessage = null;

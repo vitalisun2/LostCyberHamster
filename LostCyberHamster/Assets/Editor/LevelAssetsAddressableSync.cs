@@ -125,12 +125,10 @@ namespace Assets.EditorTools
 
                 if (!logSilently)
                 {
-                    Debug.Log("[LevelAssetsAddressableSync] Addressables updated.");
                 }
             }
             else if (!logSilently)
             {
-                Debug.Log("[LevelAssetsAddressableSync] Addressables already up to date.");
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Common.Models;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.System.LevelManagement;
 using System;
 using System.Collections.Generic;
@@ -549,7 +549,6 @@ public static class LevelDataManager
                 {
                     if (obstacle.type != (int)correctType)
                     {
-                        Debug.Log($"Mismatch found for {obstacle.spriteName}. Expected type: {correctType}, found: {obstacle.type}. Updating...");
                         obstacle.type = (int)correctType;
                         hasChanges = true;
                     }
@@ -564,7 +563,6 @@ public static class LevelDataManager
         if (hasChanges)
         {
             SaveLevel(currentLevelInfo, filePath);
-            Debug.Log($"Level data '{filePath}' updated with correct types for location '{location}'.");
         }
     }
 

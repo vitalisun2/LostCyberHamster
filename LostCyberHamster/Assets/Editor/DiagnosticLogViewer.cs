@@ -23,8 +23,6 @@ namespace Assets.EditorTools
             }
             
             var content = DebugManager.ReadDiagLog();
-            Debug.Log($"=== Diagnostic Log Content ===\n{content}\n=== End of Log ===");
-            Debug.Log($"[DiagnosticLogViewer] Full log available at: {logPath}");
             
             // Open in external editor
             if (EditorUtility.DisplayDialog("Diagnostic Log", 
@@ -43,7 +41,6 @@ namespace Assets.EditorTools
                 "Clear", "Cancel"))
             {
                 DebugManager.ClearDiagLog();
-                Debug.Log("[DiagnosticLogViewer] Diagnostic log cleared.");
             }
         }
 

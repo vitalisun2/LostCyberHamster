@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Assets.Scripts.Common.Models;
 using UnityEngine;
@@ -16,7 +16,6 @@ namespace Assets.Editor.Shared
                 var json = Resources.Load<TextAsset>(filePath).text;
                 result = JsonUtility.FromJson<LevelInfo>(json);
 
-                Debug.Log($"level info loaded from file at path: {filePath}");
             }
             catch (Exception e)
             {
@@ -37,7 +36,6 @@ namespace Assets.Editor.Shared
                 File.WriteAllText(filePath, json);
                 UnityEditor.AssetDatabase.Refresh();
 
-                Debug.Log($"level info saved to file at path: {filePath}");
             }
             catch (Exception e)
             {

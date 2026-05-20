@@ -132,6 +132,5 @@ public static class SpriteLoader
 
         _handleCache.Clear();
         _spriteCache.Clear();
-        Debug.Log("SpriteLoader cache cleared.");
     }
 }

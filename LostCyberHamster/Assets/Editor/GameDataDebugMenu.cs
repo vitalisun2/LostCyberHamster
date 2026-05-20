@@ -40,7 +40,6 @@ namespace LostCyberHamster.Editor
                 var outputPath = Path.Combine(tempFolder, "PlayerData.json");
                 File.WriteAllText(outputPath, json);
 
-                Debug.Log($"[Player Data] Exported to {outputPath}");
             }
             catch (Exception ex)
             {
@@ -68,7 +67,6 @@ namespace LostCyberHamster.Editor
 
                 ExportPlayerData();
 
-                Debug.Log("[Player Data] Local progress reset. Next session will start fresh.");
             }
             catch (Exception ex)
             {

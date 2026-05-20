@@ -76,7 +76,6 @@ public class BatchRenameWindow : EditorWindow
         }
 
         AssetDatabase.SaveAssets();
-        Debug.Log("Assets renamed successfully.");
     }
 
     private void AddPrefixToSelectedAssets()
@@ -101,7 +100,6 @@ public class BatchRenameWindow : EditorWindow
         }
 
         AssetDatabase.SaveAssets();
-        Debug.Log("Prefix added to assets successfully.");
     }
 
     private void AddPostfixToSelectedAssets()
@@ -126,6 +124,5 @@ public class BatchRenameWindow : EditorWindow
         }
 
         AssetDatabase.SaveAssets();
-        Debug.Log("Postfix added to assets successfully.");
     }
 }

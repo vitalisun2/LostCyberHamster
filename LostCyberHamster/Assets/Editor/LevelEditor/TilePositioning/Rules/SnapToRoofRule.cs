@@ -26,7 +26,6 @@ public class SnapToRoofRule : ITilePlacementRule
         }
 
         // 3) Ни на одной линии не нашли, куда поместить объект
-        Debug.Log("[SnapToRoofRule] Не нашли подходящий BigNotAlive / MediumNotAlive. Объект на крышу не ставим.");
         return false;
     }
 
@@ -74,7 +73,6 @@ public class SnapToRoofRule : ITilePlacementRule
 
             // Если полностью влезает, «ставим» объект на крышу
             newPos.y = oldTopY + Consts.RoofOffset;
-            Debug.Log($"[SnapToRoofRule] Объект целиком влез. Ставим на крышу: X={newPos.x:F2}, Y={newPos.y:F2}");
             return true;
         }
 

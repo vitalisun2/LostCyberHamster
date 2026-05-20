@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -96,7 +96,6 @@ public class AssetBundlesManager
 
             foreach(var file in files)
             {
-                Debug.Log("Add: " + file);
                 AssetImporter.GetAtPath(file)?.SetAssetBundleNameAndVariant(directoriesAndBindlesNames[dir], string.Empty);
             }
         }
@@ -187,7 +186,6 @@ public class AssetBundlesManager
 
         File.WriteAllText(Path.Combine(folderPath, "catalog.json"), catalogJson);
 
-        Debug.Log("Catalog.json file has been created.");
     }
 
     public static (string Hash, List<string> Assets, uint crc) ParseManifest(string filePath)

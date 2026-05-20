@@ -79,7 +79,6 @@ namespace Assets.EditorTools
                 return;
             }
 
-            int totalFixed = 0;
             var spritePaths = Directory.GetFiles(locationsRoot, "*.png", SearchOption.AllDirectories);
 
             foreach (var spritePath in spritePaths)
@@ -119,7 +118,6 @@ namespace Assets.EditorTools
                         var fixedName = UnderscoreFrameSuffix.Replace(name, "-$1");
                         fixedMetas[i].name = fixedName;
                         needsFix = true;
-                        Debug.Log($"[ObstacleAnimationImporter] Fixing sub-sprite name: '{name}' → '{fixedName}' in {assetPath}");
                     }
                 }
 
@@ -127,14 +125,8 @@ namespace Assets.EditorTools
                 {
                     importer.spritesheet = fixedMetas;
                     importer.SaveAndReimport();
-                    totalFixed++;
                 }
             }
-
-            if (totalFixed > 0)
-                Debug.Log($"[ObstacleAnimationImporter] Validation complete. Fixed {totalFixed} sprite sheet(s).");
-            else
-                Debug.Log("[ObstacleAnimationImporter] Validation complete. All sub-sprite names follow the dash convention.");
         }
 
         [MenuItem("Tools/Obstacle Animations/Import From Dropbox", priority = 500)]
@@ -159,10 +151,8 @@ namespace Assets.EditorTools
             }
 
             var pngPaths = Directory.GetFiles(SourceFolder, "*.png", SearchOption.TopDirectoryOnly);
-            Debug.Log($"[ObstacleAnimationImporter] Found {pngPaths.Length} png files in source folder.");
 
             var groups = GroupFrames(pngPaths);
-            Debug.Log($"[ObstacleAnimationImporter] Prepared {groups.Count} groups to process.");
 
             foreach (var (baseName, frames) in groups.OrderBy(g => g.Key))
             {
@@ -243,7 +233,6 @@ namespace Assets.EditorTools
 
                 if (dedupResult.UniqueFrames.Count < loadedFrames.Count)
                 {
-                    Debug.Log($"[ObstacleAnimationImporter] Optimized '{baseName}': {loadedFrames.Count} frames → {dedupResult.UniqueFrames.Count} unique ({optimizationPercent:F1}% reduction)");
                 }
 
                 if (!TryCreateSpriteSheet(baseName, dedupResult.UniqueFrames, frameWidth, frameHeight, locationFolder, out var spriteSheetAssetPath))
@@ -266,7 +255,6 @@ namespace Assets.EditorTools
                 var animationCreated = TryCreateAnimation(baseName, dedupResult.FrameSequence, sprites);
                 if (animationCreated)
                 {
-                    Debug.Log($"[ObstacleAnimationImporter] Animation processed: Assets/Animations/Obstacles/{baseName}.anim ({dedupResult.FrameSequence.Count} keyframes)");
                 }
                 else
                 {
@@ -350,7 +338,6 @@ namespace Assets.EditorTools
                 File.WriteAllBytes(spriteSheetFullPath, png);
                 AssetDatabase.ImportAsset(spriteSheetAssetPath, ImportAssetOptions.ForceUpdate);
 
-                Debug.Log($"[ObstacleAnimationImporter] Sprite sheet created: {spriteSheetAssetPath} ({frames.Count} frames)");
                 sheet.DestroyImmediate();
                 return true;
             }
@@ -448,7 +435,6 @@ namespace Assets.EditorTools
                     {
                         EditorUtility.CopySerialized(clip, existingClip);
                         EditorUtility.SetDirty(existingClip);
-                        Debug.Log($"[ObstacleAnimationImporter] Animation overwritten: {animAssetPath}");
                     }
                     else
                     {
@@ -497,7 +483,6 @@ namespace Assets.EditorTools
             var spritesGroupName = $"{locationLowerWithSpaces} obstacles sprites";
             var animationsGroupName = $"{locationTitleCase} obstacle animations";
 
-            DebugManager.DiagLog($"[ObstacleAnimationImporter] Addressables lookup: locationPascal='{locationPascal}' → spritesGroup='{spritesGroupName}', animationsGroup='{animationsGroupName}'");
 
             // Find or create groups
             var spritesGroup = settings.FindGroup(spritesGroupName);
@@ -521,7 +506,6 @@ namespace Assets.EditorTools
                     {
                         spriteEntry.address = baseName;
                         spriteEntry.SetLabel($"{locationTitleCase} obstacles sprites", true, true);
-                        Debug.Log($"[ObstacleAnimationImporter] Sprite sheet registered in Addressables: {baseName}");
                     }
                 }
             }
@@ -548,7 +532,6 @@ namespace Assets.EditorTools
                     {
                         animEntry.address = baseName;
                         animEntry.SetLabel($"{locationTitleCase} obstacle animations", true, true);
-                        Debug.Log($"[ObstacleAnimationImporter] Animation registered in Addressables: {baseName}");
                     }
                 }
             }
@@ -570,7 +553,6 @@ namespace Assets.EditorTools
                 }
             }
 
-            Debug.Log($"[ObstacleAnimationImporter] Source frames deleted for '{baseName}'.");
         }
 
         private static bool TryExtractLocation(string baseName, out string locationPascal)
@@ -991,8 +973,6 @@ namespace Assets.EditorTools
             }
             
             // All checks passed - perform resize
-            Debug.Log($"[ObstacleAnimationImporter] Auto-resizing '{baseName}' ({categoryName}):\\n" +
-                      $"{currentWidth}x{currentHeight} → {targetWidth}x{targetHeight} ({inverseScale:F0}x downscale)");
             
             var resizedFrames = new List<LoadedFrame>(frames.Count);
             

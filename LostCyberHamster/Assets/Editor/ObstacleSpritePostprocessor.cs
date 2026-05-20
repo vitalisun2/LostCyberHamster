@@ -47,9 +47,6 @@ namespace Assets.EditorTools
             settings.spriteAlignment = (int)SpriteAlignment.Custom;
             settings.spritePivot = new Vector2(PivotX, PivotY);
             importer.SetTextureSettings(settings);
-
-            Debug.Log($"[ObstacleSpritePostprocessor] Configured static obstacle sprite: {assetPath} " +
-                      $"(Single mode, Bottom Center pivot)");
         }
 
         /// <summary>
