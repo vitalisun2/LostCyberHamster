@@ -145,6 +145,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
                  obstacleIndex < projectedWorldSnapshot.Obstacles.Count;
                  obstacleIndex++)
             {
+                // Отбирает только препятствия впереди на текущей линии хомяка.
                 ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
                 if (obstacle.IsBottomLine != hamster.IsOnBottomLine)
                     continue;
@@ -152,6 +153,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
                 if (obstacle.RightX <= lastRoof.RightX)
                     continue;
 
+                // Фиксирует первую подходящую крышу как цель текущего прыжка.
                 if (targetRoof == null && ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType))
                 {
                     targetRoof = obstacle;
@@ -162,9 +164,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
                         return true;
                 }
 
+                // Пропускает препятствия, которые не блокируют обычный сход с крыши.
                 if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
                     continue;
 
+                // Запоминает первый damage obstacle и проверяет, годится ли он как blocker.
                 firstDamageAhead ??= obstacle;
                 if (targetRoof == null)
                     lastObstacleBeforeTargetRoof = obstacle;
@@ -182,6 +186,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
                     return false;
                 }
 
+                // Подтверждает blocker и завершает поиск, если target roof уже найдена.
                 hasRunFromRoofBlocker = true;
                 runFromRoofBlocker ??= obstacle;
                 if (targetRoof != null)
