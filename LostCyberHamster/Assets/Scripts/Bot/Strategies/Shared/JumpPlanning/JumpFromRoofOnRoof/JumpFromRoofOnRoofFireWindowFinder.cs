@@ -8,10 +8,13 @@ using Assets.Scripts.GameEngine.Mechanics.Models;
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
 {
     /// <summary>
-    /// Подбирает fire shift для прыжка с крыши на следующую крышу.
+    /// Ищет и подтверждает окно fire shift для прыжка с одной крыши на следующую в roof-to-roof стратегии.
     /// </summary>
     internal sealed class JumpFromRoofOnRoofFireWindowFinder
     {
+        /// <summary>
+        /// Предоставляет runtime-правила и resolver для проверки roof-to-roof прыжка.
+        /// </summary>
         private readonly IJumpFromRoofOnRoofPolicy _policy;
 
         public JumpFromRoofOnRoofFireWindowFinder(IJumpFromRoofOnRoofPolicy policy)
@@ -108,12 +111,14 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             out ObstacleSnapshot targetRoof,
             out int targetRoofIndex)
         {
+            // Инициализирует пустой результат поиска.
             lastRoof = null;
             runFromRoofBlocker = null;
             lastObstacleBeforeTargetRoof = null;
             targetRoof = null;
             targetRoofIndex = -1;
 
+            // Отбрасывает некорректный вход и недостающий snapshot хомяка.
             if (planningState == null || projectedWorldSnapshot == null || chain == null)
                 return false;
 
@@ -121,6 +126,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             if (hamster == null)
                 return false;
 
+            // Находит крышу, с которой бот собирается выполнять прыжок.
             if (!RoofRunProjection.TryFindLastPassiveRoof(
                     planningState,
                     projectedWorldSnapshot,
@@ -204,6 +210,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             float fireShift,
             JumpFromRoofOnRoofTravel travel)
         {
+            // Отбрасывает вызов без обязательных данных для runtime-проверки.
             if (planningState == null || projectedWorldSnapshot == null || baseObstacles == null)
                 return false;
 
@@ -240,11 +247,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             if (result.TargetIndex < 0 || result.TargetIndex >= obstaclesAtFireShift.Count)
                 return false;
 
+            // Подтверждает совпадение target roof и в resolver snapshot, и в projected world.
             return obstaclesAtFireShift[result.TargetIndex].InstanceId == expectedTargetRoofInstanceId
                 && result.TargetIndex < projectedWorldSnapshot.Obstacles.Count
                 && projectedWorldSnapshot.Obstacles[result.TargetIndex].InstanceId == expectedTargetRoofInstanceId;
         }
 
+        /// <summary>
+        /// Резервирует точку для диагностики причин отклонения roof-to-roof поиска.
+        /// </summary>
         private void LogReject(
             PlanningState planningState,
             string reason,
@@ -255,6 +266,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             return;
         }
 
+        /// <summary>
+        /// Резервирует точку для диагностики результата runtime resolver-а на выбранном fire shift.
+        /// </summary>
         private void LogRuntimeOutcome(
             PlanningState planningState,
             IReadOnlyList<JumpObstacleData> obstaclesAtFireShift,
@@ -265,6 +279,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             return;
         }
 
+        /// <summary>
+        /// Резервирует точку для диагностики геометрического окна roof-to-roof прыжка.
+        /// </summary>
         private void LogWindowReject(
             PlanningState planningState,
             ObstacleSnapshot lastRoof,
@@ -277,6 +294,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             return;
         }
 
+        /// <summary>
+        /// Форматирует obstacle для краткого диагностического вывода.
+        /// </summary>
         private static string FormatObstacle(ObstacleSnapshot obstacle)
         {
             if (obstacle == null)
@@ -285,6 +305,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             return $"{obstacle.ObstacleType}/{obstacle.InstanceId}/[{obstacle.LeftX:F2},{obstacle.RightX:F2}]";
         }
 
+        /// <summary>
+        /// Резервирует точку для диагностики ситуации, когда не удалось определить опорную крышу.
+        /// </summary>
         private void LogSupportLookupFailure(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot)
@@ -292,6 +315,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             return;
         }
 
+        /// <summary>
+        /// Резервирует точку для диагностики причины, по которой поиск следующей крыши завершился без результата.
+        /// </summary>
         private void LogTargetSearchMiss(
             PlanningState planningState,
             ObstacleSnapshot lastRoof,
