@@ -1,4 +1,4 @@
-using Assets.Scripts.Bot.Perception;
+﻿using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Common.Models;
@@ -90,7 +90,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
         }
 
         /// <summary>
-        /// Сужает fire window для bigAlive на первом и последнем obstacle между крышами.
+        /// Сужает fire window для пролета над bigAlive между крышами с учетом collision padding.
         /// </summary>
         private static void ApplyBigAliveFireWindowLimits(
             HamsterSnapshot hamster,
@@ -124,7 +124,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
         }
 
         /// <summary>
-        /// Пересекает окно с попаданием hamster bounds на target roof после roof-jump shift.
+        /// Вычисляет fire window для посадки на крышу применяя RoofJumpTravel.
         /// </summary>
         private static void ApplyTargetRoofLandingLimit(
             HamsterSnapshot hamster,
