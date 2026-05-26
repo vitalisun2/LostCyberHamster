@@ -12,6 +12,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
     /// </summary>
     internal sealed class JumpOnSimulator : ISimulator
     {
+        /// <summary>
+        /// Политика runtime-различий конкретного jump-on варианта.
+        /// </summary>
         private readonly IJumpOnPolicy _policy;
 
         public JumpOnSimulator(IJumpOnPolicy policy)
@@ -19,16 +22,24 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             _policy = policy;
         }
 
+        /// <summary>
+        /// Возвращает тип action, который симулирует этот экземпляр.
+        /// </summary>
         public BotActionKind ActionKind => _policy.ActionKind;
 
+        /// <summary>
+        /// Строит planning-состояние после завершённого jump-on и удаления target obstacle.
+        /// </summary>
         public PlanningState Simulate(
             PlanningState planningState,
             PlannedAction action,
             WorldSnapshot worldSnapshot)
         {
+            // Проверяет входные данные.
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
                 return null;
 
+            // Применяет завершённый переход.
             HamsterSnapshot nextHamster = PlanningStateTransition.ApplyRunAfterOver(planningState.Hamster, action);
             return PlanningStateTransition.AdvanceAfterTargetRemoval(
                 planningState,
@@ -37,14 +48,19 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                 nextHamster);
         }
 
+        /// <summary>
+        /// Проецирует planning-состояние для action, который уже был запущен, но ещё не завершён.
+        /// </summary>
         public PlanningState ProjectInProgress(
             PlanningState planningState,
             PlannedAction action,
             WorldSnapshot worldSnapshot)
         {
+            // Проверяет входные данные.
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
                 return null;
 
+            // Строит projection до ожидаемого завершения.
             HamsterSnapshot nextHamster = PlanningStateTransition.ApplyRunAfterOver(planningState.Hamster, action);
             return InProgressProjectionHelper.Project(
                 planningState,

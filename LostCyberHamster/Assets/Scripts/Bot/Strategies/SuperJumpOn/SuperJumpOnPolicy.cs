@@ -15,39 +15,68 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
     /// </summary>
     internal sealed class SuperJumpOnPolicy : IJumpOnPolicy
     {
+        /// <summary>
+        /// Название клипа super-jump, используемого runtime resolver-ом.
+        /// </summary>
         private const string SuperJumpClipName = "transform_super_jump";
 
+        /// <summary>
+        /// Название клипа полного super-jump-on action.
+        /// </summary>
+        private const string SuperJumpOnClipName = "transform_super_jump_on";
+
+        /// <summary>
+        /// Возвращает тип super-jump-on action.
+        /// </summary>
         public BotActionKind ActionKind => BotActionKind.SuperJumpOn;
+
+        /// <summary>
+        /// Возвращает стоимость super-jump-on в энергии.
+        /// </summary>
         public int EnergyCost => 20;
+
+        /// <summary>
+        /// Возвращает префикс описания super-jump-on action.
+        /// </summary>
         public string DescriptionPrefix => "Super jump on";
+
+        /// <summary>
+        /// Возвращает тег диагностических сообщений super-jump-on.
+        /// </summary>
         public string LogTag => "SuperJumpOn";
+
+        /// <summary>
+        /// Возвращает runtime-состояние, подтверждающее успешное super-напрыгивание.
+        /// </summary>
         public HamsterStateEnum ExpectedJumpOnState => HamsterStateEnum.SuperJumpOnObstacle;
 
-        public bool TryGetTravel(out float travel)
+        /// <summary>
+        /// Считывает runtime-дистанции super-jump-on из animation clips и double-jump задержки.
+        /// </summary>
+        public bool TryGetTravel(out JumpOnTravel travel)
         {
+            // Находит controller с jump animation clips.
             TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
             if (controller == null)
             {
-                travel = 0f;
+                travel = default;
                 return false;
             }
 
+            // Собирает дистанции resolver-точки и полного action.
             float upgradeDelayTravel = GetSuperJumpUpgradeDelayTravel();
-            travel = HelpMethods.GetWorldShiftForClip(controller, SuperJumpClipName) + upgradeDelayTravel;
+            float actionTravel = HelpMethods.GetWorldShiftForClip(controller, SuperJumpOnClipName) + upgradeDelayTravel;
+            float resolveTravel = HelpMethods.GetWorldShiftForClip(controller, SuperJumpClipName);
+            travel = new JumpOnTravel(
+                actionTravel,
+                resolveTravel,
+                resolveFireShiftOffset: upgradeDelayTravel);
             return true;
         }
 
-        public void GetResolveInput(
-            float fireShift,
-            float jumpTravel,
-            out float resolveFireShift,
-            out float resolveTravel)
-        {
-            float upgradeDelayTravel = GetSuperJumpUpgradeDelayTravel();
-            resolveFireShift = fireShift + upgradeDelayTravel;
-            resolveTravel = jumpTravel - upgradeDelayTravel;
-        }
-
+        /// <summary>
+        /// Вызывает runtime resolver super-jump.
+        /// </summary>
         public JumpResolveResult Resolve(
             IReadOnlyList<JumpObstacleData> obstacles,
             JumpResolveContext context)
@@ -55,6 +84,9 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
             return SuperJumpOutcomeResolver.ResolveSuperJump(obstacles, context);
         }
 
+        /// <summary>
+        /// Возвращает дистанцию, которую мир проходит до второго tap для super-jump.
+        /// </summary>
         private static float GetSuperJumpUpgradeDelayTravel()
         {
             float halfDoubleJumpWindowSeconds = DoubleJumpDetector.DoubleJumpThreshold / 2f;

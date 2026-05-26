@@ -41,6 +41,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
             }
 
             ObstacleSnapshot firstObstacle = decisionPoint.Chain.FirstObstacle;
+            if (firstObstacle.IsBottomLine != hamster.IsOnBottomLine)
+                return false;
+
             if (!_policy.CanJumpOverObstacle(firstObstacle.ObstacleType))
                 return false;
 

@@ -41,6 +41,47 @@ namespace Assets.Scripts.Bot.Planning
                 return plannedActions;
             }
 
+            CollectActionsForDecisionPoint(
+                planningState,
+                projectedWorldSnapshot,
+                decisionPoint,
+                plannedActions);
+
+            if (!decisionPoint.IsJumpOnOpportunity
+                && _decisionPointDetector.TryDetectJumpOnOpportunity(
+                    planningState,
+                    projectedWorldSnapshot,
+                    out DecisionPoint opportunityDecisionPoint))
+            {
+                CollectActionsForDecisionPoint(
+                    planningState,
+                    projectedWorldSnapshot,
+                    opportunityDecisionPoint,
+                    plannedActions);
+            }
+
+            RemoveSuperJumpOnCandidatesCoveredByJumpOn(plannedActions);
+
+            if (plannedActions.Count == 0)
+            {
+                DebugManager.DiagLogVerbose(
+                    $"[Bot PLAN] NO_ACTIONS obstacle={decisionPoint.Obstacle.ObstacleType} " +
+                    $"kind={decisionPoint.Kind} " +
+                    $"leftX={decisionPoint.Obstacle.LeftX:F2} rightX={decisionPoint.Obstacle.RightX:F2} " +
+                    $"lane={(decisionPoint.Obstacle.IsBottomLine ? "bottom" : "top")} " +
+                    $"projection={planningState.ProjectionWorldShift:F2} " +
+                    $"hamsterLane={(planningState.IsOnBottomLine ? "bottom" : "top")}");
+            }
+
+            return plannedActions;
+        }
+
+        private void CollectActionsForDecisionPoint(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            DecisionPoint decisionPoint,
+            List<PlannedAction> plannedActions)
+        {
             for (int strategyIndex = 0; strategyIndex < _strategies.Count; strategyIndex++)
             {
                 _strategies[strategyIndex].CollectActions(
@@ -49,18 +90,47 @@ namespace Assets.Scripts.Bot.Planning
                     decisionPoint,
                     plannedActions);
             }
+        }
 
-            if (plannedActions.Count == 0)
+        private static void RemoveSuperJumpOnCandidatesCoveredByJumpOn(List<PlannedAction> plannedActions)
+        {
+            if (plannedActions == null || plannedActions.Count < 2)
+                return;
+
+            for (int actionIndex = plannedActions.Count - 1; actionIndex >= 0; actionIndex--)
             {
-                DebugManager.DiagLogVerbose(
-                    $"[Bot PLAN] NO_ACTIONS obstacle={decisionPoint.Obstacle.ObstacleType} " +
-                    $"leftX={decisionPoint.Obstacle.LeftX:F2} rightX={decisionPoint.Obstacle.RightX:F2} " +
-                    $"lane={(decisionPoint.Obstacle.IsBottomLine ? "bottom" : "top")} " +
-                    $"projection={planningState.ProjectionWorldShift:F2} " +
-                    $"hamsterLane={(planningState.IsOnBottomLine ? "bottom" : "top")}");
+                PlannedAction action = plannedActions[actionIndex];
+                if (action == null || action.Kind != BotActionKind.SuperJumpOn)
+                    continue;
+
+                if (HasJumpOnCandidateForSameTarget(plannedActions, action))
+                    plannedActions.RemoveAt(actionIndex);
+            }
+        }
+
+        private static bool HasJumpOnCandidateForSameTarget(
+            IReadOnlyList<PlannedAction> plannedActions,
+            PlannedAction superJumpOnAction)
+        {
+            for (int actionIndex = 0; actionIndex < plannedActions.Count; actionIndex++)
+            {
+                PlannedAction action = plannedActions[actionIndex];
+                if (action == null || action.Kind != BotActionKind.JumpOn)
+                    continue;
+
+                if (TargetsSameObstacle(action, superJumpOnAction))
+                    return true;
             }
 
-            return plannedActions;
+            return false;
+        }
+
+        private static bool TargetsSameObstacle(PlannedAction left, PlannedAction right)
+        {
+            if (left.TargetObstacleInstanceId.HasValue && right.TargetObstacleInstanceId.HasValue)
+                return left.TargetObstacleInstanceId.Value == right.TargetObstacleInstanceId.Value;
+
+            return left.TargetObstacleIndex == right.TargetObstacleIndex;
         }
 
         private static void LogNoDecisionPoint(PlanningState planningState, WorldSnapshot projectedWorldSnapshot)

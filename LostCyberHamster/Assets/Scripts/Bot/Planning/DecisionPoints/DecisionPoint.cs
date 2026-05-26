@@ -4,6 +4,15 @@ using Assets.Scripts.Bot.Perception;
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
     /// <summary>
+    /// Описывает причину, по которой planner создал точку решения.
+    /// </summary>
+    public enum DecisionPointKind
+    {
+        BlockingThreat,
+        JumpOnOpportunity
+    }
+
+    /// <summary>
     /// Описывает текущую обязательную для обработки ситуацию перед ботом.
     /// </summary>
     public sealed class DecisionPoint
@@ -12,11 +21,36 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         /// Создаёт новую точку решения из готовой chain.
         /// </summary>
         public DecisionPoint(ObstacleChain chain)
+            : this(chain, DecisionPointKind.BlockingThreat, null)
+        {
+        }
+
+        /// <summary>
+        /// Создаёт новую точку решения из готовой chain и причины её появления.
+        /// </summary>
+        public DecisionPoint(ObstacleChain chain, DecisionPointKind kind)
+            : this(chain, kind, null)
+        {
+        }
+
+        /// <summary>
+        /// Создаёт новую точку решения из готовой chain, причины её появления и optional fire-deadline.
+        /// </summary>
+        public DecisionPoint(
+            ObstacleChain chain,
+            DecisionPointKind kind,
+            ObstacleSnapshot fireBeforeObstacle)
         {
             Chain = chain ?? throw new ArgumentNullException(nameof(chain));
+            Kind = kind;
+            FireBeforeObstacle = fireBeforeObstacle;
         }
 
         public ObstacleChain Chain { get; }
+        public DecisionPointKind Kind { get; }
+        public bool IsJumpOnOpportunity => Kind == DecisionPointKind.JumpOnOpportunity;
+        public ObstacleSnapshot FireBeforeObstacle { get; }
+        public bool HasFireBeforeObstacle => FireBeforeObstacle != null;
 
         /// <summary>
         /// Временный compatibility-доступ к первому obstacle chain.

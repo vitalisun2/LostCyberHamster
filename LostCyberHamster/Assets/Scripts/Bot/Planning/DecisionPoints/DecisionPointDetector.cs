@@ -21,7 +21,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         private const int _maxChainLength = 3;
 
         /// <summary>
-        /// Пытается найти ближайшую chain-ситуацию на текущей линии хомяка.
+        /// Пытается найти ближайшую blocking chain-ситуацию или high-priority jump-on opportunity.
         /// </summary>
         public bool TryDetect(
             PlanningState planningState,
@@ -40,41 +40,71 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                     worldSnapshot,
                     out int roofOccupantHazardIndex))
             {
-                decisionPoint = new DecisionPoint(BuildChain(planningState, worldSnapshot, roofOccupantHazardIndex));
+                decisionPoint = new DecisionPoint(BuildChain(
+                    planningState,
+                    worldSnapshot,
+                    roofOccupantHazardIndex,
+                    planningState.IsOnBottomLine));
                 return true;
             }
 
             // Выбирает стартовый obstacle.
             int firstObstacleIndex = GetFirstDetectionIndex(planningState, worldSnapshot);
 
-            // Ищет ближайший damaging obstacle на текущей линии.
-            for (int obstacleIndex = firstObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            bool hasBlockingThreat = TryFindBlockingThreat(
+                planningState,
+                worldSnapshot,
+                firstObstacleIndex,
+                out int blockingThreatIndex);
+
+            if (hasBlockingThreat)
             {
-                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                if (obstacle.RightX <= planningState.Hamster.HamsterLeftX)
-                    continue;
-
-                if (obstacle.IsBottomLine != planningState.IsOnBottomLine)
-                    continue;
-
-                if (RoofRunProjection.IsPassiveRoofContinuation(planningState, worldSnapshot, obstacle))
-                {
-                    DebugManager.DiagLogVerbose(
-                        $"[Bot PLAN] SKIP_ROOF_CONTINUATION obstacle={obstacle.ObstacleType} " +
-                        $"index={obstacleIndex} instanceId={obstacle.InstanceId} " +
-                        $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2}");
-                    continue;
-                }
-
-                if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
-                    continue;
-
-                // Создает decision point.
-                decisionPoint = new DecisionPoint(BuildChain(planningState, worldSnapshot, obstacleIndex));
+                decisionPoint = new DecisionPoint(BuildChain(
+                    planningState,
+                    worldSnapshot,
+                    blockingThreatIndex,
+                    planningState.IsOnBottomLine));
                 return true;
             }
 
-            return false;
+            return TryDetectJumpOnOpportunity(planningState, worldSnapshot, out decisionPoint);
+        }
+
+        /// <summary>
+        /// Пытается найти видимую target-oriented jump-on opportunity независимо от ближайшей угрозы.
+        /// </summary>
+        public bool TryDetectJumpOnOpportunity(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            out DecisionPoint decisionPoint)
+        {
+            decisionPoint = null;
+            if (planningState == null || worldSnapshot == null)
+                return false;
+
+            int firstObstacleIndex = GetFirstDetectionIndex(planningState, worldSnapshot);
+            if (!TryFindJumpOnOpportunity(
+                    planningState,
+                    worldSnapshot,
+                    firstObstacleIndex,
+                    out int opportunityIndex,
+                    out bool opportunityBottomLine))
+            {
+                return false;
+            }
+
+            ObstacleChain opportunityChain = BuildChain(
+                planningState,
+                worldSnapshot,
+                opportunityIndex,
+                opportunityBottomLine);
+            decisionPoint = new DecisionPoint(
+                opportunityChain,
+                DecisionPointKind.JumpOnOpportunity,
+                TryFindBlockingThreat(planningState, worldSnapshot, firstObstacleIndex, out int blockingThreatIndex)
+                    ? worldSnapshot.Obstacles[blockingThreatIndex]
+                    : null);
+            return true;
         }
 
         /// <summary>
@@ -121,7 +151,8 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         private static ObstacleChain BuildChain(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            int firstObstacleIndex)
+            int firstObstacleIndex,
+            bool chainBottomLine)
         {
             // Инициализирует chain первым obstacle.
             var obstacles = new List<ObstacleSnapshot>();
@@ -137,7 +168,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                  obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                if (obstacle.IsBottomLine != planningState.IsOnBottomLine)
+                if (obstacle.IsBottomLine != chainBottomLine)
                     continue;
 
                 if (RoofRunProjection.IsPassiveRoofContinuation(planningState, worldSnapshot, obstacle))
@@ -160,5 +191,125 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             // Возвращает готовую chain.
             return new ObstacleChain(obstacles, indices);
         }
+
+        /// <summary>
+        /// Находит ближайшую обязательную угрозу на текущей линии хомяка.
+        /// </summary>
+        private static bool TryFindBlockingThreat(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            int firstObstacleIndex,
+            out int blockingThreatIndex)
+        {
+            blockingThreatIndex = -1;
+
+            for (int obstacleIndex = firstObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (!IsBlockingThreat(planningState, worldSnapshot, obstacle, obstacleIndex))
+                    continue;
+
+                blockingThreatIndex = obstacleIndex;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Проверяет, является ли obstacle ближайшей угрозой текущей линии.
+        /// </summary>
+        private static bool IsBlockingThreat(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            ObstacleSnapshot obstacle,
+            int obstacleIndex)
+        {
+            if (obstacle.RightX <= planningState.Hamster.HamsterLeftX)
+                return false;
+
+            if (obstacle.IsBottomLine != planningState.IsOnBottomLine)
+                return false;
+
+            if (RoofRunProjection.IsPassiveRoofContinuation(planningState, worldSnapshot, obstacle))
+            {
+                DebugManager.DiagLogVerbose(
+                    $"[Bot PLAN] SKIP_ROOF_CONTINUATION obstacle={obstacle.ObstacleType} " +
+                    $"index={obstacleIndex} instanceId={obstacle.InstanceId} " +
+                    $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2}");
+                return false;
+            }
+
+            return ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType);
+        }
+
+        /// <summary>
+        /// Находит off-line opportunity-chain, где после смены линии можно выполнить jump-on target.
+        /// </summary>
+        private static bool TryFindJumpOnOpportunity(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            int firstObstacleIndex,
+            out int opportunityIndex,
+            out bool opportunityBottomLine)
+        {
+            opportunityIndex = -1;
+            opportunityBottomLine = false;
+
+            if (!CanSearchJumpOnOpportunity(planningState))
+                return false;
+
+            for (int obstacleIndex = firstObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.RightX <= planningState.Hamster.HamsterLeftX)
+                    continue;
+
+                if (obstacle.IsBottomLine == planningState.IsOnBottomLine)
+                    continue;
+
+                if (obstacle.LeftX > worldSnapshot.ScreenRightEdgeX)
+                    return false;
+
+                if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
+                    continue;
+
+                ObstacleChain chain = BuildChain(
+                    planningState,
+                    worldSnapshot,
+                    obstacleIndex,
+                    obstacle.IsBottomLine);
+                if (!chain.TryFindFirstGroundJumpOnTarget(
+                        obstacle.IsBottomLine,
+                        out ObstacleSnapshot targetObstacle,
+                        out _,
+                        out _))
+                {
+                    continue;
+                }
+
+                if (targetObstacle.LeftX > worldSnapshot.ScreenRightEdgeX)
+                    continue;
+
+                opportunityIndex = obstacleIndex;
+                opportunityBottomLine = obstacle.IsBottomLine;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Проверяет, можно ли искать target-oriented jump-on opportunity.
+        /// </summary>
+        private static bool CanSearchJumpOnOpportunity(PlanningState planningState)
+        {
+            HamsterSnapshot hamster = planningState.Hamster;
+            return hamster != null
+                && !hamster.IsOnRoof
+                && !hamster.IsShifting
+                && hamster.Energy >= PlanningInterestRules.HighPriorityJumpOnEnergyThreshold;
+        }
+
     }
 }

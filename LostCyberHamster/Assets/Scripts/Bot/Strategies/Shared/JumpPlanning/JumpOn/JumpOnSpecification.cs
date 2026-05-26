@@ -9,6 +9,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
     /// </summary>
     internal sealed class JumpOnSpecification
     {
+        /// <summary>
+        /// Политика runtime-различий конкретного jump-on варианта.
+        /// </summary>
         private readonly IJumpOnPolicy _policy;
 
         public JumpOnSpecification(IJumpOnPolicy policy)
@@ -16,15 +19,20 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             _policy = policy;
         }
 
+        /// <summary>
+        /// Проверяет, можно ли выполнить jump-on по текущей decision chain, и возвращает первый валидный target.
+        /// </summary>
         public bool IsSatisfiedBy(
             PlanningState planningState,
             DecisionPoint decisionPoint,
             out ObstacleSnapshot targetObstacle,
             out int targetObstacleIndex)
         {
+            // Инициализирует выходные значения.
             targetObstacle = null;
             targetObstacleIndex = -1;
 
+            // Проверяет наличие planning context.
             if (planningState == null
                 || decisionPoint == null
                 || decisionPoint.Chain == null)
@@ -32,6 +40,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                 return false;
             }
 
+            // Проверяет состояние хомяка и энергию.
             HamsterSnapshot hamster = planningState.Hamster;
             if (hamster == null
                 || hamster.IsOnRoof
@@ -41,15 +50,16 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                 return false;
             }
 
-            ObstacleSnapshot firstObstacle = decisionPoint.Chain.FirstObstacle;
-            if (firstObstacle.IsBottomLine != hamster.IsOnBottomLine
-                || !ObstacleClassifier.CanJumpOnGroundObstacle(firstObstacle.ObstacleType))
+            // Ищет первый ground jump-on target в chain.
+            if (!decisionPoint.Chain.TryFindFirstGroundJumpOnTarget(
+                    hamster.IsOnBottomLine,
+                    out targetObstacle,
+                    out targetObstacleIndex,
+                    out _))
             {
                 return false;
             }
 
-            targetObstacle = firstObstacle;
-            targetObstacleIndex = decisionPoint.Chain.FirstIndex;
             return true;
         }
     }

@@ -15,9 +15,19 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
     /// </summary>
     internal sealed class JumpOnRetainedActionValidator : IRetainedActionValidator
     {
+        /// <summary>
+        /// Допуск при повторной проверке оставшегося fire shift.
+        /// </summary>
         private const float ValidationEpsilon = 0.0001f;
 
+        /// <summary>
+        /// Политика runtime-различий конкретного jump-on варианта.
+        /// </summary>
         private readonly IJumpOnPolicy _policy;
+
+        /// <summary>
+        /// Finder для повторного runtime-подтверждения сохранённого action.
+        /// </summary>
         private readonly JumpOnFireWindowFinder _fireWindowFinder;
 
         public JumpOnRetainedActionValidator(
@@ -28,19 +38,28 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             _fireWindowFinder = fireWindowFinder;
         }
 
+        /// <summary>
+        /// Возвращает тип action, который валидирует этот экземпляр.
+        /// </summary>
         public BotActionKind ActionKind => _policy.ActionKind;
 
+        /// <summary>
+        /// Проверяет, можно ли оставить ранее выбранный jump-on action в текущем planning-состоянии.
+        /// </summary>
         public bool IsStillValid(RetainedActionContext context)
         {
+            // Проверяет базовую совместимость context и action.
             if (context == null || context.Action == null || context.Action.Kind != ActionKind)
                 return false;
 
+            // Раскрывает context для дальнейших проверок.
             PlanningState planningState = context.PlanningState;
             WorldSnapshot projectedWorldSnapshot = context.ProjectedWorldSnapshot;
             DecisionPoint decisionPoint = context.DecisionPoint;
             ObstacleSnapshot targetObstacle = context.TargetObstacle;
             PlannedAction action = context.Action;
 
+            // Отсекает неполный context.
             if (planningState == null
                 || projectedWorldSnapshot == null
                 || decisionPoint?.Chain == null
@@ -50,18 +69,36 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                 return false;
             }
 
-            if (decisionPoint.Chain.FirstObstacle.InstanceId != targetObstacle.InstanceId)
+            // Получает runtime-дистанции действия.
+            if (!_policy.TryGetTravel(out JumpOnTravel travel))
                 return false;
 
+            // Проверяет, что chain всё ещё ведёт к тому же target.
+            if (!decisionPoint.Chain.TryFindFirstGroundJumpOnTarget(
+                    planningState.Hamster.IsOnBottomLine,
+                    out ObstacleSnapshot currentTargetObstacle,
+                    out int currentTargetIndex,
+                    out _)
+                || currentTargetObstacle.InstanceId != targetObstacle.InstanceId)
+            {
+                return false;
+            }
+
+            // Пересчитывает актуальное fire-window.
             if (!JumpOnWindowCalculator.TryCalculate(
                     planningState.Hamster,
                     decisionPoint.Chain,
-                    action.PostFireWorldShift,
+                    travel.ResolveTravel,
                     out JumpOnWindowModel window))
             {
                 return false;
             }
 
+            // Проверяет индекс target внутри актуального окна.
+            if (window.TargetObstacleIndex != currentTargetIndex)
+                return false;
+
+            // Вычисляет оставшийся fire shift.
             if (!TryGetRemainingFireShift(
                     projectedWorldSnapshot,
                     targetObstacle,
@@ -72,21 +109,41 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                 return false;
             }
 
-            if (fireShift < window.FirstFireShift - ValidationEpsilon
+            // Проверяет попадание fire shift в актуальное окно.
+            if (fireShift < -ValidationEpsilon
                 || fireShift > window.LastFireShift + ValidationEpsilon)
             {
                 return false;
             }
 
+            // Нормализует незначительный отрицательный остаток.
+            if (fireShift < 0f)
+                fireShift = 0f;
+
+            // Подтверждает outcome runtime resolver-ом.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            return _fireWindowFinder.CheckRuntimeOutcomeAtFireShift(
+            if (!_fireWindowFinder.CheckRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
                 fireShift,
-                action.PostFireWorldShift,
-                window.TargetObstacleIndex);
+                travel,
+                window.TargetObstacleIndex))
+            {
+                return false;
+            }
+
+            // Проверяет безопасность после полного завершения.
+            return JumpOnPostActionSafety.IsSafeAfterCompletion(
+                planningState,
+                projectedWorldSnapshot,
+                window.TargetObstacleIndex,
+                window.TargetObstacle.InstanceId,
+                fireShift + travel.ActionTravel);
         }
 
+        /// <summary>
+        /// Вычисляет оставшийся fire shift относительно live trigger obstacle или target obstacle.
+        /// </summary>
         private static bool TryGetRemainingFireShift(
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot targetObstacle,
@@ -94,12 +151,14 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             float projectionWorldShift,
             out float fireShift)
         {
+            // Отсекает неполные данные.
             if (projectedWorldSnapshot == null || targetObstacle == null || action == null)
             {
                 fireShift = 0f;
                 return false;
             }
 
+            // Ищет live trigger obstacle.
             float projectedTriggerX = action.TriggerX - projectionWorldShift;
             int? triggerObstacleInstanceId = action.TriggerObstacleInstanceId ?? action.TargetObstacleInstanceId;
             if (triggerObstacleInstanceId.HasValue)
@@ -115,6 +174,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                 }
             }
 
+            // Использует target как fallback.
             fireShift = targetObstacle.LeftX - projectedTriggerX;
             return true;
         }

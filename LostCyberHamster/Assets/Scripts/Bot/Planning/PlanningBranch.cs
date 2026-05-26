@@ -32,6 +32,8 @@ namespace Assets.Scripts.Bot.Planning
         public int TotalEnergyCost => Metrics.TotalEnergyCost;
         public int TapCount => Metrics.TapCount;
         public int ActionCount => Metrics.ActionCount;
+        public int JumpOnObjectiveCount => Metrics.JumpOnObjectiveCount;
+        public int? FirstJumpOnObjectiveTargetIndex => Metrics.FirstJumpOnObjectiveTargetIndex;
         public float FirstTriggerX => Metrics.FirstTriggerX ?? 0f;
 
         /// <summary>

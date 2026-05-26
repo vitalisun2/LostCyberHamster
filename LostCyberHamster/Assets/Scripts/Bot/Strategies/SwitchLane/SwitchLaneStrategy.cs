@@ -64,6 +64,15 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             if (!_fireWindowCalculator.TryGetLatestFireShift(hamster, targetObstacle, out float latestFireShift))
                 return;
 
+            if (decisionPoint.HasFireBeforeObstacle
+                && !TryClampLatestFireShiftBeforeDeadline(
+                    hamster,
+                    decisionPoint.FireBeforeObstacle,
+                    ref latestFireShift))
+            {
+                return;
+            }
+
             // Строит все варианты action в найденном окне.
             IReadOnlyList<float> fireShifts = _fireWindowCalculator.CollectFireShifts(
                 worldSnapshot,
@@ -101,6 +110,23 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 targetBottomLine: targetBottomLine,
                 energyCost: 0,
                 description: $"Switch lane before {targetObstacle.ObstacleType}");
+        }
+
+        private bool TryClampLatestFireShiftBeforeDeadline(
+            HamsterSnapshot hamster,
+            ObstacleSnapshot deadlineObstacle,
+            ref float latestFireShift)
+        {
+            if (deadlineObstacle == null)
+                return latestFireShift > 0f;
+
+            if (!_fireWindowCalculator.TryGetLatestFireShift(hamster, deadlineObstacle, out float deadlineLatestFireShift))
+                return false;
+
+            if (deadlineLatestFireShift < latestFireShift)
+                latestFireShift = deadlineLatestFireShift;
+
+            return latestFireShift > 0f;
         }
     }
 }

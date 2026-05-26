@@ -64,7 +64,11 @@ namespace Assets.Scripts.Bot.Planning
             if (right == null)
                 return -1;
 
-            int compare = left.TotalEnergyCost.CompareTo(right.TotalEnergyCost);
+            int compare = left.Metrics.CompareJumpOnObjectivePriority(right.Metrics);
+            if (compare != 0)
+                return compare;
+
+            compare = left.TotalEnergyCost.CompareTo(right.TotalEnergyCost);
             if (compare != 0)
                 return compare;
 

@@ -70,7 +70,10 @@ namespace Assets.Scripts.Bot.Planning
                 return;
             }
 
-            bool expandedAnyChild = false;
+            // Optional planning interests must stay skippable.
+            if (!HasUnresolvedBlockingDecision(currentNode.State, worldSnapshot))
+                AddLeafBranch(currentNode, branches);
+
             for (int candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
             {
                 PlannedAction candidate = candidates[candidateIndex];
@@ -87,12 +90,7 @@ namespace Assets.Scripts.Bot.Planning
 
                 bestMetricsByState[childNode.StateKey] = childNode.Metrics;
                 ExploreNode(childNode, worldSnapshot, branches, bestMetricsByState);
-                expandedAnyChild = true;
             }
-
-            // Keep the current chain as a leaf when no candidate produced a valid new state.
-            if (!expandedAnyChild && !HasUnresolvedBlockingDecision(currentNode.State, worldSnapshot))
-                AddLeafBranch(currentNode, branches);
         }
 
         private bool HasUnresolvedBlockingDecision(PlanningState planningState, WorldSnapshot worldSnapshot)
@@ -101,12 +99,16 @@ namespace Assets.Scripts.Bot.Planning
             if (projectedWorldSnapshot == null)
                 return false;
 
-            return _decisionPointDetector.TryDetect(planningState, projectedWorldSnapshot, out _);
+            return _decisionPointDetector.TryDetect(
+                       planningState,
+                       projectedWorldSnapshot,
+                       out DecisionPoint decisionPoint)
+                   && !decisionPoint.IsJumpOnOpportunity;
         }
 
         private static void AddLeafBranch(PlanningGraphNode leafNode, List<PlanningBranch> branches)
         {
-            if (leafNode == null || leafNode.IsRoot)
+            if (leafNode == null)
                 return;
 
             branches.Add(PlanningBranch.FromLeaf(leafNode));

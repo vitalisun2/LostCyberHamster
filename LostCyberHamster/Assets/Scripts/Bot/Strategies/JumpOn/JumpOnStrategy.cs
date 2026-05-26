@@ -16,17 +16,35 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
     /// </summary>
     internal sealed class JumpOnStrategy : IPlanningStrategy
     {
+        /// <summary>
+        /// Политика runtime-параметров обычного jump-on.
+        /// </summary>
         private readonly IJumpOnPolicy _policy;
+
+        /// <summary>
+        /// Проверка применимости обычного jump-on к текущей decision chain.
+        /// </summary>
         private readonly JumpOnSpecification _specification;
+
+        /// <summary>
+        /// Подбор безопасного момента запуска обычного jump-on.
+        /// </summary>
         private readonly JumpOnFireWindowFinder _fireWindowFinder;
+
+        /// <summary>
+        /// Симулятор planning-состояния после обычного jump-on.
+        /// </summary>
         private readonly JumpOnSimulator _simulator;
 
         public JumpOnStrategy()
         {
+            // Инициализирует planning-компоненты стратегии.
             _policy = new JumpOnPolicy();
             _specification = new JumpOnSpecification(_policy);
             _fireWindowFinder = new JumpOnFireWindowFinder(_policy);
             _simulator = new JumpOnSimulator(_policy);
+
+            // Инициализирует runtime-компоненты выполнения.
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             Executor = new JumpOnExecutor(triggerGate);
@@ -34,23 +52,43 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
             Simulator = _simulator;
         }
 
+        /// <summary>
+        /// Возвращает тип action, который строит стратегия.
+        /// </summary>
         public BotActionKind ActionKind => _policy.ActionKind;
+
+        /// <summary>
+        /// Runtime-исполнитель обычного jump-on.
+        /// </summary>
         public IActionExecutionHandler Executor { get; }
+
+        /// <summary>
+        /// Валидатор сохранённого обычного jump-on action.
+        /// </summary>
         public IRetainedActionValidator RetainedValidator { get; }
+
+        /// <summary>
+        /// Симулятор planning-перехода для обычного jump-on.
+        /// </summary>
         public ISimulator Simulator { get; }
 
+        /// <summary>
+        /// Добавляет обычный jump-on action, если chain содержит валидный target и полное действие безопасно.
+        /// </summary>
         public void CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             DecisionPoint decisionPoint,
             List<PlannedAction> actions)
         {
+            // Проверяет входные данные.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
                 (decisionPoint, nameof(decisionPoint)),
                 (actions, nameof(actions)));
 
+            // Отсекает неподходящую chain.
             if (!_specification.IsSatisfiedBy(
                     planningState,
                     decisionPoint,
@@ -60,46 +98,76 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                 return;
             }
 
-            if (!_policy.TryGetTravel(out float jumpTravel))
+            // Получает runtime-дистанции действия.
+            if (!_policy.TryGetTravel(out JumpOnTravel travel))
                 return;
 
+            // Подбирает подтвержденный момент запуска.
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
                     worldSnapshot,
                     decisionPoint.Chain,
-                    jumpTravel,
+                    travel,
                     out JumpOnWindowModel window,
                     out float fireShift))
             {
                 return;
             }
 
-            actions.Add(BuildAction(_policy, planningState, window, fireShift, jumpTravel));
+            // Проверяет безопасность после полного завершения.
+            float completionWorldShift = fireShift + travel.ActionTravel;
+            if (!JumpOnPostActionSafety.IsSafeAfterCompletion(
+                    planningState,
+                    worldSnapshot,
+                    window.TargetObstacleIndex,
+                    window.TargetObstacle.InstanceId,
+                    completionWorldShift))
+            {
+                return;
+            }
+
+            // Добавляет action в набор вариантов.
+            actions.Add(BuildAction(
+                _policy,
+                planningState,
+                decisionPoint.Chain.FirstObstacle,
+                window,
+                fireShift,
+                travel,
+                completionWorldShift));
         }
 
+        /// <summary>
+        /// Создаёт planning action для обычного jump-on с привязкой к trigger и target obstacle.
+        /// </summary>
         private static PlannedAction BuildAction(
             IJumpOnPolicy policy,
             PlanningState planningState,
+            ObstacleSnapshot triggerObstacle,
             JumpOnWindowModel window,
             float fireShift,
-            float jumpTravel)
+            JumpOnTravel travel,
+            float completionWorldShift)
         {
+            // Вычисляет координату запуска.
             ObstacleSnapshot targetObstacle = window.TargetObstacle;
-            float projectedTriggerX = targetObstacle.LeftX - fireShift;
+            float projectedTriggerX = triggerObstacle.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
 
+            // Создаёт описание action.
             return new PlannedAction(
                 policy.ActionKind,
                 triggerX,
                 renderWorldX: triggerX,
-                completionWorldShift: fireShift + jumpTravel,
-                postFireWorldShift: jumpTravel,
+                completionWorldShift,
+                postFireWorldShift: travel.ActionTravel,
                 window.TargetObstacleIndex,
                 targetObstacleInstanceId: targetObstacle.InstanceId,
-                triggerObstacleInstanceId: targetObstacle.InstanceId,
+                triggerObstacleInstanceId: triggerObstacle.InstanceId,
                 targetBottomLine: null,
                 energyCost: policy.EnergyCost,
-                description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}");
+                description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}",
+                fulfillsJumpOnObjective: planningState.Hamster.Energy >= PlanningInterestRules.HighPriorityJumpOnEnergyThreshold);
         }
     }
 }
