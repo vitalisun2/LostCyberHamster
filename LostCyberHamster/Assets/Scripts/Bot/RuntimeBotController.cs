@@ -4,6 +4,7 @@ using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Execution;
 using Assets.Scripts.Bot.Strategies.JumpFromRoof;
 using Assets.Scripts.Bot.Strategies.JumpFromRoofOnRoof;
+using Assets.Scripts.Bot.Strategies.JumpOn;
 using Assets.Scripts.Bot.Strategies.JumpOnRoof;
 using Assets.Scripts.Bot.Strategies.JumpOver;
 using Assets.Scripts.Bot.Strategies.RoofJumpOver;
@@ -12,6 +13,7 @@ using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.SuperRoofJumpOver;
 using Assets.Scripts.Bot.Strategies.SuperJumpFromRoof;
 using Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof;
+using Assets.Scripts.Bot.Strategies.SuperJumpOn;
 using Assets.Scripts.Bot.Strategies.SuperJumpOnRoof;
 using Assets.Scripts.Bot.Strategies.SuperJumpOver;
 using Assets.Scripts.Bot.Strategies.SwitchLane;
@@ -98,6 +100,8 @@ namespace Assets.Scripts.Bot
                 new SwitchLaneStrategy(),
                 new JumpOverStrategy(),
                 new SuperJumpOverStrategy(),
+                new JumpOnStrategy(),
+                new SuperJumpOnStrategy(),
                 new JumpOnRoofStrategy(),
                 new SuperJumpOnRoofStrategy(),
                 new JumpFromRoofStrategy(),

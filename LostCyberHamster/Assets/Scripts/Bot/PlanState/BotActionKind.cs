@@ -9,6 +9,8 @@ namespace Assets.Scripts.Bot.PlanState
         SwitchLane,
         JumpOver,
         SuperJumpOver,
+        JumpOn,
+        SuperJumpOn,
         JumpOnRoof,
         SuperJumpOnRoof,
         RoofJumpOver,

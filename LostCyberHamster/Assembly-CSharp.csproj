@@ -423,6 +423,19 @@
     <Compile Include="Assets\Scripts\Bot\Perception\ObstacleSnapshot.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoofOnRoof\SuperJumpFromRoofOnRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelData.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnStrategy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOn\IJumpOnPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOn\JumpOnFireWindowFinder.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOn\JumpOnRetainedActionValidator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOn\JumpOnSimulator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOn\JumpOnSpecification.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOn\JumpOnWindowCalculator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOn\JumpOnWindowModel.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnStrategy.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Content\ui\uxml\ShopModal.uxml" />

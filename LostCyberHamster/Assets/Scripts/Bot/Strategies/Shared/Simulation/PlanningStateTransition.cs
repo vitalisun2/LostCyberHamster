@@ -60,6 +60,32 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
         }
 
         /// <summary>
+        /// Возвращает planning-состояние после действия, которое удаляет target obstacle.
+        /// </summary>
+        public static PlanningState AdvanceAfterTargetRemoval(
+            PlanningState planningState,
+            PlannedAction action,
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot nextHamster)
+        {
+            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            int minimumNextObstacleIndex = Math.Max(
+                planningState.NextObstacleIndex,
+                action.TargetObstacleIndex + 1);
+
+            int nextObstacleIndex = FindNextRelevantObstacleIndex(
+                worldSnapshot,
+                minimumNextObstacleIndex,
+                nextProjectionWorldShift,
+                nextHamster.HamsterLeftX);
+
+            return new PlanningState(
+                nextHamster,
+                nextObstacleIndex,
+                nextProjectionWorldShift);
+        }
+
+        /// <summary>
         /// Возвращает planning-состояние после roof jump over над препятствием на текущей крыше.
         /// </summary>
         public static PlanningState AdvanceAfterRoofJumpOver(

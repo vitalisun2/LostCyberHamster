@@ -51,6 +51,14 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
+        /// Возвращает true, если препятствие можно уничтожить ground jump-on действием.
+        /// </summary>
+        public static bool CanJumpOnGroundObstacle(ObstacleTypeEnum obstacleType)
+        {
+            return obstacleType == ObstacleTypeEnum.smallAlive;
+        }
+
+        /// <summary>
         /// Возвращает true для дорожных small-obstacle типов, которые можно перелететь одной chain-over дугой.
         /// </summary>
         public static bool IsRoadSmallOverChainObstacle(ObstacleTypeEnum obstacleType)

@@ -57,9 +57,9 @@
 <br>
 ---
 
-### Jump On -
+### Jump On - 1 препятствие (`smallAlive` на дороге)
 
-### Super Jump On -
+### Super Jump On - 1 препятствие (`smallAlive` на дороге)
 
 <br>
 ---
