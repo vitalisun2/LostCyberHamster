@@ -1,4 +1,4 @@
-{
+﻿{
     "skyTexture": "",
     "roadTexture": "",
     "location": "01_New_York",
@@ -25,6 +25,16 @@
         },
         {
             "ref": "test_super_jump_on_03",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "test_super_jump_on_04",
             "spriteSeed": 0,
             "overrides": []
         }
