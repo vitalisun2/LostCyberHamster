@@ -139,11 +139,11 @@
 
 Для стандартного workflow задача не считается завершённой, пока после явного одобрения пользователя merge `integration/unity-live -> main` не выполнен. Если ветки публикуются на remote, обязательна публикация всех затронутых веток выбранного workflow.
 
-Дополнительно обязателен **Promotion Check Done**:
+Дополнительно обязателен **Learning Review Done**:
 
-- Проверены новые/обновлённые пункты в `ai_workflow_lessons.md`.
-- Зрелые lessons перенесены в файл-владелец темы в `docs/rules/`.
-- В `ai_workflow_lessons.md` выставлен статус (`incubating` или `promoted`) для новых/обновлённых lessons.
+- Выполнен Efficiency Review по `docs/rules/agent_efficiency_playbook.md`.
+- Новые reusable lessons добавлены в playbook как `incubating` или перенесены в файл-владелец темы с `promoted`-ссылкой.
+- Если новых lessons нет, пустые записи не добавлены, а это явно указано в отчёте.
 
 Для задачи в отдельном worktree закрытие допустимо только после всех пунктов:
 
@@ -227,7 +227,7 @@ Unity YAML-ассеты практически не мержатся. Один �
 - Тип задачи: аналитическая или исполнительная.
 - Оставшиеся блокеры или ручные проверки.
 - Если по ходу задачи обнаружено существенное расхождение между проектным правилом и релевантной рекомендацией Clean Code, кратко указать это в ответе: что применено в проекте и какая альтернатива была сознательно не выбрана.
-- Подтверждение `Efficiency Review Done`: `agent_efficiency_playbook.md` дополнен или новых efficiency lessons нет.
+- Подтверждение `Learning Review Done`: `agent_efficiency_playbook.md` дополнен, owner rules обновлены/promoted или новых lessons нет.
 
 Для аналитической:
 - Краткий итог находок.
@@ -239,4 +239,4 @@ Unity YAML-ассеты практически не мержатся. Один �
 - Хэш коммита (если commit был создан).
 - Успешность push, если push выполнялся в выбранном workflow.
 - Подтверждение `Tech Done` и `Workflow Done`.
-- Подтверждение `Promotion Check Done` (`promoted X / kept incubating Y`).
+- Подтверждение `Learning Review Done` (`promoted X / incubating Y / новых lessons нет`).

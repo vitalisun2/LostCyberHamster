@@ -29,7 +29,7 @@ description: "Использовать для итеративной работ�
 - Для тестового прогона считать основным launch-path уровень `LostCyberHamster/Assets/Content/locations/01_New_York/levels/Morning/test_level/test_level.json`.
 - Stage-specific сценарии оформлять через bot-паттерны в `PatternsCollection.json`, а `test_level.json` собирать под текущую задачу из этих паттернов.
 - После каждой итерации явно отделять: ошибка решения, ошибка тайминга, ошибка логирования, ошибка тестового контента.
-- После завершения задачи делать короткую ретроспективу и обновлять `docs/rules/ai_workflow_lessons.md`, если появился новый устойчивый процессный урок.
+- После завершения задачи делать Learning Review по `docs/rules/agent_efficiency_playbook.md` и обновлять playbook или owner-файл, если появился новый устойчивый процессный урок.
 
 ## Если автозапуск недоступен
 
