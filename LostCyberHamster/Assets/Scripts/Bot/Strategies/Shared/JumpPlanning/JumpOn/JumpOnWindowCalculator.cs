@@ -22,14 +22,14 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
         public static bool TryCalculate(
             HamsterSnapshot hamster,
             ObstacleChain chain,
-            float resolveTravel,
+            JumpOnTravel travel,
             out JumpOnWindowModel window)
         {
             // Инициализирует результат.
             window = default;
 
             // Проверяет входные данные.
-            if (hamster == null || chain == null || chain.Count <= 0 || resolveTravel <= 0f)
+            if (hamster == null || chain == null || chain.Count <= 0 || travel.ResolveTravel <= 0f)
                 return false;
 
             // Ищет target для напрыгивания.
@@ -48,7 +48,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                     chain,
                     targetObstacle,
                     targetObstacleChainIndex,
-                    resolveTravel,
+                    travel,
                     out float firstFireShift,
                     out float lastFireShift))
             {
@@ -68,26 +68,40 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
         }
 
         /// <summary>
-        /// Вычисляет открытые границы запуска между недолётом, перелётом и ground-contact.
+        /// Вычисляет открытые границы запуска между недолётом, перелётом, pre-target clearance и ground-contact.
         /// </summary>
         private static bool TryGetOpenWindow(
             HamsterSnapshot hamster,
             ObstacleChain chain,
             ObstacleSnapshot targetObstacle,
             int targetObstacleChainIndex,
-            float resolveTravel,
+            JumpOnTravel travel,
             out float firstFireShift,
             out float lastFireShift)
         {
-            // Вычисляет левую границу по достижению target.
+            // Вычисляет левую границу по достижению target и очистке pre-target obstacles.
             float rightTolerance = hamster.Width * RightEdgeToleranceRatio;
-            firstFireShift = targetObstacle.LeftX - resolveTravel - hamster.CenterX;
+            firstFireShift =
+                targetObstacle.LeftX
+                - travel.ResolveFireShiftOffset
+                - travel.ResolveTravel
+                - hamster.CenterX;
+            ApplyPreTargetClearanceLimit(
+                hamster,
+                chain,
+                targetObstacleChainIndex,
+                travel,
+                ref firstFireShift);
             if (firstFireShift < 0f)
                 firstFireShift = 0f;
 
             // Вычисляет правую границу по перелёту и ground-contact.
             float lastFireShiftBeforeOvershoot =
-                targetObstacle.RightX + rightTolerance - resolveTravel - hamster.CenterX;
+                targetObstacle.RightX
+                + rightTolerance
+                - travel.ResolveFireShiftOffset
+                - travel.ResolveTravel
+                - hamster.CenterX;
             float lastFireShiftBeforeGroundContact =
                 GetChainLeftEdgeBeforeTarget(chain, targetObstacleChainIndex) - hamster.HamsterRightX;
             lastFireShift = Math.Min(
@@ -102,6 +116,31 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
 
             // Проверяет, что окно осталось открытым.
             return lastFireShift > 0f && firstFireShift < lastFireShift;
+        }
+
+        /// <summary>
+        /// Сдвигает левую границу до момента, когда pre-target obstacles не блокируют resolver.
+        /// </summary>
+        private static void ApplyPreTargetClearanceLimit(
+            HamsterSnapshot hamster,
+            ObstacleChain chain,
+            int targetObstacleChainIndex,
+            JumpOnTravel travel,
+            ref float firstFireShift)
+        {
+            // Проверяет препятствия до target.
+            for (int chainIndex = 0; chainIndex < targetObstacleChainIndex; chainIndex++)
+            {
+                ObstacleSnapshot obstacle = chain.Obstacles[chainIndex];
+                float earliestAfterObstacle =
+                    obstacle.RightX
+                    - travel.ResolveFireShiftOffset
+                    - travel.ResolveTravel
+                    - hamster.HamsterLeftX;
+
+                if (earliestAfterObstacle > firstFireShift)
+                    firstFireShift = earliestAfterObstacle;
+            }
         }
 
         /// <summary>

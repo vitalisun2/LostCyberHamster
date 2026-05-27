@@ -88,7 +88,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             if (!JumpOnWindowCalculator.TryCalculate(
                     planningState.Hamster,
                     decisionPoint.Chain,
-                    travel.ResolveTravel,
+                    travel,
                     out JumpOnWindowModel window))
             {
                 return false;

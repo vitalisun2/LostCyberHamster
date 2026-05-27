@@ -9,20 +9,10 @@ using Assets.Scripts.GameEngine.Mechanics.Models;
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
 {
     /// <summary>
-    /// Подбирает и подтверждает fire shift для ground jump-on smallAlive.
+    /// Подтверждает выбранный fire shift для ground jump-on smallAlive.
     /// </summary>
     internal sealed class JumpOnFireWindowFinder
     {
-        /// <summary>
-        /// Число итераций бинарного поиска раннего fire shift.
-        /// </summary>
-        private const int EarliestFireShiftSearchIterations = 10;
-
-        /// <summary>
-        /// Доля валидного окна, на которую запуск смещается внутрь при obstacle перед target.
-        /// </summary>
-        private const float PreTargetObstacleWindowOffsetRatio = 0.2f;
-
         /// <summary>
         /// Политика runtime-различий конкретного jump-on варианта.
         /// </summary>
@@ -55,20 +45,21 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             if (!JumpOnWindowCalculator.TryCalculate(
                     planningState.Hamster,
                     chain,
-                    travel.ResolveTravel,
+                    travel,
                     out window))
             {
                 return false;
             }
 
             // Подтверждает fire shift через runtime resolver.
+            fireShift = window.SelectedFireShift;
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            bool hasExpectedOutcome = TryFindResolverValidFireShift(
+            bool hasExpectedOutcome = CheckRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
-                window,
+                fireShift,
                 travel,
-                out fireShift);
+                window.TargetObstacleIndex);
 
             return hasExpectedOutcome;
         }
@@ -137,122 +128,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
 
             // Возвращает policy-specific outcome.
             return _policy.Resolve(obstaclesAtFireShift, context);
-        }
-
-        /// <summary>
-        /// Ищет ранний fire shift, который runtime resolver подтверждает как jump-on по target.
-        /// </summary>
-        private bool TryFindResolverValidFireShift(
-            HamsterSnapshot hamster,
-            IReadOnlyList<JumpObstacleData> baseObstacles,
-            JumpOnWindowModel window,
-            JumpOnTravel travel,
-            out float fireShift)
-        {
-            // Проверяет левую границу окна.
-            fireShift = window.FirstFireShift;
-            JumpResolveResult firstOutcome = ResolveRuntimeOutcomeAtFireShift(
-                hamster,
-                baseObstacles,
-                fireShift,
-                travel);
-            if (IsExpectedOutcome(firstOutcome, window.TargetObstacleIndex))
-            {
-                ApplyPreTargetOffset(
-                    hamster,
-                    baseObstacles,
-                    window,
-                    travel,
-                    ref fireShift);
-                return true;
-            }
-
-            // Проверяет правую границу окна.
-            float rightFireShift = window.LastFireShift;
-            JumpResolveResult rightOutcome = ResolveRuntimeOutcomeAtFireShift(
-                hamster,
-                baseObstacles,
-                rightFireShift,
-                travel);
-            if (!IsExpectedOutcome(rightOutcome, window.TargetObstacleIndex))
-            {
-                fireShift = rightFireShift;
-                return false;
-            }
-
-            // Ищет самую раннюю подтвержденную точку.
-            float leftFireShift = window.FirstFireShift;
-            for (int iteration = 0; iteration < EarliestFireShiftSearchIterations; iteration++)
-            {
-                float candidateFireShift = (leftFireShift + rightFireShift) * 0.5f;
-                JumpResolveResult candidateOutcome = ResolveRuntimeOutcomeAtFireShift(
-                    hamster,
-                    baseObstacles,
-                    candidateFireShift,
-                    travel);
-
-                if (IsExpectedOutcome(candidateOutcome, window.TargetObstacleIndex))
-                {
-                    rightFireShift = candidateFireShift;
-                    continue;
-                }
-
-                leftFireShift = candidateFireShift;
-            }
-
-            // Смещает результат внутрь окна при pre-target obstacle.
-            fireShift = rightFireShift;
-            ApplyPreTargetOffset(
-                hamster,
-                baseObstacles,
-                window,
-                travel,
-                ref fireShift);
-            return true;
-        }
-
-        /// <summary>
-        /// При наличии obstacle перед target немного смещает запуск внутрь валидного окна.
-        /// </summary>
-        private void ApplyPreTargetOffset(
-            HamsterSnapshot hamster,
-            IReadOnlyList<JumpObstacleData> baseObstacles,
-            JumpOnWindowModel window,
-            JumpOnTravel travel,
-            ref float fireShift)
-        {
-            // Проверяет наличие obstacle перед target.
-            if (window.TargetObstacleChainIndex <= 0)
-                return;
-
-            // Рассчитывает предпочтительный сдвиг внутрь окна.
-            float preferredFireShift =
-                fireShift
-                + (window.LastFireShift - fireShift) * PreTargetObstacleWindowOffsetRatio;
-            if (preferredFireShift <= fireShift)
-                return;
-
-            // Подтверждает предпочтительный сдвиг через resolver.
-            JumpResolveResult preferredOutcome = ResolveRuntimeOutcomeAtFireShift(
-                hamster,
-                baseObstacles,
-                preferredFireShift,
-                travel);
-            if (!IsExpectedOutcome(preferredOutcome, window.TargetObstacleIndex))
-                return;
-
-            fireShift = preferredFireShift;
-        }
-
-        /// <summary>
-        /// Проверяет, что resolver outcome соответствует target obstacle.
-        /// </summary>
-        private bool IsExpectedOutcome(
-            JumpResolveResult outcome,
-            int targetObstacleIndex)
-        {
-            return outcome.State == _policy.ExpectedJumpOnState
-                   && outcome.TargetIndex == targetObstacleIndex;
         }
     }
 }
