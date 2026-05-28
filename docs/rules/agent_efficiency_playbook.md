@@ -33,6 +33,8 @@
 - [incubating] Ошибка/риск: ... Причина: ... Рабочий ход: ... Правило: ...
 ```
 
+- [incubating] Ошибка/риск: runtime verbose-диагностика Unity Play Mode не попадает в лог после включения static flag из Editor automation. Причина: domain reload может сбросить runtime static state перед стартом Play Mode. Рабочий ход: для обязательных bot-test логов использовать forced `DiagLog` в runtime path или включать verbose из runtime-кода после загрузки сцены. Правило: не полагаться на Editor-side static flags для Play Mode диагностики без проверки фактического лога.
+
 ### Promoted
 
 ```text
