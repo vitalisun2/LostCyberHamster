@@ -71,6 +71,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpObstacleProjection.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneStrategy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimatorEventsDispatcher.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\JumpOnTargetChainBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnPolicy.cs" />
     <Compile Include="Assets\Scripts\Gameplay\ScrollingEnvironment.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\SnapshotBuilder.cs" />
@@ -173,7 +174,6 @@
     <Compile Include="Assets\Scripts\Debug\FeatureFlagToggle.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\RootTask.cs" />
     <Compile Include="Assets\Scripts\Common\Models\PatternRef.cs" />
-    <Compile Include="Assets\Scripts\Bot\Planning\PlanningInterestRules.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpFromRoof\JumpFromRoofFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\Common\Models\DecorationTile.cs" />
