@@ -539,6 +539,8 @@ Menu: `Tools/Migration/` — 3 шага:
 - `ObjectCategory.Threat` ≠ полное множество runtime-опасных объектов. Классификатор может помечать часть как `Target`. Safety проверки сверять с runtime-dangerous type set.
 - `HamsterState` — источник истины для прыжков: `JumpOver` = перепрыгивание.
 - Chain-stage тесты: все объекты цепочки должны попадать в один initial snapshot (в пределах `scanRange`).
+- Retained-action проверяется по уже сохранённому target instance; visibility-гейты для новых candidates (`ScreenRightEdgeX`) нельзя использовать как жёсткий предел для committed target.
+- Для timed jump-on objective при равных target/стоимости/тапах выбирать ветку с более ранним первым trigger: поздний prefix может съесть fire-window и вызвать лишние перестроения.
 
 ### ActionGenerator
 

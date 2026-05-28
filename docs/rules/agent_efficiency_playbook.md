@@ -93,3 +93,4 @@
 - [promoted -> docs/rules/iteration_cycle.md] Бот-итерации: отделять поведение от логирования, локализовать один провал, использовать visual feedback, representative levels, читать BOT вместе с ECO.
 - [promoted -> docs/rules/agent_tools.md] Automation bridge, diagnostic logs, `read_log_channel.ps1`, ignored paths, Editor.log fallback, Unity wake-up и full bot validation.
 - [promoted -> docs/architecture_knowledge_base.md] Устойчивые bot/runtime выводы: HamsterState, SwitchLane windows, ThreatSafety target, chain semantics, ActionGenerator инварианты.
+- [promoted -> docs/architecture_knowledge_base.md] Bot planning: для timed jump-on objective сохранять temporal slack первого действия, иначе поздний prefix может разрушить окно retained jump-on.
