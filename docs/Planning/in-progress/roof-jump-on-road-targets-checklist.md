@@ -1,0 +1,22 @@
+# Roof Jump On Road Targets Checklist
+
+- [ ] Добавить action kinds для roof-to-road jump-on.
+- [ ] Добавить classifier predicate для roof jump-on target.
+- [ ] Создать shared policy contract и travel model.
+- [ ] Описать модель roof jump-on окна.
+- [ ] Добавить specification для roof jump-on.
+- [ ] Добавить расчет fire-window для центра хомяка внутри target.
+- [ ] Добавить resolver-backed fire-window finder.
+- [ ] Обобщить post-action safety после удаления target.
+- [ ] Перевести ordinary ground JumpOn на общий safety helper.
+- [ ] Перевести retained ground JumpOn на общий safety helper.
+- [ ] Удалить ground-only safety wrapper.
+- [ ] Добавить simulator для успешного roof jump-on.
+- [ ] Добавить retained validator для roof jump-on actions.
+- [ ] Добавить ordinary policy, strategy facade и executor.
+- [ ] Добавить super timing, policy, strategy facade и executor.
+- [ ] Уточнить фильтр ordinary/super jump-on candidates.
+- [ ] Зарегистрировать стратегии в runtime bot pipeline.
+- [ ] Обновить project files для новых scripts.
+- [ ] Добавить целевые test patterns и test levels.
+- [ ] Уточнить jump constraints.
