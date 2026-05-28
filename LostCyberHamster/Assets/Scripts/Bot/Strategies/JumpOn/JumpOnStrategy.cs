@@ -143,7 +143,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
         }
 
         /// <summary>
-        /// Строит target-aware chain в пределах видимого horizon и проверяет применимость обычного jump-on.
+        /// Строит target-aware chain в пределах vision horizon и проверяет применимость обычного jump-on.
         /// </summary>
         private bool TryResolveActionChain(
             PlanningState planningState,
@@ -156,7 +156,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                     planningState,
                     worldSnapshot,
                     decisionPoint.Chain,
-                    worldSnapshot.ScreenRightEdgeX,
+                    worldSnapshot.VisionRightEdgeX,
                     out actionChain))
             {
                 return false;

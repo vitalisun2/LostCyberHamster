@@ -96,7 +96,9 @@ namespace Assets.Scripts.Bot.Planning
                     actionIndex,
                     worldSnapshot,
                     retainInProgressHead);
-                if (isBoundaryRetainedAction
+                bool requiresRetainedValidation = isBoundaryRetainedAction
+                    || IsGroundJumpOnTargetBeyondScreen(action, worldSnapshot);
+                if (requiresRetainedValidation
                     && !(retainInProgressHead && actionIndex == 0)
                     && !_retainedActionRevalidator.IsStillValid(currentState, action, worldSnapshot))
                     break;
@@ -149,8 +151,37 @@ namespace Assets.Scripts.Bot.Planning
             if (retainInProgressHead && actionIndex == 0)
                 return true;
 
+            if (IsGroundJumpOnTargetAction(action))
+            {
+                return action.RenderWorldX >= worldSnapshot.ScreenLeftEdgeX
+                    && action.RenderWorldX <= worldSnapshot.VisionRightEdgeX;
+            }
+
             return action.RenderWorldX >= worldSnapshot.ScreenLeftEdgeX
                 && action.RenderWorldX <= worldSnapshot.ScreenRightEdgeX;
+        }
+
+        /// <summary>
+        /// Проверяет, является ли действие target-bound ground jump-on вариантом.
+        /// </summary>
+        private static bool IsGroundJumpOnTargetAction(PlannedAction action)
+        {
+            if (action == null || !action.TargetObstacleInstanceId.HasValue)
+                return false;
+
+            return action.Kind == BotActionKind.JumpOn
+                || action.Kind == BotActionKind.SuperJumpOn;
+        }
+
+        /// <summary>
+        /// Проверяет, требует ли сохраненный jump-on повторной валидации за экранной границей.
+        /// </summary>
+        private static bool IsGroundJumpOnTargetBeyondScreen(
+            PlannedAction action,
+            WorldSnapshot worldSnapshot)
+        {
+            return IsGroundJumpOnTargetAction(action)
+                && action.RenderWorldX > worldSnapshot.ScreenRightEdgeX;
         }
 
         /// <summary>
