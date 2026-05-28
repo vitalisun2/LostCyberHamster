@@ -16,11 +16,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
     internal sealed class JumpOnRetainedActionValidator : IRetainedActionValidator
     {
         /// <summary>
-        /// Допуск при повторной проверке оставшегося fire shift.
-        /// </summary>
-        private const float ValidationEpsilon = 0.0001f;
-
-        /// <summary>
         /// Политика runtime-различий конкретного jump-on варианта.
         /// </summary>
         private readonly IJumpOnPolicy _policy;
@@ -69,12 +64,24 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                 return false;
             }
 
+            // Восстанавливает актуальную jump-on chain, включая уже committed target за обычным gap.
+            float targetChainHorizon = GetRetainedTargetChainHorizon(
+                projectedWorldSnapshot,
+                targetObstacle);
+            if (!JumpOnTargetChainBuilder.TryBuildTargetChain(
+                    planningState,
+                    projectedWorldSnapshot,
+                    decisionPoint.Chain,
+                    targetChainHorizon,
+                    out ObstacleChain actionChain))
+                return false;
+
             // Получает runtime-дистанции действия.
             if (!_policy.TryGetTravel(out JumpOnTravel travel))
                 return false;
 
             // Проверяет, что chain всё ещё ведёт к тому же target.
-            if (!decisionPoint.Chain.TryFindFirstGroundJumpOnTarget(
+            if (!actionChain.TryFindFirstGroundJumpOnTarget(
                     planningState.Hamster.IsOnBottomLine,
                     out ObstacleSnapshot currentTargetObstacle,
                     out int currentTargetIndex,
@@ -84,20 +91,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                 return false;
             }
 
-            // Пересчитывает актуальное fire-window.
-            if (!JumpOnWindowCalculator.TryCalculate(
-                    planningState.Hamster,
-                    decisionPoint.Chain,
-                    travel,
-                    out JumpOnWindowModel window))
-            {
-                return false;
-            }
-
-            // Проверяет индекс target внутри актуального окна.
-            if (window.TargetObstacleIndex != currentTargetIndex)
-                return false;
-
             // Вычисляет оставшийся fire shift.
             if (!TryGetRemainingFireShift(
                     projectedWorldSnapshot,
@@ -105,18 +98,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                     action,
                     planningState.ProjectionWorldShift,
                     out float fireShift))
-            {
                 return false;
-            }
 
-            // Проверяет попадание fire shift в актуальное окно.
-            if (fireShift < -ValidationEpsilon
-                || fireShift > window.LastFireShift + ValidationEpsilon)
-            {
-                return false;
-            }
-
-            // Нормализует незначительный отрицательный остаток.
+            // Сохраненный trigger — representative-точка внутри окна, а не жесткий дедлайн.
             if (fireShift < 0f)
                 fireShift = 0f;
 
@@ -127,17 +111,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                 baseObstacles,
                 fireShift,
                 travel,
-                window.TargetObstacleIndex))
-            {
+                currentTargetIndex))
                 return false;
-            }
 
             // Проверяет безопасность после полного завершения.
             return JumpOnPostActionSafety.IsSafeAfterCompletion(
                 planningState,
                 projectedWorldSnapshot,
-                window.TargetObstacleIndex,
-                window.TargetObstacle.InstanceId,
+                currentTargetIndex,
+                currentTargetObstacle.InstanceId,
                 fireShift + travel.ActionTravel);
         }
 
@@ -177,6 +159,19 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             // Использует target как fallback.
             fireShift = targetObstacle.LeftX - projectedTriggerX;
             return true;
+        }
+
+        /// <summary>
+        /// Возвращает правую границу поиска target-chain для уже выбранного retained action.
+        /// </summary>
+        private static float GetRetainedTargetChainHorizon(
+            WorldSnapshot projectedWorldSnapshot,
+            ObstacleSnapshot targetObstacle)
+        {
+            // Для новых candidates действует ScreenRightEdgeX, но retained target уже был выбран раньше.
+            return targetObstacle.LeftX > projectedWorldSnapshot.ScreenRightEdgeX
+                ? targetObstacle.LeftX
+                : projectedWorldSnapshot.ScreenRightEdgeX;
         }
     }
 }

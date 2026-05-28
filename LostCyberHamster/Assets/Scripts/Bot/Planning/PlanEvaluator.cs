@@ -76,6 +76,10 @@ namespace Assets.Scripts.Bot.Planning
             if (compare != 0)
                 return compare;
 
+            compare = CompareFirstTriggerForSameJumpOnObjective(left, right);
+            if (compare != 0)
+                return compare;
+
             compare = right.FinalNextObstacleIndex.CompareTo(left.FinalNextObstacleIndex);
             if (compare != 0)
                 return compare;
@@ -89,6 +93,25 @@ namespace Assets.Scripts.Bot.Planning
                 return compare;
 
             return CompareActionSequences(left.Actions, right.Actions);
+        }
+
+        /// <summary>
+        /// Для веток с одинаковым jump-on objective предпочитает более ранний первый trigger.
+        /// </summary>
+        private static int CompareFirstTriggerForSameJumpOnObjective(
+            PlanningBranch left,
+            PlanningBranch right)
+        {
+            int? leftTargetIndex = left.FirstJumpOnObjectiveTargetIndex;
+            int? rightTargetIndex = right.FirstJumpOnObjectiveTargetIndex;
+            if (!leftTargetIndex.HasValue
+                || !rightTargetIndex.HasValue
+                || leftTargetIndex.Value != rightTargetIndex.Value)
+            {
+                return 0;
+            }
+
+            return right.FirstTriggerX.CompareTo(left.FirstTriggerX);
         }
 
         /// <summary>

@@ -6,7 +6,7 @@ using Assets.Scripts.GameEngine.Mechanics;
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
     /// <summary>
-    /// Находит следующую обязательную для реакции ситуацию в projected world snapshot.
+    /// Находит обязательные угрозы и optional jump-on opportunities в projected world snapshot.
     /// </summary>
     public sealed class DecisionPointDetector
     {
@@ -21,13 +21,19 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         private const int _maxChainLength = 3;
 
         /// <summary>
-        /// Пытается найти ближайшую blocking chain-ситуацию или high-priority jump-on opportunity.
+        /// Минимальная энергия, при которой planner ищет optional JumpOn opportunity.
         /// </summary>
-        public bool TryDetect(
+        private const int _highPriorityJumpOnEnergyThreshold = 40;
+
+        /// <summary>
+        /// Пытается найти ближайшую обязательную угрозу, включая roof occupant hazards на текущей roof-chain.
+        /// </summary>
+        public bool TryDetectBlockingThreat(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             out DecisionPoint decisionPoint)
         {
+            // Подготавливает результат.
             decisionPoint = null;
 
             // Отсекает неполный вход.
@@ -48,15 +54,17 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                 return true;
             }
 
-            // Выбирает стартовый obstacle.
+            // Выбирает старт поиска.
             int firstObstacleIndex = GetFirstDetectionIndex(planningState, worldSnapshot);
 
+            // Ищет ближайшую обязательную угрозу.
             bool hasBlockingThreat = TryFindBlockingThreat(
                 planningState,
                 worldSnapshot,
                 firstObstacleIndex,
                 out int blockingThreatIndex);
 
+            // Возвращает blocking decision point.
             if (hasBlockingThreat)
             {
                 decisionPoint = new DecisionPoint(BuildChain(
@@ -67,7 +75,8 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                 return true;
             }
 
-            return TryDetectJumpOnOpportunity(planningState, worldSnapshot, out decisionPoint);
+            // Сообщает, что обязательной угрозы нет.
+            return false;
         }
 
         /// <summary>
@@ -78,26 +87,23 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             WorldSnapshot worldSnapshot,
             out DecisionPoint decisionPoint)
         {
+            // Отсекает неполный вход.
             decisionPoint = null;
             if (planningState == null || worldSnapshot == null)
                 return false;
 
+            // Строит opportunity-chain.
             int firstObstacleIndex = GetFirstDetectionIndex(planningState, worldSnapshot);
-            if (!TryFindJumpOnOpportunity(
+            if (!TryBuildJumpOnOpportunityChain(
                     planningState,
                     worldSnapshot,
                     firstObstacleIndex,
-                    out int opportunityIndex,
-                    out bool opportunityBottomLine))
+                    out ObstacleChain opportunityChain))
             {
                 return false;
             }
 
-            ObstacleChain opportunityChain = BuildChain(
-                planningState,
-                worldSnapshot,
-                opportunityIndex,
-                opportunityBottomLine);
+            // Возвращает jump-on decision point.
             decisionPoint = new DecisionPoint(
                 opportunityChain,
                 DecisionPointKind.JumpOnOpportunity,
@@ -244,21 +250,22 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         }
 
         /// <summary>
-        /// Находит off-line opportunity-chain, где после смены линии можно выполнить jump-on target.
+        /// Строит off-line opportunity-chain, где после смены линии можно выполнить jump-on target.
         /// </summary>
-        private static bool TryFindJumpOnOpportunity(
+        private static bool TryBuildJumpOnOpportunityChain(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             int firstObstacleIndex,
-            out int opportunityIndex,
-            out bool opportunityBottomLine)
+            out ObstacleChain opportunityChain)
         {
-            opportunityIndex = -1;
-            opportunityBottomLine = false;
+            // Подготавливает результат.
+            opportunityChain = null;
 
+            // Проверяет возможность поиска.
             if (!CanSearchJumpOnOpportunity(planningState))
                 return false;
 
+            // Ищет off-line chain с jump-on target.
             for (int obstacleIndex = firstObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
@@ -279,7 +286,17 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                     worldSnapshot,
                     obstacleIndex,
                     obstacle.IsBottomLine);
-                if (!chain.TryFindFirstGroundJumpOnTarget(
+                if (!JumpOnTargetChainBuilder.TryBuildTargetChain(
+                        planningState,
+                        worldSnapshot,
+                        chain,
+                        worldSnapshot.ScreenRightEdgeX,
+                        out ObstacleChain targetChain))
+                {
+                    continue;
+                }
+
+                if (!targetChain.TryFindFirstGroundJumpOnTarget(
                         obstacle.IsBottomLine,
                         out ObstacleSnapshot targetObstacle,
                         out _,
@@ -291,8 +308,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                 if (targetObstacle.LeftX > worldSnapshot.ScreenRightEdgeX)
                     continue;
 
-                opportunityIndex = obstacleIndex;
-                opportunityBottomLine = obstacle.IsBottomLine;
+                opportunityChain = targetChain;
                 return true;
             }
 
@@ -308,7 +324,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             return hamster != null
                 && !hamster.IsOnRoof
                 && !hamster.IsShifting
-                && hamster.Energy >= PlanningInterestRules.HighPriorityJumpOnEnergyThreshold;
+                && hamster.Energy >= _highPriorityJumpOnEnergyThreshold;
         }
 
     }

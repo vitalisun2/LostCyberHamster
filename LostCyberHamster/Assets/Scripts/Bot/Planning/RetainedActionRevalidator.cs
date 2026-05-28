@@ -43,12 +43,15 @@ namespace Assets.Scripts.Bot.Planning
             if (projectedWorldSnapshot == null)
                 return false;
 
-            // Затем убеждаемся, что действие всё ещё направлено в текущий blocking decision.
+            // Затем убеждаемся, что действие всё ещё направлено в актуальный decision point.
             if (!TryFindActionTarget(projectedWorldSnapshot, action, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
                 return false;
 
-            if (!_decisionPointDetector.TryDetect(planningState, projectedWorldSnapshot, out DecisionPoint decisionPoint))
+            if (!_decisionPointDetector.TryDetectBlockingThreat(planningState, projectedWorldSnapshot, out DecisionPoint decisionPoint)
+                && !_decisionPointDetector.TryDetectJumpOnOpportunity(planningState, projectedWorldSnapshot, out decisionPoint))
+            {
                 return false;
+            }
 
             if (!decisionPoint.Chain.ContainsObstacle(targetObstacle)
                 && !CanTargetLiveOutsideDecisionChain(action))
@@ -68,14 +71,16 @@ namespace Assets.Scripts.Bot.Planning
                 action));
         }
 
-            /// <summary>
-            /// Возвращает true для actions, у которых target может лежать дальше текущего blocker chain.
-            /// </summary>
-            private static bool CanTargetLiveOutsideDecisionChain(PlannedAction action)
-            {
-                return action.Kind == BotActionKind.JumpFromRoofOnRoof
+        /// <summary>
+        /// Возвращает true для actions, у которых target может лежать дальше текущего blocker chain.
+        /// </summary>
+        private static bool CanTargetLiveOutsideDecisionChain(PlannedAction action)
+        {
+            return action.Kind == BotActionKind.JumpOn
+                || action.Kind == BotActionKind.SuperJumpOn
+                || action.Kind == BotActionKind.JumpFromRoofOnRoof
                 || action.Kind == BotActionKind.SuperJumpFromRoofOnRoof;
-            }
+        }
 
         /// <summary>
         /// Находит целевое obstacle для retained-action.

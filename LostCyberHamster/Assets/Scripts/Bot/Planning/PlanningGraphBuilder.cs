@@ -99,11 +99,10 @@ namespace Assets.Scripts.Bot.Planning
             if (projectedWorldSnapshot == null)
                 return false;
 
-            return _decisionPointDetector.TryDetect(
-                       planningState,
-                       projectedWorldSnapshot,
-                       out DecisionPoint decisionPoint)
-                   && !decisionPoint.IsJumpOnOpportunity;
+            return _decisionPointDetector.TryDetectBlockingThreat(
+                planningState,
+                projectedWorldSnapshot,
+                out _);
         }
 
         private static void AddLeafBranch(PlanningGraphNode leafNode, List<PlanningBranch> branches)

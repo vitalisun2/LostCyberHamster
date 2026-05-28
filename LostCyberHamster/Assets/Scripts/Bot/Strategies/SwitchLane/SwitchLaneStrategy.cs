@@ -15,6 +15,11 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
     /// </summary>
     internal sealed class SwitchLaneStrategy : IPlanningStrategy
     {
+        /// <summary>
+        /// Минимальная энергия, при которой SwitchLane добавляет ранний вариант для потенциального JumpOn.
+        /// </summary>
+        private const int _highPriorityJumpOnEnergyThreshold = 40;
+
         private readonly SwitchLaneSpecification _specification;
         private readonly SwitchLaneFireWindowCalculator _fireWindowCalculator;
         private readonly SwitchLaneSimulator _simulator;
@@ -74,11 +79,15 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             }
 
             // Строит все варианты action в найденном окне.
+            IReadOnlyList<float> selectionRatios = GetSelectionRatios(
+                planningState,
+                decisionPoint);
             IReadOnlyList<float> fireShifts = _fireWindowCalculator.CollectFireShifts(
                 worldSnapshot,
                 hamster,
                 targetBottomLine,
-                latestFireShift);
+                latestFireShift,
+                selectionRatios);
 
             for (int fireShiftIndex = 0; fireShiftIndex < fireShifts.Count; fireShiftIndex++)
                 actions.Add(BuildAction(planningState, targetObstacle, targetObstacleIndex, targetBottomLine, fireShifts[fireShiftIndex]));
@@ -103,13 +112,43 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 BotActionKind.SwitchLane,
                 triggerX,
                 renderWorldX: triggerX,
-                completionWorldShift: fireShift + SwitchLaneTiming.DecisionTravel,
-                postFireWorldShift: SwitchLaneTiming.DecisionTravel,
+                completionWorldShift: fireShift + SwitchLaneTiming.PostFirePlanningTravel,
+                postFireWorldShift: SwitchLaneTiming.PostFirePlanningTravel,
                 targetObstacleIndex,
                 targetObstacleInstanceId: targetObstacle.InstanceId,
                 targetBottomLine: targetBottomLine,
                 energyCost: 0,
                 description: $"Switch lane before {targetObstacle.ObstacleType}");
+        }
+
+        /// <summary>
+        /// Возвращает ratio safe-window, которые нужно попробовать для текущей точки решения.
+        /// </summary>
+        private static IReadOnlyList<float> GetSelectionRatios(
+            PlanningState planningState,
+            DecisionPoint decisionPoint)
+        {
+            // Выбирает ранний запуск для явной JumpOn-возможности.
+            if (decisionPoint != null && decisionPoint.IsJumpOnOpportunity)
+                return new[]
+                {
+                    SwitchLaneTiming.EarlyWindowSelectionRatio
+                };
+
+            // Добавляет ранний вариант при достаточной энергии для потенциального JumpOn.
+            HamsterSnapshot hamster = planningState?.Hamster;
+            if (hamster != null && hamster.Energy >= _highPriorityJumpOnEnergyThreshold)
+                return new[]
+                {
+                    SwitchLaneTiming.EarlyWindowSelectionRatio,
+                    SwitchLaneTiming.MidWindowSelectionRatio
+                };
+
+            // Возвращает обычный вариант уклонения.
+            return new[]
+            {
+                SwitchLaneTiming.MidWindowSelectionRatio
+            };
         }
 
         private bool TryClampLatestFireShiftBeforeDeadline(

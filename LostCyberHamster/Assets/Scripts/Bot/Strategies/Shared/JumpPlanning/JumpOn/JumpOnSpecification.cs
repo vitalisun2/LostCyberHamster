@@ -20,11 +20,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
         }
 
         /// <summary>
-        /// Проверяет, можно ли выполнить jump-on по текущей decision chain, и возвращает первый валидный target.
+        /// Проверяет, можно ли выполнить jump-on по указанной chain, и возвращает первый валидный target.
         /// </summary>
         public bool IsSatisfiedBy(
             PlanningState planningState,
-            DecisionPoint decisionPoint,
+            ObstacleChain chain,
             out ObstacleSnapshot targetObstacle,
             out int targetObstacleIndex)
         {
@@ -34,8 +34,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
 
             // Проверяет наличие planning context.
             if (planningState == null
-                || decisionPoint == null
-                || decisionPoint.Chain == null)
+                || chain == null)
             {
                 return false;
             }
@@ -51,7 +50,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             }
 
             // Ищет первый ground jump-on target в chain.
-            if (!decisionPoint.Chain.TryFindFirstGroundJumpOnTarget(
+            if (!chain.TryFindFirstGroundJumpOnTarget(
                     hamster.IsOnBottomLine,
                     out targetObstacle,
                     out targetObstacleIndex,

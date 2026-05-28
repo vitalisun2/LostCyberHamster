@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
@@ -35,8 +36,12 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
-            float latestFireShift)
+            float latestFireShift,
+            IReadOnlyList<float> selectionRatios)
         {
+            if (selectionRatios == null || selectionRatios.Count == 0)
+                return new List<float>(0);
+
             // Собирает все безопасные интервалы запуска.
             List<SafeInterval> safeIntervals = CollectSafeFireIntervals(
                 worldSnapshot,
@@ -44,22 +49,61 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 targetBottomLine,
                 latestFireShift);
 
-            // Выбирает по одной точке внутри каждого безопасного интервала.
-            var fireShifts = new List<float>(safeIntervals.Count);
+            // Применяет выбранную sampling-policy к каждому безопасному интервалу.
+            var fireShifts = new List<float>(safeIntervals.Count * selectionRatios.Count);
             for (int intervalIndex = 0; intervalIndex < safeIntervals.Count; intervalIndex++)
             {
                 SafeInterval interval = safeIntervals[intervalIndex];
-                if (interval.TrySelectInteriorPoint(
-                        lateBudget: 0f,
-                        SwitchLaneTiming.InteriorSelectionRatio,
-                        out float fireShift,
-                        epsilon: 0f))
+                for (int ratioIndex = 0; ratioIndex < selectionRatios.Count; ratioIndex++)
                 {
-                    fireShifts.Add(fireShift);
+                    TryAddFireShift(
+                        interval,
+                        selectionRatios[ratioIndex],
+                        fireShifts);
                 }
             }
 
             return fireShifts;
+        }
+
+        /// <summary>
+        /// Добавляет representative fire shift из интервала, если такой точки ещё нет.
+        /// </summary>
+        private static void TryAddFireShift(
+            SafeInterval interval,
+            float selectionRatio,
+            List<float> fireShifts)
+        {
+            if (fireShifts == null)
+                return;
+
+            if (interval.TrySelectInteriorPoint(
+                        lateBudget: 0f,
+                        selectionRatio,
+                        out float fireShift,
+                        epsilon: 0f))
+            {
+                if (!ContainsEquivalentFireShift(fireShifts, fireShift))
+                    fireShifts.Add(fireShift);
+            }
+        }
+
+        /// <summary>
+        /// Возвращает true, если список уже содержит эквивалентный fire shift.
+        /// </summary>
+        private static bool ContainsEquivalentFireShift(
+            IReadOnlyList<float> fireShifts,
+            float fireShift)
+        {
+            const float epsilon = 0.001f;
+            for (int fireShiftIndex = 0; fireShiftIndex < fireShifts.Count; fireShiftIndex++)
+            {
+                float existingFireShift = fireShifts[fireShiftIndex];
+                if (Math.Abs(existingFireShift - fireShift) <= epsilon)
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>

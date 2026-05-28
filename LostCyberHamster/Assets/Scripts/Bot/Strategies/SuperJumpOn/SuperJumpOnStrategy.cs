@@ -17,6 +17,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
     internal sealed class SuperJumpOnStrategy : IPlanningStrategy
     {
         /// <summary>
+        /// Минимальная энергия, при которой super-jump-on помечается как high-priority objective.
+        /// </summary>
+        private const int _highPriorityJumpOnEnergyThreshold = 40;
+
+        /// <summary>
         /// Политика runtime-параметров super-jump-on.
         /// </summary>
         private readonly IJumpOnPolicy _policy;
@@ -88,12 +93,12 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
                 (decisionPoint, nameof(decisionPoint)),
                 (actions, nameof(actions)));
 
-            // Отсекает неподходящую chain.
-            if (!_specification.IsSatisfiedBy(
+            // Подбирает action-chain: обычную decision chain или расширенную jump-on chain.
+            if (!TryResolveActionChain(
                     planningState,
+                    worldSnapshot,
                     decisionPoint,
-                    out _,
-                    out _))
+                    out ObstacleChain actionChain))
             {
                 return;
             }
@@ -106,7 +111,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
                     worldSnapshot,
-                    decisionPoint.Chain,
+                    actionChain,
                     travel,
                     out JumpOnWindowModel window,
                     out float fireShift))
@@ -130,11 +135,39 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
             actions.Add(BuildAction(
                 _policy,
                 planningState,
-                decisionPoint.Chain.FirstObstacle,
+                actionChain.FirstObstacle,
                 window,
                 fireShift,
                 travel,
                 completionWorldShift));
+        }
+
+        /// <summary>
+        /// Строит target-aware chain в пределах видимого horizon и проверяет применимость super-jump-on.
+        /// </summary>
+        private bool TryResolveActionChain(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            DecisionPoint decisionPoint,
+            out ObstacleChain actionChain)
+        {
+            // Строит chain с ближайшим target в допустимом horizon.
+            if (!JumpOnTargetChainBuilder.TryBuildTargetChain(
+                    planningState,
+                    worldSnapshot,
+                    decisionPoint.Chain,
+                    worldSnapshot.ScreenRightEdgeX,
+                    out actionChain))
+            {
+                return false;
+            }
+
+            // Проверяет применимость super-jump-on к найденной chain.
+            return _specification.IsSatisfiedBy(
+                planningState,
+                actionChain,
+                out _,
+                out _);
         }
 
         /// <summary>
@@ -166,7 +199,8 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
                 triggerObstacleInstanceId: triggerObstacle.InstanceId,
                 targetBottomLine: null,
                 energyCost: policy.EnergyCost,
-                description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}");
+                description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}",
+                fulfillsJumpOnObjective: planningState.Hamster.Energy >= _highPriorityJumpOnEnergyThreshold);
         }
     }
 }
