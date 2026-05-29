@@ -50,6 +50,17 @@
 <br>
 ---
 
+### Jump On From Roof - 1 target `smallAlive` / `bigAlive`
+
+Действие уничтожает один дорожный target при сходе с крыши на дорогу. Остальные препятствия вокруг target только ограничивают окно запуска и post-action safety; фактический travel и количество покрываемых объектов подтверждаются runtime-прогоном.
+
+### Super Jump On From Roof - 1 target `smallAlive` / `bigAlive`
+
+Действие уничтожает один дорожный target при super-сходе с крыши на дорогу. Остальные препятствия вокруг target только ограничивают окно запуска и post-action safety; фактический travel и количество покрываемых объектов подтверждаются runtime-прогоном.
+
+<br>
+---
+
 ### Jump From Roof On Roof - 2 препятствий
 
 ### Super Jump From Roof On Roof - 3 препятствий
