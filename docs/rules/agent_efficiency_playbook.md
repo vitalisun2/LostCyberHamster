@@ -66,6 +66,7 @@
 - После failed patch уменьшать scope, а не повторять тот же большой diff.
 - После введения центрального helper/predicate искать старые primitive checks, прямые обходные вызовы и obsolete usings.
 - После helper extraction проверять, не появились ли повторные проходы по одной коллекции; факты для одного решения собирать одним scan.
+- [incubating] Ошибка/риск: manual `apply_patch` в задаче с отдельным worktree может попасть в основной каталог. Причина: tool не принимает `workdir` и резолвит пути от текущего workspace root. Рабочий ход: для task-worktree patch указывать path с префиксом `.worktrees/<slug>/...`, затем проверять `git status` в основном каталоге и worktree. Правило: после создания worktree первый manual patch применять только с явным worktree-prefixed filename.
 
 ### Проверка execution path
 
