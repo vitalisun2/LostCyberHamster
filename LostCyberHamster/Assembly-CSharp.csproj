@@ -115,6 +115,7 @@
     <Compile Include="Assets\Scripts\Debug\AndroidDiagnosticsHelper.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Data\SettingsData.cs" />
     <Compile Include="Assets\Scripts\UI\ResourceUIHelper.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\RoofJumpOnOpportunityChainBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Execution\PlanExecutor.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\AwaitExtensions.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverStrategy.cs" />

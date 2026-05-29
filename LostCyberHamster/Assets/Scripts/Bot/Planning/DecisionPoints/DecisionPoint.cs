@@ -9,7 +9,8 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
     public enum DecisionPointKind
     {
         BlockingThreat,
-        JumpOnOpportunity
+        JumpOnOpportunity,
+        RoofJumpOnOpportunity
     }
 
     /// <summary>
@@ -48,7 +49,8 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
 
         public ObstacleChain Chain { get; }
         public DecisionPointKind Kind { get; }
-        public bool IsJumpOnOpportunity => Kind == DecisionPointKind.JumpOnOpportunity;
+        public bool IsJumpOnOpportunity => Kind == DecisionPointKind.JumpOnOpportunity
+            || Kind == DecisionPointKind.RoofJumpOnOpportunity;
         public ObstacleSnapshot FireBeforeObstacle { get; }
         public bool HasFireBeforeObstacle => FireBeforeObstacle != null;
 

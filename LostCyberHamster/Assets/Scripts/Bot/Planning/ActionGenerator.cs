@@ -70,8 +70,22 @@ namespace Assets.Scripts.Bot.Planning
                     plannedActions);
             }
 
+            // Собирает действия для optional roof jump-on opportunity.
+            DecisionPoint roofOpportunityDecisionPoint = null;
+            if (_decisionPointDetector.TryDetectRoofJumpOnOpportunity(
+                    planningState,
+                    projectedWorldSnapshot,
+                    out roofOpportunityDecisionPoint))
+            {
+                CollectActionsForDecisionPoint(
+                    planningState,
+                    projectedWorldSnapshot,
+                    roofOpportunityDecisionPoint,
+                    plannedActions);
+            }
+
             // Проверяет наличие точки решения.
-            DecisionPoint logDecisionPoint = blockingDecisionPoint ?? opportunityDecisionPoint;
+            DecisionPoint logDecisionPoint = blockingDecisionPoint ?? opportunityDecisionPoint ?? roofOpportunityDecisionPoint;
             if (logDecisionPoint == null)
             {
                 LogNoDecisionPoint(planningState, projectedWorldSnapshot);

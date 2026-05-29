@@ -109,6 +109,42 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         }
 
         /// <summary>
+        /// Пытается найти видимую target-oriented opportunity для цепочки SwitchLane -> JumpOnRoof -> JumpOnFromRoof.
+        /// </summary>
+        public bool TryDetectRoofJumpOnOpportunity(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            out DecisionPoint decisionPoint)
+        {
+            decisionPoint = null;
+            if (planningState == null || worldSnapshot == null)
+                return false;
+
+            if (!CanSearchJumpOnOpportunity(planningState))
+                return false;
+
+            int firstObstacleIndex = GetFirstDetectionIndex(planningState, worldSnapshot);
+            if (!RoofJumpOnOpportunityChainBuilder.TryBuildOpportunityChain(
+                    planningState,
+                    worldSnapshot,
+                    firstObstacleIndex,
+                    worldSnapshot.ScreenRightEdgeX,
+                    worldSnapshot.VisionRightEdgeX,
+                    out ObstacleChain opportunityChain))
+            {
+                return false;
+            }
+
+            decisionPoint = new DecisionPoint(
+                opportunityChain,
+                DecisionPointKind.RoofJumpOnOpportunity,
+                TryFindBlockingThreat(planningState, worldSnapshot, firstObstacleIndex, out int blockingThreatIndex)
+                    ? worldSnapshot.Obstacles[blockingThreatIndex]
+                    : null);
+            return true;
+        }
+
+        /// <summary>
         /// Возвращает index obstacle, с которого detector должен начать поиск decision point.
         /// </summary>
         private static int GetFirstDetectionIndex(

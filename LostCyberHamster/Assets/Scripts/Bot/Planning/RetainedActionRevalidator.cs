@@ -48,7 +48,8 @@ namespace Assets.Scripts.Bot.Planning
                 return false;
 
             if (!_decisionPointDetector.TryDetectBlockingThreat(planningState, projectedWorldSnapshot, out DecisionPoint decisionPoint)
-                && !_decisionPointDetector.TryDetectJumpOnOpportunity(planningState, projectedWorldSnapshot, out decisionPoint))
+                && !_decisionPointDetector.TryDetectJumpOnOpportunity(planningState, projectedWorldSnapshot, out decisionPoint)
+                && !_decisionPointDetector.TryDetectRoofJumpOnOpportunity(planningState, projectedWorldSnapshot, out decisionPoint))
             {
                 return false;
             }
