@@ -5,6 +5,7 @@ using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Common;
@@ -16,11 +17,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
     /// </summary>
     internal sealed class JumpOnStrategy : IPlanningStrategy
     {
-        /// <summary>
-        /// Минимальная энергия, при которой обычный JumpOn помечается как high-priority objective.
-        /// </summary>
-        private const int _highPriorityJumpOnEnergyThreshold = 40;
-
         /// <summary>
         /// Политика runtime-параметров обычного jump-on.
         /// </summary>
@@ -121,7 +117,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
 
             // Проверяет безопасность после полного завершения.
             float completionWorldShift = fireShift + travel.ActionTravel;
-            if (!JumpOnPostActionSafety.IsSafeAfterCompletion(
+            if (!TargetRemovalPostActionSafety.IsSafeAfterCompletion(
                     planningState,
                     worldSnapshot,
                     window.TargetObstacleIndex,
@@ -200,7 +196,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                 targetBottomLine: null,
                 energyCost: policy.EnergyCost,
                 description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}",
-                fulfillsJumpOnObjective: planningState.Hamster.Energy >= _highPriorityJumpOnEnergyThreshold);
+                fulfillsJumpOnObjective: JumpOnObjectiveRules.HasEnergyForJumpOnObjective(planningState.Hamster));
         }
     }
 }

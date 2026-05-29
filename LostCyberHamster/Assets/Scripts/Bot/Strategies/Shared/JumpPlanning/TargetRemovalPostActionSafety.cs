@@ -1,12 +1,12 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 
-namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
 {
     /// <summary>
-    /// Проверяет состояние Run после полного ground jump-on action и удаления target obstacle.
+    /// Проверяет Run-состояние после действия, которое уничтожает target obstacle.
     /// </summary>
-    internal static class JumpOnPostActionSafety
+    internal static class TargetRemovalPostActionSafety
     {
         /// <summary>
         /// Допуск для проверки X-overlap после завершения action.
@@ -14,7 +14,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
         private const float OverlapEpsilon = 0.0001f;
 
         /// <summary>
-        /// Возвращает true, если после полного jump-on хомяк не оказывается в немедленной ground-collision.
+        /// Возвращает true, если после полного действия хомяк не оказывается в немедленной ground-collision.
         /// </summary>
         public static bool IsSafeAfterCompletion(
             PlanningState planningState,
@@ -78,7 +78,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
         }
 
         /// <summary>
-        /// Проверяет, является ли obstacle target-ом, который jump-on уничтожит до Run-состояния.
+        /// Проверяет, является ли obstacle target-ом, который действие уничтожит до Run-состояния.
         /// </summary>
         private static bool IsRemovedTarget(
             ObstacleSnapshot obstacle,

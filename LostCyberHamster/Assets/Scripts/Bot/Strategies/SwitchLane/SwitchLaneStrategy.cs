@@ -15,11 +15,6 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
     /// </summary>
     internal sealed class SwitchLaneStrategy : IPlanningStrategy
     {
-        /// <summary>
-        /// Минимальная энергия, при которой SwitchLane добавляет ранний вариант для потенциального JumpOn.
-        /// </summary>
-        private const int _highPriorityJumpOnEnergyThreshold = 40;
-
         private readonly SwitchLaneSpecification _specification;
         private readonly SwitchLaneFireWindowCalculator _fireWindowCalculator;
         private readonly SwitchLaneSimulator _simulator;
@@ -137,7 +132,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
             // Добавляет ранний вариант при достаточной энергии для потенциального JumpOn.
             HamsterSnapshot hamster = planningState?.Hamster;
-            if (hamster != null && hamster.Energy >= _highPriorityJumpOnEnergyThreshold)
+            if (JumpOnObjectiveRules.HasEnergyForJumpOnObjective(hamster))
                 return new[]
                 {
                     SwitchLaneTiming.EarlyWindowSelectionRatio,

@@ -52,12 +52,12 @@ namespace Assets.Scripts.Bot.Planning
         public int ActionCount { get; }
 
         /// <summary>
-        /// Число выполненных high-priority objectives обычного ground JumpOn.
+        /// Число выполненных high-priority jump-on objectives.
         /// </summary>
         public int JumpOnObjectiveCount { get; }
 
         /// <summary>
-        /// World-index первого high-priority ground JumpOn target, выполненного веткой.
+        /// World-index первого high-priority jump-on target, выполненного веткой.
         /// </summary>
         public int? FirstJumpOnObjectiveTargetIndex { get; }
 

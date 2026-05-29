@@ -78,6 +78,8 @@ namespace Assets.Scripts.Bot.Planning
         {
             return action.Kind == BotActionKind.JumpOn
                 || action.Kind == BotActionKind.SuperJumpOn
+                || action.Kind == BotActionKind.JumpOnFromRoof
+                || action.Kind == BotActionKind.SuperJumpOnFromRoof
                 || action.Kind == BotActionKind.JumpFromRoofOnRoof
                 || action.Kind == BotActionKind.SuperJumpFromRoofOnRoof;
         }

@@ -8,29 +8,36 @@ using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 
-namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
+namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnFromRoof
 {
     /// <summary>
-    /// Проверяет, можно ли сохранить ранее выбранное ground jump-on action.
+    /// Проверяет, можно ли сохранить ранее выбранное roof-to-road jump-on action.
     /// </summary>
-    internal sealed class JumpOnRetainedActionValidator : IRetainedActionValidator
+    internal sealed class JumpOnFromRoofRetainedActionValidator : IRetainedActionValidator
     {
         /// <summary>
-        /// Политика runtime-различий конкретного jump-on варианта.
+        /// Политика runtime-различий конкретного варианта.
         /// </summary>
-        private readonly IJumpOnPolicy _policy;
+        private readonly IJumpOnFromRoofPolicy _policy;
 
         /// <summary>
         /// Finder для повторного runtime-подтверждения сохранённого action.
         /// </summary>
-        private readonly JumpOnFireWindowFinder _fireWindowFinder;
+        private readonly JumpOnFromRoofFireWindowFinder _fireWindowFinder;
 
-        public JumpOnRetainedActionValidator(
-            IJumpOnPolicy policy,
-            JumpOnFireWindowFinder fireWindowFinder)
+        /// <summary>
+        /// Проверка применимости roof-to-road jump-on к найденной road target-chain.
+        /// </summary>
+        private readonly JumpOnFromRoofSpecification _specification;
+
+        public JumpOnFromRoofRetainedActionValidator(
+            IJumpOnFromRoofPolicy policy,
+            JumpOnFromRoofFireWindowFinder fireWindowFinder,
+            JumpOnFromRoofSpecification specification)
         {
             _policy = policy;
             _fireWindowFinder = fireWindowFinder;
+            _specification = specification;
         }
 
         /// <summary>
@@ -39,7 +46,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
         public BotActionKind ActionKind => _policy.ActionKind;
 
         /// <summary>
-        /// Проверяет, можно ли оставить ранее выбранный jump-on action в текущем planning-состоянии.
+        /// Проверяет, можно ли оставить ранее выбранный roof-to-road jump-on action.
         /// </summary>
         public bool IsStillValid(RetainedActionContext context)
         {
@@ -50,71 +57,70 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             // Раскрывает context для дальнейших проверок.
             PlanningState planningState = context.PlanningState;
             WorldSnapshot projectedWorldSnapshot = context.ProjectedWorldSnapshot;
-            DecisionPoint decisionPoint = context.DecisionPoint;
-            ObstacleSnapshot targetObstacle = context.TargetObstacle;
+            ObstacleSnapshot retainedTargetObstacle = context.TargetObstacle;
             PlannedAction action = context.Action;
 
             // Отсекает неполный context.
             if (planningState == null
                 || projectedWorldSnapshot == null
-                || decisionPoint?.Chain == null
-                || targetObstacle == null
-                || action == null)
+                || retainedTargetObstacle == null)
             {
                 return false;
             }
-
-            // Восстанавливает актуальную jump-on chain, включая уже committed target за обычным gap.
-            float targetChainHorizon = GetRetainedTargetChainHorizon(
-                projectedWorldSnapshot,
-                targetObstacle);
-            if (!JumpOnTargetChainBuilder.TryBuildTargetChain(
-                    planningState,
-                    projectedWorldSnapshot,
-                    decisionPoint.Chain,
-                    targetChainHorizon,
-                    out ObstacleChain actionChain))
-                return false;
 
             // Получает runtime-дистанции действия.
-            if (!_policy.TryGetTravel(out JumpOnTravel travel))
+            if (!_policy.TryGetTravel(out JumpOnFromRoofTravel travel))
                 return false;
 
-            // Проверяет, что chain всё ещё ведёт к тому же target.
-            if (!actionChain.TryFindFirstGroundJumpOnTarget(
-                    planningState.Hamster.IsOnBottomLine,
+            // Заново строит road target-chain после конца passive roof path.
+            if (!JumpOnFromRoofTargetChainBuilder.TryBuildTargetChain(
+                    planningState,
+                    projectedWorldSnapshot,
+                    projectedWorldSnapshot.VisionRightEdgeX,
+                    out ObstacleChain actionChain,
+                    out ObstacleSnapshot lastRoof))
+                return false;
+
+            // Повторяет specification-gate и сверяет target.
+            if (!_specification.IsSatisfiedBy(
+                    planningState,
+                    actionChain,
+                    lastRoof,
+                    travel,
                     out ObstacleSnapshot currentTargetObstacle,
                     out int currentTargetIndex,
-                    out _)
-                || currentTargetObstacle.InstanceId != targetObstacle.InstanceId)
-            {
+                    out _))
                 return false;
-            }
 
-            // Вычисляет оставшийся fire shift.
+            if (currentTargetObstacle.InstanceId != retainedTargetObstacle.InstanceId)
+                return false;
+
+            if (action.TargetObstacleInstanceId != currentTargetObstacle.InstanceId)
+                return false;
+
+            // Восстанавливает текущий fire shift.
             if (!TryGetRemainingFireShift(
                     projectedWorldSnapshot,
-                    targetObstacle,
+                    retainedTargetObstacle,
                     action,
-                    planningState.ProjectionWorldShift,
                     out float fireShift))
                 return false;
 
-            // Сохраненный trigger — representative-точка внутри окна, а не жесткий дедлайн.
+            // Сохраненный trigger — representative-точка внутри окна, а не жесткий planning-boundary.
             if (fireShift < 0f)
                 fireShift = 0f;
 
-            // Подтверждает outcome runtime resolver-ом.
+            // Подтверждает outcome runtime resolver-ом и безопасность после удаления target.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
             if (!_fireWindowFinder.CheckRuntimeOutcomeAtFireShift(
-                planningState.Hamster,
-                baseObstacles,
-                fireShift,
-                travel,
-                currentTargetIndex))
+                    planningState.Hamster,
+                    baseObstacles,
+                    fireShift,
+                    travel,
+                    currentTargetIndex,
+                    currentTargetObstacle.InstanceId))
                 return false;
 
-            // Проверяет безопасность после полного завершения.
             return TargetRemovalPostActionSafety.IsSafeAfterCompletion(
                 planningState,
                 projectedWorldSnapshot,
@@ -130,7 +136,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             WorldSnapshot projectedWorldSnapshot,
             ObstacleSnapshot targetObstacle,
             PlannedAction action,
-            float projectionWorldShift,
             out float fireShift)
         {
             // Отсекает неполные данные.
@@ -141,7 +146,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             }
 
             // Ищет live trigger obstacle.
-            float projectedTriggerX = action.TriggerX - projectionWorldShift;
+            float projectedTriggerX = action.TriggerX;
             int? triggerObstacleInstanceId = action.TriggerObstacleInstanceId ?? action.TargetObstacleInstanceId;
             if (triggerObstacleInstanceId.HasValue)
             {
@@ -154,24 +159,17 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                     fireShift = obstacle.LeftX - projectedTriggerX;
                     return true;
                 }
+
+                if (triggerObstacleInstanceId != action.TargetObstacleInstanceId)
+                {
+                    fireShift = 0f;
+                    return false;
+                }
             }
 
             // Использует target как fallback.
             fireShift = targetObstacle.LeftX - projectedTriggerX;
             return true;
-        }
-
-        /// <summary>
-        /// Возвращает правую границу поиска target-chain для уже выбранного retained action.
-        /// </summary>
-        private static float GetRetainedTargetChainHorizon(
-            WorldSnapshot projectedWorldSnapshot,
-            ObstacleSnapshot targetObstacle)
-        {
-            // Для новых candidates действует ScreenRightEdgeX, но retained target уже был выбран раньше.
-            return targetObstacle.LeftX > projectedWorldSnapshot.ScreenRightEdgeX
-                ? targetObstacle.LeftX
-                : projectedWorldSnapshot.ScreenRightEdgeX;
         }
     }
 }

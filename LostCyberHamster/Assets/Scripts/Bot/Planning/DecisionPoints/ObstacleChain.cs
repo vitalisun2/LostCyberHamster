@@ -111,6 +111,36 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         }
 
         /// <summary>
+        /// Находит первый дорожный target для jump-on при сходе с крыши внутри chain на заданной линии.
+        /// </summary>
+        public bool TryFindFirstJumpOnFromRoofTarget(
+            bool isBottomLine,
+            out ObstacleSnapshot targetObstacle,
+            out int targetWorldIndex,
+            out int targetChainIndex)
+        {
+            for (int chainIndex = 0; chainIndex < Count; chainIndex++)
+            {
+                ObstacleSnapshot obstacle = Obstacles[chainIndex];
+                if (obstacle.IsBottomLine != isBottomLine)
+                    continue;
+
+                if (!ObstacleClassifier.CanJumpOnFromRoofObstacle(obstacle.ObstacleType))
+                    continue;
+
+                targetObstacle = obstacle;
+                targetWorldIndex = Indices[chainIndex];
+                targetChainIndex = chainIndex;
+                return true;
+            }
+
+            targetObstacle = null;
+            targetWorldIndex = -1;
+            targetChainIndex = -1;
+            return false;
+        }
+
+        /// <summary>
         /// Возвращает true, если на крыше obstacle из chain есть опасный occupant.
         /// </summary>
         public bool HasDamagingRoofOccupant(int roofChainIndex)

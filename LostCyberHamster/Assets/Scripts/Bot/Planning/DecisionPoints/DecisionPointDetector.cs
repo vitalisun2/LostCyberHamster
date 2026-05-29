@@ -21,11 +21,6 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         private const int _maxChainLength = 3;
 
         /// <summary>
-        /// Минимальная энергия, при которой planner ищет optional JumpOn opportunity.
-        /// </summary>
-        private const int _highPriorityJumpOnEnergyThreshold = 40;
-
-        /// <summary>
         /// Пытается найти ближайшую обязательную угрозу, включая roof occupant hazards на текущей roof-chain.
         /// </summary>
         public bool TryDetectBlockingThreat(
@@ -324,7 +319,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             return hamster != null
                 && !hamster.IsOnRoof
                 && !hamster.IsShifting
-                && hamster.Energy >= _highPriorityJumpOnEnergyThreshold;
+                && JumpOnObjectiveRules.HasEnergyForJumpOnObjective(hamster);
         }
 
     }

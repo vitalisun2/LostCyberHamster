@@ -79,7 +79,7 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             // Убирает избыточные super jump-on варианты.
-            RemoveSuperJumpOnCandidatesCoveredByJumpOn(plannedActions);
+            RemoveSuperJumpOnCandidatesCoveredByOrdinaryJumpOn(plannedActions);
 
             // Логирует отсутствие подходящих действий.
             if (plannedActions.Count == 0)
@@ -117,44 +117,69 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Удаляет SuperJumpOn-кандидаты, если тот же target уже покрыт обычным JumpOn.
+        /// Удаляет super jump-on кандидаты, если тот же target уже покрыт обычным jump-on.
         /// </summary>
-        private static void RemoveSuperJumpOnCandidatesCoveredByJumpOn(List<PlannedAction> plannedActions)
+        private static void RemoveSuperJumpOnCandidatesCoveredByOrdinaryJumpOn(List<PlannedAction> plannedActions)
         {
             // Проверяет, есть ли что фильтровать.
             if (plannedActions == null || plannedActions.Count < 2)
                 return;
 
-            // Удаляет покрытые SuperJumpOn-кандидаты с конца списка.
+            // Удаляет покрытые super-кандидаты с конца списка.
             for (int actionIndex = plannedActions.Count - 1; actionIndex >= 0; actionIndex--)
             {
                 PlannedAction action = plannedActions[actionIndex];
-                if (action == null || action.Kind != BotActionKind.SuperJumpOn)
+                if (action == null || !TryGetOrdinaryJumpOnKind(action.Kind, out BotActionKind ordinaryKind))
                     continue;
 
-                if (HasJumpOnCandidateForSameTarget(plannedActions, action))
+                if (HasOrdinaryJumpOnCandidateForSameTarget(plannedActions, action, ordinaryKind))
                     plannedActions.RemoveAt(actionIndex);
             }
         }
 
         /// <summary>
-        /// Проверяет наличие JumpOn-кандидата для того же target, что и у SuperJumpOn-действия.
+        /// Проверяет наличие ordinary jump-on кандидата для того же target, что и у super-действия.
         /// </summary>
-        private static bool HasJumpOnCandidateForSameTarget(
+        private static bool HasOrdinaryJumpOnCandidateForSameTarget(
             IReadOnlyList<PlannedAction> plannedActions,
-            PlannedAction superJumpOnAction)
+            PlannedAction superJumpOnAction,
+            BotActionKind ordinaryKind)
         {
-            // Ищет соответствующий JumpOn среди кандидатов.
+            // Ищет соответствующий ordinary action среди кандидатов.
             for (int actionIndex = 0; actionIndex < plannedActions.Count; actionIndex++)
             {
                 PlannedAction action = plannedActions[actionIndex];
-                if (action == null || action.Kind != BotActionKind.JumpOn)
+                if (action == null || action.Kind != ordinaryKind)
                     continue;
 
                 if (TargetsSameObstacle(action, superJumpOnAction))
                     return true;
             }
 
+            return false;
+        }
+
+        /// <summary>
+        /// Возвращает ordinary-вариант для super jump-on action.
+        /// </summary>
+        private static bool TryGetOrdinaryJumpOnKind(
+            BotActionKind superKind,
+            out BotActionKind ordinaryKind)
+        {
+            // Сопоставляет пары ordinary/super jump-on.
+            if (superKind == BotActionKind.SuperJumpOn)
+            {
+                ordinaryKind = BotActionKind.JumpOn;
+                return true;
+            }
+
+            if (superKind == BotActionKind.SuperJumpOnFromRoof)
+            {
+                ordinaryKind = BotActionKind.JumpOnFromRoof;
+                return true;
+            }
+
+            ordinaryKind = BotActionKind.None;
             return false;
         }
 

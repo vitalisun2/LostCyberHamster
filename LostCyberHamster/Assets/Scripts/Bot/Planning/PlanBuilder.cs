@@ -97,7 +97,7 @@ namespace Assets.Scripts.Bot.Planning
                     worldSnapshot,
                     retainInProgressHead);
                 bool requiresRetainedValidation = isBoundaryRetainedAction
-                    || IsGroundJumpOnTargetBeyondScreen(action, worldSnapshot);
+                    || IsTargetBoundJumpOnBeyondScreen(action, worldSnapshot);
                 if (requiresRetainedValidation
                     && !(retainInProgressHead && actionIndex == 0)
                     && !_retainedActionRevalidator.IsStillValid(currentState, action, worldSnapshot))
@@ -151,7 +151,7 @@ namespace Assets.Scripts.Bot.Planning
             if (retainInProgressHead && actionIndex == 0)
                 return true;
 
-            if (IsGroundJumpOnTargetAction(action))
+            if (IsTargetBoundJumpOnAction(action))
             {
                 return action.RenderWorldX >= worldSnapshot.ScreenLeftEdgeX
                     && action.RenderWorldX <= worldSnapshot.VisionRightEdgeX;
@@ -162,25 +162,27 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Проверяет, является ли действие target-bound ground jump-on вариантом.
+        /// Проверяет, является ли действие target-bound jump-on вариантом.
         /// </summary>
-        private static bool IsGroundJumpOnTargetAction(PlannedAction action)
+        private static bool IsTargetBoundJumpOnAction(PlannedAction action)
         {
             if (action == null || !action.TargetObstacleInstanceId.HasValue)
                 return false;
 
             return action.Kind == BotActionKind.JumpOn
-                || action.Kind == BotActionKind.SuperJumpOn;
+                || action.Kind == BotActionKind.SuperJumpOn
+                || action.Kind == BotActionKind.JumpOnFromRoof
+                || action.Kind == BotActionKind.SuperJumpOnFromRoof;
         }
 
         /// <summary>
         /// Проверяет, требует ли сохраненный jump-on повторной валидации за экранной границей.
         /// </summary>
-        private static bool IsGroundJumpOnTargetBeyondScreen(
+        private static bool IsTargetBoundJumpOnBeyondScreen(
             PlannedAction action,
             WorldSnapshot worldSnapshot)
         {
-            return IsGroundJumpOnTargetAction(action)
+            return IsTargetBoundJumpOnAction(action)
                 && action.RenderWorldX > worldSnapshot.ScreenRightEdgeX;
         }
 
