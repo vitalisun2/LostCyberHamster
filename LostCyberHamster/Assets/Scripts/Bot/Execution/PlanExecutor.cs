@@ -77,12 +77,12 @@ namespace Assets.Scripts.Bot.Execution
         /// <summary>
         /// Исполняет головное действие текущего плана и продвигает план после завершения этого действия.
         /// </summary>
-        public void Tick(Hamster hamster)
+        public bool Tick(Hamster hamster)
         {
             Guard.ThrowIfNull((hamster, nameof(hamster)));
 
             if (!CurrentPlan.HasActions)
-                return;
+                return false;
 
             PlannedAction action = CurrentPlan.Actions[0];
             IActionExecutionHandler handler = GetRequiredHandler(action);
@@ -92,16 +92,27 @@ namespace Assets.Scripts.Bot.Execution
             {
                 ActionFireResult fireResult = handler.TryFire(hamster, action);
                 if (fireResult == ActionFireResult.Fired)
+                {
                     _isActionInProgress = true;
+                    return true;
+                }
                 else if (fireResult == ActionFireResult.Cancelled)
+                {
                     AdvanceHead();
+                    return true;
+                }
 
-                return;
+                return false;
             }
 
             // После запуска ждём, пока handler подтвердит завершение действия.
             if (handler.IsCompleted(hamster, action))
+            {
                 AdvanceHead();
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>

@@ -215,19 +215,24 @@ namespace Assets.Scripts.Bot
             _lastSnapshotBuildMs = GetElapsedMilliseconds(snapshotStartTimestamp);
             long executorStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
 #endif
-            _executor.Tick(_hamster);
+            bool executionChanged = _executor.Tick(_hamster);
 #if UNITY_EDITOR
             _lastExecutorTickMs = GetElapsedMilliseconds(executorStartTimestamp);
 #endif
 
-            // Затем обновляем snapshot заново, чтобы replanning видел фактическое post-action состояние.
+            // Переснимаем snapshot только после фактического execution-перехода.
+            // В обычных кадрах без fire/complete/cancel исходный snapshot остаётся актуальным для replanning.
+            if (executionChanged)
+            {
 #if UNITY_EDITOR
-            snapshotStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
+                snapshotStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
 #endif
-            LastSnapshot = _snapshotBuilder.Build(_hamster);
+                LastSnapshot = _snapshotBuilder.Build(_hamster);
 #if UNITY_EDITOR
-            _lastSnapshotBuildMs += GetElapsedMilliseconds(snapshotStartTimestamp);
+                _lastSnapshotBuildMs += GetElapsedMilliseconds(snapshotStartTimestamp);
 #endif
+            }
+
             TrySetNewPlan();
         }
 
