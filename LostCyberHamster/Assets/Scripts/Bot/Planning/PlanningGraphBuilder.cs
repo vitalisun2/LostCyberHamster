@@ -54,7 +54,7 @@ namespace Assets.Scripts.Bot.Planning
             // Stop expanding when the search reached the configured horizon.
             if (currentNode.Depth >= MaxSearchDepth)
             {
-                if (!HasUnresolvedBlockingDecision(currentNode.State, worldSnapshot))
+                if (!HasUnresolvedRequiredDecision(currentNode.State, worldSnapshot))
                     AddLeafBranch(currentNode, branches);
 
                 return;
@@ -64,14 +64,14 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlannedAction> candidates = _actionGenerator.Generate(currentNode.State, worldSnapshot);
             if (candidates.Count == 0)
             {
-                if (!HasUnresolvedBlockingDecision(currentNode.State, worldSnapshot))
+                if (!HasUnresolvedRequiredDecision(currentNode.State, worldSnapshot))
                     AddLeafBranch(currentNode, branches);
 
                 return;
             }
 
             // Optional planning interests must stay skippable.
-            if (!HasUnresolvedBlockingDecision(currentNode.State, worldSnapshot))
+            if (!HasUnresolvedRequiredDecision(currentNode.State, worldSnapshot))
                 AddLeafBranch(currentNode, branches);
 
             for (int candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
@@ -93,13 +93,13 @@ namespace Assets.Scripts.Bot.Planning
             }
         }
 
-        private bool HasUnresolvedBlockingDecision(PlanningState planningState, WorldSnapshot worldSnapshot)
+        private bool HasUnresolvedRequiredDecision(PlanningState planningState, WorldSnapshot worldSnapshot)
         {
             WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
             if (projectedWorldSnapshot == null)
                 return false;
 
-            return _decisionPointDetector.TryDetectBlockingThreat(
+            return _decisionPointDetector.TryDetectRequiredDecisionPoint(
                 planningState,
                 projectedWorldSnapshot,
                 out _);

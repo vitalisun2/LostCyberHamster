@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
@@ -6,142 +7,251 @@ using Assets.Scripts.GameEngine.Mechanics;
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
     /// <summary>
-    /// Находит обязательные угрозы и optional jump-on opportunities в projected world snapshot.
+    /// Координирует chain builders и возвращает готовые planning-ситуации.
     /// </summary>
     public sealed class DecisionPointDetector
     {
         /// <summary>
-        /// Находит roof occupants на текущей passive roof-chain до общего пропуска крыш.
+        /// Builders обязательных ситуаций в порядке приоритета.
         /// </summary>
-        private readonly RoofOccupantHazardDetector _roofOccupantHazardDetector = new();
+        private readonly IReadOnlyList<IDecisionPointChainBuilder> _requiredBuilders =
+            new IDecisionPointChainBuilder[]
+            {
+                new RoofOccupantHazardChainBuilder(),
+                new JumpOnFromRoofTargetChainBuilder(),
+                new CurrentLaneGroundJumpOnTargetChainBuilder(),
+                new BlockingThreatChainBuilder()
+            };
 
         /// <summary>
-        /// Ограничивает количество obstacles в одной chain-ситуации.
+        /// Builders optional jump-on objectives в порядке приоритета.
         /// </summary>
-        private const int _maxChainLength = 3;
+        private readonly IReadOnlyList<IDecisionPointChainBuilder> _optionalBuilders =
+            new IDecisionPointChainBuilder[]
+            {
+                new OtherLaneGroundJumpOnTargetChainBuilder(),
+                new RoofJumpOnTargetChainBuilder()
+            };
 
         /// <summary>
-        /// Пытается найти ближайшую обязательную угрозу, включая roof occupant hazards на текущей roof-chain.
+        /// Пытается найти ближайшую обязательную planning-ситуацию.
         /// </summary>
-        public bool TryDetectBlockingThreat(
+        public bool TryDetectRequiredDecisionPoint(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             out DecisionPoint decisionPoint)
         {
-            // Подготавливает результат.
+            // Подготавливает результат и проверяет вход.
             decisionPoint = null;
-
-            // Отсекает неполный вход.
             if (planningState == null || worldSnapshot == null)
                 return false;
 
-            // Сначала обрабатывает hazards, стоящие на текущей passive roof-chain.
-            if (_roofOccupantHazardDetector.TryDetect(
-                    planningState,
-                    worldSnapshot,
-                    out int roofOccupantHazardIndex))
-            {
-                decisionPoint = new DecisionPoint(BuildChain(
-                    planningState,
-                    worldSnapshot,
-                    roofOccupantHazardIndex,
-                    planningState.IsOnBottomLine));
-                return true;
-            }
-
-            // Выбирает старт поиска.
-            int firstObstacleIndex = GetFirstDetectionIndex(planningState, worldSnapshot);
-
-            // Ищет ближайшую обязательную угрозу.
-            bool hasBlockingThreat = TryFindBlockingThreat(
+            // Запускает required builders с target horizon в пределах vision.
+            DecisionPointBuildContext context = CreateBuildContext(
                 planningState,
                 worldSnapshot,
-                firstObstacleIndex,
-                out int blockingThreatIndex);
+                maxFirstObstacleLeftX: worldSnapshot.ScreenRightEdgeX,
+                maxTargetLeftX: worldSnapshot.VisionRightEdgeX);
+            return TryBuildFirst(_requiredBuilders, context, out decisionPoint);
+        }
 
-            // Возвращает blocking decision point.
-            if (hasBlockingThreat)
+        /// <summary>
+        /// Возвращает optional jump-on objective decision points.
+        /// </summary>
+        public IReadOnlyList<DecisionPoint> DetectOptionalDecisionPoints(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot)
+        {
+            // Подготавливает результат и проверяет вход.
+            var decisionPoints = new List<DecisionPoint>();
+            if (planningState == null || worldSnapshot == null)
+                return decisionPoints;
+
+            // Optional objectives ищутся только когда planner охотится за jump-on target.
+            if (!CanSearchJumpOnObjective(planningState))
+                return decisionPoints;
+
+            // Ground optional target ограничен экраном, roof optional target может смотреть до vision horizon.
+            TryAddOptionalDecisionPoint(
+                _optionalBuilders[0],
+                planningState,
+                worldSnapshot,
+                maxFirstObstacleLeftX: worldSnapshot.ScreenRightEdgeX,
+                maxTargetLeftX: worldSnapshot.ScreenRightEdgeX,
+                decisionPoints);
+            TryAddOptionalDecisionPoint(
+                _optionalBuilders[1],
+                planningState,
+                worldSnapshot,
+                maxFirstObstacleLeftX: worldSnapshot.ScreenRightEdgeX,
+                maxTargetLeftX: worldSnapshot.VisionRightEdgeX,
+                decisionPoints);
+
+            return decisionPoints;
+        }
+
+        /// <summary>
+        /// Пытается найти decision point, chain которого содержит уже выбранный retained target.
+        /// </summary>
+        public bool TryDetectDecisionPointForRetainedTarget(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            ObstacleSnapshot retainedTarget,
+            out DecisionPoint decisionPoint)
+        {
+            // Подготавливает результат и проверяет вход.
+            decisionPoint = null;
+            if (planningState == null || worldSnapshot == null || retainedTarget == null)
+                return false;
+
+            // Ищет target внутри required situations с расширенным horizon.
+            float retainedTargetHorizon = Math.Max(worldSnapshot.VisionRightEdgeX, retainedTarget.LeftX);
+            DecisionPointBuildContext requiredContext = CreateBuildContext(
+                planningState,
+                worldSnapshot,
+                maxFirstObstacleLeftX: worldSnapshot.ScreenRightEdgeX,
+                maxTargetLeftX: retainedTargetHorizon);
+            if (TryBuildFirstContainingTarget(
+                    _requiredBuilders,
+                    requiredContext,
+                    retainedTarget,
+                    out decisionPoint))
             {
-                decisionPoint = new DecisionPoint(BuildChain(
-                    planningState,
-                    worldSnapshot,
-                    blockingThreatIndex,
-                    planningState.IsOnBottomLine));
                 return true;
             }
 
-            // Сообщает, что обязательной угрозы нет.
+            // Ищет target внутри optional objectives с расширенным horizon.
+            if (!CanSearchJumpOnObjective(planningState))
+                return false;
+
+            float optionalGroundTargetHorizon = Math.Max(worldSnapshot.ScreenRightEdgeX, retainedTarget.LeftX);
+            DecisionPointBuildContext optionalGroundContext = CreateBuildContext(
+                planningState,
+                worldSnapshot,
+                maxFirstObstacleLeftX: worldSnapshot.ScreenRightEdgeX,
+                maxTargetLeftX: optionalGroundTargetHorizon);
+            if (TryBuildContainingTarget(
+                    _optionalBuilders[0],
+                    optionalGroundContext,
+                    retainedTarget,
+                    out decisionPoint))
+            {
+                return true;
+            }
+
+            DecisionPointBuildContext optionalRoofContext = CreateBuildContext(
+                planningState,
+                worldSnapshot,
+                maxFirstObstacleLeftX: worldSnapshot.ScreenRightEdgeX,
+                maxTargetLeftX: retainedTargetHorizon);
+            return TryBuildContainingTarget(
+                _optionalBuilders[1],
+                optionalRoofContext,
+                retainedTarget,
+                out decisionPoint);
+        }
+
+        /// <summary>
+        /// Создает общий build context для builders.
+        /// </summary>
+        private static DecisionPointBuildContext CreateBuildContext(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            float maxFirstObstacleLeftX,
+            float maxTargetLeftX)
+        {
+            return new DecisionPointBuildContext(
+                planningState,
+                worldSnapshot,
+                GetFirstDetectionIndex(planningState, worldSnapshot),
+                maxFirstObstacleLeftX,
+                maxTargetLeftX);
+        }
+
+        /// <summary>
+        /// Пытается построить первый decision point из списка builders.
+        /// </summary>
+        private static bool TryBuildFirst(
+            IReadOnlyList<IDecisionPointChainBuilder> builders,
+            DecisionPointBuildContext context,
+            out DecisionPoint decisionPoint)
+        {
+            // Запускает builders в заданном порядке.
+            decisionPoint = null;
+            for (int builderIndex = 0; builderIndex < builders.Count; builderIndex++)
+            {
+                if (builders[builderIndex].TryBuild(context, out decisionPoint))
+                    return true;
+            }
+
             return false;
         }
 
         /// <summary>
-        /// Пытается найти видимую target-oriented jump-on opportunity независимо от ближайшей угрозы.
+        /// Пытается построить первый decision point, chain которого содержит target.
         /// </summary>
-        public bool TryDetectJumpOnOpportunity(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
+        private static bool TryBuildFirstContainingTarget(
+            IReadOnlyList<IDecisionPointChainBuilder> builders,
+            DecisionPointBuildContext context,
+            ObstacleSnapshot target,
             out DecisionPoint decisionPoint)
         {
-            // Отсекает неполный вход.
+            // Запускает builders в заданном порядке до chain с target.
             decisionPoint = null;
-            if (planningState == null || worldSnapshot == null)
-                return false;
-
-            // Строит opportunity-chain.
-            int firstObstacleIndex = GetFirstDetectionIndex(planningState, worldSnapshot);
-            if (!TryBuildJumpOnOpportunityChain(
-                    planningState,
-                    worldSnapshot,
-                    firstObstacleIndex,
-                    out ObstacleChain opportunityChain))
+            for (int builderIndex = 0; builderIndex < builders.Count; builderIndex++)
             {
-                return false;
+                if (TryBuildContainingTarget(
+                        builders[builderIndex],
+                        context,
+                        target,
+                        out decisionPoint))
+                {
+                    return true;
+                }
             }
 
-            // Возвращает jump-on decision point.
-            decisionPoint = new DecisionPoint(
-                opportunityChain,
-                DecisionPointKind.JumpOnOpportunity,
-                TryFindBlockingThreat(planningState, worldSnapshot, firstObstacleIndex, out int blockingThreatIndex)
-                    ? worldSnapshot.Obstacles[blockingThreatIndex]
-                    : null);
+            return false;
+        }
+
+        /// <summary>
+        /// Пытается построить decision point, chain которого содержит target.
+        /// </summary>
+        private static bool TryBuildContainingTarget(
+            IDecisionPointChainBuilder builder,
+            DecisionPointBuildContext context,
+            ObstacleSnapshot target,
+            out DecisionPoint decisionPoint)
+        {
+            // Проверяет результат builder'а на принадлежность target chain.
+            decisionPoint = null;
+            if (!builder.TryBuild(context, out DecisionPoint candidate))
+                return false;
+
+            if (!candidate.Chain.ContainsObstacle(target))
+                return false;
+
+            decisionPoint = candidate;
             return true;
         }
 
         /// <summary>
-        /// Пытается найти видимую target-oriented opportunity для цепочки SwitchLane -> JumpOnRoof -> JumpOnFromRoof.
+        /// Добавляет optional decision point, если builder смог его построить.
         /// </summary>
-        public bool TryDetectRoofJumpOnOpportunity(
+        private static void TryAddOptionalDecisionPoint(
+            IDecisionPointChainBuilder builder,
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            out DecisionPoint decisionPoint)
+            float maxFirstObstacleLeftX,
+            float maxTargetLeftX,
+            List<DecisionPoint> decisionPoints)
         {
-            decisionPoint = null;
-            if (planningState == null || worldSnapshot == null)
-                return false;
-
-            if (!CanSearchJumpOnOpportunity(planningState))
-                return false;
-
-            int firstObstacleIndex = GetFirstDetectionIndex(planningState, worldSnapshot);
-            if (!RoofJumpOnOpportunityChainBuilder.TryBuildOpportunityChain(
-                    planningState,
-                    worldSnapshot,
-                    firstObstacleIndex,
-                    worldSnapshot.ScreenRightEdgeX,
-                    worldSnapshot.VisionRightEdgeX,
-                    out ObstacleChain opportunityChain))
-            {
-                return false;
-            }
-
-            decisionPoint = new DecisionPoint(
-                opportunityChain,
-                DecisionPointKind.RoofJumpOnOpportunity,
-                TryFindBlockingThreat(planningState, worldSnapshot, firstObstacleIndex, out int blockingThreatIndex)
-                    ? worldSnapshot.Obstacles[blockingThreatIndex]
-                    : null);
-            return true;
+            DecisionPointBuildContext context = CreateBuildContext(
+                planningState,
+                worldSnapshot,
+                maxFirstObstacleLeftX,
+                maxTargetLeftX);
+            if (builder.TryBuild(context, out DecisionPoint decisionPoint))
+                decisionPoints.Add(decisionPoint);
         }
 
         /// <summary>
@@ -183,173 +293,9 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         }
 
         /// <summary>
-        /// Строит obstacle chain, начиная с первого obstacle decision point.
+        /// Проверяет, можно ли искать optional jump-on objective.
         /// </summary>
-        private static ObstacleChain BuildChain(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
-            int firstObstacleIndex,
-            bool chainBottomLine)
-        {
-            // Инициализирует chain первым obstacle.
-            var obstacles = new List<ObstacleSnapshot>();
-            var indices = new List<int>();
-            ObstacleSnapshot firstObstacle = worldSnapshot.Obstacles[firstObstacleIndex];
-            obstacles.Add(firstObstacle);
-            indices.Add(firstObstacleIndex);
-
-            // Расширяет chain близкими damaging obstacles.
-            float previousRightX = firstObstacle.RightX;
-            for (int obstacleIndex = firstObstacleIndex + 1;
-                 obstacleIndex < worldSnapshot.Obstacles.Count && obstacles.Count < _maxChainLength;
-                 obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                if (obstacle.IsBottomLine != chainBottomLine)
-                    continue;
-
-                if (RoofRunProjection.IsPassiveRoofContinuation(planningState, worldSnapshot, obstacle))
-                    continue;
-
-                if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
-                    continue;
-
-                float gap = obstacle.LeftX - previousRightX;
-                if (gap >= planningState.Hamster.Width)
-                    break;
-
-                obstacles.Add(obstacle);
-                indices.Add(obstacleIndex);
-
-                if (obstacle.RightX > previousRightX)
-                    previousRightX = obstacle.RightX;
-            }
-
-            // Возвращает готовую chain.
-            return new ObstacleChain(obstacles, indices);
-        }
-
-        /// <summary>
-        /// Находит ближайшую обязательную угрозу на текущей линии хомяка.
-        /// </summary>
-        private static bool TryFindBlockingThreat(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
-            int firstObstacleIndex,
-            out int blockingThreatIndex)
-        {
-            blockingThreatIndex = -1;
-
-            for (int obstacleIndex = firstObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                if (!IsBlockingThreat(planningState, worldSnapshot, obstacle, obstacleIndex))
-                    continue;
-
-                blockingThreatIndex = obstacleIndex;
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Проверяет, является ли obstacle ближайшей угрозой текущей линии.
-        /// </summary>
-        private static bool IsBlockingThreat(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
-            ObstacleSnapshot obstacle,
-            int obstacleIndex)
-        {
-            if (obstacle.RightX <= planningState.Hamster.HamsterLeftX)
-                return false;
-
-            if (obstacle.IsBottomLine != planningState.IsOnBottomLine)
-                return false;
-
-            if (RoofRunProjection.IsPassiveRoofContinuation(planningState, worldSnapshot, obstacle))
-            {
-                DebugManager.DiagLogVerbose(
-                    $"[Bot PLAN] SKIP_ROOF_CONTINUATION obstacle={obstacle.ObstacleType} " +
-                    $"index={obstacleIndex} instanceId={obstacle.InstanceId} " +
-                    $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2}");
-                return false;
-            }
-
-            return ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType);
-        }
-
-        /// <summary>
-        /// Строит off-line opportunity-chain, где после смены линии можно выполнить jump-on target.
-        /// </summary>
-        private static bool TryBuildJumpOnOpportunityChain(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
-            int firstObstacleIndex,
-            out ObstacleChain opportunityChain)
-        {
-            // Подготавливает результат.
-            opportunityChain = null;
-
-            // Проверяет возможность поиска.
-            if (!CanSearchJumpOnOpportunity(planningState))
-                return false;
-
-            // Ищет off-line chain с jump-on target.
-            for (int obstacleIndex = firstObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                if (obstacle.RightX <= planningState.Hamster.HamsterLeftX)
-                    continue;
-
-                if (obstacle.IsBottomLine == planningState.IsOnBottomLine)
-                    continue;
-
-                if (obstacle.LeftX > worldSnapshot.ScreenRightEdgeX)
-                    return false;
-
-                if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
-                    continue;
-
-                ObstacleChain chain = BuildChain(
-                    planningState,
-                    worldSnapshot,
-                    obstacleIndex,
-                    obstacle.IsBottomLine);
-                if (!JumpOnTargetChainBuilder.TryBuildTargetChain(
-                        planningState,
-                        worldSnapshot,
-                        chain,
-                        worldSnapshot.ScreenRightEdgeX,
-                        out ObstacleChain targetChain))
-                {
-                    continue;
-                }
-
-                if (!targetChain.TryFindFirstGroundJumpOnTarget(
-                        obstacle.IsBottomLine,
-                        out ObstacleSnapshot targetObstacle,
-                        out _,
-                        out _))
-                {
-                    continue;
-                }
-
-                if (targetObstacle.LeftX > worldSnapshot.ScreenRightEdgeX)
-                    continue;
-
-                opportunityChain = targetChain;
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Проверяет, можно ли искать target-oriented jump-on opportunity.
-        /// </summary>
-        private static bool CanSearchJumpOnOpportunity(PlanningState planningState)
+        private static bool CanSearchJumpOnObjective(PlanningState planningState)
         {
             HamsterSnapshot hamster = planningState.Hamster;
             return hamster != null
@@ -357,6 +303,5 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                 && !hamster.IsShifting
                 && JumpOnObjectiveRules.HasEnergyForJumpOnObjective(hamster);
         }
-
     }
 }

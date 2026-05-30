@@ -72,14 +72,23 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnFromRoof
             if (!_policy.TryGetTravel(out JumpOnFromRoofTravel travel))
                 return false;
 
-            // Заново строит road target-chain после конца passive roof path.
-            if (!JumpOnFromRoofTargetChainBuilder.TryBuildTargetChain(
+            // Берет актуальную road target-chain из decision point.
+            DecisionPoint decisionPoint = context.DecisionPoint;
+            if (decisionPoint?.Kind != DecisionPointKind.JumpOnFromRoofTarget
+                || decisionPoint.Chain == null)
+            {
+                return false;
+            }
+
+            ObstacleChain actionChain = decisionPoint.Chain;
+            if (!RoofRunProjection.TryFindLastPassiveRoof(
                     planningState,
                     projectedWorldSnapshot,
-                    projectedWorldSnapshot.VisionRightEdgeX,
-                    out ObstacleChain actionChain,
-                    out ObstacleSnapshot lastRoof))
+                    out ObstacleSnapshot lastRoof,
+                    out _))
+            {
                 return false;
+            }
 
             // Повторяет specification-gate и сверяет target.
             if (!_specification.IsSatisfiedBy(

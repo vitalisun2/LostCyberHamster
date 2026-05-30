@@ -4,9 +4,9 @@ using Assets.Scripts.Bot.Perception;
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
     /// <summary>
-    /// Строит target-oriented дорожную chain для jump-on при сходе с крыши.
+    /// Собирает дорожную target-chain после passive roof path.
     /// </summary>
-    internal static class JumpOnFromRoofTargetChainBuilder
+    internal static class JumpOnFromRoofTargetChainComposer
     {
         /// <summary>
         /// Возвращает road-chain после конца passive roof path, если она ведет к roof jump-on target.

@@ -5,54 +5,52 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
     /// <summary>
-    /// Строит off-line opportunity-chain для сценария SwitchLane -> JumpOnRoof -> JumpOnFromRoof.
+    /// Строит optional off-lane chain для сценария SwitchLane -> JumpOnRoof -> JumpOnFromRoof.
     /// </summary>
-    internal static class RoofJumpOnOpportunityChainBuilder
+    internal sealed class RoofJumpOnTargetChainBuilder : IDecisionPointChainBuilder
     {
         /// <summary>
-        /// Возвращает chain, начинающуюся с off-line roof obstacle и ведущую к roof jump-on target
-        /// после всей passive roof-chain на целевой линии.
+        /// Пытается построить optional roof jump-on target decision point.
         /// </summary>
-        public static bool TryBuildOpportunityChain(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
-            int firstObstacleIndex,
-            float maxRoofLeftX,
-            float maxTargetLeftX,
-            out ObstacleChain opportunityChain)
+        public bool TryBuild(
+            DecisionPointBuildContext context,
+            out DecisionPoint decisionPoint)
         {
-            opportunityChain = null;
-
-            if (planningState == null || planningState.Hamster == null || worldSnapshot == null)
+            // Подготавливает результат и проверяет вход.
+            decisionPoint = null;
+            if (!context.HasValidInput)
                 return false;
 
-            HamsterSnapshot hamster = planningState.Hamster;
-            for (int obstacleIndex = firstObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            // Ищет будущую off-line крышу, после которой есть road target.
+            for (int obstacleIndex = context.FirstObstacleIndex; obstacleIndex < context.WorldSnapshot.Obstacles.Count; obstacleIndex++)
             {
-                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                if (obstacle.RightX <= hamster.HamsterLeftX)
+                ObstacleSnapshot obstacle = context.WorldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.RightX <= context.Hamster.HamsterLeftX)
                     continue;
 
-                if (obstacle.IsBottomLine == hamster.IsOnBottomLine)
+                if (obstacle.IsBottomLine == context.Hamster.IsOnBottomLine)
                     continue;
 
-                if (obstacle.LeftX > maxRoofLeftX)
+                if (obstacle.LeftX > context.MaxFirstObstacleLeftX)
                     return false;
 
                 if (!ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType))
                     continue;
 
                 if (!TryBuildFromRoof(
-                        planningState,
-                        worldSnapshot,
+                        context,
                         obstacle,
                         obstacleIndex,
-                        maxTargetLeftX,
-                        out opportunityChain))
+                        out ObstacleChain opportunityChain))
                 {
                     continue;
                 }
 
+                decisionPoint = new DecisionPoint(
+                    opportunityChain,
+                    DecisionPointKind.RoofJumpOnTarget,
+                    isDecisionRequired: false,
+                    fireBeforeObstacle: FindFireBeforeObstacleOrNull(context));
                 return true;
             }
 
@@ -63,30 +61,30 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         /// Строит opportunity-chain от найденной будущей крыши до road target после passive roof path.
         /// </summary>
         private static bool TryBuildFromRoof(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
+            DecisionPointBuildContext context,
             ObstacleSnapshot roofObstacle,
             int roofObstacleIndex,
-            float maxTargetLeftX,
             out ObstacleChain opportunityChain)
         {
+            // Проецирует planning state в состояние после будущей посадки на крышу.
             opportunityChain = null;
-
             PlanningState futureRoofState = BuildFutureRoofRunState(
-                planningState,
+                context.PlanningState,
                 roofObstacle,
                 roofObstacleIndex);
 
-            if (!JumpOnFromRoofTargetChainBuilder.TryBuildTargetChain(
+            // Строит road target-chain после будущей roof-run цепочки.
+            if (!JumpOnFromRoofTargetChainComposer.TryBuildTargetChain(
                     futureRoofState,
-                    worldSnapshot,
-                    maxTargetLeftX,
+                    context.WorldSnapshot,
+                    context.MaxTargetLeftX,
                     out ObstacleChain roadTargetChain,
                     out _))
             {
                 return false;
             }
 
+            // Добавляет будущую крышу перед road target-chain.
             var obstacles = new List<ObstacleSnapshot>(roadTargetChain.Count + 1)
             {
                 roofObstacle
@@ -107,7 +105,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         }
 
         /// <summary>
-        /// Создаёт projected state после будущей посадки на крышу, чтобы переиспользовать roof-run target-chain builder.
+        /// Создаёт projected state после будущей посадки на крышу.
         /// </summary>
         private static PlanningState BuildFutureRoofRunState(
             PlanningState planningState,
@@ -132,6 +130,20 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                 futureHamster,
                 roofObstacleIndex,
                 planningState.ProjectionWorldShift);
+        }
+
+        /// <summary>
+        /// Возвращает obstacle, до которого нужно успеть запустить optional action.
+        /// </summary>
+        private static ObstacleSnapshot FindFireBeforeObstacleOrNull(DecisionPointBuildContext context)
+        {
+            return ThreatChainCollector.TryFindFirstThreat(
+                    context.PlanningState,
+                    context.WorldSnapshot,
+                    context.FirstObstacleIndex,
+                    out int blockingThreatIndex)
+                ? context.WorldSnapshot.Obstacles[blockingThreatIndex]
+                : null;
         }
     }
 }

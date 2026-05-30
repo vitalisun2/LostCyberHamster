@@ -64,19 +64,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
                 return false;
             }
 
-            // Восстанавливает актуальную jump-on chain, включая уже committed target за обычным gap.
-            float targetChainHorizon = GetRetainedTargetChainHorizon(
-                projectedWorldSnapshot,
-                targetObstacle);
-            if (!JumpOnTargetChainBuilder.TryBuildTargetChain(
-                    planningState,
-                    projectedWorldSnapshot,
-                    decisionPoint.Chain,
-                    targetChainHorizon,
-                    out ObstacleChain actionChain))
+            // Берет актуальную target-chain из decision point.
+            if (decisionPoint.Kind != DecisionPointKind.GroundJumpOnTarget)
                 return false;
 
             // Получает runtime-дистанции действия.
+            ObstacleChain actionChain = decisionPoint.Chain;
             if (!_policy.TryGetTravel(out JumpOnTravel travel))
                 return false;
 
@@ -161,17 +154,5 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn
             return true;
         }
 
-        /// <summary>
-        /// Возвращает правую границу поиска target-chain для уже выбранного retained action.
-        /// </summary>
-        private static float GetRetainedTargetChainHorizon(
-            WorldSnapshot projectedWorldSnapshot,
-            ObstacleSnapshot targetObstacle)
-        {
-            // Для новых candidates действует ScreenRightEdgeX, но retained target уже был выбран раньше.
-            return targetObstacle.LeftX > projectedWorldSnapshot.ScreenRightEdgeX
-                ? targetObstacle.LeftX
-                : projectedWorldSnapshot.ScreenRightEdgeX;
-        }
     }
 }

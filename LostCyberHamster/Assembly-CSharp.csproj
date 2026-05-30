@@ -56,16 +56,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskParallel.cs" />
-    <Compile Include="Assets\Scripts\Bot\Planning\PlanBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\PlanBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoofOnRoof\JumpFromRoofOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnExecutor.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitRoadLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOnRoof\JumpOnRoofSimulator.cs" />
     <Compile Include="Assets\Scripts\UI\Components\CrystalStorageUI.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Builders\DecisionPointBuildContext.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoof\SuperJumpFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UnspawnOutOfBoundsMechanics.cs" />
-    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\JumpOnFromRoofTargetChainBuilder.cs" />
     <Compile Include="Assets\Scripts\Installers\ProjectInstaller.cs" />
     <Compile Include="Assets\Scripts\System\DecorationSpawner.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenEnum.cs" />
@@ -73,7 +73,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpObstacleProjection.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneStrategy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimatorEventsDispatcher.cs" />
-    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\JumpOnTargetChainBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnPolicy.cs" />
     <Compile Include="Assets\Scripts\Gameplay\ScrollingEnvironment.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\SnapshotBuilder.cs" />
@@ -115,7 +114,6 @@
     <Compile Include="Assets\Scripts\Debug\AndroidDiagnosticsHelper.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Data\SettingsData.cs" />
     <Compile Include="Assets\Scripts\UI\ResourceUIHelper.cs" />
-    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\RoofJumpOnOpportunityChainBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Execution\PlanExecutor.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\AwaitExtensions.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverStrategy.cs" />
@@ -158,6 +156,7 @@
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelCatalogService.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\QuestSystem\QuestManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverStrategy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Builders\RoofOccupantHazardChainBuilder.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperJumpOutcomeResolver.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\DecisionPoint.cs" />
     <Compile Include="Assets\Scripts\System\UserSettings.cs" />
@@ -172,6 +171,7 @@
     <Compile Include="Assets\Scripts\System\Rendering\SpriteRendererMaterialHelper.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpCollisionSpec.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\Skin.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Shared\JumpOnFromRoofTargetChainComposer.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneTiming.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\AddCoinsOrBonusMechanics.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LocationTheme.cs" />
@@ -183,6 +183,7 @@
     <Compile Include="Assets\Scripts\Common\Models\PatternRef.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpFromRoof\JumpFromRoofFireWindowFinder.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Builders\RoofJumpOnTargetChainBuilder.cs" />
     <Compile Include="Assets\Scripts\Common\Models\DecorationTile.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimatorController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpFromRoof\IJumpFromRoofPolicy.cs" />
@@ -217,6 +218,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiHamsterStateMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpPlanningConstants.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\PauseModalController.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Builders\IDecisionPointChainBuilder.cs" />
     <Compile Include="Assets\Scripts\UI\Common\IScreenController.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\ShiftTransformAnimatorController.cs" />
     <Compile Include="Assets\Scripts\Common\Models\PatternsCollection.cs" />
@@ -234,6 +236,7 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\QuestSystem\Quest.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\WorldSnapshot.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\RoofHeightTransitionCompensator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Builders\GroundJumpOnTargetChainBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOver\JumpOverSimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOnRoof\JumpOnRoofFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\Common\Polyfills\IsExternalInit.cs" />
@@ -311,6 +314,7 @@
     <Compile Include="Assets\Scripts\SharedCore\LicenseManager.cs" />
     <Compile Include="Assets\Scripts\GameManagement\GameDataManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnRoof\JumpOnRoofStrategy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Builders\JumpOnFromRoofTargetChainBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\System\Resources\AddressableSetLease.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinFactory.cs" />
@@ -346,7 +350,9 @@
     <Compile Include="Assets\Scripts\Entry Points\LoadingTaskPipeline.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\HierarchicalLevelCatalog.cs" />
     <Compile Include="Assets\Scripts\UI\Components\MoneyStorageUI.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Shared\GroundJumpOnTargetChainComposer.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelInfoRef.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Shared\ThreatChainCollector.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnRoof\SuperJumpOnRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\ObstacleClassifier.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiGameScreenMechanics.cs" />
@@ -354,6 +360,7 @@
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitBackgroundLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneSpecification.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\RoofRunProjection.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\DecisionPointKind.cs" />
     <Compile Include="Assets\Scripts\Common\Models\ObstacleModel.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\DeathMechanics.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LocationInfoList.cs" />
@@ -372,7 +379,6 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranchMetrics.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Storages\CrystalStorage.cs" />
-    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\RoofOccupantHazardDetector.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitDecorationsLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoof\SuperJumpFromRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneExecutor.cs" />
@@ -419,6 +425,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\RoofJumpOver\RoofJumpOverRetainedActionValidator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOver\IJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningState.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Builders\BlockingThreatChainBuilder.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\SpriteAnimatorEventsDispatcher.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\ISimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpFromRoof\JumpFromRoofChainModel.cs" />

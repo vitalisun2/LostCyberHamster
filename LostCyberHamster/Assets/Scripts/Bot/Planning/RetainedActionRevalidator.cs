@@ -47,14 +47,20 @@ namespace Assets.Scripts.Bot.Planning
             if (!TryFindActionTarget(projectedWorldSnapshot, action, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
                 return false;
 
-            if (!_decisionPointDetector.TryDetectBlockingThreat(planningState, projectedWorldSnapshot, out DecisionPoint decisionPoint)
-                && !_decisionPointDetector.TryDetectJumpOnOpportunity(planningState, projectedWorldSnapshot, out decisionPoint)
-                && !_decisionPointDetector.TryDetectRoofJumpOnOpportunity(planningState, projectedWorldSnapshot, out decisionPoint))
+            bool foundTargetDecisionPoint =
+                _decisionPointDetector.TryDetectDecisionPointForRetainedTarget(
+                    planningState,
+                    projectedWorldSnapshot,
+                    targetObstacle,
+                    out DecisionPoint decisionPoint);
+            if (!foundTargetDecisionPoint
+                && !_decisionPointDetector.TryDetectRequiredDecisionPoint(planningState, projectedWorldSnapshot, out decisionPoint))
             {
                 return false;
             }
 
-            if (!decisionPoint.Chain.ContainsObstacle(targetObstacle)
+            if (!foundTargetDecisionPoint
+                && !decisionPoint.Chain.ContainsObstacle(targetObstacle)
                 && !CanTargetLiveOutsideDecisionChain(action))
             {
                 return false;

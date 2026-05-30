@@ -96,6 +96,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
             if (!TryResolveActionChain(
                     planningState,
                     worldSnapshot,
+                    decisionPoint,
                     travel,
                     out ObstacleChain actionChain,
                     out ObstacleSnapshot targetObstacle,
@@ -146,11 +147,12 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
         }
 
         /// <summary>
-        /// Строит road target-chain после passive roof path и проверяет применимость action.
+        /// Берет road target-chain из decision point и проверяет применимость action.
         /// </summary>
         private bool TryResolveActionChain(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
+            DecisionPoint decisionPoint,
             JumpOnFromRoofTravel travel,
             out ObstacleChain actionChain,
             out ObstacleSnapshot targetObstacle,
@@ -165,18 +167,25 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
             targetObstacleChainIndex = -1;
             lastRoof = null;
 
-            // Строит target-chain в пределах vision horizon.
-            if (!JumpOnFromRoofTargetChainBuilder.TryBuildTargetChain(
+            // Проверяет, что detector уже нашел roof-exit target-chain.
+            if (decisionPoint?.Kind != DecisionPointKind.JumpOnFromRoofTarget
+                || decisionPoint.Chain == null)
+            {
+                return false;
+            }
+
+            // Восстанавливает последнюю passive roof для расчета окна схода.
+            if (!RoofRunProjection.TryFindLastPassiveRoof(
                     planningState,
                     worldSnapshot,
-                    worldSnapshot.VisionRightEdgeX,
-                    out actionChain,
-                    out lastRoof))
+                    out lastRoof,
+                    out _))
             {
                 return false;
             }
 
             // Проверяет roof jump-on правила для найденной road-chain.
+            actionChain = decisionPoint.Chain;
             return _specification.IsSatisfiedBy(
                 planningState,
                 actionChain,

@@ -4,17 +4,7 @@ using Assets.Scripts.Bot.Perception;
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
     /// <summary>
-    /// Описывает причину, по которой planner создал точку решения.
-    /// </summary>
-    public enum DecisionPointKind
-    {
-        BlockingThreat,
-        JumpOnOpportunity,
-        RoofJumpOnOpportunity
-    }
-
-    /// <summary>
-    /// Описывает текущую обязательную для обработки ситуацию перед ботом.
+    /// Описывает текущую planning-ситуацию перед ботом.
     /// </summary>
     public sealed class DecisionPoint
     {
@@ -22,7 +12,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         /// Создаёт новую точку решения из готовой chain.
         /// </summary>
         public DecisionPoint(ObstacleChain chain)
-            : this(chain, DecisionPointKind.BlockingThreat, null)
+            : this(chain, DecisionPointKind.BlockingThreat, isDecisionRequired: true, null)
         {
         }
 
@@ -30,7 +20,15 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         /// Создаёт новую точку решения из готовой chain и причины её появления.
         /// </summary>
         public DecisionPoint(ObstacleChain chain, DecisionPointKind kind)
-            : this(chain, kind, null)
+            : this(chain, kind, isDecisionRequired: true, null)
+        {
+        }
+
+        /// <summary>
+        /// Создаёт новую точку решения из готовой chain, её типа и обязательности обработки.
+        /// </summary>
+        public DecisionPoint(ObstacleChain chain, DecisionPointKind kind, bool isDecisionRequired)
+            : this(chain, kind, isDecisionRequired, null)
         {
         }
 
@@ -40,17 +38,30 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         public DecisionPoint(
             ObstacleChain chain,
             DecisionPointKind kind,
+            bool isDecisionRequired,
             ObstacleSnapshot fireBeforeObstacle)
         {
             Chain = chain ?? throw new ArgumentNullException(nameof(chain));
             Kind = kind;
+            IsDecisionRequired = isDecisionRequired;
             FireBeforeObstacle = fireBeforeObstacle;
         }
 
         public ObstacleChain Chain { get; }
         public DecisionPointKind Kind { get; }
-        public bool IsJumpOnOpportunity => Kind == DecisionPointKind.JumpOnOpportunity
-            || Kind == DecisionPointKind.RoofJumpOnOpportunity;
+
+        /// <summary>
+        /// Возвращает true, если planner не должен оставлять эту ситуацию без действия.
+        /// </summary>
+        public bool IsDecisionRequired { get; }
+
+        /// <summary>
+        /// Возвращает true, если optional jump-on objective требует раннее окно смены линии.
+        /// </summary>
+        public bool UsesObjectiveSwitchLaneTiming => !IsDecisionRequired
+            && (Kind == DecisionPointKind.GroundJumpOnTarget
+                || Kind == DecisionPointKind.RoofJumpOnTarget);
+
         public ObstacleSnapshot FireBeforeObstacle { get; }
         public bool HasFireBeforeObstacle => FireBeforeObstacle != null;
 

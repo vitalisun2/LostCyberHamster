@@ -139,7 +139,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
         }
 
         /// <summary>
-        /// Строит target-aware chain в пределах vision horizon и проверяет применимость super-jump-on.
+        /// Берет ground jump-on target-chain из decision point и проверяет применимость super-jump-on.
         /// </summary>
         private bool TryResolveActionChain(
             PlanningState planningState,
@@ -147,18 +147,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
             DecisionPoint decisionPoint,
             out ObstacleChain actionChain)
         {
-            // Строит chain с ближайшим target в допустимом horizon.
-            if (!JumpOnTargetChainBuilder.TryBuildTargetChain(
-                    planningState,
-                    worldSnapshot,
-                    decisionPoint.Chain,
-                    worldSnapshot.VisionRightEdgeX,
-                    out actionChain))
+            // Проверяет, что detector уже нашел ground target-chain.
+            actionChain = null;
+            if (decisionPoint?.Kind != DecisionPointKind.GroundJumpOnTarget
+                || decisionPoint.Chain == null)
             {
                 return false;
             }
 
             // Проверяет применимость super-jump-on к найденной chain.
+            actionChain = decisionPoint.Chain;
             return _specification.IsSatisfiedBy(
                 planningState,
                 actionChain,

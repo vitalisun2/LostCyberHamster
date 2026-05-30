@@ -4,9 +4,9 @@ using Assets.Scripts.Bot.Perception;
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
     /// <summary>
-    /// Строит target-oriented chain для ground jump-on, не меняя общий blocking-chain detector.
+    /// Расширяет road threat-chain до первого ground jump-on target.
     /// </summary>
-    internal static class JumpOnTargetChainBuilder
+    internal static class GroundJumpOnTargetChainComposer
     {
         /// <summary>
         /// Возвращает исходную или расширенную chain, если она ведет к первому ground jump-on target на линии chain.
@@ -18,9 +18,8 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             float maxTargetLeftX,
             out ObstacleChain targetChain)
         {
-            targetChain = null;
-
             // Проверяет обязательный контекст.
+            targetChain = null;
             if (planningState == null
                 || planningState.Hamster == null
                 || worldSnapshot == null
@@ -45,7 +44,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                 return true;
             }
 
-            // Расширяет chain до первого target, оставляя все pre-target obstacles частью одного действия.
+            // Расширяет chain до первого target, оставляя все pre-target obstacles частью одной ситуации.
             var obstacles = new List<ObstacleSnapshot>(sourceChain.Obstacles);
             var indices = new List<int>(sourceChain.Indices);
             int scanStartIndex = sourceChain.Indices[sourceChain.Count - 1] + 1;

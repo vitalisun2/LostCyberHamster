@@ -91,7 +91,7 @@ namespace Assets.Tests.EditMode
     public class DecisionPointDetectorTests
     {
         [Test]
-        public void TryDetectBlockingThreat_BuildsChainWithOccupiedRoof_WhenRoofHasDamagingOccupant()
+        public void TryDetectRequiredDecisionPoint_BuildsChainWithOccupiedRoof_WhenRoofHasDamagingOccupant()
         {
             var detector = new DecisionPointDetector();
             var hamster = CreateHamsterSnapshot(isOnBottomLine: false);
@@ -99,7 +99,7 @@ namespace Assets.Tests.EditMode
             var roofOccupant = CreateObstacleSnapshot(102, ObstacleTypeEnum.smallNotAliveRoadAndRoof, 0.8f, 1.6f, isTopLine: true);
             var worldSnapshot = CreateWorldSnapshot(hamster, roofObstacle, roofOccupant);
 
-            bool detected = detector.TryDetectBlockingThreat(new PlanningState(hamster, 0, 0f), worldSnapshot, out DecisionPoint decisionPoint);
+            bool detected = detector.TryDetectRequiredDecisionPoint(new PlanningState(hamster, 0, 0f), worldSnapshot, out DecisionPoint decisionPoint);
 
             Assert.IsTrue(detected);
             Assert.NotNull(decisionPoint);
@@ -109,14 +109,14 @@ namespace Assets.Tests.EditMode
         }
 
         [Test]
-        public void TryDetectBlockingThreat_BuildsClearRoofChain_WhenRoofIsClear()
+        public void TryDetectRequiredDecisionPoint_BuildsClearRoofChain_WhenRoofIsClear()
         {
             var detector = new DecisionPointDetector();
             var hamster = CreateHamsterSnapshot(isOnBottomLine: false);
             var roofObstacle = CreateObstacleSnapshot(201, ObstacleTypeEnum.mediumNotAlive, 0f, 3.4f, isTopLine: true);
             var worldSnapshot = CreateWorldSnapshot(hamster, roofObstacle);
 
-            bool detected = detector.TryDetectBlockingThreat(new PlanningState(hamster, 0, 0f), worldSnapshot, out DecisionPoint decisionPoint);
+            bool detected = detector.TryDetectRequiredDecisionPoint(new PlanningState(hamster, 0, 0f), worldSnapshot, out DecisionPoint decisionPoint);
 
             Assert.IsTrue(detected);
             Assert.NotNull(decisionPoint);

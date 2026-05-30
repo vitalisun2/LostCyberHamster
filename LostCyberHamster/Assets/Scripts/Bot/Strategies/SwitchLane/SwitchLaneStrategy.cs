@@ -123,8 +123,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             PlanningState planningState,
             DecisionPoint decisionPoint)
         {
-            // Выбирает ранний запуск для явной JumpOn-возможности.
-            if (decisionPoint != null && decisionPoint.IsJumpOnOpportunity)
+            // Выбирает ранний запуск для optional jump-on objective.
+            if (decisionPoint != null && decisionPoint.UsesObjectiveSwitchLaneTiming)
                 return new[]
                 {
                     SwitchLaneTiming.EarlyWindowSelectionRatio

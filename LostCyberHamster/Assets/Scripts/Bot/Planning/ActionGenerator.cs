@@ -42,50 +42,37 @@ namespace Assets.Scripts.Bot.Planning
             // Проецирует мир в состояние планирования.
             WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
 
-            // Собирает действия для обязательной угрозы.
-            DecisionPoint blockingDecisionPoint = null;
-            if (_decisionPointDetector.TryDetectBlockingThreat(
+            // Собирает действия для обязательной planning-ситуации.
+            DecisionPoint requiredDecisionPoint = null;
+            if (_decisionPointDetector.TryDetectRequiredDecisionPoint(
                     planningState,
                     projectedWorldSnapshot,
-                    out blockingDecisionPoint))
+                    out requiredDecisionPoint))
             {
                 CollectActionsForDecisionPoint(
                     planningState,
                     projectedWorldSnapshot,
-                    blockingDecisionPoint,
+                    requiredDecisionPoint,
                     plannedActions);
             }
 
-            // Собирает действия для optional jump-on opportunity.
-            DecisionPoint opportunityDecisionPoint = null;
-            if (_decisionPointDetector.TryDetectJumpOnOpportunity(
+            // Собирает действия для optional jump-on objectives.
+            IReadOnlyList<DecisionPoint> optionalDecisionPoints =
+                _decisionPointDetector.DetectOptionalDecisionPoints(
                     planningState,
-                    projectedWorldSnapshot,
-                    out opportunityDecisionPoint))
+                    projectedWorldSnapshot);
+            for (int decisionPointIndex = 0; decisionPointIndex < optionalDecisionPoints.Count; decisionPointIndex++)
             {
                 CollectActionsForDecisionPoint(
                     planningState,
                     projectedWorldSnapshot,
-                    opportunityDecisionPoint,
-                    plannedActions);
-            }
-
-            // Собирает действия для optional roof jump-on opportunity.
-            DecisionPoint roofOpportunityDecisionPoint = null;
-            if (_decisionPointDetector.TryDetectRoofJumpOnOpportunity(
-                    planningState,
-                    projectedWorldSnapshot,
-                    out roofOpportunityDecisionPoint))
-            {
-                CollectActionsForDecisionPoint(
-                    planningState,
-                    projectedWorldSnapshot,
-                    roofOpportunityDecisionPoint,
+                    optionalDecisionPoints[decisionPointIndex],
                     plannedActions);
             }
 
             // Проверяет наличие точки решения.
-            DecisionPoint logDecisionPoint = blockingDecisionPoint ?? opportunityDecisionPoint ?? roofOpportunityDecisionPoint;
+            DecisionPoint logDecisionPoint = requiredDecisionPoint
+                ?? (optionalDecisionPoints.Count > 0 ? optionalDecisionPoints[0] : null);
             if (logDecisionPoint == null)
             {
                 LogNoDecisionPoint(planningState, projectedWorldSnapshot);
