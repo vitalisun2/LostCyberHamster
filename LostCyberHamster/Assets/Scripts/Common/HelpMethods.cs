@@ -14,6 +14,13 @@ namespace Assets.Scripts.Common
 {
     public static class HelpMethods
     {
+#if UNITY_EDITOR
+        private static int _worldShiftClipCalls;
+        private static float _worldShiftClipTotalMs;
+        private static float _worldShiftClipMaxMs;
+        private static string _worldShiftClipMaxName;
+#endif
+
         public static bool IsOnSameLine(bool isHamsterOnBottomLine, Obstacle obstacle)
         {
             bool isTopObstacle = obstacle.ObstacleType.IsTop;
@@ -163,16 +170,60 @@ namespace Assets.Scripts.Common
         /// </summary>
         public static float GetWorldShiftForClip(TransformAnimatorController animController, string clipName)
         {
+#if UNITY_EDITOR
+            long diagnosticsStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
+#endif
+            float worldShift;
             AnimationClip clip = FindClipByName(animController, clipName);
             if (clip != null)
             {
                 int clipFrames = Mathf.RoundToInt(clip.frameRate * clip.length);
-                return CalculateWorldShiftDistance(clipFrames);
+                worldShift = CalculateWorldShiftDistance(clipFrames);
+            }
+            else
+            {
+                int frames = animController.GetClipFrameCount(clipName);
+                worldShift = CalculateWorldShiftDistance(frames);
             }
 
-            int frames = animController.GetClipFrameCount(clipName);
-            return CalculateWorldShiftDistance(frames);
+#if UNITY_EDITOR
+            RecordWorldShiftClipDiagnostics(clipName, diagnosticsStartTimestamp);
+#endif
+            return worldShift;
         }
+
+#if UNITY_EDITOR
+        public static void ConsumeWorldShiftClipDiagnostics(
+            out int calls,
+            out float totalMs,
+            out float maxMs,
+            out string maxName)
+        {
+            calls = _worldShiftClipCalls;
+            totalMs = _worldShiftClipTotalMs;
+            maxMs = _worldShiftClipMaxMs;
+            maxName = _worldShiftClipMaxName;
+
+            _worldShiftClipCalls = 0;
+            _worldShiftClipTotalMs = 0f;
+            _worldShiftClipMaxMs = 0f;
+            _worldShiftClipMaxName = null;
+        }
+
+        private static void RecordWorldShiftClipDiagnostics(string clipName, long startTimestamp)
+        {
+            long elapsedTicks = global::System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            float elapsedMs = elapsedTicks * 1000f / global::System.Diagnostics.Stopwatch.Frequency;
+
+            _worldShiftClipCalls++;
+            _worldShiftClipTotalMs += elapsedMs;
+            if (elapsedMs <= _worldShiftClipMaxMs)
+                return;
+
+            _worldShiftClipMaxMs = elapsedMs;
+            _worldShiftClipMaxName = clipName;
+        }
+#endif
 
         /// <summary>Возвращает AnimationClip из TransformAnimatorController по имени.</summary>
         public static AnimationClip? FindClipByName(

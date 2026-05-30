@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
@@ -33,14 +34,12 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
 
         public bool TryGetTravel(out float travel)
         {
-            TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
-            if (controller == null)
+            if (!BotAnimationTravelProvider.TryGetTravel(SuperJumpClipName, out float clipTravel))
             {
-                travel = 0f;
+                travel = default;
                 return false;
             }
 
-            float clipTravel = HelpMethods.GetWorldShiftForClip(controller, SuperJumpClipName);
             float upgradeDelayTravel = GetSuperJumpUpgradeDelayTravel();
             travel = clipTravel + upgradeDelayTravel;
             return true;

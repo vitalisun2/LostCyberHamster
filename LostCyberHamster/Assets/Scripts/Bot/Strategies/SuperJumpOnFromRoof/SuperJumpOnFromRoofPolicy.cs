@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnFromRoof;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
@@ -85,32 +86,27 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
         /// </summary>
         public bool TryGetTravel(out JumpOnFromRoofTravel travel)
         {
-            // Находит контроллер анимаций.
-            TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
-            if (controller == null)
+            if (!BotAnimationTravelProvider.TryGetTravel(RunFromRoofClipName, out float runFromRoofTravel)
+                || !BotAnimationTravelProvider.TryGetTravel(SuperRoofJumpClipName, out float roofJumpTravel)
+                || !BotAnimationTravelProvider.TryGetTravel(SuperJumpFromRoofClipName, out float resolveTravel)
+                || !BotAnimationTravelProvider.TryGetTravel(SuperJumpOnObstacleFromRoofClipName, out float actionTravel))
             {
                 travel = default;
                 return false;
             }
 
-            // Считывает основные runtime clips.
-            float runFromRoofTravel = HelpMethods.GetWorldShiftForClip(controller, RunFromRoofClipName);
-            float roofJumpTravel = HelpMethods.GetWorldShiftForClip(controller, SuperRoofJumpClipName);
-            float resolveTravel = HelpMethods.GetWorldShiftForClip(controller, SuperJumpFromRoofClipName);
-            float actionTravel = HelpMethods.GetWorldShiftForClip(controller, SuperJumpOnObstacleFromRoofClipName);
-
             // Считывает medium fallback clips.
             if (runFromRoofTravel <= 0f)
-                runFromRoofTravel = HelpMethods.GetWorldShiftForClip(controller, MediumRunFromRoofClipName);
+                BotAnimationTravelProvider.TryGetTravel(MediumRunFromRoofClipName, out runFromRoofTravel);
 
             if (roofJumpTravel <= 0f)
-                roofJumpTravel = HelpMethods.GetWorldShiftForClip(controller, MediumSuperRoofJumpClipName);
+                BotAnimationTravelProvider.TryGetTravel(MediumSuperRoofJumpClipName, out roofJumpTravel);
 
             if (resolveTravel <= 0f)
-                resolveTravel = HelpMethods.GetWorldShiftForClip(controller, MediumSuperJumpFromRoofClipName);
+                BotAnimationTravelProvider.TryGetTravel(MediumSuperJumpFromRoofClipName, out resolveTravel);
 
             if (actionTravel <= 0f)
-                actionTravel = HelpMethods.GetWorldShiftForClip(controller, MediumSuperJumpOnObstacleFromRoofClipName);
+                BotAnimationTravelProvider.TryGetTravel(MediumSuperJumpOnObstacleFromRoofClipName, out actionTravel);
 
             // Учитывает путь мира до второго input super roof jump.
             actionTravel += SuperJumpOnFromRoofTiming.UpgradeDelayTravel;

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
@@ -29,17 +30,15 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
         /// </summary>
         public bool TryGetTravel(out float travel)
         {
-            // Находит контроллер анимаций в активной сцене.
-            TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
-            if (controller == null)
+            if (!BotAnimationTravelProvider.TryGetTravel(_superJumpClipName, out float clipTravel))
             {
-                travel = 0f;
+                travel = default;
                 return false;
             }
 
             // Складывает дистанцию super jump clip и путь мира за половину double-jump окна.
             float upgradeDelayTravel = GetSuperJumpUpgradeDelayTravel();
-            travel = HelpMethods.GetWorldShiftForClip(controller, _superJumpClipName) + upgradeDelayTravel;
+            travel = clipTravel + upgradeDelayTravel;
             return true;
         }
 

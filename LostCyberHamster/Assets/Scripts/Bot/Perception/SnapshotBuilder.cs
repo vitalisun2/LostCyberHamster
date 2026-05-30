@@ -13,6 +13,15 @@ namespace Assets.Scripts.Bot.Perception
     public sealed class SnapshotBuilder
     {
         private const float _extraVisionScreenFraction = 1f;
+        private static readonly Comparison<ObstacleSnapshot> _compareObstaclesByLeftX =
+            (left, right) => left.LeftX.CompareTo(right.LeftX);
+
+        private readonly Dictionary<int, BoxCollider2D> _obstacleCollidersByInstanceId = new();
+
+        private Camera _camera;
+        private Hamster _cachedHamster;
+        private BoxCollider2D _hamsterCollider;
+        private ObstacleSpawner _cachedSpawner;
 
         /// <summary>
         /// Строит snapshot мира по текущему состоянию хомяка и окружения.
@@ -24,7 +33,7 @@ namespace Assets.Scripts.Bot.Perception
                 throw new InvalidOperationException(
                     "SnapshotBuilder.Build failed: hamster is null. RuntimeBotController should resolve scene dependencies before ticking.");
 
-            Camera camera = Camera.main;
+            Camera camera = GetCamera();
             if (camera == null)
             {
                 throw new InvalidOperationException(
@@ -51,10 +60,10 @@ namespace Assets.Scripts.Bot.Perception
         /// <summary>
         /// Собирает snapshot хомяка.
         /// </summary>
-        private static HamsterSnapshot BuildHamsterSnapshot(Hamster hamster)
+        private HamsterSnapshot BuildHamsterSnapshot(Hamster hamster)
         {
             // Получает runtime bounds collider хомяка.
-            BoxCollider2D collider = hamster.GetComponentInChildren<BoxCollider2D>();
+            BoxCollider2D collider = GetHamsterCollider(hamster);
             if (collider == null)
                 throw new MissingComponentException("SnapshotBuilder.BuildHamsterSnapshot failed: BoxCollider2D is missing on Hamster object.");
 
@@ -80,15 +89,22 @@ namespace Assets.Scripts.Bot.Perception
                 bounds.max.y);
         }
 
-            /// <summary>
-            /// Собирает obstacles в зоне видимости.
-            /// </summary>
-        private static List<ObstacleSnapshot> CollectObstacles(float screenLeftEdgeX, float visionRightEdgeX)
+        /// <summary>
+        /// Собирает obstacles в зоне видимости.
+        /// </summary>
+        private List<ObstacleSnapshot> CollectObstacles(float screenLeftEdgeX, float visionRightEdgeX)
         {
-            var obstacles = new List<ObstacleSnapshot>();
             ObstacleSpawner spawner = ObstacleSpawner.Instance;
             if (spawner == null)
-                return obstacles;
+                return new List<ObstacleSnapshot>(0);
+
+            if (_cachedSpawner != spawner)
+            {
+                _cachedSpawner = spawner;
+                _obstacleCollidersByInstanceId.Clear();
+            }
+
+            var obstacles = new List<ObstacleSnapshot>(spawner.SpawnedObstacles.Count);
 
             for (int i = 0; i < spawner.SpawnedObstacles.Count; i++)
             {
@@ -97,7 +113,7 @@ namespace Assets.Scripts.Bot.Perception
                 if (obstacle == null)
                     continue;
 
-                BoxCollider2D collider = obstacle.GetComponentInChildren<BoxCollider2D>();
+                BoxCollider2D collider = GetObstacleCollider(obstacle);
                 if (collider == null)
                     continue;
 
@@ -116,8 +132,43 @@ namespace Assets.Scripts.Bot.Perception
                     bounds.max.y));
             }
 
-            obstacles.Sort((left, right) => left.LeftX.CompareTo(right.LeftX));
+            obstacles.Sort(_compareObstaclesByLeftX);
             return obstacles;
+        }
+
+        private Camera GetCamera()
+        {
+            if (_camera == null)
+                _camera = Camera.main;
+
+            return _camera;
+        }
+
+        private BoxCollider2D GetHamsterCollider(Hamster hamster)
+        {
+            if (_cachedHamster != hamster || _hamsterCollider == null)
+            {
+                _cachedHamster = hamster;
+                _hamsterCollider = hamster.GetComponentInChildren<BoxCollider2D>();
+            }
+
+            return _hamsterCollider;
+        }
+
+        private BoxCollider2D GetObstacleCollider(Obstacle obstacle)
+        {
+            int instanceId = obstacle.GetInstanceID();
+            if (_obstacleCollidersByInstanceId.TryGetValue(instanceId, out BoxCollider2D collider)
+                && collider != null)
+            {
+                return collider;
+            }
+
+            collider = obstacle.GetComponentInChildren<BoxCollider2D>();
+            if (collider != null)
+                _obstacleCollidersByInstanceId[instanceId] = collider;
+
+            return collider;
         }
 
         /// <summary>

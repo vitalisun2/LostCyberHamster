@@ -309,6 +309,7 @@
     <Compile Include="Assets\Scripts\Common\Guard.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\JumpOnObjectiveRules.cs" />
     <Compile Include="Assets\Scripts\Common\Models\AnimationType.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\BotAnimationTravelProvider.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiToMenuMechanics.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\GameScreenController.cs" />
     <Compile Include="Assets\Scripts\SharedCore\LicenseManager.cs" />

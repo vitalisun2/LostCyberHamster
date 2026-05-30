@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
@@ -55,22 +56,18 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
         /// </summary>
         public bool TryGetTravel(out JumpOnTravel travel)
         {
-            // Находит controller с jump animation clips.
-            TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
-            if (controller == null)
+            if (!BotAnimationTravelProvider.TryGetTravel(JumpOnClipName, out float actionTravel)
+                || !BotAnimationTravelProvider.TryGetTravel(JumpClipName, out float resolveTravel))
             {
                 travel = default;
                 return false;
             }
 
-            // Собирает дистанции resolver-точки и полного action.
-            float actionTravel = HelpMethods.GetWorldShiftForClip(controller, JumpOnClipName);
-            float resolveTravel = HelpMethods.GetWorldShiftForClip(controller, JumpClipName);
             travel = new JumpOnTravel(
                 actionTravel,
                 resolveTravel,
                 resolveFireShiftOffset: 0f);
-            return true;
+            return actionTravel > 0f && resolveTravel > 0f;
         }
 
         /// <summary>

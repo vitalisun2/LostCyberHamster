@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
@@ -29,17 +30,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
         /// </summary>
         public bool TryGetTravel(out float travel)
         {
-            // Находит контроллер анимаций в активной сцене.
-            TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
-            if (controller == null)
-            {
-                travel = 0f;
-                return false;
-            }
-
-            // Считывает world shift для клипа прыжка.
-            travel = HelpMethods.GetWorldShiftForClip(controller, _jumpClipName);
-            return true;
+            return BotAnimationTravelProvider.TryGetTravel(_jumpClipName, out travel);
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.RoofJumpOver;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
@@ -27,21 +28,19 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
 
         public bool TryGetTravel(out RoofJumpOverTravel travel)
         {
-            TransformAnimatorController controller = Object.FindAnyObjectByType<TransformAnimatorController>();
-            if (controller == null)
+            if (!BotAnimationTravelProvider.TryGetTravel(RoofJumpClipName, out float roofJumpTravel)
+                || !BotAnimationTravelProvider.TryGetTravel(JumpFromRoofClipName, out float jumpFromRoofTravel))
             {
                 travel = default;
                 return false;
             }
 
             // Считывает основные roof-jump клипы и fallback для medium roof.
-            float roofJumpTravel = HelpMethods.GetWorldShiftForClip(controller, RoofJumpClipName);
-            float jumpFromRoofTravel = HelpMethods.GetWorldShiftForClip(controller, JumpFromRoofClipName);
             if (roofJumpTravel <= 0f)
-                roofJumpTravel = HelpMethods.GetWorldShiftForClip(controller, MediumRoofJumpClipName);
+                BotAnimationTravelProvider.TryGetTravel(MediumRoofJumpClipName, out roofJumpTravel);
 
             if (jumpFromRoofTravel <= 0f)
-                jumpFromRoofTravel = HelpMethods.GetWorldShiftForClip(controller, MediumJumpFromRoofClipName);
+                BotAnimationTravelProvider.TryGetTravel(MediumJumpFromRoofClipName, out jumpFromRoofTravel);
 
             travel = new RoofJumpOverTravel(roofJumpTravel, jumpFromRoofTravel);
             return roofJumpTravel > 0f && jumpFromRoofTravel > 0f;
