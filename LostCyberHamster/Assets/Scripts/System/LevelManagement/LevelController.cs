@@ -1,4 +1,4 @@
-using Assets.Scripts.GameManagerLogic;
+﻿using Assets.Scripts.GameManagerLogic;
 using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
@@ -17,7 +17,7 @@ namespace Assets.Scripts.System
         Listeners.IGameFinishListener
     {
         private const float DefaultTimeScale = 1.0f;
-        private const float BotEnabledDefaultTimeScale = 4.0f;
+        private const float BotEnabledDefaultTimeScale = 1.0f;
 
         [SerializeField]
         [FormerlySerializedAs("timeScale")]

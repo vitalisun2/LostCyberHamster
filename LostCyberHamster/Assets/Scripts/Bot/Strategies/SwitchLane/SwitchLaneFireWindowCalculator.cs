@@ -33,7 +33,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         /// <summary>
         /// Собирает representative fire shifts из безопасных интервалов смены линии.
         /// </summary>
-        public IReadOnlyList<float> CollectFireShifts(
+        public IReadOnlyList<SwitchLaneFireWindowSample> CollectFireWindowSamples(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
@@ -41,7 +41,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             IReadOnlyList<float> selectionRatios)
         {
             if (selectionRatios == null || selectionRatios.Count == 0)
-                return new List<float>(0);
+                return new List<SwitchLaneFireWindowSample>(0);
 
             // Собирает все безопасные интервалы запуска.
             List<SafeInterval> safeIntervals = CollectSafeFireIntervals(
@@ -51,31 +51,31 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 latestFireShift);
 
             // Применяет выбранную sampling-policy к каждому безопасному интервалу.
-            var fireShifts = new List<float>(safeIntervals.Count * selectionRatios.Count);
+            var samples = new List<SwitchLaneFireWindowSample>(safeIntervals.Count * selectionRatios.Count);
             for (int intervalIndex = 0; intervalIndex < safeIntervals.Count; intervalIndex++)
             {
                 SafeInterval interval = safeIntervals[intervalIndex];
                 for (int ratioIndex = 0; ratioIndex < selectionRatios.Count; ratioIndex++)
                 {
-                    TryAddFireShift(
+                    TryAddFireWindowSample(
                         interval,
                         selectionRatios[ratioIndex],
-                        fireShifts);
+                        samples);
                 }
             }
 
-            return fireShifts;
+            return samples;
         }
 
         /// <summary>
         /// Добавляет representative fire shift из интервала, если такой точки ещё нет.
         /// </summary>
-        private static void TryAddFireShift(
+        private static void TryAddFireWindowSample(
             SafeInterval interval,
             float selectionRatio,
-            List<float> fireShifts)
+            List<SwitchLaneFireWindowSample> samples)
         {
-            if (fireShifts == null)
+            if (samples == null)
                 return;
 
             if (interval.TrySelectInteriorPoint(
@@ -84,8 +84,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                         out float fireShift,
                         epsilon: 0f))
             {
-                if (!ContainsEquivalentFireShift(fireShifts, fireShift))
-                    fireShifts.Add(fireShift);
+                if (!ContainsEquivalentFireShift(samples, fireShift))
+                    samples.Add(new SwitchLaneFireWindowSample(fireShift, interval.Start, interval.End));
             }
         }
 
@@ -93,13 +93,13 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         /// Возвращает true, если список уже содержит эквивалентный fire shift.
         /// </summary>
         private static bool ContainsEquivalentFireShift(
-            IReadOnlyList<float> fireShifts,
+            IReadOnlyList<SwitchLaneFireWindowSample> samples,
             float fireShift)
         {
             const float epsilon = 0.001f;
-            for (int fireShiftIndex = 0; fireShiftIndex < fireShifts.Count; fireShiftIndex++)
+            for (int fireShiftIndex = 0; fireShiftIndex < samples.Count; fireShiftIndex++)
             {
-                float existingFireShift = fireShifts[fireShiftIndex];
+                float existingFireShift = samples[fireShiftIndex].FireShift;
                 if (Math.Abs(existingFireShift - fireShift) <= epsilon)
                     return true;
             }

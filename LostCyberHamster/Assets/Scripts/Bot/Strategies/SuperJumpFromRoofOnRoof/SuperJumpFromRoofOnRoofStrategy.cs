@@ -78,6 +78,8 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
                     travel,
                     out ObstacleSnapshot targetRoof,
                     out int targetRoofIndex,
+                    out float firstFireShift,
+                    out float lastFireShift,
                     out float fireShift))
             {
                 LogPlanReject(planningState, "fireWindow");
@@ -85,7 +87,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
             }
 
             // Добавляет planned action.
-            actions.Add(BuildAction(_policy, planningState, targetRoof, targetRoofIndex, fireShift, travel));
+            actions.Add(BuildAction(_policy, planningState, targetRoof, targetRoofIndex, firstFireShift, lastFireShift, fireShift, travel));
         }
 
         private static void LogPlanReject(PlanningState planningState, string reason)
@@ -101,12 +103,19 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
             PlanningState planningState,
             ObstacleSnapshot targetRoof,
             int targetRoofIndex,
+            float firstFireShift,
+            float lastFireShift,
             float fireShift,
             JumpFromRoofOnRoofTravel travel)
         {
             // Считает trigger position по target roof.
             float projectedTriggerX = targetRoof.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
+                triggerX,
+                fireShift,
+                firstFireShift,
+                lastFireShift);
 
             // Возвращает action с target roof как execution anchor.
             return new PlannedAction(
@@ -121,7 +130,8 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
                 targetBottomLine: null,
                 energyCost: policy.EnergyCost,
                 description: $"{policy.DescriptionPrefix} {targetRoof.ObstacleType}",
-                resultRoofSupportInstanceId: targetRoof.InstanceId);
+                resultRoofSupportInstanceId: targetRoof.InstanceId,
+                triggerWindow: triggerWindow);
         }
     }
 }

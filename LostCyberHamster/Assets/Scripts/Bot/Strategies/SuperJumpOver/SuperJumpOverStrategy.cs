@@ -68,12 +68,13 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                     worldSnapshot,
                     decisionPoint.Chain,
                     superJumpTravel,
+                    out JumpOverChainModel chainWindow,
                     out float fireShift))
             {
                 return;
             }
 
-            actions.Add(BuildAction(_policy, planningState, targetObstacle, targetObstacleIndex, fireShift, superJumpTravel));
+            actions.Add(BuildAction(_policy, planningState, targetObstacle, targetObstacleIndex, chainWindow, fireShift, superJumpTravel));
         }
 
         private static PlannedAction BuildAction(
@@ -81,11 +82,17 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             PlanningState planningState,
             ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
+            JumpOverChainModel chainWindow,
             float fireShift,
             float superJumpTravel)
         {
             float projectedTriggerX = targetObstacle.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
+                triggerX,
+                fireShift,
+                chainWindow.FirstFireShift,
+                chainWindow.LastFireShift);
 
             return new PlannedAction(
                 policy.ActionKind,
@@ -97,7 +104,8 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 targetObstacleInstanceId: targetObstacle.InstanceId,
                 targetBottomLine: null,
                 energyCost: policy.EnergyCost,
-                description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}");
+                description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}",
+                triggerWindow: triggerWindow);
         }
     }
 }

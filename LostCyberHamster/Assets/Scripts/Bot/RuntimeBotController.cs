@@ -38,7 +38,7 @@ namespace Assets.Scripts.Bot
     /// <summary>
     /// Оркестрирует perception, planning и execution бота в рантайме.
     /// </summary>
-    public sealed class RuntimeBotController : MonoBehaviour
+    public sealed class RuntimeBotController : MonoBehaviour, Listeners.IGameLateUpdateListener
     {
         private const float _initRetryInterval = 0.5f;
         private const string _hostObjectName = "[Bot]";
@@ -54,6 +54,7 @@ namespace Assets.Scripts.Bot
         private PlanExecutor _executor;
         private Hamster _hamster;
         private GameManager _gameManager;
+        private GameManager _registeredGameManager;
         private PlanBuilder _planBuilder;
         private RuntimeBotEventTracker _eventTracker;
         private float _nextInitRetryTime;
@@ -157,9 +158,21 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Выполняет один кадр цикла бота, когда runtime-зависимости готовы и игровой ран активен.
+        /// Подключает бота к game loop, когда runtime-зависимости становятся доступны.
         /// </summary>
         private void Update()
+        {
+            if (!IsEnabled)
+                return;
+
+            if (!IsInitialized || _registeredGameManager == null)
+                TryResolveRuntimeDependencies();
+        }
+
+        /// <summary>
+        /// Выполняет один кадр цикла бота внутри детерминированного game loop после update-движения мира.
+        /// </summary>
+        public void OnLateUpdate(float deltaTime)
         {
             if (!IsEnabled)
                 return;
@@ -178,6 +191,7 @@ namespace Assets.Scripts.Bot
 
         private void OnDestroy()
         {
+            UnregisterFromGameManager();
             _eventTracker?.Dispose();
 #if UNITY_EDITOR
             DisposePerfDiagnostics();
@@ -297,8 +311,29 @@ namespace Assets.Scripts.Bot
             if (!IsInitialized)
                 return;
 
+            RegisterWithGameManager(_gameManager);
+
             if (_eventTracker == null)
                 _eventTracker = new RuntimeBotEventTracker(_hamster, _gameManager);
+        }
+
+        private void RegisterWithGameManager(GameManager gameManager)
+        {
+            if (gameManager == null || ReferenceEquals(_registeredGameManager, gameManager))
+                return;
+
+            UnregisterFromGameManager();
+            gameManager.AddListener(this);
+            _registeredGameManager = gameManager;
+        }
+
+        private void UnregisterFromGameManager()
+        {
+            if (_registeredGameManager == null)
+                return;
+
+            _registeredGameManager.RemoveListener(this);
+            _registeredGameManager = null;
         }
 
 #if UNITY_EDITOR

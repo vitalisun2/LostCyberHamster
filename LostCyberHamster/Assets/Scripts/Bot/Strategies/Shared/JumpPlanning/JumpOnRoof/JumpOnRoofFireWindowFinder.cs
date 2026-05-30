@@ -46,10 +46,14 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
             float jumpTravel,
             out ObstacleSnapshot targetObstacle,
             out int targetObstacleIndex,
+            out float firstFireShift,
+            out float lastFireShift,
             out float fireShift)
         {
             targetObstacle = null;
             targetObstacleIndex = -1;
+            firstFireShift = 0f;
+            lastFireShift = 0f;
             fireShift = 0f;
 
             // Проверяет обязательные входные данные.
@@ -71,8 +75,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof
                     targetObstacle,
                     roofChainIndex,
                     jumpTravel,
-                    out float firstFireShift,
-                    out float lastFireShift))
+                    out firstFireShift,
+                    out lastFireShift))
             {
                 return false;
             }

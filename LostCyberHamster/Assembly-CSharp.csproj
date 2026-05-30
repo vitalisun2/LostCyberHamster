@@ -187,6 +187,7 @@
     <Compile Include="Assets\Scripts\Common\Models\DecorationTile.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimatorController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpFromRoof\IJumpFromRoofPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\PlanState\ActionTriggerWindow.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Simulation\ActionInProgressProjector.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\Gameplay\Hamster.cs" />
@@ -247,6 +248,7 @@
     <Compile Include="Assets\Scripts\Gameplay\Obstacle.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\BoomEffectAction.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiPauseScreenMechanics.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowSample.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\RoofJumpOver\RoofJumpOverSimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\RuntimeBotEventTracker.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpFromRoofOnRoof\JumpFromRoofOnRoofRetainedActionValidator.cs" />

@@ -95,6 +95,11 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
             ObstacleSnapshot hazardObstacle = chainModel.FirstHazard;
             float projectedTriggerX = hazardObstacle.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
+                triggerX,
+                fireShift,
+                chainModel.FirstFireShift,
+                chainModel.LastFireShift);
 
             return new PlannedAction(
                 policy.ActionKind,
@@ -108,7 +113,8 @@ namespace Assets.Scripts.Bot.Strategies.RoofJumpOver
                 targetBottomLine: null,
                 energyCost: policy.EnergyCost,
                 description: BuildDescription(policy, chainModel),
-                resultRoofSupportInstanceId: supportObstacle.InstanceId);
+                resultRoofSupportInstanceId: supportObstacle.InstanceId,
+                triggerWindow: triggerWindow);
         }
 
         private static string BuildDescription(

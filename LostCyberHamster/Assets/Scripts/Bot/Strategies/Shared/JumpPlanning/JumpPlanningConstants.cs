@@ -8,12 +8,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
     internal static class JumpPlanningConstants
     {
         /// <summary>
-        /// Базовый внутренний отступ от обеих границ fire-window для jump-like действий.
+        /// Небольшой геометрический отступ от обеих границ fire-window для jump-like действий.
         /// </summary>
         public const float FireWindowBoundaryMargin = 0.1f;
 
         /// <summary>
-        /// Возвращает runtime-отступ fire-window с учетом ускорения времени.
+        /// Возвращает геометрический отступ fire-window.
         /// </summary>
         public static float GetEffectiveFireWindowBoundaryMargin()
         {
@@ -25,10 +25,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
         /// </summary>
         public static float GetEffectiveFireWindowBoundaryMargin(float timeScale)
         {
-            if (timeScale <= 1f)
-                return FireWindowBoundaryMargin;
-
-            return FireWindowBoundaryMargin * timeScale;
+            return FireWindowBoundaryMargin;
         }
     }
 }

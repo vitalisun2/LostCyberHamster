@@ -73,6 +73,8 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                     jumpTravel,
                     out ObstacleSnapshot targetObstacle,
                     out int targetObstacleIndex,
+                    out float firstFireShift,
+                    out float lastFireShift,
                     out float fireShift))
             {
                 return;
@@ -80,7 +82,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 
             // Добавляет готовое действие в результирующий список.
             ObstacleSnapshot triggerObstacle = decisionPoint.Chain.FirstObstacle;
-            actions.Add(BuildAction(_policy, planningState, triggerObstacle, targetObstacle, targetObstacleIndex, fireShift, jumpTravel));
+            actions.Add(BuildAction(_policy, planningState, triggerObstacle, targetObstacle, targetObstacleIndex, firstFireShift, lastFireShift, fireShift, jumpTravel));
         }
 
         /// <summary>
@@ -92,12 +94,19 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             ObstacleSnapshot triggerObstacle,
             ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
+            float firstFireShift,
+            float lastFireShift,
             float fireShift,
             float jumpTravel)
         {
             // Оставляет trigger в абсолютной runtime-линии перед хомяком.
             float projectedTriggerX = triggerObstacle.LeftX - fireShift;
             float renderWorldX = projectedTriggerX + planningState.ProjectionWorldShift;
+            ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
+                projectedTriggerX,
+                fireShift,
+                firstFireShift,
+                lastFireShift);
 
             // Формирует итоговое плановое действие.
             return new PlannedAction(
@@ -111,7 +120,8 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 triggerObstacleInstanceId: triggerObstacle.InstanceId,
                 targetBottomLine: null,
                 energyCost: policy.EnergyCost,
-                description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}");
+                description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}",
+                triggerWindow: triggerWindow);
         }
     }
 }

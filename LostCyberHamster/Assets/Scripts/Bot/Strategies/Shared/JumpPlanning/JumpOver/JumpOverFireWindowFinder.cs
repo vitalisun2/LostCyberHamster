@@ -25,8 +25,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
             WorldSnapshot projectedWorldSnapshot,
             ObstacleChain chain,
             float jumpTravel,
+            out JumpOverChainModel chainWindow,
             out float fireShift)
         {
+            chainWindow = default;
+            fireShift = 0f;
+
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (projectedWorldSnapshot, nameof(projectedWorldSnapshot)),
@@ -37,9 +41,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
                     planningState.Hamster,
                     chain,
                     jumpTravel,
-                    out JumpOverChainModel chainWindow))
+                    out chainWindow))
             {
-                fireShift = 0f;
                 return false;
             }
 

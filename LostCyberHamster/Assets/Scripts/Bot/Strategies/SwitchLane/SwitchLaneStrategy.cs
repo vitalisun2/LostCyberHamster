@@ -77,16 +77,17 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             IReadOnlyList<float> selectionRatios = GetSelectionRatios(
                 planningState,
                 decisionPoint);
-            IReadOnlyList<float> fireShifts = _fireWindowCalculator.CollectFireShifts(
+            IReadOnlyList<SwitchLaneFireWindowSample> fireWindowSamples = _fireWindowCalculator.CollectFireWindowSamples(
                 worldSnapshot,
                 hamster,
                 targetBottomLine,
                 latestFireShift,
                 selectionRatios);
 
-            for (int fireShiftIndex = 0; fireShiftIndex < fireShifts.Count; fireShiftIndex++)
+            for (int fireShiftIndex = 0; fireShiftIndex < fireWindowSamples.Count; fireShiftIndex++)
             {
-                float fireShift = fireShifts[fireShiftIndex];
+                SwitchLaneFireWindowSample fireWindowSample = fireWindowSamples[fireShiftIndex];
+                float fireShift = fireWindowSample.FireShift;
                 if (!TryGetResultRoofSupport(
                         worldSnapshot,
                         hamster,
@@ -102,7 +103,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     targetObstacle,
                     targetObstacleIndex,
                     targetBottomLine,
-                    fireShift,
+                    fireWindowSample,
                     resultRoofSupportInstanceId));
             }
         }
@@ -145,12 +146,18 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
             bool targetBottomLine,
-            float fireShift,
+            SwitchLaneFireWindowSample fireWindowSample,
             int? resultRoofSupportInstanceId)
         {
             // Рассчитывает мировую точку срабатывания действия.
+            float fireShift = fireWindowSample.FireShift;
             float projectedTriggerX = targetObstacle.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
+                triggerX,
+                fireShift,
+                fireWindowSample.FirstFireShift,
+                fireWindowSample.LastFireShift);
 
             // Создаёт action с рассчитанными параметрами исполнения.
             return new PlannedAction(
@@ -164,7 +171,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 targetBottomLine: targetBottomLine,
                 energyCost: 0,
                 description: $"Switch lane before {targetObstacle.ObstacleType}",
-                resultRoofSupportInstanceId: resultRoofSupportInstanceId);
+                resultRoofSupportInstanceId: resultRoofSupportInstanceId,
+                triggerWindow: triggerWindow);
         }
 
         /// <summary>

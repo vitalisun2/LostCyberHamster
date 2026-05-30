@@ -12,6 +12,8 @@ namespace Assets.Scripts.Bot.Planning
     /// </summary>
     public sealed class PlanBuilder
     {
+        private const int InProgressExecutionHandoffActionCount = 2;
+
         private readonly PlanningGraphBuilder _graphBuilder;
         private readonly TransitionSimulator _transitionSimulator;
         private readonly PlanEvaluator _planEvaluator;
@@ -88,9 +90,12 @@ namespace Assets.Scripts.Bot.Planning
             for (int actionIndex = 0; actionIndex < currentActions.Count; actionIndex++)
             {
                 PlannedAction action = currentActions[actionIndex];
-                if (!ShouldRetainAction(action, actionIndex, worldSnapshot, retainInProgressHead))
+                if (!ShouldRetainCommittedAction(action, actionIndex, worldSnapshot, retainInProgressHead))
                     break;
 
+                bool isExecutionHandoffAction = IsInProgressExecutionHandoffAction(
+                    actionIndex,
+                    retainInProgressHead);
                 bool isBoundaryRetainedAction = IsBoundaryRetainedAction(
                     currentActions,
                     actionIndex,
@@ -99,7 +104,7 @@ namespace Assets.Scripts.Bot.Planning
                 bool requiresRetainedValidation = isBoundaryRetainedAction
                     || IsTargetBoundJumpOnBeyondScreen(action, worldSnapshot);
                 if (requiresRetainedValidation
-                    && !(retainInProgressHead && actionIndex == 0)
+                    && !isExecutionHandoffAction
                     && !_retainedActionRevalidator.IsStillValid(currentState, action, worldSnapshot))
                     break;
 
@@ -137,6 +142,29 @@ namespace Assets.Scripts.Bot.Planning
                 nextActionIndex,
                 worldSnapshot,
                 retainInProgressHead);
+        }
+
+        /// <summary>
+        /// Проверяет сохранение committed-action в префиксе нового плана.
+        /// </summary>
+        private static bool ShouldRetainCommittedAction(
+            PlannedAction action,
+            int actionIndex,
+            WorldSnapshot worldSnapshot,
+            bool retainInProgressHead)
+        {
+            if (IsInProgressExecutionHandoffAction(actionIndex, retainInProgressHead))
+                return true;
+
+            return ShouldRetainAction(action, actionIndex, worldSnapshot, retainInProgressHead);
+        }
+
+        /// <summary>
+        /// Определяет атомарный handoff между уже запущенным head-action и ближайшим следующим действием.
+        /// </summary>
+        private static bool IsInProgressExecutionHandoffAction(int actionIndex, bool retainInProgressHead)
+        {
+            return retainInProgressHead && actionIndex < InProgressExecutionHandoffActionCount;
         }
 
         /// <summary>

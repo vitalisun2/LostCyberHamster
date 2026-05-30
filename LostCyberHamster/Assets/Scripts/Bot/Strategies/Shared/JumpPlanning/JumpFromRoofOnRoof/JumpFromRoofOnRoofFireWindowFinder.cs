@@ -32,11 +32,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
             JumpFromRoofOnRoofTravel travel,
             out ObstacleSnapshot targetRoof,
             out int targetRoofIndex,
+            out float firstFireShift,
+            out float lastFireShift,
             out float fireShift)
         {
             // Инициализирует пустой результат.
             targetRoof = null;
             targetRoofIndex = -1;
+            firstFireShift = 0f;
+            lastFireShift = 0f;
             fireShift = 0f;
 
             // Находит target roof для текущего roof-to-roof сценария.
@@ -64,8 +68,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof
                     lastObstacleBeforeTargetRoof,
                     _policy.BigAliveCollisionPaddingRatio,
                     travel,
-                    out float firstFireShift,
-                    out float lastFireShift,
+                    out firstFireShift,
+                    out lastFireShift,
                     out fireShift))
             {
                 LogWindowReject(

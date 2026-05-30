@@ -25,7 +25,8 @@ namespace Assets.Scripts.Bot.PlanState
             int energyCost = 0,
             string description = null,
             int? resultRoofSupportInstanceId = null,
-            bool fulfillsJumpOnObjective = false)
+            bool fulfillsJumpOnObjective = false,
+            ActionTriggerWindow? triggerWindow = null)
         {
             Kind = kind;
             TriggerX = triggerX;
@@ -40,6 +41,7 @@ namespace Assets.Scripts.Bot.PlanState
             Description = description;
             ResultRoofSupportInstanceId = resultRoofSupportInstanceId;
             FulfillsJumpOnObjective = fulfillsJumpOnObjective;
+            TriggerWindow = triggerWindow;
         }
 
         public BotActionKind Kind { get; }
@@ -55,6 +57,7 @@ namespace Assets.Scripts.Bot.PlanState
         public string Description { get; }
         public int? ResultRoofSupportInstanceId { get; }
         public bool FulfillsJumpOnObjective { get; }
+        public ActionTriggerWindow? TriggerWindow { get; }
 
         /// <summary>
         /// Сравнивает два действия по их planning-параметрам.
@@ -78,7 +81,19 @@ namespace Assets.Scripts.Bot.PlanState
                 && TargetBottomLine == other.TargetBottomLine
                 && EnergyCost == other.EnergyCost
                 && ResultRoofSupportInstanceId == other.ResultRoofSupportInstanceId
-                && FulfillsJumpOnObjective == other.FulfillsJumpOnObjective;
+                && FulfillsJumpOnObjective == other.FulfillsJumpOnObjective
+                && AreTriggerWindowsEquivalent(TriggerWindow, other.TriggerWindow);
+        }
+
+        private static bool AreTriggerWindowsEquivalent(
+            ActionTriggerWindow? left,
+            ActionTriggerWindow? right)
+        {
+            if (!left.HasValue || !right.HasValue)
+                return left.HasValue == right.HasValue;
+
+            return Math.Abs(left.Value.EarliestTriggerX - right.Value.EarliestTriggerX) <= EqualityEpsilon
+                && Math.Abs(left.Value.LatestTriggerX - right.Value.LatestTriggerX) <= EqualityEpsilon;
         }
     }
 }

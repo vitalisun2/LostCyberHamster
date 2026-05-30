@@ -180,6 +180,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
             ObstacleSnapshot targetObstacle = window.TargetObstacle;
             float projectedTriggerX = triggerObstacle.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
+                triggerX,
+                fireShift,
+                window.FirstFireShift,
+                window.LastFireShift);
 
             // Создаёт описание action.
             return new PlannedAction(
@@ -194,7 +199,8 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
                 targetBottomLine: null,
                 energyCost: policy.EnergyCost,
                 description: $"{policy.DescriptionPrefix} {targetObstacle.ObstacleType}",
-                fulfillsJumpOnObjective: JumpOnObjectiveRules.HasEnergyForJumpOnObjective(planningState.Hamster));
+                fulfillsJumpOnObjective: JumpOnObjectiveRules.HasEnergyForJumpOnObjective(planningState.Hamster),
+                triggerWindow: triggerWindow);
         }
     }
 }

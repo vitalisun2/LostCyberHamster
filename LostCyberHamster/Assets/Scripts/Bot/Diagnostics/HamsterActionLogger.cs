@@ -11,9 +11,15 @@ namespace Assets.Scripts.Bot.Diagnostics
     {
         public static void LogFire(PlannedAction action, float obstacleLeftX, string extra = null)
         {
+            string window = action.TriggerWindow.HasValue
+                ? $"window=[{action.TriggerWindow.Value.EarliestTriggerX:F2},{action.TriggerWindow.Value.LatestTriggerX:F2}] "
+                : string.Empty;
+            float triggerOvershoot = action.TriggerX - obstacleLeftX;
+
             DebugManager.DiagLog(
                 $"[Bot EXEC] FIRE kind={action.Kind} " +
                 $"triggerX={action.TriggerX:F2} renderX={action.RenderWorldX:F2} obstacleLeftX={obstacleLeftX:F2} " +
+                $"triggerOvershoot={triggerOvershoot:F2} {window}" +
                 $"{extra ?? string.Empty}" +
                 $"desc={action.Description}");
         }

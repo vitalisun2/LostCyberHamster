@@ -132,6 +132,11 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
             ObstacleSnapshot targetObstacle = chainModel.FirstObstacle;
             float projectedTriggerX = targetObstacle.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
+                triggerX,
+                fireShift,
+                chainModel.FirstFireShift,
+                chainModel.LastFireShift);
 
             // Возвращает action.
             return new PlannedAction(
@@ -145,7 +150,8 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
                 triggerObstacleInstanceId: targetObstacle.InstanceId,
                 targetBottomLine: null,
                 energyCost: policy.EnergyCost,
-                description: BuildDescription(policy, chainModel));
+                description: BuildDescription(policy, chainModel),
+                triggerWindow: triggerWindow);
         }
 
         /// <summary>
