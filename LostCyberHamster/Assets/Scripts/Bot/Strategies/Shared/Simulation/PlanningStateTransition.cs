@@ -135,12 +135,20 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
         /// </summary>
         public static HamsterSnapshot ApplyLaneSwitch(HamsterSnapshot hamster, PlannedAction action)
         {
-            bool isOnRoof = action.TargetBottomLine.HasValue ? false : hamster.IsOnRoof;
+            // Определяет, остается ли хомяк на roof support после смены линии.
+            bool keepsRoofSupport = hamster.IsOnRoof && action.ResultRoofSupportInstanceId.HasValue;
+            bool isOnRoof = keepsRoofSupport || (!action.TargetBottomLine.HasValue && hamster.IsOnRoof);
             bool targetBottomLine = action.TargetBottomLine ?? hamster.IsOnBottomLine;
-            int? roofSupportInstanceId = isOnRoof ? hamster.RoofSupportInstanceId : null;
+            int? roofSupportInstanceId = keepsRoofSupport
+                ? action.ResultRoofSupportInstanceId
+                : (isOnRoof ? hamster.RoofSupportInstanceId : null);
+            HamsterStateEnum hamsterState = hamster.HamsterState == HamsterStateEnum.RoofRun && !isOnRoof
+                ? HamsterStateEnum.RunFromRoof
+                : hamster.HamsterState;
 
+            // Возвращает состояние после завершения смены линии.
             return new HamsterSnapshot(
-                hamster.HamsterState,
+                hamsterState,
                 targetBottomLine,
                 isOnRoof,
                 hamster.Energy - action.EnergyCost,

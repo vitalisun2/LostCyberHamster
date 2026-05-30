@@ -28,9 +28,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
         public float LastFireShift { get; }
         public float SelectedFireShift { get; }
 
-        public bool ContainsObstacleIndex(int obstacleIndex)
+        public bool IsLastObstacle(int obstacleIndex)
         {
-            return obstacleIndex >= FirstObstacleIndex && obstacleIndex <= LastObstacleIndex;
+            return obstacleIndex == LastObstacleIndex;
         }
     }
 }

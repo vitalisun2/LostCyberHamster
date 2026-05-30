@@ -85,7 +85,56 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 selectionRatios);
 
             for (int fireShiftIndex = 0; fireShiftIndex < fireShifts.Count; fireShiftIndex++)
-                actions.Add(BuildAction(planningState, targetObstacle, targetObstacleIndex, targetBottomLine, fireShifts[fireShiftIndex]));
+            {
+                float fireShift = fireShifts[fireShiftIndex];
+                if (!TryGetResultRoofSupport(
+                        worldSnapshot,
+                        hamster,
+                        targetBottomLine,
+                        fireShift,
+                        out int? resultRoofSupportInstanceId))
+                {
+                    continue;
+                }
+
+                actions.Add(BuildAction(
+                    planningState,
+                    targetObstacle,
+                    targetObstacleIndex,
+                    targetBottomLine,
+                    fireShift,
+                    resultRoofSupportInstanceId));
+            }
+        }
+
+        /// <summary>
+        /// Возвращает roof support для switch с крыши или null для обычной смены линии на дороге.
+        /// </summary>
+        private bool TryGetResultRoofSupport(
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
+            bool targetBottomLine,
+            float fireShift,
+            out int? resultRoofSupportInstanceId)
+        {
+            // Для ground-switch support не требуется.
+            resultRoofSupportInstanceId = null;
+            if (!hamster.IsOnRoof)
+                return true;
+
+            // Для roof-switch разрешает только переход на roof target-линии.
+            if (!_fireWindowCalculator.TryFindTargetRoofSupportAtFireShift(
+                    worldSnapshot,
+                    hamster,
+                    targetBottomLine,
+                    fireShift,
+                    out ObstacleSnapshot support))
+            {
+                return false;
+            }
+
+            resultRoofSupportInstanceId = support.InstanceId;
+            return true;
         }
 
         /// <summary>
@@ -96,7 +145,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             ObstacleSnapshot targetObstacle,
             int targetObstacleIndex,
             bool targetBottomLine,
-            float fireShift)
+            float fireShift,
+            int? resultRoofSupportInstanceId)
         {
             // Рассчитывает мировую точку срабатывания действия.
             float projectedTriggerX = targetObstacle.LeftX - fireShift;
@@ -113,7 +163,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 targetObstacleInstanceId: targetObstacle.InstanceId,
                 targetBottomLine: targetBottomLine,
                 energyCost: 0,
-                description: $"Switch lane before {targetObstacle.ObstacleType}");
+                description: $"Switch lane before {targetObstacle.ObstacleType}",
+                resultRoofSupportInstanceId: resultRoofSupportInstanceId);
         }
 
         /// <summary>

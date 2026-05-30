@@ -1,12 +1,9 @@
-using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.GameEngine.Mechanics.Models;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
 {
@@ -50,6 +47,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
                 return false;
             }
 
+            if (!CanStillExecute(planningState.Hamster, targetObstacle, action))
+                return false;
+
             if (decisionPoint.Chain.FirstObstacle.InstanceId != targetObstacle.InstanceId)
                 return false;
 
@@ -79,13 +79,25 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
                 return false;
             }
 
-            List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
             return _fireWindowFinder.CheckRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
-                baseObstacles,
+                JumpObstacleProjection.BuildBase(projectedWorldSnapshot),
                 fireShift,
                 action.PostFireWorldShift,
                 chainWindow);
+        }
+
+        private bool CanStillExecute(
+            HamsterSnapshot hamster,
+            ObstacleSnapshot targetObstacle,
+            PlannedAction action)
+        {
+            return hamster != null
+                && !hamster.IsOnRoof
+                && !hamster.IsShifting
+                && hamster.Energy >= action.EnergyCost
+                && targetObstacle.IsBottomLine == hamster.IsOnBottomLine
+                && _policy.CanJumpOverObstacle(targetObstacle.ObstacleType);
         }
 
         private static bool TryGetRemainingFireShift(
@@ -119,5 +131,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
             fireShift = targetObstacle.LeftX - projectedTriggerX;
             return true;
         }
+
     }
 }

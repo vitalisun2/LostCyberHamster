@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Assets.Scripts;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -140,7 +141,50 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             if (safeStart <= latestFireShift)
                 safeIntervals.Add(new SafeInterval(safeStart, latestFireShift));
 
+            // Для switch с крыши оставляет только окна, где target-линия имеет roof support под хомяком.
+            if (hamster.IsOnRoof)
+            {
+                safeIntervals = IntersectWithTargetRoofSupportIntervals(
+                    worldSnapshot,
+                    hamster,
+                    targetBottomLine,
+                    latestFireShift,
+                    safeIntervals);
+            }
+
             return safeIntervals;
+        }
+
+        /// <summary>
+        /// Ищет roof support на целевой линии в момент запуска SwitchLane.
+        /// </summary>
+        public bool TryFindTargetRoofSupportAtFireShift(
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
+            bool targetBottomLine,
+            float fireShift,
+            out ObstacleSnapshot support)
+        {
+            // Подготавливает результат и проверяет вход.
+            support = null;
+            if (worldSnapshot == null || hamster == null)
+                return false;
+
+            // Ищет roof, которую runtime найдет под хомяком сразу после tap.
+            for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (!IsTargetLineRoof(obstacle, targetBottomLine))
+                    continue;
+
+                if (!IsRoofSupportUnderHamsterAtFireShift(hamster, obstacle, fireShift))
+                    continue;
+
+                support = obstacle;
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -184,6 +228,116 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
             // Возвращает найденные опасные интервалы запуска.
             return unsafeIntervals;
+        }
+
+        /// <summary>
+        /// Пересекает безопасные интервалы SwitchLane с интервалами наличия roof support на целевой линии.
+        /// </summary>
+        private static List<SafeInterval> IntersectWithTargetRoofSupportIntervals(
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
+            bool targetBottomLine,
+            float latestFireShift,
+            IReadOnlyList<SafeInterval> safeIntervals)
+        {
+            // Собирает интервалы, где target roof находится под центром хомяка с runtime tolerance.
+            List<SafeInterval> supportIntervals = CollectTargetRoofSupportIntervals(
+                worldSnapshot,
+                hamster,
+                targetBottomLine,
+                latestFireShift);
+            supportIntervals.Sort((left, right) => left.Start.CompareTo(right.Start));
+
+            // Возвращает пересечение safety и roof-support окон.
+            var supportedSafeIntervals = new List<SafeInterval>();
+            for (int safeIndex = 0; safeIndex < safeIntervals.Count; safeIndex++)
+            {
+                SafeInterval safeInterval = safeIntervals[safeIndex];
+                for (int supportIndex = 0; supportIndex < supportIntervals.Count; supportIndex++)
+                {
+                    SafeInterval supportInterval = supportIntervals[supportIndex];
+                    float start = Math.Max(safeInterval.Start, supportInterval.Start);
+                    float end = Math.Min(safeInterval.End, supportInterval.End);
+                    if (start <= end)
+                        supportedSafeIntervals.Add(new SafeInterval(start, end));
+                }
+            }
+
+            return supportedSafeIntervals;
+        }
+
+        /// <summary>
+        /// Собирает интервалы fire shift, в которых target-line roof остаётся под хомяком после tap.
+        /// </summary>
+        private static List<SafeInterval> CollectTargetRoofSupportIntervals(
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
+            bool targetBottomLine,
+            float latestFireShift)
+        {
+            // Отсекает неполный вход.
+            var supportIntervals = new List<SafeInterval>();
+            if (worldSnapshot == null || hamster == null)
+                return supportIntervals;
+
+            // Проецирует каждую target-line roof в окно shift, где runtime считает её опорой.
+            for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (!IsTargetLineRoof(obstacle, targetBottomLine))
+                    continue;
+
+                float supportRadius = GetRoofSupportRadius(obstacle);
+                float supportStart = obstacle.CenterX - hamster.CenterX - supportRadius;
+                float supportEnd = obstacle.CenterX - hamster.CenterX + supportRadius;
+
+                if (supportEnd < 0f || supportStart > latestFireShift)
+                    continue;
+
+                if (supportStart < 0f)
+                    supportStart = 0f;
+
+                if (supportEnd > latestFireShift)
+                    supportEnd = latestFireShift;
+
+                supportIntervals.Add(new SafeInterval(supportStart, supportEnd));
+            }
+
+            return supportIntervals;
+        }
+
+        /// <summary>
+        /// Проверяет, является ли obstacle roof на целевой линии SwitchLane.
+        /// </summary>
+        private static bool IsTargetLineRoof(
+            ObstacleSnapshot obstacle,
+            bool targetBottomLine)
+        {
+            return obstacle != null
+                && obstacle.IsBottomLine == targetBottomLine
+                && ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType);
+        }
+
+        /// <summary>
+        /// Проверяет runtime-условие поиска roof support под хомяком после сдвига мира.
+        /// </summary>
+        private static bool IsRoofSupportUnderHamsterAtFireShift(
+            HamsterSnapshot hamster,
+            ObstacleSnapshot roof,
+            float fireShift)
+        {
+            float shiftedRoofCenterX = roof.CenterX - fireShift;
+            float distanceToHamsterCenter = Math.Abs(hamster.CenterX - shiftedRoofCenterX);
+            return distanceToHamsterCenter <= GetRoofSupportRadius(roof);
+        }
+
+        /// <summary>
+        /// Возвращает radius поиска roof support, повторяя HelpMethods.FindBigNotAliveUnderHamster.
+        /// </summary>
+        private static float GetRoofSupportRadius(ObstacleSnapshot roof)
+        {
+            float roofWidth = roof.RightX - roof.LeftX;
+            return roofWidth * 0.5f + Consts.BigNotAliveEdgeTolerance;
         }
     }
 }

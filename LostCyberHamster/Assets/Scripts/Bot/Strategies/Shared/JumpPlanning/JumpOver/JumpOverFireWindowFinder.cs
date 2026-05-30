@@ -75,7 +75,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver
 
             JumpResolveResult result = _policy.Resolve(obstaclesAtFireShift, context);
             return result.State == _policy.ExpectedOverState
-                   && chainWindow.ContainsObstacleIndex(result.TargetIndex);
+                   && chainWindow.IsLastObstacle(result.TargetIndex);
         }
     }
 }

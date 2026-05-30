@@ -65,6 +65,26 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             if (fireShift < 0f || fireShift > latestFireShift + _validationEpsilon)
                 return false;
 
+            // Для roof-switch проверяет, что сохраненный action всё ещё ведет на ту же roof support.
+            if (context.PlanningState.Hamster.IsOnRoof)
+            {
+                if (!context.Action.ResultRoofSupportInstanceId.HasValue)
+                    return false;
+
+                if (!_fireWindowCalculator.TryFindTargetRoofSupportAtFireShift(
+                        context.ProjectedWorldSnapshot,
+                        context.PlanningState.Hamster,
+                        context.Action.TargetBottomLine.Value,
+                        fireShift,
+                        out var support))
+                {
+                    return false;
+                }
+
+                if (support.InstanceId != context.Action.ResultRoofSupportInstanceId.Value)
+                    return false;
+            }
+
             // Проверяет попадание fire shift в одно из безопасных окон смены линии.
             List<SafeInterval> safeIntervals = _fireWindowCalculator.CollectSafeFireIntervals(
                 context.ProjectedWorldSnapshot,
