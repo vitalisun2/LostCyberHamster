@@ -1508,7 +1508,7 @@ public class LevelTilemapEditor : EditorWindow
     }
 
     /// <summary>
-    /// Добавляет новый паттерн в список.
+    /// Добавляет новый паттерн сразу после выбранного паттерна.
     /// </summary>
     private void AddNewPattern()
     {
@@ -1525,15 +1525,42 @@ public class LevelTilemapEditor : EditorWindow
             obstacles = new List<ObstacleModel>()
         };
 
-        _currentLevelInfo.patterns.Add(newPattern);
+        var insertIndex = GetNewPatternInsertIndex();
+        _currentLevelInfo.patterns.Insert(insertIndex, newPattern);
 
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-
-        _selectedPatternIndex = _currentLevelInfo.patterns.Count - 1;
-        _uiManager.UpdatePatternsList(patternNames, _selectedPatternIndex);
+        _selectedPatternIndex = insertIndex;
+        RefreshPatternListSelectingCurrentPattern();
         _uiManager.UpdatePatternNameField(newPattern.name);
         _uiManager.UpdatePatternDescriptionField(newPattern.desсription);
+        AddTilesToTilemap();
+    }
 
+    /// <summary>
+    /// Возвращает позицию вставки нового паттерна относительно текущего выбора.
+    /// </summary>
+    private int GetNewPatternInsertIndex()
+    {
+        if (_selectedPatternIndex < 0 || _selectedPatternIndex >= _currentLevelInfo.patterns.Count)
+        {
+            return _currentLevelInfo.patterns.Count;
+        }
+
+        return _selectedPatternIndex + 1;
+    }
+
+    /// <summary>
+    /// Обновляет список паттернов и выбирает текущий паттерн, если он видим с активным фильтром.
+    /// </summary>
+    private void RefreshPatternListSelectingCurrentPattern()
+    {
+        RefreshFilteredPatternCache();
+
+        var visiblePatternNames = _filteredPatternIndices
+            .Select(i => _allPatternNames[i])
+            .ToList();
+        var selectedDisplayedIndex = _filteredPatternIndices.IndexOf(_selectedPatternIndex);
+
+        _uiManager.UpdatePatternsList(visiblePatternNames, selectedDisplayedIndex);
     }
 
     private string GenerateNewPatternName()
