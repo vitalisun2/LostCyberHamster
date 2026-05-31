@@ -90,7 +90,9 @@ public class CollisionController : MonoBehaviour
         }
 
         // Применяем урон, если текущее состояние допускает столкновение.
-        if (HasCollisionInRunState(obstacle) || HasCollisionWithBigAliveInJumpState(obstacle))
+        if (HasCollisionInRunState(obstacle)
+            || HasCollisionInJumpOnState()
+            || HasCollisionWithBigAliveInJumpState(obstacle))
         {
             HandleDamage(obstacle);
         }
@@ -125,6 +127,27 @@ public class CollisionController : MonoBehaviour
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Проверяет, должен ли хомяк получать урон во второй фазе анимации напрыгивания.
+    /// </summary>
+    private bool HasCollisionInJumpOnState()
+    {
+        if (_hamster.HamsterState.Value != HamsterStateEnum.JumpOnObstacle
+            && _hamster.HamsterState.Value != HamsterStateEnum.SuperJumpOnObstacle
+            && _hamster.HamsterState.Value != HamsterStateEnum.JumpOnObstacleFromRoof
+            && _hamster.HamsterState.Value != HamsterStateEnum.SuperJumpOnObstacleFromRoof)
+        {
+            return false;
+        }
+
+        if (_hamster.PendingJumpedOnObstacle.Value != null)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
