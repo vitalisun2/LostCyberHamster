@@ -30,6 +30,7 @@ namespace LostCyberHamster.Editor
         private const string LocationsRootPath = "Assets/Content/locations";
         private const string LevelsFolderName = "levels";
         private const string TestLevelPrefix = "test";
+        private const string PendingInteractiveLaunchAddressSessionKey = "TestLevelLauncher.PendingInteractiveLaunchAddress";
 
         /// <summary>Default timescale when launching through the automation bridge.</summary>
         private const float AutomationDefaultTimeScale = 2.0f;
@@ -44,9 +45,9 @@ namespace LostCyberHamster.Editor
 
         private static void OnPlayModeChanged(PlayModeStateChange state)
         {
-            // Auto-clear override when exiting Play Mode
             if (state == PlayModeStateChange.EnteredEditMode)
             {
+                // Auto-clear override when exiting Play Mode.
                 if (PlayerPrefs.HasKey(OverridePrefsKey))
                 {
                     PlayerPrefs.DeleteKey(OverridePrefsKey);
@@ -62,6 +63,8 @@ namespace LostCyberHamster.Editor
                     PlayerPrefs.DeleteKey(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey);
                     PlayerPrefs.Save();
                 }
+
+                LaunchPendingInteractiveLevelWhenReady();
             }
         }
 
@@ -80,7 +83,7 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
-            TestLevelPickerWindow.ShowWindow(testLevels, LaunchInteractive);
+            TestLevelPickerWindow.ShowWindow(testLevels);
         }
 
         /// <summary>
@@ -104,6 +107,13 @@ namespace LostCyberHamster.Editor
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
+                if (interactive)
+                {
+                    RequestInteractiveRelaunch(levelAddress);
+                    errorMessage = null;
+                    return true;
+                }
+
                 errorMessage = "Exit Play mode first.";
                 return false;
             }
@@ -144,13 +154,35 @@ namespace LostCyberHamster.Editor
 
             PlayerPrefs.Save();
 
-            string timeScalePart = timeScaleOverride.HasValue
-                ? $", timeScale={timeScaleOverride.Value:F2}"
-                : string.Empty;
             EditorSceneManager.OpenScene(BootstrapScenePath);
             EditorApplication.isPlaying = true;
             errorMessage = null;
             return true;
+        }
+
+        private static void RequestInteractiveRelaunch(string levelAddress)
+        {
+            SessionState.SetString(PendingInteractiveLaunchAddressSessionKey, levelAddress ?? string.Empty);
+            EditorApplication.isPlaying = false;
+            EditorApplication.delayCall += LaunchPendingInteractiveLevelWhenReady;
+        }
+
+        private static void LaunchPendingInteractiveLevelWhenReady()
+        {
+            var levelAddress = SessionState.GetString(PendingInteractiveLaunchAddressSessionKey, string.Empty);
+            if (string.IsNullOrWhiteSpace(levelAddress))
+            {
+                return;
+            }
+
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorApplication.delayCall += LaunchPendingInteractiveLevelWhenReady;
+                return;
+            }
+
+            SessionState.SetString(PendingInteractiveLaunchAddressSessionKey, string.Empty);
+            EditorApplication.delayCall += () => LaunchInteractive(levelAddress);
         }
 
         /// <summary>
@@ -287,13 +319,15 @@ namespace LostCyberHamster.Editor
         private sealed class TestLevelPickerWindow : EditorWindow
         {
             private const float WindowWidth = 640f;
-            private const float WindowHeight = 360f;
+            private const float MinWindowHeight = 360f;
+            private const float ScreenVerticalMargin = 96f;
+            private const float HeaderHeight = 96f;
+            private const float LevelRowHeight = 32f;
 
             private readonly List<TestLevelEntry> _testLevels = new();
             private Vector2 _scrollPosition;
-            private Action<string> _onLaunch;
 
-            public static void ShowWindow(IEnumerable<TestLevelEntry> testLevels, Action<string> onLaunch)
+            public static void ShowWindow(IEnumerable<TestLevelEntry> testLevels)
             {
                 var entries = testLevels?.ToList() ?? new List<TestLevelEntry>();
                 if (entries.Count == 0)
@@ -306,16 +340,22 @@ namespace LostCyberHamster.Editor
                 window.titleContent = new GUIContent("Test Levels");
                 window._testLevels.Clear();
                 window._testLevels.AddRange(entries);
-                window._onLaunch = onLaunch;
-                window.minSize = new Vector2(WindowWidth, WindowHeight);
-                window.maxSize = new Vector2(WindowWidth, WindowHeight);
+                window.ApplyWindowSize();
                 window.position = new Rect(
                     (Screen.currentResolution.width - WindowWidth) * 0.5f,
-                    (Screen.currentResolution.height - WindowHeight) * 0.5f,
+                    (Screen.currentResolution.height - window.minSize.y) * 0.5f,
                     WindowWidth,
-                    WindowHeight);
+                    window.minSize.y);
                 window.ShowUtility();
                 window.Focus();
+            }
+
+            private void OnEnable()
+            {
+                if (_testLevels.Count == 0)
+                {
+                    RefreshLevels();
+                }
             }
 
             private void OnGUI()
@@ -358,15 +398,7 @@ namespace LostCyberHamster.Editor
 
                             if (GUILayout.Button("Launch", GUILayout.Width(90f)))
                             {
-                                try
-                                {
-                                    _onLaunch?.Invoke(testLevel.Address);
-                                }
-                                finally
-                                {
-                                    Close();
-                                }
-
+                                LaunchInteractive(testLevel.Address);
                                 GUIUtility.ExitGUI();
                             }
                         }
@@ -380,6 +412,25 @@ namespace LostCyberHamster.Editor
             {
                 _testLevels.Clear();
                 _testLevels.AddRange(DiscoverTestLevels());
+                ApplyWindowSize();
+            }
+
+            private void ApplyWindowSize()
+            {
+                var screenHeight = Screen.currentResolution.height > 0
+                    ? Screen.currentResolution.height
+                    : MinWindowHeight;
+                var maxWindowHeight = Mathf.Max(MinWindowHeight, screenHeight - ScreenVerticalMargin);
+                var contentHeight = HeaderHeight + _testLevels.Count * LevelRowHeight;
+                var windowHeight = Mathf.Clamp(contentHeight, MinWindowHeight, maxWindowHeight);
+
+                minSize = new Vector2(WindowWidth, windowHeight);
+                maxSize = new Vector2(WindowWidth, windowHeight);
+
+                if (position.width > 0f)
+                {
+                    position = new Rect(position.x, position.y, WindowWidth, windowHeight);
+                }
             }
         }
     }
