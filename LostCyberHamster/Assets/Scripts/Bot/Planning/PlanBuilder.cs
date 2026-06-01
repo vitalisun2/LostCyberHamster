@@ -12,7 +12,7 @@ namespace Assets.Scripts.Bot.Planning
     /// </summary>
     public sealed class PlanBuilder
     {
-        private const int InProgressExecutionHandoffActionCount = 2;
+        private const int InProgressAtomicActionCount = 1;
 
         private readonly PlanningGraphBuilder _graphBuilder;
         private readonly TransitionSimulator _transitionSimulator;
@@ -54,7 +54,7 @@ namespace Assets.Scripts.Bot.Planning
                 actions,
                 retainInProgressHead);
 
-            // Expand only the tail beyond the committed prefix.
+            // Разворачивает только хвост после сохранённого префикса.
             IReadOnlyList<PlanningBranch> branches = _graphBuilder.BuildBranches(worldSnapshot, tailRootState);
             PlanningBranch bestBranch = _planEvaluator.SelectBest(branches);
 
@@ -93,7 +93,7 @@ namespace Assets.Scripts.Bot.Planning
                 if (!ShouldRetainCommittedAction(action, actionIndex, worldSnapshot, retainInProgressHead))
                     break;
 
-                bool isExecutionHandoffAction = IsInProgressExecutionHandoffAction(
+                bool isInProgressAtomicAction = IsInProgressAtomicAction(
                     actionIndex,
                     retainInProgressHead);
                 bool isBoundaryRetainedAction = IsBoundaryRetainedAction(
@@ -104,7 +104,7 @@ namespace Assets.Scripts.Bot.Planning
                 bool requiresRetainedValidation = isBoundaryRetainedAction
                     || IsTargetBoundJumpOnBeyondScreen(action, worldSnapshot);
                 if (requiresRetainedValidation
-                    && !isExecutionHandoffAction
+                    && !isInProgressAtomicAction
                     && !_retainedActionRevalidator.IsStillValid(currentState, action, worldSnapshot))
                     break;
 
@@ -153,18 +153,18 @@ namespace Assets.Scripts.Bot.Planning
             WorldSnapshot worldSnapshot,
             bool retainInProgressHead)
         {
-            if (IsInProgressExecutionHandoffAction(actionIndex, retainInProgressHead))
+            if (IsInProgressAtomicAction(actionIndex, retainInProgressHead))
                 return true;
 
             return ShouldRetainAction(action, actionIndex, worldSnapshot, retainInProgressHead);
         }
 
         /// <summary>
-        /// Определяет атомарный handoff между уже запущенным head-action и ближайшим следующим действием.
+        /// Определяет уже запущенное действие, которое нельзя пересобрать до завершения.
         /// </summary>
-        private static bool IsInProgressExecutionHandoffAction(int actionIndex, bool retainInProgressHead)
+        private static bool IsInProgressAtomicAction(int actionIndex, bool retainInProgressHead)
         {
-            return retainInProgressHead && actionIndex < InProgressExecutionHandoffActionCount;
+            return retainInProgressHead && actionIndex < InProgressAtomicActionCount;
         }
 
         /// <summary>
