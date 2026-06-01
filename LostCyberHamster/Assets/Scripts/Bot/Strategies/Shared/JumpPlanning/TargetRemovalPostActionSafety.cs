@@ -14,7 +14,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
         private const float OverlapEpsilon = 0.0001f;
 
         /// <summary>
-        /// Возвращает true, если после полного действия хомяк не оказывается в немедленной ground-collision.
+        /// Дистанция, которую re-entry в Run должен выдержать до следующего управляемого jump-window.
+        /// </summary>
+        private const float ReentryGuardTravel = JumpPlanningConstants.FireWindowBoundaryMargin;
+
+        /// <summary>
+        /// Возвращает true, если после полного действия хомяк безопасно возвращается в Run.
         /// </summary>
         public static bool IsSafeAfterCompletion(
             PlanningState planningState,
@@ -62,15 +67,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
                     return false;
                 }
 
-                // Пропускает obstacle позади хомяка.
-                if (projectedRightX <= hamster.HamsterLeftX + OverlapEpsilon)
+                // Проверяет re-entry интервал, а не только точку completion.
+                if (IsSafeThroughoutReentryGuard(hamster, projectedLeftX, projectedRightX))
                     continue;
 
-                // Пропускает obstacle впереди хомяка.
-                if (projectedLeftX >= hamster.HamsterRightX - OverlapEpsilon)
-                    continue;
-
-                // Фиксирует немедленную ground-collision.
+                // Фиксирует небезопасный re-entry в Run.
                 return false;
             }
 
@@ -88,6 +89,23 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
         {
             return obstacleIndex == targetObstacleIndex
                 || obstacle.InstanceId == targetObstacleInstanceId;
+        }
+
+        /// <summary>
+        /// Возвращает true, если obstacle не пересекает хомяка до первого безопасного re-entry окна.
+        /// </summary>
+        private static bool IsSafeThroughoutReentryGuard(
+            HamsterSnapshot hamster,
+            float projectedLeftX,
+            float projectedRightX)
+        {
+            // Пропускает obstacle, который уже полностью позади хомяка.
+            if (projectedRightX <= hamster.HamsterLeftX + OverlapEpsilon)
+                return true;
+
+            // Пропускает obstacle, который останется впереди весь guard-интервал.
+            float guardEndLeftX = projectedLeftX - ReentryGuardTravel;
+            return guardEndLeftX >= hamster.HamsterRightX - OverlapEpsilon;
         }
     }
 }
