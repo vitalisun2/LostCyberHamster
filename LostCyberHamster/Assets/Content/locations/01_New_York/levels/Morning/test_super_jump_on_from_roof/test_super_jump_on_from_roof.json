@@ -32,6 +32,11 @@
             "ref": "relief_energy",
             "spriteSeed": 0,
             "overrides": []
+        },
+        {
+            "ref": "test_super_jump_on_from_roof_04",
+            "spriteSeed": 0,
+            "overrides": []
         }
     ],
     "decorationPatterns": [
