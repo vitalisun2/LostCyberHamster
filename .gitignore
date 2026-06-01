@@ -95,6 +95,9 @@ LostCyberHamster/.utmp/
 /LostCyberHamster/EditorLogs/
 /EditorLogs/*.txt
 
+# Auto-generated compact codebase files
+/docs/Compacted Code/
+
 # Rider cache
 .idea/
 *.idea/
@@ -120,3 +123,6 @@ Desktop.ini
 
 # Generated compact codebase dumps
 /docs/*codebase_compact*.txt
+
+# Temporary files and reports
+/.temp/

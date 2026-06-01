@@ -36,7 +36,7 @@
 - Использовать релевантный тестовый уровень под текущую задачу. Смежные уровни — только если реально нужен контроль регрессии.
 - Перед ручным прогоном рекомендуется `recompile_scripts`, если менялись .cs файлы.
 - Логирование — `EditorLogs/diagnostic_log.txt` с тегами каналов: `[CH=STAB]`, `[CH=BOT]`, `[CH=ECO]`.
-- Для чтения логов — `read_log_channel.ps1` (см. `agent_tools.md`).
+   - Для чтения логов — `tools/read_log_channel.ps1` (см. `agent_tools.md`).
 
 ## Цикл
 
@@ -47,9 +47,9 @@
 5. Пользователь запускает ручной прогон в Unity или автопрогон вручную.
 6. Остановиться и запросить визуальный фидбэк.
 7. После фидбэка прочитать логи:
-   - `./read_log_channel.ps1 -Channel STAB -Tail 120`
-   - `./read_log_channel.ps1 -Channel BOT -Tail 200`
-   - `./read_log_channel.ps1 -Channel ECO -Tail 200`
+   - `./tools/read_log_channel.ps1 -Channel STAB -Tail 120`
+   - `./tools/read_log_channel.ps1 -Channel BOT -Tail 200`
+   - `./tools/read_log_channel.ps1 -Channel ECO -Tail 200`
 8. Сопоставить визуал и логи, оценить экономику:
    - **Безопасность** — 100% (любое столкновение = баг).
    - **Энергия** — % оптимальности расхода.

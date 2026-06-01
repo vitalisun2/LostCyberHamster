@@ -4,7 +4,7 @@
         {
             "label": "Commit & Merge to Main",
             "type": "shell",
-            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/commit_merge.ps1'",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/tools/commit_merge.ps1'",
             "presentation": {
                 "reveal": "always",
                 "panel": "shared",
@@ -21,7 +21,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}/codebase_compact.ps1"
+                "${workspaceFolder}/tools/codebase_compact.ps1"
             ],
             "isBackground": true,
             "problemMatcher": [],
@@ -35,6 +35,26 @@
             }
         },
         {
+            "label": "Cleanup Old Logs",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/tools/cleanup_old_logs.ps1"
+            ],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
             "label": "Recompile And Sync",
             "type": "shell",
             "command": "pwsh",
@@ -43,7 +63,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "${workspaceFolder}/invoke_recompile_and_sync.ps1"
+                "${workspaceFolder}/tools/invoke_recompile_and_sync.ps1"
             ],
             "presentation": {
                 "reveal": "always",

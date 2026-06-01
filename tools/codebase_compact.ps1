@@ -1,9 +1,12 @@
 <#
 .SYNOPSIS
-    Auto-generates and keeps up-to-date a compact C# codebase snapshot for LLM consumption.
+    Auto-generates and keeps up-to-date three compact C# codebase snapshots for LLM consumption.
 .DESCRIPTION
     Collects all .cs files from Assets/Scripts and Assets/Editor, normalizes whitespace,
-    and writes docs/game_scripts_codebase_compact.txt.
+    and writes three separate files in docs/Compacted Code/:
+    - editor_scripts_compact.txt (Assets/Editor)
+    - bot_compact.txt (Assets/Scripts/Bot)
+    - game_scripts_compact.txt (Assets/Scripts excluding Bot)
     
     Then watches for file changes and re-generates automatically with debounce.
     Starts automatically when opening the repo in VS Code (via .vscode/tasks.json).
@@ -21,50 +24,97 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = $PSScriptRoot
 $unityRoot = Join-Path $repoRoot 'LostCyberHamster'
-$outputFile = Join-Path (Join-Path $repoRoot 'docs') 'game_scripts_codebase_compact.txt'
+$outputDir = Join-Path (Join-Path $repoRoot 'docs') 'Compacted Code'
 
-$sourceDirs = @(
+# Define three module configurations
+$modules = @(
+    @{
+        Name = 'editor_scripts_compact.txt'
+        Title = 'EDITOR SCRIPTS COMPACT'
+        IncludePaths = @(Join-Path (Join-Path $unityRoot 'Assets') 'Editor')
+        ExcludePaths = @()
+    },
+    @{
+        Name = 'bot_compact.txt'
+        Title = 'BOT MODULE COMPACT'
+        IncludePaths = @(Join-Path (Join-Path (Join-Path $unityRoot 'Assets') 'Scripts') 'Bot')
+        ExcludePaths = @()
+    },
+    @{
+        Name = 'game_scripts_compact.txt'
+        Title = 'GAME SCRIPTS COMPACT (excluding Bot)'
+        IncludePaths = @(Join-Path (Join-Path $unityRoot 'Assets') 'Scripts')
+        ExcludePaths = @(Join-Path (Join-Path (Join-Path $unityRoot 'Assets') 'Scripts') 'Bot')
+    }
+)
+
+$allWatchDirs = @(
     Join-Path (Join-Path $unityRoot 'Assets') 'Scripts'
     Join-Path (Join-Path $unityRoot 'Assets') 'Editor'
 )
 
 # --- Generation ---
 
-function Invoke-Generate {
-    $allFiles = @()
-    foreach ($dir in $sourceDirs) {
-        if (Test-Path $dir) {
-            $files = Get-ChildItem -Path $dir -Filter '*.cs' -Recurse -File
-            foreach ($f in $files) {
+function Get-FilesForModule($module) {
+    $files = @()
+    
+    foreach ($includePath in $module.IncludePaths) {
+        if (-not (Test-Path $includePath)) {
+            continue
+        }
+        
+        $candidateFiles = Get-ChildItem -Path $includePath -Filter '*.cs' -Recurse -File
+        
+        foreach ($f in $candidateFiles) {
+            # Check if file should be excluded
+            $shouldExclude = $false
+            foreach ($excludePath in $module.ExcludePaths) {
+                if ($f.FullName.StartsWith($excludePath, [StringComparison]::OrdinalIgnoreCase)) {
+                    $shouldExclude = $true
+                    break
+                }
+            }
+            
+            if (-not $shouldExclude) {
                 $relPath = $f.FullName.Substring($repoRoot.Length + 1)
-                $allFiles += [PSCustomObject]@{
+                $files += [PSCustomObject]@{
                     FullPath = $f.FullName
                     RelPath  = $relPath
                 }
             }
         }
     }
+    
+    return $files | Sort-Object RelPath
+}
 
-    $allFiles = $allFiles | Sort-Object RelPath
-
+function Invoke-GenerateModule($module) {
+    $moduleFiles = Get-FilesForModule $module
+    
     $timestamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-    $sourceRoots = ($sourceDirs | ForEach-Object {
+    $sourceRoots = ($module.IncludePaths | ForEach-Object {
         $_.Substring($repoRoot.Length + 1)
     }) -join ', '
-
+    
     $sb = [System.Text.StringBuilder]::new(1024 * 1024)
-
-    [void]$sb.AppendLine('GAME CODEBASE COMPACT MERGE')
+    
+    [void]$sb.AppendLine($module.Title)
     [void]$sb.AppendLine("GeneratedAtUtc: $timestamp")
     [void]$sb.AppendLine("SourceRoots: $sourceRoots")
-    [void]$sb.AppendLine("FileCount: $($allFiles.Count)")
+    if ($module.ExcludePaths.Count -gt 0) {
+        $excludeRoots = ($module.ExcludePaths | ForEach-Object {
+            $_.Substring($repoRoot.Length + 1)
+        }) -join ', '
+        [void]$sb.AppendLine("ExcludedPaths: $excludeRoots")
+    }
+    [void]$sb.AppendLine("FileCount: $($moduleFiles.Count)")
     [void]$sb.AppendLine('Format: FILE blocks with normalized whitespace (trimmed line endings, collapsed blank lines)')
-
-    foreach ($file in $allFiles) {
+    
+    foreach ($file in $moduleFiles) {
         $rawContent = [System.IO.File]::ReadAllText($file.FullPath)
-
+        
         $lines = $rawContent -split "`r?`n" | ForEach-Object { $_.TrimEnd() }
-
+        
         $normalized = [System.Collections.Generic.List[string]]::new()
         $prevBlank = $false
         foreach ($line in $lines) {
@@ -73,33 +123,39 @@ function Invoke-Generate {
             $normalized.Add($line)
             $prevBlank = $isBlank
         }
-
+        
         while ($normalized.Count -gt 0 -and [string]::IsNullOrWhiteSpace($normalized[$normalized.Count - 1])) {
             $normalized.RemoveAt($normalized.Count - 1)
         }
-
+        
         $normalizedText = $normalized -join "`n"
         $lineCount = $normalized.Count
-
+        
         $bytes = [System.Text.Encoding]::UTF8.GetBytes($normalizedText)
         $sha = [System.Security.Cryptography.SHA256]::Create()
         $hash = ($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString('X2') }) -join ''
-
+        
         [void]$sb.AppendLine('')
         [void]$sb.AppendLine("=== FILE START: $($file.RelPath) | lines=$lineCount | sha256=$hash ===")
         [void]$sb.AppendLine($normalizedText)
         [void]$sb.AppendLine("=== FILE END: $($file.RelPath) ===")
     }
-
-    $outDir = Split-Path $outputFile -Parent
-    if (-not (Test-Path $outDir)) {
-        New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+    
+    if (-not (Test-Path $outputDir)) {
+        New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
     }
-
+    
+    $outputFile = Join-Path $outputDir $module.Name
     [System.IO.File]::WriteAllText($outputFile, $sb.ToString(), [System.Text.UTF8Encoding]::new($false))
-
+    
     $sizeKB = [math]::Round((Get-Item $outputFile).Length / 1024, 1)
-    Write-Host "Generated: docs/game_scripts_codebase_compact.txt ($($allFiles.Count) files, ${sizeKB} KB)"
+    Write-Host "Generated: docs/Compacted Code/$($module.Name) ($($moduleFiles.Count) files, ${sizeKB} KB)"
+}
+
+function Invoke-Generate {
+    foreach ($module in $modules) {
+        Invoke-GenerateModule $module
+    }
 }
 
 # --- Initial generation ---
@@ -118,7 +174,7 @@ $watchers = @()
 $pendingRegenerate = $false
 $lastChangeTime = [DateTime]::MinValue
 
-foreach ($dir in $sourceDirs) {
+foreach ($dir in $allWatchDirs) {
     if (-not (Test-Path $dir)) { continue }
 
     $watcher = [System.IO.FileSystemWatcher]::new($dir)

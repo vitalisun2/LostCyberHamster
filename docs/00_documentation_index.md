@@ -103,11 +103,11 @@
 
 ## Инструменты разработчика
 
-### codebase_compact.ps1
+### tools/codebase_compact.ps1
 Скрипт для генерации сжатого снимка C#-кода.
 
-### read_log_channel.ps1
+### tools/read_log_channel.ps1
 Унифицированное чтение каналов логов `STAB`, `BOT`, `ECO`.
 
-### invoke_open_unity_test_level.ps1
+### tools/invoke_open_unity_test_level.ps1
 Сценарий полного цикла: рекомпиляция, запуск тестового уровня и ожидание результата.

@@ -10,19 +10,19 @@
 
 **Файлы:**
 - Реализация: `LostCyberHamster/Assets/Editor/TestLevelAutomationBridge.cs`
-- PowerShell-обёртка: `invoke_open_unity_test_level.ps1`
+- PowerShell-обёртка: `tools/invoke_open_unity_test_level.ps1`
 
 **Как вызвать:**
 
 Вариант A — запуск **всех** тестовых уровней разом (рекомендуется для валидации):
 ```powershell
-.\invoke_run_all_test_levels.ps1 -TimeoutSeconds 120
+.\tools\invoke_run_all_test_levels.ps1 -TimeoutSeconds 120
 ```
 Находит все `test*.json` уровни под `Assets/Content/locations`, компилирует один раз, регенерирует project files, печатает SUMMARY и semantic action summary по каждому уровню.
 
 Вариант B — запуск одного уровня:
 ```powershell
-.\invoke_open_unity_test_level.ps1 -LevelAddress '01_New_York/Morning/test_threat_small_notalive_road_switchlane' -TimeoutSeconds 120
+.\tools\invoke_open_unity_test_level.ps1 -LevelAddress '01_New_York/Morning/test_threat_small_notalive_road_switchlane' -TimeoutSeconds 120
 ```
 Скрипт сам отправляет `recompile_scripts`, ждёт компиляцию, затем запускает тест.
 
@@ -36,7 +36,7 @@
 **Команды:**
 - `launch_test_level` — запуск тестового уровня с ботом.
 - `recompile_scripts` — принудительная перекомпиляция скриптов (по явному запросу пользователя).
-- `regenerate_project_files` — пересоздать .csproj/.sln (вызывает `SyncVS.SyncSolution()` через рефлексию). Нужно после добавления или удаления .cs-файлов, чтобы Visual Studio Solution Explorer отразил актуальную структуру. `invoke_open_unity_test_level.ps1` вызывает это автоматически.
+- `regenerate_project_files` — пересоздать .csproj/.sln (вызывает `SyncVS.SyncSolution()` через рефлексию). Нужно после добавления или удаления .cs-файлов, чтобы Visual Studio Solution Explorer отразил актуальную структуру. `tools/invoke_open_unity_test_level.ps1` вызывает это автоматически.
 
 **Результат:**
 - `test_level_response.json` с полями: `state` (running/completed/failed/busy), `testResult` (WIN/FAIL/UNKNOWN), `diagnosticLogPath`.
@@ -155,15 +155,16 @@
 
 | Скрипт | Назначение |
 |--------|-----------|
-| `invoke_open_unity_test_level.ps1` | Полный цикл: рекомпиляция → запуск теста → получение результата |
-| `migrate_levels.ps1` | Миграция уровней из copy-paste формата в reference-based |
-| `rename_to_snake_case.ps1` | Переименование анимационных файлов в snake_case перед импортом |
-| `read_log_channel.ps1` | Унифицированное чтение логов по каналу (STAB/BOT/ECO) с фильтрацией и tail |
-| `commit_merge.ps1` | Коммит по diff + merge integration/unity-live → main + push |
+| `tools/invoke_open_unity_test_level.ps1` | Полный цикл: рекомпиляция → запуск теста → получение результата |
+| `tools/migrate_levels.ps1` | Миграция уровней из copy-paste формата в reference-based |
+| `tools/rename_to_snake_case.ps1` | Переименование анимационных файлов в snake_case перед импортом |
+| `tools/read_log_channel.ps1` | Унифицированное чтение логов по каналу (STAB/BOT/ECO) с фильтрацией и tail |
+| `tools/commit_merge.ps1` | Коммит по diff + merge integration/unity-live → main + push |
+| `tools/cleanup_old_logs.ps1` | Автоочистка логов старше 3 дней (автозапуск при открытии проекта, не чаще раза в день) |
 
 ### 10.1 Log Channel Reader (для любого агента)
 
-Скрипт `read_log_channel.ps1` задаёт единый способ чтения логов для GitHub Copilot / Codex / Claude Code.
+Скрипт `tools/read_log_channel.ps1` задаёт единый способ чтения логов для GitHub Copilot / Codex / Claude Code.
 
 Он работает в двух режимах:
 - **tagged**: читает `diagnostic_log.txt` и фильтрует по тегам `[CH=STAB|BOT|ECO]`.
@@ -171,10 +172,10 @@
 Базовые примеры:
 
 ```powershell
-./read_log_channel.ps1 -Channel STAB -Tail 120
-./read_log_channel.ps1 -Channel BOT -Event "EXECUTE|RESULT" -Tail 200
-./read_log_channel.ps1 -Channel ECO -Tail 200
-./read_log_channel.ps1 -Channel ALL -SummaryOnly
+./tools/read_log_channel.ps1 -Channel STAB -Tail 120
+./tools/read_log_channel.ps1 -Channel BOT -Event "EXECUTE|RESULT" -Tail 200
+./tools/read_log_channel.ps1 -Channel ECO -Tail 200
+./tools/read_log_channel.ps1 -Channel ALL -SummaryOnly
 ```
 
 Рекомендация для процесса:
@@ -226,5 +227,5 @@ echo "prompt" | gh models run openai/gpt-4.1-mini 2>&1 |
 | `openai/gpt-4.1` | Анализ кода, более сложные задачи |
 
 **Использование в проекте:**
-- `commit_merge.ps1` использует `gpt-4.1-mini` для генерации сообщений коммитов по diff
+- `tools/commit_merge.ps1` использует `gpt-4.1-mini` для генерации сообщений коммитов по diff
 - Хоткей: `Ctrl+Shift+M` — запускает VS Code task `Commit & Merge to Main`
