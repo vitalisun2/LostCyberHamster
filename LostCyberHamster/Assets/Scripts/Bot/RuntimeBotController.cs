@@ -8,6 +8,7 @@ using Assets.Scripts.Bot.Strategies.JumpFromRoofOnRoof;
 using Assets.Scripts.Bot.Strategies.JumpOn;
 using Assets.Scripts.Bot.Strategies.JumpOnRoof;
 using Assets.Scripts.Bot.Strategies.JumpOver;
+using Assets.Scripts.Bot.Strategies.PassiveRoofExit;
 using Assets.Scripts.Bot.Strategies.RoofJumpOver;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -148,6 +149,7 @@ namespace Assets.Scripts.Bot
                 new SuperJumpOnRoofStrategy(),
                 new JumpOnFromRoofStrategy(),
                 new SuperJumpOnFromRoofStrategy(),
+                new PassiveRoofExitStrategy(),
                 new JumpFromRoofStrategy(),
                 new SuperJumpFromRoofStrategy(),
                 new JumpFromRoofOnRoofStrategy(),

@@ -57,6 +57,13 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskParallel.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitModel.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitPlanner.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitRetainedActionValidator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitSimulator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoofOnRoof\JumpFromRoofOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnExecutor.cs" />
