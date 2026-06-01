@@ -39,47 +39,41 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void OnTriggerEnter2D(Collider2D other)
     {
-        ProcessTrigerEnter(other);
+        if (!TryResolveSameLaneObstacle(other, out Obstacle obstacle))
+            return;
+
+        ProcessTriggerEnter(obstacle);
     }
 
     /// <summary>
-    /// Повторно проверяет столкновение во время нахождения в триггере после смещения с крыши.
+    /// Проверяет удерживаемое пересечение после смены runtime-состояния без нового входа в триггер.
     /// </summary>
     private void OnTriggerStay2D(Collider2D other)
     {
-        if (_hamster.NeedCheckCollisionInRunFromRoofAfterShift.Value)
-        {
-            ProcessTrigerEnter(other);
+        bool checkRunFromRoofAfterShift = _hamster.NeedCheckCollisionInRunFromRoofAfterShift.Value;
+        bool shouldCheckHeldRunCollision =
+            _hamster.HamsterState.Value == HamsterStateEnum.Run
+            || checkRunFromRoofAfterShift;
+
+        if (!shouldCheckHeldRunCollision)
+            return;
+
+        if (!TryResolveSameLaneObstacle(other, out Obstacle obstacle))
+            return;
+
+        ProcessTriggerStay(obstacle);
+
+        if (checkRunFromRoofAfterShift)
             _hamster.NeedCheckCollisionInRunFromRoofAfterShift.Value = false;
-        }
     }
 
     /// <summary>
-    /// Определяет результат столкновения хомяка с объектом триггера.
+    /// Определяет результат первого входа хомяка в триггер препятствия.
     /// </summary>
-    private void ProcessTrigerEnter(Collider2D other)
+    private void ProcessTriggerEnter(Obstacle obstacle)
     {
         // Прерываем обработку для уже повреждённого хомяка.
         if (_hamster.IsDamaged.Value)
-            return;
-
-        // Находим корневой объект препятствия и валидируем его состав.
-        var otherRoot = other.transform.parent?.parent?.gameObject;
-        if (otherRoot == null)
-        {
-            Debug.LogError("Root object not found");
-            return;
-        }
-
-        var obstacle = otherRoot.GetComponent<Obstacle>();
-        if (obstacle == null)
-        {
-            Debug.LogError("Obstacle component not found");
-            return;
-        }
-
-        // Игнорируем объекты на другой линии движения.
-        if (!HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle))
             return;
 
         // Подбираем бонусы и коллекционные объекты.
@@ -89,13 +83,65 @@ public class CollisionController : MonoBehaviour
             return;
         }
 
-        // Применяем урон, если текущее состояние допускает столкновение.
-        if (HasCollisionInRunState(obstacle)
-            || HasCollisionInJumpOnState()
-            || HasCollisionWithBigAliveInJumpState(obstacle))
+        // Применяем урон, если текущее состояние допускает столкновение на входе в триггер.
+        if (HasCollisionInRunState(obstacle))
         {
-            HandleDamage(obstacle);
+            HandleDamage(obstacle, "Enter", "RunState");
+            return;
         }
+
+        if (HasCollisionWithBigAliveInJumpState(obstacle))
+        {
+            HandleDamage(obstacle, "Enter", "BigAliveJumpOverlap");
+        }
+    }
+
+    /// <summary>
+    /// Определяет результат удерживаемого пересечения с препятствием.
+    /// </summary>
+    private void ProcessTriggerStay(Obstacle obstacle)
+    {
+        if (_hamster.IsDamaged.Value)
+            return;
+
+        if (IsCollectableState() && IsObstacleCollectable(obstacle))
+        {
+            HandleCollectable(obstacle);
+            return;
+        }
+
+        if (HasCollisionInRunState(obstacle))
+        {
+            HandleDamage(obstacle, "Stay", "RunState");
+        }
+    }
+
+    /// <summary>
+    /// Находит obstacle из collider-а и отсекает объекты с другой линии.
+    /// </summary>
+    private bool TryResolveSameLaneObstacle(Collider2D other, out Obstacle obstacle)
+    {
+        obstacle = null;
+
+        var otherRoot = other.transform.parent?.parent?.gameObject;
+        if (otherRoot == null)
+        {
+            Debug.LogError("Root object not found");
+            return false;
+        }
+
+        obstacle = otherRoot.GetComponent<Obstacle>();
+        if (obstacle == null)
+        {
+            Debug.LogError("Obstacle component not found");
+            return false;
+        }
+
+        // Игнорируем объекты на другой линии движения.
+        if (!HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle))
+            return false;
+
+        return true;
     }
 
     /// <summary>
@@ -127,27 +173,6 @@ public class CollisionController : MonoBehaviour
         }
 
         return result;
-    }
-
-    /// <summary>
-    /// Проверяет, должен ли хомяк получать урон во второй фазе анимации напрыгивания.
-    /// </summary>
-    private bool HasCollisionInJumpOnState()
-    {
-        if (_hamster.HamsterState.Value != HamsterStateEnum.JumpOnObstacle
-            && _hamster.HamsterState.Value != HamsterStateEnum.SuperJumpOnObstacle
-            && _hamster.HamsterState.Value != HamsterStateEnum.JumpOnObstacleFromRoof
-            && _hamster.HamsterState.Value != HamsterStateEnum.SuperJumpOnObstacleFromRoof)
-        {
-            return false;
-        }
-
-        if (_hamster.PendingJumpedOnObstacle.Value != null)
-        {
-            return false;
-        }
-
-        return true;
     }
 
     /// <summary>
@@ -193,6 +218,11 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void HandleCollectable(Obstacle obstacle)
     {
+        DebugManager.DiagLog(
+            $"[CollisionController] collect obstacle={FormatObstacle(obstacle)} " +
+            $"state={_hamster.HamsterState.Value} lives={_hamster.Lives.Value} " +
+            $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")}");
+
         _hamster.CollectCoinsOrBonusAction.Invoke(obstacle);
         UnspawnObstacle(obstacle);
     }
@@ -200,8 +230,18 @@ public class CollisionController : MonoBehaviour
     /// <summary>
     /// Наносит урон хомяку и при необходимости уничтожает препятствие после столкновения.
     /// </summary>
-    private void HandleDamage(Obstacle obstacle)
+    private void HandleDamage(Obstacle obstacle, string triggerSource, string reason)
     {
+        DebugManager.DiagLog(
+            $"[CollisionController] damage source={triggerSource} reason={reason} " +
+            $"state={_hamster.HamsterState.Value} livesBefore={_hamster.Lives.Value} " +
+            $"isDamaged={_hamster.IsDamaged.Value} protected={_hamster.IsProtected.Value} " +
+            $"destructive={_hamster.IsDestructiveOnCollision.Value} " +
+            $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
+            $"{FormatHamsterBounds()} " +
+            $"obstacle={FormatObstacle(obstacle)} " +
+            $"pending={FormatObstacle(_hamster.PendingJumpedOnObstacle.Value)}");
+
         // Отправляем событие урона, если защита не активна.
         if (!_hamster.IsProtected.Value)
         {
@@ -221,5 +261,35 @@ public class CollisionController : MonoBehaviour
     private static void UnspawnObstacle(Obstacle obstacle)
     {
         obstacle.OnObstacleUnspawned.Invoke(obstacle.gameObject);
+    }
+
+    /// <summary>
+    /// Форматирует bounds хомяка для диагностики столкновений.
+    /// </summary>
+    private string FormatHamsterBounds()
+    {
+        return $"hamsterX=[{_hamster.LeftX:F2},{_hamster.RightX:F2}]";
+    }
+
+    /// <summary>
+    /// Форматирует obstacle для диагностики столкновений.
+    /// </summary>
+    private static string FormatObstacle(Obstacle obstacle)
+    {
+        if (obstacle == null)
+            return "null";
+
+        CollisionUtils.GetObstacleXInterval(
+            obstacle,
+            obstacle.ColliderWidth,
+            0f,
+            out float obstacleLeftX,
+            out float obstacleRightX);
+
+        return $"{obstacle.ObstacleType.ObstacleTypeEnum}#" +
+               $"{obstacle.gameObject.GetInstanceID()} " +
+               $"name={obstacle.name} " +
+               $"x=[{obstacleLeftX:F2},{obstacleRightX:F2}] " +
+               $"lane={(obstacle.ObstacleType.IsTop ? "top" : "bottom")}";
     }
 }
