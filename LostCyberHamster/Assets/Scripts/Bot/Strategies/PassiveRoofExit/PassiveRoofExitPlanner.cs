@@ -2,6 +2,7 @@ using System;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
@@ -48,8 +49,15 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
 
             float exitStartShift = CalculateExitStartShift(hamster, lastRoof);
             float completionWorldShift = exitStartShift + runFromRoofTravel;
-            if (!IsSafeDuringRunFromRoof(hamster, worldSnapshot, exitStartShift, completionWorldShift))
+            if (!RoofExitSafety.IsSafeDuringRunFromRoof(
+                    hamster,
+                    worldSnapshot,
+                    hamster.IsOnBottomLine,
+                    exitStartShift,
+                    completionWorldShift))
+            {
                 return Fail(out model);
+            }
 
             model = new PassiveRoofExitModel(
                 lastRoof,
@@ -82,44 +90,6 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
         {
             float exitStartX = lastRoof.RightX + hamster.Width * RoofRunProjection.PassiveContinuationGapFactor;
             return Math.Max(0f, exitStartX - hamster.HamsterRightX);
-        }
-
-        private static bool IsSafeDuringRunFromRoof(
-            HamsterSnapshot hamster,
-            WorldSnapshot worldSnapshot,
-            float exitStartShift,
-            float completionWorldShift)
-        {
-            for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                if (obstacle.IsBottomLine != hamster.IsOnBottomLine)
-                    continue;
-
-                if (ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType))
-                    continue;
-
-                if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
-                    continue;
-
-                if (OverlapsHamsterDuringShift(hamster, obstacle, exitStartShift, completionWorldShift))
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static bool OverlapsHamsterDuringShift(
-            HamsterSnapshot hamster,
-            ObstacleSnapshot obstacle,
-            float startShift,
-            float endShift)
-        {
-            float firstOverlapShift = obstacle.LeftX - hamster.HamsterRightX;
-            float lastOverlapShift = obstacle.RightX - hamster.HamsterLeftX;
-
-            return firstOverlapShift <= endShift
-                && lastOverlapShift >= startShift;
         }
     }
 }

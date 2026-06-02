@@ -68,7 +68,7 @@ namespace Assets.Scripts.Bot.Planning
         {
             return new PlanningBranchMetrics(
                 TotalEnergyCost + action.EnergyCost,
-                TapCount + (action.Kind == BotActionKind.SwitchLane ? 1 : 0),
+                TapCount + (BotActionKindRules.ConsumesTap(action.Kind) ? 1 : 0),
                 FirstTriggerX ?? action.TriggerX,
                 ActionCount + 1,
                 JumpOnObjectiveCount + (action.FulfillsJumpOnObjective ? 1 : 0),
