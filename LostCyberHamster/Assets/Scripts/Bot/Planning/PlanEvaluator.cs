@@ -40,7 +40,7 @@ namespace Assets.Scripts.Bot.Planning
             for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
             {
                 totalEnergyCost += actions[actionIndex].EnergyCost;
-                if (actions[actionIndex].Kind == BotActionKind.SwitchLane)
+                if (BotActionKindRules.ConsumesTap(actions[actionIndex].Kind))
                     tapCount++;
             }
 

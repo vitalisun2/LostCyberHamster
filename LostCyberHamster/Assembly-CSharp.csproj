@@ -64,6 +64,13 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitRetainedActionValidator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitSimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitStrategy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitModel.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitPlanner.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitRetainedActionValidator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitSimulator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoofOnRoof\JumpFromRoofOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnExecutor.cs" />
@@ -136,6 +143,7 @@
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleChain.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitGameRepositoryLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\BotActionKind.cs" />
+    <Compile Include="Assets\Scripts\Bot\PlanState\BotActionKindRules.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\AddOneCoinMechanics.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\ListenersInstaller.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\HamsterActionLogger.cs" />
@@ -448,6 +456,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UltaChargeMechanics.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiPauseMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\TargetRemovalPostActionSafety.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\RoofExitSafety.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResolveResult.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\DailyTasksScreenController.cs" />
     <Compile Include="Assets\Scripts\SharedCore\UI\UIElements\LocalizedButton.cs" />

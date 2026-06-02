@@ -38,7 +38,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             HamsterSnapshot hamster,
             bool targetBottomLine,
             float latestFireShift,
-            IReadOnlyList<float> selectionRatios)
+            IReadOnlyList<float> selectionRatios,
+            bool requireTargetRoofSupport = true)
         {
             if (selectionRatios == null || selectionRatios.Count == 0)
                 return new List<SwitchLaneFireWindowSample>(0);
@@ -48,7 +49,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 worldSnapshot,
                 hamster,
                 targetBottomLine,
-                latestFireShift);
+                latestFireShift,
+                requireTargetRoofSupport);
 
             // Применяет выбранную sampling-policy к каждому безопасному интервалу.
             var samples = new List<SwitchLaneFireWindowSample>(safeIntervals.Count * selectionRatios.Count);
@@ -114,7 +116,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
-            float latestFireShift)
+            float latestFireShift,
+            bool requireTargetRoofSupport = true)
         {
             // Собирает и упорядочивает все опасные интервалы.
             var unsafeIntervals = CollectUnsafeFireIntervals(worldSnapshot, hamster, targetBottomLine, latestFireShift);
@@ -142,7 +145,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 safeIntervals.Add(new SafeInterval(safeStart, latestFireShift));
 
             // Для switch с крыши оставляет только окна, где target-линия имеет roof support под хомяком.
-            if (hamster.IsOnRoof)
+            if (hamster.IsOnRoof && requireTargetRoofSupport)
             {
                 safeIntervals = IntersectWithTargetRoofSupportIntervals(
                     worldSnapshot,
