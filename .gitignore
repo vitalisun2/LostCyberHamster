@@ -97,6 +97,7 @@ LostCyberHamster/.utmp/
 
 # Auto-generated compact codebase files
 /docs/Compacted Code/
+/tools/docs/Compacted Code/
 
 # Rider cache
 .idea/
