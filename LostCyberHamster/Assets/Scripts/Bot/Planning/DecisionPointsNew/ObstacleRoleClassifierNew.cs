@@ -1,0 +1,51 @@
+using Assets.Scripts.Bot.Perception;
+using Assets.Scripts.Bot.Planning;
+
+namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
+{
+    /// <summary>
+    /// Назначает role-based factual-роли obstacle через существующие planning classifiers.
+    /// </summary>
+    internal static class ObstacleRoleClassifierNew
+    {
+        /// <summary>
+        /// Возвращает набор ролей obstacle в текущем projected planning-состоянии.
+        /// </summary>
+        public static ObstacleRole GetRoles(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            ObstacleSnapshot obstacle)
+        {
+            if (obstacle == null)
+                return ObstacleRole.None;
+
+            ObstacleRole roles = ObstacleRole.None;
+
+            // Базовые type facts берутся из единого ObstacleClassifier.
+            if (ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
+                roles |= ObstacleRole.BlockingThreat;
+
+            if (ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType))
+                roles |= ObstacleRole.RoofSupport;
+
+            if (ObstacleClassifier.CanJumpOnGroundObstacle(obstacle.ObstacleType)
+                || ObstacleClassifier.CanJumpOnFromRoofObstacle(obstacle.ObstacleType))
+            {
+                roles |= ObstacleRole.Target;
+            }
+
+            // RoofOccupantHazard зависит от текущего roof path, поэтому делегируется RoofRunProjection.
+            if (RoofRunProjection.TryFindDamagingOccupantOnPassiveRoofPath(
+                    planningState,
+                    worldSnapshot,
+                    obstacle,
+                    out _,
+                    out _))
+            {
+                roles |= ObstacleRole.RoofOccupantHazard;
+            }
+
+            return roles;
+        }
+    }
+}

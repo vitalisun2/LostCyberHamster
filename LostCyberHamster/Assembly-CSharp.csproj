@@ -72,6 +72,13 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitSimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanBuilder.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\DecisionPointDetectorNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\DecisionPointNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleChainBuilderNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleChainElementNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleChainNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleRole.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleRoleClassifierNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoofOnRoof\JumpFromRoofOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnExecutor.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitRoadLoadingTask.cs" />
