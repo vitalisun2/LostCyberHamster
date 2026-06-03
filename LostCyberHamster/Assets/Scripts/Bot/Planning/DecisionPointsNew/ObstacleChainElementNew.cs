@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 
 namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
@@ -8,13 +9,15 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
     /// </summary>
     public sealed class ObstacleChainElementNew
     {
+        private readonly HashSet<ObstacleRole> _roles;
+
         /// <summary>
         /// Создает элемент role-based chain.
         /// </summary>
         public ObstacleChainElementNew(
             ObstacleSnapshot obstacle,
             int worldIndex,
-            ObstacleRole roles)
+            IEnumerable<ObstacleRole> roles)
         {
             Obstacle = obstacle ?? throw new ArgumentNullException(nameof(obstacle));
 
@@ -22,30 +25,39 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
                 throw new ArgumentOutOfRangeException(nameof(worldIndex));
 
             WorldIndex = worldIndex;
-            Roles = roles;
+            _roles = roles != null
+                ? new HashSet<ObstacleRole>(roles)
+                : throw new ArgumentNullException(nameof(roles));
         }
 
         public ObstacleSnapshot Obstacle { get; }
         public int WorldIndex { get; }
-        public ObstacleRole Roles { get; }
+        public IReadOnlyCollection<ObstacleRole> Roles => _roles;
         public bool IsBottomLine => Obstacle.IsBottomLine;
 
         /// <summary>
-        /// Возвращает true, если элемент содержит все переданные role flags.
+        /// Возвращает true, если элемент содержит указанную роль.
         /// </summary>
         public bool HasRole(ObstacleRole role)
         {
-            return role != ObstacleRole.None
-                && (Roles & role) == role;
+            return _roles.Contains(role);
         }
 
         /// <summary>
-        /// Возвращает true, если элемент содержит хотя бы одну из переданных role flags.
+        /// Возвращает true, если элемент содержит хотя бы одну из переданных ролей.
         /// </summary>
-        public bool HasAnyRole(ObstacleRole roles)
+        public bool HasAnyRole(IEnumerable<ObstacleRole> roles)
         {
-            return roles != ObstacleRole.None
-                && (Roles & roles) != ObstacleRole.None;
+            if (roles == null)
+                return false;
+
+            foreach (ObstacleRole role in roles)
+            {
+                if (_roles.Contains(role))
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -55,8 +67,13 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
         {
             get
             {
-                ObstacleRole activeRoles = Roles & ~ObstacleRole.Collectible;
-                return activeRoles != ObstacleRole.None;
+                foreach (ObstacleRole role in _roles)
+                {
+                    if (role != ObstacleRole.Collectible)
+                        return true;
+                }
+
+                return false;
             }
         }
     }

@@ -138,7 +138,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
             if (obstacle.IsBottomLine != focusBottomLine)
                 return false;
 
-            ObstacleRole roles = ObstacleRoleClassifierNew.GetRoles(
+            HashSet<ObstacleRole> roles = ObstacleRoleClassifierNew.GetRoles(
                 planningState,
                 worldSnapshot,
                 obstacle);
@@ -147,28 +147,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
             if (!element.HasAnyActivePlanningRole)
                 return false;
 
-            if (IsPassiveRoofOnlyContinuation(planningState, worldSnapshot, obstacle, roles))
-                return false;
-
             return true;
-        }
-
-        /// <summary>
-        /// Отсекает passive roof continuation, если там нет отдельной roof occupant hazard.
-        /// </summary>
-        private static bool IsPassiveRoofOnlyContinuation(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
-            ObstacleSnapshot obstacle,
-            ObstacleRole roles)
-        {
-            if ((roles & ObstacleRole.RoofOccupantHazard) != ObstacleRole.None)
-                return false;
-
-            return RoofRunProjection.IsPassiveRoofContinuation(
-                planningState,
-                worldSnapshot,
-                obstacle);
         }
     }
 }

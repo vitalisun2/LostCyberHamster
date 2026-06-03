@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 
@@ -11,27 +12,27 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
         /// <summary>
         /// Возвращает набор ролей obstacle в текущем projected planning-состоянии.
         /// </summary>
-        public static ObstacleRole GetRoles(
+        public static HashSet<ObstacleRole> GetRoles(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             ObstacleSnapshot obstacle)
         {
             if (obstacle == null)
-                return ObstacleRole.None;
+                return new HashSet<ObstacleRole>();
 
-            ObstacleRole roles = ObstacleRole.None;
+            var roles = new HashSet<ObstacleRole>();
 
             // Базовые type facts берутся из единого ObstacleClassifier.
             if (ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
-                roles |= ObstacleRole.BlockingThreat;
+                roles.Add(ObstacleRole.BlockingThreat);
 
             if (ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType))
-                roles |= ObstacleRole.RoofSupport;
+                roles.Add(ObstacleRole.RoofSupport);
 
             if (ObstacleClassifier.CanJumpOnGroundObstacle(obstacle.ObstacleType)
                 || ObstacleClassifier.CanJumpOnFromRoofObstacle(obstacle.ObstacleType))
             {
-                roles |= ObstacleRole.Target;
+                roles.Add(ObstacleRole.Target);
             }
 
             // RoofOccupantHazard зависит от текущего roof path, поэтому делегируется RoofRunProjection.
@@ -42,7 +43,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
                     out _,
                     out _))
             {
-                roles |= ObstacleRole.RoofOccupantHazard;
+                roles.Add(ObstacleRole.RoofOccupantHazard);
             }
 
             return roles;
