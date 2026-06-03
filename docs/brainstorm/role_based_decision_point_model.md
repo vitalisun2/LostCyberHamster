@@ -4,6 +4,8 @@
 
 Упростить planning-архитектуру бота: убрать сценарные target-specific chain builders и оставить одну универсальную модель decision point, где препятствия описаны ролями, а ветки строятся из actions стратегий.
 
+Дополнительная цель refactor'а - сделать систему проще и поддерживаемее: меньше специальных сущностей, меньше дублирования ответственности, больше ясного разделения detector / strategy / graph / evaluator / executor.
+
 ## Текущая проблема
 
 Сейчас `DecisionPointKind` заранее выбирает сценарий всей ситуации: `BlockingThreat`, `GroundJumpOnTarget`, `JumpOnFromRoofTarget`, `RoofJumpOnTarget`.
@@ -18,7 +20,7 @@
 
 ## Предлагаемая модель
 
-`DecisionPointDetector` строит один `DecisionPoint`, внутри которого лежит универсальный `ObstacleChain`.
+`DecisionPointDetector` строит один `DecisionPoint` для текущего planning node, внутри которого лежит универсальный `ObstacleChain` выбранной focus lane.
 
 `ObstacleChain` содержит элементы препятствий. Каждый элемент знает:
 
@@ -48,11 +50,15 @@
 Базовые правила:
 
 - obstacles уже сортируются по `LeftX` в snapshot;
+- detector сначала выбирает focus lane;
+- chain содержит obstacles только focus lane;
+- obstacles другой линии участвуют только в target scan для выбора focus lane;
 - плотные obstacles одной линии входят в один chain;
 - если gap между obstacles меньше ширины хомяка, это один chain;
 - если gap больше или равен ширине хомяка, следующий obstacle можно обрабатывать отдельным future decision;
-- для passive roof continuation может сохраняться отдельное roof-specific правило gap;
-- chain должен охватывать обе линии в relevant window, чтобы стратегии могли видеть current-lane threats и off-lane opportunities.
+- для passive roof continuation может сохраняться отдельное roof-specific правило gap.
+
+После action, например `SwitchLane`, graph симулирует новый `PlanningState`; следующий `DecisionPoint` строится заново уже для новой ситуации и новой lane.
 
 ## Генерация actions
 
@@ -83,7 +89,7 @@ Unsafe actions не попадают в дерево.
 1. Получает actions из `ActionGenerator`.
 2. Для каждого action симулирует следующий `PlanningState`.
 3. Рекурсивно строит продолжение ветки.
-4. Закрывает leaf, если в текущем snapshot нет необработанной required threat.
+4. Закрывает leaf, если в текущем projected snapshot нет unresolved planning situation.
 5. Передаёт готовые ветки в `PlanEvaluator`.
 
 `PlanEvaluator` выбирает лучшую safe ветку по приоритетам:
@@ -133,7 +139,7 @@ Tree branches:
 
 - хомяк на верхней линии;
 - верхняя линия пустая;
-- required threat нет.
+- unresolved planning situation нет.
 
 Ветка закрывается как leaf:
 
