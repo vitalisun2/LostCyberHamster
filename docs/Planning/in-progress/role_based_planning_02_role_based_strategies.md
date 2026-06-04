@@ -21,11 +21,11 @@
 - strategy получает `DecisionPointNew`;
 - strategy выбирает подходящий `ObstacleChainElementNew` по role;
 - existing calculators/simulators/executors переиспользуются, если их contract не тянет старый `DecisionPoint`;
-- если старый class можно адаптировать маленьким overload'ом, не создавать новый класс-дубль.
+- новый path живёт в отдельной папке/namespace `StrategiesNew`; для strategy/specification слоя создавать дубли, чтобы старый path не смешивался с role-based миграцией.
 
 Возможный переходный contract:
 
-- `IPlanningStrategyNew` только если нельзя безопасно изменить старый `IPlanningStrategy` без поломки активного path.
+- `IPlanningStrategyNew` в `StrategiesNew.Shared.Contracts`, чтобы не менять старый `IPlanningStrategy` до полного переключения path.
 - После полной миграции оставить один нейтральный `IPlanningStrategy`, а `New`-контракты удалить.
 
 ## Первый action: SwitchLane
@@ -38,7 +38,7 @@
 4. Переиспользовать `SwitchLaneFireWindowCalculator`.
 5. Переиспользовать `SwitchLaneSimulator`.
 6. Переиспользовать `SwitchLaneExecutor`.
-7. Retained validation: переиспользовать проверочную логику, но не старый `IRetainedActionValidator` напрямую, пока он принимает старый `RetainedActionContext`.
+7. Retained validation не включать в блок 02: новый retained context и validators переносить в блок 05.
 8. Убрать зависимость от `DecisionPoint.UsesObjectiveSwitchLaneTiming` и `FireBeforeObstacle`.
 
 Sampling policy для первого этапа:

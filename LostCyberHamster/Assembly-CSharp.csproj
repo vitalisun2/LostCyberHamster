@@ -79,6 +79,9 @@
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleChainNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleRole.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleRoleClassifierNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\Contracts\IPlanningStrategyNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\SwitchLane\SwitchLaneSpecificationNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\SwitchLane\SwitchLaneStrategyNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoofOnRoof\JumpFromRoofOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnExecutor.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitRoadLoadingTask.cs" />
