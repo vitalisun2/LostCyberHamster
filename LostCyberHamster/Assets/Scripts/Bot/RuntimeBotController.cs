@@ -10,7 +10,9 @@ using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
+using Assets.Scripts.Bot.StrategiesNew.JumpOver;
 using Assets.Scripts.Bot.StrategiesNew.Shared.Contracts;
+using Assets.Scripts.Bot.StrategiesNew.SuperJumpOver;
 using Assets.Scripts.Bot.StrategiesNew.SwitchLane;
 using UnityEngine;
 
@@ -77,7 +79,9 @@ namespace Assets.Scripts.Bot
             // Подключаем стратегии
             IReadOnlyList<IPlanningStrategyNew> strategies = new IPlanningStrategyNew[]
             {
-                new SwitchLaneStrategyNew()
+                new SwitchLaneStrategyNew(),
+                new JumpOverStrategyNew(),
+                new SuperJumpOverStrategyNew()
             };
 
             // и прочие компоненты

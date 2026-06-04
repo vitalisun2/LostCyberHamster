@@ -18,7 +18,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
     /// </summary>
     internal sealed class SwitchLaneStrategyNew : IPlanningStrategyNew
     {
-        private readonly SwitchLaneSpecificationNew _specification;
+        private readonly IBotStrategySpecification _specification;
         private readonly SwitchLaneFireWindowCalculator _fireWindowCalculator;
         private readonly SwitchLaneSimulator _simulator;
 
@@ -57,12 +57,17 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
                 (decisionPoint, nameof(decisionPoint)),
                 (actions, nameof(actions)));
 
-            // Отбирает obstacle, для которого допустима смена линии.
-            if (!_specification.TryFindBlockingThreat(
-                    planningState,
+            // Выбирает blocking threat из текущей role-based ситуации.
+            if (!TryResolveBlockingThreat(
                     decisionPoint,
-                    out ObstacleSnapshot threatObstacle,
-                    out int threatObstacleIndex))
+                    out ObstacleSnapshot blockingThreat,
+                    out int blockingThreatIndex))
+            {
+                return;
+            }
+
+            // Проверяет применимость дорожного SwitchLane к выбранной blocking threat.
+            if (!_specification.IsSatisfiedBy(planningState, blockingThreat))
             {
                 return;
             }
@@ -72,7 +77,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
             bool targetBottomLine = !hamster.IsOnBottomLine;
             if (!_fireWindowCalculator.TryGetLatestFireShift(
                     hamster,
-                    threatObstacle,
+                    blockingThreat,
                     out float latestFireShift))
             {
                 return;
@@ -93,11 +98,38 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
                 SwitchLaneFireWindowSample fireWindowSample = fireWindowSamples[sampleIndex];
                 actions.Add(BuildAction(
                     planningState,
-                    threatObstacle,
-                    threatObstacleIndex,
+                    blockingThreat,
+                    blockingThreatIndex,
                     targetBottomLine,
                     fireWindowSample));
             }
+        }
+
+        /// <summary>
+        /// Пытается выбрать первую blocking threat из focus chain текущей ситуации.
+        /// </summary>
+        private static bool TryResolveBlockingThreat(
+            DecisionPointNew decisionPoint,
+            out ObstacleSnapshot blockingThreat,
+            out int blockingThreatIndex)
+        {
+            blockingThreat = null;
+            blockingThreatIndex = -1;
+
+            if (decisionPoint?.Chain == null)
+                return false;
+
+            if (!decisionPoint.Chain.TryFindFirstWithRole(
+                    ObstacleRole.BlockingThreat,
+                    out ObstacleChainElementNew blockingThreatElement,
+                    out _))
+            {
+                return false;
+            }
+
+            blockingThreat = blockingThreatElement.Obstacle;
+            blockingThreatIndex = blockingThreatElement.WorldIndex;
+            return true;
         }
 
         /// <summary>
@@ -105,14 +137,14 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
         /// </summary>
         private static PlannedAction BuildAction(
             PlanningState planningState,
-            ObstacleSnapshot threatObstacle,
-            int threatObstacleIndex,
+            ObstacleSnapshot blockingThreat,
+            int blockingThreatIndex,
             bool targetBottomLine,
             SwitchLaneFireWindowSample fireWindowSample)
         {
             // Рассчитывает мировую точку срабатывания действия.
             float fireShift = fireWindowSample.FireShift;
-            float projectedTriggerX = threatObstacle.LeftX - fireShift;
+            float projectedTriggerX = blockingThreat.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
                 triggerX,
@@ -127,11 +159,11 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
                 renderWorldX: triggerX,
                 completionWorldShift: fireShift + SwitchLaneTiming.PostFirePlanningTravel,
                 postFireWorldShift: SwitchLaneTiming.PostFirePlanningTravel,
-                threatObstacleIndex,
-                targetObstacleInstanceId: threatObstacle.InstanceId,
+                blockingThreatIndex,
+                targetObstacleInstanceId: blockingThreat.InstanceId,
                 targetBottomLine: targetBottomLine,
                 energyCost: 0,
-                description: $"Switch lane before {threatObstacle.ObstacleType}",
+                description: $"Switch lane before {blockingThreat.ObstacleType}",
                 triggerWindow: triggerWindow);
         }
 

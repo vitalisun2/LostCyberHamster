@@ -1,34 +1,28 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
-using Assets.Scripts.Bot.Planning.DecisionPointsNew;
+using Assets.Scripts.Bot.StrategiesNew.Shared.Contracts;
 using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
 {
     /// <summary>
-    /// Проверяет применимость смены линии для role-based planning-ситуации.
+    /// Проверяет применимость дорожной смены линии к уже выбранной blocking threat.
     /// </summary>
-    internal sealed class SwitchLaneSpecificationNew
+    internal sealed class SwitchLaneSpecificationNew : IBotStrategySpecification
     {
         /// <summary>
-        /// Ищет blocking threat, относительно которого можно построить действие смены линии.
+        /// Возвращает true, если SwitchLane применим к указанной blocking threat.
         /// </summary>
-        public bool TryFindBlockingThreat(
+        public bool IsSatisfiedBy(
             PlanningState planningState,
-            DecisionPointNew decisionPoint,
-            out ObstacleSnapshot threatObstacle,
-            out int threatObstacleIndex)
+            ObstacleSnapshot obstacle)
         {
-            // Сбрасывает выходные значения и проверяет контекст.
-            threatObstacle = null;
-            threatObstacleIndex = -1;
             if (planningState?.Hamster == null
-                || decisionPoint?.Chain == null)
+                || obstacle == null)
             {
                 return false;
             }
 
-            // Отбрасывает состояния, в которых смену линии планировать нельзя.
             HamsterSnapshot hamster = planningState.Hamster;
             if (!CanPlanSwitchLaneFromRoad(hamster)
                 || hamster.IsShifting)
@@ -36,19 +30,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
                 return false;
             }
 
-            // Выбирает первый blocking threat в focus chain.
-            if (!decisionPoint.Chain.TryFindFirstWithRole(
-                    ObstacleRole.BlockingThreat,
-                    out ObstacleChainElementNew threatElement,
-                    out _))
-            {
-                return false;
-            }
-
-            // Возвращает obstacle-угрозу для planning action.
-            threatObstacle = threatElement.Obstacle;
-            threatObstacleIndex = threatElement.WorldIndex;
-            return true;
+            return obstacle.IsBottomLine == hamster.IsOnBottomLine;
         }
 
         /// <summary>
