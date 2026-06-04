@@ -72,6 +72,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitSimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLaneExit\RoofSwitchLaneExitStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanBuilder.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\PlanBuilderNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\DecisionPointDetectorNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\DecisionPointNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleChainBuilderNew.cs" />
@@ -142,6 +143,7 @@
     <Compile Include="Assets\Scripts\GameManagement\Data\SettingsData.cs" />
     <Compile Include="Assets\Scripts\UI\ResourceUIHelper.cs" />
     <Compile Include="Assets\Scripts\Bot\Execution\PlanExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\Execution\PlanExecutorNew.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\AwaitExtensions.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoof\JumpFromRoofStrategy.cs" />
@@ -217,6 +219,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpFromRoof\IJumpFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\ActionTriggerWindow.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Simulation\ActionInProgressProjector.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Simulation\ActionInProgressProjectorNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\Gameplay\Hamster.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOnFromRoof\JumpOnFromRoofSpecification.cs" />

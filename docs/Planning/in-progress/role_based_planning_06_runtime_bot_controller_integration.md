@@ -2,7 +2,7 @@
 
 ## Назначение
 
-Подключить role-based planning path в существующей точке сборки зависимостей. Отдельного класса `RuntimeCompositionNew` нет и создавать его не нужно.
+Подключить role-based planning path в существующей runtime-точке сборки зависимостей. `RuntimeBotController` остаётся единственным controller/lifecycle entrypoint. `RuntimeCompositionNew` и `RuntimeBotControllerNew` не создавать.
 
 ## Факты по текущему коду
 
@@ -10,23 +10,26 @@
 - `CreateStrategies` сейчас регистрирует все стратегии.
 - `PlanExecutor` работает с action execution handlers по `BotActionKind`, а не с `DecisionPoint`.
 - `TransitionSimulator` и `ActionInProgressProjector` строят maps по `BotActionKind`.
+- New-path strategies используют контракт `IPlanningStrategyNew`, поэтому классы с constructor/API от strategy contract получают отдельные `*New` версии.
 
 ## Целевая форма
 
-Composition остаётся в `RuntimeBotController` или маленькой private factory рядом с ним:
+Composition остаётся прямо в `RuntimeBotController`:
 
 - `CreateRoleBasedStrategiesForMigration()` возвращает только role-based `SwitchLane` на первом этапе.
-- `PlanExecutor` переиспользуется, если strategy отдаёт тот же executor contract.
-- `TransitionSimulator`/`ActionInProgressProjector` переиспользуются или получают минимальный adapter к role-based strategy contract.
+- `PlanExecutorNew` принимает `IPlanningStrategyNew` и публикует тот же runtime execution surface.
+- `PlanBuilderNew` работает с `ActionGeneratorNew`, `PlanningGraphBuilderNew`, `TransitionSimulatorNew`, `RetainedActionRevalidatorNew`, `ActionInProgressProjectorNew`.
+- `ActionInProgressProjectorNew` принимает `IPlanningStrategyNew`.
+- `TransitionSimulatorNew` уже принимает `IPlanningStrategyNew`.
 - Старый `CreateStrategies` остаётся до полного cleanup.
 
-Не создавать `Assets/Scripts/Bot/RuntimeNew` без доказанной причины. Это был бы новый слой без собственной доменной ответственности.
+Не создавать `Assets/Scripts/Bot/RuntimeNew`, `RuntimeCompositionNew` или `RuntimeBotControllerNew`: это был бы новый runtime lifecycle/composition слой без собственной ответственности.
 
 ## Переключение пути
 
 На время миграции нужен явный и локальный выбор active path:
 
-- private factory/constant в `RuntimeBotController`;
+- local constant в `RuntimeBotController`;
 - без UI и без debug toggles, пока пользователь не попросит;
 - нельзя смешивать old strategies и role-based strategies в одном action generator.
 
@@ -34,6 +37,7 @@ Composition остаётся в `RuntimeBotController` или маленькой
 
 - Не удалять старый path до миграции всех strategies.
 - Не создавать `RuntimeCompositionNew`.
+- Не создавать `RuntimeBotControllerNew`.
 - Не добавлять runtime setting/UI ради временного переключателя.
 - Не коммитить debug logs/toggles.
 
