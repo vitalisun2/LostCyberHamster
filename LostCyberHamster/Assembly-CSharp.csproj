@@ -80,6 +80,9 @@
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleRole.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPointsNew\ObstacleRoleClassifierNew.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\Contracts\IPlanningStrategyNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\RetainedValidation\IRetainedActionValidatorNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\RetainedValidation\RetainedActionContextNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\SwitchLane\SwitchLaneRetainedValidatorNew.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\SwitchLane\SwitchLaneSpecificationNew.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\SwitchLane\SwitchLaneStrategyNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoofOnRoof\JumpFromRoofOnRoofPolicy.cs" />
@@ -445,6 +448,7 @@
     <Compile Include="Assets\Scripts\Bot\Planning\ActionGenerator.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\ActionGeneratorNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningGraphBuilderNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\RetainedValidation\RetainedActionRevalidatorNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\TransitionSimulatorNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOn\JumpOnSimulator.cs" />

@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPointsNew;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 
 namespace Assets.Scripts.Bot.StrategiesNew.Shared.Contracts
@@ -20,6 +21,8 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.Contracts
         IActionExecutionHandler Executor { get; }
 
         ISimulator Simulator { get; }
+
+        IRetainedActionValidatorNew RetainedValidator { get; }
 
         /// <summary>
         /// Добавляет релевантные кандидаты действий для role-based точки решения.

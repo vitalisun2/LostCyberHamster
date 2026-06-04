@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPointsNew;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -32,11 +33,13 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
             // Публикует runtime-компоненты, которые не зависят от старого DecisionPoint.
             Executor = new SwitchLaneExecutor(triggerGate);
             Simulator = _simulator;
+            RetainedValidator = new SwitchLaneRetainedValidatorNew(_fireWindowCalculator);
         }
 
         public BotActionKind ActionKind => BotActionKind.SwitchLane;
         public IActionExecutionHandler Executor { get; }
         public ISimulator Simulator { get; }
+        public IRetainedActionValidatorNew RetainedValidator { get; }
 
         /// <summary>
         /// Собирает допустимые действия смены линии для role-based точки принятия решения.
@@ -88,54 +91,13 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
             for (int sampleIndex = 0; sampleIndex < fireWindowSamples.Count; sampleIndex++)
             {
                 SwitchLaneFireWindowSample fireWindowSample = fireWindowSamples[sampleIndex];
-                if (!TryGetResultRoofSupport(
-                        worldSnapshot,
-                        hamster,
-                        targetBottomLine,
-                        fireWindowSample.FireShift,
-                        out int? resultRoofSupportInstanceId))
-                {
-                    continue;
-                }
-
                 actions.Add(BuildAction(
                     planningState,
                     threatObstacle,
                     threatObstacleIndex,
                     targetBottomLine,
-                    fireWindowSample,
-                    resultRoofSupportInstanceId));
+                    fireWindowSample));
             }
-        }
-
-        /// <summary>
-        /// Возвращает roof support для switch с крыши или null для обычной смены линии на дороге.
-        /// </summary>
-        private bool TryGetResultRoofSupport(
-            WorldSnapshot worldSnapshot,
-            HamsterSnapshot hamster,
-            bool targetBottomLine,
-            float fireShift,
-            out int? resultRoofSupportInstanceId)
-        {
-            // Для ground-switch support не требуется.
-            resultRoofSupportInstanceId = null;
-            if (!hamster.IsOnRoof)
-                return true;
-
-            // Для roof-switch разрешает только переход на roof target-линии.
-            if (!_fireWindowCalculator.TryFindTargetRoofSupportAtFireShift(
-                    worldSnapshot,
-                    hamster,
-                    targetBottomLine,
-                    fireShift,
-                    out ObstacleSnapshot support))
-            {
-                return false;
-            }
-
-            resultRoofSupportInstanceId = support.InstanceId;
-            return true;
         }
 
         /// <summary>
@@ -146,8 +108,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
             ObstacleSnapshot threatObstacle,
             int threatObstacleIndex,
             bool targetBottomLine,
-            SwitchLaneFireWindowSample fireWindowSample,
-            int? resultRoofSupportInstanceId)
+            SwitchLaneFireWindowSample fireWindowSample)
         {
             // Рассчитывает мировую точку срабатывания действия.
             float fireShift = fireWindowSample.FireShift;
@@ -171,7 +132,6 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
                 targetBottomLine: targetBottomLine,
                 energyCost: 0,
                 description: $"Switch lane before {threatObstacle.ObstacleType}",
-                resultRoofSupportInstanceId: resultRoofSupportInstanceId,
                 triggerWindow: triggerWindow);
         }
 

@@ -30,7 +30,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
 
             // Отбрасывает состояния, в которых смену линии планировать нельзя.
             HamsterSnapshot hamster = planningState.Hamster;
-            if (!CanPlanSwitchLaneFromState(hamster.HamsterState)
+            if (!CanPlanSwitchLaneFromRoad(hamster)
                 || hamster.IsShifting)
             {
                 return false;
@@ -52,12 +52,13 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
         }
 
         /// <summary>
-        /// Определяет, допускает ли текущее runtime-состояние запуск планирования смены линии.
+        /// Определяет, допускает ли текущее состояние дорожный SwitchLane.
         /// </summary>
-        private static bool CanPlanSwitchLaneFromState(HamsterStateEnum hamsterState)
+        private static bool CanPlanSwitchLaneFromRoad(HamsterSnapshot hamster)
         {
-            return hamsterState == HamsterStateEnum.Run
-                || hamsterState == HamsterStateEnum.RoofRun;
+            return hamster != null
+                && hamster.HamsterState == HamsterStateEnum.Run
+                && !hamster.IsOnRoof;
         }
     }
 }

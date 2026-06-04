@@ -12,7 +12,7 @@
 - `SwitchLaneFireWindowCalculator` уже считает safe intervals по всем damaging obstacles target lane, а не только по chain.
 - `SwitchLaneSimulator` уже меняет lane в `PlanningState` и продвигает `NextObstacleIndex`.
 - `SwitchLaneRetainedValidator` не использует `context.DecisionPoint` напрямую, но его contract принимает старый `RetainedActionContext`.
-- `RoofSwitchLaneExitStrategy` уже отдельная стратегия; концептуально её оставляем отдельной, потому что switch с roof-exit и ground/roof switch имеют разные условия.
+- `RoofSwitchLaneExitStrategy` уже отдельная стратегия; roof-switch сценарии не смешивать с дорожным `SwitchLane`.
 
 ## Целевая форма
 
@@ -33,7 +33,7 @@
 Минимальная адаптация:
 
 1. Добавить role-based вход в `SwitchLaneSpecification`: искать первый `BlockingThreat` в focus chain.
-2. Оставить state guard: `Run` или `RoofRun`, `!IsShifting`.
+2. Оставить state guard: только дорожный `Run`, `!IsOnRoof`, `!IsShifting`.
 3. Target lane = противоположная текущей lane хомяка.
 4. Переиспользовать `SwitchLaneFireWindowCalculator`.
 5. Переиспользовать `SwitchLaneSimulator`.
@@ -57,7 +57,7 @@ Sampling policy для первого этапа:
 4. `JumpOn` / `SuperJumpOn`: huntable ground `Target` + post-action safety.
 5. `JumpOnFromRoof` / `SuperJumpOnFromRoof`: roof-exit huntable `Target` + bounce/re-entry safety.
 6. `JumpFromRoof*`, `RoofJumpOver*`: перенос после roof-chain правил.
-7. `RoofSwitchLaneExit`: адаптировать к new point contract без слияния с обычным `SwitchLane`.
+7. `RoofSwitchLaneExit` / будущий `RoofSwitchLane`: адаптировать к new point contract отдельными стратегиями без слияния с дорожным `SwitchLane`.
 
 ## Что не делать
 
@@ -71,5 +71,5 @@ Sampling policy для первого этапа:
 
 - `SwitchLane` создаёт action только от `BlockingThreat`.
 - Unsafe target lane не создаёт action.
-- Roof switch проходит только при target-lane roof support.
+- `SwitchLaneNew` не создаёт action из `RoofRun`; roof-switch покрывается отдельной будущей стратегией.
 - После action child state находится на другой lane.
