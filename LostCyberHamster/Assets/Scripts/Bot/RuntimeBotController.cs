@@ -11,8 +11,10 @@ using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Bot.StrategiesNew.JumpOver;
+using Assets.Scripts.Bot.StrategiesNew.JumpOn;
 using Assets.Scripts.Bot.StrategiesNew.Shared.Contracts;
 using Assets.Scripts.Bot.StrategiesNew.SuperJumpOver;
+using Assets.Scripts.Bot.StrategiesNew.SuperJumpOn;
 using Assets.Scripts.Bot.StrategiesNew.SwitchLane;
 using UnityEngine;
 
@@ -81,7 +83,9 @@ namespace Assets.Scripts.Bot
             {
                 new SwitchLaneStrategyNew(),
                 new JumpOverStrategyNew(),
-                new SuperJumpOverStrategyNew()
+                new SuperJumpOverStrategyNew(),
+                new JumpOnStrategyNew(),
+                new SuperJumpOnStrategyNew()
             };
 
             // и прочие компоненты
