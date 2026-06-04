@@ -26,9 +26,10 @@
 6. [if-relevant: баг, регрессия, расследование] `docs/rules/bug_regression_analysis_workflow.md` — evidence-first цикл расследования одного регресса
 7. [if-relevant: инструменты, автопрогон, логи] `docs/rules/agent_tools.md` — каталог инструментов проекта
 8. [if-relevant: архитектура, ассеты, новые системы] `docs/architecture_knowledge_base.md` — архитектурные решения и паттерны (читать только релевантные секции)
-9. [if-relevant: подготовка плана реализации, реализация, рефакторинг, code review] `docs/rules/clean_code_by_b_martin/README.md` — выбрать только релевантные темы Clean Code до подготовки плана и сверить их перед первой содержательной правкой; это вспомогательный слой, приоритет всегда у project rules
-10. Активный план в `docs/Planning/in-progress/`, если задача привязана к плану
-11. Релевантные исходники, editor tools, ассеты и тесты
+9. [if-relevant: code review, self-review после доработки] `docs/rules/code_review_principles.md` — принципы ревью архитектурной целостности и ownership
+10. [if-relevant: подготовка плана реализации, реализация, рефакторинг, code review] `docs/rules/clean_code_by_b_martin/README.md` — выбрать только релевантные темы Clean Code до подготовки плана и сверить их перед первой содержательной правкой; это вспомогательный слой, приоритет всегда у project rules
+11. Активный план в `docs/Planning/in-progress/`, если задача привязана к плану
+12. Релевантные исходники, editor tools, ассеты и тесты
 
 ## Профиль пользователя
 
@@ -88,6 +89,7 @@
 | `iteration_cycle.md` | Итерационный цикл тестирования бота (ручной прогон пользователя, логи, фидбэк) |
 | `bug_regression_analysis_workflow.md` | Evidence-first расследование одного бага или регресса: гипотезы, субагенты, логи, root cause, проверка |
 | `code_conventions.md` | Конвенции кода, валидация, Unity-специфика |
+| `code_review_principles.md` | Принципы code review и self-review после доработок |
 | `agent_tools.md` | Каталог проектных инструментов и автоматизаций |
 | `agent_efficiency_playbook.md` | Накопленные workflow-lessons, Learning Review и практические правила эффективности агента |
 | `temporary_current_rules.md` | Временные обязательные правила текущего этапа разработки |
