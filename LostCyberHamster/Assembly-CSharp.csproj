@@ -443,6 +443,7 @@
     <Compile Include="Assets\Scripts\GameManagement\Progress\ProgressService.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\Ultas\EnergyShieldUlta.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\ActionGenerator.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\ActionGeneratorNew.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpOn\JumpOnSimulator.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ResourceType.cs" />
