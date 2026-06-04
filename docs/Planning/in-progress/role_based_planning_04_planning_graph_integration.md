@@ -15,18 +15,12 @@
 
 ## Целевая форма
 
-Не дублировать весь `PlanningGraphBuilder`, если можно заменить зависимость:
+На этапе миграции создать отдельный `PlanningGraphBuilderNew`, чтобы не рефакторить сложный старый graph до проверки нового path:
 
-- graph должен получать генератор actions и predicate "есть ли unresolved planning situation";
-- old path может передавать старый required detector;
-- role-based path передаёт `DecisionPointDetectorNew.TryDetect`.
-
-Возможные минимальные реализации:
-
-- маленький internal interface для action generator + situation detector;
-- или constructor overload/factory, если интерфейс окажется лишним.
-
-Критерий выбора: меньше дублирования и меньше новых сущностей при сохранении понятного ownership.
+- `PlanningGraphBuilderNew` использует `ActionGeneratorNew`;
+- `PlanningGraphBuilderNew` проверяет unresolved planning situation через `DecisionPointDetectorNew.TryDetect`;
+- `TransitionSimulatorNew` использует `IPlanningStrategyNew` и не смешивается со старым `TransitionSimulator`;
+- старый `PlanningGraphBuilder` и старый runtime path остаются без изменений до cleanup.
 
 ## Leaf rule в role-based модели
 
@@ -41,7 +35,7 @@
 - `PlanningBranch`.
 - `PlanningBranchMetrics`.
 - `PlanningStateKey`.
-- `TransitionSimulator`.
+- `TransitionSimulatorNew` как отдельный диспетчер симуляторов для `IPlanningStrategyNew`.
 - `PlanEvaluator`.
 
 ## Что не делать
@@ -49,7 +43,8 @@
 - Не менять scoring.
 - Не строить chain внутри graph.
 - Не добавлять no-op/no-action branch-step.
-- Не создавать `PlanningGraphNew`, если достаточно отвязать существующий graph от конкретного detector.
+- Не рефакторить старый `PlanningGraphBuilder` в этом шаге.
+- Не смешивать old/new strategy contracts в одном graph или simulator.
 
 ## Валидация будущей реализации
 
