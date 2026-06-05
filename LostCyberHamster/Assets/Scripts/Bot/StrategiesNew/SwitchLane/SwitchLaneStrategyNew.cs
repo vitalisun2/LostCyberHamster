@@ -6,7 +6,7 @@ using Assets.Scripts.Bot.Planning.DecisionPointsNew;
 using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.Shared.Timing;
 using Assets.Scripts.Bot.Strategies.SwitchLane;
 using Assets.Scripts.Bot.StrategiesNew.Shared.Contracts;
 using Assets.Scripts.Common;
@@ -18,7 +18,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
     /// </summary>
     internal sealed class SwitchLaneStrategyNew : IPlanningStrategyNew
     {
-        private readonly IBotStrategySpecification _specification;
+        private readonly SwitchLaneSpecificationNew _specification;
         private readonly SwitchLaneFireWindowCalculator _fireWindowCalculator;
         private readonly SwitchLaneSimulator _simulator;
 
@@ -172,7 +172,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
         /// </summary>
         private static IReadOnlyList<float> GetSelectionRatios(PlanningState planningState)
         {
-            // Добавляет ранний вариант при достаточной энергии для потенциального target-hunt.
+            // Добавляет ранний вариант при достаточной энергии для потенциального target.
             HamsterSnapshot hamster = planningState?.Hamster;
             if (JumpOnObjectiveRules.HasEnergyForJumpOnObjective(hamster))
                 return new[]

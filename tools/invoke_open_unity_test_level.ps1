@@ -2,13 +2,14 @@ param(
     [int]$TimeoutSeconds = 120,
     [int]$PollMilliseconds = 250,
     [string]$LevelAddress = '01_New_York/Morning/test_switch_lane',
-    [float]$TimeScale = 2
+    [float]$TimeScale = 1
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$projectPath = Join-Path $PSScriptRoot 'LostCyberHamster'
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$projectPath = Join-Path $repoRoot 'LostCyberHamster'
 $automationPath = Join-Path $projectPath 'EditorLogs\automation'
 $requestPath = Join-Path $automationPath 'test_level_request.json'
 $responsePath = Join-Path $automationPath 'test_level_response.json'

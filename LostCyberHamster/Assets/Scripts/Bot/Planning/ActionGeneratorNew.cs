@@ -117,7 +117,6 @@ namespace Assets.Scripts.Bot.Planning
                 $"roles={FormatRoles(firstElement.Roles)} " +
                 $"chainCount={chain.Count} " +
                 $"chainLeftX={chain.LeftX:F2} chainRightX={chain.RightX:F2} " +
-                $"focusLane={(chain.FocusBottomLine ? "bottom" : "top")} " +
                 $"firstLeftX={firstObstacle.LeftX:F2} firstRightX={firstObstacle.RightX:F2} " +
                 $"projection={planningState.ProjectionWorldShift:F2} " +
                 $"hamsterLane={(planningState.IsOnBottomLine ? "bottom" : "top")}");

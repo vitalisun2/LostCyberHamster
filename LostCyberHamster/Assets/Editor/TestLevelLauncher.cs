@@ -33,7 +33,7 @@ namespace LostCyberHamster.Editor
         private const string PendingInteractiveLaunchAddressSessionKey = "TestLevelLauncher.PendingInteractiveLaunchAddress";
 
         /// <summary>Default timescale when launching through the automation bridge.</summary>
-        private const float AutomationDefaultTimeScale = 2.0f;
+        private const float AutomationDefaultTimeScale = 1.0f;
 
         /// <summary>Default timescale when launching via Tools menu for interactive visual inspection.</summary>
         private const float ToolsDefaultTimeScale = 1.0f;

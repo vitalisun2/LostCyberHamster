@@ -33,7 +33,6 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
             // Отбрасывает неподходящие действия.
             if (action.Kind != BotActionKind.SwitchLane
-                || !action.TargetObstacleInstanceId.HasValue
                 || !action.TargetBottomLine.HasValue)
             {
                 return ActionFireResult.Cancelled;
@@ -59,11 +58,18 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 return triggerResult;
 
             // Логирует и отправляет tap.
+            FireSwitchLane(hamster, action, obstacleLeftX);
+            return ActionFireResult.Fired;
+        }
+
+        /// <summary>
+        /// Логирует и отправляет runtime tap для SwitchLane.
+        /// </summary>
+        private static void FireSwitchLane(Hamster hamster, PlannedAction action, float obstacleLeftX)
+        {
             string targetLane = action.TargetBottomLine.Value ? "bottom" : "top";
             HamsterActionLogger.LogFire(action, obstacleLeftX, $"targetLane={targetLane} ");
             hamster.TapRequest.Invoke();
-
-            return ActionFireResult.Fired;
         }
 
         /// <summary>

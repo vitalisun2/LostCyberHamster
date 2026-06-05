@@ -162,6 +162,9 @@
 | `tools/commit_merge.ps1` | Коммит по diff + merge integration/unity-live → main + push |
 | `tools/cleanup_old_logs.ps1` | Автоочистка логов старше 3 дней (автозапуск при открытии проекта, не чаще раза в день) |
 
+Правила для automation bridge:
+- Перед расследованием "зависшего" запуска проверить, что request/response paths находятся под реальным Unity project root (`LostCyberHamster/EditorLogs/automation`), а не под папкой `tools`.
+
 ### 10.1 Log Channel Reader (для любого агента)
 
 Скрипт `tools/read_log_channel.ps1` задаёт единый способ чтения логов для GitHub Copilot / Codex / Claude Code.

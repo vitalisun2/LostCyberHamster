@@ -10,11 +10,9 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
     public sealed class ObstacleChainNew
     {
         /// <summary>
-        /// Создает role-based chain для одной focus lane.
+        /// Создает role-based chain для одной линии.
         /// </summary>
-        public ObstacleChainNew(
-            IReadOnlyList<ObstacleChainElementNew> elements,
-            bool focusBottomLine)
+        public ObstacleChainNew(IReadOnlyList<ObstacleChainElementNew> elements)
         {
             if (elements == null)
                 throw new ArgumentNullException(nameof(elements));
@@ -25,13 +23,15 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
             var copiedElements = new List<ObstacleChainElementNew>(elements.Count);
             float leftX = float.MaxValue;
             float rightX = float.MinValue;
+            bool chainBottomLine = elements[0]?.IsBottomLine
+                ?? throw new ArgumentException("Obstacle chain cannot contain null elements.", nameof(elements));
 
             for (int elementIndex = 0; elementIndex < elements.Count; elementIndex++)
             {
                 ObstacleChainElementNew element = elements[elementIndex]
                     ?? throw new ArgumentException("Obstacle chain cannot contain null elements.", nameof(elements));
 
-                if (element.IsBottomLine != focusBottomLine)
+                if (element.IsBottomLine != chainBottomLine)
                     throw new ArgumentException("Obstacle chain must contain elements from one focus lane.", nameof(elements));
 
                 copiedElements.Add(element);
@@ -44,13 +44,11 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
             }
 
             Elements = copiedElements;
-            FocusBottomLine = focusBottomLine;
             LeftX = leftX;
             RightX = rightX;
         }
 
         public IReadOnlyList<ObstacleChainElementNew> Elements { get; }
-        public bool FocusBottomLine { get; }
         public int Count => Elements.Count;
         public ObstacleChainElementNew First => Elements[0];
         public ObstacleSnapshot FirstObstacle => First.Obstacle;

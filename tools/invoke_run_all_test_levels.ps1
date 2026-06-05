@@ -10,18 +10,19 @@
 .PARAMETER PollMilliseconds
     Polling interval in milliseconds. Default: 250.
 .PARAMETER TimeScale
-    Explicit Time.timeScale override forwarded to Unity. Default: 2.
+    Explicit Time.timeScale override forwarded to Unity. Default: 1.
 #>
 param(
     [int]$TimeoutSeconds = 120,
     [int]$PollMilliseconds = 250,
-    [float]$TimeScale = 2
+    [float]$TimeScale = 1
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$projectPath    = Join-Path $PSScriptRoot 'LostCyberHamster'
+$repoRoot       = Split-Path -Parent $PSScriptRoot
+$projectPath    = Join-Path $repoRoot 'LostCyberHamster'
 $automationPath = Join-Path $projectPath 'EditorLogs\automation'
 $requestPath    = Join-Path $automationPath 'test_level_request.json'
 $responsePath   = Join-Path $automationPath 'test_level_response.json'

@@ -152,7 +152,6 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
             return _chainBuilder.TryBuild(
                 context.PlanningState,
                 context.ProjectedWorldSnapshot,
-                context.PlanningState.Hamster.IsOnBottomLine,
                 context.PlanningState.NextObstacleIndex,
                 out chain);
         }

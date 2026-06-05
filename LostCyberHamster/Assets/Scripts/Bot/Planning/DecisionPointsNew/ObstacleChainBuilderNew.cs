@@ -5,17 +5,16 @@ using Assets.Scripts.Bot.Planning;
 namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
 {
     /// <summary>
-    /// Строит one-line role-based chain для выбранной focus lane.
+    /// Строит one-line role-based chain для текущей линии хомяка.
     /// </summary>
     internal sealed class ObstacleChainBuilderNew
     {
         /// <summary>
-        /// Пытается построить chain от ближайшего active obstacle на focus lane.
+        /// Пытается построить chain от ближайшего active obstacle на текущей линии.
         /// </summary>
         public bool TryBuild(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            bool focusBottomLine,
             int firstObstacleIndex,
             out ObstacleChainNew chain)
         {
@@ -23,10 +22,11 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
             if (planningState?.Hamster == null || worldSnapshot?.Obstacles == null)
                 return false;
 
+            bool currentBottomLine = planningState.IsOnBottomLine;
             if (!TryFindFirstActiveElement(
                     planningState,
                     worldSnapshot,
-                    focusBottomLine,
+                    currentBottomLine,
                     firstObstacleIndex,
                     out ObstacleChainElementNew firstElement))
             {
@@ -36,20 +36,20 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
             List<ObstacleChainElementNew> elements = BuildChainElements(
                 planningState,
                 worldSnapshot,
-                focusBottomLine,
+                currentBottomLine,
                 firstElement);
 
-            chain = new ObstacleChainNew(elements, focusBottomLine);
+            chain = new ObstacleChainNew(elements);
             return true;
         }
 
         /// <summary>
-        /// Находит ближайший active obstacle на focus lane.
+        /// Находит ближайший active obstacle на текущей линии.
         /// </summary>
         private static bool TryFindFirstActiveElement(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            bool focusBottomLine,
+            bool currentBottomLine,
             int firstObstacleIndex,
             out ObstacleChainElementNew element)
         {
@@ -62,7 +62,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
                 if (!TryCreateActiveElement(
                         planningState,
                         worldSnapshot,
-                        focusBottomLine,
+                        currentBottomLine,
                         obstacle,
                         obstacleIndex,
                         out ObstacleChainElementNew candidate))
@@ -78,12 +78,12 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
         }
 
         /// <summary>
-        /// Расширяет chain близкими active obstacles той же focus lane.
+        /// Расширяет chain близкими active obstacles той же текущей линии.
         /// </summary>
         private static List<ObstacleChainElementNew> BuildChainElements(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            bool focusBottomLine,
+            bool currentBottomLine,
             ObstacleChainElementNew firstElement)
         {
             var elements = new List<ObstacleChainElementNew> { firstElement };
@@ -95,7 +95,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
                 if (!TryCreateActiveElement(
                         planningState,
                         worldSnapshot,
-                        focusBottomLine,
+                        currentBottomLine,
                         obstacle,
                         obstacleIndex,
                         out ObstacleChainElementNew element))
@@ -117,12 +117,12 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
         }
 
         /// <summary>
-        /// Создает active element, если obstacle относится к focus lane и участвует в planning.
+        /// Создает active element, если obstacle относится к текущей линии и участвует в planning.
         /// </summary>
         private static bool TryCreateActiveElement(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            bool focusBottomLine,
+            bool currentBottomLine,
             ObstacleSnapshot obstacle,
             int obstacleIndex,
             out ObstacleChainElementNew element)
@@ -135,7 +135,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
             if (obstacle.RightX <= planningState.Hamster.HamsterLeftX)
                 return false;
 
-            if (obstacle.IsBottomLine != focusBottomLine)
+            if (obstacle.IsBottomLine != currentBottomLine)
                 return false;
 
             HashSet<ObstacleRole> roles = ObstacleRoleClassifierNew.GetRoles(

@@ -107,18 +107,22 @@
 
 ## Решение
 
-Архитектурно нужно разделить два сценария `SwitchLane` в role-based path:
+Выбранное решение: убрать target-driven focus lane из `DecisionPointDetectorNew` и заменить его отдельным intent-флагом.
 
-1. Same-lane avoidance: текущая логика `BlockingThreat` на линии хомяка.
-2. Target-focus lane acquisition: focus-chain на другой линии, первый target/threat находится на целевой линии, а `SwitchLane` должен планироваться по safe-window target lane и после симуляции дать graph следующую decision point уже на target lane.
+1. `DecisionPointDetectorNew` всегда строит chain текущей линии хомяка.
+2. Detector отдельно вычисляет `NeedSwitchLaneForTargetHunt`.
+3. Energy >= 40 больше не является gate detector-а: энергию проверяют сами `JumpOn`/`SuperJumpOn` strategies.
+4. Если current-lane chain отсутствует, но `NeedSwitchLaneForTargetHunt == true`, detector возвращает intent-only `DecisionPointNew` с `Chain == null`.
+5. `SwitchLaneStrategyNew` первым делом обрабатывает `NeedSwitchLaneForTargetHunt` и создаёт immediate ungated `SwitchLane` на противоположную линию, только если запуск безопасен прямо сейчас.
+6. Обычный same-lane `BlockingThreat` path остаётся fallback-логикой.
 
-Правка не должна ослаблять `JumpOnSpecificationNew`: `JumpOn` должен оставаться действием только с текущей линии. Исправлять нужно в `SwitchLaneStrategyNew`/specification или в явном helper-е applicability для off-lane target-focus, чтобы branch `SwitchLane -> JumpOn` создавался до target-window.
+Правка не ослабляет `JumpOnSpecificationNew`: `JumpOn` остаётся действием только с текущей линии. После immediate `SwitchLane` graph пересобирает decision point уже с новой текущей линией, и `JumpOn`/`SuperJumpOn` работают обычным путём.
 
 ## Проверка
 
 Требуется после фикса:
 
 - Прогнать уровень с off-lane `smallAlive` target при `Energy >= 40`.
-- Проверить в `BOT`, что появляется branch/head `SwitchLane` к target lane, затем `JumpOn` или `SuperJumpOn`.
+- Проверить в `BOT`, что появляется `Switch lane for target hunt`, затем `JumpOn` или `SuperJumpOn`.
 - Контроль: same-lane blocking threat по-прежнему строит avoidance actions.
 - Контроль: off-lane non-target threat не вызывает target-hunt switch.

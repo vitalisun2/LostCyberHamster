@@ -34,6 +34,19 @@ namespace Assets.Scripts.Bot.StrategiesNew.SwitchLane
         }
 
         /// <summary>
+        /// Возвращает true, если из текущего состояния можно планировать дорожный SwitchLane.
+        /// </summary>
+        public bool IsSatisfiedBy(PlanningState planningState)
+        {
+            if (planningState?.Hamster == null)
+                return false;
+
+            HamsterSnapshot hamster = planningState.Hamster;
+            return CanPlanSwitchLaneFromRoad(hamster)
+                && !hamster.IsShifting;
+        }
+
+        /// <summary>
         /// Определяет, допускает ли текущее состояние дорожный SwitchLane.
         /// </summary>
         private static bool CanPlanSwitchLaneFromRoad(HamsterSnapshot hamster)
