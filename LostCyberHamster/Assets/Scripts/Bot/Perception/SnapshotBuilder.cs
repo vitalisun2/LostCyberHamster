@@ -12,7 +12,7 @@ namespace Assets.Scripts.Bot.Perception
     /// </summary>
     public sealed class SnapshotBuilder
     {
-        private const float _extraVisionScreenFraction = 1f;
+        private const float _extraVisionScreenFraction = 2f;
         private static readonly Comparison<ObstacleSnapshot> _compareObstaclesByLeftX =
             (left, right) => left.LeftX.CompareTo(right.LeftX);
 
