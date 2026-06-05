@@ -186,6 +186,7 @@
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitCameraLoadingTask.cs" />
     <Compile Include="Assets\Scripts\System\Rendering\SpriteRendererMaterialHelper.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpCollisionSpec.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\JumpOn\JumpOnActionChainResolver.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\Skin.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\Shared\JumpOnFromRoofTargetChainComposer.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneTiming.cs" />

@@ -11,16 +11,17 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
 {
     /// <summary>
-    /// Validates retained JumpOn actions for the role-based planning path.
+    /// Проверяет сохраненные JumpOn actions для role-based planning path.
     /// </summary>
     internal sealed class JumpOnRetainedValidatorNew : IRetainedActionValidatorNew
     {
         private readonly IJumpOnPolicy _policy;
         private readonly JumpOnFireWindowFinderNew _fireWindowFinder;
         private readonly ObstacleChainBuilderNew _chainBuilder = new ObstacleChainBuilderNew();
+        private readonly JumpOnActionChainResolver _actionChainResolver = new JumpOnActionChainResolver();
 
         /// <summary>
-        /// Creates a role-based validator for retained JumpOn actions.
+        /// Создает role-based validator для сохраненных JumpOn actions.
         /// </summary>
         public JumpOnRetainedValidatorNew(
             IJumpOnPolicy policy,
@@ -33,7 +34,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
         public BotActionKind ActionKind => _policy.ActionKind;
 
         /// <summary>
-        /// Checks whether the retained JumpOn action is still relevant and safe.
+        /// Возвращает true, если сохраненный JumpOn action все еще актуален и безопасен.
         /// </summary>
         public bool IsStillValid(RetainedActionContextNew context)
         {
@@ -53,17 +54,24 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
             if (!CanStillExecute(hamster, context.RetainedObstacle, action))
                 return false;
 
-            if (!TryBuildCurrentLaneChain(context, out ObstacleChainNew chain)
-                || !TryFindRetainedTargetInChain(
-                    chain,
-                    context.RetainedObstacle,
+            if (!_policy.TryGetTravel(out JumpOnTravel travel))
+                return false;
+
+            if (!TryBuildCurrentLaneChain(context, out ObstacleChainNew sourceChain)
+                || !_actionChainResolver.TryResolve(
+                    context.PlanningState,
+                    context.ProjectedWorldSnapshot,
+                    sourceChain,
+                    travel,
+                    out _,
+                    out ObstacleSnapshot resolvedTarget,
                     out int targetObstacleIndex,
-                    out int targetObstacleChainIndex))
+                    out _))
             {
                 return false;
             }
 
-            if (!_policy.TryGetTravel(out JumpOnTravel travel))
+            if (resolvedTarget.InstanceId != context.RetainedObstacle.InstanceId)
                 return false;
 
             if (!TryGetRemainingFireShift(
@@ -99,7 +107,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
         }
 
         /// <summary>
-        /// Checks whether the retained target can still be handled by ground JumpOn.
+        /// Проверяет, может ли сохраненный target все еще обрабатываться ground JumpOn.
         /// </summary>
         private bool CanStillExecute(
             HamsterSnapshot hamster,
@@ -116,7 +124,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
         }
 
         /// <summary>
-        /// Rebuilds the role-based chain on the hamster's current lane.
+        /// Перестраивает role-based chain на текущей линии хомяка.
         /// </summary>
         private bool TryBuildCurrentLaneChain(
             RetainedActionContextNew context,
@@ -130,41 +138,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
         }
 
         /// <summary>
-        /// Finds the retained target inside the current role-based chain.
-        /// </summary>
-        private static bool TryFindRetainedTargetInChain(
-            ObstacleChainNew chain,
-            ObstacleSnapshot retainedTarget,
-            out int targetObstacleIndex,
-            out int targetObstacleChainIndex)
-        {
-            targetObstacleIndex = -1;
-            targetObstacleChainIndex = -1;
-            if (chain == null || retainedTarget == null)
-                return false;
-
-            for (int chainIndex = 0; chainIndex < chain.Count; chainIndex++)
-            {
-                ObstacleChainElementNew element = chain.Elements[chainIndex];
-                if (element.Obstacle.InstanceId != retainedTarget.InstanceId)
-                    continue;
-
-                if (!element.HasRole(ObstacleRole.Target)
-                    || !ObstacleClassifier.CanJumpOnGroundObstacle(element.Obstacle.ObstacleType))
-                {
-                    return false;
-                }
-
-                targetObstacleIndex = element.WorldIndex;
-                targetObstacleChainIndex = chainIndex;
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Restores the remaining fire shift for the retained action by trigger obstacle.
+        /// Восстанавливает оставшийся fire shift сохраненного action по trigger obstacle.
         /// </summary>
         private static bool TryGetRemainingFireShift(
             WorldSnapshot projectedWorldSnapshot,

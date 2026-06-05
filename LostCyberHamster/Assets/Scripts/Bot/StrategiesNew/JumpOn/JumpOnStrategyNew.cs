@@ -22,6 +22,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.JumpOn
         private readonly IJumpOnPolicy _policy;
         private readonly IBotStrategySpecification _specification;
         private readonly JumpOnFireWindowFinderNew _fireWindowFinder;
+        private readonly JumpOnActionChainResolver _actionChainResolver;
         private readonly JumpOnSimulator _simulator;
 
         /// <summary>
@@ -32,6 +33,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.JumpOn
             _policy = new JumpOnPolicy();
             _specification = new JumpOnSpecificationNew(_policy);
             _fireWindowFinder = new JumpOnFireWindowFinderNew(_policy);
+            _actionChainResolver = new JumpOnActionChainResolver();
             _simulator = new JumpOnSimulator(_policy);
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
@@ -61,9 +63,16 @@ namespace Assets.Scripts.Bot.StrategiesNew.JumpOn
                 (decisionPoint, nameof(decisionPoint)),
                 (actions, nameof(actions)));
 
-            // Выбирает target из текущей role-based ситуации.
-            if (!TryResolveTarget(
-                    decisionPoint,
+            // Получает runtime travel и строит action-chain до достижимого target.
+            if (!_policy.TryGetTravel(out JumpOnTravel travel))
+                return;
+
+            if (!_actionChainResolver.TryResolve(
+                    planningState,
+                    worldSnapshot,
+                    decisionPoint.Chain,
+                    travel,
+                    out ObstacleChainNew actionChain,
                     out ObstacleSnapshot targetObstacle,
                     out int targetObstacleIndex,
                     out int targetObstacleChainIndex))
@@ -75,14 +84,11 @@ namespace Assets.Scripts.Bot.StrategiesNew.JumpOn
             if (!_specification.IsSatisfiedBy(planningState, targetObstacle))
                 return;
 
-            // Получает runtime travel и подтверждает fire window.
-            if (!_policy.TryGetTravel(out JumpOnTravel travel))
-                return;
-
+            // Подтверждает fire window через runtime resolver.
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
                     worldSnapshot,
-                    decisionPoint.Chain,
+                    actionChain,
                     targetObstacle,
                     targetObstacleIndex,
                     targetObstacleChainIndex,
@@ -109,46 +115,11 @@ namespace Assets.Scripts.Bot.StrategiesNew.JumpOn
             actions.Add(BuildAction(
                 _policy,
                 planningState,
-                decisionPoint.Chain.FirstObstacle,
+                actionChain.FirstObstacle,
                 window,
                 fireShift,
                 travel,
                 completionWorldShift));
-        }
-
-        /// <summary>
-        /// Пытается выбрать первый ground target из focus chain текущей ситуации.
-        /// </summary>
-        private static bool TryResolveTarget(
-            DecisionPointNew decisionPoint,
-            out ObstacleSnapshot targetObstacle,
-            out int targetObstacleIndex,
-            out int targetObstacleChainIndex)
-        {
-            // Сбрасывает результат и проверяет chain.
-            targetObstacle = null;
-            targetObstacleIndex = -1;
-            targetObstacleChainIndex = -1;
-            if (decisionPoint?.Chain == null)
-                return false;
-
-            // Ищет первый target, который подходит именно для ground jump-on.
-            for (int chainIndex = 0; chainIndex < decisionPoint.Chain.Count; chainIndex++)
-            {
-                ObstacleChainElementNew element = decisionPoint.Chain.Elements[chainIndex];
-                if (!element.HasRole(ObstacleRole.Target)
-                    || !ObstacleClassifier.CanJumpOnGroundObstacle(element.Obstacle.ObstacleType))
-                {
-                    continue;
-                }
-
-                targetObstacle = element.Obstacle;
-                targetObstacleIndex = element.WorldIndex;
-                targetObstacleChainIndex = chainIndex;
-                return true;
-            }
-
-            return false;
         }
 
         /// <summary>
