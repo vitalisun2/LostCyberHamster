@@ -11,18 +11,16 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
 {
     /// <summary>
-    /// Проверяет retained JumpOn action для role-based planning path.
+    /// Validates retained JumpOn actions for the role-based planning path.
     /// </summary>
     internal sealed class JumpOnRetainedValidatorNew : IRetainedActionValidatorNew
     {
-        private const float ValidationEpsilon = 0.0001f;
-
         private readonly IJumpOnPolicy _policy;
         private readonly JumpOnFireWindowFinderNew _fireWindowFinder;
         private readonly ObstacleChainBuilderNew _chainBuilder = new ObstacleChainBuilderNew();
 
         /// <summary>
-        /// Создает role-based validator сохраненного JumpOn.
+        /// Creates a role-based validator for retained JumpOn actions.
         /// </summary>
         public JumpOnRetainedValidatorNew(
             IJumpOnPolicy policy,
@@ -35,11 +33,10 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
         public BotActionKind ActionKind => _policy.ActionKind;
 
         /// <summary>
-        /// Проверяет, что retained JumpOn все еще актуален и безопасен.
+        /// Checks whether the retained JumpOn action is still relevant and safe.
         /// </summary>
         public bool IsStillValid(RetainedActionContextNew context)
         {
-            // Проверяет базовую совместимость context и action.
             if (context?.PlanningState?.Hamster == null
                 || context.ProjectedWorldSnapshot == null
                 || context.RetainedObstacle == null
@@ -51,13 +48,11 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
                 return false;
             }
 
-            // Проверяет текущую применимость retained target.
             PlannedAction action = context.Action;
             HamsterSnapshot hamster = context.PlanningState.Hamster;
             if (!CanStillExecute(hamster, context.RetainedObstacle, action))
                 return false;
 
-            // Пересобирает role-based chain и находит retained target внутри него.
             if (!TryBuildCurrentLaneChain(context, out ObstacleChainNew chain)
                 || !TryFindRetainedTargetInChain(
                     chain,
@@ -68,24 +63,9 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
                 return false;
             }
 
-            // Получает runtime-дистанции действия.
             if (!_policy.TryGetTravel(out JumpOnTravel travel))
                 return false;
 
-            // Пересчитывает окно запуска для retained target.
-            if (!JumpOnWindowCalculatorNew.TryCalculate(
-                    hamster,
-                    chain,
-                    context.RetainedObstacle,
-                    targetObstacleIndex,
-                    targetObstacleChainIndex,
-                    travel,
-                    out JumpOnWindowModel window))
-            {
-                return false;
-            }
-
-            // Восстанавливает оставшийся fire shift сохраненного action.
             if (!TryGetRemainingFireShift(
                     context.ProjectedWorldSnapshot,
                     context.RetainedObstacle,
@@ -99,13 +79,6 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
             if (fireShift < 0f)
                 fireShift = 0f;
 
-            if (fireShift < window.FirstFireShift - ValidationEpsilon
-                || fireShift > window.LastFireShift + ValidationEpsilon)
-            {
-                return false;
-            }
-
-            // Подтверждает runtime outcome и post-action safety.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(context.ProjectedWorldSnapshot);
             if (!_fireWindowFinder.CheckRuntimeOutcomeAtFireShift(
                     hamster,
@@ -126,7 +99,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
         }
 
         /// <summary>
-        /// Проверяет текущую применимость retained target для ground jump-on.
+        /// Checks whether the retained target can still be handled by ground JumpOn.
         /// </summary>
         private bool CanStillExecute(
             HamsterSnapshot hamster,
@@ -143,7 +116,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
         }
 
         /// <summary>
-        /// Пересобирает role-based chain на текущей линии hamster.
+        /// Rebuilds the role-based chain on the hamster's current lane.
         /// </summary>
         private bool TryBuildCurrentLaneChain(
             RetainedActionContextNew context,
@@ -157,7 +130,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
         }
 
         /// <summary>
-        /// Находит retained target внутри актуальной role-based chain.
+        /// Finds the retained target inside the current role-based chain.
         /// </summary>
         private static bool TryFindRetainedTargetInChain(
             ObstacleChainNew chain,
@@ -165,13 +138,11 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
             out int targetObstacleIndex,
             out int targetObstacleChainIndex)
         {
-            // Сбрасывает результат и проверяет входы.
             targetObstacleIndex = -1;
             targetObstacleChainIndex = -1;
             if (chain == null || retainedTarget == null)
                 return false;
 
-            // Ищет target с тем же instance id.
             for (int chainIndex = 0; chainIndex < chain.Count; chainIndex++)
             {
                 ObstacleChainElementNew element = chain.Elements[chainIndex];
@@ -193,7 +164,7 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
         }
 
         /// <summary>
-        /// Восстанавливает оставшийся fire shift сохраненного action по trigger obstacle.
+        /// Restores the remaining fire shift for the retained action by trigger obstacle.
         /// </summary>
         private static bool TryGetRemainingFireShift(
             WorldSnapshot projectedWorldSnapshot,
@@ -202,14 +173,12 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
             float projectionWorldShift,
             out float fireShift)
         {
-            // Проверяет входные данные.
             if (projectedWorldSnapshot == null || targetObstacle == null || action == null)
             {
                 fireShift = 0f;
                 return false;
             }
 
-            // Сначала ищет trigger anchor по instance id.
             float projectedTriggerX = action.TriggerX - projectionWorldShift;
             int? triggerObstacleInstanceId = action.TriggerObstacleInstanceId ?? action.TargetObstacleInstanceId;
             if (triggerObstacleInstanceId.HasValue)
@@ -225,7 +194,6 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
                 }
             }
 
-            // Использует retained target как fallback.
             fireShift = targetObstacle.LeftX - projectedTriggerX;
             return true;
         }

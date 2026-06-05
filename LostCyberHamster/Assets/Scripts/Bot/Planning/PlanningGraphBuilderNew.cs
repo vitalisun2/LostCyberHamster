@@ -7,7 +7,7 @@ using Assets.Scripts.Bot.Planning.DecisionPointsNew;
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
-    /// Строит role-based дерево решений для текущего planning-состояния.
+    /// Builds a role-based decision tree for the current planning state.
     /// </summary>
     public sealed class PlanningGraphBuilderNew
     {
@@ -18,7 +18,7 @@ namespace Assets.Scripts.Bot.Planning
         private readonly DecisionPointDetectorNew _decisionPointDetector = new DecisionPointDetectorNew();
 
         /// <summary>
-        /// Создает role-based построитель графа поверх нового генератора действий и нового симулятора.
+        /// Creates a role-based graph builder over the new action generator and transition simulator.
         /// </summary>
         public PlanningGraphBuilderNew(ActionGeneratorNew actionGenerator, TransitionSimulatorNew transitionSimulator)
         {
@@ -27,7 +27,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Строит все достижимые role-based planning-ветки от корневого состояния.
+        /// Builds all reachable role-based planning branches from the root state.
         /// </summary>
         public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot worldSnapshot, PlanningState rootState)
         {
@@ -46,7 +46,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Рекурсивно разворачивает role-based planning node в дочерние ветки.
+        /// Recursively expands a role-based planning node into child branches.
         /// </summary>
         private void ExploreNode(
             PlanningGraphNode currentNode,
@@ -54,7 +54,6 @@ namespace Assets.Scripts.Bot.Planning
             List<PlanningBranch> branches,
             Dictionary<PlanningStateKey, PlanningBranchMetrics> bestMetricsByState)
         {
-            // Останавливает поиск на заданной глубине.
             if (currentNode.Depth >= MaxSearchDepth)
             {
                 if (!HasUnresolvedPlanningSituation(currentNode.State, worldSnapshot))
@@ -63,17 +62,19 @@ namespace Assets.Scripts.Bot.Planning
                 return;
             }
 
-            // Разворачивает все action-варианты из текущего projected-состояния.
             IReadOnlyList<PlannedAction> candidates = _actionGenerator.Generate(currentNode.State, worldSnapshot);
+            bool hasUnresolvedPlanningSituation = HasUnresolvedPlanningSituation(currentNode.State, worldSnapshot);
             if (candidates.Count == 0)
             {
-                if (!HasUnresolvedPlanningSituation(currentNode.State, worldSnapshot))
+                if (!hasUnresolvedPlanningSituation)
                     AddLeafBranch(currentNode, branches);
 
                 return;
             }
 
-            // Строит дочерние узлы только через реальные действия.
+            if (!hasUnresolvedPlanningSituation)
+                AddLeafBranch(currentNode, branches);
+
             for (int candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
             {
                 PlannedAction candidate = candidates[candidateIndex];
@@ -94,11 +95,10 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Проверяет, осталась ли unresolved role-based planning-ситуация для projected-состояния.
+        /// Checks whether an unresolved role-based planning situation remains for the projected state.
         /// </summary>
         private bool HasUnresolvedPlanningSituation(PlanningState planningState, WorldSnapshot worldSnapshot)
         {
-            // Проецирует snapshot перед проверкой новой точки решения.
             WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
             if (projectedWorldSnapshot == null)
                 return false;
@@ -110,7 +110,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Добавляет leaf-ветку в итоговый список.
+        /// Adds a leaf branch to the result list.
         /// </summary>
         private static void AddLeafBranch(PlanningGraphNode leafNode, List<PlanningBranch> branches)
         {
@@ -121,7 +121,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Проверяет, доминирует ли уже найденная ветка над новым узлом с тем же state key.
+        /// Checks whether a known branch dominates a new node with the same state key.
         /// </summary>
         private static bool IsDominated(
             PlanningGraphNode candidateNode,
@@ -135,7 +135,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Проверяет, не возвращает ли новый state ветку в уже посещенный ancestor state.
+        /// Checks whether the next state returns the branch to an ancestor state.
         /// </summary>
         private static bool CreatesAncestorCycle(PlanningGraphNode currentNode, PlanningState nextState)
         {

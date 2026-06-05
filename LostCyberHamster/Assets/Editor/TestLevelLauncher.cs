@@ -6,7 +6,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace LostCyberHamster.Editor
 {
@@ -69,9 +68,9 @@ namespace LostCyberHamster.Editor
         }
 
         /// <summary>
-        /// Открывает окно выбора test-level адреса из Content/locations.
-        /// Unity не поддерживает динамическое создание MenuItem из данных на диске,
-        /// поэтому список строится во вспомогательном окне по статическому пункту меню.
+        /// Opens the test-level address picker from Content/locations.
+        /// Unity does not support dynamic MenuItem creation from disk data,
+        /// so the list is built in a helper window from a static menu item.
         /// </summary>
         [MenuItem("Tools/Test Level/Launch...", priority = 50)]
         private static void ShowLaunchMenu()
@@ -87,7 +86,7 @@ namespace LostCyberHamster.Editor
         }
 
         /// <summary>
-        /// Запускает test level без UI-диалогов, чтобы этим можно было безопасно управлять из automation bridge.
+        /// Launches a test level without UI dialogs for automation bridge control.
         /// </summary>
         public static bool TryLaunchTestLevelAutomation(string levelAddress, float timeScale, out string errorMessage)
         {
@@ -115,12 +114,6 @@ namespace LostCyberHamster.Editor
                 }
 
                 errorMessage = "Exit Play mode first.";
-                return false;
-            }
-
-            if (!interactive && HasDirtyOpenScenes())
-            {
-                errorMessage = "Automation launch requires all open scenes to be saved first.";
                 return false;
             }
 
@@ -186,7 +179,7 @@ namespace LostCyberHamster.Editor
         }
 
         /// <summary>
-        /// Собирает список test-level адресов из Content/locations/*/levels.
+        /// Collects test-level addresses from Content/locations/*/levels.
         /// </summary>
         private static List<TestLevelEntry> DiscoverTestLevels()
         {
@@ -290,19 +283,6 @@ namespace LostCyberHamster.Editor
                 : path.Replace('\\', '/');
         }
 
-        private static bool HasDirtyOpenScenes()
-        {
-            for (var index = 0; index < SceneManager.sceneCount; index++)
-            {
-                if (SceneManager.GetSceneAt(index).isDirty)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private readonly struct TestLevelEntry
         {
             public TestLevelEntry(string address, string menuLabel)
@@ -361,7 +341,7 @@ namespace LostCyberHamster.Editor
             private void OnGUI()
             {
                 EditorGUILayout.LabelField("Test Levels", EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox("Выбери test level для запуска через Bootstrap с автовключением бота.", MessageType.Info);
+                EditorGUILayout.HelpBox("Choose a test level to launch through Bootstrap with bot auto-start.", MessageType.Info);
 
                 using (new EditorGUILayout.HorizontalScope())
                 {

@@ -1,20 +1,41 @@
+using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 
 namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
 {
     /// <summary>
-    /// Строит current-lane decision point.
+    /// Builds role-based decision points for a selected focus lane.
     /// </summary>
     public sealed class DecisionPointDetectorNew
     {
         private readonly ObstacleChainBuilderNew _chainBuilder = new ObstacleChainBuilderNew();
 
         /// <summary>
-        /// Пытается построить ближайшую role-based planning-ситуацию.
+        /// Tries to build the nearest role-based planning situation.
         /// </summary>
         public bool TryDetect(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
+            out DecisionPointNew decisionPoint)
+        {
+            decisionPoint = null;
+            if (planningState?.Hamster == null)
+                return false;
+
+            return TryDetect(
+                planningState,
+                worldSnapshot,
+                planningState.IsOnBottomLine,
+                out decisionPoint);
+        }
+
+        /// <summary>
+        /// Tries to build the nearest role-based planning situation for the selected focus lane.
+        /// </summary>
+        public bool TryDetect(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            bool focusBottomLine,
             out DecisionPointNew decisionPoint)
         {
             decisionPoint = null;
@@ -26,6 +47,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
                     planningState,
                     worldSnapshot,
                     firstDetectionIndex,
+                    focusBottomLine,
                     out ObstacleChainNew chain))
             {
                 decisionPoint = new DecisionPointNew(chain);
@@ -36,7 +58,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPointsNew
         }
 
         /// <summary>
-        /// Возвращает index obstacle, с которого detector должен начать поиск point.
+        /// Returns the obstacle index where detection should start.
         /// </summary>
         private static int GetFirstDetectionIndex(
             PlanningState planningState,
