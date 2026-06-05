@@ -102,3 +102,4 @@
 - [promoted -> docs/architecture_knowledge_base.md] Устойчивые bot/runtime выводы: HamsterState, SwitchLane windows, ThreatSafety target, chain semantics, ActionGenerator инварианты.
 - [promoted -> docs/architecture_knowledge_base.md] Bot planning: для timed jump-on objective сохранять temporal slack первого действия, иначе поздний prefix может разрушить окно retained jump-on.
 - [promoted -> docs/architecture_knowledge_base.md] Bot planning: во время in-progress head-action стабилизировать только атомарный execution handoff, а не весь дальний хвост плана.
+- [promoted -> docs/architecture_knowledge_base.md] SwitchLane planning: после fire учитывать runtime-блокировку следующего tap до конца `Hamster.IsShifting`.

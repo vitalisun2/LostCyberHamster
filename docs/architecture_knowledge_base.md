@@ -552,6 +552,7 @@ Menu: `Tools/Migration/` — 3 шага:
 ### SwitchLane механика
 
 - `IsOnBottomLine` переключается мгновенно при `TapRequest` (`TapMechanics.OnTap`). Source-lane препятствия не могут навредить после `TapRequest`.
+- `SwitchLane` planning после fire должен учитывать `DecisionTravel`: линия меняется сразу, но следующий tap runtime не принимает, пока `Hamster.IsShifting`.
 - `SwitchLane` из `RoofRun` безопасен только если в момент tap на target-линии под хомяком есть roof support; иначе runtime принудительно уходит в `RunFromRoof`, а same-line non-roof obstacles могут сразу нанести damage.
 - Не добавлять фильтры по типу препятствия для обхода safety-логики. Проблема в модели, а не в типе.
 - Planning (StateProjector) проверяет конечную позицию по snapshot-данным — грубая оценка. Execution (StepExecutor) проверяет swept zone по live-данным каждый кадр — точная проверка. Если live-check не проходит до deadline — шаг отменяется.

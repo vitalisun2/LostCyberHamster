@@ -115,6 +115,9 @@ namespace Assets.Scripts.Bot.Planning
 
                 retainedActions.Add(action);
                 currentState = nextState;
+
+                if (isInProgressAtomicAction)
+                    break;
             }
 
             return currentState;
