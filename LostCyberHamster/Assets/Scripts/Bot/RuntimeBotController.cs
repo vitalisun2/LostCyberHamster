@@ -10,10 +10,12 @@ using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
+using Assets.Scripts.Bot.StrategiesNew.JumpFromRoof;
 using Assets.Scripts.Bot.StrategiesNew.JumpOver;
 using Assets.Scripts.Bot.StrategiesNew.JumpOn;
 using Assets.Scripts.Bot.StrategiesNew.JumpOnRoof;
 using Assets.Scripts.Bot.StrategiesNew.Shared.Contracts;
+using Assets.Scripts.Bot.StrategiesNew.SuperJumpFromRoof;
 using Assets.Scripts.Bot.StrategiesNew.SuperJumpOver;
 using Assets.Scripts.Bot.StrategiesNew.SuperJumpOn;
 using Assets.Scripts.Bot.StrategiesNew.SuperJumpOnRoof;
@@ -89,7 +91,9 @@ namespace Assets.Scripts.Bot
                 new JumpOnStrategyNew(),
                 new SuperJumpOnStrategyNew(),
                 new JumpOnRoofStrategyNew(),
-                new SuperJumpOnRoofStrategyNew()
+                new SuperJumpOnRoofStrategyNew(),
+                new JumpFromRoofStrategyNew(),
+                new SuperJumpFromRoofStrategyNew()
             };
 
             // и прочие компоненты
