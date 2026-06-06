@@ -557,6 +557,21 @@
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperJumpFromRoof\SuperJumpFromRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperJumpFromRoof\SuperJumpFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperJumpFromRoof\SuperJumpFromRoofStrategyNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\RoofJumpOver\RoofJumpOverExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\RoofJumpOver\RoofJumpOverPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\RoofJumpOver\RoofJumpOverStrategyNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\RoofJumpOver\IRoofJumpOverPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\RoofJumpOver\RoofJumpOverActionResolver.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\RoofJumpOver\RoofJumpOverChainCalculatorNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\RoofJumpOver\RoofJumpOverChainModel.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\RoofJumpOver\RoofJumpOverFireWindowFinderNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\RoofJumpOver\RoofJumpOverRetainedValidatorNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\RoofJumpOver\RoofJumpOverSimulator.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\RoofJumpOver\RoofJumpOverSpecificationNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\RoofJumpOver\RoofJumpOverTravel.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperRoofJumpOver\SuperRoofJumpOverExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperRoofJumpOver\SuperRoofJumpOverPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperRoofJumpOver\SuperRoofJumpOverStrategyNew.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Content\ui\uxml\ShopModal.uxml" />
