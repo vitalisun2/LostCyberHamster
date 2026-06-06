@@ -529,6 +529,19 @@
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelData.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\JumpOn\JumpOnSimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\JumpOnRoof\JumpOnRoofExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\JumpOnRoof\JumpOnRoofPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\JumpOnRoof\JumpOnRoofStrategyNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\JumpOnRoof\IJumpOnRoofPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\JumpOnRoof\JumpOnRoofActionResolver.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\JumpOnRoof\JumpOnRoofFireWindowFinderNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\JumpOnRoof\JumpOnRoofRetainedValidatorNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\JumpOnRoof\JumpOnRoofSimulator.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\JumpOnRoof\JumpOnRoofSpecificationNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\Shared\JumpOnRoof\JumpOnRoofWindowModel.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperJumpOnRoof\SuperJumpOnRoofExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperJumpOnRoof\SuperJumpOnRoofPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperJumpOnRoof\SuperJumpOnRoofStrategyNew.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Content\ui\uxml\ShopModal.uxml" />

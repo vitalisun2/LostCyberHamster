@@ -12,9 +12,11 @@ using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Bot.StrategiesNew.JumpOver;
 using Assets.Scripts.Bot.StrategiesNew.JumpOn;
+using Assets.Scripts.Bot.StrategiesNew.JumpOnRoof;
 using Assets.Scripts.Bot.StrategiesNew.Shared.Contracts;
 using Assets.Scripts.Bot.StrategiesNew.SuperJumpOver;
 using Assets.Scripts.Bot.StrategiesNew.SuperJumpOn;
+using Assets.Scripts.Bot.StrategiesNew.SuperJumpOnRoof;
 using Assets.Scripts.Bot.StrategiesNew.SwitchLane;
 using UnityEngine;
 
@@ -85,7 +87,9 @@ namespace Assets.Scripts.Bot
                 new JumpOverStrategyNew(),
                 new SuperJumpOverStrategyNew(),
                 new JumpOnStrategyNew(),
-                new SuperJumpOnStrategyNew()
+                new SuperJumpOnStrategyNew(),
+                new JumpOnRoofStrategyNew(),
+                new SuperJumpOnRoofStrategyNew()
             };
 
             // и прочие компоненты

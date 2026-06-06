@@ -1,0 +1,138 @@
+using System.Collections.Generic;
+using Assets.Scripts.Bot.Perception;
+using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPointsNew;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Bot.Strategies.Shared.Execution;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.StrategiesNew.Shared.Contracts;
+using Assets.Scripts.Bot.StrategiesNew.Shared.JumpOnRoof;
+using Assets.Scripts.Common;
+
+namespace Assets.Scripts.Bot.StrategiesNew.SuperJumpOnRoof
+{
+    /// <summary>
+    /// Собирает role-based кандидаты super-jump-on-roof.
+    /// </summary>
+    internal sealed class SuperJumpOnRoofStrategyNew : IPlanningStrategyNew
+    {
+        private readonly IJumpOnRoofPolicy _policy;
+        private readonly IBotStrategySpecification _specification;
+        private readonly JumpOnRoofFireWindowFinderNew _fireWindowFinder;
+        private readonly JumpOnRoofActionResolver _actionResolver;
+        private readonly JumpOnRoofSimulator _simulator;
+
+        /// <summary>
+        /// Создает strategy и runtime-компоненты super-jump-on-roof.
+        /// </summary>
+        public SuperJumpOnRoofStrategyNew()
+        {
+            _policy = new SuperJumpOnRoofPolicy();
+            _specification = new JumpOnRoofSpecificationNew(_policy);
+            _fireWindowFinder = new JumpOnRoofFireWindowFinderNew(_policy);
+            _actionResolver = new JumpOnRoofActionResolver();
+            _simulator = new JumpOnRoofSimulator(_policy);
+            var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
+
+            Executor = new SuperJumpOnRoofExecutor(triggerGate);
+            Simulator = _simulator;
+            RetainedValidator = new JumpOnRoofRetainedValidatorNew(_policy, _fireWindowFinder);
+        }
+
+        public BotActionKind ActionKind => _policy.ActionKind;
+        public IActionExecutionHandler Executor { get; }
+        public ISimulator Simulator { get; }
+        public IRetainedActionValidatorNew RetainedValidator { get; }
+
+        /// <summary>
+        /// Добавляет super-jump-on-roof action, если roof support выбран и подтвержден resolver-ом.
+        /// </summary>
+        public void CollectActions(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            DecisionPointNew decisionPoint,
+            List<PlannedAction> actions)
+        {
+            Guard.ThrowIfNull(
+                (planningState, nameof(planningState)),
+                (worldSnapshot, nameof(worldSnapshot)),
+                (decisionPoint, nameof(decisionPoint)),
+                (actions, nameof(actions)));
+
+            if (!_actionResolver.TryResolve(
+                    decisionPoint.Chain,
+                    out ObstacleSnapshot targetRoof,
+                    out int targetRoofIndex,
+                    out int targetRoofChainIndex))
+            {
+                return;
+            }
+
+            if (!_specification.IsSatisfiedBy(planningState, targetRoof))
+                return;
+
+            if (!_policy.TryGetTravel(out float superJumpTravel))
+                return;
+
+            if (!_fireWindowFinder.TryFindFireShift(
+                    planningState,
+                    worldSnapshot,
+                    decisionPoint.Chain,
+                    targetRoof,
+                    targetRoofIndex,
+                    targetRoofChainIndex,
+                    superJumpTravel,
+                    out JumpOnRoofWindowModel window,
+                    out float fireShift))
+            {
+                return;
+            }
+
+            actions.Add(BuildAction(
+                _policy,
+                planningState,
+                decisionPoint.Chain.FirstObstacle,
+                window,
+                fireShift,
+                superJumpTravel));
+        }
+
+        /// <summary>
+        /// Создает planning action для подтвержденной super-посадки на крышу.
+        /// </summary>
+        private static PlannedAction BuildAction(
+            IJumpOnRoofPolicy policy,
+            PlanningState planningState,
+            ObstacleSnapshot triggerObstacle,
+            JumpOnRoofWindowModel window,
+            float fireShift,
+            float superJumpTravel)
+        {
+            ObstacleSnapshot targetRoof = window.TargetObstacle;
+            float projectedTriggerX = triggerObstacle.LeftX - fireShift;
+            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
+                triggerX,
+                fireShift,
+                window.FirstFireShift,
+                window.LastFireShift);
+
+            return new PlannedAction(
+                policy.ActionKind,
+                triggerX,
+                renderWorldX: triggerX,
+                completionWorldShift: fireShift + superJumpTravel,
+                postFireWorldShift: superJumpTravel,
+                window.TargetObstacleIndex,
+                targetObstacleInstanceId: targetRoof.InstanceId,
+                triggerObstacleInstanceId: triggerObstacle.InstanceId,
+                targetBottomLine: null,
+                energyCost: policy.EnergyCost,
+                description: $"{policy.DescriptionPrefix} {targetRoof.ObstacleType}",
+                resultRoofSupportInstanceId: targetRoof.InstanceId,
+                triggerWindow: triggerWindow);
+        }
+    }
+}
