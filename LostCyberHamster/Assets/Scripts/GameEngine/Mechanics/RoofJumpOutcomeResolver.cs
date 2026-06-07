@@ -176,17 +176,17 @@ namespace Assets.Scripts.GameEngine.Mechanics
             RoofJumpResolveContext context,
             JumpResolveResult noHit)
         {
-            bool isOnBigRoof = TryFindBigNotAliveUnderSmallNotAlive(
+            bool hasRoofUnderHazard = TryFindRoofUnderRoofHazard(
                 small,
                 obstacles,
                 context,
-                out int bigUnderSmallIndex);
+                out int roofUnderHazardIndex);
 
-            if (isOnBigRoof)
+            if (hasRoofUnderHazard)
             {
                 bool hitSmall = IsHitSmallNotAliveOnRoof(obstacles, context);
                 HamsterStateEnum state = hitSmall ? HamsterStateEnum.RoofJumpDamage : HamsterStateEnum.RoofJump;
-                return new JumpResolveResult(state, bigUnderSmallIndex);
+                return new JumpResolveResult(state, roofUnderHazardIndex);
             }
 
             // small стоит на дороге: прыгаем с крыши вниз.
@@ -207,14 +207,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
             for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
             {
                 JumpObstacleData obstacle = obstacles[obstacleIndex];
-                if (obstacle.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
-                    continue;
-
                 if (!IsSameRuntimeCandidate(obstacle, context))
                     continue;
 
-                // Пропускаем коробки, которые стоят на дороге, а не на крыше BigNotAlive/MediumNotAlive.
-                if (!TryFindBigNotAliveUnderSmallNotAlive(obstacle, obstacles, context, out _))
+                if (!IsRoofHazard(obstacle, obstacles, context))
                     continue;
 
                 if (IsOverlapAtShift(context, obstacle, context.RoofJumpShift))
@@ -224,28 +220,45 @@ namespace Assets.Scripts.GameEngine.Mechanics
             return false;
         }
 
+        private static bool IsRoofHazard(
+            JumpObstacleData obstacle,
+            IReadOnlyList<JumpObstacleData> allObstacles,
+            RoofJumpResolveContext context)
+        {
+            return TryFindRoofUnderRoofHazard(obstacle, allObstacles, context, out _);
+        }
+
         /// <summary>
-        /// Ищет roof obstacle под smallNotAliveRoadAndRoof в текущем снимке препятствий.
-        /// Повторяет смысл runtime helper'а CollisionUtils.TryFindBigNotAliveUnderSmallNotAlive.
+        /// Ищет roof obstacle под roof hazard в текущем снимке препятствий.
+        /// Повторяет смысл runtime helper'а CollisionUtils.TryFindRoofUnderRoofHazard.
         /// </summary>
-        private static bool TryFindBigNotAliveUnderSmallNotAlive(
-            JumpObstacleData smallNotAlive,
+        private static bool TryFindRoofUnderRoofHazard(
+            JumpObstacleData roofHazard,
             IReadOnlyList<JumpObstacleData> allObstacles,
             RoofJumpResolveContext context,
             out int foundIndex)
         {
+            if (roofHazard.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
+            {
+                foundIndex = NoTarget;
+                return false;
+            }
+
             for (int obstacleIndex = 0; obstacleIndex < allObstacles.Count; obstacleIndex++)
             {
                 JumpObstacleData candidate = allObstacles[obstacleIndex];
                 if (!IsSameRuntimeCandidate(candidate, context))
                     continue;
 
+                if (candidate.IsBottomLine != roofHazard.IsBottomLine)
+                    continue;
+
                 if (!CollisionUtils.IsRoofObstacle(candidate.Type))
                     continue;
 
                 if (CollisionUtils.IsOverlap(
-                        smallNotAlive.LeftX,
-                        smallNotAlive.RightX,
+                        roofHazard.LeftX,
+                        roofHazard.RightX,
                         candidate.LeftX,
                         candidate.RightX))
                 {

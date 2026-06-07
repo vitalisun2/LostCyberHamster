@@ -170,12 +170,7 @@ namespace Assets.Scripts.Common
 
             foreach (var o in sameLineObstacles)
             {
-                if (o.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
-                    continue;
-
-                // пропускаем коробки, которые стоят на дороге,
-                //    а не на крыше BigNotAlive
-                if (!TryFindBigNotAliveUnderSmallNotAlive(o, sameLineObstacles, out var _)) // ✱
+                if (!IsRoofHazard(o, sameLineObstacles))
                     continue;
 
                 GetObstacleXInterval(o, o.ColliderWidth, worldShift, out var oL, out var oR);
@@ -186,22 +181,42 @@ namespace Assets.Scripts.Common
             return false;
         }
 
-        // ───────────────────────────────── Поиск bigNotAlive под smallNotAlive ─────────────────────────────────
+        // ───────────────────────────────── Поиск roof под roof hazard ─────────────────────────────────
 
-        public static bool TryFindBigNotAliveUnderSmallNotAlive(
-            Obstacle smallNotAlive,
+        public static bool IsRoofHazard(Obstacle obstacle, IEnumerable<Obstacle> allObstacles)
+        {
+            return TryFindRoofUnderRoofHazard(obstacle, allObstacles, out _);
+        }
+
+        public static bool TryFindRoofUnderRoofHazard(
+            Obstacle roofHazard,
             IEnumerable<Obstacle> allObstacles,
             out Obstacle found)
         {
+            if (roofHazard == null || allObstacles == null)
+            {
+                found = null;
+                return false;
+            }
+
+            if (roofHazard.ObstacleType.ObstacleTypeEnum != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
+            {
+                found = null;
+                return false;
+            }
+
             // текущий кадр — shift = 0
-            GetObstacleXInterval(smallNotAlive, smallNotAlive.ColliderWidth, 0f,
-                out var smallL, out var smallR);
+            GetObstacleXInterval(roofHazard, roofHazard.ColliderWidth, 0f,
+                out var hazardLeftX, out var hazardRightX);
 
             foreach (var o in allObstacles)
                 if (IsRoofObstacle(o.ObstacleType.ObstacleTypeEnum))
                 {
+                    if (o.ObstacleType.IsTop != roofHazard.ObstacleType.IsTop)
+                        continue;
+
                     GetObstacleXInterval(o, o.ColliderWidth, 0f, out var oL, out var oR);
-                    bool overlap = IsOverlap(smallL, smallR, oL, oR);
+                    bool overlap = IsOverlap(hazardLeftX, hazardRightX, oL, oR);
                     if (overlap) { found = o; return true; }
                 }
 

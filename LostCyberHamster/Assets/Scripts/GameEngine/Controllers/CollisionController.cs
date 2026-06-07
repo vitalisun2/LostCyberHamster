@@ -2,6 +2,7 @@ using Assets.Scripts.Common.Models;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -51,11 +52,8 @@ public class CollisionController : MonoBehaviour
     private void OnTriggerStay2D(Collider2D other)
     {
         bool checkRunFromRoofAfterShift = _hamster.NeedCheckCollisionInRunFromRoofAfterShift.Value;
-        bool shouldCheckHeldRunCollision =
-            _hamster.HamsterState.Value == HamsterStateEnum.Run
-            || checkRunFromRoofAfterShift;
 
-        if (!shouldCheckHeldRunCollision)
+        if (!ShouldCheckHeldRunCollision(checkRunFromRoofAfterShift))
             return;
 
         if (!TryResolveSameLaneObstacle(other, out Obstacle obstacle))
@@ -65,6 +63,15 @@ public class CollisionController : MonoBehaviour
 
         if (checkRunFromRoofAfterShift)
             _hamster.NeedCheckCollisionInRunFromRoofAfterShift.Value = false;
+    }
+
+    private bool ShouldCheckHeldRunCollision(bool checkRunFromRoofAfterShift)
+    {
+        HamsterStateEnum state = _hamster.HamsterState.Value;
+
+        return state == HamsterStateEnum.Run
+            || state == HamsterStateEnum.RoofRun
+            || checkRunFromRoofAfterShift;
     }
 
     /// <summary>
@@ -87,6 +94,12 @@ public class CollisionController : MonoBehaviour
         if (HasCollisionInRunState(obstacle))
         {
             HandleDamage(obstacle, "Enter", "RunState");
+            return;
+        }
+
+        if (HasCollisionWithRoofHazardInJumpOnRoofState(obstacle))
+        {
+            HandleDamage(obstacle, "Enter", "JumpOnRoofRoofHazard");
             return;
         }
 
@@ -203,6 +216,24 @@ public class CollisionController : MonoBehaviour
         float overlap = Mathf.Min(_hamster.RightX, obstacleRightX) - Mathf.Max(_hamster.LeftX, obstacleLeftX);
 
         return overlap > _hamster.ColliderWidth * BigAliveJumpDamageOverlapThreshold;
+    }
+
+    private bool HasCollisionWithRoofHazardInJumpOnRoofState(Obstacle obstacle)
+    {
+        HamsterStateEnum state = _hamster.HamsterState.Value;
+        if (state != HamsterStateEnum.JumpOnRoof && state != HamsterStateEnum.SuperJumpOnRoof)
+            return false;
+
+        if (ObstacleSpawner.Instance == null)
+            return false;
+
+        var obstacles = ObstacleSpawner.Instance.SpawnedObstacles
+            .Select(spawnedObstacle => spawnedObstacle?.ObstacleScript)
+            .Where(spawnedObstacle => spawnedObstacle != null);
+
+        return CollisionUtils.IsRoofHazard(
+            obstacle,
+            obstacles);
     }
 
     /// <summary>
