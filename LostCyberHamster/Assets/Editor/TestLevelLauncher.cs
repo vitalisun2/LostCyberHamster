@@ -31,6 +31,7 @@ namespace LostCyberHamster.Editor
         private const string TestLevelPrefix = "test";
         private const string PendingInteractiveLaunchAddressSessionKey = "TestLevelLauncher.PendingInteractiveLaunchAddress";
         private const string LaunchedInteractiveAddressesSessionKey = "TestLevelLauncher.LaunchedInteractiveAddresses";
+        private const string LastLaunchedInteractiveAddressSessionKey = "TestLevelLauncher.LastLaunchedInteractiveAddress";
 
         /// <summary>Default timescale when launching through the automation bridge.</summary>
         private const float AutomationDefaultTimeScale = 1.0f;
@@ -310,12 +311,18 @@ namespace LostCyberHamster.Editor
             private const float ScreenVerticalMargin = 96f;
             private const float HeaderHeight = 96f;
             private const float LevelRowHeight = 32f;
+            private const float LaunchWithoutStartToggleWidth = 160f;
             private static readonly Color LaunchedLevelBackgroundColor = new(0.68f, 0.86f, 0.68f, 1f);
+            private static readonly Color LaunchedBadgeTextColor = new(0.12f, 0.42f, 0.16f, 1f);
+            private static readonly Color LastLaunchedBadgeTextColor = new(0.1f, 0.3f, 0.72f, 1f);
 
             private readonly List<TestLevelEntry> _testLevels = new();
             private readonly HashSet<string> _launchedLevelAddresses = new(StringComparer.Ordinal);
+            private string _lastLaunchedLevelAddress;
+            private bool _launchWithoutStart;
             private Vector2 _scrollPosition;
             private static GUIStyle _launchedBadgeStyle;
+            private static GUIStyle _lastLaunchedBadgeStyle;
 
             public static void ShowWindow(IEnumerable<TestLevelEntry> testLevels)
             {
@@ -363,14 +370,14 @@ namespace LostCyberHamster.Editor
                     EditorGUILayout.LabelField($"Found: {_testLevels.Count}", EditorStyles.miniLabel);
                     GUILayout.FlexibleSpace();
 
+                    _launchWithoutStart = GUILayout.Toggle(
+                        _launchWithoutStart,
+                        "Launch without start",
+                        GUILayout.Width(LaunchWithoutStartToggleWidth));
+
                     if (GUILayout.Button("Refresh", GUILayout.Width(80f)))
                     {
                         RefreshLevels(resetLaunchedState: true);
-                    }
-
-                    if (GUILayout.Button("Close", GUILayout.Width(80f)))
-                    {
-                        Close();
                     }
                 }
 
@@ -395,7 +402,12 @@ namespace LostCyberHamster.Editor
 
             private void DrawTestLevelRow(TestLevelEntry testLevel)
             {
+                // Display state.
                 var wasLaunched = _launchedLevelAddresses.Contains(testLevel.Address);
+                var isLastLaunched = wasLaunched &&
+                    string.Equals(testLevel.Address, _lastLaunchedLevelAddress, StringComparison.Ordinal);
+
+                // Row surface.
                 var previousBackgroundColor = GUI.backgroundColor;
                 if (wasLaunched)
                 {
@@ -412,35 +424,68 @@ namespace LostCyberHamster.Editor
 
                         if (wasLaunched)
                         {
-                            GUILayout.Label("Launched", GetLaunchedBadgeStyle(), GUILayout.Width(72f));
+                            GUILayout.Label("Launched", GetLaunchedBadgeStyle(isLastLaunched), GUILayout.Width(72f));
                         }
 
+                        // Launch command.
                         if (GUILayout.Button("Launch", GUILayout.Width(90f)))
                         {
-                            if (LaunchInteractive(testLevel.Address))
-                            {
-                                _launchedLevelAddresses.Add(testLevel.Address);
-                                SaveLaunchedLevelAddresses();
-                            }
-
+                            LaunchOrMarkTestLevel(testLevel.Address);
                             GUIUtility.ExitGUI();
                         }
                     }
                 }
             }
 
-            private static GUIStyle GetLaunchedBadgeStyle()
+            private void LaunchOrMarkTestLevel(string levelAddress)
             {
+                if (_launchWithoutStart)
+                {
+                    RegisterLaunchedLevel(levelAddress);
+                    return;
+                }
+
+                if (LaunchInteractive(levelAddress))
+                {
+                    RegisterLaunchedLevel(levelAddress);
+                }
+            }
+
+            private static GUIStyle GetLaunchedBadgeStyle(bool isLastLaunched)
+            {
+                if (isLastLaunched)
+                {
+                    if (_lastLaunchedBadgeStyle == null)
+                    {
+                        _lastLaunchedBadgeStyle = CreateLaunchedBadgeStyle(LastLaunchedBadgeTextColor);
+                    }
+
+                    return _lastLaunchedBadgeStyle;
+                }
+
                 if (_launchedBadgeStyle == null)
                 {
-                    _launchedBadgeStyle = new GUIStyle(EditorStyles.miniBoldLabel)
-                    {
-                        alignment = TextAnchor.MiddleRight
-                    };
-                    _launchedBadgeStyle.normal.textColor = new Color(0.12f, 0.42f, 0.16f, 1f);
+                    _launchedBadgeStyle = CreateLaunchedBadgeStyle(LaunchedBadgeTextColor);
                 }
 
                 return _launchedBadgeStyle;
+            }
+
+            private static GUIStyle CreateLaunchedBadgeStyle(Color textColor)
+            {
+                var style = new GUIStyle(EditorStyles.miniBoldLabel)
+                {
+                    alignment = TextAnchor.MiddleRight
+                };
+                style.normal.textColor = textColor;
+                return style;
+            }
+
+            private void RegisterLaunchedLevel(string levelAddress)
+            {
+                _launchedLevelAddresses.Add(levelAddress);
+                _lastLaunchedLevelAddress = levelAddress;
+                SaveLaunchedLevelAddresses();
             }
 
             private void RefreshLevels(bool resetLaunchedState)
@@ -458,6 +503,7 @@ namespace LostCyberHamster.Editor
             private void LoadLaunchedLevelAddresses()
             {
                 _launchedLevelAddresses.Clear();
+                _lastLaunchedLevelAddress = SessionState.GetString(LastLaunchedInteractiveAddressSessionKey, string.Empty);
 
                 var launchedAddresses = SessionState.GetString(LaunchedInteractiveAddressesSessionKey, string.Empty);
                 if (string.IsNullOrWhiteSpace(launchedAddresses))
@@ -476,17 +522,20 @@ namespace LostCyberHamster.Editor
                 SessionState.SetString(
                     LaunchedInteractiveAddressesSessionKey,
                     string.Join("\n", _launchedLevelAddresses.OrderBy(address => address, StringComparer.Ordinal)));
+                SessionState.SetString(LastLaunchedInteractiveAddressSessionKey, _lastLaunchedLevelAddress ?? string.Empty);
             }
 
             private void ClearLaunchedLevelAddresses()
             {
                 _launchedLevelAddresses.Clear();
+                _lastLaunchedLevelAddress = string.Empty;
                 ClearLaunchedLevelAddressesStorage();
             }
 
             private static void ClearLaunchedLevelAddressesStorage()
             {
                 SessionState.SetString(LaunchedInteractiveAddressesSessionKey, string.Empty);
+                SessionState.SetString(LastLaunchedInteractiveAddressSessionKey, string.Empty);
             }
 
             private void ApplyWindowSize()

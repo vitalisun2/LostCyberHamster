@@ -10802,8 +10802,8 @@
         },
         {
             "name": "test_jump_on_from_roof_04",
-            "description": "should jump on from roof",
-            "nextObstacleId": 6,
+            "description": "should not jump on from roof",
+            "nextObstacleId": 7,
             "obstacles": [
                 {
                     "id": 0,
@@ -10818,9 +10818,9 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "id": 5,
+                    "id": 6,
                     "type": 3,
-                    "x": 4.0,
+                    "x": 5.599999904632568,
                     "y": -2.799999952316284
                 },
                 {
@@ -10858,7 +10858,7 @@
         },
         {
             "name": "test_super_jump_on_from_roof_01",
-            "description": "",
+            "description": "should super jump on from roof",
             "nextObstacleId": 16,
             "obstacles": [
                 {
@@ -10883,7 +10883,7 @@
         },
         {
             "name": "test_super_jump_on_from_roof_02",
-            "description": "",
+            "description": "should super jump on from roof",
             "nextObstacleId": 6,
             "obstacles": [
                 {
@@ -10926,7 +10926,7 @@
         },
         {
             "name": "test_super_jump_on_from_roof_03",
-            "description": "",
+            "description": "should super jump on from roof",
             "nextObstacleId": 12,
             "obstacles": [
                 {
@@ -10969,7 +10969,7 @@
         },
         {
             "name": "test_super_jump_on_from_roof_04",
-            "description": "",
+            "description": "should not super jump on from roof",
             "nextObstacleId": 7,
             "obstacles": [
                 {
