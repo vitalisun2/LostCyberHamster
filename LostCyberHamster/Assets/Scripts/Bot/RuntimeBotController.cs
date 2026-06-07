@@ -14,6 +14,7 @@ using Assets.Scripts.Bot.StrategiesNew.JumpFromRoof;
 using Assets.Scripts.Bot.StrategiesNew.JumpFromRoofOnRoof;
 using Assets.Scripts.Bot.StrategiesNew.JumpOver;
 using Assets.Scripts.Bot.StrategiesNew.JumpOn;
+using Assets.Scripts.Bot.StrategiesNew.JumpOnFromRoof;
 using Assets.Scripts.Bot.StrategiesNew.JumpOnRoof;
 using Assets.Scripts.Bot.StrategiesNew.PassiveRoofExit;
 using Assets.Scripts.Bot.StrategiesNew.RoofJumpOver;
@@ -22,6 +23,7 @@ using Assets.Scripts.Bot.StrategiesNew.SuperJumpFromRoof;
 using Assets.Scripts.Bot.StrategiesNew.SuperJumpFromRoofOnRoof;
 using Assets.Scripts.Bot.StrategiesNew.SuperJumpOver;
 using Assets.Scripts.Bot.StrategiesNew.SuperJumpOn;
+using Assets.Scripts.Bot.StrategiesNew.SuperJumpOnFromRoof;
 using Assets.Scripts.Bot.StrategiesNew.SuperJumpOnRoof;
 using Assets.Scripts.Bot.StrategiesNew.SuperRoofJumpOver;
 using Assets.Scripts.Bot.StrategiesNew.SwitchLane;
@@ -159,6 +161,8 @@ namespace Assets.Scripts.Bot
                 new JumpOnRoofStrategyNew(),
                 new SuperJumpOnRoofStrategyNew(),
                 new PassiveRoofExitStrategyNew(),
+                new JumpOnFromRoofStrategyNew(),
+                new SuperJumpOnFromRoofStrategyNew(),
                 new JumpFromRoofStrategyNew(),
                 new SuperJumpFromRoofStrategyNew(),
                 new JumpFromRoofOnRoofStrategyNew(),

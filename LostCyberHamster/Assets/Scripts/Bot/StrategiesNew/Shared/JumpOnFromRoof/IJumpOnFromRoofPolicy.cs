@@ -3,15 +3,15 @@ using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay.Enums;
 
-namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
+namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOnFromRoof
 {
     /// <summary>
-    /// Описывает runtime-различия вариантов напрыгивания на дорожный target.
+    /// Описывает runtime-отличия конкретного roof-to-road jump-on варианта.
     /// </summary>
-    internal interface IJumpOnPolicy
+    internal interface IJumpOnFromRoofPolicy
     {
         /// <summary>
-        /// Тип action для конкретного варианта jump-on.
+        /// Тип action для конкретного варианта.
         /// </summary>
         BotActionKind ActionKind { get; }
 
@@ -31,20 +31,20 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOn
         string LogTag { get; }
 
         /// <summary>
-        /// Runtime-состояние, которое подтверждает успешное напрыгивание.
+        /// Runtime-состояние, которое подтверждает успешное напрыгивание с крыши.
         /// </summary>
         HamsterStateEnum ExpectedJumpOnState { get; }
 
         /// <summary>
-        /// Возвращает runtime-дистанции для текущего варианта jump-on действия.
+        /// Возвращает runtime-дистанции для текущего варианта roof-to-road jump-on.
         /// </summary>
-        bool TryGetTravel(out JumpOnTravel travel);
+        bool TryGetTravel(out JumpOnFromRoofTravel travel);
 
         /// <summary>
-        /// Вызывает runtime resolver для конкретного варианта прыжка.
+        /// Вызывает runtime roof-jump resolver для конкретного варианта прыжка.
         /// </summary>
         JumpResolveResult Resolve(
             IReadOnlyList<JumpObstacleData> obstacles,
-            JumpResolveContext context);
+            RoofJumpResolveContext context);
     }
 }

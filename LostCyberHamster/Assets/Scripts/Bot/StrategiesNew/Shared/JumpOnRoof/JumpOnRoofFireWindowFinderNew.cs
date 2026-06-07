@@ -140,13 +140,6 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOnRoof
                 return false;
             }
 
-            if (!chain.TryGetAt(roofChainIndex, out ObstacleChainElementNew roofElement)
-                || roofElement.Obstacle.InstanceId != roofObstacle.InstanceId
-                || roofElement.WorldIndex != roofWorldIndex)
-            {
-                return false;
-            }
-
             float firstFireShift = CalculateFirstFireShift(hamster, roofObstacle, jumpTravel);
             float lastFireShift = CalculateLastFireShift(
                 hamster,

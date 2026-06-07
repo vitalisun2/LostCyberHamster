@@ -10802,7 +10802,7 @@
         },
         {
             "name": "test_jump_on_from_roof_04",
-            "description": "should not jump on from roof",
+            "description": "should jump on from roof",
             "nextObstacleId": 6,
             "obstacles": [
                 {
