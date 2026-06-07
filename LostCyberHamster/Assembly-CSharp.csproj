@@ -542,6 +542,13 @@
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperJumpOnRoof\SuperJumpOnRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperJumpOnRoof\SuperJumpOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\SuperJumpOnRoof\SuperJumpOnRoofStrategyNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\PassiveRoofExit\PassiveRoofExitExecutor.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\PassiveRoofExit\PassiveRoofExitModel.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\PassiveRoofExit\PassiveRoofExitPlannerNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\PassiveRoofExit\PassiveRoofExitPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\PassiveRoofExit\PassiveRoofExitRetainedValidatorNew.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\PassiveRoofExit\PassiveRoofExitSimulator.cs" />
+    <Compile Include="Assets\Scripts\Bot\StrategiesNew\PassiveRoofExit\PassiveRoofExitStrategyNew.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\JumpFromRoof\JumpFromRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\JumpFromRoof\JumpFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\StrategiesNew\JumpFromRoof\JumpFromRoofStrategyNew.cs" />
