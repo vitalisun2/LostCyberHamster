@@ -541,6 +541,7 @@ Menu: `Tools/Migration/` — 3 шага:
 - Chain-stage тесты: все объекты цепочки должны попадать в один initial snapshot (в пределах `scanRange`).
 - Retained-action проверяется по уже сохранённому target instance; visibility-гейты для новых candidates (`ScreenRightEdgeX`) нельзя использовать как жёсткий предел для committed target.
 - Для timed jump-on objective при равных target/стоимости/тапах выбирать ветку с более ранним первым trigger: поздний prefix может съесть fire-window и вызвать лишние перестроения.
+- Для target-bound jump-on post-action safety должен участвовать в выборе fire shift внутри окна; нельзя отбрасывать весь action только потому, что первый runtime-valid timing возвращает хомяка в unsafe `Run`, если поздний timing того же окна safe.
 - Во время in-progress head-action планировщик должен стабилизировать атомарный execution handoff: уже запущенный head и ближайший следующий action сохраняются как committed-префикс, дальний хвост остаётся обычным replanning/validation.
 
 ### ActionGenerator
