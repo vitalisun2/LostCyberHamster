@@ -134,11 +134,13 @@ namespace Assets.Scripts.Bot
             if (IsEnabled)
             {
                 Disable();
+                Debug.Log("[Bot] OFF");
                 return;
             }
 
             // Включает controller, если он неактивен.
             Enable();
+            Debug.Log("[Bot] ON");
         }
 
         /// <summary>
