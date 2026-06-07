@@ -64,6 +64,14 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOnRoof
             }
 
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
+            if (HasRoofHazardOnRoofEntryEdge(
+                    planningState.Hamster,
+                    baseObstacles,
+                    targetObstacleIndex))
+            {
+                return false;
+            }
+
             if (!TryFindEarliestResolverValidFireShift(
                     planningState.Hamster,
                     baseObstacles,
@@ -103,6 +111,14 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOnRoof
                 || baseObstacles == null
                 || fireShift < 0f
                 || jumpTravel <= 0f)
+            {
+                return false;
+            }
+
+            if (HasRoofHazardOnRoofEntryEdge(
+                    hamster,
+                    baseObstacles,
+                    targetObstacleIndex))
             {
                 return false;
             }
@@ -233,6 +249,62 @@ namespace Assets.Scripts.Bot.StrategiesNew.Shared.JumpOnRoof
             return Math.Min(
                 latestSafeFireShiftBeforeChainContact,
                 latestSafeFireShiftBeforeRoofOvershoot);
+        }
+
+        /// <summary>
+        /// Проверяет, стоит ли roof hazard на входном edge-сегменте выбранной roof support.
+        /// </summary>
+        private static bool HasRoofHazardOnRoofEntryEdge(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> obstacles,
+            int targetRoofIndex)
+        {
+            if (hamster == null
+                || obstacles == null
+                || targetRoofIndex < 0
+                || targetRoofIndex >= obstacles.Count
+                || hamster.Width <= 0f)
+            {
+                return false;
+            }
+
+            JumpObstacleData targetRoof = obstacles[targetRoofIndex];
+            if (!CollisionUtils.IsRoofObstacle(targetRoof.Type))
+                return false;
+
+            float entryEdgeLeftX = targetRoof.LeftX;
+            float entryEdgeRightX = targetRoof.LeftX + hamster.Width;
+            for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
+            {
+                if (obstacleIndex == targetRoofIndex)
+                    continue;
+
+                JumpObstacleData obstacle = obstacles[obstacleIndex];
+                if (obstacle.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
+                    continue;
+
+                if (obstacle.IsBottomLine != targetRoof.IsBottomLine)
+                    continue;
+
+                bool onTargetRoof = CollisionUtils.IsOverlap(
+                    obstacle.LeftX,
+                    obstacle.RightX,
+                    targetRoof.LeftX,
+                    targetRoof.RightX);
+                if (!onTargetRoof)
+                    continue;
+
+                if (CollisionUtils.IsOverlap(
+                        obstacle.LeftX,
+                        obstacle.RightX,
+                        entryEdgeLeftX,
+                        entryEdgeRightX))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
