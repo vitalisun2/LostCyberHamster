@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -306,11 +306,8 @@ namespace LostCyberHamster.Editor
 
         private sealed class TestLevelPickerWindow : EditorWindow
         {
-            private const float WindowWidth = 640f;
+            private const float MinWindowWidth = 360f;
             private const float MinWindowHeight = 360f;
-            private const float ScreenVerticalMargin = 96f;
-            private const float HeaderHeight = 96f;
-            private const float LevelRowHeight = 32f;
             private const float LaunchWithoutStartToggleWidth = 160f;
             private static readonly Color LaunchedLevelBackgroundColor = new(0.68f, 0.86f, 0.68f, 1f);
             private static readonly Color LaunchedBadgeTextColor = new(0.12f, 0.42f, 0.16f, 1f);
@@ -335,17 +332,13 @@ namespace LostCyberHamster.Editor
 
                 ClearLaunchedLevelAddressesStorage();
 
-                var window = CreateInstance<TestLevelPickerWindow>();
+                var window = GetWindow<TestLevelPickerWindow>("Test Levels");
                 window.titleContent = new GUIContent("Test Levels");
                 window._testLevels.Clear();
                 window._testLevels.AddRange(entries);
+                window._launchWithoutStart = false;
+                window.LoadLaunchedLevelAddresses();
                 window.ApplyWindowSize();
-                window.position = new Rect(
-                    (Screen.currentResolution.width - WindowWidth) * 0.5f,
-                    (Screen.currentResolution.height - window.minSize.y) * 0.5f,
-                    WindowWidth,
-                    window.minSize.y);
-                window.ShowUtility();
                 window.Focus();
             }
 
@@ -362,7 +355,6 @@ namespace LostCyberHamster.Editor
             private void OnGUI()
             {
                 // Header and window commands.
-                EditorGUILayout.LabelField("Test Levels", EditorStyles.boldLabel);
                 EditorGUILayout.HelpBox("Choose a test level to launch through Bootstrap with bot auto-start.", MessageType.Info);
 
                 using (new EditorGUILayout.HorizontalScope())
@@ -540,20 +532,8 @@ namespace LostCyberHamster.Editor
 
             private void ApplyWindowSize()
             {
-                var screenHeight = Screen.currentResolution.height > 0
-                    ? Screen.currentResolution.height
-                    : MinWindowHeight;
-                var maxWindowHeight = Mathf.Max(MinWindowHeight, screenHeight - ScreenVerticalMargin);
-                var contentHeight = HeaderHeight + _testLevels.Count * LevelRowHeight;
-                var windowHeight = Mathf.Clamp(contentHeight, MinWindowHeight, maxWindowHeight);
-
-                minSize = new Vector2(WindowWidth, windowHeight);
-                maxSize = new Vector2(WindowWidth, windowHeight);
-
-                if (position.width > 0f)
-                {
-                    position = new Rect(position.x, position.y, WindowWidth, windowHeight);
-                }
+                minSize = new Vector2(MinWindowWidth, MinWindowHeight);
+                maxSize = new Vector2(4096f, 4096f);
             }
         }
     }
