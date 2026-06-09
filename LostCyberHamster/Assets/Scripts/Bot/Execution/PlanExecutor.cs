@@ -10,6 +10,17 @@ using Assets.Scripts.System;
 namespace Assets.Scripts.Bot.Execution
 {
     /// <summary>
+    /// Описывает результат одного execution tick текущего плана.
+    /// </summary>
+    public enum PlanExecutionTickResult
+    {
+        None,
+        Fired,
+        Completed,
+        Cancelled
+    }
+
+    /// <summary>
     /// Исполняет role-based план бота по одному действию за раз.
     /// </summary>
     public sealed class PlanExecutor
@@ -77,12 +88,12 @@ namespace Assets.Scripts.Bot.Execution
         /// <summary>
         /// Исполняет головное действие текущего role-based плана.
         /// </summary>
-        public bool Tick(Hamster hamster)
+        public PlanExecutionTickResult Tick(Hamster hamster)
         {
             Guard.ThrowIfNull((hamster, nameof(hamster)));
 
             if (!CurrentPlan.HasActions)
-                return false;
+                return PlanExecutionTickResult.None;
 
             PlannedAction action = CurrentPlan.Actions[0];
             IActionExecutionHandler handler = GetRequiredHandler(action);
@@ -94,26 +105,26 @@ namespace Assets.Scripts.Bot.Execution
                 if (fireResult == ActionFireResult.Fired)
                 {
                     _isActionInProgress = true;
-                    return true;
+                    return PlanExecutionTickResult.Fired;
                 }
 
                 if (fireResult == ActionFireResult.Cancelled)
                 {
                     AdvanceHead();
-                    return true;
+                    return PlanExecutionTickResult.Cancelled;
                 }
 
-                return false;
+                return PlanExecutionTickResult.None;
             }
 
             // После запуска ждёт, пока handler подтвердит завершение действия.
             if (handler.IsCompleted(hamster, action))
             {
                 AdvanceHead();
-                return true;
+                return PlanExecutionTickResult.Completed;
             }
 
-            return false;
+            return PlanExecutionTickResult.None;
         }
 
         /// <summary>

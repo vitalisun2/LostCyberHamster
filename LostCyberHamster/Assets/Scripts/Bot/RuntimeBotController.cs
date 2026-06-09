@@ -257,14 +257,15 @@ namespace Assets.Scripts.Bot
 
             // Сначала снимаем snapshot для текущего execution-тика.
             LastSnapshot = _snapshotBuilder.Build(_hamster);
-            bool executionChanged = _executor.Tick(_hamster);
+            PlanExecutionTickResult executionResult = _executor.Tick(_hamster);
 
             // Переснимаем snapshot только после фактического execution-перехода.
-            // В обычных кадрах без fire/complete/cancel исходный snapshot остаётся актуальным для replanning.
-            if (executionChanged)
+            // В обычных кадрах ожидания исходный snapshot остаётся актуальным для решения о rebuild.
+            if (executionResult != PlanExecutionTickResult.None)
                 LastSnapshot = _snapshotBuilder.Build(_hamster);
 
-            TrySetNewPlan();
+            if (ShouldRebuildPlan(executionResult))
+                RebuildPlanFromCurrentSnapshot();
         }
 
         /// <summary>
@@ -290,27 +291,39 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Строит и активирует новый plan, если он отличается от текущего.
+        /// Проверяет, нужно ли строить план заново в текущем tick.
         /// </summary>
-        private void TrySetNewPlan()
+        private bool ShouldRebuildPlan(PlanExecutionTickResult executionResult)
+        {
+            // Строит начальный план или пересобирает после атомарного результата head-action.
+            return !CurrentPlan.HasActions
+                || executionResult == PlanExecutionTickResult.Completed
+                || executionResult == PlanExecutionTickResult.Cancelled;
+        }
+
+        /// <summary>
+        /// Строит новый план от текущего snapshot без сохранения старого хвоста.
+        /// </summary>
+        private void RebuildPlanFromCurrentSnapshot()
         {
             // Проверяет готовность planning компонентов.
             if (_executor == null || _planBuilder == null)
                 return;
 
-            // Строит candidate plan по текущему snapshot.
+            // Строит candidate plan с нуля по текущему snapshot.
             BotPlan plan = _planBuilder.Build(
                 LastSnapshot,
-                _executor.CurrentPlan,
-                _executor.IsActionInProgress);
+                BotPlan.Empty(),
+                retainInProgressHead: false);
 
-            // Отбрасывает пустой или эквивалентный plan.
-            if (!plan.HasActions || plan.IsEquivalentTo(CurrentPlan))
+            // Отбрасывает только эквивалентный plan; пустой rebuild тоже должен очищать старый хвост.
+            if (plan.IsEquivalentTo(CurrentPlan))
                 return;
 
             // Активирует новый plan.
             _executor.SetPlan(plan);
-            LogPlanActivation(plan);
+            if (plan.HasActions)
+                LogPlanActivation(plan);
         }
 
         /// <summary>
