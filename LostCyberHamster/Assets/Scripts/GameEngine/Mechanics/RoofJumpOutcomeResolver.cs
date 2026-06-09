@@ -98,7 +98,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return noHit;
 
             bool hitSmall = IsHitSmallNotAliveOnRoof(obstacles, context);
-            HamsterStateEnum state = hitSmall ? HamsterStateEnum.RoofJumpDamage : HamsterStateEnum.RoofJump;
+            bool hitBigAlive = IsHitBigAliveDuringRoofJump(obstacles, context);
+            HamsterStateEnum state = hitSmall || hitBigAlive
+                ? HamsterStateEnum.RoofJumpDamage
+                : HamsterStateEnum.RoofJump;
 
             return new JumpResolveResult(state, obstacleIndex);
         }
@@ -185,7 +188,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (hasRoofUnderHazard)
             {
                 bool hitSmall = IsHitSmallNotAliveOnRoof(obstacles, context);
-                HamsterStateEnum state = hitSmall ? HamsterStateEnum.RoofJumpDamage : HamsterStateEnum.RoofJump;
+                bool hitBigAlive = IsHitBigAliveDuringRoofJump(obstacles, context);
+                HamsterStateEnum state = hitSmall || hitBigAlive
+                    ? HamsterStateEnum.RoofJumpDamage
+                    : HamsterStateEnum.RoofJump;
                 return new JumpResolveResult(state, roofUnderHazardIndex);
             }
 
@@ -211,6 +217,29 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     continue;
 
                 if (!IsRoofHazard(obstacle, obstacles, context))
+                    continue;
+
+                if (IsOverlapAtShift(context, obstacle, context.RoofJumpShift))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Проверяет высокий bigAlive, который roof jump может зацепить перед входом в RoofRun.
+        /// </summary>
+        private static bool IsHitBigAliveDuringRoofJump(
+            IReadOnlyList<JumpObstacleData> obstacles,
+            RoofJumpResolveContext context)
+        {
+            for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
+            {
+                JumpObstacleData obstacle = obstacles[obstacleIndex];
+                if (!IsSameRuntimeCandidate(obstacle, context))
+                    continue;
+
+                if (obstacle.Type != ObstacleTypeEnum.bigAlive)
                     continue;
 
                 if (IsOverlapAtShift(context, obstacle, context.RoofJumpShift))

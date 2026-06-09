@@ -136,7 +136,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             }
 
             bool hitSmall = IsHitSmallNotAliveOnRoof(obstacles, context);
-            HamsterStateEnum state = hitSmall
+            bool hitBigAlive = IsHitBigAliveDuringRoofJump(obstacles, context);
+            HamsterStateEnum state = hitSmall || hitBigAlive
                 ? HamsterStateEnum.SuperRoofJumpDamage
                 : HamsterStateEnum.SuperRoofJump;
 
@@ -225,7 +226,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (TryFindRoofUnderRoofHazard(small, obstacles, context, out int roofUnderHazardIndex))
             {
                 bool hitSmall = IsHitSmallNotAliveOnRoof(obstacles, context);
-                HamsterStateEnum state = hitSmall
+                bool hitBigAlive = IsHitBigAliveDuringRoofJump(obstacles, context);
+                HamsterStateEnum state = hitSmall || hitBigAlive
                     ? HamsterStateEnum.SuperRoofJumpDamage
                     : HamsterStateEnum.SuperRoofJump;
 
@@ -275,6 +277,29 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     continue;
 
                 if (!IsRoofHazard(obstacle, obstacles, context))
+                    continue;
+
+                if (IsOverlapAtShift(context, obstacle, context.RoofJumpShift))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Проверяет высокий bigAlive, который super roof jump может зацепить перед входом в RoofRun.
+        /// </summary>
+        private static bool IsHitBigAliveDuringRoofJump(
+            IReadOnlyList<JumpObstacleData> obstacles,
+            RoofJumpResolveContext context)
+        {
+            for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
+            {
+                JumpObstacleData obstacle = obstacles[obstacleIndex];
+                if (!IsSameRuntimeCandidate(obstacle, context))
+                    continue;
+
+                if (obstacle.Type != ObstacleTypeEnum.bigAlive)
                     continue;
 
                 if (IsOverlapAtShift(context, obstacle, context.RoofJumpShift))
