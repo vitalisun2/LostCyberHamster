@@ -10544,7 +10544,7 @@
         },
         {
             "name": "test_jump_from_roof_to_roof_06",
-            "description": "should jump from roof to roof",
+            "description": "should not jump from roof to roof",
             "nextObstacleId": 25,
             "obstacles": [
                 {
@@ -10575,24 +10575,6 @@
                     "id": 14,
                     "type": 2,
                     "x": -4.800000190734863,
-                    "y": -1.8000000715255738
-                },
-                {
-                    "id": 22,
-                    "type": 2,
-                    "x": -3.200000047683716,
-                    "y": -1.8000000715255738
-                },
-                {
-                    "id": 23,
-                    "type": 2,
-                    "x": -1.600000023841858,
-                    "y": -1.8000000715255738
-                },
-                {
-                    "id": 24,
-                    "type": 2,
-                    "x": 0.0,
                     "y": -1.8000000715255738
                 }
             ]
