@@ -11,12 +11,23 @@ using UnityEngine;
 namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
 {
     /// <summary>
-    /// Выполняет super-прыжок с крыши на следующую крышу как двухфазный runtime input.
+    /// Выполняет super-прыжок с текущей крыши на следующую крышу как двухфазный runtime input.
     /// </summary>
     internal sealed class SuperJumpFromRoofOnRoofExecutor : IActionExecutionHandler
     {
+        /// <summary>
+        /// Gate проверки live trigger roof перед отправкой input.
+        /// </summary>
         private readonly ActionTriggerGate _triggerGate;
+
+        /// <summary>
+        /// Признак запланированного второго input.
+        /// </summary>
         private bool _isUpgradeScheduled;
+
+        /// <summary>
+        /// Runtime-время, когда можно отправить второй input.
+        /// </summary>
         private float _upgradeReadyTime;
 
         public SuperJumpFromRoofOnRoofExecutor(ActionTriggerGate triggerGate)
@@ -29,25 +40,21 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
         /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
-            // Проверяет обязательный вход.
+            // Проверяет обязательный вход и сбрасывает старый upgrade state.
             Guard.ThrowIfNull(
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 
-            // Сбрасывает предыдущий незавершенный upgrade schedule.
             ResetUpgradeSchedule();
 
-            // Проверяет action kind и trigger.
-            if (action.Kind != BotActionKind.SuperJumpFromRoofOnRoof || !action.TargetObstacleInstanceId.HasValue)
+            // Проверяет action contract и runtime state.
+            if (action.Kind != BotActionKind.SuperJumpFromRoofOnRoof
+                || !action.TargetObstacleInstanceId.HasValue
+                || hamster.Energy.Value < action.EnergyCost
+                || hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
+            {
                 return ActionFireResult.Cancelled;
-
-            // Проверяет энергию.
-            if (hamster.Energy.Value < action.EnergyCost)
-                return ActionFireResult.Cancelled;
-
-            // Проверяет roof-run состояние.
-            if (hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
-                return ActionFireResult.Cancelled;
+            }
 
             // Проверяет fire gate.
             ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
@@ -58,13 +65,14 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
             HamsterActionLogger.LogFire(action, obstacleLeftX);
             hamster.RoofJumpRequest.Invoke();
 
-            // Планирует второй input, если runtime перешел в состояние roof jump.
+            // Проверяет, что runtime перешел в состояние, допускающее upgrade.
             if (!CanUpgradeToSuperRoofJump(hamster.HamsterState.Value))
             {
                 HamsterActionLogger.LogCancel(action, $"stateAfterRoofJump={hamster.HamsterState.Value}");
                 return ActionFireResult.Cancelled;
             }
 
+            // Планирует второй input.
             _isUpgradeScheduled = true;
             _upgradeReadyTime = Time.time + SuperJumpFromRoofOnRoofTiming.UpgradeDelaySeconds;
             return ActionFireResult.Fired;
@@ -103,6 +111,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
         /// </summary>
         private static bool CanUpgradeToSuperRoofJump(HamsterStateEnum hamsterState)
         {
+            // Перечисляет runtime states между первым и вторым input.
             return hamsterState == HamsterStateEnum.RoofJump
                    || hamsterState == HamsterStateEnum.RoofJumpDamage
                    || hamsterState == HamsterStateEnum.JumpFromRoof
@@ -115,6 +124,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
         /// </summary>
         private void ResetUpgradeSchedule()
         {
+            // Очищает schedule второго input.
             _isUpgradeScheduled = false;
             _upgradeReadyTime = 0f;
         }

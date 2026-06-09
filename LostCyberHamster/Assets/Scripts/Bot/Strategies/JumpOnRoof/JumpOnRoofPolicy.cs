@@ -1,13 +1,11 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof;
+using Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof;
 using Assets.Scripts.Common;
-using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay.Enums;
-using UnityEngine;
 
 namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 {
@@ -16,7 +14,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
     /// </summary>
     internal sealed class JumpOnRoofPolicy : IJumpOnRoofPolicy
     {
-        private const string _jumpClipName = "transform_jump";
+        private const string JumpClipName = "transform_jump";
 
         public BotActionKind ActionKind => BotActionKind.JumpOnRoof;
         public int EnergyCost => 10;
@@ -26,15 +24,16 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
         public bool DamageBigAliveWithoutYByReach => true;
 
         /// <summary>
-        /// Возвращает runtime-дистанцию обычного jump animation clip.
+        /// Возвращает runtime-дистанцию обычного прыжка.
         /// </summary>
         public bool TryGetTravel(out float travel)
         {
-            return BotAnimationTravelProvider.TryGetTravel(_jumpClipName, out travel);
+            return BotAnimationTravelProvider.TryGetTravel(JumpClipName, out travel)
+                && travel > 0f;
         }
 
         /// <summary>
-        /// Оставляет resolver-точку обычного прыжка равной точке первого input.
+        /// Передает обычный jump без смещения resolver-точки.
         /// </summary>
         public void GetResolveInput(
             float fireShift,
@@ -42,7 +41,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             out float resolveFireShift,
             out float resolveTravel)
         {
-            // Передает обычный jump в resolver без смещения.
             resolveFireShift = fireShift;
             resolveTravel = jumpTravel;
         }

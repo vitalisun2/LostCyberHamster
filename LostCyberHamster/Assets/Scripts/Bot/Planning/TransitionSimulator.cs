@@ -3,20 +3,18 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
-    /// Делегирует симуляцию действий конкретным planning-стратегиям.
+    /// Делегирует симуляцию role-based действий конкретным новым planning-стратегиям.
     /// </summary>
     public sealed class TransitionSimulator
     {
         private readonly IReadOnlyDictionary<BotActionKind, ISimulator> _simulatorsByActionKind;
 
         /// <summary>
-        /// Создает диспетчер planning-симуляции поверх набора стратегий.
+        /// Создает диспетчер role-based planning-симуляции поверх набора новых стратегий.
         /// </summary>
         internal TransitionSimulator(IReadOnlyList<IPlanningStrategy> strategies)
         {
@@ -30,7 +28,7 @@ namespace Assets.Scripts.Bot.Planning
                 if (simulatorsByActionKind.ContainsKey(strategy.ActionKind))
                 {
                     throw new InvalidOperationException(
-                        $"Для planning-действия зарегистрировано больше одного simulator: kind={strategy.ActionKind}");
+                        $"Для role-based planning-действия зарегистрировано больше одного simulator: kind={strategy.ActionKind}");
                 }
 
                 simulatorsByActionKind.Add(strategy.ActionKind, strategy.Simulator);
@@ -40,7 +38,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Симулирует результат одного запланированного действия.
+        /// Симулирует результат одного role-based запланированного действия.
         /// </summary>
         public PlanningState Simulate(PlanningState planningState, PlannedAction action, WorldSnapshot worldSnapshot)
         {
@@ -51,16 +49,19 @@ namespace Assets.Scripts.Bot.Planning
             return simulator.Simulate(planningState, action, worldSnapshot);
         }
 
+        /// <summary>
+        /// Возвращает simulator для указанного действия или сообщает ошибку конфигурации нового path.
+        /// </summary>
         private ISimulator GetRequiredSimulator(PlannedAction action)
         {
             if (action == null)
-                throw new InvalidOperationException("План содержит пустое действие для planning-симуляции.");
+                throw new InvalidOperationException("План содержит пустое действие для role-based planning-симуляции.");
 
             if (_simulatorsByActionKind.TryGetValue(action.Kind, out ISimulator simulator))
                 return simulator;
 
             string message =
-                $"Для действия бота не зарегистрирован simulator: kind={action.Kind}, desc={action.Description}";
+                $"Для role-based действия бота не зарегистрирован simulator: kind={action.Kind}, desc={action.Description}";
             throw new InvalidOperationException(message);
         }
     }

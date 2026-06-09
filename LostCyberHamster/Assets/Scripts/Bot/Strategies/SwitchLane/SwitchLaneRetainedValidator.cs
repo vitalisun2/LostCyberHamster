@@ -1,91 +1,78 @@
 using System.Collections.Generic;
-using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Bot.Strategies.Shared.Timing;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
+using Assets.Scripts.Bot.Strategies.Shared.Timing;
+using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
 {
     /// <summary>
-    /// Проверяет, можно ли сохранить ранее выбранное действие смены линии на границе retained-префикса плана.
+    /// Проверяет retained SwitchLane action для role-based planning path.
     /// </summary>
     internal sealed class SwitchLaneRetainedValidator : IRetainedActionValidator
     {
-        private const float _validationEpsilon = 0.0001f;
+        private const float ValidationEpsilon = 0.0001f;
 
-        private readonly SwitchLaneSpecification _specification;
         private readonly SwitchLaneFireWindowCalculator _fireWindowCalculator;
 
-        public SwitchLaneRetainedValidator(
-            SwitchLaneSpecification specification,
-            SwitchLaneFireWindowCalculator fireWindowCalculator)
+        /// <summary>
+        /// Создает role-based validator сохраненного SwitchLane.
+        /// </summary>
+        public SwitchLaneRetainedValidator(SwitchLaneFireWindowCalculator fireWindowCalculator)
         {
-            _specification = specification;
             _fireWindowCalculator = fireWindowCalculator;
         }
 
-        /// <summary>
-        /// Возвращает тип действия, для которого validator перепроверяет сохранённый план.
-        /// </summary>
         public BotActionKind ActionKind => BotActionKind.SwitchLane;
 
         /// <summary>
-        /// Проверяет, что сохранённое действие смены линии всё ещё соответствует текущему planning context и остаётся внутри допустимого окна запуска.
+        /// Проверяет, что retained SwitchLane все еще актуален и безопасен.
         /// </summary>
         public bool IsStillValid(RetainedActionContext context)
         {
-            // Отсекает неподходящий retained action.
-            if (context == null
+            // Проверяет базовую совместимость context и action.
+            if (context?.PlanningState?.Hamster == null
+                || context.ProjectedWorldSnapshot == null
+                || context.RetainedObstacle == null
                 || context.Action == null
                 || context.Action.Kind != ActionKind
-                || !context.Action.TargetBottomLine.HasValue)
+                || !context.Action.TargetBottomLine.HasValue
+                || context.Action.ResultRoofSupportInstanceId.HasValue)
             {
                 return false;
             }
 
-            // Проверяет, что стратегия смены линии всё ещё применима к текущему состоянию.
-            if (!_specification.IsSatisfiedBy(context.PlanningState))
+            // Проверяет, что retained action остается дорожным SwitchLane.
+            if (context.PlanningState.Hamster.HamsterState != HamsterStateEnum.Run
+                || context.PlanningState.Hamster.IsOnRoof)
+            {
                 return false;
+            }
 
+            // Проверяет, что action все еще ведет на другую линию.
             if (context.Action.TargetBottomLine.Value == context.PlanningState.Hamster.IsOnBottomLine)
                 return false;
 
-            // Пересчитывает верхнюю границу допустимого fire window.
+            // Проверяет, что retained obstacle все еще является угрозой для switch-lane action.
+            if (!ObstacleClassifier.DamagesOnGroundContact(context.RetainedObstacle.ObstacleType))
+                return false;
+
+            // Пересчитывает окно запуска относительно retained obstacle.
             if (!_fireWindowCalculator.TryGetLatestFireShift(
                     context.PlanningState.Hamster,
-                    context.TargetObstacle,
+                    context.RetainedObstacle,
                     out float latestFireShift))
             {
                 return false;
             }
 
-            // Восстанавливает текущий fire shift сохранённого действия.
             float projectedTriggerX = context.Action.TriggerX - context.PlanningState.ProjectionWorldShift;
-            float fireShift = context.TargetObstacle.LeftX - projectedTriggerX;
-            if (fireShift < 0f || fireShift > latestFireShift + _validationEpsilon)
+            float fireShift = context.RetainedObstacle.LeftX - projectedTriggerX;
+            if (fireShift < 0f || fireShift > latestFireShift + ValidationEpsilon)
                 return false;
 
-            // Для roof-switch проверяет, что сохраненный action всё ещё ведет на ту же roof support.
-            if (context.PlanningState.Hamster.IsOnRoof)
-            {
-                if (!context.Action.ResultRoofSupportInstanceId.HasValue)
-                    return false;
-
-                if (!_fireWindowCalculator.TryFindTargetRoofSupportAtFireShift(
-                        context.ProjectedWorldSnapshot,
-                        context.PlanningState.Hamster,
-                        context.Action.TargetBottomLine.Value,
-                        fireShift,
-                        out var support))
-                {
-                    return false;
-                }
-
-                if (support.InstanceId != context.Action.ResultRoofSupportInstanceId.Value)
-                    return false;
-            }
-
-            // Проверяет попадание fire shift в одно из безопасных окон смены линии.
+            // Проверяет, что retained fire shift все еще попадает в safe interval.
             List<SafeInterval> safeIntervals = _fireWindowCalculator.CollectSafeFireIntervals(
                 context.ProjectedWorldSnapshot,
                 context.PlanningState.Hamster,
@@ -95,8 +82,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             for (int intervalIndex = 0; intervalIndex < safeIntervals.Count; intervalIndex++)
             {
                 SafeInterval interval = safeIntervals[intervalIndex];
-                if (fireShift >= interval.Start - _validationEpsilon
-                    && fireShift <= interval.End + _validationEpsilon)
+                if (fireShift >= interval.Start - ValidationEpsilon
+                    && fireShift <= interval.End + ValidationEpsilon)
                 {
                     return true;
                 }

@@ -1,173 +1,100 @@
 using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
-using Assets.Scripts.GameEngine.Mechanics;
-using Assets.Scripts.GameEngine.Mechanics.Models;
 
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
     /// <summary>
-    /// Хранит ближайшую цепочку препятствий и их индексы в world snapshot.
+    /// Хранит one-line цепочку role-based obstacle elements для одной planning-ситуации.
     /// </summary>
     public sealed class ObstacleChain
     {
-        public ObstacleChain(
-            IReadOnlyList<ObstacleSnapshot> obstacles,
-            IReadOnlyList<int> indices)
+        /// <summary>
+        /// Создает role-based chain для одной линии.
+        /// </summary>
+        public ObstacleChain(IReadOnlyList<ObstacleChainElement> elements)
         {
-            if (obstacles == null)
-                throw new ArgumentNullException(nameof(obstacles));
+            if (elements == null)
+                throw new ArgumentNullException(nameof(elements));
 
-            if (indices == null)
-                throw new ArgumentNullException(nameof(indices));
+            if (elements.Count == 0)
+                throw new ArgumentException("Obstacle chain must contain at least one element.", nameof(elements));
 
-            if (obstacles.Count == 0 || obstacles.Count != indices.Count)
-                throw new ArgumentException("Obstacle chain must contain matching obstacle/index pairs.");
+            var copiedElements = new List<ObstacleChainElement>(elements.Count);
+            float leftX = float.MaxValue;
+            float rightX = float.MinValue;
+            bool chainBottomLine = elements[0]?.IsBottomLine
+                ?? throw new ArgumentException("Obstacle chain cannot contain null elements.", nameof(elements));
 
-            Obstacles = new List<ObstacleSnapshot>(obstacles);
-            Indices = new List<int>(indices);
+            for (int elementIndex = 0; elementIndex < elements.Count; elementIndex++)
+            {
+                ObstacleChainElement element = elements[elementIndex]
+                    ?? throw new ArgumentException("Obstacle chain cannot contain null elements.", nameof(elements));
+
+                if (element.IsBottomLine != chainBottomLine)
+                    throw new ArgumentException("Obstacle chain must contain elements from one focus lane.", nameof(elements));
+
+                copiedElements.Add(element);
+
+                if (element.Obstacle.LeftX < leftX)
+                    leftX = element.Obstacle.LeftX;
+
+                if (element.Obstacle.RightX > rightX)
+                    rightX = element.Obstacle.RightX;
+            }
+
+            Elements = copiedElements;
+            LeftX = leftX;
+            RightX = rightX;
         }
 
-        public IReadOnlyList<ObstacleSnapshot> Obstacles { get; }
-        public IReadOnlyList<int> Indices { get; }
-        public int Count => Obstacles.Count;
-        public ObstacleSnapshot FirstObstacle => Obstacles[0];
-        public int FirstIndex => Indices[0];
+        public IReadOnlyList<ObstacleChainElement> Elements { get; }
+        public int Count => Elements.Count;
+        public ObstacleChainElement First => Elements[0];
+        public ObstacleSnapshot FirstObstacle => First.Obstacle;
+        public int FirstIndex => First.WorldIndex;
+        public float LeftX { get; }
+        public float RightX { get; }
 
         /// <summary>
-        /// Возвращает obstacle и world index по индексу внутри chain.
+        /// Возвращает element по индексу внутри chain.
         /// </summary>
         public bool TryGetAt(
             int chainIndex,
-            out ObstacleSnapshot obstacle,
-            out int worldIndex)
+            out ObstacleChainElement element)
         {
             if (chainIndex < 0 || chainIndex >= Count)
             {
-                obstacle = null;
-                worldIndex = -1;
+                element = null;
                 return false;
             }
 
-            obstacle = Obstacles[chainIndex];
-            worldIndex = Indices[chainIndex];
+            element = Elements[chainIndex];
             return true;
         }
 
         /// <summary>
-        /// Находит первую крышу внутри chain.
+        /// Находит первый element с указанной role.
         /// </summary>
-        public bool TryFindFirstRoof(
-            out ObstacleSnapshot roofObstacle,
-            out int roofWorldIndex,
-            out int roofChainIndex)
+        public bool TryFindFirstWithRole(
+            ObstacleRole role,
+            out ObstacleChainElement element,
+            out int chainIndex)
         {
-            for (int chainIndex = 0; chainIndex < Count; chainIndex++)
+            for (int index = 0; index < Count; index++)
             {
-                ObstacleSnapshot obstacle = Obstacles[chainIndex];
-                if (!ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType))
+                ObstacleChainElement candidate = Elements[index];
+                if (!candidate.HasRole(role))
                     continue;
 
-                roofObstacle = obstacle;
-                roofWorldIndex = Indices[chainIndex];
-                roofChainIndex = chainIndex;
+                element = candidate;
+                chainIndex = index;
                 return true;
             }
 
-            roofObstacle = null;
-            roofWorldIndex = -1;
-            roofChainIndex = -1;
+            element = null;
+            chainIndex = -1;
             return false;
-        }
-
-        /// <summary>
-        /// Находит первый дорожный target для ground jump-on внутри chain на заданной линии.
-        /// </summary>
-        public bool TryFindFirstGroundJumpOnTarget(
-            bool isBottomLine,
-            out ObstacleSnapshot targetObstacle,
-            out int targetWorldIndex,
-            out int targetChainIndex)
-        {
-            for (int chainIndex = 0; chainIndex < Count; chainIndex++)
-            {
-                ObstacleSnapshot obstacle = Obstacles[chainIndex];
-                if (obstacle.IsBottomLine != isBottomLine)
-                    continue;
-
-                if (!ObstacleClassifier.CanJumpOnGroundObstacle(obstacle.ObstacleType))
-                    continue;
-
-                targetObstacle = obstacle;
-                targetWorldIndex = Indices[chainIndex];
-                targetChainIndex = chainIndex;
-                return true;
-            }
-
-            targetObstacle = null;
-            targetWorldIndex = -1;
-            targetChainIndex = -1;
-            return false;
-        }
-
-        /// <summary>
-        /// Находит первый дорожный target для jump-on при сходе с крыши внутри chain на заданной линии.
-        /// </summary>
-        public bool TryFindFirstJumpOnFromRoofTarget(
-            bool isBottomLine,
-            out ObstacleSnapshot targetObstacle,
-            out int targetWorldIndex,
-            out int targetChainIndex)
-        {
-            for (int chainIndex = 0; chainIndex < Count; chainIndex++)
-            {
-                ObstacleSnapshot obstacle = Obstacles[chainIndex];
-                if (obstacle.IsBottomLine != isBottomLine)
-                    continue;
-
-                if (!ObstacleClassifier.CanJumpOnFromRoofObstacle(obstacle.ObstacleType))
-                    continue;
-
-                targetObstacle = obstacle;
-                targetWorldIndex = Indices[chainIndex];
-                targetChainIndex = chainIndex;
-                return true;
-            }
-
-            targetObstacle = null;
-            targetWorldIndex = -1;
-            targetChainIndex = -1;
-            return false;
-        }
-
-        /// <summary>
-        /// Возвращает true, если на крыше obstacle из chain есть опасный occupant.
-        /// </summary>
-        public bool HasDamagingRoofOccupant(int roofChainIndex)
-        {
-            if (roofChainIndex < 0 || roofChainIndex >= Count)
-                return false;
-
-            var obstacleData = new JumpObstacleData[Count];
-            for (int chainIndex = 0; chainIndex < Count; chainIndex++)
-            {
-                ObstacleSnapshot obstacle = Obstacles[chainIndex];
-                obstacleData[chainIndex] = new JumpObstacleData(
-                    obstacle.ObstacleType,
-                    obstacle.IsBottomLine,
-                    obstacle.LeftX,
-                    obstacle.RightX,
-                    obstacle.CenterX,
-                    obstacle.InstanceId,
-                    hasY: true,
-                    obstacle.BottomY,
-                    obstacle.TopY);
-            }
-
-            return JumpOutcomeResolver.TryFindDamagingRoofOccupantOnRoof(
-                obstacleData,
-                roofChainIndex,
-                out _);
         }
 
         /// <summary>
@@ -180,7 +107,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
 
             for (int chainIndex = 0; chainIndex < Count; chainIndex++)
             {
-                if (Obstacles[chainIndex].InstanceId == targetObstacle.InstanceId)
+                if (Elements[chainIndex].Obstacle.InstanceId == targetObstacle.InstanceId)
                     return true;
             }
 

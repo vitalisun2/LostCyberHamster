@@ -1,17 +1,17 @@
-﻿using System.Collections.Generic;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.Bot.Strategies.Shared.Execution;
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
 {
     /// <summary>
-    /// Собирает компоненты SwitchLane strategy.
+    /// Collects role-based SwitchLane candidates for the new planning path.
     /// </summary>
     internal sealed class SwitchLaneStrategy : IPlanningStrategy
     {
@@ -21,25 +21,23 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
         public SwitchLaneStrategy()
         {
-            // Создаёт внутренние зависимости стратегии.
             _specification = new SwitchLaneSpecification();
             _fireWindowCalculator = new SwitchLaneFireWindowCalculator();
             _simulator = new SwitchLaneSimulator();
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
-            // Публикует runtime-компоненты стратегии.
             Executor = new SwitchLaneExecutor(triggerGate);
-            RetainedValidator = new SwitchLaneRetainedValidator(_specification, _fireWindowCalculator);
             Simulator = _simulator;
+            RetainedValidator = new SwitchLaneRetainedValidator(_fireWindowCalculator);
         }
 
         public BotActionKind ActionKind => BotActionKind.SwitchLane;
         public IActionExecutionHandler Executor { get; }
-        public IRetainedActionValidator RetainedValidator { get; }
         public ISimulator Simulator { get; }
+        public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
-        /// Собирает допустимые действия смены линии для текущей точки принятия решения.
+        /// Collects valid lane-switch actions for a role-based decision point.
         /// </summary>
         public void CollectActions(
             PlanningState planningState,
@@ -47,111 +45,144 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             DecisionPoint decisionPoint,
             List<PlannedAction> actions)
         {
-            // Проверяет обязательные аргументы.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
                 (decisionPoint, nameof(decisionPoint)),
                 (actions, nameof(actions)));
 
-            // Отбирает obstacle, для которого допустима смена линии.
-            if (!_specification.IsSatisfiedBy(planningState, decisionPoint, out ObstacleSnapshot targetObstacle, out int targetObstacleIndex))
-                return;
-
-            // Вычисляет линию и доступное окно запуска.
-            HamsterSnapshot hamster = planningState.Hamster;
-            bool targetBottomLine = !hamster.IsOnBottomLine;
-            if (!_fireWindowCalculator.TryGetLatestFireShift(hamster, targetObstacle, out float latestFireShift))
-                return;
-
-            if (decisionPoint.HasFireBeforeObstacle
-                && !TryClampLatestFireShiftBeforeDeadline(
-                    hamster,
-                    decisionPoint.FireBeforeObstacle,
-                    ref latestFireShift))
+            if (!TryResolveSwitchLaneTarget(
+                    planningState,
+                    decisionPoint,
+                    out ObstacleSnapshot triggerObstacle,
+                    out int triggerObstacleIndex,
+                    out bool targetBottomLine,
+                    out bool isEntryToOppositeLane))
             {
                 return;
             }
 
-            // Строит все варианты action в найденном окне.
-            IReadOnlyList<float> selectionRatios = GetSelectionRatios(
-                planningState,
-                decisionPoint);
-            IReadOnlyList<SwitchLaneFireWindowSample> fireWindowSamples = _fireWindowCalculator.CollectFireWindowSamples(
-                worldSnapshot,
-                hamster,
-                targetBottomLine,
-                latestFireShift,
-                selectionRatios);
-
-            for (int fireShiftIndex = 0; fireShiftIndex < fireWindowSamples.Count; fireShiftIndex++)
+            HamsterSnapshot hamster = planningState.Hamster;
+            if (!_fireWindowCalculator.TryGetLatestFireShift(
+                    hamster,
+                    triggerObstacle,
+                    out float latestFireShift))
             {
-                SwitchLaneFireWindowSample fireWindowSample = fireWindowSamples[fireShiftIndex];
-                float fireShift = fireWindowSample.FireShift;
-                if (!TryGetResultRoofSupport(
-                        worldSnapshot,
-                        hamster,
-                        targetBottomLine,
-                        fireShift,
-                        out int? resultRoofSupportInstanceId))
-                {
-                    continue;
-                }
+                return;
+            }
 
+            IReadOnlyList<float> selectionRatios = GetSelectionRatios(planningState);
+            IReadOnlyList<SwitchLaneFireWindowSample> fireWindowSamples =
+                _fireWindowCalculator.CollectFireWindowSamples(
+                    worldSnapshot,
+                    hamster,
+                    targetBottomLine,
+                    latestFireShift,
+                    selectionRatios);
+
+            for (int sampleIndex = 0; sampleIndex < fireWindowSamples.Count; sampleIndex++)
+            {
+                SwitchLaneFireWindowSample fireWindowSample = fireWindowSamples[sampleIndex];
                 actions.Add(BuildAction(
                     planningState,
-                    targetObstacle,
-                    targetObstacleIndex,
+                    triggerObstacle,
+                    triggerObstacleIndex,
                     targetBottomLine,
                     fireWindowSample,
-                    resultRoofSupportInstanceId));
+                    isEntryToOppositeLane));
             }
         }
 
         /// <summary>
-        /// Возвращает roof support для switch с крыши или null для обычной смены линии на дороге.
+        /// Resolves the road SwitchLane target: current-lane threat or opposite-lane entry.
         /// </summary>
-        private bool TryGetResultRoofSupport(
-            WorldSnapshot worldSnapshot,
-            HamsterSnapshot hamster,
-            bool targetBottomLine,
-            float fireShift,
-            out int? resultRoofSupportInstanceId)
+        private bool TryResolveSwitchLaneTarget(
+            PlanningState planningState,
+            DecisionPoint decisionPoint,
+            out ObstacleSnapshot triggerObstacle,
+            out int triggerObstacleIndex,
+            out bool targetBottomLine,
+            out bool isEntryToOppositeLane)
         {
-            // Для ground-switch support не требуется.
-            resultRoofSupportInstanceId = null;
-            if (!hamster.IsOnRoof)
-                return true;
+            triggerObstacle = null;
+            triggerObstacleIndex = -1;
+            targetBottomLine = false;
+            isEntryToOppositeLane = false;
 
-            // Для roof-switch разрешает только переход на roof target-линии.
-            if (!_fireWindowCalculator.TryFindTargetRoofSupportAtFireShift(
-                    worldSnapshot,
-                    hamster,
-                    targetBottomLine,
-                    fireShift,
-                    out ObstacleSnapshot support))
+            if (planningState?.Hamster == null || decisionPoint?.Chain == null)
+                return false;
+
+            HamsterSnapshot hamster = planningState.Hamster;
+            bool chainBottomLine = decisionPoint.Chain.First.IsBottomLine;
+            if (chainBottomLine != hamster.IsOnBottomLine)
+            {
+                if (!_specification.IsSatisfiedBy(planningState))
+                    return false;
+
+                triggerObstacle = decisionPoint.Chain.FirstObstacle;
+                triggerObstacleIndex = decisionPoint.Chain.FirstIndex;
+                targetBottomLine = chainBottomLine;
+                isEntryToOppositeLane = true;
+                return true;
+            }
+
+            if (!TryResolveBlockingThreat(
+                    decisionPoint,
+                    out ObstacleSnapshot blockingThreat,
+                    out int blockingThreatIndex))
             {
                 return false;
             }
 
-            resultRoofSupportInstanceId = support.InstanceId;
+            if (!_specification.IsSatisfiedBy(planningState, blockingThreat))
+                return false;
+
+            triggerObstacle = blockingThreat;
+            triggerObstacleIndex = blockingThreatIndex;
+            targetBottomLine = !hamster.IsOnBottomLine;
             return true;
         }
 
         /// <summary>
-        /// Создаёт запланированное действие смены линии для выбранного момента запуска.
+        /// Tries to select the first blocking threat from the current focus chain.
+        /// </summary>
+        private static bool TryResolveBlockingThreat(
+            DecisionPoint decisionPoint,
+            out ObstacleSnapshot blockingThreat,
+            out int blockingThreatIndex)
+        {
+            blockingThreat = null;
+            blockingThreatIndex = -1;
+
+            if (decisionPoint?.Chain == null)
+                return false;
+
+            if (!decisionPoint.Chain.TryFindFirstWithRole(
+                    ObstacleRole.BlockingThreat,
+                    out ObstacleChainElement blockingThreatElement,
+                    out _))
+            {
+                return false;
+            }
+
+            blockingThreat = blockingThreatElement.Obstacle;
+            blockingThreatIndex = blockingThreatElement.WorldIndex;
+            return true;
+        }
+
+        /// <summary>
+        /// Builds a planned lane-switch action for the selected fire moment.
         /// </summary>
         private static PlannedAction BuildAction(
             PlanningState planningState,
-            ObstacleSnapshot targetObstacle,
-            int targetObstacleIndex,
+            ObstacleSnapshot triggerObstacle,
+            int triggerObstacleIndex,
             bool targetBottomLine,
             SwitchLaneFireWindowSample fireWindowSample,
-            int? resultRoofSupportInstanceId)
+            bool isEntryToOppositeLane)
         {
-            // Рассчитывает мировую точку срабатывания действия.
             float fireShift = fireWindowSample.FireShift;
-            float projectedTriggerX = targetObstacle.LeftX - fireShift;
+            float projectedTriggerX = triggerObstacle.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
                 triggerX,
@@ -159,37 +190,27 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 fireWindowSample.FirstFireShift,
                 fireWindowSample.LastFireShift);
 
-            // Создаёт action с рассчитанными параметрами исполнения.
             return new PlannedAction(
                 BotActionKind.SwitchLane,
                 triggerX,
                 renderWorldX: triggerX,
-                completionWorldShift: fireShift + SwitchLaneTiming.PostFirePlanningTravel,
-                postFireWorldShift: SwitchLaneTiming.PostFirePlanningTravel,
-                targetObstacleIndex,
-                targetObstacleInstanceId: targetObstacle.InstanceId,
+                completionWorldShift: fireShift + SwitchLaneTiming.DecisionTravel,
+                postFireWorldShift: SwitchLaneTiming.DecisionTravel,
+                triggerObstacleIndex,
+                targetObstacleInstanceId: triggerObstacle.InstanceId,
                 targetBottomLine: targetBottomLine,
                 energyCost: 0,
-                description: $"Switch lane before {targetObstacle.ObstacleType}",
-                resultRoofSupportInstanceId: resultRoofSupportInstanceId,
+                description: isEntryToOppositeLane
+                    ? $"Switch lane entry before {triggerObstacle.ObstacleType}"
+                    : $"Switch lane before {triggerObstacle.ObstacleType}",
                 triggerWindow: triggerWindow);
         }
 
         /// <summary>
-        /// Возвращает ratio safe-window, которые нужно попробовать для текущей точки решения.
+        /// Returns safe-window selection ratios for role-based SwitchLane.
         /// </summary>
-        private static IReadOnlyList<float> GetSelectionRatios(
-            PlanningState planningState,
-            DecisionPoint decisionPoint)
+        private static IReadOnlyList<float> GetSelectionRatios(PlanningState planningState)
         {
-            // Выбирает ранний запуск для optional jump-on objective.
-            if (decisionPoint != null && decisionPoint.UsesObjectiveSwitchLaneTiming)
-                return new[]
-                {
-                    SwitchLaneTiming.EarlyWindowSelectionRatio
-                };
-
-            // Добавляет ранний вариант при достаточной энергии для потенциального JumpOn.
             HamsterSnapshot hamster = planningState?.Hamster;
             if (JumpOnObjectiveRules.HasEnergyForJumpOnObjective(hamster))
                 return new[]
@@ -198,28 +219,10 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     SwitchLaneTiming.MidWindowSelectionRatio
                 };
 
-            // Возвращает обычный вариант уклонения.
             return new[]
             {
                 SwitchLaneTiming.MidWindowSelectionRatio
             };
-        }
-
-        private bool TryClampLatestFireShiftBeforeDeadline(
-            HamsterSnapshot hamster,
-            ObstacleSnapshot deadlineObstacle,
-            ref float latestFireShift)
-        {
-            if (deadlineObstacle == null)
-                return latestFireShift > 0f;
-
-            if (!_fireWindowCalculator.TryGetLatestFireShift(hamster, deadlineObstacle, out float deadlineLatestFireShift))
-                return false;
-
-            if (deadlineLatestFireShift < latestFireShift)
-                latestFireShift = deadlineLatestFireShift;
-
-            return latestFireShift > 0f;
         }
     }
 }

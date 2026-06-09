@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoof;
+using Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay.Enums;
-using UnityEngine;
 
 namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoof
 {
@@ -16,60 +15,18 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoof
     /// </summary>
     internal sealed class SuperJumpFromRoofPolicy : IJumpFromRoofPolicy
     {
-        /// <summary>
-        /// Имя клипа автоматического схода с крыши.
-        /// </summary>
         private const string RunFromRoofClipName = "transform_run_from_roof";
-
-        /// <summary>
-        /// Имя клипа super roof jump.
-        /// </summary>
         private const string SuperRoofJumpClipName = "transform_super_roof_jump";
-
-        /// <summary>
-        /// Имя клипа super-прыжка с крыши на дорогу.
-        /// </summary>
         private const string SuperJumpFromRoofClipName = "transform_super_jump_from_roof";
-
-        /// <summary>
-        /// Имя medium fallback-клипа автоматического схода с крыши.
-        /// </summary>
         private const string MediumRunFromRoofClipName = "transform_medium_run_from_roof";
-
-        /// <summary>
-        /// Имя medium fallback-клипа super roof jump.
-        /// </summary>
         private const string MediumSuperRoofJumpClipName = "transform_medium_super_roof_jump";
-
-        /// <summary>
-        /// Имя medium fallback-клипа super-прыжка с крыши на дорогу.
-        /// </summary>
         private const string MediumSuperJumpFromRoofClipName = "transform_medium_super_jump_from_roof";
 
-        /// <summary>
-        /// Тип action для super-прыжка с крыши.
-        /// </summary>
         public BotActionKind ActionKind => BotActionKind.SuperJumpFromRoof;
-
-        /// <summary>
-        /// Стоимость super-прыжка с крыши.
-        /// </summary>
         public int EnergyCost => 20;
-
-        /// <summary>
-        /// Префикс описания planned action.
-        /// </summary>
         public string DescriptionPrefix => "Super jump from roof";
-
-        /// <summary>
-        /// Runtime outcome, который считается успешным для этой strategy.
-        /// </summary>
         public HamsterStateEnum ExpectedSuccessState => HamsterStateEnum.SuperJumpFromRoof;
-
-        /// <summary>
-        /// Super-прыжок с крыши не добавляет дополнительный отступ для bigAlive.
-        /// </summary>
-        public float BigAliveCollisionPaddingRatio => 0;
+        public float BigAliveCollisionPaddingRatio => 0f;
 
         /// <summary>
         /// Возвращает runtime-дистанции super-прыжка с крыши.
@@ -115,7 +72,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoof
         }
 
         /// <summary>
-        /// Возвращает путь мира за задержку upgrade-запроса super roof jump.
+        /// Возвращает путь мира за задержку upgrade input.
         /// </summary>
         private static float GetSuperRoofJumpUpgradeDelayTravel()
         {

@@ -16,26 +16,15 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
     /// </summary>
     internal sealed class SuperJumpOnExecutor : IActionExecutionHandler
     {
-        /// <summary>
-        /// Задержка между первым jump input и вторым input для upgrade до super-jump.
-        /// </summary>
         private const float UpgradeDelaySeconds = DoubleJumpDetector.DoubleJumpThreshold * 0.5f;
 
-        /// <summary>
-        /// Проверяет, наступил ли момент запуска action относительно live obstacle.
-        /// </summary>
         private readonly ActionTriggerGate _triggerGate;
-
-        /// <summary>
-        /// Признак запланированного второго input для upgrade.
-        /// </summary>
         private bool _isUpgradeScheduled;
-
-        /// <summary>
-        /// Runtime-время, после которого можно отправить второй input.
-        /// </summary>
         private float _upgradeReadyTime;
 
+        /// <summary>
+        /// Создает executor с gate проверки live trigger obstacle.
+        /// </summary>
         public SuperJumpOnExecutor(ActionTriggerGate triggerGate)
         {
             _triggerGate = triggerGate;
@@ -51,12 +40,13 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 
-            // Сбрасывает устаревший upgrade.
+            // Сбрасывает устаревший upgrade и проверяет action.
             ResetUpgradeSchedule();
-
-            // Проверяет совместимость action.
-            if (action.Kind != BotActionKind.SuperJumpOn || !action.TargetObstacleInstanceId.HasValue)
+            if (action.Kind != BotActionKind.SuperJumpOn
+                || !action.TargetObstacleInstanceId.HasValue)
+            {
                 return ActionFireResult.Cancelled;
+            }
 
             // Дожидается состояния, в котором можно прыгнуть.
             if (hamster.HamsterState.Value != HamsterStateEnum.Run)

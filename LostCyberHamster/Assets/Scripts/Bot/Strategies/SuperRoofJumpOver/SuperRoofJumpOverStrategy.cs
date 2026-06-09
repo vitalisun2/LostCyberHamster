@@ -3,62 +3,113 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.RoofJumpOver;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver;
 using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
 {
     /// <summary>
-    /// Строит действия super roof jump-over над опасными obstacle на текущей крыше.
+    /// Собирает role-based кандидаты super roof jump-over.
     /// </summary>
     internal sealed class SuperRoofJumpOverStrategy : IPlanningStrategy
     {
+        /// <summary>
+        /// Policy super roof jump-over.
+        /// </summary>
         private readonly IRoofJumpOverPolicy _policy;
+
+        /// <summary>
+        /// Specification применимости super roof jump-over.
+        /// </summary>
         private readonly RoofJumpOverSpecification _specification;
+
+        /// <summary>
+        /// Resolver первого roof occupant hazard в role-based chain.
+        /// </summary>
+        private readonly RoofJumpOverActionResolver _actionResolver;
+
+        /// <summary>
+        /// Finder fire-window с runtime-проверкой результата.
+        /// </summary>
         private readonly RoofJumpOverFireWindowFinder _fireWindowFinder;
+
+        /// <summary>
+        /// Simulator planning-перехода super roof jump-over.
+        /// </summary>
         private readonly RoofJumpOverSimulator _simulator;
 
+        /// <summary>
+        /// Создает strategy и runtime-компоненты super roof jump-over.
+        /// </summary>
         public SuperRoofJumpOverStrategy()
         {
             _policy = new SuperRoofJumpOverPolicy();
             _specification = new RoofJumpOverSpecification(_policy);
+            _actionResolver = new RoofJumpOverActionResolver();
             _fireWindowFinder = new RoofJumpOverFireWindowFinder(_policy);
             _simulator = new RoofJumpOverSimulator(_policy);
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             Executor = new SuperRoofJumpOverExecutor(triggerGate);
-            RetainedValidator = new RoofJumpOverRetainedActionValidator(_policy, _fireWindowFinder);
             Simulator = _simulator;
+            RetainedValidator = new RoofJumpOverRetainedValidator(
+                _policy,
+                _fireWindowFinder,
+                _specification);
         }
 
+        /// <summary>
+        /// Тип action, который создает стратегия.
+        /// </summary>
         public BotActionKind ActionKind => _policy.ActionKind;
+
+        /// <summary>
+        /// Runtime executor super roof jump-over.
+        /// </summary>
         public IActionExecutionHandler Executor { get; }
-        public IRetainedActionValidator RetainedValidator { get; }
+
+        /// <summary>
+        /// Simulator super roof jump-over.
+        /// </summary>
         public ISimulator Simulator { get; }
 
+        /// <summary>
+        /// Validator сохраненных actions super roof jump-over.
+        /// </summary>
+        public IRetainedActionValidator RetainedValidator { get; }
+
+        /// <summary>
+        /// Добавляет super-roof-jump-over action для hazard на текущем passive roof path.
+        /// </summary>
         public void CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             DecisionPoint decisionPoint,
             List<PlannedAction> actions)
         {
+            // Проверяет вход и выбирает role-based hazard.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
                 (decisionPoint, nameof(decisionPoint)),
                 (actions, nameof(actions)));
 
-            if (!_specification.IsSatisfiedBy(
-                    planningState,
-                    worldSnapshot,
-                    decisionPoint,
-                    out _,
+            if (!_actionResolver.TryResolve(
+                    decisionPoint.Chain,
+                    out ObstacleSnapshot hazardObstacle,
                     out _))
+            {
+                return;
+            }
+
+            if (!_specification.IsSatisfiedBy(planningState, hazardObstacle))
                 return;
 
+            // Получает travel и подтверждает fire-window через runtime resolver.
             if (!_policy.TryGetTravel(out RoofJumpOverTravel travel))
                 return;
 
@@ -70,7 +121,9 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
                     out RoofJumpOverChainModel chainModel,
                     out ObstacleSnapshot supportObstacle,
                     out float fireShift))
+            {
                 return;
+            }
 
             actions.Add(BuildAction(
                 _policy,
@@ -81,6 +134,9 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
                 travel));
         }
 
+        /// <summary>
+        /// Создает planned action для найденного super roof jump-over fire shift.
+        /// </summary>
         private static PlannedAction BuildAction(
             IRoofJumpOverPolicy policy,
             PlanningState planningState,
@@ -89,6 +145,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
             float fireShift,
             RoofJumpOverTravel travel)
         {
+            // Считает trigger position по первому hazard.
             ObstacleSnapshot hazardObstacle = chainModel.FirstHazard;
             float projectedTriggerX = hazardObstacle.LeftX - fireShift;
             float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
@@ -98,6 +155,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
                 chainModel.FirstFireShift,
                 chainModel.LastFireShift);
 
+            // Возвращает action с сохранением result roof support.
             return new PlannedAction(
                 policy.ActionKind,
                 triggerX,
@@ -114,6 +172,9 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
                 triggerWindow: triggerWindow);
         }
 
+        /// <summary>
+        /// Формирует описание planned action.
+        /// </summary>
         private static string BuildDescription(
             IRoofJumpOverPolicy policy,
             RoofJumpOverChainModel chainModel)

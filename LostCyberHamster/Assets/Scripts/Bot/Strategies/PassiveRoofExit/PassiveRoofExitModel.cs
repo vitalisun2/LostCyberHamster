@@ -3,7 +3,7 @@ using Assets.Scripts.Bot.Perception;
 namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
 {
     /// <summary>
-    /// Хранит рассчитанные параметры пассивного схода с крыши.
+    /// Хранит рассчитанные параметры role-based пассивного схода с крыши.
     /// </summary>
     internal readonly struct PassiveRoofExitModel
     {
@@ -27,7 +27,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
         public ObstacleSnapshot LastRoof { get; }
 
         /// <summary>
-        /// Obstacle, из-за которого planner рассматривает продолжение цепочки.
+        /// Obstacle, относительно которого graph рассматривает следующий planning context.
         /// </summary>
         public ObstacleSnapshot ContextObstacle { get; }
 

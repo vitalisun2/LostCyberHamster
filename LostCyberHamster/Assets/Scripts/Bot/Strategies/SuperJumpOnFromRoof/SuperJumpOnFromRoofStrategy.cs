@@ -3,36 +3,42 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnFromRoof;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof;
 using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
 {
     /// <summary>
-    /// Собирает super roof-to-road jump-on actions.
+    /// Собирает role-based кандидаты super-напрыгивания с крыши на дорожный target.
     /// </summary>
     internal sealed class SuperJumpOnFromRoofStrategy : IPlanningStrategy
     {
         /// <summary>
-        /// Политика runtime-параметров super roof-to-road jump-on.
+        /// Policy super roof-to-road jump-on.
         /// </summary>
         private readonly IJumpOnFromRoofPolicy _policy;
 
         /// <summary>
-        /// Проверка применимости super roof-to-road jump-on к найденной road target-chain.
+        /// Specification применимости super roof-to-road jump-on к выбранному target.
         /// </summary>
         private readonly JumpOnFromRoofSpecification _specification;
 
         /// <summary>
-        /// Подбор безопасного момента запуска super roof-to-road jump-on.
+        /// Resolver target и roof context внутри role-based chain.
+        /// </summary>
+        private readonly JumpOnFromRoofActionResolver _actionResolver;
+
+        /// <summary>
+        /// Finder fire-window с runtime-проверкой target.
         /// </summary>
         private readonly JumpOnFromRoofFireWindowFinder _fireWindowFinder;
 
         /// <summary>
-        /// Симулятор planning-состояния после super roof-to-road jump-on.
+        /// Simulator planning-перехода super roof-to-road jump-on.
         /// </summary>
         private readonly JumpOnFromRoofSimulator _simulator;
 
@@ -41,36 +47,39 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
             // Инициализирует planning-компоненты стратегии.
             _policy = new SuperJumpOnFromRoofPolicy();
             _specification = new JumpOnFromRoofSpecification(_policy);
+            _actionResolver = new JumpOnFromRoofActionResolver();
             _fireWindowFinder = new JumpOnFromRoofFireWindowFinder(_policy);
             _simulator = new JumpOnFromRoofSimulator(_policy);
-
-            // Инициализирует runtime-компоненты выполнения.
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
+            // Публикует runtime handlers наружу.
             Executor = new SuperJumpOnFromRoofExecutor(triggerGate);
-            RetainedValidator = new JumpOnFromRoofRetainedActionValidator(_policy, _fireWindowFinder, _specification);
             Simulator = _simulator;
+            RetainedValidator = new JumpOnFromRoofRetainedValidator(
+                _policy,
+                _fireWindowFinder,
+                _specification);
         }
 
         /// <summary>
-        /// Возвращает тип action, который строит стратегия.
+        /// Тип action, который создает стратегия.
         /// </summary>
         public BotActionKind ActionKind => _policy.ActionKind;
 
         /// <summary>
-        /// Runtime-исполнитель super roof-to-road jump-on.
+        /// Runtime executor super roof-to-road jump-on.
         /// </summary>
         public IActionExecutionHandler Executor { get; }
 
         /// <summary>
-        /// Валидатор сохранённого super roof-to-road jump-on action.
-        /// </summary>
-        public IRetainedActionValidator RetainedValidator { get; }
-
-        /// <summary>
-        /// Симулятор planning-перехода для super roof-to-road jump-on.
+        /// Simulator super roof-to-road jump-on.
         /// </summary>
         public ISimulator Simulator { get; }
+
+        /// <summary>
+        /// Validator сохраненных actions super roof-to-road jump-on.
+        /// </summary>
+        public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
         /// Добавляет super roof-to-road jump-on action, если target и полное действие безопасны.
@@ -81,22 +90,21 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
             DecisionPoint decisionPoint,
             List<PlannedAction> actions)
         {
-            // Проверяет входные данные.
+            // Проверяет обязательные аргументы и runtime travel.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
                 (decisionPoint, nameof(decisionPoint)),
                 (actions, nameof(actions)));
 
-            // Получает runtime-дистанции действия.
             if (!_policy.TryGetTravel(out JumpOnFromRoofTravel travel))
                 return;
 
-            // Подбирает road target-chain после конца passive roof path.
-            if (!TryResolveActionChain(
+            // Выбирает target внутри role-based chain.
+            if (!_actionResolver.TryResolve(
                     planningState,
                     worldSnapshot,
-                    decisionPoint,
+                    decisionPoint.Chain,
                     travel,
                     out ObstacleChain actionChain,
                     out ObstacleSnapshot targetObstacle,
@@ -107,7 +115,10 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
                 return;
             }
 
-            // Подбирает подтвержденный момент запуска.
+            if (!_specification.IsSatisfiedBy(planningState, targetObstacle))
+                return;
+
+            // Подтверждает fire-window через runtime resolver.
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
                     worldSnapshot,
@@ -123,19 +134,9 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
                 return;
             }
 
-            // Проверяет безопасность после полного завершения.
             float completionWorldShift = fireShift + travel.ActionTravel;
-            if (!TargetRemovalPostActionSafety.IsSafeAfterCompletion(
-                    planningState,
-                    worldSnapshot,
-                    window.TargetObstacleIndex,
-                    window.TargetObstacle.InstanceId,
-                    completionWorldShift))
-            {
-                return;
-            }
 
-            // Добавляет action в набор вариантов.
+            // Добавляет safe action без локального сравнения с ordinary-вариантом.
             actions.Add(BuildAction(
                 _policy,
                 planningState,
@@ -147,57 +148,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
         }
 
         /// <summary>
-        /// Берет road target-chain из decision point и проверяет применимость action.
-        /// </summary>
-        private bool TryResolveActionChain(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
-            DecisionPoint decisionPoint,
-            JumpOnFromRoofTravel travel,
-            out ObstacleChain actionChain,
-            out ObstacleSnapshot targetObstacle,
-            out int targetObstacleIndex,
-            out int targetObstacleChainIndex,
-            out ObstacleSnapshot lastRoof)
-        {
-            // Инициализирует пустой результат.
-            actionChain = null;
-            targetObstacle = null;
-            targetObstacleIndex = -1;
-            targetObstacleChainIndex = -1;
-            lastRoof = null;
-
-            // Проверяет, что detector уже нашел roof-exit target-chain.
-            if (decisionPoint?.Kind != DecisionPointKind.JumpOnFromRoofTarget
-                || decisionPoint.Chain == null)
-            {
-                return false;
-            }
-
-            // Восстанавливает последнюю passive roof для расчета окна схода.
-            if (!RoofRunProjection.TryFindLastPassiveRoof(
-                    planningState,
-                    worldSnapshot,
-                    out lastRoof,
-                    out _))
-            {
-                return false;
-            }
-
-            // Проверяет roof jump-on правила для найденной road-chain.
-            actionChain = decisionPoint.Chain;
-            return _specification.IsSatisfiedBy(
-                planningState,
-                actionChain,
-                lastRoof,
-                travel,
-                out targetObstacle,
-                out targetObstacleIndex,
-                out targetObstacleChainIndex);
-        }
-
-        /// <summary>
-        /// Создаёт planning action для super roof-to-road jump-on.
+        /// Создает planning action для super roof-to-road jump-on.
         /// </summary>
         private static PlannedAction BuildAction(
             IJumpOnFromRoofPolicy policy,
@@ -211,18 +162,18 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
             // Вычисляет координату запуска.
             ObstacleSnapshot targetObstacle = window.TargetObstacle;
             float projectedTriggerX = triggerObstacle.LeftX - fireShift;
-            float renderWorldX = projectedTriggerX + planningState.ProjectionWorldShift;
+            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
-                projectedTriggerX,
+                triggerX,
                 fireShift,
                 window.FirstFireShift,
                 window.LastFireShift);
 
-            // Создаёт описание action.
+            // Создает action с target как удаляемым obstacle.
             return new PlannedAction(
                 policy.ActionKind,
-                triggerX: projectedTriggerX,
-                renderWorldX,
+                triggerX,
+                renderWorldX: triggerX,
                 completionWorldShift,
                 postFireWorldShift: travel.ActionTravel,
                 window.TargetObstacleIndex,

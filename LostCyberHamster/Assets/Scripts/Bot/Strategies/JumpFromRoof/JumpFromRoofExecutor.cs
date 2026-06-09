@@ -14,11 +14,11 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
     /// </summary>
     internal sealed class JumpFromRoofExecutor : IActionExecutionHandler
     {
-        /// <summary>
-        /// Проверяет момент fire относительно live trigger obstacle.
-        /// </summary>
         private readonly ActionTriggerGate _triggerGate;
 
+        /// <summary>
+        /// Создает executor с gate проверки live trigger obstacle.
+        /// </summary>
         public JumpFromRoofExecutor(ActionTriggerGate triggerGate)
         {
             _triggerGate = triggerGate;
@@ -29,29 +29,27 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
         /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
-            // Проверяет обязательный вход.
+            // Проверяет вход и action contract.
             Guard.ThrowIfNull(
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 
-            // Проверяет action kind и target.
-            if (action.Kind != BotActionKind.JumpFromRoof || !action.TargetObstacleInstanceId.HasValue)
+            if (action.Kind != BotActionKind.JumpFromRoof
+                || !action.TargetObstacleInstanceId.HasValue
+                || hamster.Energy.Value < action.EnergyCost)
+            {
                 return ActionFireResult.Cancelled;
-
-            // Проверяет энергию.
-            if (hamster.Energy.Value < action.EnergyCost)
-                return ActionFireResult.Cancelled;
+            }
 
             // Проверяет roof-run состояние.
             if (hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
                 return ActionFireResult.Cancelled;
 
-            // Проверяет fire gate.
+            // Проверяет live trigger и отправляет input.
             ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
             if (triggerResult != ActionFireResult.Fired)
                 return triggerResult;
 
-            // Отправляет runtime input.
             HamsterActionLogger.LogFire(action, obstacleLeftX);
             hamster.RoofJumpRequest.Invoke();
             return ActionFireResult.Fired;

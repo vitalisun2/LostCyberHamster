@@ -1,8 +1,8 @@
-﻿using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Bot.Strategies.Shared.Execution;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
@@ -10,28 +10,35 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 {
     /// <summary>
-    /// Выполняет jump on roof в runtime и ждёт RoofRun.
+    /// Выполняет jump-on-roof в runtime и ждёт RoofRun.
     /// </summary>
     internal sealed class JumpOnRoofExecutor : IActionExecutionHandler
     {
         private readonly ActionTriggerGate _triggerGate;
 
+        /// <summary>
+        /// Создает executor с gate проверки live trigger obstacle.
+        /// </summary>
         public JumpOnRoofExecutor(ActionTriggerGate triggerGate)
         {
             _triggerGate = triggerGate;
         }
 
+        /// <summary>
+        /// Пытается выполнить обычный jump-on-roof input.
+        /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
             Guard.ThrowIfNull(
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 
-            if (action.Kind != BotActionKind.JumpOnRoof || !action.TargetObstacleInstanceId.HasValue)
+            if (action.Kind != BotActionKind.JumpOnRoof
+                || !action.TargetObstacleInstanceId.HasValue
+                || hamster.Energy.Value < action.EnergyCost)
+            {
                 return ActionFireResult.Cancelled;
-
-            if (hamster.Energy.Value < action.EnergyCost)
-                return ActionFireResult.Cancelled;
+            }
 
             if (hamster.HamsterState.Value != HamsterStateEnum.Run)
             {
@@ -49,6 +56,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
             return ActionFireResult.Fired;
         }
 
+        /// <summary>
+        /// Проверяет, завершилась ли посадка переходом в RoofRun.
+        /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
             bool completed = hamster.HamsterState.Value == HamsterStateEnum.RoofRun;

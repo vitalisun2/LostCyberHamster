@@ -3,21 +3,38 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpFromRoofOnRoof;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof;
 using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
 {
     /// <summary>
-    /// Собирает действия super-прыжка с крыши на следующую крышу.
+    /// Собирает role-based кандидаты super-прыжка с текущей крыши на следующую крышу.
     /// </summary>
     internal sealed class SuperJumpFromRoofOnRoofStrategy : IPlanningStrategy
     {
+        /// <summary>
+        /// Policy super roof-to-roof прыжка.
+        /// </summary>
         private readonly IJumpFromRoofOnRoofPolicy _policy;
+
+        /// <summary>
+        /// Specification применимости super roof-to-roof прыжка.
+        /// </summary>
         private readonly JumpFromRoofOnRoofSpecification _specification;
+
+        /// <summary>
+        /// Finder fire-window с runtime-проверкой target roof.
+        /// </summary>
         private readonly JumpFromRoofOnRoofFireWindowFinder _fireWindowFinder;
+
+        /// <summary>
+        /// Simulator planning-перехода super roof-to-roof прыжка.
+        /// </summary>
         private readonly JumpFromRoofOnRoofSimulator _simulator;
 
         public SuperJumpFromRoofOnRoofStrategy()
@@ -31,17 +48,35 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
 
             // Публикует обработчики и симулятор наружу.
             Executor = new SuperJumpFromRoofOnRoofExecutor(triggerGate);
-            RetainedValidator = new JumpFromRoofOnRoofRetainedActionValidator(_policy, _fireWindowFinder, _specification);
             Simulator = _simulator;
+            RetainedValidator = new JumpFromRoofOnRoofRetainedValidator(
+                _policy,
+                _fireWindowFinder,
+                _specification);
         }
 
+        /// <summary>
+        /// Тип action, который создает стратегия.
+        /// </summary>
         public BotActionKind ActionKind => _policy.ActionKind;
+
+        /// <summary>
+        /// Runtime executor super roof-to-roof прыжка.
+        /// </summary>
         public IActionExecutionHandler Executor { get; }
-        public IRetainedActionValidator RetainedValidator { get; }
+
+        /// <summary>
+        /// Simulator super roof-to-roof прыжка.
+        /// </summary>
         public ISimulator Simulator { get; }
 
         /// <summary>
-        /// Добавляет возможный super roof-to-roof прыжок в список planned actions.
+        /// Validator сохраненных actions super roof-to-roof прыжка.
+        /// </summary>
+        public IRetainedActionValidator RetainedValidator { get; }
+
+        /// <summary>
+        /// Добавляет super roof-to-roof action, если passive roof exit опасен и следующая roof подтверждена.
         /// </summary>
         public void CollectActions(
             PlanningState planningState,
@@ -58,17 +93,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
 
             // Проверяет применимость strategy.
             if (!_specification.IsSatisfiedBy(planningState))
-            {
-                LogPlanReject(planningState, "spec");
                 return;
-            }
 
             // Получает runtime-дистанции.
             if (!_policy.TryGetTravel(out JumpFromRoofOnRoofTravel travel))
-            {
-                LogPlanReject(planningState, "travel");
                 return;
-            }
 
             // Ищет target roof и подбирает fire shift.
             if (!_fireWindowFinder.TryFindFireShift(
@@ -82,21 +111,23 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
                     out float lastFireShift,
                     out float fireShift))
             {
-                LogPlanReject(planningState, "fireWindow");
                 return;
             }
 
-            // Добавляет planned action.
-            actions.Add(BuildAction(_policy, planningState, targetRoof, targetRoofIndex, firstFireShift, lastFireShift, fireShift, travel));
-        }
-
-        private static void LogPlanReject(PlanningState planningState, string reason)
-        {
-            return;
+            // Добавляет planned action без локального фильтра against ordinary.
+            actions.Add(BuildAction(
+                _policy,
+                planningState,
+                targetRoof,
+                targetRoofIndex,
+                firstFireShift,
+                lastFireShift,
+                fireShift,
+                travel));
         }
 
         /// <summary>
-        /// Создает planned action для найденного fire shift.
+        /// Создает planned action для найденного super roof-to-roof fire shift.
         /// </summary>
         private static PlannedAction BuildAction(
             IJumpFromRoofOnRoofPolicy policy,

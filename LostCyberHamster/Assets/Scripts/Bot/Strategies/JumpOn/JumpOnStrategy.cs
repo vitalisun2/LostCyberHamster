@@ -3,78 +3,51 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOn;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Strategies.Shared.JumpOn;
 using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot.Strategies.JumpOn
 {
     /// <summary>
-    /// Собирает компоненты обычного ground jump-on strategy.
+    /// Собирает role-based кандидаты обычного ground jump-on.
     /// </summary>
     internal sealed class JumpOnStrategy : IPlanningStrategy
     {
-        /// <summary>
-        /// Политика runtime-параметров обычного jump-on.
-        /// </summary>
         private readonly IJumpOnPolicy _policy;
-
-        /// <summary>
-        /// Проверка применимости обычного jump-on к текущей decision chain.
-        /// </summary>
-        private readonly JumpOnSpecification _specification;
-
-        /// <summary>
-        /// Подбор безопасного момента запуска обычного jump-on.
-        /// </summary>
+        private readonly IBotStrategySpecification _specification;
         private readonly JumpOnFireWindowFinder _fireWindowFinder;
-
-        /// <summary>
-        /// Симулятор planning-состояния после обычного jump-on.
-        /// </summary>
+        private readonly JumpOnActionChainResolver _actionChainResolver;
         private readonly JumpOnSimulator _simulator;
 
+        /// <summary>
+        /// Создает strategy и runtime-компоненты обычного jump-on.
+        /// </summary>
         public JumpOnStrategy()
         {
-            // Инициализирует planning-компоненты стратегии.
             _policy = new JumpOnPolicy();
             _specification = new JumpOnSpecification(_policy);
             _fireWindowFinder = new JumpOnFireWindowFinder(_policy);
+            _actionChainResolver = new JumpOnActionChainResolver();
             _simulator = new JumpOnSimulator(_policy);
-
-            // Инициализирует runtime-компоненты выполнения.
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             Executor = new JumpOnExecutor(triggerGate);
-            RetainedValidator = new JumpOnRetainedActionValidator(_policy, _fireWindowFinder);
             Simulator = _simulator;
+            RetainedValidator = new JumpOnRetainedValidator(_policy, _fireWindowFinder);
         }
 
-        /// <summary>
-        /// Возвращает тип action, который строит стратегия.
-        /// </summary>
         public BotActionKind ActionKind => _policy.ActionKind;
-
-        /// <summary>
-        /// Runtime-исполнитель обычного jump-on.
-        /// </summary>
         public IActionExecutionHandler Executor { get; }
-
-        /// <summary>
-        /// Валидатор сохранённого обычного jump-on action.
-        /// </summary>
+        public ISimulator Simulator { get; }
         public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
-        /// Симулятор planning-перехода для обычного jump-on.
-        /// </summary>
-        public ISimulator Simulator { get; }
-
-        /// <summary>
-        /// Добавляет обычный jump-on action, если chain содержит валидный target и полное действие безопасно.
+        /// Добавляет обычный jump-on action, если role-based target и полное действие безопасны.
         /// </summary>
         public void CollectActions(
             PlanningState planningState,
@@ -82,32 +55,42 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
             DecisionPoint decisionPoint,
             List<PlannedAction> actions)
         {
-            // Проверяет входные данные.
+            // Проверяет обязательные аргументы.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
                 (decisionPoint, nameof(decisionPoint)),
                 (actions, nameof(actions)));
 
-            // Подбирает action-chain: обычную decision chain или расширенную jump-on chain.
-            if (!TryResolveActionChain(
+            // Получает runtime travel и строит action-chain до достижимого target.
+            if (!_policy.TryGetTravel(out JumpOnTravel travel))
+                return;
+
+            if (!_actionChainResolver.TryResolve(
                     planningState,
                     worldSnapshot,
-                    decisionPoint,
-                    out ObstacleChain actionChain))
+                    decisionPoint.Chain,
+                    travel,
+                    out ObstacleChain actionChain,
+                    out ObstacleSnapshot targetObstacle,
+                    out int targetObstacleIndex,
+                    out int targetObstacleChainIndex))
             {
                 return;
             }
 
-            // Получает runtime-дистанции действия.
-            if (!_policy.TryGetTravel(out JumpOnTravel travel))
+            // Проверяет применимость strategy к выбранному target.
+            if (!_specification.IsSatisfiedBy(planningState, targetObstacle))
                 return;
 
-            // Подбирает подтвержденный момент запуска.
+            // Подтверждает fire window через runtime resolver.
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
                     worldSnapshot,
                     actionChain,
+                    targetObstacle,
+                    targetObstacleIndex,
+                    targetObstacleChainIndex,
                     travel,
                     out JumpOnWindowModel window,
                     out float fireShift))
@@ -127,7 +110,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                 return;
             }
 
-            // Добавляет action в набор вариантов.
+            // Добавляет safe action в общий набор кандидатов без локального ранжирования.
             actions.Add(BuildAction(
                 _policy,
                 planningState,
@@ -136,32 +119,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                 fireShift,
                 travel,
                 completionWorldShift));
-        }
-
-        /// <summary>
-        /// Берет ground jump-on target-chain из decision point и проверяет применимость обычного jump-on.
-        /// </summary>
-        private bool TryResolveActionChain(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
-            DecisionPoint decisionPoint,
-            out ObstacleChain actionChain)
-        {
-            // Проверяет, что detector уже нашел ground target-chain.
-            actionChain = null;
-            if (decisionPoint?.Kind != DecisionPointKind.GroundJumpOnTarget
-                || decisionPoint.Chain == null)
-            {
-                return false;
-            }
-
-            // Проверяет применимость jump-on к найденной chain.
-            actionChain = decisionPoint.Chain;
-            return _specification.IsSatisfiedBy(
-                planningState,
-                actionChain,
-                out _,
-                out _);
         }
 
         /// <summary>
@@ -186,7 +143,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                 window.FirstFireShift,
                 window.LastFireShift);
 
-            // Создаёт описание action.
+            // Создаёт action без локального сравнения с super-вариантом.
             return new PlannedAction(
                 policy.ActionKind,
                 triggerX,

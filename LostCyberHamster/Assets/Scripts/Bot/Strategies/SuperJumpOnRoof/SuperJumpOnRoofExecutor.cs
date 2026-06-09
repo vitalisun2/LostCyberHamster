@@ -1,8 +1,8 @@
-﻿using Assets.Scripts.Bot.Diagnostics;
-using Assets.Scripts.Bot.Strategies.Shared.Execution;
-using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
+using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Bot.Strategies.Shared.Execution;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay;
@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
 {
     /// <summary>
-    /// Выполняет super jump on roof как двухфазный runtime input.
+    /// Выполняет super-jump-on-roof как двухфазный runtime input.
     /// </summary>
     internal sealed class SuperJumpOnRoofExecutor : IActionExecutionHandler
     {
@@ -22,11 +22,17 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
         private bool _isUpgradeScheduled;
         private float _upgradeReadyTime;
 
+        /// <summary>
+        /// Создает executor с gate проверки live trigger obstacle.
+        /// </summary>
         public SuperJumpOnRoofExecutor(ActionTriggerGate triggerGate)
         {
             _triggerGate = triggerGate;
         }
 
+        /// <summary>
+        /// Пытается запустить super-jump-on-roof и планирует второй input.
+        /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
             Guard.ThrowIfNull(
@@ -34,9 +40,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                 (action, nameof(action)));
 
             ResetUpgradeSchedule();
-
-            if (action.Kind != BotActionKind.SuperJumpOnRoof || !action.TargetObstacleInstanceId.HasValue)
+            if (action.Kind != BotActionKind.SuperJumpOnRoof
+                || !action.TargetObstacleInstanceId.HasValue)
+            {
                 return ActionFireResult.Cancelled;
+            }
 
             if (hamster.HamsterState.Value != HamsterStateEnum.Run)
             {
@@ -66,6 +74,9 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             return ActionFireResult.Fired;
         }
 
+        /// <summary>
+        /// Выполняет отложенный upgrade input и ждёт RoofRun.
+        /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
             if (_isUpgradeScheduled)
@@ -89,6 +100,9 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             return completed;
         }
 
+        /// <summary>
+        /// Проверяет, допускает ли текущее состояние второй input для super jump.
+        /// </summary>
         private static bool CanUpgradeToSuperJump(HamsterStateEnum hamsterState)
         {
             return hamsterState == HamsterStateEnum.Jump
@@ -101,6 +115,9 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                    || hamsterState == HamsterStateEnum.JumpOnRoofDamage;
         }
 
+        /// <summary>
+        /// Сбрасывает отложенный upgrade input.
+        /// </summary>
         private void ResetUpgradeSchedule()
         {
             _isUpgradeScheduled = false;

@@ -1,14 +1,13 @@
-using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 using System.Collections.Generic;
-using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
+using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
-    /// Собирает итоговый план из committed-префикса и лучшей новой ветки.
+    /// Собирает role-based план из committed-префикса и лучшей новой ветки.
     /// </summary>
     public sealed class PlanBuilder
     {
@@ -21,7 +20,7 @@ namespace Assets.Scripts.Bot.Planning
         private readonly ActionInProgressProjector _inProgressProjector;
 
         /// <summary>
-        /// Создает сборщик плана поверх генератора, симулятора и evaluator'а.
+        /// Создает role-based сборщик плана поверх generator, simulator и evaluator.
         /// </summary>
         public PlanBuilder(
             ActionGenerator actionGenerator,
@@ -38,7 +37,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Строит новый план по текущему snapshot мира и остаткам старого плана.
+        /// Строит role-based план по текущему snapshot мира и остаткам старого плана.
         /// </summary>
         public BotPlan Build(WorldSnapshot worldSnapshot, BotPlan committedPlan, bool retainInProgressHead = false)
         {
@@ -72,7 +71,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Проецирует committed-префикс плана.
+        /// Проецирует committed-префикс role-based плана.
         /// </summary>
         private PlanningState ProjectCommittedPrefix(
             WorldSnapshot worldSnapshot,
@@ -116,6 +115,9 @@ namespace Assets.Scripts.Bot.Planning
 
                 retainedActions.Add(action);
                 currentState = nextState;
+
+                if (isInProgressAtomicAction)
+                    break;
             }
 
             return currentState;
@@ -145,7 +147,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Проверяет сохранение committed-action в префиксе нового плана.
+        /// Проверяет сохранение committed-action в префиксе role-based плана.
         /// </summary>
         private static bool ShouldRetainCommittedAction(
             PlannedAction action,

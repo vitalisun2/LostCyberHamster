@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnFromRoof;
+using Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Mechanics;

@@ -1,14 +1,15 @@
-using Assets.Scripts.Bot.Planning;
-using Assets.Scripts.Bot.Planning.DecisionPoints;
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
-using System.Collections.Generic;
+using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Planning.RetainedValidation;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
 {
     /// <summary>
-    /// Описывает planning-стратегию для одного семейства действий бота.
+    /// Описывает role-based planning-стратегию для нового path генерации действий.
     /// </summary>
     internal interface IPlanningStrategy
     {
@@ -19,12 +20,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
 
         IActionExecutionHandler Executor { get; }
 
-        IRetainedActionValidator RetainedValidator { get; }
-
         ISimulator Simulator { get; }
 
+        IRetainedActionValidator RetainedValidator { get; }
+
         /// <summary>
-        /// Добавляет все релевантные кандидаты действий для текущей точки решения.
+        /// Добавляет релевантные кандидаты действий для role-based точки решения.
         /// </summary>
         void CollectActions(
             PlanningState planningState,

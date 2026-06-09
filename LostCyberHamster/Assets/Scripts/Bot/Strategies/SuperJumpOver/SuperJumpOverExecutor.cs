@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Diagnostics;

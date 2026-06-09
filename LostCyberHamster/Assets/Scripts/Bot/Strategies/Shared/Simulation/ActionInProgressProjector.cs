@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
-using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
 {
     /// <summary>
-    /// Диспетчеризует projection незавершённых head-действий по strategy.
+    /// Диспетчеризует projection незавершённых role-based head-действий по strategy.
     /// </summary>
     public sealed class ActionInProgressProjector
     {
@@ -28,7 +27,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
                 if (simulatorsByKind.ContainsKey(strategy.ActionKind))
                 {
                     throw new InvalidOperationException(
-                        $"Для strategy зарегистрировано больше одного simulator: kind={strategy.ActionKind}");
+                        $"Для role-based strategy зарегистрировано больше одного simulator: kind={strategy.ActionKind}");
                 }
 
                 simulatorsByKind.Add(strategy.ActionKind, strategy.Simulator);
@@ -37,6 +36,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             _simulatorsByKind = simulatorsByKind;
         }
 
+        /// <summary>
+        /// Проецирует незавершённое role-based действие до planning boundary.
+        /// </summary>
         public PlanningState Project(
             PlanningState planningState,
             PlannedAction action,
@@ -49,7 +51,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
                 return simulator.ProjectInProgress(planningState, action, worldSnapshot);
 
             string message =
-                $"Для действия бота не зарегистрирован simulator: kind={action.Kind}, desc={action.Description}";
+                $"Для role-based действия бота не зарегистрирован simulator: kind={action.Kind}, desc={action.Description}";
             throw new InvalidOperationException(message);
         }
     }

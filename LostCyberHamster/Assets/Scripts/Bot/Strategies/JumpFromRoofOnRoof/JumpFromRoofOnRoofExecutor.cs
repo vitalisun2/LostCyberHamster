@@ -10,10 +10,13 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.Strategies.JumpFromRoofOnRoof
 {
     /// <summary>
-    /// Выполняет обычный прыжок с крыши на следующую крышу в runtime.
+    /// Выполняет обычный прыжок с текущей крыши на следующую крышу в runtime.
     /// </summary>
     internal sealed class JumpFromRoofOnRoofExecutor : IActionExecutionHandler
     {
+        /// <summary>
+        /// Gate проверки live trigger roof перед отправкой input.
+        /// </summary>
         private readonly ActionTriggerGate _triggerGate;
 
         public JumpFromRoofOnRoofExecutor(ActionTriggerGate triggerGate)
@@ -31,17 +34,14 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoofOnRoof
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 
-            // Проверяет action kind и trigger.
-            if (action.Kind != BotActionKind.JumpFromRoofOnRoof || !action.TargetObstacleInstanceId.HasValue)
+            // Проверяет action contract и runtime state.
+            if (action.Kind != BotActionKind.JumpFromRoofOnRoof
+                || !action.TargetObstacleInstanceId.HasValue
+                || hamster.Energy.Value < action.EnergyCost
+                || hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
+            {
                 return ActionFireResult.Cancelled;
-
-            // Проверяет энергию.
-            if (hamster.Energy.Value < action.EnergyCost)
-                return ActionFireResult.Cancelled;
-
-            // Проверяет roof-run состояние.
-            if (hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
-                return ActionFireResult.Cancelled;
+            }
 
             // Проверяет fire gate.
             ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
@@ -59,6 +59,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoofOnRoof
         /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
+            // Проверяет возврат runtime state в RoofRun.
             bool completed = hamster.HamsterState.Value == HamsterStateEnum.RoofRun;
             if (completed)
                 HamsterActionLogger.LogComplete(action, hamster.HamsterState.Value);

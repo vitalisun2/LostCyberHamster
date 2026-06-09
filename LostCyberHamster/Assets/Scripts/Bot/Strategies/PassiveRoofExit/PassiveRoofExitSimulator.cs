@@ -8,10 +8,13 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
 {
     /// <summary>
-    /// Симулирует переход RoofRun -> Run после пассивного схода с крыши.
+    /// Симулирует role-based переход RoofRun -> Run после пассивного схода с крыши.
     /// </summary>
     internal sealed class PassiveRoofExitSimulator : ISimulator
     {
+        /// <summary>
+        /// Policy passive roof exit action.
+        /// </summary>
         private readonly PassiveRoofExitPolicy _policy;
 
         public PassiveRoofExitSimulator(PassiveRoofExitPolicy policy)
@@ -32,9 +35,11 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             PlannedAction action,
             WorldSnapshot worldSnapshot)
         {
+            // Проверяет action contract.
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
                 return null;
 
+            // Применяет ground Run состояние после пассивного схода.
             HamsterSnapshot nextHamster = ApplyRunAfterPassiveExit(planningState.Hamster);
             return PlanningStateTransition.Advance(planningState, action, worldSnapshot, nextHamster);
         }
@@ -47,9 +52,11 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             PlannedAction action,
             WorldSnapshot worldSnapshot)
         {
+            // Проверяет action contract.
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
                 return null;
 
+            // Проецирует ожидаемое ground Run состояние.
             HamsterSnapshot nextHamster = ApplyRunAfterPassiveExit(planningState.Hamster);
             return InProgressProjectionHelper.Project(
                 planningState,
@@ -59,8 +66,12 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                 skipTargetObstacleAfterCompletion: false);
         }
 
+        /// <summary>
+        /// Создает snapshot хомяка после завершения passive roof exit.
+        /// </summary>
         private static HamsterSnapshot ApplyRunAfterPassiveExit(HamsterSnapshot hamster)
         {
+            // Возвращает ground-state snapshot на той же линии.
             return new HamsterSnapshot(
                 HamsterStateEnum.Run,
                 hamster.IsOnBottomLine,

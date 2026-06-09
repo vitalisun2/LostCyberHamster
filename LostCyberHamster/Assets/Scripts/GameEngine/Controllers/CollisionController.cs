@@ -1,4 +1,4 @@
-using Assets.Scripts.Common.Models;
+﻿using Assets.Scripts.Common.Models;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;

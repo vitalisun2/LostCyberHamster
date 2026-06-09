@@ -4,6 +4,7 @@ using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Common;
+using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using UnityEngine;
@@ -15,19 +16,15 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoof
     /// </summary>
     internal sealed class SuperJumpFromRoofExecutor : IActionExecutionHandler
     {
-        /// <summary>
-        /// Задержка второго input внутри окна double jump.
-        /// </summary>
         private const float UpgradeDelaySeconds = DoubleJumpDetector.DoubleJumpThreshold * 0.5f;
 
-        /// <summary>
-        /// Проверяет момент fire относительно live trigger obstacle.
-        /// </summary>
         private readonly ActionTriggerGate _triggerGate;
-
         private bool _isUpgradeScheduled;
         private float _upgradeReadyTime;
 
+        /// <summary>
+        /// Создает executor с gate проверки live trigger obstacle.
+        /// </summary>
         public SuperJumpFromRoofExecutor(ActionTriggerGate triggerGate)
         {
             _triggerGate = triggerGate;
@@ -38,36 +35,31 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoof
         /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
-            // Проверяет обязательный вход.
+            // Проверяет вход и сбрасывает прошлый upgrade schedule.
             Guard.ThrowIfNull(
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 
-            // Сбрасывает предыдущий незавершенный upgrade schedule.
             ResetUpgradeSchedule();
 
-            // Проверяет action kind и target.
-            if (action.Kind != BotActionKind.SuperJumpFromRoof || !action.TargetObstacleInstanceId.HasValue)
+            // Проверяет action contract, ресурс и roof-run состояние.
+            if (action.Kind != BotActionKind.SuperJumpFromRoof
+                || !action.TargetObstacleInstanceId.HasValue
+                || hamster.Energy.Value < action.EnergyCost
+                || hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
+            {
                 return ActionFireResult.Cancelled;
+            }
 
-            // Проверяет энергию.
-            if (hamster.Energy.Value < action.EnergyCost)
-                return ActionFireResult.Cancelled;
-
-            // Проверяет roof-run состояние.
-            if (hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
-                return ActionFireResult.Cancelled;
-
-            // Проверяет fire gate.
+            // Проверяет live trigger и отправляет первый input.
             ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
             if (triggerResult != ActionFireResult.Fired)
                 return triggerResult;
 
-            // Отправляет первый runtime input.
             HamsterActionLogger.LogFire(action, obstacleLeftX);
             hamster.RoofJumpRequest.Invoke();
 
-            // Планирует второй input, если runtime перешел в состояние roof jump.
+            // Планирует второй input, если runtime перешел в roof jump состояние.
             if (!CanUpgradeToSuperRoofJump(hamster.HamsterState.Value))
             {
                 HamsterActionLogger.LogCancel(action, $"stateAfterRoofJump={hamster.HamsterState.Value}");

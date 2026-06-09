@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Bot.Strategies.Shared.Simulation;
+using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Execution;
@@ -10,23 +10,23 @@ using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
-using Assets.Scripts.Bot.StrategiesNew.JumpFromRoof;
-using Assets.Scripts.Bot.StrategiesNew.JumpFromRoofOnRoof;
-using Assets.Scripts.Bot.StrategiesNew.JumpOver;
-using Assets.Scripts.Bot.StrategiesNew.JumpOn;
-using Assets.Scripts.Bot.StrategiesNew.JumpOnFromRoof;
-using Assets.Scripts.Bot.StrategiesNew.JumpOnRoof;
-using Assets.Scripts.Bot.StrategiesNew.PassiveRoofExit;
-using Assets.Scripts.Bot.StrategiesNew.RoofJumpOver;
-using Assets.Scripts.Bot.StrategiesNew.Shared.Contracts;
-using Assets.Scripts.Bot.StrategiesNew.SuperJumpFromRoof;
-using Assets.Scripts.Bot.StrategiesNew.SuperJumpFromRoofOnRoof;
-using Assets.Scripts.Bot.StrategiesNew.SuperJumpOver;
-using Assets.Scripts.Bot.StrategiesNew.SuperJumpOn;
-using Assets.Scripts.Bot.StrategiesNew.SuperJumpOnFromRoof;
-using Assets.Scripts.Bot.StrategiesNew.SuperJumpOnRoof;
-using Assets.Scripts.Bot.StrategiesNew.SuperRoofJumpOver;
-using Assets.Scripts.Bot.StrategiesNew.SwitchLane;
+using Assets.Scripts.Bot.Strategies.JumpFromRoof;
+using Assets.Scripts.Bot.Strategies.JumpFromRoofOnRoof;
+using Assets.Scripts.Bot.Strategies.JumpOver;
+using Assets.Scripts.Bot.Strategies.JumpOn;
+using Assets.Scripts.Bot.Strategies.JumpOnFromRoof;
+using Assets.Scripts.Bot.Strategies.JumpOnRoof;
+using Assets.Scripts.Bot.Strategies.PassiveRoofExit;
+using Assets.Scripts.Bot.Strategies.RoofJumpOver;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Bot.Strategies.SuperJumpFromRoof;
+using Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof;
+using Assets.Scripts.Bot.Strategies.SuperJumpOver;
+using Assets.Scripts.Bot.Strategies.SuperJumpOn;
+using Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof;
+using Assets.Scripts.Bot.Strategies.SuperJumpOnRoof;
+using Assets.Scripts.Bot.Strategies.SuperRoofJumpOver;
+using Assets.Scripts.Bot.Strategies.SwitchLane;
 using UnityEngine;
 
 namespace Assets.Scripts.Bot
@@ -54,7 +54,7 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Executor текущего bot plan.
         /// </summary>
-        private PlanExecutorNew _executor;
+        private PlanExecutor _executor;
 
         /// <summary>
         /// Runtime hamster instance в текущей scene.
@@ -74,7 +74,7 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Builder нового bot plan по snapshot и текущему execution state.
         /// </summary>
-        private PlanBuilderNew _planBuilder;
+        private PlanBuilder _planBuilder;
 
         /// <summary>
         /// Tracker runtime-событий бота для диагностики.
@@ -153,34 +153,34 @@ namespace Assets.Scripts.Bot
             BotAnimationTravelProvider.Reset();
 
             // Подключаем стратегии
-            IReadOnlyList<IPlanningStrategyNew> strategies = new IPlanningStrategyNew[]
+            IReadOnlyList<IPlanningStrategy> strategies = new IPlanningStrategy[]
             {
-                new SwitchLaneStrategyNew(),
-                new JumpOverStrategyNew(),
-                new SuperJumpOverStrategyNew(),
-                new JumpOnStrategyNew(),
-                new SuperJumpOnStrategyNew(),
-                new JumpOnRoofStrategyNew(),
-                new SuperJumpOnRoofStrategyNew(),
-                new PassiveRoofExitStrategyNew(),
-                new JumpOnFromRoofStrategyNew(),
-                new SuperJumpOnFromRoofStrategyNew(),
-                new JumpFromRoofStrategyNew(),
-                new SuperJumpFromRoofStrategyNew(),
-                new JumpFromRoofOnRoofStrategyNew(),
-                new SuperJumpFromRoofOnRoofStrategyNew(),
-                new RoofJumpOverStrategyNew(),
-                new SuperRoofJumpOverStrategyNew()
+                new SwitchLaneStrategy(),
+                new JumpOverStrategy(),
+                new SuperJumpOverStrategy(),
+                new JumpOnStrategy(),
+                new SuperJumpOnStrategy(),
+                new JumpOnRoofStrategy(),
+                new SuperJumpOnRoofStrategy(),
+                new PassiveRoofExitStrategy(),
+                new JumpOnFromRoofStrategy(),
+                new SuperJumpOnFromRoofStrategy(),
+                new JumpFromRoofStrategy(),
+                new SuperJumpFromRoofStrategy(),
+                new JumpFromRoofOnRoofStrategy(),
+                new SuperJumpFromRoofOnRoofStrategy(),
+                new RoofJumpOverStrategy(),
+                new SuperRoofJumpOverStrategy()
             };
 
             // и прочие компоненты
-            _executor = new PlanExecutorNew(strategies);
-            _planBuilder = new PlanBuilderNew(
-                new ActionGeneratorNew(strategies),
-                new TransitionSimulatorNew(strategies),
+            _executor = new PlanExecutor(strategies);
+            _planBuilder = new PlanBuilder(
+                new ActionGenerator(strategies),
+                new TransitionSimulator(strategies),
                 new PlanEvaluator(),
-                new RetainedActionRevalidatorNew(strategies),
-                new ActionInProgressProjectorNew(strategies));
+                new RetainedActionRevalidator(strategies),
+                new ActionInProgressProjector(strategies));
         }
 
         /// <summary>

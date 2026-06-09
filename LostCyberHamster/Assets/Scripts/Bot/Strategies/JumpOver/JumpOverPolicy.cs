@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Strategies.Shared;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOver;
+using Assets.Scripts.Bot.Strategies.Shared.JumpOver;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;

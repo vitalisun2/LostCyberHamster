@@ -8,10 +8,13 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
 {
     /// <summary>
-    /// Исполняет passive roof exit без пользовательского ввода.
+    /// Исполняет role-based passive roof exit без пользовательского ввода.
     /// </summary>
     internal sealed class PassiveRoofExitExecutor : IActionExecutionHandler
     {
+        /// <summary>
+        /// Policy passive roof exit action.
+        /// </summary>
         private readonly PassiveRoofExitPolicy _policy;
 
         public PassiveRoofExitExecutor(PassiveRoofExitPolicy policy)
@@ -24,9 +27,11 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
         /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
+            // Проверяет action contract.
             if (hamster == null || action == null || action.Kind != _policy.ActionKind)
                 return ActionFireResult.Cancelled;
 
+            // Отсекает поврежденное или мертвое состояние.
             HamsterStateEnum state = hamster.HamsterState.Value;
             if (state == HamsterStateEnum.Dead || hamster.IsDamaged.Value)
             {
@@ -34,6 +39,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                 return ActionFireResult.Cancelled;
             }
 
+            // Разрешает только состояния естественного roof-exit lifecycle.
             if (state != HamsterStateEnum.RoofRun
                 && state != HamsterStateEnum.RunFromRoof
                 && state != HamsterStateEnum.Run)
@@ -42,6 +48,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                 return ActionFireResult.Cancelled;
             }
 
+            // Помечает no-input action как начатый.
             HamsterActionLogger.LogFire(action, action.RenderWorldX);
             return ActionFireResult.Fired;
         }
@@ -51,9 +58,11 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
         /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
+            // Проверяет action contract.
             if (hamster == null || action == null || action.Kind != _policy.ActionKind)
                 return false;
 
+            // Завершает action при damage/death, чтобы executor не завис.
             HamsterStateEnum state = hamster.HamsterState.Value;
             if (state == HamsterStateEnum.Dead || hamster.IsDamaged.Value)
             {
@@ -61,6 +70,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                 return true;
             }
 
+            // Ждет фактический ground Run.
             if (state == HamsterStateEnum.Run)
             {
                 HamsterActionLogger.LogComplete(action, state);
@@ -70,6 +80,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             if (state == HamsterStateEnum.RoofRun || state == HamsterStateEnum.RunFromRoof)
                 return false;
 
+            // Сбрасывает action при неожиданном runtime state.
             HamsterActionLogger.LogCancel(action, $"unexpectedState={state}");
             return true;
         }

@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
-using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
@@ -10,7 +10,7 @@ using Assets.Scripts.System;
 namespace Assets.Scripts.Bot.Execution
 {
     /// <summary>
-    /// Исполняет текущий план бота по одному действию за раз.
+    /// Исполняет role-based план бота по одному действию за раз.
     /// </summary>
     public sealed class PlanExecutor
     {
@@ -30,7 +30,7 @@ namespace Assets.Scripts.Bot.Execution
                 if (handlers.ContainsKey(strategy.ActionKind))
                 {
                     throw new InvalidOperationException(
-                        $"Для strategy зарегистрировано больше одного executor: kind={strategy.ActionKind}");
+                        $"Для role-based strategy зарегистрировано больше одного executor: kind={strategy.ActionKind}");
                 }
 
                 handlers.Add(strategy.ActionKind, strategy.Executor);
@@ -40,7 +40,7 @@ namespace Assets.Scripts.Bot.Execution
         }
 
         /// <summary>
-        /// Текущий план на исполнении.
+        /// Текущий role-based план на исполнении.
         /// </summary>
         public BotPlan CurrentPlan { get; private set; } = BotPlan.Empty();
 
@@ -50,7 +50,7 @@ namespace Assets.Scripts.Bot.Execution
         public bool IsActionInProgress => _isActionInProgress;
 
         /// <summary>
-        /// Устанавливает новый план на исполнение и сбрасывает состояние текущего действия.
+        /// Устанавливает новый role-based план на исполнение и сбрасывает состояние текущего действия.
         /// </summary>
         public void SetPlan(BotPlan plan)
         {
@@ -66,7 +66,7 @@ namespace Assets.Scripts.Bot.Execution
         }
 
         /// <summary>
-        /// Очищает текущий план и возвращает executor в исходное состояние.
+        /// Очищает текущий role-based план и возвращает executor в исходное состояние.
         /// </summary>
         public void Clear()
         {
@@ -75,7 +75,7 @@ namespace Assets.Scripts.Bot.Execution
         }
 
         /// <summary>
-        /// Исполняет головное действие текущего плана и продвигает план после завершения этого действия.
+        /// Исполняет головное действие текущего role-based плана.
         /// </summary>
         public bool Tick(Hamster hamster)
         {
@@ -87,7 +87,7 @@ namespace Assets.Scripts.Bot.Execution
             PlannedAction action = CurrentPlan.Actions[0];
             IActionExecutionHandler handler = GetRequiredHandler(action);
 
-            // Сначала пробуем один раз запустить действие из головы плана.
+            // Сначала пробует один раз запустить действие из головы плана.
             if (!_isActionInProgress)
             {
                 ActionFireResult fireResult = handler.TryFire(hamster, action);
@@ -96,7 +96,8 @@ namespace Assets.Scripts.Bot.Execution
                     _isActionInProgress = true;
                     return true;
                 }
-                else if (fireResult == ActionFireResult.Cancelled)
+
+                if (fireResult == ActionFireResult.Cancelled)
                 {
                     AdvanceHead();
                     return true;
@@ -105,7 +106,7 @@ namespace Assets.Scripts.Bot.Execution
                 return false;
             }
 
-            // После запуска ждём, пока handler подтвердит завершение действия.
+            // После запуска ждёт, пока handler подтвердит завершение действия.
             if (handler.IsCompleted(hamster, action))
             {
                 AdvanceHead();
@@ -116,23 +117,23 @@ namespace Assets.Scripts.Bot.Execution
         }
 
         /// <summary>
-        /// Возвращает handler для действия из головы плана и выбрасывает ошибку, если execution-слой его не поддерживает.
+        /// Возвращает handler для действия из головы role-based плана.
         /// </summary>
         private IActionExecutionHandler GetRequiredHandler(PlannedAction action)
         {
             if (action == null)
-                throw new InvalidOperationException("План содержит пустое действие в голове очереди.");
+                throw new InvalidOperationException("Role-based план содержит пустое действие в голове очереди.");
 
             if (_handlers.TryGetValue(action.Kind, out IActionExecutionHandler handler))
                 return handler;
 
             string message =
-                $"Для действия бота не зарегистрирован handler: kind={action.Kind}, desc={action.Description}";
+                $"Для role-based действия бота не зарегистрирован handler: kind={action.Kind}, desc={action.Description}";
             throw new InvalidOperationException(message);
         }
 
         /// <summary>
-        /// Сдвигает план после завершения head-action.
+        /// Сдвигает role-based план после завершения head-action.
         /// </summary>
         private void AdvanceHead()
         {
@@ -146,7 +147,7 @@ namespace Assets.Scripts.Bot.Execution
                 return;
             }
 
-            // Иначе перестраиваем оставшийся хвост после завершения действия в голове.
+            // Иначе перестраивает оставшийся хвост после завершения действия в голове.
             var remainingActions = new List<PlannedAction>(actions.Count - 1);
             for (int actionIndex = 1; actionIndex < actions.Count; actionIndex++)
                 remainingActions.Add(actions[actionIndex]);

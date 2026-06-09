@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
@@ -99,13 +99,13 @@ namespace Assets.Tests.EditMode
             var roofOccupant = CreateObstacleSnapshot(102, ObstacleTypeEnum.smallNotAliveRoadAndRoof, 0.8f, 1.6f, isTopLine: true);
             var worldSnapshot = CreateWorldSnapshot(hamster, roofObstacle, roofOccupant);
 
-            bool detected = detector.TryDetectRequiredDecisionPoint(new PlanningState(hamster, 0, 0f), worldSnapshot, out DecisionPoint decisionPoint);
+            bool detected = detector.TryDetect(new PlanningState(hamster, 0, 0f), worldSnapshot, out DecisionPoint decisionPoint);
 
             Assert.IsTrue(detected);
             Assert.NotNull(decisionPoint);
             Assert.AreEqual(roofObstacle.InstanceId, decisionPoint.Chain.FirstObstacle.InstanceId);
             Assert.AreEqual(2, decisionPoint.Chain.Count);
-            Assert.IsTrue(decisionPoint.Chain.HasDamagingRoofOccupant(0));
+            Assert.IsTrue(decisionPoint.Chain.TryFindFirstWithRole(ObstacleRole.RoofOccupantHazard, out _, out _));
         }
 
         [Test]
@@ -116,16 +116,17 @@ namespace Assets.Tests.EditMode
             var roofObstacle = CreateObstacleSnapshot(201, ObstacleTypeEnum.mediumNotAlive, 0f, 3.4f, isTopLine: true);
             var worldSnapshot = CreateWorldSnapshot(hamster, roofObstacle);
 
-            bool detected = detector.TryDetectRequiredDecisionPoint(new PlanningState(hamster, 0, 0f), worldSnapshot, out DecisionPoint decisionPoint);
+            bool detected = detector.TryDetect(new PlanningState(hamster, 0, 0f), worldSnapshot, out DecisionPoint decisionPoint);
 
             Assert.IsTrue(detected);
             Assert.NotNull(decisionPoint);
             Assert.AreEqual(roofObstacle.InstanceId, decisionPoint.Chain.FirstObstacle.InstanceId);
             Assert.AreEqual(1, decisionPoint.Chain.Count);
-            Assert.IsTrue(decisionPoint.Chain.TryFindFirstRoof(out _, out int roofWorldIndex, out int roofChainIndex));
+            Assert.IsTrue(decisionPoint.Chain.TryFindFirstWithRole(ObstacleRole.RoofSupport, out ObstacleChainElement roofElement, out int roofChainIndex));
+            int roofWorldIndex = roofElement.WorldIndex;
             Assert.AreEqual(0, roofWorldIndex);
             Assert.AreEqual(0, roofChainIndex);
-            Assert.IsFalse(decisionPoint.Chain.HasDamagingRoofOccupant(0));
+            Assert.IsFalse(decisionPoint.Chain.TryFindFirstWithRole(ObstacleRole.RoofOccupantHazard, out _, out _));
         }
 
         private static HamsterSnapshot CreateHamsterSnapshot(bool isOnBottomLine)

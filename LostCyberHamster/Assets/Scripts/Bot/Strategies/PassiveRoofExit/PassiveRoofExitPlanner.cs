@@ -8,7 +8,7 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
 {
     /// <summary>
-    /// Строит общую planning-модель пассивного схода с крыши.
+    /// Строит role-based planning-модель безопасного пассивного схода с крыши.
     /// </summary>
     internal static class PassiveRoofExitPlanner
     {
@@ -22,31 +22,36 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             float runFromRoofTravel,
             out PassiveRoofExitModel model)
         {
+            // Проверяет входные данные и состояние хомяка.
             model = default;
-
             if (planningState == null || worldSnapshot == null || runFromRoofTravel <= 0f)
-                return Fail(out model);
+                return false;
 
             HamsterSnapshot hamster = planningState.Hamster;
             if (!CanExitRoofPassively(hamster))
-                return Fail(out model);
+                return false;
 
-            if (decisionPoint == null || decisionPoint.Chain == null || !decisionPoint.IsDecisionRequired)
-                return Fail(out model);
+            // Получает context obstacle из role-based chain.
+            if (!TryGetContextObstacle(
+                    decisionPoint,
+                    hamster,
+                    out ObstacleSnapshot contextObstacle,
+                    out int contextObstacleIndex))
+            {
+                return false;
+            }
 
+            // Находит последнюю roof текущей passive roof chain.
             if (!RoofRunProjection.TryFindLastPassiveRoof(
                     planningState,
                     worldSnapshot,
                     out ObstacleSnapshot lastRoof,
                     out _))
             {
-                return Fail(out model);
+                return false;
             }
 
-            ObstacleSnapshot contextObstacle = decisionPoint.Obstacle;
-            if (contextObstacle == null || contextObstacle.RightX <= hamster.HamsterLeftX)
-                return Fail(out model);
-
+            // Проверяет безопасность автоматического схода.
             float exitStartShift = CalculateExitStartShift(hamster, lastRoof);
             float completionWorldShift = exitStartShift + runFromRoofTravel;
             if (!RoofExitSafety.IsSafeDuringRunFromRoof(
@@ -56,27 +61,25 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                     exitStartShift,
                     completionWorldShift))
             {
-                return Fail(out model);
+                return false;
             }
 
+            // Возвращает готовую модель transition.
             model = new PassiveRoofExitModel(
                 lastRoof,
                 contextObstacle,
-                decisionPoint.ObstacleIndex,
+                contextObstacleIndex,
                 exitStartShift,
                 completionWorldShift);
-
             return true;
         }
 
-        private static bool Fail(out PassiveRoofExitModel model)
-        {
-            model = default;
-            return false;
-        }
-
+        /// <summary>
+        /// Проверяет, находится ли хомяк в состоянии, допускающем passive roof exit.
+        /// </summary>
         private static bool CanExitRoofPassively(HamsterSnapshot hamster)
         {
+            // Проверяет roof-run состояние.
             return hamster != null
                 && hamster.HamsterState == HamsterStateEnum.RoofRun
                 && hamster.IsOnRoof
@@ -84,10 +87,43 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                 && hamster.RoofSupportInstanceId.HasValue;
         }
 
+        /// <summary>
+        /// Возвращает context obstacle, относительно которого строится продолжение после схода.
+        /// </summary>
+        private static bool TryGetContextObstacle(
+            DecisionPoint decisionPoint,
+            HamsterSnapshot hamster,
+            out ObstacleSnapshot contextObstacle,
+            out int contextObstacleIndex)
+        {
+            // Сбрасывает результат и проверяет chain.
+            contextObstacle = null;
+            contextObstacleIndex = -1;
+            ObstacleChainElement firstElement = decisionPoint?.Chain?.First;
+            if (firstElement == null)
+                return false;
+
+            // Не позволяет passive exit обходить hazard на текущей roof path.
+            if (firstElement.HasRole(ObstacleRole.RoofOccupantHazard))
+                return false;
+
+            // Проверяет, что context obstacle ещё актуален впереди.
+            contextObstacle = firstElement.Obstacle;
+            if (contextObstacle == null || contextObstacle.RightX <= hamster.HamsterLeftX)
+                return false;
+
+            contextObstacleIndex = firstElement.WorldIndex;
+            return true;
+        }
+
+        /// <summary>
+        /// Считает сдвиг мира до начала автоматического схода с последней roof.
+        /// </summary>
         private static float CalculateExitStartShift(
             HamsterSnapshot hamster,
             ObstacleSnapshot lastRoof)
         {
+            // Считает runtime-точку начала RunFromRoof.
             float exitStartX = lastRoof.RightX + hamster.Width * RoofRunProjection.PassiveContinuationGapFactor;
             return Math.Max(0f, exitStartX - hamster.HamsterRightX);
         }

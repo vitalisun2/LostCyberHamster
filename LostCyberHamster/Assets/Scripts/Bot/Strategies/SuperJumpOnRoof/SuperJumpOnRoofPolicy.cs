@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared;
-using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning.JumpOnRoof;
+using Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay.Enums;
-using UnityEngine;
 
 namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
 {
@@ -16,7 +15,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
     /// </summary>
     internal sealed class SuperJumpOnRoofPolicy : IJumpOnRoofPolicy
     {
-        private const string _superJumpClipName = "transform_super_jump";
+        private const string SuperJumpClipName = "transform_super_jump";
 
         public BotActionKind ActionKind => BotActionKind.SuperJumpOnRoof;
         public int EnergyCost => 20;
@@ -26,20 +25,19 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
         public bool DamageBigAliveWithoutYByReach => false;
 
         /// <summary>
-        /// Возвращает runtime-дистанцию super jump с учётом задержки upgrade-запроса.
+        /// Возвращает runtime-дистанцию super jump с учетом задержки upgrade input.
         /// </summary>
         public bool TryGetTravel(out float travel)
         {
-            if (!BotAnimationTravelProvider.TryGetTravel(_superJumpClipName, out float clipTravel))
+            if (!BotAnimationTravelProvider.TryGetTravel(SuperJumpClipName, out float clipTravel))
             {
                 travel = default;
                 return false;
             }
 
-            // Складывает дистанцию super jump clip и путь мира за половину double-jump окна.
             float upgradeDelayTravel = GetSuperJumpUpgradeDelayTravel();
             travel = clipTravel + upgradeDelayTravel;
-            return true;
+            return travel > 0f;
         }
 
         /// <summary>
@@ -51,7 +49,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
             out float resolveFireShift,
             out float resolveTravel)
         {
-            // Сдвигает resolver на задержку upgrade-запроса.
             float upgradeDelayTravel = GetSuperJumpUpgradeDelayTravel();
             resolveFireShift = fireShift + upgradeDelayTravel;
             resolveTravel = jumpTravel - upgradeDelayTravel;
@@ -68,7 +65,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
         }
 
         /// <summary>
-        /// Возвращает путь мира за задержку upgrade-запроса super jump.
+        /// Возвращает путь мира за задержку upgrade input.
         /// </summary>
         private static float GetSuperJumpUpgradeDelayTravel()
         {

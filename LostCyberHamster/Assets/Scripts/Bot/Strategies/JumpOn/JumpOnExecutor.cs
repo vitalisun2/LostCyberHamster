@@ -14,11 +14,11 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
     /// </summary>
     internal sealed class JumpOnExecutor : IActionExecutionHandler
     {
-        /// <summary>
-        /// Проверяет, наступил ли момент запуска action относительно live obstacle.
-        /// </summary>
         private readonly ActionTriggerGate _triggerGate;
 
+        /// <summary>
+        /// Создает executor с gate проверки live trigger obstacle.
+        /// </summary>
         public JumpOnExecutor(ActionTriggerGate triggerGate)
         {
             _triggerGate = triggerGate;
@@ -34,13 +34,13 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 
-            // Проверяет совместимость action.
-            if (action.Kind != BotActionKind.JumpOn || !action.TargetObstacleInstanceId.HasValue)
+            // Проверяет совместимость action и энергию.
+            if (action.Kind != BotActionKind.JumpOn
+                || !action.TargetObstacleInstanceId.HasValue
+                || hamster.Energy.Value < action.EnergyCost)
+            {
                 return ActionFireResult.Cancelled;
-
-            // Проверяет запас энергии.
-            if (hamster.Energy.Value < action.EnergyCost)
-                return ActionFireResult.Cancelled;
+            }
 
             // Дожидается состояния, в котором можно прыгнуть.
             if (hamster.HamsterState.Value != HamsterStateEnum.Run)

@@ -4,101 +4,87 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
-    /// Генерирует candidate-действия бота для текущего planning-состояния через доступные planning-стратегии.
+    /// Generates role-based candidate actions through new decision points and planning strategies.
     /// </summary>
     public sealed class ActionGenerator
     {
-        /// <summary>
-        /// Список стратегий, которые предлагают действия для найденной точки решения.
-        /// </summary>
         private readonly IReadOnlyList<IPlanningStrategy> _strategies;
-
-        /// <summary>
-        /// Детектор обязательных угроз и дополнительных jump-on opportunities.
-        /// </summary>
+        private readonly IPlanningStrategy _switchLaneStrategy;
         private readonly DecisionPointDetector _decisionPointDetector = new DecisionPointDetector();
 
+        /// <summary>
+        /// Creates a role-based generator over the active new strategies.
+        /// </summary>
         internal ActionGenerator(IReadOnlyList<IPlanningStrategy> strategies)
         {
             _strategies = strategies ?? Array.Empty<IPlanningStrategy>();
+            _switchLaneStrategy = FindStrategy(_strategies, BotActionKind.SwitchLane);
         }
 
         /// <summary>
-        /// Генерирует список действий, доступных из текущего planning-состояния и snapshot мира.
+        /// Generates actions available from the current planning state and world snapshot.
         /// </summary>
         public IReadOnlyList<PlannedAction> Generate(PlanningState planningState, WorldSnapshot worldSnapshot)
         {
-            // Проверяет входные данные.
             var plannedActions = new List<PlannedAction>();
             if (planningState == null || worldSnapshot == null)
                 return plannedActions;
 
-            // Проецирует мир в состояние планирования.
             WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
+            if (projectedWorldSnapshot == null)
+                return plannedActions;
 
-            // Собирает действия для обязательной planning-ситуации.
-            DecisionPoint requiredDecisionPoint = null;
-            if (_decisionPointDetector.TryDetectRequiredDecisionPoint(
+            bool currentBottomLine = planningState.IsOnBottomLine;
+
+            bool hasCurrentDecisionPoint = _decisionPointDetector.TryDetect(
                     planningState,
                     projectedWorldSnapshot,
-                    out requiredDecisionPoint))
-            {
-                CollectActionsForDecisionPoint(
+                    currentBottomLine,
+                    out DecisionPoint currentDecisionPoint);
+
+            bool hasOppositeDecisionPoint = _decisionPointDetector.TryDetect(
                     planningState,
                     projectedWorldSnapshot,
-                    requiredDecisionPoint,
-                    plannedActions);
-            }
+                    !currentBottomLine,
+                    out DecisionPoint oppositeDecisionPoint);
 
-            // Собирает действия для optional jump-on objectives.
-            IReadOnlyList<DecisionPoint> optionalDecisionPoints =
-                _decisionPointDetector.DetectOptionalDecisionPoints(
-                    planningState,
-                    projectedWorldSnapshot);
-            for (int decisionPointIndex = 0; decisionPointIndex < optionalDecisionPoints.Count; decisionPointIndex++)
+            if (!hasCurrentDecisionPoint && !hasOppositeDecisionPoint)
             {
-                CollectActionsForDecisionPoint(
-                    planningState,
-                    projectedWorldSnapshot,
-                    optionalDecisionPoints[decisionPointIndex],
-                    plannedActions);
-            }
-
-            // Проверяет наличие точки решения.
-            DecisionPoint logDecisionPoint = requiredDecisionPoint
-                ?? (optionalDecisionPoints.Count > 0 ? optionalDecisionPoints[0] : null);
-            if (logDecisionPoint == null)
-            {
-                LogNoDecisionPoint(planningState, projectedWorldSnapshot);
+                LogNoDecisionPoint(planningState);
                 return plannedActions;
             }
 
-            // Убирает избыточные super jump-on варианты.
-            RemoveSuperJumpOnCandidatesCoveredByOrdinaryJumpOn(plannedActions);
-
-            // Логирует отсутствие подходящих действий.
-            if (plannedActions.Count == 0)
+            if (hasCurrentDecisionPoint)
             {
-                DebugManager.DiagLogVerbose(
-                    $"[Bot PLAN] NO_ACTIONS obstacle={logDecisionPoint.Obstacle.ObstacleType} " +
-                    $"kind={logDecisionPoint.Kind} " +
-                    $"leftX={logDecisionPoint.Obstacle.LeftX:F2} rightX={logDecisionPoint.Obstacle.RightX:F2} " +
-                    $"lane={(logDecisionPoint.Obstacle.IsBottomLine ? "bottom" : "top")} " +
-                    $"projection={planningState.ProjectionWorldShift:F2} " +
-                    $"hamsterLane={(planningState.IsOnBottomLine ? "bottom" : "top")}");
+                CollectActionsForDecisionPoint(
+                    planningState,
+                    projectedWorldSnapshot,
+                    currentDecisionPoint,
+                    plannedActions);
             }
+
+            if (hasOppositeDecisionPoint)
+            {
+                CollectSwitchLaneEntryAction(
+                    planningState,
+                    projectedWorldSnapshot,
+                    oppositeDecisionPoint,
+                    plannedActions);
+            }
+
+            if (plannedActions.Count == 0 && hasCurrentDecisionPoint)
+                LogNoActions(planningState, currentDecisionPoint);
 
             return plannedActions;
         }
 
         /// <summary>
-        /// Запрашивает у всех planning-стратегий действия для указанной точки решения.
+        /// Requests actions from all role-based planning strategies for the decision point.
         /// </summary>
         private void CollectActionsForDecisionPoint(
             PlanningState planningState,
@@ -106,7 +92,6 @@ namespace Assets.Scripts.Bot.Planning
             DecisionPoint decisionPoint,
             List<PlannedAction> plannedActions)
         {
-            // Обходит стратегии в порядке их приоритета.
             for (int strategyIndex = 0; strategyIndex < _strategies.Count; strategyIndex++)
             {
                 _strategies[strategyIndex].CollectActions(
@@ -118,111 +103,95 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Удаляет super jump-on кандидаты, если тот же target уже покрыт обычным jump-on.
+        /// Adds the entry SwitchLane action for the opposite-lane branch.
         /// </summary>
-        private static void RemoveSuperJumpOnCandidatesCoveredByOrdinaryJumpOn(List<PlannedAction> plannedActions)
+        private void CollectSwitchLaneEntryAction(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            DecisionPoint oppositeDecisionPoint,
+            List<PlannedAction> plannedActions)
         {
-            // Проверяет, есть ли что фильтровать.
-            if (plannedActions == null || plannedActions.Count < 2)
+            if (_switchLaneStrategy == null)
                 return;
 
-            // Удаляет покрытые super-кандидаты с конца списка.
-            for (int actionIndex = plannedActions.Count - 1; actionIndex >= 0; actionIndex--)
-            {
-                PlannedAction action = plannedActions[actionIndex];
-                if (action == null || !TryGetOrdinaryJumpOnKind(action.Kind, out BotActionKind ordinaryKind))
-                    continue;
-
-                if (HasOrdinaryJumpOnCandidateForSameTarget(plannedActions, action, ordinaryKind))
-                    plannedActions.RemoveAt(actionIndex);
-            }
+            _switchLaneStrategy.CollectActions(
+                planningState,
+                projectedWorldSnapshot,
+                oppositeDecisionPoint,
+                plannedActions);
         }
 
         /// <summary>
-        /// Проверяет наличие ordinary jump-on кандидата для того же target, что и у super-действия.
+        /// Finds a strategy by action kind.
         /// </summary>
-        private static bool HasOrdinaryJumpOnCandidateForSameTarget(
-            IReadOnlyList<PlannedAction> plannedActions,
-            PlannedAction superJumpOnAction,
-            BotActionKind ordinaryKind)
+        private static IPlanningStrategy FindStrategy(
+            IReadOnlyList<IPlanningStrategy> strategies,
+            BotActionKind actionKind)
         {
-            // Ищет соответствующий ordinary action среди кандидатов.
-            for (int actionIndex = 0; actionIndex < plannedActions.Count; actionIndex++)
-            {
-                PlannedAction action = plannedActions[actionIndex];
-                if (action == null || action.Kind != ordinaryKind)
-                    continue;
+            if (strategies == null)
+                return null;
 
-                if (TargetsSameObstacle(action, superJumpOnAction))
-                    return true;
+            for (int strategyIndex = 0; strategyIndex < strategies.Count; strategyIndex++)
+            {
+                IPlanningStrategy strategy = strategies[strategyIndex];
+                if (strategy != null && strategy.ActionKind == actionKind)
+                    return strategy;
             }
 
-            return false;
+            return null;
         }
 
         /// <summary>
-        /// Возвращает ordinary-вариант для super jump-on action.
+        /// Logs the absence of a role-based decision point.
         /// </summary>
-        private static bool TryGetOrdinaryJumpOnKind(
-            BotActionKind superKind,
-            out BotActionKind ordinaryKind)
+        private static void LogNoDecisionPoint(PlanningState planningState)
         {
-            // Сопоставляет пары ordinary/super jump-on.
-            if (superKind == BotActionKind.SuperJumpOn)
-            {
-                ordinaryKind = BotActionKind.JumpOn;
-                return true;
-            }
-
-            if (superKind == BotActionKind.SuperJumpOnFromRoof)
-            {
-                ordinaryKind = BotActionKind.JumpOnFromRoof;
-                return true;
-            }
-
-            ordinaryKind = BotActionKind.None;
-            return false;
-        }
-
-        /// <summary>
-        /// Проверяет, ссылаются ли два действия на один и тот же obstacle target.
-        /// </summary>
-        private static bool TargetsSameObstacle(PlannedAction left, PlannedAction right)
-        {
-            // Сравнивает стабильные instance id, если они доступны.
-            if (left.TargetObstacleInstanceId.HasValue && right.TargetObstacleInstanceId.HasValue)
-                return left.TargetObstacleInstanceId.Value == right.TargetObstacleInstanceId.Value;
-
-            // Использует индекс obstacle как запасной идентификатор.
-            return left.TargetObstacleIndex == right.TargetObstacleIndex;
-        }
-
-        /// <summary>
-        /// Логирует ближайший same-lane obstacle, если detector не нашёл точку решения.
-        /// </summary>
-        private static void LogNoDecisionPoint(PlanningState planningState, WorldSnapshot projectedWorldSnapshot)
-        {
-            // Проверяет входные данные.
-            if (planningState == null || projectedWorldSnapshot == null)
+            if (planningState?.Hamster == null)
                 return;
 
-            // Ищет ближайший obstacle впереди на текущей линии.
-            for (int obstacleIndex = planningState.NextObstacleIndex; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
-                if (obstacle.RightX <= planningState.Hamster.HamsterLeftX)
-                    continue;
+            DebugManager.DiagLogVerbose(
+                $"[Bot PLAN NEW] NO_DECISION " +
+                $"nextObstacleIndex={planningState.NextObstacleIndex} " +
+                $"projection={planningState.ProjectionWorldShift:F2} " +
+                $"hamsterLane={(planningState.IsOnBottomLine ? "bottom" : "top")}");
+        }
 
-                if (obstacle.IsBottomLine != planningState.IsOnBottomLine)
-                    continue;
-
-                DebugManager.DiagLogVerbose(
-                    $"[Bot PLAN] NO_DECISION nextSameLane={obstacle.ObstacleType} " +
-                    $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2} " +
-                    $"lane={(obstacle.IsBottomLine ? "bottom" : "top")} " +
-                    $"projection={planningState.ProjectionWorldShift:F2}");
+        /// <summary>
+        /// Logs a role-based decision point that produced no strategy actions.
+        /// </summary>
+        private static void LogNoActions(PlanningState planningState, DecisionPoint decisionPoint)
+        {
+            if (planningState == null || decisionPoint?.Chain == null)
                 return;
-            }
+
+            ObstacleChain chain = decisionPoint.Chain;
+            ObstacleChainElement firstElement = chain.First;
+            ObstacleSnapshot firstObstacle = firstElement.Obstacle;
+
+            DebugManager.DiagLogVerbose(
+                $"[Bot PLAN NEW] NO_ACTIONS firstObstacle={firstObstacle.ObstacleType} " +
+                $"roles={FormatRoles(firstElement.Roles)} " +
+                $"chainCount={chain.Count} " +
+                $"chainLeftX={chain.LeftX:F2} chainRightX={chain.RightX:F2} " +
+                $"firstLeftX={firstObstacle.LeftX:F2} firstRightX={firstObstacle.RightX:F2} " +
+                $"projection={planningState.ProjectionWorldShift:F2} " +
+                $"hamsterLane={(planningState.IsOnBottomLine ? "bottom" : "top")}");
+        }
+
+        /// <summary>
+        /// Formats obstacle roles for the diagnostic log.
+        /// </summary>
+        private static string FormatRoles(IReadOnlyCollection<ObstacleRole> roles)
+        {
+            if (roles == null || roles.Count == 0)
+                return "none";
+
+            var roleNames = new List<string>(roles.Count);
+            foreach (ObstacleRole role in roles)
+                roleNames.Add(role.ToString());
+
+            roleNames.Sort(StringComparer.Ordinal);
+            return string.Join("|", roleNames);
         }
     }
 }
