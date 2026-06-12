@@ -147,6 +147,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.IsRemovedInPlanning)
+                    continue;
+
                 if (obstacle.LeftX > maxTargetLeftX)
                     break;
 
@@ -190,6 +193,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             element = null;
             HamsterSnapshot hamster = planningState.Hamster;
             if (obstacle == null
+                || obstacle.IsRemovedInPlanning
                 || obstacle.RightX <= hamster.HamsterLeftX
                 || obstacle.LeftX < roofRightEdgeX
                 || obstacle.IsBottomLine != hamster.IsOnBottomLine
@@ -235,6 +239,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             // Проверяет роль, линию и factual-тип obstacle.
             return element != null
                 && hamster != null
+                && !element.Obstacle.IsRemovedInPlanning
                 && element.HasRole(ObstacleRole.Target)
                 && element.Obstacle.IsBottomLine == hamster.IsOnBottomLine
                 && ObstacleClassifier.CanJumpOnFromRoofObstacle(element.Obstacle.ObstacleType);

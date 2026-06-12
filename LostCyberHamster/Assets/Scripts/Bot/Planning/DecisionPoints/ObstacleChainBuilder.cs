@@ -153,6 +153,9 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             if (obstacle == null)
                 return false;
 
+            if (obstacle.IsRemovedInPlanning)
+                return false;
+
             if (obstacle.RightX <= planningState.Hamster.HamsterLeftX)
                 return false;
 

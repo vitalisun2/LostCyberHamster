@@ -29,6 +29,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
             {
                 JumpObstacleData obstacle = obstacles[obstacleIndex];
+                if (obstacle.IsRemovedInPlanning)
+                    continue;
+
                 if (obstacle.IsBottomLine != context.IsBottomLine)
                     continue;
 
@@ -304,7 +307,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpObstacleData obstacle,
             RoofJumpResolveContext context)
         {
-            return obstacle.IsBottomLine == context.IsBottomLine
+            return !obstacle.IsRemovedInPlanning
+                   && obstacle.IsBottomLine == context.IsBottomLine
                    && obstacle.CenterX > context.HamsterCenterX;
         }
 

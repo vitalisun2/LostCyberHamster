@@ -39,12 +39,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
 
             // Проверяет все будущие ground-угрозы после завершения action.
             HamsterSnapshot hamster = planningState.Hamster;
-            for (int obstacleIndex = planningState.NextObstacleIndex;
+            for (int obstacleIndex = 0;
                  obstacleIndex < projectedWorldSnapshot.Obstacles.Count;
                  obstacleIndex++)
             {
                 // Пропускает уничтожаемый target.
                 ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.IsRemovedInPlanning)
+                    continue;
+
                 if (IsRemovedTarget(obstacle, obstacleIndex, targetObstacleIndex, targetObstacleInstanceId))
                     continue;
 

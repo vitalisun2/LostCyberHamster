@@ -221,8 +221,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
             ObstacleSnapshot lastRoof)
         {
             // Проверяет наличие obstacle и линию.
-            if (obstacle == null || obstacle.IsBottomLine != hamster.IsOnBottomLine)
+            if (obstacle == null
+                || obstacle.IsRemovedInPlanning
+                || obstacle.IsBottomLine != hamster.IsOnBottomLine)
+            {
                 return false;
+            }
 
             // Проверяет положение относительно текущей крыши.
             return obstacle.RightX > lastRoof.RightX;

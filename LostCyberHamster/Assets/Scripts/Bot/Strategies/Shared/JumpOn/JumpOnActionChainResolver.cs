@@ -168,6 +168,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
             // Отсекает obstacle вне линии или позади хомяка.
             element = null;
             if (obstacle == null
+                || obstacle.IsRemovedInPlanning
                 || obstacle.RightX <= planningState.Hamster.HamsterLeftX
                 || obstacle.IsBottomLine != chainBottomLine)
             {

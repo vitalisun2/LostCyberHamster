@@ -21,6 +21,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
             {
                 JumpObstacleData obstacle = obstacles[obstacleIndex];
+                if (obstacle.IsRemovedInPlanning)
+                    continue;
+
                 if (obstacle.IsBottomLine != context.IsBottomLine)
                     continue;
 
@@ -168,6 +171,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
             {
                 JumpObstacleData candidate = obstacles[obstacleIndex];
+                if (candidate.IsRemovedInPlanning)
+                    continue;
+
                 if (candidate.IsBottomLine != small.IsBottomLine)
                     continue;
 
@@ -197,6 +203,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
             }
 
             JumpObstacleData roofObstacle = obstacles[roofIndex];
+            if (roofObstacle.IsRemovedInPlanning)
+            {
+                occupantIndex = NoTarget;
+                return false;
+            }
+
             if (!CollisionUtils.IsRoofObstacle(roofObstacle.Type))
             {
                 occupantIndex = NoTarget;
@@ -206,6 +218,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
             {
                 JumpObstacleData candidate = obstacles[obstacleIndex];
+                if (candidate.IsRemovedInPlanning)
+                    continue;
+
                 if (candidate.Type != ObstacleTypeEnum.smallNotAliveRoadAndRoof)
                     continue;
 

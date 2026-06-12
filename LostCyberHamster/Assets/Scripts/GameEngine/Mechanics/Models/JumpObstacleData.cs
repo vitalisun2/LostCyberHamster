@@ -13,6 +13,7 @@ namespace Assets.Scripts.GameEngine.Mechanics.Models
         public readonly bool HasY;
         public readonly float BottomY;
         public readonly float TopY;
+        public readonly bool IsRemovedInPlanning;
 
         public JumpObstacleData(
             ObstacleTypeEnum type,
@@ -23,7 +24,8 @@ namespace Assets.Scripts.GameEngine.Mechanics.Models
             int instanceId = 0,
             bool hasY = false,
             float bottomY = 0f,
-            float topY = 0f)
+            float topY = 0f,
+            bool isRemovedInPlanning = false)
         {
             Type = type;
             IsBottomLine = isBottomLine;
@@ -34,6 +36,7 @@ namespace Assets.Scripts.GameEngine.Mechanics.Models
             HasY = hasY;
             BottomY = bottomY;
             TopY = topY;
+            IsRemovedInPlanning = isRemovedInPlanning;
         }
     }
 }

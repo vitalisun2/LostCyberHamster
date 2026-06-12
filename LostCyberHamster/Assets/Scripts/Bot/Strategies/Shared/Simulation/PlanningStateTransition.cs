@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
@@ -23,14 +24,40 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
             int nextObstacleIndex = FindNextRelevantObstacleIndex(
                 worldSnapshot,
-                planningState.NextObstacleIndex,
+                startObstacleIndex: 0,
                 nextProjectionWorldShift,
-                nextHamster.HamsterLeftX);
+                nextHamster.HamsterLeftX,
+                planningState.RemovedObstacleInstanceIds);
 
             return new PlanningState(
                 nextHamster,
                 nextObstacleIndex,
-                nextProjectionWorldShift);
+                nextProjectionWorldShift,
+                planningState.RemovedObstacleInstanceIds);
+        }
+
+        /// <summary>
+        /// Возвращает planning-состояние после смены линии, пересчитывая ближайший obstacle для новой линии с начала snapshot.
+        /// </summary>
+        public static PlanningState AdvanceAfterLaneSwitch(
+            PlanningState planningState,
+            PlannedAction action,
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot nextHamster)
+        {
+            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            int nextObstacleIndex = FindNextRelevantObstacleIndex(
+                worldSnapshot,
+                startObstacleIndex: 0,
+                nextProjectionWorldShift,
+                nextHamster.HamsterLeftX,
+                planningState.RemovedObstacleInstanceIds);
+
+            return new PlanningState(
+                nextHamster,
+                nextObstacleIndex,
+                nextProjectionWorldShift,
+                planningState.RemovedObstacleInstanceIds);
         }
 
         /// <summary>
@@ -43,20 +70,18 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             HamsterSnapshot nextHamster)
         {
             float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
-            int minimumNextObstacleIndex = Math.Max(
-                planningState.NextObstacleIndex,
-                action.TargetObstacleIndex + 1);
-
             int nextObstacleIndex = FindNextRelevantObstacleIndex(
                 worldSnapshot,
-                minimumNextObstacleIndex,
+                startObstacleIndex: 0,
                 nextProjectionWorldShift,
-                nextHamster.HamsterLeftX);
+                nextHamster.HamsterLeftX,
+                planningState.RemovedObstacleInstanceIds);
 
             return new PlanningState(
                 nextHamster,
                 nextObstacleIndex,
-                nextProjectionWorldShift);
+                nextProjectionWorldShift,
+                planningState.RemovedObstacleInstanceIds);
         }
 
         /// <summary>
@@ -69,20 +94,21 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             HamsterSnapshot nextHamster)
         {
             float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
-            int minimumNextObstacleIndex = Math.Max(
-                planningState.NextObstacleIndex,
-                action.TargetObstacleIndex + 1);
+            IReadOnlyList<int> nextRemovedObstacleInstanceIds =
+                planningState.GetRemovedObstacleInstanceIdsWith(action.TargetObstacleInstanceId);
 
             int nextObstacleIndex = FindNextRelevantObstacleIndex(
                 worldSnapshot,
-                minimumNextObstacleIndex,
+                startObstacleIndex: 0,
                 nextProjectionWorldShift,
-                nextHamster.HamsterLeftX);
+                nextHamster.HamsterLeftX,
+                nextRemovedObstacleInstanceIds);
 
             return new PlanningState(
                 nextHamster,
                 nextObstacleIndex,
-                nextProjectionWorldShift);
+                nextProjectionWorldShift,
+                nextRemovedObstacleInstanceIds);
         }
 
         /// <summary>
@@ -95,20 +121,18 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             HamsterSnapshot nextHamster)
         {
             float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
-            int minimumNextObstacleIndex = Math.Max(
-                planningState.NextObstacleIndex,
-                action.TargetObstacleIndex + 1);
-
             int nextObstacleIndex = FindNextRelevantObstacleIndex(
                 worldSnapshot,
-                minimumNextObstacleIndex,
+                startObstacleIndex: 0,
                 nextProjectionWorldShift,
-                nextHamster.HamsterLeftX);
+                nextHamster.HamsterLeftX,
+                planningState.RemovedObstacleInstanceIds);
 
             return new PlanningState(
                 nextHamster,
                 nextObstacleIndex,
-                nextProjectionWorldShift);
+                nextProjectionWorldShift,
+                planningState.RemovedObstacleInstanceIds);
         }
 
         /// <summary>
@@ -208,17 +232,37 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             WorldSnapshot worldSnapshot,
             int startObstacleIndex,
             float projectionWorldShift,
-            float hamsterLeftX)
+            float hamsterLeftX,
+            IReadOnlyList<int> removedObstacleInstanceIds)
         {
             for (int obstacleIndex = startObstacleIndex; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (IsObstacleRemoved(obstacle.InstanceId, removedObstacleInstanceIds))
+                    continue;
+
                 float projectedRightX = obstacle.RightX - projectionWorldShift;
                 if (projectedRightX > hamsterLeftX)
                     return obstacleIndex;
             }
 
             return worldSnapshot.Obstacles.Count;
+        }
+
+        private static bool IsObstacleRemoved(
+            int obstacleInstanceId,
+            IReadOnlyList<int> removedObstacleInstanceIds)
+        {
+            if (removedObstacleInstanceIds == null)
+                return false;
+
+            for (int index = 0; index < removedObstacleInstanceIds.Count; index++)
+            {
+                if (removedObstacleInstanceIds[index] == obstacleInstanceId)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

@@ -28,7 +28,8 @@ namespace Assets.Scripts.Bot.Planning
                     obstacle.RightX - planningState.ProjectionWorldShift,
                     obstacle.CenterX - planningState.ProjectionWorldShift,
                     obstacle.BottomY,
-                    obstacle.TopY));
+                    obstacle.TopY,
+                    planningState.IsObstacleRemoved(obstacle.InstanceId)));
             }
 
             return new WorldSnapshot(

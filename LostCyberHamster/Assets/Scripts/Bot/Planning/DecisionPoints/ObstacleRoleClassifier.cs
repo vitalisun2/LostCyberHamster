@@ -17,7 +17,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             WorldSnapshot worldSnapshot,
             ObstacleSnapshot obstacle)
         {
-            if (obstacle == null)
+            if (obstacle == null || obstacle.IsRemovedInPlanning)
                 return new HashSet<ObstacleRole>();
 
             var roles = new HashSet<ObstacleRole>();

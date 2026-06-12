@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -15,7 +16,8 @@ namespace Assets.Scripts.Bot.Planning
             int energy,
             int lives,
             bool isShifting,
-            int projectionBucket)
+            int projectionBucket,
+            int[] removedObstacleInstanceIds)
         {
             NextObstacleIndex = nextObstacleIndex;
             HamsterState = hamsterState;
@@ -26,6 +28,7 @@ namespace Assets.Scripts.Bot.Planning
             Lives = lives;
             IsShifting = isShifting;
             ProjectionBucket = projectionBucket;
+            RemovedObstacleInstanceIds = removedObstacleInstanceIds ?? Array.Empty<int>();
         }
 
         private int NextObstacleIndex { get; }
@@ -37,6 +40,7 @@ namespace Assets.Scripts.Bot.Planning
         private int Lives { get; }
         private bool IsShifting { get; }
         private int ProjectionBucket { get; }
+        private int[] RemovedObstacleInstanceIds { get; }
 
         public static PlanningStateKey FromState(PlanningState planningState)
         {
@@ -52,7 +56,8 @@ namespace Assets.Scripts.Bot.Planning
                 planningState.Hamster.Energy,
                 planningState.Hamster.Lives,
                 planningState.Hamster.IsShifting,
-                projectionBucket);
+                projectionBucket,
+                CopyRemovedObstacleInstanceIds(planningState.RemovedObstacleInstanceIds));
         }
 
         public bool Equals(PlanningStateKey other)
@@ -65,7 +70,8 @@ namespace Assets.Scripts.Bot.Planning
                 && Energy == other.Energy
                 && Lives == other.Lives
                 && IsShifting == other.IsShifting
-                && ProjectionBucket == other.ProjectionBucket;
+                && ProjectionBucket == other.ProjectionBucket
+                && RemovedObstacleInstanceIdsEqual(other.RemovedObstacleInstanceIds);
         }
 
         public override bool Equals(object obj)
@@ -86,8 +92,41 @@ namespace Assets.Scripts.Bot.Planning
                 hash = (hash * 397) ^ Lives;
                 hash = (hash * 397) ^ (IsShifting ? 1 : 0);
                 hash = (hash * 397) ^ ProjectionBucket;
+                int[] removedObstacleInstanceIds = RemovedObstacleInstanceIds ?? Array.Empty<int>();
+                for (int index = 0; index < removedObstacleInstanceIds.Length; index++)
+                    hash = (hash * 397) ^ removedObstacleInstanceIds[index];
+
                 return hash;
             }
+        }
+
+        private static int[] CopyRemovedObstacleInstanceIds(IReadOnlyList<int> removedObstacleInstanceIds)
+        {
+            if (removedObstacleInstanceIds == null || removedObstacleInstanceIds.Count == 0)
+                return Array.Empty<int>();
+
+            var copy = new int[removedObstacleInstanceIds.Count];
+            for (int index = 0; index < removedObstacleInstanceIds.Count; index++)
+                copy[index] = removedObstacleInstanceIds[index];
+
+            return copy;
+        }
+
+        private bool RemovedObstacleInstanceIdsEqual(int[] other)
+        {
+            int[] left = RemovedObstacleInstanceIds ?? Array.Empty<int>();
+            int[] right = other ?? Array.Empty<int>();
+
+            if (left.Length != right.Length)
+                return false;
+
+            for (int index = 0; index < left.Length; index++)
+            {
+                if (left[index] != right[index])
+                    return false;
+            }
+
+            return true;
         }
     }
 }

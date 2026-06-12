@@ -23,7 +23,7 @@ namespace Assets.Scripts.Bot.Planning
             ObstacleSnapshot obstacle)
         {
             // Отсекает неполный вход.
-            if (planningState == null || projectedWorldSnapshot == null || obstacle == null)
+            if (planningState == null || projectedWorldSnapshot == null || obstacle == null || obstacle.IsRemovedInPlanning)
                 return false;
 
             // Проверяет roof-состояние хомяка.
@@ -106,6 +106,9 @@ namespace Assets.Scripts.Bot.Planning
             for (int obstacleIndex = currentSupportIndex + 1; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot candidate = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                if (candidate.IsRemovedInPlanning)
+                    continue;
+
                 if (candidate.IsBottomLine != hamster.IsOnBottomLine)
                     continue;
 
@@ -141,7 +144,7 @@ namespace Assets.Scripts.Bot.Planning
             supportIndex = -1;
 
             // Отсекает неполный вход.
-            if (planningState == null || projectedWorldSnapshot == null || occupant == null)
+            if (planningState == null || projectedWorldSnapshot == null || occupant == null || occupant.IsRemovedInPlanning)
                 return false;
 
             // Проверяет roof-состояние хомяка.
@@ -173,6 +176,9 @@ namespace Assets.Scripts.Bot.Planning
             for (int obstacleIndex = currentSupportIndex; obstacleIndex <= lastRoofIndex; obstacleIndex++)
             {
                 ObstacleSnapshot candidate = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                if (candidate.IsRemovedInPlanning)
+                    continue;
+
                 if (candidate.IsBottomLine != hamster.IsOnBottomLine)
                     continue;
 
@@ -211,7 +217,7 @@ namespace Assets.Scripts.Bot.Planning
             supportIndex = -1;
 
             // Проверяет вход и фактические признаки roof occupant.
-            if (planningState == null || projectedWorldSnapshot == null || occupant == null)
+            if (planningState == null || projectedWorldSnapshot == null || occupant == null || occupant.IsRemovedInPlanning)
                 return false;
 
             HamsterSnapshot hamster = planningState.Hamster;
@@ -267,6 +273,9 @@ namespace Assets.Scripts.Bot.Planning
             for (int obstacleIndex = 0; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot candidate = projectedWorldSnapshot.Obstacles[obstacleIndex];
+                if (candidate.IsRemovedInPlanning)
+                    continue;
+
                 if (candidate.InstanceId != roofSupportInstanceId)
                     continue;
 
@@ -291,7 +300,7 @@ namespace Assets.Scripts.Bot.Planning
             HamsterSnapshot hamster,
             ObstacleSnapshot occupant)
         {
-            if (hamster == null || occupant == null)
+            if (hamster == null || occupant == null || occupant.IsRemovedInPlanning)
                 return false;
 
             return occupant.ObstacleType == ObstacleTypeEnum.smallNotAliveRoadAndRoof

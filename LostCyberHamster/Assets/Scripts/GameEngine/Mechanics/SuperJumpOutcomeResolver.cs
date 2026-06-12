@@ -21,6 +21,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
             {
                 JumpObstacleData obstacle = obstacles[obstacleIndex];
+                if (obstacle.IsRemovedInPlanning)
+                    continue;
+
                 if (obstacle.IsBottomLine != context.IsBottomLine)
                     continue;
 

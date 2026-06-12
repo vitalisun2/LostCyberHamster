@@ -80,6 +80,9 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             // Берет обычный старт detection из planning state.
             int defaultDetectionIndex = planningState.NextObstacleIndex;
             HamsterSnapshot hamster = planningState.Hamster;
+            if (hamster != null && focusBottomLine != hamster.IsOnBottomLine)
+                return 0;
+
             if (hamster == null || !hamster.IsOnRoof)
                 return defaultDetectionIndex;
 

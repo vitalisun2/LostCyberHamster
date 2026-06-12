@@ -50,6 +50,26 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
+        /// Проецирует результат уже запущенного head-action до его ожидаемого завершения.
+        /// </summary>
+        public PlanningState ProjectInProgress(
+            PlanningState planningState,
+            PlannedAction action,
+            WorldSnapshot worldSnapshot,
+            float? remainingPostFireWorldShift = null)
+        {
+            if (planningState == null || action == null || worldSnapshot == null)
+                return null;
+
+            ISimulator simulator = GetRequiredSimulator(action);
+            return simulator.ProjectInProgress(
+                planningState,
+                action,
+                worldSnapshot,
+                remainingPostFireWorldShift);
+        }
+
+        /// <summary>
         /// Возвращает simulator для указанного действия или сообщает ошибку конфигурации нового path.
         /// </summary>
         private ISimulator GetRequiredSimulator(PlannedAction action)

@@ -18,7 +18,8 @@ namespace Assets.Scripts.Bot.Perception
             float rightX,
             float centerX,
             float bottomY,
-            float topY)
+            float topY,
+            bool isRemovedInPlanning = false)
         {
             InstanceId = instanceId;
             ObstacleType = obstacleType;
@@ -28,6 +29,7 @@ namespace Assets.Scripts.Bot.Perception
             CenterX = centerX;
             BottomY = bottomY;
             TopY = topY;
+            IsRemovedInPlanning = isRemovedInPlanning;
         }
 
         /// <summary>
@@ -74,5 +76,10 @@ namespace Assets.Scripts.Bot.Perception
         /// Верхняя Y-граница collider.
         /// </summary>
         public float TopY { get; }
+
+        /// <summary>
+        /// Признак obstacle, который уже уничтожен внутри projected planning-ветки.
+        /// </summary>
+        public bool IsRemovedInPlanning { get; }
     }
 }

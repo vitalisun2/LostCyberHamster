@@ -24,7 +24,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
                     obstacle.InstanceId,
                     hasY: true,
                     obstacle.BottomY,
-                    obstacle.TopY));
+                    obstacle.TopY,
+                    obstacle.IsRemovedInPlanning));
             }
 
             return obstacles;
@@ -48,7 +49,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
                     obstacle.InstanceId,
                     obstacle.HasY,
                     obstacle.BottomY,
-                    obstacle.TopY));
+                    obstacle.TopY,
+                    obstacle.IsRemovedInPlanning));
             }
         }
     }

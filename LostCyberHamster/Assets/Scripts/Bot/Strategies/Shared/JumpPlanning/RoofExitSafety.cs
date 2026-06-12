@@ -24,6 +24,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.IsRemovedInPlanning)
+                    continue;
+
                 if (obstacle.IsBottomLine != targetBottomLine)
                     continue;
 

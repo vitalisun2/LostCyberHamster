@@ -177,6 +177,9 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.IsRemovedInPlanning)
+                    continue;
+
                 if (!IsTargetLineRoof(obstacle, targetBottomLine))
                     continue;
 
@@ -206,6 +209,9 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.IsRemovedInPlanning)
+                    continue;
+
                 if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
                     continue;
 
@@ -287,6 +293,9 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.IsRemovedInPlanning)
+                    continue;
+
                 if (!IsTargetLineRoof(obstacle, targetBottomLine))
                     continue;
 
@@ -317,6 +326,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             bool targetBottomLine)
         {
             return obstacle != null
+                && !obstacle.IsRemovedInPlanning
                 && obstacle.IsBottomLine == targetBottomLine
                 && ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType);
         }
