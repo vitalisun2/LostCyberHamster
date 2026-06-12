@@ -36,7 +36,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
         public PlanningState ProjectInProgress(
             PlanningState planningState,
             PlannedAction action,
-            WorldSnapshot worldSnapshot)
+            WorldSnapshot worldSnapshot,
+            float? remainingPostFireWorldShift = null)
         {
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
                 return null;
@@ -47,7 +48,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: false);
+                skipTargetObstacleAfterCompletion: false,
+                remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
     }
 }

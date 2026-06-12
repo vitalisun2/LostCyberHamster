@@ -3,7 +3,6 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -56,10 +55,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
 
             Executor = new SuperRoofJumpOverExecutor(triggerGate);
             Simulator = _simulator;
-            RetainedValidator = new RoofJumpOverRetainedValidator(
-                _policy,
-                _fireWindowFinder,
-                _specification);
         }
 
         /// <summary>
@@ -76,11 +71,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
         /// Simulator super roof jump-over.
         /// </summary>
         public ISimulator Simulator { get; }
-
-        /// <summary>
-        /// Validator сохраненных actions super roof jump-over.
-        /// </summary>
-        public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
         /// Добавляет super-roof-jump-over action для hazard на текущем passive roof path.
@@ -148,7 +138,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
             // Считает trigger position по первому hazard.
             ObstacleSnapshot hazardObstacle = chainModel.FirstHazard;
             float projectedTriggerX = hazardObstacle.LeftX - fireShift;
-            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            float triggerX = projectedTriggerX;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
                 triggerX,
                 fireShift,

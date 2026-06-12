@@ -95,33 +95,47 @@ namespace Assets.Scripts.Bot.Execution
             if (!CurrentPlan.HasActions)
                 return PlanExecutionTickResult.None;
 
-            PlannedAction action = CurrentPlan.Actions[0];
-            IActionExecutionHandler handler = GetRequiredHandler(action);
-
             // Сначала пробует один раз запустить действие из головы плана.
             if (!_isActionInProgress)
-            {
-                ActionFireResult fireResult = handler.TryFire(hamster, action);
-                if (fireResult == ActionFireResult.Fired)
-                {
-                    _isActionInProgress = true;
-                    return PlanExecutionTickResult.Fired;
-                }
-
-                if (fireResult == ActionFireResult.Cancelled)
-                {
-                    AdvanceHead();
-                    return PlanExecutionTickResult.Cancelled;
-                }
-
-                return PlanExecutionTickResult.None;
-            }
+                return TryFireCurrentHead(hamster);
 
             // После запуска ждёт, пока handler подтвердит завершение действия.
+            PlannedAction action = CurrentPlan.Actions[0];
+            IActionExecutionHandler handler = GetRequiredHandler(action);
             if (handler.IsCompleted(hamster, action))
             {
                 AdvanceHead();
+                PlanExecutionTickResult nextHeadResult = TryFireCurrentHead(hamster);
+                if (nextHeadResult != PlanExecutionTickResult.None)
+                    return nextHeadResult;
+
                 return PlanExecutionTickResult.Completed;
+            }
+
+            return PlanExecutionTickResult.None;
+        }
+
+        /// <summary>
+        /// Пытается запустить текущий head-action без ожидания следующего кадра.
+        /// </summary>
+        private PlanExecutionTickResult TryFireCurrentHead(Hamster hamster)
+        {
+            if (!CurrentPlan.HasActions)
+                return PlanExecutionTickResult.None;
+
+            PlannedAction action = CurrentPlan.Actions[0];
+            IActionExecutionHandler handler = GetRequiredHandler(action);
+            ActionFireResult fireResult = handler.TryFire(hamster, action);
+            if (fireResult == ActionFireResult.Fired)
+            {
+                _isActionInProgress = true;
+                return PlanExecutionTickResult.Fired;
+            }
+
+            if (fireResult == ActionFireResult.Cancelled)
+            {
+                AdvanceHead();
+                return PlanExecutionTickResult.Cancelled;
             }
 
             return PlanExecutionTickResult.None;

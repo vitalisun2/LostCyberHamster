@@ -61,7 +61,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
         public PlanningState ProjectInProgress(
             PlanningState planningState,
             PlannedAction action,
-            WorldSnapshot worldSnapshot)
+            WorldSnapshot worldSnapshot,
+            float? remainingPostFireWorldShift = null)
         {
             // Проверяет, что action подходит этому simulator.
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
@@ -78,7 +79,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: true);
+                skipTargetObstacleAfterCompletion: true,
+                remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
     }
 }

@@ -3,7 +3,6 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -49,10 +48,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
             // Публикует обработчики и симулятор наружу.
             Executor = new SuperJumpFromRoofOnRoofExecutor(triggerGate);
             Simulator = _simulator;
-            RetainedValidator = new JumpFromRoofOnRoofRetainedValidator(
-                _policy,
-                _fireWindowFinder,
-                _specification);
         }
 
         /// <summary>
@@ -69,11 +64,6 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
         /// Simulator super roof-to-roof прыжка.
         /// </summary>
         public ISimulator Simulator { get; }
-
-        /// <summary>
-        /// Validator сохраненных actions super roof-to-roof прыжка.
-        /// </summary>
-        public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
         /// Добавляет super roof-to-roof action, если passive roof exit опасен и следующая roof подтверждена.
@@ -141,7 +131,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
         {
             // Считает trigger position по target roof.
             float projectedTriggerX = targetRoof.LeftX - fireShift;
-            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            float triggerX = projectedTriggerX;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
                 triggerX,
                 fireShift,

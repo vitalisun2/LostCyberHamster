@@ -3,7 +3,6 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Common;
@@ -28,13 +27,11 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
             Executor = new SwitchLaneExecutor(triggerGate);
             Simulator = _simulator;
-            RetainedValidator = new SwitchLaneRetainedValidator(_fireWindowCalculator);
         }
 
         public BotActionKind ActionKind => BotActionKind.SwitchLane;
         public IActionExecutionHandler Executor { get; }
         public ISimulator Simulator { get; }
-        public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
         /// Collects valid lane-switch actions for a role-based decision point.
@@ -183,7 +180,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         {
             float fireShift = fireWindowSample.FireShift;
             float projectedTriggerX = triggerObstacle.LeftX - fireShift;
-            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            float triggerX = projectedTriggerX;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
                 triggerX,
                 fireShift,

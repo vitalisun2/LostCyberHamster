@@ -1,6 +1,7 @@
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
+using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
@@ -33,24 +34,42 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 (action, nameof(action)));
 
             if (action.Kind != BotActionKind.JumpOver || !action.TargetObstacleInstanceId.HasValue)
-                return ActionFireResult.Cancelled;
+                return Cancel(action, "reason=invalid-jump-over-action");
 
             if (hamster.Energy.Value < action.EnergyCost)
-                return ActionFireResult.Cancelled;
+                return Cancel(action, $"reason=not-enough-energy energy={hamster.Energy.Value} cost={action.EnergyCost}");
 
             if (hamster.HamsterState.Value != HamsterStateEnum.Run)
             {
                 return hamster.HamsterState.Value == HamsterStateEnum.RunFromRoof
                     ? ActionFireResult.Waiting
-                    : ActionFireResult.Cancelled;
+                    : Cancel(action, $"reason=invalid-state state={hamster.HamsterState.Value}");
             }
 
-            ActionFireResult triggerResult = _triggerGate.Check(action, out _);
+            ActionFireResult triggerResult = _triggerGate.Check(
+                action,
+                out float obstacleLeftX,
+                out string triggerDiagnosticReason);
             if (triggerResult != ActionFireResult.Fired)
+            {
+                if (triggerResult == ActionFireResult.Cancelled)
+                {
+                    return Cancel(
+                        action,
+                        $"reason=trigger-gate-cancel obstacleLeftX={obstacleLeftX:F2} {triggerDiagnosticReason}");
+                }
+
                 return triggerResult;
+            }
 
             hamster.JumpRequest.Invoke();
             return ActionFireResult.Fired;
+        }
+
+        private static ActionFireResult Cancel(PlannedAction action, string reason)
+        {
+            HamsterActionLogger.LogCancel(action, reason);
+            return ActionFireResult.Cancelled;
         }
 
         /// <summary>

@@ -46,11 +46,8 @@ namespace Assets.Scripts.Bot.Diagnostics
                 $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
                 $"state={_hamster.HamsterState.Value}");
 
-            if (_hamster.Lives.Value <= 0)
-            {
-                DebugManager.DiagLog("[TEST RESULT] FAIL");
-                DebugManager.DiagStability("[TEST RESULT] FAIL");
-            }
+            DebugManager.DiagLog("[TEST RESULT] FAIL");
+            DebugManager.DiagStability("[TEST RESULT] FAIL");
         }
 
         private void OnGameFinished()

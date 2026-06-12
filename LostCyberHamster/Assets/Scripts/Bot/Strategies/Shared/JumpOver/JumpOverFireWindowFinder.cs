@@ -73,6 +73,24 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             float jumpTravel,
             JumpOverChainModel chainWindow)
         {
+            JumpResolveResult result = ResolveRuntimeOutcomeAtFireShift(
+                hamster,
+                baseObstacles,
+                fireShift,
+                jumpTravel);
+            return result.State == _policy.ExpectedOverState
+                   && chainWindow.IsLastObstacle(result.TargetIndex);
+        }
+
+        /// <summary>
+        /// Возвращает runtime-equivalent outcome для выбранного fire shift.
+        /// </summary>
+        private JumpResolveResult ResolveRuntimeOutcomeAtFireShift(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            float fireShift,
+            float jumpTravel)
+        {
             // Проецирует obstacle snapshot к моменту запуска.
             var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
             JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
@@ -89,8 +107,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
                 damageBigAliveWithoutYByReach: _policy.DamageBigAliveWithoutYByReach);
 
             JumpResolveResult result = _policy.Resolve(obstaclesAtFireShift, context);
-            return result.State == _policy.ExpectedOverState
-                   && chainWindow.IsLastObstacle(result.TargetIndex);
+            return result;
         }
     }
 }

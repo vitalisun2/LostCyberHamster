@@ -3,7 +3,6 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
@@ -38,13 +37,11 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 
             Executor = new JumpOnRoofExecutor(triggerGate);
             Simulator = _simulator;
-            RetainedValidator = new JumpOnRoofRetainedValidator(_policy, _fireWindowFinder);
         }
 
         public BotActionKind ActionKind => _policy.ActionKind;
         public IActionExecutionHandler Executor { get; }
         public ISimulator Simulator { get; }
-        public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
         /// Добавляет jump-on-roof action, если roof support выбран из role-chain и подтвержден resolver-ом.
@@ -112,7 +109,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
         {
             ObstacleSnapshot targetRoof = window.TargetObstacle;
             float projectedTriggerX = triggerObstacle.LeftX - fireShift;
-            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            float triggerX = projectedTriggerX;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
                 triggerX,
                 fireShift,

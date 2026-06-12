@@ -50,7 +50,8 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
         public PlanningState ProjectInProgress(
             PlanningState planningState,
             PlannedAction action,
-            WorldSnapshot worldSnapshot)
+            WorldSnapshot worldSnapshot,
+            float? remainingPostFireWorldShift = null)
         {
             // Проверяет action contract.
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
@@ -63,7 +64,8 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: false);
+                skipTargetObstacleAfterCompletion: false,
+                remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
 
         /// <summary>

@@ -3,7 +3,6 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -35,13 +34,11 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
 
             Executor = new JumpOverExecutor(triggerGate);
             Simulator = _simulator;
-            RetainedValidator = new JumpOverRetainedValidator(_policy, _fireWindowFinder);
         }
 
         public BotActionKind ActionKind => _policy.ActionKind;
         public IActionExecutionHandler Executor { get; }
         public ISimulator Simulator { get; }
-        public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
         /// Добавляет обычный jump-over action, если первый role-based obstacle безопасно перепрыгивается.
@@ -76,7 +73,9 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
 
             // Получает runtime travel и подтверждает fire window.
             if (!_policy.TryGetTravel(out float jumpTravel))
+            {
                 return;
+            }
 
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
@@ -90,14 +89,15 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
             }
 
             // Добавляет safe action в общий набор кандидатов без локального ранжирования.
-            actions.Add(BuildAction(
+            PlannedAction action = BuildAction(
                 _policy,
                 planningState,
                 blockingThreat,
                 blockingThreatIndex,
                 chainWindow,
                 fireShift,
-                jumpTravel));
+                jumpTravel);
+            actions.Add(action);
         }
 
         /// <summary>
@@ -137,7 +137,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
         {
             // Рассчитывает trigger window относительно blocking threat.
             float projectedTriggerX = blockingThreat.LeftX - fireShift;
-            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            float triggerX = projectedTriggerX;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
                 triggerX,
                 fireShift,
@@ -158,5 +158,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 description: $"{policy.DescriptionPrefix} {blockingThreat.ObstacleType}",
                 triggerWindow: triggerWindow);
         }
+
     }
 }

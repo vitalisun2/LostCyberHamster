@@ -1,23 +1,16 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
-using Assets.Scripts.Bot.Planning.RetainedValidation;
-using Assets.Scripts.Bot.Strategies.Shared.Simulation;
 
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
-    /// Собирает role-based план из committed-префикса и лучшей новой ветки.
+    /// Собирает role-based план с нуля по текущему snapshot мира.
     /// </summary>
     public sealed class PlanBuilder
     {
-        private const int InProgressAtomicActionCount = 1;
-
         private readonly PlanningGraphBuilder _graphBuilder;
-        private readonly TransitionSimulator _transitionSimulator;
         private readonly PlanEvaluator _planEvaluator;
-        private readonly RetainedActionRevalidator _retainedActionRevalidator;
-        private readonly ActionInProgressProjector _inProgressProjector;
 
         /// <summary>
         /// Создает role-based сборщик плана поверх generator, simulator и evaluator.
@@ -25,206 +18,43 @@ namespace Assets.Scripts.Bot.Planning
         public PlanBuilder(
             ActionGenerator actionGenerator,
             TransitionSimulator transitionSimulator,
-            PlanEvaluator planEvaluator,
-            RetainedActionRevalidator retainedActionRevalidator,
-            ActionInProgressProjector inProgressProjector)
+            PlanEvaluator planEvaluator)
         {
             _graphBuilder = new PlanningGraphBuilder(actionGenerator, transitionSimulator);
-            _transitionSimulator = transitionSimulator;
             _planEvaluator = planEvaluator;
-            _retainedActionRevalidator = retainedActionRevalidator;
-            _inProgressProjector = inProgressProjector;
         }
 
         /// <summary>
-        /// Строит role-based план по текущему snapshot мира и остаткам старого плана.
+        /// Строит role-based план по текущему snapshot мира.
         /// </summary>
-        public BotPlan Build(WorldSnapshot worldSnapshot, BotPlan committedPlan, bool retainInProgressHead = false)
+        public BotPlan Build(WorldSnapshot worldSnapshot)
         {
             if (worldSnapshot == null)
-                return BotPlan.Empty(committedPlan?.CommittedBoundaryX ?? 0f);
+                return BotPlan.Empty();
 
-            var actions = new List<PlannedAction>();
-            PlanningState rootState = PlanningState.FromSnapshot(worldSnapshot);
-            PlanningState tailRootState = ProjectCommittedPrefix(
-                worldSnapshot,
-                committedPlan,
-                rootState,
-                actions,
-                retainInProgressHead);
+            return Build(worldSnapshot, PlanningState.FromSnapshot(worldSnapshot));
+        }
 
-            // Разворачивает только хвост после сохранённого префикса.
-            IReadOnlyList<PlanningBranch> branches = _graphBuilder.BuildBranches(worldSnapshot, tailRootState);
+        /// <summary>
+        /// Строит role-based план по snapshot мира от указанного planning-состояния.
+        /// </summary>
+        public BotPlan Build(WorldSnapshot worldSnapshot, PlanningState rootState)
+        {
+            if (worldSnapshot == null)
+                return BotPlan.Empty();
+
+            if (rootState == null)
+                return BotPlan.Empty(worldSnapshot.ScreenRightEdgeX);
+
+            // Разворачивает planning tree от переданного root-состояния.
+            IReadOnlyList<PlanningBranch> branches = _graphBuilder.BuildBranches(worldSnapshot, rootState);
             PlanningBranch bestBranch = _planEvaluator.SelectBest(branches);
 
-            if (bestBranch != null && bestBranch.HasActions)
-            {
-                for (int actionIndex = 0; actionIndex < bestBranch.Actions.Count; actionIndex++)
-                    actions.Add(bestBranch.Actions[actionIndex]);
-            }
+            if (bestBranch == null || !bestBranch.HasActions)
+                return BotPlan.Empty(worldSnapshot.ScreenRightEdgeX);
 
-            if (actions.Count == 0)
-                return BotPlan.Empty(GetCommittedBoundaryX(committedPlan, worldSnapshot));
-
-            float score = _planEvaluator.Score(actions);
-            return new BotPlan(actions, worldSnapshot.ScreenRightEdgeX, score);
-        }
-
-        /// <summary>
-        /// Проецирует committed-префикс role-based плана.
-        /// </summary>
-        private PlanningState ProjectCommittedPrefix(
-            WorldSnapshot worldSnapshot,
-            BotPlan committedPlan,
-            PlanningState rootState,
-            List<PlannedAction> retainedActions,
-            bool retainInProgressHead)
-        {
-            if (committedPlan == null || !committedPlan.HasActions)
-                return rootState;
-
-            PlanningState currentState = rootState;
-            IReadOnlyList<PlannedAction> currentActions = committedPlan.Actions;
-
-            for (int actionIndex = 0; actionIndex < currentActions.Count; actionIndex++)
-            {
-                PlannedAction action = currentActions[actionIndex];
-                if (!ShouldRetainCommittedAction(action, actionIndex, worldSnapshot, retainInProgressHead))
-                    break;
-
-                bool isInProgressAtomicAction = IsInProgressAtomicAction(
-                    actionIndex,
-                    retainInProgressHead);
-                bool isBoundaryRetainedAction = IsBoundaryRetainedAction(
-                    currentActions,
-                    actionIndex,
-                    worldSnapshot,
-                    retainInProgressHead);
-                bool requiresRetainedValidation = isBoundaryRetainedAction
-                    || IsTargetBoundJumpOnBeyondScreen(action, worldSnapshot);
-                if (requiresRetainedValidation
-                    && !isInProgressAtomicAction
-                    && !_retainedActionRevalidator.IsStillValid(currentState, action, worldSnapshot))
-                    break;
-
-                PlanningState nextState = retainInProgressHead && actionIndex == 0
-                    ? _inProgressProjector.Project(currentState, action, worldSnapshot)
-                    : _transitionSimulator.Simulate(currentState, action, worldSnapshot);
-                if (nextState == null)
-                    break;
-
-                retainedActions.Add(action);
-                currentState = nextState;
-
-                if (isInProgressAtomicAction)
-                    break;
-            }
-
-            return currentState;
-        }
-
-        /// <summary>
-        /// Проверяет границу retained-префикса.
-        /// </summary>
-        private static bool IsBoundaryRetainedAction(
-            IReadOnlyList<PlannedAction> actions,
-            int actionIndex,
-            WorldSnapshot worldSnapshot,
-            bool retainInProgressHead)
-        {
-            if (actions == null)
-                return false;
-
-            int nextActionIndex = actionIndex + 1;
-            if (nextActionIndex >= actions.Count)
-                return true;
-
-            return !ShouldRetainAction(
-                actions[nextActionIndex],
-                nextActionIndex,
-                worldSnapshot,
-                retainInProgressHead);
-        }
-
-        /// <summary>
-        /// Проверяет сохранение committed-action в префиксе role-based плана.
-        /// </summary>
-        private static bool ShouldRetainCommittedAction(
-            PlannedAction action,
-            int actionIndex,
-            WorldSnapshot worldSnapshot,
-            bool retainInProgressHead)
-        {
-            if (IsInProgressAtomicAction(actionIndex, retainInProgressHead))
-                return true;
-
-            return ShouldRetainAction(action, actionIndex, worldSnapshot, retainInProgressHead);
-        }
-
-        /// <summary>
-        /// Определяет уже запущенное действие, которое нельзя пересобрать до завершения.
-        /// </summary>
-        private static bool IsInProgressAtomicAction(int actionIndex, bool retainInProgressHead)
-        {
-            return retainInProgressHead && actionIndex < InProgressAtomicActionCount;
-        }
-
-        /// <summary>
-        /// Проверяет сохранение действия в префиксе.
-        /// </summary>
-        private static bool ShouldRetainAction(
-            PlannedAction action,
-            int actionIndex,
-            WorldSnapshot worldSnapshot,
-            bool retainInProgressHead)
-        {
-            if (retainInProgressHead && actionIndex == 0)
-                return true;
-
-            if (IsTargetBoundJumpOnAction(action))
-            {
-                return action.RenderWorldX >= worldSnapshot.ScreenLeftEdgeX
-                    && action.RenderWorldX <= worldSnapshot.VisionRightEdgeX;
-            }
-
-            return action.RenderWorldX >= worldSnapshot.ScreenLeftEdgeX
-                && action.RenderWorldX <= worldSnapshot.ScreenRightEdgeX;
-        }
-
-        /// <summary>
-        /// Проверяет, является ли действие target-bound jump-on вариантом.
-        /// </summary>
-        private static bool IsTargetBoundJumpOnAction(PlannedAction action)
-        {
-            if (action == null || !action.TargetObstacleInstanceId.HasValue)
-                return false;
-
-            return action.Kind == BotActionKind.JumpOn
-                || action.Kind == BotActionKind.SuperJumpOn
-                || action.Kind == BotActionKind.JumpOnFromRoof
-                || action.Kind == BotActionKind.SuperJumpOnFromRoof;
-        }
-
-        /// <summary>
-        /// Проверяет, требует ли сохраненный jump-on повторной валидации за экранной границей.
-        /// </summary>
-        private static bool IsTargetBoundJumpOnBeyondScreen(
-            PlannedAction action,
-            WorldSnapshot worldSnapshot)
-        {
-            return IsTargetBoundJumpOnAction(action)
-                && action.RenderWorldX > worldSnapshot.ScreenRightEdgeX;
-        }
-
-        /// <summary>
-        /// Возвращает committed boundary X.
-        /// </summary>
-        private static float GetCommittedBoundaryX(BotPlan committedPlan, WorldSnapshot worldSnapshot)
-        {
-            if (committedPlan != null && committedPlan.CommittedBoundaryX > 0f)
-                return committedPlan.CommittedBoundaryX;
-
-            return worldSnapshot != null ? worldSnapshot.ScreenRightEdgeX : 0f;
+            float score = _planEvaluator.Score(bestBranch.Actions);
+            return new BotPlan(bestBranch.Actions, worldSnapshot.ScreenRightEdgeX, score);
         }
     }
 }

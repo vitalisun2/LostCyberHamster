@@ -443,7 +443,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
         {
             ObstacleSnapshot triggerObstacle = chain.FirstObstacle;
             float projectedTriggerX = triggerObstacle.LeftX - fireShift;
-            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            float triggerX = projectedTriggerX;
             float fireWindowBoundaryMargin =
                 JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
 

@@ -52,7 +52,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
         public PlanningState ProjectInProgress(
             PlanningState planningState,
             PlannedAction action,
-            WorldSnapshot worldSnapshot)
+            WorldSnapshot worldSnapshot,
+            float? remainingPostFireWorldShift = null)
         {
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
                 return null;
@@ -66,7 +67,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: true);
+                skipTargetObstacleAfterCompletion: true,
+                remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
     }
 }

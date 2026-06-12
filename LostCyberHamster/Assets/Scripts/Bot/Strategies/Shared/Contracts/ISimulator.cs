@@ -19,6 +19,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
         PlanningState ProjectInProgress(
             PlanningState planningState,
             PlannedAction action,
-            WorldSnapshot worldSnapshot);
+            WorldSnapshot worldSnapshot,
+            float? remainingPostFireWorldShift = null);
     }
 }

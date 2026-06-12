@@ -3,7 +3,6 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 
 namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
@@ -24,7 +23,6 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             _policy = new PassiveRoofExitPolicy();
             Executor = new PassiveRoofExitExecutor(_policy);
             Simulator = new PassiveRoofExitSimulator(_policy);
-            RetainedValidator = new PassiveRoofExitRetainedValidator(_policy);
         }
 
         /// <summary>
@@ -41,11 +39,6 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
         /// Simulator passive roof exit.
         /// </summary>
         public ISimulator Simulator { get; }
-
-        /// <summary>
-        /// Validator сохраненных passive roof exit actions.
-        /// </summary>
-        public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
         /// Добавляет no-input passive roof exit action, если естественный сход с крыши безопасен.
@@ -87,7 +80,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             PassiveRoofExitModel model)
         {
             // Выбирает stable trigger anchor на последней roof.
-            float triggerX = model.LastRoof.LeftX + planningState.ProjectionWorldShift;
+            float triggerX = model.LastRoof.LeftX;
             string description = $"{_policy.DescriptionPrefix} before {model.ContextObstacle.ObstacleType}";
 
             // Возвращает zero-cost no-tap action.

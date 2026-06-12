@@ -33,7 +33,11 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             HamsterSnapshot nextHamster = PlanningStateTransition.ApplyLaneSwitch(planningState.Hamster, action);
 
             // Продвигает planning-состояние до конца действия.
-            return PlanningStateTransition.Advance(planningState, action, worldSnapshot, nextHamster);
+            return PlanningStateTransition.AdvanceAfterLaneSwitch(
+                planningState,
+                action,
+                worldSnapshot,
+                nextHamster);
         }
 
         /// <summary>
@@ -42,7 +46,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         public PlanningState ProjectInProgress(
             PlanningState planningState,
             PlannedAction action,
-            WorldSnapshot worldSnapshot)
+            WorldSnapshot worldSnapshot,
+            float? remainingPostFireWorldShift = null)
         {
             // Отсекает неподходящий action или неполный planning context.
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
@@ -70,7 +75,9 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: false);
+                skipTargetObstacleAfterCompletion: false,
+                remainingPostFireWorldShift: remainingPostFireWorldShift,
+                startObstacleIndexOverride: 0);
         }
     }
 }

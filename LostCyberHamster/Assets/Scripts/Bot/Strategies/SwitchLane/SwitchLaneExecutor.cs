@@ -35,7 +35,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             if (action.Kind != BotActionKind.SwitchLane
                 || !action.TargetBottomLine.HasValue)
             {
-                return ActionFireResult.Cancelled;
+                return Cancel(action, "reason=invalid-switch-lane-action");
             }
 
             // Проверяет, можно ли сейчас принять tap.
@@ -45,21 +45,49 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             {
                 return hamster.IsShifting.Value
                     ? ActionFireResult.Waiting
-                    : ActionFireResult.Cancelled;
+                    : Cancel(
+                        action,
+                        $"reason=tap-not-accepted state={hamster.HamsterState.Value} shifting={hamster.IsShifting.Value}");
             }
 
             // Сверяет ожидаемую линию после tap.
             if (hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value)
-                return ActionFireResult.Cancelled;
+            {
+                return Cancel(
+                    action,
+                    $"reason=already-on-target-lane lane={(hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
+                    $"target={(action.TargetBottomLine.Value ? "bottom" : "top")}");
+            }
 
             // Проверяет окно срабатывания по триггеру.
-            ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
+            ActionFireResult triggerResult = _triggerGate.Check(
+                action,
+                out float obstacleLeftX,
+                out string triggerDiagnosticReason);
             if (triggerResult != ActionFireResult.Fired)
+            {
+                if (triggerResult == ActionFireResult.Cancelled)
+                {
+                    return Cancel(
+                        action,
+                        $"reason=trigger-gate-cancel obstacleLeftX={obstacleLeftX:F2} {triggerDiagnosticReason}");
+                }
+
                 return triggerResult;
+            }
 
             // Логирует и отправляет tap.
             FireSwitchLane(hamster, action, obstacleLeftX);
             return ActionFireResult.Fired;
+        }
+
+        /// <summary>
+        /// Пишет причину отмены SwitchLane и возвращает Cancelled.
+        /// </summary>
+        private static ActionFireResult Cancel(PlannedAction action, string reason)
+        {
+            HamsterActionLogger.LogCancel(action, reason);
+            return ActionFireResult.Cancelled;
         }
 
         /// <summary>

@@ -3,7 +3,6 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -37,16 +36,11 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoof
 
             Executor = new SuperJumpFromRoofExecutor(triggerGate);
             Simulator = _simulator;
-            RetainedValidator = new JumpFromRoofRetainedValidator(
-                _policy,
-                _fireWindowFinder,
-                _specification);
         }
 
         public BotActionKind ActionKind => _policy.ActionKind;
         public IActionExecutionHandler Executor { get; }
         public ISimulator Simulator { get; }
-        public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
         /// Добавляет super-jump-from-roof action, если passive roof exit опасен, а super-прыжок безопасен.
@@ -112,7 +106,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoof
             // Считает trigger position относительно первой threat.
             ObstacleSnapshot targetObstacle = chainModel.FirstObstacle;
             float projectedTriggerX = targetObstacle.LeftX - fireShift;
-            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            float triggerX = projectedTriggerX;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
                 triggerX,
                 fireShift,

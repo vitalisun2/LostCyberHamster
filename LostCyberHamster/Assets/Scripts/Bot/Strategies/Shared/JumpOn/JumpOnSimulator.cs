@@ -51,7 +51,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
         public PlanningState ProjectInProgress(
             PlanningState planningState,
             PlannedAction action,
-            WorldSnapshot worldSnapshot)
+            WorldSnapshot worldSnapshot,
+            float? remainingPostFireWorldShift = null)
         {
             // Проверяет входные данные.
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
@@ -64,7 +65,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: true);
+                skipTargetObstacleAfterCompletion: true,
+                remainingPostFireWorldShift: remainingPostFireWorldShift,
+                removedObstacleInstanceIdAfterCompletion: action.TargetObstacleInstanceId);
         }
     }
 }

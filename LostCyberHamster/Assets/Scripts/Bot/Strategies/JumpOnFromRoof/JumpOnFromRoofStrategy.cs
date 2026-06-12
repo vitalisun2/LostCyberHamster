@@ -3,7 +3,6 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
-using Assets.Scripts.Bot.Planning.RetainedValidation;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -55,10 +54,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnFromRoof
             // Публикует runtime handlers наружу.
             Executor = new JumpOnFromRoofExecutor(triggerGate);
             Simulator = _simulator;
-            RetainedValidator = new JumpOnFromRoofRetainedValidator(
-                _policy,
-                _fireWindowFinder,
-                _specification);
         }
 
         /// <summary>
@@ -75,11 +70,6 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnFromRoof
         /// Simulator обычного roof-to-road jump-on.
         /// </summary>
         public ISimulator Simulator { get; }
-
-        /// <summary>
-        /// Validator сохраненных actions обычного roof-to-road jump-on.
-        /// </summary>
-        public IRetainedActionValidator RetainedValidator { get; }
 
         /// <summary>
         /// Добавляет ordinary roof-to-road jump-on action, если target и полное действие безопасны.
@@ -162,7 +152,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnFromRoof
             // Вычисляет координату запуска.
             ObstacleSnapshot targetObstacle = window.TargetObstacle;
             float projectedTriggerX = triggerObstacle.LeftX - fireShift;
-            float triggerX = projectedTriggerX + planningState.ProjectionWorldShift;
+            float triggerX = projectedTriggerX;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
                 triggerX,
                 fireShift,

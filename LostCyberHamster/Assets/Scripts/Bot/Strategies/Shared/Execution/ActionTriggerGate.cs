@@ -27,23 +27,44 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Execution
         /// </summary>
         public ActionFireResult Check(PlannedAction action, out float obstacleLeftX)
         {
+            return Check(action, out obstacleLeftX, out _);
+        }
+
+        /// <summary>
+        /// Проверяет trigger gate и возвращает diagnostic reason для non-fired результата.
+        /// </summary>
+        public ActionFireResult Check(
+            PlannedAction action,
+            out float obstacleLeftX,
+            out string diagnosticReason)
+        {
             // Сбрасывает выходную координату и определяет obstacle-триггер.
             obstacleLeftX = 0f;
+            diagnosticReason = null;
             int? triggerObstacleInstanceId = action?.TriggerObstacleInstanceId ?? action?.TargetObstacleInstanceId;
 
             // Отменяет проверку без доступного obstacle-триггера.
             if (!triggerObstacleInstanceId.HasValue)
+            {
+                diagnosticReason = "missing-trigger-obstacle-id";
                 return ActionFireResult.Cancelled;
+            }
 
             // Находит live obstacle по сохранённому идентификатору.
             Obstacle obstacle = _liveObstacleResolver.Find(triggerObstacleInstanceId.Value);
             if (obstacle == null)
+            {
+                diagnosticReason = $"trigger-obstacle-not-found instanceId={triggerObstacleInstanceId.Value}";
                 return ActionFireResult.Cancelled;
+            }
 
             // Получает collider препятствия для расчёта левой границы.
             BoxCollider2D collider = obstacle.GetComponentInChildren<BoxCollider2D>();
             if (collider == null)
+            {
+                diagnosticReason = $"trigger-obstacle-has-no-collider instanceId={triggerObstacleInstanceId.Value}";
                 return ActionFireResult.Cancelled;
+            }
 
             // Сравнивает текущую позицию препятствия с рассчитанным trigger contract.
             obstacleLeftX = collider.bounds.min.x;
@@ -61,10 +82,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Execution
                     action.TriggerWindow.Value,
                     obstacleLeftX,
                     hasPreviousObstacleLeftX,
-                    previousObstacleLeftX);
+                    previousObstacleLeftX,
+                    out diagnosticReason);
             }
 
-            return CheckPoint(action.TriggerX, obstacleLeftX);
+            return CheckPoint(action.TriggerX, obstacleLeftX, out diagnosticReason);
         }
 
         private static ActionFireResult CheckWindow(
@@ -72,8 +94,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Execution
             ActionTriggerWindow window,
             float obstacleLeftX,
             bool hasPreviousObstacleLeftX,
-            float previousObstacleLeftX)
+            float previousObstacleLeftX,
+            out string diagnosticReason)
         {
+            diagnosticReason = null;
+
             if (hasPreviousObstacleLeftX && DidCrossSelectedTrigger(window, action.TriggerX, previousObstacleLeftX, obstacleLeftX))
                 return ActionFireResult.Fired;
 
@@ -81,10 +106,19 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Execution
                 return ActionFireResult.Fired;
 
             if (IsAfterWindowClose(window, obstacleLeftX))
+            {
+                diagnosticReason =
+                    $"after-window-close obstacleLeftX={obstacleLeftX:F2} latest={window.LatestTriggerX:F2} " +
+                    $"prev={(hasPreviousObstacleLeftX ? previousObstacleLeftX.ToString("F2") : "none")}";
                 return ActionFireResult.Cancelled;
+            }
 
             if (IsBeforeWindowOpen(window, obstacleLeftX))
+            {
+                diagnosticReason =
+                    $"before-window-open obstacleLeftX={obstacleLeftX:F2} earliest={window.EarliestTriggerX:F2}";
                 return ActionFireResult.Waiting;
+            }
 
             if (obstacleLeftX <= action.TriggerX + WindowBoundaryEpsilon)
                 return ActionFireResult.Fired;
@@ -92,6 +126,9 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Execution
             if (IsNarrowForCurrentRuntimeStep(window, hasPreviousObstacleLeftX, previousObstacleLeftX, obstacleLeftX))
                 return ActionFireResult.Fired;
 
+            diagnosticReason =
+                $"inside-window-waiting obstacleLeftX={obstacleLeftX:F2} triggerX={action.TriggerX:F2} " +
+                $"window=[{window.EarliestTriggerX:F2},{window.LatestTriggerX:F2}]";
             return ActionFireResult.Waiting;
         }
 
@@ -117,11 +154,16 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Execution
             return obstacleLeftX > window.EarliestTriggerX + WindowBoundaryEpsilon;
         }
 
-        private static ActionFireResult CheckPoint(float triggerX, float obstacleLeftX)
+        private static ActionFireResult CheckPoint(float triggerX, float obstacleLeftX, out string diagnosticReason)
         {
-            return obstacleLeftX > triggerX
-                ? ActionFireResult.Waiting
-                : ActionFireResult.Fired;
+            if (obstacleLeftX > triggerX)
+            {
+                diagnosticReason = $"point-before-trigger obstacleLeftX={obstacleLeftX:F2} triggerX={triggerX:F2}";
+                return ActionFireResult.Waiting;
+            }
+
+            diagnosticReason = null;
+            return ActionFireResult.Fired;
         }
 
         private static bool IsNarrowForCurrentRuntimeStep(
