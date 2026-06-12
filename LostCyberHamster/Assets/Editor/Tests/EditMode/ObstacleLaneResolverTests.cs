@@ -172,7 +172,6 @@ namespace Assets.Tests.EditMode
                 new List<ObstacleSnapshot>(obstacles),
                 screenLeftEdgeX: -10f,
                 screenRightEdgeX: 10f,
-                visionRightEdgeX: 20f,
                 snapshotTime: 0f);
         }
     }

@@ -2,10 +2,10 @@
 
 ## Статус
 
-- Тип: план реализации.
+- Тип: план реализации и tracking выполнения.
 - Ветка: `integration/unity-live`.
 - Цель: заменить rolling replanning по таймеру на event-driven replanning для детерминированного runner-мира.
-- Код пока не менять в рамках этого документа.
+- Реализация выполнена в рамках этого документа.
 
 ## Целевая идея
 
@@ -16,9 +16,9 @@
 3. `SpawnPattern` — `ObstacleSpawner` добавил новый pattern в `SpawnedObstacles`.
 4. `ActionCompleted` / `ActionCancelled` — executor завершил или отменил текущую head-action.
 
-Текущая head-action остаётся единственным committed элементом. Хвост после неё свободно пересчитывается. Коммитить `head + 2` и вводить soft-commit/revalidation сейчас не нужно.
+Committed prefix удерживает ближайшие два действия: текущую head-action и следующий action для immediate handoff. Хвост после них свободно пересчитывается. Коммитить более длинный prefix и вводить soft-commit/revalidation сейчас не нужно.
 
-## Факты по текущему коду
+## Исходные факты по коду перед реализацией
 
 - `RuntimeBotController` тикает через `IGameLateUpdateListener.OnLateUpdate()` и вызывается из `GameManager.LateUpdate()`.
 - `ObstacleSpawner` тикает через `IGameUpdateListener.OnUpdate()` и вызывается из `GameManager.Update()` до `LateUpdate()`. Поэтому spawn-event, выставленный в `Update`, может быть обработан ботом в том же кадре в `LateUpdate`.
@@ -32,20 +32,20 @@
 - `BuildPlanForCurrentExecutionState()` уже умеет:
   - строить plan с нуля, если текущего плана нет;
   - сохранять текущую head-action, если она уже in-progress;
-  - сохранять pending head-action, если она вошла в execution region и trigger ещё reachable;
-  - строить хвост от projected state после committed head.
+  - сохранять следующий pending action, если trigger ещё reachable;
+  - строить хвост от projected state после committed prefix.
 - `PlanExecutor.Tick()` исполняет только head-action, но после completion уже делает immediate handoff: `AdvanceHead()` и сразу `TryFireCurrentHead()`.
 - Текущий `PlanExecutionTickResult` — enum `None/Fired/Completed/Cancelled`. Он не может выразить факт "предыдущая action completed, следующая action fired в тот же tick". Для event-driven replanning это важно, потому что completion должен запросить replan хвоста даже если новая head-action уже fired.
 - `SnapshotBuilder.CollectObstacles()` сейчас фильтрует obstacles по `screenLeftEdgeX` и `visionRightEdgeX`. Это не равно "все spawned obstacles".
 - `ObstacleSpawner.SpawnPattern()` добавляет obstacles в `_spawnedObstacles`; `UnspawnObstacle()` удаляет их из списка при out-of-bounds или jump-on unspawn.
 - Реальная скорость движения static obstacle: `ScrollLeftMechanics.Update()` использует `Consts.RoadScrollSpeed * 3.8f`; сейчас `RoadScrollSpeed = 1f`, `GameSpeedBase = 3.8f`.
-- `WorldSnapshot.VisionRightEdgeX` используется только в `RuntimeBotController.IsActionInExecutionRegion()` для target-bound jump-on actions. После отказа от artificial vision horizon это поле лучше удалить или перестать использовать, чтобы старая semantic не коммитила дальние actions раньше нужного.
+- `WorldSnapshot.VisionRightEdgeX` был artificial horizon для старой модели видимости. В реализации поле удалено, retention не должен опираться на него.
 
 ## Non-goals
 
 - Не менять scoring, `PlanEvaluator`, веса energy/tap/progression.
 - Не менять `PlanningGraphBuilder.MaxSearchDepth = 6`.
-- Не добавлять committed prefix длиннее head.
+- Не добавлять committed prefix длиннее двух actions.
 - Не добавлять soft-commit/revalidation для tail-actions.
 - Не переводить planner на будущие unspawned level-data; horizon остаётся равен всем active spawned obstacles.
 - Не решать отдельно animated/moving obstacle cases; они будут отдельным этапом.
@@ -94,7 +94,7 @@ public enum PlanExecutionTickResult
 }
 ```
 
-Тогда `PlanExecutor.Tick()` после completion может вернуть `Completed | Fired`, если следующий head-action стартовал в тот же tick. Это сохраняет immediate handoff и одновременно даёт controller-у основание пересобрать хвост после новой in-progress head.
+Тогда `PlanExecutor.Tick()` после completion может вернуть `Completed | Fired`, если следующий head-action стартовал в тот же tick. Это сохраняет immediate handoff и при этом даёт controller-у основание пересобрать хвост после новой in-progress head.
 
 ### Spawn event
 
@@ -125,17 +125,18 @@ Screen bounds всё ещё нужны:
 - `ScreenRightEdgeX`;
 - возможно retention pending head.
 
-Artificial `VisionRightEdgeX` больше не нужен как horizon. Лучший вариант — удалить его из `WorldSnapshot` и обновить call sites. Если на реализации это создаст слишком большой diff, временно оставить поле равным `ScreenRightEdgeX`, но не использовать его как planning horizon.
+Artificial `VisionRightEdgeX` больше не нужен как horizon. Поле должно быть удалено из `WorldSnapshot`, а все call sites должны перейти на `ScreenRightEdgeX` или на явную работу со всеми `SpawnedObstacles`.
 
-### Committed head only
+### Committed prefix: head + next action
 
 Оставить текущую идею `BuildPlanForCurrentExecutionState()`:
 
-- если action in-progress: project current head и rebuild tail;
-- если pending head уже в execution region и trigger reachable: simulate pending head и rebuild tail;
+- если action in-progress: project current head;
+- если следующий pending action trigger reachable: simulate pending action;
+- rebuild tail от состояния после committed prefix;
 - иначе rebuild full plan from live snapshot.
 
-Не сохранять второй/третий action как committed. Tail всегда является новым best branch от состояния после committed head.
+Не сохранять третий и последующие actions как committed. Tail всегда является новым best branch от состояния после committed prefix.
 
 ## План реализации
 
@@ -260,7 +261,7 @@ Artificial `VisionRightEdgeX` больше не нужен как horizon. Лу�
    - читать только `ObstacleSpawner.SpawnedObstacles`;
    - пропускать null obstacle/collider;
    - сортировать snapshot по `LeftX`.
-5. Удалить `VisionRightEdgeX` из `WorldSnapshot` и `PlanningSnapshotProjector`, если diff остаётся локальным.
+5. Удалить `VisionRightEdgeX` из `WorldSnapshot` и `PlanningSnapshotProjector`.
 6. В `RuntimeBotController.IsActionInExecutionRegion()` использовать `ScreenRightEdgeX` для всех action kinds.
 
 Критерий готовности:
@@ -268,7 +269,7 @@ Artificial `VisionRightEdgeX` больше не нужен как horizon. Лу�
 - Все active spawned obstacles попадают в `WorldSnapshot.Obstacles`.
 - Старый artificial vision horizon не участвует в planning или head retention.
 
-### Шаг 6. Сохранить текущую модель committed head
+### Шаг 6. Сохранить bounded committed prefix
 
 Файл:
 
@@ -276,18 +277,18 @@ Artificial `VisionRightEdgeX` больше не нужен как horizon. Лу�
 
 Действия:
 
-1. Не добавлять committed prefix длиннее одной action.
+1. Не добавлять committed prefix длиннее двух actions.
 2. Сохранить `BuildTailRootState()` как единственную точку решения:
    - in-progress head -> `ProjectInProgress`;
-   - pending head in execution region and reachable -> `Simulate`;
+   - pending committed action with reachable trigger -> `Simulate`;
    - иначе full rebuild.
 3. Проверить, что `SetPlan(plan)` сохраняет `_isActionInProgress`, если новая head equivalent старой.
 4. Не добавлять revalidation layer для tail.
 
 Критерий готовности:
 
-- На spawn-event пересчитывается хвост после текущей committed head.
-- Если pending head ещё далеко, новый plan может заменить её полностью.
+- На spawn-event пересчитывается хвост после текущего committed prefix.
+- Если pending committed action уже не reachable, новый plan строится от live snapshot.
 
 ### Шаг 7. Диагностика
 
@@ -348,7 +349,7 @@ Artificial `VisionRightEdgeX` больше не нужен как horizon. Лу�
    - если нет spawn и action lifecycle event, plan activation log не повторяется каждые `0.5s`.
 4. Action completion:
    - после completion/cancel появляется rebuild с reason `ActionCompleted`/`ActionCancelled`.
-   - если completion сразу fire-ит следующий head в том же tick, rebuild строит хвост после новой in-progress head.
+   - если completion сразу fire-ит следующий head в том же tick, rebuild строит хвост после новой in-progress head и следующего retained action, если он есть.
 5. Bot toggle:
    - F1 OFF очищает plan;
    - F1 ON запрашивает новый plan без timer.
@@ -368,12 +369,12 @@ Artificial `VisionRightEdgeX` больше не нужен как horizon. Лу�
 
 ### Риск: пропущенный spawn-event оставит bot без актуального хвоста
 
-Причина: после удаления timer больше нет periodic fallback.
+Причина: после удаления timer больше нет периодической пересборки, которая раньше могла скрыть пропущенный event.
 
 Митигация:
 
 - гарантировать подписку controller-а на `ObstacleSpawner.Instance`;
-- иметь one-shot initial replan fallback при first ready tick;
+- иметь one-shot initial replan при first ready tick для случая поздней регистрации controller-а;
 - логировать `SpawnPattern` reason.
 
 ### Риск: completion + immediate fire потеряет completion-event
@@ -387,12 +388,12 @@ Artificial `VisionRightEdgeX` больше не нужен как horizon. Лу�
 
 ### Риск: удаление vision horizon меняет pending-head retention
 
-Причина: `VisionRightEdgeX` сейчас даёт target-bound jump-on более широкий execution region.
+Причина: `VisionRightEdgeX` раньше давал target-bound jump-on более широкий execution region.
 
 Митигация:
 
-- consciously перейти на `ScreenRightEdgeX` для retention;
-- дальние actions не committed, а пересчитываются при spawn/action event.
+- не использовать artificial vision horizon для retention;
+- третья и последующие actions не committed, а пересчитываются при spawn/action event.
 
 ### Риск: all spawned snapshot включает obstacles слева от экрана
 
@@ -412,7 +413,7 @@ Artificial `VisionRightEdgeX` больше не нужен как horizon. Лу�
 
 - сначала менять orchestration, не scoring/strategies;
 - проверять логи выбранной ветки и execution result;
-- не добавлять soft-commit до стабилизации простого head-only варианта.
+- не добавлять soft-commit до стабилизации bounded prefix варианта.
 
 ## Критерии готовности
 
@@ -420,11 +421,20 @@ Artificial `VisionRightEdgeX` больше не нужен как horizon. Лу�
 - Rebuild вызывается только через queued reasons: `LevelStart`, `BotEnabled`, `SpawnPattern`, `ActionCompleted`, `ActionCancelled`.
 - `SnapshotBuilder` строит `WorldSnapshot.Obstacles` из всех `ObstacleSpawner.SpawnedObstacles`.
 - `RuntimeBotController` не строит plan напрямую из spawn callback; callback только requests replan.
-- Committed prefix не длиннее текущей head-action.
+- Committed prefix не длиннее двух actions.
 - Immediate handoff в `PlanExecutor` сохранён.
 - Completion не теряется при `Completed | Fired`.
 - В diagnostic log plan activation содержит reason.
 - Документация `architecture_knowledge_base.md` обновлена после реализации.
+
+## Implementation notes
+
+- `PlanExecutionTickResult` переведён на flags enum, чтобы `Completed | Fired` сохранял immediate handoff и не терял completion-trigger для replan.
+- `RuntimeBotController` переведён с rolling timer на queued `BotReplanReason`.
+- `ObstacleSpawner` публикует `PatternSpawned` после успешного добавления obstacles pattern-а в `_spawnedObstacles`.
+- `SnapshotBuilder` собирает все active spawned obstacles без `screenLeftEdgeX`/right-horizon фильтра.
+- `WorldSnapshot.VisionRightEdgeX` удалён полностью.
+- `docs/architecture_knowledge_base.md` обновлён под event-driven replanning.
 
 ## Замечания по Clean Code / KISS
 

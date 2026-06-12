@@ -37,7 +37,6 @@ namespace Assets.Scripts.Bot.Planning
                 projectedObstacles,
                 sourceSnapshot.ScreenLeftEdgeX,
                 sourceSnapshot.ScreenRightEdgeX,
-                sourceSnapshot.VisionRightEdgeX,
                 sourceSnapshot.SnapshotTime);
         }
     }

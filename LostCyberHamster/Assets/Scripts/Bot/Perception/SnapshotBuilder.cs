@@ -12,7 +12,6 @@ namespace Assets.Scripts.Bot.Perception
     /// </summary>
     public sealed class SnapshotBuilder
     {
-        private const float _extraVisionScreenFraction = 2f;
         private static readonly Comparison<ObstacleSnapshot> _compareObstaclesByLeftX =
             (left, right) => left.LeftX.CompareTo(right.LeftX);
 
@@ -43,9 +42,8 @@ namespace Assets.Scripts.Bot.Perception
             float halfWidth = camera.orthographicSize * camera.aspect;
             float screenLeftEdgeX = camera.transform.position.x - halfWidth;
             float screenRightEdgeX = camera.transform.position.x + halfWidth;
-            float visionRightEdgeX = screenRightEdgeX + halfWidth * 2f * _extraVisionScreenFraction;
 
-            List<ObstacleSnapshot> obstacles = CollectObstacles(screenLeftEdgeX, visionRightEdgeX);
+            List<ObstacleSnapshot> obstacles = CollectObstacles();
             HamsterSnapshot hamsterSnapshot = BuildHamsterSnapshot(hamster);
 
             return new WorldSnapshot(
@@ -53,7 +51,6 @@ namespace Assets.Scripts.Bot.Perception
                 obstacles,
                 screenLeftEdgeX,
                 screenRightEdgeX,
-                visionRightEdgeX,
                 Time.time);
         }
 
@@ -90,9 +87,9 @@ namespace Assets.Scripts.Bot.Perception
         }
 
         /// <summary>
-        /// Собирает obstacles в зоне видимости.
+        /// Собирает все active spawned obstacles.
         /// </summary>
-        private List<ObstacleSnapshot> CollectObstacles(float screenLeftEdgeX, float visionRightEdgeX)
+        private List<ObstacleSnapshot> CollectObstacles()
         {
             ObstacleSpawner spawner = ObstacleSpawner.Instance;
             if (spawner == null)
@@ -118,9 +115,6 @@ namespace Assets.Scripts.Bot.Perception
                     continue;
 
                 Bounds bounds = collider.bounds;
-                if (bounds.max.x < screenLeftEdgeX || bounds.min.x > visionRightEdgeX)
-                    continue;
-
                 obstacles.Add(new ObstacleSnapshot(
                     obstacle.GetInstanceID(),
                     obstacle.ObstacleType.ObstacleTypeEnum,

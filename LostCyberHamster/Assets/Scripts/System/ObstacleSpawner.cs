@@ -20,6 +20,7 @@ namespace Assets.Scripts.System
         public List<InstantiatedObstacle> SpawnedObstacles => _spawnedObstacles;
         public string CurrPatternName { get; private set; }
         public int CurrPatternIndex => _currentPatternIndex;
+        public event global::System.Action<int, string> PatternSpawned;
 
         private readonly float _delayBetweenPatterns = 2.0f;
         private float _timeSinceLastPattern;
@@ -168,6 +169,8 @@ namespace Assets.Scripts.System
                 obstacle.ObstacleScript.InitializeMechanics();
                 _spawnedObstacles.Add(obstacle);
             }
+
+            PatternSpawned?.Invoke(patternIndex, CurrPatternName);
         }
     }
 

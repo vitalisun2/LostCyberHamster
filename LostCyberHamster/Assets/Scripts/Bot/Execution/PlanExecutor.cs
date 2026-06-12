@@ -12,12 +12,13 @@ namespace Assets.Scripts.Bot.Execution
     /// <summary>
     /// Описывает результат одного execution tick текущего плана.
     /// </summary>
+    [Flags]
     public enum PlanExecutionTickResult
     {
-        None,
-        Fired,
-        Completed,
-        Cancelled
+        None = 0,
+        Fired = 1,
+        Completed = 2,
+        Cancelled = 4
     }
 
     /// <summary>
@@ -106,10 +107,7 @@ namespace Assets.Scripts.Bot.Execution
             {
                 AdvanceHead();
                 PlanExecutionTickResult nextHeadResult = TryFireCurrentHead(hamster);
-                if (nextHeadResult != PlanExecutionTickResult.None)
-                    return nextHeadResult;
-
-                return PlanExecutionTickResult.Completed;
+                return PlanExecutionTickResult.Completed | nextHeadResult;
             }
 
             return PlanExecutionTickResult.None;

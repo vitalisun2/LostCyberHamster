@@ -539,8 +539,9 @@ Menu: `Tools/Migration/` — 3 шага:
 - `ObjectCategory.Threat` ≠ полное множество runtime-опасных объектов. Классификатор может помечать часть как `Target`. Safety проверки сверять с runtime-dangerous type set.
 - `HamsterState` — источник истины для прыжков: `JumpOver` = перепрыгивание.
 - Chain-stage тесты: все объекты цепочки должны попадать в один initial snapshot (в пределах `scanRange`).
-- Runtime bot planning строит план с нуля от live snapshot: начальный план создаётся при пустом executor-е, затем full rebuild идёт только после `Completed` или `Cancelled` head-action.
-- Во время ожидания trigger или выполнения head-action дерево решений не перестраивается; runtime fire/cancel остаётся ответственностью executor/gate.
+- Runtime bot planning работает event-driven: plan rebuild запрашивается на `LevelStart`, `BotEnabled`, `SpawnPattern`, `ActionCompleted` и `ActionCancelled`; таймерного rolling rebuild нет.
+- Snapshot horizon для бота — все active `ObstacleSpawner.SpawnedObstacles`, без искусственной правой границы видимости.
+- Во время ожидания trigger или выполнения head-action committed prefix удерживает до двух действий: текущую head-action и следующий action для immediate handoff; при replan пересчитывается только хвост после этого prefix. Runtime fire/cancel остаётся ответственностью executor/gate.
 - Execution handoff: если после завершения/освобождения head-action в retained хвосте уже есть следующий шаг, executor должен сначала дать ему шанс стартовать, а rebuild должен пересчитывать только хвост после нового in-progress шага.
 - Для actions с ранним handoff-событием (`JumpOn` уничтожает target на `transform_jumped_on`, но возвращается в `Run` позже) completion для следующего bot action нельзя сводить только к финальному `Run`.
 - Для timed jump-on objective при равных target/стоимости/тапах выбирать ветку с более ранним первым trigger, чтобы не сужать runtime fire-window первого action.
@@ -620,7 +621,7 @@ Menu: `Tools/Migration/` — 3 шага:
 ## Bot Architecture Pipeline
 
 **Папка:** `Assets/Scripts/Bot/`
-**Оркестратор:** `RuntimeBotController.cs` (MonoBehaviour, `IGameLateUpdateListener`)
+**Оркестратор:** `RuntimeBotController.cs` (MonoBehaviour, `IGameStartListener`, `IGameLateUpdateListener`)
 
 ### Pipeline
 
@@ -636,7 +637,7 @@ RuntimeBotController
     → PlanEvaluator
 ```
 
-1. **`SnapshotBuilder`** (`Perception/`) — собирает `WorldSnapshot` из живых Unity-объектов.
+1. **`SnapshotBuilder`** (`Perception/`) — собирает `WorldSnapshot` из живых Unity-объектов, включая все active spawned obstacles.
 2. **`PlanExecutor`** (`Execution/`) — исполняет только head-action текущего `BotPlan` и возвращает `PlanExecutionTickResult`.
 3. **`PlanBuilder`** (`Planning/`) — строит новый `BotPlan` с нуля по live snapshot.
 4. **`PlanningGraphBuilder`** (`Planning/`) — раскрывает дерево решений до `MaxSearchDepth = 6`.
@@ -645,10 +646,12 @@ RuntimeBotController
 7. **`PlanEvaluator`** (`Planning/`) — выбирает лучшую ветку по objective, energy cost, tap count и progression.
 
 **Триггеры пересчёта** (в `RuntimeBotController`):
-- пустой текущий plan — начальное построение;
-- `PlanExecutionTickResult.Completed` — head-action завершён, следующий plan строится от live snapshot;
+- `LevelStart` — первичное построение plan после старта gameplay;
+- `BotEnabled` — построение plan после включения бота;
+- `SpawnPattern` — пересборка после добавления нового pattern в `ObstacleSpawner.SpawnedObstacles`;
+- `PlanExecutionTickResult.Completed` — head-action завершён, следующий plan строится от live snapshot или от новой in-progress head после immediate handoff;
 - `PlanExecutionTickResult.Cancelled` — head-action отменён, следующий plan строится от live snapshot;
-- `PlanExecutionTickResult.Fired` и `None` — дерево решений не перестраивается.
+- `PlanExecutionTickResult.Fired` и `None` сами по себе дерево решений не перестраивают.
 
 ### Классификация объектов
 

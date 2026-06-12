@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Assets.Scripts;
@@ -5,7 +6,6 @@ using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Execution;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
-using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.GameManagerLogic;
@@ -29,13 +29,16 @@ using Assets.Scripts.Bot.Strategies.SuperJumpOnRoof;
 using Assets.Scripts.Bot.Strategies.SuperRoofJumpOver;
 using Assets.Scripts.Bot.Strategies.SwitchLane;
 using UnityEngine;
+using RuntimeObstacleSpawner = Assets.Scripts.System.ObstacleSpawner;
 
 namespace Assets.Scripts.Bot
 {
     /// <summary>
     /// Оркестрирует perception, planning и execution бота в рантайме.
     /// </summary>
-    public sealed class RuntimeBotController : MonoBehaviour, Listeners.IGameLateUpdateListener
+    public sealed class RuntimeBotController : MonoBehaviour,
+        Listeners.IGameStartListener,
+        Listeners.IGameLateUpdateListener
     {
         /// <summary>
         /// Интервал повторной попытки поиска scene-зависимостей.
@@ -43,29 +46,35 @@ namespace Assets.Scripts.Bot
         private const float _initRetryInterval = 0.5f;
 
         /// <summary>
-        /// Интервал регулярной пересборки planning tree во время gameplay.
-        /// </summary>
-        private const float _rollingReplanInterval = 0.5f;
-
-        /// <summary>
         /// Допуск для проверки live trigger window.
         /// </summary>
         private const float _triggerWindowEpsilon = 0.001f;
+
+        /// <summary>
+        /// Количество ближайших действий, которые replan не заменяет: текущая голова и следующий action для instant handoff.
+        /// </summary>
+        private const int _committedPrefixActionCount = 2;
 
         /// <summary>
         /// Имя runtime GameObject, на который подключается bot controller.
         /// </summary>
         private const string _hostObjectName = "[Bot]";
 
+        [Flags]
+        private enum BotReplanReason
+        {
+            None = 0,
+            LevelStart = 1,
+            BotEnabled = 2,
+            SpawnPattern = 4,
+            ActionCompleted = 8,
+            ActionCancelled = 16
+        }
+
         /// <summary>
         /// Builder runtime snapshot мира вокруг хомяка.
         /// </summary>
         private readonly SnapshotBuilder _snapshotBuilder = new SnapshotBuilder();
-
-        /// <summary>
-        /// Detector unresolved role-based situations for retained-head validation.
-        /// </summary>
-        private readonly DecisionPointDetector _decisionPointDetector = new DecisionPointDetector();
 
         /// <summary>
         /// Executor текущего bot plan.
@@ -108,11 +117,6 @@ namespace Assets.Scripts.Bot
         private float _nextInitRetryTime;
 
         /// <summary>
-        /// Runtime-время следующей регулярной пересборки плана.
-        /// </summary>
-        private float _nextRollingReplanTime;
-
-        /// <summary>
         /// Head-action, которая была фактически запущена executor-ом.
         /// </summary>
         private PlannedAction _inProgressHeadAction;
@@ -121,6 +125,26 @@ namespace Assets.Scripts.Bot
         /// Snapshot time момента запуска текущей in-progress head-action.
         /// </summary>
         private float _inProgressHeadFireTime;
+
+        /// <summary>
+        /// Признак запрошенной event-driven пересборки плана.
+        /// </summary>
+        private bool _isReplanRequested;
+
+        /// <summary>
+        /// Накопленные причины пересборки плана до ближайшего bot tick.
+        /// </summary>
+        private BotReplanReason _pendingReplanReasons = BotReplanReason.None;
+
+        /// <summary>
+        /// Признак уже запрошенного первичного plan для текущего gameplay runtime.
+        /// </summary>
+        private bool _initialReplanRequestedForCurrentGame;
+
+        /// <summary>
+        /// ObstacleSpawner, на событие spawn которого controller сейчас подписан.
+        /// </summary>
+        private RuntimeObstacleSpawner _subscribedObstacleSpawner;
 
         /// <summary>
         /// Признак включенного bot controller.
@@ -229,7 +253,13 @@ namespace Assets.Scripts.Bot
 
             // Пытается найти runtime-зависимости.
             if (!IsInitialized || _registeredGameManager == null)
+            {
                 TryResolveRuntimeDependencies();
+                return;
+            }
+
+            // ObstacleSpawner может появиться после регистрации controller-а в GameManager.
+            SubscribeToObstacleSpawner(RuntimeObstacleSpawner.Instance);
         }
 
         /// <summary>
@@ -250,11 +280,23 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
+        /// Запрашивает первичную пересборку плана после старта gameplay.
+        /// </summary>
+        public void OnStart()
+        {
+            if (!IsEnabled)
+                return;
+
+            RequestInitialReplan(BotReplanReason.LevelStart);
+        }
+
+        /// <summary>
         /// Освобождает регистрацию в game loop и runtime tracker.
         /// </summary>
         private void OnDestroy()
         {
             // Отписывает controller от scene-зависимостей.
+            UnsubscribeFromObstacleSpawner();
             UnregisterFromGameManager();
             _eventTracker?.Dispose();
         }
@@ -266,7 +308,7 @@ namespace Assets.Scripts.Bot
         {
             // Переводит controller в активное состояние.
             IsEnabled = true;
-            _nextRollingReplanTime = 0f;
+            RequestInitialReplan(BotReplanReason.BotEnabled);
             if (!IsInitialized)
                 TryResolveRuntimeDependencies();
         }
@@ -279,7 +321,8 @@ namespace Assets.Scripts.Bot
             // Очищает runtime state бота.
             IsEnabled = false;
             LastSnapshot = null;
-            _nextRollingReplanTime = 0f;
+            ClearReplanRequest();
+            _initialReplanRequestedForCurrentGame = false;
             ClearInProgressHeadFirePoint();
             _executor?.Clear();
         }
@@ -293,6 +336,8 @@ namespace Assets.Scripts.Bot
             if (_executor == null || _planBuilder == null)
                 return;
 
+            EnsureInitialReplanRequested();
+
             // Сначала снимаем snapshot для текущего execution-тика.
             LastSnapshot = _snapshotBuilder.Build(_hamster);
             PlanExecutionTickResult executionResult = _executor.Tick(_hamster);
@@ -303,6 +348,7 @@ namespace Assets.Scripts.Bot
                 LastSnapshot = _snapshotBuilder.Build(_hamster);
 
             UpdateInProgressHeadFirePoint(executionResult);
+            RequestReplanForExecutionResult(executionResult);
 
             if (ShouldRebuildPlan())
                 RebuildPlanFromCurrentSnapshot();
@@ -335,8 +381,7 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private bool ShouldRebuildPlan()
         {
-            // Пересобирает план строго по rolling-интервалу.
-            return Time.time >= _nextRollingReplanTime;
+            return _isReplanRequested;
         }
 
         /// <summary>
@@ -348,10 +393,12 @@ namespace Assets.Scripts.Bot
             if (_executor == null || _planBuilder == null)
                 return;
 
-            _nextRollingReplanTime = Time.time + _rollingReplanInterval;
+            BotReplanReason replanReasons = ConsumeReplanReasons();
+            if (replanReasons == BotReplanReason.None)
+                return;
 
             // Строит candidate plan с учетом текущего execution state.
-            BotPlan plan = BuildPlanForCurrentExecutionState();
+            BotPlan plan = BuildPlanForCurrentExecutionState(replanReasons);
 
             // Отбрасывает только эквивалентный plan; пустой rebuild тоже должен очищать старый хвост.
             if (plan.IsEquivalentTo(CurrentPlan))
@@ -360,36 +407,35 @@ namespace Assets.Scripts.Bot
             // Активирует новый plan.
             _executor.SetPlan(plan);
             if (plan.HasActions)
-                LogPlanActivation(plan);
+                LogPlanActivation(plan, replanReasons);
         }
 
         /// <summary>
         /// Строит candidate plan: live-root при ожидании action или committed-head плюс новый хвост при execution.
         /// </summary>
-        private BotPlan BuildPlanForCurrentExecutionState()
+        private BotPlan BuildPlanForCurrentExecutionState(BotReplanReason replanReasons)
         {
-            if (!CurrentPlan.HasActions)
+            if (!CurrentPlan.HasActions
+                || HasReplanReason(replanReasons, BotReplanReason.ActionCancelled))
+            {
+                return _planBuilder.Build(LastSnapshot);
+            }
+
+            IReadOnlyList<PlannedAction> committedPrefix = BuildCommittedPrefix(CurrentPlan);
+            if (committedPrefix.Count == 0)
                 return _planBuilder.Build(LastSnapshot);
 
-            PlannedAction committedHead = CurrentPlan.Actions[0];
             PlanningState rootState = PlanningState.FromSnapshot(LastSnapshot);
-            PlanningState tailRootState = BuildTailRootState(rootState, committedHead);
+            PlanningState tailRootState = BuildTailRootState(rootState, committedPrefix);
 
             if (tailRootState == null)
                 return _planBuilder.Build(LastSnapshot);
 
             BotPlan tailPlan = _planBuilder.Build(LastSnapshot, tailRootState);
-            if (!_executor.IsActionInProgress
-                && !tailPlan.HasActions
-                && HasUnresolvedPlanningSituation(tailRootState, LastSnapshot))
-            {
-                return _planBuilder.Build(LastSnapshot);
-            }
 
-            var actions = new List<PlannedAction>(tailPlan.Actions.Count + 1)
-            {
-                committedHead
-            };
+            var actions = new List<PlannedAction>(committedPrefix.Count + tailPlan.Actions.Count);
+            for (int actionIndex = 0; actionIndex < committedPrefix.Count; actionIndex++)
+                actions.Add(committedPrefix[actionIndex]);
 
             for (int actionIndex = 0; actionIndex < tailPlan.Actions.Count; actionIndex++)
                 actions.Add(tailPlan.Actions[actionIndex]);
@@ -398,51 +444,87 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Получает root-состояние для хвоста после committed head-action.
+        /// Возвращает committed-prefix, который должен пережить replan без замены.
         /// </summary>
-        private PlanningState BuildTailRootState(PlanningState rootState, PlannedAction committedHead)
+        private static IReadOnlyList<PlannedAction> BuildCommittedPrefix(BotPlan plan)
         {
-            if (_executor.IsActionInProgress)
-            {
-                float? remainingPostFireWorldShift = TryGetRemainingPostFireWorldShift(
-                    committedHead,
-                    out float remainingShift)
-                        ? remainingShift
-                        : null;
+            if (plan == null || !plan.HasActions)
+                return Array.Empty<PlannedAction>();
 
-                return _transitionSimulator.ProjectInProgress(
-                    rootState,
-                    committedHead,
-                    LastSnapshot,
-                    remainingPostFireWorldShift);
-            }
+            int committedActionCount = Math.Min(_committedPrefixActionCount, plan.Actions.Count);
+            var committedActions = new PlannedAction[committedActionCount];
+            for (int actionIndex = 0; actionIndex < committedActionCount; actionIndex++)
+                committedActions[actionIndex] = plan.Actions[actionIndex];
 
-            if (!ShouldRetainPendingHead(committedHead, LastSnapshot))
-                return null;
-
-            PlannedAction projectionAction = CreatePendingProjectionAction(
-                committedHead,
-                LastSnapshot);
-
-            return _transitionSimulator.Simulate(
-                rootState,
-                projectionAction,
-                LastSnapshot);
+            return committedActions;
         }
 
         /// <summary>
-        /// Проверяет, осталась ли role-based ситуация после projected head без безопасного tail.
+        /// Получает root-состояние для хвоста после committed-prefix.
         /// </summary>
-        private bool HasUnresolvedPlanningSituation(PlanningState planningState, WorldSnapshot worldSnapshot)
+        private PlanningState BuildTailRootState(
+            PlanningState rootState,
+            IReadOnlyList<PlannedAction> committedPrefix)
         {
-            WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
-            if (projectedWorldSnapshot == null)
-                return false;
+            PlanningState currentState = rootState;
+            for (int actionIndex = 0; actionIndex < committedPrefix.Count; actionIndex++)
+            {
+                PlannedAction committedAction = committedPrefix[actionIndex];
+                bool isCurrentInProgressHead = actionIndex == 0 && _executor.IsActionInProgress;
 
-            return _decisionPointDetector.TryDetect(
-                planningState,
-                projectedWorldSnapshot,
-                out _);
+                currentState = isCurrentInProgressHead
+                    ? ProjectInProgressCommittedAction(currentState, committedAction)
+                    : SimulatePendingCommittedAction(currentState, committedAction);
+
+                if (currentState == null)
+                    return null;
+            }
+
+            return currentState;
+        }
+
+        /// <summary>
+        /// Проецирует уже запущенный committed action до его ожидаемого завершения.
+        /// </summary>
+        private PlanningState ProjectInProgressCommittedAction(
+            PlanningState currentState,
+            PlannedAction committedAction)
+        {
+            float? remainingPostFireWorldShift = TryGetRemainingPostFireWorldShift(
+                committedAction,
+                out float remainingShift)
+                    ? remainingShift
+                    : null;
+
+            return _transitionSimulator.ProjectInProgress(
+                currentState,
+                committedAction,
+                LastSnapshot,
+                remainingPostFireWorldShift);
+        }
+
+        /// <summary>
+        /// Симулирует pending committed action для построения хвоста после него.
+        /// </summary>
+        private PlanningState SimulatePendingCommittedAction(
+            PlanningState currentState,
+            PlannedAction committedAction)
+        {
+            WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(LastSnapshot, currentState);
+            if (projectedWorldSnapshot == null)
+                return null;
+
+            if (!ShouldRetainPendingCommittedAction(committedAction, projectedWorldSnapshot))
+                return null;
+
+            PlannedAction projectionAction = CreatePendingProjectionAction(
+                committedAction,
+                projectedWorldSnapshot);
+
+            return _transitionSimulator.Simulate(
+                currentState,
+                projectionAction,
+                LastSnapshot);
         }
 
         /// <summary>
@@ -450,18 +532,100 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private void UpdateInProgressHeadFirePoint(PlanExecutionTickResult executionResult)
         {
-            if (executionResult == PlanExecutionTickResult.Fired && CurrentPlan.HasActions)
-            {
-                _inProgressHeadAction = CurrentPlan.Actions[0];
-                _inProgressHeadFireTime = LastSnapshot.SnapshotTime;
-                return;
-            }
-
-            if (executionResult == PlanExecutionTickResult.Completed
-                || executionResult == PlanExecutionTickResult.Cancelled)
+            if (HasExecutionResult(executionResult, PlanExecutionTickResult.Completed)
+                || HasExecutionResult(executionResult, PlanExecutionTickResult.Cancelled))
             {
                 ClearInProgressHeadFirePoint();
             }
+
+            if (HasExecutionResult(executionResult, PlanExecutionTickResult.Fired) && CurrentPlan.HasActions)
+            {
+                _inProgressHeadAction = CurrentPlan.Actions[0];
+                _inProgressHeadFireTime = LastSnapshot.SnapshotTime;
+            }
+        }
+
+        /// <summary>
+        /// Запрашивает пересборку плана по результатам execution tick.
+        /// </summary>
+        private void RequestReplanForExecutionResult(PlanExecutionTickResult executionResult)
+        {
+            if (HasExecutionResult(executionResult, PlanExecutionTickResult.Completed))
+                RequestReplan(BotReplanReason.ActionCompleted);
+
+            if (HasExecutionResult(executionResult, PlanExecutionTickResult.Cancelled))
+                RequestReplan(BotReplanReason.ActionCancelled);
+        }
+
+        /// <summary>
+        /// Проверяет наличие указанного execution-факта в результате tick.
+        /// </summary>
+        private static bool HasExecutionResult(
+            PlanExecutionTickResult executionResult,
+            PlanExecutionTickResult expectedResult)
+        {
+            return (executionResult & expectedResult) != PlanExecutionTickResult.None;
+        }
+
+        /// <summary>
+        /// Проверяет наличие указанной причины в наборе причин replan.
+        /// </summary>
+        private static bool HasReplanReason(
+            BotReplanReason replanReasons,
+            BotReplanReason expectedReason)
+        {
+            return (replanReasons & expectedReason) != BotReplanReason.None;
+        }
+
+        /// <summary>
+        /// Запрашивает первичную пересборку плана для текущего gameplay runtime.
+        /// </summary>
+        private void RequestInitialReplan(BotReplanReason reason)
+        {
+            _initialReplanRequestedForCurrentGame = true;
+            RequestReplan(reason);
+        }
+
+        /// <summary>
+        /// Страхует случай, когда controller зарегистрировался после вызова GameManager.StartGame().
+        /// </summary>
+        private void EnsureInitialReplanRequested()
+        {
+            if (_initialReplanRequestedForCurrentGame)
+                return;
+
+            RequestInitialReplan(BotReplanReason.LevelStart);
+        }
+
+        /// <summary>
+        /// Добавляет причину event-driven пересборки плана.
+        /// </summary>
+        private void RequestReplan(BotReplanReason reason)
+        {
+            if (reason == BotReplanReason.None)
+                return;
+
+            _pendingReplanReasons |= reason;
+            _isReplanRequested = true;
+        }
+
+        /// <summary>
+        /// Возвращает накопленные причины пересборки и очищает request state.
+        /// </summary>
+        private BotReplanReason ConsumeReplanReasons()
+        {
+            BotReplanReason reasons = _pendingReplanReasons;
+            ClearReplanRequest();
+            return reasons;
+        }
+
+        /// <summary>
+        /// Очищает request state пересборки плана.
+        /// </summary>
+        private void ClearReplanRequest()
+        {
+            _isReplanRequested = false;
+            _pendingReplanReasons = BotReplanReason.None;
         }
 
         /// <summary>
@@ -499,30 +663,14 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Проверяет, вошёл ли waiting head в execution-зону и ещё не вышел из trigger contract.
+        /// Проверяет, что pending committed action ещё не вышел из trigger contract.
         /// </summary>
-        private static bool ShouldRetainPendingHead(PlannedAction action, WorldSnapshot worldSnapshot)
+        private static bool ShouldRetainPendingCommittedAction(PlannedAction action, WorldSnapshot worldSnapshot)
         {
             if (action == null || worldSnapshot == null)
                 return false;
 
-            if (!IsActionInExecutionRegion(action, worldSnapshot))
-                return false;
-
             return IsTriggerStillReachable(action, worldSnapshot);
-        }
-
-        /// <summary>
-        /// Проверяет, находится ли action достаточно близко к runtime execution, чтобы не вытеснять её replan-ом.
-        /// </summary>
-        private static bool IsActionInExecutionRegion(PlannedAction action, WorldSnapshot worldSnapshot)
-        {
-            float rightBoundary = IsTargetBoundJumpOnAction(action)
-                ? worldSnapshot.VisionRightEdgeX
-                : worldSnapshot.ScreenRightEdgeX;
-
-            return action.RenderWorldX >= worldSnapshot.ScreenLeftEdgeX
-                && action.RenderWorldX <= rightBoundary;
         }
 
         /// <summary>
@@ -629,33 +777,27 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Проверяет target-bound jump-on варианты, которым нужен vision boundary до fire.
-        /// </summary>
-        private static bool IsTargetBoundJumpOnAction(PlannedAction action)
-        {
-            if (action == null || !action.TargetObstacleInstanceId.HasValue)
-                return false;
-
-            return action.Kind == BotActionKind.JumpOn
-                || action.Kind == BotActionKind.SuperJumpOn
-                || action.Kind == BotActionKind.JumpOnFromRoof
-                || action.Kind == BotActionKind.SuperJumpOnFromRoof;
-        }
-
-        /// <summary>
         /// Пишет краткую диагностическую строку для только что активированного плана.
         /// </summary>
-        private static void LogPlanActivation(BotPlan plan)
+        private static void LogPlanActivation(BotPlan plan, BotReplanReason replanReasons)
         {
             // Формирует одну строку ветки, чтобы видеть весь выбранный chain без verbose-режима.
             string message =
-                $"[Bot PLAN] actions={plan.Actions.Count} " +
+                $"[Bot PLAN] reason={FormatReplanReasons(replanReasons)} actions={plan.Actions.Count} " +
                 $"score={plan.Score:F2} boundaryX={plan.CommittedBoundaryX:F2} " +
                 $"chain={FormatPlanChain(plan)}";
 
             // Пишет выбранную ветку и в diagnostic log, и в Unity console.
             DebugManager.DiagLog(message);
             Debug.Log(message);
+        }
+
+        /// <summary>
+        /// Форматирует набор причин пересборки плана для диагностической строки.
+        /// </summary>
+        private static string FormatReplanReasons(BotReplanReason replanReasons)
+        {
+            return replanReasons.ToString().Replace(", ", "|");
         }
 
         /// <summary>
@@ -705,6 +847,7 @@ namespace Assets.Scripts.Bot
 
             // Подключает controller к game loop.
             RegisterWithGameManager(_gameManager);
+            SubscribeToObstacleSpawner(RuntimeObstacleSpawner.Instance);
 
             // Лениво создает tracker runtime-событий.
             if (_eventTracker == null)
@@ -720,8 +863,13 @@ namespace Assets.Scripts.Bot
             if (gameManager == null || ReferenceEquals(_registeredGameManager, gameManager))
                 return;
 
+            bool isChangingGameManager = !ReferenceEquals(_registeredGameManager, null);
+
             // Перерегистрирует controller в актуальный game manager.
             UnregisterFromGameManager();
+            if (isChangingGameManager)
+                ResetRuntimeStateForNewGameManager();
+
             gameManager.AddListener(this);
             _registeredGameManager = gameManager;
         }
@@ -738,6 +886,61 @@ namespace Assets.Scripts.Bot
             // Удаляет listener из game manager.
             _registeredGameManager.RemoveListener(this);
             _registeredGameManager = null;
+        }
+
+        /// <summary>
+        /// Очищает runtime state, привязанный к предыдущему GameManager.
+        /// </summary>
+        private void ResetRuntimeStateForNewGameManager()
+        {
+            LastSnapshot = null;
+            UnsubscribeFromObstacleSpawner();
+            _eventTracker?.Dispose();
+            _eventTracker = null;
+            ClearReplanRequest();
+            _initialReplanRequestedForCurrentGame = false;
+            ClearInProgressHeadFirePoint();
+            _executor?.Clear();
+        }
+
+        /// <summary>
+        /// Подписывает controller на события текущего obstacle spawner.
+        /// </summary>
+        private void SubscribeToObstacleSpawner(RuntimeObstacleSpawner obstacleSpawner)
+        {
+            if (ReferenceEquals(_subscribedObstacleSpawner, obstacleSpawner))
+                return;
+
+            UnsubscribeFromObstacleSpawner();
+            if (obstacleSpawner == null)
+                return;
+
+            _subscribedObstacleSpawner = obstacleSpawner;
+            _subscribedObstacleSpawner.PatternSpawned += OnPatternSpawned;
+        }
+
+        /// <summary>
+        /// Отписывает controller от событий текущего obstacle spawner.
+        /// </summary>
+        private void UnsubscribeFromObstacleSpawner()
+        {
+            if (!ReferenceEquals(_subscribedObstacleSpawner, null))
+                _subscribedObstacleSpawner.PatternSpawned -= OnPatternSpawned;
+
+            _subscribedObstacleSpawner = null;
+        }
+
+        /// <summary>
+        /// Запрашивает пересборку хвоста после появления нового pattern.
+        /// </summary>
+        private void OnPatternSpawned(int patternIndex, string patternName)
+        {
+            if (!IsEnabled)
+                return;
+
+            RequestReplan(BotReplanReason.SpawnPattern);
+            DebugManager.DiagLogVerbose(
+                $"[Bot PLAN] REPLAN_REQUEST reason=SpawnPattern patternIndex={patternIndex} pattern={patternName}");
         }
     }
 }
