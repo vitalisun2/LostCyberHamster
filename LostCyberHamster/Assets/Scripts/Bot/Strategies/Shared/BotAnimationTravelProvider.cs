@@ -6,11 +6,12 @@ using UnityEngine;
 namespace Assets.Scripts.Bot.Strategies.Shared
 {
     /// <summary>
-    /// Кеширует runtime-дистанции animation clips для planning-стратегий бота.
+    /// Кеширует runtime-параметры animation clips для planning-стратегий бота.
     /// </summary>
     internal static class BotAnimationTravelProvider
     {
         private static readonly Dictionary<string, float> _travelByClipName = new();
+        private static readonly Dictionary<string, float> _rootYAtHalfByClipName = new();
 
         private static TransformAnimatorController _controller;
 
@@ -32,10 +33,32 @@ namespace Assets.Scripts.Bot.Strategies.Shared
             return true;
         }
 
+        /// <summary>
+        /// Возвращает root-Y offset в mid-point указанного animation clip.
+        /// </summary>
+        public static bool TryGetRootYAtHalf(string clipName, out float rootY)
+        {
+            rootY = 0f;
+            if (string.IsNullOrWhiteSpace(clipName))
+                return false;
+
+            TransformAnimatorController controller = ResolveController();
+            if (controller == null)
+                return false;
+
+            if (_rootYAtHalfByClipName.TryGetValue(clipName, out rootY))
+                return true;
+
+            rootY = HelpMethods.GetClipRootYAtHalf(controller, clipName);
+            _rootYAtHalfByClipName[clipName] = rootY;
+            return true;
+        }
+
         public static void Reset()
         {
             _controller = null;
             _travelByClipName.Clear();
+            _rootYAtHalfByClipName.Clear();
         }
 
         private static TransformAnimatorController ResolveController()
@@ -45,6 +68,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared
 
             _controller = Object.FindAnyObjectByType<TransformAnimatorController>();
             _travelByClipName.Clear();
+            _rootYAtHalfByClipName.Clear();
             return _controller;
         }
     }

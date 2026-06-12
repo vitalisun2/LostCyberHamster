@@ -47,6 +47,15 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
         }
 
         /// <summary>
+        /// SuperJump runtime не использует mid-Y проверку обычного jump-клипа.
+        /// </summary>
+        public bool TryGetJumpMidYShift(out float jumpMidYShift)
+        {
+            jumpMidYShift = 0f;
+            return false;
+        }
+
+        /// <summary>
         /// Вызывает runtime resolver super-jump.
         /// </summary>
         public JumpResolveResult Resolve(

@@ -44,6 +44,14 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
         }
 
         /// <summary>
+        /// Считывает runtime root-Y offset обычного jump-клипа для проверки bigAlive.
+        /// </summary>
+        public bool TryGetJumpMidYShift(out float jumpMidYShift)
+        {
+            return BotAnimationTravelProvider.TryGetRootYAtHalf(JumpClipName, out jumpMidYShift);
+        }
+
+        /// <summary>
         /// Вызывает runtime resolver обычного прыжка.
         /// </summary>
         public JumpResolveResult Resolve(

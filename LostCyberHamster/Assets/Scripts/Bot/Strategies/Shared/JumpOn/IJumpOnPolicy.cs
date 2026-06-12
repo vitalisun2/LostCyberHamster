@@ -41,6 +41,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
         bool TryGetTravel(out JumpOnTravel travel);
 
         /// <summary>
+        /// Возвращает runtime root-Y offset для mid-point проверки обычного прыжка.
+        /// </summary>
+        bool TryGetJumpMidYShift(out float jumpMidYShift);
+
+        /// <summary>
         /// Вызывает runtime resolver для конкретного варианта прыжка.
         /// </summary>
         JumpResolveResult Resolve(

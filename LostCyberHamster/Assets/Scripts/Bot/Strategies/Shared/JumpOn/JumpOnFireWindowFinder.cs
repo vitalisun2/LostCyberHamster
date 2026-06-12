@@ -118,8 +118,38 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
                 travel.GetResolveFireShift(fireShift),
                 obstaclesAtFireShift);
 
-            // Собирает контекст resolver-а.
-            JumpResolveContext context = new(
+            // Собирает runtime-equivalent context resolver-а.
+            JumpResolveContext context = CreateResolveContext(hamster, travel);
+
+            return _policy.Resolve(obstaclesAtFireShift, context);
+        }
+
+        /// <summary>
+        /// Создает context resolver-а с policy-specific mid-Y проверкой.
+        /// </summary>
+        private JumpResolveContext CreateResolveContext(
+            HamsterSnapshot hamster,
+            JumpOnTravel travel)
+        {
+            if (_policy.TryGetJumpMidYShift(out float jumpMidYShift))
+            {
+                float hamsterCenterY = (hamster.HamsterBottomY + hamster.HamsterTopY) * 0.5f;
+                float hamsterHalfHeight = hamster.Height * 0.5f;
+                float hamsterJumpMidCenterY = hamsterCenterY + jumpMidYShift;
+                return new JumpResolveContext(
+                    hamster.IsOnBottomLine,
+                    hamster.HamsterLeftX,
+                    hamster.HamsterRightX,
+                    hamster.CenterX,
+                    hamster.Width,
+                    travel.ResolveTravel,
+                    travel.ResolveTravel,
+                    hasJumpMidY: true,
+                    hamsterJumpMidBottomY: hamsterJumpMidCenterY - hamsterHalfHeight,
+                    hamsterJumpMidTopY: hamsterJumpMidCenterY + hamsterHalfHeight);
+            }
+
+            return new JumpResolveContext(
                 hamster.IsOnBottomLine,
                 hamster.HamsterLeftX,
                 hamster.HamsterRightX,
@@ -128,8 +158,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
                 travel.ResolveTravel,
                 travel.ResolveTravel,
                 damageBigAliveWithoutYByReach: false);
-
-            return _policy.Resolve(obstaclesAtFireShift, context);
         }
     }
 }
