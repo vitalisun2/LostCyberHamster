@@ -539,10 +539,12 @@ Menu: `Tools/Migration/` — 3 шага:
 - `ObjectCategory.Threat` ≠ полное множество runtime-опасных объектов. Классификатор может помечать часть как `Target`. Safety проверки сверять с runtime-dangerous type set.
 - `HamsterState` — источник истины для прыжков: `JumpOver` = перепрыгивание.
 - Chain-stage тесты: все объекты цепочки должны попадать в один initial snapshot (в пределах `scanRange`).
-- Retained-action проверяется по уже сохранённому target instance; visibility-гейты для новых candidates (`ScreenRightEdgeX`) нельзя использовать как жёсткий предел для committed target.
-- Для timed jump-on objective при равных target/стоимости/тапах выбирать ветку с более ранним первым trigger: поздний prefix может съесть fire-window и вызвать лишние перестроения.
+- Runtime bot planning строит план с нуля от live snapshot: начальный план создаётся при пустом executor-е, затем full rebuild идёт только после `Completed` или `Cancelled` head-action.
+- Во время ожидания trigger или выполнения head-action дерево решений не перестраивается; runtime fire/cancel остаётся ответственностью executor/gate.
+- Execution handoff: если после завершения/освобождения head-action в retained хвосте уже есть следующий шаг, executor должен сначала дать ему шанс стартовать, а rebuild должен пересчитывать только хвост после нового in-progress шага.
+- Для actions с ранним handoff-событием (`JumpOn` уничтожает target на `transform_jumped_on`, но возвращается в `Run` позже) completion для следующего bot action нельзя сводить только к финальному `Run`.
+- Для timed jump-on objective при равных target/стоимости/тапах выбирать ветку с более ранним первым trigger, чтобы не сужать runtime fire-window первого action.
 - Для target-bound jump-on post-action safety должен участвовать в выборе fire shift внутри окна; нельзя отбрасывать весь action только потому, что первый runtime-valid timing возвращает хомяка в unsafe `Run`, если поздний timing того же окна safe.
-- Во время in-progress head-action планировщик должен стабилизировать атомарный execution handoff: уже запущенный head и ближайший следующий action сохраняются как committed-префикс, дальний хвост остаётся обычным replanning/validation.
 
 ### ActionGenerator
 
@@ -556,7 +558,7 @@ Menu: `Tools/Migration/` — 3 шага:
 - `SwitchLane` planning после fire должен учитывать `DecisionTravel`: линия меняется сразу, но следующий tap runtime не принимает, пока `Hamster.IsShifting`.
 - `SwitchLane` из `RoofRun` безопасен только если в момент tap на target-линии под хомяком есть roof support; иначе runtime принудительно уходит в `RunFromRoof`, а same-line non-roof obstacles могут сразу нанести damage.
 - Не добавлять фильтры по типу препятствия для обхода safety-логики. Проблема в модели, а не в типе.
-- Planning (StateProjector) проверяет конечную позицию по snapshot-данным — грубая оценка. Execution (StepExecutor) проверяет swept zone по live-данным каждый кадр — точная проверка. Если live-check не проходит до deadline — шаг отменяется.
+- Planning-проекция проверяет конечную позицию по snapshot-данным — грубая оценка. Runtime execution handlers проверяют live-дистанцию/окно срабатывания; если live-check не проходит до deadline — шаг отменяется.
 
 ---
 
@@ -618,34 +620,35 @@ Menu: `Tools/Migration/` — 3 шага:
 ## Bot Architecture Pipeline
 
 **Папка:** `Assets/Scripts/Bot/`
-**Оркестратор:** `BotOrchestrator.cs` (MonoBehaviour, event-driven)
+**Оркестратор:** `RuntimeBotController.cs` (MonoBehaviour, `IGameLateUpdateListener`)
 
 ### Pipeline
 
 ```
-BotOrchestrator
+RuntimeBotController
   → SnapshotBuilder
-  → BranchSelector
-    → ProblemResolver
+  → PlanExecutor
+  → PlanBuilder
+    → PlanningGraphBuilder
+      → DecisionPointDetector
     → ActionGenerator
-    → BranchGenerator
-    → BranchEvaluator
-    → ObjectClassifier
-  → StepExecutor
+    → TransitionSimulator
+    → PlanEvaluator
 ```
 
-1. **`SnapshotBuilder`** (`Perception/`) — собирает `BotSceneSnapshot` из живых Unity-объектов.
-2. **`ObjectClassifier`** (`Perception/`) — по запросу вычисляет planner-категорию конкретного obstacle в контексте snapshot: `Threat` / `Target` / `Collectible`.
-3. **`ProblemResolver`** (`Planning/`) — находит ближайшую same-lane угрозу напрямую, без промежуточного `ProblemKind`.
-4. **`ActionGenerator`** (`Planning/`) — опрашивает `IActionStrategy`, возвращает список `BranchStep`-кандидатов для текущей угрозы.
-5. **`BranchGenerator`** (`Planning/`) — раскрывает кандидатов в lookahead-ветви через `ProjectedWorld`.
-6. **`BranchEvaluator`** (через `BranchSelector`) — выбирает лучшую ветвь.
-7. **`StepExecutor`** — исполняет текущий head committed plan по live-дистанции.
+1. **`SnapshotBuilder`** (`Perception/`) — собирает `WorldSnapshot` из живых Unity-объектов.
+2. **`PlanExecutor`** (`Execution/`) — исполняет только head-action текущего `BotPlan` и возвращает `PlanExecutionTickResult`.
+3. **`PlanBuilder`** (`Planning/`) — строит новый `BotPlan` с нуля по live snapshot.
+4. **`PlanningGraphBuilder`** (`Planning/`) — раскрывает дерево решений до `MaxSearchDepth = 6`.
+5. **`ActionGenerator`** (`Planning/`) — опрашивает `IPlanningStrategy`, возвращает role-based кандидаты для текущей точки решения.
+6. **`TransitionSimulator`** (`Planning/`) — симулирует действие через simulator соответствующей strategy.
+7. **`PlanEvaluator`** (`Planning/`) — выбирает лучшую ветку по objective, energy cost, tap count и progression.
 
-**Триггеры пересчёта** (в `BotOrchestrator`):
-- `OnNewObjectAppeared` — в snapshot появился новый visible object
-- `StepCompleted` — шаг завершён, committed plan продвигается на следующий head
-- `PlanExhausted` — после продвижения плана шагов больше не осталось
+**Триггеры пересчёта** (в `RuntimeBotController`):
+- пустой текущий plan — начальное построение;
+- `PlanExecutionTickResult.Completed` — head-action завершён, следующий plan строится от live snapshot;
+- `PlanExecutionTickResult.Cancelled` — head-action отменён, следующий plan строится от live snapshot;
+- `PlanExecutionTickResult.Fired` и `None` — дерево решений не перестраивается.
 
 ### Классификация объектов
 
