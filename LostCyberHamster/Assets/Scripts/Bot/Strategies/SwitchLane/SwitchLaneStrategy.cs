@@ -64,7 +64,9 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     triggerObstacle,
                     out float latestFireShift))
             {
-                return DeadEnd("Нет безопасного окна для смены линии: до препятствия не остается положительного интервала запуска.");
+                return DeadEnd(
+                    isEntryToOppositeLane,
+                    "Нет безопасного окна для смены линии: до препятствия не остается положительного интервала запуска.");
             }
 
             IReadOnlyList<float> selectionRatios = GetSelectionRatios(planningState);
@@ -77,7 +79,11 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     selectionRatios);
 
             if (fireWindowSamples.Count == 0)
-                return DeadEnd(BuildNoSwitchLaneSampleReason(worldSnapshot, hamster, targetBottomLine, latestFireShift));
+            {
+                return DeadEnd(
+                    isEntryToOppositeLane,
+                    BuildNoSwitchLaneSampleReason(worldSnapshot, hamster, targetBottomLine, latestFireShift));
+            }
 
             var actions = new List<PlannedAction>(fireWindowSamples.Count);
             for (int sampleIndex = 0; sampleIndex < fireWindowSamples.Count; sampleIndex++)
@@ -98,9 +104,13 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         /// <summary>
         /// Создает dead-end результат для применимой стратегии смены линии.
         /// </summary>
-        private static PlanningStrategyResult DeadEnd(string message)
+        private static PlanningStrategyResult DeadEnd(bool isEntryToOppositeLane, string message)
         {
-            return PlanningStrategyResult.DeadEnd(nameof(SwitchLaneStrategy), message);
+            string context = isEntryToOppositeLane
+                ? "ход на другую линию"
+                : "текущая линия";
+
+            return PlanningStrategyResult.DeadEnd(nameof(SwitchLaneStrategy), $"{context}: {message}");
         }
 
         /// <summary>
