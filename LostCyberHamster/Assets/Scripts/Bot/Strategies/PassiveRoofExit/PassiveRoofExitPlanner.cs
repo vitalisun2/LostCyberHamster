@@ -20,10 +20,12 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             WorldSnapshot worldSnapshot,
             DecisionPoint decisionPoint,
             float runFromRoofTravel,
-            out PassiveRoofExitModel model)
+            out PassiveRoofExitModel model,
+            out string deadEndReason)
         {
             // Проверяет входные данные и состояние хомяка.
             model = default;
+            deadEndReason = null;
             if (planningState == null || worldSnapshot == null || runFromRoofTravel <= 0f)
                 return false;
 
@@ -36,7 +38,8 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                     decisionPoint,
                     hamster,
                     out ObstacleSnapshot contextObstacle,
-                    out int contextObstacleIndex))
+                    out int contextObstacleIndex,
+                    out deadEndReason))
             {
                 return false;
             }
@@ -61,6 +64,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                     exitStartShift,
                     completionWorldShift))
             {
+                deadEndReason = "Нет безопасного окна для пассивного схода с крыши: интервал RunFromRoof пересекает дорожное опасное препятствие.";
                 return false;
             }
 
@@ -94,18 +98,23 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             DecisionPoint decisionPoint,
             HamsterSnapshot hamster,
             out ObstacleSnapshot contextObstacle,
-            out int contextObstacleIndex)
+            out int contextObstacleIndex,
+            out string deadEndReason)
         {
             // Сбрасывает результат и проверяет chain.
             contextObstacle = null;
             contextObstacleIndex = -1;
+            deadEndReason = null;
             ObstacleChainElement firstElement = decisionPoint?.Chain?.First;
             if (firstElement == null)
                 return false;
 
             // Не позволяет passive exit обходить hazard на текущей roof path.
             if (firstElement.HasRole(ObstacleRole.RoofOccupantHazard))
+            {
+                deadEndReason = "Нет безопасного пассивного продолжения: на текущей крыше находится опасное препятствие.";
                 return false;
+            }
 
             // Проверяет, что context obstacle ещё актуален впереди.
             contextObstacle = firstElement.Obstacle;

@@ -33,10 +33,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             int targetObstacleChainIndex,
             ObstacleSnapshot lastRoof,
             JumpOnFromRoofTravel travel,
-            out JumpOnFromRoofWindowModel window)
+            out JumpOnFromRoofWindowModel window,
+            out string deadEndReason)
         {
             // Проверяет входы.
             window = default;
+            deadEndReason = null;
             if (hamster == null
                 || chain == null
                 || targetObstacle == null
@@ -56,7 +58,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                     lastRoof,
                     travel,
                     out float firstFireShift,
-                    out float lastFireShift))
+                    out float lastFireShift,
+                    out deadEndReason))
             {
                 return false;
             }
@@ -85,9 +88,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             ObstacleSnapshot lastRoof,
             JumpOnFromRoofTravel travel,
             out float firstFireShift,
-            out float lastFireShift)
+            out float lastFireShift,
+            out string deadEndReason)
         {
             // Вычисляет target-интервал runtime resolver-а.
+            deadEndReason = null;
             GetTargetInterval(
                 hamster,
                 targetObstacle,
@@ -105,29 +110,62 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                 - travel.ResolveFireShiftOffset
                 - travel.ResolveTravel
                 - hamster.CenterX;
+            float lastFireShiftBeforeRoofRunLimit = lastFireShift;
 
             // Применяет ограничения до target и до окончания RoofRun.
+            float firstFireShiftBeforePreTargetClearance = firstFireShift;
             ApplyPreTargetClearanceLimit(
                 hamster,
                 chain,
                 targetObstacleChainIndex,
                 travel,
                 ref firstFireShift);
+            bool preTargetClearanceMovedWindow = firstFireShift > firstFireShiftBeforePreTargetClearance;
             ApplyRoofRunLimit(
                 hamster,
                 lastRoof,
                 ref lastFireShift);
+            bool roofRunLimitMovedWindow = lastFireShift < lastFireShiftBeforeRoofRunLimit;
 
             if (firstFireShift < 0f)
                 firstFireShift = 0f;
+
+            if (lastFireShift <= 0f || firstFireShift >= lastFireShift)
+            {
+                deadEndReason = BuildRawWindowDeadEndReason(
+                    preTargetClearanceMovedWindow,
+                    roofRunLimitMovedWindow);
+                return false;
+            }
 
             // Сужает окно на общий safety margin.
             float fireWindowBoundaryMargin =
                 JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
             firstFireShift += fireWindowBoundaryMargin;
             lastFireShift -= fireWindowBoundaryMargin;
+            if (firstFireShift >= lastFireShift)
+            {
+                deadEndReason = "Safety margin не оставил безопасного окна для напрыгивания с крыши.";
+                return false;
+            }
 
-            return lastFireShift > 0f && firstFireShift < lastFireShift;
+            return true;
+        }
+
+        /// <summary>
+        /// Выбирает короткую причину схлопывания raw-окна roof-to-road jump-on.
+        /// </summary>
+        private static string BuildRawWindowDeadEndReason(
+            bool preTargetClearanceMovedWindow,
+            bool roofRunLimitMovedWindow)
+        {
+            if (preTargetClearanceMovedWindow)
+                return "Нет безопасного окна для напрыгивания с крыши: препятствие перед target закрывает траекторию.";
+
+            if (roofRunLimitMovedWindow)
+                return "Нет безопасного окна для напрыгивания с крыши: окно попадания в target не пересекается с окном движения по текущей крыше.";
+
+            return "Нет безопасного окна для напрыгивания с крыши: target не пересекается с допустимой траекторией прыжка.";
         }
 
         /// <summary>

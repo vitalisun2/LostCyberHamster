@@ -20,10 +20,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
             ObstacleChain chain,
             ObstacleSnapshot lastRoof,
             JumpFromRoofTravel travel,
-            out JumpFromRoofChainModel model)
+            out JumpFromRoofChainModel model,
+            out string deadEndReason)
         {
             // Проверяет вход и состояние хомяка.
             model = default;
+            deadEndReason = null;
             if (policy == null
                 || planningState?.Hamster == null
                 || chain == null
@@ -60,7 +62,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
                     latestRoofRunFireShift,
                     travel.ActionTravel,
                     out float firstFireShift,
-                    out float lastFireShift))
+                    out float lastFireShift,
+                    out deadEndReason))
             {
                 return false;
             }
@@ -84,7 +87,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
                         latestRoofRunFireShift,
                         travel.ActionTravel,
                         out float candidateFirstFireShift,
-                        out float candidateLastFireShift))
+                        out float candidateLastFireShift,
+                        out _))
                 {
                     break;
                 }
@@ -108,7 +112,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
 
             // Выбирает fire shift внутри окна.
             if (!TrySelectFireShift(firstFireShift, lastFireShift, out float selectedFireShift))
+            {
+                deadEndReason = "Нет безопасного окна для прыжка с крыши: bigAlive требует дополнительный зазор, которого нет в этом участке.";
                 return false;
+            }
 
             model = new JumpFromRoofChainModel(
                 firstObstacle,
@@ -156,20 +163,35 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
             float latestRoofRunFireShift,
             float jumpFromRoofTravel,
             out float firstFireShift,
-            out float lastFireShift)
+            out float lastFireShift,
+            out string deadEndReason)
         {
             // Считает левую границу по достижимости правого края covered chain.
-            firstFireShift = chainRightX - hamster.HamsterLeftX - jumpFromRoofTravel;
-            if (firstFireShift < 0f)
-                firstFireShift = 0f;
+            deadEndReason = null;
+            float rawFirstFireShift = chainRightX - hamster.HamsterLeftX - jumpFromRoofTravel;
+            if (rawFirstFireShift < 0f)
+                rawFirstFireShift = 0f;
+
+            if (rawFirstFireShift >= latestRoofRunFireShift)
+            {
+                firstFireShift = rawFirstFireShift;
+                lastFireShift = latestRoofRunFireShift;
+                deadEndReason = "Нет безопасного окна для прыжка с крыши: окно ухода с крыши не покрывает дорожную угрозу.";
+                return false;
+            }
 
             // Применяет общий boundary margin к обеим границам.
             float fireWindowBoundaryMargin =
                 JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
-            firstFireShift += fireWindowBoundaryMargin;
+            firstFireShift = rawFirstFireShift + fireWindowBoundaryMargin;
             lastFireShift = latestRoofRunFireShift - fireWindowBoundaryMargin;
+            if (firstFireShift >= lastFireShift)
+            {
+                deadEndReason = "Safety margin не оставил безопасного окна для прыжка с крыши.";
+                return false;
+            }
 
-            return firstFireShift < lastFireShift;
+            return true;
         }
 
         /// <summary>

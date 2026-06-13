@@ -23,7 +23,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             out ObstacleSnapshot targetObstacle,
             out int targetObstacleIndex,
             out int targetObstacleChainIndex,
-            out ObstacleSnapshot lastRoof)
+            out ObstacleSnapshot lastRoof,
+            out string deadEndReason)
         {
             // Инициализирует пустой результат и проверяет вход.
             actionChain = null;
@@ -31,6 +32,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             targetObstacleIndex = -1;
             targetObstacleChainIndex = -1;
             lastRoof = null;
+            deadEndReason = null;
             if (planningState?.Hamster == null
                 || worldSnapshot == null
                 || sourceChain == null
@@ -61,9 +63,14 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                     maxTargetLeftX,
                     out targetObstacle,
                     out targetObstacleIndex,
-                    out targetObstacleChainIndex))
+                    out targetObstacleChainIndex,
+                    out deadEndReason))
             {
                 actionChain = sourceChain;
+            }
+            else if (!string.IsNullOrEmpty(deadEndReason))
+            {
+                return false;
             }
             else if (!TryBuildRoadActionChain(
                          planningState,
@@ -95,12 +102,14 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             float maxTargetLeftX,
             out ObstacleSnapshot targetObstacle,
             out int targetObstacleIndex,
-            out int targetObstacleChainIndex)
+            out int targetObstacleChainIndex,
+            out string deadEndReason)
         {
             // Инициализирует пустой результат.
             targetObstacle = null;
             targetObstacleIndex = -1;
             targetObstacleChainIndex = -1;
+            deadEndReason = null;
             if (hamster == null || sourceChain == null)
                 return false;
 
@@ -112,7 +121,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                     continue;
 
                 if (element.Obstacle.LeftX > maxTargetLeftX)
+                {
+                    deadEndReason = "Нет безопасного окна для напрыгивания с крыши: target находится за правой границей безопасного окна запуска.";
                     return false;
+                }
 
                 targetObstacle = element.Obstacle;
                 targetObstacleIndex = element.WorldIndex;

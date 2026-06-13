@@ -36,11 +36,13 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
             RoofJumpOverTravel travel,
             out RoofJumpOverChainModel chainModel,
             out ObstacleSnapshot resultSupportObstacle,
-            out float fireShift)
+            out float fireShift,
+            out string deadEndReason)
         {
             // Проверяет обязательные входные данные.
             resultSupportObstacle = null;
             fireShift = 0f;
+            deadEndReason = null;
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (projectedWorldSnapshot, nameof(projectedWorldSnapshot)),
@@ -52,7 +54,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
                     projectedWorldSnapshot,
                     chain,
                     travel,
-                    out chainModel))
+                    out chainModel,
+                    out deadEndReason))
             {
                 return false;
             }
@@ -66,7 +69,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
                 baseObstacles,
                 fireShift,
                 travel,
-                out resultSupportObstacle);
+                out resultSupportObstacle,
+                out deadEndReason);
         }
 
         /// <summary>
@@ -87,7 +91,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
                 baseObstacles,
                 fireShift,
                 travel,
-                out ObstacleSnapshot resultSupportObstacle)
+                out ObstacleSnapshot resultSupportObstacle,
+                out _)
                    && resultSupportObstacle.InstanceId == expectedSupportInstanceId;
         }
 
@@ -100,10 +105,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
             IReadOnlyList<JumpObstacleData> baseObstacles,
             float fireShift,
             RoofJumpOverTravel travel,
-            out ObstacleSnapshot resultSupportObstacle)
+            out ObstacleSnapshot resultSupportObstacle,
+            out string deadEndReason)
         {
             // Проверяет вход и строит obstacles на момент fire.
             resultSupportObstacle = null;
+            deadEndReason = null;
             if (planningState?.Hamster == null
                 || projectedWorldSnapshot?.Obstacles == null
                 || baseObstacles == null
@@ -131,19 +138,34 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
             // Сверяет resolver outcome с ожидаемым продолжением RoofRun.
             JumpResolveResult result = _policy.Resolve(obstaclesAtFireShift, context);
             if (result.State != _policy.ExpectedSuccessState)
+            {
+                deadEndReason = "Нет безопасного окна для прыжка над препятствием на крыше: runtime-модель не подтверждает безопасный прыжок.";
                 return false;
+            }
 
             if (result.TargetIndex < 0 || result.TargetIndex >= projectedWorldSnapshot.Obstacles.Count)
+            {
+                deadEndReason = "Нет безопасного окна для прыжка над препятствием на крыше: runtime-модель не подтверждает безопасный прыжок.";
                 return false;
+            }
 
             resultSupportObstacle = projectedWorldSnapshot.Obstacles[result.TargetIndex];
             if (resultSupportObstacle.InstanceId != obstaclesAtFireShift[result.TargetIndex].InstanceId)
+            {
+                deadEndReason = "Нет безопасного окна для прыжка над препятствием на крыше: runtime-модель не подтверждает безопасный прыжок.";
                 return false;
+            }
 
-            return RoofRunProjection.IsPassiveRoofContinuation(
+            if (RoofRunProjection.IsPassiveRoofContinuation(
                 planningState,
                 projectedWorldSnapshot,
-                resultSupportObstacle);
+                resultSupportObstacle))
+            {
+                return true;
+            }
+
+            deadEndReason = "Небезопасное состояние после прыжка по крыше: после приземления нет безопасного продолжения RoofRun.";
+            return false;
         }
     }
 }

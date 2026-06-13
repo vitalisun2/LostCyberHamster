@@ -32,17 +32,20 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
             ObstacleSnapshot lastRoof,
             JumpFromRoofTravel travel,
             out JumpFromRoofChainModel chainModel,
-            out float fireShift)
+            out float fireShift,
+            out string deadEndReason)
         {
             // Вычисляет covered chain и допустимое окно.
             fireShift = 0f;
+            deadEndReason = null;
             if (!JumpFromRoofChainCalculator.TryCalculate(
                     _policy,
                     planningState,
                     chain,
                     lastRoof,
                     travel,
-                    out chainModel))
+                    out chainModel,
+                    out deadEndReason))
             {
                 return false;
             }
@@ -50,11 +53,17 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
             // Подтверждает выбранную точку через runtime resolver.
             fireShift = chainModel.SelectedFireShift;
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            return CheckRuntimeOutcomeAtFireShift(
+            if (CheckRuntimeOutcomeAtFireShift(
                 planningState,
                 baseObstacles,
                 fireShift,
-                travel);
+                travel))
+            {
+                return true;
+            }
+
+            deadEndReason = "Нет безопасного окна для прыжка с крыши: runtime-модель не подтверждает безопасный результат прыжка.";
+            return false;
         }
 
         /// <summary>

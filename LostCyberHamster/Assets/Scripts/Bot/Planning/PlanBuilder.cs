@@ -5,6 +5,22 @@ using Assets.Scripts.Bot.PlanState;
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
+    /// Результат построения bot plan.
+    /// </summary>
+    internal sealed class PlanBuildResult
+    {
+        public PlanBuildResult(BotPlan plan, PlanningDeadEndReport deadEndReport)
+        {
+            Plan = plan ?? BotPlan.Empty();
+            DeadEndReport = deadEndReport;
+        }
+
+        public BotPlan Plan { get; }
+        public PlanningDeadEndReport DeadEndReport { get; }
+        public bool HasDeadEnd => DeadEndReport != null;
+    }
+
+    /// <summary>
     /// Собирает role-based план с нуля по текущему snapshot мира.
     /// </summary>
     public sealed class PlanBuilder
@@ -27,10 +43,10 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Строит role-based план по текущему snapshot мира.
         /// </summary>
-        public BotPlan Build(WorldSnapshot worldSnapshot)
+        internal PlanBuildResult Build(WorldSnapshot worldSnapshot)
         {
             if (worldSnapshot == null)
-                return BotPlan.Empty();
+                return new PlanBuildResult(BotPlan.Empty(), deadEndReport: null);
 
             return Build(worldSnapshot, PlanningState.FromSnapshot(worldSnapshot));
         }
@@ -38,23 +54,33 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Строит role-based план по snapshot мира от указанного planning-состояния.
         /// </summary>
-        public BotPlan Build(WorldSnapshot worldSnapshot, PlanningState rootState)
+        internal PlanBuildResult Build(WorldSnapshot worldSnapshot, PlanningState rootState)
         {
             if (worldSnapshot == null)
-                return BotPlan.Empty();
+                return new PlanBuildResult(BotPlan.Empty(), deadEndReport: null);
 
             if (rootState == null)
-                return BotPlan.Empty(worldSnapshot.ScreenRightEdgeX);
+            {
+                return new PlanBuildResult(
+                    BotPlan.Empty(worldSnapshot.ScreenRightEdgeX),
+                    deadEndReport: null);
+            }
 
             // Разворачивает planning tree от переданного root-состояния.
-            IReadOnlyList<PlanningBranch> branches = _graphBuilder.BuildBranches(worldSnapshot, rootState);
-            PlanningBranch bestBranch = _planEvaluator.SelectBest(branches);
+            PlanningGraphBuildResult graphResult = _graphBuilder.BuildBranches(worldSnapshot, rootState);
+            PlanningBranch bestBranch = _planEvaluator.SelectBest(graphResult.Branches);
 
             if (bestBranch == null || !bestBranch.HasActions)
-                return BotPlan.Empty(worldSnapshot.ScreenRightEdgeX);
+            {
+                return new PlanBuildResult(
+                    BotPlan.Empty(worldSnapshot.ScreenRightEdgeX),
+                    graphResult.DeadEndReport);
+            }
 
             float score = _planEvaluator.Score(bestBranch.Actions);
-            return new BotPlan(bestBranch.Actions, worldSnapshot.ScreenRightEdgeX, score);
+            return new PlanBuildResult(
+                new BotPlan(bestBranch.Actions, worldSnapshot.ScreenRightEdgeX, score),
+                deadEndReport: null);
         }
     }
 }

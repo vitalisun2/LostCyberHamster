@@ -5,6 +5,7 @@ using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
+using Assets.Scripts.Bot.Strategies.Shared.Timing;
 using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
@@ -36,17 +37,15 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         /// <summary>
         /// Collects valid lane-switch actions for a role-based decision point.
         /// </summary>
-        public void CollectActions(
+        public PlanningStrategyResult CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            DecisionPoint decisionPoint,
-            List<PlannedAction> actions)
+            DecisionPoint decisionPoint)
         {
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
-                (decisionPoint, nameof(decisionPoint)),
-                (actions, nameof(actions)));
+                (decisionPoint, nameof(decisionPoint)));
 
             if (!TryResolveSwitchLaneTarget(
                     planningState,
@@ -56,7 +55,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     out bool targetBottomLine,
                     out bool isEntryToOppositeLane))
             {
-                return;
+                return PlanningStrategyResult.NotApplicable();
             }
 
             HamsterSnapshot hamster = planningState.Hamster;
@@ -65,7 +64,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     triggerObstacle,
                     out float latestFireShift))
             {
-                return;
+                return DeadEnd("Нет безопасного окна для смены линии: до препятствия не остается положительного интервала запуска.");
             }
 
             IReadOnlyList<float> selectionRatios = GetSelectionRatios(planningState);
@@ -77,6 +76,10 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     latestFireShift,
                     selectionRatios);
 
+            if (fireWindowSamples.Count == 0)
+                return DeadEnd(BuildNoSwitchLaneSampleReason(worldSnapshot, hamster, targetBottomLine, latestFireShift));
+
+            var actions = new List<PlannedAction>(fireWindowSamples.Count);
             for (int sampleIndex = 0; sampleIndex < fireWindowSamples.Count; sampleIndex++)
             {
                 SwitchLaneFireWindowSample fireWindowSample = fireWindowSamples[sampleIndex];
@@ -88,6 +91,36 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     fireWindowSample,
                     isEntryToOppositeLane));
             }
+
+            return PlanningStrategyResult.FromActions(actions);
+        }
+
+        /// <summary>
+        /// Создает dead-end результат для применимой стратегии смены линии.
+        /// </summary>
+        private static PlanningStrategyResult DeadEnd(string message)
+        {
+            return PlanningStrategyResult.DeadEnd(nameof(SwitchLaneStrategy), message);
+        }
+
+        /// <summary>
+        /// Уточняет причину отсутствия sample внутри safe-window смены линии.
+        /// </summary>
+        private string BuildNoSwitchLaneSampleReason(
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
+            bool targetBottomLine,
+            float latestFireShift)
+        {
+            List<SafeInterval> safeIntervals = _fireWindowCalculator.CollectSafeFireIntervals(
+                worldSnapshot,
+                hamster,
+                targetBottomLine,
+                latestFireShift);
+
+            return safeIntervals.Count == 0
+                ? "Нет безопасного окна для смены линии: целевая линия перекрыта опасными препятствиями во всем допустимом интервале."
+                : "Нет безопасного окна для смены линии: безопасный интервал слишком узкий для запуска действия.";
         }
 
         /// <summary>

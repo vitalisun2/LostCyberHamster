@@ -45,17 +45,15 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
         /// <summary>
         /// Добавляет super-jump-on-roof action, если roof support выбран и подтвержден resolver-ом.
         /// </summary>
-        public void CollectActions(
+        public PlanningStrategyResult CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            DecisionPoint decisionPoint,
-            List<PlannedAction> actions)
+            DecisionPoint decisionPoint)
         {
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
-                (decisionPoint, nameof(decisionPoint)),
-                (actions, nameof(actions)));
+                (decisionPoint, nameof(decisionPoint)));
 
             if (!_actionResolver.TryResolve(
                     decisionPoint.Chain,
@@ -63,14 +61,14 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                     out int targetRoofIndex,
                     out int targetRoofChainIndex))
             {
-                return;
+                return PlanningStrategyResult.NotApplicable();
             }
 
             if (!_specification.IsSatisfiedBy(planningState, targetRoof))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             if (!_policy.TryGetTravel(out float superJumpTravel))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
@@ -81,18 +79,27 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
                     targetRoofChainIndex,
                     superJumpTravel,
                     out JumpOnRoofWindowModel window,
-                    out float fireShift))
+                    out float fireShift,
+                    out string deadEndReason))
             {
-                return;
+                return DeadEnd(deadEndReason);
             }
 
-            actions.Add(BuildAction(
+            return PlanningStrategyResult.FromAction(BuildAction(
                 _policy,
                 planningState,
                 decisionPoint.Chain.FirstObstacle,
                 window,
                 fireShift,
                 superJumpTravel));
+        }
+
+        /// <summary>
+        /// Создает dead-end результат для применимой super-jump-on-roof strategy.
+        /// </summary>
+        private static PlanningStrategyResult DeadEnd(string message)
+        {
+            return PlanningStrategyResult.DeadEnd(nameof(SuperJumpOnRoofStrategy), message);
         }
 
         /// <summary>

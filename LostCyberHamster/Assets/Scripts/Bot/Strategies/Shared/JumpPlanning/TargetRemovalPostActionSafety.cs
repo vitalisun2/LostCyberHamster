@@ -28,7 +28,28 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
             int targetObstacleInstanceId,
             float completionWorldShift)
         {
+            return IsSafeAfterCompletion(
+                planningState,
+                projectedWorldSnapshot,
+                targetObstacleIndex,
+                targetObstacleInstanceId,
+                completionWorldShift,
+                out _);
+        }
+
+        /// <summary>
+        /// Возвращает true, если после полного действия хомяк безопасно возвращается в Run.
+        /// </summary>
+        public static bool IsSafeAfterCompletion(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            int targetObstacleIndex,
+            int targetObstacleInstanceId,
+            float completionWorldShift,
+            out string deadEndReason)
+        {
             // Отсекает невалидные входные данные.
+            deadEndReason = null;
             if (planningState == null
                 || planningState.Hamster == null
                 || projectedWorldSnapshot == null
@@ -67,6 +88,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
                 if (obstacleIndex < targetObstacleIndex
                     && projectedRightX > hamster.HamsterLeftX + OverlapEpsilon)
                 {
+                    deadEndReason = "Небезопасное состояние после напрыгивания: перед target остается препятствие в зоне хомяка.";
                     return false;
                 }
 
@@ -75,6 +97,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
                     continue;
 
                 // Фиксирует небезопасный re-entry в Run.
+                deadEndReason = "Небезопасное состояние после напрыгивания: после возврата в Run хомяк пересекает следующее опасное препятствие.";
                 return false;
             }
 

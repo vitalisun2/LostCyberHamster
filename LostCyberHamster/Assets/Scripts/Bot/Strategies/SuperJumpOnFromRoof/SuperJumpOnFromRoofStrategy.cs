@@ -74,21 +74,19 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
         /// <summary>
         /// Добавляет super roof-to-road jump-on action, если target и полное действие безопасны.
         /// </summary>
-        public void CollectActions(
+        public PlanningStrategyResult CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            DecisionPoint decisionPoint,
-            List<PlannedAction> actions)
+            DecisionPoint decisionPoint)
         {
             // Проверяет обязательные аргументы и runtime travel.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
-                (decisionPoint, nameof(decisionPoint)),
-                (actions, nameof(actions)));
+                (decisionPoint, nameof(decisionPoint)));
 
             if (!_policy.TryGetTravel(out JumpOnFromRoofTravel travel))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             // Выбирает target внутри role-based chain.
             if (!_actionResolver.TryResolve(
@@ -100,13 +98,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
                     out ObstacleSnapshot targetObstacle,
                     out int targetObstacleIndex,
                     out int targetObstacleChainIndex,
-                    out ObstacleSnapshot lastRoof))
+                    out ObstacleSnapshot lastRoof,
+                    out string resolveDeadEndReason))
             {
-                return;
+                return string.IsNullOrEmpty(resolveDeadEndReason)
+                    ? PlanningStrategyResult.NotApplicable()
+                    : DeadEnd(resolveDeadEndReason);
             }
 
             if (!_specification.IsSatisfiedBy(planningState, targetObstacle))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             // Подтверждает fire-window через runtime resolver.
             if (!_fireWindowFinder.TryFindFireShift(
@@ -119,15 +120,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
                     targetObstacleChainIndex,
                     lastRoof,
                     out JumpOnFromRoofWindowModel window,
-                    out float fireShift))
+                    out float fireShift,
+                    out string deadEndReason))
             {
-                return;
+                return DeadEnd(deadEndReason);
             }
 
             float completionWorldShift = fireShift + travel.ActionTravel;
 
             // Добавляет safe action без локального сравнения с ordinary-вариантом.
-            actions.Add(BuildAction(
+            return PlanningStrategyResult.FromAction(BuildAction(
                 _policy,
                 planningState,
                 actionChain.FirstObstacle,
@@ -135,6 +137,14 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
                 fireShift,
                 travel,
                 completionWorldShift));
+        }
+
+        /// <summary>
+        /// Создает dead-end результат для применимой super-jump-on-from-roof strategy.
+        /// </summary>
+        private static PlanningStrategyResult DeadEnd(string message)
+        {
+            return PlanningStrategyResult.DeadEnd(nameof(SuperJumpOnFromRoofStrategy), message);
         }
 
         /// <summary>

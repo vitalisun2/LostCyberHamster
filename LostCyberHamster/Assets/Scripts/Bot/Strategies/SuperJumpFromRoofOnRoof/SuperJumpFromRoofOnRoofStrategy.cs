@@ -68,26 +68,24 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
         /// <summary>
         /// Добавляет super roof-to-roof action, если passive roof exit опасен и следующая roof подтверждена.
         /// </summary>
-        public void CollectActions(
+        public PlanningStrategyResult CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            DecisionPoint decisionPoint,
-            List<PlannedAction> actions)
+            DecisionPoint decisionPoint)
         {
             // Проверяет обязательный вход.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
-                (decisionPoint, nameof(decisionPoint)),
-                (actions, nameof(actions)));
+                (decisionPoint, nameof(decisionPoint)));
 
             // Проверяет применимость strategy.
             if (!_specification.IsSatisfiedBy(planningState))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             // Получает runtime-дистанции.
             if (!_policy.TryGetTravel(out JumpFromRoofOnRoofTravel travel))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             // Ищет target roof и подбирает fire shift.
             if (!_fireWindowFinder.TryFindFireShift(
@@ -99,13 +97,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
                     out int targetRoofIndex,
                     out float firstFireShift,
                     out float lastFireShift,
-                    out float fireShift))
+                    out float fireShift,
+                    out string deadEndReason))
             {
-                return;
+                return string.IsNullOrEmpty(deadEndReason)
+                    ? PlanningStrategyResult.NotApplicable()
+                    : DeadEnd(deadEndReason);
             }
 
             // Добавляет planned action без локального фильтра against ordinary.
-            actions.Add(BuildAction(
+            return PlanningStrategyResult.FromAction(BuildAction(
                 _policy,
                 planningState,
                 targetRoof,
@@ -114,6 +115,14 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
                 lastFireShift,
                 fireShift,
                 travel));
+        }
+
+        /// <summary>
+        /// Создает dead-end результат для применимой super roof-to-roof strategy.
+        /// </summary>
+        private static PlanningStrategyResult DeadEnd(string message)
+        {
+            return PlanningStrategyResult.DeadEnd(nameof(SuperJumpFromRoofOnRoofStrategy), message);
         }
 
         /// <summary>

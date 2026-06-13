@@ -34,7 +34,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
             out int targetRoofIndex,
             out float firstFireShift,
             out float lastFireShift,
-            out float fireShift)
+            out float fireShift,
+            out string deadEndReason)
         {
             // Инициализирует пустой результат.
             targetRoof = null;
@@ -42,6 +43,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
             firstFireShift = 0f;
             lastFireShift = 0f;
             fireShift = 0f;
+            deadEndReason = null;
 
             // Находит target roof для текущего roof-to-roof сценария.
             if (!TryFindTargetRoof(
@@ -69,20 +71,27 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
                     travel,
                     out firstFireShift,
                     out lastFireShift,
-                    out fireShift))
+                    out fireShift,
+                    out deadEndReason))
             {
                 return false;
             }
 
             // Подтверждает выбранную точку через runtime resolver.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            return CheckRuntimeOutcomeAtFireShift(
+            if (CheckRuntimeOutcomeAtFireShift(
                 planningState,
                 projectedWorldSnapshot,
                 baseObstacles,
                 targetRoof.InstanceId,
                 fireShift,
-                travel);
+                travel))
+            {
+                return true;
+            }
+
+            deadEndReason = "Нет безопасного окна для прыжка на следующую крышу: runtime-модель не подтверждает посадку на выбранную крышу.";
+            return false;
         }
 
         /// <summary>

@@ -75,33 +75,31 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
         /// <summary>
         /// Добавляет super-roof-jump-over action для hazard на текущем passive roof path.
         /// </summary>
-        public void CollectActions(
+        public PlanningStrategyResult CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            DecisionPoint decisionPoint,
-            List<PlannedAction> actions)
+            DecisionPoint decisionPoint)
         {
             // Проверяет вход и выбирает role-based hazard.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
-                (decisionPoint, nameof(decisionPoint)),
-                (actions, nameof(actions)));
+                (decisionPoint, nameof(decisionPoint)));
 
             if (!_actionResolver.TryResolve(
                     decisionPoint.Chain,
                     out ObstacleSnapshot hazardObstacle,
                     out _))
             {
-                return;
+                return PlanningStrategyResult.NotApplicable();
             }
 
             if (!_specification.IsSatisfiedBy(planningState, hazardObstacle))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             // Получает travel и подтверждает fire-window через runtime resolver.
             if (!_policy.TryGetTravel(out RoofJumpOverTravel travel))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
@@ -110,18 +108,27 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
                     travel,
                     out RoofJumpOverChainModel chainModel,
                     out ObstacleSnapshot supportObstacle,
-                    out float fireShift))
+                    out float fireShift,
+                    out string deadEndReason))
             {
-                return;
+                return DeadEnd(deadEndReason);
             }
 
-            actions.Add(BuildAction(
+            return PlanningStrategyResult.FromAction(BuildAction(
                 _policy,
                 planningState,
                 chainModel,
                 supportObstacle,
                 fireShift,
                 travel));
+        }
+
+        /// <summary>
+        /// Создает dead-end результат для применимой super roof-jump-over strategy.
+        /// </summary>
+        private static PlanningStrategyResult DeadEnd(string message)
+        {
+            return PlanningStrategyResult.DeadEnd(nameof(SuperRoofJumpOverStrategy), message);
         }
 
         /// <summary>

@@ -398,7 +398,14 @@ namespace Assets.Scripts.Bot
                 return;
 
             // Строит candidate plan с учетом текущего execution state.
-            BotPlan plan = BuildPlanForCurrentExecutionState(replanReasons);
+            PlanBuildResult buildResult = BuildPlanForCurrentExecutionState(replanReasons);
+            if (buildResult.HasDeadEnd)
+            {
+                ReportDeadEnd(buildResult.DeadEndReport, replanReasons);
+                return;
+            }
+
+            BotPlan plan = buildResult.Plan;
 
             // Отбрасывает только эквивалентный plan; пустой rebuild тоже должен очищать старый хвост.
             if (plan.IsEquivalentTo(CurrentPlan))
@@ -413,7 +420,7 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Строит candidate plan: live-root при ожидании action или committed-head плюс новый хвост при execution.
         /// </summary>
-        private BotPlan BuildPlanForCurrentExecutionState(BotReplanReason replanReasons)
+        private PlanBuildResult BuildPlanForCurrentExecutionState(BotReplanReason replanReasons)
         {
             if (!CurrentPlan.HasActions
                 || HasReplanReason(replanReasons, BotReplanReason.ActionCancelled))
@@ -431,7 +438,8 @@ namespace Assets.Scripts.Bot
             if (tailRootState == null)
                 return _planBuilder.Build(LastSnapshot);
 
-            BotPlan tailPlan = _planBuilder.Build(LastSnapshot, tailRootState);
+            PlanBuildResult tailBuildResult = _planBuilder.Build(LastSnapshot, tailRootState);
+            BotPlan tailPlan = tailBuildResult.Plan;
 
             var actions = new List<PlannedAction>(committedPrefix.Count + tailPlan.Actions.Count);
             for (int actionIndex = 0; actionIndex < committedPrefix.Count; actionIndex++)
@@ -440,7 +448,51 @@ namespace Assets.Scripts.Bot
             for (int actionIndex = 0; actionIndex < tailPlan.Actions.Count; actionIndex++)
                 actions.Add(tailPlan.Actions[actionIndex]);
 
-            return new BotPlan(actions, tailPlan.CommittedBoundaryX, tailPlan.Score);
+            return new PlanBuildResult(
+                new BotPlan(actions, tailPlan.CommittedBoundaryX, tailPlan.Score),
+                tailBuildResult.DeadEndReport);
+        }
+
+        /// <summary>
+        /// Логирует непроходимый участок уровня и останавливает validation run.
+        /// </summary>
+        private void ReportDeadEnd(PlanningDeadEndReport deadEndReport, BotReplanReason replanReasons)
+        {
+            if (deadEndReport == null)
+                return;
+
+            string message =
+                $"[Bot DEAD_END] reason={FormatReplanReasons(replanReasons)} " +
+                $"depth={deadEndReport.Depth} " +
+                $"nextObstacleIndex={deadEndReport.NextObstacleIndex} " +
+                $"projection={deadEndReport.ProjectionWorldShift:F2} " +
+                $"causes={FormatDeadEndReasons(deadEndReport)}";
+
+            DebugManager.DiagLog(message);
+            Debug.LogWarning(message);
+            DebugManager.DiagLog("[TEST RESULT] FAIL");
+            DebugManager.DiagStability("[TEST RESULT] FAIL");
+            _gameManager?.Pause();
+        }
+
+        /// <summary>
+        /// Форматирует причины dead-end от применимых стратегий.
+        /// </summary>
+        private static string FormatDeadEndReasons(PlanningDeadEndReport deadEndReport)
+        {
+            if (deadEndReport?.Reasons == null || deadEndReport.Reasons.Count == 0)
+                return "Применимые стратегии не вернули действия, но dead-end причины не собраны.";
+
+            var builder = new StringBuilder();
+            for (int reasonIndex = 0; reasonIndex < deadEndReport.Reasons.Count; reasonIndex++)
+            {
+                if (reasonIndex > 0)
+                    builder.Append(" | ");
+
+                builder.Append(deadEndReport.Reasons[reasonIndex]);
+            }
+
+            return builder.ToString();
         }
 
         /// <summary>

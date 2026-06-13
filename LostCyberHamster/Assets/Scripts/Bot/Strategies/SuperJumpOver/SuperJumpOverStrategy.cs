@@ -43,18 +43,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         /// <summary>
         /// Добавляет super jump-over action, если первый role-based obstacle безопасно перепрыгивается.
         /// </summary>
-        public void CollectActions(
+        public PlanningStrategyResult CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            DecisionPoint decisionPoint,
-            List<PlannedAction> actions)
+            DecisionPoint decisionPoint)
         {
             // Проверяет обязательные аргументы.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
-                (decisionPoint, nameof(decisionPoint)),
-                (actions, nameof(actions)));
+                (decisionPoint, nameof(decisionPoint)));
 
             // Выбирает blocking threat из текущей role-based ситуации.
             if (!TryResolveBlockingThreat(
@@ -62,18 +60,18 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                     out ObstacleSnapshot blockingThreat,
                     out int blockingThreatIndex))
             {
-                return;
+                return PlanningStrategyResult.NotApplicable();
             }
 
             // Проверяет применимость super-policy к выбранной blocking threat.
             if (!_specification.IsSatisfiedBy(planningState, blockingThreat))
             {
-                return;
+                return PlanningStrategyResult.NotApplicable();
             }
 
             // Получает runtime travel и подтверждает fire window.
             if (!_policy.TryGetTravel(out float superJumpTravel))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
@@ -81,13 +79,14 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                     decisionPoint.Chain,
                     superJumpTravel,
                     out JumpOverChainModel chainWindow,
-                    out float fireShift))
+                    out float fireShift,
+                    out string deadEndReason))
             {
-                return;
+                return DeadEnd(deadEndReason);
             }
 
             // Добавляет safe action в общий набор кандидатов без сравнения с обычным JumpOver.
-            actions.Add(BuildAction(
+            return PlanningStrategyResult.FromAction(BuildAction(
                 _policy,
                 planningState,
                 blockingThreat,
@@ -95,6 +94,14 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 chainWindow,
                 fireShift,
                 superJumpTravel));
+        }
+
+        /// <summary>
+        /// Создает dead-end результат для применимой super jump-over strategy.
+        /// </summary>
+        private static PlanningStrategyResult DeadEnd(string message)
+        {
+            return PlanningStrategyResult.DeadEnd(nameof(SuperJumpOverStrategy), message);
         }
 
         /// <summary>

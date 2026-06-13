@@ -46,22 +46,20 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
         /// <summary>
         /// Добавляет обычный jump-on action, если role-based target и полное действие безопасны.
         /// </summary>
-        public void CollectActions(
+        public PlanningStrategyResult CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            DecisionPoint decisionPoint,
-            List<PlannedAction> actions)
+            DecisionPoint decisionPoint)
         {
             // Проверяет обязательные аргументы.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
-                (decisionPoint, nameof(decisionPoint)),
-                (actions, nameof(actions)));
+                (decisionPoint, nameof(decisionPoint)));
 
             // Получает runtime travel и строит action-chain до достижимого target.
             if (!_policy.TryGetTravel(out JumpOnTravel travel))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             if (!_actionChainResolver.TryResolve(
                     planningState,
@@ -71,14 +69,17 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                     out ObstacleChain actionChain,
                     out ObstacleSnapshot targetObstacle,
                     out int targetObstacleIndex,
-                    out int targetObstacleChainIndex))
+                    out int targetObstacleChainIndex,
+                    out string resolveDeadEndReason))
             {
-                return;
+                return string.IsNullOrEmpty(resolveDeadEndReason)
+                    ? PlanningStrategyResult.NotApplicable()
+                    : DeadEnd(resolveDeadEndReason);
             }
 
             // Проверяет применимость strategy к выбранному target.
             if (!_specification.IsSatisfiedBy(planningState, targetObstacle))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             // Подтверждает fire window через runtime resolver.
             if (!_fireWindowFinder.TryFindFireShift(
@@ -90,9 +91,10 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                     targetObstacleChainIndex,
                     travel,
                     out JumpOnWindowModel window,
-                    out float fireShift))
+                    out float fireShift,
+                    out string fireWindowDeadEndReason))
             {
-                return;
+                return DeadEnd(fireWindowDeadEndReason);
             }
 
             // Проверяет безопасность после полного завершения.
@@ -102,13 +104,14 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                     worldSnapshot,
                     window.TargetObstacleIndex,
                     window.TargetObstacle.InstanceId,
-                    completionWorldShift))
+                    completionWorldShift,
+                    out string postActionDeadEndReason))
             {
-                return;
+                return DeadEnd(postActionDeadEndReason);
             }
 
             // Добавляет safe action в общий набор кандидатов без локального ранжирования.
-            actions.Add(BuildAction(
+            return PlanningStrategyResult.FromAction(BuildAction(
                 _policy,
                 planningState,
                 actionChain.FirstObstacle,
@@ -116,6 +119,14 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                 fireShift,
                 travel,
                 completionWorldShift));
+        }
+
+        /// <summary>
+        /// Создает dead-end результат для применимой jump-on strategy.
+        /// </summary>
+        private static PlanningStrategyResult DeadEnd(string message)
+        {
+            return PlanningStrategyResult.DeadEnd(nameof(JumpOnStrategy), message);
         }
 
         /// <summary>

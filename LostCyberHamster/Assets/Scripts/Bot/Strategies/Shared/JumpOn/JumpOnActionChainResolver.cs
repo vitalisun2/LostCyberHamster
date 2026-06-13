@@ -22,13 +22,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
             out ObstacleChain actionChain,
             out ObstacleSnapshot targetObstacle,
             out int targetObstacleIndex,
-            out int targetObstacleChainIndex)
+            out int targetObstacleChainIndex,
+            out string deadEndReason)
         {
             // Проверяет входные данные.
             actionChain = null;
             targetObstacle = null;
             targetObstacleIndex = -1;
             targetObstacleChainIndex = -1;
+            deadEndReason = null;
             if (planningState?.Hamster == null
                 || worldSnapshot?.Obstacles == null
                 || sourceChain == null
@@ -50,7 +52,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
                     out targetObstacleChainIndex))
             {
                 if (targetObstacle.LeftX > maxTargetLeftX)
+                {
+                    deadEndReason = "Нет безопасного окна для напрыгивания: target находится за правой границей безопасного окна запуска.";
                     return false;
+                }
 
                 actionChain = sourceChain;
                 return true;

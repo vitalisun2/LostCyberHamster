@@ -32,11 +32,13 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             ObstacleChain chain,
             float jumpTravel,
             out JumpOverChainModel chainWindow,
-            out float fireShift)
+            out float fireShift,
+            out string deadEndReason)
         {
             // Проверяет входы и вычисляет геометрическое окно.
             chainWindow = default;
             fireShift = 0f;
+            deadEndReason = null;
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (projectedWorldSnapshot, nameof(projectedWorldSnapshot)),
@@ -47,7 +49,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
                     planningState.Hamster,
                     chain,
                     jumpTravel,
-                    out chainWindow))
+                    out chainWindow,
+                    out deadEndReason))
             {
                 return false;
             }
@@ -55,12 +58,18 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             // Проверяет выбранный fire shift через runtime resolver.
             fireShift = chainWindow.SelectedFireShift;
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            return CheckRuntimeOutcomeAtFireShift(
+            if (CheckRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
                 fireShift,
                 jumpTravel,
-                chainWindow);
+                chainWindow))
+            {
+                return true;
+            }
+
+            deadEndReason = "Нет безопасного окна для перепрыгивания: runtime-модель не подтверждает безопасный перелет выбранной цепочки.";
+            return false;
         }
 
         /// <summary>

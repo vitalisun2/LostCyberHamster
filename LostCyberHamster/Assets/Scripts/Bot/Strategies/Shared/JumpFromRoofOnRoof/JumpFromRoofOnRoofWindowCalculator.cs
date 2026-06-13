@@ -23,12 +23,14 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
             JumpFromRoofOnRoofTravel travel,
             out float firstFireShift,
             out float lastFireShift,
-            out float selectedFireShift)
+            out float selectedFireShift,
+            out string deadEndReason)
         {
             // Инициализирует пустой результат.
             firstFireShift = 0f;
             lastFireShift = 0f;
             selectedFireShift = 0f;
+            deadEndReason = null;
 
             // Отсекает неполный вход.
             if (planningState == null || lastRoof == null || targetRoof == null)
@@ -46,6 +48,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
             lastFireShift = float.PositiveInfinity;
 
             ApplyRoofRunLimit(hamster, lastRoof, fireWindowBoundaryMargin, ref lastFireShift);
+            float lastFireShiftAfterRoofRunLimit = lastFireShift;
             ApplyTargetRoofLandingLimit(
                 hamster,
                 targetRoof,
@@ -64,10 +67,45 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
 
             // Выбирает середину итогового окна.
             if (firstFireShift >= lastFireShift)
+            {
+                deadEndReason = BuildDeadEndReason(
+                    firstFireShift,
+                    lastFireShift,
+                    lastFireShiftAfterRoofRunLimit,
+                    runFromRoofBlocker,
+                    lastObstacleBeforeTargetRoof);
                 return false;
+            }
 
             selectedFireShift = (firstFireShift + lastFireShift) * 0.5f;
-            return selectedFireShift > firstFireShift;
+            if (selectedFireShift > firstFireShift)
+                return true;
+
+            deadEndReason = "Safety margin не оставил безопасного окна для прыжка на следующую крышу.";
+            return false;
+        }
+
+        /// <summary>
+        /// Выбирает короткую причину отсутствия roof-to-roof fire-window.
+        /// </summary>
+        private static string BuildDeadEndReason(
+            float firstFireShift,
+            float lastFireShift,
+            float lastFireShiftAfterRoofRunLimit,
+            ObstacleSnapshot runFromRoofBlocker,
+            ObstacleSnapshot lastObstacleBeforeTargetRoof)
+        {
+            bool hasBigAliveLimit =
+                runFromRoofBlocker?.ObstacleType == ObstacleTypeEnum.bigAlive
+                || lastObstacleBeforeTargetRoof?.ObstacleType == ObstacleTypeEnum.bigAlive;
+
+            if (hasBigAliveLimit)
+                return "Нет безопасного окна для прыжка на следующую крышу: bigAlive между крышами требует дополнительный зазор.";
+
+            if (lastFireShift <= lastFireShiftAfterRoofRunLimit && firstFireShift >= lastFireShift)
+                return "Нет безопасного окна для прыжка на следующую крышу: окно движения по текущей крыше не пересекается с окном посадки на следующую крышу.";
+
+            return "Safety margin не оставил безопасного окна для прыжка на следующую крышу.";
         }
 
         /// <summary>

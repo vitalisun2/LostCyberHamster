@@ -35,7 +35,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
             int targetObstacleChainIndex,
             JumpOnTravel travel,
             out JumpOnWindowModel window,
-            out float fireShift)
+            out float fireShift,
+            out string deadEndReason)
         {
             // Проверяет входные данные.
             Guard.ThrowIfNull(
@@ -46,6 +47,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
 
             // Вычисляет аналитическое окно.
             fireShift = 0f;
+            deadEndReason = null;
             if (!JumpOnWindowCalculator.TryCalculate(
                     planningState.Hamster,
                     chain,
@@ -53,7 +55,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
                     targetObstacleIndex,
                     targetObstacleChainIndex,
                     travel,
-                    out window))
+                    out window,
+                    out deadEndReason))
             {
                 return false;
             }
@@ -61,12 +64,18 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
             // Подтверждает fire shift через runtime resolver.
             fireShift = window.SelectedFireShift;
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            return CheckRuntimeOutcomeAtFireShift(
+            if (CheckRuntimeOutcomeAtFireShift(
                 planningState.Hamster,
                 baseObstacles,
                 fireShift,
                 travel,
-                window.TargetObstacleIndex);
+                window.TargetObstacleIndex))
+            {
+                return true;
+            }
+
+            deadEndReason = "Нет безопасного окна для напрыгивания: runtime-модель не подтверждает попадание в target.";
+            return false;
         }
 
         /// <summary>

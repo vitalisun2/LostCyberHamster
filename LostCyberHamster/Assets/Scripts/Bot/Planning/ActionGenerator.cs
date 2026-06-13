@@ -9,6 +9,31 @@ using Assets.Scripts.System;
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
+    /// Результат генерации actions для одного planning state.
+    /// </summary>
+    internal sealed class ActionGenerationResult
+    {
+        public ActionGenerationResult(
+            IReadOnlyList<PlannedAction> actions,
+            IReadOnlyList<StrategyDeadEndReason> deadEndReasons)
+        {
+            Actions = actions ?? Array.Empty<PlannedAction>();
+            DeadEndReasons = deadEndReasons ?? Array.Empty<StrategyDeadEndReason>();
+        }
+
+        public IReadOnlyList<PlannedAction> Actions { get; }
+        public IReadOnlyList<StrategyDeadEndReason> DeadEndReasons { get; }
+        public bool HasDeadEndReasons => DeadEndReasons.Count > 0;
+
+        public static ActionGenerationResult Empty()
+        {
+            return new ActionGenerationResult(
+                Array.Empty<PlannedAction>(),
+                Array.Empty<StrategyDeadEndReason>());
+        }
+    }
+
+    /// <summary>
     /// Generates role-based candidate actions through new decision points and planning strategies.
     /// </summary>
     public sealed class ActionGenerator
@@ -29,15 +54,16 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Generates actions available from the current planning state and world snapshot.
         /// </summary>
-        public IReadOnlyList<PlannedAction> Generate(PlanningState planningState, WorldSnapshot worldSnapshot)
+        internal ActionGenerationResult Generate(PlanningState planningState, WorldSnapshot worldSnapshot)
         {
             var plannedActions = new List<PlannedAction>();
+            var deadEndReasons = new List<StrategyDeadEndReason>();
             if (planningState == null || worldSnapshot == null)
-                return plannedActions;
+                return ActionGenerationResult.Empty();
 
             WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
             if (projectedWorldSnapshot == null)
-                return plannedActions;
+                return ActionGenerationResult.Empty();
 
             bool currentBottomLine = planningState.IsOnBottomLine;
 
@@ -56,7 +82,9 @@ namespace Assets.Scripts.Bot.Planning
             if (!hasCurrentDecisionPoint && !hasOppositeDecisionPoint)
             {
                 LogNoDecisionPoint(planningState);
-                return plannedActions;
+                return new ActionGenerationResult(
+                    plannedActions,
+                    deadEndReasons);
             }
 
             if (hasCurrentDecisionPoint)
@@ -65,7 +93,8 @@ namespace Assets.Scripts.Bot.Planning
                     planningState,
                     projectedWorldSnapshot,
                     currentDecisionPoint,
-                    plannedActions);
+                    plannedActions,
+                    deadEndReasons);
             }
 
             if (hasOppositeDecisionPoint)
@@ -74,13 +103,16 @@ namespace Assets.Scripts.Bot.Planning
                     planningState,
                     projectedWorldSnapshot,
                     oppositeDecisionPoint,
-                    plannedActions);
+                    plannedActions,
+                    deadEndReasons);
             }
 
             if (plannedActions.Count == 0 && hasCurrentDecisionPoint)
                 LogNoActions(planningState, currentDecisionPoint);
 
-            return plannedActions;
+            return new ActionGenerationResult(
+                plannedActions,
+                deadEndReasons);
         }
 
         /// <summary>
@@ -90,15 +122,20 @@ namespace Assets.Scripts.Bot.Planning
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
             DecisionPoint decisionPoint,
-            List<PlannedAction> plannedActions)
+            List<PlannedAction> plannedActions,
+            List<StrategyDeadEndReason> deadEndReasons)
         {
             for (int strategyIndex = 0; strategyIndex < _strategies.Count; strategyIndex++)
             {
-                _strategies[strategyIndex].CollectActions(
+                PlanningStrategyResult result = _strategies[strategyIndex].CollectActions(
                     planningState,
                     projectedWorldSnapshot,
-                    decisionPoint,
-                    plannedActions);
+                    decisionPoint);
+
+                ApplyStrategyResult(
+                    result,
+                    plannedActions,
+                    deadEndReasons);
             }
         }
 
@@ -109,16 +146,43 @@ namespace Assets.Scripts.Bot.Planning
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
             DecisionPoint oppositeDecisionPoint,
-            List<PlannedAction> plannedActions)
+            List<PlannedAction> plannedActions,
+            List<StrategyDeadEndReason> deadEndReasons)
         {
             if (_switchLaneStrategy == null)
                 return;
 
-            _switchLaneStrategy.CollectActions(
+            PlanningStrategyResult result = _switchLaneStrategy.CollectActions(
                 planningState,
                 projectedWorldSnapshot,
-                oppositeDecisionPoint,
-                plannedActions);
+                oppositeDecisionPoint);
+
+            ApplyStrategyResult(
+                result,
+                plannedActions,
+                deadEndReasons);
+        }
+
+        /// <summary>
+        /// Добавляет результат одной strategy в общий generation result.
+        /// </summary>
+        private static void ApplyStrategyResult(
+            PlanningStrategyResult result,
+            List<PlannedAction> plannedActions,
+            List<StrategyDeadEndReason> deadEndReasons)
+        {
+            if (result == null || !result.IsApplicable)
+                return;
+
+            for (int actionIndex = 0; actionIndex < result.Actions.Count; actionIndex++)
+            {
+                PlannedAction action = result.Actions[actionIndex];
+                if (action != null)
+                    plannedActions.Add(action);
+            }
+
+            if (result.HasDeadEndReason)
+                deadEndReasons.Add(result.DeadEndReason);
         }
 
         /// <summary>

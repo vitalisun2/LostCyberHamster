@@ -40,7 +40,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
             int targetObstacleChainIndex,
             float jumpTravel,
             out JumpOnRoofWindowModel window,
-            out float fireShift)
+            out float fireShift,
+            out string deadEndReason)
         {
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
@@ -50,6 +51,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
 
             window = default;
             fireShift = 0f;
+            deadEndReason = null;
 
             if (!TryGetRoofLandingWindow(
                     planningState.Hamster,
@@ -58,7 +60,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
                     targetObstacleIndex,
                     targetObstacleChainIndex,
                     jumpTravel,
-                    out window))
+                    out window,
+                    out deadEndReason))
             {
                 return false;
             }
@@ -69,6 +72,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
                     baseObstacles,
                     targetObstacleIndex))
             {
+                deadEndReason = "Нет безопасного окна для прыжка на крышу: входной край крыши занят опасным препятствием.";
                 return false;
             }
 
@@ -83,6 +87,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
                     out fireShift,
                     out JumpResolveResult selectedOutcome))
             {
+                deadEndReason = "Нет безопасного окна для прыжка на крышу: runtime-модель не подтверждает безопасную посадку на выбранную крышу.";
                 return false;
             }
 
@@ -142,9 +147,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
             int roofWorldIndex,
             int roofChainIndex,
             float jumpTravel,
-            out JumpOnRoofWindowModel window)
+            out JumpOnRoofWindowModel window,
+            out string deadEndReason)
         {
             window = default;
+            deadEndReason = null;
             if (hamster == null
                 || chain == null
                 || roofObstacle == null
@@ -164,13 +171,22 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
                 roofChainIndex,
                 jumpTravel);
 
+            if (lastFireShift <= 0f || firstFireShift >= lastFireShift)
+            {
+                deadEndReason = "Нет безопасного окна для прыжка на крышу: окно посадки не пересекается с ограничениями траектории и контакта с цепочкой.";
+                return false;
+            }
+
             float fireWindowBoundaryMargin =
                 JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
             firstFireShift += fireWindowBoundaryMargin;
             lastFireShift -= fireWindowBoundaryMargin;
 
             if (lastFireShift <= 0f || firstFireShift >= lastFireShift)
+            {
+                deadEndReason = "Safety margin не оставил безопасного окна для прыжка на крышу.";
                 return false;
+            }
 
             window = new JumpOnRoofWindowModel(
                 roofObstacle,

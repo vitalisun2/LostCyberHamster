@@ -3,9 +3,50 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 
 namespace Assets.Scripts.Bot.Planning
 {
+    /// <summary>
+    /// Результат построения role-based planning graph.
+    /// </summary>
+    internal sealed class PlanningGraphBuildResult
+    {
+        public PlanningGraphBuildResult(
+            IReadOnlyList<PlanningBranch> branches,
+            PlanningDeadEndReport deadEndReport)
+        {
+            Branches = branches ?? Array.Empty<PlanningBranch>();
+            DeadEndReport = deadEndReport;
+        }
+
+        public IReadOnlyList<PlanningBranch> Branches { get; }
+        public PlanningDeadEndReport DeadEndReport { get; }
+    }
+
+    /// <summary>
+    /// Описывает unresolved участок, где применимые стратегии не создали action.
+    /// </summary>
+    internal sealed class PlanningDeadEndReport
+    {
+        public PlanningDeadEndReport(
+            int depth,
+            int nextObstacleIndex,
+            float projectionWorldShift,
+            IReadOnlyList<StrategyDeadEndReason> reasons)
+        {
+            Depth = depth;
+            NextObstacleIndex = nextObstacleIndex;
+            ProjectionWorldShift = projectionWorldShift;
+            Reasons = reasons ?? Array.Empty<StrategyDeadEndReason>();
+        }
+
+        public int Depth { get; }
+        public int NextObstacleIndex { get; }
+        public float ProjectionWorldShift { get; }
+        public IReadOnlyList<StrategyDeadEndReason> Reasons { get; }
+    }
+
     /// <summary>
     /// Builds a role-based decision tree for the current planning state.
     /// </summary>
@@ -29,20 +70,25 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Builds all reachable role-based planning branches from the root state.
         /// </summary>
-        public IReadOnlyList<PlanningBranch> BuildBranches(WorldSnapshot worldSnapshot, PlanningState rootState)
+        internal PlanningGraphBuildResult BuildBranches(WorldSnapshot worldSnapshot, PlanningState rootState)
         {
             if (worldSnapshot == null || rootState == null)
-                return Array.Empty<PlanningBranch>();
+            {
+                return new PlanningGraphBuildResult(
+                    Array.Empty<PlanningBranch>(),
+                    deadEndReport: null);
+            }
 
             var branches = new List<PlanningBranch>();
+            PlanningDeadEndReport deadEndReport = null;
             PlanningGraphNode rootNode = PlanningGraphNode.CreateRoot(rootState);
             var bestMetricsByState = new Dictionary<PlanningStateKey, PlanningBranchMetrics>
             {
                 [rootNode.StateKey] = rootNode.Metrics
             };
 
-            ExploreNode(rootNode, worldSnapshot, branches, bestMetricsByState);
-            return branches;
+            ExploreNode(rootNode, worldSnapshot, branches, bestMetricsByState, ref deadEndReport);
+            return new PlanningGraphBuildResult(branches, deadEndReport);
         }
 
         /// <summary>
@@ -52,7 +98,8 @@ namespace Assets.Scripts.Bot.Planning
             PlanningGraphNode currentNode,
             WorldSnapshot worldSnapshot,
             List<PlanningBranch> branches,
-            Dictionary<PlanningStateKey, PlanningBranchMetrics> bestMetricsByState)
+            Dictionary<PlanningStateKey, PlanningBranchMetrics> bestMetricsByState,
+            ref PlanningDeadEndReport deadEndReport)
         {
             if (currentNode.Depth >= MaxSearchDepth)
             {
@@ -62,12 +109,19 @@ namespace Assets.Scripts.Bot.Planning
                 return;
             }
 
-            IReadOnlyList<PlannedAction> candidates = _actionGenerator.Generate(currentNode.State, worldSnapshot);
+            ActionGenerationResult generationResult = _actionGenerator.Generate(currentNode.State, worldSnapshot);
+            IReadOnlyList<PlannedAction> candidates = generationResult.Actions;
             bool hasUnresolvedPlanningSituation = HasUnresolvedPlanningSituation(currentNode.State, worldSnapshot);
             if (candidates.Count == 0)
             {
                 if (!hasUnresolvedPlanningSituation)
+                {
                     AddLeafBranch(currentNode, branches);
+                    return;
+                }
+
+                if (deadEndReport == null && generationResult.HasDeadEndReasons)
+                    deadEndReport = BuildDeadEndReport(currentNode, generationResult);
 
                 return;
             }
@@ -90,8 +144,22 @@ namespace Assets.Scripts.Bot.Planning
                     continue;
 
                 bestMetricsByState[childNode.StateKey] = childNode.Metrics;
-                ExploreNode(childNode, worldSnapshot, branches, bestMetricsByState);
+                ExploreNode(childNode, worldSnapshot, branches, bestMetricsByState, ref deadEndReport);
             }
+        }
+
+        /// <summary>
+        /// Создает report для первого unresolved node без доступных actions.
+        /// </summary>
+        private static PlanningDeadEndReport BuildDeadEndReport(
+            PlanningGraphNode currentNode,
+            ActionGenerationResult generationResult)
+        {
+            return new PlanningDeadEndReport(
+                currentNode.Depth,
+                currentNode.State.NextObstacleIndex,
+                currentNode.State.ProjectionWorldShift,
+                generationResult.DeadEndReasons);
         }
 
         /// <summary>

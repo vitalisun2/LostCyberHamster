@@ -18,10 +18,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             HamsterSnapshot hamster,
             ObstacleChain chain,
             float jumpTravel,
-            out JumpOverChainModel window)
+            out JumpOverChainModel window,
+            out string deadEndReason)
         {
             // Проверяет входы и первый obstacle текущей ситуации.
             window = default;
+            deadEndReason = null;
             if (policy == null || hamster == null || chain == null || chain.Count <= 0)
                 return false;
 
@@ -48,7 +50,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
                     chainRightX,
                     jumpTravel,
                     out float firstFireShift,
-                    out float lastFireShift))
+                    out float lastFireShift,
+                    out deadEndReason))
             {
                 return false;
             }
@@ -76,7 +79,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
                         candidateChainRightX,
                         jumpTravel,
                         out float candidateFirstFireShift,
-                        out float candidateLastFireShift))
+                        out float candidateLastFireShift,
+                        out _))
                 {
                     break;
                 }
@@ -99,7 +103,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
                 ref lastFireShift);
 
             if (firstFireShift >= lastFireShift)
+            {
+                deadEndReason = "Нет безопасного окна для перепрыгивания: bigAlive требует дополнительный зазор, которого нет в этом участке.";
                 return false;
+            }
 
             float selectedFireShift = (firstFireShift + lastFireShift) * 0.5f;
             window = new JumpOverChainModel(
@@ -121,22 +128,36 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             float chainRightX,
             float jumpTravel,
             out float firstFireShift,
-            out float lastFireShift)
+            out float lastFireShift,
+            out string deadEndReason)
         {
             // Находит геометрические границы окна относительно hamster.
-            firstFireShift = chainRightX - hamster.HamsterLeftX - jumpTravel;
-            if (firstFireShift < 0f)
-                firstFireShift = 0f;
+            deadEndReason = null;
+            float rawFirstFireShift = chainRightX - hamster.HamsterLeftX - jumpTravel;
+            if (rawFirstFireShift < 0f)
+                rawFirstFireShift = 0f;
 
-            lastFireShift = chainLeftX - hamster.HamsterRightX;
+            float rawLastFireShift = chainLeftX - hamster.HamsterRightX;
+            if (rawFirstFireShift >= rawLastFireShift)
+            {
+                firstFireShift = rawFirstFireShift;
+                lastFireShift = rawLastFireShift;
+                deadEndReason = "Нет безопасного окна для перепрыгивания: траектория прыжка не покрывает текущую цепочку препятствий.";
+                return false;
+            }
 
             // Сужает окно на runtime boundary margin.
             float fireWindowBoundaryMargin =
                 JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
-            firstFireShift += fireWindowBoundaryMargin;
-            lastFireShift -= fireWindowBoundaryMargin;
+            firstFireShift = rawFirstFireShift + fireWindowBoundaryMargin;
+            lastFireShift = rawLastFireShift - fireWindowBoundaryMargin;
+            if (firstFireShift >= lastFireShift)
+            {
+                deadEndReason = "Safety margin не оставил безопасного окна для перепрыгивания.";
+                return false;
+            }
 
-            return firstFireShift < lastFireShift;
+            return true;
         }
 
         /// <summary>

@@ -42,9 +42,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             int targetObstacleChainIndex,
             ObstacleSnapshot lastRoof,
             out JumpOnFromRoofWindowModel window,
-            out float fireShift)
+            out float fireShift,
+            out string deadEndReason)
         {
             // Собирает timing-кандидаты, подтвержденные runtime resolver-ом.
+            deadEndReason = null;
             if (TryCollectFireShifts(
                     planningState,
                     projectedWorldSnapshot,
@@ -55,9 +57,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                     targetObstacleChainIndex,
                     lastRoof,
                     out window,
-                    out IReadOnlyList<float> fireShifts))
+                    out IReadOnlyList<float> fireShifts,
+                    out deadEndReason))
             {
                 // Выбирает первый candidate, который безопасен после полного действия.
+                string postActionDeadEndReason = null;
                 for (int shiftIndex = 0; shiftIndex < fireShifts.Count; shiftIndex++)
                 {
                     float candidateFireShift = fireShifts[shiftIndex];
@@ -67,7 +71,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                             projectedWorldSnapshot,
                             window.TargetObstacleIndex,
                             window.TargetObstacle.InstanceId,
-                            completionWorldShift))
+                            completionWorldShift,
+                            out postActionDeadEndReason))
                     {
                         continue;
                     }
@@ -75,6 +80,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                     fireShift = candidateFireShift;
                     return true;
                 }
+
+                deadEndReason = FormatRoofToRoadPostActionReason(postActionDeadEndReason);
             }
 
             fireShift = 0f;
@@ -94,7 +101,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             int targetObstacleChainIndex,
             ObstacleSnapshot lastRoof,
             out JumpOnFromRoofWindowModel window,
-            out IReadOnlyList<float> fireShifts)
+            out IReadOnlyList<float> fireShifts,
+            out string deadEndReason)
         {
             // Проверяет входные данные.
             Guard.ThrowIfNull(
@@ -106,6 +114,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
 
             // Вычисляет аналитическое окно.
             fireShifts = null;
+            deadEndReason = null;
             if (!JumpOnFromRoofWindowCalculator.TryCalculate(
                     planningState.Hamster,
                     chain,
@@ -114,7 +123,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                     targetObstacleChainIndex,
                     lastRoof,
                     travel,
-                    out window))
+                    out window,
+                    out deadEndReason))
             {
                 return false;
             }
@@ -138,7 +148,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                 validFireShifts);
 
             if (validFireShifts.Count == 0)
+            {
+                deadEndReason = "Нет безопасного окна для напрыгивания с крыши: runtime-модель не подтверждает попадание в target.";
                 return false;
+            }
 
             fireShifts = validFireShifts;
             return true;
@@ -175,6 +188,17 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             }
 
             fireShifts.Add(fireShift);
+        }
+
+        /// <summary>
+        /// Адаптирует post-action reason для roof-to-road jump-on.
+        /// </summary>
+        private static string FormatRoofToRoadPostActionReason(string reason)
+        {
+            if (string.IsNullOrEmpty(reason))
+                return "Небезопасное состояние после напрыгивания с крыши: после возврата в Run хомяк пересекает опасное препятствие.";
+
+            return reason.Replace("после напрыгивания:", "после напрыгивания с крыши:");
         }
 
         /// <summary>

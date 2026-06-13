@@ -43,19 +43,18 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
         /// <summary>
         /// Добавляет no-input passive roof exit action, если естественный сход с крыши безопасен.
         /// </summary>
-        public void CollectActions(
+        public PlanningStrategyResult CollectActions(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            DecisionPoint decisionPoint,
-            List<PlannedAction> actions)
+            DecisionPoint decisionPoint)
         {
             // Проверяет входные данные.
-            if (actions == null)
-                return;
+            if (planningState == null || worldSnapshot == null || decisionPoint == null)
+                return PlanningStrategyResult.NotApplicable();
 
             // Получает runtime travel автоматического схода.
             if (!_policy.TryGetRunFromRoofTravel(out float runFromRoofTravel))
-                return;
+                return PlanningStrategyResult.NotApplicable();
 
             // Строит safe transition model.
             if (!PassiveRoofExitPlanner.TryBuildModel(
@@ -63,13 +62,24 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                     worldSnapshot,
                     decisionPoint,
                     runFromRoofTravel,
-                    out PassiveRoofExitModel model))
+                    out PassiveRoofExitModel model,
+                    out string deadEndReason))
             {
-                return;
+                return string.IsNullOrEmpty(deadEndReason)
+                    ? PlanningStrategyResult.NotApplicable()
+                    : DeadEnd(deadEndReason);
             }
 
             // Добавляет no-input planned action.
-            actions.Add(BuildAction(planningState, model));
+            return PlanningStrategyResult.FromAction(BuildAction(planningState, model));
+        }
+
+        /// <summary>
+        /// Создает dead-end результат для применимой passive roof exit strategy.
+        /// </summary>
+        private static PlanningStrategyResult DeadEnd(string message)
+        {
+            return PlanningStrategyResult.DeadEnd(nameof(PassiveRoofExitStrategy), message);
         }
 
         /// <summary>
