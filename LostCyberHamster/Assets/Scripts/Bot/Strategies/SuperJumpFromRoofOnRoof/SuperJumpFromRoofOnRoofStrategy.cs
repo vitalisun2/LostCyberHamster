@@ -40,7 +40,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
         {
             // Инициализирует зависимости стратегии.
             _policy = new SuperJumpFromRoofOnRoofPolicy();
-            _specification = new JumpFromRoofOnRoofSpecification(_policy);
+            _specification = new JumpFromRoofOnRoofSpecification();
             _fireWindowFinder = new JumpFromRoofOnRoofFireWindowFinder(_policy);
             _simulator = new JumpFromRoofOnRoofSimulator(_policy);
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
@@ -82,6 +82,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof
             // Проверяет применимость strategy.
             if (!_specification.IsSatisfiedBy(planningState))
                 return PlanningStrategyResult.NotApplicable();
+
+            // Проверяет ресурс применимой strategy до поиска safe-window.
+            if (planningState.Hamster.Energy < _policy.EnergyCost)
+            {
+                return PlanningStrategyResult.InsufficientEnergy(
+                    nameof(SuperJumpFromRoofOnRoofStrategy),
+                    _policy.ActionKind,
+                    _policy.EnergyCost,
+                    planningState.Hamster.Energy);
+            }
 
             // Получает runtime-дистанции.
             if (!_policy.TryGetTravel(out JumpFromRoofOnRoofTravel travel))

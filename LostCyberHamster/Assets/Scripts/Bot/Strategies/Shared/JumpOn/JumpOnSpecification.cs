@@ -10,16 +10,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
     /// </summary>
     internal sealed class JumpOnSpecification : IBotStrategySpecification
     {
-        private readonly IJumpOnPolicy _policy;
-
-        /// <summary>
-        /// Создает specification для конкретного jump-on policy.
-        /// </summary>
-        public JumpOnSpecification(IJumpOnPolicy policy)
-        {
-            _policy = policy;
-        }
-
         /// <summary>
         /// Возвращает true, если ground jump-on policy применима к указанному target.
         /// </summary>
@@ -34,12 +24,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
                 return false;
             }
 
-            // Проверяет ground-run состояние и ресурс action.
+            // Проверяет ground-run состояние.
             HamsterSnapshot hamster = planningState.Hamster;
             if (hamster.HamsterState != HamsterStateEnum.Run
                 || hamster.IsOnRoof
-                || hamster.IsShifting
-                || hamster.Energy < _policy.EnergyCost)
+                || hamster.IsShifting)
             {
                 return false;
             }

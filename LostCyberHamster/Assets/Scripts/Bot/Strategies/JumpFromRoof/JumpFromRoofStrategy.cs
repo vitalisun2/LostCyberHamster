@@ -28,7 +28,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
         public JumpFromRoofStrategy()
         {
             _policy = new JumpFromRoofPolicy();
-            _specification = new JumpFromRoofSpecification(_policy);
+            _specification = new JumpFromRoofSpecification();
             _actionResolver = new JumpFromRoofActionResolver();
             _fireWindowFinder = new JumpFromRoofFireWindowFinder(_policy);
             _simulator = new JumpFromRoofSimulator(_policy);
@@ -74,6 +74,16 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
 
             if (!_specification.IsSatisfiedBy(planningState, blockingThreat))
                 return PlanningStrategyResult.NotApplicable();
+
+            // Проверяет ресурс применимой strategy до поиска safe-window.
+            if (planningState.Hamster.Energy < _policy.EnergyCost)
+            {
+                return PlanningStrategyResult.InsufficientEnergy(
+                    nameof(JumpFromRoofStrategy),
+                    _policy.ActionKind,
+                    _policy.EnergyCost,
+                    planningState.Hamster.Energy);
+            }
 
             // Подтверждает fire-window через runtime resolver.
             if (!_fireWindowFinder.TryFindFireShift(

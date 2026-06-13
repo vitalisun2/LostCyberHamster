@@ -542,6 +542,7 @@ Menu: `Tools/Migration/` — 3 шага:
 - Runtime bot planning работает event-driven: plan rebuild запрашивается на `LevelStart`, `BotEnabled`, `SpawnPattern`, `ActionCompleted` и `ActionCancelled`; таймерного rolling rebuild нет.
 - Snapshot horizon для бота — все active `ObstacleSpawner.SpawnedObstacles`, без искусственной правой границы видимости.
 - Planner no-action/dead-end reasons — это diagnosis, а не доказанный level dead-end. Подтвержденный dead-end для валидатора уровня фиксируется только после runtime-потери жизни (`LivesLost`); без сохраненной diagnosis loss-of-life не должен создавать bot dead-end report.
+- Для jump-стратегий нехватка энергии после подтвержденной применимости state/type/lane — это dead-end diagnosis, а не `NotApplicable`; `Specification` не должна скрывать такую причину.
 - `PlanningDeadEndReport.Depth` указывает на первый zero-candidate узел, а не обязательно на ближайшую runtime-угрозу; отсутствие strategy в causes не доказывает, что она не создавала action раньше в ветке.
 - Если успешных leaf-веток нет, planner использует dead-end branch fallback: возвращает максимально дальний безопасный prefix вместе с diagnosis, чтобы validator подтвердил потерю жизни ближе к реальному непроходимому участку.
 - Во время ожидания trigger или выполнения head-action committed prefix удерживает до двух действий: текущую head-action и следующий action для immediate handoff; при replan пересчитывается только хвост после этого prefix. Runtime fire/cancel остаётся ответственностью executor/gate.

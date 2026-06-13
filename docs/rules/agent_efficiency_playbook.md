@@ -107,3 +107,4 @@
 - [promoted -> docs/architecture_knowledge_base.md] Bot planning: dead-end report на глубине N описывает первый zero-candidate узел; dead-end branch fallback должен сохранять безопасный prefix для level validation.
 - [promoted -> docs/architecture_knowledge_base.md] SwitchLane planning: после fire учитывать runtime-блокировку следующего tap до конца `Hamster.IsShifting`.
 - [promoted -> docs/architecture_knowledge_base.md] Bot execution: retained next action должен получать immediate handoff перед rebuild, а actions с ранним runtime handoff нельзя ждать только до финального `Run`.
+- [promoted -> docs/architecture_knowledge_base.md] Bot validation: нехватка энергии у применимой jump-стратегии должна оставаться dead-end diagnosis, а не уходить в `NotApplicable`.

@@ -10,16 +10,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
     /// </summary>
     internal sealed class JumpOnRoofSpecification : IBotStrategySpecification
     {
-        private readonly IJumpOnRoofPolicy _policy;
-
-        /// <summary>
-        /// Создает specification для конкретного jump-on-roof policy.
-        /// </summary>
-        public JumpOnRoofSpecification(IJumpOnRoofPolicy policy)
-        {
-            _policy = policy;
-        }
-
         /// <summary>
         /// Возвращает true, если хомяк может прыгнуть на указанную крышу.
         /// </summary>
@@ -33,8 +23,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
             HamsterSnapshot hamster = planningState.Hamster;
             if (hamster.HamsterState != HamsterStateEnum.Run
                 || hamster.IsOnRoof
-                || hamster.IsShifting
-                || hamster.Energy < _policy.EnergyCost)
+                || hamster.IsShifting)
             {
                 return false;
             }

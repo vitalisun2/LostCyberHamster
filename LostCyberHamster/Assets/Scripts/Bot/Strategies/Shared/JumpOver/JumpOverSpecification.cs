@@ -34,8 +34,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
 
             HamsterSnapshot hamster = planningState.Hamster;
             if (hamster.IsOnRoof
-                || hamster.IsShifting
-                || hamster.Energy < _policy.EnergyCost)
+                || hamster.IsShifting)
             {
                 return false;
             }

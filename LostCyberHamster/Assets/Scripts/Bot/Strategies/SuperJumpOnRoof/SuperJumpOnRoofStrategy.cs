@@ -28,7 +28,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
         public SuperJumpOnRoofStrategy()
         {
             _policy = new SuperJumpOnRoofPolicy();
-            _specification = new JumpOnRoofSpecification(_policy);
+            _specification = new JumpOnRoofSpecification();
             _fireWindowFinder = new JumpOnRoofFireWindowFinder(_policy);
             _actionResolver = new JumpOnRoofActionResolver();
             _simulator = new JumpOnRoofSimulator(_policy);
@@ -66,6 +66,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnRoof
 
             if (!_specification.IsSatisfiedBy(planningState, targetRoof))
                 return PlanningStrategyResult.NotApplicable();
+
+            // Проверяет ресурс применимой strategy до поиска safe-window.
+            if (planningState.Hamster.Energy < _policy.EnergyCost)
+            {
+                return PlanningStrategyResult.InsufficientEnergy(
+                    nameof(SuperJumpOnRoofStrategy),
+                    _policy.ActionKind,
+                    _policy.EnergyCost,
+                    planningState.Hamster.Energy);
+            }
 
             if (!_policy.TryGetTravel(out float superJumpTravel))
                 return PlanningStrategyResult.NotApplicable();

@@ -11,6 +11,7 @@ namespace Assets.Scripts.Bot.Diagnostics
     {
         private readonly Hamster _hamster;
         private readonly GameManager _gameManager;
+        private int _lastEnergy;
 
         /// <summary>
         /// Подписывается на события завершения уровня.
@@ -19,9 +20,15 @@ namespace Assets.Scripts.Bot.Diagnostics
         {
             _hamster = hamster;
             _gameManager = gameManager;
+            _lastEnergy = _hamster.Energy.Value;
 
             _gameManager.OnFinish += OnGameFinished;
             GameEventsManager.OnLevelCompleted += OnLevelCompleted;
+            GameEventsManager.OnEnergyAdded += OnEnergyAdded;
+            GameEventsManager.OnEnergySpent += OnEnergySpent;
+            _hamster.Energy.Subscribe(OnEnergyChanged);
+
+            DebugManager.DiagEconomy($"[Energy] start value={_lastEnergy}");
         }
 
         /// <summary>
@@ -33,19 +40,39 @@ namespace Assets.Scripts.Bot.Diagnostics
                 _gameManager.OnFinish -= OnGameFinished;
 
             GameEventsManager.OnLevelCompleted -= OnLevelCompleted;
+            GameEventsManager.OnEnergyAdded -= OnEnergyAdded;
+            GameEventsManager.OnEnergySpent -= OnEnergySpent;
+            _hamster?.Energy.Unsubscribe(OnEnergyChanged);
         }
 
         private void OnGameFinished()
         {
             DebugManager.DiagLog(
                 $"[TEST FINISH] state={_gameManager.State} " +
-                $"lives={_hamster.Lives.Value}");
+                $"lives={_hamster.Lives.Value} energy={_hamster.Energy.Value}");
         }
 
         private static void OnLevelCompleted(int levelId, int stars)
         {
             DebugManager.DiagLog($"[TEST RESULT] WIN level={levelId} stars={stars}");
             DebugManager.DiagStability($"[TEST RESULT] WIN level={levelId} stars={stars}");
+        }
+
+        private void OnEnergyChanged(int energy)
+        {
+            int delta = energy - _lastEnergy;
+            _lastEnergy = energy;
+            DebugManager.DiagEconomy($"[Energy] change delta={delta:+#;-#;0} value={energy}");
+        }
+
+        private void OnEnergyAdded(int amount)
+        {
+            DebugManager.DiagEconomy($"[Energy] added amount={amount} value={_hamster.Energy.Value}");
+        }
+
+        private void OnEnergySpent(int amount)
+        {
+            DebugManager.DiagEconomy($"[Energy] spent amount={amount} value={_hamster.Energy.Value}");
         }
     }
 }

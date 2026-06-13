@@ -66,6 +66,45 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
                 actions: Array.Empty<PlannedAction>(),
                 deadEndReason: new StrategyDeadEndReason(strategyName, message));
         }
+
+        /// <summary>
+        /// Создает dead-end результат для применимой стратегии, которой не хватает энергии.
+        /// </summary>
+        public static PlanningStrategyResult InsufficientEnergy(
+            string strategyName,
+            BotActionKind actionKind,
+            int requiredEnergy,
+            int availableEnergy)
+        {
+            return DeadEnd(
+                strategyName,
+                $"Недостаточно энергии для {FormatActionKind(actionKind)}: нужно {requiredEnergy}, доступно {availableEnergy}.");
+        }
+
+        /// <summary>
+        /// Возвращает короткое русское название действия для dead-end причины.
+        /// </summary>
+        private static string FormatActionKind(BotActionKind actionKind)
+        {
+            return actionKind switch
+            {
+                BotActionKind.JumpOver => "перепрыгивания",
+                BotActionKind.SuperJumpOver => "супер-перепрыгивания",
+                BotActionKind.JumpOn => "напрыгивания",
+                BotActionKind.SuperJumpOn => "супер-напрыгивания",
+                BotActionKind.JumpOnRoof => "прыжка на крышу",
+                BotActionKind.SuperJumpOnRoof => "супер-прыжка на крышу",
+                BotActionKind.RoofJumpOver => "перепрыгивания на крыше",
+                BotActionKind.SuperRoofJumpOver => "супер-перепрыгивания на крыше",
+                BotActionKind.JumpFromRoof => "прыжка с крыши",
+                BotActionKind.SuperJumpFromRoof => "супер-прыжка с крыши",
+                BotActionKind.JumpOnFromRoof => "напрыгивания с крыши",
+                BotActionKind.SuperJumpOnFromRoof => "супер-напрыгивания с крыши",
+                BotActionKind.JumpFromRoofOnRoof => "прыжка на следующую крышу",
+                BotActionKind.SuperJumpFromRoofOnRoof => "супер-прыжка на следующую крышу",
+                _ => actionKind.ToString()
+            };
+        }
     }
 
     /// <summary>

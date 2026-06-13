@@ -171,14 +171,18 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             ref float firstFireShift,
             ref float lastFireShift)
         {
+            // Получает policy-specific зазор для runtime-порога bigAlive.
             float padding = hamster.Width * policy.BigAliveCollisionPaddingRatio;
             if (padding <= 0f)
                 return;
 
+            // Ограничивает поздний старт перед первым bigAlive.
             if (firstObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
                 lastFireShift -= padding;
 
-            if (lastObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
+            // Ограничивает ранний старт только для отдельного последнего bigAlive в chain.
+            bool coversSingleObstacle = firstObstacle.InstanceId == lastObstacle.InstanceId;
+            if (!coversSingleObstacle && lastObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
                 firstFireShift += padding;
         }
     }

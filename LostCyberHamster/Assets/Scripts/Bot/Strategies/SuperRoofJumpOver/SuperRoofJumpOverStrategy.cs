@@ -47,7 +47,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
         public SuperRoofJumpOverStrategy()
         {
             _policy = new SuperRoofJumpOverPolicy();
-            _specification = new RoofJumpOverSpecification(_policy);
+            _specification = new RoofJumpOverSpecification();
             _actionResolver = new RoofJumpOverActionResolver();
             _fireWindowFinder = new RoofJumpOverFireWindowFinder(_policy);
             _simulator = new RoofJumpOverSimulator(_policy);
@@ -96,6 +96,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperRoofJumpOver
 
             if (!_specification.IsSatisfiedBy(planningState, hazardObstacle))
                 return PlanningStrategyResult.NotApplicable();
+
+            // Проверяет ресурс применимой strategy до поиска safe-window.
+            if (planningState.Hamster.Energy < _policy.EnergyCost)
+            {
+                return PlanningStrategyResult.InsufficientEnergy(
+                    nameof(SuperRoofJumpOverStrategy),
+                    _policy.ActionKind,
+                    _policy.EnergyCost,
+                    planningState.Hamster.Energy);
+            }
 
             // Получает travel и подтверждает fire-window через runtime resolver.
             if (!_policy.TryGetTravel(out RoofJumpOverTravel travel))

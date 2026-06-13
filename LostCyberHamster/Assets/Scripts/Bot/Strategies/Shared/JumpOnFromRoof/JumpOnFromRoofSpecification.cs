@@ -11,16 +11,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
     internal sealed class JumpOnFromRoofSpecification : IBotStrategySpecification
     {
         /// <summary>
-        /// Policy конкретного варианта roof-to-road jump-on.
-        /// </summary>
-        private readonly IJumpOnFromRoofPolicy _policy;
-
-        public JumpOnFromRoofSpecification(IJumpOnFromRoofPolicy policy)
-        {
-            _policy = policy;
-        }
-
-        /// <summary>
         /// Возвращает true, если хомяк может выполнить roof-to-road jump-on по указанному target.
         /// </summary>
         public bool IsSatisfiedBy(
@@ -31,13 +21,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             if (planningState?.Hamster == null || obstacle == null)
                 return false;
 
-            // Проверяет roof-run состояние и ресурс action.
+            // Проверяет roof-run состояние.
             HamsterSnapshot hamster = planningState.Hamster;
             if (hamster.HamsterState != HamsterStateEnum.RoofRun
                 || !hamster.IsOnRoof
                 || !hamster.RoofSupportInstanceId.HasValue
-                || hamster.IsShifting
-                || hamster.Energy < _policy.EnergyCost)
+                || hamster.IsShifting)
             {
                 return false;
             }

@@ -69,6 +69,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                 return PlanningStrategyResult.NotApplicable();
             }
 
+            // Проверяет ресурс применимой strategy до поиска safe-window.
+            if (planningState.Hamster.Energy < _policy.EnergyCost)
+            {
+                return PlanningStrategyResult.InsufficientEnergy(
+                    nameof(SuperJumpOverStrategy),
+                    _policy.ActionKind,
+                    _policy.EnergyCost,
+                    planningState.Hamster.Energy);
+            }
+
             // Получает runtime travel и подтверждает fire window.
             if (!_policy.TryGetTravel(out float superJumpTravel))
                 return PlanningStrategyResult.NotApplicable();

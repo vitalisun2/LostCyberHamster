@@ -11,9 +11,21 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         public const float DecisionDuration = 0.45f;
 
         /// <summary>
-        /// Дистанция мира за время визуального перестроения между линиями.
+        /// Количество кадров, за которое runtime гарантированно отдаёт управление следующему bot action.
         /// </summary>
-        public const float DecisionTravel = DecisionDuration * Assets.Scripts.Consts.GameSpeedBase;
+        private const int RuntimeHandoffLatencyFrames = 2;
+
+        /// <summary>
+        /// Дополнительное время между окончанием animator transition и доступностью следующего bot action.
+        /// </summary>
+        public const float RuntimeHandoffLatencyDuration =
+            RuntimeHandoffLatencyFrames / (float)Assets.Scripts.Consts.FPS;
+
+        /// <summary>
+        /// Дистанция мира до момента, когда следующий action можно безопасно запускать после SwitchLane.
+        /// </summary>
+        public const float DecisionTravel =
+            (DecisionDuration + RuntimeHandoffLatencyDuration) * Assets.Scripts.Consts.GameSpeedBase;
 
         /// <summary>
         /// Дополнительная planning-дистанция после tap SwitchLane перед следующим действием.

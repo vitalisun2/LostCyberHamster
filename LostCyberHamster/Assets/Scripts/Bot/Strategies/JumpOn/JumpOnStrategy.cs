@@ -29,7 +29,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
         public JumpOnStrategy()
         {
             _policy = new JumpOnPolicy();
-            _specification = new JumpOnSpecification(_policy);
+            _specification = new JumpOnSpecification();
             _fireWindowFinder = new JumpOnFireWindowFinder(_policy);
             _actionChainResolver = new JumpOnActionChainResolver();
             _simulator = new JumpOnSimulator(_policy);
@@ -80,6 +80,16 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
             // Проверяет применимость strategy к выбранному target.
             if (!_specification.IsSatisfiedBy(planningState, targetObstacle))
                 return PlanningStrategyResult.NotApplicable();
+
+            // Проверяет ресурс применимой strategy до поиска safe-window.
+            if (planningState.Hamster.Energy < _policy.EnergyCost)
+            {
+                return PlanningStrategyResult.InsufficientEnergy(
+                    nameof(JumpOnStrategy),
+                    _policy.ActionKind,
+                    _policy.EnergyCost,
+                    planningState.Hamster.Energy);
+            }
 
             // Подтверждает fire window через runtime resolver.
             if (!_fireWindowFinder.TryFindFireShift(
