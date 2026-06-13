@@ -41,6 +41,24 @@ namespace Assets.Scripts.Common
             right = maxX - worldShift;
         }
 
+        /// <summary>
+        /// Возвращает X-интервал obstacle так, как если бы его transform находился в указанной позиции.
+        /// </summary>
+        public static void GetObstacleXIntervalAtPosition(
+            Obstacle obstacle,
+            Vector3 position,
+            out float left,
+            out float right)
+        {
+            // Берём текущий collider interval через базовый helper.
+            GetObstacleXInterval(obstacle, obstacle.ColliderWidth, 0f, out float currentLeft, out float currentRight);
+
+            // Переносим interval в целевую позицию transform.
+            float xDelta = position.x - obstacle.transform.position.x;
+            left = currentLeft + xDelta;
+            right = currentRight + xDelta;
+        }
+
         /// <summary>Y-интервал [bottom; top] препятствия (без сдвига по Y).</summary>
         public static void GetObstacleYInterval(
             Obstacle o,

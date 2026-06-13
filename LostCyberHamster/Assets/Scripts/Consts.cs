@@ -182,6 +182,10 @@ namespace Assets.Scripts
 
         public const float GapBetweenTiles = 0.2f;
         public const float GridSnapStep = 0.2f;
+        /// <summary>
+        /// Расстояние между визуальными краями соседних obstacle-паттернов.
+        /// </summary>
+        public const float PatternEdgeGap = 5f;
 
         // -------------------------
         // Новые константы размеров, значения в пикселях

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Assets.Scripts;
+using Assets.Scripts.Common;
 using Assets.Scripts.Entry_Points.GameLoadingTasks;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Installers.Roots;
@@ -33,8 +35,6 @@ namespace Assets.Scripts.System
         private float ScreenRightEdge =>
             Camera.main.transform.position.x +
             Camera.main.orthographicSize * Camera.main.aspect;
-
-        private readonly float _spawnPadding = 5f;           // зазор за экраном
 
         private void Awake()
         {
@@ -126,15 +126,14 @@ namespace Assets.Scripts.System
             }
         }
 
-        // проверяем, что самый правый объект предыдущего паттерна не дальше правого края
+        // проверяем, что правый край предыдущего паттерна не дальше правого края экрана
         private bool IsPreviousPatternFullyOnScreen()
         {
             int prevIndex = _currentPatternIndex - 1;
             var prev = _spawnedObstacles.Where(o => o.PatternIndex == prevIndex).ToList();
             if (!prev.Any()) return true;                      // весь паттерн уже despawn’ился
 
-            float maxX = prev.Max(o => o.ObstacleScript.transform.position.x);
-            return maxX <= ScreenRightEdge;
+            return GetPatternRightEdge(prev) <= ScreenRightEdge;
         }
 
         // ---------- UNSPAWN ----------
@@ -156,9 +155,9 @@ namespace Assets.Scripts.System
                 .ToList();
             if (!patternObstacles.Any()) return;
 
-            // динамический оффсет, левый край сразу за правым краем экрана
-            float patternMinX = patternObstacles.Min(o => o.SpawnPosition.x);
-            float offset = ScreenRightEdge + _spawnPadding - patternMinX;
+            // динамический оффсет, левый край на нужном расстоянии от предыдущего паттерна
+            float patternLeftEdge = GetPatternLeftEdgeAtSpawnPosition(patternObstacles);
+            float offset = GetNextPatternTargetLeftEdge() - patternLeftEdge;
 
             foreach (var obstacle in patternObstacles)
             {
@@ -171,6 +170,64 @@ namespace Assets.Scripts.System
             }
 
             PatternSpawned?.Invoke(patternIndex, CurrPatternName);
+        }
+
+        /// <summary>
+        /// Возвращает целевую позицию левого края следующего паттерна.
+        /// </summary>
+        private float GetNextPatternTargetLeftEdge()
+        {
+            int prevIndex = _currentPatternIndex - 1;
+            var prev = _spawnedObstacles.Where(o => o.PatternIndex == prevIndex).ToList();
+            if (!prev.Any())
+                return ScreenRightEdge + Consts.PatternEdgeGap;
+
+            return GetPatternRightEdge(prev) + Consts.PatternEdgeGap;
+        }
+
+        /// <summary>
+        /// Возвращает левый край паттерна в исходных позициях из LevelInfo.
+        /// </summary>
+        private static float GetPatternLeftEdgeAtSpawnPosition(List<InstantiatedObstacle> obstacles)
+        {
+            return obstacles.Min(GetObstacleLeftEdgeAtSpawnPosition);
+        }
+
+        /// <summary>
+        /// Возвращает текущий правый край паттерна.
+        /// </summary>
+        private static float GetPatternRightEdge(List<InstantiatedObstacle> obstacles)
+        {
+            return obstacles.Max(GetObstacleRightEdge);
+        }
+
+        /// <summary>
+        /// Возвращает левый край obstacle в его исходной позиции из LevelInfo.
+        /// </summary>
+        private static float GetObstacleLeftEdgeAtSpawnPosition(InstantiatedObstacle obstacle)
+        {
+            CollisionUtils.GetObstacleXIntervalAtPosition(
+                obstacle.ObstacleScript,
+                obstacle.SpawnPosition,
+                out float left,
+                out _);
+
+            return left;
+        }
+
+        /// <summary>
+        /// Возвращает текущий правый край obstacle по его collider bounds.
+        /// </summary>
+        private static float GetObstacleRightEdge(InstantiatedObstacle obstacle)
+        {
+            CollisionUtils.GetObstacleXInterval(
+                obstacle.ObstacleScript,
+                obstacle.ObstacleScript.ColliderWidth,
+                0f,
+                out _,
+                out float right);
+
+            return right;
         }
     }
 

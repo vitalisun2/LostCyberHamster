@@ -81,7 +81,7 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private List<Bounds> _patternBounds = new();
 
-    private const float PatternGap = 2f;
+    private const float PatternGap = Consts.PatternEdgeGap;
     private const float PatternFrameHorizontalPadding = 1.5f;
     private const float PatternFrameVerticalPadding = 0.75f;
     private const float MinPatternFrameWidth = 6f;
