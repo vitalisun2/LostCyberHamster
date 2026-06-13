@@ -147,6 +147,16 @@ namespace Assets.Scripts.Bot
         private RuntimeObstacleSpawner _subscribedObstacleSpawner;
 
         /// <summary>
+        /// Последняя planning-diagnosis, которая станет dead-end только после потери жизни.
+        /// </summary>
+        private PlanningDeadEndReport _pendingDeadEndReport;
+
+        /// <summary>
+        /// Причины replan-а, при котором была подготовлена последняя planning-diagnosis.
+        /// </summary>
+        private BotReplanReason _pendingDeadEndReplanReasons = BotReplanReason.None;
+
+        /// <summary>
         /// Признак включенного bot controller.
         /// </summary>
         public bool IsEnabled { get; private set; } = true;
@@ -240,6 +250,8 @@ namespace Assets.Scripts.Bot
                 new ActionGenerator(strategies),
                 _transitionSimulator,
                 new PlanEvaluator());
+
+            GameEventsManager.OnLivesLost += OnLivesLost;
         }
 
         /// <summary>
@@ -298,6 +310,7 @@ namespace Assets.Scripts.Bot
             // Отписывает controller от scene-зависимостей.
             UnsubscribeFromObstacleSpawner();
             UnregisterFromGameManager();
+            GameEventsManager.OnLivesLost -= OnLivesLost;
             _eventTracker?.Dispose();
         }
 
@@ -324,6 +337,7 @@ namespace Assets.Scripts.Bot
             ClearReplanRequest();
             _initialReplanRequestedForCurrentGame = false;
             ClearInProgressHeadFirePoint();
+            ClearPendingDeadEndReport();
             _executor?.Clear();
         }
 
@@ -400,10 +414,9 @@ namespace Assets.Scripts.Bot
             // Строит candidate plan с учетом текущего execution state.
             PlanBuildResult buildResult = BuildPlanForCurrentExecutionState(replanReasons);
             if (buildResult.HasDeadEnd)
-            {
-                ReportDeadEnd(buildResult.DeadEndReport, replanReasons);
-                return;
-            }
+                RememberPendingDeadEndReport(buildResult.DeadEndReport, replanReasons);
+            else
+                ClearPendingDeadEndReport();
 
             BotPlan plan = buildResult.Plan;
 
@@ -454,22 +467,63 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Логирует непроходимый участок уровня и останавливает validation run.
+        /// Сохраняет planning-diagnosis до фактической потери жизни.
         /// </summary>
-        private void ReportDeadEnd(PlanningDeadEndReport deadEndReport, BotReplanReason replanReasons)
+        private void RememberPendingDeadEndReport(
+            PlanningDeadEndReport deadEndReport,
+            BotReplanReason replanReasons)
         {
             if (deadEndReport == null)
                 return;
 
-            string message =
-                $"[Bot DEAD_END] reason={FormatReplanReasons(replanReasons)} " +
+            _pendingDeadEndReport = deadEndReport;
+            _pendingDeadEndReplanReasons = replanReasons;
+        }
+
+        /// <summary>
+        /// Очищает pending diagnosis после успешного replan или сброса runtime state.
+        /// </summary>
+        private void ClearPendingDeadEndReport()
+        {
+            _pendingDeadEndReport = null;
+            _pendingDeadEndReplanReasons = BotReplanReason.None;
+        }
+
+        /// <summary>
+        /// Подтверждает dead-end только после фактической потери жизни.
+        /// </summary>
+        private void OnLivesLost(int livesLost)
+        {
+            if (!IsEnabled || _pendingDeadEndReport == null)
+                return;
+
+            ReportConfirmedDeadEnd(_pendingDeadEndReport, _pendingDeadEndReplanReasons, livesLost);
+            ClearPendingDeadEndReport();
+        }
+
+        /// <summary>
+        /// Логирует подтвержденный непроходимый участок уровня и останавливает validation run.
+        /// </summary>
+        private void ReportConfirmedDeadEnd(
+            PlanningDeadEndReport deadEndReport,
+            BotReplanReason replanReasons,
+            int livesLost)
+        {
+            if (deadEndReport == null)
+                return;
+
+            string header =
+                $"[Bot DEAD_END] confirmed=true reason={FormatReplanReasons(replanReasons)} " +
+                $"livesLost={livesLost} lives={(_hamster != null ? _hamster.Lives.Value : -1)} " +
                 $"depth={deadEndReport.Depth} " +
                 $"nextObstacleIndex={deadEndReport.NextObstacleIndex} " +
-                $"projection={deadEndReport.ProjectionWorldShift:F2} " +
-                $"causes={FormatDeadEndReasons(deadEndReport)}";
+                $"projection={deadEndReport.ProjectionWorldShift:F2}";
+            string causes = FormatDeadEndReasons(deadEndReport);
 
-            DebugManager.DiagLog(message);
-            Debug.LogWarning(message);
+            DebugManager.DiagLog(header);
+            DebugManager.DiagLog("[Bot DEAD_END] causes:");
+            LogDeadEndReasonLines(deadEndReport);
+            Debug.LogWarning($"{header}{Environment.NewLine}causes:{Environment.NewLine}{causes}");
             DebugManager.DiagLog("[TEST RESULT] FAIL");
             DebugManager.DiagStability("[TEST RESULT] FAIL");
             _gameManager?.Pause();
@@ -487,12 +541,27 @@ namespace Assets.Scripts.Bot
             for (int reasonIndex = 0; reasonIndex < deadEndReport.Reasons.Count; reasonIndex++)
             {
                 if (reasonIndex > 0)
-                    builder.Append(" | ");
+                    builder.AppendLine();
 
                 builder.Append(deadEndReport.Reasons[reasonIndex]);
             }
 
             return builder.ToString();
+        }
+
+        /// <summary>
+        /// Пишет причины dead-end отдельными diagnostic-строками.
+        /// </summary>
+        private static void LogDeadEndReasonLines(PlanningDeadEndReport deadEndReport)
+        {
+            if (deadEndReport?.Reasons == null || deadEndReport.Reasons.Count == 0)
+            {
+                DebugManager.DiagLog("[Bot DEAD_END] Применимые стратегии не вернули действия, но dead-end причины не собраны.");
+                return;
+            }
+
+            for (int reasonIndex = 0; reasonIndex < deadEndReport.Reasons.Count; reasonIndex++)
+                DebugManager.DiagLog($"[Bot DEAD_END] {deadEndReport.Reasons[reasonIndex]}");
         }
 
         /// <summary>
@@ -833,13 +902,8 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private static void LogPlanActivation(BotPlan plan, BotReplanReason replanReasons)
         {
-            // Формирует одну строку ветки, чтобы видеть весь выбранный chain без verbose-режима.
-            string message =
-                $"[Bot PLAN] reason={FormatReplanReasons(replanReasons)} actions={plan.Actions.Count} " +
-                $"score={plan.Score:F2} boundaryX={plan.CommittedBoundaryX:F2} " +
-                $"chain={FormatPlanChain(plan)}";
+            string message = $"[Bot PLAN] {FormatPlanChain(plan)}";
 
-            // Пишет выбранную ветку и в diagnostic log, и в Unity console.
             DebugManager.DiagLog(message);
             Debug.Log(message);
         }
@@ -874,14 +938,7 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private static string FormatPlanAction(PlannedAction action)
         {
-            string window = action.TriggerWindow.HasValue
-                ? $" window=[{action.TriggerWindow.Value.EarliestTriggerX:F2},{action.TriggerWindow.Value.LatestTriggerX:F2}]"
-                : string.Empty;
-            string target = action.TargetObstacleIndex >= 0
-                ? $" target={action.TargetObstacleIndex}"
-                : string.Empty;
-
-            return $"{action.Kind}@{action.TriggerX:F2}{window}{target}({action.Description})";
+            return action.Kind.ToString();
         }
 
         /// <summary>
@@ -952,6 +1009,7 @@ namespace Assets.Scripts.Bot
             ClearReplanRequest();
             _initialReplanRequestedForCurrentGame = false;
             ClearInProgressHeadFirePoint();
+            ClearPendingDeadEndReport();
             _executor?.Clear();
         }
 

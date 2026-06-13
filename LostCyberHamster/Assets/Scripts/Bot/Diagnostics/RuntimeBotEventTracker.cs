@@ -13,14 +13,13 @@ namespace Assets.Scripts.Bot.Diagnostics
         private readonly GameManager _gameManager;
 
         /// <summary>
-        /// Подписывается на события урона и завершения уровня.
+        /// Подписывается на события завершения уровня.
         /// </summary>
         public RuntimeBotEventTracker(Hamster hamster, GameManager gameManager)
         {
             _hamster = hamster;
             _gameManager = gameManager;
 
-            _hamster.DamageEvent.Subscribe(OnDamage);
             _gameManager.OnFinish += OnGameFinished;
             GameEventsManager.OnLevelCompleted += OnLevelCompleted;
         }
@@ -30,24 +29,10 @@ namespace Assets.Scripts.Bot.Diagnostics
         /// </summary>
         public void Dispose()
         {
-            if (_hamster != null)
-                _hamster.DamageEvent.Unsubscribe(OnDamage);
-
             if (_gameManager != null)
                 _gameManager.OnFinish -= OnGameFinished;
 
             GameEventsManager.OnLevelCompleted -= OnLevelCompleted;
-        }
-
-        private void OnDamage()
-        {
-            DebugManager.DiagLog(
-                $"[Bot DAMAGE] lives={_hamster.Lives.Value} " +
-                $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
-                $"state={_hamster.HamsterState.Value}");
-
-            DebugManager.DiagLog("[TEST RESULT] FAIL");
-            DebugManager.DiagStability("[TEST RESULT] FAIL");
         }
 
         private void OnGameFinished()

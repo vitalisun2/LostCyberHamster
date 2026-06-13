@@ -103,5 +103,6 @@
 - [promoted -> docs/architecture_knowledge_base.md] Bot planning: для timed jump-on objective сохранять temporal slack первого действия, иначе поздний prefix может разрушить окно retained jump-on.
 - [promoted -> docs/architecture_knowledge_base.md] Bot planning: для target-bound jump-on выбирать fire shift с учетом post-action safety, а не отбрасывать весь action по первому runtime-valid timing.
 - [promoted -> docs/architecture_knowledge_base.md] Bot planning: во время in-progress head-action стабилизировать только атомарный execution handoff, а не весь дальний хвост плана.
+- [promoted -> docs/architecture_knowledge_base.md] Bot validation: planner diagnosis не равна доказанному level dead-end; подтверждать dead-end только через runtime `LivesLost`.
 - [promoted -> docs/architecture_knowledge_base.md] SwitchLane planning: после fire учитывать runtime-блокировку следующего tap до конца `Hamster.IsShifting`.
 - [promoted -> docs/architecture_knowledge_base.md] Bot execution: retained next action должен получать immediate handoff перед rebuild, а actions с ранним runtime handoff нельзя ждать только до финального `Run`.

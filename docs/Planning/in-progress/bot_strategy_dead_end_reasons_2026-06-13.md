@@ -8,7 +8,9 @@
 
 ## Цель
 
-Если planner видит unresolved decision point, но ни одна применимая strategy не создала action, бот должен остановить validation run и вывести короткие причины от применимых strategies.
+Если planner видит unresolved decision point, но ни одна применимая strategy не создала action, бот должен подготовить diagnosis с короткими причинами от применимых strategies.
+
+Diagnosis становится подтвержденным dead-end только после фактической потери жизни.
 
 Причина выводится в формате:
 
@@ -25,7 +27,7 @@ Strategy возвращает один из вариантов:
 - `NotApplicable` — strategy не относится к текущей situation.
 - `NoAction` — strategy применима, но отсутствие action не является level dead-end.
 
-Dead-end report создается только при условиях:
+Planning diagnosis создается только при условиях:
 
 ```text
 Actions.Count == 0
@@ -115,16 +117,25 @@ AND DeadEndReasons.Count > 0
 
 ## Runtime behavior
 
-`RuntimeBotController` при dead-end:
+`RuntimeBotController` при planning diagnosis:
+
+- сохраняет последний report;
+- не пишет `[TEST RESULT] FAIL`;
+- не ставит игру на pause;
+- дает executor продолжить текущий plan/committed prefix.
+
+`RuntimeBotController` при `LivesLost`, если сохраненная diagnosis есть:
 
 - пишет `[Bot DEAD_END]` в diagnostic log;
 - пишет `[TEST RESULT] FAIL` в BOT/STAB channels;
 - ставит игру на pause.
 
+Если жизнь потеряна без сохраненной diagnosis, dead-end report не пишется.
+
 Пример:
 
 ```text
-[Bot DEAD_END] reason=SpawnPattern depth=0 nextObstacleIndex=2 projection=12.59 causes=...
+[Bot DEAD_END] confirmed=true reason=SpawnPattern livesLost=1 lives=2 depth=0 nextObstacleIndex=2 projection=12.59 causes=...
 ```
 
 ## Валидация

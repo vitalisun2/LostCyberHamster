@@ -541,6 +541,7 @@ Menu: `Tools/Migration/` — 3 шага:
 - Chain-stage тесты: все объекты цепочки должны попадать в один initial snapshot (в пределах `scanRange`).
 - Runtime bot planning работает event-driven: plan rebuild запрашивается на `LevelStart`, `BotEnabled`, `SpawnPattern`, `ActionCompleted` и `ActionCancelled`; таймерного rolling rebuild нет.
 - Snapshot horizon для бота — все active `ObstacleSpawner.SpawnedObstacles`, без искусственной правой границы видимости.
+- Planner no-action/dead-end reasons — это diagnosis, а не доказанный level dead-end. Подтвержденный dead-end для валидатора уровня фиксируется только после runtime-потери жизни (`LivesLost`); без сохраненной diagnosis loss-of-life не должен создавать bot dead-end report.
 - Во время ожидания trigger или выполнения head-action committed prefix удерживает до двух действий: текущую head-action и следующий action для immediate handoff; при replan пересчитывается только хвост после этого prefix. Runtime fire/cancel остаётся ответственностью executor/gate.
 - Execution handoff: если после завершения/освобождения head-action в retained хвосте уже есть следующий шаг, executor должен сначала дать ему шанс стартовать, а rebuild должен пересчитывать только хвост после нового in-progress шага.
 - Для actions с ранним handoff-событием (`JumpOn` уничтожает target на `transform_jumped_on`, но возвращается в `Run` позже) completion для следующего bot action нельзя сводить только к финальному `Run`.
