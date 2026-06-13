@@ -70,17 +70,41 @@ namespace Assets.Scripts.Bot.Planning
             PlanningGraphBuildResult graphResult = _graphBuilder.BuildBranches(worldSnapshot, rootState);
             PlanningBranch bestBranch = _planEvaluator.SelectBest(graphResult.Branches);
 
-            if (bestBranch == null || !bestBranch.HasActions)
-            {
-                return new PlanBuildResult(
-                    BotPlan.Empty(worldSnapshot.ScreenRightEdgeX),
-                    graphResult.DeadEndReport);
-            }
+            if (bestBranch != null && bestBranch.HasActions)
+                return BuildSuccessfulResult(worldSnapshot, bestBranch);
 
-            float score = _planEvaluator.Score(bestBranch.Actions);
+            PlanningDeadEndBranch bestDeadEndBranch = _planEvaluator.SelectBestDeadEnd(graphResult.DeadEndBranches);
+            if (bestDeadEndBranch?.Branch != null && bestDeadEndBranch.Branch.HasActions)
+                return BuildDeadEndFallbackResult(worldSnapshot, bestDeadEndBranch);
+
             return new PlanBuildResult(
-                new BotPlan(bestBranch.Actions, worldSnapshot.ScreenRightEdgeX, score),
+                BotPlan.Empty(worldSnapshot.ScreenRightEdgeX),
+                bestDeadEndBranch?.Report);
+        }
+
+        /// <summary>
+        /// Создает результат по полноценной успешной ветке.
+        /// </summary>
+        private PlanBuildResult BuildSuccessfulResult(WorldSnapshot worldSnapshot, PlanningBranch branch)
+        {
+            float score = _planEvaluator.Score(branch.Actions);
+            return new PlanBuildResult(
+                new BotPlan(branch.Actions, worldSnapshot.ScreenRightEdgeX, score),
                 deadEndReport: null);
+        }
+
+        /// <summary>
+        /// Создает fallback-план из safe-prefix ветки, которая уперлась в dead-end.
+        /// </summary>
+        private PlanBuildResult BuildDeadEndFallbackResult(
+            WorldSnapshot worldSnapshot,
+            PlanningDeadEndBranch deadEndBranch)
+        {
+            PlanningBranch branch = deadEndBranch.Branch;
+            float score = _planEvaluator.Score(branch.Actions);
+            return new PlanBuildResult(
+                new BotPlan(branch.Actions, worldSnapshot.ScreenRightEdgeX, score),
+                deadEndBranch.Report);
         }
     }
 }

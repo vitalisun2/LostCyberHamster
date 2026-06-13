@@ -8,20 +8,20 @@ using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
-    /// Результат построения role-based planning graph.
+    /// Результат построения role-based графа планирования.
     /// </summary>
     internal sealed class PlanningGraphBuildResult
     {
         public PlanningGraphBuildResult(
             IReadOnlyList<PlanningBranch> branches,
-            PlanningDeadEndReport deadEndReport)
+            IReadOnlyList<PlanningDeadEndBranch> deadEndBranches)
         {
             Branches = branches ?? Array.Empty<PlanningBranch>();
-            DeadEndReport = deadEndReport;
+            DeadEndBranches = deadEndBranches ?? Array.Empty<PlanningDeadEndBranch>();
         }
 
         public IReadOnlyList<PlanningBranch> Branches { get; }
-        public PlanningDeadEndReport DeadEndReport { get; }
+        public IReadOnlyList<PlanningDeadEndBranch> DeadEndBranches { get; }
     }
 
     /// <summary>
@@ -48,7 +48,22 @@ namespace Assets.Scripts.Bot.Planning
     }
 
     /// <summary>
-    /// Builds a role-based decision tree for the current planning state.
+    /// Хранит безопасный prefix ветки, который упёрся в unresolved dead-end.
+    /// </summary>
+    internal sealed class PlanningDeadEndBranch
+    {
+        public PlanningDeadEndBranch(PlanningBranch branch, PlanningDeadEndReport report)
+        {
+            Branch = branch;
+            Report = report;
+        }
+
+        public PlanningBranch Branch { get; }
+        public PlanningDeadEndReport Report { get; }
+    }
+
+    /// <summary>
+    /// Строит role-based дерево решений для текущего planning-состояния.
     /// </summary>
     public sealed class PlanningGraphBuilder
     {
@@ -59,7 +74,7 @@ namespace Assets.Scripts.Bot.Planning
         private readonly DecisionPointDetector _decisionPointDetector = new DecisionPointDetector();
 
         /// <summary>
-        /// Creates a role-based graph builder over the new action generator and transition simulator.
+        /// Создает builder role-based графа поверх генератора действий и simulator-а переходов.
         /// </summary>
         public PlanningGraphBuilder(ActionGenerator actionGenerator, TransitionSimulator transitionSimulator)
         {
@@ -68,7 +83,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Builds all reachable role-based planning branches from the root state.
+        /// Строит все достижимые role-based ветки планирования от корневого состояния.
         /// </summary>
         internal PlanningGraphBuildResult BuildBranches(WorldSnapshot worldSnapshot, PlanningState rootState)
         {
@@ -76,30 +91,30 @@ namespace Assets.Scripts.Bot.Planning
             {
                 return new PlanningGraphBuildResult(
                     Array.Empty<PlanningBranch>(),
-                    deadEndReport: null);
+                    deadEndBranches: null);
             }
 
             var branches = new List<PlanningBranch>();
-            PlanningDeadEndReport deadEndReport = null;
+            var deadEndBranches = new List<PlanningDeadEndBranch>();
             PlanningGraphNode rootNode = PlanningGraphNode.CreateRoot(rootState);
             var bestMetricsByState = new Dictionary<PlanningStateKey, PlanningBranchMetrics>
             {
                 [rootNode.StateKey] = rootNode.Metrics
             };
 
-            ExploreNode(rootNode, worldSnapshot, branches, bestMetricsByState, ref deadEndReport);
-            return new PlanningGraphBuildResult(branches, deadEndReport);
+            ExploreNode(rootNode, worldSnapshot, branches, deadEndBranches, bestMetricsByState);
+            return new PlanningGraphBuildResult(branches, deadEndBranches);
         }
 
         /// <summary>
-        /// Recursively expands a role-based planning node into child branches.
+        /// Рекурсивно раскрывает role-based узел планирования в дочерние ветки.
         /// </summary>
         private void ExploreNode(
             PlanningGraphNode currentNode,
             WorldSnapshot worldSnapshot,
             List<PlanningBranch> branches,
-            Dictionary<PlanningStateKey, PlanningBranchMetrics> bestMetricsByState,
-            ref PlanningDeadEndReport deadEndReport)
+            List<PlanningDeadEndBranch> deadEndBranches,
+            Dictionary<PlanningStateKey, PlanningBranchMetrics> bestMetricsByState)
         {
             if (currentNode.Depth >= MaxSearchDepth)
             {
@@ -120,8 +135,8 @@ namespace Assets.Scripts.Bot.Planning
                     return;
                 }
 
-                if (deadEndReport == null && generationResult.HasDeadEndReasons)
-                    deadEndReport = BuildDeadEndReport(currentNode, generationResult);
+                if (generationResult.HasDeadEndReasons)
+                    AddDeadEndBranch(currentNode, generationResult, deadEndBranches);
 
                 return;
             }
@@ -144,7 +159,7 @@ namespace Assets.Scripts.Bot.Planning
                     continue;
 
                 bestMetricsByState[childNode.StateKey] = childNode.Metrics;
-                ExploreNode(childNode, worldSnapshot, branches, bestMetricsByState, ref deadEndReport);
+                ExploreNode(childNode, worldSnapshot, branches, deadEndBranches, bestMetricsByState);
             }
         }
 
@@ -163,7 +178,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Checks whether an unresolved role-based planning situation remains for the projected state.
+        /// Проверяет, остается ли unresolved role-based ситуация в спроецированном состоянии.
         /// </summary>
         private bool HasUnresolvedPlanningSituation(PlanningState planningState, WorldSnapshot worldSnapshot)
         {
@@ -178,7 +193,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Adds a leaf branch to the result list.
+        /// Добавляет leaf-ветку в результат.
         /// </summary>
         private static void AddLeafBranch(PlanningGraphNode leafNode, List<PlanningBranch> branches)
         {
@@ -189,7 +204,23 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Checks whether a known branch dominates a new node with the same state key.
+        /// Добавляет safe-prefix ветку, которая дошла до unresolved dead-end.
+        /// </summary>
+        private static void AddDeadEndBranch(
+            PlanningGraphNode deadEndNode,
+            ActionGenerationResult generationResult,
+            List<PlanningDeadEndBranch> deadEndBranches)
+        {
+            if (deadEndNode == null || deadEndBranches == null)
+                return;
+
+            deadEndBranches.Add(new PlanningDeadEndBranch(
+                PlanningBranch.FromLeaf(deadEndNode),
+                BuildDeadEndReport(deadEndNode, generationResult)));
+        }
+
+        /// <summary>
+        /// Проверяет, доминирует ли известная ветка новый узел с тем же ключом состояния.
         /// </summary>
         private static bool IsDominated(
             PlanningGraphNode candidateNode,
@@ -203,7 +234,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Checks whether the next state returns the branch to an ancestor state.
+        /// Проверяет, возвращает ли новое состояние ветку к одному из ancestor-состояний.
         /// </summary>
         private static bool CreatesAncestorCycle(PlanningGraphNode currentNode, PlanningState nextState)
         {

@@ -28,6 +28,24 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
+        /// Выбирает dead-end ветку с максимальным безопасным продвижением.
+        /// </summary>
+        internal PlanningDeadEndBranch SelectBestDeadEnd(IReadOnlyList<PlanningDeadEndBranch> candidates)
+        {
+            if (candidates == null || candidates.Count == 0)
+                return null;
+
+            PlanningDeadEndBranch best = candidates[0];
+            for (int candidateIndex = 1; candidateIndex < candidates.Count; candidateIndex++)
+            {
+                if (CompareDeadEndBranches(candidates[candidateIndex], best) < 0)
+                    best = candidates[candidateIndex];
+            }
+
+            return best;
+        }
+
+        /// <summary>
         /// Считает score итогового плана по последовательности действий.
         /// </summary>
         public float Score(IReadOnlyList<PlannedAction> actions)
@@ -93,6 +111,38 @@ namespace Assets.Scripts.Bot.Planning
                 return compare;
 
             return CompareActionSequences(left.Actions, right.Actions);
+        }
+
+        /// <summary>
+        /// Сравнивает dead-end ветки по дальности безопасного prefix.
+        /// </summary>
+        private static int CompareDeadEndBranches(PlanningDeadEndBranch left, PlanningDeadEndBranch right)
+        {
+            if (ReferenceEquals(left, right))
+                return 0;
+
+            if (left?.Branch == null)
+                return 1;
+
+            if (right?.Branch == null)
+                return -1;
+
+            PlanningBranch leftBranch = left.Branch;
+            PlanningBranch rightBranch = right.Branch;
+
+            int compare = rightBranch.FinalNextObstacleIndex.CompareTo(leftBranch.FinalNextObstacleIndex);
+            if (compare != 0)
+                return compare;
+
+            compare = rightBranch.FinalProjectionWorldShift.CompareTo(leftBranch.FinalProjectionWorldShift);
+            if (compare != 0)
+                return compare;
+
+            compare = rightBranch.ActionCount.CompareTo(leftBranch.ActionCount);
+            if (compare != 0)
+                return compare;
+
+            return CompareBranches(leftBranch, rightBranch);
         }
 
         /// <summary>
