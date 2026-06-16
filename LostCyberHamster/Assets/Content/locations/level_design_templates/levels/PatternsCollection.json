@@ -10147,7 +10147,7 @@
         {
             "name": "test_super_jump_from_roof_02",
             "description": "should super jump from roof",
-            "nextObstacleId": 28,
+            "nextObstacleId": 30,
             "obstacles": [
                 {
                     "id": 20,
@@ -10174,15 +10174,15 @@
                     "y": -1.8000000715255738
                 },
                 {
-                    "id": 26,
+                    "id": 29,
                     "type": 2,
-                    "x": -2.0,
+                    "x": -1.0,
                     "y": -1.8000000715255738
                 },
                 {
-                    "id": 27,
+                    "id": 28,
                     "type": 2,
-                    "x": -0.4000000059604645,
+                    "x": 1.2000000476837159,
                     "y": -1.8000000715255738
                 }
             ]
@@ -10642,19 +10642,13 @@
         },
         {
             "name": "test_super_jump_from_roof_to_roof_02",
-            "description": "should super jump from roof to roof",
-            "nextObstacleId": 9,
+            "description": "should not super jump from roof to roof",
+            "nextObstacleId": 12,
             "obstacles": [
                 {
-                    "id": 0,
+                    "id": 10,
                     "type": 3,
-                    "x": -4.599999904632568,
-                    "y": -2.799999952316284
-                },
-                {
-                    "id": 1,
-                    "type": 3,
-                    "x": -2.6000001430511476,
+                    "x": -6.200000286102295,
                     "y": -2.799999952316284
                 },
                 {
@@ -10664,9 +10658,9 @@
                     "y": -2.799999952316284
                 },
                 {
-                    "id": 3,
+                    "id": 11,
                     "type": 3,
-                    "x": 1.600000023841858,
+                    "x": 1.2000000476837159,
                     "y": -2.799999952316284
                 },
                 {
