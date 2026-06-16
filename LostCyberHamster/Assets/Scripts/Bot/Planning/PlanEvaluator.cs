@@ -96,7 +96,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Сравнивает dead-end ветки по дальности безопасного prefix.
+        /// Сравнивает dead-end ветки, предпочитая короткий осмысленный fallback вместо длинного switch-каскада.
         /// </summary>
         private static int CompareDeadEndBranches(PlanningDeadEndBranch left, PlanningDeadEndBranch right)
         {
@@ -112,7 +112,20 @@ namespace Assets.Scripts.Bot.Planning
             PlanningBranch leftBranch = left.Branch;
             PlanningBranch rightBranch = right.Branch;
 
-            int compare = rightBranch.FinalNextObstacleIndex.CompareTo(leftBranch.FinalNextObstacleIndex);
+            bool leftHasNonSwitchAction = HasNonSwitchAction(leftBranch);
+            bool rightHasNonSwitchAction = HasNonSwitchAction(rightBranch);
+            if (leftHasNonSwitchAction != rightHasNonSwitchAction)
+                return leftHasNonSwitchAction ? -1 : 1;
+
+            int compare = CountSwitchActions(leftBranch).CompareTo(CountSwitchActions(rightBranch));
+            if (compare != 0)
+                return compare;
+
+            compare = leftBranch.ActionCount.CompareTo(rightBranch.ActionCount);
+            if (compare != 0)
+                return compare;
+
+            compare = rightBranch.FinalNextObstacleIndex.CompareTo(leftBranch.FinalNextObstacleIndex);
             if (compare != 0)
                 return compare;
 
@@ -120,11 +133,44 @@ namespace Assets.Scripts.Bot.Planning
             if (compare != 0)
                 return compare;
 
-            compare = rightBranch.ActionCount.CompareTo(leftBranch.ActionCount);
-            if (compare != 0)
-                return compare;
-
             return CompareBranches(leftBranch, rightBranch);
+        }
+
+        private static bool HasNonSwitchAction(PlanningBranch branch)
+        {
+            if (branch?.Actions == null)
+                return false;
+
+            for (int actionIndex = 0; actionIndex < branch.Actions.Count; actionIndex++)
+            {
+                PlannedAction action = branch.Actions[actionIndex];
+                if (action != null && !IsSwitchAction(action.Kind))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static int CountSwitchActions(PlanningBranch branch)
+        {
+            if (branch?.Actions == null)
+                return 0;
+
+            int count = 0;
+            for (int actionIndex = 0; actionIndex < branch.Actions.Count; actionIndex++)
+            {
+                PlannedAction action = branch.Actions[actionIndex];
+                if (action != null && IsSwitchAction(action.Kind))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsSwitchAction(BotActionKind kind)
+        {
+            return kind == BotActionKind.SwitchLane
+                || kind == BotActionKind.RoofSwitchLaneExit;
         }
     }
 }

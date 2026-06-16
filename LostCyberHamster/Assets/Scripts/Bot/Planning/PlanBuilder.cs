@@ -70,7 +70,8 @@ namespace Assets.Scripts.Bot.Planning
             PlanningGraphBuildResult graphResult = _graphBuilder.BuildBranches(worldSnapshot, rootState);
             PlanningBranch bestBranch = _planEvaluator.SelectBest(graphResult.Branches);
 
-            if (bestBranch != null && bestBranch.HasActions)
+            // Пустая successful-ветка означает "продолжать бег" и должна выигрывать у dead-end fallback.
+            if (bestBranch != null)
                 return BuildSuccessfulResult(worldSnapshot, bestBranch);
 
             PlanningDeadEndBranch bestDeadEndBranch = _planEvaluator.SelectBestDeadEnd(graphResult.DeadEndBranches);
