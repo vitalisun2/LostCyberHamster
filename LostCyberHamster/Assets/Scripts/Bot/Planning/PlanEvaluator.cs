@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
 
@@ -110,7 +109,7 @@ namespace Assets.Scripts.Bot.Planning
             if (compare != 0)
                 return compare;
 
-            return CompareActionSequences(left.Actions, right.Actions);
+            return 0;
         }
 
         /// <summary>
@@ -164,31 +163,5 @@ namespace Assets.Scripts.Bot.Planning
             return right.FirstTriggerX.CompareTo(left.FirstTriggerX);
         }
 
-        /// <summary>
-        /// Сравнивает последовательности действий.
-        /// </summary>
-        private static int CompareActionSequences(IReadOnlyList<PlannedAction> left, IReadOnlyList<PlannedAction> right)
-        {
-            int actionCount = Math.Min(left.Count, right.Count);
-            for (int actionIndex = 0; actionIndex < actionCount; actionIndex++)
-            {
-                PlannedAction leftAction = left[actionIndex];
-                PlannedAction rightAction = right[actionIndex];
-
-                int compare = leftAction.EnergyCost.CompareTo(rightAction.EnergyCost);
-                if (compare != 0)
-                    return compare;
-
-                compare = leftAction.TriggerX.CompareTo(rightAction.TriggerX);
-                if (compare != 0)
-                    return compare;
-
-                compare = leftAction.TargetObstacleIndex.CompareTo(rightAction.TargetObstacleIndex);
-                if (compare != 0)
-                    return compare;
-            }
-
-            return left.Count.CompareTo(right.Count);
-        }
     }
 }
