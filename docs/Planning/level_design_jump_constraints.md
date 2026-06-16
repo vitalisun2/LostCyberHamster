@@ -52,7 +52,7 @@
 
 ### Jump From Roof On Roof - 2 препятствий или 1 BigAlive
 
-### Super Jump From Roof On Roof - 3 препятствий
+### Super Jump From Roof On Roof - 3 препятствий или 2 BigAlive
 
 <br>
 ---
