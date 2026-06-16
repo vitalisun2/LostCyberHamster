@@ -51,37 +51,50 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 latestFireShift,
                 requireTargetRoofSupport);
 
-            // Берет окно, ближайшее к deadline trigger obstacle, и запускает смену линии в начале этого окна.
-            return TryFindLatestSafeInterval(safeIntervals, out SafeInterval selectedInterval)
-                && TryCreateFireWindowSample(
-                    selectedInterval,
-                    SwitchLaneTiming.EarlyWindowSelectionRatio,
-                    out sample);
+            // Берет пригодное окно, ближайшее к deadline trigger obstacle, и запускает смену линии в начале этого окна.
+            return TrySelectLatestUsableSafeIntervalSample(safeIntervals, out sample);
         }
 
         /// <summary>
-        /// Ищет безопасный интервал с самым поздним окончанием.
+        /// Ищет самый поздний безопасный интервал, из которого можно выбрать точку запуска.
         /// </summary>
-        private static bool TryFindLatestSafeInterval(
+        private static bool TrySelectLatestUsableSafeIntervalSample(
             IReadOnlyList<SafeInterval> safeIntervals,
-            out SafeInterval selectedInterval)
+            out SwitchLaneFireWindowSample sample)
         {
-            selectedInterval = default;
+            sample = default;
             if (safeIntervals == null || safeIntervals.Count == 0)
                 return false;
 
-            selectedInterval = safeIntervals[0];
-            for (int intervalIndex = 1; intervalIndex < safeIntervals.Count; intervalIndex++)
+            bool hasSelectedInterval = false;
+            SafeInterval selectedInterval = default;
+            SwitchLaneFireWindowSample selectedSample = default;
+            for (int intervalIndex = 0; intervalIndex < safeIntervals.Count; intervalIndex++)
             {
                 SafeInterval candidate = safeIntervals[intervalIndex];
-                if (candidate.End > selectedInterval.End
+                if (!TryCreateFireWindowSample(
+                        candidate,
+                        SwitchLaneTiming.EarlyWindowSelectionRatio,
+                        out SwitchLaneFireWindowSample candidateSample))
+                {
+                    continue;
+                }
+
+                if (!hasSelectedInterval
+                    || candidate.End > selectedInterval.End
                     || (Math.Abs(candidate.End - selectedInterval.End) <= 0.001f
                         && candidate.Start > selectedInterval.Start))
                 {
                     selectedInterval = candidate;
+                    selectedSample = candidateSample;
+                    hasSelectedInterval = true;
                 }
             }
 
+            if (!hasSelectedInterval)
+                return false;
+
+            sample = selectedSample;
             return true;
         }
 
