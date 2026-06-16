@@ -20,6 +20,13 @@
 ```
 Находит все `test*.json` уровни под `Assets/Content/locations`, компилирует один раз, регенерирует project files, печатает SUMMARY и semantic action summary по каждому уровню.
 
+Для **test-level validation** `WIN`, `FAIL`, звёзды или прохождение уровня не являются критерием регрессии. Нужно сверять фактические действия бота с `description` каждого test-паттерна:
+- `should <action>` означает, что соответствующий action должен быть применён к этому паттерну;
+- `should not <action>` означает, что этот action не должен быть применён к этому паттерну;
+- расхождение по конкретному паттерну считать регрессом независимо от итогового `WIN`/`FAIL`.
+
+Helper-паттерны вроде `relief` / `relief_energy` не являются проверяемыми сценариями, если их `description` не задаёт `should` / `should not`.
+
 Вариант B — запуск одного уровня:
 ```powershell
 .\tools\invoke_open_unity_test_level.ps1 -LevelAddress '01_New_York/Morning/test_threat_small_notalive_road_switchlane' -TimeoutSeconds 120
@@ -103,6 +110,8 @@
 **Именование тестовых паттернов:** `test_{action}_{NN}_{description}`.
 **Координаты:** `y = -1.8` (top lane), `y = -2.8` (bottom lane).
 **Ссылка из level JSON:** `{"ref": "имя_паттерна", "spriteSeed": 0, "overrides": []}`.
+
+**Семантика `description` для валидации:** описание test-паттерна — источник expected action. При отчёте по регрессиям указывать test level и номер проверяемого test-паттерна в порядке сценариев уровня, игнорируя relief-паттерны без `should` / `should not`.
 
 ---
 
