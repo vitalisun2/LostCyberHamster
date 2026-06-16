@@ -548,7 +548,7 @@ Menu: `Tools/Migration/` — 3 шага:
 - Во время ожидания trigger или выполнения head-action committed prefix удерживает до двух действий: текущую head-action и следующий action для immediate handoff; при replan пересчитывается только хвост после этого prefix. Runtime fire/cancel остаётся ответственностью executor/gate.
 - Execution handoff: если после завершения/освобождения head-action в retained хвосте уже есть следующий шаг, executor должен сначала дать ему шанс стартовать, а rebuild должен пересчитывать только хвост после нового in-progress шага.
 - Для actions с ранним handoff-событием (`JumpOn` уничтожает target на `transform_jumped_on`, но возвращается в `Run` позже) completion для следующего bot action нельзя сводить только к финальному `Run`.
-- Для SwitchLane перед timed jump-on objective выбирать одно релевантное safe-window около deadline source-threat и ранний запуск внутри этого окна; `PlanEvaluator` не должен компенсировать множественные timing-кандидаты по first trigger.
+- Для SwitchLane перед timed jump-on objective выбирать одно релевантное safe-window около deadline source-threat и ранний запуск внутри этого окна; successful `PlanEvaluator` не должен компенсировать timing/progress-кандидаты через first-trigger, final-index/projection fallback или score-bias. Progress-proxy допустим только для dead-end fallback safe-prefix.
 - Для target-bound jump-on post-action safety должен участвовать в выборе fire shift внутри окна; нельзя отбрасывать весь action только потому, что первый runtime-valid timing возвращает хомяка в unsafe `Run`, если поздний timing того же окна safe.
 
 ### ActionGenerator

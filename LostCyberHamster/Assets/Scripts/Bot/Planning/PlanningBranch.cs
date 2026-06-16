@@ -34,7 +34,6 @@ namespace Assets.Scripts.Bot.Planning
         public int ActionCount => Metrics.ActionCount;
         public int JumpOnObjectiveCount => Metrics.JumpOnObjectiveCount;
         public int? FirstJumpOnObjectiveTargetIndex => Metrics.FirstJumpOnObjectiveTargetIndex;
-        public float FirstTriggerX => Metrics.FirstTriggerX ?? 0f;
 
         /// <summary>
         /// Собирает ветку из листового узла графа планирования.

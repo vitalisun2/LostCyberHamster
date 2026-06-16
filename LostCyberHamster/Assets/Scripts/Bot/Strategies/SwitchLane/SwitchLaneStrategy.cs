@@ -11,7 +11,7 @@ using Assets.Scripts.Common;
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
 {
     /// <summary>
-    /// Collects role-based SwitchLane candidates for the new planning path.
+    /// Собирает role-based кандидаты смены линии.
     /// </summary>
     internal sealed class SwitchLaneStrategy : IPlanningStrategy
     {
@@ -35,7 +35,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         public ISimulator Simulator { get; }
 
         /// <summary>
-        /// Collects valid lane-switch actions for a role-based decision point.
+        /// Возвращает действие смены линии для role-based точки решения.
         /// </summary>
         public PlanningStrategyResult CollectActions(
             PlanningState planningState,
@@ -69,36 +69,25 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     "Нет безопасного окна для смены линии: до препятствия не остается положительного интервала запуска.");
             }
 
-            IReadOnlyList<float> selectionRatios = GetSelectionRatios(planningState);
-            IReadOnlyList<SwitchLaneFireWindowSample> fireWindowSamples =
-                _fireWindowCalculator.CollectFireWindowSamples(
+            if (!_fireWindowCalculator.TrySelectRelevantFireWindowSample(
                     worldSnapshot,
                     hamster,
                     targetBottomLine,
                     latestFireShift,
-                    selectionRatios);
-
-            if (fireWindowSamples.Count == 0)
+                    out SwitchLaneFireWindowSample fireWindowSample))
             {
                 return DeadEnd(
                     isEntryToOppositeLane,
                     BuildNoSwitchLaneSampleReason(worldSnapshot, hamster, targetBottomLine, latestFireShift));
             }
 
-            var actions = new List<PlannedAction>(fireWindowSamples.Count);
-            for (int sampleIndex = 0; sampleIndex < fireWindowSamples.Count; sampleIndex++)
-            {
-                SwitchLaneFireWindowSample fireWindowSample = fireWindowSamples[sampleIndex];
-                actions.Add(BuildAction(
-                    planningState,
-                    triggerObstacle,
-                    triggerObstacleIndex,
-                    targetBottomLine,
-                    fireWindowSample,
-                    isEntryToOppositeLane));
-            }
-
-            return PlanningStrategyResult.FromActions(actions);
+            return PlanningStrategyResult.FromAction(BuildAction(
+                planningState,
+                triggerObstacle,
+                triggerObstacleIndex,
+                targetBottomLine,
+                fireWindowSample,
+                isEntryToOppositeLane));
         }
 
         /// <summary>
@@ -134,7 +123,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         }
 
         /// <summary>
-        /// Resolves the road SwitchLane target: current-lane threat or opposite-lane entry.
+        /// Определяет trigger obstacle для дорожной смены линии: угроза текущей линии или вход на другую линию.
         /// </summary>
         private bool TryResolveSwitchLaneTarget(
             PlanningState planningState,
@@ -184,7 +173,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         }
 
         /// <summary>
-        /// Tries to select the first blocking threat from the current focus chain.
+        /// Ищет первую блокирующую угрозу в текущей focus-chain.
         /// </summary>
         private static bool TryResolveBlockingThreat(
             DecisionPoint decisionPoint,
@@ -211,7 +200,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         }
 
         /// <summary>
-        /// Builds a planned lane-switch action for the selected fire moment.
+        /// Создает действие смены линии для выбранного момента запуска.
         /// </summary>
         private static PlannedAction BuildAction(
             PlanningState planningState,
@@ -246,23 +235,5 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 triggerWindow: triggerWindow);
         }
 
-        /// <summary>
-        /// Returns safe-window selection ratios for role-based SwitchLane.
-        /// </summary>
-        private static IReadOnlyList<float> GetSelectionRatios(PlanningState planningState)
-        {
-            HamsterSnapshot hamster = planningState?.Hamster;
-            if (JumpOnObjectiveRules.HasEnergyForJumpOnObjective(hamster))
-                return new[]
-                {
-                    SwitchLaneTiming.EarlyWindowSelectionRatio,
-                    SwitchLaneTiming.MidWindowSelectionRatio
-                };
-
-            return new[]
-            {
-                SwitchLaneTiming.MidWindowSelectionRatio
-            };
-        }
     }
 }

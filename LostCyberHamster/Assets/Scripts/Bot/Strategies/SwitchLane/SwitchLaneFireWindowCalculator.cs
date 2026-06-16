@@ -31,18 +31,17 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         }
 
         /// <summary>
-        /// Собирает representative fire shifts из безопасных интервалов смены линии.
+        /// Выбирает ранний запуск в последнем безопасном окне перед deadline trigger obstacle.
         /// </summary>
-        public IReadOnlyList<SwitchLaneFireWindowSample> CollectFireWindowSamples(
+        public bool TrySelectRelevantFireWindowSample(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
             float latestFireShift,
-            IReadOnlyList<float> selectionRatios,
+            out SwitchLaneFireWindowSample sample,
             bool requireTargetRoofSupport = true)
         {
-            if (selectionRatios == null || selectionRatios.Count == 0)
-                return new List<SwitchLaneFireWindowSample>(0);
+            sample = default;
 
             // Собирает все безопасные интервалы запуска.
             List<SafeInterval> safeIntervals = CollectSafeFireIntervals(
@@ -52,61 +51,60 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 latestFireShift,
                 requireTargetRoofSupport);
 
-            // Применяет выбранную sampling-policy к каждому безопасному интервалу.
-            var samples = new List<SwitchLaneFireWindowSample>(safeIntervals.Count * selectionRatios.Count);
-            for (int intervalIndex = 0; intervalIndex < safeIntervals.Count; intervalIndex++)
+            // Берет окно, ближайшее к deadline trigger obstacle, и запускает смену линии в начале этого окна.
+            return TryFindLatestSafeInterval(safeIntervals, out SafeInterval selectedInterval)
+                && TryCreateFireWindowSample(
+                    selectedInterval,
+                    SwitchLaneTiming.EarlyWindowSelectionRatio,
+                    out sample);
+        }
+
+        /// <summary>
+        /// Ищет безопасный интервал с самым поздним окончанием.
+        /// </summary>
+        private static bool TryFindLatestSafeInterval(
+            IReadOnlyList<SafeInterval> safeIntervals,
+            out SafeInterval selectedInterval)
+        {
+            selectedInterval = default;
+            if (safeIntervals == null || safeIntervals.Count == 0)
+                return false;
+
+            selectedInterval = safeIntervals[0];
+            for (int intervalIndex = 1; intervalIndex < safeIntervals.Count; intervalIndex++)
             {
-                SafeInterval interval = safeIntervals[intervalIndex];
-                for (int ratioIndex = 0; ratioIndex < selectionRatios.Count; ratioIndex++)
+                SafeInterval candidate = safeIntervals[intervalIndex];
+                if (candidate.End > selectedInterval.End
+                    || (Math.Abs(candidate.End - selectedInterval.End) <= 0.001f
+                        && candidate.Start > selectedInterval.Start))
                 {
-                    TryAddFireWindowSample(
-                        interval,
-                        selectionRatios[ratioIndex],
-                        samples);
+                    selectedInterval = candidate;
                 }
             }
 
-            return samples;
+            return true;
         }
 
         /// <summary>
-        /// Добавляет representative fire shift из интервала, если такой точки ещё нет.
+        /// Создает sample из выбранного безопасного интервала.
         /// </summary>
-        private static void TryAddFireWindowSample(
+        private static bool TryCreateFireWindowSample(
             SafeInterval interval,
             float selectionRatio,
-            List<SwitchLaneFireWindowSample> samples)
+            out SwitchLaneFireWindowSample sample)
         {
-            if (samples == null)
-                return;
-
-            if (interval.TrySelectInteriorPoint(
-                        lateBudget: 0f,
-                        selectionRatio,
-                        out float fireShift,
-                        epsilon: 0f))
+            sample = default;
+            if (!interval.TrySelectInteriorPoint(
+                    lateBudget: 0f,
+                    selectionRatio,
+                    out float fireShift,
+                    epsilon: 0f))
             {
-                if (!ContainsEquivalentFireShift(samples, fireShift))
-                    samples.Add(new SwitchLaneFireWindowSample(fireShift, interval.Start, interval.End));
-            }
-        }
-
-        /// <summary>
-        /// Возвращает true, если список уже содержит эквивалентный fire shift.
-        /// </summary>
-        private static bool ContainsEquivalentFireShift(
-            IReadOnlyList<SwitchLaneFireWindowSample> samples,
-            float fireShift)
-        {
-            const float epsilon = 0.001f;
-            for (int fireShiftIndex = 0; fireShiftIndex < samples.Count; fireShiftIndex++)
-            {
-                float existingFireShift = samples[fireShiftIndex].FireShift;
-                if (Math.Abs(existingFireShift - fireShift) <= epsilon)
-                    return true;
+                return false;
             }
 
-            return false;
+            sample = new SwitchLaneFireWindowSample(fireShift, interval.Start, interval.End);
+            return true;
         }
 
         /// <summary>

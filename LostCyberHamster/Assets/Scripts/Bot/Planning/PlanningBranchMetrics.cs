@@ -10,7 +10,7 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Пустые метрики ветки.
         /// </summary>
-        public static PlanningBranchMetrics Empty { get; } = new PlanningBranchMetrics(0, 0, null, 0, 0, null);
+        public static PlanningBranchMetrics Empty { get; } = new PlanningBranchMetrics(0, 0, 0, 0, null);
 
         /// <summary>
         /// Создает набор метрик для ветки планирования.
@@ -18,14 +18,12 @@ namespace Assets.Scripts.Bot.Planning
         public PlanningBranchMetrics(
             int totalEnergyCost,
             int tapCount,
-            float? firstTriggerX,
             int actionCount,
             int jumpOnObjectiveCount,
             int? firstJumpOnObjectiveTargetIndex)
         {
             TotalEnergyCost = totalEnergyCost;
             TapCount = tapCount;
-            FirstTriggerX = firstTriggerX;
             ActionCount = actionCount;
             JumpOnObjectiveCount = jumpOnObjectiveCount;
             FirstJumpOnObjectiveTargetIndex = firstJumpOnObjectiveTargetIndex;
@@ -40,11 +38,6 @@ namespace Assets.Scripts.Bot.Planning
         /// Число смен линий.
         /// </summary>
         public int TapCount { get; }
-
-        /// <summary>
-        /// Точка запуска первого действия.
-        /// </summary>
-        public float? FirstTriggerX { get; }
 
         /// <summary>
         /// Число действий в ветке.
@@ -69,7 +62,6 @@ namespace Assets.Scripts.Bot.Planning
             return new PlanningBranchMetrics(
                 TotalEnergyCost + action.EnergyCost,
                 TapCount + (BotActionKindRules.ConsumesTap(action.Kind) ? 1 : 0),
-                FirstTriggerX ?? action.TriggerX,
                 ActionCount + 1,
                 JumpOnObjectiveCount + (action.FulfillsJumpOnObjective ? 1 : 0),
                 FirstJumpOnObjectiveTargetIndex ?? GetJumpOnObjectiveTargetIndex(action));

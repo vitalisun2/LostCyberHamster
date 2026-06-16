@@ -1,7 +1,7 @@
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
 {
     /// <summary>
-    /// Хранит timing-константы и sampling-ratio для планирования смены линии.
+    /// Хранит timing-константы и параметры выбора окна для планирования смены линии.
     /// </summary>
     internal static class SwitchLaneTiming
     {
@@ -41,10 +41,5 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         /// Ratio для выбора ранней точки внутри safe-window SwitchLane.
         /// </summary>
         public const float EarlyWindowSelectionRatio = 0.05f;
-
-        /// <summary>
-        /// Ratio для выбора середины safe-window SwitchLane.
-        /// </summary>
-        public const float MidWindowSelectionRatio = 0.5f;
     }
 }
