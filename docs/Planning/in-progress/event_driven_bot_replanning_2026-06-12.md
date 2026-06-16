@@ -3,7 +3,6 @@
 ## Статус
 
 - Тип: план реализации и tracking выполнения.
-- Ветка: `integration/unity-live`.
 - Цель: заменить rolling replanning по таймеру на event-driven replanning для детерминированного runner-мира.
 - Реализация выполнена в рамках этого документа.
 

@@ -1,6 +1,6 @@
 # Agent Efficiency Playbook
 
-Единый владелец уроков о том, как AI-агентам быстрее, точнее и дешевле работать в этом репозитории.
+Единый владелец lessons о том, как AI-агентам быстрее, точнее и дешевле работать в этом репозитории.
 
 Этот документ не хранит архитектуру, gameplay-спецификации и дневник задач. Если lesson стал правилом конкретной области, он переносится в файл-владелец; здесь остаётся только краткая promoted-ссылка.
 
@@ -45,14 +45,14 @@
 
 - Обобщать до уровня проекта, не описывать историю конкретной задачи.
 - Не добавлять запись, если она повторяет существующее правило.
-- Если lesson относится к коду, workflow, инструментам, бот-итерациям или архитектуре, переносить его в соответствующий owner file, а здесь оставлять только promoted-ссылку.
+- Если lesson относится к коду, инструментам, бот-итерациям или архитектуре, переносить его в соответствующий owner file, а здесь оставлять только promoted-ссылку.
 - Удалять или переписывать устаревшие lessons вместо сохранения противоречий.
 
 ## Устойчивые правила эффективности
 
 ### Входное чтение
 
-- До первого patch прочитать `AGENTS.md`, этот playbook, `workflow.md`, `code_conventions.md`, `temporary_current_rules.md` и релевантные owner files из секции входного чтения.
+- До первого patch прочитать `AGENTS.md`, этот playbook, `code_conventions.md`, `temporary_current_rules.md` и релевантные owner files из секции входного чтения.
 - После compaction/resume быстро проверить, какие обязательные файлы уже прочитаны, прежде чем продолжать правки.
 
 ### Узкий контекст перед широким
@@ -66,7 +66,6 @@
 - После failed patch уменьшать scope, а не повторять тот же большой diff.
 - После введения центрального helper/predicate искать старые primitive checks, прямые обходные вызовы и obsolete usings.
 - После helper extraction проверять, не появились ли повторные проходы по одной коллекции; факты для одного решения собирать одним scan.
-- [incubating] Ошибка/риск: manual `apply_patch` в задаче с отдельным worktree может попасть в основной каталог. Причина: tool не принимает `workdir` и резолвит пути от текущего workspace root. Рабочий ход: для task-worktree patch указывать path с префиксом `.worktrees/<slug>/...`, затем проверять `git status` в основном каталоге и worktree. Правило: после создания worktree первый manual patch применять только с явным worktree-prefixed filename.
 
 ### Проверка execution path
 
@@ -80,6 +79,7 @@
 - Если целевой файл `??`, `git diff` недостаточен: нужны targeted `git status` и прямое чтение содержимого.
 - Если summary подагента или инструмента противоречив, добрать короткий raw command с точным статусом.
 - На Windows явно использовать native paths (`C:\...`) в PowerShell-командах и инструкциях подагентам.
+- [incubating] Ошибка/риск: попытка вручную восстановить CRLF/LF может идти против `.gitattributes` и сохранять предупреждения Git. Причина: видимый старый формат строк не всегда равен требуемому `attr/text eol`. Рабочий ход: при предупреждениях line endings сначала выполнить `git ls-files --eol <path>` и привести рабочую копию к указанному `w/...`/`attr` формату. Правило: не менять line endings на глаз; проверять Git eol metadata перед механической нормализацией.
 - Для Unity diagnostic logs брать фактический путь из automation output/DebugManager, а не угадывать по имени файла.
 - [incubating] Ошибка/риск: `EditorWindow`-кнопка перестаёт выполнять действие после входа в Play Mode. Причина: делегаты и несериализуемое состояние окна не переживают Unity domain reload. Рабочий ход: хранить только восстанавливаемые данные окна, вызывать статические команды напрямую или восстанавливать callback в `OnEnable`. Правило: editor tools, которые должны работать во время Play Mode, не должны зависеть от сохранённого `Action` в окне.
 - При удалении или объединении rule-файла выполнить `rg` по старому имени в `docs`, `AGENTS.md`, `CLAUDE.md` и `.github`, затем обновить все agent entrypoints до финальной проверки.
@@ -92,13 +92,11 @@
 ## Promotion Registry
 
 - [promoted -> docs/rules/AGENTS.md] Краткий стиль ответа, обязательное входное чтение и Learning Review в конце каждой задачи.
-- [promoted -> docs/rules/workflow.md] Git/workflow-цикл, targeted validation, отчётность и запрет объявлять задачу завершённой до выбранной точки workflow.
 - [promoted -> docs/rules/code_conventions.md] Runtime-first подход к gameplay-механикам, ограничения blind fixes, Unity `.meta`/`.csproj`, тонкий слой EditMode-тестов и JSON data migration.
 - [promoted -> docs/rules/code_review_principles.md] Self-review должен проверять, не забирают ли локальные фильтры, shortcut'ы и "полезные" оптимизации ответственность у более полного архитектурного слоя.
 - [promoted -> docs/rules/iteration_cycle.md] Бот-итерации: отделять поведение от логирования, локализовать один провал, использовать visual feedback, representative levels, читать BOT вместе с ECO.
 - [promoted -> docs/rules/agent_tools.md] Automation bridge, diagnostic logs, `tools/read_log_channel.ps1`, ignored paths, Editor.log fallback, Unity wake-up и full bot validation.
 - [promoted -> docs/rules/agent_tools.md] При "зависшем" Unity automation сначала проверить, что request/response paths указывают на реальный Unity project root.
-- [promoted -> docs/rules/bug_regression_analysis_workflow.md] После доказанного root cause не задерживать ответ завершающими ритуалами: cleanup, checks и Learning Review делегировать субагентам, если они не могут изменить вывод.
 - [promoted -> docs/architecture_knowledge_base.md] Устойчивые bot/runtime выводы: HamsterState, SwitchLane windows, ThreatSafety target, chain semantics, ActionGenerator инварианты.
 - [promoted -> docs/architecture_knowledge_base.md] Bot planning: для timed jump-on objective сохранять temporal slack первого действия, иначе поздний prefix может разрушить окно retained jump-on.
 - [promoted -> docs/architecture_knowledge_base.md] Bot planning: для target-bound jump-on выбирать fire shift с учетом post-action safety, а не отбрасывать весь action по первому runtime-valid timing.

@@ -9,9 +9,6 @@
 ### docs/rules/AGENTS.md
 Точка входа для всех AI-агентов: роутинг, профиль пользователя, стиль общения, процесс выполнения задачи, мета-правила управления правилами.
 
-### docs/rules/workflow.md
-Ветки, worktree, жизненный цикл задачи, ручная проверка пользователя в Unity, параллельное выполнение, git-правила, отчётность.
-
 ### docs/rules/iteration_cycle.md
 Итерационный цикл тестирования бота: ручной прогон пользователя, логи, визуальный фидбэк, экономика.
 
@@ -19,7 +16,7 @@
 Конвенции кода, валидация, Unity-специфика (Editor API, размеры, префабы).
 
 ### docs/rules/agent_efficiency_playbook.md
-Единый владелец workflow-lessons: Learning Review в конце каждой задачи, практические правила более быстрой и точной работы агента, promoted-ссылки на owner-файлы.
+Единый владелец lessons: Learning Review в конце каждой задачи, практические правила более быстрой и точной работы агента, promoted-ссылки на owner-файлы.
 
 ### docs/rules/temporary_current_rules.md
 Временные обязательные правила текущего этапа разработки, включая статус `Bot/` как активной зоны разработки, а не окончательного источника истины.
@@ -81,7 +78,7 @@
 План рефакторинга загрузки спрайтов и миграции на общее ядро Addressables.
 
 ### docs/Planning/in-progress/
-Каталог активных рабочих спецификаций и task-файлов до завершения изменений и merge.
+Каталог активных рабочих спецификаций и task-файлов.
 
 ### docs/Planning/in-progress/tap-outcome-resolver-and-switch-lane-window-plan.md
 План унификации runtime tap semantics и bot switch-lane window search через `TapOutcomeResolver` и `ActionWindowFinder`.

@@ -159,7 +159,6 @@
 | `tools/migrate_levels.ps1` | Миграция уровней из copy-paste формата в reference-based |
 | `tools/rename_to_snake_case.ps1` | Переименование анимационных файлов в snake_case перед импортом |
 | `tools/read_log_channel.ps1` | Унифицированное чтение логов по каналу (STAB/BOT/ECO) с фильтрацией и tail |
-| `tools/commit_merge.ps1` | Коммит по diff + merge integration/unity-live → main + push |
 | `tools/cleanup_old_logs.ps1` | Автоочистка логов старше 3 дней (автозапуск при открытии проекта, не чаще раза в день) |
 
 Правила для automation bridge:
@@ -207,18 +206,18 @@ gh extension install https://github.com/github/gh-models
 **Тарификация:**
 - Бесплатная квота на каждую модель (rate limits по токенам и запросам в день)
 - При превышении — ошибка `429`, платного fallback нет, деньги не списываются
-- Для лёгких задач (commit messages, short summaries) квота практически неисчерпаема
+- Для лёгких задач (short summaries) квота практически неисчерпаема
 
 **Полезные команды:**
 ```powershell
 gh models list                          # список доступных моделей
 gh models run openai/gpt-4.1-mini       # интерактивный чат
-echo "prompt" | gh models run openai/gpt-4.1-mini  # однострочный запрос
+echo "request" | gh models run openai/gpt-4.1-mini  # однострочный запрос
 ```
 
 **Фильтрация streaming-вывода** (мусорные escape-символы в stdout):
 ```powershell
-echo "prompt" | gh models run openai/gpt-4.1-mini 2>&1 |
+echo "request" | gh models run openai/gpt-4.1-mini 2>&1 |
     Where-Object { $_ -match '\S' -and $_ -notmatch '^та' } |
     Select-Object -Last 1
 ```
@@ -226,9 +225,5 @@ echo "prompt" | gh models run openai/gpt-4.1-mini 2>&1 |
 **Рекомендуемые модели для скриптов:**
 | Модель | Когда использовать |
 |--------|-------------------|
-| `openai/gpt-4.1-mini` | Commit messages, короткие тексты — быстро, бесплатно |
+| `openai/gpt-4.1-mini` | Короткие тексты — быстро, бесплатно |
 | `openai/gpt-4.1` | Анализ кода, более сложные задачи |
-
-**Использование в проекте:**
-- `tools/commit_merge.ps1` использует `gpt-4.1-mini` для генерации сообщений коммитов по diff
-- Хоткей: `Ctrl+Shift+M` — запускает VS Code task `Commit & Merge to Main`
