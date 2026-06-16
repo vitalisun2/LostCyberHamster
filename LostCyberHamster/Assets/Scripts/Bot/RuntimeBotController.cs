@@ -1049,8 +1049,8 @@ namespace Assets.Scripts.Bot
                 return;
 
             RequestReplan(BotReplanReason.SpawnPattern);
-            DebugManager.DiagLogVerbose(
-                $"[Bot PLAN] REPLAN_REQUEST reason=SpawnPattern patternIndex={patternIndex} pattern={patternName}");
+            DebugManager.DiagLog(
+                $"[Bot PATTERN] SPAWN patternIndex={patternIndex} pattern={patternName}");
         }
     }
 }

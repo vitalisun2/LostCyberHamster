@@ -62,6 +62,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
                 return triggerResult;
             }
 
+            HamsterActionLogger.LogFire(action, obstacleLeftX);
             hamster.JumpRequest.Invoke();
             return ActionFireResult.Fired;
         }
@@ -77,7 +78,11 @@ namespace Assets.Scripts.Bot.Strategies.JumpOver
         /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
-            return hamster.HamsterState.Value == HamsterStateEnum.Run;
+            bool completed = hamster.HamsterState.Value == HamsterStateEnum.Run;
+            if (completed)
+                HamsterActionLogger.LogComplete(action, hamster.HamsterState.Value);
+
+            return completed;
         }
     }
 }
