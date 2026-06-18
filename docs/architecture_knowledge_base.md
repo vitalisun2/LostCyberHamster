@@ -562,31 +562,9 @@ Menu: `Tools/Migration/` — 3 шага:
 - `IsOnBottomLine` переключается мгновенно при `TapRequest` (`TapMechanics.OnTap`). Source-lane препятствия не могут навредить после `TapRequest`.
 - `SwitchLane` planning после fire должен учитывать `DecisionTravel`: линия меняется сразу, но следующий tap runtime не принимает, пока `Hamster.IsShifting`.
 - `SwitchLane` из `RoofRun` безопасен только если в момент tap на target-линии под хомяком есть roof support; иначе runtime принудительно уходит в `RunFromRoof`, а same-line non-roof obstacles могут сразу нанести damage.
+- Лишние подряд `SwitchLane` отсекает `PlanningGraphBuilder`, а не `PlanEvaluator`: `SwitchLaneStrategy` помечает entry-перестроение в противоположную линию через `PlannedAction.IsOppositeLaneEntry`, после чего graph builder не раскрывает follow-up switch, а также отсекает подряд идущий switch без продвижения по target obstacle index.
 - Не добавлять фильтры по типу препятствия для обхода safety-логики. Проблема в модели, а не в типе.
 - Planning-проекция проверяет конечную позицию по snapshot-данным — грубая оценка. Runtime execution handlers проверяют live-дистанцию/окно срабатывания; если live-check не проходит до deadline — шаг отменяется.
-
----
-
-## Обновление документации
-
-Этот файл должен обновляться при:
-- Изменении архитектурных решений
-- Обнаружении важных багов и их решений
-- Добавлении новых систем/компонентов
-- Изменении workflow художников/геймдизайнеров
-
-**Формат обновлений:**
-```markdown
-## [Дата] Название изменения
-**Что изменилось:**
-- Краткое описание
-
-**Почему:**
-- Объяснение причин
-
-**Как использовать:**
-- Примеры кода / команды
-```
 
 ---
 
@@ -647,7 +625,7 @@ RuntimeBotController
 4. **`PlanningGraphBuilder`** (`Planning/`) — раскрывает дерево решений до `MaxSearchDepth = 6`.
 5. **`ActionGenerator`** (`Planning/`) — опрашивает `IPlanningStrategy`, возвращает role-based кандидаты для текущей точки решения.
 6. **`TransitionSimulator`** (`Planning/`) — симулирует действие через simulator соответствующей strategy.
-7. **`PlanEvaluator`** (`Planning/`) — выбирает лучшую ветку по objective, energy cost, tap count и progression.
+7. **`PlanEvaluator`** (`Planning/`) — выбирает лучшую ветку по objective, energy cost и tap count.
 
 **Триггеры пересчёта** (в `RuntimeBotController`):
 - `LevelStart` — первичное построение plan после старта gameplay;

@@ -78,10 +78,8 @@
 
 - [promoted -> docs/rules/AGENTS.md] Краткий стиль ответа, fast code-edit workflow и минимальное входное чтение.
 - [promoted -> docs/rules/code_conventions.md] Runtime-first подход к gameplay-механикам, ограничения blind fixes, Unity `.meta`/`.csproj`, тонкий слой EditMode-тестов и JSON data migration.
-- [promoted -> docs/rules/code_review_principles.md] Self-review должен проверять, не забирают ли локальные фильтры, shortcut'ы и "полезные" оптимизации ответственность у более полного архитектурного слоя.
-- [promoted -> docs/rules/iteration_cycle.md] Бот-итерации: отделять поведение от логирования, локализовать один провал, использовать visual feedback, representative levels, читать BOT вместе с ECO.
 - [promoted -> docs/rules/agent_tools.md] Automation bridge, diagnostic logs, `tools/read_log_channel.ps1`, ignored paths, Editor.log fallback, Unity wake-up и full bot validation.
-- [promoted -> docs/rules/agent_tools.md, docs/rules/iteration_cycle.md] Test-level validation: `WIN`/`FAIL`/звёзды не являются критерием регрессии; сверять фактические actions с `description` test-паттернов.
+- [promoted -> docs/rules/agent_tools.md] Test-level validation: `WIN`/`FAIL`/звёзды не являются критерием регрессии; сверять фактические actions с `description` test-паттернов.
 - [promoted -> docs/rules/agent_tools.md] При "зависшем" Unity automation сначала проверить, что request/response paths указывают на реальный Unity project root.
 - [promoted -> docs/architecture_knowledge_base.md] Устойчивые bot/runtime выводы: HamsterState, SwitchLane windows, ThreatSafety target, chain semantics, ActionGenerator инварианты.
 - [promoted -> docs/architecture_knowledge_base.md] Bot planning: для timed jump-on objective сохранять temporal slack первого действия, иначе поздний prefix может разрушить окно retained jump-on.
