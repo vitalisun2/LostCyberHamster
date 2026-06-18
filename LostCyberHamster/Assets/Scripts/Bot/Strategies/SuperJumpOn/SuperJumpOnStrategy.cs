@@ -91,7 +91,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
                     planningState.Hamster.Energy);
             }
 
-            // Подтверждает fire window через runtime resolver.
+            // Подтверждает fire window через runtime resolver и post-action safety.
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
                     worldSnapshot,
@@ -107,19 +107,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOn
                 return DeadEnd(fireWindowDeadEndReason);
             }
 
-            // Проверяет безопасность после полного завершения.
             float completionWorldShift = fireShift + travel.ActionTravel;
-            if (!TargetRemovalPostActionSafety.IsSafeAfterCompletion(
-                    planningState,
-                    worldSnapshot,
-                    window.TargetObstacleIndex,
-                    window.TargetObstacle.InstanceId,
-                    completionWorldShift,
-                    out string postActionDeadEndReason))
-            {
-                return DeadEnd(postActionDeadEndReason);
-            }
-
             // Добавляет safe action в общий набор кандидатов без сравнения с обычным JumpOn.
             return PlanningStrategyResult.FromAction(BuildAction(
                 _policy,

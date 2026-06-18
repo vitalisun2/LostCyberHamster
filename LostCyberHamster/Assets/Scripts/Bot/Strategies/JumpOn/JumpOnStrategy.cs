@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
@@ -91,7 +90,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                     planningState.Hamster.Energy);
             }
 
-            // Подтверждает fire window через runtime resolver.
+            // Подтверждает fire window через runtime resolver и post-action safety.
             if (!_fireWindowFinder.TryFindFireShift(
                     planningState,
                     worldSnapshot,
@@ -107,19 +106,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                 return DeadEnd(fireWindowDeadEndReason);
             }
 
-            // Проверяет безопасность после полного завершения.
             float completionWorldShift = fireShift + travel.ActionTravel;
-            if (!TargetRemovalPostActionSafety.IsSafeAfterCompletion(
-                    planningState,
-                    worldSnapshot,
-                    window.TargetObstacleIndex,
-                    window.TargetObstacle.InstanceId,
-                    completionWorldShift,
-                    out string postActionDeadEndReason))
-            {
-                return DeadEnd(postActionDeadEndReason);
-            }
-
             // Добавляет safe action в общий набор кандидатов без локального ранжирования.
             return PlanningStrategyResult.FromAction(BuildAction(
                 _policy,

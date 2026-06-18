@@ -24,7 +24,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
         }
 
         /// <summary>
-        /// Находит fire shift для выбранного target и подтверждает его runtime resolver-ом.
+        /// Находит fire shift, который попадает в target по runtime resolver-у и безопасен после возврата в Run.
         /// </summary>
         public bool TryFindFireShift(
             PlanningState planningState,
@@ -61,20 +61,80 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
                 return false;
             }
 
-            // Подтверждает fire shift через runtime resolver.
-            fireShift = window.SelectedFireShift;
+            // Подтверждает смысловые точки окна через runtime resolver и post-action safety.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            if (CheckRuntimeOutcomeAtFireShift(
-                planningState.Hamster,
-                baseObstacles,
-                fireShift,
-                travel,
-                window.TargetObstacleIndex))
+            if (TrySelectFireShift(
+                    planningState,
+                    projectedWorldSnapshot,
+                    baseObstacles,
+                    travel,
+                    window,
+                    out fireShift,
+                    out deadEndReason))
             {
                 return true;
             }
 
-            deadEndReason = "Нет безопасного окна для напрыгивания: runtime-модель не подтверждает попадание в target.";
+            return false;
+        }
+
+        /// <summary>
+        /// Выбирает первую подходящую смысловую точку окна: middle, first, last.
+        /// </summary>
+        private bool TrySelectFireShift(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            JumpOnTravel travel,
+            JumpOnWindowModel window,
+            out float fireShift,
+            out string deadEndReason)
+        {
+            // Сохраняет прежний preferred timing, но не отбрасывает всё окно из-за одной точки.
+            bool hasRuntimeValidCandidate = false;
+            string postActionDeadEndReason = null;
+            float[] candidateFireShifts =
+            {
+                window.SelectedFireShift,
+                window.FirstFireShift,
+                window.LastFireShift
+            };
+
+            for (int candidateIndex = 0; candidateIndex < candidateFireShifts.Length; candidateIndex++)
+            {
+                float candidateFireShift = candidateFireShifts[candidateIndex];
+                if (!CheckRuntimeOutcomeAtFireShift(
+                        planningState.Hamster,
+                        baseObstacles,
+                        candidateFireShift,
+                        travel,
+                        window.TargetObstacleIndex))
+                {
+                    continue;
+                }
+
+                hasRuntimeValidCandidate = true;
+                float completionWorldShift = candidateFireShift + travel.ActionTravel;
+                if (!TargetRemovalPostActionSafety.IsSafeAfterCompletion(
+                        planningState,
+                        projectedWorldSnapshot,
+                        window.TargetObstacleIndex,
+                        window.TargetObstacle.InstanceId,
+                        completionWorldShift,
+                        out postActionDeadEndReason))
+                {
+                    continue;
+                }
+
+                fireShift = candidateFireShift;
+                deadEndReason = null;
+                return true;
+            }
+
+            fireShift = 0f;
+            deadEndReason = hasRuntimeValidCandidate
+                ? postActionDeadEndReason
+                : "Нет безопасного окна для напрыгивания: runtime-модель не подтверждает попадание в target.";
             return false;
         }
 
