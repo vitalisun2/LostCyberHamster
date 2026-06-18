@@ -27,7 +27,8 @@ namespace Assets.Scripts.Bot.PlanState
             int? resultRoofSupportInstanceId = null,
             bool fulfillsJumpOnObjective = false,
             bool isOppositeLaneEntry = false,
-            ActionTriggerWindow? triggerWindow = null)
+            ActionTriggerWindow? triggerWindow = null,
+            CollectibleObjectiveValue? collectibleObjectiveValue = null)
         {
             Kind = kind;
             TriggerX = triggerX;
@@ -44,6 +45,7 @@ namespace Assets.Scripts.Bot.PlanState
             FulfillsJumpOnObjective = fulfillsJumpOnObjective;
             IsOppositeLaneEntry = isOppositeLaneEntry;
             TriggerWindow = triggerWindow;
+            CollectibleObjectiveValue = collectibleObjectiveValue ?? CollectibleObjectiveValue.None;
         }
 
         public BotActionKind Kind { get; }
@@ -61,6 +63,8 @@ namespace Assets.Scripts.Bot.PlanState
         public bool FulfillsJumpOnObjective { get; }
         public bool IsOppositeLaneEntry { get; }
         public ActionTriggerWindow? TriggerWindow { get; }
+        public CollectibleObjectiveValue CollectibleObjectiveValue { get; }
+        public bool FulfillsCollectibleObjective => CollectibleObjectiveValue.HasValue;
 
         /// <summary>
         /// Сравнивает два действия по их planning-параметрам.
@@ -86,7 +90,10 @@ namespace Assets.Scripts.Bot.PlanState
                 && ResultRoofSupportInstanceId == other.ResultRoofSupportInstanceId
                 && FulfillsJumpOnObjective == other.FulfillsJumpOnObjective
                 && IsOppositeLaneEntry == other.IsOppositeLaneEntry
-                && AreTriggerWindowsEquivalent(TriggerWindow, other.TriggerWindow);
+                && AreTriggerWindowsEquivalent(TriggerWindow, other.TriggerWindow)
+                && CollectibleObjectiveValue.Kind == other.CollectibleObjectiveValue.Kind
+                && CollectibleObjectiveValue.EffectiveGain == other.CollectibleObjectiveValue.EffectiveGain
+                && CollectibleObjectiveValue.IsCriticalEnergy == other.CollectibleObjectiveValue.IsCriticalEnergy;
         }
 
         private static bool AreTriggerWindowsEquivalent(

@@ -34,25 +34,27 @@ namespace Assets.Scripts.Bot.Planning
     }
 
     /// <summary>
-    /// Generates role-based candidate actions through new decision points and planning strategies.
+    /// Генерирует role-based действия через decision points и planning strategies.
     /// </summary>
     public sealed class ActionGenerator
     {
         private readonly IReadOnlyList<IPlanningStrategy> _strategies;
         private readonly IPlanningStrategy _switchLaneStrategy;
+        private readonly IPlanningStrategy _passiveAdvanceStrategy;
         private readonly DecisionPointDetector _decisionPointDetector = new DecisionPointDetector();
 
         /// <summary>
-        /// Creates a role-based generator over the active new strategies.
+        /// Создает role-based generator поверх активных strategies.
         /// </summary>
         internal ActionGenerator(IReadOnlyList<IPlanningStrategy> strategies)
         {
             _strategies = strategies ?? Array.Empty<IPlanningStrategy>();
             _switchLaneStrategy = FindStrategy(_strategies, BotActionKind.SwitchLane);
+            _passiveAdvanceStrategy = FindStrategy(_strategies, BotActionKind.PassiveAdvance);
         }
 
         /// <summary>
-        /// Generates actions available from the current planning state and world snapshot.
+        /// Генерирует доступные действия из текущего planning-состояния и snapshot мира.
         /// </summary>
         internal ActionGenerationResult Generate(PlanningState planningState, WorldSnapshot worldSnapshot)
         {
@@ -105,6 +107,13 @@ namespace Assets.Scripts.Bot.Planning
                     oppositeDecisionPoint,
                     plannedActions,
                     deadEndReasons);
+
+                CollectPassiveAdvanceAction(
+                    planningState,
+                    projectedWorldSnapshot,
+                    oppositeDecisionPoint,
+                    plannedActions,
+                    deadEndReasons);
             }
 
             if (plannedActions.Count == 0 && hasCurrentDecisionPoint)
@@ -116,7 +125,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Requests actions from all role-based planning strategies for the decision point.
+        /// Запрашивает действия у всех role-based strategies для decision point.
         /// </summary>
         private void CollectActionsForDecisionPoint(
             PlanningState planningState,
@@ -140,7 +149,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Adds the entry SwitchLane action for the opposite-lane branch.
+        /// Добавляет entry SwitchLane action для ветки другой линии.
         /// </summary>
         private void CollectSwitchLaneEntryAction(
             PlanningState planningState,
@@ -153,6 +162,30 @@ namespace Assets.Scripts.Bot.Planning
                 return;
 
             PlanningStrategyResult result = _switchLaneStrategy.CollectActions(
+                planningState,
+                projectedWorldSnapshot,
+                oppositeDecisionPoint);
+
+            ApplyStrategyResult(
+                result,
+                plannedActions,
+                deadEndReasons);
+        }
+
+        /// <summary>
+        /// Добавляет no-input продвижение до момента, когда opposite-lane situation перестанет блокировать анализ.
+        /// </summary>
+        private void CollectPassiveAdvanceAction(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            DecisionPoint oppositeDecisionPoint,
+            List<PlannedAction> plannedActions,
+            List<StrategyDeadEndReason> deadEndReasons)
+        {
+            if (_passiveAdvanceStrategy == null)
+                return;
+
+            PlanningStrategyResult result = _passiveAdvanceStrategy.CollectActions(
                 planningState,
                 projectedWorldSnapshot,
                 oppositeDecisionPoint);
@@ -186,7 +219,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Finds a strategy by action kind.
+        /// Находит strategy по action kind.
         /// </summary>
         private static IPlanningStrategy FindStrategy(
             IReadOnlyList<IPlanningStrategy> strategies,
@@ -206,7 +239,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Logs the absence of a role-based decision point.
+        /// Логирует отсутствие role-based decision point.
         /// </summary>
         private static void LogNoDecisionPoint(PlanningState planningState)
         {
@@ -221,7 +254,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Logs a role-based decision point that produced no strategy actions.
+        /// Логирует role-based decision point, для которого strategies не создали actions.
         /// </summary>
         private static void LogNoActions(PlanningState planningState, DecisionPoint decisionPoint)
         {
@@ -243,7 +276,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Formats obstacle roles for the diagnostic log.
+        /// Форматирует obstacle roles для диагностического лога.
         /// </summary>
         private static string FormatRoles(IReadOnlyCollection<ObstacleRole> roles)
         {

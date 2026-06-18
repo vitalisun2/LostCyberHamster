@@ -62,8 +62,33 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             return 1000f
+                + GetCollectibleScore(actions)
                 - totalEnergyCost * 100f
                 - tapCount * 10f;
+        }
+
+        private static float GetCollectibleScore(IReadOnlyList<PlannedAction> actions)
+        {
+            float score = 0f;
+            for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
+            {
+                PlannedAction action = actions[actionIndex];
+                if (action == null || !action.FulfillsCollectibleObjective)
+                    continue;
+
+                score += action.CollectibleObjectiveValue.Kind switch
+                {
+                    CollectibleKind.Life => action.CollectibleObjectiveValue.EffectiveGain * 10000f,
+                    CollectibleKind.Energy => action.CollectibleObjectiveValue.IsCriticalEnergy
+                        ? action.CollectibleObjectiveValue.EffectiveGain * 1000f
+                        : action.CollectibleObjectiveValue.EffectiveGain * 100f,
+                    CollectibleKind.Crystal => action.CollectibleObjectiveValue.EffectiveGain * 10f,
+                    CollectibleKind.Coin => action.CollectibleObjectiveValue.EffectiveGain,
+                    _ => 0f
+                };
+            }
+
+            return score;
         }
 
         /// <summary>
@@ -80,7 +105,7 @@ namespace Assets.Scripts.Bot.Planning
             if (right == null)
                 return -1;
 
-            int compare = left.Metrics.CompareJumpOnObjectivePriority(right.Metrics);
+            int compare = left.Metrics.CompareObjectivePriority(right.Metrics);
             if (compare != 0)
                 return compare;
 

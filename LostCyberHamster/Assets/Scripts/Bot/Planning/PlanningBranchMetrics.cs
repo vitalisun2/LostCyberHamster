@@ -10,7 +10,7 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Пустые метрики ветки.
         /// </summary>
-        public static PlanningBranchMetrics Empty { get; } = new PlanningBranchMetrics(0, 0, 0, 0, null);
+        public static PlanningBranchMetrics Empty { get; } = new PlanningBranchMetrics(0, 0, 0, 0, null, 0, 0, 0, 0, 0);
 
         /// <summary>
         /// Создает набор метрик для ветки планирования.
@@ -20,13 +20,23 @@ namespace Assets.Scripts.Bot.Planning
             int tapCount,
             int actionCount,
             int jumpOnObjectiveCount,
-            int? firstJumpOnObjectiveTargetIndex)
+            int? firstJumpOnObjectiveTargetIndex,
+            int lifeCollectibleValue,
+            int criticalEnergyCollectibleValue,
+            int energyCollectibleValue,
+            int crystalCollectibleValue,
+            int coinCollectibleValue)
         {
             TotalEnergyCost = totalEnergyCost;
             TapCount = tapCount;
             ActionCount = actionCount;
             JumpOnObjectiveCount = jumpOnObjectiveCount;
             FirstJumpOnObjectiveTargetIndex = firstJumpOnObjectiveTargetIndex;
+            LifeCollectibleValue = lifeCollectibleValue;
+            CriticalEnergyCollectibleValue = criticalEnergyCollectibleValue;
+            EnergyCollectibleValue = energyCollectibleValue;
+            CrystalCollectibleValue = crystalCollectibleValue;
+            CoinCollectibleValue = coinCollectibleValue;
         }
 
         /// <summary>
@@ -55,6 +65,31 @@ namespace Assets.Scripts.Bot.Planning
         public int? FirstJumpOnObjectiveTargetIndex { get; }
 
         /// <summary>
+        /// Суммарная ценность подобранных life collectables.
+        /// </summary>
+        public int LifeCollectibleValue { get; }
+
+        /// <summary>
+        /// Суммарная ценность energy collectables при энергии не выше порога охоты за target.
+        /// </summary>
+        public int CriticalEnergyCollectibleValue { get; }
+
+        /// <summary>
+        /// Суммарная ценность подобранных energy collectables.
+        /// </summary>
+        public int EnergyCollectibleValue { get; }
+
+        /// <summary>
+        /// Суммарная ценность подобранных crystal collectables.
+        /// </summary>
+        public int CrystalCollectibleValue { get; }
+
+        /// <summary>
+        /// Суммарная ценность подобранных coin collectables.
+        /// </summary>
+        public int CoinCollectibleValue { get; }
+
+        /// <summary>
         /// Возвращает новые метрики после добавления одного действия.
         /// </summary>
         public PlanningBranchMetrics Append(PlannedAction action)
@@ -64,7 +99,12 @@ namespace Assets.Scripts.Bot.Planning
                 TapCount + (BotActionKindRules.ConsumesTap(action.Kind) ? 1 : 0),
                 ActionCount + 1,
                 JumpOnObjectiveCount + (action.FulfillsJumpOnObjective ? 1 : 0),
-                FirstJumpOnObjectiveTargetIndex ?? GetJumpOnObjectiveTargetIndex(action));
+                FirstJumpOnObjectiveTargetIndex ?? GetJumpOnObjectiveTargetIndex(action),
+                LifeCollectibleValue + GetCollectibleValue(action, CollectibleKind.Life),
+                CriticalEnergyCollectibleValue + GetCriticalEnergyCollectibleValue(action),
+                EnergyCollectibleValue + GetCollectibleValue(action, CollectibleKind.Energy),
+                CrystalCollectibleValue + GetCollectibleValue(action, CollectibleKind.Crystal),
+                CoinCollectibleValue + GetCollectibleValue(action, CollectibleKind.Coin));
         }
 
         /// <summary>
@@ -75,9 +115,9 @@ namespace Assets.Scripts.Bot.Planning
             if (other == null)
                 return true;
 
-            int jumpOnObjectivePriority = CompareJumpOnObjectivePriority(other);
-            if (jumpOnObjectivePriority != 0)
-                return jumpOnObjectivePriority < 0;
+            int objectivePriority = CompareObjectivePriority(other);
+            if (objectivePriority != 0)
+                return objectivePriority < 0;
 
             if (TotalEnergyCost != other.TotalEnergyCost)
                 return TotalEnergyCost < other.TotalEnergyCost;
@@ -95,7 +135,52 @@ namespace Assets.Scripts.Bot.Planning
                 : null;
         }
 
-        internal int CompareJumpOnObjectivePriority(PlanningBranchMetrics other)
+        private static int GetCollectibleValue(PlannedAction action, CollectibleKind collectibleKind)
+        {
+            if (action == null || action.CollectibleObjectiveValue.Kind != collectibleKind)
+                return 0;
+
+            return action.CollectibleObjectiveValue.EffectiveGain;
+        }
+
+        private static int GetCriticalEnergyCollectibleValue(PlannedAction action)
+        {
+            if (action == null
+                || action.CollectibleObjectiveValue.Kind != CollectibleKind.Energy
+                || !action.CollectibleObjectiveValue.IsCriticalEnergy)
+            {
+                return 0;
+            }
+
+            return action.CollectibleObjectiveValue.EffectiveGain;
+        }
+
+        internal int CompareObjectivePriority(PlanningBranchMetrics other)
+        {
+            int compare = CompareDescending(LifeCollectibleValue, other?.LifeCollectibleValue ?? 0);
+            if (compare != 0)
+                return compare;
+
+            compare = CompareDescending(CriticalEnergyCollectibleValue, other?.CriticalEnergyCollectibleValue ?? 0);
+            if (compare != 0)
+                return compare;
+
+            compare = CompareJumpOnObjectivePriority(other);
+            if (compare != 0)
+                return compare;
+
+            compare = CompareDescending(EnergyCollectibleValue, other?.EnergyCollectibleValue ?? 0);
+            if (compare != 0)
+                return compare;
+
+            compare = CompareDescending(CrystalCollectibleValue, other?.CrystalCollectibleValue ?? 0);
+            if (compare != 0)
+                return compare;
+
+            return CompareDescending(CoinCollectibleValue, other?.CoinCollectibleValue ?? 0);
+        }
+
+        private int CompareJumpOnObjectivePriority(PlanningBranchMetrics other)
         {
             if (other == null)
                 return -1;
@@ -109,6 +194,11 @@ namespace Assets.Scripts.Bot.Planning
                 return FirstJumpOnObjectiveTargetIndex.Value.CompareTo(other.FirstJumpOnObjectiveTargetIndex.Value);
 
             return other.JumpOnObjectiveCount.CompareTo(JumpOnObjectiveCount);
+        }
+
+        private static int CompareDescending(int left, int right)
+        {
+            return right.CompareTo(left);
         }
     }
 }

@@ -113,5 +113,19 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
 
             return false;
         }
+
+        /// <summary>
+        /// Возвращает true, если в chain есть obstacle, который требует обязательного planning-решения.
+        /// </summary>
+        public bool HasAnyRequiredPlanningRole()
+        {
+            for (int chainIndex = 0; chainIndex < Count; chainIndex++)
+            {
+                if (Elements[chainIndex].HasAnyRequiredPlanningRole)
+                    return true;
+            }
+
+            return false;
+        }
     }
 }

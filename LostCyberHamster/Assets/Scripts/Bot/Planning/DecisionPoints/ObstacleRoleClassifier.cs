@@ -35,6 +35,10 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                 roles.Add(ObstacleRole.Target);
             }
 
+            // Collectible входит в graph как факт мира; value считается позже в projected ветке.
+            if (ObstacleClassifier.IsCollectible(obstacle.ObstacleType))
+                roles.Add(ObstacleRole.Collectible);
+
             // RoofOccupantHazard зависит от текущего roof path, поэтому делегируется RoofRunProjection.
             if (RoofRunProjection.TryFindDamagingOccupantOnPassiveRoofPath(
                     planningState,

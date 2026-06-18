@@ -75,5 +75,49 @@ namespace Assets.Scripts.Bot.Planning
             return obstacleType == ObstacleTypeEnum.smallNotAliveRoad
                 || obstacleType == ObstacleTypeEnum.smallNotAliveRoadAndRoof;
         }
+
+        /// <summary>
+        /// Возвращает true, если obstacle является collectable.
+        /// </summary>
+        public static bool IsCollectible(ObstacleTypeEnum obstacleType)
+        {
+            return IsEnergyCollectible(obstacleType)
+                || IsLifeCollectible(obstacleType)
+                || IsCrystalCollectible(obstacleType)
+                || IsCoinCollectible(obstacleType);
+        }
+
+        /// <summary>
+        /// Возвращает true, если collectable восстанавливает энергию.
+        /// </summary>
+        public static bool IsEnergyCollectible(ObstacleTypeEnum obstacleType)
+        {
+            return obstacleType == ObstacleTypeEnum.collectableEnergetic
+                || obstacleType == ObstacleTypeEnum.collectablePizza;
+        }
+
+        /// <summary>
+        /// Возвращает true, если collectable восстанавливает жизнь.
+        /// </summary>
+        public static bool IsLifeCollectible(ObstacleTypeEnum obstacleType)
+        {
+            return obstacleType == ObstacleTypeEnum.collectableLife;
+        }
+
+        /// <summary>
+        /// Возвращает true, если collectable имеет crystal-ценность.
+        /// </summary>
+        public static bool IsCrystalCollectible(ObstacleTypeEnum obstacleType)
+        {
+            return obstacleType == ObstacleTypeEnum.collectableCrystal;
+        }
+
+        /// <summary>
+        /// Возвращает true, если collectable имеет coin-ценность.
+        /// </summary>
+        public static bool IsCoinCollectible(ObstacleTypeEnum obstacleType)
+        {
+            return obstacleType == ObstacleTypeEnum.collectableCoin;
+        }
     }
 }

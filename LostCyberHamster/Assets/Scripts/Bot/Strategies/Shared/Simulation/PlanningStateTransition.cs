@@ -112,6 +112,33 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
         }
 
         /// <summary>
+        /// Возвращает planning-состояние после passive pickup collectable.
+        /// </summary>
+        public static PlanningState AdvanceAfterCollectiblePickup(
+            PlanningState planningState,
+            PlannedAction action,
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot nextHamster)
+        {
+            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            IReadOnlyList<int> nextRemovedObstacleInstanceIds =
+                planningState.GetRemovedObstacleInstanceIdsWith(action.TargetObstacleInstanceId);
+
+            int nextObstacleIndex = FindNextRelevantObstacleIndex(
+                worldSnapshot,
+                startObstacleIndex: 0,
+                nextProjectionWorldShift,
+                nextHamster.HamsterLeftX,
+                nextRemovedObstacleInstanceIds);
+
+            return new PlanningState(
+                nextHamster,
+                nextObstacleIndex,
+                nextProjectionWorldShift,
+                nextRemovedObstacleInstanceIds);
+        }
+
+        /// <summary>
         /// Возвращает planning-состояние после roof jump over над препятствием на текущей крыше.
         /// </summary>
         public static PlanningState AdvanceAfterRoofJumpOver(

@@ -67,6 +67,17 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         {
             get
             {
+                return _roles.Count > 0;
+            }
+        }
+
+        /// <summary>
+        /// Возвращает true, если obstacle требует обязательного planning-решения.
+        /// </summary>
+        public bool HasAnyRequiredPlanningRole
+        {
+            get
+            {
                 foreach (ObstacleRole role in _roles)
                 {
                     if (role != ObstacleRole.Collectible)

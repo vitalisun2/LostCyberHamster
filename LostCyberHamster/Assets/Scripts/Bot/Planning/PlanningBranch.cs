@@ -34,6 +34,11 @@ namespace Assets.Scripts.Bot.Planning
         public int ActionCount => Metrics.ActionCount;
         public int JumpOnObjectiveCount => Metrics.JumpOnObjectiveCount;
         public int? FirstJumpOnObjectiveTargetIndex => Metrics.FirstJumpOnObjectiveTargetIndex;
+        public int LifeCollectibleValue => Metrics.LifeCollectibleValue;
+        public int CriticalEnergyCollectibleValue => Metrics.CriticalEnergyCollectibleValue;
+        public int EnergyCollectibleValue => Metrics.EnergyCollectibleValue;
+        public int CrystalCollectibleValue => Metrics.CrystalCollectibleValue;
+        public int CoinCollectibleValue => Metrics.CoinCollectibleValue;
 
         /// <summary>
         /// Собирает ветку из листового узла графа планирования.

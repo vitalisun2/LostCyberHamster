@@ -17,6 +17,8 @@ using Assets.Scripts.Bot.Strategies.JumpOver;
 using Assets.Scripts.Bot.Strategies.JumpOn;
 using Assets.Scripts.Bot.Strategies.JumpOnFromRoof;
 using Assets.Scripts.Bot.Strategies.JumpOnRoof;
+using Assets.Scripts.Bot.Strategies.PassiveAdvance;
+using Assets.Scripts.Bot.Strategies.PassiveCollect;
 using Assets.Scripts.Bot.Strategies.PassiveRoofExit;
 using Assets.Scripts.Bot.Strategies.RoofJumpOver;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
@@ -110,6 +112,11 @@ namespace Assets.Scripts.Bot
         /// Tracker runtime-событий бота для диагностики.
         /// </summary>
         private RuntimeBotEventTracker _eventTracker;
+
+        /// <summary>
+        /// Редакторский тестовый сценарий для проверки приоритета life collectible на test_collectables.
+        /// </summary>
+        private TestCollectablesScriptedLifeLossHook _testCollectablesScriptedLifeLossHook;
 
         /// <summary>
         /// Runtime-время следующей попытки инициализации.
@@ -226,6 +233,7 @@ namespace Assets.Scripts.Bot
             IReadOnlyList<IPlanningStrategy> strategies = new IPlanningStrategy[]
             {
                 new SwitchLaneStrategy(),
+                new PassiveAdvanceStrategy(),
                 new JumpOverStrategy(),
                 new SuperJumpOverStrategy(),
                 new JumpOnStrategy(),
@@ -233,6 +241,7 @@ namespace Assets.Scripts.Bot
                 new JumpOnRoofStrategy(),
                 new SuperJumpOnRoofStrategy(),
                 new PassiveRoofExitStrategy(),
+                new PassiveCollectStrategy(),
                 new JumpOnFromRoofStrategy(),
                 new SuperJumpOnFromRoofStrategy(),
                 new JumpFromRoofStrategy(),
@@ -250,6 +259,9 @@ namespace Assets.Scripts.Bot
                 new ActionGenerator(strategies),
                 _transitionSimulator,
                 new PlanEvaluator());
+            _testCollectablesScriptedLifeLossHook = new TestCollectablesScriptedLifeLossHook(
+                () => _hamster,
+                ClearPendingDeadEndReport);
 
             GameEventsManager.OnLivesLost += OnLivesLost;
         }
@@ -299,6 +311,7 @@ namespace Assets.Scripts.Bot
             if (!IsEnabled)
                 return;
 
+            _testCollectablesScriptedLifeLossHook?.Reset();
             RequestInitialReplan(BotReplanReason.LevelStart);
         }
 
@@ -338,6 +351,7 @@ namespace Assets.Scripts.Bot
             _initialReplanRequestedForCurrentGame = false;
             ClearInProgressHeadFirePoint();
             ClearPendingDeadEndReport();
+            _testCollectablesScriptedLifeLossHook?.Reset();
             _executor?.Clear();
         }
 
@@ -494,6 +508,9 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private void OnLivesLost(int livesLost)
         {
+            if (_testCollectablesScriptedLifeLossHook?.TryConsumeLivesLost(livesLost) == true)
+                return;
+
             if (!IsEnabled || _pendingDeadEndReport == null)
                 return;
 
@@ -873,7 +890,8 @@ namespace Assets.Scripts.Bot
                 action.ResultRoofSupportInstanceId,
                 action.FulfillsJumpOnObjective,
                 action.IsOppositeLaneEntry,
-                action.TriggerWindow);
+                action.TriggerWindow,
+                action.CollectibleObjectiveValue);
         }
 
         /// <summary>
@@ -939,6 +957,9 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private static string FormatPlanAction(PlannedAction action)
         {
+            if (action.FulfillsCollectibleObjective)
+                return $"{action.Kind}[{action.CollectibleObjectiveValue.Kind}:{action.CollectibleObjectiveValue.EffectiveGain}]";
+
             return action.Kind.ToString();
         }
 
@@ -1011,6 +1032,7 @@ namespace Assets.Scripts.Bot
             _initialReplanRequestedForCurrentGame = false;
             ClearInProgressHeadFirePoint();
             ClearPendingDeadEndReport();
+            _testCollectablesScriptedLifeLossHook?.Reset();
             _executor?.Clear();
         }
 
@@ -1049,6 +1071,7 @@ namespace Assets.Scripts.Bot
             if (!IsEnabled)
                 return;
 
+            _testCollectablesScriptedLifeLossHook?.TryApplyBeforePatternEvaluation(patternIndex, patternName);
             RequestReplan(BotReplanReason.SpawnPattern);
             DebugManager.DiagLog(
                 $"[Bot PATTERN] SPAWN patternIndex={patternIndex} pattern={patternName}");

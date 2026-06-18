@@ -8,17 +8,17 @@ namespace Assets.Scripts.Bot.Planning
     internal static class JumpOnObjectiveRules
     {
         /// <summary>
-        /// Минимальная энергия, при которой planner целенаправленно охотится за jump-on target.
+        /// Порог энергии, выше которого planner целенаправленно охотится за jump-on target.
         /// </summary>
         public const int HighPriorityEnergyThreshold = 40;
 
         /// <summary>
-        /// Возвращает true, если энергии достаточно для target-oriented jump-on objective.
+        /// Возвращает true, если энергии больше порога target-oriented jump-on objective.
         /// </summary>
         public static bool HasEnergyForJumpOnObjective(HamsterSnapshot hamster)
         {
             return hamster != null
-                && hamster.Energy >= HighPriorityEnergyThreshold;
+                && hamster.Energy > HighPriorityEnergyThreshold;
         }
     }
 }
