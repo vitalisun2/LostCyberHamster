@@ -872,6 +872,7 @@ namespace Assets.Scripts.Bot
                 action.Description,
                 action.ResultRoofSupportInstanceId,
                 action.FulfillsJumpOnObjective,
+                action.IsOppositeLaneEntry,
                 action.TriggerWindow);
         }
 

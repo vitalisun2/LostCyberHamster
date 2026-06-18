@@ -84,10 +84,6 @@ namespace Assets.Scripts.Bot.Planning
             if (compare != 0)
                 return compare;
 
-            compare = right.FinalNextObstacleIndex.CompareTo(left.FinalNextObstacleIndex);
-            if (compare != 0)
-                return compare;
-
             compare = left.TotalEnergyCost.CompareTo(right.TotalEnergyCost);
             if (compare != 0)
                 return compare;

@@ -148,6 +148,9 @@ namespace Assets.Scripts.Bot.Planning
                 if (candidate == null)
                     continue;
 
+                if (IsRedundantSwitchLaneContinuation(currentNode, candidate))
+                    continue;
+
                 PlanningState nextState = _transitionSimulator.Simulate(currentNode.State, candidate, worldSnapshot);
                 if (nextState == null || CreatesAncestorCycle(currentNode, nextState))
                     continue;
@@ -229,6 +232,28 @@ namespace Assets.Scripts.Bot.Planning
 
             return bestMetricsByState.TryGetValue(candidateNode.StateKey, out PlanningBranchMetrics bestMetrics)
                 && bestMetrics.IsCheaperOrEquivalentTo(candidateNode.Metrics);
+        }
+
+        /// <summary>
+        /// Отсекает switch-lane ping-pong, который возвращает ветку к той же или более ранней ситуации.
+        /// </summary>
+        private static bool IsRedundantSwitchLaneContinuation(
+            PlanningGraphNode currentNode,
+            PlannedAction candidate)
+        {
+            PlannedAction previousAction = currentNode?.IncomingAction;
+            if (previousAction == null
+                || previousAction.Kind != BotActionKind.SwitchLane
+                || candidate == null
+                || candidate.Kind != BotActionKind.SwitchLane)
+            {
+                return false;
+            }
+
+            if (previousAction.IsOppositeLaneEntry)
+                return true;
+
+            return candidate.TargetObstacleIndex <= previousAction.TargetObstacleIndex;
         }
 
         /// <summary>

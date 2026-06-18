@@ -232,6 +232,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 description: isEntryToOppositeLane
                     ? $"Switch lane entry before {triggerObstacle.ObstacleType}"
                     : $"Switch lane before {triggerObstacle.ObstacleType}",
+                isOppositeLaneEntry: isEntryToOppositeLane,
                 triggerWindow: triggerWindow);
         }
 

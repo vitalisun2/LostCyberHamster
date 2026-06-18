@@ -9179,7 +9179,7 @@
         {
             "name": "test_jump_on_02",
             "description": "should not jump on",
-            "nextObstacleId": 4,
+            "nextObstacleId": 5,
             "obstacles": [
                 {
                     "id": 2,
@@ -9191,6 +9191,12 @@
                     "id": 3,
                     "type": 2,
                     "x": -2.4000000953674318,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 4,
+                    "type": 2,
+                    "x": -0.800000011920929,
                     "y": -2.799999952316284
                 }
             ]

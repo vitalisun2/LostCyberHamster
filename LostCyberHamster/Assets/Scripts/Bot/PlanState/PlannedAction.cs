@@ -26,6 +26,7 @@ namespace Assets.Scripts.Bot.PlanState
             string description = null,
             int? resultRoofSupportInstanceId = null,
             bool fulfillsJumpOnObjective = false,
+            bool isOppositeLaneEntry = false,
             ActionTriggerWindow? triggerWindow = null)
         {
             Kind = kind;
@@ -41,6 +42,7 @@ namespace Assets.Scripts.Bot.PlanState
             Description = description;
             ResultRoofSupportInstanceId = resultRoofSupportInstanceId;
             FulfillsJumpOnObjective = fulfillsJumpOnObjective;
+            IsOppositeLaneEntry = isOppositeLaneEntry;
             TriggerWindow = triggerWindow;
         }
 
@@ -57,6 +59,7 @@ namespace Assets.Scripts.Bot.PlanState
         public string Description { get; }
         public int? ResultRoofSupportInstanceId { get; }
         public bool FulfillsJumpOnObjective { get; }
+        public bool IsOppositeLaneEntry { get; }
         public ActionTriggerWindow? TriggerWindow { get; }
 
         /// <summary>
@@ -82,6 +85,7 @@ namespace Assets.Scripts.Bot.PlanState
                 && EnergyCost == other.EnergyCost
                 && ResultRoofSupportInstanceId == other.ResultRoofSupportInstanceId
                 && FulfillsJumpOnObjective == other.FulfillsJumpOnObjective
+                && IsOppositeLaneEntry == other.IsOppositeLaneEntry
                 && AreTriggerWindowsEquivalent(TriggerWindow, other.TriggerWindow);
         }
 
