@@ -89,7 +89,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
         }
 
         /// <summary>
-        /// Собирает runtime-valid fire shifts для selected и late точек roof-to-road окна.
+        /// Собирает runtime-valid fire shifts для selected, first и last точек roof-to-road окна.
         /// </summary>
         public bool TryCollectFireShifts(
             PlanningState planningState,
@@ -138,6 +138,13 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                 travel,
                 window,
                 window.SelectedFireShift,
+                validFireShifts);
+            TryAddRuntimeValidFireShift(
+                planningState,
+                baseObstacles,
+                travel,
+                window,
+                window.FirstFireShift,
                 validFireShifts);
             TryAddRuntimeValidFireShift(
                 planningState,

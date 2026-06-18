@@ -77,20 +77,67 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
                 return false;
             }
 
-            // Подтверждает выбранную точку через runtime resolver.
+            // Подтверждает смысловые точки окна через runtime resolver.
+            float selectedFireShift = fireShift;
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            if (CheckRuntimeOutcomeAtFireShift(
-                planningState,
-                projectedWorldSnapshot,
-                baseObstacles,
-                targetRoof.InstanceId,
-                fireShift,
-                travel))
+            if (TrySelectFireShift(
+                    planningState,
+                    projectedWorldSnapshot,
+                    baseObstacles,
+                    targetRoof.InstanceId,
+                    selectedFireShift,
+                    firstFireShift,
+                    lastFireShift,
+                    travel,
+                    out fireShift))
             {
                 return true;
             }
 
             deadEndReason = "Нет безопасного окна для прыжка на следующую крышу: runtime-модель не подтверждает посадку на выбранную крышу.";
+            return false;
+        }
+
+        /// <summary>
+        /// Выбирает первую runtime-valid точку окна: selected, first, last.
+        /// </summary>
+        private bool TrySelectFireShift(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            int expectedTargetRoofInstanceId,
+            float selectedFireShift,
+            float firstFireShift,
+            float lastFireShift,
+            JumpFromRoofOnRoofTravel travel,
+            out float fireShift)
+        {
+            float[] candidateFireShifts =
+            {
+                selectedFireShift,
+                firstFireShift,
+                lastFireShift
+            };
+
+            for (int candidateIndex = 0; candidateIndex < candidateFireShifts.Length; candidateIndex++)
+            {
+                float candidateFireShift = candidateFireShifts[candidateIndex];
+                if (!CheckRuntimeOutcomeAtFireShift(
+                        planningState,
+                        projectedWorldSnapshot,
+                        baseObstacles,
+                        expectedTargetRoofInstanceId,
+                        candidateFireShift,
+                        travel))
+                {
+                    continue;
+                }
+
+                fireShift = candidateFireShift;
+                return true;
+            }
+
+            fireShift = 0f;
             return false;
         }
 

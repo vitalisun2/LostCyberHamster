@@ -50,19 +50,56 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
                 return false;
             }
 
-            // Подтверждает выбранную точку через runtime resolver.
-            fireShift = chainModel.SelectedFireShift;
+            // Подтверждает смысловые точки окна через runtime resolver.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            if (CheckRuntimeOutcomeAtFireShift(
-                planningState,
-                baseObstacles,
-                fireShift,
-                travel))
+            if (TrySelectFireShift(
+                    planningState,
+                    baseObstacles,
+                    chainModel,
+                    travel,
+                    out fireShift))
             {
                 return true;
             }
 
             deadEndReason = "Нет безопасного окна для прыжка с крыши: runtime-модель не подтверждает безопасный результат прыжка.";
+            return false;
+        }
+
+        /// <summary>
+        /// Выбирает первую runtime-valid точку окна: selected, first, last.
+        /// </summary>
+        private bool TrySelectFireShift(
+            PlanningState planningState,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            JumpFromRoofChainModel chainModel,
+            JumpFromRoofTravel travel,
+            out float fireShift)
+        {
+            float[] candidateFireShifts =
+            {
+                chainModel.SelectedFireShift,
+                chainModel.FirstFireShift,
+                chainModel.LastFireShift
+            };
+
+            for (int candidateIndex = 0; candidateIndex < candidateFireShifts.Length; candidateIndex++)
+            {
+                float candidateFireShift = candidateFireShifts[candidateIndex];
+                if (!CheckRuntimeOutcomeAtFireShift(
+                        planningState,
+                        baseObstacles,
+                        candidateFireShift,
+                        travel))
+                {
+                    continue;
+                }
+
+                fireShift = candidateFireShift;
+                return true;
+            }
+
+            fireShift = 0f;
             return false;
         }
 

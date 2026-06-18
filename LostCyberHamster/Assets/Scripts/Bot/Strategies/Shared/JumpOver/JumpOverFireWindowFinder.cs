@@ -55,20 +55,57 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
                 return false;
             }
 
-            // Проверяет выбранный fire shift через runtime resolver.
-            fireShift = chainWindow.SelectedFireShift;
+            // Проверяет смысловые точки fire-window через runtime resolver.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            if (CheckRuntimeOutcomeAtFireShift(
-                planningState.Hamster,
-                baseObstacles,
-                fireShift,
-                jumpTravel,
-                chainWindow))
+            if (TrySelectFireShift(
+                    planningState.Hamster,
+                    baseObstacles,
+                    jumpTravel,
+                    chainWindow,
+                    out fireShift))
             {
                 return true;
             }
 
             deadEndReason = "Нет безопасного окна для перепрыгивания: runtime-модель не подтверждает безопасный перелет выбранной цепочки.";
+            return false;
+        }
+
+        /// <summary>
+        /// Выбирает первую runtime-valid точку окна: selected, first, last.
+        /// </summary>
+        private bool TrySelectFireShift(
+            HamsterSnapshot hamster,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            float jumpTravel,
+            JumpOverChainModel chainWindow,
+            out float fireShift)
+        {
+            float[] candidateFireShifts =
+            {
+                chainWindow.SelectedFireShift,
+                chainWindow.FirstFireShift,
+                chainWindow.LastFireShift
+            };
+
+            for (int candidateIndex = 0; candidateIndex < candidateFireShifts.Length; candidateIndex++)
+            {
+                float candidateFireShift = candidateFireShifts[candidateIndex];
+                if (!CheckRuntimeOutcomeAtFireShift(
+                        hamster,
+                        baseObstacles,
+                        candidateFireShift,
+                        jumpTravel,
+                        chainWindow))
+                {
+                    continue;
+                }
+
+                fireShift = candidateFireShift;
+                return true;
+            }
+
+            fireShift = 0f;
             return false;
         }
 

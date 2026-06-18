@@ -60,17 +60,62 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
                 return false;
             }
 
-            // Проверяет выбранный fire shift через runtime resolver.
-            fireShift = chainModel.SelectedFireShift;
+            // Проверяет смысловые точки fire-window через runtime resolver.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
-            return TryGetRuntimeOutcomeAtFireShift(
+            return TrySelectFireShift(
                 planningState,
                 projectedWorldSnapshot,
                 baseObstacles,
-                fireShift,
+                chainModel,
                 travel,
                 out resultSupportObstacle,
+                out fireShift,
                 out deadEndReason);
+        }
+
+        /// <summary>
+        /// Выбирает первую runtime-valid точку окна: selected, first, last.
+        /// </summary>
+        private bool TrySelectFireShift(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            IReadOnlyList<JumpObstacleData> baseObstacles,
+            RoofJumpOverChainModel chainModel,
+            RoofJumpOverTravel travel,
+            out ObstacleSnapshot resultSupportObstacle,
+            out float fireShift,
+            out string deadEndReason)
+        {
+            resultSupportObstacle = null;
+            deadEndReason = null;
+            float[] candidateFireShifts =
+            {
+                chainModel.SelectedFireShift,
+                chainModel.FirstFireShift,
+                chainModel.LastFireShift
+            };
+
+            for (int candidateIndex = 0; candidateIndex < candidateFireShifts.Length; candidateIndex++)
+            {
+                float candidateFireShift = candidateFireShifts[candidateIndex];
+                if (!TryGetRuntimeOutcomeAtFireShift(
+                        planningState,
+                        projectedWorldSnapshot,
+                        baseObstacles,
+                        candidateFireShift,
+                        travel,
+                        out resultSupportObstacle,
+                        out deadEndReason))
+                {
+                    continue;
+                }
+
+                fireShift = candidateFireShift;
+                return true;
+            }
+
+            fireShift = 0f;
+            return false;
         }
 
         /// <summary>
