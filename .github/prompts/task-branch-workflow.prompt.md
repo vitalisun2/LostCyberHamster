@@ -48,4 +48,4 @@ Task Branch workflow: временная ветка `task/<slug>` + worktree `.w
 2. Удали `.worktrees/<slug>`, `task/<slug>` и remote-ветку, если она создавалась.
 3. Сними lock.
 4. Не коммить, не пушь и не мержи в `main` в рамках prompt-а.
-5. Финальный ответ: итог, валидация, статус `integration/unity-live`, lock/cleanup, блокеры, Learning Review.
+5. Финальный ответ: итог, валидация, статус `integration/unity-live`, lock/cleanup, блокеры.
