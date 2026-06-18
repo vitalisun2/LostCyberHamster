@@ -27,7 +27,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Выбирает dead-end ветку с максимальным безопасным продвижением.
+        /// Выбирает dead-end ветку по обычным branch-priority правилам.
         /// </summary>
         internal PlanningDeadEndBranch SelectBestDeadEnd(IReadOnlyList<PlanningDeadEndBranch> candidates)
         {
@@ -96,7 +96,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Сравнивает dead-end ветки, предпочитая короткий осмысленный fallback вместо длинного switch-каскада.
+        /// Сравнивает dead-end ветки по тем же приоритетам, что и обычные ветки.
         /// </summary>
         private static int CompareDeadEndBranches(PlanningDeadEndBranch left, PlanningDeadEndBranch right)
         {
@@ -112,65 +112,7 @@ namespace Assets.Scripts.Bot.Planning
             PlanningBranch leftBranch = left.Branch;
             PlanningBranch rightBranch = right.Branch;
 
-            bool leftHasNonSwitchAction = HasNonSwitchAction(leftBranch);
-            bool rightHasNonSwitchAction = HasNonSwitchAction(rightBranch);
-            if (leftHasNonSwitchAction != rightHasNonSwitchAction)
-                return leftHasNonSwitchAction ? -1 : 1;
-
-            int compare = CountSwitchActions(leftBranch).CompareTo(CountSwitchActions(rightBranch));
-            if (compare != 0)
-                return compare;
-
-            compare = leftBranch.ActionCount.CompareTo(rightBranch.ActionCount);
-            if (compare != 0)
-                return compare;
-
-            compare = rightBranch.FinalNextObstacleIndex.CompareTo(leftBranch.FinalNextObstacleIndex);
-            if (compare != 0)
-                return compare;
-
-            compare = rightBranch.FinalProjectionWorldShift.CompareTo(leftBranch.FinalProjectionWorldShift);
-            if (compare != 0)
-                return compare;
-
             return CompareBranches(leftBranch, rightBranch);
-        }
-
-        private static bool HasNonSwitchAction(PlanningBranch branch)
-        {
-            if (branch?.Actions == null)
-                return false;
-
-            for (int actionIndex = 0; actionIndex < branch.Actions.Count; actionIndex++)
-            {
-                PlannedAction action = branch.Actions[actionIndex];
-                if (action != null && !IsSwitchAction(action.Kind))
-                    return true;
-            }
-
-            return false;
-        }
-
-        private static int CountSwitchActions(PlanningBranch branch)
-        {
-            if (branch?.Actions == null)
-                return 0;
-
-            int count = 0;
-            for (int actionIndex = 0; actionIndex < branch.Actions.Count; actionIndex++)
-            {
-                PlannedAction action = branch.Actions[actionIndex];
-                if (action != null && IsSwitchAction(action.Kind))
-                    count++;
-            }
-
-            return count;
-        }
-
-        private static bool IsSwitchAction(BotActionKind kind)
-        {
-            return kind == BotActionKind.SwitchLane
-                || kind == BotActionKind.RoofSwitchLaneExit;
         }
     }
 }
