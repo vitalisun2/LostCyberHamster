@@ -118,9 +118,7 @@ namespace Assets.Scripts.Bot.Planning
         {
             if (currentNode.Depth >= MaxSearchDepth)
             {
-                if (!HasUnresolvedPlanningSituation(currentNode.State, worldSnapshot))
-                    AddLeafBranch(currentNode, branches);
-
+                AddLeafBranch(currentNode, branches);
                 return;
             }
 
