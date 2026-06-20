@@ -106,10 +106,7 @@ namespace Assets.Scripts.Bot.Planning
             out CollectibleObjectiveValue value)
         {
             int gain = ClampPositiveToMax(MaxEnergy - hamster.Energy, EnergyCollectibleGain);
-            value = new CollectibleObjectiveValue(
-                CollectibleKind.Energy,
-                gain,
-                hamster.Energy <= JumpOnObjectiveRules.HighPriorityEnergyThreshold);
+            value = new CollectibleObjectiveValue(CollectibleKind.Energy, gain);
             return value.HasValue;
         }
 

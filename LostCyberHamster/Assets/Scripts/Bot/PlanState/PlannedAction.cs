@@ -92,8 +92,7 @@ namespace Assets.Scripts.Bot.PlanState
                 && IsOppositeLaneEntry == other.IsOppositeLaneEntry
                 && AreTriggerWindowsEquivalent(TriggerWindow, other.TriggerWindow)
                 && CollectibleObjectiveValue.Kind == other.CollectibleObjectiveValue.Kind
-                && CollectibleObjectiveValue.EffectiveGain == other.CollectibleObjectiveValue.EffectiveGain
-                && CollectibleObjectiveValue.IsCriticalEnergy == other.CollectibleObjectiveValue.IsCriticalEnergy;
+                && CollectibleObjectiveValue.EffectiveGain == other.CollectibleObjectiveValue.EffectiveGain;
         }
 
         private static bool AreTriggerWindowsEquivalent(

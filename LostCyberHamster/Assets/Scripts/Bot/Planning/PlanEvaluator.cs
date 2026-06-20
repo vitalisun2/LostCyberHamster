@@ -8,6 +8,11 @@ namespace Assets.Scripts.Bot.Planning
     /// </summary>
     public sealed class PlanEvaluator
     {
+        private const float LifeObjectiveScore = 10000000f;
+        private const float MajorObjectiveScore = 100000f;
+        private const float EnergyCostPenalty = 100f;
+        private const float TapPenalty = 10f;
+
         /// <summary>
         /// Возвращает лучшую ветку из набора рассчитанных кандидатов.
         /// </summary>
@@ -62,30 +67,47 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             return 1000f
-                + GetCollectibleScore(actions)
-                - totalEnergyCost * 100f
-                - tapCount * 10f;
+                + GetObjectiveScore(actions)
+                - totalEnergyCost * EnergyCostPenalty
+                + GetCoinScore(actions)
+                - tapCount * TapPenalty;
         }
 
-        private static float GetCollectibleScore(IReadOnlyList<PlannedAction> actions)
+        private static float GetObjectiveScore(IReadOnlyList<PlannedAction> actions)
         {
             float score = 0f;
             for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
             {
                 PlannedAction action = actions[actionIndex];
-                if (action == null || !action.FulfillsCollectibleObjective)
+                if (action == null)
                     continue;
 
-                score += action.CollectibleObjectiveValue.Kind switch
+                if (action.CollectibleObjectiveValue.Kind == CollectibleKind.Life)
+                    score += action.CollectibleObjectiveValue.EffectiveGain * LifeObjectiveScore;
+
+                if (action.FulfillsJumpOnObjective)
+                    score += MajorObjectiveScore;
+
+                if (action.CollectibleObjectiveValue.Kind == CollectibleKind.Energy
+                    || action.CollectibleObjectiveValue.Kind == CollectibleKind.Crystal)
                 {
-                    CollectibleKind.Life => action.CollectibleObjectiveValue.EffectiveGain * 10000f,
-                    CollectibleKind.Energy => action.CollectibleObjectiveValue.IsCriticalEnergy
-                        ? action.CollectibleObjectiveValue.EffectiveGain * 1000f
-                        : action.CollectibleObjectiveValue.EffectiveGain * 100f,
-                    CollectibleKind.Crystal => action.CollectibleObjectiveValue.EffectiveGain * 10f,
-                    CollectibleKind.Coin => action.CollectibleObjectiveValue.EffectiveGain,
-                    _ => 0f
-                };
+                    score += MajorObjectiveScore;
+                }
+            }
+
+            return score;
+        }
+
+        private static float GetCoinScore(IReadOnlyList<PlannedAction> actions)
+        {
+            float score = 0f;
+            for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
+            {
+                PlannedAction action = actions[actionIndex];
+                if (action?.CollectibleObjectiveValue.Kind != CollectibleKind.Coin)
+                    continue;
+
+                score += action.CollectibleObjectiveValue.EffectiveGain;
             }
 
             return score;
@@ -110,6 +132,10 @@ namespace Assets.Scripts.Bot.Planning
                 return compare;
 
             compare = left.TotalEnergyCost.CompareTo(right.TotalEnergyCost);
+            if (compare != 0)
+                return compare;
+
+            compare = right.CoinCollectibleValue.CompareTo(left.CoinCollectibleValue);
             if (compare != 0)
                 return compare;
 

@@ -32,10 +32,8 @@ namespace Assets.Scripts.Bot.Planning
         public int TotalEnergyCost => Metrics.TotalEnergyCost;
         public int TapCount => Metrics.TapCount;
         public int ActionCount => Metrics.ActionCount;
-        public int JumpOnObjectiveCount => Metrics.JumpOnObjectiveCount;
-        public int? FirstJumpOnObjectiveTargetIndex => Metrics.FirstJumpOnObjectiveTargetIndex;
+        public int MajorObjectiveCount => Metrics.MajorObjectiveCount;
         public int LifeCollectibleValue => Metrics.LifeCollectibleValue;
-        public int CriticalEnergyCollectibleValue => Metrics.CriticalEnergyCollectibleValue;
         public int EnergyCollectibleValue => Metrics.EnergyCollectibleValue;
         public int CrystalCollectibleValue => Metrics.CrystalCollectibleValue;
         public int CoinCollectibleValue => Metrics.CoinCollectibleValue;
