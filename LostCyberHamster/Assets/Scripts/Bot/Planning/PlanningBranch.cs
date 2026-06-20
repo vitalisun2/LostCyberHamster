@@ -30,7 +30,8 @@ namespace Assets.Scripts.Bot.Planning
         public float FinalProjectionWorldShift { get; }
         public bool HasActions => Actions.Count > 0;
         public int TotalEnergyCost => Metrics.TotalEnergyCost;
-        public int TapCount => Metrics.TapCount;
+        public int RouteEnergyCost => Metrics.RouteEnergyCost;
+        public int ObjectiveEnergyCost => Metrics.ObjectiveEnergyCost;
         public int ActionCount => Metrics.ActionCount;
         public int MajorObjectiveCount => Metrics.MajorObjectiveCount;
         public int LifeCollectibleValue => Metrics.LifeCollectibleValue;

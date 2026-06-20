@@ -58,6 +58,16 @@ namespace Assets.Scripts.Bot
         private const int _committedPrefixActionCount = 2;
 
         /// <summary>
+        /// Обычное окно спауна без runtime-бота.
+        /// </summary>
+        private const int _defaultSpawnLookaheadPatterns = 1;
+
+        /// <summary>
+        /// Окно спауна для validation-режима runtime-бота.
+        /// </summary>
+        private const int _botSpawnLookaheadPatterns = 2;
+
+        /// <summary>
         /// Имя runtime GameObject, на который подключается bot controller.
         /// </summary>
         private const string _hostObjectName = "[Bot]";
@@ -334,6 +344,7 @@ namespace Assets.Scripts.Bot
         {
             // Переводит controller в активное состояние.
             IsEnabled = true;
+            ApplySpawnLookaheadToObstacleSpawner();
             RequestInitialReplan(BotReplanReason.BotEnabled);
             if (!IsInitialized)
                 TryResolveRuntimeDependencies();
@@ -346,6 +357,7 @@ namespace Assets.Scripts.Bot
         {
             // Очищает runtime state бота.
             IsEnabled = false;
+            ApplySpawnLookaheadToObstacleSpawner();
             LastSnapshot = null;
             ClearReplanRequest();
             _initialReplanRequestedForCurrentGame = false;
@@ -1050,6 +1062,7 @@ namespace Assets.Scripts.Bot
 
             _subscribedObstacleSpawner = obstacleSpawner;
             _subscribedObstacleSpawner.PatternSpawned += OnPatternSpawned;
+            ApplySpawnLookaheadToObstacleSpawner();
         }
 
         /// <summary>
@@ -1058,9 +1071,24 @@ namespace Assets.Scripts.Bot
         private void UnsubscribeFromObstacleSpawner()
         {
             if (!ReferenceEquals(_subscribedObstacleSpawner, null))
+            {
+                _subscribedObstacleSpawner.SpawnLookaheadPatterns = _defaultSpawnLookaheadPatterns;
                 _subscribedObstacleSpawner.PatternSpawned -= OnPatternSpawned;
+            }
 
             _subscribedObstacleSpawner = null;
+        }
+
+        /// <summary>
+        /// Синхронизирует окно спауна с текущим состоянием runtime-бота.
+        /// </summary>
+        private void ApplySpawnLookaheadToObstacleSpawner()
+        {
+            if (ReferenceEquals(_subscribedObstacleSpawner, null))
+                return;
+
+            _subscribedObstacleSpawner.SpawnLookaheadPatterns =
+                IsEnabled ? _botSpawnLookaheadPatterns : _defaultSpawnLookaheadPatterns;
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts;
 using Assets.Scripts.Common;
@@ -22,12 +23,20 @@ namespace Assets.Scripts.System
         public List<InstantiatedObstacle> SpawnedObstacles => _spawnedObstacles;
         public string CurrPatternName { get; private set; }
         public int CurrPatternIndex => _currentPatternIndex;
-        public event global::System.Action<int, string> PatternSpawned;
+        public int SpawnLookaheadPatterns
+        {
+            get => _spawnLookaheadPatterns;
+            set => _spawnLookaheadPatterns = Mathf.Max(_defaultSpawnLookaheadPatterns, value);
+        }
 
+        public event Action<int, string> PatternSpawned;
+
+        private const int _defaultSpawnLookaheadPatterns = 1;
         private readonly float _delayBetweenPatterns = 2.0f;
         private float _timeSinceLastPattern;
         private int _reliefDelayPatternIndex = -1;
         private int _currentPatternIndex;
+        private int _spawnLookaheadPatterns = _defaultSpawnLookaheadPatterns;
         private List<InstantiatedObstacle> _spawnedObstacles = new();
         private EnvironmentRoot _environmentRoot;
         private List<InstantiatedObstacle> _intantiatedObstacles = new();
@@ -95,45 +104,53 @@ namespace Assets.Scripts.System
         private void SpawnPatterns()
         {
             _timeSinceLastPattern += Time.deltaTime;
+            var patterns = LevelController.Instance.LevelData.LevelInfo.patterns;
 
-            // завершаем, когда все паттерны отспавнены и сцена пуста
-            if (_currentPatternIndex >= LevelController.Instance.LevelData.LevelInfo.patterns.Count)
+            while (_currentPatternIndex < patterns.Count && IsCurrentPatternReadyToSpawn())
             {
-                if (!_spawnedObstacles.Any() && _timeSinceLastPattern >= _delayBetweenPatterns)
-                    LevelController.Instance.LevelData.GameManager.Finish();
-                return;
-            }
+                CurrPatternName = patterns[_currentPatternIndex].name;
+                bool needsDelay = CurrPatternName == _reliefPatternName;
 
-            CurrPatternName =
-                LevelController.Instance.LevelData.LevelInfo.patterns[_currentPatternIndex].name;
-            bool needsDelay = CurrPatternName == _reliefPatternName;
+                if (needsDelay && _reliefDelayPatternIndex != _currentPatternIndex)
+                {
+                    _reliefDelayPatternIndex = _currentPatternIndex;
+                    _timeSinceLastPattern = 0f;
+                    break;
+                }
 
-            // готовность зависит от того, полностью ли предыдущий паттерн в кадре
-            bool readyToSpawn = _currentPatternIndex == 0 || IsPreviousPatternFullyOnScreen();
+                if (needsDelay && _timeSinceLastPattern < _delayBetweenPatterns)
+                    break;
 
-            if (readyToSpawn && needsDelay && _reliefDelayPatternIndex != _currentPatternIndex)
-            {
-                _reliefDelayPatternIndex = _currentPatternIndex;
-                _timeSinceLastPattern = 0f;
-            }
-
-            if (readyToSpawn && (!needsDelay || _timeSinceLastPattern >= _delayBetweenPatterns))
-            {
                 SpawnPattern(_currentPatternIndex);
                 _currentPatternIndex++;
                 _reliefDelayPatternIndex = -1;
                 _timeSinceLastPattern = 0f;
             }
+
+            // завершаем, когда все паттерны отспавнены и сцена пуста
+            if (_currentPatternIndex >= patterns.Count
+                && !_spawnedObstacles.Any()
+                && _timeSinceLastPattern >= _delayBetweenPatterns)
+                LevelController.Instance.LevelData.GameManager.Finish();
         }
 
-        // проверяем, что правый край предыдущего паттерна не дальше правого края экрана
-        private bool IsPreviousPatternFullyOnScreen()
+        // Проверяет gate-паттерн для текущего lookahead-окна.
+        private bool IsCurrentPatternReadyToSpawn()
         {
-            int prevIndex = _currentPatternIndex - 1;
-            var prev = _spawnedObstacles.Where(o => o.PatternIndex == prevIndex).ToList();
-            if (!prev.Any()) return true;                      // весь паттерн уже despawn’ился
+            if (_currentPatternIndex < _spawnLookaheadPatterns)
+                return true;
 
-            return GetPatternRightEdge(prev) <= ScreenRightEdge;
+            int gatePatternIndex = _currentPatternIndex - _spawnLookaheadPatterns;
+            return IsPatternFullyOnScreen(gatePatternIndex);
+        }
+
+        // проверяем, что правый край паттерна не дальше правого края экрана
+        private bool IsPatternFullyOnScreen(int patternIndex)
+        {
+            var pattern = _spawnedObstacles.Where(o => o.PatternIndex == patternIndex).ToList();
+            if (!pattern.Any()) return true;                      // весь паттерн уже despawn’ился
+
+            return GetPatternRightEdge(pattern) <= ScreenRightEdge;
         }
 
         // ---------- UNSPAWN ----------

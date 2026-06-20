@@ -11,7 +11,6 @@ namespace Assets.Scripts.Bot.Planning
         private const float LifeObjectiveScore = 10000000f;
         private const float MajorObjectiveScore = 100000f;
         private const float EnergyCostPenalty = 100f;
-        private const float TapPenalty = 10f;
 
         /// <summary>
         /// Возвращает лучшую ветку из набора рассчитанных кандидатов.
@@ -58,19 +57,13 @@ namespace Assets.Scripts.Bot.Planning
                 return 0f;
 
             int totalEnergyCost = 0;
-            int tapCount = 0;
             for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
-            {
                 totalEnergyCost += actions[actionIndex].EnergyCost;
-                if (BotActionKindRules.ConsumesTap(actions[actionIndex].Kind))
-                    tapCount++;
-            }
 
             return 1000f
                 + GetObjectiveScore(actions)
                 - totalEnergyCost * EnergyCostPenalty
-                + GetCoinScore(actions)
-                - tapCount * TapPenalty;
+                + GetCoinScore(actions);
         }
 
         private static float GetObjectiveScore(IReadOnlyList<PlannedAction> actions)
@@ -127,23 +120,7 @@ namespace Assets.Scripts.Bot.Planning
             if (right == null)
                 return -1;
 
-            int compare = left.Metrics.CompareObjectivePriority(right.Metrics);
-            if (compare != 0)
-                return compare;
-
-            compare = left.TotalEnergyCost.CompareTo(right.TotalEnergyCost);
-            if (compare != 0)
-                return compare;
-
-            compare = right.CoinCollectibleValue.CompareTo(left.CoinCollectibleValue);
-            if (compare != 0)
-                return compare;
-
-            compare = left.TapCount.CompareTo(right.TapCount);
-            if (compare != 0)
-                return compare;
-
-            return 0;
+            return PlanningBranchMetricsComparer.Compare(left.Metrics, right.Metrics);
         }
 
         /// <summary>

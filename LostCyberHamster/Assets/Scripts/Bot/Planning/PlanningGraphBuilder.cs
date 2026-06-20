@@ -139,9 +139,6 @@ namespace Assets.Scripts.Bot.Planning
                 return;
             }
 
-            if (!hasUnresolvedPlanningSituation)
-                AddLeafBranch(currentNode, branches);
-
             for (int candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
             {
                 PlannedAction candidate = candidates[candidateIndex];
@@ -261,7 +258,7 @@ namespace Assets.Scripts.Bot.Planning
                 return false;
 
             return bestMetricsByState.TryGetValue(candidateNode.StateKey, out PlanningBranchMetrics bestMetrics)
-                && bestMetrics.IsCheaperOrEquivalentTo(candidateNode.Metrics);
+                && PlanningBranchMetricsComparer.IsBetterOrEqual(bestMetrics, candidateNode.Metrics);
         }
 
         /// <summary>
