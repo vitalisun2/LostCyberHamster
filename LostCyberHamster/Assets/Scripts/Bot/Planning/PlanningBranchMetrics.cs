@@ -16,8 +16,8 @@ namespace Assets.Scripts.Bot.Planning
         /// Создает набор метрик для ветки планирования.
         /// </summary>
         public PlanningBranchMetrics(
-            int routeEnergyCost,
-            int objectiveEnergyCost,
+            int energyCost,
+            int energyBeforeFirstMajor,
             int actionCount,
             int majorObjectiveCount,
             int lifeCollectibleValue,
@@ -25,8 +25,8 @@ namespace Assets.Scripts.Bot.Planning
             int crystalCollectibleValue,
             int coinCollectibleValue)
         {
-            RouteEnergyCost = routeEnergyCost;
-            ObjectiveEnergyCost = objectiveEnergyCost;
+            EnergyCost = energyCost;
+            EnergyBeforeFirstMajor = energyBeforeFirstMajor;
             ActionCount = actionCount;
             MajorObjectiveCount = majorObjectiveCount;
             LifeCollectibleValue = lifeCollectibleValue;
@@ -36,19 +36,14 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Суммарная стоимость энергии.
+        /// Суммарная стоимость энергии всех действий ветки.
         /// </summary>
-        public int TotalEnergyCost => RouteEnergyCost + ObjectiveEnergyCost;
+        public int EnergyCost { get; }
 
         /// <summary>
-        /// Энергия, потраченная на прохождение маршрута без получения major objective.
+        /// Стоимость энергии, потраченной до первого major objective в ветке.
         /// </summary>
-        public int RouteEnergyCost { get; }
-
-        /// <summary>
-        /// Энергия, потраченная действием, которое получает major objective.
-        /// </summary>
-        public int ObjectiveEnergyCost { get; }
+        public int EnergyBeforeFirstMajor { get; }
 
         /// <summary>
         /// Число действий в ветке.
@@ -85,15 +80,17 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         public PlanningBranchMetrics Append(PlannedAction action)
         {
-            bool isObjectiveEnergyCost = IsObjectiveEnergyCost(action);
-            int routeEnergyCost = isObjectiveEnergyCost ? 0 : action.EnergyCost;
-            int objectiveEnergyCost = isObjectiveEnergyCost ? action.EnergyCost : 0;
+            int actionEnergyCost = action != null ? action.EnergyCost : 0;
+            int actionMajorObjectiveCount = GetMajorObjectiveCount(action);
+            int energyBeforeFirstMajor = EnergyBeforeFirstMajor;
+            if (MajorObjectiveCount == 0 && actionMajorObjectiveCount == 0)
+                energyBeforeFirstMajor += actionEnergyCost;
 
             return new PlanningBranchMetrics(
-                RouteEnergyCost + routeEnergyCost,
-                ObjectiveEnergyCost + objectiveEnergyCost,
+                EnergyCost + actionEnergyCost,
+                energyBeforeFirstMajor,
                 ActionCount + 1,
-                MajorObjectiveCount + GetMajorObjectiveCount(action),
+                MajorObjectiveCount + actionMajorObjectiveCount,
                 LifeCollectibleValue + GetCollectibleValue(action, CollectibleKind.Life),
                 EnergyCollectibleValue + GetCollectibleValue(action, CollectibleKind.Energy),
                 CrystalCollectibleValue + GetCollectibleValue(action, CollectibleKind.Crystal),
@@ -114,19 +111,6 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             return count;
-        }
-
-        private static bool IsObjectiveEnergyCost(PlannedAction action)
-        {
-            if (action == null || action.EnergyCost <= 0)
-                return false;
-
-            if (action.FulfillsJumpOnObjective)
-                return true;
-
-            CollectibleKind collectibleKind = action.CollectibleObjectiveValue.Kind;
-            return collectibleKind == CollectibleKind.Energy
-                || collectibleKind == CollectibleKind.Crystal;
         }
 
         private static int GetCollectibleValue(PlannedAction action, CollectibleKind collectibleKind)

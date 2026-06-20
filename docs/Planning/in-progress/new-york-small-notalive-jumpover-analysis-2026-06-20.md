@@ -162,25 +162,24 @@ Implementation plan, adjusted after runtime checks and discussion:
 
 1. Keep the current action-depth boundary in `PlanningGraphBuilder`.
 2. Remove `TapCount` from branch quality: it duplicates action/input complexity without adding useful domain priority.
-3. Split energy cost in `PlanningBranchMetrics`:
-   - `RouteEnergyCost`: energy spent to pass the route without gaining a major objective.
-   - `ObjectiveEnergyCost`: energy spent by an action that gains a major objective.
-4. Use one branch-priority order in both evaluator and same-state dominance pruning:
+3. Keep one total `EnergyCost`, but add `EnergyBeforeFirstMajor`.
+4. `EnergyBeforeFirstMajor` counts only energy spent before the first `JumpOn` / useful energy collectible / crystal.
+5. Use one branch-priority order in both evaluator and same-state dominance pruning:
    - `LifeCollectibleValue`
-   - `RouteEnergyCost`
+   - `EnergyBeforeFirstMajor`
    - `MajorObjectiveCount`
-   - `ObjectiveEnergyCost`
+   - `EnergyCost`
    - `CoinCollectibleValue`
    - `ActionCount`
-5. Move this priority order into one shared comparer so pruning and final evaluator cannot diverge.
-6. Keep `ActionCount` only as the final tie-breaker when semantic value and energy are equal.
-7. Do not add a local obstacle rule like "prefer `SwitchLane` over `JumpOver`".
+6. Move this priority order into one shared comparer so pruning and final evaluator cannot diverge.
+7. Keep `ActionCount` only as the final tie-breaker when semantic value and energy are equal.
+8. Do not add a local obstacle rule like "prefer `SwitchLane` over `JumpOver`".
 
 Expected effect for this regression:
 
 - The direct `JumpOver` branch no longer wins merely because it sees more future major objectives inside the depth horizon.
 - The free `SwitchLane` detour should beat energy-spending `JumpOver` when the life value is equal.
-- Major objectives still matter before energy spent directly on those objectives, so `JumpOn` targets are not ignored.
+- Immediate `JumpOn` targets are not ignored because the `JumpOn` action itself does not increase `EnergyBeforeFirstMajor`; if two branches have the same pre-major energy, `MajorObjectiveCount` wins.
 
 Avoided quick fixes:
 
@@ -191,9 +190,6 @@ Avoided quick fixes:
 
 After implementation:
 
-- Run `01_New_York/Morning/level_01`.
-- Check first `easy_run` plan:
-  - expected: second step after first `SwitchLane` is a `SwitchLane`/free bypass route, not `JumpOver`.
-- Check runtime:
-  - no `[Energy] spent amount=10` for the first `smallNotAliveRoad`.
-- Then continue separately with the later `bigAlive` damage regression.
+- `dotnet build LostCyberHamster/Assembly-CSharp.csproj --no-restore` succeeded with existing warnings and no errors.
+- `tools/invoke_open_unity_test_level.ps1 -LevelAddress '01_New_York/Morning/level_01' -TimeoutSeconds 120 -TimeScale 1` was run.
+- Result: `[TEST RESULT] FAIL`; the first `smallNotAliveRoad` behavior improved, remaining regressions are out of scope for this analysis and should be handled separately.

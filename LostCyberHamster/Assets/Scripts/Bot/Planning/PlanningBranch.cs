@@ -29,9 +29,8 @@ namespace Assets.Scripts.Bot.Planning
         public int FinalNextObstacleIndex { get; }
         public float FinalProjectionWorldShift { get; }
         public bool HasActions => Actions.Count > 0;
-        public int TotalEnergyCost => Metrics.TotalEnergyCost;
-        public int RouteEnergyCost => Metrics.RouteEnergyCost;
-        public int ObjectiveEnergyCost => Metrics.ObjectiveEnergyCost;
+        public int EnergyCost => Metrics.EnergyCost;
+        public int EnergyBeforeFirstMajor => Metrics.EnergyBeforeFirstMajor;
         public int ActionCount => Metrics.ActionCount;
         public int MajorObjectiveCount => Metrics.MajorObjectiveCount;
         public int LifeCollectibleValue => Metrics.LifeCollectibleValue;

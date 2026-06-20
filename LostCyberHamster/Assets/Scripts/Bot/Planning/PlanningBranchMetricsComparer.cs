@@ -23,7 +23,7 @@ namespace Assets.Scripts.Bot.Planning
             if (compare != 0)
                 return compare;
 
-            compare = left.RouteEnergyCost.CompareTo(right.RouteEnergyCost);
+            compare = left.EnergyBeforeFirstMajor.CompareTo(right.EnergyBeforeFirstMajor);
             if (compare != 0)
                 return compare;
 
@@ -31,7 +31,7 @@ namespace Assets.Scripts.Bot.Planning
             if (compare != 0)
                 return compare;
 
-            compare = left.ObjectiveEnergyCost.CompareTo(right.ObjectiveEnergyCost);
+            compare = left.EnergyCost.CompareTo(right.EnergyCost);
             if (compare != 0)
                 return compare;
 
