@@ -1,7 +1,5 @@
-{
+﻿{
     "skyTexture": "",
-    "background2Texture": "bg_2_new_york_morning",
-    "backgroundTexture": "bg_new_york_morning",
     "roadTexture": "",
     "location": "01_New_York",
     "patternSequence": [
@@ -177,7 +175,7 @@
                 },
                 {
                     "obstacleId": 13,
-                    "spriteName": "obstacle_new_york_big_alive_6_walk"
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
                 },
                 {
                     "obstacleId": 14,
@@ -185,7 +183,7 @@
                 },
                 {
                     "obstacleId": 22,
-                    "spriteName": "obstacle_new_york_big_alive_6_walk"
+                    "spriteName": "obstacle_new_york_big_alive_2_idle"
                 }
             ]
         },
@@ -219,7 +217,7 @@
                 },
                 {
                     "obstacleId": 13,
-                    "spriteName": "obstacle_new_york_big_alive_6_walk"
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
                 },
                 {
                     "obstacleId": 14,
@@ -227,7 +225,7 @@
                 },
                 {
                     "obstacleId": 22,
-                    "spriteName": "obstacle_new_york_big_alive_6_walk"
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
                 }
             ]
         },
@@ -252,67 +250,106 @@
                 {
                     "name": "decor_tree_1",
                     "xPos": -31,
-                    "yPos": -2
+                    "yPos": -2,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_tree_1",
                     "xPos": 1,
-                    "yPos": -2
+                    "yPos": -2,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_tree_1",
                     "xPos": 70,
-                    "yPos": -2
+                    "yPos": -2,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_tree_1",
                     "xPos": 96,
-                    "yPos": -2
+                    "yPos": -2,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_tree_1",
                     "xPos": 138,
-                    "yPos": -2
+                    "yPos": -2,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_bush_1",
                     "xPos": 93,
-                    "yPos": -1
+                    "yPos": -1,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_bush_1",
                     "xPos": -35,
-                    "yPos": 0
+                    "yPos": 0,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_bush_1",
                     "xPos": -3,
-                    "yPos": 0
+                    "yPos": 0,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_bush_1",
                     "xPos": 17,
-                    "yPos": 0
+                    "yPos": 0,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_bush_1",
                     "xPos": 32,
-                    "yPos": 0
+                    "yPos": 0,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_bush_1",
                     "xPos": 55,
-                    "yPos": 0
+                    "yPos": 0,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_bush_1",
                     "xPos": 115,
-                    "yPos": 0
+                    "yPos": 0,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 },
                 {
                     "name": "decor_bush_1",
                     "xPos": 132,
-                    "yPos": 2
+                    "yPos": 2,
+                    "rotation": 0.0,
+                    "scaleX": 1.0,
+                    "scaleY": 1.0
                 }
             ]
         }

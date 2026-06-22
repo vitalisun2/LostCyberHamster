@@ -77,6 +77,11 @@ public class LevelTilemapEditor : EditorWindow
     private Dictionary<Vector3Int, (int patternIndex, int obstacleIndex)> _cellToPatternMap = new();
 
     /// <summary>
+    /// Маппинг visible sprite bounds -> obstacle для выбора кликом по картинке, а не только по anchor cell.
+    /// </summary>
+    private readonly List<ObstacleHitArea> _obstacleHitAreas = new();
+
+    /// <summary>
     /// Реальные world bounds каждого паттерна при последовательной отрисовке.
     /// </summary>
     private List<Bounds> _patternBounds = new();
@@ -103,6 +108,13 @@ public class LevelTilemapEditor : EditorWindow
         public float RightX;
         public string Name;
         public bool IsRelief;
+    }
+
+    private struct ObstacleHitArea
+    {
+        public int PatternIndex;
+        public int ObstacleIndex;
+        public Bounds Bounds;
     }
 
     private string _levelsDirectory;
@@ -209,6 +221,7 @@ public class LevelTilemapEditor : EditorWindow
         _currentLocationName = null;
         _levelsDirectory = null;
         _cellToPatternMap.Clear();
+        _obstacleHitAreas.Clear();
         _patternBounds.Clear();
         _patternOverlaySlots.Clear();
         _allPatternNames.Clear();
@@ -1041,6 +1054,7 @@ public class LevelTilemapEditor : EditorWindow
         _isTilemapBulkOperation = true;
         _tilemapInScene.ClearAllTiles();
         _cellToPatternMap.Clear();
+        _obstacleHitAreas.Clear();
         _patternBounds.Clear();
         _patternOverlaySlots.Clear();
 
@@ -1097,6 +1111,13 @@ public class LevelTilemapEditor : EditorWindow
 
                 // Учитываем sprite pivot/center: worldPos не всегда совпадает с геометрическим центром спрайта.
                 var spriteBounds = BuildSpriteWorldBounds(sprite, worldPos);
+                _obstacleHitAreas.Add(new ObstacleHitArea
+                {
+                    PatternIndex = p,
+                    ObstacleIndex = o,
+                    Bounds = spriteBounds
+                });
+
                 if (!boundsInitialized)
                 {
                     patternBounds = spriteBounds;
@@ -1341,7 +1362,7 @@ public class LevelTilemapEditor : EditorWindow
 
         DrawPatternBoundsOverlay();
 
-        if (_tilemapInScene == null || _cellToPatternMap.Count == 0)
+        if (_tilemapInScene == null || (_obstacleHitAreas.Count == 0 && _cellToPatternMap.Count == 0))
             return;
 
         var evt = Event.current;
@@ -1352,13 +1373,51 @@ public class LevelTilemapEditor : EditorWindow
         var worldPos = worldRay.origin;
         worldPos.z = 0f;
 
-        var cellPos = _tilemapInScene.WorldToCell(worldPos);
-        if (!_cellToPatternMap.TryGetValue(cellPos, out var mapping))
+        if (!TryFindObstacleAtWorldPosition(worldPos, out int patternIndex, out int obstacleIndex))
             return;
 
-        var (patternIndex, obstacleIndex) = mapping;
         HandleTileClicked(patternIndex, obstacleIndex);
         evt.Use();
+    }
+
+    private bool TryFindObstacleAtWorldPosition(
+        Vector3 worldPos,
+        out int patternIndex,
+        out int obstacleIndex)
+    {
+        patternIndex = -1;
+        obstacleIndex = -1;
+
+        bool hasHit = false;
+        float bestArea = float.MaxValue;
+
+        for (int i = 0; i < _obstacleHitAreas.Count; i++)
+        {
+            var hitArea = _obstacleHitAreas[i];
+            if (!hitArea.Bounds.Contains(worldPos))
+                continue;
+
+            var size = hitArea.Bounds.size;
+            float area = size.x * size.y;
+            if (hasHit && area >= bestArea)
+                continue;
+
+            hasHit = true;
+            bestArea = area;
+            patternIndex = hitArea.PatternIndex;
+            obstacleIndex = hitArea.ObstacleIndex;
+        }
+
+        if (hasHit)
+            return true;
+
+        var cellPos = _tilemapInScene.WorldToCell(worldPos);
+        if (!_cellToPatternMap.TryGetValue(cellPos, out var mapping))
+            return false;
+
+        patternIndex = mapping.patternIndex;
+        obstacleIndex = mapping.obstacleIndex;
+        return true;
     }
 
     private void DrawPatternBoundsOverlay()
