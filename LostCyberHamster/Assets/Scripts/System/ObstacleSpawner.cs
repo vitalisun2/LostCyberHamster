@@ -137,11 +137,32 @@ namespace Assets.Scripts.System
         // Проверяет gate-паттерн для текущего lookahead-окна.
         private bool IsCurrentPatternReadyToSpawn()
         {
-            if (_currentPatternIndex < _spawnLookaheadPatterns)
+            int effectiveLookaheadPatterns = GetEffectiveSpawnLookaheadPatterns(_currentPatternIndex);
+            if (_currentPatternIndex < effectiveLookaheadPatterns)
                 return true;
 
-            int gatePatternIndex = _currentPatternIndex - _spawnLookaheadPatterns;
+            int gatePatternIndex = _currentPatternIndex - effectiveLookaheadPatterns;
             return IsPatternFullyOnScreen(gatePatternIndex);
+        }
+
+        // Empty delay patterns must keep the player-facing spacing from the default spawn mode.
+        // Bot lookahead may preload real patterns, but it must not start spacer delay earlier.
+        private int GetEffectiveSpawnLookaheadPatterns(int patternIndex)
+        {
+            var patterns = LevelController.Instance.LevelData.LevelInfo.patterns;
+            if (patternIndex >= 0
+                && patternIndex < patterns.Count
+                && IsDelaySpacerPattern(patterns[patternIndex].name))
+            {
+                return _defaultSpawnLookaheadPatterns;
+            }
+
+            return _spawnLookaheadPatterns;
+        }
+
+        private bool IsDelaySpacerPattern(string patternName)
+        {
+            return string.Equals(patternName, _reliefPatternName, StringComparison.Ordinal);
         }
 
         // проверяем, что правый край паттерна не дальше правого края экрана
