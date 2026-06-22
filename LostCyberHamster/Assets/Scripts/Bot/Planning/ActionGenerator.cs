@@ -69,25 +69,17 @@ namespace Assets.Scripts.Bot.Planning
 
             bool currentBottomLine = planningState.IsOnBottomLine;
 
-            bool hasCurrentDecisionPoint = _decisionPointDetector.TryDetect(
+            bool hasCurrentDecisionPoint = _decisionPointDetector.TryDetectRoute(
                     planningState,
                     projectedWorldSnapshot,
                     currentBottomLine,
                     out DecisionPoint currentDecisionPoint);
 
-            bool hasOppositeDecisionPoint = _decisionPointDetector.TryDetect(
+            bool hasOppositeDecisionPoint = _decisionPointDetector.TryDetectRoute(
                     planningState,
                     projectedWorldSnapshot,
                     !currentBottomLine,
                     out DecisionPoint oppositeDecisionPoint);
-
-            if (!hasCurrentDecisionPoint && !hasOppositeDecisionPoint)
-            {
-                LogNoDecisionPoint(planningState);
-                return new ActionGenerationResult(
-                    plannedActions,
-                    deadEndReasons);
-            }
 
             if (hasCurrentDecisionPoint)
             {
@@ -98,6 +90,12 @@ namespace Assets.Scripts.Bot.Planning
                     plannedActions,
                     deadEndReasons);
             }
+
+            CollectCurrentLaneOptionalCollectableActions(
+                planningState,
+                projectedWorldSnapshot,
+                plannedActions,
+                deadEndReasons);
 
             if (hasOppositeDecisionPoint)
             {
@@ -116,10 +114,50 @@ namespace Assets.Scripts.Bot.Planning
                     deadEndReasons);
             }
 
+            if (!hasCurrentDecisionPoint
+                && !hasOppositeDecisionPoint
+                && plannedActions.Count == 0)
+            {
+                LogNoDecisionPoint(planningState);
+                return new ActionGenerationResult(
+                    plannedActions,
+                    deadEndReasons);
+            }
+
             if (plannedActions.Count == 0 && hasCurrentDecisionPoint)
                 LogNoActions(planningState, currentDecisionPoint);
 
             return new ActionGenerationResult(
+                plannedActions,
+                deadEndReasons);
+        }
+
+        /// <summary>
+        /// Добавляет optional current-lane collectable, не позволяя ему заслонять route decision point.
+        /// </summary>
+        private void CollectCurrentLaneOptionalCollectableActions(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            List<PlannedAction> plannedActions,
+            List<StrategyDeadEndReason> deadEndReasons)
+        {
+            bool currentBottomLine = planningState.IsOnBottomLine;
+            if (!_decisionPointDetector.TryDetect(
+                    planningState,
+                    projectedWorldSnapshot,
+                    currentBottomLine,
+                    out DecisionPoint optionalDecisionPoint))
+            {
+                return;
+            }
+
+            if (optionalDecisionPoint.Chain.HasAnyRequiredPlanningRole())
+                return;
+
+            CollectActionsForDecisionPoint(
+                planningState,
+                projectedWorldSnapshot,
+                optionalDecisionPoint,
                 plannedActions,
                 deadEndReasons);
         }

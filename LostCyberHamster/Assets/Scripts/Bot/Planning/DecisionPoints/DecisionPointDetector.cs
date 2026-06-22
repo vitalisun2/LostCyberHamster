@@ -35,6 +35,25 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         }
 
         /// <summary>
+        /// Пытается построить ближайшую route-ситуацию, пропуская optional-only collectable chains.
+        /// </summary>
+        public bool TryDetectRoute(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            out DecisionPoint decisionPoint)
+        {
+            decisionPoint = null;
+            if (planningState?.Hamster == null)
+                return false;
+
+            return TryDetectRoute(
+                planningState,
+                worldSnapshot,
+                planningState.IsOnBottomLine,
+                out decisionPoint);
+        }
+
+        /// <summary>
         /// Пытается построить ближайшую role-based planning-ситуацию для выбранной focus lane.
         /// </summary>
         public bool TryDetect(
@@ -43,30 +62,97 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             bool focusBottomLine,
             out DecisionPoint decisionPoint)
         {
-            // Проверяет входные данные.
             decisionPoint = null;
             if (planningState?.Hamster == null || worldSnapshot?.Obstacles == null)
                 return false;
 
-            // Определяет индекс старта detection для focus lane.
             int firstDetectionIndex = GetFirstDetectionIndex(
                 planningState,
                 worldSnapshot,
                 focusBottomLine);
 
-            // Строит role-based chain для найденной ситуации.
-            if (_chainBuilder.TryBuild(
-                    planningState,
-                    worldSnapshot,
-                    firstDetectionIndex,
-                    focusBottomLine,
-                    out ObstacleChain chain))
+            return TryDetectFromIndex(
+                planningState,
+                worldSnapshot,
+                focusBottomLine,
+                firstDetectionIndex,
+                requireRequiredRole: false,
+                out decisionPoint);
+        }
+
+        /// <summary>
+        /// Пытается построить ближайшую route-ситуацию для focus lane, не останавливаясь на optional-only collectables.
+        /// </summary>
+        public bool TryDetectRoute(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            bool focusBottomLine,
+            out DecisionPoint decisionPoint)
+        {
+            decisionPoint = null;
+            if (planningState?.Hamster == null || worldSnapshot?.Obstacles == null)
+                return false;
+
+            int firstDetectionIndex = GetFirstDetectionIndex(
+                planningState,
+                worldSnapshot,
+                focusBottomLine);
+
+            return TryDetectFromIndex(
+                planningState,
+                worldSnapshot,
+                focusBottomLine,
+                firstDetectionIndex,
+                requireRequiredRole: true,
+                out decisionPoint);
+        }
+
+        /// <summary>
+        /// Строит ближайший decision point от заданного индекса; route mode пропускает optional-only chains.
+        /// </summary>
+        private bool TryDetectFromIndex(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            bool focusBottomLine,
+            int firstDetectionIndex,
+            bool requireRequiredRole,
+            out DecisionPoint decisionPoint)
+        {
+            decisionPoint = null;
+            int detectionIndex = firstDetectionIndex < 0 ? 0 : firstDetectionIndex;
+
+            while (_chainBuilder.TryBuild(
+                       planningState,
+                       worldSnapshot,
+                       detectionIndex,
+                       focusBottomLine,
+                       out ObstacleChain chain))
             {
-                decisionPoint = new DecisionPoint(chain);
-                return true;
+                if (!requireRequiredRole || chain.HasAnyRequiredPlanningRole())
+                {
+                    decisionPoint = new DecisionPoint(chain);
+                    return true;
+                }
+
+                int nextDetectionIndex = GetNextDetectionIndexAfter(chain);
+                if (nextDetectionIndex <= detectionIndex)
+                    return false;
+
+                detectionIndex = nextDetectionIndex;
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Возвращает индекс первого obstacle после chain.
+        /// </summary>
+        private static int GetNextDetectionIndexAfter(ObstacleChain chain)
+        {
+            if (chain == null || chain.Count == 0)
+                return 0;
+
+            return chain.Elements[chain.Count - 1].WorldIndex + 1;
         }
 
         /// <summary>

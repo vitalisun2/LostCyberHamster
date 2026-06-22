@@ -33,7 +33,8 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
         {
             return PlanningStrategyApplicability.HasContext(planningState, decisionPoint)
                 && PlanningStrategyApplicability.CanPlanGroundRun(planningState.Hamster)
-                && PlanningStrategyApplicability.IsOppositeLane(planningState, decisionPoint);
+                && PlanningStrategyApplicability.IsOppositeLane(planningState, decisionPoint)
+                && decisionPoint.Chain.HasAnyRequiredPlanningRole();
         }
 
         /// <summary>

@@ -36,6 +36,9 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
             if (chain.First.IsBottomLine == planningState.Hamster.IsOnBottomLine)
                 return false;
 
+            if (!chain.HasAnyRequiredPlanningRole())
+                return false;
+
             // Рассчитывает минимальный shift, после которого boundary obstacle перестает быть active.
             ObstacleChainElement boundaryElement = chain.Elements[chain.Count - 1];
             ObstacleSnapshot boundaryObstacle = boundaryElement.Obstacle;

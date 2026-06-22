@@ -216,39 +216,10 @@ namespace Assets.Scripts.Bot.Planning
             if (projectedWorldSnapshot == null)
                 return false;
 
-            // Сканирует вперед, пропуская optional-only chains, чтобы они не скрывали required threats.
-            PlanningState scanState = planningState;
-            while (_decisionPointDetector.TryDetect(
-                    scanState,
-                    projectedWorldSnapshot,
-                    out DecisionPoint decisionPoint))
-            {
-                if (decisionPoint.Chain.HasAnyRequiredPlanningRole())
-                    return true;
-
-                int nextScanIndex = GetNextScanIndexAfter(decisionPoint.Chain);
-                if (nextScanIndex <= scanState.NextObstacleIndex)
-                    return false;
-
-                scanState = new PlanningState(
-                    scanState.Hamster,
-                    nextScanIndex,
-                    scanState.ProjectionWorldShift,
-                    scanState.RemovedObstacleInstanceIds);
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Возвращает индекс, с которого нужно продолжить проверку после optional-only chain.
-        /// </summary>
-        private static int GetNextScanIndexAfter(ObstacleChain chain)
-        {
-            if (chain == null || chain.Count == 0)
-                return 0;
-
-            return chain.Elements[chain.Count - 1].WorldIndex + 1;
+            return _decisionPointDetector.TryDetectRoute(
+                planningState,
+                projectedWorldSnapshot,
+                out _);
         }
 
         /// <summary>
