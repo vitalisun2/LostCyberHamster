@@ -120,6 +120,17 @@ namespace Assets.Scripts.Bot.Planning
             if (right == null)
                 return -1;
 
+            float commonHorizonProjectionWorldShift = left.FinalProjectionWorldShift < right.FinalProjectionWorldShift
+                ? left.FinalProjectionWorldShift
+                : right.FinalProjectionWorldShift;
+            // Сначала сравниваем только часть веток до общего горизонта,
+            // чтобы будущий хвост более длинной ветки не искажал первичное сравнение.
+            int compare = PlanningBranchMetricsComparer.Compare(
+                left.GetMetricsToReach(commonHorizonProjectionWorldShift),
+                right.GetMetricsToReach(commonHorizonProjectionWorldShift));
+            if (compare != 0)
+                return compare;
+
             return PlanningBranchMetricsComparer.Compare(left.Metrics, right.Metrics);
         }
 

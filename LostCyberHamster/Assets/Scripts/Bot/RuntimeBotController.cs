@@ -149,6 +149,11 @@ namespace Assets.Scripts.Bot
         private BotReplanReason _pendingReplanReasons = BotReplanReason.None;
 
         /// <summary>
+        /// Причины пересборки, которые должны быть применены только со следующего bot tick.
+        /// </summary>
+        private BotReplanReason _deferredReplanReasons = BotReplanReason.None;
+
+        /// <summary>
         /// Признак уже запрошенного первичного plan для текущего gameplay runtime.
         /// </summary>
         private bool _initialReplanRequestedForCurrentGame;
@@ -354,7 +359,7 @@ namespace Assets.Scripts.Bot
             IsEnabled = false;
             ApplySpawnLookaheadToObstacleSpawner();
             LastSnapshot = null;
-            ClearReplanRequest();
+            ClearAllReplanRequests();
             _initialReplanRequestedForCurrentGame = false;
             ClearInProgressHeadFirePoint();
             ClearPendingDeadEndReport();
@@ -383,6 +388,7 @@ namespace Assets.Scripts.Bot
                 LastSnapshot = _snapshotBuilder.Build(_hamster);
 
             UpdateInProgressHeadFirePoint(executionResult);
+            PromoteDeferredReplanReasons();
             RequestReplanForExecutionResult(executionResult);
 
             if (ShouldRebuildPlan())
@@ -693,7 +699,7 @@ namespace Assets.Scripts.Bot
         private void RequestReplanForExecutionResult(PlanExecutionTickResult executionResult)
         {
             if (HasExecutionResult(executionResult, PlanExecutionTickResult.Completed))
-                RequestReplan(BotReplanReason.ActionCompleted);
+                RequestDeferredReplan(BotReplanReason.ActionCompleted);
 
             if (HasExecutionResult(executionResult, PlanExecutionTickResult.Cancelled))
                 RequestReplan(BotReplanReason.ActionCancelled);
@@ -752,22 +758,55 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
+        /// Откладывает пересборку плана до следующего bot tick, чтобы completion-кадр не делал ещё и planning.
+        /// </summary>
+        private void RequestDeferredReplan(BotReplanReason reason)
+        {
+            if (reason == BotReplanReason.None)
+                return;
+
+            _deferredReplanReasons |= reason;
+        }
+
+        /// <summary>
+        /// Переносит отложенные причины в обычный request state в начале следующего bot tick.
+        /// </summary>
+        private void PromoteDeferredReplanReasons()
+        {
+            if (_deferredReplanReasons == BotReplanReason.None)
+                return;
+
+            _pendingReplanReasons |= _deferredReplanReasons;
+            _isReplanRequested = true;
+            _deferredReplanReasons = BotReplanReason.None;
+        }
+
+        /// <summary>
         /// Возвращает накопленные причины пересборки и очищает request state.
         /// </summary>
         private BotReplanReason ConsumeReplanReasons()
         {
             BotReplanReason reasons = _pendingReplanReasons;
-            ClearReplanRequest();
+            ClearPendingReplanRequest();
             return reasons;
         }
 
         /// <summary>
-        /// Очищает request state пересборки плана.
+        /// Очищает immediate request state пересборки плана.
         /// </summary>
-        private void ClearReplanRequest()
+        private void ClearPendingReplanRequest()
         {
             _isReplanRequested = false;
             _pendingReplanReasons = BotReplanReason.None;
+        }
+
+        /// <summary>
+        /// Очищает весь request state пересборки плана при сбросе runtime.
+        /// </summary>
+        private void ClearAllReplanRequests()
+        {
+            ClearPendingReplanRequest();
+            _deferredReplanReasons = BotReplanReason.None;
         }
 
         /// <summary>
@@ -1003,7 +1042,7 @@ namespace Assets.Scripts.Bot
             UnsubscribeFromObstacleSpawner();
             _eventTracker?.Dispose();
             _eventTracker = null;
-            ClearReplanRequest();
+            ClearAllReplanRequests();
             _initialReplanRequestedForCurrentGame = false;
             ClearInProgressHeadFirePoint();
             ClearPendingDeadEndReport();

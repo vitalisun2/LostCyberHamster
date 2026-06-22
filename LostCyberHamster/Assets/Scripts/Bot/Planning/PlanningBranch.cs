@@ -54,5 +54,47 @@ namespace Assets.Scripts.Bot.Planning
                 leafNode.State.NextObstacleIndex,
                 leafNode.State.ProjectionWorldShift);
         }
+
+        /// <summary>
+        /// Пересчитывает метрики действий, необходимых для достижения общего горизонта сравнения,
+        /// чтобы более длинная ветка не штрафовалась за будущие действия за этим горизонтом.
+        /// </summary>
+        public PlanningBranchMetrics GetMetricsToReach(float horizonProjectionWorldShift)
+        {
+            const float horizonEpsilon = 0.001f;
+
+            if (Actions.Count == 0)
+                return PlanningBranchMetrics.Empty;
+
+            float currentProjectionWorldShift = GetInitialProjectionWorldShift();
+            PlanningBranchMetrics metrics = PlanningBranchMetrics.Empty;
+            for (int actionIndex = 0; actionIndex < Actions.Count; actionIndex++)
+            {
+                PlannedAction action = Actions[actionIndex];
+                if (action == null)
+                    continue;
+
+                if (currentProjectionWorldShift >= horizonProjectionWorldShift - horizonEpsilon)
+                    break;
+
+                metrics = metrics.Append(action);
+                currentProjectionWorldShift += action.CompletionWorldShift;
+            }
+
+            return metrics;
+        }
+
+        private float GetInitialProjectionWorldShift()
+        {
+            float projectionWorldShift = FinalProjectionWorldShift;
+            for (int actionIndex = 0; actionIndex < Actions.Count; actionIndex++)
+            {
+                PlannedAction action = Actions[actionIndex];
+                if (action != null)
+                    projectionWorldShift -= action.CompletionWorldShift;
+            }
+
+            return projectionWorldShift;
+        }
     }
 }
