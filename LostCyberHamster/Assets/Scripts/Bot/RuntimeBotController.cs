@@ -48,11 +48,6 @@ namespace Assets.Scripts.Bot
         private const float _initRetryInterval = 0.5f;
 
         /// <summary>
-        /// Допуск для проверки live trigger window.
-        /// </summary>
-        private const float _triggerWindowEpsilon = 0.001f;
-
-        /// <summary>
         /// Количество ближайших действий, которые replan не заменяет: текущая голова и следующий action для instant handoff.
         /// </summary>
         private const int _committedPrefixActionCount = 2;
@@ -664,9 +659,6 @@ namespace Assets.Scripts.Bot
             if (projectedWorldSnapshot == null)
                 return null;
 
-            if (!ShouldRetainPendingCommittedAction(committedAction, projectedWorldSnapshot))
-                return null;
-
             PlannedAction projectionAction = CreatePendingProjectionAction(
                 committedAction,
                 projectedWorldSnapshot);
@@ -810,35 +802,6 @@ namespace Assets.Scripts.Bot
         {
             _inProgressHeadAction = null;
             _inProgressHeadFireTime = 0f;
-        }
-
-        /// <summary>
-        /// Проверяет, что pending committed action ещё не вышел из trigger contract.
-        /// </summary>
-        private static bool ShouldRetainPendingCommittedAction(PlannedAction action, WorldSnapshot worldSnapshot)
-        {
-            if (action == null || worldSnapshot == null)
-                return false;
-
-            return IsTriggerStillReachable(action, worldSnapshot);
-        }
-
-        /// <summary>
-        /// Проверяет, что trigger obstacle ещё не прошёл окно action.
-        /// </summary>
-        private static bool IsTriggerStillReachable(PlannedAction action, WorldSnapshot worldSnapshot)
-        {
-            int? triggerObstacleInstanceId = action.TriggerObstacleInstanceId ?? action.TargetObstacleInstanceId;
-            if (!triggerObstacleInstanceId.HasValue)
-                return true;
-
-            if (!TryFindTriggerObstacle(triggerObstacleInstanceId.Value, worldSnapshot, out ObstacleSnapshot triggerObstacle))
-                return false;
-
-            if (action.TriggerWindow.HasValue && action.TriggerWindow.Value.IsValid)
-                return triggerObstacle.LeftX >= action.TriggerWindow.Value.LatestTriggerX - _triggerWindowEpsilon;
-
-            return triggerObstacle.LeftX >= action.TriggerX - _triggerWindowEpsilon;
         }
 
         /// <summary>
