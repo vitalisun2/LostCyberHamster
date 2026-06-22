@@ -144,6 +144,13 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
         ISimulator Simulator { get; }
 
         /// <summary>
+        /// Быстро проверяет, имеет ли смысл запускать strategy для текущей planning-ситуации.
+        /// </summary>
+        bool CanConsider(
+            PlanningState planningState,
+            DecisionPoint decisionPoint);
+
+        /// <summary>
         /// Возвращает кандидаты действий или dead-end причину для применимой role-based точки решения.
         /// </summary>
         PlanningStrategyResult CollectActions(

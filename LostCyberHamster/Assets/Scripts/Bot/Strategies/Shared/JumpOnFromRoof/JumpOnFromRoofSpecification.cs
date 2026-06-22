@@ -8,12 +8,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
     /// <summary>
     /// Проверяет применимость roof-to-road jump-on к уже выбранному target.
     /// </summary>
-    internal sealed class JumpOnFromRoofSpecification : IBotStrategySpecification
+    internal sealed class JumpOnFromRoofSpecification : IActionSubjectSpecification
     {
         /// <summary>
         /// Возвращает true, если хомяк может выполнить roof-to-road jump-on по указанному target.
         /// </summary>
-        public bool IsSatisfiedBy(
+        public bool IsSubjectValid(
             PlanningState planningState,
             ObstacleSnapshot obstacle)
         {

@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -17,7 +18,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
     internal sealed class SuperJumpOverStrategy : IPlanningStrategy
     {
         private readonly IJumpOverPolicy _policy;
-        private readonly IBotStrategySpecification _specification;
+        private readonly IActionSubjectSpecification _specification;
         private readonly JumpOverFireWindowFinder _fireWindowFinder;
         private readonly JumpOverSimulator _simulator;
 
@@ -39,6 +40,17 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
         public BotActionKind ActionKind => _policy.ActionKind;
         public IActionExecutionHandler Executor { get; }
         public ISimulator Simulator { get; }
+
+        /// <summary>
+        /// Быстро проверяет, возможен ли ground super jump-over для текущей role-chain.
+        /// </summary>
+        public bool CanConsider(
+            PlanningState planningState,
+            DecisionPoint decisionPoint)
+        {
+            return PlanningStrategyApplicability.IsGroundRunCurrentLane(planningState, decisionPoint)
+                && PlanningStrategyApplicability.FirstHasRole(decisionPoint, ObstacleRole.BlockingThreat);
+        }
 
         /// <summary>
         /// Добавляет super jump-over action, если первый role-based obstacle безопасно перепрыгивается.
@@ -64,7 +76,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             }
 
             // Проверяет применимость super-policy к выбранной blocking threat.
-            if (!_specification.IsSatisfiedBy(planningState, blockingThreat))
+            if (!_specification.IsSubjectValid(planningState, blockingThreat))
             {
                 return PlanningStrategyResult.NotApplicable();
             }

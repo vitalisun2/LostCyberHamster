@@ -8,12 +8,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
     /// <summary>
     /// Проверяет применимость jump-on-roof к уже выбранному roof support.
     /// </summary>
-    internal sealed class JumpOnRoofSpecification : IBotStrategySpecification
+    internal sealed class JumpOnRoofSpecification : IActionSubjectSpecification
     {
         /// <summary>
         /// Возвращает true, если хомяк может прыгнуть на указанную крышу.
         /// </summary>
-        public bool IsSatisfiedBy(
+        public bool IsSubjectValid(
             PlanningState planningState,
             ObstacleSnapshot obstacle)
         {

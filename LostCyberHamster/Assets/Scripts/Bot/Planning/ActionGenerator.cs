@@ -136,7 +136,8 @@ namespace Assets.Scripts.Bot.Planning
         {
             for (int strategyIndex = 0; strategyIndex < _strategies.Count; strategyIndex++)
             {
-                PlanningStrategyResult result = _strategies[strategyIndex].CollectActions(
+                PlanningStrategyResult result = CollectFromStrategy(
+                    _strategies[strategyIndex],
                     planningState,
                     projectedWorldSnapshot,
                     decisionPoint);
@@ -161,7 +162,8 @@ namespace Assets.Scripts.Bot.Planning
             if (_switchLaneStrategy == null)
                 return;
 
-            PlanningStrategyResult result = _switchLaneStrategy.CollectActions(
+            PlanningStrategyResult result = CollectFromStrategy(
+                _switchLaneStrategy,
                 planningState,
                 projectedWorldSnapshot,
                 oppositeDecisionPoint);
@@ -185,7 +187,8 @@ namespace Assets.Scripts.Bot.Planning
             if (_passiveAdvanceStrategy == null)
                 return;
 
-            PlanningStrategyResult result = _passiveAdvanceStrategy.CollectActions(
+            PlanningStrategyResult result = CollectFromStrategy(
+                _passiveAdvanceStrategy,
                 planningState,
                 projectedWorldSnapshot,
                 oppositeDecisionPoint);
@@ -194,6 +197,27 @@ namespace Assets.Scripts.Bot.Planning
                 result,
                 plannedActions,
                 deadEndReasons);
+        }
+
+        /// <summary>
+        /// Запрашивает actions у стратегии после дешевой проверки применимости.
+        /// </summary>
+        private static PlanningStrategyResult CollectFromStrategy(
+            IPlanningStrategy strategy,
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            DecisionPoint decisionPoint)
+        {
+            if (strategy == null)
+                return PlanningStrategyResult.NotApplicable();
+
+            if (!strategy.CanConsider(planningState, decisionPoint))
+                return PlanningStrategyResult.NotApplicable();
+
+            return strategy.CollectActions(
+                planningState,
+                projectedWorldSnapshot,
+                decisionPoint);
         }
 
         /// <summary>

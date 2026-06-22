@@ -12,7 +12,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
         /// <summary>
         /// Возвращает true, если хомяк сейчас может выполнить roof-to-roof прыжок.
         /// </summary>
-        public bool IsSatisfiedBy(PlanningState planningState)
+        public bool IsStateValid(PlanningState planningState)
         {
             // Проверяет planning state.
             if (planningState == null)

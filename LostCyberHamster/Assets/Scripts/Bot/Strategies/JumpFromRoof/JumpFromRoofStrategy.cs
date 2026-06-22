@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -43,6 +44,17 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
         public ISimulator Simulator { get; }
 
         /// <summary>
+        /// Быстро проверяет roof-run ситуацию с дорожной угрозой для прыжка с крыши.
+        /// </summary>
+        public bool CanConsider(
+            PlanningState planningState,
+            DecisionPoint decisionPoint)
+        {
+            return PlanningStrategyApplicability.IsRoofRunCurrentLane(planningState, decisionPoint)
+                && PlanningStrategyApplicability.FirstHasRole(decisionPoint, ObstacleRole.BlockingThreat);
+        }
+
+        /// <summary>
         /// Добавляет jump-from-roof action, если passive roof exit опасен, а прыжок безопасен.
         /// </summary>
         public PlanningStrategyResult CollectActions(
@@ -72,7 +84,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpFromRoof
                 return PlanningStrategyResult.NotApplicable();
             }
 
-            if (!_specification.IsSatisfiedBy(planningState, blockingThreat))
+            if (!_specification.IsSubjectValid(planningState, blockingThreat))
                 return PlanningStrategyResult.NotApplicable();
 
             // Проверяет ресурс применимой strategy до поиска safe-window.

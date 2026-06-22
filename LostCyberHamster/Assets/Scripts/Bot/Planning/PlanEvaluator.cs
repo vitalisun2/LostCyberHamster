@@ -23,7 +23,7 @@ namespace Assets.Scripts.Bot.Planning
             PlanningBranch best = candidates[0];
             for (int candidateIndex = 1; candidateIndex < candidates.Count; candidateIndex++)
             {
-                if (CompareBranches(candidates[candidateIndex], best) < 0)
+                if (PlanningBranchComparer.Compare(candidates[candidateIndex], best) < 0)
                     best = candidates[candidateIndex];
             }
 
@@ -107,34 +107,6 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Сравнивает две planning-ветки.
-        /// </summary>
-        private static int CompareBranches(PlanningBranch left, PlanningBranch right)
-        {
-            if (ReferenceEquals(left, right))
-                return 0;
-
-            if (left == null)
-                return 1;
-
-            if (right == null)
-                return -1;
-
-            float commonHorizonProjectionWorldShift = left.FinalProjectionWorldShift < right.FinalProjectionWorldShift
-                ? left.FinalProjectionWorldShift
-                : right.FinalProjectionWorldShift;
-            // Сначала сравниваем только часть веток до общего горизонта,
-            // чтобы будущий хвост более длинной ветки не искажал первичное сравнение.
-            int compare = PlanningBranchMetricsComparer.Compare(
-                left.GetMetricsToReach(commonHorizonProjectionWorldShift),
-                right.GetMetricsToReach(commonHorizonProjectionWorldShift));
-            if (compare != 0)
-                return compare;
-
-            return PlanningBranchMetricsComparer.Compare(left.Metrics, right.Metrics);
-        }
-
-        /// <summary>
         /// Сравнивает dead-end ветки по тем же приоритетам, что и обычные ветки.
         /// </summary>
         private static int CompareDeadEndBranches(PlanningDeadEndBranch left, PlanningDeadEndBranch right)
@@ -151,7 +123,7 @@ namespace Assets.Scripts.Bot.Planning
             PlanningBranch leftBranch = left.Branch;
             PlanningBranch rightBranch = right.Branch;
 
-            return CompareBranches(leftBranch, rightBranch);
+            return PlanningBranchComparer.Compare(leftBranch, rightBranch);
         }
     }
 }

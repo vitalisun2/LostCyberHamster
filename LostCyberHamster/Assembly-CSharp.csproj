@@ -74,6 +74,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneStrategy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimatorEventsDispatcher.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\PlanningStrategyApplicability.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofSimulator.cs" />
     <Compile Include="Assets\Scripts\Gameplay\ScrollingEnvironment.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\SnapshotBuilder.cs" />
@@ -242,7 +243,6 @@
     <Compile Include="Assets\Scripts\Common\Models\LocationInfo.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopItemList.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\KeyboardMechanics.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\IBotStrategySpecification.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\QuestSystem\Quest.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\WorldSnapshot.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\RoofHeightTransitionCompensator.cs" />
@@ -268,6 +268,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\JumpFromRoofTravel.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitLocalizationLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnSpecification.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\IActionSubjectSpecification.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\GameManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\IPlanningStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnRoof\JumpOnRoofExecutor.cs" />
@@ -426,6 +427,7 @@
     <Compile Include="Assets\Scripts\UI\Screens\SelectLevelScreenController.cs" />
     <Compile Include="Assets\Scripts\SharedCore\GameData\Crypto\ICryptoService.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\IJumpOnPolicy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranchComparer.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Data\GameData.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoofOnRoof\SuperJumpFromRoofOnRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Progress\ProgressService.cs" />

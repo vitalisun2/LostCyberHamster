@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
@@ -18,7 +19,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
     internal sealed class JumpOnRoofStrategy : IPlanningStrategy
     {
         private readonly IJumpOnRoofPolicy _policy;
-        private readonly IBotStrategySpecification _specification;
+        private readonly IActionSubjectSpecification _specification;
         private readonly JumpOnRoofFireWindowFinder _fireWindowFinder;
         private readonly JumpOnRoofActionResolver _actionResolver;
         private readonly JumpOnRoofSimulator _simulator;
@@ -44,6 +45,17 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
         public ISimulator Simulator { get; }
 
         /// <summary>
+        /// Быстро проверяет, есть ли ground-ситуация с roof support для прыжка на крышу.
+        /// </summary>
+        public bool CanConsider(
+            PlanningState planningState,
+            DecisionPoint decisionPoint)
+        {
+            return PlanningStrategyApplicability.IsGroundRunCurrentLane(planningState, decisionPoint)
+                && PlanningStrategyApplicability.HasRole(decisionPoint, ObstacleRole.RoofSupport);
+        }
+
+        /// <summary>
         /// Добавляет jump-on-roof action, если roof support выбран из role-chain и подтвержден resolver-ом.
         /// </summary>
         public PlanningStrategyResult CollectActions(
@@ -65,7 +77,7 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                 return PlanningStrategyResult.NotApplicable();
             }
 
-            if (!_specification.IsSatisfiedBy(planningState, targetRoof))
+            if (!_specification.IsSubjectValid(planningState, targetRoof))
                 return PlanningStrategyResult.NotApplicable();
 
             // Проверяет ресурс применимой strategy до поиска safe-window.

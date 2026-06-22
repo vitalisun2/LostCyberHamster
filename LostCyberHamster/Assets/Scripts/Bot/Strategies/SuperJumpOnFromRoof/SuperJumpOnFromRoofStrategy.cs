@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -72,6 +73,16 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
         public ISimulator Simulator { get; }
 
         /// <summary>
+        /// Быстро проверяет roof-run context перед поиском super roof-to-road target.
+        /// </summary>
+        public bool CanConsider(
+            PlanningState planningState,
+            DecisionPoint decisionPoint)
+        {
+            return PlanningStrategyApplicability.IsRoofRunCurrentLane(planningState, decisionPoint);
+        }
+
+        /// <summary>
         /// Добавляет super roof-to-road jump-on action, если target и полное действие безопасны.
         /// </summary>
         public PlanningStrategyResult CollectActions(
@@ -106,7 +117,7 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof
                     : DeadEnd(resolveDeadEndReason);
             }
 
-            if (!_specification.IsSatisfiedBy(planningState, targetObstacle))
+            if (!_specification.IsSubjectValid(planningState, targetObstacle))
                 return PlanningStrategyResult.NotApplicable();
 
             // Проверяет ресурс применимой strategy до поиска safe-window.

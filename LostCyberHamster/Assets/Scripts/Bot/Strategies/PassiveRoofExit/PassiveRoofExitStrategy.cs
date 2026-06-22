@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 
 namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
@@ -39,6 +40,16 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
         /// Simulator passive roof exit.
         /// </summary>
         public ISimulator Simulator { get; }
+
+        /// <summary>
+        /// Быстро проверяет roof-run context для пассивного схода с крыши.
+        /// </summary>
+        public bool CanConsider(
+            PlanningState planningState,
+            DecisionPoint decisionPoint)
+        {
+            return PlanningStrategyApplicability.IsRoofRunCurrentLane(planningState, decisionPoint);
+        }
 
         /// <summary>
         /// Добавляет no-input passive roof exit action, если естественный сход с крыши безопасен.

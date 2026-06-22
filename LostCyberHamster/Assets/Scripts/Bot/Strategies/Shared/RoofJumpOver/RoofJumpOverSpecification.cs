@@ -12,7 +12,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
         /// <summary>
         /// Возвращает true, если хомяк может выполнить roof jump-over над obstacle.
         /// </summary>
-        public bool IsSatisfiedBy(
+        public bool IsSubjectValid(
             PlanningState planningState,
             ObstacleSnapshot hazardObstacle)
         {

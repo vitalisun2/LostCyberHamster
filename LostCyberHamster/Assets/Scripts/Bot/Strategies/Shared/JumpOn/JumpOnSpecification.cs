@@ -8,12 +8,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
     /// <summary>
     /// Проверяет применимость ground jump-on к уже выбранному target.
     /// </summary>
-    internal sealed class JumpOnSpecification : IBotStrategySpecification
+    internal sealed class JumpOnSpecification : IActionSubjectSpecification
     {
         /// <summary>
         /// Возвращает true, если ground jump-on policy применима к указанному target.
         /// </summary>
-        public bool IsSatisfiedBy(
+        public bool IsSubjectValid(
             PlanningState planningState,
             ObstacleSnapshot obstacle)
         {

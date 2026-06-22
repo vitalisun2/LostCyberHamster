@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Timing;
@@ -33,6 +34,26 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         public BotActionKind ActionKind => BotActionKind.SwitchLane;
         public IActionExecutionHandler Executor { get; }
         public ISimulator Simulator { get; }
+
+        /// <summary>
+        /// Быстро проверяет, может ли дорожный SwitchLane быть полезен для этой role-chain.
+        /// </summary>
+        public bool CanConsider(
+            PlanningState planningState,
+            DecisionPoint decisionPoint)
+        {
+            if (!PlanningStrategyApplicability.HasContext(planningState, decisionPoint)
+                || !PlanningStrategyApplicability.CanPlanGroundRun(planningState.Hamster))
+            {
+                return false;
+            }
+
+            if (PlanningStrategyApplicability.IsOppositeLane(planningState, decisionPoint))
+                return true;
+
+            return PlanningStrategyApplicability.IsCurrentLane(planningState, decisionPoint)
+                && PlanningStrategyApplicability.HasRole(decisionPoint, ObstacleRole.BlockingThreat);
+        }
 
         /// <summary>
         /// Возвращает действие смены линии для role-based точки решения.
@@ -145,7 +166,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             bool chainBottomLine = decisionPoint.Chain.First.IsBottomLine;
             if (chainBottomLine != hamster.IsOnBottomLine)
             {
-                if (!_specification.IsSatisfiedBy(planningState))
+                if (!_specification.IsStateValid(planningState))
                     return false;
 
                 triggerObstacle = decisionPoint.Chain.FirstObstacle;
@@ -163,7 +184,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 return false;
             }
 
-            if (!_specification.IsSatisfiedBy(planningState, blockingThreat))
+            if (!_specification.IsSubjectValid(planningState, blockingThreat))
                 return false;
 
             triggerObstacle = blockingThreat;

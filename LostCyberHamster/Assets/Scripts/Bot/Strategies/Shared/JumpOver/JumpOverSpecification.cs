@@ -7,7 +7,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
     /// <summary>
     /// Проверяет применимость ground jump-over к уже выбранной blocking threat.
     /// </summary>
-    internal sealed class JumpOverSpecification : IBotStrategySpecification
+    internal sealed class JumpOverSpecification : IActionSubjectSpecification
     {
         private readonly IJumpOverPolicy _policy;
 
@@ -22,7 +22,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
         /// <summary>
         /// Возвращает true, если jump-over policy применима к указанной blocking threat.
         /// </summary>
-        public bool IsSatisfiedBy(
+        public bool IsSubjectValid(
             PlanningState planningState,
             ObstacleSnapshot obstacle)
         {

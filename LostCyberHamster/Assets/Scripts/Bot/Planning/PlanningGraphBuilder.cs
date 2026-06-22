@@ -67,7 +67,7 @@ namespace Assets.Scripts.Bot.Planning
     /// </summary>
     public sealed class PlanningGraphBuilder
     {
-        private const int MaxSearchDepth = 6;
+        private const int MaxSearchDepth = 5;
 
         private readonly ActionGenerator _actionGenerator;
         private readonly TransitionSimulator _transitionSimulator;
@@ -96,9 +96,11 @@ namespace Assets.Scripts.Bot.Planning
 
             var branches = new List<PlanningBranch>();
             var deadEndBranches = new List<PlanningDeadEndBranch>();
+            var bestNodesByState = new Dictionary<PlanningStateKey, PlanningGraphNode>();
             PlanningGraphNode rootNode = PlanningGraphNode.CreateRoot(rootState);
 
-            ExploreNode(rootNode, worldSnapshot, branches, deadEndBranches);
+            ExploreNode(rootNode, worldSnapshot, branches, deadEndBranches, bestNodesByState);
+
             return new PlanningGraphBuildResult(branches, deadEndBranches);
         }
 
@@ -109,8 +111,12 @@ namespace Assets.Scripts.Bot.Planning
             PlanningGraphNode currentNode,
             WorldSnapshot worldSnapshot,
             List<PlanningBranch> branches,
-            List<PlanningDeadEndBranch> deadEndBranches)
+            List<PlanningDeadEndBranch> deadEndBranches,
+            Dictionary<PlanningStateKey, PlanningGraphNode> bestNodesByState)
         {
+            if (ShouldPruneSameState(currentNode, bestNodesByState))
+                return;
+
             if (currentNode.Depth >= MaxSearchDepth)
             {
                 AddLeafBranch(currentNode, branches);
@@ -118,8 +124,11 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             ActionGenerationResult generationResult = _actionGenerator.Generate(currentNode.State, worldSnapshot);
+
             IReadOnlyList<PlannedAction> candidates = generationResult.Actions;
+
             bool hasUnresolvedPlanningSituation = HasUnresolvedPlanningSituation(currentNode.State, worldSnapshot);
+
             if (candidates.Count == 0)
             {
                 if (!hasUnresolvedPlanningSituation)
@@ -151,8 +160,36 @@ namespace Assets.Scripts.Bot.Planning
                     continue;
 
                 PlanningGraphNode childNode = currentNode.CreateChild(nextState, candidate);
-                ExploreNode(childNode, worldSnapshot, branches, deadEndBranches);
+                ExploreNode(childNode, worldSnapshot, branches, deadEndBranches, bestNodesByState);
             }
+        }
+
+        /// <summary>
+        /// Отсекает node, если тот же planning-state уже достигнут не худшей prefix-веткой.
+        /// </summary>
+        private static bool ShouldPruneSameState(
+            PlanningGraphNode currentNode,
+            Dictionary<PlanningStateKey, PlanningGraphNode> bestNodesByState)
+        {
+            if (currentNode == null || bestNodesByState == null)
+                return false;
+
+            if (!bestNodesByState.TryGetValue(currentNode.StateKey, out PlanningGraphNode existingNode))
+            {
+                bestNodesByState.Add(currentNode.StateKey, currentNode);
+                return false;
+            }
+
+            if (ReferenceEquals(existingNode, currentNode))
+                return false;
+
+            PlanningBranch existingBranch = PlanningBranch.FromLeaf(existingNode);
+            PlanningBranch currentBranch = PlanningBranch.FromLeaf(currentNode);
+            if (PlanningBranchComparer.IsBetterOrEqual(existingBranch, currentBranch))
+                return true;
+
+            bestNodesByState[currentNode.StateKey] = currentNode;
+            return false;
         }
 
         /// <summary>

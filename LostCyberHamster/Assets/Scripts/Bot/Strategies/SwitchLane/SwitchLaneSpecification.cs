@@ -8,12 +8,12 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
     /// <summary>
     /// Проверяет применимость дорожной смены линии к уже выбранной blocking threat.
     /// </summary>
-    internal sealed class SwitchLaneSpecification : IBotStrategySpecification
+    internal sealed class SwitchLaneSpecification : IActionSubjectSpecification
     {
         /// <summary>
         /// Возвращает true, если SwitchLane применим к указанной blocking threat.
         /// </summary>
-        public bool IsSatisfiedBy(
+        public bool IsSubjectValid(
             PlanningState planningState,
             ObstacleSnapshot obstacle)
         {
@@ -36,7 +36,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         /// <summary>
         /// Возвращает true, если из текущего состояния можно планировать дорожный SwitchLane.
         /// </summary>
-        public bool IsSatisfiedBy(PlanningState planningState)
+        public bool IsStateValid(PlanningState planningState)
         {
             if (planningState?.Hamster == null)
                 return false;

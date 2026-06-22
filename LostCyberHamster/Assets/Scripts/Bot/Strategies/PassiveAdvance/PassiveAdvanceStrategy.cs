@@ -2,6 +2,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Common;
@@ -22,6 +23,18 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
         public BotActionKind ActionKind => BotActionKind.PassiveAdvance;
         public IActionExecutionHandler Executor { get; }
         public ISimulator Simulator { get; }
+
+        /// <summary>
+        /// Быстро проверяет, нужен ли no-input advance для opposite-lane ситуации.
+        /// </summary>
+        public bool CanConsider(
+            PlanningState planningState,
+            DecisionPoint decisionPoint)
+        {
+            return PlanningStrategyApplicability.HasContext(planningState, decisionPoint)
+                && PlanningStrategyApplicability.CanPlanGroundRun(planningState.Hamster)
+                && PlanningStrategyApplicability.IsOppositeLane(planningState, decisionPoint);
+        }
 
         /// <summary>
         /// Создает passive advance action для safe ожидания ухода opposite-lane blocker.

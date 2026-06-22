@@ -2,6 +2,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Common;
@@ -22,6 +23,19 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
         public BotActionKind ActionKind => BotActionKind.PassiveCollect;
         public IActionExecutionHandler Executor { get; }
         public ISimulator Simulator { get; }
+
+        /// <summary>
+        /// Быстро проверяет, есть ли на текущей линии collectable для no-input pickup.
+        /// </summary>
+        public bool CanConsider(
+            PlanningState planningState,
+            DecisionPoint decisionPoint)
+        {
+            return PlanningStrategyApplicability.HasContext(planningState, decisionPoint)
+                && PlanningStrategyApplicability.CanPlanPassiveCollect(planningState.Hamster)
+                && PlanningStrategyApplicability.IsCurrentLane(planningState, decisionPoint)
+                && PlanningStrategyApplicability.HasRole(decisionPoint, ObstacleRole.Collectible);
+        }
 
         /// <summary>
         /// Добавляет passive collect action, если collectable можно безопасно подобрать без input.
