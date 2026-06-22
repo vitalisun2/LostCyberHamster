@@ -97,12 +97,8 @@ namespace Assets.Scripts.Bot.Planning
             var branches = new List<PlanningBranch>();
             var deadEndBranches = new List<PlanningDeadEndBranch>();
             PlanningGraphNode rootNode = PlanningGraphNode.CreateRoot(rootState);
-            var bestMetricsByState = new Dictionary<PlanningStateKey, PlanningBranchMetrics>
-            {
-                [rootNode.StateKey] = rootNode.Metrics
-            };
 
-            ExploreNode(rootNode, worldSnapshot, branches, deadEndBranches, bestMetricsByState);
+            ExploreNode(rootNode, worldSnapshot, branches, deadEndBranches);
             return new PlanningGraphBuildResult(branches, deadEndBranches);
         }
 
@@ -113,8 +109,7 @@ namespace Assets.Scripts.Bot.Planning
             PlanningGraphNode currentNode,
             WorldSnapshot worldSnapshot,
             List<PlanningBranch> branches,
-            List<PlanningDeadEndBranch> deadEndBranches,
-            Dictionary<PlanningStateKey, PlanningBranchMetrics> bestMetricsByState)
+            List<PlanningDeadEndBranch> deadEndBranches)
         {
             if (currentNode.Depth >= MaxSearchDepth)
             {
@@ -148,16 +143,15 @@ namespace Assets.Scripts.Bot.Planning
                 if (IsRedundantSwitchLaneContinuation(currentNode, candidate))
                     continue;
 
-                PlanningState nextState = _transitionSimulator.Simulate(currentNode.State, candidate, worldSnapshot);
-                if (nextState == null || CreatesAncestorCycle(currentNode, nextState))
+                PlanningState nextState = _transitionSimulator.Simulate(
+                    currentNode.State,
+                    candidate,
+                    worldSnapshot);
+                if (nextState == null)
                     continue;
 
                 PlanningGraphNode childNode = currentNode.CreateChild(nextState, candidate);
-                if (IsDominated(childNode, bestMetricsByState))
-                    continue;
-
-                bestMetricsByState[childNode.StateKey] = childNode.Metrics;
-                ExploreNode(childNode, worldSnapshot, branches, deadEndBranches, bestMetricsByState);
+                ExploreNode(childNode, worldSnapshot, branches, deadEndBranches);
             }
         }
 
@@ -248,20 +242,6 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Проверяет, доминирует ли известная ветка новый узел с тем же ключом состояния.
-        /// </summary>
-        private static bool IsDominated(
-            PlanningGraphNode candidateNode,
-            Dictionary<PlanningStateKey, PlanningBranchMetrics> bestMetricsByState)
-        {
-            if (candidateNode == null || bestMetricsByState == null)
-                return false;
-
-            return bestMetricsByState.TryGetValue(candidateNode.StateKey, out PlanningBranchMetrics bestMetrics)
-                && PlanningBranchMetricsComparer.IsBetterOrEqual(bestMetrics, candidateNode.Metrics);
-        }
-
-        /// <summary>
         /// Отсекает switch-lane ping-pong, который возвращает ветку к той же или более ранней ситуации.
         /// </summary>
         private static bool IsRedundantSwitchLaneContinuation(
@@ -283,19 +263,5 @@ namespace Assets.Scripts.Bot.Planning
             return candidate.TargetObstacleIndex <= previousAction.TargetObstacleIndex;
         }
 
-        /// <summary>
-        /// Проверяет, возвращает ли новое состояние ветку к одному из ancestor-состояний.
-        /// </summary>
-        private static bool CreatesAncestorCycle(PlanningGraphNode currentNode, PlanningState nextState)
-        {
-            PlanningStateKey nextKey = PlanningStateKey.FromState(nextState);
-            for (PlanningGraphNode node = currentNode; node != null; node = node.Parent)
-            {
-                if (node.StateKey.Equals(nextKey))
-                    return true;
-            }
-
-            return false;
-        }
     }
 }
