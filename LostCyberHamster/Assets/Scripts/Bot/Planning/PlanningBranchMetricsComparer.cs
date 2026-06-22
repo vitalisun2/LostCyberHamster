@@ -1,7 +1,7 @@
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
-    /// Сравнивает planning-метрики по единому порядку приоритетов для pruning и финального выбора ветки.
+    /// Сравнивает planning-метрики по энергоэффективности ветки.
     /// </summary>
     internal static class PlanningBranchMetricsComparer
     {
@@ -19,23 +19,7 @@ namespace Assets.Scripts.Bot.Planning
             if (right == null)
                 return -1;
 
-            int compare = CompareDescending(left.LifeCollectibleValue, right.LifeCollectibleValue);
-            if (compare != 0)
-                return compare;
-
-            compare = left.EnergyBeforeFirstMajor.CompareTo(right.EnergyBeforeFirstMajor);
-            if (compare != 0)
-                return compare;
-
-            compare = CompareDescending(left.MajorObjectiveCount, right.MajorObjectiveCount);
-            if (compare != 0)
-                return compare;
-
-            compare = left.EnergyCost.CompareTo(right.EnergyCost);
-            if (compare != 0)
-                return compare;
-
-            compare = CompareDescending(left.CoinCollectibleValue, right.CoinCollectibleValue);
+            int compare = left.EnergyCost.CompareTo(right.EnergyCost);
             if (compare != 0)
                 return compare;
 
@@ -50,9 +34,5 @@ namespace Assets.Scripts.Bot.Planning
             return Compare(left, right) <= 0;
         }
 
-        private static int CompareDescending(int left, int right)
-        {
-            return right.CompareTo(left);
-        }
     }
 }
