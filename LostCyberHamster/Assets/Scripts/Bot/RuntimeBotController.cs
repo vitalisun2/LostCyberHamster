@@ -502,7 +502,32 @@ namespace Assets.Scripts.Bot
                 return;
             }
 
+            if (ShouldPreserveCurrentHandoffTail(result))
+                return;
+
             ApplyPlanBuildResult(result.BuildResult, result.ReplanReasons);
+        }
+
+        /// <summary>
+        /// Не применяет dead-end fallback, если он стирает следующий action после уже выполняющегося head.
+        /// </summary>
+        private bool ShouldPreserveCurrentHandoffTail(AsyncPlanBuildResult result)
+        {
+            if (_executor == null || !_executor.IsActionInProgress)
+                return false;
+
+            PlanBuildResult buildResult = result?.BuildResult;
+            if (buildResult == null || !buildResult.HasDeadEnd)
+                return false;
+
+            BotPlan currentPlan = CurrentPlan;
+            BotPlan resultPlan = buildResult.Plan;
+            return currentPlan.HasActions
+                && currentPlan.Actions.Count > 1
+                && resultPlan != null
+                && resultPlan.HasActions
+                && resultPlan.Actions.Count < 2
+                && currentPlan.Actions[0].IsEquivalentTo(resultPlan.Actions[0]);
         }
 
         /// <summary>
