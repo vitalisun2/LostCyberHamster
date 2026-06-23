@@ -7,6 +7,8 @@ argument-hint: "Описание задачи"
 
 Unity Live workflow: обычные правки прямо в `integration/unity-live`. Без отдельной ветки, worktree и lock.
 
+Не использовать для analysis-only/root cause задач. Если пользователь просит только анализ или доказательство причины, после доказанного root cause сразу ответь с причиной и предложением решения; не переходи к этому workflow, не запускай cleanup, validation или дополнительные git/workflow checks без отдельного запроса.
+
 ## Процесс
 
 1. Убедись, что основной каталог на `integration/unity-live`.

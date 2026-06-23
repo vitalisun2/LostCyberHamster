@@ -7,6 +7,8 @@ argument-hint: "Описание задачи и, опционально, slug"
 
 Task Branch workflow: временная ветка `task/<slug>` + worktree `.worktrees/<slug>`. Используется для изолированной/параллельной работы. `integration/unity-live` — только для ревью-снимка под lock.
 
+Не использовать для analysis-only/root cause задач. Если пользователь просит только анализ или доказательство причины, после доказанного root cause сразу ответь с причиной и предложением решения; не создавай ветку/worktree, не запускай cleanup, validation или дополнительные git/workflow checks без отдельного запроса.
+
 ## Подготовка
 
 1. Выбери `slug` в kebab-case.
