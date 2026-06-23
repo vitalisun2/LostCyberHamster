@@ -39,10 +39,10 @@
 | DTO, конфиги, domain objects, нарушение инкапсуляции | `09_objects_and_data_structures.md` |
 | Ошибки, `null`, исключения, guard-проверки | `10_error_handling.md` |
 | Unity API, Addressables, сторонние библиотеки, внешние сервисы | `11_boundaries_and_third_party_code.md` |
-| Добавление или рефакторинг тестов | `12_unit_tests.md` |
+| Явный запрос пользователя на работу с тестами | `12_unit_tests.md` |
 | Разделение класса, SRP, связность, рост ответственности | `13_classes_srp_cohesion.md` |
 | Инициализация систем, зависимости, фабрики, composition root | `14_system_construction_and_dependencies.md` |
-| Архитектурное упрощение через тесты и рефакторинг | `15_emergent_design.md` |
+| Архитектурное упрощение и рефакторинг | `15_emergent_design.md` |
 | Асинхронность, фоновые задачи, потоки, shared state | `16_concurrency.md` |
 | Последовательная очистка сложного кода без переписывания | `17_progressive_cleanup.md` |
 | Code review, общий поиск проблем, непонятный запах | `18_smells_and_heuristics.md` |
@@ -60,10 +60,10 @@
 - `09_objects_and_data_structures.md` - объекты, структуры данных, DTO, закон Деметры.
 - `10_error_handling.md` - исключения, контекст ошибки, отказ от `null`.
 - `11_boundaries_and_third_party_code.md` - границы со сторонним и платформенным кодом.
-- `12_unit_tests.md` - чистые тесты, F.I.R.S.T., один смысл на тест.
+- `12_unit_tests.md` - работа с существующими или явно запрошенными тестами.
 - `13_classes_srp_cohesion.md` - компактные классы, SRP, связность.
 - `14_system_construction_and_dependencies.md` - отделение создания системы от использования.
-- `15_emergent_design.md` - простая архитектура через тесты, DRY и выразительность.
+- `15_emergent_design.md` - простая архитектура через DRY, выразительность и минимальный набор сущностей.
 - `16_concurrency.md` - изоляция многопоточного кода и shared state.
 - `17_progressive_cleanup.md` - постепенная очистка работающего кода.
 - `18_smells_and_heuristics.md` - диагностический список запахов.

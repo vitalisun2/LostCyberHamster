@@ -19,7 +19,7 @@
 - Используй immutable snapshots или копии данных.
 - Минимизируй synchronized/locked секции.
 - Не связывай несколько lock-зависимых методов скрытым порядком вызова.
-- Тестируй не только happy path, но и завершение/отмену.
+- Проверяй не только happy path, но и завершение/отмену доступным способом.
 
 ## Пример
 
@@ -45,4 +45,3 @@ private Task<JumpPlan> PlanJumpAsync(Hamster hamster)
 ## Правило для агента
 
 Если в асинхронном коде есть shared mutable state, считай это дефектом дизайна, пока не доказано обратное. Сначала ищи snapshot, ownership или main-thread boundary.
-

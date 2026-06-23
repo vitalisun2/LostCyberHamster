@@ -47,7 +47,7 @@
 
 ### Патчи и рефакторинг
 
-- Делить manual patch по слоям ответственности: predicate/helper, call sites, tests/specs, cleanup.
+- Делить manual patch по слоям ответственности: predicate/helper, call sites, specs, cleanup.
 - После failed patch уменьшать scope, а не повторять тот же большой diff.
 - После введения центрального helper/predicate искать старые primitive checks, прямые обходные вызовы и obsolete usings.
 - После helper extraction проверять, не появились ли повторные проходы по одной коллекции; факты для одного решения собирать одним scan.
@@ -77,7 +77,7 @@
 ## Promotion Registry
 
 - [promoted -> docs/rules/AGENTS.md] Краткий стиль ответа, fast code-edit workflow и минимальное входное чтение.
-- [promoted -> docs/rules/code_conventions.md] Runtime-first подход к gameplay-механикам, ограничения blind fixes, Unity `.meta`/`.csproj`, тонкий слой EditMode-тестов и JSON data migration.
+- [promoted -> docs/rules/code_conventions.md] Runtime-first подход к gameplay-механикам, ограничения blind fixes, Unity `.meta`/`.csproj`, запрет инициативного добавления тестов и JSON data migration.
 - [promoted -> docs/rules/agent_tools.md] Automation bridge, diagnostic logs, `tools/read_log_channel.ps1`, ignored paths, Editor.log fallback, Unity wake-up и full bot validation.
 - [promoted -> docs/rules/agent_tools.md] Test-level validation: `WIN`/`FAIL`/звёзды не являются критерием регрессии; сверять фактические actions с `description` test-паттернов.
 - [promoted -> docs/rules/agent_tools.md] При "зависшем" Unity automation сначала проверить, что request/response paths указывают на реальный Unity project root.

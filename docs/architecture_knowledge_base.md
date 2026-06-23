@@ -404,7 +404,7 @@ DebugManager.DiagLog($"[Component] Important data: {value}");
 - Особенно для Editor API (AnimationMode, SceneView)
 - Unity API обширный, не изобретать велосипед
 
-**4. Тестировать инкрементально**
+**4. Проверять инкрементально**
 - Не делать 10 изменений сразу
 - После каждого изменения — компиляция + проверка
 - Использовать `get_errors` для валидации
@@ -538,7 +538,7 @@ Menu: `Tools/Migration/` — 3 шага:
 - Chain-этапы: межлинейность — свойство запланированной последовательности шагов (zigzag 2-step), не отдельная смена линии.
 - `ObjectCategory.Threat` ≠ полное множество runtime-опасных объектов. Классификатор может помечать часть как `Target`. Safety проверки сверять с runtime-dangerous type set.
 - `HamsterState` — источник истины для прыжков: `JumpOver` = перепрыгивание.
-- Chain-stage тесты: все объекты цепочки должны попадать в один initial snapshot (в пределах `scanRange`).
+- Chain-stage сценарии: все объекты цепочки должны попадать в один initial snapshot (в пределах `scanRange`).
 - Runtime bot planning работает event-driven: plan rebuild запрашивается на `LevelStart`, `BotEnabled`, `SpawnPattern`, `ActionCompleted` и `ActionCancelled`; таймерного rolling rebuild нет.
 - Snapshot horizon для бота — все active `ObstacleSpawner.SpawnedObstacles`, без искусственной правой границы видимости.
 - Planner no-action/dead-end reasons — это diagnosis, а не доказанный level dead-end. Подтвержденный dead-end для валидатора уровня фиксируется только после runtime-потери жизни (`LivesLost`); без сохраненной diagnosis loss-of-life не должен создавать bot dead-end report.

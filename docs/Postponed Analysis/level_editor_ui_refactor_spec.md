@@ -88,9 +88,9 @@ sky_{location_slug}_{daypart}     → sky_new_york_morning
 - Написать Editor-скрипт или PowerShell для удаления полей `backgroundTexture`, `skyTexture`, `background2Texture`, `roadTexture` из всех существующих JSON-файлов уровней
 - Убедиться, что все существующие спрайты в Addressables соответствуют naming convention
 
-### Тестирование
-- Юнит-тест: построение ключа фона по location + daypart
-- Проверка: загрузка каждой комбинации location + daypart даёт валидный спрайт
+### Проверка
+- Локальная проверка: построение ключа фона по location + daypart.
+- Проверка: загрузка каждой комбинации location + daypart даёт валидный спрайт.
 
 ---
 
