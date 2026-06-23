@@ -22,6 +22,7 @@ namespace Assets.Scripts.Bot.Planning
             Metrics = metrics ?? PlanningBranchMetrics.Empty;
             FinalNextObstacleIndex = finalNextObstacleIndex;
             FinalProjectionWorldShift = finalProjectionWorldShift;
+            InitialProjectionWorldShift = CalculateInitialProjectionWorldShift(Actions, finalProjectionWorldShift);
         }
 
         public IReadOnlyList<PlannedAction> Actions { get; }
@@ -37,20 +38,16 @@ namespace Assets.Scripts.Bot.Planning
         public int EnergyCollectibleValue => Metrics.EnergyCollectibleValue;
         public int CrystalCollectibleValue => Metrics.CrystalCollectibleValue;
         public int CoinCollectibleValue => Metrics.CoinCollectibleValue;
+        private float InitialProjectionWorldShift { get; }
 
         /// <summary>
         /// Собирает ветку из листового узла графа планирования.
         /// </summary>
         public static PlanningBranch FromLeaf(PlanningGraphNode leafNode)
         {
-            var actions = new List<PlannedAction>(leafNode.Depth);
-            for (PlanningGraphNode current = leafNode; current != null && !current.IsRoot; current = current.Parent)
-                actions.Add(current.IncomingAction);
-
-            actions.Reverse();
             return new PlanningBranch(
-                actions,
-                PlanningBranchMetrics.FromActions(actions),
+                leafNode.Actions,
+                leafNode.Metrics,
                 leafNode.State.NextObstacleIndex,
                 leafNode.State.ProjectionWorldShift);
         }
@@ -66,30 +63,33 @@ namespace Assets.Scripts.Bot.Planning
             if (Actions.Count == 0)
                 return PlanningBranchMetrics.Empty;
 
-            float currentProjectionWorldShift = GetInitialProjectionWorldShift();
-            var actionsToHorizon = new List<PlannedAction>(Actions.Count);
+            int actionCountToHorizon = 0;
+            float currentProjectionWorldShift = InitialProjectionWorldShift;
             for (int actionIndex = 0; actionIndex < Actions.Count; actionIndex++)
             {
-                PlannedAction action = Actions[actionIndex];
-                if (action == null)
-                    continue;
-
                 if (currentProjectionWorldShift >= horizonProjectionWorldShift - horizonEpsilon)
                     break;
 
-                actionsToHorizon.Add(action);
-                currentProjectionWorldShift += action.CompletionWorldShift;
+                actionCountToHorizon++;
+                PlannedAction action = Actions[actionIndex];
+                if (action != null)
+                    currentProjectionWorldShift += action.CompletionWorldShift;
             }
 
-            return PlanningBranchMetrics.FromActions(actionsToHorizon);
+            return PlanningBranchMetrics.FromActionPrefix(Actions, actionCountToHorizon);
         }
 
-        private float GetInitialProjectionWorldShift()
+        private static float CalculateInitialProjectionWorldShift(
+            IReadOnlyList<PlannedAction> actions,
+            float finalProjectionWorldShift)
         {
-            float projectionWorldShift = FinalProjectionWorldShift;
-            for (int actionIndex = 0; actionIndex < Actions.Count; actionIndex++)
+            float projectionWorldShift = finalProjectionWorldShift;
+            if (actions == null)
+                return projectionWorldShift;
+
+            for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
             {
-                PlannedAction action = Actions[actionIndex];
+                PlannedAction action = actions[actionIndex];
                 if (action != null)
                     projectionWorldShift -= action.CompletionWorldShift;
             }

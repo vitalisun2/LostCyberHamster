@@ -84,23 +84,40 @@ namespace Assets.Scripts.Bot.Planning
             if (actions == null || actions.Count == 0)
                 return Empty;
 
-            int firstMajorActionIndex = FindFirstMajorActionIndex(actions);
+            return FromActionPrefix(actions, actions.Count);
+        }
+
+        /// <summary>
+        /// Собирает метрики из начального участка цепочки действий.
+        /// </summary>
+        internal static PlanningBranchMetrics FromActionPrefix(
+            IReadOnlyList<PlannedAction> actions,
+            int actionCount)
+        {
+            if (actions == null || actionCount <= 0)
+                return Empty;
+
+            int effectiveActionCount = actionCount < actions.Count ? actionCount : actions.Count;
+            if (effectiveActionCount == 0)
+                return Empty;
+
+            int firstMajorActionIndex = FindFirstMajorActionIndex(actions, effectiveActionCount);
             int energyCost = 0;
             int energyBeforeFirstMajor = 0;
-            int actionCount = 0;
+            int countedActionCount = 0;
             int majorObjectiveCount = 0;
             int lifeCollectibleValue = 0;
             int energyCollectibleValue = 0;
             int crystalCollectibleValue = 0;
             int coinCollectibleValue = 0;
 
-            for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
+            for (int actionIndex = 0; actionIndex < effectiveActionCount; actionIndex++)
             {
                 PlannedAction action = actions[actionIndex];
                 int actionEnergyCost = action != null ? action.EnergyCost : 0;
 
                 energyCost += actionEnergyCost;
-                actionCount++;
+                countedActionCount++;
                 majorObjectiveCount += GetMajorObjectiveCount(action);
                 lifeCollectibleValue += GetCollectibleValue(action, CollectibleKind.Life);
                 energyCollectibleValue += GetCollectibleValue(action, CollectibleKind.Energy);
@@ -117,7 +134,7 @@ namespace Assets.Scripts.Bot.Planning
             return new PlanningBranchMetrics(
                 energyCost,
                 energyBeforeFirstMajor,
-                actionCount,
+                countedActionCount,
                 majorObjectiveCount,
                 lifeCollectibleValue,
                 energyCollectibleValue,
@@ -125,9 +142,11 @@ namespace Assets.Scripts.Bot.Planning
                 coinCollectibleValue);
         }
 
-        private static int FindFirstMajorActionIndex(IReadOnlyList<PlannedAction> actions)
+        private static int FindFirstMajorActionIndex(
+            IReadOnlyList<PlannedAction> actions,
+            int actionCount)
         {
-            for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
+            for (int actionIndex = 0; actionIndex < actionCount; actionIndex++)
             {
                 if (GetMajorObjectiveCount(actions[actionIndex]) > 0)
                     return actionIndex;

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 
@@ -16,21 +17,11 @@ namespace Assets.Scripts.Bot.Planning
             if (sourceSnapshot == null || planningState == null)
                 return null;
 
-            var projectedObstacles = new List<ObstacleSnapshot>(sourceSnapshot.Obstacles.Count);
-            for (int obstacleIndex = 0; obstacleIndex < sourceSnapshot.Obstacles.Count; obstacleIndex++)
-            {
-                ObstacleSnapshot obstacle = sourceSnapshot.Obstacles[obstacleIndex];
-                projectedObstacles.Add(new ObstacleSnapshot(
-                    obstacle.InstanceId,
-                    obstacle.ObstacleType,
-                    obstacle.IsTopLine,
-                    obstacle.LeftX - planningState.ProjectionWorldShift,
-                    obstacle.RightX - planningState.ProjectionWorldShift,
-                    obstacle.CenterX - planningState.ProjectionWorldShift,
-                    obstacle.BottomY,
-                    obstacle.TopY,
-                    planningState.IsObstacleRemoved(obstacle.InstanceId)));
-            }
+            IReadOnlyList<ObstacleSnapshot> projectedObstacles =
+                planningState.ProjectionWorldShift == 0f
+                && planningState.RemovedObstacleInstanceIds.Count == 0
+                    ? sourceSnapshot.Obstacles
+                    : new ProjectedObstacleList(sourceSnapshot.Obstacles, planningState);
 
             return new WorldSnapshot(
                 planningState.Hamster,
@@ -38,6 +29,60 @@ namespace Assets.Scripts.Bot.Planning
                 sourceSnapshot.ScreenLeftEdgeX,
                 sourceSnapshot.ScreenRightEdgeX,
                 sourceSnapshot.SnapshotTime);
+        }
+
+        private sealed class ProjectedObstacleList : IReadOnlyList<ObstacleSnapshot>
+        {
+            private readonly IReadOnlyList<ObstacleSnapshot> _source;
+            private readonly PlanningState _planningState;
+            private readonly ObstacleSnapshot[] _cache;
+
+            public ProjectedObstacleList(
+                IReadOnlyList<ObstacleSnapshot> source,
+                PlanningState planningState)
+            {
+                _source = source;
+                _planningState = planningState;
+                _cache = new ObstacleSnapshot[source.Count];
+            }
+
+            public int Count => _source.Count;
+
+            public ObstacleSnapshot this[int index]
+            {
+                get
+                {
+                    ObstacleSnapshot projected = _cache[index];
+                    if (projected != null)
+                        return projected;
+
+                    ObstacleSnapshot obstacle = _source[index];
+                    float projectionWorldShift = _planningState.ProjectionWorldShift;
+                    projected = new ObstacleSnapshot(
+                        obstacle.InstanceId,
+                        obstacle.ObstacleType,
+                        obstacle.IsTopLine,
+                        obstacle.LeftX - projectionWorldShift,
+                        obstacle.RightX - projectionWorldShift,
+                        obstacle.CenterX - projectionWorldShift,
+                        obstacle.BottomY,
+                        obstacle.TopY,
+                        obstacle.IsRemovedInPlanning || _planningState.IsObstacleRemoved(obstacle.InstanceId));
+                    _cache[index] = projected;
+                    return projected;
+                }
+            }
+
+            public IEnumerator<ObstacleSnapshot> GetEnumerator()
+            {
+                for (int index = 0; index < Count; index++)
+                    yield return this[index];
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
         }
     }
 }

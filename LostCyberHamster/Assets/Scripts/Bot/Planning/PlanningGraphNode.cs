@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
 
@@ -13,12 +14,14 @@ namespace Assets.Scripts.Bot.Planning
             PlanningGraphNode parent,
             PlannedAction incomingAction,
             int depth,
+            IReadOnlyList<PlannedAction> actions,
             PlanningBranchMetrics metrics)
         {
             State = state;
             Parent = parent;
             IncomingAction = incomingAction;
             Depth = depth;
+            Actions = actions ?? Array.Empty<PlannedAction>();
             Metrics = metrics;
             StateKey = PlanningStateKey.FromState(state);
         }
@@ -27,6 +30,7 @@ namespace Assets.Scripts.Bot.Planning
         public PlanningGraphNode Parent { get; }
         public PlannedAction IncomingAction { get; }
         public int Depth { get; }
+        public IReadOnlyList<PlannedAction> Actions { get; }
         public PlanningBranchMetrics Metrics { get; }
         internal PlanningStateKey StateKey { get; }
         public bool IsRoot => Parent == null;
@@ -36,7 +40,13 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         public static PlanningGraphNode CreateRoot(PlanningState rootState)
         {
-            return new PlanningGraphNode(rootState, null, null, depth: 0, PlanningBranchMetrics.Empty);
+            return new PlanningGraphNode(
+                rootState,
+                null,
+                null,
+                depth: 0,
+                Array.Empty<PlannedAction>(),
+                PlanningBranchMetrics.Empty);
         }
 
         /// <summary>
@@ -44,22 +54,26 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         public PlanningGraphNode CreateChild(PlanningState childState, PlannedAction action)
         {
+            IReadOnlyList<PlannedAction> actions = AppendAction(Actions, action);
             return new PlanningGraphNode(
                 childState,
                 this,
                 action,
                 Depth + 1,
-                PlanningBranchMetrics.FromActions(BuildActionPrefix(action)));
+                actions,
+                PlanningBranchMetrics.FromActions(actions));
         }
 
-        private IReadOnlyList<PlannedAction> BuildActionPrefix(PlannedAction action)
+        private static IReadOnlyList<PlannedAction> AppendAction(
+            IReadOnlyList<PlannedAction> prefix,
+            PlannedAction action)
         {
-            var actions = new List<PlannedAction>(Depth + 1);
-            for (PlanningGraphNode current = this; current != null && !current.IsRoot; current = current.Parent)
-                actions.Add(current.IncomingAction);
+            int prefixCount = prefix?.Count ?? 0;
+            var actions = new PlannedAction[prefixCount + 1];
+            for (int actionIndex = 0; actionIndex < prefixCount; actionIndex++)
+                actions[actionIndex] = prefix[actionIndex];
 
-            actions.Reverse();
-            actions.Add(action);
+            actions[prefixCount] = action;
             return actions;
         }
     }

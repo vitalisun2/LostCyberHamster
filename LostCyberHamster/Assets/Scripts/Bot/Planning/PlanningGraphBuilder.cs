@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
-using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 
 namespace Assets.Scripts.Bot.Planning
@@ -71,7 +70,6 @@ namespace Assets.Scripts.Bot.Planning
 
         private readonly ActionGenerator _actionGenerator;
         private readonly TransitionSimulator _transitionSimulator;
-        private readonly DecisionPointDetector _decisionPointDetector = new DecisionPointDetector();
 
         /// <summary>
         /// Создает builder role-based графа поверх генератора действий и simulator-а переходов.
@@ -127,11 +125,9 @@ namespace Assets.Scripts.Bot.Planning
 
             IReadOnlyList<PlannedAction> candidates = generationResult.Actions;
 
-            bool hasUnresolvedPlanningSituation = HasUnresolvedPlanningSituation(currentNode.State, worldSnapshot);
-
             if (candidates.Count == 0)
             {
-                if (!hasUnresolvedPlanningSituation)
+                if (!generationResult.HasUnresolvedPlanningSituation)
                 {
                     AddLeafBranch(currentNode, branches);
                     return;
@@ -204,22 +200,6 @@ namespace Assets.Scripts.Bot.Planning
                 currentNode.State.NextObstacleIndex,
                 currentNode.State.ProjectionWorldShift,
                 generationResult.DeadEndReasons);
-        }
-
-        /// <summary>
-        /// Проверяет, остается ли впереди обязательная role-based ситуация после optional-only collectables.
-        /// </summary>
-        private bool HasUnresolvedPlanningSituation(PlanningState planningState, WorldSnapshot worldSnapshot)
-        {
-            // Проецирует snapshot один раз для текущего planning-state.
-            WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
-            if (projectedWorldSnapshot == null)
-                return false;
-
-            return _decisionPointDetector.TryDetectRoute(
-                planningState,
-                projectedWorldSnapshot,
-                out _);
         }
 
         /// <summary>

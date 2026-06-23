@@ -15,21 +15,25 @@ namespace Assets.Scripts.Bot.Planning
     {
         public ActionGenerationResult(
             IReadOnlyList<PlannedAction> actions,
-            IReadOnlyList<StrategyDeadEndReason> deadEndReasons)
+            IReadOnlyList<StrategyDeadEndReason> deadEndReasons,
+            bool hasUnresolvedPlanningSituation)
         {
             Actions = actions ?? Array.Empty<PlannedAction>();
             DeadEndReasons = deadEndReasons ?? Array.Empty<StrategyDeadEndReason>();
+            HasUnresolvedPlanningSituation = hasUnresolvedPlanningSituation;
         }
 
         public IReadOnlyList<PlannedAction> Actions { get; }
         public IReadOnlyList<StrategyDeadEndReason> DeadEndReasons { get; }
+        public bool HasUnresolvedPlanningSituation { get; }
         public bool HasDeadEndReasons => DeadEndReasons.Count > 0;
 
         public static ActionGenerationResult Empty()
         {
             return new ActionGenerationResult(
                 Array.Empty<PlannedAction>(),
-                Array.Empty<StrategyDeadEndReason>());
+                Array.Empty<StrategyDeadEndReason>(),
+                hasUnresolvedPlanningSituation: false);
         }
     }
 
@@ -121,7 +125,8 @@ namespace Assets.Scripts.Bot.Planning
                 LogNoDecisionPoint(planningState);
                 return new ActionGenerationResult(
                     plannedActions,
-                    deadEndReasons);
+                    deadEndReasons,
+                    hasUnresolvedPlanningSituation: false);
             }
 
             if (plannedActions.Count == 0 && hasCurrentDecisionPoint)
@@ -129,7 +134,8 @@ namespace Assets.Scripts.Bot.Planning
 
             return new ActionGenerationResult(
                 plannedActions,
-                deadEndReasons);
+                deadEndReasons,
+                hasUnresolvedPlanningSituation: hasCurrentDecisionPoint || hasOppositeDecisionPoint);
         }
 
         /// <summary>
