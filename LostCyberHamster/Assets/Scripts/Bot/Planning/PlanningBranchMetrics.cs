@@ -61,7 +61,7 @@ namespace Assets.Scripts.Bot.Planning
         public int MajorObjectiveCount { get; }
 
         /// <summary>
-        /// Локальный приоритет первого action: уничтожает target, а не только обходит препятствие.
+        /// Локальный приоритет первой route-цепочки: уничтожает target, а не только обходит препятствие.
         /// </summary>
         public int ImmediateTargetEliminationCount { get; }
 
@@ -228,8 +228,11 @@ namespace Assets.Scripts.Bot.Planning
                 if (IsTargetEliminationAction(action.Kind))
                     return 1;
 
-                if (IsGroundJumpOverAction(action.Kind) || action.FulfillsCollectibleObjective)
+                if (IsGroundJumpOverAction(action.Kind))
                     return 0;
+
+                if (IsPassiveCollectAction(action.Kind))
+                    continue;
 
                 if (!IsImmediateRouteSetupAction(action.Kind))
                     return 0;
@@ -251,8 +254,11 @@ namespace Assets.Scripts.Bot.Planning
                 if (IsGroundJumpOverAction(action.Kind))
                     return action.EnergyCost;
 
-                if (IsTargetEliminationAction(action.Kind) || action.FulfillsCollectibleObjective)
+                if (IsTargetEliminationAction(action.Kind))
                     return 0;
+
+                if (IsPassiveCollectAction(action.Kind))
+                    continue;
 
                 if (!IsImmediateRouteSetupAction(action.Kind))
                     return 0;
@@ -281,6 +287,11 @@ namespace Assets.Scripts.Bot.Planning
         {
             return actionKind == BotActionKind.JumpOver
                 || actionKind == BotActionKind.SuperJumpOver;
+        }
+
+        private static bool IsPassiveCollectAction(BotActionKind actionKind)
+        {
+            return actionKind == BotActionKind.PassiveCollect;
         }
 
         private static int GetCollectibleValue(PlannedAction action, CollectibleKind collectibleKind)
