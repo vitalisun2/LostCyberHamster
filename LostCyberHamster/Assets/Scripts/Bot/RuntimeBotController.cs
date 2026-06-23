@@ -49,11 +49,6 @@ namespace Assets.Scripts.Bot
         private const float _initRetryInterval = 0.5f;
 
         /// <summary>
-        /// Количество ближайших действий, которые replan не заменяет: текущая голова и следующий action для instant handoff.
-        /// </summary>
-        private const int _committedPrefixActionCount = 2;
-
-        /// <summary>
         /// Обычное окно спауна без runtime-бота.
         /// </summary>
         private const int _defaultSpawnLookaheadPatterns = 1;
@@ -501,6 +496,12 @@ namespace Assets.Scripts.Bot
                 return;
             }
 
+            if (!IsAsyncResultApplicableToCurrentExecution(result))
+            {
+                RequestReplan(result.ReplanReasons);
+                return;
+            }
+
             ApplyPlanBuildResult(result.BuildResult, result.ReplanReasons);
         }
 
@@ -687,19 +688,39 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Возвращает committed-prefix, который должен пережить replan без замены.
+        /// Проверяет, что async-result не пытается заменить action, который уже стартовал после capture.
         /// </summary>
-        private static IReadOnlyList<PlannedAction> BuildCommittedPrefix(BotPlan plan)
+        private bool IsAsyncResultApplicableToCurrentExecution(AsyncPlanBuildResult result)
         {
-            if (plan == null || !plan.HasActions)
+            if (result == null)
+                return false;
+
+            if (_executor == null || !_executor.IsActionInProgress)
+                return true;
+
+            if (!result.WasActionInProgressAtCapture)
+                return false;
+
+            BotPlan resultPlan = result.BuildResult?.Plan;
+            return CurrentPlan.HasActions
+                && resultPlan != null
+                && resultPlan.HasActions
+                && CurrentPlan.Actions[0].IsEquivalentTo(resultPlan.Actions[0]);
+        }
+
+        /// <summary>
+        /// Возвращает committed-prefix, который уже физически нельзя заменить свежим replan-ом.
+        /// </summary>
+        private static IReadOnlyList<PlannedAction> BuildCommittedPrefix(AsyncPlanBuildRequest request)
+        {
+            if (request?.CurrentPlan == null
+                || !request.CurrentPlan.HasActions
+                || !request.IsActionInProgress)
+            {
                 return Array.Empty<PlannedAction>();
+            }
 
-            int committedActionCount = Math.Min(_committedPrefixActionCount, plan.Actions.Count);
-            var committedActions = new PlannedAction[committedActionCount];
-            for (int actionIndex = 0; actionIndex < committedActionCount; actionIndex++)
-                committedActions[actionIndex] = plan.Actions[actionIndex];
-
-            return committedActions;
+            return new[] { request.CurrentPlan.Actions[0] };
         }
 
         /// <summary>
@@ -746,12 +767,14 @@ namespace Assets.Scripts.Bot
                 int requestId,
                 int runtimeGeneration,
                 BotReplanReason replanReasons,
+                bool wasActionInProgressAtCapture,
                 PlanBuildResult buildResult,
                 Exception error)
             {
                 RequestId = requestId;
                 RuntimeGeneration = runtimeGeneration;
                 ReplanReasons = replanReasons;
+                WasActionInProgressAtCapture = wasActionInProgressAtCapture;
                 BuildResult = buildResult;
                 Error = error;
             }
@@ -759,6 +782,7 @@ namespace Assets.Scripts.Bot
             public int RequestId { get; }
             public int RuntimeGeneration { get; }
             public BotReplanReason ReplanReasons { get; }
+            public bool WasActionInProgressAtCapture { get; }
             public PlanBuildResult BuildResult { get; }
             public Exception Error { get; }
             public bool HasError => Error != null;
@@ -771,6 +795,7 @@ namespace Assets.Scripts.Bot
                     request.RequestId,
                     request.RuntimeGeneration,
                     request.ReplanReasons,
+                    request.IsActionInProgress,
                     buildResult,
                     error: null);
             }
@@ -783,6 +808,7 @@ namespace Assets.Scripts.Bot
                     request?.RequestId ?? 0,
                     request?.RuntimeGeneration ?? 0,
                     request?.ReplanReasons ?? BotReplanReason.None,
+                    request?.IsActionInProgress ?? false,
                     buildResult: null,
                     error);
             }
@@ -832,7 +858,7 @@ namespace Assets.Scripts.Bot
                     return _planBuilder.Build(snapshot);
                 }
 
-                IReadOnlyList<PlannedAction> committedPrefix = BuildCommittedPrefix(request.CurrentPlan);
+                IReadOnlyList<PlannedAction> committedPrefix = BuildCommittedPrefix(request);
                 if (committedPrefix.Count == 0)
                     return _planBuilder.Build(snapshot);
 

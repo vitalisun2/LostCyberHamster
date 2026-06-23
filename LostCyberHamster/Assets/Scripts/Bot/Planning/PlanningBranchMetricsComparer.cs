@@ -14,9 +14,11 @@ namespace Assets.Scripts.Bot.Planning
         /// 2. EnergyBeforeFirstMajor: не тратим энергию до первой полезной цели.
         /// 3. MajorObjectiveCount: при равной цене входа берем больше jump-on/crystal целей.
         /// 4. EnergyCost: после смысла ветки минимизируем общий расход, включая цену самого JumpOn.
-        /// 5. EnergyCollectibleValue: энергия полезна, но не оправдывает более дорогой экшен к той же major-цели.
-        /// 6. CoinCollectibleValue: монетки улучшают только равные по важным критериям ветки.
-        /// 7. ActionCount: финальный tie-breaker, чтобы не выбирать лишние действия при полном равенстве.
+        /// 5. ImmediateTargetEliminationCount: при равной цене локально предпочитаем уничтожить target.
+        /// 6. ImmediateObstacleBypassEnergyCost: при равных целях локально предпочитаем route-обход без jump-over расхода.
+        /// 7. EnergyCollectibleValue: энергия полезна, но не оправдывает более дорогой экшен к той же major-цели.
+        /// 8. CoinCollectibleValue: монетки улучшают только равные по важным критериям ветки.
+        /// 9. ActionCount: финальный tie-breaker, чтобы не выбирать лишние действия при полном равенстве.
         /// </summary>
         public static int Compare(PlanningBranchMetrics left, PlanningBranchMetrics right)
         {
@@ -50,6 +52,18 @@ namespace Assets.Scripts.Bot.Planning
             // Полный расход остается важным: обычный JumpOn за 10 должен выигрывать
             // у SuperJumpOn за 20, если они дают одинаковую полезную цель.
             compare = left.EnergyCost.CompareTo(right.EnergyCost);
+            if (compare != 0)
+                return compare;
+
+            // Узкий semantic tie-breaker: если стоимость веток уже равна,
+            // первый jump-on action полезнее первого jump-over через тот же target.
+            compare = right.ImmediateTargetEliminationCount.CompareTo(left.ImmediateTargetEliminationCount);
+            if (compare != 0)
+                return compare;
+
+            // Узкий anti-waste критерий: если switch-lane маршрут дает равные цели
+            // и равную общую цену, не предпочитаем первый ground jump-over расход.
+            compare = left.ImmediateObstacleBypassEnergyCost.CompareTo(right.ImmediateObstacleBypassEnergyCost);
             if (compare != 0)
                 return compare;
 

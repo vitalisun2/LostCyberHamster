@@ -11,7 +11,7 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Пустые метрики ветки.
         /// </summary>
-        public static PlanningBranchMetrics Empty { get; } = new PlanningBranchMetrics(0, 0, 0, 0, 0, 0, 0, 0);
+        public static PlanningBranchMetrics Empty { get; } = new PlanningBranchMetrics(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         /// <summary>
         /// Создает набор метрик для ветки планирования.
@@ -21,6 +21,8 @@ namespace Assets.Scripts.Bot.Planning
             int energyBeforeFirstMajor,
             int actionCount,
             int majorObjectiveCount,
+            int immediateTargetEliminationCount,
+            int immediateObstacleBypassEnergyCost,
             int lifeCollectibleValue,
             int energyCollectibleValue,
             int crystalCollectibleValue,
@@ -30,6 +32,8 @@ namespace Assets.Scripts.Bot.Planning
             EnergyBeforeFirstMajor = energyBeforeFirstMajor;
             ActionCount = actionCount;
             MajorObjectiveCount = majorObjectiveCount;
+            ImmediateTargetEliminationCount = immediateTargetEliminationCount;
+            ImmediateObstacleBypassEnergyCost = immediateObstacleBypassEnergyCost;
             LifeCollectibleValue = lifeCollectibleValue;
             EnergyCollectibleValue = energyCollectibleValue;
             CrystalCollectibleValue = crystalCollectibleValue;
@@ -55,6 +59,16 @@ namespace Assets.Scripts.Bot.Planning
         /// Суммарное число основных целей: jump-on target и crystal.
         /// </summary>
         public int MajorObjectiveCount { get; }
+
+        /// <summary>
+        /// Локальный приоритет первого action: уничтожает target, а не только обходит препятствие.
+        /// </summary>
+        public int ImmediateTargetEliminationCount { get; }
+
+        /// <summary>
+        /// Энергия первого ground jump-over в ближайшей route-цепочке до полезной цели.
+        /// </summary>
+        public int ImmediateObstacleBypassEnergyCost { get; }
 
         /// <summary>
         /// Суммарная ценность подобранных life collectables.
@@ -106,6 +120,8 @@ namespace Assets.Scripts.Bot.Planning
             int energyBeforeFirstMajor = 0;
             int countedActionCount = 0;
             int majorObjectiveCount = 0;
+            int immediateTargetEliminationCount = GetImmediateTargetEliminationCount(actions, effectiveActionCount);
+            int immediateObstacleBypassEnergyCost = GetImmediateObstacleBypassEnergyCost(actions, effectiveActionCount);
             int lifeCollectibleValue = 0;
             int energyCollectibleValue = 0;
             int crystalCollectibleValue = 0;
@@ -119,6 +135,7 @@ namespace Assets.Scripts.Bot.Planning
                 energyCost += actionEnergyCost;
                 countedActionCount++;
                 majorObjectiveCount += GetMajorObjectiveCount(action);
+
                 lifeCollectibleValue += GetCollectibleValue(action, CollectibleKind.Life);
                 energyCollectibleValue += GetCollectibleValue(action, CollectibleKind.Energy);
                 crystalCollectibleValue += GetCollectibleValue(action, CollectibleKind.Crystal);
@@ -136,6 +153,8 @@ namespace Assets.Scripts.Bot.Planning
                 energyBeforeFirstMajor,
                 countedActionCount,
                 majorObjectiveCount,
+                immediateTargetEliminationCount,
+                immediateObstacleBypassEnergyCost,
                 lifeCollectibleValue,
                 energyCollectibleValue,
                 crystalCollectibleValue,
@@ -194,6 +213,74 @@ namespace Assets.Scripts.Bot.Planning
                 count++;
 
             return count;
+        }
+
+        private static int GetImmediateTargetEliminationCount(
+            IReadOnlyList<PlannedAction> actions,
+            int actionCount)
+        {
+            for (int actionIndex = 0; actionIndex < actionCount; actionIndex++)
+            {
+                PlannedAction action = actions[actionIndex];
+                if (action == null)
+                    continue;
+
+                if (IsTargetEliminationAction(action.Kind))
+                    return 1;
+
+                if (IsGroundJumpOverAction(action.Kind) || action.FulfillsCollectibleObjective)
+                    return 0;
+
+                if (!IsImmediateRouteSetupAction(action.Kind))
+                    return 0;
+            }
+
+            return 0;
+        }
+
+        private static int GetImmediateObstacleBypassEnergyCost(
+            IReadOnlyList<PlannedAction> actions,
+            int actionCount)
+        {
+            for (int actionIndex = 0; actionIndex < actionCount; actionIndex++)
+            {
+                PlannedAction action = actions[actionIndex];
+                if (action == null)
+                    continue;
+
+                if (IsGroundJumpOverAction(action.Kind))
+                    return action.EnergyCost;
+
+                if (IsTargetEliminationAction(action.Kind) || action.FulfillsCollectibleObjective)
+                    return 0;
+
+                if (!IsImmediateRouteSetupAction(action.Kind))
+                    return 0;
+            }
+
+            return 0;
+        }
+
+        private static bool IsImmediateRouteSetupAction(BotActionKind actionKind)
+        {
+            return actionKind == BotActionKind.SwitchLane
+                || actionKind == BotActionKind.PassiveAdvance
+                || actionKind == BotActionKind.JumpOnRoof
+                || actionKind == BotActionKind.SuperJumpOnRoof;
+        }
+
+        private static bool IsTargetEliminationAction(BotActionKind actionKind)
+        {
+            return actionKind == BotActionKind.JumpOn
+                || actionKind == BotActionKind.SuperJumpOn
+                || actionKind == BotActionKind.JumpOnFromRoof
+                || actionKind == BotActionKind.SuperJumpOnFromRoof;
+        }
+
+        private static bool IsGroundJumpOverAction(BotActionKind actionKind)
+        {
+            return actionKind == BotActionKind.JumpOver
+                || actionKind == BotActionKind.SuperJumpOver;
         }
 
         private static int GetCollectibleValue(PlannedAction action, CollectibleKind collectibleKind)

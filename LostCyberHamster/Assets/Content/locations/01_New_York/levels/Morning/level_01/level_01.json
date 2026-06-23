@@ -188,7 +188,7 @@
             ]
         },
         {
-            "ref": "medium_difficulty",
+            "ref": "medium_difficulty_energy",
             "spriteSeed": 0,
             "overrides": [
                 {
