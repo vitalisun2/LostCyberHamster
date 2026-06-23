@@ -18,7 +18,8 @@ namespace Assets.Scripts.Bot.Planning
         /// 6. ImmediateObstacleBypassEnergyCost: при равных целях локально предпочитаем route-обход без jump-over расхода.
         /// 7. EnergyCollectibleValue: энергия полезна, но не оправдывает более дорогой экшен к той же major-цели.
         /// 8. CoinCollectibleValue: монетки улучшают только равные по важным критериям ветки.
-        /// 9. ActionCount: финальный tie-breaker, чтобы не выбирать лишние действия при полном равенстве.
+        /// 9. ImmediateRouteSetupActionCount: при равных целях, цене и collectables выбираем более прямой route.
+        /// 10. ActionCount: финальный tie-breaker, чтобы не выбирать лишние действия при полном равенстве.
         /// </summary>
         public static int Compare(PlanningBranchMetrics left, PlanningBranchMetrics right)
         {
@@ -77,6 +78,12 @@ namespace Assets.Scripts.Bot.Planning
             // Coin - низкий приоритет: берем монетки только когда они не ухудшают
             // жизнь, путь к major objective, число major objectives, общий расход и энергию.
             compare = right.CoinCollectibleValue.CompareTo(left.CoinCollectibleValue);
+            if (compare != 0)
+                return compare;
+
+            // Если локальный route уже равноценен по целям, энергии и collectables,
+            // не добавляем подготовительные перестроения перед ближайшим действием.
+            compare = left.ImmediateRouteSetupActionCount.CompareTo(right.ImmediateRouteSetupActionCount);
             if (compare != 0)
                 return compare;
 

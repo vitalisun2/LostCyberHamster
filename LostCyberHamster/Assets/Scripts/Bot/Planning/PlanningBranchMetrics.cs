@@ -11,7 +11,7 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Пустые метрики ветки.
         /// </summary>
-        public static PlanningBranchMetrics Empty { get; } = new PlanningBranchMetrics(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        public static PlanningBranchMetrics Empty { get; } = new PlanningBranchMetrics(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         /// <summary>
         /// Создает набор метрик для ветки планирования.
@@ -23,6 +23,7 @@ namespace Assets.Scripts.Bot.Planning
             int majorObjectiveCount,
             int immediateTargetEliminationCount,
             int immediateObstacleBypassEnergyCost,
+            int immediateRouteSetupActionCount,
             int lifeCollectibleValue,
             int energyCollectibleValue,
             int crystalCollectibleValue,
@@ -34,6 +35,7 @@ namespace Assets.Scripts.Bot.Planning
             MajorObjectiveCount = majorObjectiveCount;
             ImmediateTargetEliminationCount = immediateTargetEliminationCount;
             ImmediateObstacleBypassEnergyCost = immediateObstacleBypassEnergyCost;
+            ImmediateRouteSetupActionCount = immediateRouteSetupActionCount;
             LifeCollectibleValue = lifeCollectibleValue;
             EnergyCollectibleValue = energyCollectibleValue;
             CrystalCollectibleValue = crystalCollectibleValue;
@@ -69,6 +71,11 @@ namespace Assets.Scripts.Bot.Planning
         /// Энергия первого ground jump-over в ближайшей route-цепочке до полезной цели.
         /// </summary>
         public int ImmediateObstacleBypassEnergyCost { get; }
+
+        /// <summary>
+        /// Число подготовительных route-действий до первого локального bypass/elimination.
+        /// </summary>
+        public int ImmediateRouteSetupActionCount { get; }
 
         /// <summary>
         /// Суммарная ценность подобранных life collectables.
@@ -122,6 +129,7 @@ namespace Assets.Scripts.Bot.Planning
             int majorObjectiveCount = 0;
             int immediateTargetEliminationCount = GetImmediateTargetEliminationCount(actions, effectiveActionCount);
             int immediateObstacleBypassEnergyCost = GetImmediateObstacleBypassEnergyCost(actions, effectiveActionCount);
+            int immediateRouteSetupActionCount = GetImmediateRouteSetupActionCount(actions, effectiveActionCount);
             int lifeCollectibleValue = 0;
             int energyCollectibleValue = 0;
             int crystalCollectibleValue = 0;
@@ -155,6 +163,7 @@ namespace Assets.Scripts.Bot.Planning
                 majorObjectiveCount,
                 immediateTargetEliminationCount,
                 immediateObstacleBypassEnergyCost,
+                immediateRouteSetupActionCount,
                 lifeCollectibleValue,
                 energyCollectibleValue,
                 crystalCollectibleValue,
@@ -265,6 +274,35 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             return 0;
+        }
+
+        private static int GetImmediateRouteSetupActionCount(
+            IReadOnlyList<PlannedAction> actions,
+            int actionCount)
+        {
+            int routeSetupActionCount = 0;
+            for (int actionIndex = 0; actionIndex < actionCount; actionIndex++)
+            {
+                PlannedAction action = actions[actionIndex];
+                if (action == null)
+                    continue;
+
+                if (IsGroundJumpOverAction(action.Kind) || IsTargetEliminationAction(action.Kind))
+                    return routeSetupActionCount;
+
+                if (IsPassiveCollectAction(action.Kind))
+                    continue;
+
+                if (IsImmediateRouteSetupAction(action.Kind))
+                {
+                    routeSetupActionCount++;
+                    continue;
+                }
+
+                return routeSetupActionCount;
+            }
+
+            return routeSetupActionCount;
         }
 
         private static bool IsImmediateRouteSetupAction(BotActionKind actionKind)
