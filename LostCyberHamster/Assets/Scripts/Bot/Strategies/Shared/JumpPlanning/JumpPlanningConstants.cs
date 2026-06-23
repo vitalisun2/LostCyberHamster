@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
 {
     /// <summary>
@@ -17,7 +15,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
         /// </summary>
         public static float GetEffectiveFireWindowBoundaryMargin()
         {
-            return GetEffectiveFireWindowBoundaryMargin(Time.timeScale);
+            return FireWindowBoundaryMargin;
         }
 
         /// <summary>

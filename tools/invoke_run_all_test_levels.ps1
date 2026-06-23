@@ -84,6 +84,35 @@ Write-Host "Per-level logs: $runLogDirectory"
 
 $PatternCatalog = $null
 
+function Get-PatternCollectibleCounts {
+    param(
+        [Parameter(Mandatory)] $Pattern
+    )
+
+    $counts = @{
+        Coin = 0
+        Crystal = 0
+        Energy = 0
+        Life = 0
+    }
+
+    if ($null -eq $Pattern -or -not ($Pattern.PSObject.Properties.Name -contains 'obstacles')) {
+        return $counts
+    }
+
+    foreach ($obstacle in $Pattern.obstacles) {
+        switch ([int]$obstacle.type) {
+            5 { $counts.Energy++ }
+            6 { $counts.Energy++ }
+            7 { $counts.Crystal++ }
+            8 { $counts.Life++ }
+            9 { $counts.Coin++ }
+        }
+    }
+
+    return $counts
+}
+
 function Get-PatternCatalog {
     if ($null -ne $script:PatternCatalog) {
         return $script:PatternCatalog
@@ -105,6 +134,7 @@ function Get-PatternCatalog {
         $catalog[$pattern.name] = [PSCustomObject]@{
             Name = $pattern.name
             Description = $description
+            CollectibleCounts = Get-PatternCollectibleCounts -Pattern $pattern
         }
     }
 
@@ -134,6 +164,50 @@ function Resolve-ExpectedAction {
         $normalized.Substring('should '.Length).Trim()
     }
 
+    if ($actionPhrase -like 'collect energy*') {
+        return [PSCustomObject]@{
+            Kind = 'PassiveCollect'
+            Forbidden = $isForbidden
+            CollectibleKind = 'Energy'
+            RequiredCount = 1
+            RequiredCountMode = 'Any'
+            ForbiddenCollectibleKinds = @()
+        }
+    }
+
+    if ($actionPhrase -eq 'collect life') {
+        return [PSCustomObject]@{
+            Kind = 'PassiveCollect'
+            Forbidden = $isForbidden
+            CollectibleKind = 'Life'
+            RequiredCount = 1
+            RequiredCountMode = 'Any'
+            ForbiddenCollectibleKinds = @()
+        }
+    }
+
+    if ($actionPhrase -eq 'collect all coins') {
+        return [PSCustomObject]@{
+            Kind = 'PassiveCollect'
+            Forbidden = $isForbidden
+            CollectibleKind = 'Coin'
+            RequiredCount = 1
+            RequiredCountMode = 'All'
+            ForbiddenCollectibleKinds = @()
+        }
+    }
+
+    if ($actionPhrase -eq 'ignore all bonuses for collecting life on roof if enough energy for jump on roof') {
+        return [PSCustomObject]@{
+            Kind = 'PassiveCollect'
+            Forbidden = $false
+            CollectibleKind = 'Life'
+            RequiredCount = 1
+            RequiredCountMode = 'Any'
+            ForbiddenCollectibleKinds = @('Coin', 'Crystal', 'Energy')
+        }
+    }
+
     $actionMappings = @(
         @{ Phrase = 'super jump from roof to roof'; Kind = 'SuperJumpFromRoofOnRoof' },
         @{ Phrase = 'jump from roof to roof'; Kind = 'JumpFromRoofOnRoof' },
@@ -157,6 +231,10 @@ function Resolve-ExpectedAction {
             return [PSCustomObject]@{
                 Kind = $mapping.Kind
                 Forbidden = $isForbidden
+                CollectibleKind = $null
+                RequiredCount = 1
+                RequiredCountMode = 'Any'
+                ForbiddenCollectibleKinds = @()
             }
         }
     }
@@ -164,6 +242,10 @@ function Resolve-ExpectedAction {
     return [PSCustomObject]@{
         Kind = "UNKNOWN:$actionPhrase"
         Forbidden = $isForbidden
+        CollectibleKind = $null
+        RequiredCount = 1
+        RequiredCountMode = 'Any'
+        ForbiddenCollectibleKinds = @()
     }
 }
 
@@ -200,10 +282,18 @@ function Get-LevelExpectedPatternActions {
             continue
         }
 
-        $description = $catalog[$patternName].Description
+        $catalogEntry = $catalog[$patternName]
+        $description = $catalogEntry.Description
         $expectation = Resolve-ExpectedAction -Description $description
         if ($null -eq $expectation) {
             continue
+        }
+
+        $requiredCount = $expectation.RequiredCount
+        if (($expectation.RequiredCountMode -eq 'All') `
+            -and (-not [string]::IsNullOrWhiteSpace($expectation.CollectibleKind)) `
+            -and $catalogEntry.CollectibleCounts.ContainsKey($expectation.CollectibleKind)) {
+            $requiredCount = [int]$catalogEntry.CollectibleCounts[$expectation.CollectibleKind]
         }
 
         $scenarioIndex++
@@ -214,6 +304,9 @@ function Get-LevelExpectedPatternActions {
             Description = $description
             Kind = $expectation.Kind
             Forbidden = $expectation.Forbidden
+            CollectibleKind = $expectation.CollectibleKind
+            RequiredCount = $requiredCount
+            ForbiddenCollectibleKinds = @($expectation.ForbiddenCollectibleKinds)
         })
     }
 
@@ -228,16 +321,37 @@ function Get-LogPatternSpawns {
     $spawns = [System.Collections.Generic.List[PSCustomObject]]::new()
     for ($lineIndex = 0; $lineIndex -lt $LogLines.Count; $lineIndex++) {
         $line = $LogLines[$lineIndex]
-        if ($line -match '\[Bot PATTERN\] SPAWN patternIndex=([0-9]+) pattern=([^\s]+)') {
+        if ($line -match '\[Bot PATTERN\] SPAWN patternIndex=([0-9]+) pattern=([^\s]+)(?: obstacleIds=([^\s]+))?') {
             $spawns.Add([PSCustomObject]@{
                 LineIndex = $lineIndex
                 PatternIndex = [int]$Matches[1]
                 Pattern = $Matches[2]
+                ObstacleIds = @(Convert-ObstacleIds -RawIds $Matches[3])
             })
         }
     }
 
     return $spawns.ToArray()
+}
+
+function Convert-ObstacleIds {
+    param(
+        [string]$RawIds
+    )
+
+    if ([string]::IsNullOrWhiteSpace($RawIds) -or $RawIds -eq 'none') {
+        return @()
+    }
+
+    $ids = [System.Collections.Generic.List[int]]::new()
+    foreach ($rawId in ($RawIds -split ',')) {
+        $parsedId = 0
+        if ([int]::TryParse($rawId, [ref]$parsedId)) {
+            $ids.Add($parsedId)
+        }
+    }
+
+    return $ids.ToArray()
 }
 
 function Get-ActionCountsInLogRange {
@@ -268,6 +382,114 @@ function Get-ActionCountsInLogRange {
     }
 
     return $actionCounts
+}
+
+function Get-ActionCountsForObstacleIds {
+    param(
+        [string[]]$LogLines,
+        [int[]]$ObstacleIds
+    )
+
+    $actionCounts = @{}
+    if ($null -eq $ObstacleIds -or $ObstacleIds.Count -eq 0) {
+        return $actionCounts
+    }
+
+    $obstacleIdSet = @{}
+    foreach ($obstacleId in $ObstacleIds) {
+        $obstacleIdSet[$obstacleId] = $true
+    }
+
+    foreach ($line in $LogLines) {
+        if ($line -notmatch '\[Bot EXEC\] FIRE kind=([A-Za-z]+)\s+targetId=([0-9-]+|none)\s+triggerId=([0-9-]+|none)') {
+            continue
+        }
+
+        $kind = $Matches[1]
+        $targetId = $Matches[2]
+        $triggerId = $Matches[3]
+        $matchesPatternObstacle = $false
+
+        if ($targetId -ne 'none') {
+            $targetIdValue = [int]$targetId
+            $matchesPatternObstacle = $obstacleIdSet.ContainsKey($targetIdValue)
+        }
+
+        if (-not $matchesPatternObstacle -and $triggerId -ne 'none') {
+            $triggerIdValue = [int]$triggerId
+            $matchesPatternObstacle = $obstacleIdSet.ContainsKey($triggerIdValue)
+        }
+
+        if (-not $matchesPatternObstacle) {
+            continue
+        }
+
+        if (-not $actionCounts.ContainsKey($kind)) {
+            $actionCounts[$kind] = 0
+        }
+
+        $actionCounts[$kind]++
+    }
+
+    return $actionCounts
+}
+
+function Convert-CollectableTypeToKind {
+    param(
+        [string]$CollectableType
+    )
+
+    switch ($CollectableType) {
+        'Energetic' { return 'Energy' }
+        'Pizza' { return 'Energy' }
+        'Crystal' { return 'Crystal' }
+        'Life' { return 'Life' }
+        'Coin' { return 'Coin' }
+        default { return $null }
+    }
+}
+
+function Get-CollectibleCountsForObstacleIds {
+    param(
+        [string[]]$LogLines,
+        [int[]]$ObstacleIds
+    )
+
+    $collectibleCounts = @{}
+    if ($null -eq $ObstacleIds -or $ObstacleIds.Count -eq 0) {
+        return $collectibleCounts
+    }
+
+    $obstacleIdSet = @{}
+    foreach ($obstacleId in $ObstacleIds) {
+        $obstacleIdSet[$obstacleId] = $true
+    }
+
+    $countedObstacleIds = @{}
+    foreach ($line in $LogLines) {
+        if ($line -notmatch '\[CollisionController\] collect obstacle=collectable([A-Za-z]+)#([0-9-]+)') {
+            continue
+        }
+
+        $collectibleKind = Convert-CollectableTypeToKind -CollectableType $Matches[1]
+        if ([string]::IsNullOrWhiteSpace($collectibleKind)) {
+            continue
+        }
+
+        $obstacleId = [int]$Matches[2]
+        if (-not $obstacleIdSet.ContainsKey($obstacleId) -or $countedObstacleIds.ContainsKey($obstacleId)) {
+            continue
+        }
+
+        $countedObstacleIds[$obstacleId] = $true
+        if (-not $collectibleCounts.ContainsKey($collectibleKind)) {
+            $collectibleCounts[$collectibleKind] = 0
+        }
+
+        $collectibleCounts[$collectibleKind]++
+    }
+
+    return $collectibleCounts
 }
 
 function Format-ActionCounts {
@@ -356,13 +578,65 @@ function Get-LevelSemanticSummary {
         else {
             $logLines.Count
         }
-        $patternActionCounts = Get-ActionCountsInLogRange -LogLines $logLines -StartLineIndex $startLineIndex -EndLineIndex $endLineIndex
-        $actualCount = if ($patternActionCounts.ContainsKey($expected.Kind)) { $patternActionCounts[$expected.Kind] } else { 0 }
+        $patternObstacleIds = @($spawns[$spawnIndex].ObstacleIds)
+        $patternActionCounts = if ($patternObstacleIds.Count -gt 0) {
+            Get-ActionCountsForObstacleIds -LogLines $logLines -ObstacleIds $patternObstacleIds
+        }
+        else {
+            Get-ActionCountsInLogRange -LogLines $logLines -StartLineIndex $startLineIndex -EndLineIndex $endLineIndex
+        }
+        $patternCollectibleCounts = if ($patternObstacleIds.Count -gt 0) {
+            Get-CollectibleCountsForObstacleIds -LogLines $logLines -ObstacleIds $patternObstacleIds
+        }
+        else {
+            @{}
+        }
 
         if ($expected.Kind.StartsWith('UNKNOWN:')) {
             $failedPatterns.Add("${label}: unsupported expectation '$($expected.Kind)'")
             continue
         }
+
+        if (-not [string]::IsNullOrWhiteSpace($expected.CollectibleKind)) {
+            $actualCollectibleCount = if ($patternCollectibleCounts.ContainsKey($expected.CollectibleKind)) {
+                $patternCollectibleCounts[$expected.CollectibleKind]
+            }
+            else {
+                0
+            }
+
+            if ($expected.Forbidden) {
+                if ($actualCollectibleCount -gt 0) {
+                    $failedPatterns.Add("${label}: forbidden $($expected.CollectibleKind) collected $actualCollectibleCount time(s); pickups=$(Format-ActionCounts -ActionCounts $patternCollectibleCounts)")
+                }
+                else {
+                    $passedPatterns.Add("${label}: did not collect $($expected.CollectibleKind)")
+                }
+            }
+            elseif ($actualCollectibleCount -lt $expected.RequiredCount) {
+                $failedPatterns.Add("${label}: expected $($expected.CollectibleKind) collected $($expected.RequiredCount) time(s), actual $actualCollectibleCount; pickups=$(Format-ActionCounts -ActionCounts $patternCollectibleCounts)")
+            }
+            else {
+                $passedPatterns.Add("${label}: collected $($expected.CollectibleKind) $actualCollectibleCount time(s)")
+            }
+
+            foreach ($forbiddenCollectibleKind in @($expected.ForbiddenCollectibleKinds)) {
+                $forbiddenCount = if ($patternCollectibleCounts.ContainsKey($forbiddenCollectibleKind)) {
+                    $patternCollectibleCounts[$forbiddenCollectibleKind]
+                }
+                else {
+                    0
+                }
+
+                if ($forbiddenCount -gt 0) {
+                    $failedPatterns.Add("${label}: forbidden bonus $forbiddenCollectibleKind collected $forbiddenCount time(s); pickups=$(Format-ActionCounts -ActionCounts $patternCollectibleCounts)")
+                }
+            }
+
+            continue
+        }
+
+        $actualCount = if ($patternActionCounts.ContainsKey($expected.Kind)) { $patternActionCounts[$expected.Kind] } else { 0 }
 
         if ($expected.Forbidden) {
             if ($actualCount -gt 0) {

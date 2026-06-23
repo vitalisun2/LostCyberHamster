@@ -49,7 +49,12 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             }
 
             if (PlanningStrategyApplicability.IsOppositeLane(planningState, decisionPoint))
-                return decisionPoint.Chain.HasAnyRequiredPlanningRole();
+            {
+                return decisionPoint.Chain.HasAnyRequiredPlanningRole()
+                    || CollectibleValuePolicy.HasPositiveCollectible(
+                        planningState.Hamster,
+                        decisionPoint.Chain);
+            }
 
             return PlanningStrategyApplicability.IsCurrentLane(planningState, decisionPoint)
                 && PlanningStrategyApplicability.HasRole(decisionPoint, ObstacleRole.BlockingThreat);

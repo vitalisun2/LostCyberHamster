@@ -52,7 +52,7 @@ namespace Assets.Scripts.Bot.Planning
         public int ActionCount { get; }
 
         /// <summary>
-        /// Суммарное число основных целей: jump-on target, полезная энергия, crystal.
+        /// Суммарное число основных целей: jump-on target и crystal.
         /// </summary>
         public int MajorObjectiveCount { get; }
 
@@ -190,12 +190,8 @@ namespace Assets.Scripts.Bot.Planning
                 return 0;
 
             int count = action.FulfillsJumpOnObjective ? 1 : 0;
-            CollectibleKind collectibleKind = action.CollectibleObjectiveValue.Kind;
-            if (collectibleKind == CollectibleKind.Energy
-                || collectibleKind == CollectibleKind.Crystal)
-            {
+            if (action.CollectibleObjectiveValue.Kind == CollectibleKind.Crystal)
                 count++;
-            }
 
             return count;
         }

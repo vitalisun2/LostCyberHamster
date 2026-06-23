@@ -1,13 +1,15 @@
 using System;
+using System.Collections.Generic;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.GameEngine;
 using GameManagement;
 
 namespace Assets.Scripts.Bot
 {
     /// <summary>
-    /// Изолирует редакторский тестовый сценарий test_collectables, где перед life collectible
-    /// нужна ровно одна недостающая жизнь без запуска игровой механики damage-state.
+    /// Изолирует редакторский тестовый сценарий test_collectables, где перед каждым life collectible
+    /// нужен свободный life slot без запуска игровой механики damage-state.
     /// </summary>
     internal sealed class TestCollectablesScriptedLifeLossHook
     {
@@ -18,16 +20,15 @@ namespace Assets.Scripts.Bot
         private const string _testCollectablesLevelAddress = "01_New_York/Morning/test_collectables";
 
         /// <summary>
-        /// Pattern с life collectible, перед которым test level должен иметь недостающую жизнь.
+        /// Patterns с life collectible, перед которыми test level должен иметь недостающую жизнь.
         /// </summary>
-        private const string _testCollectablesLifePatternName = "test_collectables_04";
+        private static readonly HashSet<string> _testCollectablesLifePatternNames = new HashSet<string>
+        {
+            "test_collectables_04",
+            "test_collectables_05"
+        };
 
-        /// <summary>
-        /// Максимальное число жизней, от которого тестовый сценарий создает ровно одну недостающую жизнь.
-        /// </summary>
-        private const int _testCollectablesMaxLives = 3;
-
-        private bool _isScriptedLifeLossApplied;
+        private readonly HashSet<string> _scriptedLifeLossAppliedPatternNames = new HashSet<string>();
         private bool _suppressNextScriptedLifeLossDeadEndReport;
 #endif
 
@@ -52,7 +53,7 @@ namespace Assets.Scripts.Bot
         public void Reset()
         {
 #if UNITY_EDITOR
-            _isScriptedLifeLossApplied = false;
+            _scriptedLifeLossAppliedPatternNames.Clear();
             _suppressNextScriptedLifeLossDeadEndReport = false;
 #endif
         }
@@ -82,31 +83,38 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Перед оценкой pattern-а с life collectible создает недостающую жизнь без DamageEvent.
+        /// Перед оценкой pattern-а с life collectible создает свободный life slot.
         /// Это заменяет физический damage pattern, который мог дать каскадные столкновения и остановить проверку раньше.
         /// </summary>
         public void TryApplyBeforePatternEvaluation(int patternIndex, string patternName)
         {
 #if UNITY_EDITOR
             // Проверяет, что сценарий применим ровно к нужному тестовому pattern-у.
-            if (_isScriptedLifeLossApplied
+            if (_scriptedLifeLossAppliedPatternNames.Contains(patternName)
                 || !IsCurrentTestCollectablesLevel()
-                || !string.Equals(patternName, _testCollectablesLifePatternName, StringComparison.Ordinal))
+                || !_testCollectablesLifePatternNames.Contains(patternName))
             {
                 return;
             }
 
+            _scriptedLifeLossAppliedPatternNames.Add(patternName);
+            TryApplyLifeLoss(patternIndex, patternName);
+#endif
+        }
+
+#if UNITY_EDITOR
+        private void TryApplyLifeLoss(int patternIndex, string patternName)
+        {
             Hamster hamster = _hamsterProvider();
             if (hamster == null)
                 return;
 
-            _isScriptedLifeLossApplied = true;
-
-            // Не создает дополнительный урон, если недостающая жизнь уже появилась раньше.
-            if (hamster.Lives.Value < _testCollectablesMaxLives)
+            // Каждый life-сценарий должен иметь собственный свободный life slot.
+            // Если предыдущий life pickup еще не исполнен, второй slot создается заранее.
+            if (hamster.Lives.Value <= 1)
             {
                 DebugManager.DiagLog(
-                    $"[Bot TEST] scripted life loss skipped reason=already_missing_life " +
+                    $"[Bot TEST] scripted life loss skipped reason=minimum_lives_guard " +
                     $"level={GetCurrentLevelAddressForLog()} patternIndex={patternIndex} " +
                     $"pattern={patternName} lives={hamster.Lives.Value}");
                 return;
@@ -119,10 +127,8 @@ namespace Assets.Scripts.Bot
             DebugManager.DiagLog(
                 $"[Bot TEST] scripted life loss level={GetCurrentLevelAddressForLog()} " +
                 $"patternIndex={patternIndex} pattern={patternName} livesLost=1 lives={hamster.Lives.Value}");
-#endif
         }
 
-#if UNITY_EDITOR
         /// <summary>
         /// Проверяет, что активный уровень — именно редакторский test_collectables.
         /// </summary>

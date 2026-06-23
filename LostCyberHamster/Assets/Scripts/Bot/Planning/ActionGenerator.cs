@@ -101,6 +101,12 @@ namespace Assets.Scripts.Bot.Planning
                 plannedActions,
                 deadEndReasons);
 
+            CollectOppositeLaneOptionalCollectableActions(
+                planningState,
+                projectedWorldSnapshot,
+                plannedActions,
+                deadEndReasons);
+
             if (hasOppositeDecisionPoint)
             {
                 CollectSwitchLaneEntryAction(
@@ -135,7 +141,7 @@ namespace Assets.Scripts.Bot.Planning
             return new ActionGenerationResult(
                 plannedActions,
                 deadEndReasons,
-                hasUnresolvedPlanningSituation: hasCurrentDecisionPoint || hasOppositeDecisionPoint);
+                hasUnresolvedPlanningSituation: hasCurrentDecisionPoint || deadEndReasons.Count > 0);
         }
 
         /// <summary>
@@ -161,6 +167,41 @@ namespace Assets.Scripts.Bot.Planning
                 return;
 
             CollectActionsForDecisionPoint(
+                planningState,
+                projectedWorldSnapshot,
+                optionalDecisionPoint,
+                plannedActions,
+                deadEndReasons);
+        }
+
+        /// <summary>
+        /// Добавляет entry SwitchLane к ценному optional collectable на другой линии.
+        /// </summary>
+        private void CollectOppositeLaneOptionalCollectableActions(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            List<PlannedAction> plannedActions,
+            List<StrategyDeadEndReason> deadEndReasons)
+        {
+            bool oppositeBottomLine = !planningState.IsOnBottomLine;
+            if (!_decisionPointDetector.TryDetect(
+                    planningState,
+                    projectedWorldSnapshot,
+                    oppositeBottomLine,
+                    out DecisionPoint optionalDecisionPoint))
+            {
+                return;
+            }
+
+            if (optionalDecisionPoint.Chain.HasAnyRequiredPlanningRole()
+                || !CollectibleValuePolicy.HasPositiveCollectible(
+                    planningState.Hamster,
+                    optionalDecisionPoint.Chain))
+            {
+                return;
+            }
+
+            CollectSwitchLaneEntryAction(
                 planningState,
                 projectedWorldSnapshot,
                 optionalDecisionPoint,

@@ -1,3 +1,5 @@
+using Assets.Scripts.Bot.PlanState;
+
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
@@ -19,13 +21,21 @@ namespace Assets.Scripts.Bot.Planning
             if (right == null)
                 return -1;
 
+            int compare = right.Metrics.LifeCollectibleValue.CompareTo(left.Metrics.LifeCollectibleValue);
+            if (compare != 0)
+                return compare;
+
+            compare = CompareLifeUrgency(left, right);
+            if (compare != 0)
+                return compare;
+
             float commonHorizonProjectionWorldShift = left.FinalProjectionWorldShift < right.FinalProjectionWorldShift
                 ? left.FinalProjectionWorldShift
                 : right.FinalProjectionWorldShift;
 
             // Сначала сравнивает только часть веток до общего горизонта,
             // чтобы хвост более длинной ветки не искажал первичный priority.
-            int compare = PlanningBranchMetricsComparer.Compare(
+            compare = PlanningBranchMetricsComparer.Compare(
                 left.GetMetricsToReach(commonHorizonProjectionWorldShift),
                 right.GetMetricsToReach(commonHorizonProjectionWorldShift));
             if (compare != 0)
@@ -40,6 +50,58 @@ namespace Assets.Scripts.Bot.Planning
         public static bool IsBetterOrEqual(PlanningBranch left, PlanningBranch right)
         {
             return Compare(left, right) <= 0;
+        }
+
+        private static int CompareLifeUrgency(PlanningBranch left, PlanningBranch right)
+        {
+            if (left.Metrics.LifeCollectibleValue <= 0 || right.Metrics.LifeCollectibleValue <= 0)
+                return 0;
+
+            int compare = GetActionCountToFirstLife(left).CompareTo(GetActionCountToFirstLife(right));
+            if (compare != 0)
+                return compare;
+
+            return GetEnergyCostToFirstLife(left).CompareTo(GetEnergyCostToFirstLife(right));
+        }
+
+        private static int GetActionCountToFirstLife(PlanningBranch branch)
+        {
+            if (branch?.Actions == null)
+                return int.MaxValue;
+
+            for (int actionIndex = 0; actionIndex < branch.Actions.Count; actionIndex++)
+            {
+                if (IsLifeCollectibleAction(branch.Actions[actionIndex]))
+                    return actionIndex + 1;
+            }
+
+            return int.MaxValue;
+        }
+
+        private static int GetEnergyCostToFirstLife(PlanningBranch branch)
+        {
+            if (branch?.Actions == null)
+                return int.MaxValue;
+
+            int energyCost = 0;
+            for (int actionIndex = 0; actionIndex < branch.Actions.Count; actionIndex++)
+            {
+                PlannedAction action = branch.Actions[actionIndex];
+                if (action != null)
+                    energyCost += action.EnergyCost;
+
+                if (IsLifeCollectibleAction(action))
+                    return energyCost;
+            }
+
+            return int.MaxValue;
+        }
+
+        private static bool IsLifeCollectibleAction(PlannedAction action)
+        {
+            return action != null
+                && action.CollectibleObjectiveValue.Kind == CollectibleKind.Life
+                && action.CollectibleObjectiveValue.EffectiveGain > 0;
         }
     }
 }

@@ -18,6 +18,7 @@ namespace Assets.Scripts.Bot.Diagnostics
 
             DebugManager.DiagLog(
                 $"[Bot EXEC] FIRE kind={action.Kind} " +
+                $"{FormatActionIds(action)} " +
                 $"triggerX={action.TriggerX:F2} renderX={action.RenderWorldX:F2} obstacleLeftX={obstacleLeftX:F2} " +
                 $"triggerOvershoot={triggerOvershoot:F2} {window}" +
                 $"{extra ?? string.Empty}" +
@@ -28,6 +29,7 @@ namespace Assets.Scripts.Bot.Diagnostics
         {
             DebugManager.DiagLog(
                 $"[Bot EXEC] COMPLETE kind={action.Kind} " +
+                $"{FormatActionIds(action)} " +
                 $"state={state} " +
                 $"desc={action.Description}");
         }
@@ -36,6 +38,7 @@ namespace Assets.Scripts.Bot.Diagnostics
         {
             DebugManager.DiagLog(
                 $"[Bot EXEC] CANCEL kind={action.Kind} " +
+                $"{FormatActionIds(action)} " +
                 $"{extra} " +
                 $"desc={action.Description}");
         }
@@ -44,8 +47,20 @@ namespace Assets.Scripts.Bot.Diagnostics
         {
             DebugManager.DiagLog(
                 $"[Bot EXEC] COMPLETE kind={action.Kind} " +
+                $"{FormatActionIds(action)} " +
                 $"lane={(isBottomLine ? "bottom" : "top")} " +
                 $"desc={action.Description}");
+        }
+
+        private static string FormatActionIds(PlannedAction action)
+        {
+            return $"targetId={FormatNullable(action?.TargetObstacleInstanceId)} " +
+                   $"triggerId={FormatNullable(action?.TriggerObstacleInstanceId)}";
+        }
+
+        private static string FormatNullable(int? value)
+        {
+            return value.HasValue ? value.Value.ToString() : "none";
         }
     }
 }

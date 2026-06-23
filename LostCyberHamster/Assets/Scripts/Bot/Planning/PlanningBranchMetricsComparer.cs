@@ -12,10 +12,11 @@ namespace Assets.Scripts.Bot.Planning
         /// Порядок приоритетов:
         /// 1. Life: безопасно подобранная жизнь важнее остальных выгод.
         /// 2. EnergyBeforeFirstMajor: не тратим энергию до первой полезной цели.
-        /// 3. MajorObjectiveCount: при равной цене входа берем больше jump-on/energy/crystal целей.
+        /// 3. MajorObjectiveCount: при равной цене входа берем больше jump-on/crystal целей.
         /// 4. EnergyCost: после смысла ветки минимизируем общий расход, включая цену самого JumpOn.
-        /// 5. CoinCollectibleValue: монетки улучшают только равные по важным критериям ветки.
-        /// 6. ActionCount: финальный tie-breaker, чтобы не выбирать лишние действия при полном равенстве.
+        /// 5. EnergyCollectibleValue: энергия полезна, но не оправдывает более дорогой экшен к той же major-цели.
+        /// 6. CoinCollectibleValue: монетки улучшают только равные по важным критериям ветки.
+        /// 7. ActionCount: финальный tie-breaker, чтобы не выбирать лишние действия при полном равенстве.
         /// </summary>
         public static int Compare(PlanningBranchMetrics left, PlanningBranchMetrics right)
         {
@@ -52,8 +53,15 @@ namespace Assets.Scripts.Bot.Planning
             if (compare != 0)
                 return compare;
 
+            // Энергия остается полезной secondary objective, но ее нельзя ставить выше
+            // цены action: иначе super-вариант выигрывает у обычного только потому,
+            // что немного раньше цепляет энергетик после уже достигнутой major-цели.
+            compare = right.EnergyCollectibleValue.CompareTo(left.EnergyCollectibleValue);
+            if (compare != 0)
+                return compare;
+
             // Coin - низкий приоритет: берем монетки только когда они не ухудшают
-            // жизнь, путь к major objective, число major objectives и общий расход.
+            // жизнь, путь к major objective, число major objectives, общий расход и энергию.
             compare = right.CoinCollectibleValue.CompareTo(left.CoinCollectibleValue);
             if (compare != 0)
                 return compare;

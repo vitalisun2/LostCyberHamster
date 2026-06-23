@@ -1,5 +1,6 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.Bot.Planning
@@ -90,6 +91,34 @@ namespace Assets.Scripts.Bot.Planning
                 hamster.HamsterRightX,
                 hamster.HamsterBottomY,
                 hamster.HamsterTopY);
+        }
+
+        /// <summary>
+        /// Возвращает true, если chain содержит collectable с положительной ценностью для текущего projected состояния.
+        /// </summary>
+        public static bool HasPositiveCollectible(
+            HamsterSnapshot hamster,
+            ObstacleChain chain)
+        {
+            if (hamster == null || chain == null)
+                return false;
+
+            for (int chainIndex = 0; chainIndex < chain.Count; chainIndex++)
+            {
+                ObstacleChainElement element = chain.Elements[chainIndex];
+                if (element == null || !element.HasRole(ObstacleRole.Collectible))
+                    continue;
+
+                if (TryGetPositiveValue(
+                        hamster,
+                        element.Obstacle,
+                        out _))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool TryGetLifeValue(

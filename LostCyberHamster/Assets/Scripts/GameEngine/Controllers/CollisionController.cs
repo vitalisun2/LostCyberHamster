@@ -318,7 +318,8 @@ public class CollisionController : MonoBehaviour
             out float obstacleRightX);
 
         return $"{obstacle.ObstacleType.ObstacleTypeEnum}#" +
-               $"{obstacle.gameObject.GetInstanceID()} " +
+               $"{obstacle.GetInstanceID()} " +
+               $"gameObjectId={obstacle.gameObject.GetInstanceID()} " +
                $"name={obstacle.name} " +
                $"x=[{obstacleLeftX:F2},{obstacleRightX:F2}] " +
                $"lane={(obstacle.ObstacleType.IsTop ? "top" : "bottom")}";

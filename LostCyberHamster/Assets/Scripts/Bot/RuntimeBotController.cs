@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Assets.Scripts;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Execution;
@@ -104,14 +105,24 @@ namespace Assets.Scripts.Bot
         private GameManager _registeredGameManager;
 
         /// <summary>
-        /// Builder нового bot plan по snapshot и текущему execution state.
+        /// Текущий async replan task, если сборка уже выполняется в worker.
         /// </summary>
-        private PlanBuilder _planBuilder;
+        private Task<AsyncPlanBuildResult> _runningReplanTask;
 
         /// <summary>
-        /// Проецирует уже исполняемый head-action для replanning хвоста.
+        /// Id текущего async request-а для отбрасывания устаревших результатов.
         /// </summary>
-        private TransitionSimulator _transitionSimulator;
+        private int _runningReplanRequestId;
+
+        /// <summary>
+        /// Следующий id async request-а.
+        /// </summary>
+        private int _nextReplanRequestId;
+
+        /// <summary>
+        /// Поколение runtime state; меняется при сбросе scene/controller state.
+        /// </summary>
+        private int _runtimeGeneration;
 
         /// <summary>
         /// Tracker runtime-событий бота для диагностики.
@@ -238,9 +249,24 @@ namespace Assets.Scripts.Bot
             // Подготавливает persistent controller.
             DontDestroyOnLoad(gameObject);
             BotAnimationTravelProvider.Reset();
+            DebugManager.SetVerboseDiagLoggingEnabled(false);
+            BotAnimationTravelProvider.PrewarmKnownClipData();
 
-            // Подключаем стратегии
-            IReadOnlyList<IPlanningStrategy> strategies = new IPlanningStrategy[]
+            IReadOnlyList<IPlanningStrategy> executorStrategies = CreatePlanningStrategies();
+            _executor = new PlanExecutor(executorStrategies);
+            _testCollectablesScriptedLifeLossHook = new TestCollectablesScriptedLifeLossHook(
+                () => _hamster,
+                ClearPendingDeadEndReport);
+
+            GameEventsManager.OnLivesLost += OnLivesLost;
+        }
+
+        /// <summary>
+        /// Создает независимый набор planning strategies для executor или worker planner.
+        /// </summary>
+        private static IReadOnlyList<IPlanningStrategy> CreatePlanningStrategies()
+        {
+            return new IPlanningStrategy[]
             {
                 new SwitchLaneStrategy(),
                 new PassiveAdvanceStrategy(),
@@ -261,19 +287,6 @@ namespace Assets.Scripts.Bot
                 new RoofJumpOverStrategy(),
                 new SuperRoofJumpOverStrategy()
             };
-
-            // и прочие компоненты
-            _transitionSimulator = new TransitionSimulator(strategies);
-            _executor = new PlanExecutor(strategies);
-            _planBuilder = new PlanBuilder(
-                new ActionGenerator(strategies),
-                _transitionSimulator,
-                new PlanEvaluator());
-            _testCollectablesScriptedLifeLossHook = new TestCollectablesScriptedLifeLossHook(
-                () => _hamster,
-                ClearPendingDeadEndReport);
-
-            GameEventsManager.OnLivesLost += OnLivesLost;
         }
 
         /// <summary>
@@ -331,6 +344,7 @@ namespace Assets.Scripts.Bot
         private void OnDestroy()
         {
             // Отписывает controller от scene-зависимостей.
+            InvalidateAsyncReplan();
             UnsubscribeFromObstacleSpawner();
             UnregisterFromGameManager();
             GameEventsManager.OnLivesLost -= OnLivesLost;
@@ -357,6 +371,7 @@ namespace Assets.Scripts.Bot
         {
             // Очищает runtime state бота.
             IsEnabled = false;
+            InvalidateAsyncReplan();
             ApplySpawnLookaheadToObstacleSpawner();
             LastSnapshot = null;
             ClearAllReplanRequests();
@@ -373,7 +388,7 @@ namespace Assets.Scripts.Bot
         private void TickBot()
         {
             // Проверяет готовность planning компонентов.
-            if (_executor == null || _planBuilder == null)
+            if (_executor == null)
                 return;
 
             EnsureInitialReplanRequested();
@@ -391,8 +406,10 @@ namespace Assets.Scripts.Bot
             PromoteDeferredReplanReasons();
             RequestReplanForExecutionResult(executionResult);
 
+            TryApplyCompletedAsyncReplan();
+
             if (ShouldRebuildPlan())
-                RebuildPlanFromCurrentSnapshot();
+                StartAsyncReplanFromCurrentSnapshot();
         }
 
         /// <summary>
@@ -426,71 +443,146 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Строит новый план от текущего snapshot с сохранением уже запущенного head-action.
+        /// Запускает async пересборку плана от текущего snapshot без блокировки game tick.
         /// </summary>
-        private void RebuildPlanFromCurrentSnapshot()
+        private void StartAsyncReplanFromCurrentSnapshot()
         {
-            // Проверяет готовность planning компонентов.
-            if (_executor == null || _planBuilder == null)
+            if (LastSnapshot == null)
                 return;
 
             BotReplanReason replanReasons = ConsumeReplanReasons();
             if (replanReasons == BotReplanReason.None)
                 return;
 
-            // Строит candidate plan с учетом текущего execution state.
-            PlanBuildResult buildResult = BuildPlanForCurrentExecutionState(replanReasons);
+            AsyncPlanBuildRequest request = CaptureAsyncPlanBuildRequest(replanReasons);
+            _runningReplanRequestId = request.RequestId;
+            _runningReplanTask = Task.Run(() => new AsyncPlanRebuilder(CreatePlanningStrategies()).Build(request));
+        }
+
+        /// <summary>
+        /// Применяет завершенный async replan result, если runtime state не успел устареть.
+        /// </summary>
+        private void TryApplyCompletedAsyncReplan()
+        {
+            Task<AsyncPlanBuildResult> task = _runningReplanTask;
+            if (task == null || !task.IsCompleted)
+                return;
+
+            int requestId = _runningReplanRequestId;
+            _runningReplanTask = null;
+            _runningReplanRequestId = 0;
+
+            if (task.IsCanceled)
+                return;
+
+            if (task.IsFaulted)
+            {
+                Debug.LogError($"[Bot] Async replan task failed: {task.Exception}");
+                return;
+            }
+
+            AsyncPlanBuildResult result = task.Result;
+            if (result == null
+                || result.RequestId != requestId
+                || result.RuntimeGeneration != _runtimeGeneration)
+            {
+                return;
+            }
+
+            if (HasQueuedReplanReasons())
+            {
+                return;
+            }
+
+            if (result.HasError)
+            {
+                Debug.LogError($"[Bot] Async replan failed: {result.Error}");
+                RequestReplan(result.ReplanReasons);
+                return;
+            }
+
+            ApplyPlanBuildResult(result.BuildResult, result.ReplanReasons);
+        }
+
+        /// <summary>
+        /// Захватывает immutable input для worker-пересборки.
+        /// </summary>
+        private AsyncPlanBuildRequest CaptureAsyncPlanBuildRequest(BotReplanReason replanReasons)
+        {
+            return new AsyncPlanBuildRequest(
+                ++_nextReplanRequestId,
+                _runtimeGeneration,
+                LastSnapshot,
+                CopyCurrentPlanForAsyncRequest(),
+                _executor.IsActionInProgress,
+                _inProgressHeadAction,
+                _inProgressHeadFireTime,
+                replanReasons);
+        }
+
+        /// <summary>
+        /// Копирует action-list текущего плана, чтобы worker не зависел от дальнейшей замены CurrentPlan.
+        /// </summary>
+        private BotPlan CopyCurrentPlanForAsyncRequest()
+        {
+            BotPlan currentPlan = CurrentPlan;
+            if (currentPlan == null || !currentPlan.HasActions)
+                return BotPlan.Empty(currentPlan?.CommittedBoundaryX ?? 0f);
+
+            var actions = new PlannedAction[currentPlan.Actions.Count];
+            for (int actionIndex = 0; actionIndex < currentPlan.Actions.Count; actionIndex++)
+                actions[actionIndex] = currentPlan.Actions[actionIndex];
+
+            return new BotPlan(actions, currentPlan.CommittedBoundaryX, currentPlan.Score);
+        }
+
+        /// <summary>
+        /// Применяет результат построения плана по старому main-thread контракту.
+        /// </summary>
+        private void ApplyPlanBuildResult(PlanBuildResult buildResult, BotReplanReason replanReasons)
+        {
+            if (buildResult == null)
+                return;
+
             if (buildResult.HasDeadEnd)
                 RememberPendingDeadEndReport(buildResult.DeadEndReport, replanReasons);
             else
                 ClearPendingDeadEndReport();
 
             BotPlan plan = buildResult.Plan;
-
-            // Отбрасывает только эквивалентный plan; пустой rebuild тоже должен очищать старый хвост.
             if (plan.IsEquivalentTo(CurrentPlan))
                 return;
 
-            // Активирует новый plan.
             _executor.SetPlan(plan);
             if (plan.HasActions)
                 LogPlanActivation(plan, replanReasons);
         }
 
         /// <summary>
-        /// Строит candidate plan: live-root при ожидании action или committed-head плюс новый хвост при execution.
+        /// Проверяет, выполняется ли replan task в worker.
         /// </summary>
-        private PlanBuildResult BuildPlanForCurrentExecutionState(BotReplanReason replanReasons)
+        private bool IsAsyncReplanRunning()
         {
-            if (!CurrentPlan.HasActions
-                || HasReplanReason(replanReasons, BotReplanReason.ActionCancelled))
-            {
-                return _planBuilder.Build(LastSnapshot);
-            }
+            return _runningReplanTask != null && !_runningReplanTask.IsCompleted;
+        }
 
-            IReadOnlyList<PlannedAction> committedPrefix = BuildCommittedPrefix(CurrentPlan);
-            if (committedPrefix.Count == 0)
-                return _planBuilder.Build(LastSnapshot);
+        /// <summary>
+        /// Проверяет, появились ли более свежие причины replan-а после запуска worker task.
+        /// </summary>
+        private bool HasQueuedReplanReasons()
+        {
+            return _pendingReplanReasons != BotReplanReason.None
+                || _deferredReplanReasons != BotReplanReason.None;
+        }
 
-            PlanningState rootState = PlanningState.FromSnapshot(LastSnapshot);
-            PlanningState tailRootState = BuildTailRootState(rootState, committedPrefix);
-
-            if (tailRootState == null)
-                return _planBuilder.Build(LastSnapshot);
-
-            PlanBuildResult tailBuildResult = _planBuilder.Build(LastSnapshot, tailRootState);
-            BotPlan tailPlan = tailBuildResult.Plan;
-
-            var actions = new List<PlannedAction>(committedPrefix.Count + tailPlan.Actions.Count);
-            for (int actionIndex = 0; actionIndex < committedPrefix.Count; actionIndex++)
-                actions.Add(committedPrefix[actionIndex]);
-
-            for (int actionIndex = 0; actionIndex < tailPlan.Actions.Count; actionIndex++)
-                actions.Add(tailPlan.Actions[actionIndex]);
-
-            return new PlanBuildResult(
-                new BotPlan(actions, tailPlan.CommittedBoundaryX, tailPlan.Score),
-                tailBuildResult.DeadEndReport);
+        /// <summary>
+        /// Инвалидирует pending async result при смене runtime context.
+        /// </summary>
+        private void InvalidateAsyncReplan()
+        {
+            _runtimeGeneration++;
+            _runningReplanTask = null;
+            _runningReplanRequestId = 0;
         }
 
         /// <summary>
@@ -611,68 +703,219 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Получает root-состояние для хвоста после committed-prefix.
+        /// Immutable input для async replan worker-а.
         /// </summary>
-        private PlanningState BuildTailRootState(
-            PlanningState rootState,
-            IReadOnlyList<PlannedAction> committedPrefix)
+        private sealed class AsyncPlanBuildRequest
         {
-            PlanningState currentState = rootState;
-            for (int actionIndex = 0; actionIndex < committedPrefix.Count; actionIndex++)
+            public AsyncPlanBuildRequest(
+                int requestId,
+                int runtimeGeneration,
+                WorldSnapshot snapshot,
+                BotPlan currentPlan,
+                bool isActionInProgress,
+                PlannedAction inProgressHeadAction,
+                float inProgressHeadFireTime,
+                BotReplanReason replanReasons)
             {
-                PlannedAction committedAction = committedPrefix[actionIndex];
-                bool isCurrentInProgressHead = actionIndex == 0 && _executor.IsActionInProgress;
-
-                currentState = isCurrentInProgressHead
-                    ? ProjectInProgressCommittedAction(currentState, committedAction)
-                    : SimulatePendingCommittedAction(currentState, committedAction);
-
-                if (currentState == null)
-                    return null;
+                RequestId = requestId;
+                RuntimeGeneration = runtimeGeneration;
+                Snapshot = snapshot;
+                CurrentPlan = currentPlan ?? BotPlan.Empty(snapshot?.ScreenRightEdgeX ?? 0f);
+                IsActionInProgress = isActionInProgress;
+                InProgressHeadAction = inProgressHeadAction;
+                InProgressHeadFireTime = inProgressHeadFireTime;
+                ReplanReasons = replanReasons;
             }
 
-            return currentState;
+            public int RequestId { get; }
+            public int RuntimeGeneration { get; }
+            public WorldSnapshot Snapshot { get; }
+            public BotPlan CurrentPlan { get; }
+            public bool IsActionInProgress { get; }
+            public PlannedAction InProgressHeadAction { get; }
+            public float InProgressHeadFireTime { get; }
+            public BotReplanReason ReplanReasons { get; }
         }
 
         /// <summary>
-        /// Проецирует уже запущенный committed action до его ожидаемого завершения.
+        /// Result async replan worker-а, включая exception без падения Task.
         /// </summary>
-        private PlanningState ProjectInProgressCommittedAction(
-            PlanningState currentState,
-            PlannedAction committedAction)
+        private sealed class AsyncPlanBuildResult
         {
-            float? remainingPostFireWorldShift = TryGetRemainingPostFireWorldShift(
-                committedAction,
-                out float remainingShift)
-                    ? remainingShift
-                    : null;
+            private AsyncPlanBuildResult(
+                int requestId,
+                int runtimeGeneration,
+                BotReplanReason replanReasons,
+                PlanBuildResult buildResult,
+                Exception error)
+            {
+                RequestId = requestId;
+                RuntimeGeneration = runtimeGeneration;
+                ReplanReasons = replanReasons;
+                BuildResult = buildResult;
+                Error = error;
+            }
 
-            return _transitionSimulator.ProjectInProgress(
-                currentState,
-                committedAction,
-                LastSnapshot,
-                remainingPostFireWorldShift);
+            public int RequestId { get; }
+            public int RuntimeGeneration { get; }
+            public BotReplanReason ReplanReasons { get; }
+            public PlanBuildResult BuildResult { get; }
+            public Exception Error { get; }
+            public bool HasError => Error != null;
+
+            public static AsyncPlanBuildResult Success(
+                AsyncPlanBuildRequest request,
+                PlanBuildResult buildResult)
+            {
+                return new AsyncPlanBuildResult(
+                    request.RequestId,
+                    request.RuntimeGeneration,
+                    request.ReplanReasons,
+                    buildResult,
+                    error: null);
+            }
+
+            public static AsyncPlanBuildResult Failure(
+                AsyncPlanBuildRequest request,
+                Exception error)
+            {
+                return new AsyncPlanBuildResult(
+                    request?.RequestId ?? 0,
+                    request?.RuntimeGeneration ?? 0,
+                    request?.ReplanReasons ?? BotReplanReason.None,
+                    buildResult: null,
+                    error);
+            }
         }
 
         /// <summary>
-        /// Симулирует pending committed action для построения хвоста после него.
+        /// Собирает план в worker по захваченному snapshot и execution-state.
         /// </summary>
-        private PlanningState SimulatePendingCommittedAction(
-            PlanningState currentState,
-            PlannedAction committedAction)
+        private sealed class AsyncPlanRebuilder
         {
-            WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(LastSnapshot, currentState);
-            if (projectedWorldSnapshot == null)
-                return null;
+            private readonly TransitionSimulator _transitionSimulator;
+            private readonly PlanBuilder _planBuilder;
 
-            PlannedAction projectionAction = CreatePendingProjectionAction(
-                committedAction,
-                projectedWorldSnapshot);
+            public AsyncPlanRebuilder(IReadOnlyList<IPlanningStrategy> strategies)
+            {
+                _transitionSimulator = new TransitionSimulator(strategies);
+                _planBuilder = new PlanBuilder(
+                    new ActionGenerator(strategies),
+                    _transitionSimulator,
+                    new PlanEvaluator());
+            }
 
-            return _transitionSimulator.Simulate(
-                currentState,
-                projectionAction,
-                LastSnapshot);
+            public AsyncPlanBuildResult Build(AsyncPlanBuildRequest request)
+            {
+                try
+                {
+                    PlanBuildResult buildResult = BuildPlanForRequest(request);
+                    return AsyncPlanBuildResult.Success(
+                        request,
+                        buildResult);
+                }
+                catch (Exception error)
+                {
+                    return AsyncPlanBuildResult.Failure(request, error);
+                }
+            }
+
+            private PlanBuildResult BuildPlanForRequest(AsyncPlanBuildRequest request)
+            {
+                if (request?.Snapshot == null)
+                    return new PlanBuildResult(BotPlan.Empty(), deadEndReport: null);
+
+                WorldSnapshot snapshot = request.Snapshot;
+                if (!request.CurrentPlan.HasActions
+                    || HasReplanReason(request.ReplanReasons, BotReplanReason.ActionCancelled))
+                {
+                    return _planBuilder.Build(snapshot);
+                }
+
+                IReadOnlyList<PlannedAction> committedPrefix = BuildCommittedPrefix(request.CurrentPlan);
+                if (committedPrefix.Count == 0)
+                    return _planBuilder.Build(snapshot);
+
+                PlanningState rootState = PlanningState.FromSnapshot(snapshot);
+                PlanningState tailRootState = BuildTailRootState(request, rootState, committedPrefix);
+
+                if (tailRootState == null)
+                    return _planBuilder.Build(snapshot);
+
+                PlanBuildResult tailBuildResult = _planBuilder.Build(snapshot, tailRootState);
+                BotPlan tailPlan = tailBuildResult.Plan;
+
+                var actions = new List<PlannedAction>(committedPrefix.Count + tailPlan.Actions.Count);
+                for (int actionIndex = 0; actionIndex < committedPrefix.Count; actionIndex++)
+                    actions.Add(committedPrefix[actionIndex]);
+
+                for (int actionIndex = 0; actionIndex < tailPlan.Actions.Count; actionIndex++)
+                    actions.Add(tailPlan.Actions[actionIndex]);
+
+                return new PlanBuildResult(
+                    new BotPlan(actions, tailPlan.CommittedBoundaryX, tailPlan.Score),
+                    tailBuildResult.DeadEndReport);
+            }
+
+            private PlanningState BuildTailRootState(
+                AsyncPlanBuildRequest request,
+                PlanningState rootState,
+                IReadOnlyList<PlannedAction> committedPrefix)
+            {
+                PlanningState currentState = rootState;
+                for (int actionIndex = 0; actionIndex < committedPrefix.Count; actionIndex++)
+                {
+                    PlannedAction committedAction = committedPrefix[actionIndex];
+                    bool isCurrentInProgressHead = actionIndex == 0 && request.IsActionInProgress;
+
+                    currentState = isCurrentInProgressHead
+                        ? ProjectInProgressCommittedAction(request, currentState, committedAction)
+                        : SimulatePendingCommittedAction(request, currentState, committedAction);
+
+                    if (currentState == null)
+                        return null;
+                }
+
+                return currentState;
+            }
+
+            private PlanningState ProjectInProgressCommittedAction(
+                AsyncPlanBuildRequest request,
+                PlanningState currentState,
+                PlannedAction committedAction)
+            {
+                float? remainingPostFireWorldShift = TryGetRemainingPostFireWorldShift(
+                    request,
+                    committedAction,
+                    out float remainingShift)
+                        ? remainingShift
+                        : null;
+
+                return _transitionSimulator.ProjectInProgress(
+                    currentState,
+                    committedAction,
+                    request.Snapshot,
+                    remainingPostFireWorldShift);
+            }
+
+            private PlanningState SimulatePendingCommittedAction(
+                AsyncPlanBuildRequest request,
+                PlanningState currentState,
+                PlannedAction committedAction)
+            {
+                WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(request.Snapshot, currentState);
+                if (projectedWorldSnapshot == null)
+                    return null;
+
+                PlannedAction projectionAction = CreatePendingProjectionAction(
+                    committedAction,
+                    projectedWorldSnapshot);
+
+                return _transitionSimulator.Simulate(
+                    currentState,
+                    projectionAction,
+                    request.Snapshot);
+            }
         }
 
         /// <summary>
@@ -812,18 +1055,21 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Возвращает оставшийся world shift для уже запущенной head-action.
         /// </summary>
-        private bool TryGetRemainingPostFireWorldShift(PlannedAction action, out float remainingPostFireWorldShift)
+        private static bool TryGetRemainingPostFireWorldShift(
+            AsyncPlanBuildRequest request,
+            PlannedAction action,
+            out float remainingPostFireWorldShift)
         {
             remainingPostFireWorldShift = 0f;
-            if (_inProgressHeadAction == null
+            if (request?.InProgressHeadAction == null
                 || action == null
-                || !action.IsEquivalentTo(_inProgressHeadAction)
-                || LastSnapshot == null)
+                || !action.IsEquivalentTo(request.InProgressHeadAction)
+                || request.Snapshot == null)
             {
                 return false;
             }
 
-            float elapsedSeconds = LastSnapshot.SnapshotTime - _inProgressHeadFireTime;
+            float elapsedSeconds = request.Snapshot.SnapshotTime - request.InProgressHeadFireTime;
             float elapsedWorldShift = elapsedSeconds > 0f
                 ? elapsedSeconds * Consts.GameSpeedBase
                 : 0f;
@@ -990,6 +1236,8 @@ namespace Assets.Scripts.Bot
             if (!IsInitialized)
                 return;
 
+            BotAnimationTravelProvider.PrewarmKnownClipData();
+
             // Подключает controller к game loop.
             RegisterWithGameManager(_gameManager);
             SubscribeToObstacleSpawner(RuntimeObstacleSpawner.Instance);
@@ -1038,6 +1286,7 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private void ResetRuntimeStateForNewGameManager()
         {
+            InvalidateAsyncReplan();
             LastSnapshot = null;
             UnsubscribeFromObstacleSpawner();
             _eventTracker?.Dispose();
@@ -1104,7 +1353,32 @@ namespace Assets.Scripts.Bot
             _testCollectablesScriptedLifeLossHook?.TryApplyBeforePatternEvaluation(patternIndex, patternName);
             RequestReplan(BotReplanReason.SpawnPattern);
             DebugManager.DiagLog(
-                $"[Bot PATTERN] SPAWN patternIndex={patternIndex} pattern={patternName}");
+                $"[Bot PATTERN] SPAWN patternIndex={patternIndex} pattern={patternName} " +
+                $"obstacleIds={FormatPatternObstacleIds(_subscribedObstacleSpawner, patternIndex)}");
+        }
+
+        private static string FormatPatternObstacleIds(
+            RuntimeObstacleSpawner obstacleSpawner,
+            int patternIndex)
+        {
+            if (obstacleSpawner?.SpawnedObstacles == null)
+                return "none";
+
+            var ids = new List<int>();
+            for (int obstacleIndex = 0; obstacleIndex < obstacleSpawner.SpawnedObstacles.Count; obstacleIndex++)
+            {
+                var obstacle = obstacleSpawner.SpawnedObstacles[obstacleIndex];
+                if (obstacle?.ObstacleScript == null || obstacle.PatternIndex != patternIndex)
+                    continue;
+
+                ids.Add(obstacle.ObstacleScript.GetInstanceID());
+            }
+
+            if (ids.Count == 0)
+                return "none";
+
+            ids.Sort();
+            return string.Join(",", ids);
         }
     }
 }

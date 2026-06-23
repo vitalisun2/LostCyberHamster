@@ -9,7 +9,17 @@
             "overrides": []
         },
         {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
             "ref": "test_collectables_02",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
             "spriteSeed": 0,
             "overrides": []
         },
@@ -19,7 +29,17 @@
             "overrides": []
         },
         {
+            "ref": "relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
             "ref": "test_collectables_04",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "relief",
             "spriteSeed": 0,
             "overrides": []
         },
