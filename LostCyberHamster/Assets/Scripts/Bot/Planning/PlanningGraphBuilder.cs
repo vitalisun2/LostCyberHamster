@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
@@ -67,7 +67,7 @@ namespace Assets.Scripts.Bot.Planning
     /// </summary>
     public sealed class PlanningGraphBuilder
     {
-        private const int MaxSearchDepth = 5;
+        private const int MaxSearchDepth = 6;
 
         private readonly ActionGenerator _actionGenerator;
         private readonly TransitionSimulator _transitionSimulator;

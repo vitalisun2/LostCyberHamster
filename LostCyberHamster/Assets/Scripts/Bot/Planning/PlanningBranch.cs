@@ -43,14 +43,14 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         public static PlanningBranch FromLeaf(PlanningGraphNode leafNode)
         {
-            var actions = new List<PlannedAction>(leafNode.Metrics.ActionCount);
+            var actions = new List<PlannedAction>(leafNode.Depth);
             for (PlanningGraphNode current = leafNode; current != null && !current.IsRoot; current = current.Parent)
                 actions.Add(current.IncomingAction);
 
             actions.Reverse();
             return new PlanningBranch(
                 actions,
-                leafNode.Metrics,
+                PlanningBranchMetrics.FromActions(actions),
                 leafNode.State.NextObstacleIndex,
                 leafNode.State.ProjectionWorldShift);
         }
@@ -67,7 +67,7 @@ namespace Assets.Scripts.Bot.Planning
                 return PlanningBranchMetrics.Empty;
 
             float currentProjectionWorldShift = GetInitialProjectionWorldShift();
-            PlanningBranchMetrics metrics = PlanningBranchMetrics.Empty;
+            var actionsToHorizon = new List<PlannedAction>(Actions.Count);
             for (int actionIndex = 0; actionIndex < Actions.Count; actionIndex++)
             {
                 PlannedAction action = Actions[actionIndex];
@@ -77,11 +77,11 @@ namespace Assets.Scripts.Bot.Planning
                 if (currentProjectionWorldShift >= horizonProjectionWorldShift - horizonEpsilon)
                     break;
 
-                metrics = metrics.Append(action);
+                actionsToHorizon.Add(action);
                 currentProjectionWorldShift += action.CompletionWorldShift;
             }
 
-            return metrics;
+            return PlanningBranchMetrics.FromActions(actionsToHorizon);
         }
 
         private float GetInitialProjectionWorldShift()

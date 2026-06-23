@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
 
 namespace Assets.Scripts.Bot.Planning
@@ -76,25 +77,92 @@ namespace Assets.Scripts.Bot.Planning
         public int CoinCollectibleValue { get; }
 
         /// <summary>
-        /// Возвращает новые метрики после добавления одного действия.
+        /// Собирает метрики из полной цепочки действий с учетом подготовительных действий составной objective-цепочки.
         /// </summary>
-        public PlanningBranchMetrics Append(PlannedAction action)
+        public static PlanningBranchMetrics FromActions(IReadOnlyList<PlannedAction> actions)
         {
-            int actionEnergyCost = action != null ? action.EnergyCost : 0;
-            int actionMajorObjectiveCount = GetMajorObjectiveCount(action);
-            int energyBeforeFirstMajor = EnergyBeforeFirstMajor;
-            if (MajorObjectiveCount == 0 && actionMajorObjectiveCount == 0)
-                energyBeforeFirstMajor += actionEnergyCost;
+            if (actions == null || actions.Count == 0)
+                return Empty;
+
+            int firstMajorActionIndex = FindFirstMajorActionIndex(actions);
+            int energyCost = 0;
+            int energyBeforeFirstMajor = 0;
+            int actionCount = 0;
+            int majorObjectiveCount = 0;
+            int lifeCollectibleValue = 0;
+            int energyCollectibleValue = 0;
+            int crystalCollectibleValue = 0;
+            int coinCollectibleValue = 0;
+
+            for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
+            {
+                PlannedAction action = actions[actionIndex];
+                int actionEnergyCost = action != null ? action.EnergyCost : 0;
+
+                energyCost += actionEnergyCost;
+                actionCount++;
+                majorObjectiveCount += GetMajorObjectiveCount(action);
+                lifeCollectibleValue += GetCollectibleValue(action, CollectibleKind.Life);
+                energyCollectibleValue += GetCollectibleValue(action, CollectibleKind.Energy);
+                crystalCollectibleValue += GetCollectibleValue(action, CollectibleKind.Crystal);
+                coinCollectibleValue += GetCollectibleValue(action, CollectibleKind.Coin);
+
+                if ((firstMajorActionIndex < 0 || actionIndex < firstMajorActionIndex)
+                    && !IsSetupForFirstMajor(actions, actionIndex, firstMajorActionIndex))
+                {
+                    energyBeforeFirstMajor += actionEnergyCost;
+                }
+            }
 
             return new PlanningBranchMetrics(
-                EnergyCost + actionEnergyCost,
+                energyCost,
                 energyBeforeFirstMajor,
-                ActionCount + 1,
-                MajorObjectiveCount + actionMajorObjectiveCount,
-                LifeCollectibleValue + GetCollectibleValue(action, CollectibleKind.Life),
-                EnergyCollectibleValue + GetCollectibleValue(action, CollectibleKind.Energy),
-                CrystalCollectibleValue + GetCollectibleValue(action, CollectibleKind.Crystal),
-                CoinCollectibleValue + GetCollectibleValue(action, CollectibleKind.Coin));
+                actionCount,
+                majorObjectiveCount,
+                lifeCollectibleValue,
+                energyCollectibleValue,
+                crystalCollectibleValue,
+                coinCollectibleValue);
+        }
+
+        private static int FindFirstMajorActionIndex(IReadOnlyList<PlannedAction> actions)
+        {
+            for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
+            {
+                if (GetMajorObjectiveCount(actions[actionIndex]) > 0)
+                    return actionIndex;
+            }
+
+            return -1;
+        }
+
+        private static bool IsSetupForFirstMajor(
+            IReadOnlyList<PlannedAction> actions,
+            int actionIndex,
+            int firstMajorActionIndex)
+        {
+            if (firstMajorActionIndex <= 0 || actionIndex != firstMajorActionIndex - 1)
+                return false;
+
+            PlannedAction setupAction = actions[actionIndex];
+            PlannedAction firstMajorAction = actions[firstMajorActionIndex];
+            if (setupAction == null || firstMajorAction == null)
+                return false;
+
+            return IsRoofEntryAction(setupAction.Kind)
+                && IsFromRoofJumpOnAction(firstMajorAction.Kind);
+        }
+
+        private static bool IsRoofEntryAction(BotActionKind actionKind)
+        {
+            return actionKind == BotActionKind.JumpOnRoof
+                || actionKind == BotActionKind.SuperJumpOnRoof;
+        }
+
+        private static bool IsFromRoofJumpOnAction(BotActionKind actionKind)
+        {
+            return actionKind == BotActionKind.JumpOnFromRoof
+                || actionKind == BotActionKind.SuperJumpOnFromRoof;
         }
 
         private static int GetMajorObjectiveCount(PlannedAction action)

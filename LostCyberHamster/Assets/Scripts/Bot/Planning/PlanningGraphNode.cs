@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Assets.Scripts.Bot.PlanState;
 
 namespace Assets.Scripts.Bot.Planning
@@ -48,7 +49,18 @@ namespace Assets.Scripts.Bot.Planning
                 this,
                 action,
                 Depth + 1,
-                Metrics.Append(action));
+                PlanningBranchMetrics.FromActions(BuildActionPrefix(action)));
+        }
+
+        private IReadOnlyList<PlannedAction> BuildActionPrefix(PlannedAction action)
+        {
+            var actions = new List<PlannedAction>(Depth + 1);
+            for (PlanningGraphNode current = this; current != null && !current.IsRoot; current = current.Parent)
+                actions.Add(current.IncomingAction);
+
+            actions.Reverse();
+            actions.Add(action);
+            return actions;
         }
     }
 }
