@@ -68,6 +68,7 @@ namespace Assets.Scripts.Gameplay
             _uiGameOverMechanics.Subscribe();
 
             await _uiManager.LoadScreenAsync(ScreenEnum.GameScreen);
+            _uiGameScreenMechanics.SyncState();
 
             _isInitialized = true;
         }

@@ -130,8 +130,26 @@ namespace LostCyberHamster.UI
             _hamsterState.text = state;
         }
 
+        public void SetUltraControlsVisible(bool visible)
+        {
+            SetElementVisible(_ultraButton, visible);
+            SetElementVisible(_buyUltraButton, visible);
+
+            if (!visible)
+            {
+                _ultraButton?.SetEnabled(false);
+            }
+
+            _buyUltraButton?.SetEnabled(visible);
+        }
+
         public void SetUltraValue(int value)
         {
+            if (_ultraButton == null)
+            {
+                return;
+            }
+
             if (value < 100)
             {
                 _ultraButton.text = $"{value}";
@@ -142,6 +160,16 @@ namespace LostCyberHamster.UI
                 _ultraButton.text = "S";
                 _ultraButton.SetEnabled(true);
             }
+        }
+
+        private static void SetElementVisible(VisualElement element, bool visible)
+        {
+            if (element == null)
+            {
+                return;
+            }
+
+            element.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         public void SetJumpAction(Action action)

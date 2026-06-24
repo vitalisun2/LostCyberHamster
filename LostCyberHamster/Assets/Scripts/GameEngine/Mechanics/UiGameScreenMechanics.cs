@@ -52,6 +52,18 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _character?.Energy.Subscribe(OnEnergyChanged);
         }
 
+        public void SyncState()
+        {
+            if (_character == null)
+            {
+                return;
+            }
+
+            OnLifesChanged(_character.Lives.Value);
+            SyncUltraControls();
+            OnEnergyChanged(_character.Energy.Value);
+        }
+
         public void Unsubscribe()
         {
             _character?.Lives.Unsubscribe(OnLifesChanged);
@@ -66,6 +78,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnUltaChargeAmountChanged(int value)
         {
+            if (SkinManager.IsDefaultSkin)
+            {
+                _gameScreenController?.SetUltraControlsVisible(false);
+                return;
+            }
+
             _gameScreenController?.SetUltraValue(value);
         }
 
@@ -122,6 +140,11 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnUlta()
         {
+            if (SkinManager.IsDefaultSkin)
+            {
+                return;
+            }
+
             _character.UltaEvent?.Invoke();
         }
 
@@ -142,11 +165,27 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnBuyUltra()
         {
+            if (SkinManager.IsDefaultSkin)
+            {
+                return;
+            }
+
             const int price = 100;
             if (ResourceManager.CanSpendResource(ResourceType.Coins, price))
             {
                 ResourceManager.SpendResource(ResourceType.Coins, price);
                 _character.AddUltaCharge(100);
+            }
+        }
+
+        private void SyncUltraControls()
+        {
+            bool ultraAvailable = !SkinManager.IsDefaultSkin;
+            _gameScreenController?.SetUltraControlsVisible(ultraAvailable);
+
+            if (ultraAvailable)
+            {
+                OnUltaChargeAmountChanged(_character.UltaChargeAmount.Value);
             }
         }
     }

@@ -12,10 +12,13 @@ using Vues.GameCore;
 
 public static class SkinManager
 {
+    private const int DefaultSkinId = 0;
+
     public static List<string> AvailableSkinsNames => _availableSkins.Select(x => x.Name).ToList();
     public static string CurrentSkinName => CurrentSkin?.Name;
     public static bool IsUltaActive => CurrentSkin?.IsUltaActive.Value ?? false;
     public static int UltaChargeAmount => LevelController.Instance.LevelData.Hamster?.UltaChargeAmount.Value ?? 0;
+    public static bool IsDefaultSkin => CurrentSkin == null || CurrentSkin.Id == DefaultSkinId;
 
 
     public static List<Skin> AvailableSkins => _availableSkins;

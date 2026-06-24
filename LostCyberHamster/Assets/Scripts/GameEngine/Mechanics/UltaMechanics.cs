@@ -31,6 +31,11 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnUltaEvent()
         {
+            if (SkinManager.IsDefaultSkin)
+            {
+                return;
+            }
+
             if (_ultaChargeAmount.Value < 100)
             {
                 Debug.LogWarning("Ulta charge is not full");
