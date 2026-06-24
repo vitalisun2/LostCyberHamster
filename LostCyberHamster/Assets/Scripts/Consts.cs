@@ -75,7 +75,7 @@ namespace Assets.Scripts
         public const float RoadScrollSpeed = 1f;
         
         public const float BackgroundYPos = 0.515f;
-        public const float Background2YPos = BackgroundYPos + 0.3f;
+        public const float Background2YPos = BackgroundYPos + 0.885f;
         public const float SkyYPos = BackgroundYPos + (BACKGROUND_HEIGHT * PIXELS_TO_UNITS_RATIO / 1.8f);
         public const float RoadYPos = BackgroundYPos - (BACKGROUND_HEIGHT * PIXELS_TO_UNITS_RATIO);
 
