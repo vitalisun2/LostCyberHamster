@@ -1,6 +1,4 @@
-using System;
 using Unity.Properties;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.UIElements;
@@ -10,8 +8,11 @@ namespace LostCyberHamster.UI
     [UxmlElement]
     public partial class Energybar : VisualElement
     {
+        private const float MinValue = 0f;
+        private const float MaxValue = 100f;
+
         [SerializeField, DontCreateProperty]
-        float _value = 100;
+        float _value = MaxValue;
 
         [SerializeField, DontCreateProperty]
         private VisualTreeAsset _visualTree;
@@ -22,28 +23,23 @@ namespace LostCyberHamster.UI
             get => _value;
             set
             {
-                _value = value;
-
-                if (value > 100)
-                {
-                    _value = 100;
-                }
-
-                if (value < 0)
-                {
-                    _value = 0;
-                }
-
-                UpdateEnergybar();
+                _value = Mathf.Clamp(value, MinValue, MaxValue);
+                ApplyValueToView();
             }
         }
 
         private VisualElement _foreground;
 
-        private void UpdateEnergybar()
+        private void ApplyValueToView()
         {
-            float widthPercentage = _value / 100f;
-            _foreground.style.flexGrow = new StyleFloat(widthPercentage);
+            if (_foreground == null)
+            {
+                return;
+            }
+
+            float fillPercentage = _value / MaxValue * 100f;
+            _foreground.style.flexGrow = new StyleFloat(0f);
+            _foreground.style.width = new StyleLength(Length.Percent(fillPercentage));
         }
 
         public Energybar()
@@ -54,6 +50,7 @@ namespace LostCyberHamster.UI
             Addressables.Release(op);
             this.Add(_visualTree.CloneTree());
             _foreground = this.Q("foreground");
+            ApplyValueToView();
         }
     }
 }
