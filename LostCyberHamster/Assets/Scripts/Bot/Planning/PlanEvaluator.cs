@@ -20,11 +20,17 @@ namespace Assets.Scripts.Bot.Planning
             if (candidates == null || candidates.Count == 0)
                 return null;
 
+            float commonHorizonProjectionWorldShift = GetCommonSelectionHorizon(candidates);
             PlanningBranch best = candidates[0];
             for (int candidateIndex = 1; candidateIndex < candidates.Count; candidateIndex++)
             {
-                if (PlanningBranchComparer.Compare(candidates[candidateIndex], best) < 0)
+                if (PlanningBranchComparer.CompareAtCommonHorizon(
+                        candidates[candidateIndex],
+                        best,
+                        commonHorizonProjectionWorldShift) < 0)
+                {
                     best = candidates[candidateIndex];
+                }
             }
 
             return best;
@@ -104,6 +110,29 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             return score;
+        }
+
+        private static float GetCommonSelectionHorizon(IReadOnlyList<PlanningBranch> candidates)
+        {
+            bool hasCandidate = false;
+            float commonHorizonProjectionWorldShift = 0f;
+            for (int candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
+            {
+                PlanningBranch candidate = candidates[candidateIndex];
+                if (candidate == null)
+                    continue;
+
+                if (hasCandidate
+                    && candidate.FinalProjectionWorldShift >= commonHorizonProjectionWorldShift)
+                {
+                    continue;
+                }
+
+                hasCandidate = true;
+                commonHorizonProjectionWorldShift = candidate.FinalProjectionWorldShift;
+            }
+
+            return commonHorizonProjectionWorldShift;
         }
 
         /// <summary>

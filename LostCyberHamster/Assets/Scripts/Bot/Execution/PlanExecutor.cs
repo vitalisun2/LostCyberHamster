@@ -29,6 +29,7 @@ namespace Assets.Scripts.Bot.Execution
         private readonly IReadOnlyDictionary<BotActionKind, IActionExecutionHandler> _handlers;
 
         private bool _isActionInProgress;
+        private bool _isHeadWaitingForFire;
 
         internal PlanExecutor(IReadOnlyList<IPlanningStrategy> strategies)
         {
@@ -62,19 +63,29 @@ namespace Assets.Scripts.Bot.Execution
         public bool IsActionInProgress => _isActionInProgress;
 
         /// <summary>
+        /// Признак head-action, который уже передан execution-слою и не должен заменяться replan-ом.
+        /// </summary>
+        public bool IsHeadCommitted => _isActionInProgress || _isHeadWaitingForFire;
+
+        /// <summary>
         /// Устанавливает новый role-based план на исполнение и сбрасывает состояние текущего действия.
         /// </summary>
         public void SetPlan(BotPlan plan)
         {
-            bool preserveInProgressHead =
-                _isActionInProgress
-                && CurrentPlan.HasActions
+            bool canPreserveCurrentHead =
+                CurrentPlan.HasActions
                 && plan != null
                 && plan.HasActions
                 && CurrentPlan.Actions[0].IsEquivalentTo(plan.Actions[0]);
+            bool preserveInProgressHead = _isActionInProgress && canPreserveCurrentHead;
+            bool preserveWaitingHead =
+                !_isActionInProgress
+                && _isHeadWaitingForFire
+                && canPreserveCurrentHead;
 
             CurrentPlan = plan ?? BotPlan.Empty();
             _isActionInProgress = preserveInProgressHead;
+            _isHeadWaitingForFire = preserveWaitingHead;
         }
 
         /// <summary>
@@ -84,6 +95,7 @@ namespace Assets.Scripts.Bot.Execution
         {
             CurrentPlan = BotPlan.Empty();
             _isActionInProgress = false;
+            _isHeadWaitingForFire = false;
         }
 
         /// <summary>
@@ -127,6 +139,7 @@ namespace Assets.Scripts.Bot.Execution
             if (fireResult == ActionFireResult.Fired)
             {
                 _isActionInProgress = true;
+                _isHeadWaitingForFire = false;
                 return PlanExecutionTickResult.Fired;
             }
 
@@ -136,6 +149,7 @@ namespace Assets.Scripts.Bot.Execution
                 return PlanExecutionTickResult.Cancelled;
             }
 
+            _isHeadWaitingForFire = true;
             return PlanExecutionTickResult.None;
         }
 
@@ -167,6 +181,7 @@ namespace Assets.Scripts.Bot.Execution
             {
                 CurrentPlan = BotPlan.Empty(CurrentPlan.CommittedBoundaryX);
                 _isActionInProgress = false;
+                _isHeadWaitingForFire = false;
                 return;
             }
 
@@ -177,6 +192,7 @@ namespace Assets.Scripts.Bot.Execution
 
             CurrentPlan = new BotPlan(remainingActions, CurrentPlan.CommittedBoundaryX, CurrentPlan.Score);
             _isActionInProgress = false;
+            _isHeadWaitingForFire = false;
         }
     }
 }

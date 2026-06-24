@@ -8,9 +8,37 @@ namespace Assets.Scripts.Bot.Planning
     internal static class PlanningBranchComparer
     {
         /// <summary>
-        /// Сравнивает две planning-ветки; отрицательное значение означает, что left лучше right.
+        /// Сравнивает две planning-ветки по pairwise-горизонту; отрицательное значение означает, что left лучше right.
         /// </summary>
         public static int Compare(PlanningBranch left, PlanningBranch right)
+        {
+            float pairwiseHorizonProjectionWorldShift = GetPairwiseHorizon(left, right);
+            return CompareCore(left, right, pairwiseHorizonProjectionWorldShift);
+        }
+
+        /// <summary>
+        /// Сравнивает две planning-ветки в общем горизонте текущего набора candidates.
+        /// </summary>
+        public static int CompareAtCommonHorizon(
+            PlanningBranch left,
+            PlanningBranch right,
+            float commonHorizonProjectionWorldShift)
+        {
+            return CompareCore(left, right, commonHorizonProjectionWorldShift);
+        }
+
+        /// <summary>
+        /// Возвращает true, если left не хуже right по pairwise planning-правилам.
+        /// </summary>
+        public static bool IsBetterOrEqual(PlanningBranch left, PlanningBranch right)
+        {
+            return Compare(left, right) <= 0;
+        }
+
+        private static int CompareCore(
+            PlanningBranch left,
+            PlanningBranch right,
+            float commonHorizonProjectionWorldShift)
         {
             if (ReferenceEquals(left, right))
                 return 0;
@@ -29,11 +57,7 @@ namespace Assets.Scripts.Bot.Planning
             if (compare != 0)
                 return compare;
 
-            float commonHorizonProjectionWorldShift = left.FinalProjectionWorldShift < right.FinalProjectionWorldShift
-                ? left.FinalProjectionWorldShift
-                : right.FinalProjectionWorldShift;
-
-            // Сначала сравнивает только часть веток до общего горизонта,
+            // Сначала сравнивает только часть веток до заданного общего горизонта,
             // чтобы хвост более длинной ветки не искажал первичный priority.
             compare = PlanningBranchMetricsComparer.Compare(
                 left.GetMetricsToReach(commonHorizonProjectionWorldShift),
@@ -44,12 +68,14 @@ namespace Assets.Scripts.Bot.Planning
             return PlanningBranchMetricsComparer.Compare(left.Metrics, right.Metrics);
         }
 
-        /// <summary>
-        /// Возвращает true, если left не хуже right по тем же правилам, что и финальный evaluator.
-        /// </summary>
-        public static bool IsBetterOrEqual(PlanningBranch left, PlanningBranch right)
+        private static float GetPairwiseHorizon(PlanningBranch left, PlanningBranch right)
         {
-            return Compare(left, right) <= 0;
+            if (left == null || right == null)
+                return 0f;
+
+            return left.FinalProjectionWorldShift < right.FinalProjectionWorldShift
+                ? left.FinalProjectionWorldShift
+                : right.FinalProjectionWorldShift;
         }
 
         private static int CompareLifeUrgency(PlanningBranch left, PlanningBranch right)

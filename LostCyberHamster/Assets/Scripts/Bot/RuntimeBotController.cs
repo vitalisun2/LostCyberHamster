@@ -509,11 +509,11 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Не применяет dead-end fallback, если он стирает следующий action после уже выполняющегося head.
+        /// Не применяет dead-end fallback, если он стирает следующий action после committed head.
         /// </summary>
         private bool ShouldPreserveCurrentHandoffTail(AsyncPlanBuildResult result)
         {
-            if (_executor == null || !_executor.IsActionInProgress)
+            if (_executor == null || !_executor.IsHeadCommitted)
                 return false;
 
             PlanBuildResult buildResult = result?.BuildResult;
@@ -541,6 +541,7 @@ namespace Assets.Scripts.Bot
                 LastSnapshot,
                 CopyCurrentPlanForAsyncRequest(),
                 _executor.IsActionInProgress,
+                _executor.IsHeadCommitted,
                 _inProgressHeadAction,
                 _inProgressHeadFireTime,
                 replanReasons);
@@ -713,17 +714,17 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Проверяет, что async-result не пытается заменить action, который уже стартовал после capture.
+        /// Проверяет, что async-result не пытается заменить execution-head, который стал committed после capture.
         /// </summary>
         private bool IsAsyncResultApplicableToCurrentExecution(AsyncPlanBuildResult result)
         {
             if (result == null)
                 return false;
 
-            if (_executor == null || !_executor.IsActionInProgress)
+            if (_executor == null || !_executor.IsHeadCommitted)
                 return true;
 
-            if (!result.WasActionInProgressAtCapture)
+            if (!result.WasHeadCommittedAtCapture)
                 return false;
 
             BotPlan resultPlan = result.BuildResult?.Plan;
@@ -734,17 +735,18 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Возвращает committed-prefix, который уже физически нельзя заменить свежим replan-ом.
+        /// Возвращает execution-head, который уже нельзя заменить свежим replan-ом.
         /// </summary>
         private static IReadOnlyList<PlannedAction> BuildCommittedPrefix(AsyncPlanBuildRequest request)
         {
             if (request?.CurrentPlan == null
                 || !request.CurrentPlan.HasActions
-                || !request.IsActionInProgress)
+                || !request.IsHeadCommitted)
             {
                 return Array.Empty<PlannedAction>();
             }
 
+            // Fired и Waiting head уже принадлежат execution-слою: replan может перестроить только хвост.
             return new[] { request.CurrentPlan.Actions[0] };
         }
 
@@ -759,6 +761,7 @@ namespace Assets.Scripts.Bot
                 WorldSnapshot snapshot,
                 BotPlan currentPlan,
                 bool isActionInProgress,
+                bool isHeadCommitted,
                 PlannedAction inProgressHeadAction,
                 float inProgressHeadFireTime,
                 BotReplanReason replanReasons)
@@ -768,6 +771,7 @@ namespace Assets.Scripts.Bot
                 Snapshot = snapshot;
                 CurrentPlan = currentPlan ?? BotPlan.Empty(snapshot?.ScreenRightEdgeX ?? 0f);
                 IsActionInProgress = isActionInProgress;
+                IsHeadCommitted = isHeadCommitted;
                 InProgressHeadAction = inProgressHeadAction;
                 InProgressHeadFireTime = inProgressHeadFireTime;
                 ReplanReasons = replanReasons;
@@ -778,6 +782,7 @@ namespace Assets.Scripts.Bot
             public WorldSnapshot Snapshot { get; }
             public BotPlan CurrentPlan { get; }
             public bool IsActionInProgress { get; }
+            public bool IsHeadCommitted { get; }
             public PlannedAction InProgressHeadAction { get; }
             public float InProgressHeadFireTime { get; }
             public BotReplanReason ReplanReasons { get; }
@@ -792,14 +797,14 @@ namespace Assets.Scripts.Bot
                 int requestId,
                 int runtimeGeneration,
                 BotReplanReason replanReasons,
-                bool wasActionInProgressAtCapture,
+                bool wasHeadCommittedAtCapture,
                 PlanBuildResult buildResult,
                 Exception error)
             {
                 RequestId = requestId;
                 RuntimeGeneration = runtimeGeneration;
                 ReplanReasons = replanReasons;
-                WasActionInProgressAtCapture = wasActionInProgressAtCapture;
+                WasHeadCommittedAtCapture = wasHeadCommittedAtCapture;
                 BuildResult = buildResult;
                 Error = error;
             }
@@ -807,7 +812,7 @@ namespace Assets.Scripts.Bot
             public int RequestId { get; }
             public int RuntimeGeneration { get; }
             public BotReplanReason ReplanReasons { get; }
-            public bool WasActionInProgressAtCapture { get; }
+            public bool WasHeadCommittedAtCapture { get; }
             public PlanBuildResult BuildResult { get; }
             public Exception Error { get; }
             public bool HasError => Error != null;
@@ -820,7 +825,7 @@ namespace Assets.Scripts.Bot
                     request.RequestId,
                     request.RuntimeGeneration,
                     request.ReplanReasons,
-                    request.IsActionInProgress,
+                    request.IsHeadCommitted,
                     buildResult,
                     error: null);
             }
@@ -833,7 +838,7 @@ namespace Assets.Scripts.Bot
                     request?.RequestId ?? 0,
                     request?.RuntimeGeneration ?? 0,
                     request?.ReplanReasons ?? BotReplanReason.None,
-                    request?.IsActionInProgress ?? false,
+                    request?.IsHeadCommitted ?? false,
                     buildResult: null,
                     error);
             }
