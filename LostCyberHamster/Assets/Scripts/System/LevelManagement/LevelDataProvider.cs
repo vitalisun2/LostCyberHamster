@@ -750,6 +750,11 @@ public static void ReleaseIntroSprites()
                         continue;
                     }
 
+                    if (!HierarchicalLevelCatalog.IsGameplayLevelAddress(address))
+                    {
+                        continue;
+                    }
+
                     var key = HierarchicalLevelCatalog.NormalizeLevelKey(address);
                     if (!string.IsNullOrWhiteSpace(key))
                     {

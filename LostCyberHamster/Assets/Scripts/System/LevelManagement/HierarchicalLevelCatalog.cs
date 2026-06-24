@@ -392,6 +392,60 @@ namespace Assets.Scripts.System
                 : address.Replace('\\', '/').Trim();
         }
 
+        public static bool TryParseLevelAddress(string address, out string locationKey, out string partKey, out string levelKey)
+        {
+            locationKey = string.Empty;
+            partKey = string.Empty;
+            levelKey = string.Empty;
+
+            var segments = GetAddressSegments(address);
+            if (segments.Length != 3)
+            {
+                return false;
+            }
+
+            locationKey = segments[0].Trim();
+            partKey = segments[1].Trim();
+            levelKey = segments[2].Trim();
+
+            return !string.IsNullOrWhiteSpace(locationKey)
+                   && !string.IsNullOrWhiteSpace(partKey)
+                   && !string.IsNullOrWhiteSpace(levelKey);
+        }
+
+        public static bool IsGameplayLevelAddress(string address)
+        {
+            return TryParseLevelAddress(address, out _, out _, out var levelKey)
+                   && IsGameplayLevelKey(levelKey);
+        }
+
+        public static bool IsGameplayLevelKey(string levelKey)
+        {
+            const string prefix = "level_";
+
+            if (string.IsNullOrWhiteSpace(levelKey))
+            {
+                return false;
+            }
+
+            var trimmed = levelKey.Trim();
+            if (!trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                || trimmed.Length != prefix.Length + 2)
+            {
+                return false;
+            }
+
+            for (int index = prefix.Length; index < trimmed.Length; index++)
+            {
+                if (!char.IsDigit(trimmed[index]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public static string NormalizeLevelKey(string identifier)
         {
             if (string.IsNullOrWhiteSpace(identifier))
@@ -408,6 +462,14 @@ namespace Assets.Scripts.System
             }
 
             return pathNormalized;
+        }
+
+        private static string[] GetAddressSegments(string address)
+        {
+            var normalized = NormalizeAddress(address);
+            return string.IsNullOrWhiteSpace(normalized)
+                ? Array.Empty<string>()
+                : normalized.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
         }
     }
 }

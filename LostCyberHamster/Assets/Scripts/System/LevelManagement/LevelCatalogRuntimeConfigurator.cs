@@ -130,16 +130,16 @@ namespace Assets.Scripts.System
                     continue;
                 }
 
-                var normalized = address.Replace('\\', '/');
-                var segments = normalized.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-                if (segments.Length < 3)
+                var normalized = address.Replace('\\', '/').Trim();
+                if (!HierarchicalLevelCatalog.TryParseLevelAddress(normalized, out var locationSegment, out var partSegment, out var levelKey))
                 {
-                    Debug.LogWarning($"[LevelCatalogRuntimeConfigurator] Address '{address}' does not match '<Location>/<Part>/<level_XX>' pattern.");
                     continue;
                 }
 
-                var partSegment = segments[^2];
-                var locationSegment = segments[^3];
+                if (!HierarchicalLevelCatalog.IsGameplayLevelKey(levelKey))
+                {
+                    continue;
+                }
 
                 if (!layout.TryGetValue(locationSegment, out var parts))
                 {

@@ -1,3 +1,4 @@
+using GameManagement;
 using UnityEngine;
 
 namespace Assets.Scripts.System.LevelManagement
@@ -75,6 +76,17 @@ namespace Assets.Scripts.System.LevelManagement
             {
                 var locationSlug = LocationAssetFallback.ToLocationSlug(locationKey);
                 var daypartSlug = LocationAssetFallback.ToSlug(partOfDay);
+
+                if (!string.IsNullOrWhiteSpace(locationSlug) && !string.IsNullOrWhiteSpace(daypartSlug))
+                    return (locationSlug, daypartSlug);
+            }
+
+            // Direct address path: used when a launched level is intentionally outside the gameplay catalog.
+            var currentLevelAddress = GameDataManager.PlayerData?.CurrentLevel;
+            if (HierarchicalLevelCatalog.TryParseLevelAddress(currentLevelAddress, out var addressLocationKey, out var addressPartKey, out _))
+            {
+                var locationSlug = LocationAssetFallback.ToLocationSlug(addressLocationKey);
+                var daypartSlug = LocationAssetFallback.ToSlug(addressPartKey);
 
                 if (!string.IsNullOrWhiteSpace(locationSlug) && !string.IsNullOrWhiteSpace(daypartSlug))
                     return (locationSlug, daypartSlug);

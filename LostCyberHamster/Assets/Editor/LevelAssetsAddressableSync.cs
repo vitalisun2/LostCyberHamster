@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Assets.Scripts.System;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -237,10 +238,17 @@ namespace Assets.EditorTools
             }
 
             var address = BuildLevelAddress(locationKey, partKey, levelKey);
-            return EnsureLevelAssetEntry(settings, group, filePath, address, locationKey, partKey);
+            return EnsureLevelAssetEntry(
+                settings,
+                group,
+                filePath,
+                address,
+                locationKey,
+                partKey,
+                HierarchicalLevelCatalog.IsGameplayLevelKey(levelKey));
         }
 
-        private static bool EnsureLevelAssetEntry(AddressableAssetSettings settings, AddressableAssetGroup group, string filePath, string address, string locationKey, string partKey)
+        private static bool EnsureLevelAssetEntry(AddressableAssetSettings settings, AddressableAssetGroup group, string filePath, string address, string locationKey, string partKey, bool includeGameplayLabels)
         {
             var assetPath = ToAssetPath(filePath);
             var guid = AssetDatabase.AssetPathToGUID(assetPath);
@@ -264,9 +272,7 @@ namespace Assets.EditorTools
             }
 
             var changed = UpdateAddress(entry, address);
-            changed |= EnsureLabel(settings, entry, GlobalDayPartLabel);
-            changed |= EnsureLabel(settings, entry, $"{GlobalDayPartLabel}_{partKey}");
-            changed |= EnsureLabel(settings, entry, $"levels_location_{locationKey}");
+            changed |= SetGameplayLabels(settings, entry, locationKey, partKey, includeGameplayLabels);
             return changed;
         }
 
@@ -287,7 +293,14 @@ namespace Assets.EditorTools
                 }
 
                 var address = BuildLevelAddress(locationKey, partKey, levelKey) + "/" + introName;
-                changed |= EnsureLevelAssetEntry(settings, group, introFile, address, locationKey, partKey);
+                changed |= EnsureLevelAssetEntry(
+                    settings,
+                    group,
+                    introFile,
+                    address,
+                    locationKey,
+                    partKey,
+                    includeGameplayLabels: false);
             }
 
             return changed;
@@ -406,23 +419,37 @@ namespace Assets.EditorTools
 
         private static bool EnsureLabel(AddressableAssetSettings settings, AddressableAssetEntry entry, string label)
         {
+            return SetLabelState(settings, entry, label, enabled: true);
+        }
+
+        private static bool SetGameplayLabels(AddressableAssetSettings settings, AddressableAssetEntry entry, string locationKey, string partKey, bool enabled)
+        {
+            var changed = SetLabelState(settings, entry, GlobalDayPartLabel, enabled);
+            changed |= SetLabelState(settings, entry, $"{GlobalDayPartLabel}_{partKey}", enabled);
+            changed |= SetLabelState(settings, entry, $"levels_location_{locationKey}", enabled);
+            return changed;
+        }
+
+        private static bool SetLabelState(AddressableAssetSettings settings, AddressableAssetEntry entry, string label, bool enabled)
+        {
             if (string.IsNullOrEmpty(label))
             {
                 return false;
             }
 
-            if (!settings.GetLabels().Contains(label))
+            if (enabled && !settings.GetLabels().Contains(label))
             {
                 settings.AddLabel(label);
             }
 
-            if (!entry.labels.Contains(label))
+            var hasLabel = entry.labels.Contains(label);
+            if (hasLabel == enabled)
             {
-                entry.SetLabel(label, true, true);
-                return true;
+                return false;
             }
 
-            return false;
+            entry.SetLabel(label, enabled, true);
+            return true;
         }
 
         private static string ToAssetPath(string filePath)

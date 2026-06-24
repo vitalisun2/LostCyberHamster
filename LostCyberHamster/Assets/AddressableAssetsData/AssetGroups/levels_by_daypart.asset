@@ -18,66 +18,42 @@ MonoBehaviour:
   - m_GUID: 06f3f472f4858774f916e569dbae1709
     m_Address: 01_New_York/Morning/test_super_jump_on_roof
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1c3e01b1a885ef94d85c842371c63946
     m_Address: 01_New_York/Morning/test_super_jump_over
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 388f65722d46cc445b224cc04fb64491
     m_Address: 01_New_York/Morning/test_super_jump_from_roof
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3fe53429da4428444b2f73b4966dd35b
     m_Address: 01_New_York/Morning/test_jump_over
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4975dd3cf1e9a6046818c02f5eb0572d
     m_Address: 01_New_York/Morning/level_01/intro_01
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 500f619b818fc6945a24bd009183cc26
     m_Address: 01_New_York/Morning/level_01/intro_02
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5e744fa0c593753459b810ad55fb07d6
     m_Address: 01_New_York/Morning/test_collectables
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 69a73f82e91a94540a067502496b81a3
     m_Address: 01_New_York/Morning/test_jump_on_from_roof
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 69e2ed40c7b80594d97378b5e3e533e2
     m_Address: 01_New_York/Morning/level_01
@@ -91,98 +67,62 @@ MonoBehaviour:
   - m_GUID: 6fd463a36da621249918d90c17ef95d1
     m_Address: 01_New_York/Morning/level_01/intro_05
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 70f51de9101ee3941ac3db38c833fde9
     m_Address: 01_New_York/Morning/level_01/intro_03
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 76b4aa3c1fe6a294ba98d0cbf667c01f
     m_Address: 01_New_York/Morning/test_super_jump_on_from_roof
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7f11168f76720e843915d8e052e3c041
     m_Address: 01_New_York/Morning/test_super_jump_on
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 950eb140c1c2ff5468ba0dd1b73b302b
     m_Address: 01_New_York/Morning/test_jump_from_roof
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9c2cfd3913b169341a4b73329d8092c0
     m_Address: 01_New_York/Morning/test_roof_jump_over
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9c30fa0197fa11245a28edc5c36b7e1c
     m_Address: 01_New_York/Morning/test_jump_on
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a9f96f93e944bfe42bd4f62e007aa2b7
     m_Address: 01_New_York/Morning/level_01/intro_04
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b9c70fd160c2a714b9d2c2e078b385d4
     m_Address: 01_New_York/Morning/test_jump_from_roof_to_roof
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c2abce2f16e5be44bb4c199a2fea72d5
     m_Address: 01_New_York/Morning/test_switch_lane
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cb11c910b70ae4b4585ae54477c7651a
     m_Address: 01_New_York/Morning/test_jump_on_roof
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cbef245d8d6c55b4eb16d50fee9ba674
     m_Address: 01_New_York/Morning/test_super_jump_from_roof_to_roof
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f23755e54d47f814f8c58115d4211060
     m_Address: 01_New_York/Morning/level_02
@@ -196,10 +136,7 @@ MonoBehaviour:
   - m_GUID: f504347bda3c9af4899c6a80d87972ac
     m_Address: 01_New_York/Morning/test_roof_super_jump_over
     m_ReadOnly: 0
-    m_SerializedLabels:
-    - levels_daypart
-    - levels_daypart_Morning
-    - levels_location_01_New_York
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
