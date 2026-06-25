@@ -76,8 +76,8 @@ namespace Assets.Scripts
         
         public const float BackgroundYPos = 0.515f;
         public const float Background2YPos = BackgroundYPos + 0.885f;
-        public const float SkyYPos = BackgroundYPos + (BACKGROUND_HEIGHT * PIXELS_TO_UNITS_RATIO / 1.8f);
-        public const float RoadYPos = BackgroundYPos - (BACKGROUND_HEIGHT * PIXELS_TO_UNITS_RATIO);
+        public const float SkyYPos = BackgroundYPos + (ENVIRONMENT_REFERENCE_HEIGHT * PIXELS_TO_UNITS_RATIO / 1.8f);
+        public const float RoadYPos = BackgroundYPos - (ROAD_HEIGHT * PIXELS_TO_UNITS_RATIO);
 
         public const float CameraSize = 3.1f;
         public static Vector3 CameraPosition = new(0, 0, -10);
@@ -191,7 +191,7 @@ namespace Assets.Scripts
         // Новые константы размеров, значения в пикселях
         // -------------------------
         public const int BACKGROUND_WIDTH = 2000;
-        public const int BACKGROUND_HEIGHT = 240;
+        public const int ENVIRONMENT_REFERENCE_HEIGHT = 240;
 
         public const int ROAD_WIDTH = 2000;
         public const int ROAD_HEIGHT = 240;

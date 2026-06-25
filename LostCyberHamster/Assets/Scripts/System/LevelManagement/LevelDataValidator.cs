@@ -90,15 +90,13 @@ public static class LevelDataValidator
             return;
         }
 
-        if (backgroundSprite.texture.width != Consts.BACKGROUND_WIDTH || backgroundSprite.texture.height != Consts.BACKGROUND_HEIGHT)
+        if (backgroundSprite.texture.width != Consts.BACKGROUND_WIDTH)
         {
             HelpMethods.LogAndStopGame(
-                $"[LevelDataValidator.ValidateBackgroundTexture] Background sprite '{backgroundSprite.name}' has resolution {backgroundSprite.texture.width}x{backgroundSprite.texture.height}, expected {Consts.BACKGROUND_WIDTH}x{Consts.BACKGROUND_HEIGHT}."
+                $"[LevelDataValidator.ValidateBackgroundTexture] Background sprite '{backgroundSprite.name}' has width {backgroundSprite.texture.width}, expected {Consts.BACKGROUND_WIDTH}. Height is art-driven and is not fixed."
             );
         }
 
-        // ETC2 requirement
-        ValidateTextureDivisibleBy4(backgroundSprite.texture, $"Background sprite '{backgroundSprite.name}'");
     }
 
     public static void ValidateObstacleSprite(ObstacleTypeEnum obstacleType, string spriteName, Sprite sprite)

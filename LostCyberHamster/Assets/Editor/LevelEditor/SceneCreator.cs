@@ -8,12 +8,10 @@ using UnityEngine.SceneManagement;
 
 public static class SceneCreator
 {
-    private const float PixelsPerUnit = 100.0f;
     private const float BackgroundZPosition = 1.0f;
     private const float RoadZPosition = 0.5f;
     private const string BackgroundSortingLayer = "Background";
     private const string RoadSortingLayer = "Road";
-    private static readonly Vector2 SpritePivot = new Vector2(0.5f, 0.5f);
 
     public static GameObject CreateSceneWithTilemap(int targetWidth, string locationName, string daypartSlug)
     {
@@ -99,18 +97,18 @@ public static class SceneCreator
             return;
         }
 
-        var backgroundSprite = Sprite.Create(
-            sprite.texture,
-            new Rect(0, 0, sprite.texture.width, sprite.texture.height),
-            SpritePivot
-        );
+        float textureWidthInUnits = sprite.bounds.size.x;
+        if (textureWidthInUnits <= 0f)
+        {
+            Debug.LogWarning($"[SceneCreator] Background sprite has invalid width: {backgroundKey}");
+            return;
+        }
 
-        float textureWidthInUnits = backgroundSprite.texture.width / PixelsPerUnit;
         int numberOfCopies = Mathf.CeilToInt(targetWidth / textureWidthInUnits);
 
         for (int i = 0; i < numberOfCopies; i++)
         {
-            CreateBackgroundSegment(backgroundSprite, i * textureWidthInUnits, scene);
+            CreateBackgroundSegment(sprite, i * textureWidthInUnits, scene);
         }
     }
 
@@ -140,18 +138,18 @@ public static class SceneCreator
             return;
         }
 
-        var roadSprite = Sprite.Create(
-            sprite.texture,
-            new Rect(0, 0, sprite.texture.width, sprite.texture.height),
-            SpritePivot
-        );
+        float textureWidthInUnits = sprite.bounds.size.x;
+        if (textureWidthInUnits <= 0f)
+        {
+            Debug.LogWarning($"[SceneCreator] Road sprite has invalid width: {roadKey}");
+            return;
+        }
 
-        float textureWidthInUnits = roadSprite.texture.width / PixelsPerUnit;
         int numberOfCopies = Mathf.CeilToInt(targetWidth / textureWidthInUnits);
 
         for (int i = 0; i < numberOfCopies; i++)
         {
-            CreateRoadSegment(roadSprite, i * textureWidthInUnits, scene);
+            CreateRoadSegment(sprite, i * textureWidthInUnits, scene);
         }
     }
 
