@@ -30,3 +30,39 @@
     min-width: 120px;
     flex-shrink: 0;
 }
+
+.resizable-section {
+    flex-grow: 0;
+    flex-direction: column;
+    margin: 8px;
+}
+
+.files-section {
+    min-height: 80px;
+    height: 140px;
+}
+
+.patterns-section {
+    min-height: 180px;
+    height: 360px;
+}
+
+.resizable-list {
+    flex-grow: 1;
+    min-height: 30px;
+}
+
+.vertical-resize-handle {
+    height: 6px;
+    min-height: 6px;
+    margin-top: 4px;
+    background-color: #303030;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-top-color: #4a4a4a;
+    border-bottom-color: #1c1c1c;
+}
+
+.vertical-resize-handle:hover {
+    background-color: #3f3f3f;
+}

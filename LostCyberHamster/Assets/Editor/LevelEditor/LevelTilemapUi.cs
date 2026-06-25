@@ -33,6 +33,9 @@ public class LevelTilemapUi
     private VisualElement _patternsSection;
     private VisualElement _patternButtonsRow;
     private VisualElement _createLevelRow;
+    private VisualElement _filesSection;
+    private VisualElement _filesResizeHandle;
+    private VisualElement _patternsResizeHandle;
     private Label _spritesLabel;
     private AddressableSetLease<Sprite> _obstacleSpritesLease;
     private static string _templatesFallbackLocation => Consts.TemplatesFallbackLocation;
@@ -77,6 +80,7 @@ public class LevelTilemapUi
         InitializeTextFields();
         InitializeDaypartSelector();
         InitializePatternSearch();
+        InitializeResizableSections();
     }
 
     private void SetElements(VisualElement root)
@@ -96,10 +100,13 @@ public class LevelTilemapUi
         _patternSearchField = root.Q<TextField>("pattern-search-field");
         _daypartRadioGroup = root.Q<RadioButtonGroup>("daypart-radio-group");
 
-        // Section containers for mode visibility
-        _patternsSection = root.Q<VisualElement>("VisualElement"); // named container with patterns
+        // Контейнеры секций для переключения режимов UI.
+        _patternsSection = root.Q<VisualElement>("patterns-section");
         _patternButtonsRow = root.Q<Button>("add-pattern-btn")?.parent;
         _createLevelRow = root.Q<VisualElement>("create-level-row");
+        _filesSection = root.Q<VisualElement>("files-section");
+        _filesResizeHandle = root.Q<VisualElement>("files-resize-handle");
+        _patternsResizeHandle = root.Q<VisualElement>("patterns-resize-handle");
         _spritesLabel = root.Q<Label>("sprites-label");
 
 
@@ -146,9 +153,11 @@ public class LevelTilemapUi
     private void InitializeListViews()
     {
         _filesList.selectionType = SelectionType.Single;
+        _filesList.style.flexGrow = 1f;
         _filesList.selectionChanged += OnFileSelectedInternal;
 
         _patternsList.selectionType = SelectionType.Single;
+        _patternsList.style.flexGrow = 1f;
         _patternsList.selectionChanged += OnPatternSelectedInternal;
     }
 
@@ -631,33 +640,31 @@ public class LevelTilemapUi
     }
 
     /// <summary>
-    /// Applies UI visibility based on the current editor mode.
-    /// Templates mode: shows pattern editing tools, hides file list and level-only elements.
-    /// Level mode: shows file list, daypart, hides pattern editing tools.
-    /// Sprites palette is visible in both modes (templates for obstacles, levels for decor).
+    /// Переключает видимость UI-секций под текущий режим редактора.
+    /// Templates mode показывает инструменты паттернов, level mode показывает список уровней.
     /// </summary>
     public void ApplyModeUI(bool isTemplateMode)
     {
-        // Templates-only elements
+        // Элементы только для Templates mode.
         SetVisible(_patternsSection, isTemplateMode);
         SetVisible(_patternButtonsRow, isTemplateMode);
         SetVisible(_obstacleTypeDropdownField, isTemplateMode);
         SetVisible(_isObjectOnRoofToggle, isTemplateMode);
         SetVisible(_patternSearchField, isTemplateMode);
 
-        // Sprites palette — visible in both modes (templates for obstacles, levels for decor)
+        // Палитра спрайтов видима в обоих режимах.
         SetVisible(_spritesScrollView, true);
         SetVisible(_spritesLabel, true);
 
         // В templates mode порядок паттернов редактируется прямо в общем списке.
         SetMoveButtonsVisible(isTemplateMode);
 
-        // Level-only elements
+        // Элементы только для level mode.
         SetDaypartSelectorVisible(!isTemplateMode);
         SetFilesListVisible(!isTemplateMode);
         SetVisible(_levelListModeButton, !isTemplateMode);
 
-        // Create button — visible in both modes
+        // Создание доступно в обоих режимах.
         SetVisible(_createLevelRow, true);
     }
 
@@ -678,6 +685,32 @@ public class LevelTilemapUi
     {
         if (element == null) return;
         element.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    /// <summary>
+    /// Подключает ручное изменение высоты к списку уровней и списку шаблонных паттернов.
+    /// </summary>
+    private void InitializeResizableSections()
+    {
+        // Список уровней в режиме локации.
+        if (_filesSection != null && _filesResizeHandle != null)
+        {
+            _filesSection.AddManipulator(new Assets.Editor.LevelEditor.VerticalResizeManipulator(
+                _filesSection,
+                _filesResizeHandle,
+                80f,
+                520f));
+        }
+
+        // Список паттернов в Templates mode.
+        if (_patternsSection != null && _patternsResizeHandle != null)
+        {
+            _patternsSection.AddManipulator(new Assets.Editor.LevelEditor.VerticalResizeManipulator(
+                _patternsSection,
+                _patternsResizeHandle,
+                180f,
+                700f));
+        }
     }
 
     private void InitializePatternSearch()
@@ -812,4 +845,114 @@ public class LevelTilemapUi
             _patternDescriptionField.SetValueWithoutNotify(desc ?? "");
     }
 
+}
+
+namespace Assets.Editor.LevelEditor
+{
+    /// <summary>
+    /// Манипулятор вертикального изменения высоты панели через отдельный handle-элемент.
+    /// </summary>
+    internal sealed class VerticalResizeManipulator : PointerManipulator
+    {
+        private readonly VisualElement _resizeTarget;
+        private readonly VisualElement _handle;
+        private readonly float _minHeight;
+        private readonly float _maxHeight;
+        private float _startPointerY;
+        private float _startHeight;
+        private bool _isDragging;
+
+        /// <summary>
+        /// Создаёт resize-манипулятор для указанной панели и handle-элемента.
+        /// </summary>
+        public VerticalResizeManipulator(
+            VisualElement resizeTarget,
+            VisualElement handle,
+            float minHeight,
+            float maxHeight)
+        {
+            _resizeTarget = resizeTarget;
+            _handle = handle;
+            _minHeight = minHeight;
+            _maxHeight = maxHeight;
+            activators.Add(new ManipulatorActivationFilter { button = MouseButton.LeftMouse });
+        }
+
+        protected override void RegisterCallbacksOnTarget()
+        {
+            _handle.RegisterCallback<PointerDownEvent>(OnPointerDown);
+            _handle.RegisterCallback<PointerMoveEvent>(OnPointerMove);
+            _handle.RegisterCallback<PointerUpEvent>(OnPointerUp);
+            _handle.RegisterCallback<PointerCaptureOutEvent>(OnPointerCaptureOut);
+        }
+
+        protected override void UnregisterCallbacksFromTarget()
+        {
+            _handle.UnregisterCallback<PointerDownEvent>(OnPointerDown);
+            _handle.UnregisterCallback<PointerMoveEvent>(OnPointerMove);
+            _handle.UnregisterCallback<PointerUpEvent>(OnPointerUp);
+            _handle.UnregisterCallback<PointerCaptureOutEvent>(OnPointerCaptureOut);
+        }
+
+        private void OnPointerDown(PointerDownEvent evt)
+        {
+            if (!CanStartManipulation(evt))
+            {
+                return;
+            }
+
+            _isDragging = true;
+            _startPointerY = evt.position.y;
+            _startHeight = ResolveTargetHeight();
+            _handle.CapturePointer(evt.pointerId);
+            evt.StopPropagation();
+        }
+
+        private void OnPointerMove(PointerMoveEvent evt)
+        {
+            if (!_isDragging || !_handle.HasPointerCapture(evt.pointerId))
+            {
+                return;
+            }
+
+            var nextHeight = Mathf.Clamp(
+                _startHeight + evt.position.y - _startPointerY,
+                _minHeight,
+                _maxHeight);
+            _resizeTarget.style.height = nextHeight;
+            evt.StopPropagation();
+        }
+
+        private void OnPointerUp(PointerUpEvent evt)
+        {
+            if (!_isDragging || !_handle.HasPointerCapture(evt.pointerId))
+            {
+                return;
+            }
+
+            _handle.ReleasePointer(evt.pointerId);
+            _isDragging = false;
+            evt.StopPropagation();
+        }
+
+        private void OnPointerCaptureOut(PointerCaptureOutEvent evt)
+        {
+            _isDragging = false;
+        }
+
+        private float ResolveTargetHeight()
+        {
+            if (_resizeTarget.resolvedStyle.height > 0f)
+            {
+                return _resizeTarget.resolvedStyle.height;
+            }
+
+            if (_resizeTarget.style.height.value.value > 0f)
+            {
+                return _resizeTarget.style.height.value.value;
+            }
+
+            return _minHeight;
+        }
+    }
 }

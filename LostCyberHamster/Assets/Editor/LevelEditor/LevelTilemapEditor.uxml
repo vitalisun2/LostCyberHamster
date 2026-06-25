@@ -4,7 +4,7 @@
         <ui:Button text="create level" name="create-level-btn" />
         <ui:Button text="Gameplay Levels" name="level-list-mode-btn" class="level-list-mode-btn" />
     </ui:VisualElement>
-    <ui:VisualElement style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 140px; min-height: 50px; height: auto;">
+    <ui:VisualElement name="files-section" class="resizable-section files-section">
         <ui:Label text="files" style="margin-top: 0; margin-right: 0; margin-bottom: 4px; margin-left: 0;" />
         <ui:RadioButtonGroup name="daypart-radio-group" style="display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: flex-start; column-gap: 12px; margin-bottom: 6px;">
             <ui:RadioButton text="Утро" value="true" name="daypart-morning" style="flex-grow: 0;" />
@@ -12,14 +12,16 @@
             <ui:RadioButton text="Вечер" name="daypart-evening" style="flex-grow: 0;" />
             <ui:RadioButton text="Ночь" name="daypart-night" style="flex-grow: 0;" />
         </ui:RadioButtonGroup>
-        <ui:ListView name="files-list-view" style="min-height: 30px; max-height: 100px; height: auto;" />
+        <ui:ListView name="files-list-view" class="resizable-list" />
+        <ui:VisualElement name="files-resize-handle" class="vertical-resize-handle" />
     </ui:VisualElement>
-    <ui:VisualElement name="VisualElement" style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 500px; min-height: 100px; height: auto;">
+    <ui:VisualElement name="patterns-section" class="resizable-section patterns-section">
         <ui:Label text="patterns" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
         <ui:TextField label="Selected pattern name" placeholder-text="filler text" name="selected-pattern-name" />
         <ui:TextField label="Selected pattern description" placeholder-text="filler text" name="selected-pattern-description" vertical-scroller-visibility="Auto" multiline="true" />
         <ui:TextField label="Search" name="pattern-search-field" />
-        <ui:ListView name="patterns-list-view" style="height: auto; max-height: 200px; min-height: 100px;" />
+        <ui:ListView name="patterns-list-view" class="resizable-list" />
+        <ui:VisualElement name="patterns-resize-handle" class="vertical-resize-handle" />
     </ui:VisualElement>
     <ui:VisualElement style="flex-grow: 1; flex-direction: row; justify-content: space-around; max-height: 60px; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; min-height: 30px;">
         <ui:Button text="add" name="add-pattern-btn" />

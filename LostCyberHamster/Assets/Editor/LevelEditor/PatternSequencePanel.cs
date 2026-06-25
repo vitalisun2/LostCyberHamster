@@ -8,8 +8,8 @@ using UnityEngine.UIElements;
 namespace Assets.Editor.LevelEditor
 {
     /// <summary>
-    /// UI panel for managing the pattern sequence of a reference-based level.
-    /// Visible only in Location Level mode.
+    /// Панель управления последовательностью паттернов для reference-based уровня.
+    /// Видима только в режиме уровня конкретной локации.
     /// </summary>
     public class PatternSequencePanel
     {
@@ -62,6 +62,8 @@ namespace Assets.Editor.LevelEditor
             _root.style.flexDirection = FlexDirection.Column;
             _root.style.marginTop = 8;
             _root.style.marginBottom = 8;
+            _root.style.height = 300;
+            _root.style.minHeight = 220;
 
             var header = new Label("Pattern Sequence");
             header.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -70,10 +72,11 @@ namespace Assets.Editor.LevelEditor
 
             var columns = new VisualElement();
             columns.style.flexDirection = FlexDirection.Row;
-            columns.style.height = 200;
+            columns.style.flexGrow = 1;
+            columns.style.minHeight = 140;
             _root.Add(columns);
 
-            // Left column — available patterns
+            // Левая колонка: доступные паттерны.
             var leftColumn = new VisualElement();
             leftColumn.style.flexGrow = 1;
             leftColumn.style.flexBasis = 0;
@@ -94,7 +97,7 @@ namespace Assets.Editor.LevelEditor
             _availablePatternsList.bindItem = (e, i) => ((Label)e).text = _filteredPatternNames[i];
             leftColumn.Add(_availablePatternsList);
 
-            // Right column — level sequence
+            // Правая колонка: последовательность уровня.
             var rightColumn = new VisualElement();
             rightColumn.style.flexGrow = 1;
             rightColumn.style.flexBasis = 0;
@@ -120,7 +123,7 @@ namespace Assets.Editor.LevelEditor
             _sequenceList.itemIndexChanged += OnSequenceReordered;
             rightColumn.Add(_sequenceList);
 
-            // Buttons row
+            // Кнопки редактирования последовательности.
             var buttonsRow = new VisualElement();
             buttonsRow.style.flexDirection = FlexDirection.Row;
             buttonsRow.style.marginTop = 4;
@@ -132,7 +135,7 @@ namespace Assets.Editor.LevelEditor
             buttonsRow.Add(_addButton);
             buttonsRow.Add(_removeButton);
 
-            // Seed row
+            // Настройки seed выбранного паттерна.
             var seedRow = new VisualElement();
             seedRow.style.flexDirection = FlexDirection.Row;
             seedRow.style.marginTop = 4;
@@ -145,6 +148,11 @@ namespace Assets.Editor.LevelEditor
 
             _randomizeSeedButton = new Button(RandomizeSeed) { text = "Randomize" };
             seedRow.Add(_randomizeSeedButton);
+
+            var resizeHandle = new VisualElement();
+            resizeHandle.AddToClassList("vertical-resize-handle");
+            _root.Add(resizeHandle);
+            _root.AddManipulator(new VerticalResizeManipulator(_root, resizeHandle, 220f, 700f));
         }
 
         private void RefreshUI()
