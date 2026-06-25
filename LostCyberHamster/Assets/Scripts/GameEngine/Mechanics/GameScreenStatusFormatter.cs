@@ -9,7 +9,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 {
     public sealed class GameScreenStatusFormatter
     {
-    private const float _minUpdateInterval = 0.1f;
+        private const float _minUpdateInterval = 0.1f;
 
         private readonly StringBuilder _builder = new StringBuilder(128);
 
@@ -44,7 +44,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             var locationName = LevelManager.GetLocationName() ?? string.Empty;
             var partOfDay = LevelManager.GetCurrentPartOfDay() ?? string.Empty;
-            var patternIndex = GetDisplayedPatternIndex();
+            var patternIndex = GetDisplayedPatternIndex(hamster);
             var patternName = GetDisplayedPatternName(patternIndex);
             var gameState = gameManager.State;
             var hamsterState = hamster.HamsterState.Value;
@@ -102,7 +102,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             return true;
         }
 
-        private static int GetDisplayedPatternIndex()
+        private static int GetDisplayedPatternIndex(Hamster hamster)
         {
             var spawner = ObstacleSpawner.Instance;
             if (spawner == null)
@@ -116,8 +116,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return -1;
             }
 
-            var index = spawner.CurrPatternIndex - 1;
-            return index >= 0 ? index : -1;
+            return spawner.GetPatternIndexOverlappingXRange(hamster.LeftX, hamster.RightX);
         }
 
         private static string GetDisplayedPatternName(int patternIndex)

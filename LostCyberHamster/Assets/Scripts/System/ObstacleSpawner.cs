@@ -45,6 +45,97 @@ namespace Assets.Scripts.System
             Camera.main.transform.position.x +
             Camera.main.orthographicSize * Camera.main.aspect;
 
+        /// <summary>
+        /// Возвращает индекс заспавненного паттерна, который сейчас пересекает X-интервал игрока.
+        /// </summary>
+        public int GetPatternIndexOverlappingXRange(float leftX, float rightX)
+        {
+            if (_spawnedObstacles.Count == 0)
+            {
+                return -1;
+            }
+
+            if (leftX > rightX)
+            {
+                (leftX, rightX) = (rightX, leftX);
+            }
+
+            const float edgeTolerance = 0.01f;
+            int bestPatternIndex = -1;
+            float bestPatternLeftEdge = float.PositiveInfinity;
+
+            // Берём именно заспавненные паттерны, чтобы lookahead не показывал будущий шаблон.
+            int maxPatternIndex = GetMaxSpawnedPatternIndex();
+            for (int patternIndex = 0; patternIndex <= maxPatternIndex; patternIndex++)
+            {
+                if (!TryGetSpawnedPatternXRange(patternIndex, out float patternLeftEdge, out float patternRightEdge))
+                {
+                    continue;
+                }
+
+                bool overlapsRange =
+                    patternLeftEdge <= rightX + edgeTolerance &&
+                    patternRightEdge >= leftX - edgeTolerance;
+
+                if (!overlapsRange)
+                {
+                    continue;
+                }
+
+                if (patternLeftEdge < bestPatternLeftEdge)
+                {
+                    bestPatternLeftEdge = patternLeftEdge;
+                    bestPatternIndex = patternIndex;
+                }
+            }
+
+            return bestPatternIndex;
+        }
+
+        /// <summary>
+        /// Возвращает максимальный индекс среди заспавненных паттернов.
+        /// </summary>
+        private int GetMaxSpawnedPatternIndex()
+        {
+            int maxPatternIndex = -1;
+            foreach (var obstacle in _spawnedObstacles)
+            {
+                if (obstacle.PatternIndex > maxPatternIndex)
+                {
+                    maxPatternIndex = obstacle.PatternIndex;
+                }
+            }
+
+            return maxPatternIndex;
+        }
+
+        /// <summary>
+        /// Возвращает текущие X-границы заспавненного паттерна по его obstacle bounds.
+        /// </summary>
+        private bool TryGetSpawnedPatternXRange(
+            int patternIndex,
+            out float leftEdge,
+            out float rightEdge)
+        {
+            leftEdge = float.PositiveInfinity;
+            rightEdge = float.NegativeInfinity;
+            bool hasObstacles = false;
+
+            foreach (var obstacle in _spawnedObstacles)
+            {
+                if (obstacle.PatternIndex != patternIndex)
+                {
+                    continue;
+                }
+
+                hasObstacles = true;
+                leftEdge = Mathf.Min(leftEdge, GetObstacleLeftEdge(obstacle));
+                rightEdge = Mathf.Max(rightEdge, GetObstacleRightEdge(obstacle));
+            }
+
+            return hasObstacles;
+        }
+
         private void Awake()
         {
             if (Instance == null)
@@ -266,6 +357,21 @@ namespace Assets.Scripts.System
                 out float right);
 
             return right;
+        }
+
+        /// <summary>
+        /// Возвращает текущий левый край obstacle по его collider bounds.
+        /// </summary>
+        private static float GetObstacleLeftEdge(InstantiatedObstacle obstacle)
+        {
+            CollisionUtils.GetObstacleXInterval(
+                obstacle.ObstacleScript,
+                obstacle.ObstacleScript.ColliderWidth,
+                0f,
+                out float left,
+                out _);
+
+            return left;
         }
     }
 
