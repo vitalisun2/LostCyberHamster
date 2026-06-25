@@ -1,0 +1,52 @@
+{
+    "skyTexture": "",
+    "roadTexture": "",
+    "location": "01_New_York",
+    "patternSequence": [
+        {
+            "ref": "easy_run_3",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "roof_bonus_run_2",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "roof_narrow_gap_4",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "roof_bonus_chain_2",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bonus_strip_2",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "roof_wide_gap",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "roof_switch_line",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "easy_run_2",
+            "spriteSeed": 0,
+            "overrides": []
+        }
+    ],
+    "decorationPatterns": [
+        {
+            "decorationTiles": []
+        }
+    ]
+}

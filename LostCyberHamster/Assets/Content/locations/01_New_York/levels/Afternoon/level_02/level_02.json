@@ -1,0 +1,52 @@
+{
+    "skyTexture": "",
+    "roadTexture": "",
+    "location": "01_New_York",
+    "patternSequence": [
+        {
+            "ref": "easy_run",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "small_jumps",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "roof_bonus_run",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "roof_narrow_gap",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "bonus_strip_3",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "medium_difficulty_2",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "roof_narrow_gap_2",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "easy_run_3",
+            "spriteSeed": 0,
+            "overrides": []
+        }
+    ],
+    "decorationPatterns": [
+        {
+            "decorationTiles": []
+        }
+    ]
+}
