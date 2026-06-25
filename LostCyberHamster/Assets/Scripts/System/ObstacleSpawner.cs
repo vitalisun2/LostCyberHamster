@@ -23,6 +23,7 @@ namespace Assets.Scripts.System
         public List<InstantiatedObstacle> SpawnedObstacles => _spawnedObstacles;
         public string CurrPatternName { get; private set; }
         public int CurrPatternIndex => _currentPatternIndex;
+        public VisiblePatternTracker VisiblePatternTracker => _visiblePatternTracker;
         public int SpawnLookaheadPatterns
         {
             get => _spawnLookaheadPatterns;
@@ -42,25 +43,10 @@ namespace Assets.Scripts.System
         private EnvironmentRoot _environmentRoot;
         private List<InstantiatedObstacle> _intantiatedObstacles = new();
         private const string _reliefPatternName = "test_relief";
-        private float ScreenLeftEdge =>
-            Camera.main.transform.position.x -
-            Camera.main.orthographicSize * Camera.main.aspect;
 
         private float ScreenRightEdge =>
             Camera.main.transform.position.x +
             Camera.main.orthographicSize * Camera.main.aspect;
-
-        /// <summary>
-        /// Возвращает индекс видимого паттерна, который сейчас является актуальным для игрока.
-        /// </summary>
-        public int GetCurrentVisiblePatternIndex(float leftX, float rightX)
-        {
-            return _visiblePatternTracker.GetCurrentPatternIndex(
-                leftX,
-                rightX,
-                ScreenLeftEdge,
-                ScreenRightEdge);
-        }
 
         private void Awake()
         {
@@ -101,7 +87,7 @@ namespace Assets.Scripts.System
             }
 
             SpawnPatterns();
-            _visiblePatternTracker.Update(deltaTime, ScreenLeftEdge);
+            _visiblePatternTracker.Update(deltaTime);
         }
 
         public void OnPause()
@@ -216,7 +202,6 @@ namespace Assets.Scripts.System
             float patternLeftEdge = GetPatternLeftEdgeAtSpawnPosition(patternObstacles);
             float targetLeftEdge = GetNextPatternTargetLeftEdge();
             float offset = targetLeftEdge - patternLeftEdge;
-            float targetRightEdge = GetPatternRightEdgeAtSpawnPosition(patternObstacles) + offset + Consts.PatternEdgeGap;
 
             foreach (var obstacle in patternObstacles)
             {
@@ -228,7 +213,7 @@ namespace Assets.Scripts.System
                 _spawnedObstacles.Add(obstacle);
             }
 
-            _visiblePatternTracker.RegisterPattern(patternIndex, targetLeftEdge, targetRightEdge);
+            _visiblePatternTracker.RegisterPattern(patternIndex, patternObstacles, offset);
             PatternSpawned?.Invoke(patternIndex, CurrPatternName);
         }
 
@@ -262,14 +247,6 @@ namespace Assets.Scripts.System
         }
 
         /// <summary>
-        /// Возвращает правый край паттерна в исходных позициях из LevelInfo.
-        /// </summary>
-        private static float GetPatternRightEdgeAtSpawnPosition(List<InstantiatedObstacle> obstacles)
-        {
-            return obstacles.Max(GetObstacleRightEdgeAtSpawnPosition);
-        }
-
-        /// <summary>
         /// Возвращает левый край obstacle в его исходной позиции из LevelInfo.
         /// </summary>
         private static float GetObstacleLeftEdgeAtSpawnPosition(InstantiatedObstacle obstacle)
@@ -281,20 +258,6 @@ namespace Assets.Scripts.System
                 out _);
 
             return left;
-        }
-
-        /// <summary>
-        /// Возвращает правый край obstacle в его исходной позиции из LevelInfo.
-        /// </summary>
-        private static float GetObstacleRightEdgeAtSpawnPosition(InstantiatedObstacle obstacle)
-        {
-            CollisionUtils.GetObstacleXIntervalAtPosition(
-                obstacle.ObstacleScript,
-                obstacle.SpawnPosition,
-                out _,
-                out float right);
-
-            return right;
         }
 
         /// <summary>

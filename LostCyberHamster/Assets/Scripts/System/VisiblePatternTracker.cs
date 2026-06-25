@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Mechanics;
+using UnityEngine;
 
 namespace Assets.Scripts.System
 {
@@ -9,22 +11,37 @@ namespace Assets.Scripts.System
 
         private readonly List<PatternXRange> _ranges = new();
 
+        private static float ScreenLeftEdge =>
+            Camera.main.transform.position.x -
+            Camera.main.orthographicSize * Camera.main.aspect;
+
+        private static float ScreenRightEdge =>
+            Camera.main.transform.position.x +
+            Camera.main.orthographicSize * Camera.main.aspect;
+
         public void Clear()
         {
             _ranges.Clear();
         }
 
-        public void RegisterPattern(int patternIndex, float leftEdge, float rightEdge)
+        public void RegisterPattern(
+            int patternIndex,
+            IReadOnlyList<InstantiatedObstacle> obstacles,
+            float spawnOffset)
         {
-            if (leftEdge > rightEdge)
+            if (obstacles == null || obstacles.Count == 0)
             {
-                (leftEdge, rightEdge) = (rightEdge, leftEdge);
+                return;
             }
+
+            GetPatternXRangeAtSpawnPosition(obstacles, out float leftEdge, out float rightEdge);
+            leftEdge += spawnOffset;
+            rightEdge += spawnOffset + Consts.PatternEdgeGap;
 
             _ranges.Add(new PatternXRange(patternIndex, leftEdge, rightEdge));
         }
 
-        public void Update(float deltaTime, float screenLeftEdge)
+        public void Update(float deltaTime)
         {
             if (_ranges.Count == 0)
             {
@@ -37,14 +54,10 @@ namespace Assets.Scripts.System
                 _ranges[i].ShiftLeft(shift);
             }
 
-            Prune(screenLeftEdge);
+            Prune(ScreenLeftEdge);
         }
 
-        public int GetCurrentPatternIndex(
-            float playerLeftX,
-            float playerRightX,
-            float screenLeftEdge,
-            float screenRightEdge)
+        public int GetCurrentPatternIndex(float playerLeftX, float playerRightX)
         {
             if (_ranges.Count == 0)
             {
@@ -62,6 +75,8 @@ namespace Assets.Scripts.System
             float upcomingPatternLeftEdge = float.PositiveInfinity;
             int trailingPatternIndex = -1;
             float trailingPatternRightEdge = float.NegativeInfinity;
+            float screenLeftEdge = ScreenLeftEdge;
+            float screenRightEdge = ScreenRightEdge;
 
             foreach (var range in _ranges)
             {
@@ -124,6 +139,27 @@ namespace Assets.Scripts.System
         private void Prune(float screenLeftEdge)
         {
             _ranges.RemoveAll(range => range.RightEdge < screenLeftEdge - _edgeTolerance);
+        }
+
+        private static void GetPatternXRangeAtSpawnPosition(
+            IReadOnlyList<InstantiatedObstacle> obstacles,
+            out float leftEdge,
+            out float rightEdge)
+        {
+            leftEdge = float.PositiveInfinity;
+            rightEdge = float.NegativeInfinity;
+
+            for (int i = 0; i < obstacles.Count; i++)
+            {
+                CollisionUtils.GetObstacleXIntervalAtPosition(
+                    obstacles[i].ObstacleScript,
+                    obstacles[i].SpawnPosition,
+                    out float obstacleLeftEdge,
+                    out float obstacleRightEdge);
+
+                leftEdge = Mathf.Min(leftEdge, obstacleLeftEdge);
+                rightEdge = Mathf.Max(rightEdge, obstacleRightEdge);
+            }
         }
 
         private sealed class PatternXRange
