@@ -62,8 +62,6 @@ namespace Assets.Editor.LevelEditor
             _root.style.flexDirection = FlexDirection.Column;
             _root.style.marginTop = 8;
             _root.style.marginBottom = 8;
-            _root.style.height = 300;
-            _root.style.minHeight = 220;
 
             var header = new Label("Pattern Sequence");
             header.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -72,8 +70,9 @@ namespace Assets.Editor.LevelEditor
 
             var columns = new VisualElement();
             columns.style.flexDirection = FlexDirection.Row;
-            columns.style.flexGrow = 1;
+            columns.style.height = 220;
             columns.style.minHeight = 140;
+            columns.style.flexShrink = 0;
             _root.Add(columns);
 
             // Левая колонка: доступные паттерны.
@@ -123,6 +122,11 @@ namespace Assets.Editor.LevelEditor
             _sequenceList.itemIndexChanged += OnSequenceReordered;
             rightColumn.Add(_sequenceList);
 
+            var resizeHandle = new VisualElement();
+            resizeHandle.AddToClassList("vertical-resize-handle");
+            _root.Add(resizeHandle);
+            _root.AddManipulator(new VerticalResizeManipulator(columns, resizeHandle, 140f, 620f));
+
             // Кнопки редактирования последовательности.
             var buttonsRow = new VisualElement();
             buttonsRow.style.flexDirection = FlexDirection.Row;
@@ -148,11 +152,6 @@ namespace Assets.Editor.LevelEditor
 
             _randomizeSeedButton = new Button(RandomizeSeed) { text = "Randomize" };
             seedRow.Add(_randomizeSeedButton);
-
-            var resizeHandle = new VisualElement();
-            resizeHandle.AddToClassList("vertical-resize-handle");
-            _root.Add(resizeHandle);
-            _root.AddManipulator(new VerticalResizeManipulator(_root, resizeHandle, 220f, 700f));
         }
 
         private void RefreshUI()
