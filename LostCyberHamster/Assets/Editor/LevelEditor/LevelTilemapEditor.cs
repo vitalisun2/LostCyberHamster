@@ -49,6 +49,7 @@ public class LevelTilemapEditor : EditorWindow
     private int _selectedPatternIndex = -1;
     private Tilemap _tilemapInScene;
     private bool _isObjectOnRoof;
+    private bool _showTestLevels;
 
     private bool IsTemplateMode => string.Equals(_currentLocationName,
         Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
@@ -215,6 +216,7 @@ public class LevelTilemapEditor : EditorWindow
         _selectedPatternIndex = -1;
         _isObjectOnRoof = false;
         _selectedLevelDescriptor = null;
+        _showTestLevels = false;
         _allLevelDescriptors.Clear();
         _visibleLevelDescriptors.Clear();
         _selectedDaypart = PartOfDayEnum.Morning;
@@ -630,7 +632,7 @@ public class LevelTilemapEditor : EditorWindow
 
         _currentLocationName = newValue;
 
-    _uiManager.SetObstaclesSpritesListView(newValue, _spritesExt);
+        _uiManager.SetObstaclesSpritesListView(newValue, _spritesExt);
         _uiManager.AddCollectablesToSpritesListView();
 
         /* Загружаем маппинг спрайт‑типов для выбранной локации.
@@ -651,6 +653,9 @@ public class LevelTilemapEditor : EditorWindow
             _selectedDaypart = PartOfDayEnum.Morning;
             _uiManager.SetSelectedDaypart(_selectedDaypart);
         }
+
+        _showTestLevels = false;
+        _uiManager.SetLevelListMode(_showTestLevels);
 
         _selectedLevelDescriptor = null;
 
@@ -702,6 +707,7 @@ public class LevelTilemapEditor : EditorWindow
             ? new List<LevelFileDescriptor>(_allLevelDescriptors)
             : _allLevelDescriptors
                 .Where(descriptor => descriptor.PartOfDay.HasValue && descriptor.PartOfDay.Value == _selectedDaypart)
+                .Where(IsLevelDescriptorVisibleInCurrentMode)
                 .ToList();
 
         _uiManager.UpdateFilesList(_visibleLevelDescriptors);
@@ -731,17 +737,89 @@ public class LevelTilemapEditor : EditorWindow
         _uiManager.SelectFirstFile();
     }
 
-    private bool TrySelectLevelByPath(string absolutePath)
+    /// <summary>
+    /// Переключает список уровней между gameplay-уровнями и тестовыми уровнями.
+    /// </summary>
+    private void HandleLevelListModeToggleClicked()
     {
-        if (string.IsNullOrWhiteSpace(absolutePath))
+        if (IsTemplateMode)
         {
-            return false;
+            return;
+        }
+
+        _showTestLevels = !_showTestLevels;
+        _selectedLevelDescriptor = null;
+        _uiManager.SetLevelListMode(_showTestLevels);
+        RefreshLevelFilesList(reloadFromDisk: false, autoSelectFirst: true);
+    }
+
+    /// <summary>
+    /// Проверяет, должен ли уровень отображаться в текущем режиме списка.
+    /// </summary>
+    private bool IsLevelDescriptorVisibleInCurrentMode(LevelFileDescriptor descriptor)
+    {
+        var isTestLevel = IsTestLevelDescriptor(descriptor);
+        return _showTestLevels ? isTestLevel : !isTestLevel;
+    }
+
+    /// <summary>
+    /// Определяет тестовый уровень по ключу уровня с префиксом test_.
+    /// </summary>
+    private static bool IsTestLevelDescriptor(LevelFileDescriptor descriptor)
+    {
+        var levelKey = GetLevelKey(descriptor);
+        return levelKey.StartsWith("test_", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Возвращает ключ уровня из относительного пути внутри папки levels.
+    /// </summary>
+    private static string GetLevelKey(LevelFileDescriptor descriptor)
+    {
+        var relativePath = descriptor.RelativePath?.Replace('\\', '/') ?? string.Empty;
+        var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        var levelSegmentIndex = descriptor.PartOfDay.HasValue && segments.Length > 1 ? 1 : 0;
+        return Path.GetFileNameWithoutExtension(segments[levelSegmentIndex]);
+    }
+
+    /// <summary>
+    /// Ищет уровень в списке по абсолютному пути.
+    /// </summary>
+    private static int FindLevelDescriptorIndexByPath(
+        IReadOnlyList<LevelFileDescriptor> descriptors,
+        string absolutePath)
+    {
+        if (descriptors == null || string.IsNullOrWhiteSpace(absolutePath))
+        {
+            return -1;
         }
 
         var normalizedTargetPath = Path.GetFullPath(absolutePath);
-        var index = _visibleLevelDescriptors.FindIndex(descriptor =>
-            string.Equals(Path.GetFullPath(descriptor.AbsolutePath), normalizedTargetPath, StringComparison.OrdinalIgnoreCase));
+        for (int index = 0; index < descriptors.Count; index++)
+        {
+            if (string.Equals(
+                Path.GetFullPath(descriptors[index].AbsolutePath),
+                normalizedTargetPath,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return index;
+            }
+        }
 
+        return -1;
+    }
+
+    /// <summary>
+    /// Выбирает уровень в текущем видимом списке по абсолютному пути.
+    /// </summary>
+    private bool TrySelectLevelByPath(string absolutePath)
+    {
+        var index = FindLevelDescriptorIndexByPath(_visibleLevelDescriptors, absolutePath);
         if (index < 0)
         {
             return false;
@@ -771,13 +849,38 @@ public class LevelTilemapEditor : EditorWindow
         FinalizeCreatedLevel(createdLevelPath);
     }
 
+    /// <summary>
+    /// Обновляет список уровней после создания файла и выбирает созданный уровень.
+    /// </summary>
     private void FinalizeCreatedLevel(string createdLevelPath)
     {
         if (string.IsNullOrWhiteSpace(createdLevelPath))
             return;
 
         AssetDatabase.Refresh();
-        RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
+
+        // Для локаций синхронизируем фильтр с типом созданного уровня.
+        if (!IsTemplateMode)
+        {
+            _allLevelDescriptors = LevelDataManager
+                .GetLevelFileDescriptors(_levelsDirectory, _levelsExt)
+                .ToList();
+
+            var createdLevelIndex = FindLevelDescriptorIndexByPath(_allLevelDescriptors, createdLevelPath);
+            if (createdLevelIndex >= 0)
+            {
+                _showTestLevels = IsTestLevelDescriptor(_allLevelDescriptors[createdLevelIndex]);
+                _uiManager.SetLevelListMode(_showTestLevels);
+            }
+
+            RefreshLevelFilesList(reloadFromDisk: false, autoSelectFirst: false);
+        }
+        else
+        {
+            // В Templates mode список скрыт, но существующий путь выбора шаблона сохраняем.
+            RefreshLevelFilesList(reloadFromDisk: true, autoSelectFirst: false);
+        }
+
         TrySelectLevelByPath(createdLevelPath);
     }
 
@@ -2008,6 +2111,7 @@ public class LevelTilemapEditor : EditorWindow
     private void SubscribeEvents()
     {
         _uiManager.OnCreateLevelClicked += HandleCreateLevelClicked;
+        _uiManager.OnLevelListModeToggleClicked += HandleLevelListModeToggleClicked;
         _uiManager.OnSaveLevelClicked += HandleSaveLevelClicked;
         _uiManager.OnLocationChanged += HandleLocationChanged;
         _uiManager.OnSpriteSelected += HandleSpriteSelected;
@@ -2035,6 +2139,7 @@ public class LevelTilemapEditor : EditorWindow
         if (_uiManager != null)
         {
             _uiManager.OnCreateLevelClicked -= HandleCreateLevelClicked;
+            _uiManager.OnLevelListModeToggleClicked -= HandleLevelListModeToggleClicked;
             _uiManager.OnSaveLevelClicked -= HandleSaveLevelClicked;
             _uiManager.OnLocationChanged -= HandleLocationChanged;
             _uiManager.OnSpriteSelected -= HandleSpriteSelected;

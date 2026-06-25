@@ -22,6 +22,7 @@ public class LevelTilemapUi
     private ListView _patternsList;
     private Button _saveJsonButton;
     private Button _createLevelButton;
+    private Button _levelListModeButton;
     private string _selectedSprite;
     private Toggle _isObjectOnRoofToggle;
     private Button _resetButton;
@@ -48,6 +49,7 @@ public class LevelTilemapUi
 
 
     public event Action OnCreateLevelClicked;
+    public event Action OnLevelListModeToggleClicked;
     public event Action OnSaveLevelClicked;
     public event Action<string> OnLocationChanged;
     public event Action<string> OnSpriteSelected;
@@ -80,6 +82,7 @@ public class LevelTilemapUi
     private void SetElements(VisualElement root)
     {
         _createLevelButton = _root.Q<Button>("create-level-btn");
+        _levelListModeButton = _root.Q<Button>("level-list-mode-btn");
         _locationsDropdownField = _root.Q<DropdownField>("location-dropdown");
         _obstacleTypeDropdownField = root.Q<DropdownField>("obstacle-type-dropdown");
         _spritesScrollView = _root.Q<ScrollView>("sprites");
@@ -130,6 +133,7 @@ public class LevelTilemapUi
     private void InitializeButtons()
     {
         _createLevelButton.clicked += () => OnCreateLevelClicked?.Invoke();
+        _levelListModeButton.clicked += () => OnLevelListModeToggleClicked?.Invoke();
         _saveJsonButton.clicked += () => OnSaveLevelClicked?.Invoke();
         _resetButton.clicked += () => OnResetClicked?.Invoke();
     }
@@ -651,9 +655,23 @@ public class LevelTilemapUi
         // Level-only elements
         SetDaypartSelectorVisible(!isTemplateMode);
         SetFilesListVisible(!isTemplateMode);
+        SetVisible(_levelListModeButton, !isTemplateMode);
 
         // Create button — visible in both modes
         SetVisible(_createLevelRow, true);
+    }
+
+    /// <summary>
+    /// Обновляет текст кнопки переключения списка уровней.
+    /// </summary>
+    public void SetLevelListMode(bool showTestLevels)
+    {
+        if (_levelListModeButton == null)
+        {
+            return;
+        }
+
+        _levelListModeButton.text = showTestLevels ? "Test Levels" : "Gameplay Levels";
     }
 
     private static void SetVisible(VisualElement element, bool isVisible)

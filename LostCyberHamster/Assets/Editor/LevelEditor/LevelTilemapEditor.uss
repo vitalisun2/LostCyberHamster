@@ -25,3 +25,8 @@
     min-height: 30px;
 }
 
+.level-list-mode-btn {
+    margin-left: 12px;
+    min-width: 120px;
+    flex-shrink: 0;
+}

@@ -2,6 +2,7 @@
     <ui:DropdownField label="location" name="location-dropdown" style="margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px;" />
     <ui:VisualElement name="create-level-row" class="create-level-row">
         <ui:Button text="create level" name="create-level-btn" />
+        <ui:Button text="Gameplay Levels" name="level-list-mode-btn" class="level-list-mode-btn" />
     </ui:VisualElement>
     <ui:VisualElement style="flex-grow: 1; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 8px; max-height: 140px; min-height: 50px; height: auto;">
         <ui:Label text="files" style="margin-top: 0; margin-right: 0; margin-bottom: 4px; margin-left: 0;" />
