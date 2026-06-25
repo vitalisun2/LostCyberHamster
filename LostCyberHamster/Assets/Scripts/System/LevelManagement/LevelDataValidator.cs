@@ -90,13 +90,36 @@ public static class LevelDataValidator
             return;
         }
 
-        if (backgroundSprite.texture.width != Consts.BACKGROUND_WIDTH)
+        var texture = backgroundSprite.texture;
+
+        if (texture.width != Consts.BACKGROUND_WIDTH)
         {
             HelpMethods.LogAndStopGame(
-                $"[LevelDataValidator.ValidateBackgroundTexture] Background sprite '{backgroundSprite.name}' has width {backgroundSprite.texture.width}, expected {Consts.BACKGROUND_WIDTH}. Height is art-driven and is not fixed."
+                $"[LevelDataValidator.ValidateBackgroundTexture] Background sprite '{backgroundSprite.name}' has width {texture.width}, expected {Consts.BACKGROUND_WIDTH}. Height is art-driven and is not fixed."
             );
         }
 
+        ValidateBackgroundTextureDivisibleBy4(texture, backgroundSprite.name);
+    }
+
+    private static void ValidateBackgroundTextureDivisibleBy4(Texture2D texture, string spriteName)
+    {
+        if (texture == null)
+        {
+            HelpMethods.LogAndStopGame("[LevelDataValidator.ValidateBackgroundTexture] Texture is null: " + spriteName);
+            return;
+        }
+
+        if ((texture.width % 4) == 0 && (texture.height % 4) == 0)
+        {
+            return;
+        }
+
+        HelpMethods.LogAndStopGame(
+            $"[LevelDataValidator.ValidateBackgroundTexture] Background sprite '{spriteName}' has size {texture.width}x{texture.height}. " +
+            "For ETC2 compression both width and height must be divisible by 4. " +
+            "If this asset was just added or changed, right-click the PNG in Unity and run Reimport so EnvironmentTexturePostprocessor can pad its height."
+        );
     }
 
     public static void ValidateObstacleSprite(ObstacleTypeEnum obstacleType, string spriteName, Sprite sprite)
