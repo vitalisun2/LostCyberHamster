@@ -304,6 +304,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOver\JumpOverSimulator.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\SettingsModalController.cs" />
     <Compile Include="Assets\Scripts\System\ObstacleSpawner.cs" />
+    <Compile Include="Assets\Scripts\System\VisiblePatternTracker.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\QuestsScreenController.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CrystalBonus.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofSpecification.cs" />

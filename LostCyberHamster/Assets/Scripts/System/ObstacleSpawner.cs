@@ -4,7 +4,6 @@ using System.Linq;
 using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Entry_Points.GameLoadingTasks;
-using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Installers.Roots;
 using Assets.Scripts.Gameplay;
@@ -33,14 +32,13 @@ namespace Assets.Scripts.System
         public event Action<int, string> PatternSpawned;
 
         private const int _defaultSpawnLookaheadPatterns = 1;
-        private const float _patternEdgeTolerance = 0.01f;
         private readonly float _delayBetweenPatterns = 2.0f;
         private float _timeSinceLastPattern;
         private int _reliefDelayPatternIndex = -1;
         private int _currentPatternIndex;
         private int _spawnLookaheadPatterns = _defaultSpawnLookaheadPatterns;
         private List<InstantiatedObstacle> _spawnedObstacles = new();
-        private readonly List<SpawnedPatternXRange> _spawnedPatternRanges = new();
+        private readonly VisiblePatternTracker _visiblePatternTracker = new();
         private EnvironmentRoot _environmentRoot;
         private List<InstantiatedObstacle> _intantiatedObstacles = new();
         private const string _reliefPatternName = "test_relief";
@@ -57,119 +55,11 @@ namespace Assets.Scripts.System
         /// </summary>
         public int GetCurrentVisiblePatternIndex(float leftX, float rightX)
         {
-            if (_spawnedPatternRanges.Count == 0)
-            {
-                return -1;
-            }
-
-            if (leftX > rightX)
-            {
-                (leftX, rightX) = (rightX, leftX);
-            }
-
-            int overlappingPatternIndex = -1;
-            float overlappingPatternLeftEdge = float.PositiveInfinity;
-            int upcomingPatternIndex = -1;
-            float upcomingPatternLeftEdge = float.PositiveInfinity;
-            int trailingPatternIndex = -1;
-            float trailingPatternRightEdge = float.NegativeInfinity;
-            float screenLeftEdge = ScreenLeftEdge;
-            float screenRightEdge = ScreenRightEdge;
-
-            PruneSpawnedPatternRanges(screenLeftEdge);
-
-            foreach (var patternRange in _spawnedPatternRanges)
-            {
-                int patternIndex = patternRange.PatternIndex;
-                float patternLeftEdge = patternRange.LeftEdge;
-                float patternRightEdge = patternRange.RightEdge;
-
-                bool isVisible =
-                    patternLeftEdge <= screenRightEdge + _patternEdgeTolerance &&
-                    patternRightEdge >= screenLeftEdge - _patternEdgeTolerance;
-
-                if (!isVisible)
-                {
-                    continue;
-                }
-
-                bool overlapsPlayerRange =
-                    patternLeftEdge <= rightX + _patternEdgeTolerance &&
-                    patternRightEdge >= leftX - _patternEdgeTolerance;
-
-                if (overlapsPlayerRange)
-                {
-                    if (patternLeftEdge < overlappingPatternLeftEdge)
-                    {
-                        overlappingPatternLeftEdge = patternLeftEdge;
-                        overlappingPatternIndex = patternIndex;
-                    }
-
-                    continue;
-                }
-
-                bool isNotPassedByPlayer = patternRightEdge >= leftX - _patternEdgeTolerance;
-                if (isNotPassedByPlayer)
-                {
-                    if (patternLeftEdge < upcomingPatternLeftEdge)
-                    {
-                        upcomingPatternLeftEdge = patternLeftEdge;
-                        upcomingPatternIndex = patternIndex;
-                    }
-
-                    continue;
-                }
-
-                if (patternRightEdge > trailingPatternRightEdge)
-                {
-                    trailingPatternRightEdge = patternRightEdge;
-                    trailingPatternIndex = patternIndex;
-                }
-            }
-
-            if (overlappingPatternIndex >= 0)
-            {
-                return overlappingPatternIndex;
-            }
-
-            if (upcomingPatternIndex >= 0)
-            {
-                return upcomingPatternIndex;
-            }
-
-            return trailingPatternIndex;
-        }
-
-        private void RegisterSpawnedPatternRange(int patternIndex, float leftEdge, float rightEdge)
-        {
-            if (leftEdge > rightEdge)
-            {
-                (leftEdge, rightEdge) = (rightEdge, leftEdge);
-            }
-
-            _spawnedPatternRanges.Add(new SpawnedPatternXRange(patternIndex, leftEdge, rightEdge));
-        }
-
-        private void UpdateSpawnedPatternRanges(float deltaTime)
-        {
-            if (_spawnedPatternRanges.Count == 0)
-            {
-                return;
-            }
-
-            float shift = Consts.RoadScrollSpeed * ScrollLeftMechanics.SpeedMultiplier * deltaTime;
-            for (int i = 0; i < _spawnedPatternRanges.Count; i++)
-            {
-                _spawnedPatternRanges[i].ShiftLeft(shift);
-            }
-
-            PruneSpawnedPatternRanges(ScreenLeftEdge);
-        }
-
-        private void PruneSpawnedPatternRanges(float screenLeftEdge)
-        {
-            _spawnedPatternRanges.RemoveAll(range =>
-                range.RightEdge < screenLeftEdge - _patternEdgeTolerance);
+            return _visiblePatternTracker.GetCurrentPatternIndex(
+                leftX,
+                rightX,
+                ScreenLeftEdge,
+                ScreenRightEdge);
         }
 
         private void Awake()
@@ -188,6 +78,7 @@ namespace Assets.Scripts.System
         {
             LevelController.Instance.LevelData.GameManager.AddListener(this);
 
+            _visiblePatternTracker.Clear();
             _environmentRoot = environmentRoot;
             _intantiatedObstacles = ObstacleFactory.CreateObstacles(_environmentRoot);
 
@@ -210,7 +101,7 @@ namespace Assets.Scripts.System
             }
 
             SpawnPatterns();
-            UpdateSpawnedPatternRanges(deltaTime);
+            _visiblePatternTracker.Update(deltaTime, ScreenLeftEdge);
         }
 
         public void OnPause()
@@ -337,7 +228,7 @@ namespace Assets.Scripts.System
                 _spawnedObstacles.Add(obstacle);
             }
 
-            RegisterSpawnedPatternRange(patternIndex, targetLeftEdge, targetRightEdge);
+            _visiblePatternTracker.RegisterPattern(patternIndex, targetLeftEdge, targetRightEdge);
             PatternSpawned?.Invoke(patternIndex, CurrPatternName);
         }
 
@@ -434,26 +325,6 @@ namespace Assets.Scripts.System
                 out _);
 
             return left;
-        }
-
-        private sealed class SpawnedPatternXRange
-        {
-            public SpawnedPatternXRange(int patternIndex, float leftEdge, float rightEdge)
-            {
-                PatternIndex = patternIndex;
-                LeftEdge = leftEdge;
-                RightEdge = rightEdge;
-            }
-
-            public int PatternIndex { get; }
-            public float LeftEdge { get; private set; }
-            public float RightEdge { get; private set; }
-
-            public void ShiftLeft(float shift)
-            {
-                LeftEdge -= shift;
-                RightEdge -= shift;
-            }
         }
     }
 
