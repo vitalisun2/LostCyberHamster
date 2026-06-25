@@ -704,18 +704,26 @@ public static void ReleaseIntroSprites()
             }
         }
         /// <summary>
-        /// Возвращает список ключей уровней, известных иерархическому каталогу.
+        /// Возвращает список полных адресов gameplay-уровней, сохраняя legacy-имя метода.
         /// </summary>
-        public static async Task<List<string>> GetAllLevelNamesAsync()
+        public static Task<List<string>> GetAllLevelNamesAsync()
+        {
+            return GetAllLevelAddressesAsync();
+        }
+
+        /// <summary>
+        /// Возвращает список полных адресов gameplay-уровней, известных иерархическому каталогу.
+        /// </summary>
+        public static async Task<List<string>> GetAllLevelAddressesAsync()
         {
             if (LevelCatalogService.HasCatalog && !LevelCatalogService.Catalog.IsEmpty)
             {
                 var fromCatalog = LevelCatalogService.Catalog
                     .EnumerateLevels()
-                    .Select(level => level.LevelKey)
-                    .Where(key => !string.IsNullOrWhiteSpace(key))
+                    .Select(level => level.Address?.Trim())
+                    .Where(address => !string.IsNullOrWhiteSpace(address))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(key => key, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(address => address, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
                 if (fromCatalog.Count > 0)
@@ -724,10 +732,10 @@ public static void ReleaseIntroSprites()
                 }
             }
 
-            return await GetHierarchicalLevelNamesAsync();
+            return await GetHierarchicalLevelAddressesAsync();
         }
 
-        private static async Task<List<string>> GetHierarchicalLevelNamesAsync()
+        private static async Task<List<string>> GetHierarchicalLevelAddressesAsync()
         {
             var handle = Addressables.LoadResourceLocationsAsync(Consts.LevelsDaypart, typeof(TextAsset));
 
@@ -740,11 +748,11 @@ public static void ReleaseIntroSprites()
                 }
 
                 var comparer = StringComparer.OrdinalIgnoreCase;
-                var names = new HashSet<string>(comparer);
+                var addresses = new HashSet<string>(comparer);
 
                 foreach (var location in locations)
                 {
-                    var address = location?.PrimaryKey;
+                    var address = location?.PrimaryKey?.Trim();
                     if (string.IsNullOrWhiteSpace(address))
                     {
                         continue;
@@ -755,14 +763,10 @@ public static void ReleaseIntroSprites()
                         continue;
                     }
 
-                    var key = HierarchicalLevelCatalog.NormalizeLevelKey(address);
-                    if (!string.IsNullOrWhiteSpace(key))
-                    {
-                        names.Add(key);
-                    }
+                    addresses.Add(address);
                 }
 
-                var result = names.ToList();
+                var result = addresses.ToList();
                 result.Sort(StringComparer.OrdinalIgnoreCase);
                 return result;
             }

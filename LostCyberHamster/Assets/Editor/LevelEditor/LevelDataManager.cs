@@ -19,6 +19,7 @@ public static class LevelDataManager
 {
     private const string MappingFileName   = "obstacle_sprite_to_type_mappings";
     private const string MappingsGroupName = "Mappings";
+    private const string GameplayLevelKeyPrefix = "level_";
     private static readonly Regex _levelKeySanitizer = new Regex(@"[^a-z0-9_]+", RegexOptions.Compiled);
 
     private static readonly IReadOnlyDictionary<string, PartOfDayEnum> _partOfDayFolderMap =
@@ -234,7 +235,7 @@ public static class LevelDataManager
             if (errors.Any())
                 throw new Exception($"Level data is invalid: {string.Join(", ", errors)}");
 
-            var levelKey = ResolveLevelKey(levelsDirectory, requestedLevelName);
+            var levelKey = ResolveLevelKey(levelsDirectory, partOfDay, requestedLevelName);
             var filePath = BuildCanonicalLevelJsonPath(levelsDirectory, partOfDay, levelKey);
 
             SaveLevel(levelInfo, filePath);
@@ -261,7 +262,7 @@ public static class LevelDataManager
             if (errors.Any())
                 throw new Exception($"Level data is invalid: {string.Join(", ", errors)}");
 
-            var levelKey = ResolveLevelKey(levelsDirectory, requestedLevelName);
+            var levelKey = ResolveLevelKey(levelsDirectory, partOfDay, requestedLevelName);
             var filePath = BuildCanonicalLevelJsonPath(levelsDirectory, partOfDay, levelKey);
 
             SaveLevelRef(levelInfoRef, filePath);
@@ -302,32 +303,31 @@ public static class LevelDataManager
         return Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
     }
 
-    public static string GetNextAvailableLevelKey(string levelsDirectory)
+    public static string GetNextAvailableLevelKey(string levelsDirectory, PartOfDayEnum partOfDay)
     {
-        return GenerateNextLevelKey(levelsDirectory);
+        return GenerateNextLevelKey(levelsDirectory, partOfDay);
     }
 
-    private static string ResolveLevelKey(string levelsDirectory, string requestedLevelName, string currentLevelKeyToIgnore = null)
+    private static string ResolveLevelKey(string levelsDirectory, PartOfDayEnum partOfDay, string requestedLevelName, string currentLevelKeyToIgnore = null)
     {
         var normalizedRequested = NormalizeLevelKey(requestedLevelName);
         if (!string.IsNullOrWhiteSpace(normalizedRequested))
         {
-            EnsureLevelKeyIsAvailable(levelsDirectory, normalizedRequested, currentLevelKeyToIgnore);
+            EnsureLevelKeyIsAvailable(levelsDirectory, partOfDay, normalizedRequested, currentLevelKeyToIgnore);
             return normalizedRequested;
         }
 
-        return GenerateNextLevelKey(levelsDirectory);
+        return GenerateNextLevelKey(levelsDirectory, partOfDay);
     }
 
-    private static string GenerateNextLevelKey(string levelsDirectory)
+    private static string GenerateNextLevelKey(string levelsDirectory, PartOfDayEnum partOfDay)
     {
         var highestLevelNumber = 0;
 
-        foreach (var descriptor in EnumerateAllLocationLevelFileDescriptors())
+        foreach (var descriptor in EnumeratePartLevelFileDescriptors(levelsDirectory, partOfDay))
         {
-            var levelKey = GetLevelKeyFromFilePath(descriptor.AbsolutePath);
-            var parts = levelKey.Split('_');
-            if (parts.Length == 2 && int.TryParse(parts[1], out var levelNumber))
+            var levelKey = GetLevelKey(descriptor);
+            if (TryParseGameplayLevelNumber(levelKey, out var levelNumber))
             {
                 if (levelNumber > highestLevelNumber)
                 {
@@ -339,17 +339,66 @@ public static class LevelDataManager
         return $"level_{highestLevelNumber + 1:D2}";
     }
 
-    private static void EnsureLevelKeyIsAvailable(string levelsDirectory, string levelKey, string currentLevelKeyToIgnore)
+    private static void EnsureLevelKeyIsAvailable(string levelsDirectory, PartOfDayEnum partOfDay, string levelKey, string currentLevelKeyToIgnore)
     {
-        foreach (var descriptor in EnumerateAllLocationLevelFileDescriptors())
+        foreach (var descriptor in EnumeratePartLevelFileDescriptors(levelsDirectory, partOfDay))
         {
-            var existingKey = GetLevelKeyFromFilePath(descriptor.AbsolutePath);
+            var existingKey = GetLevelKey(descriptor);
             if (string.Equals(existingKey, currentLevelKeyToIgnore, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             if (string.Equals(existingKey, levelKey, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"Level '{levelKey}' already exists.");
         }
+    }
+
+    private static IEnumerable<LevelFileDescriptor> EnumeratePartLevelFileDescriptors(string levelsDirectory, PartOfDayEnum partOfDay)
+    {
+        if (string.IsNullOrWhiteSpace(levelsDirectory) || !Directory.Exists(levelsDirectory))
+        {
+            return Enumerable.Empty<LevelFileDescriptor>();
+        }
+
+        return GetLevelFileDescriptors(levelsDirectory, partOfDay);
+    }
+
+    private static string GetLevelKey(LevelFileDescriptor descriptor)
+    {
+        var relativePath = NormalizePath(descriptor.RelativePath);
+        var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        var levelSegmentIndex = descriptor.PartOfDay.HasValue && segments.Length > 1 ? 1 : 0;
+        return Path.GetFileNameWithoutExtension(segments[levelSegmentIndex]) ?? string.Empty;
+    }
+
+    private static bool TryParseGameplayLevelNumber(string levelKey, out int levelNumber)
+    {
+        levelNumber = 0;
+        var trimmed = levelKey?.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return false;
+        }
+
+        if (!trimmed.StartsWith(GameplayLevelKeyPrefix, StringComparison.OrdinalIgnoreCase)
+            || trimmed.Length != GameplayLevelKeyPrefix.Length + 2)
+        {
+            return false;
+        }
+
+        for (int index = GameplayLevelKeyPrefix.Length; index < trimmed.Length; index++)
+        {
+            if (trimmed[index] < '0' || trimmed[index] > '9')
+            {
+                return false;
+            }
+        }
+
+        return int.TryParse(trimmed.Substring(GameplayLevelKeyPrefix.Length), out levelNumber);
     }
 
     private static string BuildCanonicalLevelJsonPath(string levelsDirectory, PartOfDayEnum partOfDay, string levelKey)

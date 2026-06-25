@@ -594,7 +594,7 @@ public class LevelTilemapEditor : EditorWindow
             CreateLevelPromptWindow.Show(
                 "Create Level",
                 "Level Name",
-                LevelDataManager.GetNextAvailableLevelKey(_levelsDirectory),
+                LevelDataManager.GetNextAvailableLevelKey(_levelsDirectory, _selectedDaypart),
                 "OK",
                 CreateLevelWithName);
         }

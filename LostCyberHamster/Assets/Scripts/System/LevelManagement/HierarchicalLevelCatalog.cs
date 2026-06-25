@@ -124,7 +124,7 @@ namespace Assets.Scripts.System
         }
 
         /// <summary>
-        /// Attempts to resolve a level descriptor by address, file name or canonical key.
+        /// Пытается найти уровень по полному address или однозначному короткому ключу файла.
         /// </summary>
         public bool TryFindLevel(string identifier, out LevelDescriptor descriptor)
         {
@@ -302,6 +302,7 @@ namespace Assets.Scripts.System
         {
             var byAddress = new Dictionary<string, LevelDescriptor>(StringComparer.OrdinalIgnoreCase);
             var byKey = new Dictionary<string, LevelDescriptor>(StringComparer.OrdinalIgnoreCase);
+            var ambiguousKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             for (int locationIndex = 0; locationIndex < locations.Count; locationIndex++)
             {
@@ -330,10 +331,20 @@ namespace Assets.Scripts.System
                         byAddress[addressKey] = descriptor;
 
                         var levelKey = descriptor.LevelKey;
-                        if (!string.IsNullOrEmpty(levelKey) && !byKey.ContainsKey(levelKey))
+                        if (string.IsNullOrEmpty(levelKey) || ambiguousKeys.Contains(levelKey))
                         {
-                            byKey[levelKey] = descriptor;
+                            continue;
                         }
+
+                        // Короткий ключ безопасен только пока он указывает ровно на один address.
+                        if (byKey.ContainsKey(levelKey))
+                        {
+                            byKey.Remove(levelKey);
+                            ambiguousKeys.Add(levelKey);
+                            continue;
+                        }
+
+                        byKey[levelKey] = descriptor;
                     }
                 }
             }
