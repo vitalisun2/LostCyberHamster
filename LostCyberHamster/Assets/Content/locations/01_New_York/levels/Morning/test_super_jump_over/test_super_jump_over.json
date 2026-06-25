@@ -9,7 +9,7 @@
             "overrides": []
         },
         {
-            "ref": "relief",
+            "ref": "test_relief",
             "spriteSeed": 0,
             "overrides": []
         },
@@ -19,7 +19,7 @@
             "overrides": []
         },
         {
-            "ref": "relief_energy",
+            "ref": "test_relief_energy",
             "spriteSeed": 0,
             "overrides": []
         },

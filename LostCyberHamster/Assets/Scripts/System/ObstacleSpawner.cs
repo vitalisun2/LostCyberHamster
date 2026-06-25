@@ -40,7 +40,7 @@ namespace Assets.Scripts.System
         private List<InstantiatedObstacle> _spawnedObstacles = new();
         private EnvironmentRoot _environmentRoot;
         private List<InstantiatedObstacle> _intantiatedObstacles = new();
-        private readonly string _reliefPatternName = "relief";
+        private const string _reliefPatternName = "test_relief";
         private float ScreenRightEdge =>
             Camera.main.transform.position.x +
             Camera.main.orthographicSize * Camera.main.aspect;
@@ -109,7 +109,7 @@ namespace Assets.Scripts.System
             while (_currentPatternIndex < patterns.Count && IsCurrentPatternReadyToSpawn())
             {
                 CurrPatternName = patterns[_currentPatternIndex].name;
-                bool needsDelay = CurrPatternName == _reliefPatternName;
+                bool needsDelay = IsDelaySpacerPattern(CurrPatternName);
 
                 if (needsDelay && _reliefDelayPatternIndex != _currentPatternIndex)
                 {
@@ -162,7 +162,7 @@ namespace Assets.Scripts.System
 
         private bool IsDelaySpacerPattern(string patternName)
         {
-            return string.Equals(patternName, _reliefPatternName, StringComparison.Ordinal);
+            return string.Equals(patternName, _reliefPatternName, StringComparison.OrdinalIgnoreCase);
         }
 
         // проверяем, что правый край паттерна не дальше правого края экрана

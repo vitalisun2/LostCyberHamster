@@ -9,7 +9,7 @@
             "overrides": []
         },
         {
-            "ref": "relief",
+            "ref": "test_relief",
             "spriteSeed": 0,
             "overrides": []
         },
@@ -19,7 +19,7 @@
             "overrides": []
         },
         {
-            "ref": "relief",
+            "ref": "test_relief",
             "spriteSeed": 0,
             "overrides": []
         },
@@ -29,7 +29,7 @@
             "overrides": []
         },
         {
-            "ref": "relief",
+            "ref": "test_relief",
             "spriteSeed": 0,
             "overrides": []
         },
@@ -39,7 +39,7 @@
             "overrides": []
         },
         {
-            "ref": "relief",
+            "ref": "test_relief",
             "spriteSeed": 0,
             "overrides": []
         },

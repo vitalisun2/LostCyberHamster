@@ -23,6 +23,7 @@ public class LevelTilemapUi
     private Button _saveJsonButton;
     private Button _createLevelButton;
     private Button _levelListModeButton;
+    private Button _patternListModeButton;
     private string _selectedSprite;
     private Toggle _isObjectOnRoofToggle;
     private Button _resetButton;
@@ -53,6 +54,7 @@ public class LevelTilemapUi
 
     public event Action OnCreateLevelClicked;
     public event Action OnLevelListModeToggleClicked;
+    public event Action OnPatternListModeToggleClicked;
     public event Action OnSaveLevelClicked;
     public event Action<string> OnLocationChanged;
     public event Action<string> OnSpriteSelected;
@@ -81,12 +83,15 @@ public class LevelTilemapUi
         InitializeDaypartSelector();
         InitializePatternSearch();
         InitializeResizableSections();
+        SetPatternListMode(false);
+        SetVisible(_patternListModeButton, false);
     }
 
     private void SetElements(VisualElement root)
     {
         _createLevelButton = _root.Q<Button>("create-level-btn");
         _levelListModeButton = _root.Q<Button>("level-list-mode-btn");
+        _patternListModeButton = _root.Q<Button>("pattern-list-mode-btn");
         _locationsDropdownField = _root.Q<DropdownField>("location-dropdown");
         _obstacleTypeDropdownField = root.Q<DropdownField>("obstacle-type-dropdown");
         _spritesScrollView = _root.Q<ScrollView>("sprites");
@@ -141,6 +146,7 @@ public class LevelTilemapUi
     {
         _createLevelButton.clicked += () => OnCreateLevelClicked?.Invoke();
         _levelListModeButton.clicked += () => OnLevelListModeToggleClicked?.Invoke();
+        _patternListModeButton.clicked += () => OnPatternListModeToggleClicked?.Invoke();
         _saveJsonButton.clicked += () => OnSaveLevelClicked?.Invoke();
         _resetButton.clicked += () => OnResetClicked?.Invoke();
     }
@@ -663,6 +669,7 @@ public class LevelTilemapUi
         SetDaypartSelectorVisible(!isTemplateMode);
         SetFilesListVisible(!isTemplateMode);
         SetVisible(_levelListModeButton, !isTemplateMode);
+        SetVisible(_patternListModeButton, isTemplateMode);
 
         // Создание доступно в обоих режимах.
         SetVisible(_createLevelRow, true);
@@ -679,6 +686,19 @@ public class LevelTilemapUi
         }
 
         _levelListModeButton.text = showTestLevels ? "Test Levels" : "Gameplay Levels";
+    }
+
+    /// <summary>
+    /// Обновляет текст кнопки переключения списка паттернов.
+    /// </summary>
+    public void SetPatternListMode(bool showTestPatterns)
+    {
+        if (_patternListModeButton == null)
+        {
+            return;
+        }
+
+        _patternListModeButton.text = showTestPatterns ? "Test Patterns" : "Gameplay Patterns";
     }
 
     private static void SetVisible(VisualElement element, bool isVisible)

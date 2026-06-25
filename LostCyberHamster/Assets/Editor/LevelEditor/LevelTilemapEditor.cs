@@ -50,6 +50,7 @@ public class LevelTilemapEditor : EditorWindow
     private Tilemap _tilemapInScene;
     private bool _isObjectOnRoof;
     private bool _showTestLevels;
+    private bool _showTestPatterns;
 
     private bool IsTemplateMode => string.Equals(_currentLocationName,
         Consts.TemplatesLocationName, StringComparison.OrdinalIgnoreCase);
@@ -96,6 +97,7 @@ public class LevelTilemapEditor : EditorWindow
     private const float PatternBoundaryInset = 0.15f;
     private const float PatternBoundaryLineThickness = 4f;
     private const float LowerRoadTileZOffset = -0.1f;
+    private const string ReliefPatternName = "test_relief";
     private static readonly Color PatternBoundaryColor = new Color(0.12f, 0.95f, 0.18f, 1f);
     private static readonly Color SelectedPatternBoundaryColor = new Color(0.25f, 1f, 0.25f, 1f);
     private static readonly Regex PatternNameSuffixRegex = new Regex(@"^(.*?)(\d+)$", RegexOptions.Compiled);
@@ -217,6 +219,7 @@ public class LevelTilemapEditor : EditorWindow
         _isObjectOnRoof = false;
         _selectedLevelDescriptor = null;
         _showTestLevels = false;
+        _showTestPatterns = false;
         _allLevelDescriptors.Clear();
         _visibleLevelDescriptors.Clear();
         _selectedDaypart = PartOfDayEnum.Morning;
@@ -656,6 +659,8 @@ public class LevelTilemapEditor : EditorWindow
 
         _showTestLevels = false;
         _uiManager.SetLevelListMode(_showTestLevels);
+        _showTestPatterns = false;
+        _uiManager.SetPatternListMode(_showTestPatterns);
 
         _selectedLevelDescriptor = null;
 
@@ -754,6 +759,21 @@ public class LevelTilemapEditor : EditorWindow
     }
 
     /// <summary>
+    /// Переключает список паттернов в Templates mode между gameplay-паттернами и тестовыми паттернами.
+    /// </summary>
+    private void HandlePatternListModeToggleClicked()
+    {
+        if (!IsTemplateMode)
+        {
+            return;
+        }
+
+        _showTestPatterns = !_showTestPatterns;
+        _uiManager.SetPatternListMode(_showTestPatterns);
+        RefreshFilteredPatternsList();
+    }
+
+    /// <summary>
     /// Проверяет, должен ли уровень отображаться в текущем режиме списка.
     /// </summary>
     private bool IsLevelDescriptorVisibleInCurrentMode(LevelFileDescriptor descriptor)
@@ -769,6 +789,19 @@ public class LevelTilemapEditor : EditorWindow
     {
         var levelKey = GetLevelKey(descriptor);
         return levelKey.StartsWith("test_", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Определяет тестовый паттерн по имени с префиксом test_.
+    /// </summary>
+    private static bool IsTestPatternName(string patternName)
+    {
+        return patternName?.StartsWith("test_", StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private static bool IsReliefPatternName(string patternName)
+    {
+        return string.Equals(patternName, ReliefPatternName, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -936,9 +969,8 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-        _uiManager.UpdatePatternsList(patternNames);
-        _uiManager.SelectFirstPattern();
+        _selectedPatternIndex = -1;
+        RefreshFilteredPatternsList();
     }
 
     /// <summary>
@@ -1030,15 +1062,15 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-        _uiManager.UpdatePatternsList(patternNames);
-
         if (IsTemplateMode)
         {
-            _uiManager.SelectFirstPattern();
+            _selectedPatternIndex = -1;
+            RefreshFilteredPatternsList();
         }
         else
         {
+            var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
+            _uiManager.UpdatePatternsList(patternNames);
             RenderAllPatternsToTilemap();
         }
     }
@@ -1177,7 +1209,7 @@ public class LevelTilemapEditor : EditorWindow
                 LeftX = slotStartX,
                 RightX = slotStartX + patternWidth,
                 Name = pattern.name,
-                IsRelief = string.Equals(pattern.name, "relief", StringComparison.OrdinalIgnoreCase)
+                IsRelief = IsReliefPatternName(pattern.name)
             });
 
             if (pattern.obstacles == null || pattern.obstacles.Count == 0)
@@ -1634,19 +1666,22 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void MovePatternUp()
     {
-        if (_selectedPatternIndex <= 0) return;
+        if (_currentLevelInfo == null || _selectedPatternIndex <= 0) return;
+
+        RefreshFilteredPatternCache();
+        var selectedVisibleIndex = _filteredPatternIndices.IndexOf(_selectedPatternIndex);
+        if (selectedVisibleIndex <= 0) return;
 
         var selectedIndex = _selectedPatternIndex;
         var pattern = _currentLevelInfo.patterns[selectedIndex];
+        var targetIndex = _filteredPatternIndices[selectedVisibleIndex - 1];
 
         _currentLevelInfo.patterns.RemoveAt(selectedIndex);
-        _currentLevelInfo.patterns.Insert(selectedIndex - 1, pattern);
+        _currentLevelInfo.patterns.Insert(targetIndex, pattern);
 
-        _selectedPatternIndex = selectedIndex - 1;
+        _selectedPatternIndex = targetIndex;
 
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-
-        _uiManager.UpdatePatternsList(patternNames, _selectedPatternIndex);
+        RefreshPatternListSelectingCurrentPattern();
     }
 
     /// <summary>
@@ -1654,19 +1689,21 @@ public class LevelTilemapEditor : EditorWindow
     /// </summary>
     private void MovePatternDown()
     {
-        if (_selectedPatternIndex < 0 || _selectedPatternIndex >= _currentLevelInfo.patterns.Count - 1) return;
+        if (_currentLevelInfo == null || _selectedPatternIndex < 0 || _selectedPatternIndex >= _currentLevelInfo.patterns.Count - 1) return;
+
+        RefreshFilteredPatternCache();
+        var selectedVisibleIndex = _filteredPatternIndices.IndexOf(_selectedPatternIndex);
+        if (selectedVisibleIndex < 0 || selectedVisibleIndex >= _filteredPatternIndices.Count - 1) return;
 
         var selectedIndex = _selectedPatternIndex;
         var pattern = _currentLevelInfo.patterns[selectedIndex];
+        var targetIndex = _filteredPatternIndices[selectedVisibleIndex + 1];
 
         _currentLevelInfo.patterns.RemoveAt(selectedIndex);
-        _currentLevelInfo.patterns.Insert(selectedIndex + 1, pattern);
-        _selectedPatternIndex = selectedIndex + 1;
+        _currentLevelInfo.patterns.Insert(targetIndex, pattern);
+        _selectedPatternIndex = targetIndex;
 
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-
-        _uiManager.UpdatePatternsList(patternNames, _selectedPatternIndex);
-
+        RefreshPatternListSelectingCurrentPattern();
     }
 
     /// <summary>
@@ -1733,10 +1770,18 @@ public class LevelTilemapEditor : EditorWindow
                 .Select(pattern => pattern.name),
             StringComparer.OrdinalIgnoreCase);
 
+        var fallbackName = IsTemplateMode && _showTestPatterns
+            ? "test_pattern_01"
+            : "Pattern 01";
         var basePatternName = CurrentPattern?.name;
         var candidateName = string.IsNullOrWhiteSpace(basePatternName)
-            ? "Pattern 01"
+            ? fallbackName
             : GetIncrementedPatternName(basePatternName);
+
+        if (IsTemplateMode && _showTestPatterns && !IsTestPatternName(candidateName))
+        {
+            candidateName = "test_pattern_01";
+        }
 
         while (existingNames.Contains(candidateName))
         {
@@ -1800,8 +1845,7 @@ public class LevelTilemapEditor : EditorWindow
 
         _selectedPatternIndex = insertIndex;
 
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-        _uiManager.UpdatePatternsList(patternNames, _selectedPatternIndex);
+        RefreshPatternListSelectingCurrentPattern();
         _uiManager.UpdatePatternNameField(duplicatedPattern.name);
         _uiManager.UpdatePatternDescriptionField(duplicatedPattern.desсription);
 
@@ -1976,10 +2020,6 @@ public class LevelTilemapEditor : EditorWindow
             return;
         }
 
-
-        // Save the current selection index
-        int indexToSelect = _selectedPatternIndex;
-
         // Update the pattern name in the data model
         var pattern = _currentLevelInfo.patterns[_selectedPatternIndex];
         pattern.name = newName;
@@ -1995,15 +2035,7 @@ public class LevelTilemapEditor : EditorWindow
             Debug.LogWarning("Cannot save pattern name change: No file selected.");
         }
 
-        // Get updated pattern names for UI
-        var patternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
-
-        // Update UI with pattern names and preserve selection
-        _uiManager.UpdatePatternsList(patternNames, indexToSelect);
-
-        // Make sure the pattern name field still shows the updated name
-        _uiManager.UpdatePatternNameField(newName);
-
+        RefreshFilteredPatternsList();
     }
 
     private void SavePatternsCollectionToDisk()
@@ -2062,6 +2094,13 @@ public class LevelTilemapEditor : EditorWindow
         var filteredNames = _filteredPatternIndices.Select(i => _allPatternNames[i]).ToList();
         _uiManager.UpdatePatternsList(filteredNames);
 
+        if (_filteredPatternIndices.Count == 0)
+        {
+            _selectedPatternIndex = -1;
+            ClearSelectedPatternView();
+            return;
+        }
+
         // Preserve selection if possible
         if (_selectedPatternIndex >= 0)
         {
@@ -2074,8 +2113,7 @@ public class LevelTilemapEditor : EditorWindow
         }
 
         // Select first filtered if current is not visible
-        if (_filteredPatternIndices.Count > 0)
-            _uiManager.SelectFirstPattern();
+        _uiManager.SelectFirstPattern();
     }
 
     private void RefreshFilteredPatternCache()
@@ -2089,17 +2127,17 @@ public class LevelTilemapEditor : EditorWindow
 
         _allPatternNames = _currentLevelInfo.patterns.Select(p => p.name).ToList();
 
-        if (string.IsNullOrEmpty(_patternSearchFilter))
+        _filteredPatternIndices = new List<int>();
+        for (int i = 0; i < _allPatternNames.Count; i++)
         {
-            _filteredPatternIndices = Enumerable.Range(0, _allPatternNames.Count).ToList();
-        }
-        else
-        {
-            _filteredPatternIndices = new List<int>();
-            for (int i = 0; i < _allPatternNames.Count; i++)
+            var patternName = _allPatternNames[i] ?? string.Empty;
+            var matchesSearch = string.IsNullOrEmpty(_patternSearchFilter) ||
+                                patternName.IndexOf(_patternSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0;
+            var matchesMode = !IsTemplateMode || _showTestPatterns == IsTestPatternName(patternName);
+
+            if (matchesSearch && matchesMode)
             {
-                if (_allPatternNames[i].IndexOf(_patternSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
-                    _filteredPatternIndices.Add(i);
+                _filteredPatternIndices.Add(i);
             }
         }
     }
@@ -2112,6 +2150,7 @@ public class LevelTilemapEditor : EditorWindow
     {
         _uiManager.OnCreateLevelClicked += HandleCreateLevelClicked;
         _uiManager.OnLevelListModeToggleClicked += HandleLevelListModeToggleClicked;
+        _uiManager.OnPatternListModeToggleClicked += HandlePatternListModeToggleClicked;
         _uiManager.OnSaveLevelClicked += HandleSaveLevelClicked;
         _uiManager.OnLocationChanged += HandleLocationChanged;
         _uiManager.OnSpriteSelected += HandleSpriteSelected;
@@ -2140,6 +2179,7 @@ public class LevelTilemapEditor : EditorWindow
         {
             _uiManager.OnCreateLevelClicked -= HandleCreateLevelClicked;
             _uiManager.OnLevelListModeToggleClicked -= HandleLevelListModeToggleClicked;
+            _uiManager.OnPatternListModeToggleClicked -= HandlePatternListModeToggleClicked;
             _uiManager.OnSaveLevelClicked -= HandleSaveLevelClicked;
             _uiManager.OnLocationChanged -= HandleLocationChanged;
             _uiManager.OnSpriteSelected -= HandleSpriteSelected;

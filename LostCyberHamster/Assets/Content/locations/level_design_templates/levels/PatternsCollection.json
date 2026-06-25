@@ -2786,7 +2786,7 @@
             ]
         },
         {
-            "name": "relief",
+            "name": "test_relief",
             "description": "пустой участок чтобы перевести дух",
             "nextObstacleId": 0,
             "obstacles": []
@@ -9058,7 +9058,7 @@
             ]
         },
         {
-            "name": "relief_energy",
+            "name": "test_relief_energy",
             "description": "empty stretch with energetics on both lanes to restore energy between test patterns",
             "nextObstacleId": 24,
             "obstacles": [
