@@ -116,7 +116,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return -1;
             }
 
-            return spawner.GetPatternIndexOverlappingXRange(hamster.LeftX, hamster.RightX);
+            return spawner.GetCurrentVisiblePatternIndex(hamster.LeftX, hamster.RightX);
         }
 
         private static string GetDisplayedPatternName(int patternIndex)
