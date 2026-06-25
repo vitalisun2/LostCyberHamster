@@ -53,8 +53,8 @@
 }
 
 .vertical-resize-handle {
-    height: 6px;
-    min-height: 6px;
+    height: 18px;
+    min-height: 18px;
     margin-top: 4px;
     background-color: #303030;
     border-top-width: 1px;
