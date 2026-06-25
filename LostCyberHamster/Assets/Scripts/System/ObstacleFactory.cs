@@ -96,11 +96,11 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         }
 
         /// <summary>
-        /// Extracts the base obstacle name by removing animation type suffix (_idle, _walk).
-        /// Examples:
+        /// Возвращает базовое имя препятствия без суффикса типа анимации (_idle, _walk).
+        /// Примеры:
         /// - "obstacle_new_york_people_1_idle" → "obstacle_new_york_people_1"
         /// - "obstacle_new_york_people_2_walk" → "obstacle_new_york_people_2"
-        /// - "obstacle_new_york_businessman" → "obstacle_new_york_businessman" (unchanged)
+        /// - "obstacle_new_york_manhole" → "obstacle_new_york_manhole" (без изменений)
         /// </summary>
         private static string GetBaseObstacleName(string spriteName)
         {
