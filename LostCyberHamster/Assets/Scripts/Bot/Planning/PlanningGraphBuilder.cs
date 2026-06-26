@@ -117,7 +117,7 @@ namespace Assets.Scripts.Bot.Planning
 
             if (currentNode.Depth >= MaxSearchDepth)
             {
-                AddLeafBranch(currentNode, branches);
+                AddDepthLimitedLeafBranch(currentNode, worldSnapshot, branches, deadEndBranches);
                 return;
             }
 
@@ -200,6 +200,31 @@ namespace Assets.Scripts.Bot.Planning
                 currentNode.State.NextObstacleIndex,
                 currentNode.State.ProjectionWorldShift,
                 generationResult.DeadEndReasons);
+        }
+
+        /// <summary>
+        /// Добавляет глубинный leaf только после проверки, что он не обрывается на уже видимом dead-end.
+        /// </summary>
+        private void AddDepthLimitedLeafBranch(
+            PlanningGraphNode leafNode,
+            WorldSnapshot worldSnapshot,
+            List<PlanningBranch> branches,
+            List<PlanningDeadEndBranch> deadEndBranches)
+        {
+            if (leafNode == null)
+                return;
+
+            ActionGenerationResult generationResult = _actionGenerator.Generate(leafNode.State, worldSnapshot);
+            if (generationResult.Actions.Count == 0
+                && generationResult.HasUnresolvedPlanningSituation)
+            {
+                if (generationResult.HasDeadEndReasons)
+                    AddDeadEndBranch(leafNode, generationResult, deadEndBranches);
+
+                return;
+            }
+
+            AddLeafBranch(leafNode, branches);
         }
 
         /// <summary>
