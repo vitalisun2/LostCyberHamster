@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Text;
+using System.Threading;
 using UnityEngine;
 using Vues.GameCore;
 
@@ -151,15 +153,34 @@ public static class DebugManager
     private static void WriteDiagLogToFile(string message)
     {
         if (!_fileLoggingEnabled) return;
-        
-        try
+
+        var line = message + Environment.NewLine;
+        for (var attempt = 0; attempt < 3; attempt++)
         {
-            File.AppendAllText(_diagLogPath, message + Environment.NewLine);
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"[DebugManager] Failed to write to diagnostic log: {ex.Message}");
-            _fileLoggingEnabled = false; // Disable if writing fails
+            try
+            {
+                using var stream = new FileStream(
+                    _diagLogPath,
+                    FileMode.Append,
+                    FileAccess.Write,
+                    FileShare.ReadWrite);
+                var bytes = Encoding.UTF8.GetBytes(line);
+                stream.Write(bytes, 0, bytes.Length);
+                return;
+            }
+            catch (IOException) when (attempt < 2)
+            {
+                Thread.Sleep(5 * (attempt + 1));
+            }
+            catch (UnauthorizedAccessException) when (attempt < 2)
+            {
+                Thread.Sleep(5 * (attempt + 1));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[DebugManager] Failed to write to diagnostic log: {ex.Message}");
+                return;
+            }
         }
     }
 

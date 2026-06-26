@@ -1,4 +1,5 @@
-﻿using Assets.Scripts.Common.Models;
+using Assets.Scripts.Common.Models;
+using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;
@@ -249,7 +250,9 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void HandleCollectable(Obstacle obstacle)
     {
-        DebugManager.DiagLog(
+        BotDiagnostics.Log(
+            BotDiagnosticCategory.RuntimeEvents,
+            BotDiagnosticLevel.Essential,
             $"[CollisionController] collect obstacle={FormatObstacle(obstacle)} " +
             $"state={_hamster.HamsterState.Value} lives={_hamster.Lives.Value} " +
             $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")}");
@@ -263,7 +266,9 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void HandleDamage(Obstacle obstacle, string triggerSource, string reason)
     {
-        DebugManager.DiagLog(
+        BotDiagnostics.Log(
+            BotDiagnosticCategory.RuntimeEvents,
+            BotDiagnosticLevel.Essential,
             $"[CollisionController] damage source={triggerSource} reason={reason} " +
             $"state={_hamster.HamsterState.Value} livesBefore={_hamster.Lives.Value} " +
             $"isDamaged={_hamster.IsDamaged.Value} protected={_hamster.IsProtected.Value} " +

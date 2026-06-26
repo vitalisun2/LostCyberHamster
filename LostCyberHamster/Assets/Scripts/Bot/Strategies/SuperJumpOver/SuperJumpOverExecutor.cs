@@ -47,9 +47,15 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
             if (hamster.Energy.Value < action.EnergyCost)
                 return ActionFireResult.Cancelled;
 
-            ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
+            ActionFireResult triggerResult = _triggerGate.Check(
+                action,
+                out float obstacleLeftX,
+                out string diagnosticReason);
             if (triggerResult != ActionFireResult.Fired)
+            {
+                LogNonFired(action, hamster, triggerResult, obstacleLeftX, diagnosticReason);
                 return triggerResult;
+            }
 
             HamsterActionLogger.LogFire(action, obstacleLeftX);
             hamster.JumpRequest.Invoke();
@@ -95,6 +101,26 @@ namespace Assets.Scripts.Bot.Strategies.SuperJumpOver
                    || hamsterState == HamsterStateEnum.JumpDamageForSmallNotAlive
                    || hamsterState == HamsterStateEnum.JumpDamageForBigAlive
                    || hamsterState == HamsterStateEnum.JumpOnRoofDamage;
+        }
+
+        private static void LogNonFired(
+            PlannedAction action,
+            Hamster hamster,
+            ActionFireResult result,
+            float obstacleLeftX,
+            string diagnosticReason)
+        {
+            if (result != ActionFireResult.Cancelled)
+                return;
+
+            BotExecutionDiagnostics.LogTriggerGateResult(
+                "SUPER_JUMP_TRIGGER_DIAG",
+                action,
+                hamster,
+                result,
+                obstacleLeftX,
+                diagnosticReason,
+                BotDiagnosticLevel.Verbose);
         }
 
         private void ResetUpgradeSchedule()

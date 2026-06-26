@@ -246,6 +246,7 @@ namespace Assets.Scripts.Bot
             DontDestroyOnLoad(gameObject);
             BotAnimationTravelProvider.Reset();
             DebugManager.SetVerboseDiagLoggingEnabled(false);
+            BotDiagnostics.Reset();
             BotAnimationTravelProvider.PrewarmKnownClipData();
             ApplyObstacleBonusDropPolicy();
 
@@ -524,7 +525,55 @@ namespace Assets.Scripts.Bot
             if (ShouldPreserveCurrentHandoffTail(result))
                 return;
 
+            LogAsyncHeadWindowDiagnostics(result);
             ApplyPlanBuildResult(result.BuildResult, result.ReplanReasons);
+        }
+
+        /// <summary>
+        /// Временная диагностика: async-result может устареть до первого action window.
+        /// </summary>
+        private void LogAsyncHeadWindowDiagnostics(AsyncPlanBuildResult result)
+        {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Replan, BotDiagnosticLevel.Verbose))
+                return;
+
+            BotPlan plan = result?.BuildResult?.Plan;
+            if (plan == null || !plan.HasActions || LastSnapshot == null)
+                return;
+
+            PlannedAction head = plan.Actions[0];
+            if (head == null || !head.TriggerWindow.HasValue || !head.TriggerWindow.Value.IsValid)
+                return;
+
+            int? triggerObstacleInstanceId = head.TriggerObstacleInstanceId ?? head.TargetObstacleInstanceId;
+            if (!triggerObstacleInstanceId.HasValue
+                || !TryFindTriggerObstacle(triggerObstacleInstanceId.Value, LastSnapshot, out ObstacleSnapshot triggerObstacle))
+            {
+                return;
+            }
+
+            ActionTriggerWindow triggerWindow = head.TriggerWindow.Value;
+            float liveObstacleLeftX = triggerObstacle.LeftX;
+            bool afterWindowClose = liveObstacleLeftX < triggerWindow.LatestTriggerX - 0.001f;
+            if (!afterWindowClose)
+                return;
+
+            float snapshotAgeSeconds = result.SnapshotTime > 0f
+                ? LastSnapshot.SnapshotTime - result.SnapshotTime
+                : 0f;
+            float snapshotAgeWorldShift = snapshotAgeSeconds > 0f
+                ? snapshotAgeSeconds * Consts.GameSpeedBase
+                : 0f;
+
+            BotReplanDiagnostics.LogAsyncHeadWindow(
+                FormatReplanReasons(result.ReplanReasons),
+                snapshotAgeSeconds,
+                snapshotAgeWorldShift,
+                head,
+                triggerObstacleInstanceId,
+                liveObstacleLeftX,
+                triggerWindow.LatestTriggerX - liveObstacleLeftX,
+                FormatPlanChain(plan));
         }
 
         /// <summary>
@@ -596,6 +645,7 @@ namespace Assets.Scripts.Bot
                 ClearPendingDeadEndReport();
 
             BotPlan plan = buildResult.Plan;
+            LogPlanBuildResultDiagnostics(buildResult, replanReasons);
             if (plan.IsEquivalentTo(CurrentPlan))
                 return;
 
@@ -688,12 +738,15 @@ namespace Assets.Scripts.Bot
                 $"projection={deadEndReport.ProjectionWorldShift:F2}";
             string causes = FormatDeadEndReasons(deadEndReport);
 
-            DebugManager.DiagLog(header);
-            DebugManager.DiagLog("[Bot DEAD_END] causes:");
+            BotReplanDiagnostics.LogDeadEndHeader(
+                FormatReplanReasons(replanReasons),
+                $"livesLost={livesLost} lives={(_hamster != null ? _hamster.Lives.Value : -1)} " +
+                $"depth={deadEndReport.Depth} " +
+                $"nextObstacleIndex={deadEndReport.NextObstacleIndex} " +
+                $"projection={deadEndReport.ProjectionWorldShift:F2}");
             LogDeadEndReasonLines(deadEndReport);
             Debug.LogWarning($"{header}{Environment.NewLine}causes:{Environment.NewLine}{causes}");
-            DebugManager.DiagLog("[TEST RESULT] FAIL");
-            DebugManager.DiagStability("[TEST RESULT] FAIL");
+            BotRuntimeEventDiagnostics.LogLevelFailed();
             _gameManager?.Pause();
         }
 
@@ -724,12 +777,12 @@ namespace Assets.Scripts.Bot
         {
             if (deadEndReport?.Reasons == null || deadEndReport.Reasons.Count == 0)
             {
-                DebugManager.DiagLog("[Bot DEAD_END] Применимые стратегии не вернули действия, но dead-end причины не собраны.");
+                BotReplanDiagnostics.LogDeadEndWithoutReasons();
                 return;
             }
 
             for (int reasonIndex = 0; reasonIndex < deadEndReport.Reasons.Count; reasonIndex++)
-                DebugManager.DiagLog($"[Bot DEAD_END] {deadEndReport.Reasons[reasonIndex]}");
+                BotReplanDiagnostics.LogDeadEndCause(deadEndReport.Reasons[reasonIndex].ToString());
         }
 
         /// <summary>
@@ -816,6 +869,7 @@ namespace Assets.Scripts.Bot
                 int requestId,
                 int runtimeGeneration,
                 BotReplanReason replanReasons,
+                float snapshotTime,
                 bool wasHeadCommittedAtCapture,
                 PlanBuildResult buildResult,
                 Exception error)
@@ -823,6 +877,7 @@ namespace Assets.Scripts.Bot
                 RequestId = requestId;
                 RuntimeGeneration = runtimeGeneration;
                 ReplanReasons = replanReasons;
+                SnapshotTime = snapshotTime;
                 WasHeadCommittedAtCapture = wasHeadCommittedAtCapture;
                 BuildResult = buildResult;
                 Error = error;
@@ -831,6 +886,7 @@ namespace Assets.Scripts.Bot
             public int RequestId { get; }
             public int RuntimeGeneration { get; }
             public BotReplanReason ReplanReasons { get; }
+            public float SnapshotTime { get; }
             public bool WasHeadCommittedAtCapture { get; }
             public PlanBuildResult BuildResult { get; }
             public Exception Error { get; }
@@ -844,6 +900,7 @@ namespace Assets.Scripts.Bot
                     request.RequestId,
                     request.RuntimeGeneration,
                     request.ReplanReasons,
+                    request.Snapshot?.SnapshotTime ?? 0f,
                     request.IsHeadCommitted,
                     buildResult,
                     error: null);
@@ -857,6 +914,7 @@ namespace Assets.Scripts.Bot
                     request?.RequestId ?? 0,
                     request?.RuntimeGeneration ?? 0,
                     request?.ReplanReasons ?? BotReplanReason.None,
+                    request?.Snapshot?.SnapshotTime ?? 0f,
                     request?.IsHeadCommitted ?? false,
                     buildResult: null,
                     error);
@@ -1258,8 +1316,46 @@ namespace Assets.Scripts.Bot
         {
             string message = $"[Bot PLAN] {FormatPlanChain(plan)}";
 
-            DebugManager.DiagLog(message);
+            BotReplanDiagnostics.LogPlan(plan, FormatPlanChain(plan));
             Debug.Log(message);
+        }
+
+        /// <summary>
+        /// Временная диагностика: связывает установленный plan с типом результата planning-графа.
+        /// </summary>
+        private static void LogPlanBuildResultDiagnostics(
+            PlanBuildResult buildResult,
+            BotReplanReason replanReasons)
+        {
+            BotPlan plan = buildResult?.Plan;
+            if (plan == null || !plan.HasActions)
+                return;
+
+            if (!buildResult.HasDeadEnd && !HasActionKind(plan, BotActionKind.PassiveRoofExit) && !HasActionKind(plan, BotActionKind.SwitchLane))
+                return;
+
+            PlanningDeadEndReport report = buildResult.DeadEndReport;
+            BotReplanDiagnostics.LogPlanBuildResult(
+                buildResult,
+                FormatReplanReasons(replanReasons),
+                FormatPlanChain(plan),
+                FormatNullable(report?.Depth),
+                FormatNullable(report?.NextObstacleIndex),
+                FormatNullable(report?.ProjectionWorldShift));
+        }
+
+        private static bool HasActionKind(BotPlan plan, BotActionKind actionKind)
+        {
+            if (plan?.Actions == null)
+                return false;
+
+            for (int actionIndex = 0; actionIndex < plan.Actions.Count; actionIndex++)
+            {
+                if (plan.Actions[actionIndex]?.Kind == actionKind)
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -1296,6 +1392,16 @@ namespace Assets.Scripts.Bot
                 return $"{action.Kind}[{action.CollectibleObjectiveValue.Kind}:{action.CollectibleObjectiveValue.EffectiveGain}]";
 
             return action.Kind.ToString();
+        }
+
+        private static string FormatNullable(int? value)
+        {
+            return value.HasValue ? value.Value.ToString() : "none";
+        }
+
+        private static string FormatNullable(float? value)
+        {
+            return value.HasValue ? value.Value.ToString("F2") : "none";
         }
 
         /// <summary>
@@ -1427,9 +1533,20 @@ namespace Assets.Scripts.Bot
 
             _testCollectablesScriptedLifeLossHook?.TryApplyBeforePatternEvaluation(patternIndex, patternName);
             RequestReplan(BotReplanReason.SpawnPattern);
-            DebugManager.DiagLog(
-                $"[Bot PATTERN] SPAWN patternIndex={patternIndex} pattern={patternName} " +
-                $"obstacleIds={FormatPatternObstacleIds(_subscribedObstacleSpawner, patternIndex)}");
+            BotReplanDiagnostics.LogPatternSpawn(
+                patternIndex,
+                patternName,
+                FormatPatternObstacleIds(_subscribedObstacleSpawner, patternIndex));
+
+            if (string.Equals(patternName, "roof_wide_gap", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(patternName, "shift_line_choice", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(patternName, "shift_line_choice_2", StringComparison.OrdinalIgnoreCase))
+            {
+                BotReplanDiagnostics.LogPatternDetail(
+                    patternIndex,
+                    patternName,
+                    FormatPatternObstacleDetails(_subscribedObstacleSpawner, patternIndex));
+            }
         }
 
         private static string FormatPatternObstacleIds(
@@ -1454,6 +1571,38 @@ namespace Assets.Scripts.Bot
 
             ids.Sort();
             return string.Join(",", ids);
+        }
+
+        private static string FormatPatternObstacleDetails(
+            RuntimeObstacleSpawner obstacleSpawner,
+            int patternIndex)
+        {
+            if (obstacleSpawner?.SpawnedObstacles == null)
+                return "none";
+
+            var details = new List<string>();
+            for (int obstacleIndex = 0; obstacleIndex < obstacleSpawner.SpawnedObstacles.Count; obstacleIndex++)
+            {
+                var instantiatedObstacle = obstacleSpawner.SpawnedObstacles[obstacleIndex];
+                var obstacle = instantiatedObstacle?.ObstacleScript;
+                if (obstacle == null || instantiatedObstacle.PatternIndex != patternIndex)
+                    continue;
+
+                Vector3 spawnPosition = instantiatedObstacle.SpawnPosition;
+                Vector3 currentPosition = obstacle.transform.position;
+                string lane = obstacle.ObstacleType.IsTop ? "top" : "bottom";
+                details.Add(
+                    $"{obstacle.GetInstanceID()}:{obstacle.ObstacleType.ObstacleTypeEnum}:{lane}:" +
+                    $"spawn=({spawnPosition.x:F2},{spawnPosition.y:F2}):" +
+                    $"pos=({currentPosition.x:F2},{currentPosition.y:F2}):" +
+                    $"sprite={instantiatedObstacle.SpriteName}");
+            }
+
+            if (details.Count == 0)
+                return "none";
+
+            details.Sort(StringComparer.Ordinal);
+            return string.Join("|", details);
         }
     }
 }

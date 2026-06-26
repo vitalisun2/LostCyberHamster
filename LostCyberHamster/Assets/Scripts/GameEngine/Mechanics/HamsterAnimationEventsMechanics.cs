@@ -1,4 +1,5 @@
-﻿using Assets.Scripts.GameEngine.Controllers;
+using Assets.Scripts.GameEngine.Controllers;
+using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Atomic.Elements;
@@ -138,6 +139,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     || _hamsterState.Value == HamsterStateEnum.JumpDamageForSmallAlive
                     || _hamsterState.Value == HamsterStateEnum.SuperJumpDamage)
                 {
+                    BotDiagnostics.Log(
+                        BotDiagnosticCategory.RuntimeEvents,
+                        BotDiagnosticLevel.Essential,
+                        $"[JUMP_DAMAGE_DIAG] event={animEvent} state={_hamsterState.Value}");
                     _damageEvent?.Invoke();
                 }
 

@@ -144,6 +144,10 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\AddOneCoinMechanics.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\ListenersInstaller.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\HamsterActionLogger.cs" />
+    <Compile Include="Assets\Scripts\Bot\Diagnostics\BotDiagnosticCategory.cs" />
+    <Compile Include="Assets\Scripts\Bot\Diagnostics\BotDiagnosticLevel.cs" />
+    <Compile Include="Assets\Scripts\Bot\Diagnostics\BotDiagnostics.cs" />
+    <Compile Include="Assets\Scripts\Bot\Diagnostics\BotExecutionDiagnostics.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinData.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitAnalyticsManagerLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Data\PlayerProgressMigration.cs" />
@@ -259,6 +263,9 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\RoofJumpOverChainCalculator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowSample.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\RuntimeBotEventTracker.cs" />
+    <Compile Include="Assets\Scripts\Bot\Diagnostics\BotReplanDiagnostics.cs" />
+    <Compile Include="Assets\Scripts\Bot\Diagnostics\BotRuntimeEventDiagnostics.cs" />
+    <Compile Include="Assets\Scripts\Bot\Diagnostics\BotStrategyDiagnostics.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\ObstacleBonusDropPolicy.cs" />
     <Compile Include="Assets\Scripts\Installers\Roots\UiRoot.cs" />
     <Compile Include="Assets\Scripts\System\FeatureFlags\DayPartLevelsFeature.cs" />

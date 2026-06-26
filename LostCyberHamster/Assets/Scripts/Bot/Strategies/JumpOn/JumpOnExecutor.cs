@@ -51,9 +51,15 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
             }
 
             // Проверяет live trigger.
-            ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
+            ActionFireResult triggerResult = _triggerGate.Check(
+                action,
+                out float obstacleLeftX,
+                out string diagnosticReason);
             if (triggerResult != ActionFireResult.Fired)
+            {
+                LogNonFired(action, hamster, triggerResult, obstacleLeftX, diagnosticReason);
                 return triggerResult;
+            }
 
             // Отправляет runtime input.
             HamsterActionLogger.LogFire(action, obstacleLeftX);
@@ -72,6 +78,26 @@ namespace Assets.Scripts.Bot.Strategies.JumpOn
                 HamsterActionLogger.LogComplete(action, hamster.HamsterState.Value);
 
             return completed;
+        }
+
+        private static void LogNonFired(
+            PlannedAction action,
+            Hamster hamster,
+            ActionFireResult result,
+            float obstacleLeftX,
+            string diagnosticReason)
+        {
+            if (result != ActionFireResult.Cancelled)
+                return;
+
+            BotExecutionDiagnostics.LogTriggerGateResult(
+                "JUMP_ON_TRIGGER_DIAG",
+                action,
+                hamster,
+                result,
+                obstacleLeftX,
+                diagnosticReason,
+                BotDiagnosticLevel.Verbose);
         }
     }
 }

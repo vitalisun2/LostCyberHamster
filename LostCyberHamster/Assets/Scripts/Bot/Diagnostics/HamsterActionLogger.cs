@@ -1,6 +1,5 @@
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Gameplay.Enums;
-using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Diagnostics
 {
@@ -11,56 +10,22 @@ namespace Assets.Scripts.Bot.Diagnostics
     {
         public static void LogFire(PlannedAction action, float obstacleLeftX, string extra = null)
         {
-            string window = action.TriggerWindow.HasValue
-                ? $"window=[{action.TriggerWindow.Value.EarliestTriggerX:F2},{action.TriggerWindow.Value.LatestTriggerX:F2}] "
-                : string.Empty;
-            float triggerOvershoot = action.TriggerX - obstacleLeftX;
-
-            DebugManager.DiagLog(
-                $"[Bot EXEC] FIRE kind={action.Kind} " +
-                $"{FormatActionIds(action)} " +
-                $"triggerX={action.TriggerX:F2} renderX={action.RenderWorldX:F2} obstacleLeftX={obstacleLeftX:F2} " +
-                $"triggerOvershoot={triggerOvershoot:F2} {window}" +
-                $"{extra ?? string.Empty}" +
-                $"desc={action.Description}");
+            BotExecutionDiagnostics.LogFire(action, obstacleLeftX, extra);
         }
 
         public static void LogComplete(PlannedAction action, HamsterStateEnum state)
         {
-            DebugManager.DiagLog(
-                $"[Bot EXEC] COMPLETE kind={action.Kind} " +
-                $"{FormatActionIds(action)} " +
-                $"state={state} " +
-                $"desc={action.Description}");
+            BotExecutionDiagnostics.LogComplete(action, state);
         }
 
         public static void LogCancel(PlannedAction action, string extra)
         {
-            DebugManager.DiagLog(
-                $"[Bot EXEC] CANCEL kind={action.Kind} " +
-                $"{FormatActionIds(action)} " +
-                $"{extra} " +
-                $"desc={action.Description}");
+            BotExecutionDiagnostics.LogCancel(action, extra);
         }
 
         public static void LogComplete(PlannedAction action, bool isBottomLine)
         {
-            DebugManager.DiagLog(
-                $"[Bot EXEC] COMPLETE kind={action.Kind} " +
-                $"{FormatActionIds(action)} " +
-                $"lane={(isBottomLine ? "bottom" : "top")} " +
-                $"desc={action.Description}");
-        }
-
-        private static string FormatActionIds(PlannedAction action)
-        {
-            return $"targetId={FormatNullable(action?.TargetObstacleInstanceId)} " +
-                   $"triggerId={FormatNullable(action?.TriggerObstacleInstanceId)}";
-        }
-
-        private static string FormatNullable(int? value)
-        {
-            return value.HasValue ? value.Value.ToString() : "none";
+            BotExecutionDiagnostics.LogComplete(action, isBottomLine);
         }
     }
 }

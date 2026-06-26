@@ -28,7 +28,7 @@ namespace Assets.Scripts.Bot.Diagnostics
             GameEventsManager.OnEnergySpent += OnEnergySpent;
             _hamster.Energy.Subscribe(OnEnergyChanged);
 
-            DebugManager.DiagEconomy($"[Energy] start value={_lastEnergy}");
+            BotRuntimeEventDiagnostics.LogEnergyStart(_lastEnergy);
         }
 
         /// <summary>
@@ -47,32 +47,29 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         private void OnGameFinished()
         {
-            DebugManager.DiagLog(
-                $"[TEST FINISH] state={_gameManager.State} " +
-                $"lives={_hamster.Lives.Value} energy={_hamster.Energy.Value}");
+            BotRuntimeEventDiagnostics.LogTestFinish(_gameManager, _hamster);
         }
 
         private static void OnLevelCompleted(int levelId, int stars)
         {
-            DebugManager.DiagLog($"[TEST RESULT] WIN level={levelId} stars={stars}");
-            DebugManager.DiagStability($"[TEST RESULT] WIN level={levelId} stars={stars}");
+            BotRuntimeEventDiagnostics.LogLevelCompleted(levelId, stars);
         }
 
         private void OnEnergyChanged(int energy)
         {
             int delta = energy - _lastEnergy;
             _lastEnergy = energy;
-            DebugManager.DiagEconomy($"[Energy] change delta={delta:+#;-#;0} value={energy}");
+            BotRuntimeEventDiagnostics.LogEnergyChanged(delta, energy);
         }
 
         private void OnEnergyAdded(int amount)
         {
-            DebugManager.DiagEconomy($"[Energy] added amount={amount} value={_hamster.Energy.Value}");
+            BotRuntimeEventDiagnostics.LogEnergyAdded(amount, _hamster.Energy.Value);
         }
 
         private void OnEnergySpent(int amount)
         {
-            DebugManager.DiagEconomy($"[Energy] spent amount={amount} value={_hamster.Energy.Value}");
+            BotRuntimeEventDiagnostics.LogEnergySpent(amount, _hamster.Energy.Value);
         }
     }
 }

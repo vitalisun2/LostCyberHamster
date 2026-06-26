@@ -47,9 +47,12 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
                     : ActionFireResult.Cancelled;
             }
 
-            ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX);
+            ActionFireResult triggerResult = _triggerGate.Check(action, out float obstacleLeftX, out string diagnosticReason);
             if (triggerResult != ActionFireResult.Fired)
+            {
+                LogNonFired(action, hamster, triggerResult, obstacleLeftX, diagnosticReason);
                 return triggerResult;
+            }
 
             HamsterActionLogger.LogFire(action, obstacleLeftX);
             hamster.JumpRequest.Invoke();
@@ -67,5 +70,32 @@ namespace Assets.Scripts.Bot.Strategies.JumpOnRoof
 
             return completed;
         }
+
+        private static void LogNonFired(
+            PlannedAction action,
+            Hamster hamster,
+            ActionFireResult result,
+            float obstacleLeftX,
+            string diagnosticReason)
+        {
+            if (!ShouldLogNonFired(action, result))
+                return;
+
+            BotExecutionDiagnostics.LogTriggerGateResult(
+                "JUMP_ON_ROOF_TRIGGER_DIAG",
+                action,
+                hamster,
+                result,
+                obstacleLeftX,
+                diagnosticReason,
+                BotDiagnosticLevel.Verbose);
+        }
+
+        private static bool ShouldLogNonFired(PlannedAction action, ActionFireResult result)
+        {
+            return result == ActionFireResult.Cancelled
+                || action.Description?.Contains("bigNotAlive") == true;
+        }
+
     }
 }

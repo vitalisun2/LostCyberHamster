@@ -73,7 +73,9 @@ namespace Assets.Scripts.Bot
             _suppressNextScriptedLifeLossDeadEndReport = false;
             _clearPendingDeadEndReport();
             Hamster hamster = _hamsterProvider();
-            DebugManager.DiagLog(
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.TestResult,
+                BotDiagnosticLevel.Essential,
                 $"[Bot TEST] scripted life loss accepted livesLost={livesLost} " +
                 $"lives={(hamster != null ? hamster.Lives.Value : -1)}");
             return true;
@@ -113,7 +115,9 @@ namespace Assets.Scripts.Bot
             // Если предыдущий life pickup еще не исполнен, второй slot создается заранее.
             if (hamster.Lives.Value <= 1)
             {
-                DebugManager.DiagLog(
+                BotDiagnostics.Log(
+                    BotDiagnosticCategory.TestResult,
+                    BotDiagnosticLevel.Essential,
                     $"[Bot TEST] scripted life loss skipped reason=minimum_lives_guard " +
                     $"level={GetCurrentLevelAddressForLog()} patternIndex={patternIndex} " +
                     $"pattern={patternName} lives={hamster.Lives.Value}");
@@ -124,7 +128,9 @@ namespace Assets.Scripts.Bot
             _suppressNextScriptedLifeLossDeadEndReport = true;
             hamster.Lives.Value -= 1;
             GameEventsManager.LivesLost(1);
-            DebugManager.DiagLog(
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.TestResult,
+                BotDiagnosticLevel.Essential,
                 $"[Bot TEST] scripted life loss level={GetCurrentLevelAddressForLog()} " +
                 $"patternIndex={patternIndex} pattern={patternName} livesLost=1 lives={hamster.Lives.Value}");
         }

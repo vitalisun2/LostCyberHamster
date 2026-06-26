@@ -7,6 +7,7 @@ using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Common;
 
+using Assets.Scripts.Bot.Diagnostics;
 namespace Assets.Scripts.Bot.Strategies.PassiveCollect
 {
     /// <summary>
@@ -59,7 +60,9 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
                 return PlanningStrategyResult.NotApplicable();
             }
 
-            DebugManager.DiagLogVerbose(
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.Strategy,
+                BotDiagnosticLevel.Verbose,
                 $"[Bot PLAN] PassiveCollect candidate kind={model.ObjectiveValue.Kind} " +
                 $"value={model.ObjectiveValue.EffectiveGain} target={model.TargetCollectible.ObstacleType} " +
                 $"targetIndex={model.TargetCollectibleIndex} shift={model.CompletionWorldShift:F2}");

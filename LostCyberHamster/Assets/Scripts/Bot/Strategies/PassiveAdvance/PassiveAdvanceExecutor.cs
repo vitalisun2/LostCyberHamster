@@ -1,5 +1,7 @@
 using Assets.Scripts.Bot.Diagnostics;
+using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
+using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
@@ -17,6 +19,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
         private const float CompletionEpsilon = 0.01f;
 
         private readonly LiveObstacleResolver _liveObstacleResolver;
+        private readonly SnapshotBuilder _snapshotBuilder = new SnapshotBuilder();
 
         public PassiveAdvanceExecutor(LiveObstacleResolver liveObstacleResolver)
         {
@@ -39,10 +42,14 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
             if (!CanAdvance(hamster, action))
                 return ActionFireResult.Cancelled;
 
-            float obstacleLeftX = TryGetTargetBounds(action, out Bounds targetBounds)
+            bool hasTargetBounds = TryGetTargetBounds(action, out Bounds targetBounds);
+            float obstacleLeftX = hasTargetBounds
                 ? targetBounds.min.x
                 : action.RenderWorldX;
-            HamsterActionLogger.LogFire(action, obstacleLeftX);
+            HamsterActionLogger.LogFire(
+                action,
+                obstacleLeftX,
+                BuildRuntimeSafetyExtra(hamster, action, hasTargetBounds, targetBounds));
             return ActionFireResult.Fired;
         }
 
@@ -100,6 +107,97 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
 
             bounds = collider.bounds;
             return true;
+        }
+
+        private string BuildRuntimeSafetyExtra(
+            Hamster hamster,
+            PlannedAction action,
+            bool hasTargetBounds,
+            Bounds targetBounds)
+        {
+            try
+            {
+                float completionShift = hasTargetBounds
+                    ? targetBounds.max.x - hamster.LeftX + CompletionEpsilon
+                    : action.CompletionWorldShift;
+                WorldSnapshot snapshot = _snapshotBuilder.Build(hamster);
+                if (TryFindRuntimeCurrentLaneThreat(
+                        snapshot,
+                        completionShift,
+                        out ObstacleSnapshot threat,
+                        out float unsafeStart,
+                        out float unsafeEnd,
+                        out bool intersects))
+                {
+                    string threatKind = intersects
+                        ? "runtimeBlockingThreat"
+                        : "runtimeNearestThreat";
+                    return
+                        $"runtimeCompletionShift={completionShift:F2} " +
+                        $"{threatKind}={FormatObstacle(threat)} " +
+                        $"runtimeUnsafe=[{unsafeStart:F2},{unsafeEnd:F2}] " +
+                        $"runtimeIntersects={intersects} ";
+                }
+
+                return $"runtimeCompletionShift={completionShift:F2} runtimeThreat=none ";
+            }
+            catch (global::System.Exception exception)
+            {
+                return $"runtimeSafetyError={exception.GetType().Name} ";
+            }
+        }
+
+        private static bool TryFindRuntimeCurrentLaneThreat(
+            WorldSnapshot snapshot,
+            float completionShift,
+            out ObstacleSnapshot threat,
+            out float unsafeStart,
+            out float unsafeEnd,
+            out bool intersects)
+        {
+            threat = null;
+            unsafeStart = 0f;
+            unsafeEnd = 0f;
+            intersects = false;
+
+            if (snapshot?.Hamster == null || snapshot.Obstacles == null)
+                return false;
+
+            HamsterSnapshot hamster = snapshot.Hamster;
+            for (int obstacleIndex = 0; obstacleIndex < snapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = snapshot.Obstacles[obstacleIndex];
+                if (obstacle == null
+                    || obstacle.IsBottomLine != hamster.IsOnBottomLine
+                    || !ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
+                {
+                    continue;
+                }
+
+                float candidateUnsafeStart = obstacle.LeftX - hamster.HamsterRightX;
+                float candidateUnsafeEnd = obstacle.RightX - hamster.HamsterLeftX;
+                if (candidateUnsafeEnd <= 0f)
+                    continue;
+
+                bool candidateIntersects = candidateUnsafeStart < completionShift;
+                threat = obstacle;
+                unsafeStart = candidateUnsafeStart;
+                unsafeEnd = candidateUnsafeEnd;
+                intersects = candidateIntersects;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static string FormatObstacle(ObstacleSnapshot obstacle)
+        {
+            if (obstacle == null)
+                return "none";
+
+            return $"{obstacle.ObstacleType}#{obstacle.InstanceId} " +
+                   $"lane={(obstacle.IsBottomLine ? "bottom" : "top")} " +
+                   $"x=[{obstacle.LeftX:F2},{obstacle.RightX:F2}]";
         }
     }
 }

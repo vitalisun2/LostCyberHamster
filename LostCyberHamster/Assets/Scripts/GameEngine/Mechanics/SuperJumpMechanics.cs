@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
@@ -150,7 +151,33 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 ? obstacles[result.TargetIndex]
                 : null;
 
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.RuntimeSafety,
+                BotDiagnosticLevel.Verbose,
+                $"[SUPER_JUMP_DIAG] outcome state={result.State} targetIndex={result.TargetIndex} " +
+                $"target={FormatObstacle(target)} lane={(_isOnBottomLine.Value ? "bottom" : "top")} " +
+                $"hamsterX=[{hamsterLeftX:F2},{hamsterRightX:F2}] " +
+                $"centerX={_characterTransform.position.x:F2} shift={_superJumpShift:F2} energy={_energy.Value}");
+
             return new JumpResult(result.State, target);
+        }
+
+        private static string FormatObstacle(Obstacle obstacle)
+        {
+            if (obstacle == null)
+                return "null";
+
+            CollisionUtils.GetObstacleXInterval(
+                obstacle,
+                obstacle.ColliderWidth,
+                0f,
+                out float obstacleLeftX,
+                out float obstacleRightX);
+
+            return $"{obstacle.ObstacleType.ObstacleTypeEnum}#" +
+                   $"{obstacle.GetInstanceID()} " +
+                   $"x=[{obstacleLeftX:F2},{obstacleRightX:F2}] " +
+                   $"lane={(obstacle.ObstacleType.IsTop ? "top" : "bottom")}";
         }
     }
 }

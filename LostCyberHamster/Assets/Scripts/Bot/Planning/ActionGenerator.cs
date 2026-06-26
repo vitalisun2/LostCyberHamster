@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
-using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -137,6 +137,17 @@ namespace Assets.Scripts.Bot.Planning
 
             if (plannedActions.Count == 0 && hasCurrentDecisionPoint)
                 LogNoActions(planningState, currentDecisionPoint);
+
+            if (plannedActions.Count == 0 && deadEndReasons.Count > 0)
+            {
+                LogDeadEndContext(
+                    planningState,
+                    currentDecisionPoint,
+                    oppositeDecisionPoint,
+                    hasCurrentDecisionPoint,
+                    hasOppositeDecisionPoint,
+                    deadEndReasons);
+            }
 
             return new ActionGenerationResult(
                 plannedActions,
@@ -348,6 +359,29 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
+        /// Логирует planning context, который отличает тупиковую геометрию от ошибки выбора action.
+        /// </summary>
+        private static void LogDeadEndContext(
+            PlanningState planningState,
+            DecisionPoint currentDecisionPoint,
+            DecisionPoint oppositeDecisionPoint,
+            bool hasCurrentDecisionPoint,
+            bool hasOppositeDecisionPoint,
+            IReadOnlyList<StrategyDeadEndReason> deadEndReasons)
+        {
+            if (planningState?.Hamster == null || deadEndReasons == null)
+                return;
+
+            BotStrategyDiagnostics.LogDeadEndContext(
+                planningState,
+                currentDecisionPoint,
+                oppositeDecisionPoint,
+                hasCurrentDecisionPoint,
+                hasOppositeDecisionPoint,
+                deadEndReasons.Count);
+        }
+
+        /// <summary>
         /// Логирует отсутствие role-based decision point.
         /// </summary>
         private static void LogNoDecisionPoint(PlanningState planningState)
@@ -355,7 +389,9 @@ namespace Assets.Scripts.Bot.Planning
             if (planningState?.Hamster == null)
                 return;
 
-            DebugManager.DiagLogVerbose(
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.Strategy,
+                BotDiagnosticLevel.Verbose,
                 $"[Bot PLAN NEW] NO_DECISION " +
                 $"nextObstacleIndex={planningState.NextObstacleIndex} " +
                 $"projection={planningState.ProjectionWorldShift:F2} " +
@@ -374,7 +410,9 @@ namespace Assets.Scripts.Bot.Planning
             ObstacleChainElement firstElement = chain.First;
             ObstacleSnapshot firstObstacle = firstElement.Obstacle;
 
-            DebugManager.DiagLogVerbose(
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.Strategy,
+                BotDiagnosticLevel.Verbose,
                 $"[Bot PLAN NEW] NO_ACTIONS firstObstacle={firstObstacle.ObstacleType} " +
                 $"roles={FormatRoles(firstElement.Roles)} " +
                 $"chainCount={chain.Count} " +

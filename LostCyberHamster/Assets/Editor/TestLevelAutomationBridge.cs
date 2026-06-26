@@ -437,7 +437,7 @@ namespace LostCyberHamster.Editor
 
             try
             {
-                var lines = File.ReadAllLines(logPath);
+                var lines = ReadAllLinesShared(logPath);
                 for (var index = lines.Length - 1; index >= 0; index--)
                 {
                     var line = lines[index];
@@ -469,6 +469,13 @@ namespace LostCyberHamster.Editor
             }
 
             return false;
+        }
+
+        private static string[] ReadAllLinesShared(string path)
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd().Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
         }
 
         private static void WriteResponse(BridgeResponse response)
