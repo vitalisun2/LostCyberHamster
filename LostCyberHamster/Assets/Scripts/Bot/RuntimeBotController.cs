@@ -31,6 +31,7 @@ using Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof;
 using Assets.Scripts.Bot.Strategies.SuperJumpOnRoof;
 using Assets.Scripts.Bot.Strategies.SuperRoofJumpOver;
 using Assets.Scripts.Bot.Strategies.SwitchLane;
+using Assets.Scripts.GameEngine.Mechanics;
 using UnityEngine;
 using RuntimeObstacleSpawner = Assets.Scripts.System.ObstacleSpawner;
 
@@ -246,6 +247,7 @@ namespace Assets.Scripts.Bot
             BotAnimationTravelProvider.Reset();
             DebugManager.SetVerboseDiagLoggingEnabled(false);
             BotAnimationTravelProvider.PrewarmKnownClipData();
+            ApplyObstacleBonusDropPolicy();
 
             IReadOnlyList<IPlanningStrategy> executorStrategies = CreatePlanningStrategies();
             _executor = new PlanExecutor(executorStrategies);
@@ -344,6 +346,7 @@ namespace Assets.Scripts.Bot
             UnregisterFromGameManager();
             GameEventsManager.OnLivesLost -= OnLivesLost;
             _eventTracker?.Dispose();
+            ObstacleBonusDropPolicyProvider.UseDefault();
         }
 
         /// <summary>
@@ -353,6 +356,7 @@ namespace Assets.Scripts.Bot
         {
             // Переводит controller в активное состояние.
             IsEnabled = true;
+            ApplyObstacleBonusDropPolicy();
             ApplySpawnLookaheadToObstacleSpawner();
             RequestInitialReplan(BotReplanReason.BotEnabled);
             if (!IsInitialized)
@@ -366,6 +370,7 @@ namespace Assets.Scripts.Bot
         {
             // Очищает runtime state бота.
             IsEnabled = false;
+            ApplyObstacleBonusDropPolicy();
             InvalidateAsyncReplan();
             ApplySpawnLookaheadToObstacleSpawner();
             LastSnapshot = null;
@@ -375,6 +380,20 @@ namespace Assets.Scripts.Bot
             ClearPendingDeadEndReport();
             _testCollectablesScriptedLifeLossHook?.Reset();
             _executor?.Clear();
+        }
+
+        /// <summary>
+        /// Настраивает drop policy для runtime-наград от уничтоженных препятствий.
+        /// </summary>
+        private void ApplyObstacleBonusDropPolicy()
+        {
+            if (IsEnabled)
+            {
+                ObstacleBonusDropPolicyProvider.UseNoEnergyBonuses();
+                return;
+            }
+
+            ObstacleBonusDropPolicyProvider.UseDefault();
         }
 
         /// <summary>

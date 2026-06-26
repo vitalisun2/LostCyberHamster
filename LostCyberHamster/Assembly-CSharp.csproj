@@ -259,6 +259,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\RoofJumpOverChainCalculator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowSample.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\RuntimeBotEventTracker.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\ObstacleBonusDropPolicy.cs" />
     <Compile Include="Assets\Scripts\Installers\Roots\UiRoot.cs" />
     <Compile Include="Assets\Scripts\System\FeatureFlags\DayPartLevelsFeature.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Storages\ResourceManager.cs" />

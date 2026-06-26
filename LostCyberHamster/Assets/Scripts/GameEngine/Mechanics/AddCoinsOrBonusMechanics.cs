@@ -44,33 +44,20 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void CalculateAndApplyBonus()
         {
-            float bonusChance = Random.value;
-
-            if (bonusChance < 0.3f)
+            switch (ObstacleBonusDropPolicyProvider.Current.SelectDrop())
             {
-                // 30% chance to get a bonus
-                float bonusTypeChance = Random.value;
-
-                if (bonusTypeChance < 0.85f)
-                {
-                    // 85% chance to get an energy bonus
+                case ObstacleBonusDropKind.Energy:
                     ApplyEnergyBonus();
-                }
-                else if (bonusTypeChance < 0.9f)
-                {
-                    // Next 5% (from 85% to 90%) chance to get a life bonus
+                    break;
+                case ObstacleBonusDropKind.Life:
                     ApplyLifeBonus();
-                }
-                else
-                {
-                    // Remaining 10% chance to get a crystals bonus
+                    break;
+                case ObstacleBonusDropKind.Crystals:
                     ApplyCrystalsBonus();
-                }
-            }
-            else
-            {
-                // 70% chance to get 3 coins
-                Apply3CoinsBonus();
+                    break;
+                default:
+                    Apply3CoinsBonus();
+                    break;
             }
         }
 
