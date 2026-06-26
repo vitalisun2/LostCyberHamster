@@ -62,9 +62,9 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                     worldSnapshot,
                     hamster.IsOnBottomLine,
                     exitStartShift,
-                    completionWorldShift))
+                    completionWorldShift,
+                    out deadEndReason))
             {
-                deadEndReason = "Нет безопасного окна для пассивного схода с крыши: интервал RunFromRoof пересекает дорожное опасное препятствие.";
                 return false;
             }
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
+using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
@@ -58,13 +59,21 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             // Проверяет смысловые точки fire-window через runtime resolver.
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
             if (TrySelectFireShift(
-                    planningState.Hamster,
+                    planningState,
+                    projectedWorldSnapshot,
                     baseObstacles,
                     jumpTravel,
                     chainWindow,
-                    out fireShift))
+                    out fireShift,
+                    out string postActionDeadEndReason))
             {
                 return true;
+            }
+
+            if (!string.IsNullOrEmpty(postActionDeadEndReason))
+            {
+                deadEndReason = postActionDeadEndReason;
+                return false;
             }
 
             deadEndReason = "Нет безопасного окна для перепрыгивания: runtime-модель не подтверждает безопасный перелет выбранной цепочки.";
@@ -72,19 +81,22 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
         }
 
         /// <summary>
-        /// Выбирает первую runtime-valid точку окна: selected, first, last.
+        /// Выбирает первую точку окна, которая проходит runtime outcome и post-action Run re-entry safety.
         /// </summary>
         private bool TrySelectFireShift(
-            HamsterSnapshot hamster,
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
             IReadOnlyList<JumpObstacleData> baseObstacles,
             float jumpTravel,
             JumpOverChainModel chainWindow,
-            out float fireShift)
+            out float fireShift,
+            out string postActionDeadEndReason)
         {
+            postActionDeadEndReason = null;
             float[] candidateFireShifts =
             {
-                chainWindow.SelectedFireShift,
                 chainWindow.FirstFireShift,
+                chainWindow.SelectedFireShift,
                 chainWindow.LastFireShift
             };
 
@@ -92,11 +104,22 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             {
                 float candidateFireShift = candidateFireShifts[candidateIndex];
                 if (!CheckRuntimeOutcomeAtFireShift(
-                        hamster,
+                        planningState.Hamster,
                         baseObstacles,
                         candidateFireShift,
                         jumpTravel,
                         chainWindow))
+                {
+                    continue;
+                }
+
+                float completionWorldShift = candidateFireShift + jumpTravel;
+                if (!RunReentryPostActionSafety.IsSafeAfterCompletion(
+                        planningState,
+                        projectedWorldSnapshot,
+                        completionWorldShift,
+                        "Небезопасное состояние после перепрыгивания",
+                        out postActionDeadEndReason))
                 {
                     continue;
                 }

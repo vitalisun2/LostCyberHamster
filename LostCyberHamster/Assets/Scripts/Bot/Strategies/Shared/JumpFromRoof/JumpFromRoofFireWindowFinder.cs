@@ -54,28 +54,35 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
             List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
             if (TrySelectFireShift(
                     planningState,
+                    projectedWorldSnapshot,
                     baseObstacles,
                     chainModel,
                     travel,
-                    out fireShift))
+                    out fireShift,
+                    out deadEndReason))
             {
                 return true;
             }
 
-            deadEndReason = "Нет безопасного окна для прыжка с крыши: runtime-модель не подтверждает безопасный результат прыжка.";
+            if (deadEndReason == null)
+                deadEndReason = "Нет безопасного окна для прыжка с крыши: runtime-модель не подтверждает безопасный результат прыжка.";
             return false;
         }
 
         /// <summary>
-        /// Выбирает первую runtime-valid точку окна: selected, first, last.
+        /// Выбирает первую точку окна, которая проходит runtime outcome и post-action Run re-entry safety.
         /// </summary>
         private bool TrySelectFireShift(
             PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
             IReadOnlyList<JumpObstacleData> baseObstacles,
             JumpFromRoofChainModel chainModel,
             JumpFromRoofTravel travel,
-            out float fireShift)
+            out float fireShift,
+            out string deadEndReason)
         {
+            bool hasRuntimeValidCandidate = false;
+            string postActionDeadEndReason = null;
             float[] candidateFireShifts =
             {
                 chainModel.SelectedFireShift,
@@ -95,11 +102,27 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
                     continue;
                 }
 
+                hasRuntimeValidCandidate = true;
+                float completionWorldShift = candidateFireShift + travel.ActionTravel;
+                if (!RoofExitSafety.IsSafeAfterRunReentry(
+                        planningState.Hamster,
+                        projectedWorldSnapshot,
+                        planningState.Hamster.IsOnBottomLine,
+                        completionWorldShift,
+                        out postActionDeadEndReason))
+                {
+                    continue;
+                }
+
                 fireShift = candidateFireShift;
+                deadEndReason = null;
                 return true;
             }
 
             fireShift = 0f;
+            deadEndReason = hasRuntimeValidCandidate
+                ? postActionDeadEndReason
+                : null;
             return false;
         }
 

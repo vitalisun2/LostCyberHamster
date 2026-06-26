@@ -79,7 +79,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
         }
 
         /// <summary>
-        /// Выбирает первую подходящую смысловую точку окна: middle, first, last.
+        /// Выбирает первую точку окна, которая попадает в target и безопасно возвращает хомяка в Run.
         /// </summary>
         private bool TrySelectFireShift(
             PlanningState planningState,
@@ -90,13 +90,13 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
             out float fireShift,
             out string deadEndReason)
         {
-            // Сохраняет прежний preferred timing, но не отбрасывает всё окно из-за одной точки.
+            // Предпочитает opening edge, чтобы discrete runtime tick не ждал до узкого закрывающего края окна.
             bool hasRuntimeValidCandidate = false;
             string postActionDeadEndReason = null;
             float[] candidateFireShifts =
             {
-                window.SelectedFireShift,
                 window.FirstFireShift,
+                window.SelectedFireShift,
                 window.LastFireShift
             };
 

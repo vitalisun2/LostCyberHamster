@@ -1,6 +1,7 @@
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
@@ -13,7 +14,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
         private const float BoundaryEpsilon = 0.01f;
 
         /// <summary>
-        /// Возвращает model, если можно безопасно пробежать до ухода opposite-lane chain.
+        /// Возвращает model, если можно безопасно пробежать до ухода opposite-lane chain и следующего action window.
         /// </summary>
         public static bool TryBuildModel(
             PlanningState planningState,
@@ -46,8 +47,10 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
             if (completionWorldShift <= BoundaryEpsilon)
                 return false;
 
-            // Разрешает ожидание только если текущая линия безопасна на всем отрезке.
-            if (!IsCurrentLaneSafeUntil(planningState.Hamster, worldSnapshot, completionWorldShift))
+            // Разрешает ожидание только если текущая линия безопасна до следующего управляемого действия.
+            float guardedCompletionWorldShift =
+                completionWorldShift + JumpPlanningConstants.PostActionReentryGuardTravel;
+            if (!IsCurrentLaneSafeUntil(planningState.Hamster, worldSnapshot, guardedCompletionWorldShift))
                 return false;
 
             model = new PassiveAdvanceModel(
@@ -57,6 +60,9 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
             return true;
         }
 
+        /// <summary>
+        /// Возвращает true, если текущее состояние допускает no-input продвижение по земле.
+        /// </summary>
         private static bool CanAdvancePassively(HamsterSnapshot hamster)
         {
             return hamster != null
@@ -65,6 +71,9 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
                 && hamster.HamsterState == HamsterStateEnum.Run;
         }
 
+        /// <summary>
+        /// Возвращает true, если текущая линия не пересекает damaging obstacle до заданного shift.
+        /// </summary>
         private static bool IsCurrentLaneSafeUntil(
             HamsterSnapshot hamster,
             WorldSnapshot worldSnapshot,
@@ -83,6 +92,9 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
             return true;
         }
 
+        /// <summary>
+        /// Возвращает true, если obstacle может заблокировать passive advance на текущей линии.
+        /// </summary>
         private static bool CanBlockPassiveAdvance(
             HamsterSnapshot hamster,
             ObstacleSnapshot obstacle)
@@ -93,6 +105,9 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
                 && ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType);
         }
 
+        /// <summary>
+        /// Возвращает true, если obstacle пересекает путь хомяка до completion shift.
+        /// </summary>
         private static bool IntersectsHamsterPath(
             HamsterSnapshot hamster,
             ObstacleSnapshot obstacle,

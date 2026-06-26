@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
@@ -21,7 +22,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             WorldSnapshot worldSnapshot,
             HamsterSnapshot nextHamster)
         {
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            float nextProjectionWorldShift = GetNextProjectionWorldShift(planningState, action);
             int nextObstacleIndex = FindNextRelevantObstacleIndex(
                 worldSnapshot,
                 startObstacleIndex: 0,
@@ -45,7 +46,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             WorldSnapshot worldSnapshot,
             HamsterSnapshot nextHamster)
         {
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            float nextProjectionWorldShift = GetNextProjectionWorldShift(planningState, action);
             int nextObstacleIndex = FindNextRelevantObstacleIndex(
                 worldSnapshot,
                 startObstacleIndex: 0,
@@ -69,7 +70,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             WorldSnapshot worldSnapshot,
             HamsterSnapshot nextHamster)
         {
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            float nextProjectionWorldShift = GetNextProjectionWorldShift(planningState, action);
             int nextObstacleIndex = FindNextRelevantObstacleIndex(
                 worldSnapshot,
                 startObstacleIndex: 0,
@@ -93,7 +94,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             WorldSnapshot worldSnapshot,
             HamsterSnapshot nextHamster)
         {
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            float nextProjectionWorldShift = GetNextProjectionWorldShift(planningState, action);
             IReadOnlyList<int> nextRemovedObstacleInstanceIds =
                 planningState.GetRemovedObstacleInstanceIdsWith(action.TargetObstacleInstanceId);
 
@@ -120,7 +121,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             WorldSnapshot worldSnapshot,
             HamsterSnapshot nextHamster)
         {
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            float nextProjectionWorldShift = GetNextProjectionWorldShift(planningState, action);
             IReadOnlyList<int> nextRemovedObstacleInstanceIds =
                 planningState.GetRemovedObstacleInstanceIdsWith(action.TargetObstacleInstanceId);
 
@@ -147,7 +148,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             WorldSnapshot worldSnapshot,
             HamsterSnapshot nextHamster)
         {
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + action.CompletionWorldShift;
+            float nextProjectionWorldShift = GetNextProjectionWorldShift(planningState, action);
             int nextObstacleIndex = FindNextRelevantObstacleIndex(
                 worldSnapshot,
                 startObstacleIndex: 0,
@@ -274,6 +275,18 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             }
 
             return worldSnapshot.Obstacles.Count;
+        }
+
+        /// <summary>
+        /// Возвращает projection shift после action и guard-участка безопасного Run re-entry.
+        /// </summary>
+        private static float GetNextProjectionWorldShift(
+            PlanningState planningState,
+            PlannedAction action)
+        {
+            return planningState.ProjectionWorldShift
+                + action.CompletionWorldShift
+                + JumpPlanningConstants.PostActionReentryGuardTravel;
         }
 
         private static bool IsObstacleRemoved(

@@ -198,6 +198,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\Common\Models\DecorationTile.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimatorController.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\RunReentryPostActionSafety.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\ActionTriggerWindow.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\Gameplay\Hamster.cs" />
