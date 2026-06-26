@@ -46,6 +46,8 @@ namespace Assets.Scripts.Bot.Planning
         private readonly IPlanningStrategy _switchLaneStrategy;
         private readonly IPlanningStrategy _passiveAdvanceStrategy;
         private readonly DecisionPointDetector _decisionPointDetector = new DecisionPointDetector();
+        private readonly SuperFallbackActionDeduplicator _superFallbackDeduplicator =
+            new SuperFallbackActionDeduplicator();
 
         /// <summary>
         /// Создает role-based generator поверх активных strategies.
@@ -64,6 +66,7 @@ namespace Assets.Scripts.Bot.Planning
         {
             var plannedActions = new List<PlannedAction>();
             var deadEndReasons = new List<StrategyDeadEndReason>();
+            _superFallbackDeduplicator.Reset();
             if (planningState == null || worldSnapshot == null)
                 return ActionGenerationResult.Empty();
 
@@ -319,7 +322,7 @@ namespace Assets.Scripts.Bot.Planning
         /// <summary>
         /// Добавляет результат одной strategy в общий generation result.
         /// </summary>
-        private static void ApplyStrategyResult(
+        private void ApplyStrategyResult(
             PlanningStrategyResult result,
             List<PlannedAction> plannedActions,
             List<StrategyDeadEndReason> deadEndReasons)
@@ -330,7 +333,7 @@ namespace Assets.Scripts.Bot.Planning
             for (int actionIndex = 0; actionIndex < result.Actions.Count; actionIndex++)
             {
                 PlannedAction action = result.Actions[actionIndex];
-                if (action != null)
+                if (_superFallbackDeduplicator.TryAccept(action))
                     plannedActions.Add(action);
             }
 

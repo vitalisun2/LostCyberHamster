@@ -264,7 +264,7 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private static IReadOnlyList<IPlanningStrategy> CreatePlanningStrategies()
         {
-            return new IPlanningStrategy[]
+            var strategies = new IPlanningStrategy[]
             {
                 new SwitchLaneStrategy(),
                 new PassiveAdvanceStrategy(),
@@ -285,6 +285,29 @@ namespace Assets.Scripts.Bot
                 new RoofJumpOverStrategy(),
                 new SuperRoofJumpOverStrategy()
             };
+
+            AssertSuperFallbackStrategyOrder(strategies);
+            return strategies;
+        }
+
+        /// <summary>
+        /// Диагностирует нарушение контракта генерации fallback-actions:
+        /// ordinary strategy должна идти раньше matching super strategy.
+        /// </summary>
+        private static void AssertSuperFallbackStrategyOrder(IReadOnlyList<IPlanningStrategy> strategies)
+        {
+            if (SuperFallbackActionDeduplicator.IsStrategyOrderValid(strategies))
+                return;
+
+            string message = "[Bot STRATEGY_ORDER_ASSERT] Super fallback strategy order is invalid. " +
+                "Ordinary fallback strategies must be registered before matching super strategies. " +
+                SuperFallbackActionDeduplicator.BuildStrategyOrderDiagnostic(strategies);
+
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.Strategy,
+                BotDiagnosticLevel.Essential,
+                message);
+            Debug.Assert(false, message);
         }
 
         /// <summary>
