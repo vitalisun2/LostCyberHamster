@@ -27,13 +27,17 @@
 - Не использовать `global::` квалификатор в коде — вместо этого добавлять нужный `using` в начало файла.
 - Использовать актуальные API (`FindAnyObjectByType` вместо `FindObjectOfType`).
 - Не оставлять код с deprecated API.
-- Для code-edit/fix задач удалять debug логи перед завершением правок, оставлять только `DiagLog` для важной диагностики.
+- Для code-edit/fix задач удалять временные debug/diagnostic логи перед завершением правок; оставлять только устойчивую диагностику, оформленную через Diagnostic Log инфраструктуру из секции «Логирование».
 - Для analysis-only/root cause задач временную диагностику не удалять после доказательства причины; сразу сообщить root cause, рекомендацию и где остались временные логи.
 
 ## Логирование
 
-- `DebugManager.DiagLog()` — запись в `EditorLogs/diagnostic_log.txt`.
+- Для runtime/bot диагностики использовать Diagnostic Log инфраструктуру, а не ручные `Debug.Log`, `Console.WriteLine`, запись файлов или ad-hoc logging helpers.
+- Центральный gate bot diagnostics: `Assets.Scripts.Bot.Diagnostics.BotDiagnostics` (`LostCyberHamster/Assets/Scripts/Bot/Diagnostics/BotDiagnostics.cs`). Новые bot-сообщения добавлять через профильные helpers в `LostCyberHamster/Assets/Scripts/Bot/Diagnostics/`: `BotExecutionDiagnostics`, `BotReplanDiagnostics`, `BotStrategyDiagnostics`, `BotRuntimeEventDiagnostics` и т.д.
+- Если нужного метода логирования нет, добавить его в соответствующий diagnostics-класс с правильными `BotDiagnosticCategory`/`BotDiagnosticLevel`, затем вызывать этот метод из runtime-кода.
+- `DebugManager` (`LostCyberHamster/Assets/Scripts/GameEngine/DebugManager.cs`) — низкоуровневый transport/sink diagnostic file: `DiagLog`, `DiagLogVerbose`, `DiagChannel`, путь `EditorLogs/diagnostic_log.txt`.
 - Теги каналов: `[CH=STAB]`, `[CH=BOT]`, `[CH=ECO]`.
+- `Debug.LogWarning`/`Debug.LogError` допустимы для editor/user-facing предупреждений и исключительных ошибок; не использовать их как способ сбора regression facts.
 - Не для production кода — только Editor/Debug.
 
 ## Данные и миграции

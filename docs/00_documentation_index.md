@@ -19,7 +19,7 @@
 Временные обязательные правила текущего этапа разработки, включая статус `Bot/` как активной зоны разработки, а не окончательного источника истины.
 
 ### docs/rules/agent_tools.md
-Каталог проектных инструментов: automation bridge, log reader, test level launcher, редакторские утилиты и PowerShell-скрипты.
+Каталог проектных инструментов: automation bridge, Diagnostic Log reader, test level launcher, редакторские утилиты и PowerShell-скрипты.
 
 ---
 
@@ -101,7 +101,7 @@
 Скрипт для генерации сжатого снимка C#-кода.
 
 ### tools/read_log_channel.ps1
-Унифицированное чтение каналов логов `STAB`, `BOT`, `ECO`.
+Унифицированное чтение каналов Diagnostic Log `STAB`, `BOT`, `ECO`, которые пишутся через bot diagnostics helpers и `DebugManager` sink.
 
 ### tools/invoke_open_unity_test_level.ps1
 Сценарий полного цикла: рекомпиляция, запуск тестового уровня и ожидание результата.

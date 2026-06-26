@@ -36,6 +36,11 @@ Bridge-команды:
 
 Путь: `EditorLogs/diagnostic_log.txt`.
 
+Запись/расширение:
+- Для runtime/bot фактов использовать `Assets.Scripts.Bot.Diagnostics.BotDiagnostics` и профильные helpers из `LostCyberHamster/Assets/Scripts/Bot/Diagnostics/`.
+- `DebugManager` — только низкоуровневый transport/sink diagnostic file (`DiagLog`, `DiagLogVerbose`, `DiagChannel`).
+- Если нужного bot diagnostic метода нет, добавить его в подходящий diagnostics-класс (`BotExecutionDiagnostics`, `BotReplanDiagnostics`, `BotStrategyDiagnostics`, `BotRuntimeEventDiagnostics` и т.д.) с правильными `BotDiagnosticCategory`/`BotDiagnosticLevel`, а не добавлять ручной `Debug.Log` или ad-hoc logger.
+
 Каналы:
 - `[CH=STAB]` — fail/win и критические сигналы.
 - `[CH=BOT]` — bot pipeline/select/execute/result.

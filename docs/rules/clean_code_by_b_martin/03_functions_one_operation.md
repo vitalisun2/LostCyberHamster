@@ -72,6 +72,8 @@ private void StartJump(Hamster hamster, Vector2 impulse)
 }
 ```
 
+Проектное уточнение: runtime/bot diagnostic facts не добавлять через `Debug.Log` внутри gameplay-кода; использовать Diagnostic Log инфраструктуру из `docs/rules/code_conventions.md`.
+
 ## Правило для агента
 
 Если при чтении функции приходится держать в голове больше одного уровня деталей, предложи разбиение. Цель не в уменьшении числа строк сама по себе, а в явном разделении намерения и механики.

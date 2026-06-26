@@ -18,7 +18,7 @@
 - [incubating] Ошибка/риск: ... Причина: ... Рабочий ход: ... Правило: ...
 ```
 
-- [incubating] Ошибка/риск: runtime verbose-диагностика Unity Play Mode не попадает в лог после включения static flag из Editor automation. Причина: domain reload может сбросить runtime static state перед стартом Play Mode. Рабочий ход: для обязательных bot-test логов использовать forced `DiagLog` в runtime path или включать verbose из runtime-кода после загрузки сцены. Правило: не полагаться на Editor-side static flags для Play Mode диагностики без проверки фактического лога.
+- [incubating] Ошибка/риск: runtime verbose-диагностика Unity Play Mode не попадает в лог после включения static flag из Editor automation. Причина: domain reload может сбросить runtime static state перед стартом Play Mode. Рабочий ход: для обязательных bot-test логов использовать `BotDiagnostics`/профильный diagnostics-helper на runtime path с нужным `BotDiagnosticLevel` или включать verbose из runtime-кода после загрузки сцены; `DebugManager` остается только sink. Правило: не полагаться на Editor-side static flags для Play Mode диагностики без проверки фактического лога.
 
 ### Promoted
 
@@ -65,7 +65,7 @@
 - Если summary подагента или инструмента противоречив, добрать короткий raw command с точным статусом.
 - На Windows явно использовать native paths (`C:\...`) в PowerShell-командах и инструкциях подагентам.
 - [incubating] Ошибка/риск: попытка вручную восстановить CRLF/LF может идти против `.gitattributes` и сохранять предупреждения Git. Причина: видимый старый формат строк не всегда равен требуемому `attr/text eol`. Рабочий ход: при предупреждениях line endings сначала выполнить `git ls-files --eol <path>` и привести рабочую копию к указанному `w/...`/`attr` формату. Правило: не менять line endings на глаз; проверять Git eol metadata перед механической нормализацией.
-- Для Unity diagnostic logs брать фактический путь из automation output/DebugManager, а не угадывать по имени файла.
+- Для Unity diagnostic logs брать фактический путь из automation output/`DebugManager.GetDiagLogPath()`, а не угадывать по имени файла.
 - [incubating] Ошибка/риск: `EditorWindow`-кнопка перестаёт выполнять действие после входа в Play Mode. Причина: делегаты и несериализуемое состояние окна не переживают Unity domain reload. Рабочий ход: хранить только восстанавливаемые данные окна, вызывать статические команды напрямую или восстанавливать callback в `OnEnable`. Правило: editor tools, которые должны работать во время Play Mode, не должны зависеть от сохранённого `Action` в окне.
 - При удалении или объединении rule-файла выполнить `rg` по старому имени в `docs`, `AGENTS.md`, `CLAUDE.md` и `.github`, затем обновить все agent entrypoints до финальной проверки.
 

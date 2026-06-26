@@ -9,7 +9,7 @@
 
 ```mermaid
 flowchart LR
-    External["External runtime<br/>Hamster - live state/actions<br/>GameManager - game state<br/>Camera - viewport<br/>DebugManager - diagnostic log<br/>JumpOutcomeResolver / SuperJumpOutcomeResolver - runtime jump truth"]
+    External["External runtime<br/>Hamster - live state/actions<br/>GameManager - game state<br/>Camera - viewport<br/>DebugManager - diagnostic log sink<br/>JumpOutcomeResolver / SuperJumpOutcomeResolver - runtime jump truth"]
 
     RBC["RuntimeBotController<br/>MonoBehaviour-оркестратор<br/>Создаёт pipeline, strategies, diagnostics; каждый tick ведёт perception -> planning -> execution"]
 
@@ -52,9 +52,10 @@ flowchart LR
 
     subgraph Diagnostics["Diagnostics: просмотр и диагностические события"]
         BPR["BotPlanRenderer<br/>GL-render текущего плана поверх мира"]
+        BD["BotDiagnostics<br/>Центральный gate category/level для bot diagnostic log"]
+        BHD["Bot*Diagnostics helpers<br/>Execution / Replan / Strategy / RuntimeEvent факты"]
         RBET["RuntimeBotEventTracker<br/>Логирует damage, finish, win/fail markers для test levels"]
         HAL["HamsterActionLogger<br/>Единый лог FIRE / COMPLETE / CANCEL для action execution"]
-        JFWD["JumpFireWindowDiagnostics<br/>Лог window/select/resolve для jump fire-window"]
     end
 
     RBC --> SB
@@ -83,9 +84,13 @@ flowchart LR
     PEX --> Strategies
 
     RBC --> BPR
+    RBC --> BD
+    RBC --> BHD
     RBC --> RBET
+    Planning --> BHD
     Strategies --> HAL
-    Strategies --> JFWD
+    Strategies --> BHD
+    Execution --> BHD
 
     RBC --> External
     SB --> External
@@ -364,8 +369,8 @@ flowchart TD
     StrategyFamilies["Concrete strategies<br/>SwitchLane, JumpOver, SuperJumpOver, JumpOnRoof, SuperJumpOnRoof"]
     SharedHelpers["Shared helpers<br/>Execution gates, simulation transitions, jump-planning policies/scanners/matchers"]
     ExecutionCore["PlanExecutor<br/>Runs selected plan in live runtime"]
-    DiagnosticsCore["Diagnostics<br/>Rendering and diagnostic logs"]
-    ExternalRuntime["External runtime systems<br/>Hamster, GameManager, Camera, DebugManager, jump resolvers"]
+    DiagnosticsCore["Diagnostics<br/>Rendering, BotDiagnostics helpers and diagnostic logs"]
+    ExternalRuntime["External runtime systems<br/>Hamster, GameManager, Camera, DebugManager sink, jump resolvers"]
 
     Runtime --> Data
     Runtime --> PlanningCore

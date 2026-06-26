@@ -392,11 +392,13 @@ data: transform_jump_on_roof_end
 - Перед началом сложной задачи читать этот документ
 - Экономит время и предотвращает ошибки
 
-**2. Использовать DebugManager.DiagLog() для отладки**
+**2. Использовать Diagnostic Log инфраструктуру для runtime/bot отладки**
 ```csharp
-DebugManager.DiagLog($"[Component] Important data: {value}");
+BotExecutionDiagnostics.LogFire(action, obstacleLeftX);
 ```
-- Автоматическая запись в `EditorLogs/diagnostic_log.txt`
+- Bot/runtime факты писать через `Assets.Scripts.Bot.Diagnostics.BotDiagnostics` и профильные helpers в `LostCyberHamster/Assets/Scripts/Bot/Diagnostics/`
+- Если нужного метода нет — добавить его в правильный diagnostics-класс и `BotDiagnosticCategory`/`BotDiagnosticLevel`, затем использовать из runtime-кода
+- `DebugManager` — низкоуровневый transport/sink (`DiagLog`, `DiagLogVerbose`, `DiagChannel`) с записью в `EditorLogs/diagnostic_log.txt`
 - Удобно для анализа последовательности событий
 - Удалить временные логи перед коммитом
 
@@ -424,7 +426,7 @@ DebugManager.DiagLog($"[Component] Important data: {value}");
 **6. ProcessTileChange() для режим-специфичной валидации**
 - Проверять `isTemplateLocation` перед редактированием
 - Блокировать редактирование obstacles в Locations
-- Показывать понятные Debug.LogWarning для пользователя
+- Показывать понятные `Debug.LogWarning` для пользователя; не использовать их для runtime/bot regression facts
 - Возвращать `false` при нарушении правил
 
 ---

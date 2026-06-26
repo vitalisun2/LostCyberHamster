@@ -23,9 +23,17 @@ Bug Regression Workflow: один регресс за цикл. Цель — д�
 4. Создай `docs/Planning/in-progress/<short-regression-slug>-analysis-<yyyy-mm-dd>.md` и веди там источники, команды, факты, гипотезы.
 5. Вывод не заноси в документ, а сразу выводи пользователю, причём сразу как только доказан root cause.
 
+## Диагностическое логирование
+
+1. Для runtime/bot-регрессов в первую очередь используй готовую Diagnostic Log инфраструктуру, а не ручные `Debug.Log`, `Console.WriteLine`, запись файлов или ad-hoc logging helpers.
+2. Центральная точка bot diagnostics — `Assets.Scripts.Bot.Diagnostics.BotDiagnostics` (`LostCyberHamster/Assets/Scripts/Bot/Diagnostics/BotDiagnostics.cs`); transport/sink диагностического файла — `DebugManager` (`LostCyberHamster/Assets/Scripts/GameEngine/DebugManager.cs`, `DiagLog`, `DiagLogVerbose`, `DiagChannel`).
+3. Новые факты логируй через профильный diagnostics-класс из `LostCyberHamster/Assets/Scripts/Bot/Diagnostics/`: `BotExecutionDiagnostics`, `BotReplanDiagnostics`, `BotStrategyDiagnostics`, `BotRuntimeEventDiagnostics` или другой существующий класс этой области.
+4. Если нужного метода логирования нет, добавь его в соответствующий diagnostics-класс и категорию/уровень (`BotDiagnosticCategory`, `BotDiagnosticLevel`) в правильной секции, затем используй этот метод в исследуемом коде.
+5. Прямой вызов `DebugManager.DiagLog*` из feature/runtime-кода допустим только если это уже установленный паттерн для данного слоя; для новых bot-регрессионных логов предпочитай `BotDiagnostics` и профильные diagnostics-классы.
+
 ## Факты
 
-1. Если фактов не хватает, добавь временные точечные логи только под проверяемую гипотезу: input/config, нормализованное состояние, ключевые ветки/вычисления, причины отсечения, fallback/override, actual output/side effect.
+1. Если фактов не хватает, добавь временные точечные diagnostic logs через инфраструктуру из секции выше только под проверяемую гипотезу: input/config, нормализованное состояние, ключевые ветки/вычисления, причины отсечения, fallback/override, actual output/side effect.
 2. Логи связывай correlation id между входом, обработкой и результатом.
 3. Запусти минимальный target и составь таблицу: case, expected, actual, выбранная ветка/result, причины отклонения альтернатив, первое code location расхождения.
 
