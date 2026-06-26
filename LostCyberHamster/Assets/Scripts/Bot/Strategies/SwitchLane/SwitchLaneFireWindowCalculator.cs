@@ -31,6 +31,64 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         }
 
         /// <summary>
+        /// Ограничивает latest fire shift ближайшей damaging-угрозой на текущей линии хомяка.
+        /// </summary>
+        /// <remarks>
+        /// Этот scan нужен для opposite-lane entry сценариев, где trigger obstacle лежит на целевой
+        /// линии и сам по себе не защищает от столкновения на текущей линии. Caller должен применять
+        /// метод только когда trigger не является current-lane damaging obstacle; иначе deadline уже
+        /// рассчитан по самому trigger-у через `TryGetLatestFireShift`.
+        /// </remarks>
+        public bool TryConstrainLatestFireShiftByCurrentLaneThreats(
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
+            float latestFireShift,
+            out float constrainedLatestFireShift,
+            out string deadEndReason)
+        {
+            constrainedLatestFireShift = latestFireShift;
+            deadEndReason = null;
+            if (worldSnapshot?.Obstacles == null || hamster == null)
+                return false;
+
+            for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle == null
+                    || obstacle.IsRemovedInPlanning
+                    || obstacle.IsBottomLine != hamster.IsOnBottomLine
+                    || !ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))
+                {
+                    continue;
+                }
+
+                if (obstacle.RightX <= hamster.HamsterLeftX)
+                    continue;
+
+                float latestBeforeCurrentLaneCollision = obstacle.LeftX
+                    - hamster.HamsterRightX
+                    - SwitchLaneTiming.ExecutionLeadDistance;
+
+                if (latestBeforeCurrentLaneCollision <= 0f)
+                {
+                    deadEndReason = "Нет безопасного окна для смены линии: текущая линия уже перекрыта опасным препятствием.";
+                    return false;
+                }
+
+                if (latestBeforeCurrentLaneCollision < constrainedLatestFireShift)
+                    constrainedLatestFireShift = latestBeforeCurrentLaneCollision;
+            }
+
+            if (constrainedLatestFireShift <= 0f)
+            {
+                deadEndReason = "Нет безопасного окна для смены линии: ближайшая угроза текущей линии наступает раньше запуска.";
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Выбирает ранний запуск в последнем безопасном окне перед deadline trigger obstacle.
         /// </summary>
         public bool TrySelectRelevantFireWindowSample(
@@ -107,7 +165,13 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             out SwitchLaneFireWindowSample sample)
         {
             sample = default;
-            if (!interval.TrySelectInteriorPoint(
+            float paddedStart = interval.Start + SwitchLaneTiming.FireWindowBoundaryMargin;
+            float paddedEnd = interval.End - SwitchLaneTiming.FireWindowBoundaryMargin;
+            if (paddedEnd <= paddedStart)
+                return false;
+
+            var paddedInterval = new SafeInterval(paddedStart, paddedEnd);
+            if (!paddedInterval.TrySelectInteriorPoint(
                     lateBudget: 0f,
                     selectionRatio,
                     out float fireShift,
@@ -116,7 +180,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 return false;
             }
 
-            sample = new SwitchLaneFireWindowSample(fireShift, interval.Start, interval.End);
+            sample = new SwitchLaneFireWindowSample(fireShift, paddedInterval.Start, paddedInterval.End);
             return true;
         }
 
@@ -231,7 +295,9 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
                 float overlapStart = obstacle.LeftX - hamster.HamsterRightX;
                 float overlapEnd = obstacle.RightX - hamster.HamsterLeftX;
-                float unsafeStart = overlapStart - SwitchLaneTiming.DecisionTravel;
+                float unsafeStart = overlapStart
+                    - SwitchLaneTiming.DecisionTravel
+                    - SwitchLaneTiming.PostActionTargetLaneGuardTravel;
                 float unsafeEnd = overlapEnd;
 
                 if (unsafeEnd < 0f || unsafeStart > latestFireShift)

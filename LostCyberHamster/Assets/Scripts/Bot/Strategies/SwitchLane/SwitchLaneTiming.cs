@@ -1,3 +1,5 @@
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
+
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
 {
     /// <summary>
@@ -11,21 +13,21 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         public const float DecisionDuration = 0.45f;
 
         /// <summary>
-        /// Количество кадров, за которое runtime гарантированно отдаёт управление следующему bot action.
-        /// </summary>
-        private const int RuntimeHandoffLatencyFrames = 2;
-
-        /// <summary>
         /// Дополнительное время между окончанием animator transition и доступностью следующего bot action.
         /// </summary>
-        public const float RuntimeHandoffLatencyDuration =
-            RuntimeHandoffLatencyFrames / (float)Assets.Scripts.Consts.FPS;
+        public const float RuntimeHandoffLatencyDuration = JumpPlanningConstants.RuntimeHandoffLatencyDuration;
 
         /// <summary>
         /// Дистанция мира до момента, когда следующий action можно безопасно запускать после SwitchLane.
         /// </summary>
         public const float DecisionTravel =
             (DecisionDuration + RuntimeHandoffLatencyDuration) * Assets.Scripts.Consts.GameSpeedBase;
+
+        /// <summary>
+        /// Минимальный безопасный участок target lane после завершения SwitchLane.
+        /// </summary>
+        public const float PostActionTargetLaneGuardTravel =
+            JumpPlanningConstants.PostActionReentryGuardTravel;
 
         /// <summary>
         /// Дополнительная planning-дистанция после tap SwitchLane перед следующим действием.
@@ -36,6 +38,12 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         /// Минимальный зазор до target obstacle в момент запуска SwitchLane.
         /// </summary>
         public const float ExecutionLeadDistance = 0.18f;
+
+        /// <summary>
+        /// Геометрический отступ от обеих границ fire-window SwitchLane.
+        /// </summary>
+        public const float FireWindowBoundaryMargin =
+            JumpPlanningConstants.FireWindowBoundaryMargin;
 
         /// <summary>
         /// Ratio для выбора ранней точки внутри safe-window SwitchLane.

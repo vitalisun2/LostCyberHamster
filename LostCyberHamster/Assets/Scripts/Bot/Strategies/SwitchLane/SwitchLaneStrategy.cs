@@ -95,6 +95,19 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     "Нет безопасного окна для смены линии: до препятствия не остается положительного интервала запуска.");
             }
 
+            if (!IsCurrentLaneDamageThreat(hamster, triggerObstacle)
+                && !_fireWindowCalculator.TryConstrainLatestFireShiftByCurrentLaneThreats(
+                    worldSnapshot,
+                    hamster,
+                    latestFireShift,
+                    out latestFireShift,
+                    out string currentLaneThreatReason))
+            {
+                return DeadEnd(
+                    isEntryToOppositeLane,
+                    currentLaneThreatReason);
+            }
+
             if (!_fireWindowCalculator.TrySelectRelevantFireWindowSample(
                     worldSnapshot,
                     hamster,
@@ -107,13 +120,36 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     BuildNoSwitchLaneSampleReason(worldSnapshot, hamster, targetBottomLine, latestFireShift));
             }
 
-            return PlanningStrategyResult.FromAction(BuildAction(
+            PlannedAction action = BuildAction(
                 planningState,
                 triggerObstacle,
                 triggerObstacleIndex,
                 targetBottomLine,
                 fireWindowSample,
-                isEntryToOppositeLane));
+                isEntryToOppositeLane);
+
+            return PlanningStrategyResult.FromAction(action);
+        }
+
+        /// <summary>
+        /// Возвращает true, если trigger уже является damaging obstacle на текущей линии хомяка.
+        /// </summary>
+        /// <remarks>
+        /// `SwitchLane` строит два разных сценария: уход с текущей линии от blocking threat и вход на
+        /// opposite lane ради collectable/route context. В первом сценарии deadline уже рассчитан по
+        /// current-lane trigger-у в `TryGetLatestFireShift`, поэтому дополнительный scan всех угроз
+        /// текущей линии не нужен. Во втором сценарии trigger лежит на целевой линии, поэтому caller
+        /// должен отдельно ограничить окно ближайшей текущей угрозой через
+        /// `TryConstrainLatestFireShiftByCurrentLaneThreats`.
+        /// </remarks>
+        private static bool IsCurrentLaneDamageThreat(
+            HamsterSnapshot hamster,
+            ObstacleSnapshot triggerObstacle)
+        {
+            return hamster != null
+                && triggerObstacle != null
+                && triggerObstacle.IsBottomLine == hamster.IsOnBottomLine
+                && ObstacleClassifier.DamagesOnGroundContact(triggerObstacle.ObstacleType);
         }
 
         /// <summary>
@@ -259,7 +295,52 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     ? $"Switch lane entry before {triggerObstacle.ObstacleType}"
                     : $"Switch lane before {triggerObstacle.ObstacleType}",
                 isOppositeLaneEntry: isEntryToOppositeLane,
-                triggerWindow: triggerWindow);
+                triggerWindow: triggerWindow,
+                collectibleObjectiveValue: ResolveSwitchCollectibleValue(
+                    planningState,
+                    triggerObstacle,
+                    targetBottomLine,
+                    completionWorldShift: fireShift + SwitchLaneTiming.DecisionTravel,
+                    isEntryToOppositeLane));
+        }
+
+        /// <summary>
+        /// Возвращает planning-ценность collectable, если вход на opposite lane фактически подбирает его до completion.
+        /// </summary>
+        /// <remarks>
+        /// `SwitchLane` может быть не только defensive action, но и способом забрать bonus на соседней
+        /// линии. Value записывается в `PlannedAction` только для opposite-lane entry, когда trigger
+        /// расположен на target lane, collectable полезен в текущем projected состоянии, и его X-позиция
+        /// будет достигнута до завершения switch. В остальных случаях action остается обычным
+        /// перестроением без collectible objective, чтобы evaluator не награждал маневр за бонус,
+        /// который route ещё не подобрал.
+        /// </remarks>
+        private static CollectibleObjectiveValue ResolveSwitchCollectibleValue(
+            PlanningState planningState,
+            ObstacleSnapshot triggerObstacle,
+            bool targetBottomLine,
+            float completionWorldShift,
+            bool isEntryToOppositeLane)
+        {
+            if (!isEntryToOppositeLane
+                || planningState?.Hamster == null
+                || triggerObstacle == null
+                || triggerObstacle.IsBottomLine != targetBottomLine
+                || !CollectibleValuePolicy.TryGetPositiveValue(
+                    planningState.Hamster,
+                    triggerObstacle,
+                    out CollectibleObjectiveValue objectiveValue))
+            {
+                return CollectibleObjectiveValue.None;
+            }
+
+            float pickupShift = triggerObstacle.LeftX - planningState.Hamster.HamsterRightX;
+            if (pickupShift < 0f)
+                pickupShift = 0f;
+
+            return pickupShift <= completionWorldShift
+                ? objectiveValue
+                : CollectibleObjectiveValue.None;
         }
 
     }
