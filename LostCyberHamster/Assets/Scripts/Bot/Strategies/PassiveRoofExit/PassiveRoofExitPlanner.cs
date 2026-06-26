@@ -1,4 +1,3 @@
-using System;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
@@ -55,8 +54,16 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             }
 
             // Проверяет безопасность автоматического схода.
-            float exitStartShift = CalculateExitStartShift(hamster, lastRoof);
-            float completionWorldShift = exitStartShift + runFromRoofTravel;
+            if (!RoofExitSafety.TryGetRunFromRoofWindow(
+                    hamster,
+                    lastRoof,
+                    runFromRoofTravel,
+                    out float exitStartShift,
+                    out float completionWorldShift))
+            {
+                return false;
+            }
+
             if (!RoofExitSafety.IsSafeDuringRunFromRoof(
                     hamster,
                     worldSnapshot,
@@ -123,18 +130,6 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
 
             contextObstacleIndex = firstElement.WorldIndex;
             return true;
-        }
-
-        /// <summary>
-        /// Считает сдвиг мира до начала автоматического схода с последней roof.
-        /// </summary>
-        private static float CalculateExitStartShift(
-            HamsterSnapshot hamster,
-            ObstacleSnapshot lastRoof)
-        {
-            // Считает runtime-точку начала RunFromRoof.
-            float exitStartX = lastRoof.RightX + hamster.Width * RoofRunProjection.PassiveContinuationGapFactor;
-            return Math.Max(0f, exitStartX - hamster.HamsterRightX);
         }
     }
 }

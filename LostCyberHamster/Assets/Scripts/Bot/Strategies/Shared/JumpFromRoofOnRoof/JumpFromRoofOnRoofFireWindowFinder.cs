@@ -180,7 +180,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
                 return false;
             }
 
-            // Одним проходом подтверждает blocker для схода с крыши и находит следующую roof-цель.
+            // Roof-to-roof нужен только когда общий safety слой подтверждает опасный сход.
+            if (IsPassiveRoofExitSafe(hamster, projectedWorldSnapshot, lastRoof, travel))
+                return false;
+
+            // Одним проходом подтверждает blocker для небезопасного схода и находит следующую roof-цель.
             bool hasRunFromRoofBlocker = false;
             for (int obstacleIndex = lastRoofIndex + 1;
                  obstacleIndex < projectedWorldSnapshot.Obstacles.Count;
@@ -205,10 +209,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
                 if (targetRoof == null)
                     lastObstacleBeforeTargetRoof = obstacle;
 
-                float gap = obstacle.LeftX - lastRoof.RightX;
-                if (gap >= travel.RunFromRoofTravel && !hasRunFromRoofBlocker)
-                    return false;
-
                 if (!chain.ContainsObstacle(obstacle) && !hasRunFromRoofBlocker)
                     return false;
 
@@ -219,6 +219,35 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Возвращает true, если общий passive-exit safety contract разрешает обычный сход с текущей roof.
+        /// </summary>
+        private static bool IsPassiveRoofExitSafe(
+            HamsterSnapshot hamster,
+            WorldSnapshot projectedWorldSnapshot,
+            ObstacleSnapshot lastRoof,
+            JumpFromRoofOnRoofTravel travel)
+        {
+            // Проверяет тот же runtime window, что и PassiveRoofExitStrategy.
+            if (!RoofExitSafety.TryGetRunFromRoofWindow(
+                    hamster,
+                    lastRoof,
+                    travel.RunFromRoofTravel,
+                    out float runFromRoofStartShift,
+                    out float runFromRoofCompletionShift))
+            {
+                return false;
+            }
+
+            return RoofExitSafety.IsSafeDuringRunFromRoof(
+                hamster,
+                projectedWorldSnapshot,
+                hamster.IsOnBottomLine,
+                runFromRoofStartShift,
+                runFromRoofCompletionShift,
+                out _);
         }
 
         /// <summary>

@@ -1,3 +1,4 @@
+using System;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 
@@ -17,6 +18,28 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
         /// Минимальный безопасный участок после возврата в Run до следующего управляемого окна.
         /// </summary>
         private const float RunReentryGuardTravel = JumpPlanningConstants.PostActionReentryGuardTravel;
+
+        /// <summary>
+        /// Считает runtime-окно автоматического RunFromRoof от последней passive roof.
+        /// Используется всеми стратегиями, которым нужно одинаково понимать момент схода с крыши.
+        /// </summary>
+        public static bool TryGetRunFromRoofWindow(
+            HamsterSnapshot hamster,
+            ObstacleSnapshot lastRoof,
+            float runFromRoofTravel,
+            out float startShift,
+            out float completionWorldShift)
+        {
+            startShift = 0f;
+            completionWorldShift = 0f;
+            if (hamster == null || lastRoof == null || runFromRoofTravel <= 0f)
+                return false;
+
+            float exitStartX = lastRoof.RightX + hamster.Width * RoofRunProjection.PassiveContinuationGapFactor;
+            startShift = Math.Max(0f, exitStartX - hamster.HamsterRightX);
+            completionWorldShift = startShift + runFromRoofTravel;
+            return true;
+        }
 
         /// <summary>
         /// Возвращает true, если пассивный сход не приводит к runtime-damage контакту.
