@@ -180,9 +180,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             if (firstObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
                 lastFireShift -= padding;
 
-            // Ограничивает ранний старт только для отдельного последнего bigAlive в chain.
-            bool coversSingleObstacle = firstObstacle.InstanceId == lastObstacle.InstanceId;
-            if (!coversSingleObstacle && lastObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
+            // Ограничивает ранний старт перед последним bigAlive в chain, включая одиночный bigAlive.
+            if (lastObstacle.ObstacleType == ObstacleTypeEnum.bigAlive)
                 firstFireShift += padding;
         }
     }
