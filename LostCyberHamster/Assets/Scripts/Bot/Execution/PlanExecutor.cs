@@ -118,8 +118,7 @@ namespace Assets.Scripts.Bot.Execution
             if (handler.IsCompleted(hamster, action))
             {
                 AdvanceHead();
-                PlanExecutionTickResult nextHeadResult = TryFireCurrentHead(hamster);
-                return PlanExecutionTickResult.Completed | nextHeadResult;
+                return PlanExecutionTickResult.Completed;
             }
 
             return PlanExecutionTickResult.None;
