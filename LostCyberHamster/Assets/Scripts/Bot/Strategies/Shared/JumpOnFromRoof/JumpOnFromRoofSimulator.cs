@@ -60,6 +60,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
                 return null;
 
+            InProgressProjectionOptions projectionOptions = action.TargetObstacleInstanceId.HasValue
+                ? InProgressProjectionOptions.RemoveObstacleAndRescan(action.TargetObstacleInstanceId.Value)
+                : InProgressProjectionOptions.SkipResolvedActionTarget();
+
             // Строит projection до ожидаемого завершения.
             HamsterSnapshot nextHamster = PlanningStateTransition.ApplyRunAfterOver(planningState.Hamster, action);
             return InProgressProjectionHelper.Project(
@@ -67,9 +71,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: true,
-                remainingPostFireWorldShift: remainingPostFireWorldShift,
-                removedObstacleInstanceIdAfterCompletion: action.TargetObstacleInstanceId);
+                projectionOptions,
+                remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
     }
 }

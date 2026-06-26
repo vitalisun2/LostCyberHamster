@@ -79,7 +79,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: true,
+                InProgressProjectionOptions.SkipResolvedActionTarget(),
                 remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
     }

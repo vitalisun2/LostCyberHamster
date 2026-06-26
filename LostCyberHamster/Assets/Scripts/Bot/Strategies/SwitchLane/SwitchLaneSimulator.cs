@@ -31,6 +31,18 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
             // Применяет смену линии к snapshot хомяка.
             HamsterSnapshot nextHamster = PlanningStateTransition.ApplyLaneSwitch(planningState.Hamster, action);
+            if (action.FulfillsCollectibleObjective)
+            {
+                nextHamster = CollectibleValuePolicy.ApplyValue(
+                    nextHamster,
+                    action.CollectibleObjectiveValue);
+
+                return PlanningStateTransition.AdvanceAfterCollectiblePickup(
+                    planningState,
+                    action,
+                    worldSnapshot,
+                    nextHamster);
+            }
 
             // Продвигает planning-состояние до конца действия.
             return PlanningStateTransition.AdvanceAfterLaneSwitch(
@@ -68,6 +80,18 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 hamster.HamsterRightX,
                 hamster.HamsterBottomY,
                 hamster.HamsterTopY);
+            int? removedCollectibleId = null;
+            if (action.FulfillsCollectibleObjective)
+            {
+                nextHamster = CollectibleValuePolicy.ApplyValue(
+                    nextHamster,
+                    action.CollectibleObjectiveValue);
+                removedCollectibleId = action.TargetObstacleInstanceId;
+            }
+
+            InProgressProjectionOptions projectionOptions = removedCollectibleId.HasValue
+                ? InProgressProjectionOptions.RemoveObstacleAndRescan(removedCollectibleId.Value)
+                : InProgressProjectionOptions.RescanFromStart();
 
             // Проецирует остаток head-action до ближайшего planning boundary.
             return InProgressProjectionHelper.Project(
@@ -75,9 +99,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: false,
-                remainingPostFireWorldShift: remainingPostFireWorldShift,
-                startObstacleIndexOverride: 0);
+                projectionOptions,
+                remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
     }
 }

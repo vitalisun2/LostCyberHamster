@@ -54,10 +54,10 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: false,
-                remainingPostFireWorldShift: remainingPostFireWorldShift,
-                startObstacleIndexOverride: 0,
-                removedObstacleInstanceIdAfterCompletion: action.TargetObstacleInstanceId);
+                action.TargetObstacleInstanceId.HasValue
+                    ? InProgressProjectionOptions.RemoveObstacleAndRescan(action.TargetObstacleInstanceId.Value)
+                    : InProgressProjectionOptions.RescanFromStart(),
+                remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
     }
 }

@@ -66,7 +66,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: false,
+                InProgressProjectionOptions.KeepCurrentObstacleScan(),
                 remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
     }

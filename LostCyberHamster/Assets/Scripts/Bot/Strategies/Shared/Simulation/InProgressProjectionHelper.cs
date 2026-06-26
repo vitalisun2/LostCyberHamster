@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
 {
@@ -15,10 +16,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             PlannedAction action,
             WorldSnapshot worldSnapshot,
             HamsterSnapshot nextHamster,
-            bool skipTargetObstacleAfterCompletion,
-            float? remainingPostFireWorldShift = null,
-            int? startObstacleIndexOverride = null,
-            int? removedObstacleInstanceIdAfterCompletion = null)
+            InProgressProjectionOptions options,
+            float? remainingPostFireWorldShift = null)
         {
             if (planningState == null || action == null || worldSnapshot == null || nextHamster == null)
                 return null;
@@ -29,16 +28,17 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             if (remainingPostFireShift < 0f)
                 remainingPostFireShift = 0f;
 
-            float nextProjectionWorldShift = planningState.ProjectionWorldShift + remainingPostFireShift;
+            float nextProjectionWorldShift =
+                planningState.ProjectionWorldShift
+                + remainingPostFireShift
+                + JumpPlanningConstants.PostActionReentryGuardTravel;
             IReadOnlyList<int> nextRemovedObstacleInstanceIds =
-                planningState.GetRemovedObstacleInstanceIdsWith(removedObstacleInstanceIdAfterCompletion);
+                planningState.GetRemovedObstacleInstanceIdsWith(options.RemovedObstacleInstanceIdAfterCompletion);
 
-            int startObstacleIndex = startObstacleIndexOverride ?? planningState.NextObstacleIndex;
-            if (removedObstacleInstanceIdAfterCompletion.HasValue)
-            {
-                startObstacleIndex = startObstacleIndexOverride ?? 0;
-            }
-            else if (skipTargetObstacleAfterCompletion && action.TargetObstacleIndex + 1 > startObstacleIndex)
+            int startObstacleIndex = options.StartObstacleIndexOverride ?? planningState.NextObstacleIndex;
+            if (!options.RemovedObstacleInstanceIdAfterCompletion.HasValue
+                && options.ShouldSkipResolvedActionTarget
+                && action.TargetObstacleIndex + 1 > startObstacleIndex)
             {
                 startObstacleIndex = action.TargetObstacleIndex + 1;
             }

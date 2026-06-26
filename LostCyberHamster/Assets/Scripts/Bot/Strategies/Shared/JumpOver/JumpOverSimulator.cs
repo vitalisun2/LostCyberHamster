@@ -48,7 +48,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: false,
+                InProgressProjectionOptions.KeepCurrentObstacleScan(),
                 remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
     }

@@ -280,6 +280,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOver\JumpOverFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperRoofJumpMechanics.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\RoofJumpResolveContext.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Simulation\InProgressProjectionOptions.cs" />
     <Compile Include="Assets\Scripts\Gameplay\EnergeticBonus.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\Ultas\ElectricStrikeUlta.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\IJumpFromRoofOnRoofPolicy.cs" />
@@ -304,7 +305,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOver\JumpOverSimulator.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\SettingsModalController.cs" />
     <Compile Include="Assets\Scripts\System\ObstacleSpawner.cs" />
-    <Compile Include="Assets\Scripts\System\VisiblePatternTracker.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\QuestsScreenController.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CrystalBonus.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofSpecification.cs" />
@@ -408,6 +408,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiLoseModalMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvanceSimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\DecisionPointDetector.cs" />
+    <Compile Include="Assets\Scripts\System\VisiblePatternTracker.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\Common\Models\Pattern.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoof\JumpFromRoofPolicy.cs" />

@@ -64,7 +64,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                 action,
                 worldSnapshot,
                 nextHamster,
-                skipTargetObstacleAfterCompletion: false,
+                InProgressProjectionOptions.KeepCurrentObstacleScan(),
                 remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
 

@@ -48,7 +48,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
                 action,
                 worldSnapshot,
                 planningState.Hamster,
-                skipTargetObstacleAfterCompletion: true,
+                InProgressProjectionOptions.KeepCurrentObstacleScan(),
                 remainingPostFireWorldShift: remainingPostFireWorldShift);
         }
     }
