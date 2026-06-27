@@ -188,7 +188,7 @@ namespace Assets.Scripts.Bot.Planning
             int actionIndex,
             int firstMajorActionIndex)
         {
-            if (firstMajorActionIndex <= 0 || actionIndex != firstMajorActionIndex - 1)
+            if (firstMajorActionIndex <= 0 || actionIndex >= firstMajorActionIndex)
                 return false;
 
             PlannedAction setupAction = actions[actionIndex];
@@ -196,8 +196,47 @@ namespace Assets.Scripts.Bot.Planning
             if (setupAction == null || firstMajorAction == null)
                 return false;
 
-            return IsRoofEntryAction(setupAction.Kind)
-                && IsFromRoofJumpOnAction(firstMajorAction.Kind);
+            if (!IsRoofEntryAction(setupAction.Kind))
+                return false;
+
+            if (actionIndex == firstMajorActionIndex - 1
+                && IsFromRoofJumpOnAction(firstMajorAction.Kind))
+            {
+                return true;
+            }
+
+            return IsRoofRouteSetupPath(actions, actionIndex + 1, firstMajorActionIndex)
+                && IsRoofRouteMajorAction(firstMajorAction);
+        }
+
+        private static bool IsRoofRouteSetupPath(
+            IReadOnlyList<PlannedAction> actions,
+            int startActionIndex,
+            int firstMajorActionIndex)
+        {
+            for (int actionIndex = startActionIndex; actionIndex < firstMajorActionIndex; actionIndex++)
+            {
+                PlannedAction action = actions[actionIndex];
+                if (action == null || !IsRoofRouteBridgeAction(action.Kind))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsRoofRouteMajorAction(PlannedAction action)
+        {
+            return action != null
+                && (IsFromRoofJumpOnAction(action.Kind)
+                    || action.Kind == BotActionKind.PassiveCollect
+                    || action.Kind == BotActionKind.RoofSwitchLane);
+        }
+
+        private static bool IsRoofRouteBridgeAction(BotActionKind actionKind)
+        {
+            return actionKind == BotActionKind.RoofSwitchLane
+                || actionKind == BotActionKind.PassiveCollect
+                || actionKind == BotActionKind.PassiveAdvance;
         }
 
         private static bool IsRoofEntryAction(BotActionKind actionKind)
@@ -308,6 +347,7 @@ namespace Assets.Scripts.Bot.Planning
         private static bool IsImmediateRouteSetupAction(BotActionKind actionKind)
         {
             return actionKind == BotActionKind.SwitchLane
+                || actionKind == BotActionKind.RoofSwitchLane
                 || actionKind == BotActionKind.PassiveAdvance
                 || actionKind == BotActionKind.JumpOnRoof
                 || actionKind == BotActionKind.SuperJumpOnRoof;

@@ -627,6 +627,7 @@ namespace Assets.Scripts.Bot.Planning
         private static bool IsRoofRouteChoiceAction(BotActionKind actionKind)
         {
             return actionKind == BotActionKind.PassiveRoofExit
+                || actionKind == BotActionKind.RoofSwitchLane
                 || IsRoofToRoofAction(actionKind);
         }
 

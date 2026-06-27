@@ -44,8 +44,12 @@ namespace Assets.Scripts.Bot.Planning
     {
         private readonly IReadOnlyList<IPlanningStrategy> _strategies;
         private readonly IPlanningStrategy _switchLaneStrategy;
+        private readonly IPlanningStrategy _roofSwitchLaneStrategy;
+        private readonly IPlanningStrategy _passiveCollectStrategy;
         private readonly IPlanningStrategy _passiveAdvanceStrategy;
         private readonly DecisionPointDetector _decisionPointDetector = new DecisionPointDetector();
+        private readonly RoofCollectibleDecisionPointDetector _roofCollectibleDecisionPointDetector =
+            new RoofCollectibleDecisionPointDetector();
         private readonly SuperFallbackActionDeduplicator _superFallbackDeduplicator =
             new SuperFallbackActionDeduplicator();
 
@@ -56,6 +60,8 @@ namespace Assets.Scripts.Bot.Planning
         {
             _strategies = strategies ?? Array.Empty<IPlanningStrategy>();
             _switchLaneStrategy = FindStrategy(_strategies, BotActionKind.SwitchLane);
+            _roofSwitchLaneStrategy = FindStrategy(_strategies, BotActionKind.RoofSwitchLane);
+            _passiveCollectStrategy = FindStrategy(_strategies, BotActionKind.PassiveCollect);
             _passiveAdvanceStrategy = FindStrategy(_strategies, BotActionKind.PassiveAdvance);
         }
 
@@ -99,6 +105,18 @@ namespace Assets.Scripts.Bot.Planning
             }
 
             CollectCurrentLaneOptionalCollectableActions(
+                planningState,
+                projectedWorldSnapshot,
+                plannedActions,
+                deadEndReasons);
+
+            CollectCurrentRoofPathCollectableActions(
+                planningState,
+                projectedWorldSnapshot,
+                plannedActions,
+                deadEndReasons);
+
+            CollectOppositeRoofPathCollectableActions(
                 planningState,
                 projectedWorldSnapshot,
                 plannedActions,
@@ -219,6 +237,70 @@ namespace Assets.Scripts.Bot.Planning
                 planningState,
                 projectedWorldSnapshot,
                 optionalDecisionPoint,
+                plannedActions,
+                deadEndReasons);
+        }
+
+        /// <summary>
+        /// Добавляет no-input pickup collectables, которые лежат на текущем passive roof path.
+        /// </summary>
+        private void CollectCurrentRoofPathCollectableActions(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            List<PlannedAction> plannedActions,
+            List<StrategyDeadEndReason> deadEndReasons)
+        {
+            if (_passiveCollectStrategy == null)
+                return;
+
+            if (!_roofCollectibleDecisionPointDetector.TryDetectCurrentPassiveRoofCollectibles(
+                    planningState,
+                    projectedWorldSnapshot,
+                    out DecisionPoint roofPathCollectibleDecisionPoint))
+            {
+                return;
+            }
+
+            PlanningStrategyResult result = CollectFromStrategy(
+                _passiveCollectStrategy,
+                planningState,
+                projectedWorldSnapshot,
+                roofPathCollectibleDecisionPoint);
+
+            ApplyStrategyResult(
+                result,
+                plannedActions,
+                deadEndReasons);
+        }
+
+        /// <summary>
+        /// Добавляет roof switch-lane к полезному collectable на другой roof-line, даже если его закрывает ближняя нерелевантная roof-chain.
+        /// </summary>
+        private void CollectOppositeRoofPathCollectableActions(
+            PlanningState planningState,
+            WorldSnapshot projectedWorldSnapshot,
+            List<PlannedAction> plannedActions,
+            List<StrategyDeadEndReason> deadEndReasons)
+        {
+            if (_roofSwitchLaneStrategy == null)
+                return;
+
+            if (!_roofCollectibleDecisionPointDetector.TryDetectOppositeRoofCollectibleRoute(
+                    planningState,
+                    projectedWorldSnapshot,
+                    out DecisionPoint roofRewardDecisionPoint))
+            {
+                return;
+            }
+
+            PlanningStrategyResult result = CollectFromStrategy(
+                _roofSwitchLaneStrategy,
+                planningState,
+                projectedWorldSnapshot,
+                roofRewardDecisionPoint);
+
+            ApplyStrategyResult(
+                result,
                 plannedActions,
                 deadEndReasons);
         }

@@ -120,6 +120,11 @@ MonoBehaviour:
     - levels_daypart_Morning
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6affa2dce4a772b40a944311a0e97850
+    m_Address: 01_New_York/Morning/test_roof_switch_lane
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6fd463a36da621249918d90c17ef95d1
     m_Address: 01_New_York/Morning/level_01/intro_05
     m_ReadOnly: 0

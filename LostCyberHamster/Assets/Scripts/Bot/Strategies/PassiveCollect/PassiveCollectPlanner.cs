@@ -11,6 +11,8 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
     /// </summary>
     internal static class PassiveCollectPlanner
     {
+        private const float VerticalOverlapEpsilon = 0.0001f;
+
         /// <summary>
         /// Возвращает модель passive collect, если collectable можно безопасно подобрать без input.
         /// </summary>
@@ -32,7 +34,8 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
 
             // Выбирает первый ценный collectable на текущей линии.
             if (!TryFindCollectible(
-                    planningState.Hamster,
+                    planningState,
+                    worldSnapshot,
                     decisionPoint.Chain,
                     out ObstacleSnapshot targetCollectible,
                     out int targetCollectibleIndex,
@@ -76,7 +79,8 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
         }
 
         private static bool TryFindCollectible(
-            HamsterSnapshot hamster,
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
             ObstacleChain chain,
             out ObstacleSnapshot targetCollectible,
             out int targetCollectibleIndex,
@@ -85,11 +89,15 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
             targetCollectible = null;
             targetCollectibleIndex = -1;
             objectiveValue = CollectibleObjectiveValue.None;
+            HamsterSnapshot hamster = planningState?.Hamster;
 
             for (int chainIndex = 0; chainIndex < chain.Count; chainIndex++)
             {
                 ObstacleChainElement element = chain.Elements[chainIndex];
                 if (!element.HasRole(ObstacleRole.Collectible))
+                    continue;
+
+                if (!CanReachCollectiblePassively(planningState, worldSnapshot, element.Obstacle))
                     continue;
 
                 if (!CollectibleValuePolicy.TryGetPositiveValue(
@@ -106,6 +114,45 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Проверяет, можно ли добраться до collectable без дополнительного input из текущего состояния.
+        /// </summary>
+        private static bool CanReachCollectiblePassively(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            ObstacleSnapshot collectible)
+        {
+            HamsterSnapshot hamster = planningState?.Hamster;
+            if (hamster == null || collectible == null)
+                return false;
+
+            if (hamster.HamsterState == HamsterStateEnum.RoofRun && hamster.IsOnRoof)
+            {
+                return RoofRunProjection.TryFindPassiveRoofSupportForOccupant(
+                    planningState,
+                    worldSnapshot,
+                    collectible,
+                    out _,
+                    out _);
+            }
+
+            return HasVerticalOverlap(hamster, collectible);
+        }
+
+        /// <summary>
+        /// Возвращает true, если текущая collider-высота хомяка пересекает collectable.
+        /// </summary>
+        private static bool HasVerticalOverlap(
+            HamsterSnapshot hamster,
+            ObstacleSnapshot collectible)
+        {
+            if (hamster == null || collectible == null)
+                return false;
+
+            return collectible.TopY >= hamster.HamsterBottomY - VerticalOverlapEpsilon
+                && collectible.BottomY <= hamster.HamsterTopY + VerticalOverlapEpsilon;
         }
 
         private static float CalculatePickupShift(

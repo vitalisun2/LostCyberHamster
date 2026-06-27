@@ -195,7 +195,13 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             bool requireTargetRoofSupport = true)
         {
             // Собирает и упорядочивает все опасные интервалы.
-            var unsafeIntervals = CollectUnsafeFireIntervals(worldSnapshot, hamster, targetBottomLine, latestFireShift);
+            bool allowTargetRoofContact = hamster.IsOnRoof && requireTargetRoofSupport;
+            var unsafeIntervals = CollectUnsafeFireIntervals(
+                worldSnapshot,
+                hamster,
+                targetBottomLine,
+                latestFireShift,
+                allowTargetRoofContact);
             unsafeIntervals.Sort((left, right) => left.Start.CompareTo(right.Start));
 
             // Вычитает опасные интервалы из полного окна запуска.
@@ -275,7 +281,8 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
-            float latestFireShift)
+            float latestFireShift,
+            bool allowTargetRoofContact)
         {
             // Подготавливает накопитель опасных интервалов.
             var unsafeIntervals = new List<UnsafeInterval>();
@@ -285,6 +292,9 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
                 if (obstacle.IsRemovedInPlanning)
+                    continue;
+
+                if (allowTargetRoofContact && ObstacleClassifier.IsObstacleWithRoof(obstacle.ObstacleType))
                     continue;
 
                 if (!ObstacleClassifier.DamagesOnGroundContact(obstacle.ObstacleType))

@@ -22,6 +22,7 @@ using Assets.Scripts.Bot.Strategies.PassiveAdvance;
 using Assets.Scripts.Bot.Strategies.PassiveCollect;
 using Assets.Scripts.Bot.Strategies.PassiveRoofExit;
 using Assets.Scripts.Bot.Strategies.RoofJumpOver;
+using Assets.Scripts.Bot.Strategies.RoofSwitchLane;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.SuperJumpFromRoof;
 using Assets.Scripts.Bot.Strategies.SuperJumpFromRoofOnRoof;
@@ -275,6 +276,7 @@ namespace Assets.Scripts.Bot
                 new JumpOnRoofStrategy(),
                 new SuperJumpOnRoofStrategy(),
                 new PassiveRoofExitStrategy(),
+                new RoofSwitchLaneStrategy(),
                 new PassiveCollectStrategy(),
                 new JumpOnFromRoofStrategy(),
                 new SuperJumpOnFromRoofStrategy(),
@@ -1354,8 +1356,13 @@ namespace Assets.Scripts.Bot
             if (plan == null || !plan.HasActions)
                 return;
 
-            if (!buildResult.HasDeadEnd && !HasActionKind(plan, BotActionKind.PassiveRoofExit) && !HasActionKind(plan, BotActionKind.SwitchLane))
+            if (!buildResult.HasDeadEnd
+                && !HasActionKind(plan, BotActionKind.PassiveRoofExit)
+                && !HasActionKind(plan, BotActionKind.SwitchLane)
+                && !HasActionKind(plan, BotActionKind.RoofSwitchLane))
+            {
                 return;
+            }
 
             PlanningDeadEndReport report = buildResult.DeadEndReport;
             BotReplanDiagnostics.LogPlanBuildResult(

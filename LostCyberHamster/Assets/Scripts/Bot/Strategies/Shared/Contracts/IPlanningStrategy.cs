@@ -100,6 +100,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
                 BotActionKind.SuperJumpFromRoof => "супер-прыжка с крыши",
                 BotActionKind.JumpOnFromRoof => "напрыгивания с крыши",
                 BotActionKind.SuperJumpOnFromRoof => "супер-напрыгивания с крыши",
+                BotActionKind.RoofSwitchLane => "смены линии с крыши на крышу",
                 BotActionKind.JumpFromRoofOnRoof => "прыжка на следующую крышу",
                 BotActionKind.SuperJumpFromRoofOnRoof => "супер-прыжка на следующую крышу",
                 _ => actionKind.ToString()

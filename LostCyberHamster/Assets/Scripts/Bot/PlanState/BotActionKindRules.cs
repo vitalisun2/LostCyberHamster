@@ -11,6 +11,7 @@ namespace Assets.Scripts.Bot.PlanState
         public static bool ConsumesTap(BotActionKind kind)
         {
             return kind == BotActionKind.SwitchLane
+                || kind == BotActionKind.RoofSwitchLane
                 || kind == BotActionKind.RoofSwitchLaneExit;
         }
     }

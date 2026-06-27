@@ -22,6 +22,7 @@ namespace Assets.Scripts.Bot.PlanState
         PassiveRoofExit,
         PassiveCollect,
         PassiveAdvance,
+        RoofSwitchLane,
         RoofSwitchLaneExit,
         JumpFromRoofOnRoof,
         SuperJumpFromRoofOnRoof
