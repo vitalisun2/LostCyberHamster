@@ -14,8 +14,12 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
     internal static class PlanningStateTransition
     {
         /// <summary>
-        /// Возвращает planning-состояние после завершения действия и сдвига мира.
+        /// Возвращает planning-состояние после обычного действия без специальной обработки target obstacle.
         /// </summary>
+        /// <remarks>
+        /// Target не удаляется и не считается отдельной resolved-точкой. Следующий obstacle выбирается по
+        /// позиции после completion и стандартного post-action reentry guard.
+        /// </remarks>
         public static PlanningState Advance(
             PlanningState planningState,
             PlannedAction action,
@@ -38,8 +42,43 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
         }
 
         /// <summary>
+        /// Возвращает planning-состояние после passive roof exit, сохраняя context target актуальным для следующего решения.
+        /// </summary>
+        /// <remarks>
+        /// Passive roof exit переводит хомяка из RoofRun в Run, но target/context obstacle после схода
+        /// не удаляется и не считается пройденным. Scan выполняется на completion-позиции, без
+        /// post-action reentry guard, чтобы guard-проверка безопасности не пропускала ещё актуальный
+        /// obstacle после gap.
+        /// </remarks>
+        public static PlanningState AdvanceAfterPassiveRoofExit(
+            PlanningState planningState,
+            PlannedAction action,
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot nextHamster)
+        {
+            float nextProjectionWorldShift = GetCompletionProjectionWorldShift(planningState, action);
+            int startObstacleIndex = GetUnresolvedTargetStartIndex(planningState, action);
+            int nextObstacleIndex = FindNextRelevantObstacleIndex(
+                worldSnapshot,
+                startObstacleIndex,
+                nextProjectionWorldShift,
+                nextHamster.HamsterLeftX,
+                planningState.RemovedObstacleInstanceIds);
+
+            return new PlanningState(
+                nextHamster,
+                nextObstacleIndex,
+                nextProjectionWorldShift,
+                planningState.RemovedObstacleInstanceIds);
+        }
+
+        /// <summary>
         /// Возвращает planning-состояние после смены линии, пересчитывая ближайший obstacle для новой линии с начала snapshot.
         /// </summary>
+        /// <remarks>
+        /// Target при lane switch без pickup не удаляется: смена линии делает прежний NextObstacleIndex
+        /// ненадёжным, поэтому scan начинается с начала snapshot.
+        /// </remarks>
         public static PlanningState AdvanceAfterLaneSwitch(
             PlanningState planningState,
             PlannedAction action,
@@ -64,6 +103,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
         /// <summary>
         /// Возвращает planning-состояние после посадки на крышу target obstacle.
         /// </summary>
+        /// <remarks>
+        /// Target obstacle становится текущей roof support/landing-точкой. Он остаётся в мире, но
+        /// повторно не требует ground-decision как обычное препятствие после завершения посадки.
+        /// </remarks>
         public static PlanningState AdvanceAfterRoofLanding(
             PlanningState planningState,
             PlannedAction action,
@@ -88,6 +131,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
         /// <summary>
         /// Возвращает planning-состояние после действия, которое удаляет target obstacle.
         /// </summary>
+        /// <remarks>
+        /// Target obstacle считается уничтоженным или снятым с route: его instance id добавляется
+        /// в removed ids, а следующий scan игнорирует этот obstacle.
+        /// </remarks>
         public static PlanningState AdvanceAfterTargetRemoval(
             PlanningState planningState,
             PlannedAction action,
@@ -115,6 +162,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
         /// <summary>
         /// Возвращает planning-состояние после passive pickup collectable.
         /// </summary>
+        /// <remarks>
+        /// Target collectable считается подобранным и добавляется в removed ids, чтобы projected
+        /// planning snapshot больше не выбирал его как следующий obstacle.
+        /// </remarks>
         public static PlanningState AdvanceAfterCollectiblePickup(
             PlanningState planningState,
             PlannedAction action,
@@ -142,6 +193,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
         /// <summary>
         /// Возвращает planning-состояние после roof jump over над препятствием на текущей крыше.
         /// </summary>
+        /// <remarks>
+        /// Target roof obstacle не удаляется из мира. Действие решает его как часть roof path,
+        /// после чего следующий obstacle определяется по projected-позиции RoofRun.
+        /// </remarks>
         public static PlanningState AdvanceAfterRoofJumpOver(
             PlanningState planningState,
             PlannedAction action,
@@ -275,6 +330,26 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Simulation
             }
 
             return worldSnapshot.Obstacles.Count;
+        }
+
+        private static int GetUnresolvedTargetStartIndex(
+            PlanningState planningState,
+            PlannedAction action)
+        {
+            if (action.TargetObstacleIndex < 0)
+                return planningState.NextObstacleIndex;
+
+            return Math.Min(planningState.NextObstacleIndex, action.TargetObstacleIndex);
+        }
+
+        /// <summary>
+        /// Возвращает projection shift ровно на completion-точке action-а.
+        /// </summary>
+        private static float GetCompletionProjectionWorldShift(
+            PlanningState planningState,
+            PlannedAction action)
+        {
+            return planningState.ProjectionWorldShift + action.CompletionWorldShift;
         }
 
         /// <summary>

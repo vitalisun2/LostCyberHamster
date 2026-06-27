@@ -41,7 +41,11 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
 
             // Применяет ground Run состояние после пассивного схода.
             HamsterSnapshot nextHamster = ApplyRunAfterPassiveExit(planningState.Hamster);
-            return PlanningStateTransition.Advance(planningState, action, worldSnapshot, nextHamster);
+            return PlanningStateTransition.AdvanceAfterPassiveRoofExit(
+                planningState,
+                action,
+                worldSnapshot,
+                nextHamster);
         }
 
         /// <summary>
