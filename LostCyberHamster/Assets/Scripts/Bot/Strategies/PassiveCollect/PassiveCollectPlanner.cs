@@ -11,8 +11,6 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
     /// </summary>
     internal static class PassiveCollectPlanner
     {
-        private const float VerticalOverlapEpsilon = 0.0001f;
-
         /// <summary>
         /// Возвращает модель passive collect, если collectable можно безопасно подобрать без input.
         /// </summary>
@@ -128,6 +126,9 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
             if (hamster == null || collectible == null)
                 return false;
 
+            if (collectible.IsBottomLine != hamster.IsOnBottomLine)
+                return false;
+
             if (hamster.HamsterState == HamsterStateEnum.RoofRun && hamster.IsOnRoof)
             {
                 return RoofRunProjection.TryFindPassiveRoofSupportForOccupant(
@@ -138,21 +139,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
                     out _);
             }
 
-            return HasVerticalOverlap(hamster, collectible);
-        }
-
-        /// <summary>
-        /// Возвращает true, если текущая collider-высота хомяка пересекает collectable.
-        /// </summary>
-        private static bool HasVerticalOverlap(
-            HamsterSnapshot hamster,
-            ObstacleSnapshot collectible)
-        {
-            if (hamster == null || collectible == null)
-                return false;
-
-            return collectible.TopY >= hamster.HamsterBottomY - VerticalOverlapEpsilon
-                && collectible.BottomY <= hamster.HamsterTopY + VerticalOverlapEpsilon;
+            return hamster.HamsterState == HamsterStateEnum.Run;
         }
 
         private static float CalculatePickupShift(
