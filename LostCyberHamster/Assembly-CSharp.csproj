@@ -119,6 +119,7 @@
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitSkyLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleRole.cs" />
     <Compile Include="Assets\Scripts\Common\HelpMethods.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneWindow.cs" />
     <Compile Include="Assets\Scripts\Debug\AndroidDiagnosticsHelper.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Data\SettingsData.cs" />
     <Compile Include="Assets\Scripts\UI\ResourceUIHelper.cs" />
@@ -139,7 +140,6 @@
     <Compile Include="Assets\Scripts\Common\Models\DecorationPattern.cs" />
     <Compile Include="Assets\Scripts\System\Models\PreloadedObstacle.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranch.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneModel.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleChain.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitGameRepositoryLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofActionResolver.cs" />
@@ -286,6 +286,7 @@
     <Compile Include="Assets\Scripts\Ads\AdsInitializationListener.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOver\JumpOverFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperRoofJumpMechanics.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneTargetResolver.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\RoofJumpResolveContext.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Simulation\InProgressProjectionOptions.cs" />
     <Compile Include="Assets\Scripts\Gameplay\EnergeticBonus.cs" />
@@ -343,6 +344,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\System\Resources\AddressableSetLease.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinFactory.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneWindowFinder.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\EnergyShieldSkin.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\IActionExecutionHandler.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Execution\LiveObstacleResolver.cs" />
@@ -397,7 +399,6 @@
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleChainElement.cs" />
     <Compile Include="Assets\Scripts\Gameplay\BoomEffect.cs" />
     <Compile Include="Assets\Scripts\Common\Models\CatalogBundle.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLanePlanner.cs" />
     <Compile Include="Assets\Scripts\UI\Components\QuestItem.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\TakeDamageMechanics.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Progress\IUnlockPolicy.cs" />
@@ -416,6 +417,7 @@
     <Compile Include="Assets\Scripts\System\Models\PreloadedEffect.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnStrategy.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneTarget.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ModalController.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\GameState.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofWindowCalculator.cs" />

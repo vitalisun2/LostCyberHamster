@@ -15,20 +15,43 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
     /// </summary>
     internal sealed class RoofSwitchLaneStrategy : IPlanningStrategy
     {
-        private readonly RoofSwitchLanePlanner _planner;
+        /// <summary>
+        /// Определяет target context для defensive и reward roof switch-lane сценариев.
+        /// </summary>
+        private readonly RoofSwitchLaneTargetResolver _targetResolver;
+
+        /// <summary>
+        /// Находит безопасное окно запуска и roof support для target context.
+        /// </summary>
+        private readonly RoofSwitchLaneWindowFinder _windowFinder;
 
         public RoofSwitchLaneStrategy()
         {
+            // Создает planning-зависимости.
             var fireWindowCalculator = new SwitchLaneFireWindowCalculator();
-            _planner = new RoofSwitchLanePlanner(fireWindowCalculator);
+            _targetResolver = new RoofSwitchLaneTargetResolver();
+            _windowFinder = new RoofSwitchLaneWindowFinder(fireWindowCalculator);
+
+            // Создает execution-зависимости.
             var triggerGate = new ActionTriggerGate(new LiveObstacleResolver());
 
             Executor = new RoofSwitchLaneExecutor(triggerGate);
             Simulator = new RoofSwitchLaneSimulator();
         }
 
+        /// <summary>
+        /// Возвращает тип действия, создаваемого стратегией.
+        /// </summary>
         public BotActionKind ActionKind => BotActionKind.RoofSwitchLane;
+
+        /// <summary>
+        /// Возвращает runtime executor для roof switch-lane action.
+        /// </summary>
         public IActionExecutionHandler Executor { get; }
+
+        /// <summary>
+        /// Возвращает simulator planning-перехода после roof switch-lane.
+        /// </summary>
         public ISimulator Simulator { get; }
 
         /// <summary>
@@ -38,18 +61,21 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
             PlanningState planningState,
             DecisionPoint decisionPoint)
         {
+            // Проверяет базовую применимость.
             if (!PlanningStrategyApplicability.HasContext(planningState, decisionPoint)
                 || !PlanningStrategyApplicability.CanPlanRoofRun(planningState.Hamster))
             {
                 return false;
             }
 
+            // Проверяет defensive-сценарий текущей линии.
             if (PlanningStrategyApplicability.IsCurrentLane(planningState, decisionPoint))
             {
                 return PlanningStrategyApplicability.HasRole(decisionPoint, ObstacleRole.BlockingThreat)
                     || PlanningStrategyApplicability.HasRole(decisionPoint, ObstacleRole.RoofOccupantHazard);
             }
 
+            // Проверяет reward-сценарий другой roof-line.
             return PlanningStrategyApplicability.IsOppositeLane(planningState, decisionPoint)
                 && CollectibleValuePolicy.HasPositiveCollectible(
                     planningState.Hamster,
@@ -64,16 +90,27 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
             WorldSnapshot worldSnapshot,
             DecisionPoint decisionPoint)
         {
+            // Проверяет обязательный контекст.
             Guard.ThrowIfNull(
                 (planningState, nameof(planningState)),
                 (worldSnapshot, nameof(worldSnapshot)),
                 (decisionPoint, nameof(decisionPoint)));
 
-            if (!_planner.TryBuildModel(
+            // Определяет сценарий roof switch-lane.
+            if (!_targetResolver.TryResolve(
+                    planningState,
+                    decisionPoint,
+                    out RoofSwitchLaneTarget target))
+            {
+                return PlanningStrategyResult.NotApplicable();
+            }
+
+            // Находит безопасное окно.
+            if (!_windowFinder.TryFind(
                     planningState,
                     worldSnapshot,
-                    decisionPoint,
-                    out RoofSwitchLaneModel model,
+                    target,
+                    out RoofSwitchLaneWindow window,
                     out string deadEndReason))
             {
                 return string.IsNullOrEmpty(deadEndReason)
@@ -81,7 +118,11 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                     : DeadEnd(deadEndReason);
             }
 
-            return PlanningStrategyResult.FromAction(BuildAction(model));
+            // Возвращает готовый action.
+            return PlanningStrategyResult.FromAction(BuildAction(
+                planningState.Hamster,
+                target,
+                window));
         }
 
         /// <summary>
@@ -93,39 +134,85 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         }
 
         /// <summary>
+        /// Возвращает collectable objective только если switch сам успевает подобрать context collectable.
+        /// </summary>
+        private static CollectibleObjectiveValue ResolveImmediateCollectibleObjective(
+            HamsterSnapshot hamster,
+            ObstacleSnapshot contextObstacle,
+            float completionWorldShift,
+            CollectibleObjectiveValue objectiveValue)
+        {
+            // Проверяет наличие collectable objective.
+            if (hamster == null
+                || contextObstacle == null
+                || !objectiveValue.HasValue)
+            {
+                return CollectibleObjectiveValue.None;
+            }
+
+            // Рассчитывает shift до pickup.
+            float pickupShift = contextObstacle.LeftX - hamster.HamsterRightX;
+            if (pickupShift < 0f)
+                pickupShift = 0f;
+
+            // Возвращает objective только при достижении collectable.
+            return pickupShift <= completionWorldShift
+                ? objectiveValue
+                : CollectibleObjectiveValue.None;
+        }
+
+        /// <summary>
         /// Создает planned action для выбранного roof switch-lane окна.
         /// </summary>
-        private static PlannedAction BuildAction(RoofSwitchLaneModel model)
+        private static PlannedAction BuildAction(
+            HamsterSnapshot hamster,
+            RoofSwitchLaneTarget target,
+            RoofSwitchLaneWindow window)
         {
-            ObstacleSnapshot actionTarget = model.ObjectiveValue.HasValue
-                ? model.ContextObstacle
-                : model.TargetRoof;
-            int actionTargetIndex = model.ObjectiveValue.HasValue
-                ? model.ContextObstacleIndex
-                : model.TargetRoofIndex;
-            float triggerX = model.ContextObstacle.LeftX - model.FireShift;
+            // Рассчитывает timing action-а.
+            float fireShift = window.FireWindowSample.FireShift;
+            float completionWorldShift = fireShift + SwitchLaneTiming.DecisionTravel;
+
+            // Определяет реально выполняемый collectible objective.
+            CollectibleObjectiveValue objectiveValue = ResolveImmediateCollectibleObjective(
+                hamster,
+                target.ContextObstacle,
+                completionWorldShift,
+                target.ObjectiveValue);
+
+            // Выбирает target для executor-а и метрик.
+            ObstacleSnapshot actionTarget = objectiveValue.HasValue
+                ? target.ContextObstacle
+                : window.TargetRoof;
+            int actionTargetIndex = objectiveValue.HasValue
+                ? target.ContextObstacleIndex
+                : window.TargetRoofIndex;
+
+            // Формирует trigger window.
+            float triggerX = target.ContextObstacle.LeftX - fireShift;
             ActionTriggerWindow triggerWindow = ActionTriggerWindow.FromSelectedTrigger(
                 triggerX,
-                model.FireShift,
-                model.FireWindowSample.FirstFireShift,
-                model.FireWindowSample.LastFireShift);
+                fireShift,
+                window.FireWindowSample.FirstFireShift,
+                window.FireWindowSample.LastFireShift);
 
+            // Создает planning action.
             return new PlannedAction(
                 BotActionKind.RoofSwitchLane,
                 triggerX,
                 renderWorldX: triggerX,
-                completionWorldShift: model.CompletionWorldShift,
+                completionWorldShift: completionWorldShift,
                 postFireWorldShift: SwitchLaneTiming.DecisionTravel,
                 actionTargetIndex,
                 targetObstacleInstanceId: actionTarget.InstanceId,
-                triggerObstacleInstanceId: model.ContextObstacle.InstanceId,
-                targetBottomLine: model.TargetBottomLine,
+                triggerObstacleInstanceId: target.ContextObstacle.InstanceId,
+                targetBottomLine: target.TargetBottomLine,
                 energyCost: 0,
-                description: $"Roof switch lane to {model.TargetRoof.ObstacleType} before {model.ContextObstacle.ObstacleType}",
-                resultRoofSupportInstanceId: model.TargetRoof.InstanceId,
+                description: $"Roof switch lane to {window.TargetRoof.ObstacleType} before {target.ContextObstacle.ObstacleType}",
+                resultRoofSupportInstanceId: window.TargetRoof.InstanceId,
                 isOppositeLaneEntry: true,
                 triggerWindow: triggerWindow,
-                collectibleObjectiveValue: model.ObjectiveValue);
+                collectibleObjectiveValue: objectiveValue);
         }
     }
 }

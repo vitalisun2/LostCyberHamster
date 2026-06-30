@@ -11,6 +11,9 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
     /// </summary>
     internal sealed class RoofSwitchLaneSimulator : ISimulator
     {
+        /// <summary>
+        /// Возвращает тип action, который обслуживает simulator.
+        /// </summary>
         public BotActionKind ActionKind => BotActionKind.RoofSwitchLane;
 
         /// <summary>
@@ -21,10 +24,14 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
             PlannedAction action,
             WorldSnapshot worldSnapshot)
         {
+            // Проверяет совместимость входа.
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
                 return null;
 
+            // Применяет смену линии.
             HamsterSnapshot nextHamster = PlanningStateTransition.ApplyLaneSwitch(planningState.Hamster, action);
+
+            // Обрабатывает immediate collectible.
             if (action.FulfillsCollectibleObjective)
             {
                 nextHamster = CollectibleValuePolicy.ApplyValue(
@@ -38,6 +45,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                     nextHamster);
             }
 
+            // Продвигает planning state после смены линии.
             return PlanningStateTransition.AdvanceAfterLaneSwitch(
                 planningState,
                 action,
@@ -54,10 +62,14 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
             WorldSnapshot worldSnapshot,
             float? remainingPostFireWorldShift = null)
         {
+            // Проверяет совместимость входа.
             if (planningState == null || action == null || worldSnapshot == null || action.Kind != ActionKind)
                 return null;
 
+            // Применяет ожидаемый результат смены линии.
             HamsterSnapshot nextHamster = PlanningStateTransition.ApplyLaneSwitch(planningState.Hamster, action);
+
+            // Применяет уже достигнутую collectible-ценность.
             if (action.FulfillsCollectibleObjective)
             {
                 nextHamster = CollectibleValuePolicy.ApplyValue(
@@ -65,10 +77,12 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                     action.CollectibleObjectiveValue);
             }
 
+            // Выбирает режим обновления snapshot-а.
             InProgressProjectionOptions projectionOptions = action.FulfillsCollectibleObjective
                 ? InProgressProjectionOptions.RemoveObstacleAndRescan(action.TargetObstacleInstanceId.Value)
                 : InProgressProjectionOptions.RescanFromStart();
 
+            // Проецирует состояние до завершения action.
             return InProgressProjectionHelper.Project(
                 planningState,
                 action,

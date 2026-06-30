@@ -15,6 +15,9 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
     /// </summary>
     internal sealed class RoofSwitchLaneExecutor : IActionExecutionHandler
     {
+        /// <summary>
+        /// Проверяет, что action достиг рассчитанного trigger window.
+        /// </summary>
         private readonly ActionTriggerGate _triggerGate;
 
         public RoofSwitchLaneExecutor(ActionTriggerGate triggerGate)
@@ -27,10 +30,12 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         /// </summary>
         public ActionFireResult TryFire(Hamster hamster, PlannedAction action)
         {
+            // Проверяет обязательный контекст.
             Guard.ThrowIfNull(
                 (hamster, nameof(hamster)),
                 (action, nameof(action)));
 
+            // Проверяет контракт action.
             if (action.Kind != BotActionKind.RoofSwitchLane
                 || !action.TargetBottomLine.HasValue
                 || !action.ResultRoofSupportInstanceId.HasValue)
@@ -38,6 +43,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 return Cancel(action, "reason=invalid-roof-switch-lane-action");
             }
 
+            // Проверяет актуальное roof-run состояние.
             if (hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
             {
                 return Cancel(
@@ -45,6 +51,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                     $"reason=not-roof-run state={hamster.HamsterState.Value}");
             }
 
+            // Проверяет готовность принять tap.
             if (!TapOutcomeResolver.CanAcceptTap(
                     hamster.HamsterState.Value,
                     hamster.IsShifting.Value))
@@ -56,6 +63,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                         $"reason=tap-not-accepted state={hamster.HamsterState.Value} shifting={hamster.IsShifting.Value}");
             }
 
+            // Проверяет, что смена линии еще нужна.
             if (hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value)
             {
                 return Cancel(
@@ -63,6 +71,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                     $"reason=already-on-target-lane lane={(hamster.IsOnBottomLine.Value ? "bottom" : "top")}");
             }
 
+            // Проверяет trigger window.
             ActionFireResult triggerResult = _triggerGate.Check(
                 action,
                 out float obstacleLeftX,
@@ -79,6 +88,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 return triggerResult;
             }
 
+            // Запускает runtime tap.
             FireRoofSwitchLane(hamster, action, obstacleLeftX);
             return ActionFireResult.Fired;
         }
@@ -88,12 +98,15 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         /// </summary>
         public bool IsCompleted(Hamster hamster, PlannedAction action)
         {
+            // Ждет завершения shift-анимации.
             if (hamster.IsShifting.Value)
                 return false;
 
+            // Завершает некорректно неполный action без проверки линии.
             if (!action.TargetBottomLine.HasValue)
                 return true;
 
+            // Проверяет достижение целевой линии.
             bool completed = hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value;
             if (completed)
                 HamsterActionLogger.LogComplete(action, hamster.HamsterState.Value);
@@ -115,11 +128,14 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         /// </summary>
         private static void FireRoofSwitchLane(Hamster hamster, PlannedAction action, float obstacleLeftX)
         {
+            // Формирует diagnostic context.
             string targetLane = action.TargetBottomLine.Value ? "bottom" : "top";
             HamsterActionLogger.LogFire(
                 action,
                 obstacleLeftX,
                 $"targetLane={targetLane} targetRoof={action.ResultRoofSupportInstanceId.Value} ");
+
+            // Отправляет input в gameplay.
             hamster.TapRequest.Invoke();
         }
     }
