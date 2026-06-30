@@ -47,9 +47,9 @@ namespace Assets.Scripts.Bot.Planning
         private readonly IPlanningStrategy _roofSwitchLaneStrategy;
         private readonly IPlanningStrategy _passiveCollectStrategy;
         private readonly IPlanningStrategy _passiveAdvanceStrategy;
-        private readonly DecisionPointDetector _decisionPointDetector = new DecisionPointDetector();
-        private readonly RoofCollectibleDecisionPointDetector _roofCollectibleDecisionPointDetector =
-            new RoofCollectibleDecisionPointDetector();
+        private readonly RouteDecisionPointDetector _routeDecisionPointDetector = new RouteDecisionPointDetector();
+        private readonly CollectibleDecisionPointDetector _collectibleDecisionPointDetector =
+            new CollectibleDecisionPointDetector();
         private readonly SuperFallbackActionDeduplicator _superFallbackDeduplicator =
             new SuperFallbackActionDeduplicator();
 
@@ -80,18 +80,14 @@ namespace Assets.Scripts.Bot.Planning
             if (projectedWorldSnapshot == null)
                 return ActionGenerationResult.Empty();
 
-            bool currentBottomLine = planningState.IsOnBottomLine;
-
-            bool hasCurrentDecisionPoint = _decisionPointDetector.TryDetectRoute(
+            bool hasCurrentDecisionPoint = _routeDecisionPointDetector.TryDetectCurrent(
                     planningState,
                     projectedWorldSnapshot,
-                    currentBottomLine,
                     out DecisionPoint currentDecisionPoint);
 
-            bool hasOppositeDecisionPoint = _decisionPointDetector.TryDetectRoute(
+            bool hasOppositeDecisionPoint = _routeDecisionPointDetector.TryDetectOpposite(
                     planningState,
                     projectedWorldSnapshot,
-                    !currentBottomLine,
                     out DecisionPoint oppositeDecisionPoint);
 
             if (hasCurrentDecisionPoint)
@@ -104,25 +100,13 @@ namespace Assets.Scripts.Bot.Planning
                     deadEndReasons);
             }
 
-            CollectCurrentLaneOptionalCollectableActions(
+            CollectCurrentCollectibleActions(
                 planningState,
                 projectedWorldSnapshot,
                 plannedActions,
                 deadEndReasons);
 
-            CollectCurrentRoofPathCollectableActions(
-                planningState,
-                projectedWorldSnapshot,
-                plannedActions,
-                deadEndReasons);
-
-            CollectOppositeRoofPathCollectableActions(
-                planningState,
-                projectedWorldSnapshot,
-                plannedActions,
-                deadEndReasons);
-
-            CollectOppositeLaneOptionalCollectableActions(
+            CollectOppositeCollectibleRouteActions(
                 planningState,
                 projectedWorldSnapshot,
                 plannedActions,
@@ -177,74 +161,9 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Добавляет optional current-lane collectable, не позволяя ему заслонять route decision point.
+        /// Добавляет collectable action для текущего достижимого пути.
         /// </summary>
-        private void CollectCurrentLaneOptionalCollectableActions(
-            PlanningState planningState,
-            WorldSnapshot projectedWorldSnapshot,
-            List<PlannedAction> plannedActions,
-            List<StrategyDeadEndReason> deadEndReasons)
-        {
-            bool currentBottomLine = planningState.IsOnBottomLine;
-            if (!_decisionPointDetector.TryDetect(
-                    planningState,
-                    projectedWorldSnapshot,
-                    currentBottomLine,
-                    out DecisionPoint optionalDecisionPoint))
-            {
-                return;
-            }
-
-            if (optionalDecisionPoint.Chain.HasAnyRequiredPlanningRole())
-                return;
-
-            CollectActionsForDecisionPoint(
-                planningState,
-                projectedWorldSnapshot,
-                optionalDecisionPoint,
-                plannedActions,
-                deadEndReasons);
-        }
-
-        /// <summary>
-        /// Добавляет entry SwitchLane к ценному optional collectable на другой линии.
-        /// </summary>
-        private void CollectOppositeLaneOptionalCollectableActions(
-            PlanningState planningState,
-            WorldSnapshot projectedWorldSnapshot,
-            List<PlannedAction> plannedActions,
-            List<StrategyDeadEndReason> deadEndReasons)
-        {
-            bool oppositeBottomLine = !planningState.IsOnBottomLine;
-            if (!_decisionPointDetector.TryDetect(
-                    planningState,
-                    projectedWorldSnapshot,
-                    oppositeBottomLine,
-                    out DecisionPoint optionalDecisionPoint))
-            {
-                return;
-            }
-
-            if (optionalDecisionPoint.Chain.HasAnyRequiredPlanningRole()
-                || !CollectibleValuePolicy.HasPositiveCollectible(
-                    planningState.Hamster,
-                    optionalDecisionPoint.Chain))
-            {
-                return;
-            }
-
-            CollectSwitchLaneEntryAction(
-                planningState,
-                projectedWorldSnapshot,
-                optionalDecisionPoint,
-                plannedActions,
-                deadEndReasons);
-        }
-
-        /// <summary>
-        /// Добавляет no-input pickup collectables, которые лежат на текущем passive roof path.
-        /// </summary>
-        private void CollectCurrentRoofPathCollectableActions(
+        private void CollectCurrentCollectibleActions(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
             List<PlannedAction> plannedActions,
@@ -253,10 +172,10 @@ namespace Assets.Scripts.Bot.Planning
             if (_passiveCollectStrategy == null)
                 return;
 
-            if (!_roofCollectibleDecisionPointDetector.TryDetectCurrentPassiveRoofCollectibles(
+            if (!_collectibleDecisionPointDetector.TryDetectCurrentCollectibles(
                     planningState,
                     projectedWorldSnapshot,
-                    out DecisionPoint roofPathCollectibleDecisionPoint))
+                    out DecisionPoint currentCollectibleDecisionPoint))
             {
                 return;
             }
@@ -265,7 +184,7 @@ namespace Assets.Scripts.Bot.Planning
                 _passiveCollectStrategy,
                 planningState,
                 projectedWorldSnapshot,
-                roofPathCollectibleDecisionPoint);
+                currentCollectibleDecisionPoint);
 
             ApplyStrategyResult(
                 result,
@@ -274,30 +193,33 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Добавляет roof switch-lane к полезному collectable на другой roof-line, даже если его закрывает ближняя нерелевантная roof-chain.
+        /// Добавляет entry action к полезному collectable на противоположной линии.
         /// </summary>
-        private void CollectOppositeRoofPathCollectableActions(
+        private void CollectOppositeCollectibleRouteActions(
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
             List<PlannedAction> plannedActions,
             List<StrategyDeadEndReason> deadEndReasons)
         {
-            if (_roofSwitchLaneStrategy == null)
-                return;
-
-            if (!_roofCollectibleDecisionPointDetector.TryDetectOppositeRoofCollectibleRoute(
+            if (!_collectibleDecisionPointDetector.TryDetectOppositeCollectibleRoute(
                     planningState,
                     projectedWorldSnapshot,
-                    out DecisionPoint roofRewardDecisionPoint))
+                    out DecisionPoint oppositeCollectibleDecisionPoint))
             {
                 return;
             }
 
+            IPlanningStrategy entryStrategy = planningState.Hamster.IsOnRoof
+                ? _roofSwitchLaneStrategy
+                : _switchLaneStrategy;
+            if (entryStrategy == null)
+                return;
+
             PlanningStrategyResult result = CollectFromStrategy(
-                _roofSwitchLaneStrategy,
+                entryStrategy,
                 planningState,
                 projectedWorldSnapshot,
-                roofRewardDecisionPoint);
+                oppositeCollectibleDecisionPoint);
 
             ApplyStrategyResult(
                 result,

@@ -320,7 +320,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofSpecification.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\LoadAddressablesLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelEnum.cs" />
-    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\RoofCollectibleDecisionPointDetector.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\CollectibleDecisionPointDetector.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitExecutor.cs" />
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameEngine\GameEventsManager.cs" />
@@ -422,7 +422,7 @@
     <Compile Include="Assets\Scripts\UI\Screens\CharacterScreenController.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiLoseModalMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvanceSimulator.cs" />
-    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\DecisionPointDetector.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\RouteDecisionPointDetector.cs" />
     <Compile Include="Assets\Scripts\System\VisiblePatternTracker.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\Common\Models\Pattern.cs" />

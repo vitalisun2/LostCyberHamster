@@ -4,9 +4,9 @@ using Assets.Scripts.Bot.Planning;
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
     /// <summary>
-    /// Строит role-based decision points для выбранной focus lane.
+    /// Строит обязательные route decision points для текущей или противоположной линии.
     /// </summary>
-    public sealed class DecisionPointDetector
+    internal sealed class RouteDecisionPointDetector
     {
         /// <summary>
         /// Строит one-line role-based obstacle chain.
@@ -14,38 +14,19 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         private readonly ObstacleChainBuilder _chainBuilder = new ObstacleChainBuilder();
 
         /// <summary>
-        /// Пытается построить ближайшую role-based planning-ситуацию.
+        /// Пытается построить ближайшую обязательную route-ситуацию на текущей линии.
         /// </summary>
-        public bool TryDetect(
+        public bool TryDetectCurrent(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             out DecisionPoint decisionPoint)
         {
-            // Проверяет planning state.
+            // Проверяет входной контекст.
             decisionPoint = null;
-            if (planningState?.Hamster == null)
+            if (planningState?.Hamster == null || worldSnapshot?.Obstacles == null)
                 return false;
 
-            // Делегирует detection на текущую линию хомяка.
-            return TryDetect(
-                planningState,
-                worldSnapshot,
-                planningState.IsOnBottomLine,
-                out decisionPoint);
-        }
-
-        /// <summary>
-        /// Пытается построить ближайшую route-ситуацию, пропуская optional-only collectable chains.
-        /// </summary>
-        public bool TryDetectRoute(
-            PlanningState planningState,
-            WorldSnapshot worldSnapshot,
-            out DecisionPoint decisionPoint)
-        {
-            decisionPoint = null;
-            if (planningState?.Hamster == null)
-                return false;
-
+            // Делегирует detection на текущую линию.
             return TryDetectRoute(
                 planningState,
                 worldSnapshot,
@@ -54,56 +35,47 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         }
 
         /// <summary>
-        /// Пытается построить ближайшую role-based planning-ситуацию для выбранной focus lane.
+        /// Пытается построить ближайшую обязательную route-ситуацию на противоположной линии.
         /// </summary>
-        public bool TryDetect(
+        public bool TryDetectOpposite(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
-            bool focusBottomLine,
             out DecisionPoint decisionPoint)
         {
+            // Проверяет входной контекст.
             decisionPoint = null;
             if (planningState?.Hamster == null || worldSnapshot?.Obstacles == null)
                 return false;
 
-            int firstDetectionIndex = GetFirstDetectionIndex(
+            // Делегирует detection на противоположную линию.
+            return TryDetectRoute(
                 planningState,
                 worldSnapshot,
-                focusBottomLine);
-
-            return TryDetectFromIndex(
-                planningState,
-                worldSnapshot,
-                focusBottomLine,
-                firstDetectionIndex,
-                requireRequiredRole: false,
+                !planningState.IsOnBottomLine,
                 out decisionPoint);
         }
 
         /// <summary>
         /// Пытается построить ближайшую route-ситуацию для focus lane, не останавливаясь на optional-only collectables.
         /// </summary>
-        public bool TryDetectRoute(
+        private bool TryDetectRoute(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             bool focusBottomLine,
             out DecisionPoint decisionPoint)
         {
-            decisionPoint = null;
-            if (planningState?.Hamster == null || worldSnapshot?.Obstacles == null)
-                return false;
-
-            int firstDetectionIndex = GetFirstDetectionIndex(
+            // Выбирает старт detection для ground/roof state.
+            int firstDetectionIndex = GetRouteStartIndex(
                 planningState,
                 worldSnapshot,
                 focusBottomLine);
 
+            // Строит route decision point.
             return TryDetectFromIndex(
                 planningState,
                 worldSnapshot,
                 focusBottomLine,
                 firstDetectionIndex,
-                requireRequiredRole: true,
                 out decisionPoint);
         }
 
@@ -115,7 +87,6 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             WorldSnapshot worldSnapshot,
             bool focusBottomLine,
             int firstDetectionIndex,
-            bool requireRequiredRole,
             out DecisionPoint decisionPoint)
         {
             decisionPoint = null;
@@ -128,7 +99,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                        focusBottomLine,
                        out ObstacleChain chain))
             {
-                if (!requireRequiredRole || chain.HasAnyRequiredPlanningRole())
+                if (chain.HasAnyRequiredPlanningRole())
                 {
                     decisionPoint = new DecisionPoint(chain);
                     return true;
@@ -156,25 +127,41 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         }
 
         /// <summary>
-        /// Возвращает индекс obstacle, с которого нужно начинать detection.
+        /// Возвращает индекс obstacle, с которого нужно начинать route detection.
         /// </summary>
-        private static int GetFirstDetectionIndex(
+        private static int GetRouteStartIndex(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             bool focusBottomLine)
         {
-            // Берет обычный старт detection из planning state.
-            int defaultDetectionIndex = planningState.NextObstacleIndex;
+            // Определяет focus lane.
             HamsterSnapshot hamster = planningState.Hamster;
-            if (hamster != null && focusBottomLine != hamster.IsOnBottomLine)
+            if (focusBottomLine != hamster.IsOnBottomLine)
                 return 0;
 
-            if (hamster == null || !hamster.IsOnRoof)
-                return defaultDetectionIndex;
+            // Выбирает ground или roof правила старта.
+            return hamster.IsOnRoof
+                ? GetRoofRouteStartIndex(planningState, worldSnapshot)
+                : GetGroundRouteStartIndex(planningState);
+        }
 
+        /// <summary>
+        /// Возвращает обычный старт route detection на земле.
+        /// </summary>
+        private static int GetGroundRouteStartIndex(PlanningState planningState)
+        {
+            return planningState.NextObstacleIndex;
+        }
+
+        /// <summary>
+        /// Возвращает roof-start: ближайший occupant hazard или первый obstacle после passive roof-chain.
+        /// </summary>
+        private static int GetRoofRouteStartIndex(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot)
+        {
             // На текущей roof lane сначала ищет occupant hazard на passive roof path.
-            if (focusBottomLine == hamster.IsOnBottomLine
-                && TryFindFirstRoofOccupantHazardIndex(
+            if (TryFindFirstRoofOccupantHazardIndex(
                     planningState,
                     worldSnapshot,
                     out int firstRoofOccupantHazardIndex))
@@ -189,13 +176,13 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                     out _,
                     out int lastRoofIndex))
             {
-                return defaultDetectionIndex;
+                return planningState.NextObstacleIndex;
             }
 
             int firstIndexAfterPassiveRoofs = lastRoofIndex + 1;
-            return firstIndexAfterPassiveRoofs > defaultDetectionIndex
+            return firstIndexAfterPassiveRoofs > planningState.NextObstacleIndex
                 ? firstIndexAfterPassiveRoofs
-                : defaultDetectionIndex;
+                : planningState.NextObstacleIndex;
         }
 
         /// <summary>
