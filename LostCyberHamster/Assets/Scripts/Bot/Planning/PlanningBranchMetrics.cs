@@ -236,6 +236,7 @@ namespace Assets.Scripts.Bot.Planning
         {
             return actionKind == BotActionKind.RoofSwitchLane
                 || actionKind == BotActionKind.PassiveCollect
+                || actionKind == BotActionKind.PassiveRoofExit
                 || actionKind == BotActionKind.PassiveAdvance;
         }
 
@@ -348,6 +349,7 @@ namespace Assets.Scripts.Bot.Planning
         {
             return actionKind == BotActionKind.SwitchLane
                 || actionKind == BotActionKind.RoofSwitchLane
+                || actionKind == BotActionKind.PassiveRoofExit
                 || actionKind == BotActionKind.PassiveAdvance
                 || actionKind == BotActionKind.JumpOnRoof
                 || actionKind == BotActionKind.SuperJumpOnRoof;

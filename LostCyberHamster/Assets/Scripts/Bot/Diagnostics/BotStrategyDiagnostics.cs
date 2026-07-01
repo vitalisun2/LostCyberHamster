@@ -92,6 +92,9 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         private static string FormatDecisionPoint(DecisionPoint decisionPoint)
         {
+            if (decisionPoint?.Kind == DecisionPointKind.MovingBoundary)
+                return $"movingBoundary={decisionPoint.MovingBoundaryKind}";
+
             if (decisionPoint?.Chain == null)
                 return "none";
 

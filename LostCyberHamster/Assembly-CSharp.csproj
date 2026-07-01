@@ -362,6 +362,7 @@
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitIntroAssetsLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\JumpOnRoofSpecification.cs" />
     <Compile Include="Assets\Scripts\Ads\AdLoadListener.cs" />
+    <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\MovingBoundaryDecisionPointDetector.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\SpriteAnimatorController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\Listeners.cs" />

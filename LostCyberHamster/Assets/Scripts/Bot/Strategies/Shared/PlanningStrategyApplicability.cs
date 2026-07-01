@@ -45,6 +45,20 @@ namespace Assets.Scripts.Bot.Strategies.Shared
         }
 
         /// <summary>
+        /// Возвращает true, если decision point описывает указанную границу движения.
+        /// </summary>
+        public static bool IsMovingBoundary(
+            PlanningState planningState,
+            DecisionPoint decisionPoint,
+            MovingBoundaryKind movingBoundaryKind)
+        {
+            return planningState?.Hamster != null
+                && decisionPoint != null
+                && decisionPoint.Kind == DecisionPointKind.MovingBoundary
+                && decisionPoint.MovingBoundaryKind == movingBoundaryKind;
+        }
+
+        /// <summary>
         /// Проверяет дорожное состояние, допускающее ground actions.
         /// </summary>
         public static bool CanPlanGroundRun(HamsterSnapshot hamster)

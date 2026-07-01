@@ -32,6 +32,11 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
         public ObstacleSnapshot ContextObstacle { get; }
 
         /// <summary>
+        /// Возвращает true для context-bound route exit.
+        /// </summary>
+        public bool HasContextObstacle => ContextObstacle != null;
+
+        /// <summary>
         /// Индекс context obstacle в projected snapshot.
         /// </summary>
         public int ContextObstacleIndex { get; }

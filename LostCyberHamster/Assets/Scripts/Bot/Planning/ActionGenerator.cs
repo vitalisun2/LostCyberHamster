@@ -50,6 +50,8 @@ namespace Assets.Scripts.Bot.Planning
         private readonly RouteDecisionPointDetector _routeDecisionPointDetector = new RouteDecisionPointDetector();
         private readonly CollectibleDecisionPointDetector _collectibleDecisionPointDetector =
             new CollectibleDecisionPointDetector();
+        private readonly MovingBoundaryDecisionPointDetector _movingBoundaryDecisionPointDetector =
+            new MovingBoundaryDecisionPointDetector();
         private readonly SuperFallbackActionDeduplicator _superFallbackDeduplicator =
             new SuperFallbackActionDeduplicator();
 
@@ -89,6 +91,8 @@ namespace Assets.Scripts.Bot.Planning
                     planningState,
                     projectedWorldSnapshot,
                     out DecisionPoint oppositeDecisionPoint);
+            bool hasMovingBoundaryDecisionPoint = false;
+            DecisionPoint movingBoundaryDecisionPoint = null;
 
             if (hasCurrentDecisionPoint)
             {
@@ -129,9 +133,28 @@ namespace Assets.Scripts.Bot.Planning
                     deadEndReasons);
             }
 
+            if (!hasCurrentDecisionPoint && plannedActions.Count == 0)
+            {
+                hasMovingBoundaryDecisionPoint = _movingBoundaryDecisionPointDetector.TryDetectPassiveRoofExit(
+                    planningState,
+                    projectedWorldSnapshot,
+                    out movingBoundaryDecisionPoint);
+                if (hasMovingBoundaryDecisionPoint)
+                {
+                    CollectActionsForDecisionPoint(
+                        planningState,
+                        projectedWorldSnapshot,
+                        movingBoundaryDecisionPoint,
+                        plannedActions,
+                        deadEndReasons);
+                }
+            }
+
             if (!hasCurrentDecisionPoint
                 && !hasOppositeDecisionPoint
-                && plannedActions.Count == 0)
+                && !hasMovingBoundaryDecisionPoint
+                && plannedActions.Count == 0
+                && deadEndReasons.Count == 0)
             {
                 LogNoDecisionPoint(planningState);
                 return new ActionGenerationResult(

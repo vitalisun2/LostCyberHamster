@@ -22,13 +22,9 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             out PassiveRoofExitModel model,
             out string deadEndReason)
         {
-            // Проверяет входные данные и состояние хомяка.
             model = default;
             deadEndReason = null;
-            if (planningState == null || worldSnapshot == null || runFromRoofTravel <= 0f)
-                return false;
-
-            HamsterSnapshot hamster = planningState.Hamster;
+            HamsterSnapshot hamster = planningState?.Hamster;
             if (!CanExitRoofPassively(hamster))
                 return false;
 
@@ -39,6 +35,60 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                     out ObstacleSnapshot contextObstacle,
                     out int contextObstacleIndex,
                     out deadEndReason))
+            {
+                return false;
+            }
+
+            return TryBuildSafeExitModel(
+                planningState,
+                worldSnapshot,
+                runFromRoofTravel,
+                contextObstacle,
+                contextObstacleIndex,
+                out model,
+                out deadEndReason);
+        }
+
+        /// <summary>
+        /// Возвращает модель passive roof exit для moving-boundary ситуации без obstacle context.
+        /// </summary>
+        public static bool TryBuildMovingBoundaryModel(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            float runFromRoofTravel,
+            out PassiveRoofExitModel model,
+            out string deadEndReason)
+        {
+            return TryBuildSafeExitModel(
+                planningState,
+                worldSnapshot,
+                runFromRoofTravel,
+                contextObstacle: null,
+                contextObstacleIndex: -1,
+                out model,
+                out deadEndReason);
+        }
+
+        /// <summary>
+        /// Строит общую safe transition model пассивного схода с крыши.
+        /// </summary>
+        private static bool TryBuildSafeExitModel(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            float runFromRoofTravel,
+            ObstacleSnapshot contextObstacle,
+            int contextObstacleIndex,
+            out PassiveRoofExitModel model,
+            out string deadEndReason)
+        {
+            // Проверяет входные данные и состояние хомяка.
+            model = default;
+            deadEndReason = null;
+            if (planningState == null || worldSnapshot == null || runFromRoofTravel <= 0f)
+                return false;
+
+            HamsterSnapshot hamster = planningState.Hamster;
+            if (!CanExitRoofPassively(hamster))
             {
                 return false;
             }

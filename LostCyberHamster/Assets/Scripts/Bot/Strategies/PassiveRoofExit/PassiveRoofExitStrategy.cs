@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
@@ -48,7 +47,12 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             PlanningState planningState,
             DecisionPoint decisionPoint)
         {
-            return PlanningStrategyApplicability.IsRoofRunCurrentLane(planningState, decisionPoint);
+            return PlanningStrategyApplicability.IsRoofRunCurrentLane(planningState, decisionPoint)
+                || (PlanningStrategyApplicability.IsMovingBoundary(
+                        planningState,
+                        decisionPoint,
+                        MovingBoundaryKind.PassiveRoofExit)
+                    && PlanningStrategyApplicability.CanPlanRoofRun(planningState.Hamster));
         }
 
         /// <summary>
@@ -67,14 +71,31 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             if (!_policy.TryGetRunFromRoofTravel(out float runFromRoofTravel))
                 return PlanningStrategyResult.NotApplicable();
 
-            // Строит safe transition model.
-            if (!PassiveRoofExitPlanner.TryBuildModel(
+            // Строит safe transition model по типу planning-ситуации.
+            PassiveRoofExitModel model;
+            string deadEndReason;
+            bool hasModel;
+            if (decisionPoint.Kind == DecisionPointKind.MovingBoundary)
+            {
+                hasModel = PassiveRoofExitPlanner.TryBuildMovingBoundaryModel(
+                    planningState,
+                    worldSnapshot,
+                    runFromRoofTravel,
+                    out model,
+                    out deadEndReason);
+            }
+            else
+            {
+                hasModel = PassiveRoofExitPlanner.TryBuildModel(
                     planningState,
                     worldSnapshot,
                     decisionPoint,
                     runFromRoofTravel,
-                    out PassiveRoofExitModel model,
-                    out string deadEndReason))
+                    out model,
+                    out deadEndReason);
+            }
+
+            if (!hasModel)
             {
                 return string.IsNullOrEmpty(deadEndReason)
                     ? PlanningStrategyResult.NotApplicable()
@@ -82,7 +103,7 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
             }
 
             // Добавляет no-input planned action.
-            return PlanningStrategyResult.FromAction(BuildAction(planningState, model));
+            return PlanningStrategyResult.FromAction(BuildAction(model));
         }
 
         /// <summary>
@@ -96,13 +117,19 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
         /// <summary>
         /// Создает planned action для safe passive roof exit transition.
         /// </summary>
-        private PlannedAction BuildAction(
-            PlanningState planningState,
-            PassiveRoofExitModel model)
+        private PlannedAction BuildAction(PassiveRoofExitModel model)
         {
             // Выбирает stable trigger anchor на последней roof.
             float triggerX = model.LastRoof.LeftX;
-            string description = $"{_policy.DescriptionPrefix} before {model.ContextObstacle.ObstacleType}";
+            string description = model.HasContextObstacle
+                ? $"{_policy.DescriptionPrefix} before {model.ContextObstacle.ObstacleType}"
+                : $"{_policy.DescriptionPrefix} transition";
+            int targetObstacleIndex = model.HasContextObstacle
+                ? model.ContextObstacleIndex
+                : -1;
+            int? targetObstacleInstanceId = model.HasContextObstacle
+                ? (int?)model.ContextObstacle.InstanceId
+                : null;
 
             // Возвращает zero-cost no-tap action.
             return new PlannedAction(
@@ -111,8 +138,8 @@ namespace Assets.Scripts.Bot.Strategies.PassiveRoofExit
                 triggerX,
                 model.CompletionWorldShift,
                 model.CompletionWorldShift,
-                model.ContextObstacleIndex,
-                targetObstacleInstanceId: model.ContextObstacle.InstanceId,
+                targetObstacleIndex,
+                targetObstacleInstanceId: targetObstacleInstanceId,
                 triggerObstacleInstanceId: model.LastRoof.InstanceId,
                 energyCost: 0,
                 description: description);
