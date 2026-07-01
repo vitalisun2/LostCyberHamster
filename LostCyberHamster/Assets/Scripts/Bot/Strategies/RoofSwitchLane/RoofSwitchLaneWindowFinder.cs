@@ -6,7 +6,7 @@ using Assets.Scripts.Bot.Strategies.SwitchLane;
 namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
 {
     /// <summary>
-    /// Находит безопасное окно запуска roof switch-lane и roof support на целевой линии.
+    /// Находит безопасное окно запуска roof switch-lane и тип посадки на целевой линии.
     /// </summary>
     internal sealed class RoofSwitchLaneWindowFinder
     {
@@ -21,7 +21,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         }
 
         /// <summary>
-        /// Возвращает окно запуска, если target roof-line доступна до deadline context obstacle.
+        /// Возвращает окно запуска, если целевая линия доступна как roof support или безопасная дорога.
         /// </summary>
         public bool TryFind(
             PlanningState planningState,
@@ -62,16 +62,55 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 return false;
             }
 
-            // Находит безопасное окно с roof support на целевой линии.
-            if (!_fireWindowCalculator.TrySelectRelevantFireWindowSample(
+            // Сначала сохраняет существующий roof-to-roof сценарий.
+            if (TryFindRoofLandingWindow(
                     worldSnapshot,
                     hamster,
                     target.TargetBottomLine,
                     latestFireShift,
+                    out window))
+            {
+                return true;
+            }
+
+            // Если крыши нет, пробует безопасную посадку на дорогу.
+            if (TryFindRoadLandingWindow(
+                    worldSnapshot,
+                    hamster,
+                    target.TargetBottomLine,
+                    latestFireShift,
+                    out window))
+            {
+                return true;
+            }
+
+            // Возвращает общую причину недоступности target lane.
+            deadEndReason = "Нет безопасного окна для смены линии с крыши: целевая линия недоступна ни как крыша, ни как дорога.";
+            return false;
+        }
+
+        /// <summary>
+        /// Ищет окно смены линии с посадкой на roof support.
+        /// </summary>
+        private bool TryFindRoofLandingWindow(
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
+            bool targetBottomLine,
+            float latestFireShift,
+            out RoofSwitchLaneWindow window)
+        {
+            // Инициализирует результат.
+            window = default;
+
+            // Находит безопасное окно с roof support на целевой линии.
+            if (!_fireWindowCalculator.TrySelectRelevantFireWindowSample(
+                    worldSnapshot,
+                    hamster,
+                    targetBottomLine,
+                    latestFireShift,
                     out SwitchLaneFireWindowSample fireWindowSample,
                     requireTargetRoofSupport: true))
             {
-                deadEndReason = "Нет безопасного окна для смены линии с крыши: целевая roof-line недоступна.";
                 return false;
             }
 
@@ -79,19 +118,51 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
             if (!_fireWindowCalculator.TryFindTargetRoofSupportAtFireShift(
                     worldSnapshot,
                     hamster,
-                    target.TargetBottomLine,
+                    targetBottomLine,
                     fireWindowSample.FireShift,
                     out ObstacleSnapshot targetRoof)
                 || !TryFindObstacleIndex(worldSnapshot, targetRoof, out int targetRoofIndex))
             {
-                deadEndReason = "Нет безопасного окна для смены линии с крыши: target roof support не найден.";
                 return false;
             }
 
-            // Возвращает выбранное окно.
+            // Возвращает roof landing.
             window = new RoofSwitchLaneWindow(
                 targetRoof,
                 targetRoofIndex,
+                fireWindowSample);
+            return true;
+        }
+
+        /// <summary>
+        /// Ищет окно смены линии с посадкой на безопасную дорогу.
+        /// </summary>
+        private bool TryFindRoadLandingWindow(
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
+            bool targetBottomLine,
+            float latestFireShift,
+            out RoofSwitchLaneWindow window)
+        {
+            // Инициализирует результат.
+            window = default;
+
+            // Находит безопасное окно без требования roof support.
+            if (!_fireWindowCalculator.TrySelectRelevantFireWindowSample(
+                    worldSnapshot,
+                    hamster,
+                    targetBottomLine,
+                    latestFireShift,
+                    out SwitchLaneFireWindowSample fireWindowSample,
+                    requireTargetRoofSupport: false))
+            {
+                return false;
+            }
+
+            // Возвращает road landing.
+            window = new RoofSwitchLaneWindow(
+                targetRoof: null,
+                targetRoofIndex: -1,
                 fireWindowSample);
             return true;
         }

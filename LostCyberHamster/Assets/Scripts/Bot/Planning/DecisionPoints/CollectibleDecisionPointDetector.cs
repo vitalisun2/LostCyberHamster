@@ -65,10 +65,18 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             if (planningState?.Hamster == null || worldSnapshot?.Obstacles == null)
                 return false;
 
-            // Проверяет roof reward route.
+            // Проверяет reward route из roof state.
             if (CanDetectRoofCollectibles(planningState, worldSnapshot))
             {
-                return TryDetectOppositeRoofCollectibleRoute(
+                if (TryDetectOppositeRoofCollectibleRoute(
+                        planningState,
+                        worldSnapshot,
+                        out decisionPoint))
+                {
+                    return true;
+                }
+
+                return TryDetectOppositeRoadCollectibleRoute(
                     planningState,
                     worldSnapshot,
                     out decisionPoint);
@@ -232,6 +240,51 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         }
 
         /// <summary>
+        /// Пытается построить opposite-lane road reward route из roof state.
+        /// </summary>
+        private bool TryDetectOppositeRoadCollectibleRoute(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            out DecisionPoint decisionPoint)
+        {
+            // Ищет ближайший road collectable на противоположной линии.
+            decisionPoint = null;
+            bool oppositeBottomLine = !planningState.Hamster.IsOnBottomLine;
+            if (!TryFindNearestOppositeRoadCollectible(
+                    planningState,
+                    worldSnapshot,
+                    oppositeBottomLine,
+                    out ObstacleSnapshot collectible,
+                    out int collectibleIndex))
+            {
+                return false;
+            }
+
+            // Строит optional chain от найденного collectable.
+            if (!_chainBuilder.TryBuild(
+                    planningState,
+                    worldSnapshot,
+                    collectibleIndex,
+                    oppositeBottomLine,
+                    out ObstacleChain chain))
+            {
+                return false;
+            }
+
+            // Проверяет, что route ведет именно к полезному road collectable.
+            if (!chain.ContainsObstacle(collectible)
+                || chain.HasAnyRequiredPlanningRole()
+                || !CollectibleValuePolicy.HasPositiveCollectible(planningState.Hamster, chain))
+            {
+                return false;
+            }
+
+            // Возвращает reward decision point.
+            decisionPoint = new DecisionPoint(chain);
+            return true;
+        }
+
+        /// <summary>
         /// Проверяет, можно ли искать roof collectables из текущего planning-состояния.
         /// </summary>
         private static bool CanDetectRoofCollectibles(
@@ -299,7 +352,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
-                if (!CanUseAsOppositeRoofRewardCollectible(
+                if (!CanUseAsOppositeRewardCollectible(
                         hamster,
                         obstacle,
                         supportBottomLine))
@@ -339,17 +392,80 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
         }
 
         /// <summary>
-        /// Проверяет базовую пригодность collectable на opposite roof-line.
+        /// Ищет ближайший полезный road collectable на opposite lane.
         /// </summary>
-        private static bool CanUseAsOppositeRoofRewardCollectible(
+        private static bool TryFindNearestOppositeRoadCollectible(
+            PlanningState planningState,
+            WorldSnapshot worldSnapshot,
+            bool targetBottomLine,
+            out ObstacleSnapshot collectible,
+            out int collectibleIndex)
+        {
+            // Инициализирует результат.
+            collectible = null;
+            collectibleIndex = -1;
+
+            // Проверяет входные данные.
+            HamsterSnapshot hamster = planningState?.Hamster;
+            if (hamster == null || worldSnapshot?.Obstacles == null)
+                return false;
+
+            // Перебирает collectable-кандидатов.
+            float bestDistance = float.MaxValue;
+            for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (!CanUseAsOppositeRewardCollectible(
+                        hamster,
+                        obstacle,
+                        targetBottomLine))
+                {
+                    continue;
+                }
+
+                if (!CollectibleValuePolicy.TryGetPositiveValue(
+                        hamster,
+                        obstacle,
+                        out _))
+                {
+                    continue;
+                }
+
+                if (TryFindRoofSupportForCollectible(
+                        worldSnapshot,
+                        targetBottomLine,
+                        obstacle,
+                        out _))
+                {
+                    continue;
+                }
+
+                float candidateDistance = GetForwardDistance(hamster, obstacle);
+                if (candidateDistance >= bestDistance)
+                    continue;
+
+                // Запоминает ближайший road collectable.
+                collectible = obstacle;
+                collectibleIndex = obstacleIndex;
+                bestDistance = candidateDistance;
+            }
+
+            // Возвращает наличие найденного кандидата.
+            return collectible != null;
+        }
+
+        /// <summary>
+        /// Проверяет базовую пригодность collectable на opposite lane.
+        /// </summary>
+        private static bool CanUseAsOppositeRewardCollectible(
             HamsterSnapshot hamster,
             ObstacleSnapshot obstacle,
-            bool supportBottomLine)
+            bool targetBottomLine)
         {
             return obstacle != null
                 && !obstacle.IsRemovedInPlanning
                 && obstacle.RightX > hamster.HamsterLeftX
-                && obstacle.IsBottomLine == supportBottomLine
+                && obstacle.IsBottomLine == targetBottomLine
                 && ObstacleClassifier.IsCollectible(obstacle.ObstacleType);
         }
 

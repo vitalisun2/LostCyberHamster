@@ -7,11 +7,12 @@ using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
 using Assets.Scripts.Bot.Strategies.SwitchLane;
 using Assets.Scripts.Common;
+using System.Collections.Generic;
 
 namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
 {
     /// <summary>
-    /// Планирует смену линии с текущей крыши на крышу другой линии.
+    /// Планирует смену линии с текущей крыши на крышу или дорогу другой линии.
     /// </summary>
     internal sealed class RoofSwitchLaneStrategy : IPlanningStrategy
     {
@@ -21,7 +22,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         private readonly RoofSwitchLaneTargetResolver _targetResolver;
 
         /// <summary>
-        /// Находит безопасное окно запуска и roof support для target context.
+        /// Находит безопасное окно запуска и тип посадки для target context.
         /// </summary>
         private readonly RoofSwitchLaneWindowFinder _windowFinder;
 
@@ -55,7 +56,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         public ISimulator Simulator { get; }
 
         /// <summary>
-        /// Проверяет две причины применимости: defensive уход с текущей roof lane и reward route на opposite roof lane.
+        /// Проверяет две причины применимости: defensive уход с текущей roof lane и reward route на opposite lane.
         /// </summary>
         public bool CanConsider(
             PlanningState planningState,
@@ -75,7 +76,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                     || PlanningStrategyApplicability.HasRole(decisionPoint, ObstacleRole.RoofOccupantHazard);
             }
 
-            // Проверяет reward-сценарий другой roof-line.
+            // Проверяет reward-сценарий другой линии.
             return PlanningStrategyApplicability.IsOppositeLane(planningState, decisionPoint)
                 && CollectibleValuePolicy.HasPositiveCollectible(
                     planningState.Hamster,
@@ -83,7 +84,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         }
 
         /// <summary>
-        /// Возвращает roof switch-lane action, если найдено безопасное окно с target roof support.
+        /// Возвращает roof switch-lane action, если найдено безопасное окно на target lane.
         /// </summary>
         public PlanningStrategyResult CollectActions(
             PlanningState planningState,
@@ -96,33 +97,43 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 (worldSnapshot, nameof(worldSnapshot)),
                 (decisionPoint, nameof(decisionPoint)));
 
-            // Определяет сценарий roof switch-lane.
-            if (!_targetResolver.TryResolve(
+            // Определяет target candidates для roof switch-lane.
+            if (!_targetResolver.TryResolveTargets(
                     planningState,
                     decisionPoint,
-                    out RoofSwitchLaneTarget target))
+                    out IReadOnlyList<RoofSwitchLaneTarget> targets))
             {
                 return PlanningStrategyResult.NotApplicable();
             }
 
-            // Находит безопасное окно.
-            if (!_windowFinder.TryFind(
-                    planningState,
-                    worldSnapshot,
-                    target,
-                    out RoofSwitchLaneWindow window,
-                    out string deadEndReason))
+            // Возвращает первый достижимый target.
+            string lastDeadEndReason = null;
+            for (int targetIndex = 0; targetIndex < targets.Count; targetIndex++)
             {
-                return string.IsNullOrEmpty(deadEndReason)
-                    ? PlanningStrategyResult.NotApplicable()
-                    : DeadEnd(deadEndReason);
+                RoofSwitchLaneTarget target = targets[targetIndex];
+                if (!_windowFinder.TryFind(
+                        planningState,
+                        worldSnapshot,
+                        target,
+                        out RoofSwitchLaneWindow window,
+                        out string deadEndReason))
+                {
+                    if (!string.IsNullOrEmpty(deadEndReason))
+                        lastDeadEndReason = deadEndReason;
+
+                    continue;
+                }
+
+                return PlanningStrategyResult.FromAction(BuildAction(
+                    planningState.Hamster,
+                    target,
+                    window));
             }
 
-            // Возвращает готовый action.
-            return PlanningStrategyResult.FromAction(BuildAction(
-                planningState.Hamster,
-                target,
-                window));
+            // Возвращает причину, если ни один target не достижим.
+            return string.IsNullOrEmpty(lastDeadEndReason)
+                ? PlanningStrategyResult.NotApplicable()
+                : DeadEnd(lastDeadEndReason);
         }
 
         /// <summary>
@@ -181,12 +192,14 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 target.ObjectiveValue);
 
             // Выбирает target для executor-а и метрик.
-            ObstacleSnapshot actionTarget = objectiveValue.HasValue
-                ? target.ContextObstacle
-                : window.TargetRoof;
-            int actionTargetIndex = objectiveValue.HasValue
-                ? target.ContextObstacleIndex
-                : window.TargetRoofIndex;
+            ObstacleSnapshot actionTarget = ResolveActionTarget(
+                target,
+                window,
+                objectiveValue);
+            int actionTargetIndex = ResolveActionTargetIndex(
+                target,
+                window,
+                objectiveValue);
 
             // Формирует trigger window.
             float triggerX = target.ContextObstacle.LeftX - fireShift;
@@ -208,11 +221,53 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 triggerObstacleInstanceId: target.ContextObstacle.InstanceId,
                 targetBottomLine: target.TargetBottomLine,
                 energyCost: 0,
-                description: $"Roof switch lane to {window.TargetRoof.ObstacleType} before {target.ContextObstacle.ObstacleType}",
-                resultRoofSupportInstanceId: window.TargetRoof.InstanceId,
+                description: $"Roof switch lane to {FormatLanding(window)} before {target.ContextObstacle.ObstacleType}",
+                resultRoofSupportInstanceId: window.TargetRoof?.InstanceId,
                 isOppositeLaneEntry: true,
                 triggerWindow: triggerWindow,
                 collectibleObjectiveValue: objectiveValue);
+        }
+
+        /// <summary>
+        /// Возвращает target obstacle для action lifecycle.
+        /// </summary>
+        private static ObstacleSnapshot ResolveActionTarget(
+            RoofSwitchLaneTarget target,
+            RoofSwitchLaneWindow window,
+            CollectibleObjectiveValue objectiveValue)
+        {
+            // Immediate collectable и road landing привязаны к context obstacle.
+            if (objectiveValue.HasValue || !window.LandsOnRoof)
+                return target.ContextObstacle;
+
+            // Roof landing привязан к target roof support.
+            return window.TargetRoof;
+        }
+
+        /// <summary>
+        /// Возвращает world-index target obstacle для action lifecycle.
+        /// </summary>
+        private static int ResolveActionTargetIndex(
+            RoofSwitchLaneTarget target,
+            RoofSwitchLaneWindow window,
+            CollectibleObjectiveValue objectiveValue)
+        {
+            // Immediate collectable и road landing привязаны к context obstacle.
+            if (objectiveValue.HasValue || !window.LandsOnRoof)
+                return target.ContextObstacleIndex;
+
+            // Roof landing привязан к target roof support.
+            return window.TargetRoofIndex;
+        }
+
+        /// <summary>
+        /// Форматирует тип посадки для описания action.
+        /// </summary>
+        private static string FormatLanding(RoofSwitchLaneWindow window)
+        {
+            return window.LandsOnRoof
+                ? window.TargetRoof.ObstacleType.ToString()
+                : "road";
         }
     }
 }

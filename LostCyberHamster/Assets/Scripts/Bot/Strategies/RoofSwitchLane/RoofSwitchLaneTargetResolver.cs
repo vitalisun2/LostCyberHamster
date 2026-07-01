@@ -2,24 +2,25 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using System.Collections.Generic;
 
 namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
 {
     /// <summary>
-    /// Определяет target context для смены линии между крышами.
+    /// Определяет target context для смены линии с крыши на другую линию.
     /// </summary>
     internal sealed class RoofSwitchLaneTargetResolver
     {
         /// <summary>
-        /// Определяет target context для defensive или reward roof switch-lane сценария.
+        /// Определяет target contexts для defensive или reward roof switch-lane сценария.
         /// </summary>
-        public bool TryResolve(
+        public bool TryResolveTargets(
             PlanningState planningState,
             DecisionPoint decisionPoint,
-            out RoofSwitchLaneTarget target)
+            out IReadOnlyList<RoofSwitchLaneTarget> targets)
         {
             // Инициализирует результат.
-            target = default;
+            targets = null;
 
             // Проверяет входные данные.
             HamsterSnapshot hamster = planningState?.Hamster;
@@ -29,9 +30,10 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
 
             // Выбирает сценарий по линии decision chain.
             bool chainIsCurrentLane = chain.First.IsBottomLine == hamster.IsOnBottomLine;
-            return chainIsCurrentLane
-                ? TryResolveDefensiveTarget(hamster, chain, out target)
-                : TryResolveRewardTarget(hamster, chain, out target);
+            if (chainIsCurrentLane)
+                return TryResolveDefensiveTarget(hamster, chain, out targets);
+
+            return TryResolveRewardTargets(hamster, chain, out targets);
         }
 
         /// <summary>
@@ -40,10 +42,10 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         private static bool TryResolveDefensiveTarget(
             HamsterSnapshot hamster,
             ObstacleChain chain,
-            out RoofSwitchLaneTarget target)
+            out IReadOnlyList<RoofSwitchLaneTarget> targets)
         {
             // Инициализирует результат.
-            target = default;
+            targets = null;
 
             // Проверяет входные данные.
             if (hamster == null || chain == null)
@@ -58,47 +60,45 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 return false;
             }
 
-            // Возвращает target на противоположной roof-line.
-            target = new RoofSwitchLaneTarget(
-                contextObstacle,
-                contextObstacleIndex,
-                targetBottomLine: !hamster.IsOnBottomLine,
-                CollectibleObjectiveValue.None);
+            // Возвращает target на противоположной линии.
+            targets = new[]
+            {
+                new RoofSwitchLaneTarget(
+                    contextObstacle,
+                    contextObstacleIndex,
+                    targetBottomLine: !hamster.IsOnBottomLine,
+                    CollectibleObjectiveValue.None)
+            };
             return true;
         }
 
         /// <summary>
-        /// Определяет полезный collectable на другой roof-line как target context.
+        /// Определяет полезные collectables на другой линии как target contexts.
         /// </summary>
-        private static bool TryResolveRewardTarget(
+        private static bool TryResolveRewardTargets(
             HamsterSnapshot hamster,
             ObstacleChain chain,
-            out RoofSwitchLaneTarget target)
+            out IReadOnlyList<RoofSwitchLaneTarget> targets)
         {
             // Инициализирует результат.
-            target = default;
+            targets = null;
 
             // Проверяет входные данные.
             if (hamster == null || chain == null)
                 return false;
 
-            // Ищет collectable context.
-            if (!TryFindPositiveCollectibleContext(
-                    hamster,
-                    chain,
-                    out ObstacleSnapshot contextObstacle,
-                    out int contextObstacleIndex,
-                    out CollectibleObjectiveValue objectiveValue))
-            {
-                return false;
-            }
+            // Собирает collectable contexts.
+            var resolvedTargets = new List<RoofSwitchLaneTarget>();
+            CollectPositiveCollectibleTargets(
+                hamster,
+                chain,
+                resolvedTargets);
 
-            // Возвращает target на roof-line найденного collectable.
-            target = new RoofSwitchLaneTarget(
-                contextObstacle,
-                contextObstacleIndex,
-                chain.First.IsBottomLine,
-                objectiveValue);
+            if (resolvedTargets.Count == 0)
+                return false;
+
+            // Возвращает target-ы на линии collectables.
+            targets = resolvedTargets;
             return true;
         }
 
@@ -135,23 +135,18 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         }
 
         /// <summary>
-        /// Ищет первый полезный collectable для reward roof switch-lane.
+        /// Добавляет полезные collectables для reward roof switch-lane.
         /// </summary>
-        private static bool TryFindPositiveCollectibleContext(
+        private static void CollectPositiveCollectibleTargets(
             HamsterSnapshot hamster,
             ObstacleChain chain,
-            out ObstacleSnapshot collectible,
-            out int collectibleIndex,
-            out CollectibleObjectiveValue objectiveValue)
+            List<RoofSwitchLaneTarget> targets)
         {
-            // Инициализирует результат.
-            collectible = null;
-            collectibleIndex = -1;
-            objectiveValue = CollectibleObjectiveValue.None;
-            if (hamster == null || chain == null)
-                return false;
+            // Проверяет входные данные.
+            if (hamster == null || chain == null || targets == null)
+                return;
 
-            // Ищет полезный collectable.
+            // Ищет полезные collectables.
             for (int chainIndex = 0; chainIndex < chain.Count; chainIndex++)
             {
                 ObstacleChainElement element = chain.Elements[chainIndex];
@@ -161,17 +156,17 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 if (!CollectibleValuePolicy.TryGetPositiveValue(
                         hamster,
                         element.Obstacle,
-                        out objectiveValue))
+                        out CollectibleObjectiveValue objectiveValue))
                 {
                     continue;
                 }
 
-                collectible = element.Obstacle;
-                collectibleIndex = element.WorldIndex;
-                return true;
+                targets.Add(new RoofSwitchLaneTarget(
+                    element.Obstacle,
+                    element.WorldIndex,
+                    element.Obstacle.IsBottomLine,
+                    objectiveValue));
             }
-
-            return false;
         }
     }
 }

@@ -11,7 +11,7 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
 {
     /// <summary>
-    /// Выполняет tap смены линии между крышами.
+    /// Выполняет tap смены линии с крыши на крышу или дорогу другой линии.
     /// </summary>
     internal sealed class RoofSwitchLaneExecutor : IActionExecutionHandler
     {
@@ -37,8 +37,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
 
             // Проверяет контракт action.
             if (action.Kind != BotActionKind.RoofSwitchLane
-                || !action.TargetBottomLine.HasValue
-                || !action.ResultRoofSupportInstanceId.HasValue)
+                || !action.TargetBottomLine.HasValue)
             {
                 return Cancel(action, "reason=invalid-roof-switch-lane-action");
             }
@@ -108,6 +107,13 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
 
             // Проверяет достижение целевой линии.
             bool completed = hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value;
+            if (completed
+                && !action.ResultRoofSupportInstanceId.HasValue
+                && hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
+            {
+                return false;
+            }
+
             if (completed)
                 HamsterActionLogger.LogComplete(action, hamster.HamsterState.Value);
 
@@ -130,10 +136,13 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         {
             // Формирует diagnostic context.
             string targetLane = action.TargetBottomLine.Value ? "bottom" : "top";
+            string landing = action.ResultRoofSupportInstanceId.HasValue
+                ? $"targetLanding=roof targetRoof={action.ResultRoofSupportInstanceId.Value}"
+                : "targetLanding=road";
             HamsterActionLogger.LogFire(
                 action,
                 obstacleLeftX,
-                $"targetLane={targetLane} targetRoof={action.ResultRoofSupportInstanceId.Value} ");
+                $"targetLane={targetLane} {landing} ");
 
             // Отправляет input в gameplay.
             hamster.TapRequest.Invoke();
