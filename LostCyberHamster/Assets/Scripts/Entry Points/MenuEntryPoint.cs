@@ -45,23 +45,7 @@ namespace Assets.Scripts.Entry_Points
 
             GameDataManager.SaveData();
 
-            await AuthenticationManager.IsUnityAccountLinkedAsync();
             // tutorial !GameDataManager.PlayerData.IsFirstLaunch
-
-            var isUnityAccountLinked = await AuthenticationManager.IsUnityAccountLinkedAsync();
-            /*
-            if(isUnityAccountLinked)
-            {
-                await AuthenticationManager.UnlinkUnityAsync();
-            }*/
-            if(!isUnityAccountLinked && GameDataManager.IsGameJustStarted)
-            {
-                // random chance to show ads
-                if (UnityEngine.Random.Range(0, 60) < 100)
-                {
-                    await _uiManager.ShowModalAsync(ScreenEnum.SigninModal);
-                }
-            }
 
             GameDataManager.IsGameJustStarted = false;
         }

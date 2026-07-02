@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Assets.Scripts.System;
+using LostCyberHamster.Account;
 using LoadingTasks;
-using Unity.Services.Authentication;
-using Unity.Services.Core;
 using UnityEngine;
 
 namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
@@ -27,8 +26,7 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
 
             try
             {
-                await UnityServices.InitializeAsync();
-                await AuthenticationManager.SignInCachedUserAsync();
+                await AccountServiceProvider.Current.EnsureSignedInAsync();
             }
             catch
             {

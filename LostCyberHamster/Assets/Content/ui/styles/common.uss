@@ -237,6 +237,10 @@
     width: 480px;
 }
 
+.w-px-420 {
+    width: 420px;
+}
+
 .w-px-380 {
     width: 380px;
 }
@@ -323,6 +327,88 @@
 
 #settings__dd-languages {
     margin-left: 0;
+}
+
+.save-progress-modal {
+    flex-grow: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    max-width: 760px;
+}
+
+.save-progress-modal__title {
+    font-size: 46px;
+    margin-bottom: 20px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.save-progress-modal__description {
+    font-size: 30px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    margin-bottom: 12px;
+}
+
+.save-progress-modal__status {
+    font-size: 28px;
+    min-height: 42px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.save-progress-modal__buttons {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.save-progress-modal__button-primary {
+    width: 320px;
+    font-size: 36px;
+}
+
+.save-progress-modal__button-secondary {
+    width: 220px;
+    font-size: 36px;
+}
+
+.settings-account-row {
+    flex-grow: 0;
+    flex-direction: row;
+    align-items: center;
+}
+
+.settings-account-row__label {
+    font-size: 36px;
+}
+
+.settings-account-row__actions {
+    width: 480px;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.settings-account-row__status {
+    width: 480px;
+    font-size: 30px;
+    white-space: normal;
+}
+
+.settings-account-row__button {
+    width: 300px;
+    height: 84px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    font-size: 34px;
 }
 
 .top-block {
