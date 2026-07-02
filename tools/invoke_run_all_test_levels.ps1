@@ -209,6 +209,7 @@ function Resolve-ExpectedAction {
     }
 
     $actionMappings = @(
+        @{ Phrase = 'roof switch lane'; Kind = 'RoofSwitchLane' },
         @{ Phrase = 'switch lane from one roof'; Kind = 'RoofSwitchLane' },
         @{ Phrase = 'super jump from roof to roof'; Kind = 'SuperJumpFromRoofOnRoof' },
         @{ Phrase = 'jump from roof to roof'; Kind = 'JumpFromRoofOnRoof' },

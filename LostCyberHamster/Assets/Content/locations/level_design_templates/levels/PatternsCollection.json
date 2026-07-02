@@ -6764,7 +6764,7 @@
         {
             "name": "shift_force_switch",
             "description": "необходимость резко сменить линию, иначе столкновение.",
-            "nextObstacleId": 40,
+            "nextObstacleId": 41,
             "obstacles": [
                 {
                     "id": 0,
@@ -7004,6 +7004,12 @@
                     "id": 39,
                     "type": 0,
                     "x": 65.4000015258789,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 40,
+                    "type": 5,
+                    "x": 60.20000076293945,
                     "y": -1.8000000715255738
                 }
             ]
@@ -11525,7 +11531,7 @@
         },
         {
             "name": "test_roof_switch_lane_04",
-            "description": "should switch lane from roof to road - avoiding danger",
+            "description": "should roof switch lane from roof to road - avoiding danger",
             "nextObstacleId": 11,
             "obstacles": [
                 {
@@ -11598,7 +11604,7 @@
         },
         {
             "name": "test_roof_switch_lane_05",
-            "description": "should switch lane from roof to road - hunting collectables",
+            "description": "should roof switch lane from roof to road - hunting collectables",
             "nextObstacleId": 11,
             "obstacles": [
                 {

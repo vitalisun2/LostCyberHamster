@@ -107,11 +107,26 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
 
             // Проверяет достижение целевой линии.
             bool completed = hamster.IsOnBottomLine.Value == action.TargetBottomLine.Value;
-            if (completed
-                && !action.ResultRoofSupportInstanceId.HasValue
-                && hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
+            if (completed && !action.ResultRoofSupportInstanceId.HasValue)
             {
-                return false;
+                HamsterStateEnum state = hamster.HamsterState.Value;
+                if (state == HamsterStateEnum.Dead || hamster.IsDamaged.Value)
+                {
+                    HamsterActionLogger.LogCancel(action, $"state={state} isDamaged={hamster.IsDamaged.Value}");
+                    return true;
+                }
+
+                if (state == HamsterStateEnum.Run)
+                {
+                    HamsterActionLogger.LogComplete(action, state);
+                    return true;
+                }
+
+                if (state == HamsterStateEnum.RoofRun || state == HamsterStateEnum.RunFromRoof)
+                    return false;
+
+                HamsterActionLogger.LogCancel(action, $"unexpectedState={state}");
+                return true;
             }
 
             if (completed)
