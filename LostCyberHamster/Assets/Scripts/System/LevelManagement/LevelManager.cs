@@ -16,6 +16,10 @@ namespace Assets.Scripts.System
         private const int _starUnlockOffset = 2;
         private static ProgressService _progressService;
         private static HierarchicalLevelCatalog _progressCatalog;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static Func<LevelProgressSnapshot, HierarchicalLevelCatalog, LevelProgressSnapshot> _developmentProgressOverride;
+        private static Func<bool> _developmentProgressSaveSuppression;
+#endif
 
         public static LocationInfoList LocationInfoList { get; private set; } = new();
 
@@ -27,7 +31,7 @@ namespace Assets.Scripts.System
 
         private static bool HasCatalog => LevelCatalogService.HasCatalog;
 
-        private static LevelProgressSnapshot Progress => GameDataManager.PlayerData?.Progress ?? LevelProgressSnapshot.Empty;
+        private static LevelProgressSnapshot Progress => GetEffectiveProgress();
 
         public static async Task Init()
         {
@@ -38,6 +42,19 @@ namespace Assets.Scripts.System
         {
             await LevelDataProvider.LoadLevelData();
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Подключает внешний dev-only override чтения progress без изменения сохранения игрока.
+        /// </summary>
+        public static void SetDevelopmentProgressOverride(
+            Func<LevelProgressSnapshot, HierarchicalLevelCatalog, LevelProgressSnapshot> progressOverride,
+            Func<bool> saveSuppression)
+        {
+            _developmentProgressOverride = progressOverride;
+            _developmentProgressSaveSuppression = saveSuppression;
+        }
+#endif
 
         public static int GetCurrentLevelNumber()
         {
@@ -272,8 +289,15 @@ namespace Assets.Scripts.System
             GameEventsManager.OnLevelCompleted -= HandleLevelCompleted;
         }
 
-    private static void HandleLevelCompleted(int _, int stars)
+        private static void HandleLevelCompleted(int _, int stars)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_developmentProgressSaveSuppression?.Invoke() == true)
+            {
+                return;
+            }
+#endif
+
             var playerData = GameDataManager.PlayerData;
             if (playerData == null)
             {
@@ -297,6 +321,16 @@ namespace Assets.Scripts.System
 
             playerData.Progress = snapshot;
             GameDataManager.SaveData();
+        }
+
+        private static LevelProgressSnapshot GetEffectiveProgress()
+        {
+            var realProgress = GameDataManager.PlayerData?.Progress ?? LevelProgressSnapshot.Empty;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return _developmentProgressOverride?.Invoke(realProgress, Catalog) ?? realProgress;
+#else
+            return realProgress;
+#endif
         }
 
         private static bool TryGetNextProgressKey(LevelProgressKey current, out LevelProgressKey next)

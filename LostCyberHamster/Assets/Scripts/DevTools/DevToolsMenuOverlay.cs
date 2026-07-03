@@ -14,7 +14,7 @@ namespace Assets.Scripts.DevTools
         private const float _baseOpenButtonWidth = 64f;
         private const float _baseButtonHeight = 34f;
         private const float _basePanelWidth = 260f;
-        private const float _basePanelHeight = 132f;
+        private const float _basePanelHeight = 178f;
 
         private static DevToolsMenuOverlay _instance;
 
@@ -227,12 +227,27 @@ namespace Assets.Scripts.DevTools
             GUI.color = Color.white;
             GUI.enabled = true;
 
+            Rect unlockAllRect = new Rect(
+                panelRect.x + inset,
+                toggleRect.yMax + inset * 0.75f,
+                panelRect.width - inset * 2f,
+                rowHeight);
+            bool unlockAllLevels = DevToolsRuntimeState.UnlockAllLevels;
+            GUI.color = unlockAllLevels
+                ? new Color(0.78f, 1f, 0.82f, 1f)
+                : new Color(1f, 0.82f, 0.78f, 1f);
+
+            if (GUI.Button(unlockAllRect, unlockAllLevels ? "Unlock All On" : "Unlock All Off", _buttonStyle))
+                DevToolsRuntimeState.UnlockAllLevels = !unlockAllLevels;
+
+            GUI.color = Color.white;
+
             // Показывает статус ожидания, если bot controller ещё не создан.
             if (!botAvailable)
             {
                 Rect statusRect = new Rect(
                     panelRect.x + inset,
-                    toggleRect.yMax + inset * 0.6f,
+                    unlockAllRect.yMax + inset * 0.45f,
                     panelRect.width - inset * 2f,
                     rowHeight);
                 GUI.Label(statusRect, "Bot is not ready", _labelStyle);
