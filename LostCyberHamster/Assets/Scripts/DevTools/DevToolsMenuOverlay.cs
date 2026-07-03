@@ -24,6 +24,9 @@ namespace Assets.Scripts.DevTools
         private GUIStyle _boxStyle;
         private GUIStyle _labelStyle;
         private GUIStyle _titleStyle;
+#if UNITY_EDITOR
+        private int _editorMouseDownButtonId = -1;
+#endif
 
         /// <summary>
         /// Создаёт persistent host developer-меню до загрузки пользовательских сцен.
@@ -149,7 +152,7 @@ namespace Assets.Scripts.DevTools
             if (!_isPanelOpen)
             {
                 GUI.color = new Color(1f, 1f, 1f, 0.72f);
-                if (GUI.Button(openButtonRect, "DEV", _buttonStyle))
+                if (DrawButton(1, openButtonRect, "DEV"))
                     _isPanelOpen = true;
 
                 return;
@@ -202,7 +205,7 @@ namespace Assets.Scripts.DevTools
                 rowHeight);
 
             GUI.Label(titleRect, "Developer", _titleStyle);
-            if (GUI.Button(closeRect, "X", _buttonStyle))
+            if (DrawButton(2, closeRect, "X"))
                 _isPanelOpen = false;
 
             // Считывает актуальное состояние runtime-бота каждый кадр меню.
@@ -221,7 +224,7 @@ namespace Assets.Scripts.DevTools
                 ? new Color(0.78f, 1f, 0.82f, 1f)
                 : new Color(1f, 0.82f, 0.78f, 1f);
 
-            if (GUI.Button(toggleRect, botEnabled ? "Bot On" : "Bot Off", _buttonStyle))
+            if (DrawButton(3, toggleRect, botEnabled ? "Bot On" : "Bot Off"))
                 bot.SetEnabled(!botEnabled);
 
             GUI.color = Color.white;
@@ -237,7 +240,7 @@ namespace Assets.Scripts.DevTools
                 ? new Color(0.78f, 1f, 0.82f, 1f)
                 : new Color(1f, 0.82f, 0.78f, 1f);
 
-            if (GUI.Button(unlockAllRect, unlockAllLevels ? "Unlock All On" : "Unlock All Off", _buttonStyle))
+            if (DrawButton(4, unlockAllRect, unlockAllLevels ? "Unlock All On" : "Unlock All Off"))
                 DevToolsRuntimeState.UnlockAllLevels = !unlockAllLevels;
 
             GUI.color = Color.white;
@@ -258,6 +261,42 @@ namespace Assets.Scripts.DevTools
         {
             return Object.FindAnyObjectByType<RuntimeBotController>(FindObjectsInactive.Include);
         }
+
+        private bool DrawButton(int buttonId, Rect rect, string text)
+        {
+#if UNITY_EDITOR
+            bool editorMouseClicked = GUI.enabled && TryHandleEditorMouseClick(buttonId, rect);
+#else
+            bool editorMouseClicked = false;
+#endif
+            return GUI.Button(rect, text, _buttonStyle) || editorMouseClicked;
+        }
+
+#if UNITY_EDITOR
+        private bool TryHandleEditorMouseClick(int buttonId, Rect rect)
+        {
+            Event current = Event.current;
+            if (current == null || current.button != 0)
+                return false;
+
+            if (current.type == EventType.MouseDown && rect.Contains(current.mousePosition))
+            {
+                _editorMouseDownButtonId = buttonId;
+                current.Use();
+                return false;
+            }
+
+            if (current.type != EventType.MouseUp || _editorMouseDownButtonId != buttonId)
+                return false;
+
+            _editorMouseDownButtonId = -1;
+            if (!rect.Contains(current.mousePosition))
+                return false;
+
+            current.Use();
+            return true;
+        }
+#endif
     }
 }
 #endif
