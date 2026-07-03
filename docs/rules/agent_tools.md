@@ -69,6 +69,7 @@ Bridge-команды:
 - Ensure-запуск перед мобильным тестом: `tools/device-log-collector/ensure_device_log_docker_stack.ps1 -Json`.
 - Health-check без запуска: `tools/device-log-collector/check_device_log_stack.ps1 -Json`.
 - Autostart: installer `tools/device-log-collector/install_device_log_stack_task.ps1`; предпочтительно Windows Scheduled Task `LostCyberHamsterDeviceLogStack`, fallback - user Startup shortcut. В Docker-режиме autostart делает one-shot ensure, живучесть держат `restart: unless-stopped` контейнеры.
+- Ngrok запускается с `--pooling-enabled`, чтобы несколько ноутбуков могли держать один domain; uploads при этом балансируются между активными collectors и могут сохраниться не на текущем ноутбуке.
 - Output: `DeviceLogs/android/<createdAt>_<device>_<reason>_<session>/`.
 - Агент читает локальные сохраненные uploads из `DeviceLogs/android`; телефон напрямую не опрашивается.
 

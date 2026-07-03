@@ -42,6 +42,7 @@ services:
       - http
       - http://collector:8765
       - --url=https://${NGROK_DOMAIN}
+      - --pooling-enabled
     healthcheck:
       test: ["CMD-SHELL", "wget -q -T 5 -O - --header='ngrok-skip-browser-warning: true' \"$${PUBLIC_HEALTH_URL}\" | grep '\"ok\"[[:space:]]*:[[:space:]]*true'"]
       interval: 30s

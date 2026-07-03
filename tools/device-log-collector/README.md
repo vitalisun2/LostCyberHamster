@@ -54,6 +54,8 @@ tools/device-log-collector/ngrok-watchdog.sh
 
 Ngrok контейнер собран как wrapper над официальным `ngrok/ngrok:3-alpine`: он сам проверяет публичный `/health` и перезапускается через Docker restart policy, если tunnel перестал отвечать.
 
+Ngrok запускается с `--pooling-enabled`, чтобы несколько ноутбуков могли одновременно держать один закрепленный domain. Requests распределяются между активными collectors и не дублируются на все ноутбуки.
+
 ## Unity config
 
 Unity читает `Assets/Resources/Diagnostics/device_log_settings.json`.

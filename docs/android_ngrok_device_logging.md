@@ -64,9 +64,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-colle
 
 Если проект переносится на другой Windows-ноутбук, можно дать агенту prompt ниже. Он рассчитан на точное восстановление такой же инфраструктуры: Docker Compose collector/ngrok, закрепленный ngrok domain, локальный `DeviceLogs/android`, ensure/check scripts и автозапуск.
 
-Перед запуском важно понять два ограничения:
+Перед запуском важно понять режим общего endpoint:
 
-- Точно такой же endpoint `https://ladle-substance-spray.ngrok-free.dev/upload` возможен только с тем же ngrok account/token и тем же закрепленным domain. Одновременно этот domain должен обслуживаться только одним активным ноутбуком.
+- Точно такой же endpoint `https://ladle-substance-spray.ngrok-free.dev/upload` возможен только с тем же ngrok account/token и тем же закрепленным domain.
+- Несколько ноутбуков могут одновременно держать один endpoint только если все активные ngrok agents запущены с `--pooling-enabled`. В нашем Docker stack этот флаг уже включен.
+- Pooled endpoint распределяет requests между активными ноутбуками, а не дублирует каждый upload на все collectors. Конкретный upload может сохраниться в `DeviceLogs/android` только на одном из активных ноутбуков.
 - Если на новом ноутбуке используется другой ngrok domain, нужно заменить `NGROK_DOMAIN`, обновить `LostCyberHamster/Assets/Resources/Diagnostics/device_log_settings.json`, пересобрать APK и установить новый билд на телефон.
 
 Готовый prompt для агента:
@@ -107,8 +109,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-colle
    - Предпочтительный способ: попросить пользователя один раз выполнить `ngrok config add-authtoken <token>` или установить `$env:NGROK_AUTHTOKEN` только в текущей сессии.
    - Скрипт сам создаст `tools/device-log-collector/.env.local`; этот файл локальный и не должен коммититься.
 
-5. Убедись, что старый ноутбук или другой процесс сейчас не держит тот же ngrok domain.
-   - Если старый ноутбук еще обслуживает `ladle-substance-spray.ngrok-free.dev`, останови там стек или предупреди пользователя, что два активных tunnel для одного domain будут конфликтовать.
+5. Убедись, что все активные ноутбуки, которые держат тот же ngrok domain, обновлены до pooling-режима.
+   - В `tools/device-log-collector/docker-compose.yml` у ngrok service должен быть флаг `--pooling-enabled`.
+   - Если старый ноутбук еще обслуживает `ladle-substance-spray.ngrok-free.dev` без `--pooling-enabled`, новый ноутбук не сможет подключиться к тому же domain.
+   - Решение: обновить старый ноутбук до этого коммита и запустить `ensure_device_log_docker_stack.ps1 -Rebuild -Json` либо временно остановить старый stack.
+   - Помни, что pooled endpoint load-balances requests: один upload попадает на один из активных collectors, а не во все `DeviceLogs/android` сразу.
 
 6. Из корня репозитория запусти ensure:
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\ensure_device_log_docker_stack.ps1 -Json
@@ -185,10 +190,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-colle
       docker compose --env-file .\tools\device-log-collector\.env.local -f .\tools\device-log-collector\docker-compose.yml logs --tail 120
     - Если public health 404/timeout, проверь:
       - правильный ли `NGROK_DOMAIN`;
-      - не занят ли domain другим ноутбуком;
+      - не занят ли domain другим ноутбуком без `--pooling-enabled`;
       - валиден ли ngrok authtoken;
       - есть ли интернет;
       - healthy ли collector.
+    - Если public health зеленый, но smoke upload не появился локально, проверь другой активный pooled ноутбук: request мог попасть туда.
 
 15. Финальный отчет пользователю должен содержать:
     - какой domain используется;
@@ -223,11 +229,13 @@ lostcyberhamster-device-logs
 Контейнеры:
 
 - `lostcyberhamster-device-log-collector` - Node.js HTTP collector, слушает `0.0.0.0:8765` внутри контейнера, опубликован на ноутбуке как `127.0.0.1:8765`, пишет в bind mount `DeviceLogs/android`;
-- `lostcyberhamster-device-log-ngrok` - локальный wrapper image на базе официального `ngrok/ngrok:3-alpine`, поднимает tunnel на `http://collector:8765` с закрепленным `--url=https://ladle-substance-spray.ngrok-free.dev`.
+- `lostcyberhamster-device-log-ngrok` - локальный wrapper image на базе официального `ngrok/ngrok:3-alpine`, поднимает tunnel на `http://collector:8765` с закрепленным `--url=https://ladle-substance-spray.ngrok-free.dev` и `--pooling-enabled`.
 
 Оба сервиса имеют `restart: unless-stopped`. У collector есть Docker healthcheck, а ngrok стартует только после healthy collector.
 
 Ngrok контейнер дополнительно запускается через `ngrok-watchdog.sh`: wrapper проверяет публичный `/health` с header `ngrok-skip-browser-warning: true`. Если несколько проверок подряд не проходят, wrapper завершает контейнер с ошибкой, и Docker restart policy поднимает ngrok заново. Это закрывает случай, когда процесс жив, но публичный tunnel перестал отдавать route.
+
+`--pooling-enabled` нужен для одновременной работы нескольких ноутбуков на одном закрепленном ngrok domain. Все активные ноутбуки должны быть запущены с этим флагом. Ngrok будет балансировать requests между agents, поэтому upload из телефона может сохраниться на любом активном ноутбуке в его локальном `DeviceLogs/android`.
 
 Ручная остановка контейнера через `docker stop` или `docker kill` считается намеренной остановкой. Такой контейнер поднимается следующим запуском `ensure_device_log_docker_stack.ps1`.
 
