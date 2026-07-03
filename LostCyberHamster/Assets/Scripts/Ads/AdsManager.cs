@@ -29,6 +29,11 @@ namespace GameAds
 
         public static void Initialize()
         {
+#if UNITY_EDITOR
+            _isInitialized = false;
+            DebugManager.DiagStability("[ADS] Unity Ads initialization skipped in Editor.");
+            return;
+#endif
 #if UNITY_IOS
             _gameId = Consts.IOS_GAME_ID;
 #elif UNITY_ANDROID

@@ -100,6 +100,7 @@ namespace LostCyberHamster.UI
             _energyBar = _contentRoot.Q<Energybar>();
             _healthBar = _contentRoot.Q<Healthbar>();
             _hamsterState = _contentRoot.Q<Label>("hamster-state-debug-label");
+            _hamsterState ??= _contentRoot.Q<Label>("debug-game");
             _jumpButton = _contentRoot.Q<Button>("btn_jump");
             _buyEnergyButton = _contentRoot.Q<Button>("btn_buy_energy");
             _buyUltraButton = _contentRoot.Q<Button>("btn_buy_ulta");
@@ -107,6 +108,7 @@ namespace LostCyberHamster.UI
             _tapArea = _contentRoot.Q<VisualElement>("tap");
 
             ClearBackground();
+            HideDebugStateInPlayerBuild();
             _doubleJumpDetector.Reset();
         }
 
@@ -127,7 +129,20 @@ namespace LostCyberHamster.UI
 
         public void SetHamsterState(string state)
         {
-            _hamsterState.text = state;
+            if (_hamsterState != null)
+            {
+                _hamsterState.text = state;
+            }
+        }
+
+        private void HideDebugStateInPlayerBuild()
+        {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            if (_hamsterState != null)
+            {
+                _hamsterState.style.display = DisplayStyle.None;
+            }
+#endif
         }
 
         public void SetUltraControlsVisible(bool visible)

@@ -49,8 +49,18 @@ MonoBehaviour:
     - levels_daypart_Afternoon
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 23a5c04aff626bc4596513535cff37a2
+    m_Address: 01_New_York/Morning/Tutorial Level 2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 388f65722d46cc445b224cc04fb64491
     m_Address: 01_New_York/Morning/test_super_jump_from_roof
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3e19e28a5d64931488a653571ab830a1
+    m_Address: 01_New_York/Morning/Tutorial Level
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

@@ -27,6 +27,7 @@ namespace GameManagement
         public Dictionary<string, bool> ComplitedStorylineQuests = new();
         public string LastSaveDate = DateTime.MinValue.ToString("o");
         public bool IsFirstLaunch = true;
+        public bool IsTutorialCompleted;
 
         public LevelProgressSnapshot Progress
         {

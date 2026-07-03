@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.Compilation;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace LostCyberHamster.Editor
@@ -19,6 +20,12 @@ namespace LostCyberHamster.Editor
         private const string LaunchCommand = "launch_test_level";
         private const string RecompileCommand = "recompile_scripts";
         private const string RegenerateProjectFilesCommand = "regenerate_project_files";
+        private const string ProbeTutorialStopAfterStepCommand = "probe_tutorial_stop_after_step";
+        private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
+        private const string FirstGameplayLevelAddress = "01_New_York/Morning/level_01";
+        private const string TestLevelPrefsKey = "TestLevel_Address";
+        private const string SkipIntroPrefsKey = "TestLevel_SkipIntro";
+        private const string TutorialStopAfterStepPrefsKey = "Tutorial_StopAfterStep";
         private const string RequestIdSessionKey = "TestLevelAutomationBridge.RequestId";
         private const string CommandSessionKey = "TestLevelAutomationBridge.Command";
         private const string ResultSessionKey = "TestLevelAutomationBridge.Result";
@@ -46,6 +53,7 @@ namespace LostCyberHamster.Editor
             public string createdAtUtc;
             public string levelAddress;
             public float timeScale;
+            public int stopAfterStep;
         }
 
         [Serializable]
@@ -165,7 +173,8 @@ namespace LostCyberHamster.Editor
 
             if (!string.Equals(request.command, LaunchCommand, StringComparison.Ordinal) &&
                 !string.Equals(request.command, RecompileCommand, StringComparison.Ordinal) &&
-                !string.Equals(request.command, RegenerateProjectFilesCommand, StringComparison.Ordinal))
+                !string.Equals(request.command, RegenerateProjectFilesCommand, StringComparison.Ordinal) &&
+                !string.Equals(request.command, ProbeTutorialStopAfterStepCommand, StringComparison.Ordinal))
             {
                 WriteResponse(new BridgeResponse
                 {
@@ -255,6 +264,24 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
+            if (string.Equals(request.command, ProbeTutorialStopAfterStepCommand, StringComparison.Ordinal))
+            {
+                WriteResponse(new BridgeResponse
+                {
+                    requestId = request.requestId,
+                    command = request.command,
+                    state = "running",
+                    testResult = string.Empty,
+                    message = $"Request accepted. Probing tutorial stop after step {request.stopAfterStep}.",
+                    updatedAtUtc = DateTime.UtcNow.ToString("O"),
+                    diagnosticLogPath = DebugManager.GetDiagLogPath()
+                });
+
+                DebugManager.ClearDiagLog();
+                LaunchTutorialStopAfterStepProbe(Mathf.Max(1, request.stopAfterStep));
+                return;
+            }
+
             WriteResponse(new BridgeResponse
             {
                 requestId = request.requestId,
@@ -283,6 +310,19 @@ namespace LostCyberHamster.Editor
                 ClearActiveRequest();
                 return;
             }
+        }
+
+        private static void LaunchTutorialStopAfterStepProbe(int stopAfterStep)
+        {
+            PlayerPrefs.SetString(TestLevelPrefsKey, FirstGameplayLevelAddress);
+            PlayerPrefs.SetInt(SkipIntroPrefsKey, 1);
+            PlayerPrefs.SetInt(Assets.Scripts.Tutorial.TutorialAutomationSettings.AutoPlayKey, 1);
+            PlayerPrefs.SetInt(Assets.Scripts.Tutorial.TutorialLaunchState.ResetCompletedOnceKey, 1);
+            PlayerPrefs.SetInt(TutorialStopAfterStepPrefsKey, stopAfterStep);
+
+            PlayerPrefs.Save();
+            EditorSceneManager.OpenScene(BootstrapScenePath);
+            EditorApplication.isPlaying = true;
         }
 
         private static void MonitorActiveRun()

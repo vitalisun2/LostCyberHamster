@@ -224,7 +224,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                 animator.runtimeAnimatorController = overrideController;
                 
                 ValidateAnimationClip(walkClip, spriteName, (ObstacleTypeEnum)modelType);
-                SetFirstSpriteFromAnimation(renderer, walkClip, spriteName);
+                SetFirstSpriteFromAnimation(renderer, animator, walkClip, spriteName);
                 
                 return AnimationType.Walk;
             }
@@ -239,7 +239,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                 animator.runtimeAnimatorController = overrideController;
                 
                 ValidateAnimationClip(idleClip, spriteName, (ObstacleTypeEnum)modelType);
-                SetFirstSpriteFromAnimation(renderer, idleClip, spriteName);
+                SetFirstSpriteFromAnimation(renderer, animator, idleClip, spriteName);
                 
                 return AnimationType.Idle;
             }
@@ -247,7 +247,11 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             return AnimationType.None;
         }
         
-        private static void SetFirstSpriteFromAnimation(SpriteRenderer renderer, AnimationClip clip, string spriteName)
+        private static void SetFirstSpriteFromAnimation(
+            SpriteRenderer renderer,
+            Animator animator,
+            AnimationClip clip,
+            string spriteName)
         {
 #if UNITY_EDITOR
             // Get first sprite frame from animation clip
@@ -270,7 +274,16 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             
             Debug.LogError($"[ObstacleFactory] Failed to extract first sprite from animation clip '{clip.name}' for obstacle '{spriteName}'. Sprite will appear after first Animator update. This should not happen in Editor mode.");
 #else
-            Debug.LogWarning($"[ObstacleFactory] Runtime mode: First sprite extraction skipped for '{spriteName}'. Animation will start on first Animator update.");
+            if (renderer == null || animator == null || clip == null)
+            {
+                return;
+            }
+
+            clip.SampleAnimation(animator.gameObject, 0f);
+            if (renderer.sprite == null)
+            {
+                Debug.LogWarning($"[ObstacleFactory] Failed to sample first sprite from animation clip '{clip.name}' for obstacle '{spriteName}'. Animation will start on first Animator update.");
+            }
 #endif
         }
         

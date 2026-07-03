@@ -33,6 +33,8 @@ MonoBehaviour:
       type: {class: RootTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
       data:
         _children:
+        - rid: 9100000000000000001
+        - rid: 9100000000000000002
         - rid: 2706311562664083607
         - rid: 6421078045922951243
         - rid: 6570499326113218626
@@ -76,3 +78,9 @@ MonoBehaviour:
       type: {class: InitDecorationsLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
       data:
         _children: []
+    - rid: 9100000000000000001
+      type: {class: TutorialLevelRoutingLoadingTask, ns: Assets.Scripts.Tutorial, asm: Assembly-CSharp}
+      data: {}
+    - rid: 9100000000000000002
+      type: {class: InitTutorialRuntimeLoadingTask, ns: Assets.Scripts.Tutorial, asm: Assembly-CSharp}
+      data: {}

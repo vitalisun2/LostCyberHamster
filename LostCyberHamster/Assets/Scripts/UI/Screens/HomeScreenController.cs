@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Assets.Scripts.Tutorial;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using Vues.GameCore;
@@ -14,6 +15,7 @@ namespace LostCyberHamster.UI
         private Button _buttonSettings => _contentRoot.Q<Button>("btn_settings");
 
         private Button _buttonCharacter => _contentRoot.Q<Button>("btn_character");
+        private Button _buttonTutorial => _contentRoot.Q<Button>("btn_tutorial");
 
         private Button _buttonQuests => _contentRoot.Q<Button>("btn_quests");
         private Button _buttonTasks => _contentRoot.Q<Button>("btn_tasks");
@@ -52,6 +54,7 @@ namespace LostCyberHamster.UI
             _buttonSelectLevel?.RegisterCallback<ClickEvent>(OnClickBtnSelectLevel);
             _buttonSettings?.RegisterCallback<ClickEvent>(OnClickBtnSettings);
             _buttonCharacter?.RegisterCallback<ClickEvent>(OnClickBtnCharacter);
+            _buttonTutorial?.RegisterCallback<ClickEvent>(OnClickBtnTutorial);
             _buttonQuests?.RegisterCallback<ClickEvent>(OnClickBtnQuests);
             _buttonTasks?.RegisterCallback<ClickEvent>(OnClickBtnTasks);
             _buttonAddMoney?.RegisterCallback<ClickEvent>(OnClickBtnAddMoney);
@@ -81,6 +84,12 @@ namespace LostCyberHamster.UI
             UIManager.OnScreenShow(ScreenEnum.CharacterScreen);
         }
 
+        private void OnClickBtnTutorial(ClickEvent evt)
+        {
+            TutorialLaunchState.StartReplayFromMenu();
+            SceneManager.LoadScene("Game");
+        }
+
 
         protected override void OnUnsubscribeFromEvents()
         {
@@ -88,6 +97,7 @@ namespace LostCyberHamster.UI
             _buttonSelectLevel?.UnregisterCallback<ClickEvent>(OnClickBtnSelectLevel);
             _buttonSettings?.UnregisterCallback<ClickEvent>(OnClickBtnSettings);
             _buttonCharacter?.UnregisterCallback<ClickEvent>(OnClickBtnCharacter);
+            _buttonTutorial?.UnregisterCallback<ClickEvent>(OnClickBtnTutorial);
             _buttonQuests?.UnregisterCallback<ClickEvent>(OnClickBtnQuests);
             _buttonTasks?.UnregisterCallback<ClickEvent>(OnClickBtnTasks);
             _buttonAddMoney?.UnregisterCallback<ClickEvent>(OnClickBtnAddMoney);

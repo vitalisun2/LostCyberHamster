@@ -127,3 +127,8 @@ Desktop.ini
 
 # Temporary files and reports
 /.temp/
+
+# Local Android device log collector output
+/DeviceLogs/
+/tools/device-log-collector/*.log
+/phone_screen*.png

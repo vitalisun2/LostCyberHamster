@@ -12,17 +12,6 @@
       "UltaCharge": 0
     },
     {
-      "Id": 1,
-      "NameLocalizationKey": "energy shield",
-      "Price": 10,
-      "PriceType": 2,
-      "SkinSprite": "skin_energy-shield",
-      "HamsterOverrideController": "EnergyShieldSkinAnimator",
-      "UltaPrefab": "EnergyShieldPrefab",
-      "UltaDuration": 5,
-      "UltaCharge": 20
-    },
-    {
       "Id": 2,
       "NameLocalizationKey": "electric strike",
       "Price": 20,
@@ -32,6 +21,17 @@
       "UltaPrefab": "ElectricStrikePrefab",
       "UltaDuration": 0,
       "UltaCharge": 35
+    },
+    {
+      "Id": 1,
+      "NameLocalizationKey": "energy shield",
+      "Price": 10,
+      "PriceType": 2,
+      "SkinSprite": "skin_energy-shield",
+      "HamsterOverrideController": "EnergyShieldSkinAnimator",
+      "UltaPrefab": "EnergyShieldPrefab",
+      "UltaDuration": 5,
+      "UltaCharge": 20
     }
   ]
 }

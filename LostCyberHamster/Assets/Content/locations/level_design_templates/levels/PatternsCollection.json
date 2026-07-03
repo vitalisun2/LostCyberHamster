@@ -11674,6 +11674,147 @@
                     "y": -1.8000000715255738
                 }
             ]
+        },
+        {
+            "name": "tutorial_1",
+            "description": "tutorial 1 - switch lane to avoid a single obstacle",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 0.0,
+                    "y": -1.8000000715255738
+                }
+            ]
+        },
+        {
+            "name": "tutorial_2",
+            "description": "tutorial 2 - jump over a single road obstacle",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 0.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "tutorial_3",
+            "description": "tutorial 3 - jump on a single alive obstacle",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "tutorial_4",
+            "description": "tutorial 4 - use super jump to jump over",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 1,
+                    "x": 0.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "tutorial_5",
+            "description": "tutorial 5 - use super jump to land on obstacle",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "tutorial_6",
+            "description": "tutorial 6 - jump on roof",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 4,
+                    "x": 0.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "tutorial_7",
+            "description": "tutorial 7 - jump from roof to roof",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 4,
+                    "x": 0.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "tutorial_8",
+            "description": "tutorial 8 - jump on obstacle from roof",
+            "nextObstacleId": 1,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0.0,
+                    "y": -2.799999952316284
+                }
+            ]
+        },
+        {
+            "name": "tutorial_9",
+            "description": "tutorial 9 - use electric strike super hit",
+            "nextObstacleId": 5,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 0.0,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 1,
+                    "type": 1,
+                    "x": 1.899999976158142,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 3.799999952316284,
+                    "y": -1.8000000715255738
+                },
+                {
+                    "id": 3,
+                    "type": 2,
+                    "x": 1.2000000476837159,
+                    "y": -2.799999952316284
+                },
+                {
+                    "id": 4,
+                    "type": 4,
+                    "x": 5.599999904632568,
+                    "y": -2.799999952316284
+                }
+            ]
         }
     ]
 }

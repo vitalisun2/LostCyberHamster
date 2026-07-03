@@ -94,6 +94,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnUpdate()
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            return;
+#endif
             if (_statusFormatter.TryFormat(Time.unscaledTime, _gameManager, _character, out var formattedText))
             {
                 _gameScreenController.SetHamsterState(formattedText);

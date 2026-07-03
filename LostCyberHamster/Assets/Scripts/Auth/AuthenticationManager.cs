@@ -148,7 +148,7 @@ public static class AuthenticationManager
         }
         catch (Exception ex)
         {
-            Debug.LogError("Error fetching player info.");
+            Debug.LogWarning($"Unable to fetch player info. Treating Unity account as not linked. {ex.GetType().Name}: {ex.Message}");
             //Debug.LogException(ex);
             return false;
         }

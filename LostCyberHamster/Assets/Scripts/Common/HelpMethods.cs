@@ -248,19 +248,30 @@ namespace Assets.Scripts.Common
             string clipName)
         {
             if (ctrl == null)
+            {
                 LogAndStopGame("[GetClipRootYAtHalf] ctrl == null.");
+                return 0f;
+            }
 
             var clip = FindClipByName(ctrl, clipName);
             if (clip == null)
+            {
                 LogAndStopGame($"[GetClipRootYAtHalf] Клип '{clipName}' не найден.");
+                return 0f;
+            }
 
             var go = new GameObject("ClipSampler_TMP");
             try
             {
+                var animator = go.AddComponent<Animator>();
+                if (ctrl.Animator?.runtimeAnimatorController != null)
+                {
+                    animator.runtimeAnimatorController = ctrl.Animator.runtimeAnimatorController;
+                }
+
                 var t = go.transform;
                 var midTime = clip.length * 0.8667f;
 
-                // Семплируем анимацию в середине клипа
                 clip.SampleAnimation(go, midTime);
                 return t.localPosition.y;
             }

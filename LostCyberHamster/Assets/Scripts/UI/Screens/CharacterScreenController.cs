@@ -75,7 +75,7 @@ namespace LostCyberHamster.UI
             }
             _buttonChangeSkin.text = " " + skin?.Price.ToString();
 
-            if (!SkinManager.CanPurchaseSkin(index))
+            if (!SkinManager.CanPurchaseSkin(skin.Id))
             {
                 _buttonChangeSkin.SetEnabled(false);
             }
@@ -111,11 +111,11 @@ namespace LostCyberHamster.UI
             var skin = SkinManager.AvailableSkins.ElementAt(_currentSkinIndex);
             if (skin.IsPurchased)
             {
-                SkinManager.PutOnSkin(_currentSkinIndex);
+                SkinManager.PutOnSkin(skin.Id);
             }
             else
             {
-                SkinManager.PurchaseSkin(_currentSkinIndex);
+                SkinManager.PurchaseSkin(skin.Id);
             }
 
             await ShowSkinAsync(_currentSkinIndex);

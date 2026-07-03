@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:usesCleartextTraffic="true">
+        <activity
+            android:name="com.unity3d.player.UnityPlayerGameActivity"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
+            android:enabled="true"
+            android:exported="true"
+            android:hardwareAccelerated="false"
+            android:launchMode="singleTask"
+            android:resizeableActivity="false"
+            android:screenOrientation="userLandscape"
+            android:theme="@style/BaseUnityGameActivityTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+            <meta-data android:name="android.app.lib_name" android:value="game" />
+            <meta-data android:name="notch_support" android:value="true" />
+
+            <layout
+                android:minWidth="400px"
+                android:minHeight="300px" />
+        </activity>
+    </application>
+</manifest>

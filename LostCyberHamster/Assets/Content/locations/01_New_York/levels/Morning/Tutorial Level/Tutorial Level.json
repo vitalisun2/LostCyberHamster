@@ -1,0 +1,77 @@
+{
+    "skyTexture": "",
+    "roadTexture": "",
+    "location": "01_New_York",
+    "patternSequence": [
+        {
+            "ref": "tutorial_1",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "test_relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "tutorial_2",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "test_relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "tutorial_3",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "test_relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "tutorial_4",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "test_relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "tutorial_5",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "test_relief",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "tutorial_6",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "tutorial_7",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "tutorial_8",
+            "spriteSeed": 0,
+            "overrides": []
+        }
+    ],
+    "decorationPatterns": [
+        {
+            "decorationTiles": []
+        }
+    ]
+}
