@@ -18,7 +18,7 @@
 
 - Если пользователь просит "собери билд", "собери APK", "отправь APK" или "отправь в Telegram", по умолчанию собирать Android development APK (`-Development`).
 - Windows build и non-development/release build делать только по явному запросу пользователя.
-- Артефакты сохраняются под `Builds/telegram-buffer`; перед публикацией фиксировать путь, размер, branch, short commit и dirty-tree state.
+- Артефакты сохраняются под `Builds/telegram-buffer`; build summary, Telegram caption и финальный ответ должны явно указывать Git branch, short commit и dirty-tree state того worktree, из которого собран билд.
 
 ## Минимальный запуск
 
