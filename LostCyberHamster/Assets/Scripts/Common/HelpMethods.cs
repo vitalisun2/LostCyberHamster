@@ -6,7 +6,9 @@ using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Installers.Roots;
 using GameManagement;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using Object = UnityEngine.Object;
 

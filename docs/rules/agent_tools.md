@@ -93,6 +93,11 @@ Bridge-команды:
 - `Tools → Check OnDestroy in Scripts` — поиск утечек подписок без `OnDestroy`.
 - `Tools → Export/Import Tilemap to JSON` — экспорт/импорт tilemap.
 
+## Build / Telegram Publishing
+
+- Для Android/Windows test build и отправки APK в Telegram `LostCyberHamster builds` использовать локальный Codex skill `publish-build-to-telegram-buffer`: `%USERPROFILE%\.codex\skills\publish-build-to-telegram-buffer`.
+- Перед запуском читать `SKILL.md` этого skill; для development APK сначала запускать `scripts\build_unity_player.ps1 -RepositoryRoot "<repo>" -Platform Android -Development`, затем `scripts\publish_latest_apk_to_telegram_buffer.ps1 -RepositoryRoot "<repo>"`.
+
 ## PowerShell Scripts
 
 | Скрипт | Назначение |

@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Assets.Scripts.Common.Models;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine.Networking;
 using UnityEngine;
 using LocationInfo = Assets.Scripts.Common.Models.LocationInfo;

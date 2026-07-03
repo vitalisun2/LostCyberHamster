@@ -221,21 +221,31 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
+        /// Устанавливает состояние bot controller без повторной инициализации при совпадающем значении.
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            // Не повторяет transition, если состояние уже выставлено.
+            if (IsEnabled == enabled)
+                return;
+
+            // Применяет включение или полную очистку execution state.
+            if (enabled)
+            {
+                Enable();
+                return;
+            }
+
+            Disable();
+        }
+
+        /// <summary>
         /// Переключает бота между включённым и выключенным состояниями.
         /// </summary>
         public void ToggleEnabled()
         {
-            // Выключает controller, если он активен.
-            if (IsEnabled)
-            {
-                Disable();
-                Debug.Log("[Bot] OFF");
-                return;
-            }
-
-            // Включает controller, если он неактивен.
-            Enable();
-            Debug.Log("[Bot] ON");
+            SetEnabled(!IsEnabled);
+            Debug.Log(IsEnabled ? "[Bot] ON" : "[Bot] OFF");
         }
 
         /// <summary>

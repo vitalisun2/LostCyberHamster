@@ -205,6 +205,7 @@
     <Compile Include="Assets\Scripts\Common\Models\LocationTheme.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneSimulator.cs" />
+    <Compile Include="Assets\Scripts\DevTools\DevToolsMenuOverlay.cs" />
     <Compile Include="Assets\Scripts\Debug\FeatureFlagToggle.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialRuntimeHost.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\RootTask.cs" />
