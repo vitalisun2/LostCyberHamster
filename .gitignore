@@ -132,3 +132,6 @@ Desktop.ini
 /DeviceLogs/
 /tools/device-log-collector/*.log
 /phone_screen*.png
+
+# Local Codex chat attachments
+/.codex-remote-attachments/
