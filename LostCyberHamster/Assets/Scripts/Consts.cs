@@ -74,10 +74,10 @@ namespace Assets.Scripts
         public const float BackgroundScrollSpeed = 0.7f;
         public const float RoadScrollSpeed = 1f;
         
-        public const float BackgroundYPos = 0.515f;
-        public const float Background2YPos = BackgroundYPos + 0.885f;
-        public const float SkyYPos = BackgroundYPos + (ENVIRONMENT_REFERENCE_HEIGHT * PIXELS_TO_UNITS_RATIO / 1.8f);
-        public const float RoadYPos = BackgroundYPos - (ROAD_HEIGHT * PIXELS_TO_UNITS_RATIO);
+        public const float BackgroundBottomYPos = -0.685f;
+        public const float Background2BottomYPos = BackgroundBottomYPos + 0.885f;
+        public const float SkyBottomYPos = BackgroundBottomYPos + (ENVIRONMENT_REFERENCE_HEIGHT * PIXELS_TO_UNITS_RATIO / 1.8f);
+        public const float RoadBottomYPos = BackgroundBottomYPos - (ROAD_HEIGHT * PIXELS_TO_UNITS_RATIO);
 
         public const float CameraSize = 3.1f;
         public static Vector3 CameraPosition = new(0, 0, -10);

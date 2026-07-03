@@ -50,15 +50,17 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                 spriteWidth = spriteRendererOnPrefab.bounds.size.x;
             }
 
+            var pivotY = EnvironmentLayerPlacement.GetPivotYForBottom(skySprite, Consts.SkyBottomYPos);
+
             var firstGO = GameObject.Instantiate(
                 skyPrefab,
-                new Vector3(0f, Consts.SkyYPos, 0f),
+                new Vector3(0f, pivotY, 0f),
                 Quaternion.identity,
                 _environmentRoot.transform);
 
             var secondGO = GameObject.Instantiate(
                 skyPrefab,
-                new Vector3(spriteWidth, Consts.SkyYPos, 0f),
+                new Vector3(spriteWidth, pivotY, 0f),
                 Quaternion.identity,
                 _environmentRoot.transform);
 

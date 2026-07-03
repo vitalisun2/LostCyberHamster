@@ -47,15 +47,17 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                 spriteWidth = spriteRendererOnPrefab.bounds.size.x;
             }
 
+            var pivotY = EnvironmentLayerPlacement.GetPivotYForBottom(roadSprite, Consts.RoadBottomYPos);
+
             var firstGO = GameObject.Instantiate(
                 roadPrefab,
-                new Vector3(0f, Consts.RoadYPos, 0f),
+                new Vector3(0f, pivotY, 0f),
                 Quaternion.identity,
                 _environmentRoot.transform);
 
             var secondGO = GameObject.Instantiate(
                 roadPrefab,
-                new Vector3(spriteWidth, Consts.RoadYPos, 0f),
+                new Vector3(spriteWidth, pivotY, 0f),
                 Quaternion.identity,
                 _environmentRoot.transform);
 

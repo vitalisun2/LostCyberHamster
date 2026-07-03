@@ -1,5 +1,6 @@
 using Assets.Scripts;
 using Assets.Scripts.System;
+using Assets.Scripts.System.Rendering;
 using UnityEditor.SceneManagement;
 using UnityEngine.Tilemaps;
 using UnityEngine;
@@ -119,7 +120,8 @@ public static class SceneCreator
         SceneManager.MoveGameObjectToScene(segment, scene);
         var renderer = segment.AddComponent<SpriteRenderer>();
         renderer.sprite = sprite;
-        segment.transform.position = new Vector3(xPosition, Consts.BackgroundYPos, BackgroundZPosition);
+        var pivotY = EnvironmentLayerPlacement.GetPivotYForBottom(sprite, Consts.BackgroundBottomYPos);
+        segment.transform.position = new Vector3(xPosition, pivotY, BackgroundZPosition);
         renderer.sortingLayerName = BackgroundSortingLayer;
     }
 
@@ -159,7 +161,8 @@ public static class SceneCreator
         SceneManager.MoveGameObjectToScene(segment, scene);
         var renderer = segment.AddComponent<SpriteRenderer>();
         renderer.sprite = sprite;
-        segment.transform.position = new Vector3(xPosition, Consts.RoadYPos, RoadZPosition);
+        var pivotY = EnvironmentLayerPlacement.GetPivotYForBottom(sprite, Consts.RoadBottomYPos);
+        segment.transform.position = new Vector3(xPosition, pivotY, RoadZPosition);
         renderer.sortingLayerName = RoadSortingLayer;
     }
 }

@@ -56,15 +56,17 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                 spriteWidth = spriteRendererOnPrefab.bounds.size.x;
             }
 
+            var pivotY = EnvironmentLayerPlacement.GetPivotYForBottom(background2Sprite, Consts.Background2BottomYPos);
+
             var firstGO = GameObject.Instantiate(
                 background2Prefab,
-                new Vector3(0f, Consts.Background2YPos, 0f),
+                new Vector3(0f, pivotY, 0f),
                 Quaternion.identity,
                 _environmentRoot.transform);
 
             var secondGO = GameObject.Instantiate(
                 background2Prefab,
-                new Vector3(spriteWidth, Consts.Background2YPos, 0f),
+                new Vector3(spriteWidth, pivotY, 0f),
                 Quaternion.identity,
                 _environmentRoot.transform);
 

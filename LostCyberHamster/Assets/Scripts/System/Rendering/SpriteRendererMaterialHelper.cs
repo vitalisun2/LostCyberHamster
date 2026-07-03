@@ -46,4 +46,18 @@ namespace Assets.Scripts.System.Rendering
             return _spritesDefaultMaterial;
         }
     }
+
+    public static class EnvironmentLayerPlacement
+    {
+        public static float GetPivotYForBottom(Sprite sprite, float bottomY)
+        {
+            if (sprite == null)
+            {
+                Debug.LogError("[EnvironmentLayerPlacement] Sprite is null.");
+                return bottomY;
+            }
+
+            return bottomY - sprite.bounds.min.y;
+        }
+    }
 }
