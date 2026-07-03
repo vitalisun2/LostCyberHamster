@@ -135,3 +135,5 @@ Desktop.ini
 
 # Local Codex chat attachments
 /.codex-remote-attachments/
+/docs/Planning/reports/*
+!/docs/Planning/reports/.gitkeep
