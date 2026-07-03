@@ -65,9 +65,10 @@ Bridge-команды:
 - Unity config: `LostCyberHamster/Assets/Resources/Diagnostics/device_log_settings.json`.
 - Runtime upload: `DeviceLogReporter` → `DeviceLogUploadRunner` → `DeviceLogUploader`.
 - Collector: `tools/device-log-collector/server.js`.
-- Supervised stack: `tools/device-log-collector/start_device_log_stack.ps1`.
-- Health-check: `tools/device-log-collector/check_device_log_stack.ps1 -Json`.
-- Autostart: installer `tools/device-log-collector/install_device_log_stack_task.ps1`; предпочтительно Windows Scheduled Task `LostCyberHamsterDeviceLogStack`, fallback - user Startup shortcut с restart-loop launcher.
+- Основной stack: Docker Compose `tools/device-log-collector/docker-compose.yml`.
+- Ensure-запуск перед мобильным тестом: `tools/device-log-collector/ensure_device_log_docker_stack.ps1 -Json`.
+- Health-check без запуска: `tools/device-log-collector/check_device_log_stack.ps1 -Json`.
+- Autostart: installer `tools/device-log-collector/install_device_log_stack_task.ps1`; предпочтительно Windows Scheduled Task `LostCyberHamsterDeviceLogStack`, fallback - user Startup shortcut. В Docker-режиме autostart делает one-shot ensure, живучесть держат `restart: unless-stopped` контейнеры.
 - Output: `DeviceLogs/android/<createdAt>_<device>_<reason>_<session>/`.
 - Агент читает локальные сохраненные uploads из `DeviceLogs/android`; телефон напрямую не опрашивается.
 

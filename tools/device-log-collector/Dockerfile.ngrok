@@ -1,0 +1,5 @@
+FROM ngrok/ngrok:3-alpine
+
+COPY ngrok-watchdog.sh /usr/local/bin/ngrok-watchdog.sh
+
+ENTRYPOINT ["/bin/sh", "/usr/local/bin/ngrok-watchdog.sh"]

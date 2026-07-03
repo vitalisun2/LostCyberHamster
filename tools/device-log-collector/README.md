@@ -2,31 +2,57 @@
 
 Dev-only HTTP collector для логов Android-сборок LostCyberHamster.
 
-Основной сценарий сейчас описан в `docs/android_ngrok_device_logging.md`: установленные Android APK сами отправляют snapshots `diagnostic_log.txt` через ngrok на этот локальный collector.
+Основной сценарий описан в `docs/android_ngrok_device_logging.md`: установленный Android APK сам отправляет snapshots `diagnostic_log.txt` через ngrok на локальный collector ноутбука.
 
-## Запуск
+## Основной запуск
 
-Ручной запуск только collector-а:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\start_device_log_collector.ps1
-```
-
-Устойчивый запуск collector + ngrok supervisor:
+Поднять или проверить весь Docker stack collector + ngrok:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\start_device_log_stack.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\ensure_device_log_docker_stack.ps1 -Json
 ```
 
-Установить автозапуск при входе в Windows:
+Скрипт сам:
+
+- запускает Docker Desktop при необходимости;
+- создает локальный `.env.local` с ngrok token;
+- останавливает старый non-Docker stack, если он занимает порт;
+- поднимает Docker Compose;
+- ждет local health и public ngrok health.
+
+После изменений collector-а пересобрать image явно:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\ensure_device_log_docker_stack.ps1 -Rebuild -Json
+```
+
+Проверить состояние без запуска:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\check_device_log_stack.ps1 -Json
+```
+
+Установить автозапуск ensure при входе в Windows:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\install_device_log_stack_task.ps1 -StartNow
 ```
 
-Installer сначала пробует Windows Scheduled Task. Если Task Scheduler недоступен из-за прав, создается user Startup shortcut с restart-loop launcher.
+Docker Compose файлы:
 
-Collector слушает `POST /upload`, сохраняет payload в `DeviceLogs/android/` и проверяет заголовок `X-LCH-Device-Log-Token`.
+```text
+tools/device-log-collector/Dockerfile
+tools/device-log-collector/Dockerfile.ngrok
+tools/device-log-collector/docker-compose.yml
+tools/device-log-collector/ngrok-watchdog.sh
+```
+
+Контейнеры:
+
+- `lostcyberhamster-device-log-collector`;
+- `lostcyberhamster-device-log-ngrok`.
+
+Ngrok контейнер собран как wrapper над официальным `ngrok/ngrok:3-alpine`: он сам проверяет публичный `/health` и перезапускается через Docker restart policy, если tunnel перестал отвечать.
 
 ## Unity config
 
@@ -38,11 +64,23 @@ Unity читает `Assets/Resources/Diagnostics/device_log_settings.json`.
 "endpointUrl": "https://ladle-substance-spray.ngrok-free.dev/upload"
 ```
 
-Для LAN-сценария endpoint может смотреть на IP компьютера разработчика, например `http://192.168.0.17:8765/upload`, но такой APK работает только в той же локальной сети.
-
 Перед production-сборками `enabled` должен быть `false`.
 
-## Быстрая проверка
+## Collector API
+
+Collector слушает:
+
+- `GET /health`;
+- `POST /probe`;
+- `POST /upload`.
+
+`POST /upload` сохраняет payload в `DeviceLogs/android/` и проверяет header:
+
+```text
+X-LCH-Device-Log-Token: lost-cyber-hamster-device-logs
+```
+
+## Ручная быстрая проверка
 
 ```powershell
 $headers = @{ 'X-LCH-Device-Log-Token' = 'lost-cyber-hamster-device-logs' }
@@ -55,3 +93,14 @@ $body = @{
 } | ConvertTo-Json -Depth 5
 Invoke-RestMethod -Method Post -Uri 'http://localhost:8765/upload' -Headers $headers -Body $body -ContentType 'application/json'
 ```
+
+## Legacy fallback
+
+Старые non-Docker скрипты оставлены для ручной отладки:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\start_device_log_collector.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\start_device_log_stack.ps1
+```
+
+Для обычной работы агентов использовать Docker ensure-скрипт.

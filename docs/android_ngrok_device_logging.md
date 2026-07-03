@@ -1,23 +1,16 @@
 # Android Ngrok Device Logging
 
-Документ описывает dev-инфраструктуру, через которую Android-билды LostCyberHamster, уже установленные на телефонах, сами отправляют diagnostic logs на рабочий ноутбук через публичный ngrok endpoint.
+Документ описывает dev-инфраструктуру, через которую Android APK LostCyberHamster, уже установленный на телефоне, сам отправляет snapshots `diagnostic_log.txt` на рабочий ноутбук через публичный ngrok endpoint.
 
 ## Суть
 
-Это push-based логирование: агент не подключается к телефону и не запрашивает у него логи. Runtime игры сам отправляет snapshots `diagnostic_log.txt` на HTTP collector при важных событиях. Collector сохраняет каждый upload локально в `DeviceLogs/android`, а агент читает уже эти файлы из workspace.
+Это push-based логирование: агент не подключается к телефону и не запрашивает у него логи. Runtime игры сам отправляет snapshots на HTTP collector при важных событиях. Collector сохраняет каждый upload локально в `DeviceLogs/android`, а агент читает уже эти файлы из workspace.
 
 Схема:
 
 ```text
-Android APK -> ngrok HTTPS endpoint -> localhost:8765 -> tools/device-log-collector -> DeviceLogs/android
+Android APK -> ngrok HTTPS endpoint -> Docker ngrok container -> Docker collector container -> DeviceLogs/android
 ```
-
-Важно: collector не опрашивает ngrok и не "читает" его. На ноутбуке одновременно работают два процесса:
-
-- `ngrok` agent держит исходящее tunnel-соединение к ngrok cloud и принимает публичный HTTPS-трафик для dev domain;
-- `tools/device-log-collector/server.js` слушает локальный HTTP-порт `8765` и сохраняет пришедшие requests.
-
-Когда игра делает `POST https://ladle-substance-spray.ngrok-free.dev/upload`, ngrok cloud принимает этот request, tunnel переносит его на ноутбук, а локальный collector получает его как обычный `POST /upload` на `localhost:8765`.
 
 Текущий dev endpoint:
 
@@ -31,15 +24,117 @@ https://ladle-substance-spray.ngrok-free.dev/upload
 android-dev-ngrok-logs
 ```
 
+Важно: collector не читает ngrok и не опрашивает телефон. Телефон делает обычный `POST /upload`, ngrok tunnel переносит request на ноутбук, collector принимает request и пишет файлы.
+
+## Готовность стека
+
+Основной способ поднять инфраструктуру - Docker Compose:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\ensure_device_log_docker_stack.ps1 -Json
+```
+
+Этот скрипт является entrypoint для агентов. Он:
+
+- проверяет наличие Docker CLI и готовность Docker daemon;
+- при необходимости запускает Docker Desktop и ждет готовности daemon;
+- создает локальный `tools/device-log-collector/.env.local` с `NGROK_AUTHTOKEN` и `NGROK_DOMAIN`;
+- берет ngrok token из `$env:NGROK_AUTHTOKEN`, существующего `.env.local` или `%LOCALAPPDATA%\ngrok\ngrok.yml`;
+- останавливает старый non-Docker supervisor/collector/ngrok, если они занимают тот же порт;
+- выполняет `docker compose up -d --build --remove-orphans`;
+- ждет `http://127.0.0.1:8765/health`;
+- ждет `https://ladle-substance-spray.ngrok-free.dev/health` с header `ngrok-skip-browser-warning: true`;
+- возвращает JSON со статусом health и compose-контейнеров.
+
+Локальный `.env.local` содержит секрет ngrok и не коммитится.
+
+Обычный ensure не пересобирает collector image, если `lostcyberhamster/device-log-collector:local` уже существует. Это уменьшает лишние перезапуски. После изменений `server.js`, `Dockerfile` или config запускать с явным rebuild:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\ensure_device_log_docker_stack.ps1 -Rebuild -Json
+```
+
+Проверить текущее состояние без попытки поднять стек:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\check_device_log_stack.ps1 -Json
+```
+
+## Docker Compose
+
+Файлы стека:
+
+```text
+tools/device-log-collector/Dockerfile
+tools/device-log-collector/Dockerfile.ngrok
+tools/device-log-collector/docker-compose.yml
+tools/device-log-collector/ensure_device_log_docker_stack.ps1
+tools/device-log-collector/check_device_log_stack.ps1
+tools/device-log-collector/ngrok-watchdog.sh
+```
+
+Compose project:
+
+```text
+lostcyberhamster-device-logs
+```
+
+Контейнеры:
+
+- `lostcyberhamster-device-log-collector` - Node.js HTTP collector, слушает `0.0.0.0:8765` внутри контейнера, опубликован на ноутбуке как `127.0.0.1:8765`, пишет в bind mount `DeviceLogs/android`;
+- `lostcyberhamster-device-log-ngrok` - локальный wrapper image на базе официального `ngrok/ngrok:3-alpine`, поднимает tunnel на `http://collector:8765` с закрепленным `--url=https://ladle-substance-spray.ngrok-free.dev`.
+
+Оба сервиса имеют `restart: unless-stopped`. У collector есть Docker healthcheck, а ngrok стартует только после healthy collector.
+
+Ngrok контейнер дополнительно запускается через `ngrok-watchdog.sh`: wrapper проверяет публичный `/health` с header `ngrok-skip-browser-warning: true`. Если несколько проверок подряд не проходят, wrapper завершает контейнер с ошибкой, и Docker restart policy поднимает ngrok заново. Это закрывает случай, когда процесс жив, но публичный tunnel перестал отдавать route.
+
+Ручная остановка контейнера через `docker stop` или `docker kill` считается намеренной остановкой. Такой контейнер поднимается следующим запуском `ensure_device_log_docker_stack.ps1`.
+
+Ручная диагностика контейнеров:
+
+```powershell
+docker compose --env-file .\tools\device-log-collector\.env.local -f .\tools\device-log-collector\docker-compose.yml ps
+docker compose --env-file .\tools\device-log-collector\.env.local -f .\tools\device-log-collector\docker-compose.yml logs --tail 100
+```
+
+Остановить стек вручную:
+
+```powershell
+docker compose --env-file .\tools\device-log-collector\.env.local -f .\tools\device-log-collector\docker-compose.yml down
+```
+
+## Автозапуск
+
+Installer регистрирует one-shot ensure при входе пользователя в Windows:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\install_device_log_stack_task.ps1 -StartNow
+```
+
+Имя задачи:
+
+```text
+LostCyberHamsterDeviceLogStack
+```
+
+Сначала installer пробует Windows Scheduled Task. Если прав не хватает, создает fallback:
+
+```text
+%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\LostCyberHamsterDeviceLogStack.lnk
+%LOCALAPPDATA%\LostCyberHamster\device-log-stack\start_device_log_stack.cmd
+```
+
+В Docker-режиме fallback launcher не держит бесконечный restart-loop. Он один раз вызывает `ensure_device_log_docker_stack.ps1`, а дальнейшую живучесть обеспечивают Docker restart policies.
+
 ## Клиент в игре
 
-Unity config находится здесь:
+Unity config:
 
 ```text
 LostCyberHamster/Assets/Resources/Diagnostics/device_log_settings.json
 ```
 
-Игра читает этот JSON через `Resources.Load("Diagnostics/device_log_settings")`. Для Android upload включается, когда:
+Игра читает JSON через `Resources.Load("Diagnostics/device_log_settings")`. Android upload включается, когда:
 
 - `enabled: true`;
 - `allowOnAndroid: true`;
@@ -48,23 +143,10 @@ LostCyberHamster/Assets/Resources/Diagnostics/device_log_settings.json
 
 Основные runtime-классы:
 
-- `DeviceLogReporter` - создается до загрузки сцен и подписывается на lifecycle/log events.
-- `DeviceLogUploadRunner` - держит очередь upload reasons и отправляет их последовательно.
-- `DeviceLogUploader` - читает tail `diagnostic_log.txt`, собирает metadata и делает `POST /upload`.
-- `DeviceLogStartupProbe` - дополнительно проверяет `GET /health` и `POST /probe` при старте.
-
-Игра отправляет snapshots не непрерывным стримом, а по событиям:
-
-- `session_started_awake`;
-- `startup_after_first_frame`;
-- `startup_after_2s`;
-- `scene_loaded_<Scene>`;
-- `scene_first_frame_<Scene>`;
-- `scene_after_1s_<Scene>`;
-- `application_paused`;
-- `application_quit`;
-- `runtime_error` / `runtime_exception`;
-- явные точки вроде `tutorial_completed`, `game_start_exception`, `intro_exception`.
+- `DeviceLogReporter` - создается до загрузки сцен и подписывается на lifecycle/log events;
+- `DeviceLogUploadRunner` - держит очередь upload reasons;
+- `DeviceLogUploader` - читает tail `diagnostic_log.txt`, собирает metadata и делает `POST /upload`;
+- `DeviceLogStartupProbe` - проверяет `GET /health` и `POST /probe` при старте.
 
 Для free ngrok клиент добавляет header:
 
@@ -72,127 +154,13 @@ LostCyberHamster/Assets/Resources/Diagnostics/device_log_settings.json
 ngrok-skip-browser-warning: true
 ```
 
-Без него `GET /health` может получать ngrok browser warning вместо JSON.
-
-## Collector на ноутбуке
-
-Collector находится здесь:
-
-```text
-tools/device-log-collector/server.js
-tools/device-log-collector/start_device_log_collector.ps1
-tools/device-log-collector/device-log-collector.config.json
-```
-
-Ручной запуск только collector-а:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\start_device_log_collector.ps1
-```
-
-Collector слушает `0.0.0.0:8765` и поддерживает:
-
-- `GET /health` - проверка доступности;
-- `POST /probe` - легкий startup probe;
-- `POST /upload` - прием payload с `metadata` и base64 diagnostic log.
-
-`POST /upload` требует header:
+`POST /upload` также требует dev-token:
 
 ```text
 X-LCH-Device-Log-Token: lost-cyber-hamster-device-logs
 ```
 
-Это dev-gate, а не production-grade security. Перед production-сборками device log upload должен быть выключен.
-
-## ngrok tunnel
-
-ngrok пробрасывает публичный HTTPS endpoint на локальный collector:
-
-```powershell
-ngrok http --domain=ladle-substance-spray.ngrok-free.dev 8765
-```
-
-В текущей настройке ngrok account выдает закрепленный free dev domain:
-
-```text
-https://ladle-substance-spray.ngrok-free.dev
-```
-
-Требования для работы логов из любой сети:
-
-- ноутбук включен и имеет интернет;
-- `tools/device-log-collector` запущен;
-- `ngrok http 8765` запущен;
-- APK собран с `endpointUrl` на ngrok domain;
-- Android-устройство имеет интернет.
-
-Если любой из этих пунктов не выполнен, установленная игра продолжит работать, но uploads не дойдут до `DeviceLogs/android`.
-
-## Устойчивость и автозапуск
-
-Для устойчивости используется supervisor-скрипт:
-
-```text
-tools/device-log-collector/start_device_log_stack.ps1
-```
-
-Он в цикле проверяет:
-
-- локальный collector health: `http://127.0.0.1:8765/health`;
-- публичный ngrok route: `https://ladle-substance-spray.ngrok-free.dev/health`.
-
-Если локальный health падает, supervisor перезапускает `node server.js --port 8765`. Если публичный health падает, supervisor перезапускает `ngrok http --domain=ladle-substance-spray.ngrok-free.dev 8765`.
-
-Ручной запуск supervised stack:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\start_device_log_stack.ps1
-```
-
-Одноразовая проверка и попытка поднять stack:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\start_device_log_stack.ps1 -Once
-```
-
-Диагностика текущего состояния:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\check_device_log_stack.ps1 -Json
-```
-
-Autostart installer сначала пытается оформить Windows Scheduled Task:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\install_device_log_stack_task.ps1 -StartNow
-```
-
-Task name:
-
-```text
-LostCyberHamsterDeviceLogStack
-```
-
-Scheduled Task запускается при входе пользователя в Windows, игнорирует повторный запуск, имеет restart-on-failure и держит supervisor живым в фоне. Task хранит абсолютный путь к checkout, из которого был установлен; если репозиторий перемещен или worktree удален, task нужно переустановить.
-
-Если Windows запрещает Task Scheduler в текущем пользовательском контексте, installer создает fallback:
-
-```text
-%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\LostCyberHamsterDeviceLogStack.lnk
-%LOCALAPPDATA%\LostCyberHamster\device-log-stack\start_device_log_stack.cmd
-```
-
-Fallback запускается при входе пользователя в Windows. `.cmd`-launcher держит простой restart-loop: если supervisor PowerShell-процесс завершится, launcher подождет 10 секунд и запустит его снова.
-
-Логи supervisor-а:
-
-```text
-tools/device-log-collector/device-log-stack.supervisor.log
-tools/device-log-collector/collector.supervised.stdout.log
-tools/device-log-collector/collector.supervised.stderr.log
-tools/device-log-collector/ngrok.supervised.stdout.log
-tools/device-log-collector/ngrok.supervised.stderr.log
-```
+Это dev-gate, не production-grade security. Перед production-сборками device log upload должен быть выключен.
 
 ## Где лежат логи
 
@@ -213,12 +181,18 @@ DeviceLogs/android/<createdAt>_<deviceModel>_<reason>_<sessionId>/
 - `metadata.json` - device/build/session/reason/scene/endpoint/current level;
 - `diagnostic_log.txt` - snapshot/tail diagnostic log из билда;
 - `package.json` - summary сохраненного пакета;
-- `_requests.log` в output root - access log collector-а;
+- `_requests.log` в output root - access log collector;
 - `_probes.log` в output root - startup probe записи.
 
 ## Как агент читает
 
 Агент читает локальные файлы, а не телефон и не ngrok API.
+
+Перед мобильным тестом:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\ensure_device_log_docker_stack.ps1 -Json
+```
 
 Быстро посмотреть свежие uploads текущего ngrok-билда:
 
@@ -264,9 +238,20 @@ $headers = @{ "ngrok-skip-browser-warning" = "true" }
 Invoke-RestMethod -Method Get -Uri "https://ladle-substance-spray.ngrok-free.dev/health" -Headers $headers
 ```
 
+## Legacy fallback
+
+Старые non-Docker скрипты оставлены для ручной отладки:
+
+```text
+tools/device-log-collector/start_device_log_collector.ps1
+tools/device-log-collector/start_device_log_stack.ps1
+```
+
+Они не являются основным способом поддерживать инфраструктуру. Если агенту нужен готовый стек для логов с телефона, сначала использовать Docker ensure-скрипт.
+
 ## Что важно помнить
 
-- Уже установленный APK не получает новый endpoint автоматически. После изменения `device_log_settings.json` нужно пересобрать и переустановить билд.
+- Уже установленный APK не получает новый endpoint автоматически. После изменения `device_log_settings.json` нужен новый билд.
 - Это dev-инфраструктура для тестовых Android APK, не production telemetry.
-- `diagnostic_log.txt` отправляется snapshot-ами по событиям; отсутствие нового upload не значит, что телефон "не отвечает" - возможно, не было события отправки или tunnel/collector выключен.
-- Если агенту нужно проверить мобильный flow, сначала убедиться, что stack жив через `check_device_log_stack.ps1`, затем просить запустить установленный APK и смотреть новые папки в `DeviceLogs/android`.
+- `diagnostic_log.txt` отправляется snapshots по событиям; отсутствие нового upload не означает, что телефон "не отвечает".
+- Для приема логов ноутбук должен быть включен, иметь интернет и запущенный Docker stack.

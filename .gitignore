@@ -131,6 +131,7 @@ Desktop.ini
 # Local Android device log collector output
 /DeviceLogs/
 /tools/device-log-collector/*.log
+/tools/device-log-collector/.env.local
 /phone_screen*.png
 
 # Local Codex chat attachments

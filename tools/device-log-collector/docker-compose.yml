@@ -1,0 +1,50 @@
+name: lostcyberhamster-device-logs
+
+services:
+  collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lostcyberhamster/device-log-collector:local
+    container_name: lostcyberhamster-device-log-collector
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - ../../DeviceLogs/android:/workspace/DeviceLogs/android
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8765/health | grep '\"ok\":true'"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 5s
+
+  ngrok:
+    build:
+      context: .
+      dockerfile: Dockerfile.ngrok
+    image: lostcyberhamster/device-log-ngrok:local
+    container_name: lostcyberhamster-device-log-ngrok
+    restart: unless-stopped
+    depends_on:
+      collector:
+        condition: service_healthy
+    env_file:
+      - .env.local
+    environment:
+      PUBLIC_HEALTH_URL: https://${NGROK_DOMAIN}/health
+      HEALTHCHECK_INTERVAL_SECONDS: 15
+      HEALTHCHECK_TIMEOUT_SECONDS: 5
+      HEALTHCHECK_FAILURE_THRESHOLD: 4
+      HEALTHCHECK_START_PERIOD_SECONDS: 25
+    command:
+      - http
+      - http://collector:8765
+      - --url=https://${NGROK_DOMAIN}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -T 5 -O - --header='ngrok-skip-browser-warning: true' \"$${PUBLIC_HEALTH_URL}\" | grep '\"ok\"[[:space:]]*:[[:space:]]*true'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

@@ -9,9 +9,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$scriptPath = Join-Path $PSScriptRoot 'start_device_log_stack.ps1'
+$scriptPath = Join-Path $PSScriptRoot 'ensure_device_log_docker_stack.ps1'
 if (-not (Test-Path -LiteralPath $scriptPath)) {
-    throw "Supervisor script not found: $scriptPath"
+    throw "Docker ensure script not found: $scriptPath"
 }
 
 $argument = @(
@@ -28,19 +28,13 @@ function New-Launcher {
     New-Item -ItemType Directory -Force -Path $launcherDir | Out-Null
 
     $launcherPath = Join-Path $launcherDir 'start_device_log_stack.cmd'
-$content = @"
+    $content = @"
 @echo off
-:restart
 powershell.exe $argument
-timeout /t 10 /nobreak >nul
-goto restart
 "@
     Set-Content -LiteralPath $launcherPath -Value $content -Encoding ASCII
     return $launcherPath
 }
-
-$registeredWithPowerShell = $false
-$registeredWithStartupShortcut = $false
 
 function Install-StartupShortcut {
     param([string]$LauncherPath)
@@ -56,20 +50,25 @@ function Install-StartupShortcut {
     $shortcut.TargetPath = $LauncherPath
     $shortcut.WorkingDirectory = Split-Path -Parent $LauncherPath
     $shortcut.WindowStyle = 7
-    $shortcut.Description = 'LostCyberHamster Android device log collector + ngrok supervisor.'
+    $shortcut.Description = 'LostCyberHamster Android device log Docker stack ensure.'
     $shortcut.Save()
 
     return $shortcutPath
 }
+
+$registeredWithPowerShell = $false
+$registeredWithStartupShortcut = $false
+$launcherPath = New-Launcher
+$shortcutPath = $null
 
 try {
     $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $argument
     $trigger = New-ScheduledTaskTrigger -AtLogOn
     $settings = New-ScheduledTaskSettingsSet `
         -MultipleInstances IgnoreNew `
-        -RestartCount 999 `
-        -RestartInterval (New-TimeSpan -Minutes 1) `
-        -ExecutionTimeLimit (New-TimeSpan -Days 365) `
+        -RestartCount 3 `
+        -RestartInterval (New-TimeSpan -Minutes 2) `
+        -ExecutionTimeLimit (New-TimeSpan -Minutes 10) `
         -AllowStartIfOnBatteries `
         -DontStopIfGoingOnBatteries
 
@@ -78,14 +77,13 @@ try {
         -Action $action `
         -Trigger $trigger `
         -Settings $settings `
-        -Description 'LostCyberHamster Android device log collector + ngrok supervisor.' `
+        -Description 'LostCyberHamster Android device log Docker stack ensure.' `
         -Force | Out-Null
 
     $registeredWithPowerShell = $true
 }
 catch {
     Write-Warning "Register-ScheduledTask failed, falling back to schtasks.exe launcher: $($_.Exception.Message)"
-    $launcherPath = New-Launcher
     $taskRun = "`"$launcherPath`""
     & schtasks.exe /Create /SC ONLOGON /TN $TaskName /TR $taskRun /RL LIMITED /F
     if ($LASTEXITCODE -ne 0) {
@@ -105,7 +103,8 @@ if ($StartNow.IsPresent) {
     else {
         & schtasks.exe /Run /TN $TaskName
         if ($LASTEXITCODE -ne 0) {
-            throw "schtasks.exe /Run failed with exit code $LASTEXITCODE"
+            Write-Warning "schtasks.exe /Run failed with exit code $LASTEXITCODE; running launcher directly."
+            Start-Process -FilePath $launcherPath -WorkingDirectory (Split-Path -Parent $launcherPath) -WindowStyle Hidden
         }
     }
 }
@@ -119,11 +118,14 @@ if ($registeredWithStartupShortcut) {
         LauncherPath = $launcherPath
     }
 }
-else {
-    try {
+elseif ($registeredWithPowerShell) {
     Get-ScheduledTask -TaskName $TaskName | Select-Object TaskName, TaskPath, State
-    }
-    catch {
-        & schtasks.exe /Query /TN $TaskName
+}
+else {
+    [pscustomobject]@{
+        TaskName = $TaskName
+        Mode = 'Schtasks'
+        State = 'Installed'
+        LauncherPath = $launcherPath
     }
 }
