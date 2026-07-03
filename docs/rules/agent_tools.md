@@ -57,6 +57,20 @@ Bridge-команды:
 
 Рекомендуемый порядок анализа: `STAB` → `BOT` → `ECO`.
 
+## Android Device Logs через ngrok
+
+Установленные Android APK могут сами отправлять snapshots `diagnostic_log.txt` через ngrok на локальный collector ноутбука. Owner-документ: `docs/android_ngrok_device_logging.md`.
+
+Ключевые точки:
+- Unity config: `LostCyberHamster/Assets/Resources/Diagnostics/device_log_settings.json`.
+- Runtime upload: `DeviceLogReporter` → `DeviceLogUploadRunner` → `DeviceLogUploader`.
+- Collector: `tools/device-log-collector/server.js`.
+- Supervised stack: `tools/device-log-collector/start_device_log_stack.ps1`.
+- Health-check: `tools/device-log-collector/check_device_log_stack.ps1 -Json`.
+- Autostart: installer `tools/device-log-collector/install_device_log_stack_task.ps1`; предпочтительно Windows Scheduled Task `LostCyberHamsterDeviceLogStack`, fallback - user Startup shortcut с restart-loop launcher.
+- Output: `DeviceLogs/android/<createdAt>_<device>_<reason>_<session>/`.
+- Агент читает локальные сохраненные uploads из `DeviceLogs/android`; телефон напрямую не опрашивается.
+
 ## Test Levels
 
 Паттерны: `LostCyberHamster/Assets/Content/locations/level_design_templates/levels/PatternsCollection.json`.

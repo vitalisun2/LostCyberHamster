@@ -13,6 +13,7 @@ namespace Assets.Scripts.Diagnostics
     {
         private const string _settingsResourcePath = "Diagnostics/device_log_settings";
         private const string _tokenHeaderName = "X-LCH-Device-Log-Token";
+        private const string _ngrokSkipBrowserWarningHeaderName = "ngrok-skip-browser-warning";
         private const string _diagnosticLogFileName = "diagnostic_log.txt";
         private const string _diagnosticLogEncoding = "utf-8";
 
@@ -158,10 +159,7 @@ namespace Assets.Scripts.Diagnostics
             }
 
             using var request = UnityWebRequest.Get(healthUrl);
-            if (!string.IsNullOrWhiteSpace(settings.sharedToken))
-            {
-                request.SetRequestHeader(_tokenHeaderName, settings.sharedToken);
-            }
+            ApplyCommonHeaders(settings, request);
 
             yield return SendWithTimeoutCoroutine(request, settings.UploadTimeoutSeconds);
 
@@ -176,11 +174,7 @@ namespace Assets.Scripts.Diagnostics
             request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json");
-
-            if (!string.IsNullOrWhiteSpace(settings.sharedToken))
-            {
-                request.SetRequestHeader(_tokenHeaderName, settings.sharedToken);
-            }
+            ApplyCommonHeaders(settings, request);
 
             yield return SendWithTimeoutCoroutine(request, settings.UploadTimeoutSeconds);
 
@@ -238,6 +232,16 @@ namespace Assets.Scripts.Diagnostics
                 Fragment = string.Empty
             };
             return builder.Uri.ToString();
+        }
+
+        private static void ApplyCommonHeaders(DeviceLogUploadSettings settings, UnityWebRequest request)
+        {
+            if (!string.IsNullOrWhiteSpace(settings.sharedToken))
+            {
+                request.SetRequestHeader(_tokenHeaderName, settings.sharedToken);
+            }
+
+            request.SetRequestHeader(_ngrokSkipBrowserWarningHeaderName, "true");
         }
 
         [Serializable]

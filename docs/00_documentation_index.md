@@ -40,6 +40,9 @@
 ### docs/hamster_collision_test_scenarios.md
 Чек-лист для ручного тестирования всех основных типов столкновений хомяка.
 
+### docs/android_ngrok_device_logging.md
+Dev-инфраструктура логирования установленных Android APK через ngrok: как игра сама отправляет `diagnostic_log.txt`, как supervisor держит collector/ngrok живыми, куда collector складывает uploads и как агентам читать `DeviceLogs/android`.
+
 ### README.md
 Общее описание репозитория и короткий developer-facing обзор.
 
@@ -105,6 +108,9 @@
 
 ### tools/read_log_channel.ps1
 Унифицированное чтение каналов Diagnostic Log `STAB`, `BOT`, `ECO`, которые пишутся через bot diagnostics helpers и `DebugManager` sink.
+
+### tools/device-log-collector/
+Локальный HTTP collector для Android device logs, ngrok tunnel supervisor и Scheduled Task installer. Основной сценарий описан в `docs/android_ngrok_device_logging.md`.
 
 ### tools/invoke_open_unity_test_level.ps1
 Сценарий полного цикла: рекомпиляция, запуск тестового уровня и ожидание результата.

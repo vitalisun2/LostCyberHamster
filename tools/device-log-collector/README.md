@@ -2,11 +2,29 @@
 
 Dev-only HTTP collector для логов Android-сборок LostCyberHamster.
 
+Основной сценарий сейчас описан в `docs/android_ngrok_device_logging.md`: установленные Android APK сами отправляют snapshots `diagnostic_log.txt` через ngrok на этот локальный collector.
+
 ## Запуск
+
+Ручной запуск только collector-а:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\start_device_log_collector.ps1
 ```
+
+Устойчивый запуск collector + ngrok supervisor:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\start_device_log_stack.ps1
+```
+
+Установить автозапуск при входе в Windows:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\install_device_log_stack_task.ps1 -StartNow
+```
+
+Installer сначала пробует Windows Scheduled Task. Если Task Scheduler недоступен из-за прав, создается user Startup shortcut с restart-loop launcher.
 
 Collector слушает `POST /upload`, сохраняет payload в `DeviceLogs/android/` и проверяет заголовок `X-LCH-Device-Log-Token`.
 
@@ -14,11 +32,13 @@ Collector слушает `POST /upload`, сохраняет payload в `DeviceLo
 
 Unity читает `Assets/Resources/Diagnostics/device_log_settings.json`.
 
-Для текущего LAN-сценария endpoint должен смотреть на IP компьютера разработчика:
+Для текущего ngrok-сценария endpoint должен смотреть на закрепленный ngrok domain:
 
 ```json
-"endpointUrl": "http://192.168.0.17:8765/upload"
+"endpointUrl": "https://ladle-substance-spray.ngrok-free.dev/upload"
 ```
+
+Для LAN-сценария endpoint может смотреть на IP компьютера разработчика, например `http://192.168.0.17:8765/upload`, но такой APK работает только в той же локальной сети.
 
 Перед production-сборками `enabled` должен быть `false`.
 

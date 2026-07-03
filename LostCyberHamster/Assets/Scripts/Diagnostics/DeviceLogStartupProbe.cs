@@ -9,6 +9,7 @@ namespace Assets.Scripts.Diagnostics
     {
         private const string _settingsResourcePath = "Diagnostics/device_log_settings";
         private const string _tokenHeaderName = "X-LCH-Device-Log-Token";
+        private const string _ngrokSkipBrowserWarningHeaderName = "ngrok-skip-browser-warning";
 
         public IEnumerator Run()
         {
@@ -33,7 +34,7 @@ namespace Assets.Scripts.Diagnostics
         {
             var healthUrl = BuildSiblingUrl(settings.endpointUrl, "health");
             using var request = UnityWebRequest.Get(healthUrl);
-            ApplyToken(settings, request);
+            ApplyCommonHeaders(settings, request);
 
             yield return SendWithTimeout(request, settings.UploadTimeoutSeconds);
 
@@ -53,7 +54,7 @@ namespace Assets.Scripts.Diagnostics
             form.AddField("buildLabel", settings.buildLabel);
 
             using var request = UnityWebRequest.Post(probeUrl, form);
-            ApplyToken(settings, request);
+            ApplyCommonHeaders(settings, request);
 
             yield return SendWithTimeout(request, settings.UploadTimeoutSeconds);
 
@@ -78,12 +79,14 @@ namespace Assets.Scripts.Diagnostics
             }
         }
 
-        private static void ApplyToken(DeviceLogUploadSettings settings, UnityWebRequest request)
+        private static void ApplyCommonHeaders(DeviceLogUploadSettings settings, UnityWebRequest request)
         {
             if (!string.IsNullOrWhiteSpace(settings.sharedToken))
             {
                 request.SetRequestHeader(_tokenHeaderName, settings.sharedToken);
             }
+
+            request.SetRequestHeader(_ngrokSkipBrowserWarningHeaderName, "true");
         }
 
         private static string BuildSiblingUrl(string endpointUrl, string path)
