@@ -10,6 +10,7 @@ namespace Assets.Scripts.GameManagerLogic
 
         private void Awake()
         {
+            DebugManager.DiagStability("[GAME MANAGER INSTALLER] awake begin");
             var installers = _installerObjects.Select(installerObject => installerObject.GetComponent<IInstaller>()).ToList();
 
             var listenersInstaller = this.gameObject.GetComponent<ListenersInstaller>();
@@ -19,6 +20,8 @@ namespace Assets.Scripts.GameManagerLogic
             {
                 installers[i].Install();
             }
+
+            DebugManager.DiagStability($"[GAME MANAGER INSTALLER] awake completed installers={installers.Count}");
         }
     }
 }

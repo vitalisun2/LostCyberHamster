@@ -29,6 +29,8 @@ namespace Assets.Scripts.Diagnostics
         {
             Application.logMessageReceived -= OnLogMessageReceived;
             Application.logMessageReceived += OnLogMessageReceived;
+            Application.logMessageReceivedThreaded -= OnLogMessageReceivedThreaded;
+            Application.logMessageReceivedThreaded += OnLogMessageReceivedThreaded;
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneLoaded += OnSceneLoaded;
 
@@ -54,6 +56,7 @@ namespace Assets.Scripts.Diagnostics
         private void OnDestroy()
         {
             Application.logMessageReceived -= OnLogMessageReceived;
+            Application.logMessageReceivedThreaded -= OnLogMessageReceivedThreaded;
             SceneManager.sceneLoaded -= OnSceneLoaded;
             if (_instance == this)
             {
@@ -74,6 +77,18 @@ namespace Assets.Scripts.Diagnostics
         {
             DebugManager.DiagStability($"[DEVICE LOG] scene loaded name={scene.name} mode={mode}");
             DeviceLogUploader.UploadDiagnosticLog($"scene_loaded_{scene.name}");
+            StartCoroutine(UploadSceneLoadedCheckpoints(scene.name));
+        }
+
+        private IEnumerator UploadSceneLoadedCheckpoints(string sceneName)
+        {
+            yield return null;
+            DebugManager.DiagStability($"[DEVICE LOG] scene first frame name={sceneName}");
+            DeviceLogUploader.UploadDiagnosticLog($"scene_first_frame_{sceneName}");
+
+            yield return new WaitForSecondsRealtime(1f);
+            DebugManager.DiagStability($"[DEVICE LOG] scene after 1s name={sceneName}");
+            DeviceLogUploader.UploadDiagnosticLog($"scene_after_1s_{sceneName}");
         }
 
         private void OnLogMessageReceived(string condition, string stackTrace, LogType type)
@@ -93,6 +108,17 @@ namespace Assets.Scripts.Diagnostics
 
             _nextErrorUploadAt = Time.unscaledTime + _errorUploadCooldownSeconds;
             DeviceLogUploader.UploadDiagnosticLog(type == LogType.Exception ? "runtime_exception" : "runtime_error");
+        }
+
+        private void OnLogMessageReceivedThreaded(string condition, string stackTrace, LogType type)
+        {
+            if (type != LogType.Exception && type != LogType.Error && type != LogType.Assert)
+            {
+                return;
+            }
+
+            DebugManager.DiagStability(
+                $"[DEVICE LOG] captured threaded type={type} condition={condition} stack={stackTrace}");
         }
     }
 }

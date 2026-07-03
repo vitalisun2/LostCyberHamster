@@ -8,6 +8,8 @@ using Vues.GameCore;
 public static class DebugManager
 {
     private const string DiagLogFileName = "diagnostic_log.txt";
+    private const long MaxPersistentDiagLogBytes = 2 * 1024 * 1024;
+    private static readonly object _diagLogFileSync = new object();
     private static string _diagLogPath;
     private static bool _fileLoggingEnabled = true;
     private static bool _verboseDiagLoggingEnabled = false;
@@ -37,8 +39,7 @@ public static class DebugManager
             Directory.CreateDirectory(directory);
         }
         
-        // Clear old log on startup
-        SafeDelete(_diagLogPath);
+        TrimExistingLogIfNeeded(_diagLogPath, MaxPersistentDiagLogBytes);
         WriteDiagLogToFile($"=== Diagnostic Log Started at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
     }
 
@@ -133,8 +134,15 @@ public static class DebugManager
     /// </summary>
     public static void ClearDiagLog()
     {
-        SafeDelete(_diagLogPath);
-        WriteDiagLogToFile($"=== Log Cleared at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
+        lock (_diagLogFileSync)
+        {
+            if (File.Exists(_diagLogPath))
+            {
+                File.Delete(_diagLogPath);
+            }
+
+            WriteDiagLogToFile($"=== Log Cleared at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
+        }
     }
 
     private static string GetChannelTag(DiagChannel channel)
@@ -154,40 +162,64 @@ public static class DebugManager
     {
         if (!_fileLoggingEnabled) return;
 
-        var line = message + Environment.NewLine;
-        for (var attempt = 0; attempt < 3; attempt++)
+        lock (_diagLogFileSync)
         {
-            try
+            var line = message + Environment.NewLine;
+            for (var attempt = 0; attempt < 3; attempt++)
             {
-                using var stream = new FileStream(
-                    _diagLogPath,
-                    FileMode.Append,
-                    FileAccess.Write,
-                    FileShare.ReadWrite);
-                var bytes = Encoding.UTF8.GetBytes(line);
-                stream.Write(bytes, 0, bytes.Length);
-                return;
-            }
-            catch (IOException) when (attempt < 2)
-            {
-                Thread.Sleep(5 * (attempt + 1));
-            }
-            catch (UnauthorizedAccessException) when (attempt < 2)
-            {
-                Thread.Sleep(5 * (attempt + 1));
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[DebugManager] Failed to write to diagnostic log: {ex.Message}");
-                return;
+                try
+                {
+                    using var stream = new FileStream(
+                        _diagLogPath,
+                        FileMode.Append,
+                        FileAccess.Write,
+                        FileShare.ReadWrite);
+                    var bytes = Encoding.UTF8.GetBytes(line);
+                    stream.Write(bytes, 0, bytes.Length);
+                    return;
+                }
+                catch (IOException) when (attempt < 2)
+                {
+                    Thread.Sleep(5 * (attempt + 1));
+                }
+                catch (UnauthorizedAccessException) when (attempt < 2)
+                {
+                    Thread.Sleep(5 * (attempt + 1));
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[DebugManager] Failed to write to diagnostic log: {ex.Message}");
+                    return;
+                }
             }
         }
     }
 
-    private static void SafeDelete(string path)
+    private static void TrimExistingLogIfNeeded(string path, long maxBytes)
     {
         if (!File.Exists(path)) return;
-        File.Delete(path);
+
+        lock (_diagLogFileSync)
+        {
+            try
+            {
+                var fileInfo = new FileInfo(path);
+                if (fileInfo.Length <= maxBytes)
+                {
+                    return;
+                }
+
+                var keepBytes = (int)Math.Min(maxBytes / 2, fileInfo.Length);
+                var allBytes = File.ReadAllBytes(path);
+                var tail = new byte[keepBytes];
+                Buffer.BlockCopy(allBytes, allBytes.Length - keepBytes, tail, 0, keepBytes);
+                File.WriteAllBytes(path, tail);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[DebugManager] Failed to trim diagnostic log: {ex.Message}");
+            }
+        }
     }
 
     public static void OnEnable()

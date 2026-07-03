@@ -21,6 +21,7 @@ namespace LostCyberHamster.Editor
         private const string RecompileCommand = "recompile_scripts";
         private const string RegenerateProjectFilesCommand = "regenerate_project_files";
         private const string ProbeTutorialStopAfterStepCommand = "probe_tutorial_stop_after_step";
+        private const string ProbeFirstLevelIntroCommand = "probe_first_level_intro";
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string FirstGameplayLevelAddress = "01_New_York/Morning/level_01";
         private const string TestLevelPrefsKey = "TestLevel_Address";
@@ -30,6 +31,9 @@ namespace LostCyberHamster.Editor
         private const string CommandSessionKey = "TestLevelAutomationBridge.Command";
         private const string ResultSessionKey = "TestLevelAutomationBridge.Result";
         private const string ResultLineSessionKey = "TestLevelAutomationBridge.ResultLine";
+        private const string IntroProbeSkipScheduledSessionKey = "TestLevelAutomationBridge.IntroProbe.SkipScheduled";
+        private const string IntroProbeSkipDoneSessionKey = "TestLevelAutomationBridge.IntroProbe.SkipDone";
+        private const string IntroProbeSkipAtSessionKey = "TestLevelAutomationBridge.IntroProbe.SkipAt";
         private const double PollIntervalSeconds = 0.25d;
 
         private static readonly string AutomationDirectoryPath =
@@ -174,7 +178,8 @@ namespace LostCyberHamster.Editor
             if (!string.Equals(request.command, LaunchCommand, StringComparison.Ordinal) &&
                 !string.Equals(request.command, RecompileCommand, StringComparison.Ordinal) &&
                 !string.Equals(request.command, RegenerateProjectFilesCommand, StringComparison.Ordinal) &&
-                !string.Equals(request.command, ProbeTutorialStopAfterStepCommand, StringComparison.Ordinal))
+                !string.Equals(request.command, ProbeTutorialStopAfterStepCommand, StringComparison.Ordinal) &&
+                !string.Equals(request.command, ProbeFirstLevelIntroCommand, StringComparison.Ordinal))
             {
                 WriteResponse(new BridgeResponse
                 {
@@ -282,6 +287,24 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
+            if (string.Equals(request.command, ProbeFirstLevelIntroCommand, StringComparison.Ordinal))
+            {
+                WriteResponse(new BridgeResponse
+                {
+                    requestId = request.requestId,
+                    command = request.command,
+                    state = "running",
+                    testResult = string.Empty,
+                    message = "Request accepted. Probing first gameplay level intro/start path.",
+                    updatedAtUtc = DateTime.UtcNow.ToString("O"),
+                    diagnosticLogPath = DebugManager.GetDiagLogPath()
+                });
+
+                DebugManager.ClearDiagLog();
+                LaunchFirstLevelIntroProbe(request.timeScale);
+                return;
+            }
+
             WriteResponse(new BridgeResponse
             {
                 requestId = request.requestId,
@@ -325,6 +348,30 @@ namespace LostCyberHamster.Editor
             EditorApplication.isPlaying = true;
         }
 
+        private static void LaunchFirstLevelIntroProbe(float timeScale)
+        {
+            PlayerPrefs.SetString(TestLevelPrefsKey, FirstGameplayLevelAddress);
+            PlayerPrefs.SetInt(SkipIntroPrefsKey, 0);
+            PlayerPrefs.DeleteKey(Assets.Scripts.Tutorial.TutorialAutomationSettings.AutoPlayKey);
+            PlayerPrefs.DeleteKey(Assets.Scripts.Tutorial.TutorialLaunchState.ResetCompletedOnceKey);
+            PlayerPrefs.DeleteKey(TutorialStopAfterStepPrefsKey);
+
+            if (timeScale > 0f)
+            {
+                PlayerPrefs.SetFloat(Assets.Scripts.System.AutomationRuntimePrefs.TimeScaleOverrideKey, timeScale);
+            }
+
+            Assets.Scripts.Tutorial.TutorialLaunchState.AllowFirstGameplayLevelOnce();
+            PlayerPrefs.Save();
+
+            SessionState.SetBool(IntroProbeSkipScheduledSessionKey, false);
+            SessionState.SetBool(IntroProbeSkipDoneSessionKey, false);
+            SessionState.SetString(IntroProbeSkipAtSessionKey, string.Empty);
+
+            EditorSceneManager.OpenScene(BootstrapScenePath);
+            EditorApplication.isPlaying = true;
+        }
+
         private static void MonitorActiveRun()
         {
             if (!HasActiveRequest())
@@ -347,11 +394,100 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
+            if (string.Equals(activeCommand, ProbeFirstLevelIntroCommand, StringComparison.Ordinal))
+            {
+                MonitorFirstLevelIntroProbe(activeCommand);
+                return;
+            }
+
             if (!TryReadTestResult(out var result, out var resultLine))
             {
                 return;
             }
 
+            SetStoredResult(result, resultLine);
+
+            WriteResponse(new BridgeResponse
+            {
+                requestId = GetActiveRequestId(),
+                command = activeCommand,
+                state = "stopping",
+                testResult = result,
+                message = resultLine,
+                updatedAtUtc = DateTime.UtcNow.ToString("O"),
+                diagnosticLogPath = DebugManager.GetDiagLogPath()
+            });
+
+            if (EditorApplication.isPlaying)
+            {
+                EditorApplication.isPlaying = false;
+            }
+        }
+
+        private static void MonitorFirstLevelIntroProbe(string activeCommand)
+        {
+            if (TryReadDiagnosticLine(
+                    line => line.Contains("[GAME ENTRY] exception")
+                            || line.Contains("[INTRO] exception")
+                            || line.Contains("[GAME START] exception")
+                            || line.Contains("[DEVICE LOG] captured type=Exception"),
+                    out var failureLine))
+            {
+                CompleteActiveRun(activeCommand, "FAIL", failureLine);
+                return;
+            }
+
+            if (!SessionState.GetBool(IntroProbeSkipScheduledSessionKey, false)
+                && TryReadDiagnosticLine(line => line.Contains("[INTRO] initialize completed"), out var introLine))
+            {
+                SessionState.SetBool(IntroProbeSkipScheduledSessionKey, true);
+                SessionState.SetString(
+                    IntroProbeSkipAtSessionKey,
+                    (EditorApplication.timeSinceStartup + 1d).ToString("R"));
+                DebugManager.DiagStability($"[FIRST LEVEL INTRO PROBE] intro detected line={introLine}");
+            }
+
+            TrySkipIntroForProbe();
+
+            if (TryReadDiagnosticLine(line => line.Contains("[GAME START] completed state=PLAYING"), out var winLine))
+            {
+                DebugManager.DiagStability("[TEST RESULT] WIN First level intro/start probe completed");
+                CompleteActiveRun(activeCommand, "WIN", winLine);
+            }
+        }
+
+        private static void TrySkipIntroForProbe()
+        {
+            if (!SessionState.GetBool(IntroProbeSkipScheduledSessionKey, false)
+                || SessionState.GetBool(IntroProbeSkipDoneSessionKey, false))
+            {
+                return;
+            }
+
+            var rawSkipAt = SessionState.GetString(IntroProbeSkipAtSessionKey, string.Empty);
+            if (!double.TryParse(rawSkipAt, out var skipAt)
+                || EditorApplication.timeSinceStartup < skipAt)
+            {
+                return;
+            }
+
+            try
+            {
+                Assets.Scripts.System.LevelController.Instance?.SkipIntro();
+                SessionState.SetBool(IntroProbeSkipDoneSessionKey, true);
+                DebugManager.DiagStability("[FIRST LEVEL INTRO PROBE] skip intro invoked");
+            }
+            catch (Exception exception)
+            {
+                DebugManager.DiagStability(
+                    $"[FIRST LEVEL INTRO PROBE] skip intro failed type={exception.GetType().FullName} " +
+                    $"message={exception.Message} stack={exception.StackTrace}");
+                CompleteActiveRun(GetActiveCommand(), "FAIL", exception.ToString());
+            }
+        }
+
+        private static void CompleteActiveRun(string activeCommand, string result, string resultLine)
+        {
             SetStoredResult(result, resultLine);
 
             WriteResponse(new BridgeResponse
@@ -511,6 +647,37 @@ namespace LostCyberHamster.Editor
             return false;
         }
 
+        private static bool TryReadDiagnosticLine(Predicate<string> predicate, out string resultLine)
+        {
+            resultLine = null;
+
+            var logPath = DebugManager.GetDiagLogPath();
+            if (!File.Exists(logPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                var lines = ReadAllLinesShared(logPath);
+                for (var index = lines.Length - 1; index >= 0; index--)
+                {
+                    var line = lines[index];
+                    if (predicate(line))
+                    {
+                        resultLine = line.Trim();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[TestLevelAutomationBridge] Failed to inspect diagnostic log: {exception.Message}");
+            }
+
+            return false;
+        }
+
         private static string[] ReadAllLinesShared(string path)
         {
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -581,6 +748,9 @@ namespace LostCyberHamster.Editor
             SetActiveRequestId(string.Empty);
             SetActiveCommand(string.Empty);
             ClearStoredResult();
+            SessionState.SetBool(IntroProbeSkipScheduledSessionKey, false);
+            SessionState.SetBool(IntroProbeSkipDoneSessionKey, false);
+            SessionState.SetString(IntroProbeSkipAtSessionKey, string.Empty);
         }
 
         private static void SafeDelete(string path)

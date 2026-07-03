@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
+using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Controllers;
 using UnityEngine;
@@ -36,6 +37,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared
 
         private static readonly Dictionary<string, float> _travelByClipName = new();
         private static readonly Dictionary<string, float> _rootYAtHalfByClipName = new();
+        private static readonly HashSet<string> _missingRootYClipNames = new();
 
         private static TransformAnimatorController _controller;
         private static int _mainThreadId;
@@ -86,7 +88,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared
                 if (controller == null)
                     return false;
 
-                rootY = HelpMethods.GetClipRootYAtHalf(controller, clipName);
+                if (_missingRootYClipNames.Contains(clipName))
+                    return false;
+
+                if (!TrySampleRootYAtHalf(controller, clipName, out rootY))
+                {
+                    _missingRootYClipNames.Add(clipName);
+                    return false;
+                }
+
                 _rootYAtHalfByClipName[clipName] = rootY;
                 return true;
             }
@@ -113,6 +123,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared
                 _controller = null;
                 _travelByClipName.Clear();
                 _rootYAtHalfByClipName.Clear();
+                _missingRootYClipNames.Clear();
             }
         }
 
@@ -124,12 +135,57 @@ namespace Assets.Scripts.Bot.Strategies.Shared
             _controller = Object.FindAnyObjectByType<TransformAnimatorController>();
             _travelByClipName.Clear();
             _rootYAtHalfByClipName.Clear();
+            _missingRootYClipNames.Clear();
             return _controller;
         }
 
         private static bool CanUseUnityApi()
         {
             return !_hasMainThreadId || Thread.CurrentThread.ManagedThreadId == _mainThreadId;
+        }
+
+        private static bool TrySampleRootYAtHalf(
+            TransformAnimatorController controller,
+            string clipName,
+            out float rootY)
+        {
+            rootY = 0f;
+            if (controller == null)
+            {
+                BotDiagnostics.Log(
+                    BotDiagnosticCategory.RuntimeSafety,
+                    BotDiagnosticLevel.Essential,
+                    "[BotAnimationTravelProvider] Root-Y sample skipped: TransformAnimatorController is null.");
+                return false;
+            }
+
+            if (!controller.TryFindClip(clipName, out AnimationClip clip) || clip == null)
+            {
+                BotDiagnostics.Log(
+                    BotDiagnosticCategory.RuntimeSafety,
+                    BotDiagnosticLevel.Essential,
+                    $"[BotAnimationTravelProvider] Root-Y sample skipped: animation clip '{clipName}' is not available in this build.");
+                return false;
+            }
+
+            var sampleRoot = new GameObject("BotClipSampler_TMP");
+            try
+            {
+                var animator = sampleRoot.AddComponent<Animator>();
+                if (controller.Animator?.runtimeAnimatorController != null)
+                {
+                    animator.runtimeAnimatorController = controller.Animator.runtimeAnimatorController;
+                }
+
+                float sampleTime = clip.length * 0.8667f;
+                clip.SampleAnimation(sampleRoot, sampleTime);
+                rootY = sampleRoot.transform.localPosition.y;
+                return true;
+            }
+            finally
+            {
+                Object.Destroy(sampleRoot);
+            }
         }
     }
 }

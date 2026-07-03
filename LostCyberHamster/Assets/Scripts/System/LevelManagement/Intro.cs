@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
+using Assets.Scripts.Diagnostics;
 using Assets.Scripts.System;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -28,16 +30,27 @@ public class Intro : MonoBehaviour
 
     public void Initialize(List<Sprite> introSprites)
     {
-        _uiDocument = GameObject.Find("[UI]").GetComponent<UIDocument>();
-        CreateIntroScreen(introSprites);
+        DebugManager.DiagStability($"[INTRO] initialize begin sprites={introSprites?.Count ?? 0}");
+        try
+        {
+            _uiDocument = GameObject.Find("[UI]").GetComponent<UIDocument>();
+            CreateIntroScreen(introSprites);
 
-        if (_introImages.Count == 1)
-        {
-            _introRoutine = StartCoroutine(PlaySingleImageIntro(_introImages[0]));
+            if (_introImages.Count == 1)
+            {
+                _introRoutine = StartCoroutine(PlaySingleImageIntro(_introImages[0]));
+            }
+            else
+            {
+                _introRoutine = StartCoroutine(PlayIntroSequence());
+            }
+
+            DebugManager.DiagStability($"[INTRO] initialize completed images={_introImages.Count}");
         }
-        else
+        catch (Exception exception)
         {
-            _introRoutine = StartCoroutine(PlayIntroSequence());
+            LogIntroException("initialize", exception);
+            throw;
         }
     }
 
@@ -201,7 +214,13 @@ public class Intro : MonoBehaviour
     private void EndIntro()
     {
         // Делает EndIntro идемпотентным — вызовется один раз
-        if (_ended) return;
+        if (_ended)
+        {
+            DebugManager.DiagStability("[INTRO] end ignored already ended");
+            return;
+        }
+
+        DebugManager.DiagStability("[INTRO] end begin");
         _ended = true;
 
         // Корректно отписываем кнопку Skip (важно — тем же делегатом)
@@ -215,11 +234,31 @@ public class Intro : MonoBehaviour
 
         // Запуск игры допускаем только из состояния INTRO, чтобы не «оживать» после луз-модалки
         var gm = LevelController.Instance.LevelData.GameManager;
+        DebugManager.DiagStability($"[INTRO] before start game gmState={gm.State}");
         if (gm.State == Assets.Scripts.GameManagerLogic.GameState.INTRO)
         {
-            gm.StartGame();
+            try
+            {
+                gm.StartGame();
+            }
+            catch (Exception exception)
+            {
+                LogIntroException("start_game", exception);
+                throw;
+            }
         }
 
         LevelDataProvider.ReleaseIntroSprites();
+        DebugManager.DiagStability("[INTRO] end completed");
     }
+
+    private static void LogIntroException(string context, Exception exception)
+    {
+        DebugManager.DiagStability(
+            $"[INTRO] exception context={context} type={exception.GetType().FullName} " +
+            $"message={exception.Message} stack={exception.StackTrace}");
+        Debug.LogException(exception);
+        DeviceLogUploader.UploadDiagnosticLog("intro_exception");
+    }
+
 }
