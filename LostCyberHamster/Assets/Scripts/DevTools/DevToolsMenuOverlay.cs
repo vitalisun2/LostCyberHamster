@@ -1,6 +1,9 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Assets.Scripts.Bot;
 using UnityEngine;
+#if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace Assets.Scripts.DevTools
 {
@@ -15,6 +18,10 @@ namespace Assets.Scripts.DevTools
         private const float _baseButtonHeight = 34f;
         private const float _basePanelWidth = 260f;
         private const float _basePanelHeight = 178f;
+        private const int _openButtonId = 1;
+        private const int _closeButtonId = 2;
+        private const int _botToggleButtonId = 3;
+        private const int _unlockAllButtonId = 4;
 
         private static DevToolsMenuOverlay _instance;
 
@@ -24,8 +31,11 @@ namespace Assets.Scripts.DevTools
         private GUIStyle _boxStyle;
         private GUIStyle _labelStyle;
         private GUIStyle _titleStyle;
-#if UNITY_EDITOR
-        private int _editorMouseDownButtonId = -1;
+#if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+        private Rect _editorOpenButtonRect;
+        private Rect _editorCloseButtonRect;
+        private Rect _editorBotToggleButtonRect;
+        private Rect _editorUnlockAllButtonRect;
 #endif
 
         /// <summary>
@@ -66,6 +76,13 @@ namespace Assets.Scripts.DevTools
             if (_instance == this)
                 _instance = null;
         }
+
+#if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+        private void Update()
+        {
+            HandleEditorMouseInput();
+        }
+#endif
 
         private void OnGUI()
         {
@@ -152,7 +169,7 @@ namespace Assets.Scripts.DevTools
             if (!_isPanelOpen)
             {
                 GUI.color = new Color(1f, 1f, 1f, 0.72f);
-                if (DrawButton(1, openButtonRect, "DEV"))
+                if (DrawButton(_openButtonId, openButtonRect, "DEV"))
                     _isPanelOpen = true;
 
                 return;
@@ -205,7 +222,7 @@ namespace Assets.Scripts.DevTools
                 rowHeight);
 
             GUI.Label(titleRect, "Developer", _titleStyle);
-            if (DrawButton(2, closeRect, "X"))
+            if (DrawButton(_closeButtonId, closeRect, "X"))
                 _isPanelOpen = false;
 
             // Считывает актуальное состояние runtime-бота каждый кадр меню.
@@ -224,7 +241,7 @@ namespace Assets.Scripts.DevTools
                 ? new Color(0.78f, 1f, 0.82f, 1f)
                 : new Color(1f, 0.82f, 0.78f, 1f);
 
-            if (DrawButton(3, toggleRect, botEnabled ? "Bot On" : "Bot Off"))
+            if (DrawButton(_botToggleButtonId, toggleRect, botEnabled ? "Bot On" : "Bot Off"))
                 bot.SetEnabled(!botEnabled);
 
             GUI.color = Color.white;
@@ -240,7 +257,7 @@ namespace Assets.Scripts.DevTools
                 ? new Color(0.78f, 1f, 0.82f, 1f)
                 : new Color(1f, 0.82f, 0.78f, 1f);
 
-            if (DrawButton(4, unlockAllRect, unlockAllLevels ? "Unlock All On" : "Unlock All Off"))
+            if (DrawButton(_unlockAllButtonId, unlockAllRect, unlockAllLevels ? "Unlock All On" : "Unlock All Off"))
                 DevToolsRuntimeState.UnlockAllLevels = !unlockAllLevels;
 
             GUI.color = Color.white;
@@ -264,37 +281,70 @@ namespace Assets.Scripts.DevTools
 
         private bool DrawButton(int buttonId, Rect rect, string text)
         {
-#if UNITY_EDITOR
-            bool editorMouseClicked = GUI.enabled && TryHandleEditorMouseClick(buttonId, rect);
+#if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+            CacheEditorButtonRect(buttonId, rect);
+            GUI.Button(rect, text, _buttonStyle);
+            return false;
 #else
-            bool editorMouseClicked = false;
+            return GUI.Button(rect, text, _buttonStyle);
 #endif
-            return GUI.Button(rect, text, _buttonStyle) || editorMouseClicked;
         }
 
-#if UNITY_EDITOR
-        private bool TryHandleEditorMouseClick(int buttonId, Rect rect)
+#if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+        private void CacheEditorButtonRect(int buttonId, Rect rect)
         {
-            Event current = Event.current;
-            if (current == null || current.button != 0)
-                return false;
-
-            if (current.type == EventType.MouseDown && rect.Contains(current.mousePosition))
+            switch (buttonId)
             {
-                _editorMouseDownButtonId = buttonId;
-                current.Use();
-                return false;
+                case _openButtonId:
+                    _editorOpenButtonRect = rect;
+                    break;
+                case _closeButtonId:
+                    _editorCloseButtonRect = rect;
+                    break;
+                case _botToggleButtonId:
+                    _editorBotToggleButtonRect = rect;
+                    break;
+                case _unlockAllButtonId:
+                    _editorUnlockAllButtonRect = rect;
+                    break;
+            }
+        }
+
+        private void HandleEditorMouseInput()
+        {
+            Mouse mouse = Mouse.current;
+            if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
+                return;
+
+            Vector2 mousePosition = mouse.position.ReadValue();
+            Vector2 guiPosition = new Vector2(mousePosition.x, Screen.height - mousePosition.y);
+
+            if (!_isPanelOpen)
+            {
+                if (_editorOpenButtonRect.Contains(guiPosition))
+                    _isPanelOpen = true;
+
+                return;
             }
 
-            if (current.type != EventType.MouseUp || _editorMouseDownButtonId != buttonId)
-                return false;
+            if (_editorCloseButtonRect.Contains(guiPosition))
+            {
+                _isPanelOpen = false;
+                return;
+            }
 
-            _editorMouseDownButtonId = -1;
-            if (!rect.Contains(current.mousePosition))
-                return false;
+            if (_editorUnlockAllButtonRect.Contains(guiPosition))
+            {
+                DevToolsRuntimeState.UnlockAllLevels = !DevToolsRuntimeState.UnlockAllLevels;
+                return;
+            }
 
-            current.Use();
-            return true;
+            if (!_editorBotToggleButtonRect.Contains(guiPosition))
+                return;
+
+            RuntimeBotController bot = FindBot();
+            if (bot != null)
+                bot.SetEnabled(!bot.IsEnabled);
         }
 #endif
     }
