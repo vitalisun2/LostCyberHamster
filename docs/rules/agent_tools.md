@@ -95,9 +95,9 @@ Bridge-команды:
 
 ## Build / Telegram Publishing
 
-- Для Android/Windows test build и отправки APK в Telegram `LostCyberHamster builds` использовать локальный Codex skill `publish-build-to-telegram-buffer`: `%USERPROFILE%\.codex\skills\publish-build-to-telegram-buffer`.
-- Пока действует временное правило активной разработки, Android/Telegram test APK всегда собирать с `-Development`; non-development build допустим только по явному запросу пользователя.
-- Перед запуском читать `SKILL.md` этого skill; для development APK сначала запускать `scripts\build_unity_player.ps1 -RepositoryRoot "<repo>" -Platform Android -Development`, затем `scripts\publish_latest_apk_to_telegram_buffer.ps1 -RepositoryRoot "<repo>"`.
+- Owner-документ процесса: `docs/rules/build_and_telegram_publishing.md`.
+- Инструмент: локальный Codex skill `publish-build-to-telegram-buffer` (`%USERPROFILE%\.codex\skills\publish-build-to-telegram-buffer`).
+- Перед запуском сборки или публикации читать owner-документ и `SKILL.md` skill-а.
 
 ## PowerShell Scripts
 

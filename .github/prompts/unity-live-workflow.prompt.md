@@ -1,11 +1,11 @@
 ---
-description: "Выполнить задачу прямо в integration/unity-live и остановиться на ревью."
+description: "Исключительно выполнить правку прямо в integration/unity-live, когда пользователь явно просит Unity Live."
 name: "Unity Live Workflow"
 agent: "agent"
 argument-hint: "Описание задачи"
 ---
 
-Unity Live workflow: обычные правки прямо в `integration/unity-live`. Без отдельной ветки, worktree и lock.
+Unity Live workflow — не дефолт для feature-задач и bugfix. Использовать только по явному запросу пользователя или для обслуживания общего Unity-стенда. Обычные feature/bugfix задачи выполнять через Task Branch workflow, bugfix после доказанного root cause — через Bug Fix workflow.
 
 Не использовать для analysis-only/root cause задач. Если пользователь просит только анализ или доказательство причины, после доказанного root cause сразу ответь с причиной и предложением решения; не переходи к этому workflow, не запускай cleanup, validation или дополнительные git/workflow checks без отдельного запроса.
 

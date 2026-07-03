@@ -21,6 +21,9 @@
 ### docs/rules/agent_tools.md
 Каталог проектных инструментов: automation bridge, Diagnostic Log reader, test level launcher, редакторские утилиты и PowerShell-скрипты.
 
+### docs/rules/build_and_telegram_publishing.md
+Процесс сборки Android/Windows test build и публикации APK в Telegram-канал `LostCyberHamster builds` через локальный Codex skill.
+
 ---
 
 ## Справочные документы

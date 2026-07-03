@@ -1,11 +1,11 @@
 ---
-description: "Выполнить задачу во временной task-ветке/worktree и публиковать ревью-снимок в integration/unity-live через lock."
+description: "Дефолтно выполнить feature-задачу или bugfix во временной task-ветке/worktree; Unity Live использовать только как стенд под lock."
 name: "Task Branch Workflow"
 agent: "agent"
 argument-hint: "Описание задачи и, опционально, slug"
 ---
 
-Task Branch workflow: временная ветка `task/<slug>` + worktree `.worktrees/<slug>`. Используется для изолированной/параллельной работы. `integration/unity-live` — только для ревью-снимка под lock.
+Task Branch workflow: дефолт для feature-задач и bugfix. Создаётся временная ветка `task/<slug>` и worktree `.worktrees/<slug>` от `integration/unity-live`; все правки живут в task-worktree. `integration/unity-live` — общий Unity-стенд, который можно занимать только под lock.
 
 Не использовать для analysis-only/root cause задач. Если пользователь просит только анализ или доказательство причины, после доказанного root cause сразу ответь с причиной и предложением решения; не создавай ветку/worktree, не запускай cleanup, validation или дополнительные git/workflow checks без отдельного запроса.
 
@@ -24,31 +24,25 @@ Task Branch workflow: временная ветка `task/<slug>` + worktree `.w
 3. Для C# правок проверь compile errors и `.csproj` включение новых/перемещённых файлов; для не-C# правок выполни только релевантную лёгкую проверку.
 4. Если проверка упала по текущей задаче — исправь в task-worktree; если причина внешняя — остановись с блокером.
 
-## Публикация в `integration/unity-live`
+## Unity-стенд
 
-1. Захвати lock: атомарно создай `.worktrees/.integration-lock/`.
-2. Запиши `owner.json`: `{"task":"<slug>","phase":"review","timestamp":"<ISO 8601>"}`.
-3. Если lock занят, прочитай `owner.json`, сообщи владельца и жди, повторяя попытку каждые 30 секунд. Stale lock не снимай сам.
+Используй только если нужна Unity/Play Mode/manual проверка в основном открытом проекте.
+
+1. Проверь `git status --short` в основном каталоге `integration/unity-live`. Если там есть чужие или несвязанные изменения, не перетирай их: сообщи блокер и жди освобождения стенда.
+2. Захвати lock: атомарно создай `.worktrees/.integration-lock/`.
+3. Запиши `owner.json` как лог стенда: `{"task":"<slug>","phase":"validation","branch":"task/<slug>","worktree":".worktrees/<slug>","timestamp":"<ISO 8601>"}`.
 4. Под lock перенеси snapshot/diff из `.worktrees/<slug>` в основной каталог на `integration/unity-live`.
-5. Сообщи, что ревью-снимок готов на `integration/unity-live`, и остановись на ревью пользователя.
+5. Запусти нужную Unity/automation/manual проверку на стенде.
+6. После проверки убери из `integration/unity-live` только snapshot этой задачи, верни стенд в исходное состояние и сними lock.
+7. Если проверка нашла проблему текущей задачи, исправь её в `.worktrees/<slug>` и повтори нужную валидацию.
 
-## Цикл ревью
+## Build / Telegram
 
-Если нужны доработки:
+Если после проверки нужен билд или публикация в Telegram, выполняй это из `.worktrees/<slug>` по `docs/rules/build_and_telegram_publishing.md`.
 
-1. Убери из `integration/unity-live` только ревью-снимок этой задачи.
-2. Сними lock.
-3. Доработай только `.worktrees/<slug>`.
-4. Повтори валидацию и публикацию.
+## Финализация
 
-Если пользователь доволен, задай прямой вопрос:
-
-`Если всё ок, я готов оставить изменения в integration/unity-live, удалить .worktrees/<slug> и task/<slug>, затем снять lock. Делаем?`
-
-## Финализация после подтверждения
-
-1. Проверь, что принятый diff полностью остался в `integration/unity-live`.
-2. Удали `.worktrees/<slug>`, `task/<slug>` и remote-ветку, если она создавалась.
-3. Сними lock.
-4. Не коммить, не пушь и не мержи в `main` в рамках prompt-а.
-5. Финальный ответ: кратко — итог, изменённые файлы с одной фразой смысла, проверка, статус `integration/unity-live`, lock/cleanup.
+1. Проверь, что финальный diff остался в `.worktrees/<slug>`, а `integration/unity-live` очищен от snapshot-а этой задачи.
+2. Удали lock, если он ещё существует.
+3. Коммит, push, merge и удаление worktree/ветки выполняй только по явной команде пользователя.
+4. Финальный ответ: кратко — итог, изменённые файлы с одной фразой смысла, проверка, статус task-worktree, статус `integration/unity-live` и lock/cleanup.

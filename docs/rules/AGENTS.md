@@ -21,9 +21,10 @@
 Дополнительные источники читать только по явной необходимости или запросу:
 
 1. `docs/rules/code_conventions.md` — если нужно уточнить команду валидации, Unity/C# compile или формат проекта.
-2. `docs/rules/agent_tools.md` — если задача требует project automation, логов или Unity tools.
-3. `docs/architecture_knowledge_base.md` — если задача требует архитектурного контекста.
-4. Активный план в `docs/Planning/in-progress/`, если задача прямо привязана к плану.
+2. `docs/rules/agent_tools.md` — если задача требует project automation, логов, test-level validation или editor tools.
+3. `docs/rules/build_and_telegram_publishing.md` — если задача требует сборки игры или публикации билда в Telegram.
+4. `docs/architecture_knowledge_base.md` — если задача требует архитектурного контекста.
+5. Активный план в `docs/Planning/in-progress/`, если задача прямо привязана к плану.
 
 ## Профиль пользователя
 
@@ -40,7 +41,13 @@
 
 ## Процесс выполнения задачи
 
-Fast code-edit workflow по умолчанию:
+Выбор workflow:
+
+- Feature-задачи и bug fix по умолчанию выполнять через Task Branch workflow: отдельная ветка `task/<slug>` и отдельный worktree `.worktrees/<slug>` от `integration/unity-live`; прямые правки в Unity Live не делать.
+- Bug regression и analysis-only задачи выполняются без отдельного worktree: анализируется текущее состояние `integration/unity-live`, после доказанного root cause агент останавливается. Исправление начинается отдельным Bug Fix workflow.
+- Unity Live workflow использовать только по явному запросу пользователя или для обслуживания общего Unity-стенда.
+
+Базовый fast code-edit workflow внутри выбранного рабочего каталога:
 
 1. Прочитать запрос и определить ожидаемый результат.
 2. Изучить релевантный код: целевой метод/класс, соседние call sites и ближайший execution path. Для аналитического вопроса сначала проверить затрагиваемый код, потом отвечать.
@@ -69,6 +76,7 @@ Fast code-edit workflow по умолчанию:
 | `architecting_and_coding_principles.md` | Общие принципы архитектуры и кодирования |
 | `code_conventions.md` | Конвенции кода, валидация, Unity-специфика |
 | `agent_tools.md` | Каталог проектных инструментов и автоматизаций |
+| `build_and_telegram_publishing.md` | Сборка игры и публикация тестовых билдов в Telegram через локальный skill |
 | `agent_efficiency_playbook.md` | Накопленные lessons и практические правила эффективности агента |
 | `temporary_current_rules.md` | Временные обязательные правила текущего этапа разработки |
 | `clean_code_by_b_martin/README.md` | Роутинг по кратким Clean Code-инструкциям для подготовки плана, реализации, рефакторинга и code review |

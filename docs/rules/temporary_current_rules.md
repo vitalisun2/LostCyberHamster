@@ -12,3 +12,4 @@
 
 - Пока проект находится в активной разработке, Android/Telegram test APK собирать только как development build (`-Development` / `Development Build`), чтобы dev tools, debug UI и bot toggles были доступны на устройстве.
 - Обычный non-development player build запускать только по явному запросу пользователя; если запрос звучит как "собери билд", "отправь APK" или "отправь в Telegram", по умолчанию это development build.
+- Полный процесс сборки и публикации описан в `docs/rules/build_and_telegram_publishing.md`.
