@@ -41,7 +41,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-colle
 - создает локальный `tools/device-log-collector/.env.local` с `NGROK_AUTHTOKEN` и `NGROK_DOMAIN`;
 - берет ngrok token из `$env:NGROK_AUTHTOKEN`, существующего `.env.local` или `%LOCALAPPDATA%\ngrok\ngrok.yml`;
 - останавливает старый non-Docker supervisor/collector/ngrok, если они занимают тот же порт;
-- выполняет `docker compose up -d --build --remove-orphans`;
+- выполняет `docker compose up -d --quiet-pull --remove-orphans`; на первом запуске или с `-Rebuild` дополнительно собирает локальные images;
 - ждет `http://127.0.0.1:8765/health`;
 - ждет `https://ladle-substance-spray.ngrok-free.dev/health` с header `ngrok-skip-browser-warning: true`;
 - возвращает JSON со статусом health и compose-контейнеров.
@@ -58,6 +58,147 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-colle
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\check_device_log_stack.ps1 -Json
+```
+
+## Bootstrap prompt для другого ноутбука
+
+Если проект переносится на другой Windows-ноутбук, можно дать агенту prompt ниже. Он рассчитан на точное восстановление такой же инфраструктуры: Docker Compose collector/ngrok, закрепленный ngrok domain, локальный `DeviceLogs/android`, ensure/check scripts и автозапуск.
+
+Перед запуском важно понять два ограничения:
+
+- Точно такой же endpoint `https://ladle-substance-spray.ngrok-free.dev/upload` возможен только с тем же ngrok account/token и тем же закрепленным domain. Одновременно этот domain должен обслуживаться только одним активным ноутбуком.
+- Если на новом ноутбуке используется другой ngrok domain, нужно заменить `NGROK_DOMAIN`, обновить `LostCyberHamster/Assets/Resources/Diagnostics/device_log_settings.json`, пересобрать APK и установить новый билд на телефон.
+
+Готовый prompt для агента:
+
+```text
+Ты работаешь в репозитории LostCyberHamster на новом Windows-ноутбуке. Нужно поднять такую же dev-инфраструктуру Android device logging через Docker + ngrok, как описано в docs/android_ngrok_device_logging.md.
+
+Цель: установленный Android APK должен отправлять diagnostic logs на публичный endpoint ngrok, ngrok должен прокидывать трафик в локальный Docker collector, collector должен сохранять uploads в DeviceLogs/android, а агент должен видеть ready-состояние через check/ensure scripts.
+
+Выполни строго по шагам:
+
+1. Прочитай правила проекта:
+   - docs/rules/AGENTS.md
+   - docs/android_ngrok_device_logging.md
+   - при необходимости docs/rules/agent_tools.md
+
+2. Проверь рабочую ветку и код:
+   - checkout должен быть на integration/unity-live или на ветке, которая содержит коммит с Docker stack for Android device logs.
+   - В репозитории должны существовать:
+     - tools/device-log-collector/docker-compose.yml
+     - tools/device-log-collector/Dockerfile
+     - tools/device-log-collector/Dockerfile.ngrok
+     - tools/device-log-collector/ensure_device_log_docker_stack.ps1
+     - tools/device-log-collector/check_device_log_stack.ps1
+     - tools/device-log-collector/ngrok-watchdog.sh
+     - tools/device-log-collector/device-log-collector.config.json
+
+3. Проверь prerequisites:
+   - Windows PowerShell доступен.
+   - Docker Desktop установлен.
+   - Команды `docker version` и `docker compose version` выполняются.
+   - Если Docker daemon не запущен, `ensure_device_log_docker_stack.ps1` попробует запустить Docker Desktop сам, но если Docker Desktop не установлен или требует ручной настройки WSL2/лицензии/login, остановись и попроси пользователя завершить установку.
+
+4. Получи ngrok credentials безопасно:
+   - Нужен ngrok authtoken от того account, которому принадлежит domain.
+   - Для точного совпадения текущего endpoint нужен domain: ladle-substance-spray.ngrok-free.dev
+   - Не печатай authtoken в чат, логи или commit.
+   - Предпочтительный способ: попросить пользователя один раз выполнить `ngrok config add-authtoken <token>` или установить `$env:NGROK_AUTHTOKEN` только в текущей сессии.
+   - Скрипт сам создаст `tools/device-log-collector/.env.local`; этот файл локальный и не должен коммититься.
+
+5. Убедись, что старый ноутбук или другой процесс сейчас не держит тот же ngrok domain.
+   - Если старый ноутбук еще обслуживает `ladle-substance-spray.ngrok-free.dev`, останови там стек или предупреди пользователя, что два активных tunnel для одного domain будут конфликтовать.
+
+6. Из корня репозитория запусти ensure:
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\ensure_device_log_docker_stack.ps1 -Json
+
+7. Если collector/ngrok images еще не существуют или менялись Dockerfile/server.js/config, запусти с rebuild:
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\ensure_device_log_docker_stack.ps1 -Rebuild -Json
+
+8. Успешный результат ensure:
+   - `localHealth.ok` = true
+   - `publicHealth.ok` = true
+   - контейнер `lostcyberhamster-device-log-collector` running/healthy
+   - контейнер `lostcyberhamster-device-log-ngrok` running/healthy или running сразу после старта, затем healthy после start period
+   - `DeviceLogs/android` существует
+
+9. Отдельно проверь состояние:
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\check_device_log_stack.ps1 -Json
+
+   Ожидаемый результат:
+   - `ready` = true
+   - `dockerReady` = true
+   - `localHealth.ok` = true
+   - `publicHealth.ok` = true
+
+10. Проверь публичный health вручную:
+    $headers = @{ "ngrok-skip-browser-warning" = "true" }
+    Invoke-RestMethod -Method Get -Uri "https://ladle-substance-spray.ngrok-free.dev/health" -Headers $headers
+
+11. Сделай smoke upload через публичный endpoint:
+    $headers = @{
+      "X-LCH-Device-Log-Token" = "lost-cyber-hamster-device-logs"
+      "ngrok-skip-browser-warning" = "true"
+    }
+    $createdAtUtc = (Get-Date).ToUniversalTime().ToString("o")
+    $body = @{
+      metadata = @{
+        sessionId = "new-laptop-smoke"
+        reason = "new_laptop_docker_smoke"
+        createdAtUtc = $createdAtUtc
+        buildLabel = "android-dev-ngrok-logs"
+        endpointUrl = "https://ladle-substance-spray.ngrok-free.dev/upload"
+        deviceModel = "agent-new-laptop-smoke"
+      }
+      diagnosticLogFileName = "diagnostic_log.txt"
+      diagnosticLogEncoding = "utf-8"
+      diagnosticLogBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("new laptop docker smoke $createdAtUtc"))
+      diagnosticLogTruncated = $false
+    } | ConvertTo-Json -Depth 6
+    Invoke-RestMethod -Method Post -Uri "https://ladle-substance-spray.ngrok-free.dev/upload" -Headers $headers -Body $body -ContentType "application/json"
+
+12. Проверь, что smoke upload сохранился:
+    Get-ChildItem -LiteralPath "DeviceLogs/android" -Directory |
+      Sort-Object LastWriteTime -Descending |
+      Select-Object -First 5 |
+      ForEach-Object {
+        $metadataPath = Join-Path $_.FullName "metadata.json"
+        if (Test-Path -LiteralPath $metadataPath) {
+          Get-Content -LiteralPath $metadataPath -Raw -Encoding UTF8 | ConvertFrom-Json |
+            Select-Object reason, sessionId, deviceModel, endpointUrl
+        }
+      }
+
+13. Установи автозапуск ensure при входе пользователя в Windows:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-collector\install_device_log_stack_task.ps1 -StartNow
+
+    Нормальные варианты результата:
+    - Windows Scheduled Task `LostCyberHamsterDeviceLogStack`
+    - или, если нет прав, Startup shortcut:
+      `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\LostCyberHamsterDeviceLogStack.lnk`
+
+14. Если что-то не поднялось:
+    - Не коммить `.env.local`.
+    - Проверь `docker ps -a --filter "name=lostcyberhamster-device-log"`.
+    - Посмотри logs:
+      docker compose --env-file .\tools\device-log-collector\.env.local -f .\tools\device-log-collector\docker-compose.yml logs --tail 120
+    - Если public health 404/timeout, проверь:
+      - правильный ли `NGROK_DOMAIN`;
+      - не занят ли domain другим ноутбуком;
+      - валиден ли ngrok authtoken;
+      - есть ли интернет;
+      - healthy ли collector.
+
+15. Финальный отчет пользователю должен содержать:
+    - какой domain используется;
+    - где лежит `.env.local` без показа token;
+    - результат ensure/check;
+    - путь к последнему smoke upload в `DeviceLogs/android`;
+    - установлен ли автозапуск;
+    - были ли нужны ручные действия пользователя.
+
+Не меняй production settings. Не коммить секреты, `DeviceLogs/`, `.env.local`, Docker-generated state или локальные логи.
 ```
 
 ## Docker Compose

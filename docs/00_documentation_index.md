@@ -41,7 +41,7 @@
 Чек-лист для ручного тестирования всех основных типов столкновений хомяка.
 
 ### docs/android_ngrok_device_logging.md
-Dev-инфраструктура логирования установленных Android APK через ngrok: как игра сама отправляет `diagnostic_log.txt`, как Docker Compose держит collector/ngrok живыми, как агентам поднять готовый stack через PowerShell ensure-скрипт, куда collector складывает uploads и как читать `DeviceLogs/android`.
+Dev-инфраструктура логирования установленных Android APK через ngrok: как игра сама отправляет `diagnostic_log.txt`, как Docker Compose держит collector/ngrok живыми, как агентам поднять готовый stack через PowerShell ensure-скрипт, как перенести инфраструктуру на другой ноутбук, куда collector складывает uploads и как читать `DeviceLogs/android`.
 
 ### README.md
 Общее описание репозитория и короткий developer-facing обзор.
