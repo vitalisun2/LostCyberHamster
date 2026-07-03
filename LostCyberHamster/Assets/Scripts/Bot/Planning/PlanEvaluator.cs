@@ -37,7 +37,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Выбирает dead-end ветку по обычным branch-priority правилам.
+        /// Выбирает dead-end ветку с самым дальним первым провалом.
         /// </summary>
         internal PlanningDeadEndBranch SelectBestDeadEnd(IReadOnlyList<PlanningDeadEndBranch> candidates)
         {
@@ -136,7 +136,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Сравнивает dead-end ветки по тем же приоритетам, что и обычные ветки.
+        /// Сравнивает dead-end ветки по индексу первого провала: чем дальше провал от корня, тем лучше.
         /// </summary>
         private static int CompareDeadEndBranches(PlanningDeadEndBranch left, PlanningDeadEndBranch right)
         {
@@ -149,10 +149,17 @@ namespace Assets.Scripts.Bot.Planning
             if (right?.Branch == null)
                 return -1;
 
-            PlanningBranch leftBranch = left.Branch;
-            PlanningBranch rightBranch = right.Branch;
+            int leftFailureDepth = GetDeadEndFailureDepth(left);
+            int rightFailureDepth = GetDeadEndFailureDepth(right);
+            return rightFailureDepth.CompareTo(leftFailureDepth);
+        }
 
-            return PlanningBranchComparer.Compare(leftBranch, rightBranch);
+        /// <summary>
+        /// Возвращает глубину первого unresolved dead-end для ветки.
+        /// </summary>
+        private static int GetDeadEndFailureDepth(PlanningDeadEndBranch deadEndBranch)
+        {
+            return deadEndBranch?.Report?.Depth ?? 0;
         }
     }
 }
