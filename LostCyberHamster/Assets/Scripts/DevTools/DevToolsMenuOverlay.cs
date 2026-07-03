@@ -92,11 +92,11 @@ namespace Assets.Scripts.DevTools
         }
 
         /// <summary>
-        /// Проверяет runtime guard, чтобы меню не появилось в обычном player build.
+        /// Подтверждает доступность меню в сборках, где dev-only overlay включён через compile-time guard.
         /// </summary>
         private static bool IsAvailable()
         {
-            return Application.isEditor || Debug.isDebugBuild;
+            return true;
         }
 
         private static float GetScale()
