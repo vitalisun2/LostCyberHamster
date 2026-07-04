@@ -2,7 +2,7 @@
 
 Dev-only HTTP collector для логов Android-сборок LostCyberHamster.
 
-Основной сценарий описан в `docs/android_ngrok_device_logging.md`: установленный Android APK сам отправляет snapshots `diagnostic_log.txt` через ngrok на локальный collector ноутбука.
+Основной сценарий описан в `docs/android_ngrok_device_logging.md`: установленный Android APK сам отправляет snapshots `diagnostic_log.txt` через ngrok на collector основного ноутбука, а collector пишет uploads в Dropbox Exchange.
 
 ## Основной запуск
 
@@ -15,6 +15,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-colle
 Скрипт сам:
 
 - запускает Docker Desktop при необходимости;
+- находит/создает `C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android`;
 - создает локальный `.env.local` с ngrok token;
 - останавливает старый non-Docker stack, если он занимает порт;
 - поднимает Docker Compose;
@@ -54,7 +55,7 @@ tools/device-log-collector/ngrok-watchdog.sh
 
 Ngrok контейнер собран как wrapper над официальным `ngrok/ngrok:3-alpine`: он сам проверяет публичный `/health` и перезапускается через Docker restart policy, если tunnel перестал отвечать.
 
-Ngrok запускается с `--pooling-enabled`, чтобы несколько ноутбуков могли одновременно держать один закрепленный domain. Requests распределяются между активными collectors и не дублируются на все ноутбуки.
+Ngrok должен быть активен только на receiver-ноутбуке. Второй ноутбук не поднимает ngrok/collector и читает уже синхронизированные файлы из Dropbox.
 
 ## Unity config
 
@@ -76,7 +77,13 @@ Collector слушает:
 - `POST /probe`;
 - `POST /upload`.
 
-`POST /upload` сохраняет payload в `DeviceLogs/android/` и проверяет header:
+`POST /upload` сохраняет payload в Docker mount `/workspace/DeviceLogs/android`, который на host указывает на:
+
+```text
+C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
+```
+
+Upload проверяет header:
 
 ```text
 X-LCH-Device-Log-Token: lost-cyber-hamster-device-logs

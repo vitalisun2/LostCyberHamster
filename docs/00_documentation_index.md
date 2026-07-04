@@ -41,7 +41,7 @@
 Чек-лист для ручного тестирования всех основных типов столкновений хомяка.
 
 ### docs/android_ngrok_device_logging.md
-Dev-инфраструктура логирования установленных Android APK через ngrok: как игра сама отправляет `diagnostic_log.txt`, как Docker Compose держит collector/ngrok живыми, как агентам поднять готовый stack через PowerShell ensure-скрипт, как перенести инфраструктуру на другой ноутбук, куда collector складывает uploads и как читать `DeviceLogs/android`.
+Dev-инфраструктура логирования установленных Android APK через ngrok: receiver-ноутбук принимает uploads через Docker Compose collector/ngrok, пишет их в Dropbox Exchange, а reader-ноутбуки читают синхронизированную папку без собственного ngrok/collector.
 
 ### README.md
 Общее описание репозитория и короткий developer-facing обзор.
@@ -110,7 +110,7 @@ Dev-инфраструктура логирования установленны
 Унифицированное чтение каналов Diagnostic Log `STAB`, `BOT`, `ECO`, которые пишутся через bot diagnostics helpers и `DebugManager` sink.
 
 ### tools/device-log-collector/
-Локальный HTTP collector для Android device logs, Docker Compose stack для collector/ngrok и installer автозапуска. Основной сценарий описан в `docs/android_ngrok_device_logging.md`.
+HTTP collector для Android device logs, Docker Compose stack для receiver-ноутбука, Dropbox Exchange output root и installer автозапуска. Основной сценарий описан в `docs/android_ngrok_device_logging.md`.
 
 ### tools/invoke_open_unity_test_level.ps1
 Сценарий полного цикла: рекомпиляция, запуск тестового уровня и ожидание результата.

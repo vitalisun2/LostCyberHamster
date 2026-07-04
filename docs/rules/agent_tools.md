@@ -57,21 +57,21 @@ Bridge-команды:
 
 Рекомендуемый порядок анализа: `STAB` → `BOT` → `ECO`.
 
-## Android Device Logs через ngrok
+## Android Device Logs через ngrok + Dropbox
 
-Установленные Android APK могут сами отправлять snapshots `diagnostic_log.txt` через ngrok на локальный collector ноутбука. Owner-документ: `docs/android_ngrok_device_logging.md`.
+Установленные Android APK могут сами отправлять snapshots `diagnostic_log.txt` через ngrok на receiver-ноутбук. Collector receiver-ноутбука пишет uploads в Dropbox Exchange, а остальные ноутбуки читают уже синхронизированные файлы. Owner-документ: `docs/android_ngrok_device_logging.md`.
 
 Ключевые точки:
 - Unity config: `LostCyberHamster/Assets/Resources/Diagnostics/device_log_settings.json`.
 - Runtime upload: `DeviceLogReporter` → `DeviceLogUploadRunner` → `DeviceLogUploader`.
 - Collector: `tools/device-log-collector/server.js`.
 - Основной stack: Docker Compose `tools/device-log-collector/docker-compose.yml`.
-- Ensure-запуск перед мобильным тестом: `tools/device-log-collector/ensure_device_log_docker_stack.ps1 -Json`.
-- Health-check без запуска: `tools/device-log-collector/check_device_log_stack.ps1 -Json`.
+- Receiver ensure-запуск перед мобильным тестом: `tools/device-log-collector/ensure_device_log_docker_stack.ps1 -Json`.
+- Receiver health-check без запуска: `tools/device-log-collector/check_device_log_stack.ps1 -Json`.
 - Autostart: installer `tools/device-log-collector/install_device_log_stack_task.ps1`; предпочтительно Windows Scheduled Task `LostCyberHamsterDeviceLogStack`, fallback - user Startup shortcut. В Docker-режиме autostart делает one-shot ensure, живучесть держат `restart: unless-stopped` контейнеры.
-- Ngrok запускается с `--pooling-enabled`, чтобы несколько ноутбуков могли держать один domain; uploads при этом балансируются между активными collectors и могут сохраниться не на текущем ноутбуке.
-- Output: `DeviceLogs/android/<createdAt>_<device>_<reason>_<session>/`.
-- Агент читает локальные сохраненные uploads из `DeviceLogs/android`; телефон напрямую не опрашивается.
+- Receiver output: `C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android\<createdAt>_<device>_<reason>_<session>\`.
+- Reader-ноутбук не запускает ngrok/collector и не занимает domain; агент читает Dropbox-папку локально.
+- Телефон напрямую не опрашивается.
 
 ## Test Levels
 

@@ -13,6 +13,39 @@ $ErrorActionPreference = 'Stop'
 $localHealthUrl = "http://127.0.0.1:$Port/health"
 $publicHealthUrl = "https://$NgrokDomain/health"
 
+function Read-EnvValue {
+    param(
+        [string]$Path,
+        [string]$Name
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return $null
+    }
+
+    foreach ($line in Get-Content -LiteralPath $Path -Encoding UTF8) {
+        if ($line -match "^\s*$([regex]::Escape($Name))\s*=\s*(.+?)\s*$") {
+            return $matches[1].Trim('"')
+        }
+    }
+
+    return $null
+}
+
+function ConvertTo-HostPath {
+    param([string]$Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return $null
+    }
+
+    if ([System.IO.Path]::IsPathRooted($Path)) {
+        return [System.IO.Path]::GetFullPath($Path)
+    }
+
+    return [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot $Path))
+}
+
 function Get-CommandLineProcesses {
     param(
         [string]$Name,
@@ -141,18 +174,22 @@ $collectorContainer = $composeContainers | Where-Object {
     $_.Service -eq 'collector' -and $_.State -eq 'running' -and $_.Health -eq 'healthy'
 } | Select-Object -First 1
 $ngrokContainer = $composeContainers | Where-Object {
-    $_.Service -eq 'ngrok' -and $_.State -eq 'running'
+    $_.Service -eq 'ngrok' -and $_.State -eq 'running' -and $_.Health -eq 'healthy'
 } | Select-Object -First 1
 $dockerReady = $compose.ok -and $null -ne $collectorContainer -and $null -ne $ngrokContainer
+$outputRootHost = ConvertTo-HostPath -Path (Read-EnvValue -Path $EnvFile -Name 'DEVICE_LOG_OUTPUT_ROOT_HOST')
+$outputRootHostExists = (-not [string]::IsNullOrWhiteSpace($outputRootHost)) -and (Test-Path -LiteralPath $outputRootHost)
 
 $result = [pscustomobject]@{
     repositoryRoot = $RepositoryRoot
     mode = 'DockerCompose'
-    ready = ($localHealth.ok -and $publicHealth.ok -and $dockerReady)
+    ready = ($localHealth.ok -and $publicHealth.ok -and $dockerReady -and $outputRootHostExists)
     dockerReady = $dockerReady
     ensureScript = Join-Path $PSScriptRoot 'ensure_device_log_docker_stack.ps1'
     composeFile = $ComposeFile
     envFile = $EnvFile
+    outputRootHost = $outputRootHost
+    outputRootHostExists = $outputRootHostExists
     localHealthUrl = $localHealthUrl
     publicHealthUrl = $publicHealthUrl
     localHealth = $localHealth

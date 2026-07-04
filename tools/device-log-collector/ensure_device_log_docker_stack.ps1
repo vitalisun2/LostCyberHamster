@@ -4,6 +4,7 @@ param(
     [string]$EnvFile = (Join-Path $PSScriptRoot '.env.local'),
     [int]$Port = 8765,
     [string]$NgrokDomain = 'ladle-substance-spray.ngrok-free.dev',
+    [string]$DeviceLogOutputRootHost = '',
     [int]$DockerStartupTimeoutSeconds = 120,
     [int]$HealthTimeoutSeconds = 120,
     [switch]$Rebuild,
@@ -19,7 +20,9 @@ $collectorImage = 'lostcyberhamster/device-log-collector:local'
 $ngrokImage = 'lostcyberhamster/device-log-ngrok:local'
 $localHealthUrl = "http://127.0.0.1:$Port/health"
 $publicHealthUrl = "https://$NgrokDomain/health"
-$logRoot = Join-Path $RepositoryRoot 'DeviceLogs\android'
+$dropboxProjectRoot = 'crystal_wave'
+$dropboxOutputRelativePath = 'LostCyberHamster_DeviceLogs\android'
+$logRoot = $null
 
 function Write-Step {
     param([string]$Message)
@@ -131,6 +134,74 @@ function Read-EnvValue {
     return $null
 }
 
+function ConvertTo-HostPath {
+    param([string]$Path)
+
+    if ([System.IO.Path]::IsPathRooted($Path)) {
+        return [System.IO.Path]::GetFullPath($Path)
+    }
+
+    return [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot $Path))
+}
+
+function ConvertTo-ComposePath {
+    param([string]$Path)
+
+    return $Path.Replace('\', '/')
+}
+
+function Get-DropboxOutputRootCandidates {
+    $candidates = @(
+        (Join-Path 'C:\Dropbox\exchange' (Join-Path $dropboxProjectRoot $dropboxOutputRelativePath))
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($env:USERPROFILE)) {
+        $candidates += Join-Path (Join-Path $env:USERPROFILE 'Dropbox\exchange') (Join-Path $dropboxProjectRoot $dropboxOutputRelativePath)
+    }
+
+    $candidates | Select-Object -Unique
+}
+
+function Test-DropboxCandidateAnchorExists {
+    param([string]$Candidate)
+
+    $deviceLogRoot = Split-Path -Parent $Candidate
+    $projectRoot = Split-Path -Parent $deviceLogRoot
+    $exchangeRoot = Split-Path -Parent $projectRoot
+
+    return (
+        (Test-Path -LiteralPath $Candidate) -or
+        (Test-Path -LiteralPath $projectRoot) -or
+        (Test-Path -LiteralPath $exchangeRoot)
+    )
+}
+
+function Resolve-DeviceLogOutputRootHost {
+    if (-not [string]::IsNullOrWhiteSpace($DeviceLogOutputRootHost)) {
+        return ConvertTo-HostPath -Path $DeviceLogOutputRootHost.Trim()
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:DEVICE_LOG_OUTPUT_ROOT_HOST)) {
+        return ConvertTo-HostPath -Path $env:DEVICE_LOG_OUTPUT_ROOT_HOST.Trim()
+    }
+
+    foreach ($candidate in Get-DropboxOutputRootCandidates) {
+        if (Test-DropboxCandidateAnchorExists -Candidate $candidate) {
+            return ConvertTo-HostPath -Path $candidate
+        }
+    }
+
+    $envFileOutputRoot = Read-EnvValue -Path $EnvFile -Name 'DEVICE_LOG_OUTPUT_ROOT_HOST'
+    if (-not [string]::IsNullOrWhiteSpace($envFileOutputRoot)) {
+        $hostPath = ConvertTo-HostPath -Path $envFileOutputRoot.Trim()
+        if (Test-Path -LiteralPath $hostPath) {
+            return $hostPath
+        }
+    }
+
+    throw "Dropbox Exchange folder was not found. Install/start Dropbox or pass -DeviceLogOutputRootHost '<path>' explicitly. Expected default: C:\Dropbox\exchange\$dropboxProjectRoot\$dropboxOutputRelativePath"
+}
+
 function Get-NgrokAuthtoken {
     if (-not [string]::IsNullOrWhiteSpace($env:NGROK_AUTHTOKEN)) {
         return $env:NGROK_AUTHTOKEN.Trim()
@@ -153,13 +224,16 @@ function Get-NgrokAuthtoken {
 }
 
 function Ensure-LocalEnvFile {
+    param([string]$OutputRootHost)
+
     $token = Get-NgrokAuthtoken
     $envDirectory = Split-Path -Parent $EnvFile
     New-Item -ItemType Directory -Force -Path $envDirectory | Out-Null
 
     $content = @(
         "NGROK_AUTHTOKEN=$token",
-        "NGROK_DOMAIN=$NgrokDomain"
+        "NGROK_DOMAIN=$NgrokDomain",
+        "DEVICE_LOG_OUTPUT_ROOT_HOST=$(ConvertTo-ComposePath -Path $OutputRootHost)"
     )
 
     Set-Content -LiteralPath $EnvFile -Value $content -Encoding ASCII
@@ -293,6 +367,62 @@ function Get-ComposePsJson {
     }
 }
 
+function Get-ComposeServiceLogTail {
+    param(
+        [string]$Service,
+        [int]$Tail = 40
+    )
+
+    try {
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $output = & docker compose --env-file $EnvFile -f $ComposeFile logs --no-color --tail $Tail $Service 2>$null
+        }
+        finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($output)) {
+            return ''
+        }
+
+        return ($output -join "`n")
+    }
+    catch {
+        return ''
+    }
+}
+
+function Wait-ComposeServiceHealthy {
+    param(
+        [string]$Service,
+        [int]$TimeoutSeconds = 120
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $lastStatus = 'not_found'
+
+    while ((Get-Date) -lt $deadline) {
+        $container = @(Get-ComposePsJson) | Where-Object { $_.Service -eq $Service } | Select-Object -First 1
+        if ($container) {
+            $lastStatus = "state=$($container.State), health=$($container.Health), status=$($container.Status)"
+            if ($container.State -eq 'running' -and $container.Health -eq 'healthy') {
+                return $container
+            }
+        }
+
+        Start-Sleep -Seconds 2
+    }
+
+    $logTail = Get-ComposeServiceLogTail -Service $Service
+    if ([string]::IsNullOrWhiteSpace($logTail)) {
+        throw "Docker Compose service '$Service' did not become healthy after $TimeoutSeconds seconds. Last status: $lastStatus"
+    }
+
+    throw "Docker Compose service '$Service' did not become healthy after $TimeoutSeconds seconds. Last status: $lastStatus. Recent logs:`n$logTail"
+}
+
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
     throw 'Docker CLI was not found in PATH. Install Docker Desktop before using the Android device log Docker stack.'
 }
@@ -301,8 +431,10 @@ if (-not (Test-Path -LiteralPath $ComposeFile)) {
     throw "Compose file not found: $ComposeFile"
 }
 
+$logRoot = Resolve-DeviceLogOutputRootHost
 New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
-Ensure-LocalEnvFile
+Write-Step "Using device log output root: $logRoot"
+Ensure-LocalEnvFile -OutputRootHost $logRoot
 Start-DockerDesktopIfNeeded
 
 if (-not $SkipLegacyStop.IsPresent) {
@@ -324,7 +456,10 @@ Invoke-DockerCompose -Arguments $upArguments
 Write-Step "Waiting for local collector health."
 $localHealth = Wait-HttpHealth -Name 'Local collector' -Url $localHealthUrl -TimeoutSeconds $HealthTimeoutSeconds
 
-Write-Step "Waiting for public ngrok route health."
+Write-Step "Waiting for ngrok container health."
+$ngrokContainer = Wait-ComposeServiceHealthy -Service 'ngrok' -TimeoutSeconds $HealthTimeoutSeconds
+
+Write-Step "Verifying public ngrok route health."
 $publicHealth = Wait-HttpHealth `
     -Name 'Public ngrok route' `
     -Url $publicHealthUrl `
@@ -342,6 +477,7 @@ $result = [pscustomobject]@{
     publicHealthUrl = $publicHealthUrl
     localHealth = $localHealth
     publicHealth = $publicHealth
+    ngrokContainer = $ngrokContainer
     containers = Get-ComposePsJson
 }
 

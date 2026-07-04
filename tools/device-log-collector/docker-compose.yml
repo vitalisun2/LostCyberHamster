@@ -12,7 +12,9 @@ services:
     ports:
       - "127.0.0.1:8765:8765"
     volumes:
-      - ../../DeviceLogs/android:/workspace/DeviceLogs/android
+      - type: bind
+        source: ${DEVICE_LOG_OUTPUT_ROOT_HOST}
+        target: /workspace/DeviceLogs/android
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8765/health | grep '\"ok\":true'"]
       interval: 15s
@@ -42,9 +44,8 @@ services:
       - http
       - http://collector:8765
       - --url=https://${NGROK_DOMAIN}
-      - --pooling-enabled
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -T 5 -O - --header='ngrok-skip-browser-warning: true' \"$${PUBLIC_HEALTH_URL}\" | grep '\"ok\"[[:space:]]*:[[:space:]]*true'"]
+      test: ["CMD-SHELL", "pidof ngrok >/dev/null && wget -q -T 5 -O - --header='ngrok-skip-browser-warning: true' \"$${PUBLIC_HEALTH_URL}\" | grep '\"ok\"[[:space:]]*:[[:space:]]*true'"]
       interval: 30s
       timeout: 10s
       retries: 3
