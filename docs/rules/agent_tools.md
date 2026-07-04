@@ -70,7 +70,9 @@ Bridge-команды:
 - Receiver health-check без запуска: `tools/device-log-collector/check_device_log_stack.ps1 -Json`.
 - Autostart: installer `tools/device-log-collector/install_device_log_stack_task.ps1`; предпочтительно Windows Scheduled Task `LostCyberHamsterDeviceLogStack`, fallback - user Startup shortcut. В Docker-режиме autostart делает one-shot ensure, живучесть держат `restart: unless-stopped` контейнеры.
 - Receiver output: `C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android\<createdAt>_<device>_<reason>_<session>\`.
+- Retention выполняется только receiver/Writer collector-ом: после успешной записи, throttled, удаляет записи старше 72 часов внутри canonical output root.
 - Reader-ноутбук не запускает ngrok/collector и не занимает domain; агент читает Dropbox-папку локально.
+- Reader-ноутбук не удаляет Android device logs.
 - Телефон напрямую не опрашивается.
 
 ## Test Levels

@@ -57,6 +57,20 @@ Ngrok контейнер собран как wrapper над официальны
 
 Ngrok должен быть активен только на receiver-ноутбуке. Второй ноутбук не поднимает ngrok/collector и читает уже синхронизированные файлы из Dropbox.
 
+## Retention
+
+Collector сам выполняет Writer-side retention после успешного `POST /upload`, без отдельного контейнера или процесса. Cleanup запускается лениво и throttled через `_retention_state.json`: по умолчанию не чаще одного раза в 60 минут.
+
+Политика по умолчанию:
+
+- удалять только top-level файлы и папки внутри canonical output root `/workspace/DeviceLogs/android`;
+- считать возраст по `LastWriteTimeUtc`/mtime UTC;
+- удалять записи старше 72 часов;
+- не трогать текущую только что записанную upload-папку и internal files `_requests.log`, `_probes.log`, `_retention.log`, `_retention_state.json`;
+- писать результат в Docker logs и `_retention.log`.
+
+Reader-ноутбуки только читают синхронизированные Dropbox logs и ничего не удаляют.
+
 ## Unity config
 
 Unity читает `Assets/Resources/Diagnostics/device_log_settings.json`.

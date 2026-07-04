@@ -3,5 +3,10 @@
   "port": 8765,
   "sharedToken": "lost-cyber-hamster-device-logs",
   "outputRoot": "DeviceLogs/android",
-  "maxBodyBytes": 10485760
+  "maxBodyBytes": 10485760,
+  "retention": {
+    "enabled": true,
+    "maxAgeHours": 72,
+    "throttleMinutes": 60
+  }
 }

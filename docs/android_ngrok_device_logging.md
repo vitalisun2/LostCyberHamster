@@ -4,7 +4,7 @@
 
 ## Суть
 
-Это push-based логирование: агент не подключается к телефону и не запрашивает у него логи. Runtime игры сам отправляет snapshots на HTTP collector при важных событиях. Collector принимает `POST /upload` и сохраняет каждый upload в общую Dropbox Exchange папку.
+Это push-based логирование: агент не подключается к телефону и не запрашивает у него логи. Runtime игры сам отправляет snapshots на HTTP collector при важных событиях. Collector принимает `POST /upload`, сохраняет каждый upload в общую Dropbox Exchange папку и на receiver-стороне чистит старые device logs.
 
 Текущая схема:
 
@@ -39,6 +39,7 @@ android-dev-ngrok-logs
 - держит Docker Compose stack `collector + ngrok`;
 - принимает requests от Android устройств через `ladle-substance-spray.ngrok-free.dev`;
 - пишет uploads в Dropbox Exchange output root;
+- выполняет retention cleanup старых uploads внутри output root;
 - должен быть включен, иметь интернет, запущенный Docker Desktop и Dropbox.
 
 Второй ноутбук является reader-узлом:
@@ -47,6 +48,7 @@ android-dev-ngrok-logs
 - не поднимает collector;
 - не подключается к телефону;
 - читает уже синхронизированные файлы из Dropbox Exchange;
+- не удаляет device logs и не выполняет retention;
 - использует тот же относительный путь `exchange\crystal_wave\LostCyberHamster_DeviceLogs\android` внутри своего локального Dropbox.
 
 Эта схема дает один источник правды по логам: общую Dropbox-папку. Мы не используем ngrok pooling для двух collectors, потому что pooling балансирует uploads между ноутбуками, а не дублирует каждый upload на оба.
@@ -80,6 +82,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-colle
 ```
 
 Для общей рабочей инфраструктуры использовать только Dropbox Exchange output root.
+
+## Retention
+
+Retention выполняется только на receiver/Writer стороне внутри collector-контейнера. После успешного `POST /upload` collector лениво запускает cleanup не чаще одного раза в 60 минут: удаляет только top-level файлы и папки внутри канонической device logs directory, если их `LastWriteTimeUtc`/mtime UTC старше 72 часов.
+
+Cleanup не трогает только что записанную upload-папку и внутренние файлы collector-а: `_requests.log`, `_probes.log`, `_retention.log`, `_retention_state.json`. Результат пишется в Docker logs и `_retention.log`; throttle state хранится в `_retention_state.json`.
+
+Reader-ноутбук только читает синхронизированную Dropbox-папку. Он не запускает cleanup и не удаляет старые Android device logs.
 
 ## Готовность receiver-стека
 
@@ -255,6 +265,7 @@ Get-ChildItem -LiteralPath $root -Directory |
    - tools/device-log-collector/check_device_log_stack.ps1 как критерий готовности reader-ноутбука
    - ngrok
    - локальный collector
+   - cleanup/retention для device logs
 
 5. Для анализа бери свежие upload-директории из Dropbox-папки. Внутри каждой upload-директории:
    - metadata.json
@@ -331,7 +342,9 @@ C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
 - `diagnostic_log.txt` - snapshot/tail diagnostic log из билда;
 - `package.json` - summary сохраненного пакета;
 - `_requests.log` в output root - access log collector;
-- `_probes.log` в output root - startup probe записи.
+- `_probes.log` в output root - startup probe записи;
+- `_retention.log` в output root - результаты Writer-side cleanup;
+- `_retention_state.json` в output root - throttle state Writer-side cleanup.
 
 ## Smoke upload
 
