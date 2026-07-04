@@ -120,7 +120,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
             // Считает последний fire shift до автоматического схода с крыши.
             float latestRoofRunFireShift =
                 lastRoof.RightX
-                + hamster.Width * RoofRunProjection.PassiveContinuationGapFactor
+                + Assets.Scripts.Consts.GetRoofRunPassiveContinuationGap(hamster.Width)
                 - hamster.HamsterRightX;
 
             // Сужает правую границу окна.

@@ -269,7 +269,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             float fireWindowMargin = JumpPlanningConstants.GetEffectiveFireWindowBoundaryMargin();
             float latestRoofRunFireShift =
                 lastRoof.RightX
-                + hamster.Width * RoofRunProjection.PassiveContinuationGapFactor
+                + Assets.Scripts.Consts.GetRoofRunPassiveContinuationGap(hamster.Width)
                 - hamster.HamsterRightX
                 - fireWindowMargin;
 

@@ -52,7 +52,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
             int obstacleCount = 1;
             float latestRoofRunFireShift =
                 lastRoof.RightX
-                + hamster.Width * RoofRunProjection.PassiveContinuationGapFactor
+                + Assets.Scripts.Consts.GetRoofRunPassiveContinuationGap(hamster.Width)
                 - hamster.HamsterRightX;
 
             // Строит исходное fire-window.

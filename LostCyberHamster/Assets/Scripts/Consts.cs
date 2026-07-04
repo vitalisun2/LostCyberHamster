@@ -136,6 +136,19 @@ namespace Assets.Scripts
         public const float BlinkTime = 0.2f;
         public const int BlinkNumber = 3;
 
+        /// <summary>
+        /// Доля ширины хомяка, которая задает максимальный passive gap между roof-platforms.
+        /// </summary>
+        public const float RoofRunPassiveContinuationGapFactor = 0.3f;
+
+        /// <summary>
+        /// Возвращает максимальный gap между roof-platforms для непрерывного RoofRun без input.
+        /// </summary>
+        public static float GetRoofRunPassiveContinuationGap(float hamsterWidthInUnits)
+        {
+            return hamsterWidthInUnits * RoofRunPassiveContinuationGapFactor;
+        }
+
         public const float JumpOverObstacleRangeMin = 0;
         public const float JumpOverObstacleRangeMax = 2.2f;
 

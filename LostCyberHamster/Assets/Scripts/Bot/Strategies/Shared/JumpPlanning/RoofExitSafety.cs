@@ -35,7 +35,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
             if (hamster == null || lastRoof == null || runFromRoofTravel <= 0f)
                 return false;
 
-            float exitStartX = lastRoof.RightX + hamster.Width * RoofRunProjection.PassiveContinuationGapFactor;
+            float exitStartX = lastRoof.RightX
+                + Assets.Scripts.Consts.GetRoofRunPassiveContinuationGap(hamster.Width);
             startShift = Math.Max(0f, exitStartX - hamster.HamsterRightX);
             completionWorldShift = startShift + runFromRoofTravel;
             return true;

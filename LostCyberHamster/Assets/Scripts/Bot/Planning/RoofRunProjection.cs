@@ -10,11 +10,6 @@ namespace Assets.Scripts.Bot.Planning
     internal static class RoofRunProjection
     {
         /// <summary>
-        /// Задает максимальный gap между roof-obstacles, который runtime проходит как непрерывный RoofRun.
-        /// </summary>
-        internal const float PassiveContinuationGapFactor = 0.7f;
-
-        /// <summary>
         /// Проверяет, является ли obstacle на текущей линии пассивным продолжением RoofRun.
         /// </summary>
         public static bool IsPassiveRoofContinuation(
@@ -60,7 +55,7 @@ namespace Assets.Scripts.Bot.Planning
                 return true;
 
             // Сравнивает gap с runtime passive limit.
-            float maxPassiveGap = hamster.Width * PassiveContinuationGapFactor;
+            float maxPassiveGap = Assets.Scripts.Consts.GetRoofRunPassiveContinuationGap(hamster.Width);
             return gap <= maxPassiveGap;
         }
 
@@ -102,7 +97,7 @@ namespace Assets.Scripts.Bot.Planning
             lastRoofIndex = currentSupportIndex;
 
             // Последовательно расширяет passive roof chain вправо.
-            float maxPassiveGap = hamster.Width * PassiveContinuationGapFactor;
+            float maxPassiveGap = Assets.Scripts.Consts.GetRoofRunPassiveContinuationGap(hamster.Width);
             for (int obstacleIndex = currentSupportIndex + 1; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot candidate = projectedWorldSnapshot.Obstacles[obstacleIndex];

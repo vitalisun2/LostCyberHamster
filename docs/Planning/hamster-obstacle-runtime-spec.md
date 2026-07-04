@@ -198,7 +198,7 @@
 `RoofRunMechanics` каждый кадр выполняет две последовательные проверки:
 
 1. Совпадает ли текущая линия хомяка с линией `LastObstacle`.
-2. Ушел ли хомяк правой границей дальше `roofRight + 0.7 * hamsterWidth`.
+2. Ушел ли хомяк правой границей дальше `roofRight + Consts.GetRoofRunPassiveContinuationGap(hamsterWidth)`.
 
 Если линия больше не совпадает, `HelpMethods.FindBigNotAliveUnderHamster()` ищет новый roof obstacle под хомяком на текущей линии:
 

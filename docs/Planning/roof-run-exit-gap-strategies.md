@@ -8,7 +8,7 @@
 
 ## Runtime Facts
 
-- `RoofRunMechanics` проверяет следующую roof, когда правая грань хомяка проходит правый край текущей roof на `hamster.Width * 0.7f`.
+- `RoofRunMechanics` проверяет следующую roof, когда правая грань хомяка проходит правый край текущей roof на `Consts.GetRoofRunPassiveContinuationGap(hamster.Width)`.
 - Если в этот момент следующая roof пересекается с хомяком, runtime продолжает `RoofRun` на ней.
 - Если следующей passive roof нет, runtime переводит хомяка в `RunFromRoof`.
 - `RunFromRoof` длится по клипу `transform_run_from_roof`; его horizontal travel должен считаться через тот же подход, что остальные action travel: clip duration * `Consts.GameSpeedBase`.
@@ -28,7 +28,7 @@ gap = nextObstacle.LeftX - lastRoof.RightX
 `passiveRoofGap`:
 
 ```text
-passiveRoofGap = hamster.Width * 0.7f
+passiveRoofGap = Consts.GetRoofRunPassiveContinuationGap(hamster.Width)
 ```
 
 Этот порог применяется только к roof-to-roof passive continuation.

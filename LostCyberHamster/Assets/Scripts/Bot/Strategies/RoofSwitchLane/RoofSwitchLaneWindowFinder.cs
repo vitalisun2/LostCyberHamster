@@ -199,7 +199,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
 
             // Рассчитывает deadline до схода с текущей roof-chain.
             float roofExitStartShift = lastRoof.RightX
-                + hamster.Width * RoofRunProjection.PassiveContinuationGapFactor
+                + Assets.Scripts.Consts.GetRoofRunPassiveContinuationGap(hamster.Width)
                 - hamster.HamsterRightX;
             float latestBeforeRoofExit = roofExitStartShift - SwitchLaneTiming.DecisionTravel;
             if (latestBeforeRoofExit <= 0f)

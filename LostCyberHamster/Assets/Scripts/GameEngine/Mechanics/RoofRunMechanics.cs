@@ -167,7 +167,7 @@ public class RoofRunMechanics
 
     /// <summary>
     /// Определяет момент, когда ПРАВАЯ кромка хомяка ушла за правый край текущего препятствия
-    /// на заданный процент его ширины (по умолчанию 70%).
+    /// на заданную долю его ширины.
     /// В этот момент нужно проверять наличие следующей крыши.
     /// </summary>
     /// <param name="hamsterRight">Правая кромка хомяка.</param>
@@ -175,7 +175,7 @@ public class RoofRunMechanics
     /// <returns>True — если наступил момент проверки следующей крыши.</returns>
     private bool HasReachedNextRoofCheckPoint(float hamsterRight, float roofRight)
     {
-        float threshold = _hamsterWidthInUnits * 0.7f; // 70% ширины хомяка
+        float threshold = Assets.Scripts.Consts.GetRoofRunPassiveContinuationGap(_hamsterWidthInUnits);
         return hamsterRight >= roofRight + threshold;
     }
 
