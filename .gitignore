@@ -99,6 +99,10 @@ LostCyberHamster/.utmp/
 /docs/Compacted Code/
 /tools/docs/Compacted Code/
 
+# Repository-owned build automation scripts
+!/tools/build/
+!/tools/build/*.ps1
+
 # Rider cache
 .idea/
 *.idea/

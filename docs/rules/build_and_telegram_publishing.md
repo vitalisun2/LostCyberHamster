@@ -150,7 +150,9 @@ Manifest должен попасть в билд как runtime-readable resourc
 tools/build/build_android_telegram.ps1
 ```
 
-Если этого скрипта еще нет, агент, который внедряет warm sandbox pipeline, должен создать его по этому документу. Не дробить pipeline на много скриптов заранее. Helper-скрипты рядом в `tools/build/` добавлять только когда один entrypoint станет реально перегруженным.
+Текущая реализация этого entrypoint создает/актуализирует warm sandbox, генерирует build manifest, обновляет sandbox-only `Resources/Diagnostics/device_log_settings.json`, запускает Android build и возвращает JSON с APK/metadata. Фактический Unity player build внутри entrypoint пока делегируется проверенному helper-скрипту локального skill-а `publish-build-to-telegram-buffer`; Telegram-публикация остается ответственностью skill-а.
+
+Не дробить pipeline на много скриптов заранее. Helper-скрипты рядом в `tools/build/` добавлять только когда один entrypoint станет реально перегруженным.
 
 Ожидаемый контракт:
 
