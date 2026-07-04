@@ -131,6 +131,7 @@ Desktop.ini
 
 # Temporary files and reports
 /.temp/
+/debug.log
 
 # Local Android device log collector output
 /DeviceLogs/
