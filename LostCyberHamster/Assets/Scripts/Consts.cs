@@ -139,7 +139,7 @@ namespace Assets.Scripts
         /// <summary>
         /// Доля ширины хомяка, которая задает максимальный passive gap между roof-platforms.
         /// </summary>
-        public const float RoofRunPassiveContinuationGapFactor = 0.3f;
+        public const float RoofRunPassiveContinuationGapFactor = 0.7f;
 
         /// <summary>
         /// Возвращает максимальный gap между roof-platforms для непрерывного RoofRun без input.
