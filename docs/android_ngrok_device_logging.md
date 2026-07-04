@@ -13,7 +13,7 @@ Android APK
   -> ngrok HTTPS endpoint
   -> Docker ngrok container на основном ноутбуке
   -> Docker collector container на основном ноутбуке
-  -> %USERPROFILE%\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
+  -> C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
   -> Dropbox sync
   -> второй ноутбук читает ту же папку локально
 ```
@@ -56,10 +56,10 @@ android-dev-ngrok-logs
 Канонический host-путь на основном ноутбуке:
 
 ```text
-%USERPROFILE%\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
+C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
 ```
 
-`ensure_device_log_docker_stack.ps1` сам находит или создает эту директорию, если доступна Dropbox Exchange папка в профиле пользователя. Затем он записывает host-путь в локальный файл:
+`ensure_device_log_docker_stack.ps1` сам находит или создает эту директорию, если доступна Dropbox Exchange папка. На текущем основном ноутбуке с Dropbox web совпадает именно `C:\Dropbox\exchange`. Затем скрипт записывает host-путь в локальный файл:
 
 ```text
 tools/device-log-collector/.env.local
@@ -68,7 +68,7 @@ tools/device-log-collector/.env.local
 Переменная для Docker Compose:
 
 ```text
-DEVICE_LOG_OUTPUT_ROOT_HOST=C:/Users/<user>/Dropbox/exchange/crystal_wave/LostCyberHamster_DeviceLogs/android
+DEVICE_LOG_OUTPUT_ROOT_HOST=C:/Dropbox/exchange/crystal_wave/LostCyberHamster_DeviceLogs/android
 ```
 
 `.env.local` содержит секрет ngrok и локальные пути, поэтому не коммитится.
@@ -198,13 +198,16 @@ LostCyberHamsterDeviceLogStack
 Проверка:
 
 ```powershell
-Test-Path -LiteralPath "$env:USERPROFILE\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android"
+Test-Path -LiteralPath "C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android"
 ```
 
 Reader-агент читает последние uploads:
 
 ```powershell
-$root = Join-Path $env:USERPROFILE "Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android"
+$root = "C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android"
+if (-not (Test-Path -LiteralPath $root)) {
+    $root = Join-Path $env:USERPROFILE "Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android"
+}
 
 Get-ChildItem -LiteralPath $root -Directory |
     Sort-Object LastWriteTime -Descending |
@@ -244,7 +247,8 @@ Get-ChildItem -LiteralPath $root -Directory |
 2. Проверь, что Dropbox установлен и запущен.
 
 3. Найди общую папку:
-   - %USERPROFILE%\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
+   - `exchange/crystal_wave/LostCyberHamster_DeviceLogs/android` внутри локальной Dropbox-папки, которая реально совпадает с `dropbox.com/home/exchange`
+   - на текущем основном ноутбуке: `C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android`
 
 4. Не запускай:
    - tools/device-log-collector/ensure_device_log_docker_stack.ps1
@@ -312,7 +316,7 @@ X-LCH-Device-Log-Token: lost-cyber-hamster-device-logs
 На host это bind mount в Dropbox Exchange:
 
 ```text
-%USERPROFILE%\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
+C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
 ```
 
 Каждый upload сохраняется отдельной папкой:
@@ -366,7 +370,7 @@ Invoke-RestMethod -Method Post -Uri "https://ladle-substance-spray.ngrok-free.de
 Проверить свежие uploads в Dropbox:
 
 ```powershell
-$root = Join-Path $env:USERPROFILE "Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android"
+$root = "C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android"
 Get-ChildItem -LiteralPath $root -Directory |
     Sort-Object LastWriteTime -Descending |
     Select-Object -First 5
@@ -374,9 +378,9 @@ Get-ChildItem -LiteralPath $root -Directory |
 
 ## Что уже проверено и отклонено
 
-Google Drive DriveFS не используется как Docker bind mount. Проверка показала, что контейнер может писать в смонтированный путь внутри Docker, но изменения не появляются в host-папке Google Drive, и host-файлы не видны внутри контейнера. Для надежной записи из Docker выбран Dropbox Exchange в `%USERPROFILE%\Dropbox`, который синхронизируется с аккаунтом Dropbox пользователя.
+Google Drive DriveFS не используется как Docker bind mount. Проверка показала, что контейнер может писать в смонтированный путь внутри Docker, но изменения не появляются в host-папке Google Drive, и host-файлы не видны внутри контейнера. Для надежной записи из Docker выбран Dropbox Exchange.
 
-Путь `C:\Dropbox\...` на этой машине не является текущим output root для device logs. Для логов использовать `%USERPROFILE%\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android`.
+На текущем основном ноутбуке не использовать `%USERPROFILE%\Dropbox\exchange\crystal_wave` как output root для device logs: эта локальная папка не совпала с тем, что видно в Dropbox web. Канонический путь здесь - `C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android`.
 
 Ngrok pooling не используется для рабочих ноутбуков. Он позволяет нескольким ngrok agents держать один domain, но распределяет requests между ними. Это не решает задачу "одни и те же логи доступны всем агентам".
 

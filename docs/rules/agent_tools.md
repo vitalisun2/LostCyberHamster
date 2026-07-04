@@ -69,7 +69,7 @@ Bridge-команды:
 - Receiver ensure-запуск перед мобильным тестом: `tools/device-log-collector/ensure_device_log_docker_stack.ps1 -Json`.
 - Receiver health-check без запуска: `tools/device-log-collector/check_device_log_stack.ps1 -Json`.
 - Autostart: installer `tools/device-log-collector/install_device_log_stack_task.ps1`; предпочтительно Windows Scheduled Task `LostCyberHamsterDeviceLogStack`, fallback - user Startup shortcut. В Docker-режиме autostart делает one-shot ensure, живучесть держат `restart: unless-stopped` контейнеры.
-- Receiver output: `%USERPROFILE%\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android\<createdAt>_<device>_<reason>_<session>\`.
+- Receiver output: `C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android\<createdAt>_<device>_<reason>_<session>\`.
 - Reader-ноутбук не запускает ngrok/collector и не занимает domain; агент читает Dropbox-папку локально.
 - Телефон напрямую не опрашивается.
 

@@ -151,13 +151,13 @@ function ConvertTo-ComposePath {
 }
 
 function Get-DropboxOutputRootCandidates {
-    $candidates = @()
+    $candidates = @(
+        (Join-Path 'C:\Dropbox\exchange' (Join-Path $dropboxProjectRoot $dropboxOutputRelativePath))
+    )
 
     if (-not [string]::IsNullOrWhiteSpace($env:USERPROFILE)) {
         $candidates += Join-Path (Join-Path $env:USERPROFILE 'Dropbox\exchange') (Join-Path $dropboxProjectRoot $dropboxOutputRelativePath)
     }
-
-    $candidates += Join-Path 'C:\Dropbox\exchange' (Join-Path $dropboxProjectRoot $dropboxOutputRelativePath)
 
     $candidates | Select-Object -Unique
 }
@@ -199,7 +199,7 @@ function Resolve-DeviceLogOutputRootHost {
         }
     }
 
-    throw "Dropbox Exchange folder was not found. Install/start Dropbox or pass -DeviceLogOutputRootHost '<path>' explicitly. Expected default: %USERPROFILE%\Dropbox\exchange\$dropboxProjectRoot\$dropboxOutputRelativePath"
+    throw "Dropbox Exchange folder was not found. Install/start Dropbox or pass -DeviceLogOutputRootHost '<path>' explicitly. Expected default: C:\Dropbox\exchange\$dropboxProjectRoot\$dropboxOutputRelativePath"
 }
 
 function Get-NgrokAuthtoken {

@@ -15,7 +15,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-colle
 Скрипт сам:
 
 - запускает Docker Desktop при необходимости;
-- находит/создает `%USERPROFILE%\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android`;
+- находит/создает `C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android`;
 - создает локальный `.env.local` с ngrok token;
 - останавливает старый non-Docker stack, если он занимает порт;
 - поднимает Docker Compose;
@@ -80,7 +80,7 @@ Collector слушает:
 `POST /upload` сохраняет payload в Docker mount `/workspace/DeviceLogs/android`, который на host указывает на:
 
 ```text
-%USERPROFILE%\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
+C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
 ```
 
 Upload проверяет header:
