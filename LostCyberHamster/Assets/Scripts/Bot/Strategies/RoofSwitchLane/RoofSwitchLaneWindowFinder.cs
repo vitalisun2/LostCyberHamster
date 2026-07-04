@@ -51,8 +51,8 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 return false;
             }
 
-            // Ограничивает запуск концом текущей roof-chain.
-            if (!TryConstrainLatestFireShiftByCurrentRoofRun(
+            // Ограничивает старт tap концом текущей roof-chain.
+            if (!TryConstrainLatestFireShiftByCurrentRoofExit(
                     planningState,
                     worldSnapshot,
                     latestFireShift,
@@ -168,9 +168,9 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         }
 
         /// <summary>
-        /// Ограничивает запуск текущей passive roof-chain: смещение должно завершиться до RunFromRoof.
+        /// Ограничивает запуск текущей passive roof-chain: tap должен начаться до RunFromRoof.
         /// </summary>
-        private static bool TryConstrainLatestFireShiftByCurrentRoofRun(
+        private static bool TryConstrainLatestFireShiftByCurrentRoofExit(
             PlanningState planningState,
             WorldSnapshot worldSnapshot,
             float latestFireShift,
@@ -197,14 +197,13 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 return false;
             }
 
-            // Рассчитывает deadline до схода с текущей roof-chain.
-            float roofExitStartShift = lastRoof.RightX
+            // Рассчитывает deadline старта tap до схода с текущей roof-chain.
+            float latestBeforeRoofExit = lastRoof.RightX
                 + Assets.Scripts.Consts.GetRoofRunPassiveContinuationGap(hamster.Width)
                 - hamster.HamsterRightX;
-            float latestBeforeRoofExit = roofExitStartShift - SwitchLaneTiming.DecisionTravel;
             if (latestBeforeRoofExit <= 0f)
             {
-                deadEndReason = "Нет безопасного окна для смены линии с крыши: текущая roof-chain закончится до завершения смещения.";
+                deadEndReason = "Нет безопасного окна для смены линии с крыши: текущая roof-chain закончилась до запуска смены линии.";
                 return false;
             }
 
