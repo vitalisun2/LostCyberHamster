@@ -1,3 +1,10 @@
+---
+description: "Ежедневно обновить integration/unity-live, собрать Android APK и отправить билд в Telegram."
+name: "Daily Unity Live Android Build"
+agent: "agent"
+argument-hint: "Без аргументов; используется scheduled automation"
+---
+
 # Daily Unity Live Android Build
 
 Этот prompt используется Codex scheduled automation для ежедневной сборки актуальной `integration/unity-live` и публикации Android APK в Telegram.
@@ -20,7 +27,7 @@
 5. После обновления выполни универсальный build prompt:
 
    ```text
-   docs/prompts/builds/publish_android_build.md
+   .github/prompts/builds/publish-android-build-to-telegram.prompt.md
    ```
 
    Явный source для него:

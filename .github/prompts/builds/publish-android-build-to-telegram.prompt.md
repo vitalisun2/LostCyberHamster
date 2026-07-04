@@ -1,3 +1,10 @@
+---
+description: "Собрать Android development APK из текущего или указанного checkout и отправить билд в Telegram."
+name: "Publish Android Build To Telegram"
+agent: "agent"
+argument-hint: "Опционально: SourceWorktree, branch/ref, BuildLabel"
+---
+
 # Publish Android Build To Telegram
 
 Используй этот prompt, когда нужно вручную собрать Android APK LostCyberHamster из текущего или явно указанного source checkout и отправить билд в Telegram.
