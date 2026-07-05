@@ -18,11 +18,11 @@ public class Intro : MonoBehaviour
     private VisualElement _container;
 
     private float _imageHeightFactor = 0.7f;
-    private float _fadeDuration = 2f;
+    private float _fadeDuration = 3f;
     private int _fadeSteps = 10;
     private float _waitAfterFade = 2f;
     private float _gapBetweenImages = 40f;
-    private float _timeBetweenImageScrollStarts = 6f;
+    private float _timeBetweenImageScrollStarts = 9f;
     private float _imageWidth;
     private float _imageHeight;
     private float _initialImageLeft;
