@@ -11,7 +11,6 @@ public class Intro : MonoBehaviour
 {
     private List<VisualElement> _introImages = new();
     private float _shiftSpeed = 100f;
-    private bool _skipIntro = false;
     private UIDocument _uiDocument;
     private VisualElement _introScreen;
     private LocalizedButton _skipButton;
@@ -22,6 +21,12 @@ public class Intro : MonoBehaviour
     private float _fadeDuration = 1f;
     private int _fadeSteps = 10;
     private float _waitAfterFade = 2f;
+    private float _gapBetweenImages = 40f;
+    private float _timeBetweenImageScrollStarts = 3f;
+    private float _imageWidth;
+    private float _imageHeight;
+    private float _initialImageLeft;
+    private float _initialImageTop;
 
     // Храним запущенную корутину интро, флаг одноразового завершения и ссылку на обработчик "Skip"
     private Coroutine _introRoutine;           // чтобы корректно останавливать реальную корутину
@@ -74,12 +79,12 @@ public class Intro : MonoBehaviour
 
     private void InitImages(List<Sprite> introSprites)
     {
-        // Offset between images in the container
-        float offset = 20f;
-
         // Calculate individual image dimensions
-        float imageHeight = Screen.height * 0.7f;
-        float imageWidth = imageHeight; // Square images based on height
+        _imageHeight = Screen.height * _imageHeightFactor;
+        _imageWidth = _imageHeight; // Square images based on height
+        _initialImageLeft = (Screen.width - _imageWidth) * 0.5f;
+        _initialImageTop = (Screen.height - _imageHeight) * 0.5f;
+        _shiftSpeed = (_imageWidth + _gapBetweenImages) / _timeBetweenImageScrollStarts;
 
 
         // Create the container and set its position
@@ -87,6 +92,10 @@ public class Intro : MonoBehaviour
         {
             style =
             {
+                width = Length.Percent(100),
+                height = Length.Percent(100),
+                position = Position.Relative,
+                overflow = Overflow.Hidden,
                 justifyContent = Justify.Center,
                 alignItems = Align.Center,
                 alignContent = Align.Center,
@@ -104,8 +113,11 @@ public class Intro : MonoBehaviour
             {
                 style =
             {
-                width = imageWidth,
-                height = imageHeight,
+                position = Position.Absolute,
+                left = _initialImageLeft,
+                top = _initialImageTop,
+                width = _imageWidth,
+                height = _imageHeight,
                 opacity = 0,
             }
             };
@@ -167,48 +179,89 @@ public class Intro : MonoBehaviour
 
     private IEnumerator PlayIntroSequence()
     {
-        float fadeStepTime = _fadeDuration / _fadeSteps;
+        List<VisualElement> movingImages = new();
 
-        foreach (var sprite in _introImages)
+        for (int imageIndex = 0; imageIndex < _introImages.Count; imageIndex++)
         {
-            _container.Add(sprite);
+            var image = _introImages[imageIndex];
+            ResetImagePosition(image);
+            image.style.zIndex = _introImages.Count - imageIndex;
+            _container.Add(image);
 
-            // Fade in the image
-            for (int step = 1; step <= _fadeSteps; step++)
-            {
-                sprite.style.opacity = step / (float)_fadeSteps;
-                yield return new WaitForSeconds(fadeStepTime);
-            }
+            yield return imageIndex == 0
+                ? FadeInWhileMoving(image, movingImages)
+                : RevealImageBeforeScroll(image, movingImages);
 
-            // Hold the image for 2 seconds
-            yield return new WaitForSeconds(2f);
-
-            // Fade out the image
-            for (int step = _fadeSteps - 1; step >= 0; step--)
-            {
-                sprite.style.opacity = step / (float)_fadeSteps;
-                yield return new WaitForSeconds(fadeStepTime);
-            }
-            _container.Remove(sprite);
+            movingImages.Add(image);
         }
 
+        yield return MoveUntilAllImagesExit(movingImages);
         EndIntro();
     }
 
-
-
-    private IEnumerator ShiftImagesLeft(float speed)
+    private IEnumerator FadeInWhileMoving(VisualElement image, List<VisualElement> movingImages)
     {
-        while (_introImages[^1].style.left.value.value > 0)
-        {
-            if (_skipIntro) yield break;
+        float elapsed = 0f;
 
-            foreach (var image in _introImages)
-            {
-                image.style.left = new StyleLength(image.style.left.value.value - speed * Time.deltaTime);
-            }
+        while (elapsed < _fadeDuration)
+        {
+            elapsed += Time.deltaTime;
+            image.style.opacity = Mathf.Clamp01(elapsed / _fadeDuration);
+
+            MoveImagesLeft(movingImages);
             yield return null;
         }
+
+        image.style.opacity = 1f;
+    }
+
+    private IEnumerator RevealImageBeforeScroll(VisualElement image, List<VisualElement> movingImages)
+    {
+        float elapsed = 0f;
+        float revealDuration = Mathf.Max(_fadeDuration, _timeBetweenImageScrollStarts);
+
+        while (elapsed < revealDuration)
+        {
+            elapsed += Time.deltaTime;
+            image.style.opacity = Mathf.Clamp01(elapsed / _fadeDuration);
+
+            MoveImagesLeft(movingImages);
+            yield return null;
+        }
+
+        image.style.opacity = 1f;
+    }
+
+    private IEnumerator MoveUntilAllImagesExit(List<VisualElement> movingImages)
+    {
+        while (movingImages.Count > 0)
+        {
+            MoveImagesLeft(movingImages);
+            yield return null;
+        }
+    }
+
+    private void MoveImagesLeft(List<VisualElement> movingImages)
+    {
+        for (int i = movingImages.Count - 1; i >= 0; i--)
+        {
+            var image = movingImages[i];
+            float left = image.style.left.value.value - _shiftSpeed * Time.deltaTime;
+            image.style.left = left;
+
+            if (left + _imageWidth <= 0f)
+            {
+                movingImages.RemoveAt(i);
+                image.RemoveFromHierarchy();
+            }
+        }
+    }
+
+    private void ResetImagePosition(VisualElement image)
+    {
+        image.style.left = _initialImageLeft;
+        image.style.top = _initialImageTop;
+        image.style.opacity = 0f;
     }
 
     private void EndIntro()
