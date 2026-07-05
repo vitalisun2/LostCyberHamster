@@ -25,6 +25,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         private const string _animationTypeWalk = "walk";
         private const string _animationTypeIdle = "idle";
         private const string _spritePropertyName = "m_Sprite";
+        private const float _roofOccupantVisualYOffset = -0.3f;
         
         public static List<InstantiatedObstacle> CreateObstacles(EnvironmentRoot environmentRoot)
         {
@@ -82,6 +83,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             {
                 boxCollider.size = renderer.sprite.bounds.size;
                 boxCollider.offset = renderer.sprite.bounds.center;
+                ApplyRoofOccupantVisualOffset(renderer, boxCollider, (ObstacleTypeEnum)model.type, model.y);
             }
             else
             {
@@ -115,6 +117,60 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             }
             
             return spriteName;
+        }
+
+        /// <summary>
+        /// Визуально опускает объекты, расположенные на крыше, чтобы художественно посадить спрайт ниже на поверхность крыши.
+        /// Игровая позиция и коллайдер остаются на прежней высоте: сдвиг рендера компенсируется обратным смещением коллайдера.
+        /// </summary>
+        private static void ApplyRoofOccupantVisualOffset(
+            SpriteRenderer renderer,
+            BoxCollider2D boxCollider,
+            ObstacleTypeEnum obstacleType,
+            float modelY)
+        {
+            // Пропускает неполные prefab-экземпляры без изменения gameplay-состояния.
+            if (renderer == null || boxCollider == null)
+            {
+                return;
+            }
+
+            // Применяет художественный сдвиг только к объектам, которые стоят на крыше.
+            if (!IsRoofOccupant(obstacleType, modelY))
+            {
+                return;
+            }
+
+            // Опускает визуал и оставляет world-bounds коллайдера на исходном месте.
+            renderer.transform.localPosition += new Vector3(0f, _roofOccupantVisualYOffset, 0f);
+            boxCollider.offset -= new Vector2(0f, _roofOccupantVisualYOffset);
+        }
+
+        private static bool IsRoofOccupant(ObstacleTypeEnum obstacleType, float modelY)
+        {
+            return IsRoofOccupantType(obstacleType) && !IsRoadLineY(modelY);
+        }
+
+        private static bool IsRoofOccupantType(ObstacleTypeEnum obstacleType)
+        {
+            switch (obstacleType)
+            {
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                case ObstacleTypeEnum.collectableEnergetic:
+                case ObstacleTypeEnum.collectablePizza:
+                case ObstacleTypeEnum.collectableCrystal:
+                case ObstacleTypeEnum.collectableLife:
+                case ObstacleTypeEnum.collectableCoin:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsRoadLineY(float y)
+        {
+            return Mathf.Abs(y - Consts.ObstacleY0Pos) <= Consts.ObstacleLineTolerance
+                || Mathf.Abs(y - Consts.ObstacleY1Pos) <= Consts.ObstacleLineTolerance;
         }
 
         private static Sprite GetRendererSpriteByModelTypeAndName(int modelType, string spriteName)
