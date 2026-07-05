@@ -15,6 +15,7 @@ public static class TilePlacementStrategies
         var pipeline = new TilePlacementPipeline();
         pipeline.AddRule(new YPositionRule());
         pipeline.AddRule(new OverlapAvoidanceOnRoadRule());
+        pipeline.AddRule(new RoofPlatformGapSnapRule());
         return pipeline;
     }
 
