@@ -185,8 +185,7 @@ public class Intro : MonoBehaviour
         {
             var image = _introImages[imageIndex];
             ResetImagePosition(image);
-            image.style.zIndex = _introImages.Count - imageIndex;
-            _container.Add(image);
+            AddImageBehindMovingImages(image);
 
             yield return imageIndex == 0
                 ? FadeInWhileMoving(image, movingImages)
@@ -262,6 +261,17 @@ public class Intro : MonoBehaviour
         image.style.left = _initialImageLeft;
         image.style.top = _initialImageTop;
         image.style.opacity = 0f;
+    }
+
+    private void AddImageBehindMovingImages(VisualElement image)
+    {
+        if (_container.childCount == 0)
+        {
+            _container.Add(image);
+            return;
+        }
+
+        _container.Insert(0, image);
     }
 
     private void EndIntro()
