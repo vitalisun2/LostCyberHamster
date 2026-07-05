@@ -16,6 +16,9 @@ namespace LostCyberHamster.Editor
     {
         private const string OutputArg = "-codexBuildOutput";
         private const string DevelopmentArg = "-codexBuildDevelopment";
+        private const string AndroidSigningConfigArg = "-lostCyberHamsterAndroidSigningConfig";
+        private const string AndroidSigningConfigEnvironmentVariable = "LOSTCYBERHAMSTER_ANDROID_SIGNING_CONFIG";
+        private const string DefaultAndroidSigningConfigRelativePath = @".lostcyberhamster\android-dev-signing\signing.local.json";
 
         public static void BuildAndroidApk()
         {
@@ -62,11 +65,21 @@ namespace LostCyberHamster.Editor
                     options = options
                 };
 
-                var report = BuildPipeline.BuildPlayer(buildOptions);
-                WriteSummary(outputRoot, buildPath, report, development);
+                AndroidSigningScope androidSigning = null;
+                try
+                {
+                    androidSigning = ApplyAndroidSigningIfNeeded(target);
 
-                if (report.summary.result != BuildResult.Succeeded)
-                    throw new InvalidOperationException($"Build failed: {report.summary.result}");
+                    var report = BuildPipeline.BuildPlayer(buildOptions);
+                    WriteSummary(outputRoot, buildPath, report, development, androidSigning);
+
+                    if (report.summary.result != BuildResult.Succeeded)
+                        throw new InvalidOperationException($"Build failed: {report.summary.result}");
+                }
+                finally
+                {
+                    androidSigning?.Dispose();
+                }
 
                 Debug.Log($"Build succeeded: {buildPath}");
                 EditorApplication.Exit(0);
@@ -133,7 +146,80 @@ namespace LostCyberHamster.Editor
             return bool.TryParse(GetArg(name), out var value) && value;
         }
 
-        private static void WriteSummary(string outputRoot, string buildPath, BuildReport report, bool development)
+        private static AndroidSigningScope ApplyAndroidSigningIfNeeded(BuildTarget target)
+        {
+            if (target != BuildTarget.Android)
+                return null;
+
+            var configPath = GetAndroidSigningConfigPath();
+            if (!File.Exists(configPath))
+            {
+                throw new FileNotFoundException(
+                    "Android dev signing config was not found. " +
+                    "Create it with tools/build/install_android_dev_signing.ps1 or pass " +
+                    $"{AndroidSigningConfigArg} <path>.",
+                    configPath);
+            }
+
+            var config = JsonUtility.FromJson<AndroidSigningConfig>(File.ReadAllText(configPath));
+            if (config == null)
+                throw new InvalidOperationException($"Android signing config is invalid JSON: {configPath}");
+
+            RequireConfigValue(config.keystorePath, nameof(config.keystorePath), configPath);
+            RequireConfigValue(config.keystorePass, nameof(config.keystorePass), configPath);
+            RequireConfigValue(config.keyaliasName, nameof(config.keyaliasName), configPath);
+            RequireConfigValue(config.keyaliasPass, nameof(config.keyaliasPass), configPath);
+
+            var keystorePath = ResolveConfiguredPath(config.keystorePath, Path.GetDirectoryName(configPath));
+            if (!File.Exists(keystorePath))
+                throw new FileNotFoundException("Android signing keystore was not found.", keystorePath);
+
+            var signingScope = AndroidSigningScope.Apply(config, configPath, keystorePath);
+            Debug.Log(
+                "Android dev signing configured. " +
+                $"alias={signingScope.KeyAliasName} certSha256={signingScope.CertificateSha256}");
+
+            return signingScope;
+        }
+
+        private static string GetAndroidSigningConfigPath()
+        {
+            var configPath = GetArg(AndroidSigningConfigArg);
+            if (string.IsNullOrWhiteSpace(configPath))
+                configPath = Environment.GetEnvironmentVariable(AndroidSigningConfigEnvironmentVariable);
+
+            if (string.IsNullOrWhiteSpace(configPath))
+            {
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                if (string.IsNullOrWhiteSpace(userProfile))
+                    userProfile = Environment.GetEnvironmentVariable("USERPROFILE");
+
+                configPath = Path.Combine(userProfile, DefaultAndroidSigningConfigRelativePath);
+            }
+
+            return Path.GetFullPath(configPath);
+        }
+
+        private static string ResolveConfiguredPath(string path, string configDirectory)
+        {
+            if (Path.IsPathRooted(path))
+                return Path.GetFullPath(path);
+
+            return Path.GetFullPath(Path.Combine(configDirectory, path));
+        }
+
+        private static void RequireConfigValue(string value, string fieldName, string configPath)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new InvalidOperationException($"Android signing config field '{fieldName}' is missing: {configPath}");
+        }
+
+        private static void WriteSummary(
+            string outputRoot,
+            string buildPath,
+            BuildReport report,
+            bool development,
+            AndroidSigningScope androidSigning)
         {
             var summary = report.summary;
             var builder = new StringBuilder();
@@ -143,7 +229,10 @@ namespace LostCyberHamster.Editor
             builder.AppendLine($"  \"outputPath\": \"{Escape(buildPath)}\",");
             builder.AppendLine($"  \"totalSize\": {summary.totalSize},");
             builder.AppendLine($"  \"totalTime\": \"{Escape(summary.totalTime.ToString())}\",");
-            builder.AppendLine($"  \"development\": {development.ToString().ToLowerInvariant()}");
+            builder.AppendLine($"  \"development\": {development.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"  \"androidSigningConfigured\": {(androidSigning != null).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"  \"androidSigningKeyAlias\": {JsonStringOrNull(androidSigning?.KeyAliasName)},");
+            builder.AppendLine($"  \"androidSigningCertificateSha256\": {JsonStringOrNull(androidSigning?.CertificateSha256)}");
             builder.AppendLine("}");
 
             File.WriteAllText(Path.Combine(outputRoot, $"build-summary-unity-{summary.platform}.json"), builder.ToString());
@@ -154,6 +243,72 @@ namespace LostCyberHamster.Editor
             return (value ?? string.Empty)
                 .Replace("\\", "\\\\")
                 .Replace("\"", "\\\"");
+        }
+
+        private static string JsonStringOrNull(string value)
+        {
+            return string.IsNullOrEmpty(value) ? "null" : $"\"{Escape(value)}\"";
+        }
+
+        [Serializable]
+        private sealed class AndroidSigningConfig
+        {
+            public string keystorePath;
+            public string keystorePass;
+            public string keyaliasName;
+            public string keyaliasPass;
+            public string certificateSha256;
+        }
+
+        private sealed class AndroidSigningScope : IDisposable
+        {
+            private readonly bool _previousUseCustomKeystore;
+            private readonly string _previousKeystoreName;
+            private readonly string _previousKeystorePass;
+            private readonly string _previousKeyaliasName;
+            private readonly string _previousKeyaliasPass;
+            private bool _disposed;
+
+            private AndroidSigningScope(AndroidSigningConfig config, string configPath, string keystorePath)
+            {
+                ConfigPath = configPath;
+                KeyAliasName = config.keyaliasName;
+                CertificateSha256 = config.certificateSha256;
+
+                _previousUseCustomKeystore = PlayerSettings.Android.useCustomKeystore;
+                _previousKeystoreName = PlayerSettings.Android.keystoreName;
+                _previousKeystorePass = PlayerSettings.Android.keystorePass;
+                _previousKeyaliasName = PlayerSettings.Android.keyaliasName;
+                _previousKeyaliasPass = PlayerSettings.Android.keyaliasPass;
+
+                PlayerSettings.Android.useCustomKeystore = true;
+                PlayerSettings.Android.keystoreName = keystorePath;
+                PlayerSettings.Android.keystorePass = config.keystorePass;
+                PlayerSettings.Android.keyaliasName = config.keyaliasName;
+                PlayerSettings.Android.keyaliasPass = config.keyaliasPass;
+            }
+
+            public string ConfigPath { get; }
+            public string KeyAliasName { get; }
+            public string CertificateSha256 { get; }
+
+            public static AndroidSigningScope Apply(AndroidSigningConfig config, string configPath, string keystorePath)
+            {
+                return new AndroidSigningScope(config, configPath, keystorePath);
+            }
+
+            public void Dispose()
+            {
+                if (_disposed)
+                    return;
+
+                _disposed = true;
+                PlayerSettings.Android.useCustomKeystore = _previousUseCustomKeystore;
+                PlayerSettings.Android.keystoreName = _previousKeystoreName;
+                PlayerSettings.Android.keystorePass = _previousKeystorePass;
+                PlayerSettings.Android.keyaliasName = _previousKeyaliasName;
+                PlayerSettings.Android.keyaliasPass = _previousKeyaliasPass;
+            }
         }
     }
 }

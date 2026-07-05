@@ -60,6 +60,13 @@ sysinfo.txt
 *.aab
 *.unitypackage
 *.app
+*.keystore
+*.jks
+*.p12
+*.pfx
+signing.local.json
+LostCyberHamster-dev-signing.zip
+android-dev-signing/
 
 # Crashlytics generated file
 crashlytics-build.properties

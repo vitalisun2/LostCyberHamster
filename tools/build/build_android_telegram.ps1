@@ -3,6 +3,7 @@ param(
     [string]$SandboxRoot = 'C:\BuildWorkspaces\LostCyberHamster_Android',
     [string]$BuildLabel = '',
     [string]$UnityExe = 'C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Unity.exe',
+    [string]$AndroidSigningConfigPath = '',
     [switch]$Development,
     [switch]$SkipUnityEditorReferenceCheck,
     [switch]$Json
@@ -12,7 +13,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $unityProjectRelativePath = 'LostCyberHamster'
-$skillBuildScript = Join-Path $env:USERPROFILE '.codex\skills\publish-build-to-telegram-buffer\scripts\build_unity_player.ps1'
+$buildAutomationRelativePath = 'Assets\Editor\LostCyberHamsterBuildAutomation.cs'
 
 function Write-Step {
     param([string]$Message)
@@ -188,73 +189,234 @@ function Write-BuildManifest {
     return $manifestPath
 }
 
-function Invoke-SkillBuildHelper {
-    param(
-        [string]$ProjectPath,
-        [string]$OutputRoot,
-        [string]$LogPath
-    )
+function Test-UnityEditorReferences {
+    param([string]$UnityProjectPath)
 
-    Assert-PathExists -Path $skillBuildScript -Description 'Skill Unity build helper'
+    $scriptsPath = Join-Path $UnityProjectPath 'Assets\Scripts'
+    Assert-PathExists -Path $scriptsPath -Description 'Project scripts folder'
 
-    $arguments = @(
-        '-NoProfile',
-        '-ExecutionPolicy', 'Bypass',
-        '-File', $skillBuildScript,
-        '-RepositoryRoot', $SourceWorktree,
-        '-ProjectPath', $ProjectPath,
-        '-UnityExe', $UnityExe,
-        '-OutputRoot', $OutputRoot,
-        '-Platform', 'Android'
-    )
+    $violations = New-Object System.Collections.Generic.List[string]
+    $files = Get-ChildItem -LiteralPath $scriptsPath -Recurse -Filter '*.cs' |
+        Where-Object { $_.FullName -notmatch '\\Editor\\' }
 
-    if ($Development.IsPresent) {
-        $arguments += '-Development'
+    foreach ($file in $files) {
+        $lines = @(Get-Content -LiteralPath $file.FullName -Encoding UTF8)
+        $editorGuardDepth = 0
+
+        for ($index = 0; $index -lt $lines.Count; $index++) {
+            $trimmed = $lines[$index].Trim()
+
+            if ($trimmed -match '^#if\s+UNITY_EDITOR\b') {
+                $editorGuardDepth++
+            }
+            elseif ($trimmed -match '^#endif\b' -and $editorGuardDepth -gt 0) {
+                $editorGuardDepth--
+            }
+
+            if ($editorGuardDepth -gt 0) {
+                continue
+            }
+
+            if ($lines[$index] -match '^\s*using\s+UnityEditor\s*;|UnityEditor\.') {
+                $violations.Add(("{0}:{1}: {2}" -f $file.FullName, ($index + 1), $trimmed))
+            }
+        }
     }
 
-    if ($SkipUnityEditorReferenceCheck.IsPresent) {
-        $arguments += '-SkipUnityEditorReferenceCheck'
-    }
-
-    Write-Step "Starting Unity Android build. Build helper log: $LogPath"
-    $output = & powershell.exe @arguments 2>&1
-    $exitCode = $LASTEXITCODE
-    $output | Set-Content -LiteralPath $LogPath -Encoding UTF8
-
-    if ($exitCode -ne 0) {
-        $tail = ($output | Select-Object -Last 80) -join "`n"
-        throw "Unity build helper failed with exit code $exitCode. Log: $LogPath`n$tail"
+    if ($violations.Count -gt 0) {
+        $message = "Potential player-build blockers: unguarded runtime UnityEditor references found under Assets/Scripts.`n" +
+            (($violations | Select-Object -First 40) -join "`n")
+        throw "$message`nFix or guard the references, or rerun with -SkipUnityEditorReferenceCheck if you intentionally accept the risk."
     }
 }
 
-function Get-LatestBuildSummary {
-    param(
-        [string]$OutputRoot,
-        [datetime]$StartedAt
-    )
+function Get-UnityProjectProcesses {
+    param([string]$UnityProjectPath)
 
-    $summary = Get-ChildItem -LiteralPath $OutputRoot -Recurse -Filter 'build-summary.codex.json' -ErrorAction SilentlyContinue |
-        Where-Object { $_.LastWriteTime -ge $StartedAt.AddMinutes(-5) } |
-        Sort-Object LastWriteTime -Descending |
-        Select-Object -First 1
+    $projectFullPath = [System.IO.Path]::GetFullPath($UnityProjectPath).TrimEnd('\', '/')
+    $projectName = Split-Path -Leaf $projectFullPath
+    $normalizedProjectPath = $projectFullPath.Replace('/', '\')
 
-    if (-not $summary) {
-        throw "Build summary was not found under $OutputRoot"
+    $processesById = @{}
+    foreach ($process in Get-Process Unity -ErrorAction SilentlyContinue) {
+        $processesById[[int]$process.Id] = $process
     }
 
-    return $summary
+    foreach ($cimProcess in Get-CimInstance Win32_Process -Filter "Name = 'Unity.exe'" -ErrorAction SilentlyContinue) {
+        $process = $processesById[[int]$cimProcess.ProcessId]
+        if ($null -eq $process) {
+            continue
+        }
+
+        $commandLine = if ($cimProcess.CommandLine) { $cimProcess.CommandLine.Replace('/', '\') } else { '' }
+        $title = $process.MainWindowTitle
+        $openedThisProject =
+            $commandLine.Contains($normalizedProjectPath) -or
+            (-not [string]::IsNullOrWhiteSpace($title) -and $title.Contains($projectName))
+
+        if ($openedThisProject) {
+            $process
+        }
+    }
+}
+
+function Close-OpenUnityProjectEditors {
+    param([string]$UnityProjectPath)
+
+    $projectProcesses = @(Get-UnityProjectProcesses -UnityProjectPath $UnityProjectPath)
+    if ($projectProcesses.Count -eq 0) {
+        return
+    }
+
+    Write-Step "Closing open Unity editor instances for project: $UnityProjectPath"
+    foreach ($process in $projectProcesses) {
+        try {
+            if ($process.MainWindowHandle -ne 0) {
+                [void]$process.CloseMainWindow()
+            }
+        }
+        catch {
+            Write-Step "[warn] Failed to request Unity editor close for PID $($process.Id): $($_.Exception.Message)"
+        }
+    }
+
+    $deadline = (Get-Date).AddSeconds(30)
+    do {
+        Start-Sleep -Milliseconds 500
+        $remaining = @(Get-UnityProjectProcesses -UnityProjectPath $UnityProjectPath)
+    } while ($remaining.Count -gt 0 -and (Get-Date) -lt $deadline)
+
+    foreach ($process in $remaining) {
+        try {
+            Stop-Process -Id $process.Id -Force
+            Write-Step "Stopped Unity editor PID $($process.Id)."
+        }
+        catch {
+            Write-Step "[warn] Failed to stop Unity editor PID $($process.Id): $($_.Exception.Message)"
+        }
+    }
+}
+
+function Convert-ToProcessArgumentLine {
+    param([string[]]$Arguments)
+
+    $escapedArguments = foreach ($argument in $Arguments) {
+        if ($null -eq $argument) {
+            continue
+        }
+
+        $escaped = $argument.Replace('"', '\"')
+        if ($escaped -match '\s|"') {
+            '"' + $escaped + '"'
+        }
+        else {
+            $escaped
+        }
+    }
+
+    return ($escapedArguments -join ' ')
+}
+
+function Get-DefaultAndroidSigningConfigPath {
+    $userProfile = $env:USERPROFILE
+    if ([string]::IsNullOrWhiteSpace($userProfile)) {
+        $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+    }
+
+    return Join-Path $userProfile '.lostcyberhamster\android-dev-signing\signing.local.json'
+}
+
+function Resolve-ConfiguredPath {
+    param(
+        [string]$Path,
+        [string]$BaseDirectory
+    )
+
+    if ([System.IO.Path]::IsPathRooted($Path)) {
+        return [System.IO.Path]::GetFullPath($Path)
+    }
+
+    return [System.IO.Path]::GetFullPath((Join-Path $BaseDirectory $Path))
+}
+
+function Get-AndroidSigningMetadata {
+    param([string]$ConfigPath)
+
+    Assert-PathExists -Path $ConfigPath -Description 'Android dev signing config'
+    $config = Get-Content -LiteralPath $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    foreach ($property in @('keystorePath', 'keystorePass', 'keyaliasName', 'keyaliasPass')) {
+        if (-not ($config.PSObject.Properties.Name -contains $property) -or [string]::IsNullOrWhiteSpace($config.$property)) {
+            throw "Android dev signing config field '$property' is missing: $ConfigPath"
+        }
+    }
+
+    $configDirectory = Split-Path -Parent $ConfigPath
+    $keystorePath = Resolve-ConfiguredPath -Path $config.keystorePath -BaseDirectory $configDirectory
+    Assert-PathExists -Path $keystorePath -Description 'Android dev signing keystore'
+
+    return [pscustomobject]@{
+        configPath = $ConfigPath
+        keystorePath = $keystorePath
+        keyAliasName = $config.keyaliasName
+        certificateSha256 = if ($config.PSObject.Properties.Name -contains 'certificateSha256') { $config.certificateSha256 } else { '' }
+    }
+}
+
+function Invoke-UnityAndroidBuild {
+    param(
+        [string]$ProjectPath,
+        [string]$OutputDir,
+        [string]$LogPath,
+        [string]$SigningConfigPath
+    )
+
+    Assert-PathExists -Path (Join-Path $ProjectPath $buildAutomationRelativePath) -Description 'Repo-owned Unity build automation'
+
+    $developmentValue = if ($Development.IsPresent) { 'true' } else { 'false' }
+    $unityArgs = @(
+        '-batchmode',
+        '-quit',
+        '-nographics',
+        '-projectPath', $ProjectPath,
+        '-buildTarget', 'Android',
+        '-executeMethod', 'LostCyberHamster.Editor.LostCyberHamsterBuildAutomation.BuildAndroidApk',
+        '-codexBuildOutput', $OutputDir,
+        '-codexBuildDevelopment', $developmentValue,
+        '-lostCyberHamsterAndroidSigningConfig', $SigningConfigPath,
+        '-logFile', $LogPath
+    )
+
+    Write-Step "Starting Unity Android build. Unity log: $LogPath"
+    $argumentLine = Convert-ToProcessArgumentLine -Arguments $unityArgs
+    $process = Start-Process -FilePath $UnityExe -ArgumentList $argumentLine -Wait -PassThru
+    if ($process.ExitCode -ne 0) {
+        throw "Unity Android build failed with exit code $($process.ExitCode). See log: $LogPath"
+    }
 }
 
 $SourceWorktree = Get-FullPath -Path $SourceWorktree
 $SandboxRoot = Get-FullPath -Path $SandboxRoot
+$AndroidSigningConfigPath = if ([string]::IsNullOrWhiteSpace($AndroidSigningConfigPath)) {
+    Get-DefaultAndroidSigningConfigPath
+}
+else {
+    Get-FullPath -Path $AndroidSigningConfigPath
+}
+
 $sourceProjectPath = Join-Path $SourceWorktree $unityProjectRelativePath
 $sandboxProjectPath = Join-Path $SandboxRoot $unityProjectRelativePath
 $outputRoot = Join-Path $SourceWorktree 'Builds\telegram-buffer'
-$entrypointLogRoot = Join-Path $outputRoot 'entrypoint-logs'
 
 Assert-PathExists -Path $SourceWorktree -Description 'Source worktree'
 Assert-PathExists -Path $sourceProjectPath -Description 'Source Unity project'
 Assert-PathExists -Path $UnityExe -Description 'Unity executable'
+Assert-PathExists -Path (Join-Path $sourceProjectPath 'ProjectSettings\EditorBuildSettings.asset') -Description 'Editor build settings'
+$unityRoot = Split-Path -Parent (Split-Path -Parent $UnityExe)
+Assert-PathExists -Path (Join-Path $unityRoot 'Editor\Data\PlaybackEngines\AndroidPlayer') -Description 'Unity Android module'
+Assert-PathExists -Path (Join-Path $unityRoot 'Editor\Data\PlaybackEngines\AndroidPlayer\SDK') -Description 'Unity Android SDK'
+Assert-PathExists -Path (Join-Path $unityRoot 'Editor\Data\PlaybackEngines\AndroidPlayer\NDK') -Description 'Unity Android NDK'
+Assert-PathExists -Path (Join-Path $unityRoot 'Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK') -Description 'Unity Android OpenJDK'
+$androidSigning = Get-AndroidSigningMetadata -ConfigPath $AndroidSigningConfigPath
 
 if ($SourceWorktree.TrimEnd('\', '/') -ieq $SandboxRoot.TrimEnd('\', '/')) {
     throw 'SourceWorktree and SandboxRoot must be different directories.'
@@ -262,7 +424,6 @@ if ($SourceWorktree.TrimEnd('\', '/') -ieq $SandboxRoot.TrimEnd('\', '/')) {
 
 New-Item -ItemType Directory -Force -Path $SandboxRoot | Out-Null
 New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
-New-Item -ItemType Directory -Force -Path $entrypointLogRoot | Out-Null
 
 $branch = Get-GitValue -GitArgs @('rev-parse', '--abbrev-ref', 'HEAD')
 $shortSha = Get-GitValue -GitArgs @('rev-parse', '--short', 'HEAD')
@@ -287,10 +448,17 @@ $dirtySuffix = if ($dirty) { 'dirty' } else { 'clean' }
 $buildStamp = Get-Date -Format 'yyyy-MM-dd_HHmmss'
 $builtAtUtc = (Get-Date).ToUniversalTime().ToString('o')
 $buildId = "${buildStamp}_android_${safeLabel}_${safeSha}_${dirtySuffix}"
-$entrypointLogPath = Join-Path $entrypointLogRoot "$buildId.log"
+$outputDirStamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
+$outputDir = Join-Path $outputRoot ("{0}_{1}_{2}" -f $outputDirStamp, (Get-SafeName -Value $branch), $safeSha)
+$unityLogPath = Join-Path $outputDir 'unity-android.log'
+$summaryPath = Join-Path $outputDir 'build-summary.codex.json'
+New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
 Write-Step "Preparing sandbox: $SandboxRoot"
 $sandboxProjectPath = Sync-UnityProjectSnapshot -SourceRoot $SourceWorktree -TargetRoot $SandboxRoot
+if (-not $SkipUnityEditorReferenceCheck.IsPresent) {
+    Test-UnityEditorReferences -UnityProjectPath $sandboxProjectPath
+}
 
 $manifest = [ordered]@{
     buildId = $buildId
@@ -304,22 +472,26 @@ $manifest = [ordered]@{
     builtAtUtc = $builtAtUtc
     platform = 'Android'
     development = $Development.IsPresent
+    androidSigningKeyAlias = $androidSigning.keyAliasName
+    androidSigningCertificateSha256 = $androidSigning.certificateSha256
 }
 
 $manifestPath = Write-BuildManifest -SandboxProjectPath $sandboxProjectPath -Manifest ([pscustomobject]$manifest)
 Write-Step "Build manifest written: $manifestPath"
 
-$startedAt = Get-Date
-Invoke-SkillBuildHelper -ProjectPath $sandboxProjectPath -OutputRoot $outputRoot -LogPath $entrypointLogPath
+Close-OpenUnityProjectEditors -UnityProjectPath $sandboxProjectPath
+Invoke-UnityAndroidBuild `
+    -ProjectPath $sandboxProjectPath `
+    -OutputDir $outputDir `
+    -LogPath $unityLogPath `
+    -SigningConfigPath $AndroidSigningConfigPath
 
-$summaryPath = Get-LatestBuildSummary -OutputRoot $outputRoot -StartedAt $startedAt
-$skillSummary = Get-Content -LiteralPath $summaryPath.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
-if (-not $skillSummary.apk -or -not (Test-Path -LiteralPath $skillSummary.apk)) {
-    throw "Build summary does not point to an existing APK: $($summaryPath.FullName)"
+$apkPath = Join-Path $outputDir 'LostCyberHamster.apk'
+if (-not (Test-Path -LiteralPath $apkPath)) {
+    throw "Android build completed but APK was not found: $apkPath"
 }
 
-$apk = Get-Item -LiteralPath $skillSummary.apk
-$outputDir = Split-Path -Parent $apk.FullName
+$apk = Get-Item -LiteralPath $apkPath
 $outputManifestPath = Join-Path $outputDir 'build-manifest.codex.json'
 ([pscustomobject]$manifest) | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $outputManifestPath -Encoding UTF8
 
@@ -341,11 +513,15 @@ $result = [ordered]@{
     platform = 'Android'
     development = $Development.IsPresent
     builtAtUtc = $builtAtUtc
-    buildHelperLog = $entrypointLogPath
-    skillSummaryPath = $summaryPath.FullName
+    androidSigningConfigPath = $AndroidSigningConfigPath
+    androidSigningKeyAlias = $androidSigning.keyAliasName
+    androidSigningCertificateSha256 = $androidSigning.certificateSha256
+    unityLogPath = $unityLogPath
+    buildHelperLog = $unityLogPath
+    skillSummaryPath = $summaryPath
 }
 
-$result | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $summaryPath.FullName -Encoding UTF8
+$result | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $summaryPath -Encoding UTF8
 
 if ($Json.IsPresent) {
     [pscustomobject]$result | ConvertTo-Json -Depth 8

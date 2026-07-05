@@ -40,6 +40,7 @@ source worktree
 ## Дефолт сборки
 
 - Если пользователь просит "собери билд", "собери APK", "отправь APK" или "отправь в Telegram", по умолчанию собирать Android development APK (`-Development`).
+- Android development APK должны подписываться общим локальным dev keystore; настройка и перенос между ноутбуками описаны в `docs/android_dev_signing.md`.
 - Windows build и non-development/release build делать только по явному запросу пользователя.
 - Артефакты сохраняются под `Builds/telegram-buffer`.
 - Build summary, Telegram caption и финальный ответ должны явно указывать `buildId`, source branch, short commit и dirty-tree state.
