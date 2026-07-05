@@ -27,6 +27,7 @@ public class Intro : MonoBehaviour
     private float _imageHeight;
     private float _initialImageLeft;
     private float _initialImageTop;
+    private float _imagePitch;
 
     // Храним запущенную корутину интро, флаг одноразового завершения и ссылку на обработчик "Skip"
     private Coroutine _introRoutine;           // чтобы корректно останавливать реальную корутину
@@ -186,82 +187,76 @@ public class Intro : MonoBehaviour
     {
         yield return WaitForContainerLayout();
         UpdateImageLayoutMetrics();
+        AddImagesToTape();
 
-        List<VisualElement> movingImages = new();
-
-        for (int imageIndex = 0; imageIndex < _introImages.Count; imageIndex++)
-        {
-            var image = _introImages[imageIndex];
-            ResetImagePosition(image);
-            AddImageBehindMovingImages(image);
-
-            yield return imageIndex == 0
-                ? FadeInWhileMoving(image, movingImages)
-                : RevealImageBeforeScroll(image, movingImages);
-
-            movingImages.Add(image);
-        }
-
-        yield return MoveUntilAllImagesExit(movingImages);
+        yield return FadeInFirstImage();
+        yield return MoveTapeUntilLastImageExits();
         EndIntro();
     }
 
-    private IEnumerator FadeInWhileMoving(VisualElement image, List<VisualElement> movingImages)
+    private IEnumerator FadeInFirstImage()
     {
+        var image = _introImages[0];
         float elapsed = 0f;
 
         while (elapsed < _fadeDuration)
         {
             elapsed += Time.deltaTime;
             image.style.opacity = Mathf.Clamp01(elapsed / _fadeDuration);
-
-            MoveImagesLeft(movingImages);
             yield return null;
         }
 
         image.style.opacity = 1f;
     }
 
-    private IEnumerator RevealImageBeforeScroll(VisualElement image, List<VisualElement> movingImages)
+    private IEnumerator MoveTapeUntilLastImageExits()
     {
-        float elapsed = 0f;
-        float revealDuration = Mathf.Max(_fadeDuration, _timeBetweenImageScrollStarts);
-        float fadeStartTime = revealDuration - _fadeDuration;
-
-        while (elapsed < revealDuration)
+        while (_introImages[^1].style.left.value.value + _imageWidth > 0f)
         {
-            elapsed += Time.deltaTime;
-            image.style.opacity = Mathf.Clamp01((elapsed - fadeStartTime) / _fadeDuration);
-
-            MoveImagesLeft(movingImages);
+            MoveTapeLeft();
+            UpdateTapeOpacity();
             yield return null;
         }
 
-        image.style.opacity = 1f;
+        RemoveTapeImages();
     }
 
-    private IEnumerator MoveUntilAllImagesExit(List<VisualElement> movingImages)
+    private void MoveTapeLeft()
     {
-        while (movingImages.Count > 0)
+        float shift = _shiftSpeed * Time.deltaTime;
+        foreach (var image in _introImages)
         {
-            MoveImagesLeft(movingImages);
-            yield return null;
+            image.style.left = image.style.left.value.value - shift;
         }
     }
 
-    private void MoveImagesLeft(List<VisualElement> movingImages)
+    private void UpdateTapeOpacity()
     {
-        for (int i = movingImages.Count - 1; i >= 0; i--)
+        for (int index = 1; index < _introImages.Count; index++)
         {
-            var image = movingImages[i];
-            float left = image.style.left.value.value - _shiftSpeed * Time.deltaTime;
-            image.style.left = left;
+            var image = _introImages[index];
+            float distanceToCenter = image.style.left.value.value - _initialImageLeft;
+            image.style.opacity = Mathf.Clamp01(1f - distanceToCenter / _imagePitch);
+        }
+    }
 
-            if (left + _imageWidth <= 0f)
-            {
-                movingImages.RemoveAt(i);
-                image.RemoveFromHierarchy();
-            }
+    private void AddImagesToTape()
+    {
+        for (int index = 0; index < _introImages.Count; index++)
+        {
+            var image = _introImages[index];
+            image.style.left = _initialImageLeft + _imagePitch * index;
+            image.style.top = _initialImageTop;
+            image.style.opacity = 0f;
+            _container.Add(image);
+        }
+    }
+
+    private void RemoveTapeImages()
+    {
+        foreach (var image in _introImages)
+        {
+            image.RemoveFromHierarchy();
         }
     }
 
@@ -297,7 +292,8 @@ public class Intro : MonoBehaviour
         _imageWidth = _imageHeight;
         _initialImageLeft = (containerWidth - _imageWidth) * 0.5f;
         _initialImageTop = (containerHeight - _imageHeight) * 0.5f;
-        _shiftSpeed = (_imageWidth + _gapBetweenImages) / _timeBetweenImageScrollStarts;
+        _imagePitch = _imageWidth + _gapBetweenImages;
+        _shiftSpeed = _imagePitch / _timeBetweenImageScrollStarts;
 
         foreach (var image in _introImages)
         {
