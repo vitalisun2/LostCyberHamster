@@ -18,11 +18,11 @@ public class Intro : MonoBehaviour
     private VisualElement _container;
 
     private float _imageHeightFactor = 0.7f;
-    private float _fadeDuration = 1f;
+    private float _fadeDuration = 2f;
     private int _fadeSteps = 10;
     private float _waitAfterFade = 2f;
     private float _gapBetweenImages = 40f;
-    private float _timeBetweenImageScrollStarts = 3f;
+    private float _timeBetweenImageScrollStarts = 6f;
     private float _imageWidth;
     private float _imageHeight;
     private float _initialImageLeft;
@@ -165,6 +165,11 @@ public class Intro : MonoBehaviour
 
     private IEnumerator PlaySingleImageIntro(VisualElement image)
     {
+        yield return WaitForContainerLayout();
+        UpdateImageLayoutMetrics();
+        ResetImagePosition(image);
+        AddImageBehindMovingImages(image);
+
         float fadeStepTime = _fadeDuration / _fadeSteps;
 
         for (int step = 1; step <= _fadeSteps; step++)
@@ -179,6 +184,9 @@ public class Intro : MonoBehaviour
 
     private IEnumerator PlayIntroSequence()
     {
+        yield return WaitForContainerLayout();
+        UpdateImageLayoutMetrics();
+
         List<VisualElement> movingImages = new();
 
         for (int imageIndex = 0; imageIndex < _introImages.Count; imageIndex++)
@@ -218,11 +226,12 @@ public class Intro : MonoBehaviour
     {
         float elapsed = 0f;
         float revealDuration = Mathf.Max(_fadeDuration, _timeBetweenImageScrollStarts);
+        float fadeStartTime = revealDuration - _fadeDuration;
 
         while (elapsed < revealDuration)
         {
             elapsed += Time.deltaTime;
-            image.style.opacity = Mathf.Clamp01(elapsed / _fadeDuration);
+            image.style.opacity = Mathf.Clamp01((elapsed - fadeStartTime) / _fadeDuration);
 
             MoveImagesLeft(movingImages);
             yield return null;
@@ -261,6 +270,51 @@ public class Intro : MonoBehaviour
         image.style.left = _initialImageLeft;
         image.style.top = _initialImageTop;
         image.style.opacity = 0f;
+    }
+
+    private IEnumerator WaitForContainerLayout()
+    {
+        const int maxWaitFrames = 10;
+
+        for (int frame = 0; frame < maxWaitFrames && !HasResolvedContainerSize(); frame++)
+        {
+            yield return null;
+        }
+    }
+
+    private bool HasResolvedContainerSize()
+    {
+        return IsUsableSize(_container.resolvedStyle.width) &&
+               IsUsableSize(_container.resolvedStyle.height);
+    }
+
+    private void UpdateImageLayoutMetrics()
+    {
+        float containerWidth = GetUsableSize(_container.resolvedStyle.width, Screen.width);
+        float containerHeight = GetUsableSize(_container.resolvedStyle.height, Screen.height);
+
+        _imageHeight = containerHeight * _imageHeightFactor;
+        _imageWidth = _imageHeight;
+        _initialImageLeft = (containerWidth - _imageWidth) * 0.5f;
+        _initialImageTop = (containerHeight - _imageHeight) * 0.5f;
+        _shiftSpeed = (_imageWidth + _gapBetweenImages) / _timeBetweenImageScrollStarts;
+
+        foreach (var image in _introImages)
+        {
+            image.style.width = _imageWidth;
+            image.style.height = _imageHeight;
+            ResetImagePosition(image);
+        }
+    }
+
+    private static bool IsUsableSize(float value)
+    {
+        return !float.IsNaN(value) && value > 0f;
+    }
+
+    private static float GetUsableSize(float value, float fallback)
+    {
+        return IsUsableSize(value) ? value : fallback;
     }
 
     private void AddImageBehindMovingImages(VisualElement image)
