@@ -103,6 +103,7 @@ public class LevelTilemapEditor : EditorWindow
     private static readonly Regex PatternNameSuffixRegex = new Regex(@"^(.*?)(\d+)$", RegexOptions.Compiled);
 
     private readonly List<PatternOverlaySlot> _patternOverlaySlots = new();
+    private readonly RoofPlatformPlacementGhostRenderer _roofPlatformPlacementGhostRenderer = new();
 
     private struct PatternOverlaySlot
     {
@@ -220,6 +221,7 @@ public class LevelTilemapEditor : EditorWindow
         _selectedLevelDescriptor = null;
         _showTestLevels = false;
         _showTestPatterns = false;
+        _roofPlatformPlacementGhostRenderer.ClearActiveTile();
         _allLevelDescriptors.Clear();
         _visibleLevelDescriptors.Clear();
         _selectedDaypart = PartOfDayEnum.Morning;
@@ -924,6 +926,7 @@ public class LevelTilemapEditor : EditorWindow
     {
         if (spriteName == null)
         {
+            _roofPlatformPlacementGhostRenderer.ClearActiveTile();
             TilemapEditorTool.SetActiveEditorTool(typeof(EraseTool));
             _uiManager.SetObstacleTypeForSelectedSprite(null);
         }
@@ -1493,7 +1496,10 @@ public class LevelTilemapEditor : EditorWindow
     private void OnSceneGUI(SceneView sceneView)
     {
         if (IsTemplateMode)
+        {
+            _roofPlatformPlacementGhostRenderer.Draw(sceneView, _tilemapInScene, _isObjectOnRoof);
             return;
+        }
 
         DrawPatternBoundsOverlay();
 
@@ -1955,6 +1961,7 @@ public class LevelTilemapEditor : EditorWindow
         if (sprite == null)
         {
             Debug.LogError($"Sprite '{shortName}' not found for tile.");
+            _roofPlatformPlacementGhostRenderer.ClearActiveTile();
             return;
         }
 
@@ -1970,6 +1977,8 @@ public class LevelTilemapEditor : EditorWindow
 
         GridPaintingState.gridBrush = brush;
         TilemapEditorTool.SetActiveEditorTool(typeof(PaintTool));
+
+        _roofPlatformPlacementGhostRenderer.SetActiveTile(tile, shortName);
 
         // открываем Tile Palette окно
         EditorApplication.ExecuteMenuItem("Window/2D/Tile Palette");
