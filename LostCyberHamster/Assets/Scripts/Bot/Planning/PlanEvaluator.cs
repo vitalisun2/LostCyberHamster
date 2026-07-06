@@ -136,7 +136,7 @@ namespace Assets.Scripts.Bot.Planning
         }
 
         /// <summary>
-        /// Сравнивает dead-end ветки по индексу первого провала: чем дальше провал от корня, тем лучше.
+        /// Сравнивает dead-end ветки по физическому прогрессу до первого провала.
         /// </summary>
         private static int CompareDeadEndBranches(PlanningDeadEndBranch left, PlanningDeadEndBranch right)
         {
@@ -149,17 +149,17 @@ namespace Assets.Scripts.Bot.Planning
             if (right?.Branch == null)
                 return -1;
 
-            int leftFailureDepth = GetDeadEndFailureDepth(left);
-            int rightFailureDepth = GetDeadEndFailureDepth(right);
-            return rightFailureDepth.CompareTo(leftFailureDepth);
+            float leftFailureProjection = GetDeadEndFailureProjection(left);
+            float rightFailureProjection = GetDeadEndFailureProjection(right);
+            return rightFailureProjection.CompareTo(leftFailureProjection);
         }
 
         /// <summary>
-        /// Возвращает глубину первого unresolved dead-end для ветки.
+        /// Возвращает world-shift первого unresolved dead-end для ветки.
         /// </summary>
-        private static int GetDeadEndFailureDepth(PlanningDeadEndBranch deadEndBranch)
+        private static float GetDeadEndFailureProjection(PlanningDeadEndBranch deadEndBranch)
         {
-            return deadEndBranch?.Report?.Depth ?? 0;
+            return deadEndBranch?.Report?.ProjectionWorldShift ?? 0f;
         }
     }
 }
