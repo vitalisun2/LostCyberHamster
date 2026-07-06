@@ -2,7 +2,9 @@ param(
     [int]$TimeoutSeconds = 120,
     [int]$PollMilliseconds = 250,
     [string]$LevelAddress = '01_New_York/Morning/test_switch_lane',
-    [float]$TimeScale = 1
+    [float]$TimeScale = 1,
+    [string]$UnityExePath = 'C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Unity.exe',
+    [int]$UnityStartupTimeoutSeconds = 600
 )
 
 Set-StrictMode -Version Latest
@@ -14,6 +16,8 @@ $automationPath = Join-Path $projectPath 'EditorLogs\automation'
 $requestPath = Join-Path $automationPath 'test_level_request.json'
 $responsePath = Join-Path $automationPath 'test_level_response.json'
 New-Item -ItemType Directory -Path $automationPath -Force | Out-Null
+
+. (Join-Path $PSScriptRoot 'unity_editor_autostart.ps1')
 
 function Initialize-WindowActivationHelper {
     if ('WindowActivationHelper' -as [type]) {
@@ -97,13 +101,17 @@ public static class VisualStudioRunningObjectTableHelper
     public static List<string> GetMonikerNames()
     {
         var result = new List<string>();
-        GetRunningObjectTable(0, out var rot);
-        rot.EnumRunning(out var enumMoniker);
+        IRunningObjectTable rot;
+        IEnumMoniker enumMoniker;
+        GetRunningObjectTable(0, out rot);
+        rot.EnumRunning(out enumMoniker);
         var monikers = new IMoniker[1];
         while (enumMoniker.Next(1, monikers, IntPtr.Zero) == 0)
         {
-            CreateBindCtx(0, out var ctx);
-            monikers[0].GetDisplayName(ctx, null, out var name);
+            IBindCtx ctx;
+            string name;
+            CreateBindCtx(0, out ctx);
+            monikers[0].GetDisplayName(ctx, null, out name);
             result.Add(name);
         }
 
@@ -112,17 +120,22 @@ public static class VisualStudioRunningObjectTableHelper
 
     public static object GetObject(string displayName)
     {
-        GetRunningObjectTable(0, out var rot);
-        rot.EnumRunning(out var enumMoniker);
+        IRunningObjectTable rot;
+        IEnumMoniker enumMoniker;
+        GetRunningObjectTable(0, out rot);
+        rot.EnumRunning(out enumMoniker);
         var monikers = new IMoniker[1];
         while (enumMoniker.Next(1, monikers, IntPtr.Zero) == 0)
         {
-            CreateBindCtx(0, out var ctx);
-            monikers[0].GetDisplayName(ctx, null, out var name);
+            IBindCtx ctx;
+            string name;
+            CreateBindCtx(0, out ctx);
+            monikers[0].GetDisplayName(ctx, null, out name);
             if (!string.Equals(name, displayName, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            rot.GetObject(monikers[0], out var comObject);
+            object comObject;
+            rot.GetObject(monikers[0], out comObject);
             return comObject;
         }
 
@@ -264,6 +277,11 @@ function Invoke-UnityAutomationCommand {
 
     throw "Timeout waiting for Unity automation response during '$RunningMessage'. Ensure the project is open in Unity and scripts compiled successfully."
 }
+
+Ensure-UnityEditorForProject `
+    -ProjectPath $projectPath `
+    -UnityExePath $UnityExePath `
+    -TimeoutSeconds $UnityStartupTimeoutSeconds
 
 # Request recompilation through the bridge. If Unity does not pick up the request
 # while unfocused, the launcher wakes the editor window once as a fallback.

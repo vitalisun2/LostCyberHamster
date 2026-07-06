@@ -11,11 +11,17 @@
     Polling interval in milliseconds. Default: 250.
 .PARAMETER TimeScale
     Explicit Time.timeScale override forwarded to Unity. Default: 1.
+.PARAMETER UnityExePath
+    Unity Editor executable path used when the project editor is not already running.
+.PARAMETER UnityStartupTimeoutSeconds
+    Timeout for opening the Unity project before bridge commands are sent. Default: 600.
 #>
 param(
     [int]$TimeoutSeconds = 120,
     [int]$PollMilliseconds = 250,
-    [float]$TimeScale = 1
+    [float]$TimeScale = 1,
+    [string]$UnityExePath = 'C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Unity.exe',
+    [int]$UnityStartupTimeoutSeconds = 600
 )
 
 Set-StrictMode -Version Latest
@@ -31,6 +37,8 @@ $runLogDirectory = Join-Path $repoRoot "Temp\all_test_levels_$runStamp"
 New-Item -ItemType Directory -Path $automationPath -Force | Out-Null
 New-Item -ItemType Directory -Path $runLogDirectory -Force | Out-Null
 
+. (Join-Path $PSScriptRoot 'unity_editor_autostart.ps1')
+
 # ── Test levels — Locations folder is the source of truth ───────────────────
 function Get-TestLevelAddresses {
     $locationsPath = Join-Path $projectPath 'Assets\Content\locations'
@@ -40,7 +48,8 @@ function Get-TestLevelAddresses {
 
     $discovered = Get-ChildItem -Path $locationsPath -Filter 'test*.json' -File -Recurse |
         ForEach-Object {
-            $relativePath = [System.IO.Path]::GetRelativePath($locationsPath, $_.FullName)
+            $locationsFullPath = (Resolve-Path $locationsPath).Path.TrimEnd('\', '/')
+            $relativePath = $_.FullName.Substring($locationsFullPath.Length + 1)
             $parts = $relativePath -split '[\\/]'
             if ($parts.Length -lt 5 -or $parts[1] -ne 'levels') {
                 return
@@ -733,6 +742,11 @@ function Invoke-UnityCommand {
 }
 
 # ── Recompile once before all levels ─────────────────────────────────────────
+Ensure-UnityEditorForProject `
+    -ProjectPath $projectPath `
+    -UnityExePath $UnityExePath `
+    -TimeoutSeconds $UnityStartupTimeoutSeconds
+
 Write-Host ''
 Write-Host '=== Recompiling scripts ==='
 $recompileCompleted = $false
