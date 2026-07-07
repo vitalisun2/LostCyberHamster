@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: scrolling_environment_barcelona
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: scrolling_environment_barcelona
+  m_GUID: 6d0bbffc4fea11941b80965e71404499
+  m_SerializeEntries:
+  - m_GUID: 226d968c7833adb48b02291c25fbc9c2
+    m_Address: bg_2_barcelona_afternoon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4da00396a0f8f634fa3f034421fc924f
+    m_Address: bg_2_barcelona_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 517f6d71ab3bc2e47873447fc12bb71c
+    m_Address: sky_barcelona_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5de4969a8b2bede448afd5be9b046a18
+    m_Address: sky_barcelona_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 61e134a1ce01c2646bb8b5c73ea9c612
+    m_Address: bg_barcelona_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8a081b34a1de6eb4c8df2ffb6719b900
+    m_Address: rd_barcelona_afternoon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8ec5e2e6646cb5d43a56427cd0bb001c
+    m_Address: bg_2_barcelona_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 92548d71a9067a644af0f3d1b835e109
+    m_Address: sky_barcelona_afternoon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9270c604842bfc94fa9374f33bd5f530
+    m_Address: bg_barcelona_afternoon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b67818f18f6e409499257165c55867e3
+    m_Address: rd_barcelona_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c1d13c979442df64eb4143379e36e05a
+    m_Address: bg_barcelona_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c78e178338b560a41a9f2088a7c28846
+    m_Address: rd_barcelona_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: a669e7aaac77f18499d21450bb51ece5, type: 2}
+    - {fileID: 11400000, guid: 56449935140e1324d912425c50040193, type: 2}

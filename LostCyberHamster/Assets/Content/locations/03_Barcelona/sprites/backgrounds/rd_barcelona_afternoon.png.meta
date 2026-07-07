@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: defb7b5e467e43443a87b84d6e84b311
+guid: 8a081b34a1de6eb4c8df2ffb6719b900
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2928998944684988103
-    second: bg_2_new_york_afternoon_0
+      213: -6204766976346501038
+    second: rd_barcelona_afternoon_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -110,19 +110,6 @@ TextureImporter:
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
     buildTarget: iOS
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -139,7 +126,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: bg_2_new_york_afternoon_0
+      name: rd_barcelona_afternoon_0
       rect:
         serializedVersion: 2
         x: 0
@@ -154,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 939ae827afa1a57d0800000000000000
-      internalID: -2928998944684988103
+      spriteID: 250dacc2f4d34e9a0800000000000000
+      internalID: -6204766976346501038
       vertices: []
       indices: 
       edges: []
@@ -174,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      bg_2_new_york_afternoon_0: -2928998944684988103
+      rd_barcelona_afternoon_0: -6204766976346501038
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

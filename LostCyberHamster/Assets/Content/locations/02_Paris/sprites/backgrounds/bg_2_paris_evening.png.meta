@@ -1,10 +1,13 @@
 fileFormatVersion: 2
-guid: defb7b5e467e43443a87b84d6e84b311
+guid: 640b0578b35886c4dbdb3e5c224a820c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2928998944684988103
-    second: bg_2_new_york_afternoon_0
+      213: 3468790616285353050
+    second: bg_2_paris_evening_0
+  - first:
+      213: -3770436732802585914
+    second: bg_2_paris_evening_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -110,19 +113,6 @@ TextureImporter:
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
     buildTarget: iOS
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -139,13 +129,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: bg_2_new_york_afternoon_0
+      name: bg_2_paris_evening_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 2000
-        height: 240
+        height: 161
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -154,8 +144,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 939ae827afa1a57d0800000000000000
-      internalID: -2928998944684988103
+      spriteID: a5495e3efae932030800000000000000
+      internalID: 3468790616285353050
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bg_2_paris_evening_1
+      rect:
+        serializedVersion: 2
+        x: 708
+        y: 153
+        width: 13
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6caa735a4c7bcabc0800000000000000
+      internalID: -3770436732802585914
       vertices: []
       indices: 
       edges: []
@@ -174,7 +186,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      bg_2_new_york_afternoon_0: -2928998944684988103
+      bg_2_paris_evening_0: 3468790616285353050
+      bg_2_paris_evening_1: -3770436732802585914
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
