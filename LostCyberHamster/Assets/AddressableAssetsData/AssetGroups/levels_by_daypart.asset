@@ -297,6 +297,166 @@ MonoBehaviour:
     - levels_daypart_Evening
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ecb48490a9c44543b3aad9dd9bed3781
+    m_Address: 02_Paris/Afternoon/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b32a5870aab044b584be7c3fe6eb1b5f
+    m_Address: 02_Paris/Afternoon/level_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62699dc200e34ee797831d3823c7cdbf
+    m_Address: 02_Paris/Afternoon/level_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 506e3711c8964bca9edca3cc52383038
+    m_Address: 02_Paris/Afternoon/level_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5849fb22051344f1bdf680e4a7928fb7
+    m_Address: 02_Paris/Afternoon/level_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3edb255dc88b4c48ab847bf7a7da31b0
+    m_Address: 02_Paris/Evening/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3cc0a6faf1c843fb86949ff8b0d8fb74
+    m_Address: 02_Paris/Evening/level_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 078883fbd8d84a368f926e93e1d44718
+    m_Address: 02_Paris/Evening/level_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 42072941b00b4e9fb9cd7894a1701d7e
+    m_Address: 02_Paris/Evening/level_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 748842cd5c99456bb54365851d6f3d9d
+    m_Address: 02_Paris/Evening/level_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 25f82be8c1554879b1bd2f805089e7d1
+    m_Address: 02_Paris/Morning/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7bdff096bdbc41c190f3e893999fcb01
+    m_Address: 02_Paris/Morning/level_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 33d511aed0e34cd6bacc10843a262cf7
+    m_Address: 02_Paris/Morning/level_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a432980a16db4097a0ce31c584d09a56
+    m_Address: 02_Paris/Night/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cf20ca0aca754dc69ea492bf2f76339d
+    m_Address: 02_Paris/Night/level_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 163a7afcfc704dbe94fc5ab9706eaee1
+    m_Address: 02_Paris/Night/level_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e946a1bcbc124aa4830fc7643b5bcff6
+    m_Address: 02_Paris/Night/level_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 705123f886e943c986e6169c8a9418a3
+    m_Address: 02_Paris/Night/level_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a898c1d0c17d4efa96455ab8ce35785a
+    m_Address: 02_Paris/Night/level_06
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 92567f10326c4a0d9533ee2890fbb526
+    m_Address: 02_Paris/Night/level_07
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
   m_SchemaSet:

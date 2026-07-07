@@ -1,0 +1,70 @@
+{
+    "skyTexture":  "",
+    "roadTexture":  "",
+    "location":  "02_Paris",
+    "patternSequence":  [
+                            {
+                                "ref":  "easy_run_3",
+                                "spriteSeed":  2101,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "bonus_strip_2",
+                                "spriteSeed":  2102,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "small_jumps_3",
+                                "spriteSeed":  2103,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "easy_run_2",
+                                "spriteSeed":  2104,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "medium_difficulty_2",
+                                "spriteSeed":  2105,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "bonus_strip_3",
+                                "spriteSeed":  2106,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "medium_difficulty_energy",
+                                "spriteSeed":  2107,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "easy_run",
+                                "spriteSeed":  2108,
+                                "overrides":  [
+
+                                              ]
+                            }
+                        ],
+    "decorationPatterns":  [
+                               {
+                                   "decorationTiles":  [
+
+                                                       ]
+                               }
+                           ]
+}

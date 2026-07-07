@@ -14,19 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: paris obstacles sprites
   m_GUID: 37a70c98fdb7cc54aa663bc87f7e15f7
-  m_SerializeEntries:
-  - m_GUID: 69894289a2509974887e238d4eddd0b6
-    m_Address: obstacle_paris_businessman
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Paris obstacles sprites
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: af493faffdf7c98498e5fa2177ec64c1
-    m_Address: obstacle_paris_car
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Paris obstacles sprites
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
   m_SchemaSet:

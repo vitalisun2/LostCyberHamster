@@ -1,0 +1,70 @@
+{
+    "skyTexture":  "",
+    "roadTexture":  "",
+    "location":  "02_Paris",
+    "patternSequence":  [
+                            {
+                                "ref":  "easy_run_3",
+                                "spriteSeed":  4601,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "small_jumps_2",
+                                "spriteSeed":  4602,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "shift_mirror_trap_2",
+                                "spriteSeed":  4603,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "medium_difficulty_3",
+                                "spriteSeed":  4604,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "roof_bonus_run",
+                                "spriteSeed":  4605,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "roof_switch_line",
+                                "spriteSeed":  4606,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "jump_challenge_2",
+                                "spriteSeed":  4607,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "peak_2",
+                                "spriteSeed":  4608,
+                                "overrides":  [
+
+                                              ]
+                            }
+                        ],
+    "decorationPatterns":  [
+                               {
+                                   "decorationTiles":  [
+
+                                                       ]
+                               }
+                           ]
+}
