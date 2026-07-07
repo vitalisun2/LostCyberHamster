@@ -206,7 +206,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneSimulator.cs" />
     <Compile Include="Assets\Scripts\DevTools\DevToolsMenuOverlay.cs" />
-    <Compile Include="Assets\Scripts\DevTools\DevToolsRuntimeState.cs" />
     <Compile Include="Assets\Scripts\Debug\FeatureFlagToggle.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialRuntimeHost.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\RootTask.cs" />
@@ -513,6 +512,7 @@
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\CollectibleDecisionPointDetector.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\IInstaller.cs" />
+    <Compile Include="Assets\Scripts\DevTools\DevToolsRuntimeState.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapEntryPoint.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvanceModel.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UltaChargeMechanics.cs" />
@@ -558,7 +558,6 @@
     <None Include="Assets\Content\ui\uxml\QuestsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\WinModal.uxml" />
     <None Include="Assets\Content\ui\uxml\LoseModal.uxml" />
-    <None Include="Assets\AddressableAssetsData\link.xml" />
     <None Include="Assets\Content\ui\uxml\HealthBar.uxml" />
     <None Include="Assets\Content\ui\uxml\PlayButton.uxml" />
     <None Include="Assets\Content\ui\uxml\HomeButton.uxml" />
