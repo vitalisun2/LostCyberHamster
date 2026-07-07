@@ -11,11 +11,13 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         public RoofSwitchLaneWindow(
             ObstacleSnapshot targetRoof,
             int targetRoofIndex,
-            SwitchLaneFireWindowSample fireWindowSample)
+            SwitchLaneFireWindowSample fireWindowSample,
+            float postFireWorldShift)
         {
             TargetRoof = targetRoof;
             TargetRoofIndex = targetRoofIndex;
             FireWindowSample = fireWindowSample;
+            PostFireWorldShift = postFireWorldShift;
         }
 
         /// <summary>
@@ -37,5 +39,10 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         /// Возвращает выбранное окно запуска switch-lane.
         /// </summary>
         public SwitchLaneFireWindowSample FireWindowSample { get; }
+
+        /// <summary>
+        /// Возвращает world-shift от fire до момента, когда runtime action готов отдать управление следующему action.
+        /// </summary>
+        public float PostFireWorldShift { get; }
     }
 }

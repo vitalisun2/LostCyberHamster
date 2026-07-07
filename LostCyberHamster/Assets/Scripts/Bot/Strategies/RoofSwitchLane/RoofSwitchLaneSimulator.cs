@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Simulation;
+using Assets.Scripts.Gameplay.Enums;
 
 namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
 {
@@ -29,7 +30,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 return null;
 
             // Применяет смену линии.
-            HamsterSnapshot nextHamster = PlanningStateTransition.ApplyLaneSwitch(planningState.Hamster, action);
+            HamsterSnapshot nextHamster = ApplyCompletedRoofSwitchLane(planningState.Hamster, action);
 
             // Обрабатывает immediate collectible.
             if (action.FulfillsCollectibleObjective)
@@ -67,7 +68,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 return null;
 
             // Применяет ожидаемый результат смены линии.
-            HamsterSnapshot nextHamster = PlanningStateTransition.ApplyLaneSwitch(planningState.Hamster, action);
+            HamsterSnapshot nextHamster = ApplyCompletedRoofSwitchLane(planningState.Hamster, action);
 
             // Применяет уже достигнутую collectible-ценность.
             if (action.FulfillsCollectibleObjective)
@@ -90,6 +91,32 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 nextHamster,
                 projectionOptions,
                 remainingPostFireWorldShift: remainingPostFireWorldShift);
+        }
+
+        private static HamsterSnapshot ApplyCompletedRoofSwitchLane(
+            HamsterSnapshot hamster,
+            PlannedAction action)
+        {
+            HamsterSnapshot switchedHamster = PlanningStateTransition.ApplyLaneSwitch(hamster, action);
+            if (switchedHamster == null
+                || action.ResultRoofSupportInstanceId.HasValue
+                || switchedHamster.HamsterState != HamsterStateEnum.RunFromRoof)
+            {
+                return switchedHamster;
+            }
+
+            return new HamsterSnapshot(
+                HamsterStateEnum.Run,
+                switchedHamster.IsOnBottomLine,
+                isOnRoof: false,
+                switchedHamster.Energy,
+                switchedHamster.Lives,
+                isShifting: false,
+                roofSupportInstanceId: null,
+                switchedHamster.HamsterLeftX,
+                switchedHamster.HamsterRightX,
+                switchedHamster.HamsterBottomY,
+                switchedHamster.HamsterTopY);
         }
     }
 }

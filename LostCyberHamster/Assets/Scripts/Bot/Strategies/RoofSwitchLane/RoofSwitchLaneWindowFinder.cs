@@ -1,6 +1,9 @@
+using System;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Strategies.PassiveRoofExit;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Bot.Strategies.SwitchLane;
 
 namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
@@ -14,10 +17,12 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         /// Рассчитывает безопасные окна запуска смены линии.
         /// </summary>
         private readonly SwitchLaneFireWindowCalculator _fireWindowCalculator;
+        private readonly PassiveRoofExitPolicy _passiveRoofExitPolicy;
 
         public RoofSwitchLaneWindowFinder(SwitchLaneFireWindowCalculator fireWindowCalculator)
         {
             _fireWindowCalculator = fireWindowCalculator;
+            _passiveRoofExitPolicy = new PassiveRoofExitPolicy();
         }
 
         /// <summary>
@@ -79,13 +84,16 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                     hamster,
                     target.TargetBottomLine,
                     latestFireShift,
-                    out window))
+                    out window,
+                    out string roadLandingDeadEndReason))
             {
                 return true;
             }
 
             // Возвращает общую причину недоступности target lane.
-            deadEndReason = "Нет безопасного окна для смены линии с крыши: целевая линия недоступна ни как крыша, ни как дорога.";
+            deadEndReason = string.IsNullOrEmpty(roadLandingDeadEndReason)
+                ? "Нет безопасного окна для смены линии с крыши: целевая линия недоступна ни как крыша, ни как дорога."
+                : roadLandingDeadEndReason;
             return false;
         }
 
@@ -130,7 +138,8 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
             window = new RoofSwitchLaneWindow(
                 targetRoof,
                 targetRoofIndex,
-                fireWindowSample);
+                fireWindowSample,
+                SwitchLaneTiming.DecisionTravel);
             return true;
         }
 
@@ -142,10 +151,12 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
             HamsterSnapshot hamster,
             bool targetBottomLine,
             float latestFireShift,
-            out RoofSwitchLaneWindow window)
+            out RoofSwitchLaneWindow window,
+            out string deadEndReason)
         {
             // Инициализирует результат.
             window = default;
+            deadEndReason = null;
 
             // Находит безопасное окно без требования roof support.
             if (!_fireWindowCalculator.TrySelectRelevantFireWindowSample(
@@ -159,11 +170,32 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 return false;
             }
 
+            if (!_passiveRoofExitPolicy.TryGetRunFromRoofTravel(out float runFromRoofTravel))
+                return false;
+
+            float runFromRoofStartShift = fireWindowSample.FireShift;
+            float runFromRoofCompletionShift = runFromRoofStartShift + runFromRoofTravel;
+            if (!RoofExitSafety.IsSafeDuringRunFromRoof(
+                    hamster,
+                    worldSnapshot,
+                    targetBottomLine,
+                    runFromRoofStartShift,
+                    runFromRoofCompletionShift,
+                    out deadEndReason))
+            {
+                return false;
+            }
+
+            float postFireWorldShift = Math.Max(
+                SwitchLaneTiming.DecisionTravel,
+                runFromRoofTravel);
+
             // Возвращает road landing.
             window = new RoofSwitchLaneWindow(
                 targetRoof: null,
                 targetRoofIndex: -1,
-                fireWindowSample);
+                fireWindowSample,
+                postFireWorldShift);
             return true;
         }
 

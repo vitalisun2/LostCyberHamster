@@ -182,7 +182,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
         {
             // Рассчитывает timing action-а.
             float fireShift = window.FireWindowSample.FireShift;
-            float completionWorldShift = fireShift + SwitchLaneTiming.DecisionTravel;
+            float completionWorldShift = fireShift + window.PostFireWorldShift;
 
             // Определяет реально выполняемый collectible objective.
             CollectibleObjectiveValue objectiveValue = ResolveImmediateCollectibleObjective(
@@ -215,7 +215,7 @@ namespace Assets.Scripts.Bot.Strategies.RoofSwitchLane
                 triggerX,
                 renderWorldX: triggerX,
                 completionWorldShift: completionWorldShift,
-                postFireWorldShift: SwitchLaneTiming.DecisionTravel,
+                postFireWorldShift: window.PostFireWorldShift,
                 actionTargetIndex,
                 targetObstacleInstanceId: actionTarget.InstanceId,
                 triggerObstacleInstanceId: target.ContextObstacle.InstanceId,
