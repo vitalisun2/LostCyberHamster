@@ -19,6 +19,7 @@
 
 - При создании, удалении или переименовании `.cs`-файлов проверять соответствующие `<Compile Include="..." />` записи в `.csproj`.
 - Для новых файлов и папок под `Assets/` не писать `.meta` вручную. Дать Unity Editor сгенерировать `.meta`, затем коммитить именно сгенерированные файлы.
+- Отслеживаемые Unity-generated изменения (`*.csproj`, `*.sln`, `*.meta`, importer YAML/Addressables metadata), появившиеся в ходе задачи, не оставлять dirty: stage/commit/push вместе с рабочей веткой, если нет доказательства, что это ошибочная генерация или unrelated изменение пользователя.
 - **Editor tools** в `Assets/Editor/`.
 - **Runtime scripts** в `Assets/Scripts/`.
 
