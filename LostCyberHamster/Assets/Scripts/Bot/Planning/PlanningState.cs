@@ -147,13 +147,16 @@ namespace Assets.Scripts.Bot.Planning
                 if (!IsCurrentRoofSupport(hamster, obstacle))
                     return 0;
 
-                // Логирует пропуск текущей опоры крыши и возвращает следующий obstacle.
-                BotDiagnostics.Log(
-                BotDiagnosticCategory.Planning,
-                BotDiagnosticLevel.Verbose,
-                    $"[Bot PLAN] SKIP_ROOF_SUPPORT obstacle={obstacle.ObstacleType} " +
-                    $"index={obstacleIndex} instanceId={obstacle.InstanceId} " +
-                    $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2}");
+                if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.Planning, BotDiagnosticLevel.Verbose))
+                {
+                    BotDiagnostics.Log(
+                        BotDiagnosticCategory.Planning,
+                        BotDiagnosticLevel.Verbose,
+                        $"[Bot PLAN] SKIP_ROOF_SUPPORT obstacle={obstacle.ObstacleType} " +
+                        $"index={obstacleIndex} instanceId={obstacle.InstanceId} " +
+                        $"leftX={obstacle.LeftX:F2} rightX={obstacle.RightX:F2}");
+                }
+
                 return obstacleIndex + 1;
             }
 

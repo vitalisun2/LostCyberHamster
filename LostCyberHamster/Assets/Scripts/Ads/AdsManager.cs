@@ -31,7 +31,6 @@ namespace GameAds
         {
 #if UNITY_EDITOR
             _isInitialized = false;
-            DebugManager.DiagStability("[ADS] Unity Ads initialization skipped in Editor.");
             return;
 #endif
 #if UNITY_IOS

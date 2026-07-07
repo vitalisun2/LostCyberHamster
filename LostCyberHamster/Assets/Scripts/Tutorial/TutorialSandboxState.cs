@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using GameManagement;
 using UnityEngine;
 using Vues.GameCore;
@@ -117,9 +118,9 @@ namespace Assets.Scripts.Tutorial
                 PlayerPrefs.GetString(_playerDataPrefsKey, string.Empty));
         }
 
+        [Conditional("LCH_VERBOSE_TUTORIAL_DIAGNOSTICS")]
         private static void Log(string message)
         {
-            DebugManager.DiagStability($"[TUTORIAL SANDBOX] {message}");
         }
 
         private readonly struct Snapshot

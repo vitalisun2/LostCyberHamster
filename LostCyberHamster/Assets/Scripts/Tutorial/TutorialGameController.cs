@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Assets.Scripts;
 using Assets.Scripts.Common;
@@ -713,9 +714,9 @@ namespace Assets.Scripts.Tutorial
                 $"targets={_superHitTargets.Count}");
         }
 
+        [Conditional("LCH_VERBOSE_TUTORIAL_DIAGNOSTICS")]
         private static void LogTutorial(string message)
         {
-            DebugManager.DiagStability($"[TUTORIAL] {message}");
         }
 
         private string GetDamageSuffix()

@@ -416,8 +416,11 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         private static void LogNoDecisionPoint(PlanningState planningState)
         {
-            if (planningState?.Hamster == null)
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Strategy, BotDiagnosticLevel.Verbose)
+                || planningState?.Hamster == null)
+            {
                 return;
+            }
 
             BotDiagnostics.Log(
                 BotDiagnosticCategory.Strategy,
@@ -433,8 +436,12 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         private static void LogNoActions(PlanningState planningState, DecisionPoint decisionPoint)
         {
-            if (planningState == null || decisionPoint?.Chain == null)
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Strategy, BotDiagnosticLevel.Verbose)
+                || planningState == null
+                || decisionPoint?.Chain == null)
+            {
                 return;
+            }
 
             ObstacleChain chain = decisionPoint.Chain;
             ObstacleChainElement firstElement = chain.First;

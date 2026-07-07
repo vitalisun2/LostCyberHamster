@@ -60,12 +60,16 @@ namespace Assets.Scripts.Bot.Strategies.PassiveCollect
                 return PlanningStrategyResult.NotApplicable();
             }
 
-            BotDiagnostics.Log(
-                BotDiagnosticCategory.Strategy,
-                BotDiagnosticLevel.Verbose,
-                $"[Bot PLAN] PassiveCollect candidate kind={model.ObjectiveValue.Kind} " +
-                $"value={model.ObjectiveValue.EffectiveGain} target={model.TargetCollectible.ObstacleType} " +
-                $"targetIndex={model.TargetCollectibleIndex} shift={model.CompletionWorldShift:F2}");
+            if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.Strategy, BotDiagnosticLevel.Verbose))
+            {
+                BotDiagnostics.Log(
+                    BotDiagnosticCategory.Strategy,
+                    BotDiagnosticLevel.Verbose,
+                    $"[Bot PLAN] PassiveCollect candidate kind={model.ObjectiveValue.Kind} " +
+                    $"value={model.ObjectiveValue.EffectiveGain} target={model.TargetCollectible.ObstacleType} " +
+                    $"targetIndex={model.TargetCollectibleIndex} shift={model.CompletionWorldShift:F2}");
+            }
+
             return PlanningStrategyResult.FromAction(BuildAction(model));
         }
 

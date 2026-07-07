@@ -151,13 +151,16 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 ? obstacles[result.TargetIndex]
                 : null;
 
-            BotDiagnostics.Log(
-                BotDiagnosticCategory.RuntimeSafety,
-                BotDiagnosticLevel.Verbose,
-                $"[SUPER_JUMP_DIAG] outcome state={result.State} targetIndex={result.TargetIndex} " +
-                $"target={FormatObstacle(target)} lane={(_isOnBottomLine.Value ? "bottom" : "top")} " +
-                $"hamsterX=[{hamsterLeftX:F2},{hamsterRightX:F2}] " +
-                $"centerX={_characterTransform.position.x:F2} shift={_superJumpShift:F2} energy={_energy.Value}");
+            if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.RuntimeSafety, BotDiagnosticLevel.Verbose))
+            {
+                BotDiagnostics.Log(
+                    BotDiagnosticCategory.RuntimeSafety,
+                    BotDiagnosticLevel.Verbose,
+                    $"[SUPER_JUMP_DIAG] outcome state={result.State} targetIndex={result.TargetIndex} " +
+                    $"target={FormatObstacle(target)} lane={(_isOnBottomLine.Value ? "bottom" : "top")} " +
+                    $"hamsterX=[{hamsterLeftX:F2},{hamsterRightX:F2}] " +
+                    $"centerX={_characterTransform.position.x:F2} shift={_superJumpShift:F2} energy={_energy.Value}");
+            }
 
             return new JumpResult(result.State, target);
         }

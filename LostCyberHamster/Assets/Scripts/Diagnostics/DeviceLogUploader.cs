@@ -18,9 +18,20 @@ namespace Assets.Scripts.Diagnostics
         private const string _diagnosticLogEncoding = "utf-8";
 
         private static readonly string _sessionStartedAtUtc = DateTime.UtcNow.ToString("O");
+
         public static void UploadDiagnosticLog(string reason)
         {
+            if (!IsUploadEnabled())
+            {
+                return;
+            }
+
             DeviceLogUploadRunner.Enqueue(reason);
+        }
+
+        public static bool IsUploadEnabled()
+        {
+            return IsUploadEnabled(logDisabled: false);
         }
 
         internal static IEnumerator UploadDiagnosticLogCoroutine(string reason)
@@ -42,7 +53,7 @@ namespace Assets.Scripts.Diagnostics
             try
             {
                 settings = LoadSettings();
-                if (!ShouldUpload(settings))
+                if (!ShouldUpload(settings, logDisabled: false))
                 {
                     return false;
                 }
@@ -79,14 +90,19 @@ namespace Assets.Scripts.Diagnostics
             }
         }
 
-        private static bool ShouldUpload(DeviceLogUploadSettings settings)
+        private static bool IsUploadEnabled(bool logDisabled)
+        {
+            return ShouldUpload(LoadSettings(), logDisabled);
+        }
+
+        private static bool ShouldUpload(DeviceLogUploadSettings settings, bool logDisabled)
         {
             bool shouldUpload = settings != null
                 && settings.enabled
                 && settings.HasEndpoint
                 && settings.IsPlatformAllowed();
 
-            if (!shouldUpload)
+            if (!shouldUpload && logDisabled)
             {
                 DebugManager.DiagStability(
                     $"[DEVICE LOG] upload disabled settingsNull={settings == null} " +
@@ -162,10 +178,6 @@ namespace Assets.Scripts.Diagnostics
             ApplyCommonHeaders(settings, request);
 
             yield return SendWithTimeoutCoroutine(request, settings.UploadTimeoutSeconds);
-
-            DebugManager.DiagStability(
-                $"[DEVICE LOG] health probe reason={reason} result={request.result} " +
-                $"responseCode={request.responseCode} error={request.error}");
         }
 
         private static IEnumerator SendPayloadCoroutine(DeviceLogUploadSettings settings, string json, string reason)
@@ -185,9 +197,6 @@ namespace Assets.Scripts.Diagnostics
                     $"responseCode={request.responseCode} error={request.error}");
                 yield break;
             }
-
-            DebugManager.DiagStability(
-                $"[DEVICE LOG] upload completed reason={reason} responseCode={request.responseCode}");
         }
 
         private static IEnumerator SendWithTimeoutCoroutine(UnityWebRequest request, int timeoutSeconds)

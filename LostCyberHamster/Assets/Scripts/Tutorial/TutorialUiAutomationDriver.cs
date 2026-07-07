@@ -15,15 +15,12 @@ namespace Assets.Scripts.Tutorial
             var shouldAutoPlay = TutorialAutomationSettings.ShouldAutoPlay();
             if (!shouldAutoPlay || target == null || target.panel == null)
             {
-                DebugManager.DiagStability(
-                    $"[TUTORIAL UI] automation skipped shouldAutoPlay={shouldAutoPlay} targetNull={target == null} panelNull={target?.panel == null}");
                 return;
             }
 
             var unityContext = SynchronizationContext.Current;
             if (unityContext == null)
             {
-                DebugManager.DiagStability($"[TUTORIAL UI] automation skipped missing unity context target={target.name}");
                 return;
             }
 
@@ -50,14 +47,9 @@ namespace Assets.Scripts.Tutorial
                 || target == null
                 || target.panel == null)
             {
-                DebugManager.DiagStability(
-                    $"[TUTORIAL UI] automation dispatch skipped shouldAutoPlay={shouldAutoPlay} " +
-                    $"stale={scheduleVersion != _scheduleVersion} currentAction={TutorialMetaCoordinator.CurrentAction} " +
-                    $"scheduledAction={action} targetNull={target == null} panelNull={target?.panel == null}");
                 return;
             }
 
-            DebugManager.DiagStability($"[TUTORIAL UI] automation execute action={action} target={target.name}");
             DispatchPointerClick(target);
         }
 

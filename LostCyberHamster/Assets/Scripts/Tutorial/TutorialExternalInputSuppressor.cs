@@ -27,7 +27,6 @@ namespace Assets.Scripts.Tutorial
 
             bot.ToggleEnabled();
             _disabledBot = bot;
-            DebugManager.DiagStability("[TUTORIAL] external bot input suppressed");
         }
 
         public void Restore()
@@ -43,7 +42,6 @@ namespace Assets.Scripts.Tutorial
             }
 
             _disabledBot = null;
-            DebugManager.DiagStability("[TUTORIAL] external bot input restored");
         }
 
         public void Dispose()

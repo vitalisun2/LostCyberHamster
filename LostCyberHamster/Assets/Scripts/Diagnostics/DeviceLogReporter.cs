@@ -1,6 +1,4 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Assets.Scripts.Diagnostics
 {
@@ -15,6 +13,11 @@ namespace Assets.Scripts.Diagnostics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
+            if (!DeviceLogUploader.IsUploadEnabled())
+            {
+                return;
+            }
+
             if (_instance != null)
             {
                 return;
@@ -31,13 +34,6 @@ namespace Assets.Scripts.Diagnostics
             Application.logMessageReceived += OnLogMessageReceived;
             Application.logMessageReceivedThreaded -= OnLogMessageReceivedThreaded;
             Application.logMessageReceivedThreaded += OnLogMessageReceivedThreaded;
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-            SceneManager.sceneLoaded += OnSceneLoaded;
-
-            DebugManager.DiagStability("[DEVICE LOG] reporter awake");
-            DeviceLogUploader.UploadDiagnosticLog("session_started_awake");
-            StartCoroutine(new DeviceLogStartupProbe().Run());
-            StartCoroutine(UploadStartupCheckpoints());
         }
 
         private void OnApplicationPause(bool pauseStatus)
@@ -57,38 +53,10 @@ namespace Assets.Scripts.Diagnostics
         {
             Application.logMessageReceived -= OnLogMessageReceived;
             Application.logMessageReceivedThreaded -= OnLogMessageReceivedThreaded;
-            SceneManager.sceneLoaded -= OnSceneLoaded;
             if (_instance == this)
             {
                 _instance = null;
             }
-        }
-
-        private IEnumerator UploadStartupCheckpoints()
-        {
-            yield return null;
-            DeviceLogUploader.UploadDiagnosticLog("startup_after_first_frame");
-
-            yield return new WaitForSecondsRealtime(2f);
-            DeviceLogUploader.UploadDiagnosticLog("startup_after_2s");
-        }
-
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            DebugManager.DiagStability($"[DEVICE LOG] scene loaded name={scene.name} mode={mode}");
-            DeviceLogUploader.UploadDiagnosticLog($"scene_loaded_{scene.name}");
-            StartCoroutine(UploadSceneLoadedCheckpoints(scene.name));
-        }
-
-        private IEnumerator UploadSceneLoadedCheckpoints(string sceneName)
-        {
-            yield return null;
-            DebugManager.DiagStability($"[DEVICE LOG] scene first frame name={sceneName}");
-            DeviceLogUploader.UploadDiagnosticLog($"scene_first_frame_{sceneName}");
-
-            yield return new WaitForSecondsRealtime(1f);
-            DebugManager.DiagStability($"[DEVICE LOG] scene after 1s name={sceneName}");
-            DeviceLogUploader.UploadDiagnosticLog($"scene_after_1s_{sceneName}");
         }
 
         private void OnLogMessageReceived(string condition, string stackTrace, LogType type)

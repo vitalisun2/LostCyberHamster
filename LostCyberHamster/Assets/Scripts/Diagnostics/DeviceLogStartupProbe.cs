@@ -16,7 +16,6 @@ namespace Assets.Scripts.Diagnostics
             var settings = LoadSettings();
             if (settings == null || !settings.enabled || !settings.HasEndpoint || !settings.IsPlatformAllowed())
             {
-                DebugManager.DiagStability("[DEVICE LOG] startup probe skipped settings unavailable or disabled");
                 yield break;
             }
 
@@ -37,10 +36,6 @@ namespace Assets.Scripts.Diagnostics
             ApplyCommonHeaders(settings, request);
 
             yield return SendWithTimeout(request, settings.UploadTimeoutSeconds);
-
-            DebugManager.DiagStability(
-                $"[DEVICE LOG] startup GET health result={request.result} " +
-                $"responseCode={request.responseCode} error={request.error}");
         }
 
         private static IEnumerator SendFormProbe(DeviceLogUploadSettings settings)
@@ -57,10 +52,6 @@ namespace Assets.Scripts.Diagnostics
             ApplyCommonHeaders(settings, request);
 
             yield return SendWithTimeout(request, settings.UploadTimeoutSeconds);
-
-            DebugManager.DiagStability(
-                $"[DEVICE LOG] startup POST probe result={request.result} " +
-                $"responseCode={request.responseCode} error={request.error}");
         }
 
         private static IEnumerator SendWithTimeout(UnityWebRequest request, int timeoutSeconds)

@@ -143,8 +143,13 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningBranch> branches,
             PlanningBranch selectedBranch)
         {
-            if (rootState?.Hamster == null || branches == null || branches.Count == 0)
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || rootState?.Hamster == null
+                || branches == null
+                || branches.Count == 0)
+            {
                 return;
+            }
 
             if (!ShouldLogGroundJumpOverBranches(branches, selectedBranch))
                 return;
@@ -160,6 +165,11 @@ namespace Assets.Scripts.Bot.Planning
                 $"projection={rootState.ProjectionWorldShift:F2} " +
                 $"selected={FormatBranch(selectedBranch)} " +
                 $"candidates={FormatBranches(branches)}");
+        }
+
+        private static bool ShouldLogBranchSelectionDiagnostics()
+        {
+            return BotDiagnostics.IsEnabled(BotDiagnosticCategory.BranchSelection, BotDiagnosticLevel.Verbose);
         }
 
         private static bool ShouldLogGroundJumpOverBranches(
@@ -194,8 +204,12 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningDeadEndBranch> deadEndBranches,
             PlanningBranch selectedBranch)
         {
-            if (rootState?.Hamster == null || selectedBranch?.Actions == null)
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || rootState?.Hamster == null
+                || selectedBranch?.Actions == null)
+            {
                 return;
+            }
 
             if (rootState.Hamster.Energy > 15 || !HasSwitchBeforeRoadAndRoof(selectedBranch))
                 return;
@@ -238,8 +252,12 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningDeadEndBranch> deadEndBranches,
             PlanningDeadEndBranch selectedDeadEndBranch)
         {
-            if (rootState?.Hamster == null || selectedDeadEndBranch?.Branch == null)
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || rootState?.Hamster == null
+                || selectedDeadEndBranch?.Branch == null)
+            {
                 return;
+            }
 
             PlanningBranch branch = selectedDeadEndBranch.Branch;
             if (!HasSmallGroundSuperJumpOver(branch) && !HasSwitchBeforeRoadAndRoof(branch))
@@ -260,8 +278,11 @@ namespace Assets.Scripts.Bot.Planning
 
         private static void LogPassiveAdvanceIntoRoofEntry(PlanningBranch branch)
         {
-            if (!HasPassiveAdvanceIntoRoofEntry(branch))
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || !HasPassiveAdvanceIntoRoofEntry(branch))
+            {
                 return;
+            }
 
             BotDiagnostics.Log(
                 BotDiagnosticCategory.BranchSelection,
@@ -278,8 +299,11 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningDeadEndBranch> deadEndBranches,
             PlanningBranch selectedBranch)
         {
-            if (!HasRoofExitIntoSwitch(selectedBranch))
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || !HasRoofExitIntoSwitch(selectedBranch))
+            {
                 return;
+            }
 
             BotDiagnostics.Log(
                 BotDiagnosticCategory.BranchSelection,
@@ -301,7 +325,8 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningDeadEndBranch> deadEndBranches,
             PlanningBranch selectedBranch)
         {
-            if (rootState?.Hamster == null
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || rootState?.Hamster == null
                 || selectedBranch?.Actions == null
                 || selectedBranch.Actions.Count == 0
                 || rootState.Hamster.HamsterState != Assets.Scripts.Gameplay.Enums.HamsterStateEnum.RoofRun
@@ -330,7 +355,8 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningDeadEndBranch> deadEndBranches,
             PlanningBranch selectedBranch)
         {
-            if (rootState?.Hamster == null
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || rootState?.Hamster == null
                 || !StartsWithJumpOverIntoSwitch(selectedBranch)
                 || !HasActionKind(selectedBranch, BotActionKind.PassiveRoofExit))
             {
@@ -356,7 +382,8 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningBranch> branches,
             PlanningBranch selectedBranch)
         {
-            if (rootState?.Hamster == null
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || rootState?.Hamster == null
                 || !HasLeadingSmallAliveSuperJumpOn(selectedBranch))
             {
                 return;
@@ -381,8 +408,12 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningDeadEndBranch> deadEndBranches,
             PlanningBranch selectedBranch)
         {
-            if (rootState?.Hamster == null || rootState.Hamster.Energy > 45)
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || rootState?.Hamster == null
+                || rootState.Hamster.Energy > 45)
+            {
                 return;
+            }
 
             if (!HasEnergyCollectibleAction(selectedBranch)
                 && !HasEnergyCollectibleBranch(branches)
@@ -410,8 +441,11 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningDeadEndBranch> deadEndBranches,
             PlanningDeadEndBranch selectedDeadEndBranch)
         {
-            if (!HasRoofExitIntoSwitch(selectedDeadEndBranch?.Branch))
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || !HasRoofExitIntoSwitch(selectedDeadEndBranch?.Branch))
+            {
                 return;
+            }
 
             BotDiagnostics.Log(
                 BotDiagnosticCategory.BranchSelection,
@@ -431,7 +465,8 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningDeadEndBranch> deadEndBranches,
             PlanningDeadEndBranch selectedDeadEndBranch)
         {
-            if (rootState?.Hamster == null
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || rootState?.Hamster == null
                 || !HasActionKind(selectedDeadEndBranch?.Branch, BotActionKind.JumpFromRoof))
             {
                 return;
@@ -455,7 +490,8 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningDeadEndBranch> deadEndBranches,
             PlanningDeadEndBranch selectedDeadEndBranch)
         {
-            if (rootState?.Hamster == null
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || rootState?.Hamster == null
                 || selectedDeadEndBranch?.Branch?.Actions == null
                 || selectedDeadEndBranch.Branch.Actions.Count != 1
                 || selectedDeadEndBranch.Branch.Actions[0]?.Kind != BotActionKind.SwitchLane)
@@ -481,8 +517,12 @@ namespace Assets.Scripts.Bot.Planning
             IReadOnlyList<PlanningDeadEndBranch> deadEndBranches,
             PlanningDeadEndBranch selectedDeadEndBranch)
         {
-            if (rootState?.Hamster == null || rootState.Hamster.Energy > 45)
+            if (!ShouldLogBranchSelectionDiagnostics()
+                || rootState?.Hamster == null
+                || rootState.Hamster.Energy > 45)
+            {
                 return;
+            }
 
             if (!StartsWithSwitchJumpPassive(selectedDeadEndBranch?.Branch)
                 && !HasEnergyCollectibleDeadEnd(deadEndBranches)

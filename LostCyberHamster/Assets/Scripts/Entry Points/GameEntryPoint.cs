@@ -38,22 +38,8 @@ namespace Assets.Scripts.Entry_Points
 
         }
 
-        private void Awake()
-        {
-            DebugManager.DiagStability("[GAME ENTRY] awake");
-        }
-
-        private void OnEnable()
-        {
-            DebugManager.DiagStability("[GAME ENTRY] on enable");
-        }
-
         private async Task Start()
         {
-            DebugManager.DiagStability(
-                $"[GAME ENTRY] start currentLevel={GameDataManager.PlayerData?.CurrentLevel} " +
-                $"pipelineNull={taskPipeline == null} rootNull={taskPipeline?.Root == null}");
-
             try
             {
                 if (taskPipeline != null && taskPipeline.Root != null)
@@ -67,14 +53,11 @@ namespace Assets.Scripts.Entry_Points
                 throw;
             }
 
-            DebugManager.DiagStability("[GAME ENTRY] pipeline completed");
-
             // Если интро не было (например, тестовый уровень), игра ещё в OFF — запускаем.
             // Если интро было, состояние INTRO или PLAYING — Intro.EndIntro() сам вызовет StartGame().
             var gm = (GameManager)_bundle["gameManager"];
             if (gm.State == GameState.OFF)
             {
-                DebugManager.DiagStability("[GAME ENTRY] auto start game from OFF");
                 try
                 {
                     gm.StartGame();
@@ -85,36 +68,26 @@ namespace Assets.Scripts.Entry_Points
                     throw;
                 }
             }
-
-            DebugManager.DiagStability($"[GAME ENTRY] completed gmState={gm.State}");
         }
 
         private async Task ExecuteTask(ILoadingTask task, Dictionary<string, object> bundle)
         {
             var taskName = GetTaskName(task);
-            DebugManager.DiagStability($"[GAME ENTRY] task begin name={taskName}");
             try
             {
                 await task.LoadAsync(bundle);
-                DebugManager.DiagStability($"[GAME ENTRY] task load completed name={taskName}");
 
                 if (task is ILoadingTaskParallel parallelTask)
                 {
-                    DebugManager.DiagStability(
-                        $"[GAME ENTRY] task children parallel name={taskName} count={parallelTask.Children.Count}");
                     await Task.WhenAll(parallelTask.Children.Select(c => ExecuteTask(c, bundle)));
                 }
                 else if (task is ILoadingTaskSequence sequenceTask)
                 {
-                    DebugManager.DiagStability(
-                        $"[GAME ENTRY] task children sequence name={taskName} count={sequenceTask.Children.Count}");
                     foreach (ILoadingTask child in sequenceTask.Children)
                     {
                         await ExecuteTask(child, bundle);
                     }
                 }
-
-                DebugManager.DiagStability($"[GAME ENTRY] task completed name={taskName}");
             }
             catch (Exception exception)
             {

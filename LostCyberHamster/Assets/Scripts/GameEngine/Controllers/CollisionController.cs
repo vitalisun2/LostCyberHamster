@@ -250,12 +250,15 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void HandleCollectable(Obstacle obstacle)
     {
-        BotDiagnostics.Log(
-            BotDiagnosticCategory.RuntimeEvents,
-            BotDiagnosticLevel.Essential,
-            $"[CollisionController] collect obstacle={FormatObstacle(obstacle)} " +
-            $"state={_hamster.HamsterState.Value} lives={_hamster.Lives.Value} " +
-            $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")}");
+        if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.RuntimeEvents))
+        {
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.RuntimeEvents,
+                BotDiagnosticLevel.Essential,
+                $"[CollisionController] collect obstacle={FormatObstacle(obstacle)} " +
+                $"state={_hamster.HamsterState.Value} lives={_hamster.Lives.Value} " +
+                $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")}");
+        }
 
         _hamster.CollectCoinsOrBonusAction.Invoke(obstacle);
         UnspawnObstacle(obstacle);
@@ -266,17 +269,20 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void HandleDamage(Obstacle obstacle, string triggerSource, string reason)
     {
-        BotDiagnostics.Log(
-            BotDiagnosticCategory.RuntimeEvents,
-            BotDiagnosticLevel.Essential,
-            $"[CollisionController] damage source={triggerSource} reason={reason} " +
-            $"state={_hamster.HamsterState.Value} livesBefore={_hamster.Lives.Value} " +
-            $"isDamaged={_hamster.IsDamaged.Value} protected={_hamster.IsProtected.Value} " +
-            $"destructive={_hamster.IsDestructiveOnCollision.Value} " +
-            $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
-            $"{FormatHamsterBounds()} " +
-            $"obstacle={FormatObstacle(obstacle)} " +
-            $"pending={FormatObstacle(_hamster.PendingJumpedOnObstacle.Value)}");
+        if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.RuntimeEvents))
+        {
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.RuntimeEvents,
+                BotDiagnosticLevel.Essential,
+                $"[CollisionController] damage source={triggerSource} reason={reason} " +
+                $"state={_hamster.HamsterState.Value} livesBefore={_hamster.Lives.Value} " +
+                $"isDamaged={_hamster.IsDamaged.Value} protected={_hamster.IsProtected.Value} " +
+                $"destructive={_hamster.IsDestructiveOnCollision.Value} " +
+                $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
+                $"{FormatHamsterBounds()} " +
+                $"obstacle={FormatObstacle(obstacle)} " +
+                $"pending={FormatObstacle(_hamster.PendingJumpedOnObstacle.Value)}");
+        }
 
         // Отправляем событие урона, если защита не активна.
         if (!_hamster.IsProtected.Value)

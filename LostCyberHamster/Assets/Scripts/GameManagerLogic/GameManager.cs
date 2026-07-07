@@ -39,7 +39,6 @@ namespace Assets.Scripts.GameManagerLogic
 
         private void Awake()
         {
-            DebugManager.DiagStability("[GAME MANAGER] awake begin");
             if (_instance != null && _instance != this)
             {
                 Debug.LogError("Multiple instances of GameManager detected. Destroying duplicate instance.");
@@ -55,7 +54,6 @@ namespace Assets.Scripts.GameManagerLogic
 #if UNITY_ANDROID
             SetupFramePacing();
 #endif
-            DebugManager.DiagStability("[GAME MANAGER] awake completed");
         }
 
         private void Update()
@@ -164,10 +162,6 @@ namespace Assets.Scripts.GameManagerLogic
         [Button]
         public void StartGame()
         {
-            DebugManager.DiagStability(
-                $"[GAME START] begin state={_state} listeners={_listeners.Count} " +
-                $"updateListeners={_updateListeners.Count} lateUpdateListeners={_lateUpdateListeners.Count}");
-
             foreach (var listener in _listeners)
             {
                 if (listener is not Listeners.IGameStartListener startListener)
@@ -176,11 +170,9 @@ namespace Assets.Scripts.GameManagerLogic
                 }
 
                 string listenerName = GetListenerName(listener);
-                DebugManager.DiagStability($"[GAME START] listener begin name={listenerName}");
                 try
                 {
                     startListener.OnStart();
-                    DebugManager.DiagStability($"[GAME START] listener completed name={listenerName}");
                 }
                 catch (Exception exception)
                 {

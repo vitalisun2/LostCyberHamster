@@ -36,7 +36,6 @@ public class Intro : MonoBehaviour
 
     public void Initialize(List<Sprite> introSprites)
     {
-        DebugManager.DiagStability($"[INTRO] initialize begin sprites={introSprites?.Count ?? 0}");
         try
         {
             _uiDocument = GameObject.Find("[UI]").GetComponent<UIDocument>();
@@ -329,11 +328,9 @@ public class Intro : MonoBehaviour
         // Делает EndIntro идемпотентным — вызовется один раз
         if (_ended)
         {
-            DebugManager.DiagStability("[INTRO] end ignored already ended");
             return;
         }
 
-        DebugManager.DiagStability("[INTRO] end begin");
         _ended = true;
 
         // Корректно отписываем кнопку Skip (важно — тем же делегатом)
@@ -347,7 +344,6 @@ public class Intro : MonoBehaviour
 
         // Запуск игры допускаем только из состояния INTRO, чтобы не «оживать» после луз-модалки
         var gm = LevelController.Instance.LevelData.GameManager;
-        DebugManager.DiagStability($"[INTRO] before start game gmState={gm.State}");
         if (gm.State == Assets.Scripts.GameManagerLogic.GameState.INTRO)
         {
             try
@@ -362,7 +358,6 @@ public class Intro : MonoBehaviour
         }
 
         LevelDataProvider.ReleaseIntroSprites();
-        DebugManager.DiagStability("[INTRO] end completed");
     }
 
     private static void LogIntroException(string context, Exception exception)

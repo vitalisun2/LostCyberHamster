@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "allowInEditor": true,
+  "allowInEditor": false,
   "allowOnAndroid": true,
   "allowOnOtherPlatforms": false,
   "endpointUrl": "https://ladle-substance-spray.ngrok-free.dev/upload",

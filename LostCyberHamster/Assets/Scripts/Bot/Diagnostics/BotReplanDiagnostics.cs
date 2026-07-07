@@ -11,8 +11,12 @@ namespace Assets.Scripts.Bot.Diagnostics
     {
         public static void LogPlan(BotPlan plan, string formattedPlanChain)
         {
-            if (plan == null || !plan.HasActions)
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Replan)
+                || plan == null
+                || !plan.HasActions)
+            {
                 return;
+            }
 
             BotDiagnostics.Log(
                 BotDiagnosticCategory.Replan,
@@ -29,8 +33,12 @@ namespace Assets.Scripts.Bot.Diagnostics
             string formattedProjection)
         {
             BotPlan plan = buildResult?.Plan;
-            if (plan == null || !plan.HasActions)
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Replan, BotDiagnosticLevel.Verbose)
+                || plan == null
+                || !plan.HasActions)
+            {
                 return;
+            }
 
             BotDiagnostics.Log(
                 BotDiagnosticCategory.Replan,
@@ -73,6 +81,9 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         public static void LogDeadEndHeader(string formattedReplanReasons, string deadEndDetails)
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.DeadEnd))
+                return;
+
             BotDiagnostics.Log(
                 BotDiagnosticCategory.DeadEnd,
                 BotDiagnosticLevel.Essential,
@@ -86,6 +97,9 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         public static void LogDeadEndCause(string cause)
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.DeadEnd))
+                return;
+
             BotDiagnostics.Log(
                 BotDiagnosticCategory.DeadEnd,
                 BotDiagnosticLevel.Essential,
@@ -94,6 +108,9 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         public static void LogDeadEndWithoutReasons()
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.DeadEnd))
+                return;
+
             BotDiagnostics.Log(
                 BotDiagnosticCategory.DeadEnd,
                 BotDiagnosticLevel.Essential,
@@ -105,6 +122,9 @@ namespace Assets.Scripts.Bot.Diagnostics
             string patternName,
             string obstacleIds)
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Pattern))
+                return;
+
             BotDiagnostics.Log(
                 BotDiagnosticCategory.Pattern,
                 BotDiagnosticLevel.Essential,
@@ -117,6 +137,9 @@ namespace Assets.Scripts.Bot.Diagnostics
             string patternName,
             string obstacleDetails)
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Pattern, BotDiagnosticLevel.Verbose))
+                return;
+
             BotDiagnostics.Log(
                 BotDiagnosticCategory.Pattern,
                 BotDiagnosticLevel.Verbose,

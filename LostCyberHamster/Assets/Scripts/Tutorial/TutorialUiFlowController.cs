@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using GameManagement;
 using LostCyberHamster.UI;
@@ -203,9 +204,9 @@ namespace Assets.Scripts.Tutorial
             return string.Join(",", SkinManager.AvailableSkins.Select(skin => skin.Id));
         }
 
+        [Conditional("LCH_VERBOSE_TUTORIAL_DIAGNOSTICS")]
         private static void Log(string message)
         {
-            DebugManager.DiagStability($"[TUTORIAL UI] {message}");
         }
     }
 }

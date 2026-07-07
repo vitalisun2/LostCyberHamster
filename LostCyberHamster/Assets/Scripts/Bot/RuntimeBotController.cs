@@ -245,7 +245,6 @@ namespace Assets.Scripts.Bot
         public void ToggleEnabled()
         {
             SetEnabled(!IsEnabled);
-            Debug.Log(IsEnabled ? "[Bot] ON" : "[Bot] OFF");
         }
 
         /// <summary>
@@ -686,7 +685,7 @@ namespace Assets.Scripts.Bot
 
             _executor.SetPlan(plan);
             if (plan.HasActions)
-                LogPlanActivation(plan, replanReasons);
+                LogPlanActivation(plan);
         }
 
         /// <summary>
@@ -765,44 +764,19 @@ namespace Assets.Scripts.Bot
             if (deadEndReport == null)
                 return;
 
-            string header =
-                $"[Bot DEAD_END] confirmed=true reason={FormatReplanReasons(replanReasons)} " +
-                $"livesLost={livesLost} lives={(_hamster != null ? _hamster.Lives.Value : -1)} " +
-                $"depth={deadEndReport.Depth} " +
-                $"nextObstacleIndex={deadEndReport.NextObstacleIndex} " +
-                $"projection={deadEndReport.ProjectionWorldShift:F2}";
-            string causes = FormatDeadEndReasons(deadEndReport);
-
-            BotReplanDiagnostics.LogDeadEndHeader(
-                FormatReplanReasons(replanReasons),
-                $"livesLost={livesLost} lives={(_hamster != null ? _hamster.Lives.Value : -1)} " +
-                $"depth={deadEndReport.Depth} " +
-                $"nextObstacleIndex={deadEndReport.NextObstacleIndex} " +
-                $"projection={deadEndReport.ProjectionWorldShift:F2}");
-            LogDeadEndReasonLines(deadEndReport);
-            Debug.LogWarning($"{header}{Environment.NewLine}causes:{Environment.NewLine}{causes}");
-            BotRuntimeEventDiagnostics.LogLevelFailed();
-            _gameManager?.Pause();
-        }
-
-        /// <summary>
-        /// Форматирует причины dead-end от применимых стратегий.
-        /// </summary>
-        private static string FormatDeadEndReasons(PlanningDeadEndReport deadEndReport)
-        {
-            if (deadEndReport?.Reasons == null || deadEndReport.Reasons.Count == 0)
-                return "Применимые стратегии не вернули действия, но dead-end причины не собраны.";
-
-            var builder = new StringBuilder();
-            for (int reasonIndex = 0; reasonIndex < deadEndReport.Reasons.Count; reasonIndex++)
+            if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.DeadEnd))
             {
-                if (reasonIndex > 0)
-                    builder.AppendLine();
-
-                builder.Append(deadEndReport.Reasons[reasonIndex]);
+                BotReplanDiagnostics.LogDeadEndHeader(
+                    FormatReplanReasons(replanReasons),
+                    $"livesLost={livesLost} lives={(_hamster != null ? _hamster.Lives.Value : -1)} " +
+                    $"depth={deadEndReport.Depth} " +
+                    $"nextObstacleIndex={deadEndReport.NextObstacleIndex} " +
+                    $"projection={deadEndReport.ProjectionWorldShift:F2}");
+                LogDeadEndReasonLines(deadEndReport);
             }
 
-            return builder.ToString();
+            BotRuntimeEventDiagnostics.LogLevelFailed();
+            _gameManager?.Pause();
         }
 
         /// <summary>
@@ -1347,12 +1321,12 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Пишет краткую диагностическую строку для только что активированного плана.
         /// </summary>
-        private static void LogPlanActivation(BotPlan plan, BotReplanReason replanReasons)
+        private static void LogPlanActivation(BotPlan plan)
         {
-            string message = $"[Bot PLAN] {FormatPlanChain(plan)}";
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Replan))
+                return;
 
             BotReplanDiagnostics.LogPlan(plan, FormatPlanChain(plan));
-            Debug.Log(message);
         }
 
         /// <summary>
@@ -1362,6 +1336,9 @@ namespace Assets.Scripts.Bot
             PlanBuildResult buildResult,
             BotReplanReason replanReasons)
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Replan, BotDiagnosticLevel.Verbose))
+                return;
+
             BotPlan plan = buildResult?.Plan;
             if (plan == null || !plan.HasActions)
                 return;
@@ -1573,14 +1550,18 @@ namespace Assets.Scripts.Bot
 
             _testCollectablesScriptedLifeLossHook?.TryApplyBeforePatternEvaluation(patternIndex, patternName);
             RequestReplan(BotReplanReason.SpawnPattern);
-            BotReplanDiagnostics.LogPatternSpawn(
-                patternIndex,
-                patternName,
-                FormatPatternObstacleIds(_subscribedObstacleSpawner, patternIndex));
+            if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.Pattern))
+            {
+                BotReplanDiagnostics.LogPatternSpawn(
+                    patternIndex,
+                    patternName,
+                    FormatPatternObstacleIds(_subscribedObstacleSpawner, patternIndex));
+            }
 
-            if (string.Equals(patternName, "roof_wide_gap", StringComparison.OrdinalIgnoreCase)
+            if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.Pattern, BotDiagnosticLevel.Verbose)
+                && (string.Equals(patternName, "roof_wide_gap", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(patternName, "shift_line_choice", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(patternName, "shift_line_choice_2", StringComparison.OrdinalIgnoreCase))
+                || string.Equals(patternName, "shift_line_choice_2", StringComparison.OrdinalIgnoreCase)))
             {
                 BotReplanDiagnostics.LogPatternDetail(
                     patternIndex,

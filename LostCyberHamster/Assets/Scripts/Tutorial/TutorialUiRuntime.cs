@@ -18,9 +18,6 @@ namespace Assets.Scripts.Tutorial
         private static VisualElement _activeRoot;
         private static VisualElement _activeTarget;
         private static TutorialUiPrompt _activePrompt;
-        private static ScreenEnum? _loggedPendingSurface;
-        private static float _nextSurfaceWaitLogAt;
-        private static TutorialUiPrompt _loggedMissingPrompt;
         private static bool _isTicking;
 
         public static void Activate()
@@ -79,17 +76,7 @@ namespace Assets.Scripts.Tutorial
             var completionSurface = TutorialMetaCoordinator.CurrentCompletionSurface;
             if (!completionSurface.HasValue)
             {
-                _loggedPendingSurface = null;
-                _nextSurfaceWaitLogAt = 0f;
                 return;
-            }
-
-            if (_loggedPendingSurface != completionSurface || Time.unscaledTime >= _nextSurfaceWaitLogAt)
-            {
-                _loggedPendingSurface = completionSurface;
-                _nextSurfaceWaitLogAt = Time.unscaledTime + 1f;
-                DebugManager.DiagStability(
-                    $"[TUTORIAL UI] waiting surface={completionSurface.Value} probe={BuildSurfaceProbe(completionSurface.Value)}");
             }
 
             if (!TryFindSurfaceRoot(completionSurface.Value, out _))
@@ -97,11 +84,9 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
 
-            DebugManager.DiagStability($"[TUTORIAL UI] surface root found surface={completionSurface.Value}");
             var result = TutorialMetaCoordinator.NotifySurfaceLoaded(completionSurface.Value);
             if (result.IsAccepted)
             {
-                DebugManager.DiagStability($"[TUTORIAL UI] surface accepted surface={completionSurface.Value}");
                 ClearActiveSurface();
             }
         }
@@ -117,13 +102,6 @@ namespace Assets.Scripts.Tutorial
 
             if (!TryFindPromptTarget(prompt, out var root, out var target))
             {
-                if (_loggedMissingPrompt != prompt)
-                {
-                    _loggedMissingPrompt = prompt;
-                    DebugManager.DiagStability(
-                        $"[TUTORIAL UI] prompt target missing surface={prompt.Surface} target={prompt.Target} " +
-                        $"probe={BuildSurfaceProbe(prompt.Surface)}");
-                }
                 return;
             }
 
@@ -141,14 +119,11 @@ namespace Assets.Scripts.Tutorial
             TutorialUiPrompt prompt)
         {
             ClearActiveSurface();
-            _loggedMissingPrompt = null;
 
             _activeRoot = root;
             _activeTarget = target;
             _activePrompt = prompt;
 
-            DebugManager.DiagStability(
-                $"[TUTORIAL UI] prompt attached surface={prompt.Surface} target={prompt.Target} element={target.name}");
             _inputBlocker.Attach(root, target);
             root.RegisterCallback<ClickEvent>(ObserveAllowedClick, TrickleDown.TrickleDown);
             TutorialMetaOverlay.ShowFocus(root, target, prompt.Instruction, prompt.Shape);
@@ -312,33 +287,6 @@ namespace Assets.Scripts.Tutorial
             };
         }
 
-        private static string BuildSurfaceProbe(ScreenEnum surface)
-        {
-            var documents = 0;
-            var panelRoots = 0;
-            var markerRoots = 0;
-
-            foreach (var uiDocument in Object.FindObjectsByType<UIDocument>(
-                         FindObjectsInactive.Exclude,
-                         FindObjectsSortMode.None))
-            {
-                documents++;
-                var candidateRoot = uiDocument.rootVisualElement;
-                if (candidateRoot?.panel == null)
-                {
-                    continue;
-                }
-
-                panelRoots++;
-                if (ContainsSurfaceMarker(candidateRoot, surface))
-                {
-                    markerRoots++;
-                }
-            }
-
-            return $"documents={documents} panelRoots={panelRoots} markerRoots={markerRoots}";
-        }
-
         private static void ClearActiveSurface()
         {
             if (_activeRoot != null)
@@ -351,8 +299,6 @@ namespace Assets.Scripts.Tutorial
             _activeRoot = null;
             _activeTarget = null;
             _activePrompt = null;
-            _loggedPendingSurface = null;
-            _loggedMissingPrompt = null;
         }
 
         private static bool IsEventInsideTarget(EventBase evt)

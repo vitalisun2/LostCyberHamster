@@ -10,6 +10,9 @@ namespace Assets.Scripts.Bot.Diagnostics
     {
         public static void LogEnergyStart(int value)
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Economy))
+                return;
+
             BotDiagnostics.Log(
                 BotDiagnosticCategory.Economy,
                 BotDiagnosticLevel.Essential,
@@ -19,6 +22,9 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         public static void LogEnergyChanged(int delta, int value)
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Economy))
+                return;
+
             BotDiagnostics.Log(
                 BotDiagnosticCategory.Economy,
                 BotDiagnosticLevel.Essential,
@@ -28,6 +34,9 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         public static void LogEnergyAdded(int amount, int value)
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Economy))
+                return;
+
             BotDiagnostics.Log(
                 BotDiagnosticCategory.Economy,
                 BotDiagnosticLevel.Essential,
@@ -37,6 +46,9 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         public static void LogEnergySpent(int amount, int value)
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Economy))
+                return;
+
             BotDiagnostics.Log(
                 BotDiagnosticCategory.Economy,
                 BotDiagnosticLevel.Essential,
@@ -58,6 +70,9 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         public static void LogLevelCompleted(int levelId, int stars)
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.TestResult))
+                return;
+
             string message = $"[TEST RESULT] WIN level={levelId} stars={stars}";
             BotDiagnostics.Log(BotDiagnosticCategory.TestResult, BotDiagnosticLevel.Essential, message);
             BotDiagnostics.Log(
@@ -69,6 +84,9 @@ namespace Assets.Scripts.Bot.Diagnostics
 
         public static void LogLevelFailed()
         {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.TestResult))
+                return;
+
             const string message = "[TEST RESULT] FAIL";
             BotDiagnostics.Log(BotDiagnosticCategory.TestResult, BotDiagnosticLevel.Essential, message);
             BotDiagnostics.Log(

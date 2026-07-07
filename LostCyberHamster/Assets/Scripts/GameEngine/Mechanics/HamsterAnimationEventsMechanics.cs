@@ -139,10 +139,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     || _hamsterState.Value == HamsterStateEnum.JumpDamageForSmallAlive
                     || _hamsterState.Value == HamsterStateEnum.SuperJumpDamage)
                 {
-                    BotDiagnostics.Log(
-                        BotDiagnosticCategory.RuntimeEvents,
-                        BotDiagnosticLevel.Essential,
-                        $"[JUMP_DAMAGE_DIAG] event={animEvent} state={_hamsterState.Value}");
+                    if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.RuntimeEvents))
+                    {
+                        BotDiagnostics.Log(
+                            BotDiagnosticCategory.RuntimeEvents,
+                            BotDiagnosticLevel.Essential,
+                            $"[JUMP_DAMAGE_DIAG] event={animEvent} state={_hamsterState.Value}");
+                    }
+
                     _damageEvent?.Invoke();
                 }
 

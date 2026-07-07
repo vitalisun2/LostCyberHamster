@@ -14,15 +14,24 @@ namespace Assets.Scripts.Diagnostics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
         {
+            if (!DeviceLogUploader.IsUploadEnabled())
+            {
+                return;
+            }
+
             EnsureInstance();
         }
 
         public static void Enqueue(string reason)
         {
+            if (!DeviceLogUploader.IsUploadEnabled())
+            {
+                return;
+            }
+
             EnsureInstance();
             if (_instance == null)
             {
-                DebugManager.DiagStability($"[DEVICE LOG] upload runner unavailable reason={reason}");
                 return;
             }
 
@@ -44,7 +53,6 @@ namespace Assets.Scripts.Diagnostics
         private void EnqueueInternal(string reason)
         {
             _queue.Enqueue(string.IsNullOrWhiteSpace(reason) ? "manual" : reason);
-            DebugManager.DiagStability($"[DEVICE LOG] upload queued reason={reason} queue={_queue.Count}");
 
             if (!_isProcessing)
             {
@@ -58,7 +66,6 @@ namespace Assets.Scripts.Diagnostics
             while (_queue.Count > 0)
             {
                 var reason = _queue.Dequeue();
-                DebugManager.DiagStability($"[DEVICE LOG] upload started reason={reason} remaining={_queue.Count}");
                 yield return DeviceLogUploader.UploadDiagnosticLogCoroutine(reason);
             }
 

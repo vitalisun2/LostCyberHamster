@@ -6,8 +6,12 @@ namespace Assets.Scripts.Bot.Diagnostics
     /// </summary>
     internal static class BotDiagnostics
     {
+        private const BotDiagnosticCategory DefaultEssentialCategories =
+            BotDiagnosticCategory.TestResult
+            | BotDiagnosticCategory.RuntimeSafety;
+
         private static BotDiagnosticLevel _maxLevel = BotDiagnosticLevel.Essential;
-        private static BotDiagnosticCategory _enabledCategories = BotDiagnosticCategory.All;
+        private static BotDiagnosticCategory _enabledCategories = DefaultEssentialCategories;
 
         /// <summary>
         /// Возвращает true, если указанная категория и уровень сейчас пишутся в diagnostic log.
@@ -44,7 +48,7 @@ namespace Assets.Scripts.Bot.Diagnostics
         public static void Reset()
         {
             _maxLevel = BotDiagnosticLevel.Essential;
-            _enabledCategories = BotDiagnosticCategory.All;
+            _enabledCategories = DefaultEssentialCategories;
         }
 
         /// <summary>
