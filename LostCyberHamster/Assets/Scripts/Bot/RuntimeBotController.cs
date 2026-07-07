@@ -33,6 +33,7 @@ using Assets.Scripts.Bot.Strategies.SuperJumpOnRoof;
 using Assets.Scripts.Bot.Strategies.SuperRoofJumpOver;
 using Assets.Scripts.Bot.Strategies.SwitchLane;
 using Assets.Scripts.GameEngine.Mechanics;
+using Assets.Scripts.System;
 using UnityEngine;
 using RuntimeObstacleSpawner = Assets.Scripts.System.ObstacleSpawner;
 
@@ -257,6 +258,7 @@ namespace Assets.Scripts.Bot
             BotAnimationTravelProvider.Reset();
             DebugManager.SetVerboseDiagLoggingEnabled(false);
             BotDiagnostics.Reset();
+            ApplyAutomationDiagnostics();
             BotAnimationTravelProvider.PrewarmKnownClipData();
             ApplyObstacleBonusDropPolicy();
 
@@ -272,6 +274,19 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Создает независимый набор planning strategies для executor или worker planner.
         /// </summary>
+        private static void ApplyAutomationDiagnostics()
+        {
+            if (!PlayerPrefs.HasKey(AutomationRuntimePrefs.TestLevelAddressOverrideKey))
+                return;
+
+            BotDiagnostics.SetMaxLevel(BotDiagnosticLevel.Essential);
+            BotDiagnostics.SetEnabledCategories(
+                BotDiagnosticCategory.TestResult
+                | BotDiagnosticCategory.RuntimeSafety
+                | BotDiagnosticCategory.DeadEnd
+                | BotDiagnosticCategory.Economy);
+        }
+
         private static IReadOnlyList<IPlanningStrategy> CreatePlanningStrategies()
         {
             var strategies = new IPlanningStrategy[]

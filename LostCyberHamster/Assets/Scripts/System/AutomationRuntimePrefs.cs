@@ -4,6 +4,7 @@ namespace Assets.Scripts.System
 {
     public static class AutomationRuntimePrefs
     {
+        public const string TestLevelAddressOverrideKey = "TestLevel_Address";
         public const string SkipIntroKey = "TestLevel_SkipIntro";
         public const string TimeScaleOverrideKey = "TestLevel_TimeScale";
 

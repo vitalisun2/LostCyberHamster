@@ -459,6 +459,11 @@ public static void ReleaseIntroSprites()
 
             foreach (var (candidateLabel, isFallback, reason) in candidates)
             {
+                if (!CanLocateAssets(candidateLabel, typeof(AnimationClip)))
+                {
+                    continue;
+                }
+
                 AddressableSetLease<AnimationClip> lease = null;
                 try
                 {
@@ -607,6 +612,11 @@ public static void ReleaseIntroSprites()
 
             foreach (var (candidateLabel, isFallback, reason) in candidates)
             {
+                if (!CanLocateAssets(candidateLabel, typeof(Sprite)))
+                {
+                    continue;
+                }
+
                 AddressableSetLease<Sprite> lease = null;
                 try
                 {
@@ -646,6 +656,30 @@ public static void ReleaseIntroSprites()
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Проверяет, есть ли в Addressables ассеты нужного типа для label, не создавая error-handle.
+        /// </summary>
+        private static bool CanLocateAssets(string label, Type assetType)
+        {
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                return false;
+            }
+
+            foreach (var locator in Addressables.ResourceLocators)
+            {
+                if (locator != null
+                    && locator.Locate(label, assetType, out var locations)
+                    && locations != null
+                    && locations.Count > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static string TryGetCurrentLocationName()
@@ -778,9 +812,6 @@ public static void ReleaseIntroSprites()
 
     }
 }
-
-
-
 
 
 
