@@ -1,0 +1,70 @@
+{
+    "skyTexture":  "",
+    "roadTexture":  "",
+    "location":  "03_Barcelona",
+    "patternSequence":  [
+                            {
+                                "ref":  "easy_run_3",
+                                "spriteSeed":  8701,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "bonus_strip",
+                                "spriteSeed":  8702,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "roof_wide_gap_3",
+                                "spriteSeed":  8703,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "shift_force_switch_2",
+                                "spriteSeed":  8704,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "easy_run_2",
+                                "spriteSeed":  8705,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "jump_challenge_2",
+                                "spriteSeed":  8706,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "peak_3",
+                                "spriteSeed":  8707,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "peak_2",
+                                "spriteSeed":  8708,
+                                "overrides":  [
+
+                                              ]
+                            }
+                        ],
+    "decorationPatterns":  [
+                               {
+                                   "decorationTiles":  [
+
+                                                       ]
+                               }
+                           ]
+}

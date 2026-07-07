@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: scrolling_environment_barcelona
   m_GUID: 6d0bbffc4fea11941b80965e71404499
   m_SerializeEntries:
+  - m_GUID: 1dd390ead2cb9ba479aef9effd6793b9
+    m_Address: sky_barcelona_night
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 226d968c7833adb48b02291c25fbc9c2
     m_Address: bg_2_barcelona_afternoon
     m_ReadOnly: 0
@@ -40,6 +45,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8110f9dfd43998f4ca40c5bf1d980794
+    m_Address: rd_barcelona_night
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8a081b34a1de6eb4c8df2ffb6719b900
     m_Address: rd_barcelona_afternoon
     m_ReadOnly: 0
@@ -47,6 +57,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8ec5e2e6646cb5d43a56427cd0bb001c
     m_Address: bg_2_barcelona_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8fd8395b4e25d8c47bf5c6a3bf77f632
+    m_Address: bg_barcelona_night
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -72,6 +87,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c78e178338b560a41a9f2088a7c28846
     m_Address: rd_barcelona_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e48f471a42866604a9bfc6ea580e5c6c
+    m_Address: bg_2_barcelona_night
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

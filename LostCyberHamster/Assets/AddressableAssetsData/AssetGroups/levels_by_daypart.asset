@@ -457,6 +457,166 @@ MonoBehaviour:
     - levels_daypart_Night
     - levels_location_02_Paris
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e0a1da644aab4d5a978054d1682a3243
+    m_Address: 03_Barcelona/Afternoon/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dfed433318f441a68ae0d40ba34d98a1
+    m_Address: 03_Barcelona/Afternoon/level_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7f734ffec3724f4891a066a83e532a05
+    m_Address: 03_Barcelona/Afternoon/level_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 83dea2e9472744fd9f8dda1dc82d183c
+    m_Address: 03_Barcelona/Afternoon/level_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1b142bdf2f424c27879b897d92f70b0a
+    m_Address: 03_Barcelona/Afternoon/level_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Afternoon
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0aa466c5f1b34568adfe363feaae15ee
+    m_Address: 03_Barcelona/Evening/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a4b918dba8cf430d8ff7f750da123b3a
+    m_Address: 03_Barcelona/Evening/level_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 66f0ae33dcfd47bbae8a6233ac958abe
+    m_Address: 03_Barcelona/Evening/level_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2fd60bb3abe446a3af545f418b484421
+    m_Address: 03_Barcelona/Evening/level_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1332a4ea2527451ba7002ae8ff98080f
+    m_Address: 03_Barcelona/Evening/level_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Evening
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5f2fda046c8c499c80ced52f71be36ee
+    m_Address: 03_Barcelona/Morning/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 10f7dcdc401848f78d50484ffccf9765
+    m_Address: 03_Barcelona/Morning/level_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e7cab02581cf47959cd2c1e70d9e3cc1
+    m_Address: 03_Barcelona/Morning/level_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af07de81595a44de8baee9468e936e9e
+    m_Address: 03_Barcelona/Night/level_01
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bcc43a09bae4447db021ad8ffc883099
+    m_Address: 03_Barcelona/Night/level_02
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a6c595a3ad4f4693850cf1777323379d
+    m_Address: 03_Barcelona/Night/level_03
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4a0fbd3f809f48ebbbb84683ed552e4a
+    m_Address: 03_Barcelona/Night/level_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4028f0654e144c1c960bb926d7863a49
+    m_Address: 03_Barcelona/Night/level_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4d87af3cb4b949c09f196fb03bc84c89
+    m_Address: 03_Barcelona/Night/level_06
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 43cce117798e4ea3995e761e01e8eabc
+    m_Address: 03_Barcelona/Night/level_07
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Night
+    - levels_location_03_Barcelona
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
   m_SchemaSet:

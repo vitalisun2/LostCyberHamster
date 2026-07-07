@@ -15,7 +15,7 @@ MonoBehaviour:
   m_DefaultGroup: 8b60fa516636c4257a46110822c557e1
   m_currentHash:
     serializedVersion: 2
-    Hash: 00000000000000000000000000000000
+    Hash: c23fb9b6073180cc4e350b11d788be1e
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 0
   m_CatalogRequestsTimeout: 0
@@ -146,6 +146,7 @@ MonoBehaviour:
     - NewYork obstacle animations
     - New York backgrounds
     - levels_daypart_Test
+    - levels_location_03_Barcelona
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: c9f1c9b4aab8040468e89d35e65f704f, type: 2}
