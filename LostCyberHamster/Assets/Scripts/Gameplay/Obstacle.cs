@@ -84,6 +84,11 @@ namespace Assets.Scripts.Gameplay
 
         public void OnUpdate(float deltaTime)
         {
+            if (!isActiveAndEnabled)
+            {
+                return;
+            }
+
             if (_scrollLeftMechanics == null || _unspawnOutOfBoundsMechanics == null)
             {
                 return;

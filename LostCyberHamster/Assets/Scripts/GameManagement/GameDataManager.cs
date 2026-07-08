@@ -27,6 +27,15 @@ namespace GameManagement
         public static async Task LoadDataAsync()
         {
             var localData = LoadFromPlayerPrefs();
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
+            {
+                PlayerData = localData;
+                SaveData();
+                EnsureProgressConsistency();
+                DebugManager.DiagStability("[AUTOMATION] Cloud Save load skipped for test-level run.");
+                return;
+            }
+
             var cloudData = await LoadFromCloud();
 
             DateTime.TryParse(localData.LastSaveDate, out var localLastSaveDate);
@@ -95,6 +104,12 @@ namespace GameManagement
         private static async void TrySaveToCloud()
         {
             SaveData();
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
+            {
+                DebugManager.DiagStability("[AUTOMATION] Cloud Save save skipped for test-level run.");
+                return;
+            }
+
             var playerDataDict = new Dictionary<string, object>
             {
                 { _playerDataKey, PlayerData.ToJson() }

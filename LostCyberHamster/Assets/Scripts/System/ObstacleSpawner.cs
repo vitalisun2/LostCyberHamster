@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts;
 using Assets.Scripts.Common;
+using Assets.Scripts.Diagnostics;
 using Assets.Scripts.Entry_Points.GameLoadingTasks;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Installers.Roots;
@@ -108,6 +109,8 @@ namespace Assets.Scripts.System
         // ---------- ГЛАВНАЯ ЛОГИКА SPAWN ----------
         private void SpawnPatterns()
         {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.ObstacleSpawnerSpawnPatterns);
             _timeSinceLastPattern += Time.deltaTime;
             var patterns = LevelController.Instance.LevelData.LevelInfo.patterns;
 
@@ -137,6 +140,10 @@ namespace Assets.Scripts.System
                 && !_spawnedObstacles.Any()
                 && _timeSinceLastPattern >= _delayBetweenPatterns)
                 LevelController.Instance.LevelData.GameManager.Finish();
+
+            RuntimePerformanceDiagnostics.EndAllocationSample(
+                RuntimePerformanceScope.ObstacleSpawnerSpawnPatterns,
+                allocationSample);
         }
 
         // Проверяет gate-паттерн для текущего lookahead-окна.
@@ -173,30 +180,71 @@ namespace Assets.Scripts.System
         // проверяем, что правый край паттерна не дальше правого края экрана
         private bool IsPatternFullyOnScreen(int patternIndex)
         {
-            var pattern = _spawnedObstacles.Where(o => o.PatternIndex == patternIndex).ToList();
-            if (!pattern.Any()) return true;                      // весь паттерн уже despawn’ился
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.ObstacleSpawnerIsPatternFullyOnScreen);
+            bool hasPatternObstacles = false;
+            float patternRightEdge = float.NegativeInfinity;
 
-            return GetPatternRightEdge(pattern) <= ScreenRightEdge;
+            for (int obstacleIndex = 0; obstacleIndex < _spawnedObstacles.Count; obstacleIndex++)
+            {
+                InstantiatedObstacle obstacle = _spawnedObstacles[obstacleIndex];
+                if (obstacle.PatternIndex != patternIndex)
+                    continue;
+
+                hasPatternObstacles = true;
+                float obstacleRightEdge = GetObstacleRightEdge(obstacle);
+                if (obstacleRightEdge > patternRightEdge)
+                    patternRightEdge = obstacleRightEdge;
+            }
+
+            bool result = !hasPatternObstacles ||                       // весь паттерн уже despawn’ился
+                          patternRightEdge <= ScreenRightEdge;
+
+            RuntimePerformanceDiagnostics.EndAllocationSample(
+                RuntimePerformanceScope.ObstacleSpawnerIsPatternFullyOnScreen,
+                allocationSample);
+
+            return result;
         }
 
         // ---------- UNSPAWN ----------
         private void UnspawnObstacle(GameObject obstacle)
         {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.ObstacleSpawnerUnspawnObstacle);
             var inst = _spawnedObstacles
                 .FirstOrDefault(x => x.ObstacleScript.gameObject == obstacle);
-            if (inst == null) return;
+            if (inst == null)
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.ObstacleSpawnerUnspawnObstacle,
+                    allocationSample);
+                return;
+            }
 
+            inst.ObstacleScript.gameObject.SetActive(false);
             inst.ObstacleScript.transform.SetParent(_environmentRoot.ObstaclesPool);
             _spawnedObstacles.Remove(inst);
+            RuntimePerformanceDiagnostics.EndAllocationSample(
+                RuntimePerformanceScope.ObstacleSpawnerUnspawnObstacle,
+                allocationSample);
         }
 
         // ---------- SPAWN ОДНОГО ПАТТЕРНА ----------
         private void SpawnPattern(int patternIndex)
         {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.ObstacleSpawnerSpawnPattern);
             var patternObstacles = _intantiatedObstacles
                 .Where(o => o.PatternIndex == patternIndex)
                 .ToList();
-            if (!patternObstacles.Any()) return;
+            if (!patternObstacles.Any())
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.ObstacleSpawnerSpawnPattern,
+                    allocationSample);
+                return;
+            }
 
             // динамический оффсет, левый край на нужном расстоянии от предыдущего паттерна
             float patternLeftEdge = GetPatternLeftEdgeAtSpawnPosition(patternObstacles);
@@ -209,12 +257,16 @@ namespace Assets.Scripts.System
                 pos.x += offset;
                 obstacle.ObstacleScript.transform.position = pos;
                 obstacle.ObstacleScript.transform.SetParent(_environmentRoot.ObstaclesSpawnedContainer);
+                obstacle.ObstacleScript.gameObject.SetActive(true);
                 obstacle.ObstacleScript.InitializeMechanics();
                 _spawnedObstacles.Add(obstacle);
             }
 
             _visiblePatternTracker.RegisterPattern(patternIndex, patternObstacles, offset);
             PatternSpawned?.Invoke(patternIndex, CurrPatternName);
+            RuntimePerformanceDiagnostics.EndAllocationSample(
+                RuntimePerformanceScope.ObstacleSpawnerSpawnPattern,
+                allocationSample);
         }
 
         /// <summary>
@@ -222,12 +274,24 @@ namespace Assets.Scripts.System
         /// </summary>
         private float GetNextPatternTargetLeftEdge()
         {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.ObstacleSpawnerGetNextPatternTargetLeftEdge);
             int prevIndex = _currentPatternIndex - 1;
             var prev = _spawnedObstacles.Where(o => o.PatternIndex == prevIndex).ToList();
             if (!prev.Any())
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.ObstacleSpawnerGetNextPatternTargetLeftEdge,
+                    allocationSample);
                 return ScreenRightEdge + Consts.PatternEdgeGap;
+            }
 
-            return GetPatternRightEdge(prev) + Consts.PatternEdgeGap;
+            float result = GetPatternRightEdge(prev) + Consts.PatternEdgeGap;
+            RuntimePerformanceDiagnostics.EndAllocationSample(
+                RuntimePerformanceScope.ObstacleSpawnerGetNextPatternTargetLeftEdge,
+                allocationSample);
+
+            return result;
         }
 
         /// <summary>

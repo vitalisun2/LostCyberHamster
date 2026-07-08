@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Assets.Scripts.System;
 using Unity.Services.Analytics;
 using Unity.Services.Core;
 using UnityEngine;
@@ -13,6 +14,9 @@ public static class AnalyticsManager
     /// </summary>
     public static async Task InitializeAsync()
     {
+        if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
+            return;
+
         if (_initialized)
         {
 

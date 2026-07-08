@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Assets.Scripts.System;
 using LoadingTasks;
-using UnityEngine;
-using Unity.Services.Core;
 using Unity.Services.Authentication;
+using Unity.Services.Core;
+using UnityEngine;
 
 namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
 {
@@ -15,8 +16,15 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
         public AuthenticateUserLoadingTask()
         {
         }
+
         public async Task LoadAsync(Dictionary<string, object> bundle)
         {
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
+            {
+                DebugManager.DiagStability("[AUTOMATION] Unity Authentication skipped for test-level run.");
+                return;
+            }
+
             try
             {
                 await UnityServices.InitializeAsync();
@@ -27,6 +35,5 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
                 Debug.LogError("Authentication failed");
             }
         }
-
     }
 }

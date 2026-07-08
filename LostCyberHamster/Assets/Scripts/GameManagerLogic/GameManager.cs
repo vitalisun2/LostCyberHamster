@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Assets.Scripts.Diagnostics;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.System;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Zenject;
@@ -54,6 +55,8 @@ namespace Assets.Scripts.GameManagerLogic
 #if UNITY_ANDROID
             SetupFramePacing();
 #endif
+            bool isAutomationRun = AutomationRuntimePrefs.IsTestLevelAutomationRun();
+            RuntimePerformanceDiagnostics.SetEnabled(isAutomationRun);
         }
 
         private void Update()
@@ -61,11 +64,32 @@ namespace Assets.Scripts.GameManagerLogic
             if (_state != GameState.PLAYING)
                 return;
 
-            var deltaTime = Time.deltaTime;
-            for (int i = 0; i < _updateListeners.Count; i++)
+            RuntimePerformanceDiagnostics.SampleFrame();
+            long updateSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.GameManagerUpdateLoop);
+            try
             {
-                var listener = _updateListeners[i];
-                listener.OnUpdate(deltaTime);
+                var deltaTime = Time.deltaTime;
+                for (int i = 0; i < _updateListeners.Count; i++)
+                {
+                    var listener = _updateListeners[i];
+                    RuntimePerformanceScope listenerScope = GetUpdateListenerScope(listener);
+                    long listenerSample = RuntimePerformanceDiagnostics.BeginAllocationSample(listenerScope);
+                    try
+                    {
+                        listener.OnUpdate(deltaTime);
+                    }
+                    finally
+                    {
+                        RuntimePerformanceDiagnostics.EndAllocationSample(listenerScope, listenerSample);
+                    }
+                }
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.GameManagerUpdateLoop,
+                    updateSample);
             }
         }
 
@@ -87,12 +111,60 @@ namespace Assets.Scripts.GameManagerLogic
             if (_state != GameState.PLAYING)
                 return;
 
-            var deltaTime = Time.deltaTime;
-            for (int i = 0; i < _lateUpdateListeners.Count; i++)
+            long lateUpdateSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.GameManagerLateUpdateLoop);
+            try
             {
-                var listener = _lateUpdateListeners[i];
-                listener.OnLateUpdate(deltaTime);
+                var deltaTime = Time.deltaTime;
+                for (int i = 0; i < _lateUpdateListeners.Count; i++)
+                {
+                    var listener = _lateUpdateListeners[i];
+                    RuntimePerformanceScope listenerScope = GetLateUpdateListenerScope(listener);
+                    long listenerSample = RuntimePerformanceDiagnostics.BeginAllocationSample(listenerScope);
+                    try
+                    {
+                        listener.OnLateUpdate(deltaTime);
+                    }
+                    finally
+                    {
+                        RuntimePerformanceDiagnostics.EndAllocationSample(listenerScope, listenerSample);
+                    }
+                }
             }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.GameManagerLateUpdateLoop,
+                    lateUpdateSample);
+            }
+        }
+
+        private static RuntimePerformanceScope GetUpdateListenerScope(Listeners.IGameUpdateListener listener)
+        {
+            if (listener is Obstacle)
+                return RuntimePerformanceScope.GameManagerUpdateObstacleListener;
+
+            if (listener is Hamster)
+                return RuntimePerformanceScope.GameManagerUpdateHamsterListener;
+
+            if (listener is ScrollingEnvironment)
+                return RuntimePerformanceScope.GameManagerUpdateScrollingEnvironmentListener;
+
+            if (listener is GameUi)
+                return RuntimePerformanceScope.GameManagerUpdateGameUiListener;
+
+            if (listener is ObstacleSpawner)
+                return RuntimePerformanceScope.GameManagerUpdateObstacleSpawnerListener;
+
+            return RuntimePerformanceScope.GameManagerUpdateOtherListener;
+        }
+
+        private static RuntimePerformanceScope GetLateUpdateListenerScope(Listeners.IGameLateUpdateListener listener)
+        {
+            if (listener is Assets.Scripts.Bot.RuntimeBotController)
+                return RuntimePerformanceScope.GameManagerLateUpdateRuntimeBotListener;
+
+            return RuntimePerformanceScope.GameManagerLateUpdateOtherListener;
         }
 
         public void AddListener(Listeners.IGameListener listener)
@@ -214,6 +286,7 @@ namespace Assets.Scripts.GameManagerLogic
             }
 
             _state = GameState.FINISHED;
+            RuntimePerformanceDiagnostics.LogSummary("finish");
             OnFinish?.Invoke();
         }
 
@@ -230,6 +303,7 @@ namespace Assets.Scripts.GameManagerLogic
 
             TimeScaleCoefficient = 0; // Останавливаем время в игре
             _state = GameState.PAUSED;
+            RuntimePerformanceDiagnostics.LogSummary("pause");
         }
 
         [Button]

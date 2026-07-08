@@ -14,6 +14,9 @@ namespace Assets.Scripts.System
         public static void Vibrate()
         {
             if (!EnableVibration) return;
+#if UNITY_EDITOR
+            return;
+#else
             try
             {
 #if UNITY_ANDROID || UNITY_IOS
@@ -26,16 +29,22 @@ namespace Assets.Scripts.System
             {
                 DebugManager.Log("Не удалось вызвать вибрацию при помощи функции Handheld.Vibrate().");
             }
+#endif
         }
 
         public static void OnDisable()
         {
-            GameEventsManager.OnLivesLost -= (int value) => Vibrate();
+            GameEventsManager.OnLivesLost -= OnLivesLost;
         }
 
         public static void OnEnable()
         {
-            GameEventsManager.OnLivesLost += (int value) => Vibrate();
+            GameEventsManager.OnLivesLost += OnLivesLost;
+        }
+
+        private static void OnLivesLost(int value)
+        {
+            Vibrate();
         }
     }
 }

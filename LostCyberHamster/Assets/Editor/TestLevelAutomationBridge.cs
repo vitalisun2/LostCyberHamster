@@ -34,6 +34,8 @@ namespace LostCyberHamster.Editor
         private const string IntroProbeSkipScheduledSessionKey = "TestLevelAutomationBridge.IntroProbe.SkipScheduled";
         private const string IntroProbeSkipDoneSessionKey = "TestLevelAutomationBridge.IntroProbe.SkipDone";
         private const string IntroProbeSkipAtSessionKey = "TestLevelAutomationBridge.IntroProbe.SkipAt";
+        private const string AndroidLogcatWindowTypeName =
+            "Unity.Android.Logcat.AndroidLogcatConsoleWindow, Unity.Mobile.AndroidLogcat.Editor";
         private const double PollIntervalSeconds = 0.25d;
 
         private static readonly string AutomationDirectoryPath =
@@ -282,6 +284,7 @@ namespace LostCyberHamster.Editor
                     diagnosticLogPath = DebugManager.GetDiagLogPath()
                 });
 
+                DisableAndroidLogcatForAutomation();
                 DebugManager.ClearDiagLog();
                 LaunchTutorialStopAfterStepProbe(Mathf.Max(1, request.stopAfterStep));
                 return;
@@ -300,6 +303,7 @@ namespace LostCyberHamster.Editor
                     diagnosticLogPath = DebugManager.GetDiagLogPath()
                 });
 
+                DisableAndroidLogcatForAutomation();
                 DebugManager.ClearDiagLog();
                 LaunchFirstLevelIntroProbe(request.timeScale);
                 return;
@@ -316,6 +320,7 @@ namespace LostCyberHamster.Editor
                 diagnosticLogPath = DebugManager.GetDiagLogPath()
             });
 
+            DisableAndroidLogcatForAutomation();
             DebugManager.ClearDiagLog();
 
             if (!TestLevelLauncher.TryLaunchTestLevelAutomation(request.levelAddress, request.timeScale, out var launchError))
@@ -332,6 +337,36 @@ namespace LostCyberHamster.Editor
                 });
                 ClearActiveRequest();
                 return;
+            }
+        }
+
+        private static void DisableAndroidLogcatForAutomation()
+        {
+            Type windowType = Type.GetType(AndroidLogcatWindowTypeName);
+            if (windowType == null)
+            {
+                return;
+            }
+
+            try
+            {
+                PropertyInfo showDuringBuildRun = windowType.GetProperty(
+                    "ShowDuringBuildRun",
+                    BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                showDuringBuildRun?.SetValue(null, false);
+
+                var windows = Resources.FindObjectsOfTypeAll(windowType);
+                for (int windowIndex = 0; windowIndex < windows.Length; windowIndex++)
+                {
+                    if (windows[windowIndex] is EditorWindow window)
+                    {
+                        window.Close();
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[TestLevelAutomationBridge] Failed to disable Android Logcat automation overhead: {exception.Message}");
             }
         }
 

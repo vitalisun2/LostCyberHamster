@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.System;
 using Assets.Scripts.GameEngine.Mechanics;
@@ -75,11 +76,22 @@ namespace Assets.Scripts.Gameplay
 
         private void Update()
         {
-            if(!_isInitialized) return;
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.GameUiUpdate);
+            if(!_isInitialized)
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.GameUiUpdate,
+                    allocationSample);
+                return;
+            }
 
             _uiGameScreenMechanics.OnUpdate();
             _keyboardMechanics.OnUpdate();
             _energyMechanics.OnUpdate(Time.deltaTime);
+            RuntimePerformanceDiagnostics.EndAllocationSample(
+                RuntimePerformanceScope.GameUiUpdate,
+                allocationSample);
         }
 
         private void OnDisable()

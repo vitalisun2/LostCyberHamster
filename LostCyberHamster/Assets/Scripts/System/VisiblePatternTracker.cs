@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Common;
+using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameEngine.Mechanics;
 using UnityEngine;
 
@@ -43,8 +44,13 @@ namespace Assets.Scripts.System
 
         public void Update(float deltaTime)
         {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.VisiblePatternTrackerUpdate);
             if (_ranges.Count == 0)
             {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.VisiblePatternTrackerUpdate,
+                    allocationSample);
                 return;
             }
 
@@ -55,6 +61,9 @@ namespace Assets.Scripts.System
             }
 
             Prune(ScreenLeftEdge);
+            RuntimePerformanceDiagnostics.EndAllocationSample(
+                RuntimePerformanceScope.VisiblePatternTrackerUpdate,
+                allocationSample);
         }
 
         public int GetCurrentPatternIndex(float playerLeftX, float playerRightX)
@@ -138,7 +147,12 @@ namespace Assets.Scripts.System
 
         private void Prune(float screenLeftEdge)
         {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.VisiblePatternTrackerPrune);
             _ranges.RemoveAll(range => range.RightEdge < screenLeftEdge - _edgeTolerance);
+            RuntimePerformanceDiagnostics.EndAllocationSample(
+                RuntimePerformanceScope.VisiblePatternTrackerPrune,
+                allocationSample);
         }
 
         private static void GetPatternXRangeAtSpawnPosition(
