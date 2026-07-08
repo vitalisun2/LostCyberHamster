@@ -213,8 +213,7 @@ public static void ReleaseIntroSprites()
             var patternsAsset = await LoadPatternsCollectionAsync();
             var patterns = JsonUtility.FromJson<PatternsCollection>(patternsAsset.text);
 
-            var themeAsset = await LoadLocationThemeAsync(levelRef.location);
-            var theme = JsonUtility.FromJson<LocationTheme>(themeAsset.text);
+            var theme = await LoadLocationThemeWithFallbackAsync(levelRef.location);
 
             levelData.LevelInfo = LevelResolver.Resolve(levelRef, patterns, theme);
         }
@@ -237,7 +236,40 @@ public static void ReleaseIntroSprites()
             return await Addressables.LoadAssetAsync<TextAsset>("PatternsCollection").Task;
         }
 
-        private static async Task<TextAsset> LoadLocationThemeAsync(string location)
+        private static async Task<LocationTheme> LoadLocationThemeWithFallbackAsync(string location)
+        {
+            var themeAsset = await TryLoadLocationThemeAssetAsync(location);
+            var theme = themeAsset != null
+                ? JsonUtility.FromJson<LocationTheme>(themeAsset.text)
+                : new LocationTheme();
+
+            if (string.Equals(location, Consts.TemplatesFallbackLocation, StringComparison.OrdinalIgnoreCase))
+            {
+                return theme;
+            }
+
+            var fallbackAsset = await TryLoadLocationThemeAssetAsync(Consts.TemplatesFallbackLocation);
+            var fallbackTheme = fallbackAsset != null
+                ? JsonUtility.FromJson<LocationTheme>(fallbackAsset.text)
+                : new LocationTheme();
+
+            return LocationAssetFallback.MergeLocationTheme(theme, fallbackTheme);
+        }
+
+        private static async Task<TextAsset> TryLoadLocationThemeAssetAsync(string location)
+        {
+            try
+            {
+                return await LoadLocationThemeAssetAsync(location);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[LevelDataProvider] Failed to load location theme for '{location}': {ex.Message}");
+                return null;
+            }
+        }
+
+        private static async Task<TextAsset> LoadLocationThemeAssetAsync(string location)
         {
             var address = $"{location}/obstacle_sprite_to_type_mappings";
             return await Addressables.LoadAssetAsync<TextAsset>(address).Task;
@@ -812,7 +844,6 @@ public static void ReleaseIntroSprites()
 
     }
 }
-
 
 
 

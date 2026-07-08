@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.Scripts.Common.Models;
 
 namespace Assets.Scripts.System
 {
@@ -29,6 +31,77 @@ namespace Assets.Scripts.System
 
             var suffix = trimmedOriginal.Substring(trimmedCurrent.Length);
             return string.Concat(trimmedFallback, suffix);
+        }
+
+        public static LocationTheme MergeLocationTheme(LocationTheme primary, LocationTheme fallback)
+        {
+            var result = new LocationTheme
+            {
+                obstacle_sprite_to_type_mappings = new List<SpriteTypeMapping>()
+            };
+
+            var includedTypes = new HashSet<int>();
+
+            AddMappings(primary, result, includedTypes, replaceExisting: true);
+            AddMappings(fallback, result, includedTypes, replaceExisting: false);
+
+            return result;
+        }
+
+        private static void AddMappings(
+            LocationTheme source,
+            LocationTheme target,
+            HashSet<int> includedTypes,
+            bool replaceExisting)
+        {
+            if (source?.obstacle_sprite_to_type_mappings == null)
+            {
+                return;
+            }
+
+            foreach (var mapping in source.obstacle_sprite_to_type_mappings)
+            {
+                if (!HasUsableSprites(mapping))
+                {
+                    continue;
+                }
+
+                if (includedTypes.Add(mapping.type))
+                {
+                    target.obstacle_sprite_to_type_mappings.Add(CloneMapping(mapping));
+                    continue;
+                }
+
+                if (!replaceExisting)
+                {
+                    continue;
+                }
+
+                var index = target.obstacle_sprite_to_type_mappings.FindIndex(m => m.type == mapping.type);
+                if (index >= 0)
+                {
+                    target.obstacle_sprite_to_type_mappings[index] = CloneMapping(mapping);
+                }
+            }
+        }
+
+        private static bool HasUsableSprites(SpriteTypeMapping mapping)
+        {
+            return mapping != null &&
+                   ((!string.IsNullOrWhiteSpace(mapping.@default)) ||
+                    (mapping.sprites != null && mapping.sprites.Count > 0));
+        }
+
+        private static SpriteTypeMapping CloneMapping(SpriteTypeMapping mapping)
+        {
+            return new SpriteTypeMapping
+            {
+                type = mapping.type,
+                @default = mapping.@default,
+                sprites = mapping.sprites != null
+                    ? new List<string>(mapping.sprites)
+                    : new List<string>()
+            };
         }
 
         public static string ToSlug(string value)

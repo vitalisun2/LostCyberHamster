@@ -12,6 +12,7 @@ using UnityEngine.AddressableAssets;
 using Assets.Editor.LevelEditor;
 using Assets.Editor.LevelEditor.ObstacleSpriteTypeMappingManagement;
 using Assets.Scripts;
+using Assets.Scripts.System;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using System.Text.RegularExpressions;
 
@@ -196,10 +197,28 @@ public static class LevelDataManager
     /// </summary>
     public static LocationTheme LoadLocationTheme(string locationFolder)
     {
+        var theme = LoadLocationThemeFile(locationFolder);
+        if (string.Equals(locationFolder, Consts.TemplatesFallbackLocation, StringComparison.OrdinalIgnoreCase))
+        {
+            return theme;
+        }
+
+        var fallbackTheme = LoadLocationThemeFile(Consts.TemplatesFallbackLocation);
+        return LocationAssetFallback.MergeLocationTheme(theme, fallbackTheme);
+    }
+
+    private static LocationTheme LoadLocationThemeFile(string locationFolder)
+    {
         var path = Path.Combine(Consts.LocationsPath,
             locationFolder, "obstacle_sprite_to_type_mappings.json");
+        if (!File.Exists(path))
+        {
+            Debug.LogWarning($"Location theme file not found: {path}");
+            return new LocationTheme();
+        }
+
         var json = File.ReadAllText(path, Encoding.UTF8);
-        return JsonUtility.FromJson<LocationTheme>(json);
+        return JsonUtility.FromJson<LocationTheme>(json) ?? new LocationTheme();
     }
 
     /// <summary>
