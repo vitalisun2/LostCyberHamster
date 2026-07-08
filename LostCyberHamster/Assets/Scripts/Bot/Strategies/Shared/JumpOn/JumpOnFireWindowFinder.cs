@@ -14,6 +14,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
     internal sealed class JumpOnFireWindowFinder
     {
         private readonly IJumpOnPolicy _policy;
+        private readonly List<JumpObstacleData> _baseObstacles = new();
+        private readonly List<JumpObstacleData> _shiftedObstacles = new();
 
         /// <summary>
         /// Создает finder для конкретного jump-on policy.
@@ -62,11 +64,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
             }
 
             // Подтверждает смысловые точки окна через runtime resolver и post-action safety.
-            List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
+            JumpObstacleProjection.BuildBase(projectedWorldSnapshot, _baseObstacles);
             if (TrySelectFireShift(
                     planningState,
                     projectedWorldSnapshot,
-                    baseObstacles,
+                    _baseObstacles,
                     travel,
                     window,
                     out fireShift,
@@ -181,16 +183,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
                 return new JumpResolveResult(hamster.HamsterState, -1);
 
             // Сдвигает obstacles в позицию runtime resolver-а.
-            var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
             JumpObstacleProjection.BuildShifted(
                 baseObstacles,
                 travel.GetResolveFireShift(fireShift),
-                obstaclesAtFireShift);
+                _shiftedObstacles);
 
             // Собирает runtime-equivalent context resolver-а.
             JumpResolveContext context = CreateResolveContext(hamster, travel);
 
-            return _policy.Resolve(obstaclesAtFireShift, context);
+            return _policy.Resolve(_shiftedObstacles, context);
         }
 
         /// <summary>

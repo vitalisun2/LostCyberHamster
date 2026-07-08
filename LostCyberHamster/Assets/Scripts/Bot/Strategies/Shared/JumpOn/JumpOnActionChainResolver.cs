@@ -149,7 +149,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
                 if (!IsGroundTarget(element))
                     continue;
 
-                actionChain = new ObstacleChain(elements);
+                actionChain = ObstacleChain.FromOwnedElements(elements);
                 targetObstacle = element.Obstacle;
                 targetObstacleIndex = element.WorldIndex;
                 targetObstacleChainIndex = elements.Count - 1;
@@ -181,11 +181,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOn
             }
 
             // Оставляет только blockers и ground targets, нужные для jump-on window.
-            HashSet<ObstacleRole> roles = ObstacleRoleClassifier.GetRoles(
+            ObstacleRoleMask roleMask = ObstacleRoleClassifier.GetRoleMask(
                 planningState,
                 worldSnapshot,
                 obstacle);
-            var candidate = new ObstacleChainElement(obstacle, obstacleIndex, roles);
+            var candidate = new ObstacleChainElement(obstacle, obstacleIndex, roleMask);
             if (!candidate.HasRole(ObstacleRole.BlockingThreat) && !IsGroundTarget(candidate))
                 return false;
 

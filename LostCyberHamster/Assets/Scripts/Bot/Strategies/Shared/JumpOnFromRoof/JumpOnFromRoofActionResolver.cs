@@ -180,7 +180,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                 if (!IsJumpOnFromRoofTarget(element, planningState.Hamster))
                     continue;
 
-                actionChain = new ObstacleChain(elements);
+                actionChain = ObstacleChain.FromOwnedElements(elements);
                 targetObstacle = element.Obstacle;
                 targetObstacleIndex = element.WorldIndex;
                 targetObstacleChainIndex = elements.Count - 1;
@@ -226,11 +226,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             }
 
             // Оставляет только blockers и roof-to-road targets.
-            HashSet<ObstacleRole> roles = ObstacleRoleClassifier.GetRoles(
+            ObstacleRoleMask roleMask = ObstacleRoleClassifier.GetRoleMask(
                 planningState,
                 worldSnapshot,
                 obstacle);
-            var candidate = new ObstacleChainElement(obstacle, obstacleIndex, roles);
+            var candidate = new ObstacleChainElement(obstacle, obstacleIndex, roleMask);
             if (!candidate.HasRole(ObstacleRole.BlockingThreat)
                 && !IsJumpOnFromRoofTarget(candidate, hamster))
             {

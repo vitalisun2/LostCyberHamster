@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
+using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
@@ -12,6 +13,20 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
         public static List<JumpObstacleData> BuildBase(WorldSnapshot projectedWorldSnapshot)
         {
             var obstacles = new List<JumpObstacleData>(projectedWorldSnapshot.Obstacles.Count);
+            BuildBase(projectedWorldSnapshot, obstacles);
+            return obstacles;
+        }
+
+        public static void BuildBase(
+            WorldSnapshot projectedWorldSnapshot,
+            List<JumpObstacleData> obstacles)
+        {
+            RuntimePerformanceDiagnostics.Count(RuntimePerformanceCounter.JumpObstacleProjectionBuildBaseCalls);
+            RuntimePerformanceDiagnostics.Count(
+                RuntimePerformanceCounter.JumpObstacleProjectionBuildBaseItems,
+                projectedWorldSnapshot.Obstacles.Count);
+
+            obstacles.Clear();
             for (int obstacleIndex = 0; obstacleIndex < projectedWorldSnapshot.Obstacles.Count; obstacleIndex++)
             {
                 ObstacleSnapshot obstacle = projectedWorldSnapshot.Obstacles[obstacleIndex];
@@ -27,8 +42,6 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
                     obstacle.TopY,
                     obstacle.IsRemovedInPlanning));
             }
-
-            return obstacles;
         }
 
         public static void BuildShifted(
@@ -36,6 +49,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpPlanning
             float fireShift,
             List<JumpObstacleData> shiftedObstacles)
         {
+            RuntimePerformanceDiagnostics.Count(RuntimePerformanceCounter.JumpObstacleProjectionBuildShiftedCalls);
+            RuntimePerformanceDiagnostics.Count(
+                RuntimePerformanceCounter.JumpObstacleProjectionBuildShiftedItems,
+                baseObstacles.Count);
+
             shiftedObstacles.Clear();
             for (int obstacleIndex = 0; obstacleIndex < baseObstacles.Count; obstacleIndex++)
             {

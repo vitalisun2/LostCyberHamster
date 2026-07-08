@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Diagnostics;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -42,11 +43,22 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         public PlanningState Simulate(PlanningState planningState, PlannedAction action, WorldSnapshot worldSnapshot)
         {
-            if (planningState == null || action == null || worldSnapshot == null)
-                return null;
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotTransitionSimulatorSimulate);
+            try
+            {
+                if (planningState == null || action == null || worldSnapshot == null)
+                    return null;
 
-            ISimulator simulator = GetRequiredSimulator(action);
-            return simulator.Simulate(planningState, action, worldSnapshot);
+                ISimulator simulator = GetRequiredSimulator(action);
+                return simulator.Simulate(planningState, action, worldSnapshot);
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotTransitionSimulatorSimulate,
+                    allocationSample);
+            }
         }
 
         /// <summary>
@@ -58,15 +70,26 @@ namespace Assets.Scripts.Bot.Planning
             WorldSnapshot worldSnapshot,
             float? remainingPostFireWorldShift = null)
         {
-            if (planningState == null || action == null || worldSnapshot == null)
-                return null;
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotTransitionSimulatorProjectInProgress);
+            try
+            {
+                if (planningState == null || action == null || worldSnapshot == null)
+                    return null;
 
-            ISimulator simulator = GetRequiredSimulator(action);
-            return simulator.ProjectInProgress(
-                planningState,
-                action,
-                worldSnapshot,
-                remainingPostFireWorldShift);
+                ISimulator simulator = GetRequiredSimulator(action);
+                return simulator.ProjectInProgress(
+                    planningState,
+                    action,
+                    worldSnapshot,
+                    remainingPostFireWorldShift);
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotTransitionSimulatorProjectInProgress,
+                    allocationSample);
+            }
         }
 
         /// <summary>

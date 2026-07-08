@@ -13,6 +13,14 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
     /// </summary>
     internal sealed class SwitchLaneFireWindowCalculator
     {
+        private static readonly Comparison<UnsafeInterval> UnsafeIntervalStartComparison = CompareUnsafeIntervalStart;
+        private static readonly Comparison<SafeInterval> SafeIntervalStartComparison = CompareSafeIntervalStart;
+
+        private readonly List<UnsafeInterval> _unsafeIntervals = new();
+        private readonly List<SafeInterval> _safeIntervals = new();
+        private readonly List<SafeInterval> _supportIntervals = new();
+        private readonly List<SafeInterval> _supportedSafeIntervals = new();
+
         /// <summary>
         /// Вычисляет самый поздний допустимый fire shift для смены линии перед obstacle.
         /// </summary>
@@ -102,7 +110,7 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             sample = default;
 
             // Собирает все безопасные интервалы запуска.
-            List<SafeInterval> safeIntervals = CollectSafeFireIntervals(
+            IReadOnlyList<SafeInterval> safeIntervals = CollectSafeFireIntervalsScratch(
                 worldSnapshot,
                 hamster,
                 targetBottomLine,
@@ -194,28 +202,65 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             float latestFireShift,
             bool requireTargetRoofSupport = true)
         {
-            // Собирает и упорядочивает все опасные интервалы.
-            bool allowTargetRoofContact = hamster.IsOnRoof && requireTargetRoofSupport;
-            var unsafeIntervals = CollectUnsafeFireIntervals(
+            IReadOnlyList<SafeInterval> intervals = CollectSafeFireIntervalsScratch(
                 worldSnapshot,
                 hamster,
                 targetBottomLine,
                 latestFireShift,
-                allowTargetRoofContact);
-            unsafeIntervals.Sort((left, right) => left.Start.CompareTo(right.Start));
+                requireTargetRoofSupport);
+
+            var copiedIntervals = new List<SafeInterval>(intervals.Count);
+            for (int intervalIndex = 0; intervalIndex < intervals.Count; intervalIndex++)
+                copiedIntervals.Add(intervals[intervalIndex]);
+
+            return copiedIntervals;
+        }
+
+        public bool HasAnySafeFireInterval(
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
+            bool targetBottomLine,
+            float latestFireShift,
+            bool requireTargetRoofSupport = true)
+        {
+            return CollectSafeFireIntervalsScratch(
+                worldSnapshot,
+                hamster,
+                targetBottomLine,
+                latestFireShift,
+                requireTargetRoofSupport).Count > 0;
+        }
+
+        private IReadOnlyList<SafeInterval> CollectSafeFireIntervalsScratch(
+            WorldSnapshot worldSnapshot,
+            HamsterSnapshot hamster,
+            bool targetBottomLine,
+            float latestFireShift,
+            bool requireTargetRoofSupport)
+        {
+            // Собирает и упорядочивает все опасные интервалы.
+            bool allowTargetRoofContact = hamster.IsOnRoof && requireTargetRoofSupport;
+            CollectUnsafeFireIntervals(
+                worldSnapshot,
+                hamster,
+                targetBottomLine,
+                latestFireShift,
+                allowTargetRoofContact,
+                _unsafeIntervals);
+            _unsafeIntervals.Sort(UnsafeIntervalStartComparison);
 
             // Вычитает опасные интервалы из полного окна запуска.
-            var safeIntervals = new List<SafeInterval>();
+            _safeIntervals.Clear();
             float safeStart = 0f;
-            for (int intervalIndex = 0; intervalIndex < unsafeIntervals.Count; intervalIndex++)
+            for (int intervalIndex = 0; intervalIndex < _unsafeIntervals.Count; intervalIndex++)
             {
-                UnsafeInterval interval = unsafeIntervals[intervalIndex];
+                UnsafeInterval interval = _unsafeIntervals[intervalIndex];
                 if (interval.End < safeStart)
                     continue;
 
                 float safeEnd = interval.Start;
                 if (safeEnd >= safeStart)
-                    safeIntervals.Add(new SafeInterval(safeStart, safeEnd));
+                    _safeIntervals.Add(new SafeInterval(safeStart, safeEnd));
 
                 if (interval.End > safeStart)
                     safeStart = interval.End;
@@ -223,20 +268,20 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
             // Добавляет хвостовой безопасный интервал после последнего overlap.
             if (safeStart <= latestFireShift)
-                safeIntervals.Add(new SafeInterval(safeStart, latestFireShift));
+                _safeIntervals.Add(new SafeInterval(safeStart, latestFireShift));
 
             // Для switch с крыши оставляет только окна, где target-линия имеет roof support под хомяком.
             if (hamster.IsOnRoof && requireTargetRoofSupport)
             {
-                safeIntervals = IntersectWithTargetRoofSupportIntervals(
+                return IntersectWithTargetRoofSupportIntervals(
                     worldSnapshot,
                     hamster,
                     targetBottomLine,
                     latestFireShift,
-                    safeIntervals);
+                    _safeIntervals);
             }
 
-            return safeIntervals;
+            return _safeIntervals;
         }
 
         /// <summary>
@@ -277,15 +322,16 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
         /// <summary>
         /// Собирает интервалы запуска, в которых смена линии приводит к пересечению с опасными obstacle.
         /// </summary>
-        private static List<UnsafeInterval> CollectUnsafeFireIntervals(
+        private static void CollectUnsafeFireIntervals(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
             float latestFireShift,
-            bool allowTargetRoofContact)
+            bool allowTargetRoofContact,
+            List<UnsafeInterval> unsafeIntervals)
         {
             // Подготавливает накопитель опасных интервалов.
-            var unsafeIntervals = new List<UnsafeInterval>();
+            unsafeIntervals.Clear();
 
             // Обходит obstacle на целевой линии и строит их overlap-окна.
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
@@ -321,15 +367,12 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
                 unsafeIntervals.Add(new UnsafeInterval(unsafeStart, unsafeEnd));
             }
-
-            // Возвращает найденные опасные интервалы запуска.
-            return unsafeIntervals;
         }
 
         /// <summary>
         /// Пересекает безопасные интервалы SwitchLane с интервалами наличия roof support на целевой линии.
         /// </summary>
-        private static List<SafeInterval> IntersectWithTargetRoofSupportIntervals(
+        private List<SafeInterval> IntersectWithTargetRoofSupportIntervals(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
@@ -337,44 +380,46 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             IReadOnlyList<SafeInterval> safeIntervals)
         {
             // Собирает интервалы, где target roof находится под центром хомяка с runtime tolerance.
-            List<SafeInterval> supportIntervals = CollectTargetRoofSupportIntervals(
+            CollectTargetRoofSupportIntervals(
                 worldSnapshot,
                 hamster,
                 targetBottomLine,
-                latestFireShift);
-            supportIntervals.Sort((left, right) => left.Start.CompareTo(right.Start));
+                latestFireShift,
+                _supportIntervals);
+            _supportIntervals.Sort(SafeIntervalStartComparison);
 
             // Возвращает пересечение safety и roof-support окон.
-            var supportedSafeIntervals = new List<SafeInterval>();
+            _supportedSafeIntervals.Clear();
             for (int safeIndex = 0; safeIndex < safeIntervals.Count; safeIndex++)
             {
                 SafeInterval safeInterval = safeIntervals[safeIndex];
-                for (int supportIndex = 0; supportIndex < supportIntervals.Count; supportIndex++)
+                for (int supportIndex = 0; supportIndex < _supportIntervals.Count; supportIndex++)
                 {
-                    SafeInterval supportInterval = supportIntervals[supportIndex];
+                    SafeInterval supportInterval = _supportIntervals[supportIndex];
                     float start = Math.Max(safeInterval.Start, supportInterval.Start);
                     float end = Math.Min(safeInterval.End, supportInterval.End);
                     if (start <= end)
-                        supportedSafeIntervals.Add(new SafeInterval(start, end));
+                        _supportedSafeIntervals.Add(new SafeInterval(start, end));
                 }
             }
 
-            return supportedSafeIntervals;
+            return _supportedSafeIntervals;
         }
 
         /// <summary>
         /// Собирает интервалы fire shift, в которых target-line roof остаётся под хомяком после tap.
         /// </summary>
-        private static List<SafeInterval> CollectTargetRoofSupportIntervals(
+        private static void CollectTargetRoofSupportIntervals(
             WorldSnapshot worldSnapshot,
             HamsterSnapshot hamster,
             bool targetBottomLine,
-            float latestFireShift)
+            float latestFireShift,
+            List<SafeInterval> supportIntervals)
         {
             // Отсекает неполный вход.
-            var supportIntervals = new List<SafeInterval>();
+            supportIntervals.Clear();
             if (worldSnapshot == null || hamster == null)
-                return supportIntervals;
+                return;
 
             // Проецирует каждую target-line roof в окно shift, где runtime считает её опорой.
             for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
@@ -401,8 +446,16 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
 
                 supportIntervals.Add(new SafeInterval(supportStart, supportEnd));
             }
+        }
 
-            return supportIntervals;
+        private static int CompareUnsafeIntervalStart(UnsafeInterval left, UnsafeInterval right)
+        {
+            return left.Start.CompareTo(right.Start);
+        }
+
+        private static int CompareSafeIntervalStart(SafeInterval left, SafeInterval right)
+        {
+            return left.Start.CompareTo(right.Start);
         }
 
         /// <summary>

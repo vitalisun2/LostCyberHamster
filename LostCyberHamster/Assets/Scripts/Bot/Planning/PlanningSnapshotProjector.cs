@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
+using Assets.Scripts.Diagnostics;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -14,21 +15,32 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         public static WorldSnapshot Project(WorldSnapshot sourceSnapshot, PlanningState planningState)
         {
-            if (sourceSnapshot == null || planningState == null)
-                return null;
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotPlanningSnapshotProjectorProject);
+            try
+            {
+                if (sourceSnapshot == null || planningState == null)
+                    return null;
 
-            IReadOnlyList<ObstacleSnapshot> projectedObstacles =
-                planningState.ProjectionWorldShift == 0f
-                && planningState.RemovedObstacleInstanceIds.Count == 0
-                    ? sourceSnapshot.Obstacles
-                    : new ProjectedObstacleList(sourceSnapshot.Obstacles, planningState);
+                IReadOnlyList<ObstacleSnapshot> projectedObstacles =
+                    planningState.ProjectionWorldShift == 0f
+                    && planningState.RemovedObstacleInstanceIds.Count == 0
+                        ? sourceSnapshot.Obstacles
+                        : new ProjectedObstacleList(sourceSnapshot.Obstacles, planningState);
 
-            return new WorldSnapshot(
-                planningState.Hamster,
-                projectedObstacles,
-                sourceSnapshot.ScreenLeftEdgeX,
-                sourceSnapshot.ScreenRightEdgeX,
-                sourceSnapshot.SnapshotTime);
+                return new WorldSnapshot(
+                    planningState.Hamster,
+                    projectedObstacles,
+                    sourceSnapshot.ScreenLeftEdgeX,
+                    sourceSnapshot.ScreenRightEdgeX,
+                    sourceSnapshot.SnapshotTime);
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotPlanningSnapshotProjectorProject,
+                    allocationSample);
+            }
         }
 
         private sealed class ProjectedObstacleList : IReadOnlyList<ObstacleSnapshot>

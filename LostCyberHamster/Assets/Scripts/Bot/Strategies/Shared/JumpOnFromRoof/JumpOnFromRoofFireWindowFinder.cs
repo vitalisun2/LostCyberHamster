@@ -23,6 +23,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
         /// Policy конкретного варианта roof-to-road jump-on.
         /// </summary>
         private readonly IJumpOnFromRoofPolicy _policy;
+        private readonly List<JumpObstacleData> _baseObstacles = new();
+        private readonly List<JumpObstacleData> _shiftedObstacles = new();
 
         public JumpOnFromRoofFireWindowFinder(IJumpOnFromRoofPolicy policy)
         {
@@ -131,24 +133,24 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
 
             // Подтверждает смысловые timing-точки через runtime resolver.
             var validFireShifts = new List<float>();
-            List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
+            JumpObstacleProjection.BuildBase(projectedWorldSnapshot, _baseObstacles);
             TryAddRuntimeValidFireShift(
                 planningState,
-                baseObstacles,
+                _baseObstacles,
                 travel,
                 window,
                 window.SelectedFireShift,
                 validFireShifts);
             TryAddRuntimeValidFireShift(
                 planningState,
-                baseObstacles,
+                _baseObstacles,
                 travel,
                 window,
                 window.FirstFireShift,
                 validFireShifts);
             TryAddRuntimeValidFireShift(
                 planningState,
-                baseObstacles,
+                _baseObstacles,
                 travel,
                 window,
                 window.LastFireShift,
@@ -254,11 +256,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
             JumpOnFromRoofTravel travel)
         {
             // Сдвигает obstacles в позицию runtime resolver-а.
-            var obstaclesAtResolveShift = new List<JumpObstacleData>(baseObstacles.Count);
             JumpObstacleProjection.BuildShifted(
                 baseObstacles,
                 travel.GetResolveFireShift(fireShift),
-                obstaclesAtResolveShift);
+                _shiftedObstacles);
 
             // Собирает context resolver-а относительно resolver-точки.
             RoofJumpResolveContext context = new(
@@ -271,7 +272,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnFromRoof
                 travel.ResolveTravel);
 
             // Возвращает policy-specific outcome.
-            return _policy.Resolve(obstaclesAtResolveShift, context);
+            return _policy.Resolve(_shiftedObstacles, context);
         }
     }
 }

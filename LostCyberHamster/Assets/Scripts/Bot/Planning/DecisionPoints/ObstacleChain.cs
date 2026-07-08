@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
+using Assets.Scripts.Diagnostics;
 
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
@@ -9,10 +10,22 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
     /// </summary>
     public sealed class ObstacleChain
     {
+        internal static ObstacleChain FromOwnedElements(List<ObstacleChainElement> elements)
+        {
+            return new ObstacleChain(elements, copyElements: false);
+        }
+
         /// <summary>
         /// Создает role-based chain для одной линии.
         /// </summary>
         public ObstacleChain(IReadOnlyList<ObstacleChainElement> elements)
+            : this(elements, copyElements: true)
+        {
+        }
+
+        private ObstacleChain(
+            IReadOnlyList<ObstacleChainElement> elements,
+            bool copyElements)
         {
             if (elements == null)
                 throw new ArgumentNullException(nameof(elements));
@@ -20,7 +33,9 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             if (elements.Count == 0)
                 throw new ArgumentException("Obstacle chain must contain at least one element.", nameof(elements));
 
-            var copiedElements = new List<ObstacleChainElement>(elements.Count);
+            List<ObstacleChainElement> copiedElements = copyElements
+                ? new List<ObstacleChainElement>(elements.Count)
+                : null;
             float leftX = float.MaxValue;
             float rightX = float.MinValue;
             bool chainBottomLine = elements[0]?.IsBottomLine
@@ -34,7 +49,8 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                 if (element.IsBottomLine != chainBottomLine)
                     throw new ArgumentException("Obstacle chain must contain elements from one focus lane.", nameof(elements));
 
-                copiedElements.Add(element);
+                if (copyElements)
+                    copiedElements.Add(element);
 
                 if (element.Obstacle.LeftX < leftX)
                     leftX = element.Obstacle.LeftX;
@@ -43,9 +59,18 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                     rightX = element.Obstacle.RightX;
             }
 
-            Elements = copiedElements;
+            Elements = copyElements
+                ? copiedElements
+                : elements;
             LeftX = leftX;
             RightX = rightX;
+            RuntimePerformanceDiagnostics.Count(RuntimePerformanceCounter.ObstacleChainConstructed);
+            if (copyElements)
+            {
+                RuntimePerformanceDiagnostics.Count(
+                    RuntimePerformanceCounter.ObstacleChainCopiedElements,
+                    copiedElements.Count);
+            }
         }
 
         public IReadOnlyList<ObstacleChainElement> Elements { get; }

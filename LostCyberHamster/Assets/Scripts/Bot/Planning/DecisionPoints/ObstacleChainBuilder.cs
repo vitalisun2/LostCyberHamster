@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Diagnostics;
 
 namespace Assets.Scripts.Bot.Planning.DecisionPoints
 {
@@ -40,28 +41,39 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             bool focusBottomLine,
             out ObstacleChain chain)
         {
-            chain = null;
-            if (planningState?.Hamster == null || worldSnapshot?.Obstacles == null)
-                return false;
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotObstacleChainBuilderTryBuild);
+            try
+            {
+                chain = null;
+                if (planningState?.Hamster == null || worldSnapshot?.Obstacles == null)
+                    return false;
 
-            if (!TryFindFirstActiveElement(
+                if (!TryFindFirstActiveElement(
+                        planningState,
+                        worldSnapshot,
+                        focusBottomLine,
+                        firstObstacleIndex,
+                        out ObstacleChainElement firstElement))
+                {
+                    return false;
+                }
+
+                List<ObstacleChainElement> elements = BuildChainElements(
                     planningState,
                     worldSnapshot,
                     focusBottomLine,
-                    firstObstacleIndex,
-                    out ObstacleChainElement firstElement))
-            {
-                return false;
+                    firstElement);
+
+                chain = ObstacleChain.FromOwnedElements(elements);
+                return true;
             }
-
-            List<ObstacleChainElement> elements = BuildChainElements(
-                planningState,
-                worldSnapshot,
-                focusBottomLine,
-                firstElement);
-
-            chain = new ObstacleChain(elements);
-            return true;
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotObstacleChainBuilderTryBuild,
+                    allocationSample);
+            }
         }
 
         /// <summary>
@@ -107,6 +119,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             bool focusBottomLine,
             ObstacleChainElement firstElement)
         {
+            RuntimePerformanceDiagnostics.Count(RuntimePerformanceCounter.ObstacleChainBuilderElementLists);
             var elements = new List<ObstacleChainElement> { firstElement };
             float previousRightX = firstElement.Obstacle.RightX;
 
@@ -134,6 +147,9 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                     previousRightX = element.Obstacle.RightX;
             }
 
+            RuntimePerformanceDiagnostics.Count(
+                RuntimePerformanceCounter.ObstacleChainBuilderElementListItems,
+                elements.Count);
             return elements;
         }
 
@@ -162,12 +178,12 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
             if (obstacle.IsBottomLine != focusBottomLine)
                 return false;
 
-            HashSet<ObstacleRole> roles = ObstacleRoleClassifier.GetRoles(
+            ObstacleRoleMask roleMask = ObstacleRoleClassifier.GetRoleMask(
                 planningState,
                 worldSnapshot,
                 obstacle);
 
-            element = new ObstacleChainElement(obstacle, obstacleIndex, roles);
+            element = new ObstacleChainElement(obstacle, obstacleIndex, roleMask);
             if (!element.HasAnyActivePlanningRole)
                 return false;
 

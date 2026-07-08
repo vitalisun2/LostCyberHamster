@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
@@ -6,7 +5,6 @@ using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 using Assets.Scripts.Bot.Strategies.Shared.Execution;
-using Assets.Scripts.Bot.Strategies.Shared.Timing;
 using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
@@ -173,13 +171,13 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
             bool targetBottomLine,
             float latestFireShift)
         {
-            List<SafeInterval> safeIntervals = _fireWindowCalculator.CollectSafeFireIntervals(
+            bool hasSafeIntervals = _fireWindowCalculator.HasAnySafeFireInterval(
                 worldSnapshot,
                 hamster,
                 targetBottomLine,
                 latestFireShift);
 
-            return safeIntervals.Count == 0
+            return !hasSafeIntervals
                 ? "Нет безопасного окна для смены линии: целевая линия перекрыта опасными препятствиями во всем допустимом интервале."
                 : "Нет безопасного окна для смены линии: безопасный интервал слишком узкий для запуска действия.";
         }

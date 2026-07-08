@@ -19,6 +19,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
         private const float PreRoofObstacleWindowOffsetRatio = 0.2f;
 
         private readonly IJumpOnRoofPolicy _policy;
+        private readonly List<JumpObstacleData> _baseObstacles = new();
+        private readonly List<JumpObstacleData> _shiftedObstacles = new();
 
         /// <summary>
         /// Создает finder для конкретного jump-on-roof policy.
@@ -66,10 +68,10 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
                 return false;
             }
 
-            List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
+            JumpObstacleProjection.BuildBase(projectedWorldSnapshot, _baseObstacles);
             if (HasRoofHazardOnRoofEntryEdge(
                     planningState.Hamster,
-                    baseObstacles,
+                    _baseObstacles,
                     targetObstacleIndex))
             {
                 deadEndReason = "Нет безопасного окна для прыжка на крышу: входной край крыши занят опасным препятствием.";
@@ -78,7 +80,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
 
             if (!TryFindEarliestResolverValidFireShift(
                     planningState.Hamster,
-                    baseObstacles,
+                    _baseObstacles,
                     window.FirstFireShift,
                     window.LastFireShift,
                     jumpTravel,
@@ -215,8 +217,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
             if (resolveTravel <= 0f)
                 return new JumpResolveResult(hamster.HamsterState, -1);
 
-            var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
-            JumpObstacleProjection.BuildShifted(baseObstacles, resolveFireShift, obstaclesAtFireShift);
+            JumpObstacleProjection.BuildShifted(baseObstacles, resolveFireShift, _shiftedObstacles);
 
             JumpResolveContext context = new(
                 hamster.IsOnBottomLine,
@@ -228,7 +229,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof
                 resolveTravel,
                 damageBigAliveWithoutYByReach: _policy.DamageBigAliveWithoutYByReach);
 
-            return _policy.Resolve(obstaclesAtFireShift, context);
+            return _policy.Resolve(_shiftedObstacles, context);
         }
 
         /// <summary>

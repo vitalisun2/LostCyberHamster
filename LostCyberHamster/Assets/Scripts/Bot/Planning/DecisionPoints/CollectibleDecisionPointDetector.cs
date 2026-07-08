@@ -179,7 +179,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
                 elements.Add(new ObstacleChainElement(
                     obstacle,
                     obstacleIndex,
-                    ObstacleRoleClassifier.GetRoles(
+                    ObstacleRoleClassifier.GetRoleMask(
                         planningState,
                         worldSnapshot,
                         obstacle)));
@@ -191,7 +191,7 @@ namespace Assets.Scripts.Bot.Planning.DecisionPoints
 
             // Возвращает ordered decision point.
             elements.Sort((left, right) => left.Obstacle.LeftX.CompareTo(right.Obstacle.LeftX));
-            decisionPoint = new DecisionPoint(new ObstacleChain(elements));
+            decisionPoint = new DecisionPoint(ObstacleChain.FromOwnedElements(elements));
             return true;
         }
 

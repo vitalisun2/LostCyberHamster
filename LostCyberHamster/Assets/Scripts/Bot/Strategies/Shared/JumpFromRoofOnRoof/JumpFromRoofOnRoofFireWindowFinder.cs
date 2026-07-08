@@ -16,6 +16,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
         /// Policy конкретного варианта roof-to-roof прыжка.
         /// </summary>
         private readonly IJumpFromRoofOnRoofPolicy _policy;
+        private readonly List<JumpObstacleData> _baseObstacles = new();
+        private readonly List<JumpObstacleData> _shiftedObstacles = new();
 
         public JumpFromRoofOnRoofFireWindowFinder(IJumpFromRoofOnRoofPolicy policy)
         {
@@ -79,11 +81,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
 
             // Подтверждает смысловые точки окна через runtime resolver.
             float selectedFireShift = fireShift;
-            List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
+            JumpObstacleProjection.BuildBase(projectedWorldSnapshot, _baseObstacles);
             if (TrySelectFireShift(
                     planningState,
                     projectedWorldSnapshot,
-                    baseObstacles,
+                    _baseObstacles,
                     targetRoof.InstanceId,
                     selectedFireShift,
                     firstFireShift,
@@ -266,8 +268,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
                 return false;
 
             // Строит obstacle snapshot на момент fire.
-            var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
-            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
+            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, _shiftedObstacles);
 
             // Готовит roof-jump context из текущей геометрии хомяка.
             HamsterSnapshot hamster = planningState.Hamster;
@@ -284,15 +285,15 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoofOnRoof
                 travel.JumpFromRoofTravel);
 
             // Сверяет resolver outcome с ожидаемой посадкой на конкретную target roof.
-            JumpResolveResult result = _policy.Resolve(obstaclesAtFireShift, context);
+            JumpResolveResult result = _policy.Resolve(_shiftedObstacles, context);
             if (result.State != _policy.ExpectedSuccessState)
                 return false;
 
-            if (result.TargetIndex < 0 || result.TargetIndex >= obstaclesAtFireShift.Count)
+            if (result.TargetIndex < 0 || result.TargetIndex >= _shiftedObstacles.Count)
                 return false;
 
             // Подтверждает совпадение target roof и в resolver snapshot, и в projected world.
-            return obstaclesAtFireShift[result.TargetIndex].InstanceId == expectedTargetRoofInstanceId
+            return _shiftedObstacles[result.TargetIndex].InstanceId == expectedTargetRoofInstanceId
                 && result.TargetIndex < projectedWorldSnapshot.Obstacles.Count
                 && projectedWorldSnapshot.Obstacles[result.TargetIndex].InstanceId == expectedTargetRoofInstanceId;
         }

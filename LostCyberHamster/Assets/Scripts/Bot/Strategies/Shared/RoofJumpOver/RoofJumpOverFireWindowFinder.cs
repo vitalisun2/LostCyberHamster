@@ -17,6 +17,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
         /// Policy конкретного варианта roof jump-over.
         /// </summary>
         private readonly IRoofJumpOverPolicy _policy;
+        private readonly List<JumpObstacleData> _baseObstacles = new();
+        private readonly List<JumpObstacleData> _shiftedObstacles = new();
 
         /// <summary>
         /// Создает finder для конкретного варианта roof jump-over.
@@ -61,11 +63,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
             }
 
             // Проверяет смысловые точки fire-window через runtime resolver.
-            List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
+            JumpObstacleProjection.BuildBase(projectedWorldSnapshot, _baseObstacles);
             return TrySelectFireShift(
                 planningState,
                 projectedWorldSnapshot,
-                baseObstacles,
+                _baseObstacles,
                 chainModel,
                 travel,
                 out resultSupportObstacle,
@@ -166,8 +168,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
                 return false;
             }
 
-            var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
-            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
+            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, _shiftedObstacles);
 
             // Готовит roof-jump context из текущей геометрии хомяка.
             HamsterSnapshot hamster = planningState.Hamster;
@@ -181,7 +182,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
                 travel.JumpFromRoofTravel);
 
             // Сверяет resolver outcome с ожидаемым продолжением RoofRun.
-            JumpResolveResult result = _policy.Resolve(obstaclesAtFireShift, context);
+            JumpResolveResult result = _policy.Resolve(_shiftedObstacles, context);
             if (result.State != _policy.ExpectedSuccessState)
             {
                 deadEndReason = "Нет безопасного окна для прыжка над препятствием на крыше: runtime-модель не подтверждает безопасный прыжок.";
@@ -195,7 +196,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.RoofJumpOver
             }
 
             resultSupportObstacle = projectedWorldSnapshot.Obstacles[result.TargetIndex];
-            if (resultSupportObstacle.InstanceId != obstaclesAtFireShift[result.TargetIndex].InstanceId)
+            if (resultSupportObstacle.InstanceId != _shiftedObstacles[result.TargetIndex].InstanceId)
             {
                 deadEndReason = "Нет безопасного окна для прыжка над препятствием на крыше: runtime-модель не подтверждает безопасный прыжок.";
                 return false;

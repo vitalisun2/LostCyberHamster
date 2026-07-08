@@ -4,6 +4,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
+using Assets.Scripts.Diagnostics;
 
 namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
 {
@@ -12,6 +13,16 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
     /// </summary>
     internal sealed class PlanningStrategyResult
     {
+        private static readonly PlanningStrategyResult NotApplicableResult = new(
+            isApplicable: false,
+            actions: Array.Empty<PlannedAction>(),
+            deadEndReason: null);
+
+        private static readonly PlanningStrategyResult NoActionResult = new(
+            isApplicable: true,
+            actions: Array.Empty<PlannedAction>(),
+            deadEndReason: null);
+
         private PlanningStrategyResult(
             bool isApplicable,
             IReadOnlyList<PlannedAction> actions,
@@ -30,22 +41,19 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
 
         public static PlanningStrategyResult NotApplicable()
         {
-            return new PlanningStrategyResult(
-                isApplicable: false,
-                actions: Array.Empty<PlannedAction>(),
-                deadEndReason: null);
+            RuntimePerformanceDiagnostics.Count(RuntimePerformanceCounter.PlanningStrategyResultNotApplicable);
+            return NotApplicableResult;
         }
 
         public static PlanningStrategyResult NoAction()
         {
-            return new PlanningStrategyResult(
-                isApplicable: true,
-                actions: Array.Empty<PlannedAction>(),
-                deadEndReason: null);
+            RuntimePerformanceDiagnostics.Count(RuntimePerformanceCounter.PlanningStrategyResultNoAction);
+            return NoActionResult;
         }
 
         public static PlanningStrategyResult FromActions(IReadOnlyList<PlannedAction> actions)
         {
+            RuntimePerformanceDiagnostics.Count(RuntimePerformanceCounter.PlanningStrategyResultFromActions);
             return new PlanningStrategyResult(
                 isApplicable: true,
                 actions: actions,
@@ -54,6 +62,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
 
         public static PlanningStrategyResult FromAction(PlannedAction action)
         {
+            RuntimePerformanceDiagnostics.Count(RuntimePerformanceCounter.PlanningStrategyResultFromAction);
             return action == null
                 ? NoAction()
                 : FromActions(new[] { action });
@@ -61,6 +70,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
 
         public static PlanningStrategyResult DeadEnd(string strategyName, string message)
         {
+            RuntimePerformanceDiagnostics.Count(RuntimePerformanceCounter.PlanningStrategyResultDeadEnd);
             return new PlanningStrategyResult(
                 isApplicable: true,
                 actions: Array.Empty<PlannedAction>(),
@@ -76,6 +86,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.Contracts
             int requiredEnergy,
             int availableEnergy)
         {
+            RuntimePerformanceDiagnostics.Count(RuntimePerformanceCounter.PlanningStrategyResultInsufficientEnergy);
             return DeadEnd(
                 strategyName,
                 $"Недостаточно энергии для {FormatActionKind(actionKind)}: нужно {requiredEnergy}, доступно {availableEnergy}.");

@@ -14,6 +14,14 @@ namespace Assets.Scripts.System
         }
 
         /// <summary>
+        /// Возвращает true, если текущий Play Mode запущен automation-мостом для test-level validation.
+        /// </summary>
+        public static bool IsTestLevelAutomationRun()
+        {
+            return PlayerPrefs.HasKey(TestLevelAddressOverrideKey) || ShouldSkipIntro();
+        }
+
+        /// <summary>
         /// Returns true and the override timescale if one was explicitly set by TestLevelLauncher.
         /// When not set, the caller should apply its own default logic.
         /// </summary>

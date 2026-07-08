@@ -9,6 +9,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared;
+using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
@@ -173,6 +174,21 @@ namespace Assets.Scripts.Bot
         private RuntimeObstacleSpawner _subscribedObstacleSpawner;
 
         /// <summary>
+        /// Последний spawned pattern для компактной runtime-safety диагностики.
+        /// </summary>
+        private int _lastSpawnedPatternIndex = -1;
+
+        /// <summary>
+        /// Имя последнего spawned pattern для компактной runtime-safety диагностики.
+        /// </summary>
+        private string _lastSpawnedPatternName;
+
+        /// <summary>
+        /// Запуск идет из test-level automation и должен завершаться при первой потере жизни.
+        /// </summary>
+        private bool _isAutomationValidationRun;
+
+        /// <summary>
         /// Последняя planning-diagnosis, которая станет dead-end только после потери жизни.
         /// </summary>
         private PlanningDeadEndReport _pendingDeadEndReport;
@@ -258,6 +274,7 @@ namespace Assets.Scripts.Bot
             BotAnimationTravelProvider.Reset();
             DebugManager.SetVerboseDiagLoggingEnabled(false);
             BotDiagnostics.Reset();
+            _isAutomationValidationRun = AutomationRuntimePrefs.IsTestLevelAutomationRun();
             ApplyAutomationDiagnostics();
             BotAnimationTravelProvider.PrewarmKnownClipData();
             ApplyObstacleBonusDropPolicy();
@@ -276,15 +293,14 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private static void ApplyAutomationDiagnostics()
         {
-            if (!PlayerPrefs.HasKey(AutomationRuntimePrefs.TestLevelAddressOverrideKey))
+            if (!AutomationRuntimePrefs.IsTestLevelAutomationRun())
                 return;
 
             BotDiagnostics.SetMaxLevel(BotDiagnosticLevel.Essential);
             BotDiagnostics.SetEnabledCategories(
                 BotDiagnosticCategory.TestResult
                 | BotDiagnosticCategory.RuntimeSafety
-                | BotDiagnosticCategory.DeadEnd
-                | BotDiagnosticCategory.Economy);
+                | BotDiagnosticCategory.DeadEnd);
         }
 
         private static IReadOnlyList<IPlanningStrategy> CreatePlanningStrategies()
@@ -361,16 +377,40 @@ namespace Assets.Scripts.Bot
         /// </summary>
         public void OnLateUpdate(float deltaTime)
         {
-            // Игнорирует tick в выключенном состоянии.
-            if (!IsEnabled)
-                return;
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotLateUpdate);
+            try
+            {
+                // Игнорирует tick в выключенном состоянии.
+                if (!IsEnabled)
+                    return;
 
-            // Проверяет готовность к bot tick.
-            if (!IsReadyForTick())
-                return;
+                // Проверяет готовность к bot tick.
+                if (!IsReadyForTick())
+                    return;
 
-            // Выполняет bot tick после движения мира.
-            TickBot();
+                MarkAsyncPlanRunningFrame();
+
+                // Выполняет bot tick после движения мира.
+                TickBot();
+
+                MarkAsyncPlanRunningFrame();
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotLateUpdate,
+                    allocationSample);
+            }
+        }
+
+        private void MarkAsyncPlanRunningFrame()
+        {
+            if (IsAsyncReplanRunning())
+            {
+                RuntimePerformanceDiagnostics.MarkFrameFlag(
+                    RuntimePerformanceFrameFlag.RuntimeBotAsyncPlanRunning);
+            }
         }
 
         /// <summary>
@@ -451,29 +491,99 @@ namespace Assets.Scripts.Bot
         /// </summary>
         private void TickBot()
         {
-            // Проверяет готовность planning компонентов.
-            if (_executor == null)
-                return;
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotTick);
+            try
+            {
+                // Проверяет готовность planning компонентов.
+                if (_executor == null)
+                    return;
 
-            EnsureInitialReplanRequested();
+                EnsureInitialReplanRequested();
 
-            // Сначала снимаем snapshot для текущего execution-тика.
-            LastSnapshot = _snapshotBuilder.Build(_hamster);
-            PlanExecutionTickResult executionResult = _executor.Tick(_hamster);
+                // Execution работает по live runtime-состоянию; snapshot нужен только для replan.
+                PlanExecutionTickResult executionResult = TickPlanExecutor();
 
-            // Переснимаем snapshot только после фактического execution-перехода.
-            // В обычных кадрах ожидания исходный snapshot остаётся актуальным для решения о rebuild.
-            if (executionResult != PlanExecutionTickResult.None)
-                LastSnapshot = _snapshotBuilder.Build(_hamster);
+                UpdateInProgressHeadFirePoint(executionResult);
+                PromoteDeferredReplanReasons();
+                RequestReplanForExecutionResult(executionResult);
 
-            UpdateInProgressHeadFirePoint(executionResult);
-            PromoteDeferredReplanReasons();
-            RequestReplanForExecutionResult(executionResult);
+                TryApplyCompletedAsyncReplanWithPerfSample();
 
-            TryApplyCompletedAsyncReplan();
+                if (ShouldRebuildPlan())
+                    StartAsyncReplanFromCurrentSnapshotWithPerfSample();
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotTick,
+                    allocationSample);
+            }
+        }
 
-            if (ShouldRebuildPlan())
+        private WorldSnapshot BuildRuntimeSnapshot()
+        {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotSnapshotBuild);
+            try
+            {
+                return _snapshotBuilder.Build(_hamster);
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotSnapshotBuild,
+                    allocationSample);
+            }
+        }
+
+        private PlanExecutionTickResult TickPlanExecutor()
+        {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotExecutorTick);
+            try
+            {
+                return _executor.Tick(_hamster);
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotExecutorTick,
+                    allocationSample);
+            }
+        }
+
+        private void TryApplyCompletedAsyncReplanWithPerfSample()
+        {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotApplyAsyncReplan);
+            try
+            {
+                TryApplyCompletedAsyncReplan();
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotApplyAsyncReplan,
+                    allocationSample);
+            }
+        }
+
+        private void StartAsyncReplanFromCurrentSnapshotWithPerfSample()
+        {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotStartAsyncReplan);
+            try
+            {
+                LastSnapshot = BuildRuntimeSnapshot();
                 StartAsyncReplanFromCurrentSnapshot();
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotStartAsyncReplan,
+                    allocationSample);
+            }
         }
 
         /// <summary>
@@ -520,7 +630,56 @@ namespace Assets.Scripts.Bot
 
             AsyncPlanBuildRequest request = CaptureAsyncPlanBuildRequest(replanReasons);
             _runningReplanRequestId = request.RequestId;
-            _runningReplanTask = Task.Run(() => new AsyncPlanRebuilder(CreatePlanningStrategies()).Build(request));
+            _runningReplanTask = Task.Run(() =>
+            {
+                long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotAsyncPlanBuild);
+                try
+                {
+                    IReadOnlyList<IPlanningStrategy> strategies = CreatePlanningStrategiesWithPerfSample();
+                    AsyncPlanRebuilder rebuilder = CreateAsyncPlanRebuilderWithPerfSample(strategies);
+                    return rebuilder.BuildWithPerfSample(request);
+                }
+                finally
+                {
+                    RuntimePerformanceDiagnostics.EndAllocationSample(
+                        RuntimePerformanceScope.RuntimeBotAsyncPlanBuild,
+                        allocationSample);
+                }
+            });
+        }
+
+        private static IReadOnlyList<IPlanningStrategy> CreatePlanningStrategiesWithPerfSample()
+        {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotAsyncCreateStrategies);
+            try
+            {
+                return CreatePlanningStrategies();
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotAsyncCreateStrategies,
+                    allocationSample);
+            }
+        }
+
+        private static AsyncPlanRebuilder CreateAsyncPlanRebuilderWithPerfSample(
+            IReadOnlyList<IPlanningStrategy> strategies)
+        {
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotAsyncCreateRebuilder);
+            try
+            {
+                return new AsyncPlanRebuilder(strategies);
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotAsyncCreateRebuilder,
+                    allocationSample);
+            }
         }
 
         /// <summary>
@@ -761,11 +920,32 @@ namespace Assets.Scripts.Bot
             if (_testCollectablesScriptedLifeLossHook?.TryConsumeLivesLost(livesLost) == true)
                 return;
 
-            if (!IsEnabled || _pendingDeadEndReport == null)
+            if (!IsEnabled)
                 return;
+
+            BotRuntimeEventDiagnostics.LogLivesLost(
+                livesLost,
+                _hamster,
+                _lastSpawnedPatternIndex,
+                _lastSpawnedPatternName);
+
+            if (_pendingDeadEndReport == null)
+            {
+                StopAutomationRunAfterLifeLoss();
+                return;
+            }
 
             ReportConfirmedDeadEnd(_pendingDeadEndReport, _pendingDeadEndReplanReasons, livesLost);
             ClearPendingDeadEndReport();
+        }
+
+        private void StopAutomationRunAfterLifeLoss()
+        {
+            if (!_isAutomationValidationRun)
+                return;
+
+            BotRuntimeEventDiagnostics.LogLevelFailed();
+            _gameManager?.Pause();
         }
 
         /// <summary>
@@ -962,6 +1142,22 @@ namespace Assets.Scripts.Bot
                     new PlanEvaluator());
             }
 
+            public AsyncPlanBuildResult BuildWithPerfSample(AsyncPlanBuildRequest request)
+            {
+                long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotAsyncRebuilderBuild);
+                try
+                {
+                    return Build(request);
+                }
+                finally
+                {
+                    RuntimePerformanceDiagnostics.EndAllocationSample(
+                        RuntimePerformanceScope.RuntimeBotAsyncRebuilderBuild,
+                        allocationSample);
+                }
+            }
+
             public AsyncPlanBuildResult Build(AsyncPlanBuildRequest request)
             {
                 try
@@ -979,39 +1175,86 @@ namespace Assets.Scripts.Bot
 
             private PlanBuildResult BuildPlanForRequest(AsyncPlanBuildRequest request)
             {
-                if (request?.Snapshot == null)
-                    return new PlanBuildResult(BotPlan.Empty(), deadEndReport: null);
-
-                WorldSnapshot snapshot = request.Snapshot;
-                if (!request.CurrentPlan.HasActions
-                    || HasReplanReason(request.ReplanReasons, BotReplanReason.ActionCancelled))
+                long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotAsyncBuildPlanForRequest);
+                try
                 {
-                    return _planBuilder.Build(snapshot);
+                    if (request?.Snapshot == null)
+                        return new PlanBuildResult(BotPlan.Empty(), deadEndReport: null);
+
+                    WorldSnapshot snapshot = request.Snapshot;
+                    if (!request.CurrentPlan.HasActions
+                        || HasReplanReason(request.ReplanReasons, BotReplanReason.ActionCancelled))
+                    {
+                        return _planBuilder.Build(snapshot);
+                    }
+
+                    IReadOnlyList<PlannedAction> committedPrefix = BuildCommittedPrefixWithPerfSample(request);
+                    if (committedPrefix.Count == 0)
+                        return _planBuilder.Build(snapshot);
+
+                    PlanningState rootState = PlanningState.FromSnapshot(snapshot);
+                    PlanningState tailRootState = BuildTailRootStateWithPerfSample(request, rootState, committedPrefix);
+
+                    if (tailRootState == null)
+                        return _planBuilder.Build(snapshot);
+
+                    PlanBuildResult tailBuildResult = _planBuilder.Build(snapshot, tailRootState);
+                    BotPlan tailPlan = tailBuildResult.Plan;
+
+                    var actions = new List<PlannedAction>(committedPrefix.Count + tailPlan.Actions.Count);
+                    for (int actionIndex = 0; actionIndex < committedPrefix.Count; actionIndex++)
+                        actions.Add(committedPrefix[actionIndex]);
+
+                    for (int actionIndex = 0; actionIndex < tailPlan.Actions.Count; actionIndex++)
+                        actions.Add(tailPlan.Actions[actionIndex]);
+
+                    return new PlanBuildResult(
+                        new BotPlan(actions, tailPlan.CommittedBoundaryX, tailPlan.Score),
+                        tailBuildResult.DeadEndReport);
                 }
+                finally
+                {
+                    RuntimePerformanceDiagnostics.EndAllocationSample(
+                        RuntimePerformanceScope.RuntimeBotAsyncBuildPlanForRequest,
+                        allocationSample);
+                }
+            }
 
-                IReadOnlyList<PlannedAction> committedPrefix = BuildCommittedPrefix(request);
-                if (committedPrefix.Count == 0)
-                    return _planBuilder.Build(snapshot);
+            private static IReadOnlyList<PlannedAction> BuildCommittedPrefixWithPerfSample(
+                AsyncPlanBuildRequest request)
+            {
+                long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotAsyncBuildCommittedPrefix);
+                try
+                {
+                    return BuildCommittedPrefix(request);
+                }
+                finally
+                {
+                    RuntimePerformanceDiagnostics.EndAllocationSample(
+                        RuntimePerformanceScope.RuntimeBotAsyncBuildCommittedPrefix,
+                        allocationSample);
+                }
+            }
 
-                PlanningState rootState = PlanningState.FromSnapshot(snapshot);
-                PlanningState tailRootState = BuildTailRootState(request, rootState, committedPrefix);
-
-                if (tailRootState == null)
-                    return _planBuilder.Build(snapshot);
-
-                PlanBuildResult tailBuildResult = _planBuilder.Build(snapshot, tailRootState);
-                BotPlan tailPlan = tailBuildResult.Plan;
-
-                var actions = new List<PlannedAction>(committedPrefix.Count + tailPlan.Actions.Count);
-                for (int actionIndex = 0; actionIndex < committedPrefix.Count; actionIndex++)
-                    actions.Add(committedPrefix[actionIndex]);
-
-                for (int actionIndex = 0; actionIndex < tailPlan.Actions.Count; actionIndex++)
-                    actions.Add(tailPlan.Actions[actionIndex]);
-
-                return new PlanBuildResult(
-                    new BotPlan(actions, tailPlan.CommittedBoundaryX, tailPlan.Score),
-                    tailBuildResult.DeadEndReport);
+            private PlanningState BuildTailRootStateWithPerfSample(
+                AsyncPlanBuildRequest request,
+                PlanningState rootState,
+                IReadOnlyList<PlannedAction> committedPrefix)
+            {
+                long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotAsyncBuildTailRootState);
+                try
+                {
+                    return BuildTailRootState(request, rootState, committedPrefix);
+                }
+                finally
+                {
+                    RuntimePerformanceDiagnostics.EndAllocationSample(
+                        RuntimePerformanceScope.RuntimeBotAsyncBuildTailRootState,
+                        allocationSample);
+                }
             }
 
             private PlanningState BuildTailRootState(
@@ -1089,7 +1332,7 @@ namespace Assets.Scripts.Bot
             if (HasExecutionResult(executionResult, PlanExecutionTickResult.Fired) && CurrentPlan.HasActions)
             {
                 _inProgressHeadAction = CurrentPlan.Actions[0];
-                _inProgressHeadFireTime = LastSnapshot.SnapshotTime;
+                _inProgressHeadFireTime = Time.time;
             }
         }
 
@@ -1562,6 +1805,9 @@ namespace Assets.Scripts.Bot
         {
             if (!IsEnabled)
                 return;
+
+            _lastSpawnedPatternIndex = patternIndex;
+            _lastSpawnedPatternName = patternName;
 
             _testCollectablesScriptedLifeLossHook?.TryApplyBeforePatternEvaluation(patternIndex, patternName);
             RequestReplan(BotReplanReason.SpawnPattern);

@@ -5,6 +5,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Diagnostics;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -72,115 +73,126 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         internal ActionGenerationResult Generate(PlanningState planningState, WorldSnapshot worldSnapshot)
         {
-            var plannedActions = new List<PlannedAction>();
-            var deadEndReasons = new List<StrategyDeadEndReason>();
-            _superFallbackDeduplicator.Reset();
-            if (planningState == null || worldSnapshot == null)
-                return ActionGenerationResult.Empty();
-
-            WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
-            if (projectedWorldSnapshot == null)
-                return ActionGenerationResult.Empty();
-
-            bool hasCurrentDecisionPoint = _routeDecisionPointDetector.TryDetectCurrent(
-                    planningState,
-                    projectedWorldSnapshot,
-                    out DecisionPoint currentDecisionPoint);
-
-            bool hasOppositeDecisionPoint = _routeDecisionPointDetector.TryDetectOpposite(
-                    planningState,
-                    projectedWorldSnapshot,
-                    out DecisionPoint oppositeDecisionPoint);
-            bool hasMovingBoundaryDecisionPoint = false;
-            DecisionPoint movingBoundaryDecisionPoint = null;
-
-            if (hasCurrentDecisionPoint)
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotActionGeneratorGenerate);
+            try
             {
-                CollectActionsForDecisionPoint(
-                    planningState,
-                    projectedWorldSnapshot,
-                    currentDecisionPoint,
-                    plannedActions,
-                    deadEndReasons);
-            }
+                var plannedActions = new List<PlannedAction>();
+                var deadEndReasons = new List<StrategyDeadEndReason>();
+                _superFallbackDeduplicator.Reset();
+                if (planningState == null || worldSnapshot == null)
+                    return ActionGenerationResult.Empty();
 
-            CollectCurrentCollectibleActions(
-                planningState,
-                projectedWorldSnapshot,
-                plannedActions,
-                deadEndReasons);
+                WorldSnapshot projectedWorldSnapshot = PlanningSnapshotProjector.Project(worldSnapshot, planningState);
+                if (projectedWorldSnapshot == null)
+                    return ActionGenerationResult.Empty();
 
-            CollectOppositeCollectibleRouteActions(
-                planningState,
-                projectedWorldSnapshot,
-                plannedActions,
-                deadEndReasons);
+                bool hasCurrentDecisionPoint = _routeDecisionPointDetector.TryDetectCurrent(
+                        planningState,
+                        projectedWorldSnapshot,
+                        out DecisionPoint currentDecisionPoint);
 
-            if (hasOppositeDecisionPoint)
-            {
-                CollectSwitchLaneEntryAction(
-                    planningState,
-                    projectedWorldSnapshot,
-                    oppositeDecisionPoint,
-                    plannedActions,
-                    deadEndReasons);
+                bool hasOppositeDecisionPoint = _routeDecisionPointDetector.TryDetectOpposite(
+                        planningState,
+                        projectedWorldSnapshot,
+                        out DecisionPoint oppositeDecisionPoint);
+                bool hasMovingBoundaryDecisionPoint = false;
+                DecisionPoint movingBoundaryDecisionPoint = null;
 
-                CollectPassiveAdvanceAction(
-                    planningState,
-                    projectedWorldSnapshot,
-                    oppositeDecisionPoint,
-                    plannedActions,
-                    deadEndReasons);
-            }
-
-            if (!hasCurrentDecisionPoint && plannedActions.Count == 0)
-            {
-                hasMovingBoundaryDecisionPoint = _movingBoundaryDecisionPointDetector.TryDetectPassiveRoofExit(
-                    planningState,
-                    projectedWorldSnapshot,
-                    out movingBoundaryDecisionPoint);
-                if (hasMovingBoundaryDecisionPoint)
+                if (hasCurrentDecisionPoint)
                 {
                     CollectActionsForDecisionPoint(
                         planningState,
                         projectedWorldSnapshot,
-                        movingBoundaryDecisionPoint,
+                        currentDecisionPoint,
                         plannedActions,
                         deadEndReasons);
                 }
-            }
 
-            if (!hasCurrentDecisionPoint
-                && !hasOppositeDecisionPoint
-                && !hasMovingBoundaryDecisionPoint
-                && plannedActions.Count == 0
-                && deadEndReasons.Count == 0)
-            {
-                LogNoDecisionPoint(planningState);
+                CollectCurrentCollectibleActions(
+                    planningState,
+                    projectedWorldSnapshot,
+                    plannedActions,
+                    deadEndReasons);
+
+                CollectOppositeCollectibleRouteActions(
+                    planningState,
+                    projectedWorldSnapshot,
+                    plannedActions,
+                    deadEndReasons);
+
+                if (hasOppositeDecisionPoint)
+                {
+                    CollectSwitchLaneEntryAction(
+                        planningState,
+                        projectedWorldSnapshot,
+                        oppositeDecisionPoint,
+                        plannedActions,
+                        deadEndReasons);
+
+                    CollectPassiveAdvanceAction(
+                        planningState,
+                        projectedWorldSnapshot,
+                        oppositeDecisionPoint,
+                        plannedActions,
+                        deadEndReasons);
+                }
+
+                if (!hasCurrentDecisionPoint && plannedActions.Count == 0)
+                {
+                    hasMovingBoundaryDecisionPoint = _movingBoundaryDecisionPointDetector.TryDetectPassiveRoofExit(
+                        planningState,
+                        projectedWorldSnapshot,
+                        out movingBoundaryDecisionPoint);
+                    if (hasMovingBoundaryDecisionPoint)
+                    {
+                        CollectActionsForDecisionPoint(
+                            planningState,
+                            projectedWorldSnapshot,
+                            movingBoundaryDecisionPoint,
+                            plannedActions,
+                            deadEndReasons);
+                    }
+                }
+
+                if (!hasCurrentDecisionPoint
+                    && !hasOppositeDecisionPoint
+                    && !hasMovingBoundaryDecisionPoint
+                    && plannedActions.Count == 0
+                    && deadEndReasons.Count == 0)
+                {
+                    LogNoDecisionPoint(planningState);
+                    return new ActionGenerationResult(
+                        plannedActions,
+                        deadEndReasons,
+                        hasUnresolvedPlanningSituation: false);
+                }
+
+                if (plannedActions.Count == 0 && hasCurrentDecisionPoint)
+                    LogNoActions(planningState, currentDecisionPoint);
+
+                if (plannedActions.Count == 0 && deadEndReasons.Count > 0)
+                {
+                    LogDeadEndContext(
+                        planningState,
+                        currentDecisionPoint,
+                        oppositeDecisionPoint,
+                        hasCurrentDecisionPoint,
+                        hasOppositeDecisionPoint,
+                        deadEndReasons);
+                }
+
                 return new ActionGenerationResult(
                     plannedActions,
                     deadEndReasons,
-                    hasUnresolvedPlanningSituation: false);
+                    hasUnresolvedPlanningSituation: hasCurrentDecisionPoint || deadEndReasons.Count > 0);
             }
-
-            if (plannedActions.Count == 0 && hasCurrentDecisionPoint)
-                LogNoActions(planningState, currentDecisionPoint);
-
-            if (plannedActions.Count == 0 && deadEndReasons.Count > 0)
+            finally
             {
-                LogDeadEndContext(
-                    planningState,
-                    currentDecisionPoint,
-                    oppositeDecisionPoint,
-                    hasCurrentDecisionPoint,
-                    hasOppositeDecisionPoint,
-                    deadEndReasons);
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotActionGeneratorGenerate,
+                    allocationSample);
             }
-
-            return new ActionGenerationResult(
-                plannedActions,
-                deadEndReasons,
-                hasUnresolvedPlanningSituation: hasCurrentDecisionPoint || deadEndReasons.Count > 0);
         }
 
         /// <summary>
@@ -340,10 +352,18 @@ namespace Assets.Scripts.Bot.Planning
             if (!strategy.CanConsider(planningState, decisionPoint))
                 return PlanningStrategyResult.NotApplicable();
 
-            return strategy.CollectActions(
-                planningState,
-                projectedWorldSnapshot,
-                decisionPoint);
+            long allocationSample = RuntimePerformanceDiagnostics.BeginStrategyCollectSample(strategy.ActionKind);
+            try
+            {
+                return strategy.CollectActions(
+                    planningState,
+                    projectedWorldSnapshot,
+                    decisionPoint);
+            }
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndStrategyCollectSample(strategy.ActionKind, allocationSample);
+            }
         }
 
         /// <summary>

@@ -3,6 +3,7 @@ using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Diagnostics;
 namespace Assets.Scripts.Bot.Planning
 {
     /// <summary>
@@ -57,59 +58,70 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         internal PlanBuildResult Build(WorldSnapshot worldSnapshot, PlanningState rootState)
         {
-            if (worldSnapshot == null)
-                return new PlanBuildResult(BotPlan.Empty(), deadEndReport: null);
-
-            if (rootState == null)
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotPlanBuilderBuild);
+            try
             {
+                if (worldSnapshot == null)
+                    return new PlanBuildResult(BotPlan.Empty(), deadEndReport: null);
+
+                if (rootState == null)
+                {
+                    return new PlanBuildResult(
+                        BotPlan.Empty(worldSnapshot.ScreenRightEdgeX),
+                        deadEndReport: null);
+                }
+
+                // Разворачивает planning tree от переданного root-состояния.
+                PlanningGraphBuildResult graphResult = _graphBuilder.BuildBranches(worldSnapshot, rootState);
+                PlanningBranch bestBranch = _planEvaluator.SelectBest(graphResult.Branches);
+                LogGroundJumpOverBranchSelection(rootState, graphResult.Branches, bestBranch);
+                LogLowEnergySwitchBranchSelection(
+                    rootState,
+                    graphResult.Branches,
+                    graphResult.DeadEndBranches,
+                    bestBranch);
+                LogSuperJumpOnBranchSelection(rootState, graphResult.Branches, bestBranch);
+                LogRoofExitSwitchBranchSelection(
+                    rootState,
+                    graphResult.Branches,
+                    graphResult.DeadEndBranches,
+                    bestBranch);
+                LogRoofRouteChoiceBranchSelection(
+                    rootState,
+                    graphResult.Branches,
+                    graphResult.DeadEndBranches,
+                    bestBranch);
+                LogJumpOverBoundaryBranchSelection(rootState, graphResult.Branches, graphResult.DeadEndBranches, bestBranch);
+                LogLowEnergyPickupRouteSelection(
+                    rootState,
+                    graphResult.Branches,
+                    graphResult.DeadEndBranches,
+                    bestBranch);
+
+                // Пустая successful-ветка означает "продолжать бег" и должна выигрывать у dead-end fallback.
+                if (bestBranch != null)
+                    return BuildSuccessfulResult(worldSnapshot, bestBranch);
+
+                PlanningDeadEndBranch bestDeadEndBranch = _planEvaluator.SelectBestDeadEnd(graphResult.DeadEndBranches);
+                LogDeadEndFallbackBranchSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
+                LogRoofExitSwitchDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
+                LogJumpFromRoofDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
+                LogSwitchLaneDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
+                LogLowEnergyPickupDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
+                if (bestDeadEndBranch?.Branch != null && bestDeadEndBranch.Branch.HasActions)
+                    return BuildDeadEndFallbackResult(worldSnapshot, bestDeadEndBranch);
+
                 return new PlanBuildResult(
                     BotPlan.Empty(worldSnapshot.ScreenRightEdgeX),
-                    deadEndReport: null);
+                    bestDeadEndBranch?.Report);
             }
-
-            // Разворачивает planning tree от переданного root-состояния.
-            PlanningGraphBuildResult graphResult = _graphBuilder.BuildBranches(worldSnapshot, rootState);
-            PlanningBranch bestBranch = _planEvaluator.SelectBest(graphResult.Branches);
-            LogGroundJumpOverBranchSelection(rootState, graphResult.Branches, bestBranch);
-            LogLowEnergySwitchBranchSelection(
-                rootState,
-                graphResult.Branches,
-                graphResult.DeadEndBranches,
-                bestBranch);
-            LogSuperJumpOnBranchSelection(rootState, graphResult.Branches, bestBranch);
-            LogRoofExitSwitchBranchSelection(
-                rootState,
-                graphResult.Branches,
-                graphResult.DeadEndBranches,
-                bestBranch);
-            LogRoofRouteChoiceBranchSelection(
-                rootState,
-                graphResult.Branches,
-                graphResult.DeadEndBranches,
-                bestBranch);
-            LogJumpOverBoundaryBranchSelection(rootState, graphResult.Branches, graphResult.DeadEndBranches, bestBranch);
-            LogLowEnergyPickupRouteSelection(
-                rootState,
-                graphResult.Branches,
-                graphResult.DeadEndBranches,
-                bestBranch);
-
-            // Пустая successful-ветка означает "продолжать бег" и должна выигрывать у dead-end fallback.
-            if (bestBranch != null)
-                return BuildSuccessfulResult(worldSnapshot, bestBranch);
-
-            PlanningDeadEndBranch bestDeadEndBranch = _planEvaluator.SelectBestDeadEnd(graphResult.DeadEndBranches);
-            LogDeadEndFallbackBranchSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
-            LogRoofExitSwitchDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
-            LogJumpFromRoofDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
-            LogSwitchLaneDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
-            LogLowEnergyPickupDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
-            if (bestDeadEndBranch?.Branch != null && bestDeadEndBranch.Branch.HasActions)
-                return BuildDeadEndFallbackResult(worldSnapshot, bestDeadEndBranch);
-
-            return new PlanBuildResult(
-                BotPlan.Empty(worldSnapshot.ScreenRightEdgeX),
-                bestDeadEndBranch?.Report);
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotPlanBuilderBuild,
+                    allocationSample);
+            }
         }
 
         /// <summary>

@@ -46,10 +46,13 @@ namespace Assets.Scripts.Bot.Strategies.PassiveAdvance
             float obstacleLeftX = hasTargetBounds
                 ? targetBounds.min.x
                 : action.RenderWorldX;
+            string diagnosticExtra = BotDiagnostics.IsEnabled(BotDiagnosticCategory.Execution)
+                ? BuildRuntimeSafetyExtra(hamster, action, hasTargetBounds, targetBounds)
+                : null;
             HamsterActionLogger.LogFire(
                 action,
                 obstacleLeftX,
-                BuildRuntimeSafetyExtra(hamster, action, hasTargetBounds, targetBounds));
+                diagnosticExtra);
             return ActionFireResult.Fired;
         }
 

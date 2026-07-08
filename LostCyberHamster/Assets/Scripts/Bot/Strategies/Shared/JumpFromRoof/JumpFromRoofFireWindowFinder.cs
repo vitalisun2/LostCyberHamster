@@ -13,6 +13,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
     internal sealed class JumpFromRoofFireWindowFinder
     {
         private readonly IJumpFromRoofPolicy _policy;
+        private readonly List<JumpObstacleData> _baseObstacles = new();
+        private readonly List<JumpObstacleData> _shiftedObstacles = new();
 
         /// <summary>
         /// Создает finder для конкретного варианта прыжка с крыши.
@@ -51,11 +53,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
             }
 
             // Подтверждает смысловые точки окна через runtime resolver.
-            List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
+            JumpObstacleProjection.BuildBase(projectedWorldSnapshot, _baseObstacles);
             if (TrySelectFireShift(
                     planningState,
                     projectedWorldSnapshot,
-                    baseObstacles,
+                    _baseObstacles,
                     chainModel,
                     travel,
                     out fireShift,
@@ -145,8 +147,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
             }
 
             // Строит snapshot препятствий на момент fire.
-            var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
-            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
+            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, _shiftedObstacles);
 
             // Готовит roof-jump context.
             HamsterSnapshot hamster = planningState.Hamster;
@@ -159,7 +160,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpFromRoof
                 travel.RoofJumpTravel,
                 travel.ActionTravel);
 
-            JumpResolveResult result = _policy.Resolve(obstaclesAtFireShift, context);
+            JumpResolveResult result = _policy.Resolve(_shiftedObstacles, context);
             return result.State == _policy.ExpectedSuccessState;
         }
     }

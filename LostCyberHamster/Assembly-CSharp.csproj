@@ -74,6 +74,7 @@
     <Compile Include="Assets\Scripts\Tutorial\TutorialUiInputBlocker.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoof\SuperJumpFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UnspawnOutOfBoundsMechanics.cs" />
+    <Compile Include="Assets\Scripts\Diagnostics\RuntimePerformanceDiagnostics.cs" />
     <Compile Include="Assets\Scripts\Installers\ProjectInstaller.cs" />
     <Compile Include="Assets\Scripts\System\DecorationSpawner.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenEnum.cs" />

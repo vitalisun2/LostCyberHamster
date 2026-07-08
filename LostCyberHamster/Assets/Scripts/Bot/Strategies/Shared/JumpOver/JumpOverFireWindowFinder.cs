@@ -15,6 +15,8 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
     internal sealed class JumpOverFireWindowFinder
     {
         private readonly IJumpOverPolicy _policy;
+        private readonly List<JumpObstacleData> _baseObstacles = new();
+        private readonly List<JumpObstacleData> _shiftedObstacles = new();
 
         /// <summary>
         /// Создает finder для конкретного jump-over policy.
@@ -57,11 +59,11 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             }
 
             // Проверяет смысловые точки fire-window через runtime resolver.
-            List<JumpObstacleData> baseObstacles = JumpObstacleProjection.BuildBase(projectedWorldSnapshot);
+            JumpObstacleProjection.BuildBase(projectedWorldSnapshot, _baseObstacles);
             if (TrySelectFireShift(
                     planningState,
                     projectedWorldSnapshot,
-                    baseObstacles,
+                    _baseObstacles,
                     jumpTravel,
                     chainWindow,
                     out fireShift,
@@ -161,8 +163,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
             float jumpTravel)
         {
             // Проецирует obstacle snapshot к моменту запуска.
-            var obstaclesAtFireShift = new List<JumpObstacleData>(baseObstacles.Count);
-            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, obstaclesAtFireShift);
+            JumpObstacleProjection.BuildShifted(baseObstacles, fireShift, _shiftedObstacles);
 
             // Делегирует финальную проверку runtime-equivalent resolver'у policy.
             JumpResolveContext context = new(
@@ -175,7 +176,7 @@ namespace Assets.Scripts.Bot.Strategies.Shared.JumpOver
                 jumpTravel,
                 damageBigAliveWithoutYByReach: _policy.DamageBigAliveWithoutYByReach);
 
-            JumpResolveResult result = _policy.Resolve(obstaclesAtFireShift, context);
+            JumpResolveResult result = _policy.Resolve(_shiftedObstacles, context);
             return result;
         }
     }

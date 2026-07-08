@@ -56,6 +56,26 @@ namespace Assets.Scripts.Bot.Diagnostics
                 DebugManager.DiagChannel.Economy);
         }
 
+        public static void LogLivesLost(
+            int amount,
+            Hamster hamster,
+            int patternIndex,
+            string patternName)
+        {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.RuntimeSafety))
+                return;
+
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.RuntimeSafety,
+                BotDiagnosticLevel.Essential,
+                $"[LifeLoss] amount={amount} " +
+                $"lives={(hamster != null ? hamster.Lives.Value : -1)} " +
+                $"energy={(hamster != null ? hamster.Energy.Value : -1)} " +
+                $"state={(hamster != null ? hamster.HamsterState.Value.ToString() : "none")} " +
+                $"lastPatternIndex={patternIndex} " +
+                $"lastPattern={patternName ?? "none"}");
+        }
+
         public static void LogTestFinish(GameManager gameManager, Hamster hamster)
         {
             if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.TestResult))
@@ -66,6 +86,9 @@ namespace Assets.Scripts.Bot.Diagnostics
                 BotDiagnosticLevel.Essential,
                 $"[TEST FINISH] state={gameManager.State} " +
                 $"lives={hamster.Lives.Value} energy={hamster.Energy.Value}");
+
+            if (hamster.Lives.Value <= 0)
+                LogLevelFailed();
         }
 
         public static void LogLevelCompleted(int levelId, int stars)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Diagnostics;
 
 namespace Assets.Scripts.Bot.Planning
 {
@@ -85,21 +86,32 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         internal PlanningGraphBuildResult BuildBranches(WorldSnapshot worldSnapshot, PlanningState rootState)
         {
-            if (worldSnapshot == null || rootState == null)
+            long allocationSample = RuntimePerformanceDiagnostics.BeginAllocationSample(
+                RuntimePerformanceScope.RuntimeBotPlanningGraphBuildBranches);
+            try
             {
-                return new PlanningGraphBuildResult(
-                    Array.Empty<PlanningBranch>(),
-                    deadEndBranches: null);
+                if (worldSnapshot == null || rootState == null)
+                {
+                    return new PlanningGraphBuildResult(
+                        Array.Empty<PlanningBranch>(),
+                        deadEndBranches: null);
+                }
+
+                var branches = new List<PlanningBranch>();
+                var deadEndBranches = new List<PlanningDeadEndBranch>();
+                var bestNodesByState = new Dictionary<PlanningStateKey, PlanningGraphNode>();
+                PlanningGraphNode rootNode = PlanningGraphNode.CreateRoot(rootState);
+
+                ExploreNode(rootNode, worldSnapshot, branches, deadEndBranches, bestNodesByState);
+
+                return new PlanningGraphBuildResult(branches, deadEndBranches);
             }
-
-            var branches = new List<PlanningBranch>();
-            var deadEndBranches = new List<PlanningDeadEndBranch>();
-            var bestNodesByState = new Dictionary<PlanningStateKey, PlanningGraphNode>();
-            PlanningGraphNode rootNode = PlanningGraphNode.CreateRoot(rootState);
-
-            ExploreNode(rootNode, worldSnapshot, branches, deadEndBranches, bestNodesByState);
-
-            return new PlanningGraphBuildResult(branches, deadEndBranches);
+            finally
+            {
+                RuntimePerformanceDiagnostics.EndAllocationSample(
+                    RuntimePerformanceScope.RuntimeBotPlanningGraphBuildBranches,
+                    allocationSample);
+            }
         }
 
         /// <summary>
