@@ -20,13 +20,13 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: cba079467daf37c499c75f6d362af46d
-    m_Address: 02_Paris/obstacle_sprite_to_type_mappings
+  - m_GUID: 8193a6545b0844aba2aec8b8909048e7
+    m_Address: 03_Barcelona/obstacle_sprite_to_type_mappings
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8193a6545b0844aba2aec8b8909048e7
-    m_Address: 03_Barcelona/obstacle_sprite_to_type_mappings
+  - m_GUID: cba079467daf37c499c75f6d362af46d
+    m_Address: 02_Paris/obstacle_sprite_to_type_mappings
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
