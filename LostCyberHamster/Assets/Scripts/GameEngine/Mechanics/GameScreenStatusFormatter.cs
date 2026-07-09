@@ -4,6 +4,7 @@ using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
+using GameManagement;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -46,7 +47,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             var locationName = LevelManager.GetLocationName() ?? string.Empty;
             var partOfDay = LevelManager.GetCurrentPartOfDay() ?? string.Empty;
-            var levelNumber = LevelManager.GetCurrentLevelNumber();
+            var levelNumber = GetDisplayedLevelNumber();
             var patternIndex = GetDisplayedPatternIndex(hamster);
             var patternName = GetDisplayedPatternName(patternIndex);
             var gameState = gameManager.State;
@@ -121,6 +122,17 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             formattedText = _cachedText;
             return true;
+        }
+
+        private static int GetDisplayedLevelNumber()
+        {
+            var currentLevel = GameDataManager.PlayerData?.CurrentLevel;
+            if (!LevelManager.TryResolveLevelKey(currentLevel, out _, out _, out var levelOrder))
+            {
+                return 0;
+            }
+
+            return levelOrder + 1;
         }
 
         private static int GetDisplayedPatternIndex(Hamster hamster)
