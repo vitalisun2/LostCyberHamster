@@ -30,6 +30,7 @@ namespace Assets.Scripts.Bot.Execution
 
         private bool _isActionInProgress;
         private bool _isHeadWaitingForFire;
+        private int _inProgressHeadRemainingReservedEnergyCost;
 
         internal PlanExecutor(IReadOnlyList<IPlanningStrategy> strategies)
         {
@@ -68,6 +69,12 @@ namespace Assets.Scripts.Bot.Execution
         public bool IsHeadCommitted => _isActionInProgress || _isHeadWaitingForFire;
 
         /// <summary>
+        /// Оставшаяся стоимость fired head-action, которую runtime еще не списал input-ами.
+        /// Planning резервирует ее поверх live snapshot energy, не теряя восстановление энергии во время action-а.
+        /// </summary>
+        public int InProgressHeadRemainingReservedEnergyCost => _inProgressHeadRemainingReservedEnergyCost;
+
+        /// <summary>
         /// Устанавливает новый role-based план на исполнение и сбрасывает состояние текущего действия.
         /// </summary>
         public void SetPlan(BotPlan plan)
@@ -86,6 +93,8 @@ namespace Assets.Scripts.Bot.Execution
             CurrentPlan = plan ?? BotPlan.Empty();
             _isActionInProgress = preserveInProgressHead;
             _isHeadWaitingForFire = preserveWaitingHead;
+            if (!preserveInProgressHead)
+                _inProgressHeadRemainingReservedEnergyCost = 0;
         }
 
         /// <summary>
@@ -96,6 +105,7 @@ namespace Assets.Scripts.Bot.Execution
             CurrentPlan = BotPlan.Empty();
             _isActionInProgress = false;
             _isHeadWaitingForFire = false;
+            _inProgressHeadRemainingReservedEnergyCost = 0;
         }
 
         /// <summary>
@@ -115,12 +125,15 @@ namespace Assets.Scripts.Bot.Execution
             // После запуска ждёт, пока handler подтвердит завершение действия.
             PlannedAction action = CurrentPlan.Actions[0];
             IActionExecutionHandler handler = GetRequiredHandler(action);
+            int energyBeforeProgressTick = hamster.Energy.Value;
             if (handler.IsCompleted(hamster, action))
             {
+                ReduceRemainingReservedEnergyCost(energyBeforeProgressTick, hamster.Energy.Value);
                 AdvanceHead();
                 return PlanExecutionTickResult.Completed;
             }
 
+            ReduceRemainingReservedEnergyCost(energyBeforeProgressTick, hamster.Energy.Value);
             return PlanExecutionTickResult.None;
         }
 
@@ -134,11 +147,16 @@ namespace Assets.Scripts.Bot.Execution
 
             PlannedAction action = CurrentPlan.Actions[0];
             IActionExecutionHandler handler = GetRequiredHandler(action);
+            int energyBeforeFire = hamster.Energy.Value;
             ActionFireResult fireResult = handler.TryFire(hamster, action);
             if (fireResult == ActionFireResult.Fired)
             {
                 _isActionInProgress = true;
                 _isHeadWaitingForFire = false;
+                _inProgressHeadRemainingReservedEnergyCost = CalculateRemainingReservedEnergyCost(
+                    energyBeforeFire,
+                    hamster.Energy.Value,
+                    action);
                 return PlanExecutionTickResult.Fired;
             }
 
@@ -149,7 +167,39 @@ namespace Assets.Scripts.Bot.Execution
             }
 
             _isHeadWaitingForFire = true;
+            _inProgressHeadRemainingReservedEnergyCost = 0;
             return PlanExecutionTickResult.None;
+        }
+
+        /// <summary>
+        /// Считает часть стоимости action-а, которую уже committed planning должен держать в резерве.
+        /// Runtime может списать первый input сразу, а остальные input-ы позднее в IsCompleted().
+        /// </summary>
+        private static int CalculateRemainingReservedEnergyCost(
+            int energyBeforeFire,
+            int energyAfterFire,
+            PlannedAction action)
+        {
+            int energyCost = Math.Max(0, action?.EnergyCost ?? 0);
+            int energySpentOnFire = Math.Max(0, energyBeforeFire - energyAfterFire);
+            return Math.Max(0, energyCost - energySpentOnFire);
+        }
+
+        /// <summary>
+        /// Уменьшает резерв, если in-progress handler отправил отложенный input и runtime списал энергию.
+        /// </summary>
+        private void ReduceRemainingReservedEnergyCost(int energyBeforeTick, int energyAfterTick)
+        {
+            if (_inProgressHeadRemainingReservedEnergyCost <= 0)
+                return;
+
+            int energySpentOnTick = Math.Max(0, energyBeforeTick - energyAfterTick);
+            if (energySpentOnTick <= 0)
+                return;
+
+            _inProgressHeadRemainingReservedEnergyCost = Math.Max(
+                0,
+                _inProgressHeadRemainingReservedEnergyCost - energySpentOnTick);
         }
 
         /// <summary>
@@ -181,6 +231,7 @@ namespace Assets.Scripts.Bot.Execution
                 CurrentPlan = BotPlan.Empty(CurrentPlan.CommittedBoundaryX);
                 _isActionInProgress = false;
                 _isHeadWaitingForFire = false;
+                _inProgressHeadRemainingReservedEnergyCost = 0;
                 return;
             }
 
@@ -192,6 +243,7 @@ namespace Assets.Scripts.Bot.Execution
             CurrentPlan = new BotPlan(remainingActions, CurrentPlan.CommittedBoundaryX, CurrentPlan.Score);
             _isActionInProgress = false;
             _isHeadWaitingForFire = false;
+            _inProgressHeadRemainingReservedEnergyCost = 0;
         }
     }
 }

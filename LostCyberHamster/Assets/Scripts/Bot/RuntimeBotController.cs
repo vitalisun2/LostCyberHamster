@@ -823,6 +823,7 @@ namespace Assets.Scripts.Bot
                 _executor.IsHeadCommitted,
                 _inProgressHeadAction,
                 _inProgressHeadFireTime,
+                _executor.InProgressHeadRemainingReservedEnergyCost,
                 replanReasons);
         }
 
@@ -1043,6 +1044,7 @@ namespace Assets.Scripts.Bot
                 bool isHeadCommitted,
                 PlannedAction inProgressHeadAction,
                 float inProgressHeadFireTime,
+                int inProgressHeadRemainingReservedEnergyCost,
                 BotReplanReason replanReasons)
             {
                 RequestId = requestId;
@@ -1053,6 +1055,7 @@ namespace Assets.Scripts.Bot
                 IsHeadCommitted = isHeadCommitted;
                 InProgressHeadAction = inProgressHeadAction;
                 InProgressHeadFireTime = inProgressHeadFireTime;
+                InProgressHeadRemainingReservedEnergyCost = inProgressHeadRemainingReservedEnergyCost;
                 ReplanReasons = replanReasons;
             }
 
@@ -1064,6 +1067,7 @@ namespace Assets.Scripts.Bot
             public bool IsHeadCommitted { get; }
             public PlannedAction InProgressHeadAction { get; }
             public float InProgressHeadFireTime { get; }
+            public int InProgressHeadRemainingReservedEnergyCost { get; }
             public BotReplanReason ReplanReasons { get; }
         }
 
@@ -1294,9 +1298,16 @@ namespace Assets.Scripts.Bot
                         ? remainingShift
                         : null;
 
-                return _transitionSimulator.ProjectInProgress(
+                PlanningState projectionState = CreateInProgressProjectionState(
                     currentState,
+                    request.InProgressHeadRemainingReservedEnergyCost);
+                PlannedAction projectionAction = CopyActionForProjection(
                     committedAction,
+                    energyCost: 0);
+
+                return _transitionSimulator.ProjectInProgress(
+                    projectionState,
+                    projectionAction,
                     request.Snapshot,
                     remainingPostFireWorldShift);
             }
@@ -1319,6 +1330,39 @@ namespace Assets.Scripts.Bot
                     projectionAction,
                     request.Snapshot);
             }
+        }
+
+        /// <summary>
+        /// Готовит root-state для хвоста после fired head-action: уже списанная runtime-энергия
+        /// остается в snapshot, а будущие input-ы action-а резервируются отдельным остатком стоимости.
+        /// </summary>
+        private static PlanningState CreateInProgressProjectionState(
+            PlanningState currentState,
+            int remainingReservedEnergyCost)
+        {
+            if (currentState?.Hamster == null || remainingReservedEnergyCost <= 0)
+                return currentState;
+
+            HamsterSnapshot hamster = currentState.Hamster;
+            int projectedEnergy = Math.Max(0, hamster.Energy - remainingReservedEnergyCost);
+            var projectedHamster = new HamsterSnapshot(
+                hamster.HamsterState,
+                hamster.IsOnBottomLine,
+                hamster.IsOnRoof,
+                projectedEnergy,
+                hamster.Lives,
+                hamster.IsShifting,
+                hamster.RoofSupportInstanceId,
+                hamster.HamsterLeftX,
+                hamster.HamsterRightX,
+                hamster.HamsterBottomY,
+                hamster.HamsterTopY);
+
+            return new PlanningState(
+                projectedHamster,
+                currentState.NextObstacleIndex,
+                currentState.ProjectionWorldShift,
+                currentState.RemovedObstacleInstanceIds);
         }
 
         /// <summary>
@@ -1503,10 +1547,10 @@ namespace Assets.Scripts.Bot
                 action,
                 worldSnapshot);
 
-            return CopyActionWithWorldShifts(
+            return CopyActionForProjection(
                 action,
-                remainingCompletionWorldShift,
-                action.PostFireWorldShift);
+                completionWorldShift: remainingCompletionWorldShift,
+                postFireWorldShift: action.PostFireWorldShift);
         }
 
         /// <summary>
@@ -1531,24 +1575,25 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Копирует planning action с заменой world-shift полей для projection.
+        /// Копирует planning action с точечными projection-only заменами, не меняя runtime plan.
         /// </summary>
-        private static PlannedAction CopyActionWithWorldShifts(
+        private static PlannedAction CopyActionForProjection(
             PlannedAction action,
-            float completionWorldShift,
-            float postFireWorldShift)
+            float? completionWorldShift = null,
+            float? postFireWorldShift = null,
+            int? energyCost = null)
         {
             return new PlannedAction(
                 action.Kind,
                 action.TriggerX,
                 action.RenderWorldX,
-                completionWorldShift,
-                postFireWorldShift,
+                completionWorldShift ?? action.CompletionWorldShift,
+                postFireWorldShift ?? action.PostFireWorldShift,
                 action.TargetObstacleIndex,
                 action.TargetObstacleInstanceId,
                 action.TriggerObstacleInstanceId,
                 action.TargetBottomLine,
-                action.EnergyCost,
+                energyCost ?? action.EnergyCost,
                 action.Description,
                 action.ResultRoofSupportInstanceId,
                 action.FulfillsJumpOnObjective,
