@@ -47,22 +47,9 @@
             ]
         },
         {
-            "ref": "shift_force_switch",
-            "spriteSeed": 4306,
-            "overrides": [
-                {
-                    "obstacleId": 24,
-                    "spriteName": "obstacle_new_york_big_alive_4_idle"
-                },
-                {
-                    "obstacleId": 3,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
-                },
-                {
-                    "obstacleId": 22,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                }
-            ]
+            "ref": "shift_force_switch_3",
+            "spriteSeed": 2078741271,
+            "overrides": []
         },
         {
             "ref": "peak_3",
