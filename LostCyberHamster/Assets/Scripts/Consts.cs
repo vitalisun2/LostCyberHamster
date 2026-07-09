@@ -38,6 +38,7 @@ namespace Assets.Scripts
         public const string BackgroundPrefabPath = "Assets/Core/Components/GameManager/Prefabs/BackgroundPrefab.prefab";
         public const string TilemapPrefabPath = "Assets/Core/Components/GameManager/Prefabs/TilemapPrefab.prefab";
         public const string TileDirectoryPath = "Assets/Core/Components/GameManager/Sprites/tiles";
+        public const string TemplatesFallbackLocation = "01_New_York";
 
 #if UNITY_EDITOR
         [Obsolete]
@@ -49,11 +50,6 @@ namespace Assets.Scripts
         public static string LocationsPath = Path.Combine("Assets", "Content", "Locations");
 
         public static string TemplatesLocationName = "level_design_templates";
-
-        /// <summary>
-        /// Fallback-локация для Templates: спрайты и маппинги загружаются отсюда.
-        /// </summary>
-        public static string TemplatesFallbackLocation = "01_New_York";
 
         /*  путь до общих коллектиблов  */
         public static string SharedSpritesPath = Path.Combine("Assets", "Content", "shared", "sprites");
