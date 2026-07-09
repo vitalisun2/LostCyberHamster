@@ -733,7 +733,7 @@ namespace Assets.Scripts.Bot
                 return;
             }
 
-            if (ShouldPreserveCurrentHandoffTail(result))
+            if (ShouldPreserveCurrentPlanTail(result))
                 return;
 
             LogAsyncHeadWindowDiagnostics(result);
@@ -788,25 +788,37 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Не применяет dead-end fallback, если он стирает следующий action после committed head.
+        /// Не даёт late async-result укорачивать уже принятый хвост, если он только повторяет prefix текущего плана.
         /// </summary>
-        private bool ShouldPreserveCurrentHandoffTail(AsyncPlanBuildResult result)
+        private bool ShouldPreserveCurrentPlanTail(AsyncPlanBuildResult result)
         {
-            if (_executor == null || !_executor.IsHeadCommitted)
-                return false;
-
-            PlanBuildResult buildResult = result?.BuildResult;
-            if (buildResult == null || !buildResult.HasDeadEnd)
+            if (HasReplanReason(result?.ReplanReasons ?? BotReplanReason.None, BotReplanReason.ActionCancelled))
                 return false;
 
             BotPlan currentPlan = CurrentPlan;
-            BotPlan resultPlan = buildResult.Plan;
-            return currentPlan.HasActions
-                && currentPlan.Actions.Count > 1
+            BotPlan resultPlan = result?.BuildResult?.Plan;
+            return currentPlan != null
                 && resultPlan != null
+                && currentPlan.Actions.Count > resultPlan.Actions.Count
                 && resultPlan.HasActions
-                && resultPlan.Actions.Count < 2
-                && currentPlan.Actions[0].IsEquivalentTo(resultPlan.Actions[0]);
+                && IsPlanPrefix(resultPlan, currentPlan);
+        }
+
+        private static bool IsPlanPrefix(BotPlan prefixPlan, BotPlan fullPlan)
+        {
+            if (prefixPlan?.Actions == null || fullPlan?.Actions == null)
+                return false;
+
+            if (prefixPlan.Actions.Count > fullPlan.Actions.Count)
+                return false;
+
+            for (int actionIndex = 0; actionIndex < prefixPlan.Actions.Count; actionIndex++)
+            {
+                if (!prefixPlan.Actions[actionIndex].IsEquivalentTo(fullPlan.Actions[actionIndex]))
+                    return false;
+            }
+
+            return true;
         }
 
         /// <summary>

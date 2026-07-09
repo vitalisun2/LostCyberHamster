@@ -5,6 +5,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning.DecisionPoints;
 using Assets.Scripts.Bot.Strategies.Shared.Contracts;
+using Assets.Scripts.Bot.Strategies.Shared.JumpPlanning;
 using Assets.Scripts.Diagnostics;
 
 namespace Assets.Scripts.Bot.Planning
@@ -98,6 +99,7 @@ namespace Assets.Scripts.Bot.Planning
                         out DecisionPoint oppositeDecisionPoint);
                 bool hasMovingBoundaryDecisionPoint = false;
                 DecisionPoint movingBoundaryDecisionPoint = null;
+                int currentActionsEnd = plannedActions.Count;
 
                 if (hasCurrentDecisionPoint)
                 {
@@ -107,6 +109,7 @@ namespace Assets.Scripts.Bot.Planning
                         currentDecisionPoint,
                         plannedActions,
                         deadEndReasons);
+                    currentActionsEnd = plannedActions.Count;
                 }
 
                 CollectCurrentCollectibleActions(
@@ -134,6 +137,8 @@ namespace Assets.Scripts.Bot.Planning
                         planningState,
                         projectedWorldSnapshot,
                         oppositeDecisionPoint,
+                        currentDecisionPoint,
+                        currentActionsEnd,
                         plannedActions,
                         deadEndReasons);
                 }
@@ -319,6 +324,8 @@ namespace Assets.Scripts.Bot.Planning
             PlanningState planningState,
             WorldSnapshot projectedWorldSnapshot,
             DecisionPoint oppositeDecisionPoint,
+            DecisionPoint currentDecisionPoint,
+            int currentActionsEnd,
             List<PlannedAction> plannedActions,
             List<StrategyDeadEndReason> deadEndReasons)
         {
@@ -331,10 +338,148 @@ namespace Assets.Scripts.Bot.Planning
                 projectedWorldSnapshot,
                 oppositeDecisionPoint);
 
+            PlannedAction passiveAdvance = result?.HasActions == true
+                ? result.Actions[0]
+                : null;
+            if (passiveAdvance?.Kind == BotActionKind.PassiveAdvance
+                && CutsAnyCurrentDefensiveWindow(
+                    passiveAdvance,
+                    projectedWorldSnapshot,
+                    currentDecisionPoint,
+                    plannedActions,
+                    currentActionsEnd))
+            {
+                return;
+            }
+
             ApplyStrategyResult(
                 result,
                 plannedActions,
                 deadEndReasons);
+        }
+
+        /// <summary>
+        /// PassiveAdvance не должен даже сужать уже найденные emergency-окна текущей линии.
+        /// </summary>
+        private static bool CutsAnyCurrentDefensiveWindow(
+            PlannedAction passiveAdvance,
+            WorldSnapshot projectedWorldSnapshot,
+            DecisionPoint currentDecisionPoint,
+            IReadOnlyList<PlannedAction> plannedActions,
+            int currentActionsEnd)
+        {
+            if (currentDecisionPoint?.Chain == null || plannedActions == null)
+                return false;
+
+            int endIndex = Math.Min(currentActionsEnd, plannedActions.Count);
+            float passiveShift = passiveAdvance.CompletionWorldShift
+                + JumpPlanningConstants.PostActionReentryGuardTravel;
+
+            for (int actionIndex = 0; actionIndex < endIndex; actionIndex++)
+            {
+                PlannedAction defensiveAction = plannedActions[actionIndex];
+                if (!IsCurrentDefensiveResolver(defensiveAction, currentDecisionPoint)
+                    || !defensiveAction.TriggerWindow.HasValue
+                    || !defensiveAction.TriggerWindow.Value.IsValid
+                    || !TryFindActionTriggerObstacle(
+                        defensiveAction,
+                        projectedWorldSnapshot,
+                        out ObstacleSnapshot triggerObstacle)
+                    || triggerObstacle.IsBottomLine != currentDecisionPoint.Chain.First.IsBottomLine)
+                {
+                    continue;
+                }
+
+                ActionTriggerWindow triggerWindow = defensiveAction.TriggerWindow.Value;
+                float triggerLeftAfterPassive = triggerObstacle.LeftX - passiveShift;
+                if (triggerLeftAfterPassive < triggerWindow.EarliestTriggerX)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsCurrentDefensiveResolver(
+            PlannedAction action,
+            DecisionPoint currentDecisionPoint)
+        {
+            if (action == null)
+                return false;
+
+            if (!IsDefensiveActionKind(action.Kind))
+                return false;
+
+            return IsBlockingThreatActionTarget(currentDecisionPoint, action);
+        }
+
+        private static bool IsDefensiveActionKind(BotActionKind actionKind)
+        {
+            switch (actionKind)
+            {
+                case BotActionKind.SwitchLane:
+                case BotActionKind.JumpOver:
+                case BotActionKind.SuperJumpOver:
+                case BotActionKind.JumpOn:
+                case BotActionKind.SuperJumpOn:
+                case BotActionKind.JumpOnRoof:
+                case BotActionKind.SuperJumpOnRoof:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsBlockingThreatActionTarget(
+            DecisionPoint currentDecisionPoint,
+            PlannedAction action)
+        {
+            if (currentDecisionPoint?.Chain == null || action == null)
+                return false;
+
+            ObstacleChain chain = currentDecisionPoint.Chain;
+            for (int chainIndex = 0; chainIndex < chain.Count; chainIndex++)
+            {
+                ObstacleChainElement element = chain.Elements[chainIndex];
+                if (!element.HasRole(ObstacleRole.BlockingThreat))
+                    continue;
+
+                if (MatchesActionObstacle(action.TargetObstacleInstanceId, element.Obstacle.InstanceId)
+                    || MatchesActionObstacle(action.TriggerObstacleInstanceId, element.Obstacle.InstanceId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool MatchesActionObstacle(int? actionObstacleInstanceId, int obstacleInstanceId)
+        {
+            return actionObstacleInstanceId.HasValue
+                && actionObstacleInstanceId.Value == obstacleInstanceId;
+        }
+
+        private static bool TryFindActionTriggerObstacle(
+            PlannedAction action,
+            WorldSnapshot worldSnapshot,
+            out ObstacleSnapshot triggerObstacle)
+        {
+            triggerObstacle = null;
+            int? triggerObstacleInstanceId = action.TriggerObstacleInstanceId ?? action.TargetObstacleInstanceId;
+            if (!triggerObstacleInstanceId.HasValue || worldSnapshot?.Obstacles == null)
+                return false;
+
+            for (int obstacleIndex = 0; obstacleIndex < worldSnapshot.Obstacles.Count; obstacleIndex++)
+            {
+                ObstacleSnapshot obstacle = worldSnapshot.Obstacles[obstacleIndex];
+                if (obstacle.InstanceId != triggerObstacleInstanceId.Value)
+                    continue;
+
+                triggerObstacle = obstacle;
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
