@@ -289,7 +289,7 @@ namespace Assets.Scripts.Bot
         }
 
         /// <summary>
-        /// Создает независимый набор planning strategies для executor или worker planner.
+        /// Включает обязательные категории bot diagnostics для automation-прогонов.
         /// </summary>
         private static void ApplyAutomationDiagnostics()
         {
@@ -300,7 +300,10 @@ namespace Assets.Scripts.Bot
             BotDiagnostics.SetEnabledCategories(
                 BotDiagnosticCategory.TestResult
                 | BotDiagnosticCategory.RuntimeSafety
-                | BotDiagnosticCategory.DeadEnd);
+                | BotDiagnosticCategory.DeadEnd
+                | BotDiagnosticCategory.RuntimeEvents
+                | BotDiagnosticCategory.Pattern
+                | BotDiagnosticCategory.Execution);
         }
 
         private static IReadOnlyList<IPlanningStrategy> CreatePlanningStrategies()
