@@ -1,70 +1,75 @@
-{
-    "skyTexture":  "",
-    "roadTexture":  "",
-    "location":  "02_Paris",
-    "patternSequence":  [
-                            {
-                                "ref":  "easy_run",
-                                "spriteSeed":  4401,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "medium_difficulty_energy",
-                                "spriteSeed":  4402,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "small_jumps_2",
-                                "spriteSeed":  4403,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "jump_challenge_2",
-                                "spriteSeed":  4404,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "bonus_strip",
-                                "spriteSeed":  4405,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "roof_wide_gap",
-                                "spriteSeed":  4406,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "jump_challenge_3",
-                                "spriteSeed":  4407,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "peak_2",
-                                "spriteSeed":  4408,
-                                "overrides":  [
-
-                                              ]
-                            }
-                        ],
-    "decorationPatterns":  [
-                               {
-                                   "decorationTiles":  [
-
-                                                       ]
-                               }
-                           ]
+﻿{
+    "skyTexture": "",
+    "roadTexture": "",
+    "location": "02_Paris",
+    "patternSequence": [
+        {
+            "ref": "easy_run",
+            "spriteSeed": 4401,
+            "overrides": []
+        },
+        {
+            "ref": "medium_difficulty_energy",
+            "spriteSeed": 4402,
+            "overrides": [
+                {
+                    "obstacleId": 14,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                }
+            ]
+        },
+        {
+            "ref": "small_jumps_2",
+            "spriteSeed": 4403,
+            "overrides": []
+        },
+        {
+            "ref": "jump_challenge_2",
+            "spriteSeed": 4404,
+            "overrides": []
+        },
+        {
+            "ref": "bonus_strip",
+            "spriteSeed": 4405,
+            "overrides": []
+        },
+        {
+            "ref": "roof_wide_gap",
+            "spriteSeed": 4406,
+            "overrides": [
+                {
+                    "obstacleId": 10,
+                    "spriteName": "obstacle_new_york_big_alive_4_idle"
+                },
+                {
+                    "obstacleId": 12,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                }
+            ]
+        },
+        {
+            "ref": "jump_challenge_3",
+            "spriteSeed": 4407,
+            "overrides": []
+        },
+        {
+            "ref": "peak_2",
+            "spriteSeed": 4408,
+            "overrides": [
+                {
+                    "obstacleId": 12,
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                },
+                {
+                    "obstacleId": 8,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                }
+            ]
+        }
+    ],
+    "decorationPatterns": [
+        {
+            "decorationTiles": []
+        }
+    ]
 }

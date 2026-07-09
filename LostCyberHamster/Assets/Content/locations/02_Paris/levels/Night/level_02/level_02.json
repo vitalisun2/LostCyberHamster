@@ -1,70 +1,70 @@
-{
-    "skyTexture":  "",
-    "roadTexture":  "",
-    "location":  "02_Paris",
-    "patternSequence":  [
-                            {
-                                "ref":  "easy_run_2",
-                                "spriteSeed":  4201,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "roof_bonus_run_3",
-                                "spriteSeed":  4202,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "roof_narrow_gap_2",
-                                "spriteSeed":  4203,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "roof_bonus_chain_2",
-                                "spriteSeed":  4204,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "bonus_strip_3",
-                                "spriteSeed":  4205,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "roof_wide_gap_2",
-                                "spriteSeed":  4206,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "roof_switch_line_2",
-                                "spriteSeed":  4207,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "easy_run_3",
-                                "spriteSeed":  4208,
-                                "overrides":  [
-
-                                              ]
-                            }
-                        ],
-    "decorationPatterns":  [
-                               {
-                                   "decorationTiles":  [
-
-                                                       ]
-                               }
-                           ]
+﻿{
+    "skyTexture": "",
+    "roadTexture": "",
+    "location": "02_Paris",
+    "patternSequence": [
+        {
+            "ref": "easy_run_2",
+            "spriteSeed": 4201,
+            "overrides": []
+        },
+        {
+            "ref": "roof_bonus_run_3",
+            "spriteSeed": 4202,
+            "overrides": []
+        },
+        {
+            "ref": "roof_narrow_gap_2",
+            "spriteSeed": 4203,
+            "overrides": [
+                {
+                    "obstacleId": 14,
+                    "spriteName": "obstacle_new_york_big_alive_4_idle"
+                },
+                {
+                    "obstacleId": 12,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                }
+            ]
+        },
+        {
+            "ref": "roof_bonus_chain_2",
+            "spriteSeed": 4204,
+            "overrides": []
+        },
+        {
+            "ref": "bonus_strip_3",
+            "spriteSeed": 4205,
+            "overrides": []
+        },
+        {
+            "ref": "roof_wide_gap_2",
+            "spriteSeed": 4206,
+            "overrides": [
+                {
+                    "obstacleId": 32,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                },
+                {
+                    "obstacleId": 34,
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                }
+            ]
+        },
+        {
+            "ref": "roof_switch_line_2",
+            "spriteSeed": 4207,
+            "overrides": []
+        },
+        {
+            "ref": "easy_run_3",
+            "spriteSeed": 4208,
+            "overrides": []
+        }
+    ],
+    "decorationPatterns": [
+        {
+            "decorationTiles": []
+        }
+    ]
 }

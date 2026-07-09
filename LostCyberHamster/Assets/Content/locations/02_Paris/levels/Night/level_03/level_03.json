@@ -1,70 +1,92 @@
-{
-    "skyTexture":  "",
-    "roadTexture":  "",
-    "location":  "02_Paris",
-    "patternSequence":  [
-                            {
-                                "ref":  "easy_run_3",
-                                "spriteSeed":  4301,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "small_jumps_3",
-                                "spriteSeed":  4302,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "shift_jump_mix",
-                                "spriteSeed":  4303,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "bonus_strip_2",
-                                "spriteSeed":  4304,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "shift_line_choice",
-                                "spriteSeed":  4305,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "shift_force_switch",
-                                "spriteSeed":  4306,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "peak_3",
-                                "spriteSeed":  4307,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "easy_run_2",
-                                "spriteSeed":  4308,
-                                "overrides":  [
-
-                                              ]
-                            }
-                        ],
-    "decorationPatterns":  [
-                               {
-                                   "decorationTiles":  [
-
-                                                       ]
-                               }
-                           ]
+﻿{
+    "skyTexture": "",
+    "roadTexture": "",
+    "location": "02_Paris",
+    "patternSequence": [
+        {
+            "ref": "easy_run_3",
+            "spriteSeed": 4301,
+            "overrides": []
+        },
+        {
+            "ref": "small_jumps_3",
+            "spriteSeed": 4302,
+            "overrides": []
+        },
+        {
+            "ref": "shift_jump_mix",
+            "spriteSeed": 4303,
+            "overrides": [
+                {
+                    "obstacleId": 6,
+                    "spriteName": "obstacle_new_york_big_alive_2_idle"
+                },
+                {
+                    "obstacleId": 2,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                }
+            ]
+        },
+        {
+            "ref": "bonus_strip_2",
+            "spriteSeed": 4304,
+            "overrides": []
+        },
+        {
+            "ref": "shift_line_choice",
+            "spriteSeed": 4305,
+            "overrides": [
+                {
+                    "obstacleId": 25,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                },
+                {
+                    "obstacleId": 23,
+                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                }
+            ]
+        },
+        {
+            "ref": "shift_force_switch",
+            "spriteSeed": 4306,
+            "overrides": [
+                {
+                    "obstacleId": 24,
+                    "spriteName": "obstacle_new_york_big_alive_4_idle"
+                },
+                {
+                    "obstacleId": 3,
+                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                },
+                {
+                    "obstacleId": 22,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                }
+            ]
+        },
+        {
+            "ref": "peak_3",
+            "spriteSeed": 4307,
+            "overrides": [
+                {
+                    "obstacleId": 23,
+                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                },
+                {
+                    "obstacleId": 19,
+                    "spriteName": "obstacle_new_york_big_alive_7_idle"
+                }
+            ]
+        },
+        {
+            "ref": "easy_run_2",
+            "spriteSeed": 4308,
+            "overrides": []
+        }
+    ],
+    "decorationPatterns": [
+        {
+            "decorationTiles": []
+        }
+    ]
 }
