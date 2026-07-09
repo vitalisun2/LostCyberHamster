@@ -17,6 +17,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private string _lastLocationName = string.Empty;
         private string _lastPartOfDay = string.Empty;
         private string _lastPatternName = string.Empty;
+        private int _lastLevelNumber = int.MinValue;
         private int _lastPatternIndex = int.MinValue;
         private GameState _lastGameState;
         private HamsterStateEnum _lastHamsterState;
@@ -45,6 +46,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             var locationName = LevelManager.GetLocationName() ?? string.Empty;
             var partOfDay = LevelManager.GetCurrentPartOfDay() ?? string.Empty;
+            var levelNumber = LevelManager.GetCurrentLevelNumber();
             var patternIndex = GetDisplayedPatternIndex(hamster);
             var patternName = GetDisplayedPatternName(patternIndex);
             var gameState = gameManager.State;
@@ -56,6 +58,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                                   !string.Equals(locationName, _lastLocationName, StringComparison.Ordinal) ||
                                   !string.Equals(partOfDay, _lastPartOfDay, StringComparison.Ordinal) ||
                                   !string.Equals(patternName, _lastPatternName, StringComparison.Ordinal) ||
+                                  levelNumber != _lastLevelNumber ||
                                   patternIndex != _lastPatternIndex ||
                                   gameState != _lastGameState ||
                                   hamsterState != _lastHamsterState ||
@@ -71,6 +74,17 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _builder.Append(string.IsNullOrEmpty(locationName) ? "-" : locationName);
             _builder.Append(' ');
             _builder.Append(string.IsNullOrEmpty(partOfDay) ? "-" : partOfDay);
+            _builder.Append(", ");
+            _builder.Append("LVL ");
+            if (levelNumber > 0)
+            {
+                _builder.Append(levelNumber);
+            }
+            else
+            {
+                _builder.Append('-');
+            }
+
             _builder.Append(", ");
             _builder.Append(string.IsNullOrEmpty(patternName) ? "-" : patternName);
             _builder.Append(' ');
@@ -97,6 +111,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _lastLocationName = locationName;
             _lastPartOfDay = partOfDay;
             _lastPatternName = patternName;
+            _lastLevelNumber = levelNumber;
             _lastPatternIndex = patternIndex;
             _lastGameState = gameState;
             _lastHamsterState = hamsterState;
