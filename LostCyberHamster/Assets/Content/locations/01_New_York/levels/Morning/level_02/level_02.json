@@ -169,7 +169,7 @@
         },
         {
           "obstacleId": 10,
-          "spriteName": "obstacle_new_york_big_alive_6_walk"
+          "spriteName": "obstacle_new_york_big_alive_5_idle"
         },
         {
           "obstacleId": 13,
@@ -223,7 +223,7 @@
         },
         {
           "obstacleId": 10,
-          "spriteName": "obstacle_new_york_big_alive_6_walk"
+          "spriteName": "obstacle_new_york_big_alive_5_idle"
         },
         {
           "obstacleId": 13,
