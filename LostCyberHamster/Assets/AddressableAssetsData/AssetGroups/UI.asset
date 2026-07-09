@@ -162,6 +162,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: df9a4ecd64704169af5792a98783a9df
+    m_Address: barcelona_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a78d210370ef54037aaf094ba0053894
     m_Address: GameScreen
     m_ReadOnly: 0
