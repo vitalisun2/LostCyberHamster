@@ -151,6 +151,8 @@ namespace Assets.Scripts.Bot.Planning
                 return;
             }
 
+            int branchCountBeforeCandidates = branches.Count;
+            int deadEndCountBeforeCandidates = deadEndBranches.Count;
             for (int candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
             {
                 PlannedAction candidate = candidates[candidateIndex];
@@ -169,6 +171,14 @@ namespace Assets.Scripts.Bot.Planning
 
                 PlanningGraphNode childNode = currentNode.CreateChild(nextState, candidate);
                 ExploreNode(childNode, worldSnapshot, branches, deadEndBranches, bestNodesByState);
+            }
+
+            if (branches.Count == branchCountBeforeCandidates
+                && deadEndBranches.Count == deadEndCountBeforeCandidates
+                && generationResult.HasDeadEndReasons)
+            {
+                // Если все candidate-подветки схлопнулись, сохраняем уже найденные причины unresolved-ситуации.
+                AddDeadEndBranch(currentNode, generationResult, deadEndBranches);
             }
         }
 
