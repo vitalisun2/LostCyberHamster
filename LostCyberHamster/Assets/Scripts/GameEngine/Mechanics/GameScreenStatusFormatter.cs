@@ -20,6 +20,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private int _lastPatternIndex = int.MinValue;
         private GameState _lastGameState;
         private HamsterStateEnum _lastHamsterState;
+        private int _lastEnergy;
         private bool _lastIsDamaged;
         private string _cachedText = string.Empty;
         private bool _hasSnapshot;
@@ -48,6 +49,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             var patternName = GetDisplayedPatternName(patternIndex);
             var gameState = gameManager.State;
             var hamsterState = hamster.HamsterState.Value;
+            var energy = hamster.Energy.Value;
             var isDamaged = hamster.IsDamaged.Value;
 
             var snapshotChanged = !_hasSnapshot ||
@@ -57,6 +59,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                                   patternIndex != _lastPatternIndex ||
                                   gameState != _lastGameState ||
                                   hamsterState != _lastHamsterState ||
+                                  energy != _lastEnergy ||
                                   isDamaged != _lastIsDamaged;
 
             if (!snapshotChanged)
@@ -84,6 +87,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _builder.Append(gameState);
             _builder.Append(",\n ");
             _builder.Append(hamsterState);
+            _builder.Append(", energy: ");
+            _builder.Append(energy);
             _builder.Append(", isDamaged: ");
             _builder.Append(isDamaged);
 
@@ -95,6 +100,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _lastPatternIndex = patternIndex;
             _lastGameState = gameState;
             _lastHamsterState = hamsterState;
+            _lastEnergy = energy;
             _lastIsDamaged = isDamaged;
             _hasSnapshot = true;
 
