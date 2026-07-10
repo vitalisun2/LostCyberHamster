@@ -876,7 +876,10 @@ namespace Assets.Scripts.Bot
 
             _executor.SetPlan(plan);
             if (plan.HasActions)
+            {
+                LogDeadEndSelection(buildResult.DeadEndSelection);
                 LogPlanActivation(plan);
+            }
         }
 
         /// <summary>
@@ -1231,7 +1234,8 @@ namespace Assets.Scripts.Bot
 
                     return new PlanBuildResult(
                         new BotPlan(actions, tailPlan.CommittedBoundaryX, tailPlan.Score),
-                        tailBuildResult.DeadEndReport);
+                        tailBuildResult.DeadEndReport,
+                        tailBuildResult.DeadEndSelection);
                 }
                 finally
                 {
@@ -1635,6 +1639,18 @@ namespace Assets.Scripts.Bot
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Пишет один компактный отчёт при фактической активации нового dead-end fallback-плана.
+        /// </summary>
+        private static void LogDeadEndSelection(PlanningDeadEndSelection selection)
+        {
+            if (!BotReplanDiagnostics.TryFormatDeadEndSelection(selection, out string formattedReport))
+                return;
+
+            BotReplanDiagnostics.LogDeadEndSelection(formattedReport);
+            Debug.Log(formattedReport);
         }
 
         /// <summary>

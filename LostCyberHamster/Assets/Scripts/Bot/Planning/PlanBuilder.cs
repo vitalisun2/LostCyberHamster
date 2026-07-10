@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Bot.Perception;
@@ -11,15 +12,37 @@ namespace Assets.Scripts.Bot.Planning
     /// </summary>
     internal sealed class PlanBuildResult
     {
-        public PlanBuildResult(BotPlan plan, PlanningDeadEndReport deadEndReport)
+        public PlanBuildResult(
+            BotPlan plan,
+            PlanningDeadEndReport deadEndReport,
+            PlanningDeadEndSelection deadEndSelection = null)
         {
             Plan = plan ?? BotPlan.Empty();
             DeadEndReport = deadEndReport;
+            DeadEndSelection = deadEndSelection;
         }
 
         public BotPlan Plan { get; }
         public PlanningDeadEndReport DeadEndReport { get; }
+        public PlanningDeadEndSelection DeadEndSelection { get; }
         public bool HasDeadEnd => DeadEndReport != null;
+    }
+
+    /// <summary>
+    /// Сохраняет полный набор dead-end кандидатов и выбранную ветку для event-only диагностики.
+    /// </summary>
+    internal sealed class PlanningDeadEndSelection
+    {
+        public PlanningDeadEndSelection(
+            IReadOnlyList<PlanningDeadEndBranch> candidates,
+            PlanningDeadEndBranch selectedCandidate)
+        {
+            Candidates = candidates ?? Array.Empty<PlanningDeadEndBranch>();
+            SelectedCandidate = selectedCandidate;
+        }
+
+        public IReadOnlyList<PlanningDeadEndBranch> Candidates { get; }
+        public PlanningDeadEndBranch SelectedCandidate { get; }
     }
 
     /// <summary>
@@ -104,17 +127,21 @@ namespace Assets.Scripts.Bot.Planning
                     return BuildSuccessfulResult(worldSnapshot, bestBranch);
 
                 PlanningDeadEndBranch bestDeadEndBranch = _planEvaluator.SelectBestDeadEnd(graphResult.DeadEndBranches);
+                var deadEndSelection = new PlanningDeadEndSelection(
+                    graphResult.DeadEndBranches,
+                    bestDeadEndBranch);
                 LogDeadEndFallbackBranchSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
                 LogRoofExitSwitchDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
                 LogJumpFromRoofDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
                 LogSwitchLaneDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
                 LogLowEnergyPickupDeadEndSelection(rootState, graphResult.DeadEndBranches, bestDeadEndBranch);
                 if (bestDeadEndBranch?.Branch != null && bestDeadEndBranch.Branch.HasActions)
-                    return BuildDeadEndFallbackResult(worldSnapshot, bestDeadEndBranch);
+                    return BuildDeadEndFallbackResult(worldSnapshot, bestDeadEndBranch, deadEndSelection);
 
                 return new PlanBuildResult(
                     BotPlan.Empty(worldSnapshot.ScreenRightEdgeX),
-                    bestDeadEndBranch?.Report);
+                    bestDeadEndBranch?.Report,
+                    deadEndSelection);
             }
             finally
             {
@@ -141,13 +168,15 @@ namespace Assets.Scripts.Bot.Planning
         /// </summary>
         private PlanBuildResult BuildDeadEndFallbackResult(
             WorldSnapshot worldSnapshot,
-            PlanningDeadEndBranch deadEndBranch)
+            PlanningDeadEndBranch deadEndBranch,
+            PlanningDeadEndSelection deadEndSelection)
         {
             PlanningBranch branch = deadEndBranch.Branch;
             float score = _planEvaluator.Score(branch.Actions);
             return new PlanBuildResult(
                 new BotPlan(branch.Actions, worldSnapshot.ScreenRightEdgeX, score),
-                deadEndBranch.Report);
+                deadEndBranch.Report,
+                deadEndSelection);
         }
 
         private static void LogGroundJumpOverBranchSelection(

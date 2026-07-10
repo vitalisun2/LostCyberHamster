@@ -1,5 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 using Assets.Scripts.Bot.PlanState;
 using Assets.Scripts.Bot.Planning;
+using Assets.Scripts.Bot.Strategies.Shared.Contracts;
 
 namespace Assets.Scripts.Bot.Diagnostics
 {
@@ -9,6 +14,9 @@ namespace Assets.Scripts.Bot.Diagnostics
     /// </summary>
     internal static class BotReplanDiagnostics
     {
+        private const int MaxDeadEndCandidates = 6;
+        private const int MaxDeadEndReasons = 4;
+
         public static void LogPlan(BotPlan plan, string formattedPlanChain)
         {
             if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Replan)
@@ -22,6 +30,70 @@ namespace Assets.Scripts.Bot.Diagnostics
                 BotDiagnosticCategory.Replan,
                 BotDiagnosticLevel.Essential,
                 $"[Bot PLAN] {formattedPlanChain}");
+        }
+
+        /// <summary>
+        /// Формирует компактный отчёт только для случая, когда successful-веток нет
+        /// и planner выбрал наиболее далеко продвинувшийся dead-end prefix.
+        /// </summary>
+        public static bool TryFormatDeadEndSelection(
+            PlanningDeadEndSelection selection,
+            out string formattedReport)
+        {
+            formattedReport = null;
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Replan))
+                return false;
+
+            IReadOnlyList<PlanningDeadEndBranch> candidates = selection?.Candidates;
+            int selectedIndex = FindSelectedCandidateIndex(selection);
+            if (candidates == null || candidates.Count == 0 || selectedIndex < 0)
+                return false;
+
+            var builder = new StringBuilder(512);
+            builder.Append("[Bot DEAD_END_SELECTION] successful=0 deadEnds=")
+                .Append(candidates.Count)
+                .AppendLine();
+
+            int leadingCandidateCount = candidates.Count < MaxDeadEndCandidates
+                ? candidates.Count
+                : MaxDeadEndCandidates;
+            bool appendSelectedSeparately = selectedIndex >= leadingCandidateCount;
+            if (appendSelectedSeparately)
+                leadingCandidateCount--;
+
+            for (int candidateIndex = 0; candidateIndex < leadingCandidateCount; candidateIndex++)
+                AppendDeadEndCandidate(builder, candidates[candidateIndex], candidateIndex + 1);
+
+            if (appendSelectedSeparately)
+                AppendDeadEndCandidate(builder, candidates[selectedIndex], selectedIndex + 1);
+
+            int displayedCandidateCount = leadingCandidateCount + (appendSelectedSeparately ? 1 : 0);
+            if (candidates.Count > displayedCandidateCount)
+            {
+                builder.Append("[Bot DEAD_END_SELECTION] omitted=")
+                    .Append(candidates.Count - displayedCandidateCount)
+                    .AppendLine();
+            }
+
+            builder.Append("[Bot DEAD_END_SELECTION] selected=#")
+                .Append(selectedIndex + 1)
+                .Append(" reason=maxFailureProjection");
+            formattedReport = builder.ToString();
+            return true;
+        }
+
+        public static void LogDeadEndSelection(string formattedReport)
+        {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Replan)
+                || string.IsNullOrWhiteSpace(formattedReport))
+            {
+                return;
+            }
+
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.Replan,
+                BotDiagnosticLevel.Essential,
+                formattedReport);
         }
 
         public static void LogPlanBuildResult(
@@ -150,6 +222,119 @@ namespace Assets.Scripts.Bot.Diagnostics
         private static string FormatNullable(int? value)
         {
             return value.HasValue ? value.Value.ToString() : "none";
+        }
+
+        private static int FindSelectedCandidateIndex(PlanningDeadEndSelection selection)
+        {
+            IReadOnlyList<PlanningDeadEndBranch> candidates = selection?.Candidates;
+            if (candidates == null || selection.SelectedCandidate == null)
+                return -1;
+
+            for (int candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
+            {
+                if (ReferenceEquals(candidates[candidateIndex], selection.SelectedCandidate))
+                    return candidateIndex;
+            }
+
+            return -1;
+        }
+
+        private static void AppendDeadEndCandidate(
+            StringBuilder builder,
+            PlanningDeadEndBranch candidate,
+            int candidateNumber)
+        {
+            builder.Append("[Bot DEAD_END_SELECTION] #")
+                .Append(candidateNumber)
+                .Append(" actions=");
+            AppendActionChain(builder, candidate?.Branch?.Actions);
+            builder.Append(" failAt=");
+            AppendFailureProjection(builder, candidate?.Report);
+            builder.Append(" reasons=");
+            AppendDeadEndReasons(builder, candidate?.Report?.Reasons);
+            builder.AppendLine();
+        }
+
+        private static void AppendActionChain(
+            StringBuilder builder,
+            IReadOnlyList<PlannedAction> actions)
+        {
+            if (actions == null || actions.Count == 0)
+            {
+                builder.Append("none");
+                return;
+            }
+
+            for (int actionIndex = 0; actionIndex < actions.Count; actionIndex++)
+            {
+                if (actionIndex > 0)
+                    builder.Append(" -> ");
+
+                PlannedAction action = actions[actionIndex];
+                if (action == null)
+                {
+                    builder.Append("null");
+                    continue;
+                }
+
+                builder.Append(action.Kind);
+                if (!action.FulfillsCollectibleObjective)
+                    continue;
+
+                builder.Append('[')
+                    .Append(action.CollectibleObjectiveValue.Kind)
+                    .Append(':')
+                    .Append(action.CollectibleObjectiveValue.EffectiveGain)
+                    .Append(']');
+            }
+        }
+
+        private static void AppendFailureProjection(
+            StringBuilder builder,
+            PlanningDeadEndReport report)
+        {
+            if (report == null)
+            {
+                builder.Append("none");
+                return;
+            }
+
+            builder.Append(report.ProjectionWorldShift.ToString("F2", CultureInfo.InvariantCulture));
+        }
+
+        private static void AppendDeadEndReasons(
+            StringBuilder builder,
+            IReadOnlyList<StrategyDeadEndReason> reasons)
+        {
+            if (reasons == null || reasons.Count == 0)
+            {
+                builder.Append("none");
+                return;
+            }
+
+            int reasonCount = reasons.Count < MaxDeadEndReasons ? reasons.Count : MaxDeadEndReasons;
+            for (int reasonIndex = 0; reasonIndex < reasonCount; reasonIndex++)
+            {
+                if (reasonIndex > 0)
+                    builder.Append("; ");
+
+                StrategyDeadEndReason reason = reasons[reasonIndex];
+                if (reason == null)
+                {
+                    builder.Append("null");
+                    continue;
+                }
+
+                builder.Append(reason.StrategyName)
+                    .Append(':')
+                    .Append(reason.Message);
+            }
+
+            if (reasons.Count > reasonCount)
+            {
+                builder.Append("; ... total=")
+                    .Append(reasons.Count);
+            }
         }
     }
 }
