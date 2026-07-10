@@ -8,7 +8,8 @@ namespace Assets.Scripts.Bot.Diagnostics
     {
         private const BotDiagnosticCategory DefaultEssentialCategories =
             BotDiagnosticCategory.TestResult
-            | BotDiagnosticCategory.RuntimeSafety;
+            | BotDiagnosticCategory.RuntimeSafety
+            | BotDiagnosticCategory.Replan;
 
         private static BotDiagnosticLevel _maxLevel = BotDiagnosticLevel.Essential;
         private static BotDiagnosticCategory _enabledCategories = DefaultEssentialCategories;
@@ -43,7 +44,7 @@ namespace Assets.Scripts.Bot.Diagnostics
         }
 
         /// <summary>
-        /// Возвращает диагностику в обычный режим: essential events по всем категориям.
+        /// Возвращает диагностику в обычный режим: essential events из набора по умолчанию.
         /// </summary>
         public static void Reset()
         {

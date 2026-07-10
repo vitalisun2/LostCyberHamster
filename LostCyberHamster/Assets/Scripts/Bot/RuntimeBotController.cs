@@ -300,6 +300,7 @@ namespace Assets.Scripts.Bot
             BotDiagnostics.SetEnabledCategories(
                 BotDiagnosticCategory.TestResult
                 | BotDiagnosticCategory.RuntimeSafety
+                | BotDiagnosticCategory.Replan
                 | BotDiagnosticCategory.DeadEnd
                 | BotDiagnosticCategory.RuntimeEvents
                 | BotDiagnosticCategory.Pattern
@@ -1644,7 +1645,10 @@ namespace Assets.Scripts.Bot
             if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.Replan))
                 return;
 
-            BotReplanDiagnostics.LogPlan(plan, FormatPlanChain(plan));
+            string formattedPlanChain = FormatPlanChain(plan);
+
+            BotReplanDiagnostics.LogPlan(plan, formattedPlanChain);
+            Debug.Log($"[Bot PLAN] {formattedPlanChain}");
         }
 
         /// <summary>
