@@ -1,5 +1,8 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Assets.Scripts.Bot;
+using Assets.Scripts.GameManagerLogic;
+using Assets.Scripts.Gameplay;
+using Assets.Scripts.System;
 using GameManagement;
 using LostCyberHamster.UI;
 using UnityEngine;
@@ -19,6 +22,7 @@ namespace Assets.Scripts.DevTools
         private const string _closeButtonObjectName = "CloseButton";
         private const string _botButtonObjectName = "BotButton";
         private const string _unlockAllButtonObjectName = "UnlockAllButton";
+        private const string _completeLevelButtonObjectName = "CompleteLevelButton";
         private const string _resetProgressButtonObjectName = "ResetProgressButton";
         private const string _statusTextObjectName = "StatusText";
 
@@ -27,7 +31,7 @@ namespace Assets.Scripts.DevTools
         private const float _baseOpenButtonWidth = 64f;
         private const float _baseButtonHeight = 34f;
         private const float _basePanelWidth = 260f;
-        private const float _basePanelHeight = 224f;
+        private const float _basePanelHeight = 270f;
 
         private static readonly Color _openButtonColor = new Color(1f, 1f, 1f, 0.72f);
         private static readonly Color _panelColor = new Color(1f, 1f, 1f, 0.94f);
@@ -48,6 +52,7 @@ namespace Assets.Scripts.DevTools
         private RectTransform _closeButtonRect;
         private RectTransform _botButtonRect;
         private RectTransform _unlockAllButtonRect;
+        private RectTransform _completeLevelButtonRect;
         private RectTransform _resetProgressButtonRect;
         private RectTransform _statusTextRect;
 
@@ -57,6 +62,8 @@ namespace Assets.Scripts.DevTools
 
         private Image _unlockAllButtonImage;
         private Text _unlockAllButtonText;
+
+        private Button _completeLevelButton;
 
         private Text _statusText;
 
@@ -179,6 +186,14 @@ namespace Assets.Scripts.DevTools
             _unlockAllButtonImage = unlockAllButton.GetComponent<Image>();
             _unlockAllButtonText = unlockAllButton.GetComponentInChildren<Text>();
 
+            _completeLevelButton = CreateButton(
+                _completeLevelButtonObjectName,
+                _panelObject.transform,
+                "Complete Level (3 Stars)",
+                Color.white,
+                CompleteLevelWithThreeStars);
+            _completeLevelButtonRect = _completeLevelButton.GetComponent<RectTransform>();
+
             Button resetProgressButton = CreateButton(
                 _resetProgressButtonObjectName,
                 _panelObject.transform,
@@ -293,8 +308,9 @@ namespace Assets.Scripts.DevTools
             SetTopLeft(_closeButtonRect, panelWidth - inset - rowHeight, titleY, rowHeight, rowHeight);
             SetTopLeft(_botButtonRect, inset, titleY + rowHeight + inset, panelWidth - inset * 2f, rowHeight);
             SetTopLeft(_unlockAllButtonRect, inset, titleY + rowHeight * 2f + inset * 1.75f, panelWidth - inset * 2f, rowHeight);
-            SetTopLeft(_resetProgressButtonRect, inset, titleY + rowHeight * 3f + inset * 2.5f, panelWidth - inset * 2f, rowHeight);
-            SetTopLeft(_statusTextRect, inset, titleY + rowHeight * 4f + inset * 2.95f, panelWidth - inset * 2f, rowHeight);
+            SetTopLeft(_completeLevelButtonRect, inset, titleY + rowHeight * 3f + inset * 2.5f, panelWidth - inset * 2f, rowHeight);
+            SetTopLeft(_resetProgressButtonRect, inset, titleY + rowHeight * 4f + inset * 3.25f, panelWidth - inset * 2f, rowHeight);
+            SetTopLeft(_statusTextRect, inset, titleY + rowHeight * 5f + inset * 3.7f, panelWidth - inset * 2f, rowHeight);
 
             int buttonFontSize = Mathf.RoundToInt(14f * scale);
             int titleFontSize = Mathf.RoundToInt(16f * scale);
@@ -374,6 +390,21 @@ namespace Assets.Scripts.DevTools
             RefreshButtonState();
         }
 
+        private void CompleteLevelWithThreeStars()
+        {
+            LevelController levelController = LevelController.Instance;
+            if (levelController?.LevelData?.GameManager?.State != GameState.PLAYING)
+                return;
+
+            Hamster hamster = Object.FindAnyObjectByType<Hamster>(FindObjectsInactive.Include);
+            if (hamster == null)
+                return;
+
+            hamster.Lives.Value = 3;
+            ClosePanel();
+            levelController.Finish();
+        }
+
         private void RefreshButtonState()
         {
             if (_botButton == null)
@@ -390,6 +421,12 @@ namespace Assets.Scripts.DevTools
             bool unlockAllLevels = DevToolsRuntimeState.UnlockAllLevels;
             _unlockAllButtonText.text = unlockAllLevels ? "Unlock All On" : "Unlock All Off";
             _unlockAllButtonImage.color = unlockAllLevels ? _enabledColor : _disabledColor;
+
+            if (_completeLevelButton != null)
+            {
+                _completeLevelButton.interactable =
+                    LevelController.Instance?.LevelData?.GameManager?.State == GameState.PLAYING;
+            }
 
             if (_statusText != null)
                 _statusText.gameObject.SetActive(!botAvailable);
