@@ -6,8 +6,12 @@ using Assets.Scripts.System;
 using GameManagement;
 using LostCyberHamster.UI;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem.UI;
+#endif
 
 namespace Assets.Scripts.DevTools
 {
@@ -42,6 +46,7 @@ namespace Assets.Scripts.DevTools
 
         private bool _isPanelOpen;
         private Font _font;
+        private GameObject _ownedEventSystemObject;
 
         private GameObject _openButtonObject;
         private RectTransform _openButtonRect;
@@ -97,6 +102,7 @@ namespace Assets.Scripts.DevTools
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            EnsureEventSystem();
             EnsureUi();
             SetPanelOpen(_isPanelOpen);
         }
@@ -109,9 +115,39 @@ namespace Assets.Scripts.DevTools
 
         private void Update()
         {
+            EnsureEventSystem();
             EnsureUi();
             ApplyLayout();
             RefreshButtonState();
+        }
+
+        private void EnsureEventSystem()
+        {
+            EventSystem ownedEventSystem = _ownedEventSystemObject != null
+                ? _ownedEventSystemObject.GetComponent<EventSystem>()
+                : null;
+
+            if (ownedEventSystem != null)
+            {
+                if (EventSystem.current != null && EventSystem.current != ownedEventSystem)
+                {
+                    Destroy(_ownedEventSystemObject);
+                    _ownedEventSystemObject = null;
+                }
+
+                return;
+            }
+
+            if (EventSystem.current != null)
+                return;
+
+            _ownedEventSystemObject = new GameObject("[DevToolsEventSystem]", typeof(EventSystem));
+            _ownedEventSystemObject.transform.SetParent(transform, false);
+#if ENABLE_INPUT_SYSTEM
+            _ownedEventSystemObject.AddComponent<InputSystemUIInputModule>();
+#else
+            _ownedEventSystemObject.AddComponent<StandaloneInputModule>();
+#endif
         }
 
         private void EnsureUi()
