@@ -130,7 +130,10 @@ namespace Assets.Scripts.Bot.Execution
             {
                 ReduceRemainingReservedEnergyCost(energyBeforeProgressTick, hamster.Energy.Value);
                 AdvanceHead();
-                return PlanExecutionTickResult.Completed;
+
+                // Передаёт управление следующему action в том же кадре.
+                PlanExecutionTickResult nextHeadResult = TryFireCurrentHead(hamster);
+                return PlanExecutionTickResult.Completed | nextHeadResult;
             }
 
             ReduceRemainingReservedEnergyCost(energyBeforeProgressTick, hamster.Energy.Value);
