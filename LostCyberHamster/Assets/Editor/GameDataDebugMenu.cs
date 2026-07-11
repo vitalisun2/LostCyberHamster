@@ -52,18 +52,7 @@ namespace LostCyberHamster.Editor
         {
             try
             {
-                GameDataManager.ClearData();
-                PlayerPrefs.Save();
-
-                GameDataManager.PlayerData = new PlayerData();
-                GameDataManager.Settings = new SettingsData();
-                GameDataManager.IsGameJustStarted = true;
-
-                GameDataManager.SaveData();
-                GameDataManager.SaveSettings();
-
-                MoneyStorage.Init(0);
-                CrystalStorage.Init(0);
+                GameDataManager.ResetLocalData();
 
                 ExportPlayerData();
 

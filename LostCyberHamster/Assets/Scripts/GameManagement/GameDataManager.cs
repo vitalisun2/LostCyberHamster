@@ -148,6 +148,25 @@ namespace GameManagement
             PlayerPrefs.DeleteAll();
         }
 
+        /// <summary>
+        /// Сбрасывает локальный прогресс и восстанавливает runtime-хранилища в начальное состояние.
+        /// </summary>
+        public static void ResetLocalData()
+        {
+            ClearData();
+            PlayerPrefs.Save();
+
+            PlayerData = new PlayerData();
+            Settings = new SettingsData();
+            IsGameJustStarted = true;
+
+            SaveData();
+            SaveSettings();
+
+            MoneyStorage.Init(0);
+            CrystalStorage.Init(0);
+        }
+
         private static void EnsureProgressConsistency()
         {
             if (!LevelCatalogService.HasCatalog)

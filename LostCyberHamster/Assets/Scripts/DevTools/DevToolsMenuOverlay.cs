@@ -1,5 +1,7 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Assets.Scripts.Bot;
+using GameManagement;
+using LostCyberHamster.UI;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -17,6 +19,7 @@ namespace Assets.Scripts.DevTools
         private const string _closeButtonObjectName = "CloseButton";
         private const string _botButtonObjectName = "BotButton";
         private const string _unlockAllButtonObjectName = "UnlockAllButton";
+        private const string _resetProgressButtonObjectName = "ResetProgressButton";
         private const string _statusTextObjectName = "StatusText";
 
         private const int _sortingOrder = 32767;
@@ -24,7 +27,7 @@ namespace Assets.Scripts.DevTools
         private const float _baseOpenButtonWidth = 64f;
         private const float _baseButtonHeight = 34f;
         private const float _basePanelWidth = 260f;
-        private const float _basePanelHeight = 178f;
+        private const float _basePanelHeight = 224f;
 
         private static readonly Color _openButtonColor = new Color(1f, 1f, 1f, 0.72f);
         private static readonly Color _panelColor = new Color(1f, 1f, 1f, 0.94f);
@@ -45,6 +48,7 @@ namespace Assets.Scripts.DevTools
         private RectTransform _closeButtonRect;
         private RectTransform _botButtonRect;
         private RectTransform _unlockAllButtonRect;
+        private RectTransform _resetProgressButtonRect;
         private RectTransform _statusTextRect;
 
         private Button _botButton;
@@ -175,6 +179,14 @@ namespace Assets.Scripts.DevTools
             _unlockAllButtonImage = unlockAllButton.GetComponent<Image>();
             _unlockAllButtonText = unlockAllButton.GetComponentInChildren<Text>();
 
+            Button resetProgressButton = CreateButton(
+                _resetProgressButtonObjectName,
+                _panelObject.transform,
+                "Reset Progress",
+                Color.white,
+                ResetProgress);
+            _resetProgressButtonRect = resetProgressButton.GetComponent<RectTransform>();
+
             _statusText = CreateText(_statusTextObjectName, _panelObject.transform, "Bot is not ready", TextAnchor.MiddleLeft);
             _statusTextRect = _statusText.GetComponent<RectTransform>();
         }
@@ -281,7 +293,8 @@ namespace Assets.Scripts.DevTools
             SetTopLeft(_closeButtonRect, panelWidth - inset - rowHeight, titleY, rowHeight, rowHeight);
             SetTopLeft(_botButtonRect, inset, titleY + rowHeight + inset, panelWidth - inset * 2f, rowHeight);
             SetTopLeft(_unlockAllButtonRect, inset, titleY + rowHeight * 2f + inset * 1.75f, panelWidth - inset * 2f, rowHeight);
-            SetTopLeft(_statusTextRect, inset, titleY + rowHeight * 3f + inset * 2.2f, panelWidth - inset * 2f, rowHeight);
+            SetTopLeft(_resetProgressButtonRect, inset, titleY + rowHeight * 3f + inset * 2.5f, panelWidth - inset * 2f, rowHeight);
+            SetTopLeft(_statusTextRect, inset, titleY + rowHeight * 4f + inset * 2.95f, panelWidth - inset * 2f, rowHeight);
 
             int buttonFontSize = Mathf.RoundToInt(14f * scale);
             int titleFontSize = Mathf.RoundToInt(16f * scale);
@@ -350,6 +363,14 @@ namespace Assets.Scripts.DevTools
         private void ToggleUnlockAll()
         {
             DevToolsRuntimeState.UnlockAllLevels = !DevToolsRuntimeState.UnlockAllLevels;
+            RefreshButtonState();
+        }
+
+        private void ResetProgress()
+        {
+            GameDataManager.ResetLocalData();
+            DevToolsRuntimeState.UnlockAllLevels = false;
+            UIManager.OnRepaintScreen?.Invoke();
             RefreshButtonState();
         }
 
