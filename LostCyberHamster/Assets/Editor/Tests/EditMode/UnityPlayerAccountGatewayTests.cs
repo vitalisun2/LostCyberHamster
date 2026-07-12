@@ -10,6 +10,7 @@ namespace Assets.Tests.EditMode
     /// <summary>
     /// Проверяет lifecycle Unity Player Accounts gateway через детерминированные SDK и timeout ports.
     /// </summary>
+    [Timeout(5000)]
     public sealed class UnityPlayerAccountGatewayTests
     {
         private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
@@ -178,6 +179,7 @@ namespace Assets.Tests.EditMode
             CollectionAssert.AreEqual(new[] { "shared-token", "shared-token" }, results);
             Assert.AreEqual(1, sdk.StartSignInCalls);
             Assert.AreEqual(1, sdk.SignOutCalls);
+            AssertSubscriptionsReleased(sdk);
         }
 
         [Test]
@@ -464,8 +466,7 @@ namespace Assets.Tests.EditMode
 
             public Task WaitAsync(TimeSpan timeout)
             {
-                // Real-time fallback is only a fixture watchdog; scenario timeouts remain fully controlled.
-                return _tasks.Count > 0 ? _tasks.Dequeue() : Task.Delay(TimeSpan.FromSeconds(2));
+                return _tasks.Count > 0 ? _tasks.Dequeue() : NeverCompletingTask();
             }
 
             public TaskCompletionSource<bool> EnqueuePending()

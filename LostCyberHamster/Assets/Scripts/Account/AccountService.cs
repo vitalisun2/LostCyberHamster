@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.Core;
 using UnityEngine;
@@ -14,9 +15,9 @@ namespace LostCyberHamster.Account
         private readonly IUnityPlayerAccountGateway _playerAccountGateway;
         private readonly object _linkSync = new object();
         private readonly object _stateSync = new object();
+        private readonly SemaphoreSlim _stateOperationGate = new SemaphoreSlim(1, 1);
         private Task<AccountLinkResult> _activeLinkTask;
         private AccountSnapshot _snapshot = AccountSnapshot.Unknown;
-        private int _stateOperationVersion;
 
         internal AccountService(
             IUnityAuthenticationGateway authenticationGateway,
@@ -46,7 +47,7 @@ namespace LostCyberHamster.Account
         /// </summary>
         public async Task<AccountSnapshot> EnsureSignedInAsync()
         {
-            int operationVersion = BeginStateOperation();
+            await _stateOperationGate.WaitAsync();
 
             try
             {
@@ -57,32 +58,44 @@ namespace LostCyberHamster.Account
                     await _authenticationGateway.SignInAnonymouslyAsync();
                 }
 
-                return await RefreshLinkStateCoreAsync(operationVersion);
+                return await RefreshLinkStateCoreAsync();
             }
             catch (Exception ex)
             {
                 Debug.LogWarning($"[AccountService] Failed to sign in: {ex.Message}");
                 AccountState state = IsOfflineFailure(ex) ? AccountState.Offline : AccountState.Error;
-                return SetFailureSnapshotIfCurrent(operationVersion, state, ex.Message);
+                return SetFailureSnapshot(state, ex.Message);
+            }
+            finally
+            {
+                _stateOperationGate.Release();
             }
         }
 
         /// <summary>
         /// Повторно запрашивает связь текущего UGS-игрока с Unity Player Account и публикует новый snapshot.
         /// </summary>
-        public Task<AccountSnapshot> RefreshLinkStateAsync()
+        public async Task<AccountSnapshot> RefreshLinkStateAsync()
         {
-            return RefreshLinkStateCoreAsync(BeginStateOperation());
+            await _stateOperationGate.WaitAsync();
+
+            try
+            {
+                return await RefreshLinkStateCoreAsync();
+            }
+            finally
+            {
+                _stateOperationGate.Release();
+            }
         }
 
-        private async Task<AccountSnapshot> RefreshLinkStateCoreAsync(int operationVersion)
+        private async Task<AccountSnapshot> RefreshLinkStateCoreAsync()
         {
             try
             {
                 if (!_authenticationGateway.IsSignedIn)
                 {
-                    return SetSnapshotIfCurrent(
-                        operationVersion,
+                    return SetSnapshot(
                         AccountState.Unknown,
                         string.Empty,
                         false,
@@ -92,8 +105,7 @@ namespace LostCyberHamster.Account
 
                 var isLinked = await _authenticationGateway.IsUnityAccountLinkedAsync();
                 var state = isLinked ? AccountState.Linked : AccountState.Guest;
-                return SetSnapshotIfCurrent(
-                    operationVersion,
+                return SetSnapshot(
                     state,
                     _authenticationGateway.PlayerId,
                     true,
@@ -103,7 +115,7 @@ namespace LostCyberHamster.Account
             catch (Exception ex)
             {
                 Debug.LogWarning($"[AccountService] Failed to refresh account state: {ex.Message}");
-                return SetFailureSnapshotIfCurrent(operationVersion, AccountState.Error, ex.Message);
+                return SetFailureSnapshot(AccountState.Error, ex.Message);
             }
         }
 
@@ -128,10 +140,25 @@ namespace LostCyberHamster.Account
             {
                 if (_activeLinkTask == null || _activeLinkTask.IsCompleted)
                 {
-                    _activeLinkTask = LinkUnityAccountCoreAsync();
+                    var completion = new TaskCompletionSource<AccountLinkResult>(
+                        TaskCreationOptions.RunContinuationsAsynchronously);
+                    _activeLinkTask = completion.Task;
+                    _ = ProduceLinkResultAsync(completion);
                 }
 
                 return _activeLinkTask;
+            }
+        }
+
+        private async Task ProduceLinkResultAsync(TaskCompletionSource<AccountLinkResult> completion)
+        {
+            try
+            {
+                completion.TrySetResult(await LinkUnityAccountCoreAsync());
+            }
+            catch (Exception ex)
+            {
+                completion.TrySetException(ex);
             }
         }
 
@@ -170,21 +197,21 @@ namespace LostCyberHamster.Account
                 return AccountLinkResult.Failed("Unity access token is empty.");
             }
 
-            if (!_authenticationGateway.IsSignedIn)
-            {
-                return AccountLinkResult.Failed("UGS player session is not signed in.");
-            }
-
-            int operationVersion = BeginStateOperation();
+            await _stateOperationGate.WaitAsync();
 
             try
             {
+                if (!_authenticationGateway.IsSignedIn)
+                {
+                    return AccountLinkResult.Failed("UGS player session is not signed in.");
+                }
+
                 // Link не должен молча менять Player ID: конфликт обрабатывает вызывающий UX.
                 var result = await _authenticationGateway.LinkWithUnityAsync(accessToken);
 
                 if (result.IsSuccess)
                 {
-                    await RefreshLinkStateCoreAsync(operationVersion);
+                    await RefreshLinkStateCoreAsync();
                 }
 
                 return result;
@@ -194,6 +221,10 @@ namespace LostCyberHamster.Account
                 Debug.LogWarning($"[AccountService] Failed to link account: {ex.Message}");
                 return AccountLinkResult.Failed(ex.Message);
             }
+            finally
+            {
+                _stateOperationGate.Release();
+            }
         }
 
         /// <summary>
@@ -201,49 +232,41 @@ namespace LostCyberHamster.Account
         /// </summary>
         public async Task<AccountSnapshot> UnlinkUnityAccountAsync()
         {
-            int operationVersion = BeginStateOperation();
-
-            if (!_authenticationGateway.IsSignedIn)
-            {
-                return SetSnapshotIfCurrent(
-                    operationVersion,
-                    AccountState.Unknown,
-                    string.Empty,
-                    false,
-                    false,
-                    string.Empty);
-            }
+            await _stateOperationGate.WaitAsync();
 
             try
             {
+                if (!_authenticationGateway.IsSignedIn)
+                {
+                    return SetSnapshot(
+                        AccountState.Unknown,
+                        string.Empty,
+                        false,
+                        false,
+                        string.Empty);
+                }
+
                 await _authenticationGateway.UnlinkUnityAsync();
-                return await RefreshLinkStateCoreAsync(operationVersion);
+                return await RefreshLinkStateCoreAsync();
             }
             catch (Exception ex)
             {
                 Debug.LogWarning($"[AccountService] Failed to unlink account: {ex.Message}");
-                return SetFailureSnapshotIfCurrent(operationVersion, AccountState.Error, ex.Message);
+                return SetFailureSnapshot(AccountState.Error, ex.Message);
             }
-        }
-
-        private int BeginStateOperation()
-        {
-            lock (_stateSync)
+            finally
             {
-                _stateOperationVersion++;
-                return _stateOperationVersion;
+                _stateOperationGate.Release();
             }
         }
 
-        private AccountSnapshot SetFailureSnapshotIfCurrent(
-            int operationVersion,
+        private AccountSnapshot SetFailureSnapshot(
             AccountState state,
             string errorMessage)
         {
             bool isSignedIn = _authenticationGateway.IsSignedIn;
             string playerId = isSignedIn ? _authenticationGateway.PlayerId : string.Empty;
-            return SetSnapshotIfCurrent(
-                operationVersion,
+            return SetSnapshot(
                 state,
                 playerId,
                 isSignedIn,
@@ -251,8 +274,7 @@ namespace LostCyberHamster.Account
                 errorMessage);
         }
 
-        private AccountSnapshot SetSnapshotIfCurrent(
-            int operationVersion,
+        private AccountSnapshot SetSnapshot(
             AccountState state,
             string playerId,
             bool isSignedIn,
@@ -263,11 +285,6 @@ namespace LostCyberHamster.Account
 
             lock (_stateSync)
             {
-                if (operationVersion != _stateOperationVersion)
-                {
-                    return _snapshot;
-                }
-
                 _snapshot = new AccountSnapshot(state, playerId, isSignedIn, isLinked, errorMessage);
                 snapshot = _snapshot;
             }

@@ -13,6 +13,7 @@
 - Ошибка refresh/unlink сохраняет известный Player ID, но не сохраняет недоказанный `IsLinked = true`.
 - `AlreadyLinked` не переключает Player ID: конфликт возвращается вызывающему UX.
 - Интерактивный link использует fresh Unity Player Accounts flow и service-level single-flight.
+- State-команды и refresh сериализованы: завершившаяся backend-мутация всегда публикует финальный snapshot до следующего query.
 - OAuth timeout, failure и success освобождают подписки; следующий вызов может начать новый flow.
 - Production account copy про сохранение прогресса не является частью unit-контракта: будущий flow свяжет identity с Cloud Save synchronization.
 

@@ -692,7 +692,7 @@ namespace Assets.Tests.EditMode
         }
 
         [Test]
-        public async Task GivenOlderRefreshCompletesLast_WhenNewerRefreshPublished_ThenNewestSnapshotWins()
+        public async Task GivenConcurrentRefreshes_WhenFirstIsPending_ThenSecondWaitsAndPublishesAfterFirst()
         {
             var firstRefresh = CreateCompletion<bool>();
             int attempt = 0;
@@ -705,15 +705,47 @@ namespace Assets.Tests.EditMode
                     : Task.FromResult(true)
             };
             var service = CreateService(auth);
-            Task<AccountSnapshot> older = service.RefreshLinkStateAsync();
+            Task<AccountSnapshot> first = service.RefreshLinkStateAsync();
+            Task<AccountSnapshot> second = service.RefreshLinkStateAsync();
 
-            AccountSnapshot newer = await service.RefreshLinkStateAsync();
+            Assert.AreEqual(1, auth.IsUnityAccountLinkedCalls);
+            Assert.IsFalse(second.IsCompleted);
             firstRefresh.SetResult(false);
-            AccountSnapshot olderResult = await older;
+            AccountSnapshot firstResult = await first;
+            AccountSnapshot secondResult = await second;
 
-            AssertSnapshot(newer, AccountState.Linked, "player", true, true, string.Empty);
-            AssertSnapshot(olderResult, AccountState.Linked, "player", true, true, string.Empty);
+            AssertSnapshot(firstResult, AccountState.Guest, "player", true, false, string.Empty);
+            AssertSnapshot(secondResult, AccountState.Linked, "player", true, true, string.Empty);
             AssertSnapshot(service.Snapshot, AccountState.Linked, "player", true, true, string.Empty);
+        }
+
+        [Test]
+        public async Task GivenUnlinkIsPending_WhenRefreshIsRequested_ThenRefreshWaitsForMutationState()
+        {
+            var unlinkCompletion = CreateCompletion<bool>();
+            var auth = new FakeUnityAuthenticationGateway
+            {
+                IsSignedIn = true,
+                IsUnityAccountLinked = true,
+                PlayerId = "player",
+                UnlinkUnityHandler = () => unlinkCompletion.Task
+            };
+            var service = CreateService(auth);
+
+            Task<AccountSnapshot> unlink = service.UnlinkUnityAccountAsync();
+            Task<AccountSnapshot> refresh = service.RefreshLinkStateAsync();
+
+            Assert.AreEqual(1, auth.UnlinkUnityCalls);
+            Assert.AreEqual(0, auth.IsUnityAccountLinkedCalls);
+            Assert.IsFalse(refresh.IsCompleted);
+            unlinkCompletion.SetResult(true);
+            AccountSnapshot unlinkResult = await unlink;
+            AccountSnapshot refreshResult = await refresh;
+
+            AssertSnapshot(unlinkResult, AccountState.Guest, "player", true, false, string.Empty);
+            AssertSnapshot(refreshResult, AccountState.Guest, "player", true, false, string.Empty);
+            AssertSnapshot(service.Snapshot, AccountState.Guest, "player", true, false, string.Empty);
+            Assert.AreEqual(2, auth.IsUnityAccountLinkedCalls);
         }
 
         [Test]
@@ -822,6 +854,33 @@ namespace Assets.Tests.EditMode
                     "Auth.IsUnityAccountLinked"
                 },
                 calls);
+        }
+
+        [Test]
+        public async Task GivenReentrantLinkFromStateSubscriber_WhenInteractiveLinkStarts_ThenSingleFlightIsPreserved()
+        {
+            var auth = new FakeUnityAuthenticationGateway
+            {
+                IsSignedIn = true,
+                PlayerId = "guest-player"
+            };
+            auth.LinkWithUnityHandler = _ =>
+            {
+                auth.IsUnityAccountLinked = true;
+                return Task.FromResult(AccountLinkResult.Success("guest-player"));
+            };
+            var playerAccount = new FakeUnityPlayerAccountGateway();
+            var service = CreateService(auth, playerAccount);
+            Task<AccountLinkResult> reentrant = null;
+            service.StateChanged += _ => reentrant ??= service.LinkUnityAccountAsync();
+
+            Task<AccountLinkResult> first = service.LinkUnityAccountAsync();
+            AccountLinkResult result = await first;
+
+            Assert.AreSame(first, reentrant);
+            Assert.AreEqual(AccountLinkStatus.Success, result.Status);
+            Assert.AreEqual(1, playerAccount.SignInAndGetAccessTokenCalls);
+            Assert.AreEqual(1, auth.LinkWithUnityCalls);
         }
 
         [Test]
@@ -985,6 +1044,7 @@ namespace Assets.Tests.EditMode
             public Exception LinkWithUnityException { get; set; }
             public Exception UnlinkUnityException { get; set; }
             public Func<string, Task<AccountLinkResult>> LinkWithUnityHandler { get; set; }
+            public Func<Task> UnlinkUnityHandler { get; set; }
             public string LastLinkAccessToken { get; private set; }
             public int InitializeCalls { get; private set; }
             public int SignInAnonymouslyCalls { get; private set; }
@@ -1046,7 +1106,7 @@ namespace Assets.Tests.EditMode
                     : Task.FromResult(AccountLinkResult.Success(PlayerId));
             }
 
-            public Task UnlinkUnityAsync()
+            public async Task UnlinkUnityAsync()
             {
                 UnlinkUnityCalls++;
                 _calls?.Add("Auth.UnlinkUnity");
@@ -1055,8 +1115,12 @@ namespace Assets.Tests.EditMode
                     throw UnlinkUnityException;
                 }
 
+                if (UnlinkUnityHandler != null)
+                {
+                    await UnlinkUnityHandler();
+                }
+
                 IsUnityAccountLinked = false;
-                return Task.CompletedTask;
             }
         }
 
