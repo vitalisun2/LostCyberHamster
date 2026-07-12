@@ -34,6 +34,11 @@ namespace LostCyberHamster.Account
         /// </summary>
         public static AccountLinkResult Success(string playerId)
         {
+            if (string.IsNullOrWhiteSpace(playerId))
+            {
+                return Failed("UGS player ID is empty.");
+            }
+
             return new AccountLinkResult(AccountLinkStatus.Success, playerId, string.Empty);
         }
 

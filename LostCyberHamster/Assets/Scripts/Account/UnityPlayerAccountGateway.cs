@@ -162,6 +162,7 @@ namespace LostCyberHamster.Account
 
                 if (completion.Task.IsCompleted)
                 {
+                    ObserveLateFailure(startSignInTask);
                     var earlyAccessToken = await completion.Task;
                     completedSuccessfully = true;
                     return earlyAccessToken;
@@ -169,6 +170,7 @@ namespace LostCyberHamster.Account
 
                 if (startCompletedTask != startSignInTask && !startSignInTask.IsCompleted)
                 {
+                    ObserveLateFailure(startSignInTask);
                     throw CreateTimeoutException();
                 }
 
@@ -202,6 +204,17 @@ namespace LostCyberHamster.Account
         {
             return new TimeoutException(
                 $"Unity Player Accounts sign-in did not complete within {_signInTimeout.TotalMinutes:0.#} minutes.");
+        }
+
+        private static void ObserveLateFailure(Task task)
+        {
+            _ = task.ContinueWith(
+                completedTask =>
+                {
+                    // Чтение Exception помечает позднюю ошибку SDK-задачи как observed.
+                    _ = completedTask.Exception;
+                },
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
         }
 
         private void ResetSdkStateWithoutMaskingFailure()

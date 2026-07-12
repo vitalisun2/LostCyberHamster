@@ -16,8 +16,13 @@ namespace Assets.Scripts.DevTools.Account
 
         public void Request(string warning, Func<Task> confirmedAction)
         {
+            if (confirmedAction == null)
+            {
+                throw new ArgumentNullException(nameof(confirmedAction));
+            }
+
             Warning = warning ?? string.Empty;
-            _confirmedAction = confirmedAction ?? throw new ArgumentNullException(nameof(confirmedAction));
+            _confirmedAction = confirmedAction;
         }
 
         public bool TryConsume(out Func<Task> confirmedAction)
