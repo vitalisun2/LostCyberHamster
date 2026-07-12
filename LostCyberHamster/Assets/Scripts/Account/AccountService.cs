@@ -99,6 +99,9 @@ namespace LostCyberHamster.Account
             }
         }
 
+        /// <summary>
+        /// Привязывает новый Unity Player Account или восстанавливает уже существующий аккаунт.
+        /// </summary>
         public async Task<AccountLinkResult> LinkUnityAccountWithAccessTokenAsync(string accessToken)
         {
             if (string.IsNullOrWhiteSpace(accessToken))
@@ -106,7 +109,14 @@ namespace LostCyberHamster.Account
                 return AccountLinkResult.Failed("Unity access token is empty.");
             }
 
+            // Сначала сохраняем текущий guest Player ID за выбранным аккаунтом.
             var result = await _authenticationGateway.LinkWithUnityAsync(accessToken);
+            if (result.Status == AccountLinkStatus.AlreadyLinked)
+            {
+                // Такой аккаунт уже хранит другой Player ID: восстанавливаем его.
+                result = await _authenticationGateway.SignInWithUnityAsync(accessToken);
+            }
+
             if (result.IsSuccess)
             {
                 await RefreshLinkStateAsync();

@@ -296,17 +296,53 @@ namespace Assets.Tests.EditMode
         }
 
         [Test]
-        public async Task LinkUnityAccountAsync_WhenBackendReturnsAlreadyLinked_ReturnsAlreadyLinkedAndDoesNotMarkSnapshotLinked()
+        public async Task LinkUnityAccountAsync_WhenBackendReturnsAlreadyLinked_SignsInToExistingAccount()
         {
-            var auth = new FakeUnityAuthenticationGateway { IsSignedIn = true };
+            var auth = new FakeUnityAuthenticationGateway
+            {
+                IsSignedIn = true,
+                PlayerId = "guest-player"
+            };
             auth.LinkWithUnityHandler = _ => Task.FromResult(AccountLinkResult.AlreadyLinked("already linked"));
+            auth.SignInWithUnityHandler = _ =>
+            {
+                auth.PlayerId = "existing-player";
+                auth.IsUnityAccountLinked = true;
+                return Task.FromResult(AccountLinkResult.Success(auth.PlayerId));
+            };
             var playerAccount = new FakeUnityPlayerAccountGateway { AccessToken = "unity-token" };
             var service = CreateService(auth, playerAccount);
 
             var result = await service.LinkUnityAccountAsync();
 
-            Assert.AreEqual(AccountLinkStatus.AlreadyLinked, result.Status);
+            Assert.AreEqual(AccountLinkStatus.Success, result.Status);
+            Assert.AreEqual(1, auth.SignInWithUnityCalls);
+            Assert.AreEqual("unity-token", auth.LastSignInAccessToken);
+            Assert.AreEqual("existing-player", result.PlayerId);
+            Assert.AreEqual(AccountState.Linked, service.Snapshot.State);
+            Assert.AreEqual("existing-player", service.Snapshot.PlayerId);
+            Assert.IsTrue(service.Snapshot.IsLinked);
+        }
+
+        [Test]
+        public async Task LinkUnityAccountAsync_WhenExistingAccountSignInFails_ReturnsFailedAndKeepsGuestSnapshot()
+        {
+            var auth = new FakeUnityAuthenticationGateway
+            {
+                IsSignedIn = true,
+                PlayerId = "guest-player"
+            };
+            auth.LinkWithUnityHandler = _ => Task.FromResult(AccountLinkResult.AlreadyLinked("already linked"));
+            auth.SignInWithUnityHandler = _ => Task.FromResult(AccountLinkResult.Failed("sign-in failed"));
+            var playerAccount = new FakeUnityPlayerAccountGateway { AccessToken = "unity-token" };
+            var service = CreateService(auth, playerAccount);
+
+            var result = await service.LinkUnityAccountAsync();
+
+            Assert.AreEqual(AccountLinkStatus.Failed, result.Status);
+            Assert.AreEqual("sign-in failed", result.ErrorMessage);
             Assert.AreEqual(AccountState.Guest, service.Snapshot.State);
+            Assert.AreEqual("guest-player", service.Snapshot.PlayerId);
             Assert.IsFalse(service.Snapshot.IsLinked);
         }
 
@@ -357,16 +393,27 @@ namespace Assets.Tests.EditMode
         }
 
         [Test]
-        public async Task LinkUnityAccountWithAccessTokenAsync_WhenAlreadyLinked_ReturnsAlreadyLinked()
+        public async Task LinkUnityAccountWithAccessTokenAsync_WhenAlreadyLinked_SignsInToExistingAccount()
         {
-            var auth = new FakeUnityAuthenticationGateway { IsSignedIn = true };
+            var auth = new FakeUnityAuthenticationGateway
+            {
+                IsSignedIn = true,
+                PlayerId = "guest-player"
+            };
             auth.LinkWithUnityHandler = _ => Task.FromResult(AccountLinkResult.AlreadyLinked("conflict"));
+            auth.SignInWithUnityHandler = _ =>
+            {
+                auth.PlayerId = "existing-player";
+                auth.IsUnityAccountLinked = true;
+                return Task.FromResult(AccountLinkResult.Success(auth.PlayerId));
+            };
             var service = CreateService(auth);
 
             var result = await service.LinkUnityAccountWithAccessTokenAsync("token");
 
-            Assert.AreEqual(AccountLinkStatus.AlreadyLinked, result.Status);
-            Assert.AreEqual("conflict", result.ErrorMessage);
+            Assert.AreEqual(AccountLinkStatus.Success, result.Status);
+            Assert.AreEqual("existing-player", result.PlayerId);
+            Assert.AreEqual(AccountState.Linked, service.Snapshot.State);
         }
 
         [Test]
@@ -423,11 +470,14 @@ namespace Assets.Tests.EditMode
             public Exception IsUnityAccountLinkedException { get; set; }
             public Exception UnlinkUnityException { get; set; }
             public Func<string, Task<AccountLinkResult>> LinkWithUnityHandler { get; set; }
+            public Func<string, Task<AccountLinkResult>> SignInWithUnityHandler { get; set; }
             public string LastLinkAccessToken { get; private set; }
+            public string LastSignInAccessToken { get; private set; }
             public int InitializeCalls { get; private set; }
             public int SignInAnonymouslyCalls { get; private set; }
             public int IsUnityAccountLinkedCalls { get; private set; }
             public int LinkWithUnityCalls { get; private set; }
+            public int SignInWithUnityCalls { get; private set; }
             public int UnlinkUnityCalls { get; private set; }
 
             public Task InitializeAsync()
@@ -470,6 +520,15 @@ namespace Assets.Tests.EditMode
                 LastLinkAccessToken = accessToken;
                 return LinkWithUnityHandler != null
                     ? LinkWithUnityHandler(accessToken)
+                    : Task.FromResult(AccountLinkResult.Success(PlayerId));
+            }
+
+            public Task<AccountLinkResult> SignInWithUnityAsync(string accessToken)
+            {
+                SignInWithUnityCalls++;
+                LastSignInAccessToken = accessToken;
+                return SignInWithUnityHandler != null
+                    ? SignInWithUnityHandler(accessToken)
                     : Task.FromResult(AccountLinkResult.Success(PlayerId));
             }
 

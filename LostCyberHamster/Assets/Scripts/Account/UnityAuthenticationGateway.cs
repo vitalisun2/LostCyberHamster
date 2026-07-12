@@ -47,9 +47,58 @@ namespace LostCyberHamster.Account
             }
         }
 
+        /// <summary>
+        /// Переключает текущую гостевую сессию на существующий Unity Player Account.
+        /// </summary>
+        public async Task<AccountLinkResult> SignInWithUnityAsync(string accessToken)
+        {
+            // UGS разрешает внешний sign-in только из состояния SignedOut.
+            AuthenticationService.Instance.SignOut();
+
+            try
+            {
+                await AuthenticationService.Instance.SignInWithUnityAsync(
+                    accessToken,
+                    new SignInOptions { CreateAccount = false });
+                return AccountLinkResult.Success(PlayerId);
+            }
+            catch (AuthenticationException ex)
+            {
+                return await ResumeCachedPlayerOrFailAsync(ex.Message);
+            }
+            catch (RequestFailedException ex)
+            {
+                return await ResumeCachedPlayerOrFailAsync(ex.Message);
+            }
+        }
+
         public Task UnlinkUnityAsync()
         {
             return AuthenticationService.Instance.UnlinkUnityAsync();
+        }
+
+        /// <summary>
+        /// Возвращает сохранённую гостевую сессию после неудачного переключения аккаунта.
+        /// </summary>
+        private static async Task<AccountLinkResult> ResumeCachedPlayerOrFailAsync(string signInError)
+        {
+            try
+            {
+                if (!AuthenticationService.Instance.IsSignedIn)
+                {
+                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                }
+
+                return AccountLinkResult.Failed(signInError);
+            }
+            catch (AuthenticationException ex)
+            {
+                return AccountLinkResult.Failed($"{signInError} Cached player recovery failed: {ex.Message}");
+            }
+            catch (RequestFailedException ex)
+            {
+                return AccountLinkResult.Failed($"{signInError} Cached player recovery failed: {ex.Message}");
+            }
         }
     }
 }

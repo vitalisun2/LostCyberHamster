@@ -11,6 +11,7 @@ namespace LostCyberHamster.Account
         Task SignInAnonymouslyAsync();
         Task<bool> IsUnityAccountLinkedAsync();
         Task<AccountLinkResult> LinkWithUnityAsync(string accessToken);
+        Task<AccountLinkResult> SignInWithUnityAsync(string accessToken);
         Task UnlinkUnityAsync();
     }
 }

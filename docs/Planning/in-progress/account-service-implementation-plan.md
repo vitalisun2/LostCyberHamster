@@ -39,7 +39,7 @@ GameDataManager
 
 **Что меняется:** добавляется сервис с методами `EnsureSignedInAsync`, `IsLinkedAsync`, `LinkUnityAccountAsync`.
 
-**Суть изменения:** первый запуск теперь должен создавать guest identity, а привязка аккаунта идет через один account-сервис.
+**Суть изменения:** первый запуск создаёт guest identity. При первом подключении Unity Player Account сервис привязывает текущего гостя, а при входе в уже существующий аккаунт переключается на ранее связанный UGS Player ID.
 
 ### 4. Bootstrap integration
 **Файл:** `Assets/Scripts/Entry Points/BootstrapLoadingTasks/AuthenticateUserLoadingTask.cs`
@@ -79,4 +79,4 @@ AccountService не должен сохранять `PlayerData`. Следующ
 - Публичный профиль игрока.
 - Сложный UI конфликтов.
 - Полная миграция всех вызовов `GameDataManager.SaveData()`.
-- Финальный flow восстановления существующего linked account после переустановки; для этого нужен следующий шаг с `PlayerDataService` и UX-решением по конфликту локального guest-progress.
+- Восстановление и merge игровых данных после переустановки; для этого нужен следующий шаг с `PlayerDataService` и UX-решением по конфликту локального guest-progress.

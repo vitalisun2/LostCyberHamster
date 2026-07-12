@@ -137,11 +137,15 @@
 
 Проверка: отмена или ошибка Unity Player Account flow не пробрасывается наружу, возвращает `Failed`.
 
-5. `LinkUnityAccountAsync_WhenBackendReturnsAlreadyLinked_ReturnsAlreadyLinkedAndDoesNotMarkSnapshotLinked`
+5. `LinkUnityAccountAsync_WhenBackendReturnsAlreadyLinked_SignsInToExistingAccount`
 
-Проверка: конфликт аккаунта возвращается как `AlreadyLinked`, snapshot не становится `Linked`.
+Проверка: конфликт привязки запускает sign-in в существующий аккаунт, Player ID и snapshot обновляются до `Linked`.
 
-6. `LinkUnityAccountAsync_WhenBackendReturnsFailed_ReturnsFailedAndKeepsGuestSnapshot`
+6. `LinkUnityAccountAsync_WhenExistingAccountSignInFails_ReturnsFailedAndKeepsGuestSnapshot`
+
+Проверка: ошибка восстановления возвращает `Failed`, текущий guest snapshot не помечается как linked.
+
+7. `LinkUnityAccountAsync_WhenBackendReturnsFailed_ReturnsFailedAndKeepsGuestSnapshot`
 
 Проверка: обычная ошибка link не ломает guest состояние.
 
@@ -155,9 +159,9 @@
 
 Проверка: после успешного link вызывается refresh и snapshot становится актуальным.
 
-3. `LinkUnityAccountWithAccessTokenAsync_WhenAlreadyLinked_ReturnsAlreadyLinked`
+3. `LinkUnityAccountWithAccessTokenAsync_WhenAlreadyLinked_SignsInToExistingAccount`
 
-Проверка: статус конфликта сохраняется и не маскируется под generic failed.
+Проверка: `AlreadyLinked` переключает сервис на существующий Player ID и обновляет snapshot.
 
 4. `LinkUnityAccountWithAccessTokenAsync_WhenLinkFails_ReturnsFailed`
 
