@@ -1,4 +1,4 @@
-{
+﻿{
     "skyTexture": "",
     "roadTexture": "",
     "location": "01_New_York",
@@ -34,7 +34,7 @@
             "overrides": []
         },
         {
-            "ref": "shift_force_switch",
+            "ref": "shift_force_switch_4",
             "spriteSeed": 0,
             "overrides": []
         },

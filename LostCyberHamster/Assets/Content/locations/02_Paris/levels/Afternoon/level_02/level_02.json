@@ -1,70 +1,52 @@
-{
-    "skyTexture":  "",
-    "roadTexture":  "",
-    "location":  "02_Paris",
-    "patternSequence":  [
-                            {
-                                "ref":  "easy_run_2",
-                                "spriteSeed":  2201,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "roof_bonus_run_2",
-                                "spriteSeed":  2202,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "small_jumps",
-                                "spriteSeed":  2203,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "roof_narrow_gap_2",
-                                "spriteSeed":  2204,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "bonus_strip",
-                                "spriteSeed":  2205,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "medium_difficulty_3",
-                                "spriteSeed":  2206,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "roof_narrow_gap_4",
-                                "spriteSeed":  2207,
-                                "overrides":  [
-
-                                              ]
-                            },
-                            {
-                                "ref":  "easy_run_3",
-                                "spriteSeed":  2208,
-                                "overrides":  [
-
-                                              ]
-                            }
-                        ],
-    "decorationPatterns":  [
-                               {
-                                   "decorationTiles":  [
-
-                                                       ]
-                               }
-                           ]
+﻿{
+    "skyTexture": "",
+    "roadTexture": "",
+    "location": "02_Paris",
+    "patternSequence": [
+        {
+            "ref": "easy_run_2",
+            "spriteSeed": 2201,
+            "overrides": []
+        },
+        {
+            "ref": "roof_bonus_run_2",
+            "spriteSeed": 2202,
+            "overrides": []
+        },
+        {
+            "ref": "small_jumps",
+            "spriteSeed": 2203,
+            "overrides": []
+        },
+        {
+            "ref": "roof_narrow_gap_2",
+            "spriteSeed": 2204,
+            "overrides": []
+        },
+        {
+            "ref": "bonus_strip",
+            "spriteSeed": 2205,
+            "overrides": []
+        },
+        {
+            "ref": "medium_difficulty_3",
+            "spriteSeed": 2206,
+            "overrides": []
+        },
+        {
+            "ref": "roof_narrow_gap_5",
+            "spriteSeed": 0,
+            "overrides": []
+        },
+        {
+            "ref": "easy_run_3",
+            "spriteSeed": 2208,
+            "overrides": []
+        }
+    ],
+    "decorationPatterns": [
+        {
+            "decorationTiles": []
+        }
+    ]
 }
