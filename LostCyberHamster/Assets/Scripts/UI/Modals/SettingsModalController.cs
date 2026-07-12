@@ -8,6 +8,9 @@ using Vues.GameCore;
 
 namespace LostCyberHamster.UI
 {
+    /// <summary>
+    /// Управляет пользовательскими настройками и account-link flow из общего модального окна.
+    /// </summary>
     public class SettingsModalController : ModalController
     {
         protected override ScreenEnum _modalAssetName => ScreenEnum.SettingsModal;

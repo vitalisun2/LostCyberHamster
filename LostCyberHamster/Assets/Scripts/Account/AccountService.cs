@@ -1,9 +1,13 @@
 using System;
 using System.Threading.Tasks;
+using Unity.Services.Core;
 using UnityEngine;
 
 namespace LostCyberHamster.Account
 {
+    /// <summary>
+    /// Оркестрирует сценарии UGS-сессии и привязки Unity Player Account, публикуя актуальное состояние аккаунта.
+    /// </summary>
     public sealed class AccountService : IAccountService
     {
         public static AccountService Instance { get; } = new AccountService(
@@ -12,6 +16,8 @@ namespace LostCyberHamster.Account
 
         private readonly IUnityAuthenticationGateway _authenticationGateway;
         private readonly IUnityPlayerAccountGateway _playerAccountGateway;
+        private readonly object _linkSync = new object();
+        private Task<AccountLinkResult> _activeLinkTask;
 
         internal AccountService(
             IUnityAuthenticationGateway authenticationGateway,
@@ -44,7 +50,8 @@ namespace LostCyberHamster.Account
             catch (Exception ex)
             {
                 Debug.LogWarning($"[AccountService] Failed to sign in: {ex.Message}");
-                return SetSnapshot(AccountState.Offline, Snapshot.PlayerId, Snapshot.IsSignedIn, Snapshot.IsLinked, ex.Message);
+                AccountState state = IsOfflineFailure(ex) ? AccountState.Offline : AccountState.Error;
+                return SetSnapshot(state, Snapshot.PlayerId, false, false, ex.Message);
             }
         }
 
@@ -67,7 +74,7 @@ namespace LostCyberHamster.Account
             catch (Exception ex)
             {
                 Debug.LogWarning($"[AccountService] Failed to refresh account state: {ex.Message}");
-                return SetSnapshot(AccountState.Error, Snapshot.PlayerId, Snapshot.IsSignedIn, Snapshot.IsLinked, ex.Message);
+                return SetSnapshot(AccountState.Error, Snapshot.PlayerId, Snapshot.IsSignedIn, false, ex.Message);
             }
         }
 
@@ -86,7 +93,23 @@ namespace LostCyberHamster.Account
         /// <summary>
         /// Получает access token и связывает с ним текущего UGS-игрока без смены Player ID при конфликте.
         /// </summary>
-        public async Task<AccountLinkResult> LinkUnityAccountAsync()
+        public Task<AccountLinkResult> LinkUnityAccountAsync()
+        {
+            lock (_linkSync)
+            {
+                if (_activeLinkTask == null)
+                {
+                    var completion = new TaskCompletionSource<AccountLinkResult>(
+                        TaskCreationOptions.RunContinuationsAsynchronously);
+                    _activeLinkTask = completion.Task;
+                    _ = CompleteLinkOperationAsync(completion);
+                }
+
+                return ObserveActiveLinkAsync(_activeLinkTask);
+            }
+        }
+
+        private async Task<AccountLinkResult> LinkUnityAccountCoreAsync()
         {
             var snapshot = await EnsureSignedInAsync();
             if (!snapshot.IsSignedIn)
@@ -121,15 +144,23 @@ namespace LostCyberHamster.Account
                 return AccountLinkResult.Failed("Unity access token is empty.");
             }
 
-            // Link не должен молча менять Player ID: конфликт обрабатывает вызывающий UX.
-            var result = await _authenticationGateway.LinkWithUnityAsync(accessToken);
-
-            if (result.IsSuccess)
+            try
             {
-                await RefreshLinkStateAsync();
-            }
+                // Link не должен молча менять Player ID: конфликт обрабатывает вызывающий UX.
+                var result = await _authenticationGateway.LinkWithUnityAsync(accessToken);
 
-            return result;
+                if (result.IsSuccess)
+                {
+                    await RefreshLinkStateAsync();
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[AccountService] Failed to link account: {ex.Message}");
+                return AccountLinkResult.Failed(ex.Message);
+            }
         }
 
         /// <summary>
@@ -145,7 +176,38 @@ namespace LostCyberHamster.Account
             catch (Exception ex)
             {
                 Debug.LogWarning($"[AccountService] Failed to unlink account: {ex.Message}");
-                return SetSnapshot(AccountState.Error, Snapshot.PlayerId, Snapshot.IsSignedIn, Snapshot.IsLinked, ex.Message);
+                return SetSnapshot(AccountState.Error, Snapshot.PlayerId, Snapshot.IsSignedIn, false, ex.Message);
+            }
+        }
+
+        private async Task<AccountLinkResult> ObserveActiveLinkAsync(Task<AccountLinkResult> operation)
+        {
+            try
+            {
+                return await operation;
+            }
+            finally
+            {
+                lock (_linkSync)
+                {
+                    if (ReferenceEquals(_activeLinkTask, operation))
+                    {
+                        _activeLinkTask = null;
+                    }
+                }
+            }
+        }
+
+        private async Task CompleteLinkOperationAsync(
+            TaskCompletionSource<AccountLinkResult> completion)
+        {
+            try
+            {
+                completion.TrySetResult(await LinkUnityAccountCoreAsync());
+            }
+            catch (Exception ex)
+            {
+                completion.TrySetResult(AccountLinkResult.Failed(ex.Message));
             }
         }
 
@@ -157,8 +219,36 @@ namespace LostCyberHamster.Account
             string errorMessage)
         {
             Snapshot = new AccountSnapshot(state, playerId, isSignedIn, isLinked, errorMessage);
-            StateChanged?.Invoke(Snapshot);
+            PublishStateChanged(Snapshot);
             return Snapshot;
+        }
+
+        private void PublishStateChanged(AccountSnapshot snapshot)
+        {
+            Delegate[] subscribers = StateChanged?.GetInvocationList();
+            if (subscribers == null)
+            {
+                return;
+            }
+
+            foreach (Action<AccountSnapshot> subscriber in subscribers)
+            {
+                try
+                {
+                    subscriber(snapshot);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[AccountService] StateChanged subscriber failed: {ex.Message}");
+                }
+            }
+        }
+
+        private static bool IsOfflineFailure(Exception exception)
+        {
+            return exception is TimeoutException ||
+                   exception is RequestFailedException requestFailedException &&
+                   requestFailedException.ErrorCode == CommonErrorCodes.TransportError;
         }
     }
 }

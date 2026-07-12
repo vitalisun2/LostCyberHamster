@@ -2,6 +2,9 @@ using System.Threading.Tasks;
 
 namespace LostCyberHamster.Account
 {
+    /// <summary>
+    /// Определяет границу account-слоя с Unity Authentication SDK.
+    /// </summary>
     internal interface IUnityAuthenticationGateway
     {
         bool IsSignedIn { get; }

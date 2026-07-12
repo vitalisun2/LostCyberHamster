@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 
 namespace LostCyberHamster.Account
 {
+    /// <summary>
+    /// Определяет сценарии управления UGS-сессией и связью с Unity Player Account.
+    /// </summary>
     public interface IAccountService
     {
         event Action<AccountSnapshot> StateChanged;

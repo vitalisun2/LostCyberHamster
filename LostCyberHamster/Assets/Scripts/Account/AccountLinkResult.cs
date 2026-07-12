@@ -1,19 +1,33 @@
 namespace LostCyberHamster.Account
 {
+    /// <summary>
+    /// Описывает результат попытки привязки внешнего аккаунта к UGS-игроку.
+    /// </summary>
     public readonly struct AccountLinkResult
     {
+        private readonly string _playerId;
+        private readonly string _errorMessage;
+
         private AccountLinkResult(AccountLinkStatus status, string playerId, string errorMessage)
         {
             Status = status;
-            PlayerId = playerId ?? string.Empty;
-            ErrorMessage = errorMessage ?? string.Empty;
+            _playerId = playerId ?? string.Empty;
+            _errorMessage = errorMessage ?? string.Empty;
         }
 
         public AccountLinkStatus Status { get; }
-        public string PlayerId { get; }
-        public string ErrorMessage { get; }
+        public string PlayerId => _playerId ?? string.Empty;
+        public string ErrorMessage => _errorMessage ?? string.Empty;
 
         public bool IsSuccess => Status == AccountLinkStatus.Success;
+
+        /// <summary>
+        /// Создаёт неопределённый результат для ещё не выполненной операции.
+        /// </summary>
+        public static AccountLinkResult Unknown(string errorMessage = "")
+        {
+            return new AccountLinkResult(AccountLinkStatus.Unknown, string.Empty, errorMessage);
+        }
 
         /// <summary>
         /// Создаёт успешный результат для UGS-игрока с указанным идентификатором.

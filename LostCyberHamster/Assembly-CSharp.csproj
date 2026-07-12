@@ -406,7 +406,6 @@
     <Compile Include="Assets\Scripts\System\InstantiatedObstacle.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LocationAssetFallback.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnTravel.cs" />
-    <Compile Include="Assets\Scripts\Auth\AuthenticationManager.cs" />
     <Compile Include="Assets\Scripts\Gameplay\LifeBonus.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UltaMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningGraphNode.cs" />

@@ -1,5 +1,8 @@
 namespace LostCyberHamster.Account
 {
+    /// <summary>
+    /// Хранит подменяемую глобальную точку доступа к текущей реализации account-сервиса.
+    /// </summary>
     public static class AccountServiceProvider
     {
         private static IAccountService _current;

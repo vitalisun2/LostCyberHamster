@@ -4,6 +4,9 @@ using Unity.Services.Core;
 
 namespace LostCyberHamster.Account
 {
+    /// <summary>
+    /// Адаптирует Unity Authentication SDK к внутренним контрактам account-слоя.
+    /// </summary>
     internal sealed class UnityAuthenticationGateway : IUnityAuthenticationGateway
     {
         public bool IsSignedIn => AuthenticationService.Instance.IsSignedIn;

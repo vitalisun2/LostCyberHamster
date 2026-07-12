@@ -6,6 +6,9 @@ using Vues.GameCore;
 
 namespace LostCyberHamster.UI
 {
+    /// <summary>
+    /// Управляет модальным предложением привязать Unity Player Account к текущему UGS-игроку.
+    /// </summary>
     public class SigninModalController : ModalController
     {
         private Button _signinButton => _modalContent.Q<Button>("btn__signin");
