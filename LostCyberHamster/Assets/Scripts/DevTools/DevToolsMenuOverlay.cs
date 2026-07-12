@@ -59,7 +59,12 @@ namespace Assets.Scripts.DevTools
             }
 
             GameObject host = GameObject.Find(_hostObjectName) ?? new GameObject(_hostObjectName);
-            _instance = host.GetComponent<DevToolsMenuOverlay>() ?? host.AddComponent<DevToolsMenuOverlay>();
+            _instance = host.GetComponent<DevToolsMenuOverlay>();
+            if (_instance == null)
+            {
+                _instance = host.AddComponent<DevToolsMenuOverlay>();
+            }
+
             DontDestroyOnLoad(host);
         }
 
@@ -72,7 +77,11 @@ namespace Assets.Scripts.DevTools
             }
 
             _instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (Application.isPlaying)
+            {
+                DontDestroyOnLoad(gameObject);
+            }
+
             EnsureEventSystem();
             EnsureUi();
             SetPanelOpen(_isPanelOpen);
@@ -135,7 +144,12 @@ namespace Assets.Scripts.DevTools
             }
 
             Font font = LoadDefaultFont();
-            Canvas canvas = GetComponent<Canvas>() ?? gameObject.AddComponent<Canvas>();
+            Canvas canvas = GetComponent<Canvas>();
+            if (canvas == null)
+            {
+                canvas = gameObject.AddComponent<Canvas>();
+            }
+
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = _sortingOrder;
             if (GetComponent<GraphicRaycaster>() == null)
