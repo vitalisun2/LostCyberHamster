@@ -4,7 +4,7 @@ using Assets.Scripts.System;
 using GameManagement.Progress;
 using LostCyberHamster.UI;
 
-namespace Assets.Scripts.DevTools
+namespace Assets.Scripts.DevTools.Gameplay
 {
     /// <summary>
     /// Хранит dev-only runtime overrides, которые не должны попадать в сохранение игрока.

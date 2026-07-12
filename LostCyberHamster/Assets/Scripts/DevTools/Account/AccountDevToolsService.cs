@@ -8,7 +8,7 @@ using Unity.Services.Authentication.PlayerAccounts;
 using Unity.Services.Core;
 using UnityEngine;
 
-namespace Assets.Scripts.DevTools
+namespace Assets.Scripts.DevTools.Account
 {
     /// <summary>
     /// Собирает account-диагностику и выполняет account/SDK-команды для DEV-меню.

@@ -1,7 +1,7 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 
-namespace Assets.Scripts.DevTools
+namespace Assets.Scripts.DevTools.Account
 {
     /// <summary>
     /// Хранит обучающие материалы для ручной проверки account flow в dev-меню.
@@ -75,6 +75,8 @@ namespace Assets.Scripts.DevTools
         };
 
         public static int SectionCount => _titles.Length;
+
+        public static int EditorSetupSectionIndex => 3;
 
         /// <summary>
         /// Возвращает заголовок раздела справки.
