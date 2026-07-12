@@ -8,28 +8,43 @@ public static class AuthenticationManager
 
     public static event Action LinkingCompletedFailed;
 
+    /// <summary>
+    /// Совместимый фасад для восстановления сохранённой UGS-сессии или гостевого входа.
+    /// </summary>
     public static async Task SignInCachedUserAsync()
     {
         await AccountServiceProvider.Current.EnsureSignedInAsync();
     }
 
+    /// <summary>
+    /// Совместимый фасад для привязки текущего UGS-игрока или переключения на уже связанного.
+    /// </summary>
     public static async Task LinkAnonymousAccountToUnityAsync()
     {
         var result = await AccountServiceProvider.Current.LinkUnityAccountAsync();
         NotifyLinkCompleted(result);
     }
 
+    /// <summary>
+    /// Совместимый фасад для привязки или восстановления Unity Player Account по заранее полученному access token.
+    /// </summary>
     public static async Task LinkWithUnityAsync(string accessToken)
     {
         var result = await AccountServiceProvider.Current.LinkUnityAccountWithAccessTokenAsync(accessToken);
         NotifyLinkCompleted(result);
     }
 
+    /// <summary>
+    /// Совместимый фасад для отвязки Unity Player Account от текущего UGS-игрока.
+    /// </summary>
     public static async Task UnlinkUnityAsync()
     {
         await AccountServiceProvider.Current.UnlinkUnityAccountAsync();
     }
 
+    /// <summary>
+    /// Совместимый фасад для проверки связи текущего UGS-игрока с Unity Player Account.
+    /// </summary>
     public static async Task<bool> IsUnityAccountLinkedAsync()
     {
         return await AccountServiceProvider.Current.IsLinkedAsync();

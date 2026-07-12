@@ -25,6 +25,9 @@ namespace LostCyberHamster.Account
 
         public AccountSnapshot Snapshot { get; private set; } = AccountSnapshot.Unknown;
 
+        /// <summary>
+        /// Восстанавливает сохранённую UGS-сессию или создаёт гостевую и публикует актуальное состояние аккаунта.
+        /// </summary>
         public async Task<AccountSnapshot> EnsureSignedInAsync()
         {
             try
@@ -45,6 +48,9 @@ namespace LostCyberHamster.Account
             }
         }
 
+        /// <summary>
+        /// Повторно запрашивает связь текущего UGS-игрока с Unity Player Account и публикует новый snapshot.
+        /// </summary>
         public async Task<AccountSnapshot> RefreshLinkStateAsync()
         {
             try
@@ -65,6 +71,9 @@ namespace LostCyberHamster.Account
             }
         }
 
+        /// <summary>
+        /// Гарантирует наличие UGS-сессии и возвращает признак связи с Unity Player Account.
+        /// </summary>
         public async Task<bool> IsLinkedAsync()
         {
             var snapshot = _authenticationGateway.IsSignedIn
@@ -74,6 +83,9 @@ namespace LostCyberHamster.Account
             return snapshot.IsLinked;
         }
 
+        /// <summary>
+        /// Получает access token, связывает с ним текущего UGS-игрока или переключается на уже связанного.
+        /// </summary>
         public async Task<AccountLinkResult> LinkUnityAccountAsync()
         {
             var snapshot = await EnsureSignedInAsync();
@@ -125,6 +137,9 @@ namespace LostCyberHamster.Account
             return result;
         }
 
+        /// <summary>
+        /// Отвязывает Unity Player Account и публикует обновлённое состояние текущего UGS-игрока.
+        /// </summary>
         public async Task<AccountSnapshot> UnlinkUnityAccountAsync()
         {
             try

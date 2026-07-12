@@ -7,6 +7,9 @@ namespace LostCyberHamster.Account
 {
     internal sealed class UnityPlayerAccountGateway : IUnityPlayerAccountGateway
     {
+        /// <summary>
+        /// Переиспользует активный Unity Player Account либо запускает браузерный вход и ожидает access token.
+        /// </summary>
         public async Task<string> SignInAndGetAccessTokenAsync()
         {
             if (PlayerAccountService.Instance.IsSignedIn && !string.IsNullOrEmpty(PlayerAccountService.Instance.AccessToken))

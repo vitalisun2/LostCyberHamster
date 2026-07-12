@@ -10,22 +10,34 @@ namespace LostCyberHamster.Account
 
         public string PlayerId => AuthenticationService.Instance.PlayerId ?? string.Empty;
 
+        /// <summary>
+        /// Инициализирует Unity Gaming Services для последующих вызовов Authentication SDK.
+        /// </summary>
         public Task InitializeAsync()
         {
             return UnityServices.InitializeAsync();
         }
 
+        /// <summary>
+        /// Восстанавливает закэшированного UGS-игрока или создаёт новую гостевую учётную запись.
+        /// </summary>
         public Task SignInAnonymouslyAsync()
         {
             return AuthenticationService.Instance.SignInAnonymouslyAsync();
         }
 
+        /// <summary>
+        /// Проверяет Unity Player Account среди внешних идентификаторов текущего UGS-игрока.
+        /// </summary>
         public async Task<bool> IsUnityAccountLinkedAsync()
         {
             var playerInfo = await AuthenticationService.Instance.GetPlayerInfoAsync();
             return !string.IsNullOrEmpty(playerInfo.GetUnityId());
         }
 
+        /// <summary>
+        /// Связывает Unity Player Account с текущим UGS-игроком и переводит ожидаемые ошибки SDK во внутренний результат.
+        /// </summary>
         public async Task<AccountLinkResult> LinkWithUnityAsync(string accessToken)
         {
             try
@@ -72,6 +84,9 @@ namespace LostCyberHamster.Account
             }
         }
 
+        /// <summary>
+        /// Удаляет Unity Player Account из внешних идентификаторов текущего UGS-игрока.
+        /// </summary>
         public Task UnlinkUnityAsync()
         {
             return AuthenticationService.Instance.UnlinkUnityAsync();
