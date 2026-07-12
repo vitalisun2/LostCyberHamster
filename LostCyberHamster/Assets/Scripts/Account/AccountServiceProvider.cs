@@ -5,9 +5,13 @@ namespace LostCyberHamster.Account
     /// </summary>
     public static class AccountServiceProvider
     {
+        private static readonly IAccountService _default = new AccountService(
+            new UnityAuthenticationGateway(),
+            new UnityPlayerAccountGateway());
+
         private static IAccountService _current;
 
-        public static IAccountService Current => _current ?? AccountService.Instance;
+        public static IAccountService Current => _current ?? _default;
 
         internal static void SetForTests(IAccountService service)
         {

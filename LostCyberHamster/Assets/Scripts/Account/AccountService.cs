@@ -10,10 +10,6 @@ namespace LostCyberHamster.Account
     /// </summary>
     public sealed class AccountService : IAccountService
     {
-        public static AccountService Instance { get; } = new AccountService(
-            new UnityAuthenticationGateway(),
-            new UnityPlayerAccountGateway());
-
         private readonly IUnityAuthenticationGateway _authenticationGateway;
         private readonly IUnityPlayerAccountGateway _playerAccountGateway;
         private readonly object _linkSync = new object();
