@@ -16,7 +16,7 @@ using UnityEngine.InputSystem.UI;
 namespace Assets.Scripts.DevTools
 {
     /// <summary>
-    /// Shows a compact developer menu over the game in Editor and development builds.
+    /// Создаёт постоянный оверлей DEV-меню для Editor и development builds.
     /// </summary>
     public sealed class DevToolsMenuOverlay : MonoBehaviour
     {
@@ -36,14 +36,14 @@ namespace Assets.Scripts.DevTools
         private const int _sortingOrder = 32767;
         private const float _baseMargin = 10f;
         private const float _baseOpenButtonWidth = 64f;
-        private const float _baseButtonHeight = 34f;
+        private const float _baseButtonHeight = 40f;
         private const float _baseRootPanelWidth = 260f;
         private const float _baseRootPanelHeight = 310f;
-        private const float _baseAccountPanelWidth = 430f;
-        private const float _baseAccountPanelHeight = 620f;
+        private const float _baseAccountPanelWidth = 540f;
+        private const float _baseAccountPanelHeight = 569f;
 
         private static readonly Color _openButtonColor = new Color(1f, 1f, 1f, 0.72f);
-        private static readonly Color _panelColor = new Color(1f, 1f, 1f, 0.94f);
+        private static readonly Color _panelColor = new Color(1f, 1f, 1f, 0.985f);
         private static readonly Color _enabledColor = new Color(0.78f, 1f, 0.82f, 1f);
         private static readonly Color _disabledColor = new Color(1f, 0.82f, 0.78f, 1f);
 
@@ -336,7 +336,7 @@ namespace Assets.Scripts.DevTools
             Text text = textObject.GetComponent<Text>();
             text.text = label;
             text.font = _font;
-            text.fontSize = 14;
+            text.fontSize = 15;
             text.fontStyle = fontStyle;
             text.alignment = alignment;
             text.color = Color.black;
@@ -386,11 +386,11 @@ namespace Assets.Scripts.DevTools
             float panelHeight = Mathf.Min(basePanelHeight * scale, availableHeight);
             SetTopLeft(_panelRect, left, top, panelWidth, panelHeight);
 
-            float inset = 12f * scale;
+            float inset = 16f * scale;
             float rowHeight = _baseButtonHeight * scale;
             float titleY = inset * 0.65f;
 
-            float backButtonWidth = 76f * scale;
+            float backButtonWidth = 88f * scale;
             float titleLeft = _isAccountScreenOpen ? inset + backButtonWidth + inset * 0.5f : inset;
             SetTopLeft(_backButtonRect, inset, titleY, backButtonWidth, rowHeight);
             SetTopLeft(_titleRect, titleLeft, titleY, panelWidth - titleLeft - inset - rowHeight, rowHeight);
@@ -405,10 +405,9 @@ namespace Assets.Scripts.DevTools
             float contentTop = titleY + rowHeight + inset;
             _accountScreen?.ApplyLayout(inset, contentTop, inset, inset);
 
-            int buttonFontSize = Mathf.RoundToInt(14f * scale);
+            int buttonFontSize = Mathf.RoundToInt(15f * scale);
             int titleFontSize = Mathf.RoundToInt(16f * scale);
             SetTextFontSize(_openButtonObject, buttonFontSize);
-            SetTextFontSize(_panelObject, buttonFontSize);
             if (_titleText != null)
                 _titleText.fontSize = titleFontSize;
         }

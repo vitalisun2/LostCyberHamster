@@ -10,18 +10,22 @@ using UnityEngine.UI;
 namespace Assets.Scripts.DevTools
 {
     /// <summary>
-    /// Управляет вложенными account/help-экранами внутри существующей панели DEV-меню.
+    /// Строит account-раздел DEV-меню и управляет его навигацией, состоянием представления и диагностическими действиями.
     /// </summary>
     internal sealed class AccountDevToolsScreen
     {
         private const int _accountPage = 0;
-        private const int _helpIndexPage = 1;
-        private const int _helpDetailPage = 2;
-        private const int _confirmationPage = 3;
+        private const int _sessionPage = 1;
+        private const int _diagnosticsPage = 2;
+        private const int _helpIndexPage = 3;
+        private const int _helpDetailPage = 4;
+        private const int _confirmationPage = 5;
 
         private static readonly Color _buttonColor = Color.white;
-        private static readonly Color _warningColor = new Color(1f, 0.84f, 0.62f, 1f);
-        private static readonly Color _dangerColor = new Color(1f, 0.72f, 0.68f, 1f);
+        private static readonly Color _primaryColor = new Color(0.48f, 0.82f, 1f, 1f);
+        private static readonly Color _navigationColor = new Color(0.86f, 0.93f, 1f, 1f);
+        private static readonly Color _statusCardColor = new Color(0.93f, 0.96f, 1f, 1f);
+        private static readonly Color _dangerColor = new Color(1f, 0.78f, 0.74f, 1f);
 
         private readonly AccountDevToolsService _service;
         private readonly Action _returnToRoot;
@@ -32,20 +36,27 @@ namespace Assets.Scripts.DevTools
         private readonly GameObject _rootObject;
         private readonly RectTransform _rootRect;
         private readonly GameObject _accountPageObject;
+        private readonly GameObject _sessionPageObject;
+        private readonly GameObject _diagnosticsPageObject;
         private readonly GameObject _helpIndexPageObject;
         private readonly GameObject _helpDetailPageObject;
         private readonly GameObject _confirmationPageObject;
 
-        private Text _readinessText;
-        private Text _sessionText;
+        private Text _humanStatusText;
+        private Text _readinessSummaryText;
+        private Text _diagnosticsText;
         private Text _lastResultText;
+        private Text _sessionResultText;
         private Text _helpDetailText;
         private Text _confirmationText;
         private Button _confirmButton;
+        private Button _linkButton;
+        private Text _linkButtonText;
         private Func<Task<string>> _pendingConfirmation;
+        private int _confirmationReturnPage = _accountPage;
         private int _currentPage;
         private bool _operationInProgress;
-        private string _lastResult = "Действия ещё не выполнялись.";
+        private string _lastResult = string.Empty;
 
         public AccountDevToolsScreen(
             Transform parent,
@@ -61,6 +72,8 @@ namespace Assets.Scripts.DevTools
             _rootObject = CreateUiObject("AccountScreen", parent);
             _rootRect = _rootObject.GetComponent<RectTransform>();
             _accountPageObject = CreateAccountPage(_rootObject.transform);
+            _sessionPageObject = CreateSessionPage(_rootObject.transform);
+            _diagnosticsPageObject = CreateDiagnosticsPage(_rootObject.transform);
             _helpIndexPageObject = CreateHelpIndexPage(_rootObject.transform);
             _helpDetailPageObject = CreateHelpDetailPage(_rootObject.transform);
             _confirmationPageObject = CreateConfirmationPage(_rootObject.transform);
@@ -102,7 +115,21 @@ namespace Assets.Scripts.DevTools
 
             if (_currentPage == _helpIndexPage || _currentPage == _confirmationPage)
             {
-                CancelConfirmation();
+                if (_currentPage == _confirmationPage)
+                {
+                    int returnPage = _confirmationReturnPage;
+                    CancelConfirmation();
+                    ShowPage(returnPage);
+                }
+                else
+                {
+                    ShowPage(_accountPage);
+                }
+                return;
+            }
+
+            if (_currentPage == _sessionPage || _currentPage == _diagnosticsPage)
+            {
                 ShowPage(_accountPage);
                 return;
             }
@@ -127,19 +154,35 @@ namespace Assets.Scripts.DevTools
         /// </summary>
         public void RefreshPresentation()
         {
-            if (_readinessText != null)
+            if (_humanStatusText != null)
             {
-                _readinessText.text = _service.GetReadinessText();
+                _humanStatusText.text = $"Аккаунт: {_service.GetHumanStatusText()}";
             }
 
-            if (_sessionText != null)
+            if (_readinessSummaryText != null)
             {
-                _sessionText.text = _service.GetSessionText();
+                _readinessSummaryText.text = _service.IsLocallyReadyForPlayerAccounts
+                    ? "Готовность: Локально готово"
+                    : "Готовность: Нужна настройка — откройте Диагностику";
+            }
+
+            if (_diagnosticsText != null)
+            {
+                _diagnosticsText.text = $"{_service.GetReadinessText()}\n\nТЕКУЩАЯ СЕССИЯ\n{_service.GetSessionText()}";
             }
 
             if (_lastResultText != null)
             {
-                _lastResultText.text = $"Последний результат:\n{_lastResult}";
+                string result = _operationInProgress ? "Выполняется…" : CompactResult(_lastResult);
+                _lastResultText.text = $"Последнее действие: {result}";
+                _lastResultText.gameObject.SetActive(_operationInProgress || !string.IsNullOrWhiteSpace(_lastResult));
+            }
+
+            if (_sessionResultText != null)
+            {
+                string result = _operationInProgress ? "Выполняется…" : CompactResult(_lastResult);
+                _sessionResultText.text = $"Результат: {result}";
+                _sessionResultText.gameObject.SetActive(_operationInProgress || !string.IsNullOrWhiteSpace(_lastResult));
             }
 
             foreach (Button button in _actionButtons)
@@ -149,25 +192,85 @@ namespace Assets.Scripts.DevTools
                     button.interactable = !_operationInProgress;
                 }
             }
+
+            if (_linkButton != null)
+            {
+                bool isLinked = _service.Snapshot.IsLinked;
+                _linkButton.interactable = !_operationInProgress &&
+                                           !isLinked &&
+                                           _service.IsLocallyReadyForPlayerAccounts;
+                _linkButtonText.text = isLinked ? "АККАУНТ ПРИВЯЗАН" : "ПРИВЯЗАТЬ АККАУНТ";
+            }
         }
 
         private GameObject CreateAccountPage(Transform parent)
         {
-            GameObject page = CreateScrollPage("AccountPage", parent, out Transform content);
-            _readinessText = CreateBodyText("Readiness", content, string.Empty, FontStyle.Bold);
-            _sessionText = CreateBodyText("SessionState", content, string.Empty);
-            _lastResultText = CreateBodyText("LastResult", content, string.Empty);
+            GameObject page = CreateStaticPage("AccountPage", parent, out Transform content);
+            CreateSectionHeading("StateHeading", content, "СОСТОЯНИЕ");
 
-            AddActionButton(content, "EnsureSessionButton", "Обеспечить UGS-сессию", EnsureSession);
-            AddActionButton(content, "RefreshAccountButton", "Обновить статус", RefreshAccount);
-            AddActionButton(content, "LinkAccountButton", "Привязать Unity Player Account", LinkAccount);
-            AddActionButton(content, "UnlinkAccountButton", "Отвязать Unity Player Account", RequestUnlink, _dangerColor);
-            AddActionButton(content, "SignOutUgsButton", "Выйти из UGS (кэш оставить)", SignOutUgs);
-            AddActionButton(content, "SignOutUpaButton", "Выйти из UPA OAuth", SignOutPlayerAccount);
-            AddActionButton(content, "ClearIdentityButton", "Очистить cached identity", RequestClearIdentity, _dangerColor);
-            AddActionButton(content, "PreparationButton", "Подготовка авторизации", OpenEditorPreparation, _warningColor);
-            AddActionButton(content, "DashboardButton", "Открыть Unity Dashboard", _service.OpenDashboard);
-            AddActionButton(content, "HelpButton", "Справка", OpenHelpIndex);
+            Transform stateCard = CreateCard("StateCard", content, _statusCardColor);
+            _humanStatusText = CreateBodyText("HumanStatus", stateCard, string.Empty, FontStyle.Bold);
+            _humanStatusText.fontSize = 18;
+            _readinessSummaryText = CreateBodyText("ReadinessSummary", stateCard, string.Empty);
+            _lastResultText = CreateBodyText("LastResult", stateCard, string.Empty);
+
+            _linkButton = AddActionButton(
+                content,
+                "LinkAccountButton",
+                "ПРИВЯЗАТЬ АККАУНТ",
+                LinkAccount,
+                _primaryColor,
+                40f);
+            _linkButtonText = _linkButton.GetComponentInChildren<Text>();
+            AddActionButton(content, "RefreshAccountButton", "ОБНОВИТЬ СТАТУС", RefreshAccount);
+
+            CreateNavigationButton(content, "SessionsButton", "УПРАВЛЕНИЕ СЕССИЯМИ", OpenSessionManagement);
+            CreateNavigationButton(content, "DiagnosticsButton", "ДИАГНОСТИКА", OpenDiagnostics);
+            CreateNavigationButton(content, "HelpButton", "СПРАВКА", OpenHelpIndex);
+            return page;
+        }
+
+        private GameObject CreateSessionPage(Transform parent)
+        {
+            GameObject page = CreateScrollPage("SessionPage", parent, out Transform content);
+            CreateSectionHeading("NormalActionsHeading", content, "РАСШИРЕННЫЕ ДЕЙСТВИЯ");
+            CreateBodyText(
+                "AdvancedActionsHint",
+                content,
+                "Технические команды для ручной проверки сессий. Для обычного игрового flow они не нужны.");
+            _sessionResultText = CreateBodyText("SessionResult", content, string.Empty);
+            AddActionButton(content, "EnsureSessionButton", "СОЗДАТЬ / ВОССТАНОВИТЬ ГОСТЕВУЮ СЕССИЮ", EnsureSession);
+            AddActionButton(content, "SignOutUpaButton", "ВЫЙТИ ИЗ UNITY PLAYER ACCOUNT", SignOutPlayerAccount);
+            AddActionButton(content, "SignOutUgsButton", "ЗАВЕРШИТЬ UGS-СЕССИЮ (КЭШ ОСТАВИТЬ)", SignOutUgs);
+
+            Transform dangerCard = CreateCard("DangerousActionsCard", content, new Color(1f, 0.92f, 0.91f, 1f));
+            CreateSectionHeading("DangerousActionsHeading", dangerCard, "ОПАСНЫЕ ДЕЙСТВИЯ");
+            CreateBodyText(
+                "DangerousActionsHint",
+                dangerCard,
+                "Эти действия могут лишить доступа к identity. Перед выполнением будет отдельное подтверждение.");
+            AddActionButton(
+                dangerCard,
+                "UnlinkAccountButton",
+                "ОТВЯЗАТЬ UNITY PLAYER ACCOUNT",
+                RequestUnlink,
+                _dangerColor);
+            AddActionButton(
+                dangerCard,
+                "ClearIdentityButton",
+                "ОЧИСТИТЬ ДАННЫЕ ВХОДА НА УСТРОЙСТВЕ",
+                RequestClearIdentity,
+                _dangerColor);
+            return page;
+        }
+
+        private GameObject CreateDiagnosticsPage(Transform parent)
+        {
+            GameObject page = CreateScrollPage("DiagnosticsPage", parent, out Transform content);
+            CreateSectionHeading("ReadinessHeading", content, "ГОТОВНОСТЬ");
+            _diagnosticsText = CreateBodyText("DiagnosticsText", content, string.Empty);
+            AddActionButton(content, "RefreshDiagnosticsButton", "ОБНОВИТЬ ДИАГНОСТИКУ", RefreshAccount);
+            CreateNavigationButton(content, "DashboardButton", "ОТКРЫТЬ UNITY DASHBOARD", _service.OpenDashboard);
             return page;
         }
 
@@ -186,8 +289,8 @@ namespace Assets.Scripts.DevTools
                 CreateButton(
                     $"HelpSection{index}",
                     content,
-                    AccountDevToolsHelpContent.GetTitle(index),
-                    _buttonColor,
+                    AccountDevToolsHelpContent.GetTitle(index).ToUpperInvariant(),
+                    _navigationColor,
                     () => OpenHelpDetail(capturedIndex));
             }
 
@@ -203,15 +306,31 @@ namespace Assets.Scripts.DevTools
 
         private GameObject CreateConfirmationPage(Transform parent)
         {
-            GameObject page = CreateScrollPage("ConfirmationPage", parent, out Transform content);
+            GameObject page = CreateStaticPage("ConfirmationPage", parent, out Transform content);
+            CreateSectionHeading("ConfirmationHeading", content, "ПОДТВЕРЖДЕНИЕ");
             _confirmationText = CreateBodyText("ConfirmationText", content, string.Empty, FontStyle.Bold);
+
+            GameObject actionsRow = new GameObject(
+                "ConfirmationActions",
+                typeof(RectTransform),
+                typeof(HorizontalLayoutGroup),
+                typeof(LayoutElement));
+            actionsRow.transform.SetParent(content, false);
+            HorizontalLayoutGroup actionsLayout = actionsRow.GetComponent<HorizontalLayoutGroup>();
+            actionsLayout.spacing = 8f;
+            actionsLayout.childControlWidth = true;
+            actionsLayout.childControlHeight = true;
+            actionsLayout.childForceExpandWidth = true;
+            actionsLayout.childForceExpandHeight = false;
+            actionsRow.GetComponent<LayoutElement>().preferredHeight = 40f;
+
+            CreateButton("CancelDangerousActionButton", actionsRow.transform, "ОТМЕНА", _buttonColor, CancelConfirmationAndReturn);
             _confirmButton = CreateButton(
                 "ConfirmDangerousActionButton",
-                content,
-                "ПОДТВЕРДИТЬ",
+                actionsRow.transform,
+                "ПРОДОЛЖИТЬ",
                 _dangerColor,
                 ConfirmDangerousAction);
-            CreateButton("CancelDangerousActionButton", content, "Отмена", _buttonColor, CancelConfirmationAndReturn);
             return page;
         }
 
@@ -243,7 +362,7 @@ namespace Assets.Scripts.DevTools
             {
                 _lastResult = "Link не запущен: сначала исправь локальный cloudProjectId/clientId по инструкции.";
                 RefreshPresentation();
-                OpenHelpDetail(4);
+                OpenHelpDetail(3);
                 return;
             }
 
@@ -311,9 +430,14 @@ namespace Assets.Scripts.DevTools
                 });
         }
 
-        private void OpenEditorPreparation()
+        private void OpenSessionManagement()
         {
-            OpenHelpDetail(4);
+            ShowPage(_sessionPage);
+        }
+
+        private void OpenDiagnostics()
+        {
+            ShowPage(_diagnosticsPage);
         }
 
         private void OpenHelpIndex()
@@ -329,16 +453,18 @@ namespace Assets.Scripts.DevTools
 
         private void RequestConfirmation(string warning, Func<Task<string>> action)
         {
+            _confirmationReturnPage = _currentPage;
             _pendingConfirmation = action;
             _confirmationText.text = warning;
-            ShowPage(_confirmationPage, "Требуется подтверждение");
+            ShowPage(_confirmationPage, "Подтверждение");
         }
 
         private void ConfirmDangerousAction()
         {
             Func<Task<string>> action = _pendingConfirmation;
+            int returnPage = _confirmationReturnPage;
             CancelConfirmation();
-            ShowPage(_accountPage);
+            ShowPage(returnPage);
             if (action != null)
             {
                 _ = RunOperationAsync(action);
@@ -347,8 +473,9 @@ namespace Assets.Scripts.DevTools
 
         private void CancelConfirmationAndReturn()
         {
+            int returnPage = _confirmationReturnPage;
             CancelConfirmation();
-            ShowPage(_accountPage);
+            ShowPage(returnPage);
         }
 
         private void CancelConfirmation()
@@ -390,6 +517,8 @@ namespace Assets.Scripts.DevTools
         {
             _currentPage = page;
             _accountPageObject.SetActive(page == _accountPage);
+            _sessionPageObject.SetActive(page == _sessionPage);
+            _diagnosticsPageObject.SetActive(page == _diagnosticsPage);
             _helpIndexPageObject.SetActive(page == _helpIndexPage);
             _helpDetailPageObject.SetActive(page == _helpDetailPage);
             _confirmationPageObject.SetActive(page == _confirmationPage);
@@ -402,21 +531,57 @@ namespace Assets.Scripts.DevTools
             {
                 _setTitle("Справка");
             }
+            else if (page == _sessionPage)
+            {
+                _setTitle("Управление сессиями");
+            }
+            else if (page == _diagnosticsPage)
+            {
+                _setTitle("Диагностика");
+            }
             else
             {
                 _setTitle(detailTitle ?? "Аккаунт");
             }
         }
 
-        private void AddActionButton(
+        private Button AddActionButton(
             Transform parent,
             string name,
             string label,
             UnityAction action,
-            Color? color = null)
+            Color? color = null,
+            float height = 38f)
         {
             Button button = CreateButton(name, parent, label, color ?? _buttonColor, action);
+            button.GetComponent<LayoutElement>().preferredHeight = height;
             _actionButtons.Add(button);
+            return button;
+        }
+
+        private Button CreateNavigationButton(
+            Transform parent,
+            string name,
+            string label,
+            UnityAction action)
+        {
+            return CreateButton(name, parent, label, _navigationColor, action);
+        }
+
+        private GameObject CreateStaticPage(string name, Transform parent, out Transform content)
+        {
+            GameObject page = CreateUiObject(name, parent);
+            SetStretch(page.GetComponent<RectTransform>());
+
+            GameObject contentObject = new GameObject(
+                "Content",
+                typeof(RectTransform),
+                typeof(VerticalLayoutGroup));
+            contentObject.transform.SetParent(page.transform, false);
+            SetStretch(contentObject.GetComponent<RectTransform>());
+            ConfigureVerticalLayout(contentObject.GetComponent<VerticalLayoutGroup>());
+            content = contentObject.transform;
+            return page;
         }
 
         private GameObject CreateScrollPage(string name, Transform parent, out Transform content)
@@ -449,12 +614,7 @@ namespace Assets.Scripts.DevTools
             contentRect.sizeDelta = Vector2.zero;
 
             VerticalLayoutGroup layout = contentObject.GetComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(4, 8, 4, 12);
-            layout.spacing = 7f;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
+            ConfigureVerticalLayout(layout);
 
             ContentSizeFitter fitter = contentObject.GetComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
@@ -469,6 +629,46 @@ namespace Assets.Scripts.DevTools
             scrollRect.scrollSensitivity = 22f;
             content = contentObject.transform;
             return page;
+        }
+
+        private Transform CreateCard(string name, Transform parent, Color color)
+        {
+            GameObject card = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(VerticalLayoutGroup),
+                typeof(ContentSizeFitter));
+            card.transform.SetParent(parent, false);
+            card.GetComponent<Image>().color = color;
+
+            VerticalLayoutGroup layout = card.GetComponent<VerticalLayoutGroup>();
+            ConfigureVerticalLayout(layout);
+            layout.padding = new RectOffset(12, 12, 10, 10);
+            layout.spacing = 5f;
+
+            ContentSizeFitter fitter = card.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            return card.transform;
+        }
+
+        private Text CreateSectionHeading(string name, Transform parent, string text)
+        {
+            Text heading = CreateBodyText(name, parent, text, FontStyle.Bold);
+            heading.fontSize = 15;
+            return heading;
+        }
+
+        private static void ConfigureVerticalLayout(VerticalLayoutGroup layout)
+        {
+            layout.padding = new RectOffset(2, 4, 2, 8);
+            layout.spacing = 8f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
         }
 
         private Button CreateButton(
@@ -487,13 +687,16 @@ namespace Assets.Scripts.DevTools
                 typeof(LayoutElement));
             buttonObject.transform.SetParent(parent, false);
             buttonObject.GetComponent<Image>().color = color;
-            buttonObject.GetComponent<LayoutElement>().preferredHeight = 36f;
+            LayoutElement buttonLayout = buttonObject.GetComponent<LayoutElement>();
+            buttonLayout.preferredHeight = 38f;
+            buttonLayout.flexibleWidth = 1f;
 
             Button button = buttonObject.GetComponent<Button>();
             button.targetGraphic = buttonObject.GetComponent<Image>();
             button.onClick.AddListener(action);
 
             Text text = CreateText("Text", buttonObject.transform, label, TextAnchor.MiddleCenter, FontStyle.Bold);
+            text.fontSize = 15;
             SetStretch(text.GetComponent<RectTransform>());
             return button;
         }
@@ -542,6 +745,17 @@ namespace Assets.Scripts.DevTools
             rect.anchorMax = Vector2.one;
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
+        }
+
+        private static string CompactResult(string result)
+        {
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                return "—";
+            }
+
+            string compact = result.Replace('\r', ' ').Replace('\n', ' ').Trim();
+            return compact.Length <= 120 ? compact : $"{compact.Substring(0, 117)}…";
         }
     }
 }

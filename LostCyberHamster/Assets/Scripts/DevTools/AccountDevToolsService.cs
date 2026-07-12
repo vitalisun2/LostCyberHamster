@@ -11,7 +11,7 @@ using UnityEngine;
 namespace Assets.Scripts.DevTools
 {
     /// <summary>
-    /// Выполняет диагностические account-действия DEV-меню и изолирует прямые вызовы Unity SDK от UI.
+    /// Собирает account-диагностику и выполняет account/SDK-команды для DEV-меню.
     /// </summary>
     internal sealed class AccountDevToolsService
     {
@@ -32,6 +32,35 @@ namespace Assets.Scripts.DevTools
             !string.IsNullOrWhiteSpace(GetPlayerAccountClientId());
 
         /// <summary>
+        /// Возвращает короткий пользовательский статус без SDK-терминов.
+        /// </summary>
+        public string GetHumanStatusText()
+        {
+            AccountSnapshot snapshot = Snapshot;
+            if (snapshot.State == AccountState.Error)
+            {
+                return "Ошибка авторизации";
+            }
+
+            if (snapshot.State == AccountState.Offline)
+            {
+                return "Нет соединения";
+            }
+
+            if (snapshot.IsLinked)
+            {
+                return "Аккаунт привязан";
+            }
+
+            if (snapshot.IsSignedIn)
+            {
+                return "Гость";
+            }
+
+            return "Сессия не готова";
+        }
+
+        /// <summary>
         /// Возвращает локально проверяемые prerequisites и явно отделяет их от Dashboard-конфигурации.
         /// </summary>
         public string GetReadinessText()
@@ -42,11 +71,11 @@ namespace Assets.Scripts.DevTools
             string requiredPlatform = GetRequiredDashboardPlatform();
             bool localReady = !string.IsNullOrWhiteSpace(cloudProjectId) && !string.IsNullOrWhiteSpace(clientId);
 
-            return $"Готовность: {(localReady ? "ЛОКАЛЬНО ГОТОВО" : "НУЖНА НАСТРОЙКА")}\n" +
-                   $"cloudProjectId: {DisplayValue(cloudProjectId)}\n" +
-                   $"UPA clientId: {DisplayValue(clientId)}\n" +
-                   $"UnityServices: {servicesState}\n" +
-                   $"Dashboard provider/{requiredPlatform}: проверить вручную";
+            return $"cloudProjectId: {DisplayValue(cloudProjectId)}\n" +
+                   $"UPA Client ID: {DisplayValue(clientId)}\n" +
+                   $"Unity Services: {servicesState}\n" +
+                   $"Локальная готовность: {(localReady ? "Да" : "Нет")}\n" +
+                   $"Dashboard provider / {requiredPlatform}: проверить вручную";
         }
 
         /// <summary>
@@ -59,12 +88,12 @@ namespace Assets.Scripts.DevTools
             bool playerAccountSignedIn = TryGetPlayerAccountValue(service => service.IsSignedIn);
             AccountSnapshot snapshot = Snapshot;
 
-            return $"State: {snapshot.State}\n" +
+            return $"AccountState: {snapshot.State}\n" +
                    $"UGS PlayerId: {DisplayValue(snapshot.PlayerId)}\n" +
-                   $"IsSignedIn: {YesNo(snapshot.IsSignedIn)}\n" +
-                   $"IsLinked: {YesNo(snapshot.IsLinked)}\n" +
+                   $"UGS signed in: {YesNo(snapshot.IsSignedIn)}\n" +
                    $"UGS cached token: {YesNo(sessionTokenExists)}\n" +
                    $"UPA OAuth session: {YesNo(playerAccountSignedIn)}\n" +
+                   $"IsLinked: {YesNo(snapshot.IsLinked)}\n" +
                    $"Последняя ошибка: {DisplayValue(snapshot.ErrorMessage)}\n" +
                    $"SDK UGS signed in: {YesNo(authSignedIn)}";
         }
