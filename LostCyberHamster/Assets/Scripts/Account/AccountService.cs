@@ -84,7 +84,7 @@ namespace LostCyberHamster.Account
         }
 
         /// <summary>
-        /// Получает access token, связывает с ним текущего UGS-игрока или переключается на уже связанного.
+        /// Получает access token и связывает с ним текущего UGS-игрока без смены Player ID при конфликте.
         /// </summary>
         public async Task<AccountLinkResult> LinkUnityAccountAsync()
         {
@@ -112,7 +112,7 @@ namespace LostCyberHamster.Account
         }
 
         /// <summary>
-        /// Привязывает новый Unity Player Account или восстанавливает уже существующий аккаунт.
+        /// Привязывает Unity Player Account к текущему UGS-игроку и возвращает конфликт без смены Player ID.
         /// </summary>
         public async Task<AccountLinkResult> LinkUnityAccountWithAccessTokenAsync(string accessToken)
         {
@@ -121,13 +121,8 @@ namespace LostCyberHamster.Account
                 return AccountLinkResult.Failed("Unity access token is empty.");
             }
 
-            // Сначала сохраняем текущий guest Player ID за выбранным аккаунтом.
+            // Link не должен молча менять Player ID: конфликт обрабатывает вызывающий UX.
             var result = await _authenticationGateway.LinkWithUnityAsync(accessToken);
-            if (result.Status == AccountLinkStatus.AlreadyLinked)
-            {
-                // Такой аккаунт уже хранит другой Player ID: восстанавливаем его.
-                result = await _authenticationGateway.SignInWithUnityAsync(accessToken);
-            }
 
             if (result.IsSuccess)
             {

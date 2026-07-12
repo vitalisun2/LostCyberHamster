@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Generated file, do not modify, your changes will be overwritten (use AssetPostprocessor.OnGeneratedCSProject) -->
   <PropertyGroup>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -54,12 +54,6 @@
     <UnityBuildTarget>Android:13</UnityBuildTarget>
     <UnityVersion>6000.2.6f2</UnityVersion>
   </PropertyGroup>
-  <ItemGroup>
-    <Analyzer Include="C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\Microsoft\Visual Studio Tools for Unity\Analyzers\Microsoft.Unity.Analyzers.dll" />
-    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
-    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
-    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskParallel.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofPolicy.cs" />
@@ -227,6 +221,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\GameScreenStatusFormatter.cs" />
     <Compile Include="Assets\Scripts\Gameplay\GameUi.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\GameManagerInstaller.cs" />
+    <Compile Include="Assets\Scripts\DevTools\AccountDevToolsService.cs" />
     <Compile Include="Assets\Scripts\Ads\AdShowListener.cs" />
     <Compile Include="Assets\Scripts\Gameplay\ActionTypeEnum.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranchMetricsComparer.cs" />
@@ -250,6 +245,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\JumpOutcomeResolver.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\JumpFromRoofChainCalculator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnPolicy.cs" />
+    <Compile Include="Assets\Scripts\DevTools\AccountDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperJumpMechanics.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\EnergyMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnExecutor.cs" />
@@ -270,10 +266,10 @@
     <Compile Include="Assets\Scripts\Bot\RuntimeBotController.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\TransitionSimulator.cs" />
     <Compile Include="Assets\Scripts\GameEngine\GameEventSystemController.cs" />
-    <Compile Include="Assets\Scripts\Account\IAccountService.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimationEventsDispatcher.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LocationInfo.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopItemList.cs" />
-    <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimationEventsDispatcher.cs" />
+    <Compile Include="Assets\Scripts\Account\IAccountService.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\KeyboardMechanics.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\QuestSystem\Quest.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialUiAction.cs" />
@@ -361,6 +357,7 @@
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\LoadAddressablesLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelEnum.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitExecutor.cs" />
+    <Compile Include="Assets\Scripts\DevTools\AccountDevToolsHelpContent.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialMetaStage.cs" />
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameEngine\GameEventsManager.cs" />

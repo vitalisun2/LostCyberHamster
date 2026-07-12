@@ -25,12 +25,12 @@ namespace LostCyberHamster.Account
         Task<bool> IsLinkedAsync();
 
         /// <summary>
-        /// Запускает вход в Unity Player Account, связывает с ним текущего UGS-игрока или переключается на уже связанного.
+        /// Запускает вход в Unity Player Account и связывает его с текущим UGS-игроком без смены Player ID при конфликте.
         /// </summary>
         Task<AccountLinkResult> LinkUnityAccountAsync();
 
         /// <summary>
-        /// Связывает текущего UGS-игрока с Unity Player Account по access token или переключается на уже связанного игрока.
+        /// Связывает текущего UGS-игрока с Unity Player Account по access token без смены Player ID при конфликте.
         /// </summary>
         Task<AccountLinkResult> LinkUnityAccountWithAccessTokenAsync(string accessToken);
 

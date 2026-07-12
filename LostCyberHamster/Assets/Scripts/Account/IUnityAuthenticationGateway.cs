@@ -28,11 +28,6 @@ namespace LostCyberHamster.Account
         Task<AccountLinkResult> LinkWithUnityAsync(string accessToken);
 
         /// <summary>
-        /// Переключает UGS-сессию на игрока, которому уже принадлежит Unity Player Account.
-        /// </summary>
-        Task<AccountLinkResult> SignInWithUnityAsync(string accessToken);
-
-        /// <summary>
         /// Удаляет Unity Player Account из внешних идентификаторов текущего UGS-игрока.
         /// </summary>
         Task UnlinkUnityAsync();

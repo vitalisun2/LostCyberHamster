@@ -23,19 +23,24 @@ namespace Assets.Scripts.DevTools
         private const string _hostObjectName = "[DevToolsMenu]";
         private const string _openButtonObjectName = "OpenButton";
         private const string _panelObjectName = "Panel";
+        private const string _rootScreenObjectName = "RootScreen";
+        private const string _backButtonObjectName = "BackButton";
         private const string _closeButtonObjectName = "CloseButton";
         private const string _botButtonObjectName = "BotButton";
         private const string _unlockAllButtonObjectName = "UnlockAllButton";
         private const string _completeLevelButtonObjectName = "CompleteLevelButton";
         private const string _resetProgressButtonObjectName = "ResetProgressButton";
+        private const string _accountButtonObjectName = "AccountButton";
         private const string _statusTextObjectName = "StatusText";
 
         private const int _sortingOrder = 32767;
         private const float _baseMargin = 10f;
         private const float _baseOpenButtonWidth = 64f;
         private const float _baseButtonHeight = 34f;
-        private const float _basePanelWidth = 260f;
-        private const float _basePanelHeight = 270f;
+        private const float _baseRootPanelWidth = 260f;
+        private const float _baseRootPanelHeight = 310f;
+        private const float _baseAccountPanelWidth = 430f;
+        private const float _baseAccountPanelHeight = 620f;
 
         private static readonly Color _openButtonColor = new Color(1f, 1f, 1f, 0.72f);
         private static readonly Color _panelColor = new Color(1f, 1f, 1f, 0.94f);
@@ -53,12 +58,17 @@ namespace Assets.Scripts.DevTools
 
         private GameObject _panelObject;
         private RectTransform _panelRect;
+        private GameObject _rootScreenObject;
+        private Text _titleText;
         private RectTransform _titleRect;
+        private GameObject _backButtonObject;
+        private RectTransform _backButtonRect;
         private RectTransform _closeButtonRect;
         private RectTransform _botButtonRect;
         private RectTransform _unlockAllButtonRect;
         private RectTransform _completeLevelButtonRect;
         private RectTransform _resetProgressButtonRect;
+        private RectTransform _accountButtonRect;
         private RectTransform _statusTextRect;
 
         private Button _botButton;
@@ -71,6 +81,8 @@ namespace Assets.Scripts.DevTools
         private Button _completeLevelButton;
 
         private Text _statusText;
+        private AccountDevToolsScreen _accountScreen;
+        private bool _isAccountScreenOpen;
 
         /// <summary>
         /// Creates the persistent developer menu host before user scenes are loaded.
@@ -119,6 +131,8 @@ namespace Assets.Scripts.DevTools
             EnsureUi();
             ApplyLayout();
             RefreshButtonState();
+            if (_isAccountScreenOpen)
+                _accountScreen?.RefreshPresentation();
         }
 
         private void EnsureEventSystem()
@@ -191,8 +205,17 @@ namespace Assets.Scripts.DevTools
             panelImage.color = _panelColor;
             panelImage.raycastTarget = true;
 
-            Text titleText = CreateText("Title", _panelObject.transform, "Developer", TextAnchor.MiddleLeft, FontStyle.Bold);
-            _titleRect = titleText.GetComponent<RectTransform>();
+            _titleText = CreateText("Title", _panelObject.transform, "Developer", TextAnchor.MiddleLeft, FontStyle.Bold);
+            _titleRect = _titleText.GetComponent<RectTransform>();
+
+            Button backButton = CreateButton(
+                _backButtonObjectName,
+                _panelObject.transform,
+                "Назад",
+                Color.white,
+                NavigateBack);
+            _backButtonObject = backButton.gameObject;
+            _backButtonRect = backButton.GetComponent<RectTransform>();
 
             Button closeButton = CreateButton(
                 _closeButtonObjectName,
@@ -202,9 +225,17 @@ namespace Assets.Scripts.DevTools
                 ClosePanel);
             _closeButtonRect = closeButton.GetComponent<RectTransform>();
 
+            _rootScreenObject = new GameObject(_rootScreenObjectName, typeof(RectTransform));
+            _rootScreenObject.transform.SetParent(_panelObject.transform, false);
+            RectTransform rootScreenRect = _rootScreenObject.GetComponent<RectTransform>();
+            rootScreenRect.anchorMin = Vector2.zero;
+            rootScreenRect.anchorMax = Vector2.one;
+            rootScreenRect.offsetMin = Vector2.zero;
+            rootScreenRect.offsetMax = Vector2.zero;
+
             _botButton = CreateButton(
                 _botButtonObjectName,
-                _panelObject.transform,
+                _rootScreenObject.transform,
                 "Bot Off",
                 _disabledColor,
                 ToggleBot);
@@ -214,7 +245,7 @@ namespace Assets.Scripts.DevTools
 
             Button unlockAllButton = CreateButton(
                 _unlockAllButtonObjectName,
-                _panelObject.transform,
+                _rootScreenObject.transform,
                 "Unlock All Off",
                 _disabledColor,
                 ToggleUnlockAll);
@@ -224,7 +255,7 @@ namespace Assets.Scripts.DevTools
 
             _completeLevelButton = CreateButton(
                 _completeLevelButtonObjectName,
-                _panelObject.transform,
+                _rootScreenObject.transform,
                 "Complete Level (3 Stars)",
                 Color.white,
                 CompleteLevelWithThreeStars);
@@ -232,14 +263,29 @@ namespace Assets.Scripts.DevTools
 
             Button resetProgressButton = CreateButton(
                 _resetProgressButtonObjectName,
-                _panelObject.transform,
+                _rootScreenObject.transform,
                 "Reset Progress",
                 Color.white,
                 ResetProgress);
             _resetProgressButtonRect = resetProgressButton.GetComponent<RectTransform>();
 
-            _statusText = CreateText(_statusTextObjectName, _panelObject.transform, "Bot is not ready", TextAnchor.MiddleLeft);
+            Button accountButton = CreateButton(
+                _accountButtonObjectName,
+                _rootScreenObject.transform,
+                "Аккаунт",
+                Color.white,
+                ShowAccountScreen);
+            _accountButtonRect = accountButton.GetComponent<RectTransform>();
+
+            _statusText = CreateText(_statusTextObjectName, _rootScreenObject.transform, "Bot is not ready", TextAnchor.MiddleLeft);
             _statusTextRect = _statusText.GetComponent<RectTransform>();
+
+            _accountScreen = new AccountDevToolsScreen(
+                _panelObject.transform,
+                _font,
+                ShowRootScreen,
+                SetPanelTitle);
+            ShowRootScreen();
         }
 
         private Button CreateButton(
@@ -332,29 +378,39 @@ namespace Assets.Scripts.DevTools
                 _baseOpenButtonWidth * scale,
                 _baseButtonHeight * scale);
 
-            float availableWidth = Mathf.Max(_baseOpenButtonWidth * scale, Screen.width - left - margin);
-            float panelWidth = Mathf.Min(_basePanelWidth * scale, availableWidth);
-            SetTopLeft(_panelRect, left, top, panelWidth, _basePanelHeight * scale);
+            float availableWidth = Mathf.Max(_baseOpenButtonWidth * scale, safeArea.xMax - left - margin);
+            float availableHeight = Mathf.Max(_baseButtonHeight * scale, safeArea.height - margin * 2f);
+            float basePanelWidth = _isAccountScreenOpen ? _baseAccountPanelWidth : _baseRootPanelWidth;
+            float basePanelHeight = _isAccountScreenOpen ? _baseAccountPanelHeight : _baseRootPanelHeight;
+            float panelWidth = Mathf.Min(basePanelWidth * scale, availableWidth);
+            float panelHeight = Mathf.Min(basePanelHeight * scale, availableHeight);
+            SetTopLeft(_panelRect, left, top, panelWidth, panelHeight);
 
             float inset = 12f * scale;
             float rowHeight = _baseButtonHeight * scale;
             float titleY = inset * 0.65f;
 
-            SetTopLeft(_titleRect, inset, titleY, panelWidth - inset * 2f - rowHeight, rowHeight);
+            float backButtonWidth = 76f * scale;
+            float titleLeft = _isAccountScreenOpen ? inset + backButtonWidth + inset * 0.5f : inset;
+            SetTopLeft(_backButtonRect, inset, titleY, backButtonWidth, rowHeight);
+            SetTopLeft(_titleRect, titleLeft, titleY, panelWidth - titleLeft - inset - rowHeight, rowHeight);
             SetTopLeft(_closeButtonRect, panelWidth - inset - rowHeight, titleY, rowHeight, rowHeight);
             SetTopLeft(_botButtonRect, inset, titleY + rowHeight + inset, panelWidth - inset * 2f, rowHeight);
             SetTopLeft(_unlockAllButtonRect, inset, titleY + rowHeight * 2f + inset * 1.75f, panelWidth - inset * 2f, rowHeight);
             SetTopLeft(_completeLevelButtonRect, inset, titleY + rowHeight * 3f + inset * 2.5f, panelWidth - inset * 2f, rowHeight);
             SetTopLeft(_resetProgressButtonRect, inset, titleY + rowHeight * 4f + inset * 3.25f, panelWidth - inset * 2f, rowHeight);
-            SetTopLeft(_statusTextRect, inset, titleY + rowHeight * 5f + inset * 3.7f, panelWidth - inset * 2f, rowHeight);
+            SetTopLeft(_accountButtonRect, inset, titleY + rowHeight * 5f + inset * 4f, panelWidth - inset * 2f, rowHeight);
+            SetTopLeft(_statusTextRect, inset, titleY + rowHeight * 6f + inset * 4.45f, panelWidth - inset * 2f, rowHeight);
+
+            float contentTop = titleY + rowHeight + inset;
+            _accountScreen?.ApplyLayout(inset, contentTop, inset, inset);
 
             int buttonFontSize = Mathf.RoundToInt(14f * scale);
             int titleFontSize = Mathf.RoundToInt(16f * scale);
             SetTextFontSize(_openButtonObject, buttonFontSize);
             SetTextFontSize(_panelObject, buttonFontSize);
-            Text titleText = _titleRect.GetComponent<Text>();
-            if (titleText != null)
-                titleText.fontSize = titleFontSize;
+            if (_titleText != null)
+                _titleText.fontSize = titleFontSize;
         }
 
         private static Rect GetSafeArea()
@@ -383,12 +439,43 @@ namespace Assets.Scripts.DevTools
 
         private void OpenPanel()
         {
+            ShowRootScreen();
             SetPanelOpen(true);
         }
 
         private void ClosePanel()
         {
             SetPanelOpen(false);
+        }
+
+        private void ShowAccountScreen()
+        {
+            _isAccountScreenOpen = true;
+            _rootScreenObject?.SetActive(false);
+            _backButtonObject?.SetActive(true);
+            _accountScreen?.Show();
+            ApplyLayout();
+        }
+
+        private void ShowRootScreen()
+        {
+            _isAccountScreenOpen = false;
+            _accountScreen?.Hide();
+            _rootScreenObject?.SetActive(true);
+            _backButtonObject?.SetActive(false);
+            SetPanelTitle("Developer");
+            ApplyLayout();
+        }
+
+        private void NavigateBack()
+        {
+            _accountScreen?.GoBack();
+        }
+
+        private void SetPanelTitle(string title)
+        {
+            if (_titleText != null)
+                _titleText.text = string.IsNullOrWhiteSpace(title) ? "Аккаунт" : title;
         }
 
         private void SetPanelOpen(bool isOpen)

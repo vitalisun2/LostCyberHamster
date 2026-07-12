@@ -17,7 +17,7 @@ public static class AuthenticationManager
     }
 
     /// <summary>
-    /// Совместимый фасад для привязки текущего UGS-игрока или переключения на уже связанного.
+    /// Совместимый фасад для безопасной привязки текущего UGS-игрока без смены Player ID при конфликте.
     /// </summary>
     public static async Task LinkAnonymousAccountToUnityAsync()
     {
@@ -26,7 +26,7 @@ public static class AuthenticationManager
     }
 
     /// <summary>
-    /// Совместимый фасад для привязки или восстановления Unity Player Account по заранее полученному access token.
+    /// Совместимый фасад для безопасной привязки Unity Player Account по заранее полученному access token.
     /// </summary>
     public static async Task LinkWithUnityAsync(string accessToken)
     {
