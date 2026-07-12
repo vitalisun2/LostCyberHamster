@@ -154,7 +154,6 @@
     <Compile Include="Assets\Scripts\Tutorial\TutorialUiActionContext.cs" />
     <Compile Include="Assets\Scripts\System\Models\PreloadedObstacle.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranch.cs" />
-    <Compile Include="Assets\Tests\PlayMode\AccountSettingsPlayModeTests.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleChain.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialConstants.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitGameRepositoryLoadingTask.cs" />
