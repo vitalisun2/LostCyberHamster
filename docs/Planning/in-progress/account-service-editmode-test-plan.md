@@ -50,11 +50,24 @@
 - gateway single-flight;
 - retry after success/failure/timeout.
 
-### DevTools pure state
+### UnityAuthenticationGateway
+
+- constructor and null-result boundaries;
+- anonymous sign-in success/failure and normalized Player ID;
+- link/unlink success, conflict and SDK exceptions;
+- signed-in/signed-out state reads through the injected SDK port;
+- cached-session sign-out and credential-clear delegation.
+
+### DevTools state and overlay
 
 - typed navigation root/back stack;
 - confirmation consume/cancel semantics;
-- controller busy/last-result transitions where practical without Unity UI.
+- Help section count, labels, content bounds and back navigation;
+- controller success/failure/exception paths for every account action;
+- busy-state protection and presentation change notifications;
+- separation of short user-facing results from technical diagnostics;
+- missing configuration, dashboard delegation and session sign-out actions;
+- overlay pointer-click smoke tests for open and Account-to-root navigation.
 
 ## Test doubles
 
@@ -62,13 +75,21 @@
 - fake Player Account gateway uses deterministic `TaskCompletionSource` for concurrency;
 - fake SDK port exposes events and subscription counts;
 - fake timeout port returns controlled tasks; real sleeps are forbidden;
-- static Unity services, network and browser are never called.
+- gateway and controller tests never call static Unity services, network or browser;
+- overlay smoke tests may read local SDK state during screen composition, but never start authentication, browser or network operations.
 
 ## Definition of Done
 
 - tests are Unity EditMode tests with Given/When/Then names and Arrange/Act/Assert blocks;
+- Account/DevTools fixtures use category `AccountDevTools` and a 5-second fail-fast fixture timeout;
 - every production review regression has a named test;
 - `Assembly-CSharp` and `Assembly-CSharp-Editor` compile without errors;
 - Account EditMode suite passes in Unity Test Runner;
 - no PlayMode tests are added;
 - executed case totals and any unrelated runner limitations are recorded in the final report.
+
+## Выполненная проверка
+
+- Unity Test Runner, EditMode, category `AccountDevTools`: 153/153 passed, 0 failed, 0 skipped, 0 inconclusive.
+- Состав: Models 26, AccountService 51, DevTools overlay 2, DevTools state 37, Unity Authentication gateway 16, Unity Player Account gateway 21.
+- Время выполнения test cases: 3.16 с; package-level Performance Testing hooks выполняются до и после выбранной категории.

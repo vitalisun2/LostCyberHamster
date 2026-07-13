@@ -10,6 +10,7 @@ namespace Assets.Tests.EditMode
     /// <summary>
     /// Проверяет lifecycle Unity Player Accounts gateway через детерминированные SDK и timeout ports.
     /// </summary>
+    [Category("AccountDevTools")]
     [Timeout(5000)]
     public sealed class UnityPlayerAccountGatewayTests
     {

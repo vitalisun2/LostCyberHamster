@@ -30,6 +30,9 @@ namespace Assets.Scripts.DevTools.Account
         private Button _linkButton;
         private Text _linkButtonText;
 
+        /// <summary>
+        /// Создаёт все account-страницы и размещает их внутри общей DEV-панели.
+        /// </summary>
         public AccountDevToolsView(Transform parent, Font font, Action<string> setTitle)
         {
             _setTitle = setTitle;
@@ -63,11 +66,17 @@ namespace Assets.Scripts.DevTools.Account
 
         public GameObject RootObject => _rootObject;
 
+        /// <summary>
+        /// Показывает или скрывает корневой объект account view.
+        /// </summary>
         public void SetVisible(bool visible)
         {
             _rootObject.SetActive(visible);
         }
 
+        /// <summary>
+        /// Применяет отступы account view внутри feature-панели.
+        /// </summary>
         public void ApplyLayout(float left, float top, float right, float bottom)
         {
             _rootRect.anchorMin = Vector2.zero;
@@ -76,6 +85,9 @@ namespace Assets.Scripts.DevTools.Account
             _rootRect.offsetMax = new Vector2(-right, -top);
         }
 
+        /// <summary>
+        /// Активирует выбранную account-страницу и обновляет заголовок общей панели.
+        /// </summary>
         public void SetPage(AccountDevToolsPage page, string detailTitle = null)
         {
             foreach (KeyValuePair<AccountDevToolsPage, GameObject> item in _pages)
@@ -86,16 +98,25 @@ namespace Assets.Scripts.DevTools.Account
             _setTitle(GetPageTitle(page, detailTitle));
         }
 
+        /// <summary>
+        /// Заполняет текст выбранного раздела справки.
+        /// </summary>
         public void SetHelpDetail(string text)
         {
             _helpDetailText.text = text ?? string.Empty;
         }
 
+        /// <summary>
+        /// Заполняет предупреждение на странице подтверждения опасного действия.
+        /// </summary>
         public void SetConfirmationText(string text)
         {
             _confirmationText.text = text ?? string.Empty;
         }
 
+        /// <summary>
+        /// Отображает account-state, результаты операций и доступность действий.
+        /// </summary>
         public void Render(AccountDevToolsViewState state)
         {
             _humanStatusText.text = $"Аккаунт: {state.HumanStatus}";

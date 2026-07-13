@@ -6,6 +6,9 @@ namespace Assets.Scripts.DevTools.Account
     /// </summary>
     internal readonly struct AccountDevToolsViewState
     {
+        /// <summary>
+        /// Создаёт неизменяемый снимок данных для отображения account DEV-страниц.
+        /// </summary>
         public AccountDevToolsViewState(
             string humanStatus,
             string diagnostics,

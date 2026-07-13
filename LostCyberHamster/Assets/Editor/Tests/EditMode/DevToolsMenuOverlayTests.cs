@@ -11,6 +11,8 @@ namespace Assets.Tests.EditMode
     /// <summary>
     /// Проверяет pointer-взаимодействие с общей оболочкой DEV-меню.
     /// </summary>
+    [Category("AccountDevTools")]
+    [Timeout(5000)]
     public sealed class DevToolsMenuOverlayTests
     {
         [Test]

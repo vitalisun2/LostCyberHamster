@@ -10,11 +10,15 @@ namespace Assets.Scripts.DevTools.Account
     /// </summary>
     internal sealed class AccountDevToolsController
     {
-        private readonly AccountDevToolsService _service;
+        private readonly IAccountDevToolsService _service;
         private bool _isBusy;
         private string _lastResult = string.Empty;
+        private string _lastTechnicalDetails = string.Empty;
 
-        public AccountDevToolsController(AccountDevToolsService service)
+        /// <summary>
+        /// Создаёт controller поверх заменяемого сервиса account DEV-инструментов.
+        /// </summary>
+        public AccountDevToolsController(IAccountDevToolsService service)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
         }
@@ -23,39 +27,62 @@ namespace Assets.Scripts.DevTools.Account
 
         public bool IsLocallyReady => _service.IsLocallyReadyForPlayerAccounts;
 
+        /// <summary>
+        /// Формирует текущее пользовательское и диагностическое presentation-состояние.
+        /// </summary>
         public AccountDevToolsViewState GetViewState()
         {
+            string operationDetails = string.IsNullOrWhiteSpace(_lastTechnicalDetails)
+                ? "—"
+                : _lastTechnicalDetails;
+
             return new AccountDevToolsViewState(
                 _service.GetHumanStatusText(),
-                $"{_service.GetReadinessText()}\n\nТЕКУЩАЯ СЕССИЯ\n{_service.GetSessionText()}",
+                $"{_service.GetReadinessText()}\n\nТЕКУЩАЯ СЕССИЯ\n{_service.GetSessionText()}\n\n" +
+                $"ПОСЛЕДНЯЯ ОПЕРАЦИЯ\n{operationDetails}",
                 _lastResult,
                 _isBusy,
                 _service.Snapshot.IsLinked,
                 _service.IsLocallyReadyForPlayerAccounts);
         }
 
+        /// <summary>
+        /// Создаёт или восстанавливает гостевую UGS-сессию и записывает краткий результат.
+        /// </summary>
         public Task EnsureSessionAsync()
         {
             return RunOperationAsync(async () =>
             {
                 AccountSnapshot snapshot = await _service.EnsureSessionAsync();
-                return snapshot.IsSignedIn
-                    ? $"UGS-сессия готова: {snapshot.State}, PlayerId={snapshot.PlayerId}"
-                    : $"UGS-сессия не создана: {snapshot.State}. {snapshot.ErrorMessage}";
+                string userMessage = snapshot.IsSignedIn
+                    ? snapshot.IsLinked
+                        ? "Сессия готова: аккаунт привязан."
+                        : "Гостевая сессия готова."
+                    : "Сессию создать не удалось. Подробности — в диагностике.";
+                return RecordResult(userMessage, FormatSnapshot(snapshot));
             });
         }
 
+        /// <summary>
+        /// Обновляет linked-state текущего игрока и presentation-состояние.
+        /// </summary>
         public Task RefreshAsync()
         {
             return RunOperationAsync(async () =>
             {
                 AccountSnapshot snapshot = await _service.RefreshAsync();
-                return snapshot.State == AccountState.Error
-                    ? $"Статус не обновлён: {snapshot.ErrorMessage}"
-                    : $"Статус обновлён: {snapshot.State}, linked={snapshot.IsLinked}";
+                string userMessage = snapshot.State == AccountState.Error
+                    ? "Статус не обновлён. Подробности — в диагностике."
+                    : snapshot.IsLinked
+                        ? "Статус обновлён: аккаунт привязан."
+                        : "Статус обновлён: гостевая сессия.";
+                return RecordResult(userMessage, FormatSnapshot(snapshot));
             });
         }
 
+        /// <summary>
+        /// Запускает привязку Unity Player Account и безопасно отображает конфликт identity.
+        /// </summary>
         public Task LinkAsync()
         {
             return RunOperationAsync(async () =>
@@ -63,35 +90,50 @@ namespace Assets.Scripts.DevTools.Account
                 AccountLinkResult result = await _service.LinkAsync();
                 if (result.Status == AccountLinkStatus.AlreadyLinked)
                 {
-                    return "КОНФЛИКТ: аккаунт уже связан с другим Player ID. Переключение заблокировано; текущая identity сохранена.";
+                    return RecordResult(
+                        "Конфликт: аккаунт уже связан с другим игроком. Переключение заблокировано.",
+                        FormatLinkResult(result));
                 }
 
-                return result.IsSuccess
-                    ? $"Unity Player Account привязан. PlayerId={result.PlayerId}"
-                    : $"Привязка не выполнена: {result.ErrorMessage}";
+                string userMessage = result.IsSuccess
+                    ? "Unity Player Account привязан."
+                    : "Привязка не выполнена. Подробности — в диагностике.";
+                return RecordResult(userMessage, FormatLinkResult(result));
             });
         }
 
+        /// <summary>
+        /// Отвязывает Unity Player Account и публикует итог операции.
+        /// </summary>
         public Task UnlinkAsync()
         {
             return RunOperationAsync(async () =>
             {
                 AccountSnapshot snapshot = await _service.UnlinkAsync();
-                return snapshot.State == AccountState.Error || snapshot.IsLinked
-                    ? $"Отвязка не выполнена: {snapshot.ErrorMessage}"
-                    : $"Unity Player Account отвязан. State={snapshot.State}";
+                string userMessage = snapshot.State == AccountState.Error || snapshot.IsLinked
+                    ? "Отвязка не выполнена. Подробности — в диагностике."
+                    : "Unity Player Account отвязан.";
+                return RecordResult(userMessage, FormatSnapshot(snapshot));
             });
         }
 
+        /// <summary>
+        /// Завершает UGS-сессию, сохраняя локальные credentials для восстановления.
+        /// </summary>
         public Task SignOutUgsAsync()
         {
             return RunOperationAsync(async () =>
             {
                 await _service.SignOutUgsKeepingCredentialsAsync();
-                return "UGS-сессия завершена. Cached credentials сохранены; Ensure восстановит тот же Player ID.";
+                return RecordResult(
+                    "Сессия завершена; данные входа сохранены.",
+                    "UGS sign-out completed with cached credentials preserved.");
             });
         }
 
+        /// <summary>
+        /// Завершает локальную Unity Player Accounts OAuth-сессию без изменения UGS identity.
+        /// </summary>
         public void SignOutPlayerAccount()
         {
             if (_isBusy)
@@ -102,31 +144,46 @@ namespace Assets.Scripts.DevTools.Account
             try
             {
                 _service.SignOutPlayerAccount();
-                _lastResult = "Локальная UPA OAuth-сессия очищена. UGS Player ID и link не изменены.";
+                _lastResult = "Сессия Unity Player Account завершена.";
+                _lastTechnicalDetails =
+                    "Local UPA OAuth session cleared; UGS Player ID and linked-state were not changed.";
             }
             catch (Exception ex)
             {
-                _lastResult = $"UPA sign out failed: {ex.Message}";
+                _lastResult = "Выйти из Unity Player Account не удалось. Подробности — в диагностике.";
+                _lastTechnicalDetails = ex.ToString();
             }
 
             PresentationChanged?.Invoke();
         }
 
+        /// <summary>
+        /// Удаляет локальные UGS credentials и публикует итог операции.
+        /// </summary>
         public Task ClearCachedIdentityAsync()
         {
             return RunOperationAsync(async () =>
             {
                 await _service.ClearCachedIdentityAsync();
-                return "Cached UGS identity очищена. Игровые данные оставлены без изменений.";
+                return RecordResult(
+                    "Данные входа на устройстве очищены.",
+                    "Cached UGS identity cleared; PlayerData was not changed.");
             });
         }
 
+        /// <summary>
+        /// Сообщает о недостающей локальной конфигурации и направляет пользователя в справку.
+        /// </summary>
         public void ReportMissingConfiguration()
         {
-            _lastResult = "Link не запущен: сначала исправь локальный cloudProjectId/clientId по инструкции.";
+            _lastResult = "Привязка не запущена: сначала выполни подготовку из справки.";
+            _lastTechnicalDetails = "Local cloudProjectId or Unity Player Accounts clientId is empty.";
             PresentationChanged?.Invoke();
         }
 
+        /// <summary>
+        /// Делегирует открытие Unity Dashboard сервису DEV-инструментов.
+        /// </summary>
         public void OpenDashboard()
         {
             _service.OpenDashboard();
@@ -148,13 +205,31 @@ namespace Assets.Scripts.DevTools.Account
             }
             catch (Exception ex)
             {
-                _lastResult = $"Ошибка: {ex.Message}";
+                _lastResult = "Операция завершилась ошибкой. Подробности — в диагностике.";
+                _lastTechnicalDetails = ex.ToString();
             }
             finally
             {
                 _isBusy = false;
                 PresentationChanged?.Invoke();
             }
+        }
+
+        private string RecordResult(string userMessage, string technicalDetails)
+        {
+            _lastTechnicalDetails = technicalDetails ?? string.Empty;
+            return userMessage ?? string.Empty;
+        }
+
+        private static string FormatSnapshot(AccountSnapshot snapshot)
+        {
+            return $"State={snapshot.State}; PlayerId={snapshot.PlayerId}; " +
+                   $"SignedIn={snapshot.IsSignedIn}; Linked={snapshot.IsLinked}; Error={snapshot.ErrorMessage}";
+        }
+
+        private static string FormatLinkResult(AccountLinkResult result)
+        {
+            return $"Status={result.Status}; PlayerId={result.PlayerId}; Error={result.ErrorMessage}";
         }
     }
 }

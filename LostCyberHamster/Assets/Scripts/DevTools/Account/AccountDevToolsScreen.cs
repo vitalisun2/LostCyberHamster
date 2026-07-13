@@ -30,6 +30,9 @@ namespace Assets.Scripts.DevTools.Account
 
         private string _detailTitle;
 
+        /// <summary>
+        /// Собирает account screen, связывает controller с view и настраивает начальную навигацию.
+        /// </summary>
         public AccountDevToolsScreen(
             Transform parent,
             Font font,
@@ -46,6 +49,9 @@ namespace Assets.Scripts.DevTools.Account
 
         public GameObject RootObject => _view.RootObject;
 
+        /// <summary>
+        /// Открывает account screen с основной страницы и обновляет presentation-состояние.
+        /// </summary>
         public void Show()
         {
             _confirmation.Cancel();
@@ -55,11 +61,17 @@ namespace Assets.Scripts.DevTools.Account
             RefreshPresentation();
         }
 
+        /// <summary>
+        /// Скрывает account screen.
+        /// </summary>
         public void Hide()
         {
             _view.SetVisible(false);
         }
 
+        /// <summary>
+        /// Возвращает на предыдущую account-страницу или в корневое DEV-меню.
+        /// </summary>
         public void GoBack()
         {
             if (_navigation.Current == AccountDevToolsPage.Confirmation)
@@ -77,11 +89,17 @@ namespace Assets.Scripts.DevTools.Account
             _returnToRoot();
         }
 
+        /// <summary>
+        /// Применяет внутренние отступы feature-панели к account view.
+        /// </summary>
         public void ApplyLayout(float left, float top, float right, float bottom)
         {
             _view.ApplyLayout(left, top, right, bottom);
         }
 
+        /// <summary>
+        /// Перерисовывает account view из текущего controller state.
+        /// </summary>
         public void RefreshPresentation()
         {
             _view.Render(_controller.GetViewState());

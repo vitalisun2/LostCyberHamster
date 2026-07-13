@@ -6,6 +6,8 @@ namespace Assets.Tests.EditMode
     /// <summary>
     /// Проверяет неизменяемые модели account-слоя, их значения по умолчанию и фабрики результатов.
     /// </summary>
+    [Category("AccountDevTools")]
+    [Timeout(5000)]
     public class AccountModelTests
     {
         [Test]

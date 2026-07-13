@@ -13,13 +13,16 @@ namespace Assets.Scripts.DevTools.Account
     /// <summary>
     /// Собирает account-диагностику и выполняет account/SDK-команды для DEV-меню.
     /// </summary>
-    internal sealed class AccountDevToolsService
+    internal sealed class AccountDevToolsService : IAccountDevToolsService
     {
         private const string _settingsResourceName = "UnityPlayerAccountSettings";
         private const string _dashboardUrl = "https://cloud.unity.com/home";
 
         private readonly IAccountService _accountService;
 
+        /// <summary>
+        /// Создаёт DEV-сервис поверх production account service.
+        /// </summary>
         public AccountDevToolsService(IAccountService accountService)
         {
             _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));

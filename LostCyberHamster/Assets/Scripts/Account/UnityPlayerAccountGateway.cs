@@ -1,75 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using Unity.Services.Authentication.PlayerAccounts;
 using Unity.Services.Core;
 
 namespace LostCyberHamster.Account
 {
-    /// <summary>
-    /// Предоставляет gateway минимальный порт к Unity Player Accounts SDK без прямой зависимости от static service locator.
-    /// </summary>
-    internal interface IUnityPlayerAccountSdk
-    {
-        event Action SignedIn;
-        event Action<RequestFailedException> SignInFailed;
-
-        bool IsSignedIn { get; }
-        string AccessToken { get; }
-
-        Task StartSignInAsync();
-        void SignOut();
-    }
-
-    /// <summary>
-    /// Предоставляет заменяемую границу ожидания для детерминированной проверки таймаутов gateway.
-    /// </summary>
-    internal interface IUnityPlayerAccountTimeout
-    {
-        Task WaitAsync(TimeSpan timeout);
-    }
-
-    /// <summary>
-    /// Адаптирует static PlayerAccountService к порту gateway.
-    /// </summary>
-    internal sealed class UnityPlayerAccountSdk : IUnityPlayerAccountSdk
-    {
-        public event Action SignedIn
-        {
-            add => PlayerAccountService.Instance.SignedIn += value;
-            remove => PlayerAccountService.Instance.SignedIn -= value;
-        }
-
-        public event Action<RequestFailedException> SignInFailed
-        {
-            add => PlayerAccountService.Instance.SignInFailed += value;
-            remove => PlayerAccountService.Instance.SignInFailed -= value;
-        }
-
-        public bool IsSignedIn => PlayerAccountService.Instance.IsSignedIn;
-        public string AccessToken => PlayerAccountService.Instance.AccessToken;
-
-        public Task StartSignInAsync()
-        {
-            return PlayerAccountService.Instance.StartSignInAsync();
-        }
-
-        public void SignOut()
-        {
-            PlayerAccountService.Instance.SignOut();
-        }
-    }
-
-    /// <summary>
-    /// Реализует рабочий таймаут через системный планировщик задач.
-    /// </summary>
-    internal sealed class UnityPlayerAccountTimeout : IUnityPlayerAccountTimeout
-    {
-        public Task WaitAsync(TimeSpan timeout)
-        {
-            return Task.Delay(timeout);
-        }
-    }
-
     /// <summary>
     /// Запускает свежий интерактивный Unity Player Accounts flow и возвращает access token только после SignedIn.
     /// </summary>

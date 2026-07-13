@@ -14,6 +14,9 @@ namespace Assets.Scripts.DevTools.Account
         public bool HasPending => _confirmedAction != null;
         public string Warning { get; private set; } = string.Empty;
 
+        /// <summary>
+        /// Сохраняет предупреждение и действие, ожидающее явного подтверждения.
+        /// </summary>
         public void Request(string warning, Func<Task> confirmedAction)
         {
             if (confirmedAction == null)
@@ -25,6 +28,9 @@ namespace Assets.Scripts.DevTools.Account
             _confirmedAction = confirmedAction;
         }
 
+        /// <summary>
+        /// Возвращает ожидающее действие ровно один раз и очищает confirmation-state.
+        /// </summary>
         public bool TryConsume(out Func<Task> confirmedAction)
         {
             confirmedAction = _confirmedAction;
@@ -32,6 +38,9 @@ namespace Assets.Scripts.DevTools.Account
             return confirmedAction != null;
         }
 
+        /// <summary>
+        /// Отменяет ожидающее действие и очищает предупреждение.
+        /// </summary>
         public void Cancel()
         {
             Warning = string.Empty;

@@ -10,6 +10,8 @@ namespace Assets.Tests.EditMode
     /// <summary>
     /// Проверяет публичные сценарии AccountService через детерминированные gateway-заглушки без Unity Services и сети.
     /// </summary>
+    [Category("AccountDevTools")]
+    [Timeout(5000)]
     public class AccountServiceTests
     {
         [Test]

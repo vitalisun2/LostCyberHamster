@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
@@ -9,16 +10,28 @@ namespace LostCyberHamster.Account
     /// </summary>
     internal sealed class UnityAuthenticationGateway : IUnityAuthenticationGateway
     {
-        public bool IsSignedIn => AuthenticationService.Instance.IsSignedIn;
+        private readonly IUnityAuthenticationSdk _sdk;
 
-        public string PlayerId => AuthenticationService.Instance.PlayerId ?? string.Empty;
+        internal UnityAuthenticationGateway()
+            : this(new UnityAuthenticationSdk())
+        {
+        }
+
+        internal UnityAuthenticationGateway(IUnityAuthenticationSdk sdk)
+        {
+            _sdk = sdk ?? throw new ArgumentNullException(nameof(sdk));
+        }
+
+        public bool IsSignedIn => _sdk.IsSignedIn;
+
+        public string PlayerId => _sdk.PlayerId ?? string.Empty;
 
         /// <summary>
         /// Инициализирует Unity Gaming Services для последующих вызовов Authentication SDK.
         /// </summary>
         public Task InitializeAsync()
         {
-            return UnityServices.InitializeAsync();
+            return _sdk.InitializeAsync();
         }
 
         /// <summary>
@@ -26,7 +39,7 @@ namespace LostCyberHamster.Account
         /// </summary>
         public Task SignInAnonymouslyAsync()
         {
-            return AuthenticationService.Instance.SignInAnonymouslyAsync();
+            return _sdk.SignInAnonymouslyAsync();
         }
 
         /// <summary>
@@ -34,8 +47,8 @@ namespace LostCyberHamster.Account
         /// </summary>
         public async Task<bool> IsUnityAccountLinkedAsync()
         {
-            var playerInfo = await AuthenticationService.Instance.GetPlayerInfoAsync();
-            return !string.IsNullOrEmpty(playerInfo.GetUnityId());
+            string unityAccountId = await _sdk.GetUnityAccountIdAsync();
+            return !string.IsNullOrEmpty(unityAccountId);
         }
 
         /// <summary>
@@ -45,7 +58,7 @@ namespace LostCyberHamster.Account
         {
             try
             {
-                await AuthenticationService.Instance.LinkWithUnityAsync(accessToken);
+                await _sdk.LinkWithUnityAsync(accessToken);
                 return AccountLinkResult.Success(PlayerId);
             }
             catch (AuthenticationException ex) when (ex.ErrorCode == AuthenticationErrorCodes.AccountAlreadyLinked)
@@ -67,8 +80,7 @@ namespace LostCyberHamster.Account
         /// </summary>
         public Task UnlinkUnityAsync()
         {
-            return AuthenticationService.Instance.UnlinkUnityAsync();
+            return _sdk.UnlinkUnityAsync();
         }
-
     }
 }
