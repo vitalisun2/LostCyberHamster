@@ -14,7 +14,7 @@
 
 ## Что читать перед работой
 
-Для любой задачи: прочитать запрос и релевантный контекст.
+Для любой задачи: прочитать запрос, релевантный контекст и `docs/rules/agent_efficiency_playbook.md` с обязательным fast operating protocol и накопленными process lessons.
 
 Для обычной code-edit задачи по умолчанию действует fast path: читать целевой код, соседние call sites и ближайший execution path. Не читать автоматически документацию, историю, generated snapshots, rule files и широкие related patterns, если они не нужны для корректной правки.
 
@@ -77,6 +77,6 @@
 | `code_conventions.md` | Конвенции кода, валидация, Unity-специфика |
 | `agent_tools.md` | Каталог проектных инструментов и автоматизаций |
 | `build_and_telegram_publishing.md` | Сборка игры и публикация тестовых билдов в Telegram через локальный skill |
-| `agent_efficiency_playbook.md` | Накопленные lessons и практические правила эффективности агента |
+| `agent_efficiency_playbook.md` | Обязательный fast operating protocol, накопленные process lessons и практические правила эффективности агента |
 | `temporary_current_rules.md` | Временные обязательные правила текущего этапа разработки |
 | `clean_code_by_b_martin/README.md` | Роутинг по кратким Clean Code-инструкциям для подготовки плана, реализации, рефакторинга и code review |
