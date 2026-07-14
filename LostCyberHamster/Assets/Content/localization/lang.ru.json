@@ -57,6 +57,18 @@
             "value": "Гость, аккаунт не привязан"
         },
         {
+            "key": "account_state_linking",
+            "value": "Привязываем аккаунт…"
+        },
+        {
+            "key": "account_state_linked",
+            "value": "Аккаунт привязан"
+        },
+        {
+            "key": "account_link_conflict",
+            "value": "Этот аккаунт уже привязан. Используйте вход в существующий аккаунт."
+        },
+        {
             "key": "account_state_error",
             "value": "Не удалось определить аккаунт"
         },

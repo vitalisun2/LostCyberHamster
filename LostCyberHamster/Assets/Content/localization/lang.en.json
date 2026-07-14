@@ -57,6 +57,18 @@
             "value": "Guest, account isn't linked"
         },
         {
+            "key": "account_state_linking",
+            "value": "Linking account…"
+        },
+        {
+            "key": "account_state_linked",
+            "value": "Account linked"
+        },
+        {
+            "key": "account_link_conflict",
+            "value": "This account is already linked. Use Sign in to existing account."
+        },
+        {
             "key": "account_state_error",
             "value": "Could not determine account"
         },

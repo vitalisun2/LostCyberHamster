@@ -50,7 +50,6 @@ namespace LostCyberHamster.UI
             _labelVersion.text = $"{Application.version}";
             _labelId.text = $"{SystemInfo.deviceUniqueIdentifier}";
 
-            _buttonLinkAccount.SetEnabled(false);
             SubscribeToAccountState();
             UpdateAccountState(_accountService.State);
         }
@@ -81,11 +80,43 @@ namespace LostCyberHamster.UI
                 AccountState.NotStarted => "account_state_not_started",
                 AccountState.Resolving => "account_state_resolving",
                 AccountState.Guest => "account_state_guest",
+                AccountState.Linking => "account_state_linking",
+                AccountState.Linked => "account_state_linked",
                 AccountState.Error => "account_state_error",
                 _ => "account_state_error"
             };
 
             _labelAccountState.text = LocalizationManager.GetLocalizedString(stateLocalizationKey);
+            _buttonLinkAccount.style.display = state == AccountState.Linked
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
+            _buttonLinkAccount.SetEnabled(state == AccountState.Guest);
+        }
+
+        private async void OnClickButtonLinkAccount(ClickEvent evt)
+        {
+            if (_accountService.State != AccountState.Guest)
+                return;
+
+            try
+            {
+                var result = await _accountService.LinkCurrentGuestAsync();
+                var modal = _modal;
+                if (result == AccountLinkResult.Conflict &&
+                    modal != null &&
+                    modal.resolvedStyle.display == DisplayStyle.Flex)
+                {
+                    var accountStateLabel = modal.Q<Label>("settings__lbl-account-state");
+                    if (accountStateLabel != null)
+                    {
+                        accountStateLabel.text = LocalizationManager.GetLocalizedString("account_link_conflict");
+                    }
+                }
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[Account] Link UI action failed: {exception.Message}");
+            }
         }
 
         private async void OnChangeLanguageAsync(ChangeEvent<string> evt)
@@ -111,6 +142,7 @@ namespace LostCyberHamster.UI
         {
             _buttonSave?.RegisterCallback<ClickEvent>(OnClickButtonSave);
             _buttonCancel?.RegisterCallback<ClickEvent>(OnClickButtonCancel);
+            _buttonLinkAccount?.RegisterCallback<ClickEvent>(OnClickButtonLinkAccount);
             _dropdownLanguages?.RegisterValueChangedCallback(OnChangeLanguageAsync);
             _toggleMusic?.RegisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.RegisterValueChangedCallback(OnChangeSoundAsync);
@@ -150,6 +182,7 @@ namespace LostCyberHamster.UI
         {
             _buttonSave?.UnregisterCallback<ClickEvent>(OnClickButtonSave);
             _buttonCancel?.UnregisterCallback<ClickEvent>(OnClickButtonCancel);
+            _buttonLinkAccount?.UnregisterCallback<ClickEvent>(OnClickButtonLinkAccount);
             _dropdownLanguages?.UnregisterValueChangedCallback(OnChangeLanguageAsync);
             _toggleMusic?.UnregisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.UnregisterValueChangedCallback(OnChangeSoundAsync);

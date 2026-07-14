@@ -35,6 +35,11 @@ namespace Assets.Scripts.Account
                 });
                 return AccountLinkResult.Linked;
             }
+            catch (AuthenticationException exception)
+                when (exception.ErrorCode == AuthenticationErrorCodes.AccountAlreadyLinked)
+            {
+                return AccountLinkResult.Conflict;
+            }
             catch
             {
                 return AccountLinkResult.Failed;

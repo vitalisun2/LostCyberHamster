@@ -122,5 +122,24 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(1, gateway.LinkCallCount);
             Assert.AreEqual(AccountState.Linked, service.State);
         }
+
+        [Test]
+        public async Task LinkCurrentGuestAsync_WhenAccountAlreadyLinked_PreservesGuestIdentity()
+        {
+            var gateway = new FakeAccountAuthenticationGateway
+            {
+                PlayerId = "guest-player-id",
+                LinkTask = Task.FromResult(AccountLinkResult.Conflict)
+            };
+            var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
+            service.Start();
+
+            var result = await service.LinkCurrentGuestAsync();
+
+            Assert.AreEqual(AccountLinkResult.Conflict, result);
+            Assert.AreEqual(AccountState.Guest, service.State);
+            Assert.AreEqual("guest-player-id", gateway.PlayerId);
+            Assert.AreEqual(1, gateway.LinkCallCount);
+        }
     }
 }

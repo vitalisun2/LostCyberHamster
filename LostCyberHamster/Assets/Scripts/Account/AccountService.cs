@@ -46,6 +46,14 @@ namespace Assets.Scripts.Account
                 if (resolutionVersion != _resolutionVersion)
                     return AccountLinkResult.Failed;
 
+                if (result == AccountLinkResult.Conflict)
+                {
+                    var playerIdPreserved = _authenticationGateway.PlayerId == playerId;
+                    SetState(AccountState.Guest);
+                    Debug.Log($"[Account] Link conflict: external account already linked. PlayerId preserved: {playerIdPreserved}.");
+                    return AccountLinkResult.Conflict;
+                }
+
                 if (result != AccountLinkResult.Linked)
                 {
                     SetState(AccountState.Guest);
