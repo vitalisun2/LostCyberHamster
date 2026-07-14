@@ -41,6 +41,30 @@
             "value": "ID"
         },
         {
+            "key": "lbl_account",
+            "value": "АККАУНТ"
+        },
+        {
+            "key": "account_state_not_started",
+            "value": "Аккаунт ещё не готов"
+        },
+        {
+            "key": "account_state_resolving",
+            "value": "Определяем аккаунт…"
+        },
+        {
+            "key": "account_state_guest",
+            "value": "Гость, аккаунт не привязан"
+        },
+        {
+            "key": "account_state_error",
+            "value": "Не удалось определить аккаунт"
+        },
+        {
+            "key": "btn_link_account",
+            "value": "ПРИВЯЗАТЬ АККАУНТ"
+        },
+        {
             "key": "lbl_version",
             "value": "ВЕРСИЯ"
         },

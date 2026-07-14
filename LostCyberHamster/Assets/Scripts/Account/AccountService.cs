@@ -11,6 +11,7 @@ namespace Assets.Scripts.Account
         private int _resolutionVersion;
 
         public AccountState State { get; private set; } = AccountState.NotStarted;
+        public event Action<AccountState> StateChanged;
 
         public AccountService(IAccountAuthenticationGateway authenticationGateway)
         {
@@ -28,7 +29,7 @@ namespace Assets.Scripts.Account
                 return;
 
             // Публикуем начало определения аккаунта.
-            State = AccountState.Resolving;
+            SetState(AccountState.Resolving);
             Debug.Log("[Account] State: Resolving");
 
             // Запускаем незавершённую пока логику гостя без ожидания.
@@ -44,7 +45,7 @@ namespace Assets.Scripts.Account
         {
             _resolutionVersion++;
             _authenticationGateway.SignOutAndClearLocalCredentials();
-            State = AccountState.NotStarted;
+            SetState(AccountState.NotStarted);
             Debug.Log("[Account] Test state reset. Local credentials cleared.");
         }
 #endif
@@ -73,7 +74,7 @@ namespace Assets.Scripts.Account
                     return;
                 }
 
-                State = AccountState.Guest;
+                SetState(AccountState.Guest);
                 Debug.Log(restoreGuest
                     ? "[Account] Guest restored."
                     : "[Account] Guest created.");
@@ -83,9 +84,21 @@ namespace Assets.Scripts.Account
                 if (resolutionVersion != _resolutionVersion)
                     return;
 
-                State = AccountState.Error;
+                SetState(AccountState.Error);
                 Debug.LogError($"[Account] Guest resolution failed: {exception.Message}");
             }
+        }
+
+        /// <summary>
+        /// Изменяет состояние аккаунта и уведомляет активных потребителей.
+        /// </summary>
+        private void SetState(AccountState state)
+        {
+            if (State == state)
+                return;
+
+            State = state;
+            StateChanged?.Invoke(state);
         }
     }
 }

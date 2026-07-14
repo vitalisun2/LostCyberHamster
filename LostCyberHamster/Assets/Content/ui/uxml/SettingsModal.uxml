@@ -21,6 +21,13 @@
             <Vues.GameCore.LocalizedLabel key="lbl_id" class="lcs-text w-px-320" />
             <engine:Label name="settings__lbl-id" class="lcs-text w-px-480" />
         </engine:VisualElement>
+        <engine:VisualElement class="mb-12" style="flex-grow: 0; flex-direction: row; align-items: flex-start;">
+            <Vues.GameCore.LocalizedLabel key="lbl_account" class="lcs-text w-px-320" style="margin-top: 32px;" />
+            <engine:VisualElement style="width: 480px; flex-grow: 0;">
+                <engine:Label name="settings__lbl-account-state" class="lcs-text" style="font-size: 24px;" />
+                <Vues.GameCore.LocalizedButton key="btn_link_account" name="settings__btn-link-account" class="lcs_btn bg-primary" style="width: 240px; height: 52px; font-size: 22px; margin-top: 4px; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+            </engine:VisualElement>
+        </engine:VisualElement>
         <engine:VisualElement class="mb-12" style="flex-grow: 0; flex-direction: row;">
             <Vues.GameCore.LocalizedLabel key="lbl_version" class="lcs-text w-px-320" />
             <engine:Label name="settings__lbl-version" class="lcs-text w-px-480" />

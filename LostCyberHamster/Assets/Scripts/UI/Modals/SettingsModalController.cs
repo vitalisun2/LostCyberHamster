@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Assets.Scripts.Account;
 using Assets.Scripts.System;
 using GameManagement;
 using UnityEngine;
@@ -17,13 +18,17 @@ namespace LostCyberHamster.UI
         private Toggle _toggleVibration => _modalContent.Q<Toggle>("settings__cbx-vibrate");
         private Label _labelVersion => _modalContent.Q<Label>("settings__lbl-version");
         private Label _labelId => _modalContent.Q<Label>("settings__lbl-id");
+        private Label _labelAccountState => _modalContent.Q<Label>("settings__lbl-account-state");
+        private Button _buttonLinkAccount => _modalContent.Q<Button>("settings__btn-link-account");
         private Button _buttonSave => _modalContent.Q<Button>("settings__btn-save");
         private Button _buttonCancel => _modalContent.Q<Button>("settings__btn-cancel");
 
+        private readonly AccountService _accountService;
         private SettingsData _settingsData = new();
 
-        public SettingsModalController(UIDocument uiDocument): base(uiDocument)
+        public SettingsModalController(UIDocument uiDocument, AccountService accountService): base(uiDocument)
         {
+            _accountService = accountService;
         }
 
         protected override async Task OnShowAsync()
@@ -44,6 +49,43 @@ namespace LostCyberHamster.UI
 
             _labelVersion.text = $"{Application.version}";
             _labelId.text = $"{SystemInfo.deviceUniqueIdentifier}";
+
+            _buttonLinkAccount.SetEnabled(false);
+            SubscribeToAccountState();
+            UpdateAccountState(_accountService.State);
+        }
+
+        private void SubscribeToAccountState()
+        {
+            _accountService.StateChanged -= OnAccountStateChanged;
+            _accountService.StateChanged += OnAccountStateChanged;
+        }
+
+        private void UnsubscribeFromAccountState()
+        {
+            _accountService.StateChanged -= OnAccountStateChanged;
+        }
+
+        private void OnAccountStateChanged(AccountState state)
+        {
+            UpdateAccountState(state);
+        }
+
+        /// <summary>
+        /// Показывает актуальное пользовательское описание состояния аккаунта одной строкой.
+        /// </summary>
+        private void UpdateAccountState(AccountState state)
+        {
+            var stateLocalizationKey = state switch
+            {
+                AccountState.NotStarted => "account_state_not_started",
+                AccountState.Resolving => "account_state_resolving",
+                AccountState.Guest => "account_state_guest",
+                AccountState.Error => "account_state_error",
+                _ => "account_state_error"
+            };
+
+            _labelAccountState.text = LocalizationManager.GetLocalizedString(stateLocalizationKey);
         }
 
         private async void OnChangeLanguageAsync(ChangeEvent<string> evt)
@@ -60,6 +102,7 @@ namespace LostCyberHamster.UI
 
             GameDataManager.Settings = _settingsData;
             GameDataManager.SaveSettings();
+            UnsubscribeFromAccountState();
             Hide();
             UIManager.OnRepaintScreen();
         }
@@ -72,7 +115,8 @@ namespace LostCyberHamster.UI
             _toggleMusic?.RegisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.RegisterValueChangedCallback(OnChangeSoundAsync);
             _toggleVibration?.RegisterValueChangedCallback(OnChangeVibrationAsync);
-
+            _buttonCloseModal.UnregisterCallback<ClickEvent>(OnClickButtonClose);
+            _buttonCloseModal.RegisterCallback<ClickEvent>(OnClickButtonClose);
         }
 
         private void OnChangeSoundAsync(ChangeEvent<bool> evt)
@@ -93,7 +137,13 @@ namespace LostCyberHamster.UI
 
         private void OnClickButtonCancel(ClickEvent evt)
         {
+            UnsubscribeFromAccountState();
             Hide();
+        }
+
+        private void OnClickButtonClose(ClickEvent evt)
+        {
+            UnsubscribeFromAccountState();
         }
 
         protected override void OnUnsubscribeFromEvents()
@@ -104,6 +154,8 @@ namespace LostCyberHamster.UI
             _toggleMusic?.UnregisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.UnregisterValueChangedCallback(OnChangeSoundAsync);
             _toggleVibration?.UnregisterValueChangedCallback(OnChangeVibrationAsync);
+            _buttonCloseModal.UnregisterCallback<ClickEvent>(OnClickButtonClose);
+            UnsubscribeFromAccountState();
         }
 
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Assets.Scripts.Account;
 using GameAds;
 using GameManagement;
 using LostCyberHamster.UI;
@@ -18,13 +19,20 @@ namespace Assets.Scripts.Entry_Points
         private UIDocument _uiDocument;
 
         private UIManager _uiManager;
+        private AccountService _accountService;
+
+        [Inject]
+        private void Construct(AccountService accountService)
+        {
+            _accountService = accountService;
+        }
 
         private async Task Awake()
         {
             _uiManager = new UIManager(new IScreenController[]
             {
                 new HomeScreenController(_uiDocument),
-                new SettingsModalController(_uiDocument),
+                new SettingsModalController(_uiDocument, _accountService),
                 new CharacterScreenController(_uiDocument),
                 new QuestsScreenController(_uiDocument),
                 new SelectLevelScreenController(_uiDocument),

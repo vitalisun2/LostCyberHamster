@@ -41,6 +41,30 @@
             "value": "ID"
         },
         {
+            "key": "lbl_account",
+            "value": "ACCOUNT"
+        },
+        {
+            "key": "account_state_not_started",
+            "value": "Account isn't ready yet"
+        },
+        {
+            "key": "account_state_resolving",
+            "value": "Checking account…"
+        },
+        {
+            "key": "account_state_guest",
+            "value": "Guest, account isn't linked"
+        },
+        {
+            "key": "account_state_error",
+            "value": "Could not determine account"
+        },
+        {
+            "key": "btn_link_account",
+            "value": "LINK ACCOUNT"
+        },
+        {
             "key": "lbl_version",
             "value": "VERSION"
         },
