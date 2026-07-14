@@ -1,6 +1,8 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+using Assets.Scripts.Account;
 using Assets.Scripts.DevTools.Core;
 using UnityEngine;
+using Zenject;
 
 namespace Assets.Scripts.DevTools
 {
@@ -11,25 +13,10 @@ namespace Assets.Scripts.DevTools
     {
         private DevToolsOverlayShell _shell;
 
-        private void Awake()
+        [Inject]
+        private void Construct(AccountService accountService)
         {
-            if (!DevToolsMenuBootstrap.TryRegister(this))
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                DontDestroyOnLoad(gameObject);
-            }
-
-            _shell ??= new DevToolsOverlayShell(gameObject);
-        }
-
-        private void OnDestroy()
-        {
-            DevToolsMenuBootstrap.Unregister(this);
+            _shell ??= new DevToolsOverlayShell(gameObject, accountService);
         }
 
         private void Update()

@@ -37,6 +37,19 @@ namespace Assets.Scripts.Account
             _ = ResolveGuestAsync(resolutionVersion);
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Очищает только локальные Unity Authentication credentials и возвращает сервис в начальное состояние.
+        /// </summary>
+        public void ResetForTesting()
+        {
+            _resolutionVersion++;
+            AuthenticationService.Instance.SignOut(clearCredentials: true);
+            State = AccountState.NotStarted;
+            Debug.Log("[Account] Test state reset. Local credentials cleared.");
+        }
+#endif
+
         /// <summary>
         /// Восстанавливает существующего гостя или создаёт нового по локальной сессии.
         /// </summary>

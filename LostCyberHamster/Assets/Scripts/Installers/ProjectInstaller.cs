@@ -1,6 +1,7 @@
-﻿using GameManagement;
-using UnityEngine;
-using Vues.GameCore;
+using Assets.Scripts.Account;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using Assets.Scripts.DevTools;
+#endif
 using Zenject;
 
 namespace Assets.Scripts.Installers
@@ -9,6 +10,14 @@ namespace Assets.Scripts.Installers
     {
         public override void InstallBindings()
         {
+            Container.Bind<AccountService>().AsSingle();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Container.Bind<DevToolsMenuOverlay>()
+                .FromNewComponentOnNewGameObject()
+                .WithGameObjectName("[DevToolsMenu]")
+                .AsSingle()
+                .NonLazy();
+#endif
         }
     }
 }

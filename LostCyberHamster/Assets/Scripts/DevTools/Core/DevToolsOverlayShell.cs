@@ -1,4 +1,5 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+using Assets.Scripts.Account;
 using Assets.Scripts.DevTools.Account;
 using Assets.Scripts.DevTools.Gameplay;
 using Assets.Scripts.DevTools.Root;
@@ -49,7 +50,7 @@ namespace Assets.Scripts.DevTools.Core
         private bool _isPanelOpen;
         private bool _isFeatureScreenOpen;
 
-        public DevToolsOverlayShell(GameObject host)
+        public DevToolsOverlayShell(GameObject host, AccountService accountService)
         {
             _host = host;
             EnsureEventSystem();
@@ -121,6 +122,7 @@ namespace Assets.Scripts.DevTools.Core
             _accountScreen = new AccountDevToolsScreen(
                 _panelObject.transform,
                 font,
+                accountService,
                 ShowRootScreen,
                 SetTitle);
             _gameplayScreen = new GameplayDevToolsScreen(
