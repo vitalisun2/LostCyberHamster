@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Unity.Services.Authentication;
 using UnityEngine;
 
 namespace Assets.Scripts.Account
@@ -7,11 +8,15 @@ namespace Assets.Scripts.Account
     public enum AccountState
     {
         NotStarted,
-        Resolving
+        Resolving,
+        Guest,
+        Error
     }
 
     public sealed class AccountService
     {
+        private int _resolutionVersion;
+
         public AccountState State { get; private set; } = AccountState.NotStarted;
 
         /// <summary>
@@ -19,26 +24,59 @@ namespace Assets.Scripts.Account
         /// </summary>
         public void Start()
         {
+            // Не запускаем определение аккаунта повторно.
+            if (State != AccountState.NotStarted)
+                return;
+
             // Публикуем начало определения аккаунта.
             State = AccountState.Resolving;
             Debug.Log("[Account] State: Resolving");
 
             // Запускаем незавершённую пока логику гостя без ожидания.
-            _ = ResolveGuestAsync();
+            var resolutionVersion = ++_resolutionVersion;
+            _ = ResolveGuestAsync(resolutionVersion);
         }
 
         /// <summary>
-        /// Наблюдает исключения фонового определения гостя.
+        /// Восстанавливает существующего гостя или создаёт нового по локальной сессии.
         /// </summary>
-        private async Task ResolveGuestAsync()
+        private async Task ResolveGuestAsync(int resolutionVersion)
         {
             try
             {
-                await Task.CompletedTask;
+                // Выбираем ровно один сценарий по наличию локальной сессии.
+                var authenticationService = AuthenticationService.Instance;
+                var restoreGuest = authenticationService.SessionTokenExists;
+
+                if (restoreGuest)
+                    Debug.Log("[Account] Scenario selected: RestoreGuest.");
+                else
+                    Debug.Log("[Account] Scenario selected: CreateGuest.");
+
+                // Выполняем только выбранный сценарий без fallback на создание.
+                await authenticationService.SignInAnonymouslyAsync(new SignInOptions
+                {
+                    CreateAccount = !restoreGuest
+                });
+
+                if (resolutionVersion != _resolutionVersion)
+                {
+                    authenticationService.SignOut(clearCredentials: true);
+                    return;
+                }
+
+                State = AccountState.Guest;
+                Debug.Log(restoreGuest
+                    ? "[Account] Guest restored."
+                    : "[Account] Guest created.");
             }
             catch (Exception exception)
             {
-                Debug.LogException(exception);
+                if (resolutionVersion != _resolutionVersion)
+                    return;
+
+                State = AccountState.Error;
+                Debug.LogError($"[Account] Guest resolution failed: {exception.Message}");
             }
         }
     }
