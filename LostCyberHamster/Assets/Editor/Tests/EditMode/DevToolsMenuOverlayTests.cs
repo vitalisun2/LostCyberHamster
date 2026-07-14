@@ -11,7 +11,6 @@ namespace Assets.Tests.EditMode
     /// <summary>
     /// Проверяет pointer-взаимодействие с общей оболочкой DEV-меню.
     /// </summary>
-    [Category("AccountDevTools")]
     [Timeout(5000)]
     public sealed class DevToolsMenuOverlayTests
     {
@@ -51,7 +50,7 @@ namespace Assets.Tests.EditMode
         }
 
         [Test]
-        public void BackFromAccountActivatesOnlyRootScreen()
+        public void AccountButtonOpensEmptyScreenAndBackReturnsToRoot()
         {
             GameObject host = new GameObject("DevToolsMenuOverlayNavigationTest");
             GameObject eventSystemObject = new GameObject("DevToolsMenuOverlayNavigationEventSystemTest");
@@ -70,23 +69,15 @@ namespace Assets.Tests.EditMode
                     panel.Find("RootScreen/RootNavigation/Content/AccountButton").gameObject,
                     eventSystem);
 
+                GameObject accountScreen = panel.Find("AccountScreen").gameObject;
                 Assert.IsFalse(panel.Find("RootScreen").gameObject.activeSelf);
-                Assert.IsTrue(panel.Find("AccountScreen").gameObject.activeSelf);
+                Assert.IsTrue(accountScreen.activeSelf);
+                Assert.AreEqual(0, accountScreen.transform.childCount);
 
                 ExecutePointerClick(panel.Find("BackButton").gameObject, eventSystem);
 
                 Assert.IsTrue(panel.Find("RootScreen").gameObject.activeSelf);
-                Assert.IsFalse(panel.Find("AccountScreen").gameObject.activeSelf);
-                int panelCount = 0;
-                foreach (Transform child in host.transform)
-                {
-                    if (child.name == "Panel")
-                    {
-                        panelCount++;
-                    }
-                }
-
-                Assert.AreEqual(1, panelCount);
+                Assert.IsFalse(accountScreen.activeSelf);
             }
             finally
             {

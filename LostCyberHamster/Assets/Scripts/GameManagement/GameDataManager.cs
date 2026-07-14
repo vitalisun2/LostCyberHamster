@@ -4,9 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.System;
 using GameManagement.Progress;
-using Unity.Services.Authentication;
 using Unity.Services.CloudSave;
-using Unity.Services.Core;
 using UnityEngine;
 using Vues.GameCore;
 

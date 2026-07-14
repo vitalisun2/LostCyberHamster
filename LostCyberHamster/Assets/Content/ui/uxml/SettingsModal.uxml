@@ -25,13 +25,6 @@
             <Vues.GameCore.LocalizedLabel key="lbl_version" class="lcs-text w-px-320" />
             <engine:Label name="settings__lbl-version" class="lcs-text w-px-480" />
         </engine:VisualElement>
-        <engine:VisualElement class="mb-12 settings-account-row">
-            <Vues.GameCore.LocalizedLabel key="account_label" class="lcs-text w-px-320 settings-account-row__label" />
-            <engine:VisualElement class="settings-account-row__actions">
-                <engine:Label name="settings__lbl-account-status" class="lcs-text settings-account-row__status" />
-                <engine:Button name="settings__btn-save-progress" class="lcs_btn settings-account-row__button" />
-            </engine:VisualElement>
-        </engine:VisualElement>
         <engine:VisualElement style="flex-grow: 1; flex-direction: row; justify-content: center; align-items: flex-end;">
             <Vues.GameCore.LocalizedButton key="btn_cancel" name="settings__btn-cancel" class="lcs_btn bg-danger w-px-380" />
             <Vues.GameCore.LocalizedButton key="btn_save" name="settings__btn-save" class="lcs_btn bg-primary w-px-380" />

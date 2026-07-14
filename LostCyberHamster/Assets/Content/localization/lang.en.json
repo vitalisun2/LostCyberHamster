@@ -143,54 +143,6 @@
         {
             "key": "story-009-title",
             "value": "Collect 10 Energy Items"
-        },
-        {
-            "key": "account_save_title",
-            "value": "SAVE PROGRESS"
-        },
-        {
-            "key": "account_save_description",
-            "value": "Link your account to restore progress after reinstalling or on another device."
-        },
-        {
-            "key": "account_save_later",
-            "value": "LATER"
-        },
-        {
-            "key": "account_save_button",
-            "value": "SAVE"
-        },
-        {
-            "key": "account_label",
-            "value": "ACCOUNT"
-        },
-        {
-            "key": "account_guest",
-            "value": "GUEST"
-        },
-        {
-            "key": "account_saved",
-            "value": "PROGRESS SAVED"
-        },
-        {
-            "key": "account_saved_button",
-            "value": "SAVED"
-        },
-        {
-            "key": "account_save_in_progress",
-            "value": "SAVING..."
-        },
-        {
-            "key": "account_save_error",
-            "value": "SAVE ERROR"
-        },
-        {
-            "key": "account_already_linked",
-            "value": "ACCOUNT ALREADY USED"
-        },
-        {
-            "key": "account_save_failed_retry",
-            "value": "Could not save. Try later."
         }
     ]
 }

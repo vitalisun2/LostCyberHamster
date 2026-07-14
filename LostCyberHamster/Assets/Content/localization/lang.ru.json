@@ -143,54 +143,6 @@
         {
             "key": "story-009-title",
             "value": "Собери 10 энергетических предметов"
-        },
-        {
-            "key": "account_save_title",
-            "value": "СОХРАНИТЬ ПРОГРЕСС"
-        },
-        {
-            "key": "account_save_description",
-            "value": "Привяжи аккаунт, чтобы восстановить прогресс после переустановки или на другом устройстве."
-        },
-        {
-            "key": "account_save_later",
-            "value": "ПОЗЖЕ"
-        },
-        {
-            "key": "account_save_button",
-            "value": "СОХРАНИТЬ"
-        },
-        {
-            "key": "account_label",
-            "value": "АККАУНТ"
-        },
-        {
-            "key": "account_guest",
-            "value": "ГОСТЬ"
-        },
-        {
-            "key": "account_saved",
-            "value": "ПРОГРЕСС СОХРАНЁН"
-        },
-        {
-            "key": "account_saved_button",
-            "value": "СОХРАНЕНО"
-        },
-        {
-            "key": "account_save_in_progress",
-            "value": "СОХРАНЯЕМ..."
-        },
-        {
-            "key": "account_save_error",
-            "value": "ОШИБКА СОХРАНЕНИЯ"
-        },
-        {
-            "key": "account_already_linked",
-            "value": "АККАУНТ УЖЕ ИСПОЛЬЗУЕТСЯ"
-        },
-        {
-            "key": "account_save_failed_retry",
-            "value": "Не удалось сохранить. Попробуй позже."
         }
     ]
 }

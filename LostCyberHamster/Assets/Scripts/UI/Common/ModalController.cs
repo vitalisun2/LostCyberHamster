@@ -21,11 +21,6 @@ namespace LostCyberHamster.UI
             _root = uiDocument.rootVisualElement;
         }
 
-        protected ModalController(VisualElement root)
-        {
-            _root = root;
-        }
-
         public async Task ShowAsync()
         {
             var asset = await Addressables.LoadAssetAsync<VisualTreeAsset>(_modalAssetName.ToString()).Task;

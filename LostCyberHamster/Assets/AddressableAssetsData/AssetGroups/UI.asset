@@ -207,11 +207,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c15d9824e5ef74c42b3237800a5dd7b7
-    m_Address: SigninModal
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e0fdcc782c1a44d6aa8c6c5419e95460
     m_Address: story-004
     m_ReadOnly: 0

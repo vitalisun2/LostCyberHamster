@@ -10,7 +10,6 @@ namespace Assets.Scripts.Installers
 
         public override void InstallBindings()
         {
-            Container.Bind<ILoadingTask>().To<AuthenticateUserLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitGameRepositoryLoadingTask>().AsTransient();
             //Container.Bind<ILoadingTask>().To<LoadAddressablesLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitAnalyticsManagerLoadingTask>().AsTransient();

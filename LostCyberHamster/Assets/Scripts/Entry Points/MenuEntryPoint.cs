@@ -30,7 +30,6 @@ namespace Assets.Scripts.Entry_Points
                 new SelectLevelScreenController(_uiDocument),
                 new ShopModalController(_uiDocument),
                 new DailyTasksScreenController(_uiDocument),
-                new SigninModalController(_uiDocument),
             });
 
             await _uiManager.LoadScreenAsync(ScreenEnum.HomeScreen);
@@ -38,7 +37,7 @@ namespace Assets.Scripts.Entry_Points
             await QuestManager.Init();
         }
 
-        private async void Start()
+        private void Start()
         {
             GameDataManager.PlayerData.Crystals = CrystalStorage.GetCurrentBalance();
             GameDataManager.PlayerData.Money = MoneyStorage.GetCurrentBalance();
