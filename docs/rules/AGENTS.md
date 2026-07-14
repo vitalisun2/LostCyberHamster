@@ -20,8 +20,8 @@
 
 Дополнительные источники читать только по явной необходимости или запросу:
 
-1. `docs/rules/code_conventions.md` — если нужно уточнить команду валидации, Unity/C# compile или формат проекта.
-2. `docs/rules/agent_tools.md` — если задача требует project automation, логов, test-level validation или editor tools.
+1. `docs/rules/code_conventions.md` — если нужно уточнить разрешённую автоматизированную проверку, Unity/C# compile или формат проекта.
+2. `docs/rules/agent_tools.md` — если задача требует разрешённой project automation, логов, editor tools или подготовки пользовательского test-level сценария.
 3. `docs/rules/build_and_telegram_publishing.md` — если задача требует сборки игры или публикации билда в Telegram.
 4. `docs/architecture_knowledge_base.md` — если задача требует архитектурного контекста.
 5. Активный план в `docs/Planning/in-progress/`, если задача прямо привязана к плану.
@@ -74,9 +74,9 @@
 |---|---|
 | `AGENTS.md` | Точка входа, роутинг, профиль, стиль, процесс, мета-правила |
 | `architecting_and_coding_principles.md` | Общие принципы архитектуры и кодирования |
-| `code_conventions.md` | Конвенции кода, валидация, Unity-специфика |
+| `code_conventions.md` | Конвенции кода, технические правила автоматизированных проверок, Unity-специфика |
 | `agent_tools.md` | Каталог проектных инструментов и автоматизаций |
 | `build_and_telegram_publishing.md` | Сборка игры и публикация тестовых билдов в Telegram через локальный skill |
-| `agent_efficiency_playbook.md` | Обязательный fast operating protocol, накопленные process lessons и практические правила эффективности агента |
+| `agent_efficiency_playbook.md` | Обязательный fast operating protocol, передача ручной проверки пользователю, process lessons и практические правила эффективности агента |
 | `temporary_current_rules.md` | Временные обязательные правила текущего этапа разработки |
 | `clean_code_by_b_martin/README.md` | Роутинг по кратким Clean Code-инструкциям для подготовки плана, реализации, рефакторинга и code review |
