@@ -25,6 +25,7 @@
 3. `docs/rules/build_and_telegram_publishing.md` — если задача требует сборки игры или публикации билда в Telegram.
 4. `docs/architecture_knowledge_base.md` — если задача требует архитектурного контекста.
 5. Активный план в `docs/Planning/in-progress/`, если задача прямо привязана к плану.
+6. `docs/refactoring/` и `docs/rules/clean_code_by_b_martin/README.md` — только для явно запрошенного или одобренного пользователем рефакторинга, задачи на архитектуру/рефакторинг либо после выявления конкретного code smell и получения одобрения на такую работу. Для обычной ограниченной реализации, bug fix, UI-задачи или commit-задачи эти материалы не обязательны.
 
 ## Профиль пользователя
 
@@ -79,4 +80,4 @@
 | `build_and_telegram_publishing.md` | Сборка игры и публикация тестовых билдов в Telegram через локальный skill |
 | `agent_efficiency_playbook.md` | Обязательный fast operating protocol, передача ручной проверки пользователю, process lessons и практические правила эффективности агента |
 | `temporary_current_rules.md` | Временные обязательные правила текущего этапа разработки |
-| `clean_code_by_b_martin/README.md` | Роутинг по кратким Clean Code-инструкциям для подготовки плана, реализации, рефакторинга и code review |
+| `clean_code_by_b_martin/README.md` | Роутинг по кратким Clean Code-инструкциям только для одобренного рефакторинга, архитектурно-рефакторинговых задач или конкретного выявленного code smell |
