@@ -1,17 +1,10 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using UnityEngine;
 
 namespace Assets.Scripts.Account
 {
-    public enum AccountState
-    {
-        NotStarted,
-        Resolving,
-        Guest,
-        Error
-    }
 
     public sealed class AccountService
     {
