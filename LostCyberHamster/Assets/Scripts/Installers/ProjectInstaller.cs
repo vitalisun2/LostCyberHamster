@@ -13,6 +13,9 @@ namespace Assets.Scripts.Installers
             Container.Bind<IAccountAuthenticationGateway>()
                 .To<UnityAccountAuthenticationGateway>()
                 .AsSingle();
+            Container.Bind<IUnityPlayerAccountGateway>()
+                .To<UnityPlayerAccountGateway>()
+                .AsSingle();
             Container.Bind<AccountService>().AsSingle();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Container.Bind<DevToolsMenuOverlay>()

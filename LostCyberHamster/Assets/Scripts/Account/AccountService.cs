@@ -8,15 +8,66 @@ namespace Assets.Scripts.Account
     public sealed class AccountService
     {
         private readonly IAccountAuthenticationGateway _authenticationGateway;
+        private readonly IUnityPlayerAccountGateway _playerAccountGateway;
         private int _resolutionVersion;
 
         public AccountState State { get; private set; } = AccountState.NotStarted;
         public event Action<AccountState> StateChanged;
 
-        public AccountService(IAccountAuthenticationGateway authenticationGateway)
+        public AccountService(
+            IAccountAuthenticationGateway authenticationGateway,
+            IUnityPlayerAccountGateway playerAccountGateway)
         {
             _authenticationGateway = authenticationGateway
                 ?? throw new ArgumentNullException(nameof(authenticationGateway));
+            _playerAccountGateway = playerAccountGateway
+                ?? throw new ArgumentNullException(nameof(playerAccountGateway));
+        }
+
+        /// <summary>
+        /// Привязывает текущего гостя к Unity Player Account без смены Player ID.
+        /// </summary>
+        public async Task<AccountLinkResult> LinkCurrentGuestAsync()
+        {
+            if (State != AccountState.Guest)
+                return AccountLinkResult.Failed;
+
+            var playerId = _authenticationGateway.PlayerId;
+            var resolutionVersion = ++_resolutionVersion;
+            SetState(AccountState.Linking);
+
+            try
+            {
+                var accessToken = await _playerAccountGateway.SignInAsync();
+                if (resolutionVersion != _resolutionVersion)
+                    return AccountLinkResult.Failed;
+
+                var result = await _authenticationGateway.LinkWithUnityAsync(accessToken);
+                if (resolutionVersion != _resolutionVersion)
+                    return AccountLinkResult.Failed;
+
+                if (result != AccountLinkResult.Linked)
+                {
+                    SetState(AccountState.Guest);
+                    return result;
+                }
+
+                if (_authenticationGateway.PlayerId != playerId)
+                {
+                    SetState(AccountState.Guest);
+                    return AccountLinkResult.Failed;
+                }
+
+                SetState(AccountState.Linked);
+                return AccountLinkResult.Linked;
+            }
+            catch
+            {
+                if (resolutionVersion == _resolutionVersion)
+                    SetState(AccountState.Guest);
+
+                return AccountLinkResult.Failed;
+            }
         }
 
         /// <summary>

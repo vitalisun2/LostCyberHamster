@@ -12,12 +12,33 @@ namespace Assets.Scripts.Account
 
         public bool IsUnityPlayerAccountLinked => AuthenticationService.Instance.PlayerInfo?.GetUnityId() != null;
 
+        public string PlayerId => AuthenticationService.Instance.PlayerId;
+
         public Task SignInAnonymouslyAsync(bool createAccount)
         {
             return AuthenticationService.Instance.SignInAnonymouslyAsync(new SignInOptions
             {
                 CreateAccount = createAccount
             });
+        }
+
+        /// <summary>
+        /// Привязывает текущую identity к Unity Player Account без принудительной замены связи.
+        /// </summary>
+        public async Task<AccountLinkResult> LinkWithUnityAsync(string accessToken)
+        {
+            try
+            {
+                await AuthenticationService.Instance.LinkWithUnityAsync(accessToken, new LinkOptions
+                {
+                    ForceLink = false
+                });
+                return AccountLinkResult.Linked;
+            }
+            catch
+            {
+                return AccountLinkResult.Failed;
+            }
         }
 
         public void SignOutAndClearLocalCredentials()

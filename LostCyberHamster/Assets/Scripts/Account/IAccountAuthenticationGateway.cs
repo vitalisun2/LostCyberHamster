@@ -11,7 +11,11 @@ namespace Assets.Scripts.Account
 
         bool IsUnityPlayerAccountLinked { get; }
 
+        string PlayerId { get; }
+
         Task SignInAnonymouslyAsync(bool createAccount);
+
+        Task<AccountLinkResult> LinkWithUnityAsync(string accessToken);
 
         void SignOutAndClearLocalCredentials();
     }

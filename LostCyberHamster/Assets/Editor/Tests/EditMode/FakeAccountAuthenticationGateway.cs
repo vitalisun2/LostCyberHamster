@@ -9,6 +9,8 @@ namespace Assets.Tests.EditMode
 
         public bool IsUnityPlayerAccountLinked { get; set; }
 
+        public string PlayerId { get; set; } = "guest-player-id";
+
         public bool? LastCreateAccount { get; private set; }
 
         public int SignInCallCount { get; private set; }
@@ -17,11 +19,24 @@ namespace Assets.Tests.EditMode
 
         public Task SignInTask { get; set; } = Task.CompletedTask;
 
+        public Task<AccountLinkResult> LinkTask { get; set; } = Task.FromResult(AccountLinkResult.Linked);
+
+        public string LastAccessToken { get; private set; }
+
+        public int LinkCallCount { get; private set; }
+
         public Task SignInAnonymouslyAsync(bool createAccount)
         {
             SignInCallCount++;
             LastCreateAccount = createAccount;
             return SignInTask;
+        }
+
+        public Task<AccountLinkResult> LinkWithUnityAsync(string accessToken)
+        {
+            LinkCallCount++;
+            LastAccessToken = accessToken;
+            return LinkTask;
         }
 
         public void SignOutAndClearLocalCredentials()

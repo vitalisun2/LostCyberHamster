@@ -18,7 +18,7 @@ namespace Assets.Tests.EditMode
             {
                 SessionTokenExists = sessionTokenExists
             };
-            var service = new AccountService(gateway);
+            var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
 
             service.Start();
 
@@ -34,7 +34,7 @@ namespace Assets.Tests.EditMode
                 SessionTokenExists = true,
                 IsUnityPlayerAccountLinked = true
             };
-            var service = new AccountService(gateway);
+            var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
 
             service.Start();
 
@@ -50,7 +50,7 @@ namespace Assets.Tests.EditMode
                 SessionTokenExists = true,
                 SignInTask = Task.FromException(new InvalidOperationException("sign-in failed"))
             };
-            var service = new AccountService(gateway);
+            var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
 
             var loggerWasEnabled = Debug.unityLogger.logEnabled;
             try
@@ -76,7 +76,7 @@ namespace Assets.Tests.EditMode
             {
                 SignInTask = pendingSignIn.Task
             };
-            var service = new AccountService(gateway);
+            var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
 
             service.Start();
             service.Start();
@@ -93,7 +93,7 @@ namespace Assets.Tests.EditMode
             {
                 SignInTask = pendingSignIn.Task
             };
-            var service = new AccountService(gateway);
+            var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
             service.Start();
 
             service.ResetForTesting();
@@ -102,6 +102,25 @@ namespace Assets.Tests.EditMode
 
             Assert.AreEqual(2, gateway.ClearCredentialsCallCount);
             Assert.AreEqual(AccountState.NotStarted, service.State);
+        }
+
+        [Test]
+        public async Task LinkCurrentGuestAsync_WhenSuccessful_PreservesPlayerIdAndSetsLinked()
+        {
+            var gateway = new FakeAccountAuthenticationGateway
+            {
+                PlayerId = "guest-player-id"
+            };
+            var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
+            service.Start();
+
+            var result = await service.LinkCurrentGuestAsync();
+
+            Assert.AreEqual(AccountLinkResult.Linked, result);
+            Assert.AreEqual("guest-player-id", gateway.PlayerId);
+            Assert.AreEqual("access-token", gateway.LastAccessToken);
+            Assert.AreEqual(1, gateway.LinkCallCount);
+            Assert.AreEqual(AccountState.Linked, service.State);
         }
     }
 }

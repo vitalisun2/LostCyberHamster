@@ -92,6 +92,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Simulation\InProgressProjectionHelper.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnRoof\SuperJumpOnRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\ScrollRepeatMechanic.cs" />
+    <Compile Include="Assets\Scripts\Account\IUnityPlayerAccountGateway.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitSimulator.cs" />
     <Compile Include="Assets\Scripts\System\Resources\AddressableLocationsLease.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenController.cs" />
@@ -229,6 +230,7 @@
     <Compile Include="Assets\Scripts\Gameplay\ActionTypeEnum.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranchMetricsComparer.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialSkinLessonSandboxActions.cs" />
+    <Compile Include="Assets\Scripts\Account\AccountLinkResult.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnSimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialExternalInputSuppressor.cs" />
@@ -396,6 +398,7 @@
     <Compile Include="Assets\Scripts\DevTools\Account\AccountDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CollectCoinsOrBonusAction.cs" />
     <Compile Include="Assets\Scripts\UI\Components\BaseStorageUI.cs" />
+    <Compile Include="Assets\Scripts\Account\UnityPlayerAccountGateway.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelInfo.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitIntroAssetsLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\JumpOnRoofSpecification.cs" />

@@ -5,6 +5,7 @@ namespace Assets.Scripts.Account
         NotStarted,
         Resolving,
         Guest,
+        Linking,
         Linked,
         Error
     }
