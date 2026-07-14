@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Assets.Scripts.System;
 using Unity.Services.Analytics;
-using Unity.Services.Core;
 using UnityEngine;
 using Vues.GameCore;
 
@@ -10,7 +9,7 @@ public static class AnalyticsManager
     private static bool _initialized = false;
 
     /// <summary>
-    /// Initializes the analytics service.
+    /// Инициализирует сервис аналитики после готовности Unity Gaming Services.
     /// </summary>
     public static async Task InitializeAsync()
     {
@@ -25,7 +24,6 @@ public static class AnalyticsManager
 
         try
         {
-            await UnityServices.InitializeAsync();
             AnalyticsService.Instance.StartDataCollection();
             _initialized = true;
 
@@ -39,7 +37,7 @@ public static class AnalyticsManager
     }
 
     /// <summary>
-    /// Subscribes to game events for analytics tracking.
+    /// Подписывается на игровые события для отправки аналитики.
     /// </summary>
     private static void SubscribeToEvents()
     {
@@ -49,7 +47,7 @@ public static class AnalyticsManager
     }
 
     /// <summary>
-    /// Unsubscribes from game events to prevent memory leaks.
+    /// Отписывается от игровых событий аналитики.
     /// </summary>
     private static void UnsubscribeFromEvents()
     {
@@ -59,7 +57,7 @@ public static class AnalyticsManager
     }
 
     /// <summary>
-    /// Tracks the skin purchased event.
+    /// Отправляет событие покупки скина.
     /// </summary>
     private static void TrackSkinPurchased(int skinId, ResourceType resourceType, int amount)
     {
@@ -70,7 +68,7 @@ public static class AnalyticsManager
     }
 
     /// <summary>
-    /// Tracks the level start event.
+    /// Отправляет событие начала уровня.
     /// </summary>
     private static void TrackLevelStart(int levelNumber)
     {
@@ -81,7 +79,7 @@ public static class AnalyticsManager
     }
 
     /// <summary>
-    /// Tracks the level completion event.
+    /// Отправляет событие завершения уровня.
     /// </summary>
     private static void TrackLevelComplete(int levelNumber, int stars)
     {
@@ -92,7 +90,7 @@ public static class AnalyticsManager
     }
 
     /// <summary>
-    /// Call this method when the manager is enabled.
+    /// Восстанавливает подписки при включении менеджера.
     /// </summary>
     public static void OnEnable()
     {
@@ -103,7 +101,7 @@ public static class AnalyticsManager
     }
 
     /// <summary>
-    /// Call this method when the manager is disabled.
+    /// Снимает подписки при выключении менеджера.
     /// </summary>
     public static void OnDisable()
     {

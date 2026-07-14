@@ -1,3 +1,4 @@
+using Assets.Scripts.Account;
 using Assets.Scripts.Entry_Points.BootstrapLoadingTasks;
 using LoadingTasks;
 using UnityEngine;
@@ -10,9 +11,12 @@ namespace Assets.Scripts.Installers
 
         public override void InstallBindings()
         {
+            Container.Bind<AccountService>().AsSingle();
+            Container.Bind<ILoadingTask>().To<InitUnityServicesLoadingTask>().AsTransient();
+            Container.Bind<ILoadingTask>().To<StartAccountLoadingTask>().AsTransient();
+            Container.Bind<ILoadingTask>().To<InitAnalyticsManagerLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitGameRepositoryLoadingTask>().AsTransient();
             //Container.Bind<ILoadingTask>().To<LoadAddressablesLoadingTask>().AsTransient();
-            Container.Bind<ILoadingTask>().To<InitAnalyticsManagerLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitLocalizationLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitAudioManagerLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitSkinsLoadingTask>().AsTransient();

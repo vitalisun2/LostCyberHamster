@@ -63,6 +63,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoofOnRoof\JumpFromRoofOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnExecutor.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitRoadLoadingTask.cs" />
+    <Compile Include="Assets\Scripts\Account\AccountService.cs" />
     <Compile Include="Assets\Scripts\UI\Components\CrystalStorageUI.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvanceStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectPlanner.cs" />
@@ -121,6 +122,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResult.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\DevTools\Core\DevToolsNavigation.cs" />
+    <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitUnityServicesLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Data\LevelProgressKeyAdapters.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitSkyLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleRole.cs" />
@@ -434,6 +436,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnWindowCalculator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneSpecification.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\RoofRunProjection.cs" />
+    <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\StartAccountLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Common\Models\ObstacleModel.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\DevToolsRuntimeState.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\DeathMechanics.cs" />
