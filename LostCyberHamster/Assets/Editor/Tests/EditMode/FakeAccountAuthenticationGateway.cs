@@ -7,6 +7,8 @@ namespace Assets.Tests.EditMode
     {
         public bool SessionTokenExists { get; set; }
 
+        public bool IsUnityPlayerAccountLinked { get; set; }
+
         public bool? LastCreateAccount { get; private set; }
 
         public int SignInCallCount { get; private set; }

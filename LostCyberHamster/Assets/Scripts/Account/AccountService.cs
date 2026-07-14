@@ -74,7 +74,9 @@ namespace Assets.Scripts.Account
                     return;
                 }
 
-                SetState(AccountState.Guest);
+                SetState(_authenticationGateway.IsUnityPlayerAccountLinked
+                    ? AccountState.Linked
+                    : AccountState.Guest);
                 Debug.Log(restoreGuest
                     ? "[Account] Guest restored."
                     : "[Account] Guest created.");

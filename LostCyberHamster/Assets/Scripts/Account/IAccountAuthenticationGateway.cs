@@ -9,6 +9,8 @@ namespace Assets.Scripts.Account
     {
         bool SessionTokenExists { get; }
 
+        bool IsUnityPlayerAccountLinked { get; }
+
         Task SignInAnonymouslyAsync(bool createAccount);
 
         void SignOutAndClearLocalCredentials();

@@ -27,6 +27,22 @@ namespace Assets.Tests.EditMode
         }
 
         [Test]
+        public void Start_WithLinkedRestoredSession_SetsLinked()
+        {
+            var gateway = new FakeAccountAuthenticationGateway
+            {
+                SessionTokenExists = true,
+                IsUnityPlayerAccountLinked = true
+            };
+            var service = new AccountService(gateway);
+
+            service.Start();
+
+            Assert.AreEqual(false, gateway.LastCreateAccount);
+            Assert.AreEqual(AccountState.Linked, service.State);
+        }
+
+        [Test]
         public void Start_WhenRestoreFails_DoesNotCreateGuest()
         {
             var gateway = new FakeAccountAuthenticationGateway

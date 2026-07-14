@@ -10,6 +10,8 @@ namespace Assets.Scripts.Account
     {
         public bool SessionTokenExists => AuthenticationService.Instance.SessionTokenExists;
 
+        public bool IsUnityPlayerAccountLinked => AuthenticationService.Instance.PlayerInfo?.GetUnityId() != null;
+
         public Task SignInAnonymouslyAsync(bool createAccount)
         {
             return AuthenticationService.Instance.SignInAnonymouslyAsync(new SignInOptions
