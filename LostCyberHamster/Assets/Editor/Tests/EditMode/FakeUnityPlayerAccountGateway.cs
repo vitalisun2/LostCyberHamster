@@ -5,11 +5,20 @@ namespace Assets.Tests.EditMode
 {
     internal sealed class FakeUnityPlayerAccountGateway : IUnityPlayerAccountGateway
     {
+        public bool IsSignedIn { get; set; }
+
+        public string AccessToken { get; set; } = "access-token";
+
         public Task<string> SignInTask { get; set; } = Task.FromResult("access-token");
 
         public Task<string> SignInAsync()
         {
             return SignInTask;
+        }
+
+        public void SignOut()
+        {
+            IsSignedIn = false;
         }
     }
 }

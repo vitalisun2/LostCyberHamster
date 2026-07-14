@@ -10,12 +10,17 @@ namespace Assets.Scripts.Account
     /// </summary>
     public sealed class UnityPlayerAccountGateway : IUnityPlayerAccountGateway
     {
+        public bool IsSignedIn => PlayerAccountService.Instance.IsSignedIn;
+
         /// <summary>
-        /// Запускает вход и возвращает access token после успешного завершения flow.
+        /// Возвращает access token текущей сессии или запускает вход и ожидает успешного завершения flow.
         /// </summary>
         public async Task<string> SignInAsync()
         {
             var service = PlayerAccountService.Instance;
+            if (service.IsSignedIn && !string.IsNullOrWhiteSpace(service.AccessToken))
+                return service.AccessToken;
+
             var completion = new TaskCompletionSource<string>();
 
             void Unsubscribe()
@@ -57,6 +62,14 @@ namespace Assets.Scripts.Account
             {
                 Unsubscribe();
             }
+        }
+
+        /// <summary>
+        /// Завершает текущую локальную сессию Unity Player Accounts.
+        /// </summary>
+        public void SignOut()
+        {
+            PlayerAccountService.Instance.SignOut();
         }
     }
 }

@@ -8,21 +8,19 @@ using UnityEngine.UI;
 namespace Assets.Scripts.DevTools.Account
 {
     /// <summary>
-    /// Предоставляет безопасный сброс локального тестового состояния аккаунта.
+    /// Предоставляет локальный и полный сброс тестового состояния аккаунта.
     /// </summary>
     internal sealed class AccountDevToolsScreen : IDevToolsScreen
     {
-        private const string _resetButtonLabel = "RESET ACCOUNT TEST STATE";
-        private const string _confirmButtonLabel = "CONFIRM RESET";
-
         private readonly AccountService _accountService;
         private readonly Action _returnToRoot;
         private readonly Action<string> _setTitle;
         private readonly RectTransform _rootRect;
-        private readonly Text _resetButtonText;
+        private readonly Button _localResetButton;
+        private readonly Button _fullResetButton;
         private readonly Text _resultText;
 
-        private bool _isConfirmationPending;
+        private bool _isResetInProgress;
 
         public AccountDevToolsScreen(
             Transform parent,
@@ -39,19 +37,29 @@ namespace Assets.Scripts.DevTools.Account
             RootObject = uiFactory.CreateStaticPage("AccountScreen", parent, out Transform content);
             _rootRect = RootObject.GetComponent<RectTransform>();
 
-            uiFactory.CreateSectionHeading("ResetHeading", content, "Reset Account Test State");
+            uiFactory.CreateSectionHeading("LocalResetHeading", content, "Local Account Reset");
             uiFactory.CreateBodyText(
-                "ResetDescription",
+                "LocalResetDescription",
                 content,
-                "Clears only local Unity Authentication credentials. " +
-                "Server account, progress, Cloud Save and Analytics remain untouched.");
-            Button resetButton = uiFactory.CreateButton(
-                "ResetAccountTestStateButton",
+                "Clears local Unity Authentication and Player Accounts sessions. Server links remain untouched.");
+            _localResetButton = uiFactory.CreateButton(
+                "ResetLocalAccountStateButton",
                 content,
-                _resetButtonLabel,
+                "RESET LOCAL ACCOUNT STATE",
                 new Color(1f, 0.78f, 0.78f),
-                RequestReset);
-            _resetButtonText = resetButton.GetComponentInChildren<Text>();
+                ResetLocalAccountState);
+
+            uiFactory.CreateSectionHeading("FullResetHeading", content, "Full Linked Account Reset");
+            uiFactory.CreateBodyText(
+                "FullResetDescription",
+                content,
+                "Signs in to the linked server account, removes its Unity Player Account link, then clears local sessions.");
+            _fullResetButton = uiFactory.CreateButton(
+                "FullResetTestAccountButton",
+                content,
+                "FULL RESET LINKED ACCOUNT",
+                new Color(1f, 0.58f, 0.58f),
+                FullResetTestAccount);
             _resultText = uiFactory.CreateBodyText("ResetResult", content, string.Empty);
 
             RootObject.SetActive(false);
@@ -67,7 +75,6 @@ namespace Assets.Scripts.DevTools.Account
 
         public void Hide()
         {
-            CancelConfirmation();
             RootObject.SetActive(false);
         }
 
@@ -88,40 +95,69 @@ namespace Assets.Scripts.DevTools.Account
         {
         }
 
-        private void RequestReset()
+        private void ResetLocalAccountState()
         {
-            if (!_isConfirmationPending)
-            {
-                _isConfirmationPending = true;
-                _resetButtonText.text = _confirmButtonLabel;
-                _resultText.text = "Press CONFIRM RESET to clear local account credentials.";
+            if (_isResetInProgress)
                 return;
-            }
-
-            ConfirmReset();
-        }
-
-        private void ConfirmReset()
-        {
-            CancelConfirmation();
 
             try
             {
-                _accountService.ResetForTesting();
-                _resultText.text = "Success. Local account credentials cleared. " +
-                                   "The next Account Start will select CreateGuest.";
+                _accountService.ResetLocalAccountStateForTesting();
+                _resultText.text = "Success. Local account state cleared. The next Account Start will select CreateGuest.";
             }
             catch (Exception exception)
             {
-                _resultText.text = $"Error. Account test state was not reset: {exception.Message}";
-                Debug.LogError($"[Account] Test state reset failed: {exception.Message}");
+                if (IsAlive())
+                    _resultText.text = "Error. Local account state was not reset.";
+                Debug.LogError($"[Account] Local reset UI action failed. Error type: {exception.GetType().Name}.");
             }
         }
 
-        private void CancelConfirmation()
+        private async void FullResetTestAccount()
         {
-            _isConfirmationPending = false;
-            _resetButtonText.text = _resetButtonLabel;
+            if (_isResetInProgress)
+                return;
+
+            SetBusy(true);
+            _resultText.text = "Full reset in progress…";
+
+            try
+            {
+                await _accountService.FullResetTestAccountAsync();
+                if (IsAlive())
+                    _resultText.text = "Success. Server link and local account state cleared.";
+            }
+            catch (OperationCanceledException)
+            {
+                if (IsAlive())
+                    _resultText.text = "Full reset was cancelled.";
+            }
+            catch (Exception exception)
+            {
+                if (IsAlive())
+                    _resultText.text = "Error. Full reset was not completed.";
+                Debug.LogError($"[Account] Full reset UI action failed. Error type: {exception.GetType().Name}.");
+            }
+            finally
+            {
+                if (IsAlive())
+                    SetBusy(false);
+            }
+        }
+
+        private void SetBusy(bool isBusy)
+        {
+            _isResetInProgress = isBusy;
+            _localResetButton.interactable = !isBusy;
+            _fullResetButton.interactable = !isBusy;
+        }
+
+        private bool IsAlive()
+        {
+            return RootObject != null &&
+                   _resultText != null &&
+                   _localResetButton != null &&
+                   _fullResetButton != null;
         }
     }
 }

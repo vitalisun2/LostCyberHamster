@@ -4,13 +4,15 @@ using Unity.Services.Authentication;
 namespace Assets.Scripts.Account
 {
     /// <summary>
-    /// Делегирует гостевую авторизацию в Unity Authentication SDK.
+    /// Делегирует авторизацию и управление связью аккаунта в Unity Authentication SDK.
     /// </summary>
     public sealed class UnityAccountAuthenticationGateway : IAccountAuthenticationGateway
     {
         public bool SessionTokenExists => AuthenticationService.Instance.SessionTokenExists;
 
         public bool IsUnityPlayerAccountLinked => AuthenticationService.Instance.PlayerInfo?.GetUnityId() != null;
+
+        public bool IsSignedIn => AuthenticationService.Instance.IsSignedIn;
 
         public string PlayerId => AuthenticationService.Instance.PlayerId;
 
@@ -45,6 +47,27 @@ namespace Assets.Scripts.Account
                 return AccountLinkResult.Failed;
             }
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Входит в существующий UGS-аккаунт без создания нового аккаунта.
+        /// </summary>
+        public Task SignInWithUnityAsync(string accessToken)
+        {
+            return AuthenticationService.Instance.SignInWithUnityAsync(accessToken, new SignInOptions
+            {
+                CreateAccount = false
+            });
+        }
+
+        /// <summary>
+        /// Удаляет связь текущего UGS-аккаунта с Unity Player Account.
+        /// </summary>
+        public Task UnlinkUnityAsync()
+        {
+            return AuthenticationService.Instance.UnlinkUnityAsync();
+        }
+#endif
 
         public void SignOutAndClearLocalCredentials()
         {

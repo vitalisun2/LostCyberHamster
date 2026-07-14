@@ -98,14 +98,154 @@ namespace Assets.Scripts.Account
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
-        /// Очищает только локальные Unity Authentication credentials и возвращает сервис в начальное состояние.
+        /// Очищает локальные сессии Unity Authentication и Player Accounts.
+        /// </summary>
+        public void ResetLocalAccountStateForTesting()
+        {
+            _resolutionVersion++;
+            ClearLocalAccountState();
+            Debug.Log("[Account] Local reset completed. Local account credentials cleared.");
+        }
+
+        /// <summary>
+        /// Сохраняет совместимость существующих тестов с локальным сбросом аккаунта.
         /// </summary>
         public void ResetForTesting()
         {
-            _resolutionVersion++;
-            _authenticationGateway.SignOutAndClearLocalCredentials();
+            ResetLocalAccountStateForTesting();
+        }
+
+        /// <summary>
+        /// Входит в связанный серверный аккаунт, отвязывает Unity Player Account и очищает локальные сессии.
+        /// </summary>
+        public async Task FullResetTestAccountAsync()
+        {
+            var resolutionVersion = ++_resolutionVersion;
+            var localUgsIdentityCleared = false;
+            var serverAccountUnlinked = false;
+            Debug.Log("[Account] Full reset started. Resolving Player Accounts session.");
+
+            try
+            {
+                // Получаем действующий access token до очистки локальной identity гостя.
+                var accessToken = await _playerAccountGateway.SignInAsync();
+                if (resolutionVersion != _resolutionVersion)
+                    throw new OperationCanceledException("Account operation was invalidated.");
+                if (string.IsNullOrWhiteSpace(accessToken))
+                    throw new InvalidOperationException("Unity Player Account access token is unavailable.");
+
+                Debug.Log("[Account] Full reset stage: Player Accounts access token acquired.");
+
+                // Очищаем только UGS identity, сохраняя Player Accounts session для серверного входа.
+                try
+                {
+                    _authenticationGateway.SignOutAndClearLocalCredentials();
+                    localUgsIdentityCleared = true;
+                }
+                catch (Exception exception)
+                {
+                    SetState(AccountState.Error);
+                    Debug.LogError($"[Account] Full reset failed at Unity Authentication sign-out. Error type: {exception.GetType().Name}.");
+                    throw;
+                }
+
+                SetState(AccountState.Resolving);
+                Debug.Log("[Account] Full reset stage: local UGS identity cleared.");
+
+                // Входим именно в серверный аккаунт-владелец и проверяем его связь.
+                await _authenticationGateway.SignInWithUnityAsync(accessToken);
+                EnsureCurrentOperation(resolutionVersion);
+
+                if (!_authenticationGateway.IsSignedIn || !_authenticationGateway.IsUnityPlayerAccountLinked)
+                    throw new InvalidOperationException("Signed-in server account is not linked to Unity Player Accounts.");
+
+                Debug.Log("[Account] Full reset stage: linked server account verified.");
+
+                // Удаляем только связь, затем снова очищаем локальную identity.
+                await _authenticationGateway.UnlinkUnityAsync();
+                serverAccountUnlinked = true;
+                EnsureCurrentOperation(resolutionVersion);
+
+                Debug.Log("[Account] Full reset stage: Unity Player Account unlinked.");
+                ClearLocalAccountState();
+                Debug.Log("[Account] Full reset completed. Server link and local account state cleared.");
+            }
+            catch (Exception exception)
+            {
+                if (localUgsIdentityCleared)
+                {
+                    try
+                    {
+                        ClearLocalAccountState();
+                    }
+                    catch (Exception cleanupException)
+                    {
+                        Debug.LogError($"[Account] Full reset failure cleanup failed. Error type: {cleanupException.GetType().Name}.");
+                    }
+
+                    SetState(AccountState.Error);
+                }
+
+                if (serverAccountUnlinked)
+                    Debug.LogError("[Account] Full reset partially completed: server link removed, but local completion failed.");
+
+                if (exception is OperationCanceledException)
+                {
+                    Debug.LogWarning($"[Account] Full reset cancelled. Local UGS identity cleared: {localUgsIdentityCleared}.");
+                }
+                else
+                {
+                    Debug.LogError($"[Account] Full reset failed. Local UGS identity cleared: {localUgsIdentityCleared}. Error type: {exception.GetType().Name}.");
+                }
+
+                throw;
+            }
+        }
+
+        private void EnsureCurrentOperation(int resolutionVersion)
+        {
+            if (resolutionVersion == _resolutionVersion)
+                return;
+
+            throw new OperationCanceledException("Account operation was invalidated.");
+        }
+
+        private void ClearLocalAccountState()
+        {
+            Exception authenticationException = null;
+            Exception playerAccountException = null;
+
+            try
+            {
+                _authenticationGateway.SignOutAndClearLocalCredentials();
+            }
+            catch (Exception exception)
+            {
+                authenticationException = exception;
+                Debug.LogError($"[Account] Local cleanup failed at Unity Authentication sign-out. Error type: {exception.GetType().Name}.");
+            }
+
+            try
+            {
+                if (_playerAccountGateway.IsSignedIn)
+                    _playerAccountGateway.SignOut();
+            }
+            catch (Exception exception)
+            {
+                playerAccountException = exception;
+                Debug.LogError($"[Account] Local cleanup failed at Player Accounts sign-out. Error type: {exception.GetType().Name}.");
+            }
+
+            if (authenticationException != null || playerAccountException != null)
+            {
+                SetState(AccountState.Error);
+                if (authenticationException != null && playerAccountException != null)
+                    throw new AggregateException(authenticationException, playerAccountException);
+
+                throw authenticationException ?? playerAccountException;
+            }
+
             SetState(AccountState.NotStarted);
-            Debug.Log("[Account] Test state reset. Local credentials cleared.");
         }
 #endif
 
@@ -146,7 +286,7 @@ namespace Assets.Scripts.Account
                     return;
 
                 SetState(AccountState.Error);
-                Debug.LogError($"[Account] Guest resolution failed: {exception.Message}");
+                Debug.LogError($"[Account] Guest resolution failed. Error type: {exception.GetType().Name}.");
             }
         }
 
