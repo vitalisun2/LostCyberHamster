@@ -10,6 +10,9 @@ namespace Assets.Scripts.Installers
     {
         public override void InstallBindings()
         {
+            Container.Bind<IAccountAuthenticationGateway>()
+                .To<UnityAccountAuthenticationGateway>()
+                .AsSingle();
             Container.Bind<AccountService>().AsSingle();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Container.Bind<DevToolsMenuOverlay>()

@@ -9,8 +9,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace>
-    </RootNamespace>
+    <RootNamespace></RootNamespace>
     <ProjectGuid>{33E884B2-610B-E8DB-1B74-759FE401BDD3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -56,7 +55,6 @@
     <UnityVersion>6000.2.6f2</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Account\AccountState.cs" />
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskParallel.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofWindowModel.cs" />
@@ -106,6 +104,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowCalculator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\JumpOnRoofFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\Installers\BootstrapSceneInstaller.cs" />
+    <Compile Include="Assets\Scripts\Account\AccountState.cs" />
     <Compile Include="Assets\Scripts\Installers\Roots\EnvironmentRoot.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoofOnRoof\SuperJumpFromRoofOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\ValueExtensions.cs" />
@@ -419,6 +418,7 @@
     <Compile Include="Assets\Scripts\Entry Points\LoadingTaskPipeline.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\JumpFromRoofSimulator.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialUiFlowController.cs" />
+    <Compile Include="Assets\Scripts\Account\UnityAccountAuthenticationGateway.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\HierarchicalLevelCatalog.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneStrategy.cs" />
     <Compile Include="Assets\Scripts\UI\Components\MoneyStorageUI.cs" />
@@ -448,6 +448,7 @@
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleChainElement.cs" />
     <Compile Include="Assets\Scripts\Gameplay\BoomEffect.cs" />
     <Compile Include="Assets\Scripts\Common\Models\CatalogBundle.cs" />
+    <Compile Include="Assets\Scripts\Account\IAccountAuthenticationGateway.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialAction.cs" />
     <Compile Include="Assets\Scripts\UI\Components\QuestItem.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\TakeDamageMechanics.cs" />

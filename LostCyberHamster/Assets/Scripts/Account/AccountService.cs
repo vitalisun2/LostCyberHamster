@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Unity.Services.Authentication;
 using UnityEngine;
 
 namespace Assets.Scripts.Account
@@ -8,9 +7,16 @@ namespace Assets.Scripts.Account
 
     public sealed class AccountService
     {
+        private readonly IAccountAuthenticationGateway _authenticationGateway;
         private int _resolutionVersion;
 
         public AccountState State { get; private set; } = AccountState.NotStarted;
+
+        public AccountService(IAccountAuthenticationGateway authenticationGateway)
+        {
+            _authenticationGateway = authenticationGateway
+                ?? throw new ArgumentNullException(nameof(authenticationGateway));
+        }
 
         /// <summary>
         /// Переводит аккаунт в состояние определения гостя и запускает его без блокировки игры.
@@ -37,7 +43,7 @@ namespace Assets.Scripts.Account
         public void ResetForTesting()
         {
             _resolutionVersion++;
-            AuthenticationService.Instance.SignOut(clearCredentials: true);
+            _authenticationGateway.SignOutAndClearLocalCredentials();
             State = AccountState.NotStarted;
             Debug.Log("[Account] Test state reset. Local credentials cleared.");
         }
@@ -51,8 +57,7 @@ namespace Assets.Scripts.Account
             try
             {
                 // Выбираем ровно один сценарий по наличию локальной сессии.
-                var authenticationService = AuthenticationService.Instance;
-                var restoreGuest = authenticationService.SessionTokenExists;
+                var restoreGuest = _authenticationGateway.SessionTokenExists;
 
                 if (restoreGuest)
                     Debug.Log("[Account] Scenario selected: RestoreGuest.");
@@ -60,14 +65,11 @@ namespace Assets.Scripts.Account
                     Debug.Log("[Account] Scenario selected: CreateGuest.");
 
                 // Выполняем только выбранный сценарий без fallback на создание.
-                await authenticationService.SignInAnonymouslyAsync(new SignInOptions
-                {
-                    CreateAccount = !restoreGuest
-                });
+                await _authenticationGateway.SignInAnonymouslyAsync(createAccount: !restoreGuest);
 
                 if (resolutionVersion != _resolutionVersion)
                 {
-                    authenticationService.SignOut(clearCredentials: true);
+                    _authenticationGateway.SignOutAndClearLocalCredentials();
                     return;
                 }
 
