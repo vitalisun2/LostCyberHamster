@@ -19,12 +19,17 @@ namespace Assets.Scripts.Account
 
         Task<AccountLinkResult> LinkWithUnityAsync(string accessToken);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
         /// Входит в существующий UGS-аккаунт по Unity Player Account без создания нового аккаунта.
         /// </summary>
         Task SignInWithUnityAsync(string accessToken);
 
+        /// <summary>
+        /// Завершает текущую UGS-сессию, сохраняя локальные учётные данные для восстановления гостя.
+        /// </summary>
+        void SignOutPreservingCredentials();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
         /// Удаляет связь текущего UGS-аккаунта с Unity Player Account.
         /// </summary>

@@ -61,12 +61,20 @@
             "value": "Привязываем аккаунт…"
         },
         {
+            "key": "account_state_signing_in",
+            "value": "Входим в существующий аккаунт…"
+        },
+        {
             "key": "account_state_linked",
             "value": "Аккаунт привязан"
         },
         {
             "key": "account_link_conflict",
-            "value": "Этот аккаунт уже привязан. Используйте вход в существующий аккаунт."
+            "value": "У этого Unity-аккаунта уже есть профиль. Войдите, чтобы использовать его. Прогресс гостя не будет перенесён или объединён."
+        },
+        {
+            "key": "account_sign_in_failed_retry",
+            "value": "Не удалось войти. Гость восстановлен; попробуйте ещё раз."
         },
         {
             "key": "account_state_error",
@@ -75,6 +83,10 @@
         {
             "key": "btn_link_account",
             "value": "ПРИВЯЗАТЬ АККАУНТ"
+        },
+        {
+            "key": "btn_sign_in",
+            "value": "ВОЙТИ"
         },
         {
             "key": "lbl_version",

@@ -48,7 +48,6 @@ namespace Assets.Scripts.Account
             }
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
         /// Входит в существующий UGS-аккаунт без создания нового аккаунта.
         /// </summary>
@@ -60,6 +59,12 @@ namespace Assets.Scripts.Account
             });
         }
 
+        public void SignOutPreservingCredentials()
+        {
+            AuthenticationService.Instance.SignOut(clearCredentials: false);
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
         /// Удаляет связь текущего UGS-аккаунта с Unity Player Account.
         /// </summary>

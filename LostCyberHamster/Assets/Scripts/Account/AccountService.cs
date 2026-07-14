@@ -79,6 +79,60 @@ namespace Assets.Scripts.Account
         }
 
         /// <summary>
+        /// Переключает текущего гостя на существующий UGS-аккаунт, связанный с Unity Player Account.
+        /// </summary>
+        public async Task<bool> SignInExistingAccountAsync()
+        {
+            if (State != AccountState.Guest)
+                return false;
+
+            var originalPlayerId = _authenticationGateway.PlayerId;
+            if (!IsOriginalGuestSession(originalPlayerId))
+            {
+                SetState(AccountState.Error);
+                return false;
+            }
+
+            var resolutionVersion = ++_resolutionVersion;
+            SetState(AccountState.SigningIn);
+
+            try
+            {
+                // Unity Player Account token must be acquired before leaving the current guest session.
+                var accessToken = await _playerAccountGateway.SignInAsync();
+                EnsureCurrentOperation(resolutionVersion);
+                if (string.IsNullOrWhiteSpace(accessToken))
+                    throw new InvalidOperationException("Unity Player Account access token is unavailable.");
+
+                // Keep the anonymous session token so a failed switch can restore the original guest.
+                _authenticationGateway.SignOutPreservingCredentials();
+                EnsureCurrentOperation(resolutionVersion);
+
+                await _authenticationGateway.SignInWithUnityAsync(accessToken);
+                EnsureCurrentOperation(resolutionVersion);
+
+                if (!_authenticationGateway.IsSignedIn ||
+                    !_authenticationGateway.IsUnityPlayerAccountLinked ||
+                    string.IsNullOrWhiteSpace(_authenticationGateway.PlayerId) ||
+                    _authenticationGateway.PlayerId == originalPlayerId)
+                {
+                    throw new InvalidOperationException("Existing linked account verification failed.");
+                }
+
+                SetState(AccountState.Linked);
+                Debug.Log("[Account] Existing linked account signed in.");
+                return true;
+            }
+            catch (Exception exception)
+            {
+                var restored = await TryRestoreOriginalGuestAsync(originalPlayerId);
+                SetState(restored ? AccountState.Guest : AccountState.Error);
+                Debug.LogError($"[Account] Existing account sign-in failed. Original guest restored: {restored}. Error type: {exception.GetType().Name}.");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Переводит аккаунт в состояние определения гостя и запускает его без блокировки игры.
         /// </summary>
         public void Start()
@@ -202,14 +256,6 @@ namespace Assets.Scripts.Account
             }
         }
 
-        private void EnsureCurrentOperation(int resolutionVersion)
-        {
-            if (resolutionVersion == _resolutionVersion)
-                return;
-
-            throw new OperationCanceledException("Account operation was invalidated.");
-        }
-
         private void ClearLocalAccountState()
         {
             Exception authenticationException = null;
@@ -248,6 +294,42 @@ namespace Assets.Scripts.Account
             SetState(AccountState.NotStarted);
         }
 #endif
+
+        private void EnsureCurrentOperation(int resolutionVersion)
+        {
+            if (resolutionVersion == _resolutionVersion)
+                return;
+
+            throw new OperationCanceledException("Account operation was invalidated.");
+        }
+
+        private async Task<bool> TryRestoreOriginalGuestAsync(string originalPlayerId)
+        {
+            try
+            {
+                if (IsOriginalGuestSession(originalPlayerId))
+                    return true;
+
+                if (_authenticationGateway.IsSignedIn)
+                    _authenticationGateway.SignOutPreservingCredentials();
+
+                await _authenticationGateway.SignInAnonymouslyAsync(createAccount: false);
+                return IsOriginalGuestSession(originalPlayerId);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[Account] Original guest restoration failed. Error type: {exception.GetType().Name}.");
+                return false;
+            }
+        }
+
+        private bool IsOriginalGuestSession(string originalPlayerId)
+        {
+            return !string.IsNullOrWhiteSpace(originalPlayerId) &&
+                   _authenticationGateway.IsSignedIn &&
+                   !_authenticationGateway.IsUnityPlayerAccountLinked &&
+                   _authenticationGateway.PlayerId == originalPlayerId;
+        }
 
         /// <summary>
         /// Восстанавливает существующего гостя или создаёт нового по локальной сессии.

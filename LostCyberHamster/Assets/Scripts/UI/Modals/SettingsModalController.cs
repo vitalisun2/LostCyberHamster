@@ -25,6 +25,8 @@ namespace LostCyberHamster.UI
 
         private readonly AccountService _accountService;
         private SettingsData _settingsData = new();
+        private bool _hasAccountLinkConflict;
+        private int _accountUiVersion;
 
         public SettingsModalController(UIDocument uiDocument, AccountService accountService): base(uiDocument)
         {
@@ -33,6 +35,8 @@ namespace LostCyberHamster.UI
 
         protected override async Task OnShowAsync()
         {
+            _hasAccountLinkConflict = false;
+            _accountUiVersion++;
             _settingsData = new SettingsData();
 
             _settingsData.MusicVolume = AudioManager.MusicVolume;
@@ -81,12 +85,20 @@ namespace LostCyberHamster.UI
                 AccountState.Resolving => "account_state_resolving",
                 AccountState.Guest => "account_state_guest",
                 AccountState.Linking => "account_state_linking",
+                AccountState.SigningIn => "account_state_signing_in",
                 AccountState.Linked => "account_state_linked",
                 AccountState.Error => "account_state_error",
                 _ => "account_state_error"
             };
 
+            if (state == AccountState.Guest && _hasAccountLinkConflict)
+                stateLocalizationKey = "account_link_conflict";
+
             _labelAccountState.text = LocalizationManager.GetLocalizedString(stateLocalizationKey);
+            _buttonLinkAccount.text = LocalizationManager.GetLocalizedString(
+                _hasAccountLinkConflict || state == AccountState.SigningIn
+                    ? "btn_sign_in"
+                    : "btn_link_account");
             _buttonLinkAccount.style.display = state == AccountState.Linked
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
@@ -98,19 +110,41 @@ namespace LostCyberHamster.UI
             if (_accountService.State != AccountState.Guest)
                 return;
 
+            var accountUiVersion = _accountUiVersion;
+
             try
             {
+                if (_hasAccountLinkConflict)
+                {
+                    var signedIn = await _accountService.SignInExistingAccountAsync();
+                    if (accountUiVersion != _accountUiVersion)
+                        return;
+
+                    if (signedIn)
+                    {
+                        _hasAccountLinkConflict = false;
+                        UpdateAccountState(_accountService.State);
+                    }
+                    else if (_accountService.State == AccountState.Guest)
+                    {
+                        _labelAccountState.text = LocalizationManager.GetLocalizedString(
+                            "account_sign_in_failed_retry");
+                    }
+
+                    return;
+                }
+
                 var result = await _accountService.LinkCurrentGuestAsync();
+                if (accountUiVersion != _accountUiVersion)
+                    return;
+
                 var modal = _modal;
                 if (result == AccountLinkResult.Conflict &&
                     modal != null &&
                     modal.resolvedStyle.display == DisplayStyle.Flex)
                 {
-                    var accountStateLabel = modal.Q<Label>("settings__lbl-account-state");
-                    if (accountStateLabel != null)
-                    {
-                        accountStateLabel.text = LocalizationManager.GetLocalizedString("account_link_conflict");
-                    }
+                    _hasAccountLinkConflict = true;
+                    UpdateAccountState(_accountService.State);
                 }
             }
             catch (System.Exception exception)
@@ -133,6 +167,7 @@ namespace LostCyberHamster.UI
 
             GameDataManager.Settings = _settingsData;
             GameDataManager.SaveSettings();
+            ResetAccountConflictUi();
             UnsubscribeFromAccountState();
             Hide();
             UIManager.OnRepaintScreen();
@@ -169,13 +204,21 @@ namespace LostCyberHamster.UI
 
         private void OnClickButtonCancel(ClickEvent evt)
         {
+            ResetAccountConflictUi();
             UnsubscribeFromAccountState();
             Hide();
         }
 
         private void OnClickButtonClose(ClickEvent evt)
         {
+            ResetAccountConflictUi();
             UnsubscribeFromAccountState();
+        }
+
+        private void ResetAccountConflictUi()
+        {
+            _hasAccountLinkConflict = false;
+            _accountUiVersion++;
         }
 
         protected override void OnUnsubscribeFromEvents()
@@ -188,6 +231,7 @@ namespace LostCyberHamster.UI
             _toggleSound?.UnregisterValueChangedCallback(OnChangeSoundAsync);
             _toggleVibration?.UnregisterValueChangedCallback(OnChangeVibrationAsync);
             _buttonCloseModal.UnregisterCallback<ClickEvent>(OnClickButtonClose);
+            ResetAccountConflictUi();
             UnsubscribeFromAccountState();
         }
 

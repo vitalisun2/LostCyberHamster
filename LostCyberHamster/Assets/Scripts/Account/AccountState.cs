@@ -6,6 +6,7 @@ namespace Assets.Scripts.Account
         Resolving,
         Guest,
         Linking,
+        SigningIn,
         Linked,
         Error
     }

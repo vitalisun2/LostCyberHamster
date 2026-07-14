@@ -61,12 +61,20 @@
             "value": "Linking account…"
         },
         {
+            "key": "account_state_signing_in",
+            "value": "Signing in to existing account…"
+        },
+        {
             "key": "account_state_linked",
             "value": "Account linked"
         },
         {
             "key": "account_link_conflict",
-            "value": "This account is already linked. Use Sign in to existing account."
+            "value": "This Unity account already has an existing profile. Sign in to use it. Guest progress will not be transferred or merged."
+        },
+        {
+            "key": "account_sign_in_failed_retry",
+            "value": "Sign-in failed. Guest restored; try again."
         },
         {
             "key": "account_state_error",
@@ -75,6 +83,10 @@
         {
             "key": "btn_link_account",
             "value": "LINK ACCOUNT"
+        },
+        {
+            "key": "btn_sign_in",
+            "value": "SIGN IN"
         },
         {
             "key": "lbl_version",

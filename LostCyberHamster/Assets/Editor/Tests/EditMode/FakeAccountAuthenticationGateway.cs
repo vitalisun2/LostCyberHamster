@@ -19,6 +19,8 @@ namespace Assets.Tests.EditMode
 
         public int ClearCredentialsCallCount { get; private set; }
 
+        public int PreserveCredentialsCallCount { get; private set; }
+
         public Task SignInTask { get; set; } = Task.CompletedTask;
 
         public Task<AccountLinkResult> LinkTask { get; set; } = Task.FromResult(AccountLinkResult.Linked);
@@ -44,6 +46,11 @@ namespace Assets.Tests.EditMode
         public Task SignInWithUnityAsync(string accessToken)
         {
             return Task.CompletedTask;
+        }
+
+        public void SignOutPreservingCredentials()
+        {
+            PreserveCredentialsCallCount++;
         }
 
         public Task UnlinkUnityAsync()
