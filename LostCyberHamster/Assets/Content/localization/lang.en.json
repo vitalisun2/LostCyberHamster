@@ -81,8 +81,28 @@
             "value": "Could not determine account"
         },
         {
+            "key": "account_prompt_title",
+            "value": "LINK ACCOUNT?"
+        },
+        {
+            "key": "account_prompt_body",
+            "value": "Link your account to protect access to your game profile."
+        },
+        {
+            "key": "account_prompt_later_message",
+            "value": "You can link your account later: Settings → Account."
+        },
+        {
             "key": "btn_link_account",
             "value": "LINK ACCOUNT"
+        },
+        {
+            "key": "btn_account_prompt_link",
+            "value": "LINK ACCOUNT"
+        },
+        {
+            "key": "btn_later",
+            "value": "LATER"
         },
         {
             "key": "btn_sign_in",

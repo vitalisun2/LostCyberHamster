@@ -9,6 +9,7 @@ namespace LostCyberHamster.UI
         SelectLevelScreen,
         IntroScreen,
         SettingsModal,
+        AccountPromptModal,
         ShopModal,
         GameScreen,
         PauseModal,

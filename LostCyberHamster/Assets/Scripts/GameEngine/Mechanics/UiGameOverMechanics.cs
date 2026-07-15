@@ -2,6 +2,7 @@ using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
 using Atomic.Elements;
+using GameManagement;
 using LostCyberHamster.UI;
 
 namespace Assets.Scripts.GameEngine.Mechanics
@@ -37,7 +38,19 @@ namespace Assets.Scripts.GameEngine.Mechanics
             }
             else
             {
-                GameEventsManager.LevelCompleted(LevelManager.GetCurrentLevelNumber(), _hamster.Lives.Value);
+                var completedLevelNumber = LevelManager.GetCurrentLevelNumber();
+                GameEventsManager.LevelCompleted(completedLevelNumber, _hamster.Lives.Value);
+
+                var playerData = GameDataManager.PlayerData;
+                if (completedLevelNumber == 1 &&
+                    playerData != null &&
+                    !playerData.IsAccountPromptPending &&
+                    !playerData.IsAccountPromptShown)
+                {
+                    playerData.IsAccountPromptPending = true;
+                    GameDataManager.SaveData();
+                }
+
                 var winScreenController = _uiManager.GetController<WinModalController>();
                 winScreenController.SetParamsForInit(LevelManager.GetLocationName(), LevelManager.GetCurrentPartOfDay(), _hamster.Lives.Value);
                 _uiManager.ShowModalAsync(ScreenEnum.WinModal);

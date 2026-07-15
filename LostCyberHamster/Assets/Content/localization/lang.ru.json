@@ -81,8 +81,28 @@
             "value": "Не удалось определить аккаунт"
         },
         {
+            "key": "account_prompt_title",
+            "value": "ПРИВЯЗАТЬ АККАУНТ?"
+        },
+        {
+            "key": "account_prompt_body",
+            "value": "Привяжите аккаунт, чтобы защитить доступ к игровому профилю."
+        },
+        {
+            "key": "account_prompt_later_message",
+            "value": "Привязать аккаунт можно позже: Настройки → Аккаунт."
+        },
+        {
             "key": "btn_link_account",
             "value": "ПРИВЯЗАТЬ АККАУНТ"
+        },
+        {
+            "key": "btn_account_prompt_link",
+            "value": "ПРИВЯЗАТЬ"
+        },
+        {
+            "key": "btn_later",
+            "value": "ПОЗЖЕ"
         },
         {
             "key": "btn_sign_in",

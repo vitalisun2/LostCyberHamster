@@ -20,6 +20,7 @@ namespace Assets.Scripts.Entry_Points
 
         private UIManager _uiManager;
         private AccountService _accountService;
+        private AccountPromptCoordinator _accountPromptCoordinator;
 
         [Inject]
         private void Construct(AccountService accountService)
@@ -33,6 +34,7 @@ namespace Assets.Scripts.Entry_Points
             {
                 new HomeScreenController(_uiDocument),
                 new SettingsModalController(_uiDocument, _accountService),
+                new AccountPromptModalController(_uiDocument),
                 new CharacterScreenController(_uiDocument),
                 new QuestsScreenController(_uiDocument),
                 new SelectLevelScreenController(_uiDocument),
@@ -41,6 +43,9 @@ namespace Assets.Scripts.Entry_Points
             });
 
             await _uiManager.LoadScreenAsync(ScreenEnum.HomeScreen);
+            _accountPromptCoordinator = new AccountPromptCoordinator(_uiManager, _accountService);
+            if (isActiveAndEnabled)
+                _accountPromptCoordinator.Enable();
             AdsManager.Initialize();
             await QuestManager.Init();
         }
@@ -60,10 +65,12 @@ namespace Assets.Scripts.Entry_Points
         private void OnEnable()
         {
             _uiManager?.SubscribeToEvents();
+            _accountPromptCoordinator?.Enable();
         }
 
         private void OnDisable()
         {
+            _accountPromptCoordinator?.Disable();
             _uiManager?.UnsubscribeFromEvents();
         }
     }

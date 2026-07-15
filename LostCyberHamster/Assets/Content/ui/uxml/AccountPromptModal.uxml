@@ -1,0 +1,12 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement name="account-prompt-modal__content" style="flex-grow: 1; align-items: center; justify-content: center; padding-top: 48px; padding-right: 48px; padding-bottom: 48px; padding-left: 48px;">
+        <Vues.GameCore.LocalizedLabel key="account_prompt_title" name="account-prompt-modal__title" class="lcs-text" style="font-size: 52px; -unity-text-align: middle-center; white-space: normal;" />
+        <Vues.GameCore.LocalizedLabel key="account_prompt_body" name="account-prompt-modal__body" class="lcs-text" style="width: 880px; margin-top: 32px; font-size: 32px; -unity-text-align: middle-center; white-space: normal;" />
+        <engine:VisualElement style="flex-grow: 0; flex-direction: row; align-items: center; justify-content: center; margin-top: 48px;">
+            <Vues.GameCore.LocalizedButton key="btn_account_prompt_link" name="account-prompt-modal__btn-link-account" class="lcs_btn bg-primary" style="width: 440px; font-size: 32px;" />
+            <Vues.GameCore.LocalizedButton key="btn_later" name="account-prompt-modal__btn-later" class="lcs_btn bg-danger" style="width: 280px; font-size: 32px;" />
+        </engine:VisualElement>
+        <engine:Label name="account-prompt-modal__later-message" class="lcs-text account-prompt-later-message" style="display: none;" />
+    </engine:VisualElement>
+</engine:UXML>

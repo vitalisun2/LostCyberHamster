@@ -207,6 +207,12 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ba9b2dd75d0be4b449e9e92e4b867613
+    m_Address: AccountPromptModal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - screens
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e0fdcc782c1a44d6aa8c6c5419e95460
     m_Address: story-004
     m_ReadOnly: 0

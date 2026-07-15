@@ -233,6 +233,23 @@
     border-color: var(--secondary);
 }
 
+.account-prompt-later-message {
+    position: absolute;
+    left: 128px;
+    right: 128px;
+    bottom: 32px;
+    padding: 16px;
+    background-color: rgba(36, 18, 77, 0.95);
+    border-radius: var(--secondary-border-radius);
+    border-width: 4px;
+    border-color: var(--secondary);
+    color: var(--white);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    font-size: 28px;
+    white-space: normal;
+}
+
 .w-px-480 {
     width: 480px;
 }

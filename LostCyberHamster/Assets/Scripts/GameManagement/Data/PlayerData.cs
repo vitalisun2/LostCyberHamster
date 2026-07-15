@@ -28,6 +28,8 @@ namespace GameManagement
         public string LastSaveDate = DateTime.MinValue.ToString("o");
         public bool IsFirstLaunch = true;
         public bool IsTutorialCompleted;
+        public bool IsAccountPromptPending;
+        public bool IsAccountPromptShown;
 
         public LevelProgressSnapshot Progress
         {

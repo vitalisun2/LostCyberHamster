@@ -500,6 +500,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\JumpFromRoofChainModel.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Progress\DefaultUnlockPolicy.cs" />
     <Compile Include="Assets\Scripts\Gameplay\PizzaBonus.cs" />
+    <Compile Include="Assets\Scripts\UI\Modals\AccountPromptCoordinator.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\SelectLevelScreenController.cs" />
     <Compile Include="Assets\Scripts\SharedCore\GameData\Crypto\ICryptoService.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\IJumpOnPolicy.cs" />
@@ -517,6 +518,7 @@
     <Compile Include="Assets\Scripts\Diagnostics\DeviceLogStartupProbe.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Models\ActionFireResult.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningState.cs" />
+    <Compile Include="Assets\Scripts\UI\Modals\AccountPromptModalController.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\SpriteAnimatorEventsDispatcher.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\ISimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectSafety.cs" />
@@ -586,6 +588,7 @@
     <None Include="Assets\Content\ui\uxml\EnergyBar.uxml" />
     <None Include="Assets\Content\ui\uxml\HealthItem.uxml" />
     <None Include="Assets\Content\ui\styles\global.uss" />
+    <None Include="Assets\Content\ui\uxml\AccountPromptModal.uxml" />
     <None Include="Assets\Content\ui\uxml\CharacterScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\GameUI.uxml" />
     <None Include="Assets\Content\ui\uxml\QuestItem.uxml" />
