@@ -14,6 +14,7 @@ $ErrorActionPreference = 'Stop'
 
 $unityProjectRelativePath = 'LostCyberHamster'
 $buildAutomationRelativePath = 'Assets\Editor\LostCyberHamsterBuildAutomation.cs'
+$androidGradlePostprocessorRelativePath = 'Assets\Editor\LostCyberHamsterAndroidGradlePostprocessor.cs'
 
 function Write-Step {
     param([string]$Message)
@@ -456,6 +457,14 @@ New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
 Write-Step "Preparing sandbox: $SandboxRoot"
 $sandboxProjectPath = Sync-UnityProjectSnapshot -SourceRoot $SourceWorktree -TargetRoot $SandboxRoot
+$postprocessorTemplatePath = Join-Path $PSScriptRoot "sandbox-overrides\$androidGradlePostprocessorRelativePath"
+$postprocessorTargetPath = Join-Path $sandboxProjectPath $androidGradlePostprocessorRelativePath
+Assert-PathExists -Path $postprocessorTemplatePath -Description 'Sandbox Android Gradle postprocessor template'
+Assert-PathExists -Path "$postprocessorTemplatePath.meta" -Description 'Sandbox Android Gradle postprocessor meta'
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $postprocessorTargetPath) | Out-Null
+Copy-Item -LiteralPath $postprocessorTemplatePath -Destination $postprocessorTargetPath -Force
+Copy-Item -LiteralPath "$postprocessorTemplatePath.meta" -Destination "$postprocessorTargetPath.meta" -Force
+Write-Step "Installed sandbox Android Gradle postprocessor: $postprocessorTargetPath"
 if (-not $SkipUnityEditorReferenceCheck.IsPresent) {
     Test-UnityEditorReferences -UnityProjectPath $sandboxProjectPath
 }
