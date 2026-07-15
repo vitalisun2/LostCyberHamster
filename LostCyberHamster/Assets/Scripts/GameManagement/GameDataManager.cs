@@ -158,6 +158,7 @@ namespace GameManagement
             Settings = new SettingsData();
             IsGameJustStarted = true;
 
+            EnsureProgressConsistency();
             SaveData();
             SaveSettings();
 
