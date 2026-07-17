@@ -279,6 +279,18 @@ namespace Assets.Scripts.System
             return descriptor.PartId;
         }
 
+        /// <summary>
+        /// Разрешает координаты текущего уровня в иерархии прогресса.
+        /// </summary>
+        public static bool TryGetCurrentProgressKey(out LevelProgressKey progressKey)
+        {
+            progressKey = default;
+            var currentLevel = GameDataManager.PlayerData?.CurrentLevel;
+
+            return !string.IsNullOrWhiteSpace(currentLevel)
+                   && TryResolveProgressKey(currentLevel, out progressKey);
+        }
+
         public static void OnEnable()
         {
             GameEventsManager.OnLevelCompleted += HandleLevelCompleted;

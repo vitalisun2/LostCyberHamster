@@ -79,6 +79,7 @@ namespace Assets.Scripts.Gameplay
         private AddOneCoinMechanics _addOneCoinMechanics;
         private AddCoinsOrBonusMechanics _addCoinsOrBonusMechanics;
         private RunScoreMechanics _runScoreMechanics;
+        private PartOfDayScoreMechanics _partOfDayScoreMechanics;
         private UltaChargeMechanics _ultaChargeMechanics;
         private UltaMechanics _ultaMechanics;
         private DeathMechanics _deathMechanics;
@@ -183,6 +184,10 @@ namespace Assets.Scripts.Gameplay
                 DestroyObstacleEvent,
                 Lives,
                 LevelController.Instance.LevelData.GameManager);
+            _partOfDayScoreMechanics = new PartOfDayScoreMechanics(
+                _runScoreMechanics,
+                Lives,
+                LevelController.Instance.LevelData.GameManager);
             _ultaChargeMechanics = new UltaChargeMechanics(DestroyObstacleEvent, UltaChargeAmount);
             _ultaMechanics = new UltaMechanics(UltaEvent, UltaChargeAmount);
             _deathMechanics = new DeathMechanics(Lives);
@@ -202,6 +207,7 @@ namespace Assets.Scripts.Gameplay
             _hamsterAnimationEventsMechanics.OnEnable();
             _takeDamageMechanics.OnEnable();
             _runScoreMechanics.OnEnable();
+            _partOfDayScoreMechanics.OnEnable();
             _addOneCoinMechanics.OnEnable();
             _addCoinsOrBonusMechanics.OnEnable();
             _ultaChargeMechanics.OnEnable();
@@ -219,6 +225,7 @@ namespace Assets.Scripts.Gameplay
             _hamsterAnimationEventsMechanics.OnDisable();
             _takeDamageMechanics.OnDisable();
             _runScoreMechanics.OnDisable();
+            _partOfDayScoreMechanics.OnDisable();
             _addOneCoinMechanics.OnDisable();
             _addCoinsOrBonusMechanics.OnDisable();
             _ultaChargeMechanics.OnDisable();

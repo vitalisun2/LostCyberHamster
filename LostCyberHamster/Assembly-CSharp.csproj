@@ -230,6 +230,7 @@
     <Compile Include="Assets\Scripts\Gameplay\ActionTypeEnum.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranchMetricsComparer.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialSkinLessonSandboxActions.cs" />
+    <Compile Include="Assets\Scripts\GameManagement\Progress\PartOfDayScoreService.cs" />
     <Compile Include="Assets\Scripts\Account\AccountLinkResult.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnSimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverStrategy.cs" />
@@ -471,6 +472,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneExecutor.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\HealthBarMechanics.cs" />
     <Compile Include="Assets\Scripts\Consts.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\PartOfDayScoreMechanics.cs" />
     <Compile Include="Assets\Scripts\System\Models\PreloadedEffect.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnStrategy.cs" />
