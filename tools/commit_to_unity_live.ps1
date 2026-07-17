@@ -1,4 +1,4 @@
-Set-StrictMode -Off
+﻿Set-StrictMode -Off
 $ErrorActionPreference = "Stop"
 
 function Invoke-Git {
@@ -7,11 +7,19 @@ function Invoke-Git {
         [string[]]$Arguments
     )
 
-    $output = & git @Arguments 2>&1
-    if ($LASTEXITCODE -ne 0) {
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $output = & git @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    if ($exitCode -ne 0) {
         $details = ($output | Out-String).Trim()
         if ([string]::IsNullOrWhiteSpace($details)) {
-            $details = "git exited with code $LASTEXITCODE"
+            $details = "git exited with code $exitCode"
         }
 
         throw "git $($Arguments -join ' ') failed.`n$details"
@@ -54,8 +62,13 @@ try {
         $maxLen = 12000
         if ($diff.Length -gt $maxLen) { $diff = $diff.Substring(0, $maxLen) + "`n...[truncated]" }
 
-        $prompt = "Write a short git commit message in English, one line up to 72 characters, imperative mood, no period at the end. Be specific about what changed — not just which file, but what was added, removed or modified. Output only the message, nothing else.`nDiff:`n$diff"
-        $commitMsg = ($prompt | gh models run openai/gpt-4.1-mini 2>$null | Where-Object { $_ -match '\S' -and $_ -notmatch '^та' } | Select-Object -Last 1)
+        $prompt = "Write a short git commit message in English, one line up to 72 characters, imperative mood, no period at the end. Be specific about what changed - not just which file, but what was added, removed or modified. Output only the message, nothing else.`nDiff:`n$diff"
+        $ghCommand = Get-Command 'gh' -ErrorAction SilentlyContinue
+        if ($null -ne $ghCommand) {
+            $commitMsg = ($prompt | & $ghCommand.Source models run openai/gpt-4.1-mini 2>$null | Where-Object { $_ -match '\S' -and $_ -notmatch '^та' } | Select-Object -Last 1)
+        } else {
+            $commitMsg = ""
+        }
         $commitMsg = "$commitMsg".Trim().Trim('"').Trim()
         if ([string]::IsNullOrWhiteSpace($commitMsg)) {
             Write-Warning "Не удалось сгенерировать сообщение через gh models, использую fallback."
@@ -68,42 +81,10 @@ try {
         Write-Host "Commit: $(Get-GitText -Arguments @('log', '-1', '--oneline'))"
     } else {
         Write-Host "Нет staged-изменений. Используй 'git add' чтобы выбрать файлы для коммита."
-        Write-Host "Продолжаю с merge..."
     }
 
-    # Обновляем main через fast-forward без checkout, чтобы не трогать unstaged в unity-live.
-    & git merge-base --is-ancestor main integration/unity-live
-    if ($LASTEXITCODE -eq 1) {
-        $mainHash = Get-GitText -Arguments @('rev-parse', 'main')
-        $liveHash = Get-GitText -Arguments @('rev-parse', 'integration/unity-live')
-        throw "Ветки действительно разошлись: main=$mainHash, unity-live=$liveHash. Нужен ручной merge, fast-forward невозможен."
-    }
-
-    if ($LASTEXITCODE -ne 0) {
-        throw "git merge-base --is-ancestor main integration/unity-live failed with exit code $LASTEXITCODE"
-    }
-
-    $mainHash = Get-GitText -Arguments @('rev-parse', 'main')
-    $liveHash = Get-GitText -Arguments @('rev-parse', 'integration/unity-live')
-    if ($mainHash -ne $liveHash) {
-        Write-Host "Fast-forward main -> integration/unity-live ($liveHash)..."
-        Invoke-Git -Arguments @('update-ref', 'refs/heads/main', $liveHash, $mainHash) | Out-Null
-    } else {
-        Write-Host "main уже синхронизирован с integration/unity-live."
-    }
-
-    Invoke-Git -Arguments @('push', 'origin', 'main') | ForEach-Object { Write-Host $_ }
     Invoke-Git -Arguments @('push', 'origin', 'integration/unity-live') | ForEach-Object { Write-Host $_ }
-
-    # Проверка синхронизации
-    $mainHash    = Get-GitText -Arguments @('rev-parse', 'main')
-    $liveHash    = Get-GitText -Arguments @('rev-parse', 'integration/unity-live')
-    if ($mainHash -eq $liveHash) {
-        Write-Host "$(Get-GitText -Arguments @('log', '-1', '--oneline', 'integration/unity-live')) — main и unity-live синхронизированы ✓"
-    } else {
-        Write-Error "Ветки расходятся! main=$mainHash, unity-live=$liveHash"
-        exit 1
-    }
+    Write-Host "$(Get-GitText -Arguments @('log', '-1', '--oneline', 'integration/unity-live')) - unity-live отправлена в origin"
 } catch {
     Write-Error $_
     exit 1
