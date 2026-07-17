@@ -260,7 +260,15 @@ public class CollisionController : MonoBehaviour
                 $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")}");
         }
 
+        var collectableType = obstacle.ObstacleType.ObstacleTypeEnum;
+
+        // Выдаём награду за подтверждённый collectable.
         _hamster.CollectCoinsOrBonusAction.Invoke(obstacle);
+
+        // Публикуем одно точное событие для счётчика очков забега.
+        _hamster.CollectableCollectedEvent.Invoke(collectableType);
+
+        // Убираем подобранный объект со сцены.
         UnspawnObstacle(obstacle);
     }
 

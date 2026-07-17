@@ -1,4 +1,5 @@
 ﻿using System;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameManagerLogic;
@@ -30,6 +31,7 @@ namespace Assets.Scripts.Gameplay
         public float ColliderHeight => GetBoxColliderHeight();
         public float LeftX { get; private set; }
         public float RightX { get; private set; }
+        public int RunScore => _runScoreMechanics?.CurrentScore ?? 0;
 
         public AtomicVariable<HamsterStateEnum> HamsterState = new(HamsterStateEnum.Run);
 
@@ -40,6 +42,7 @@ namespace Assets.Scripts.Gameplay
         public AtomicEvent RoofJumpRequest = new();
         public AtomicEvent SuperRoofJumpRequest = new();
         public AtomicEvent JumpOverEvent = new();
+        public AtomicEvent<ObstacleTypeEnum> CollectableCollectedEvent = new();
         public AtomicEvent<Obstacle> DestroyObstacleEvent = new();
         public AtomicEvent DamageEvent = new();
         public AtomicEvent UltaEvent = new();
@@ -75,6 +78,7 @@ namespace Assets.Scripts.Gameplay
         private TakeDamageMechanics _takeDamageMechanics;
         private AddOneCoinMechanics _addOneCoinMechanics;
         private AddCoinsOrBonusMechanics _addCoinsOrBonusMechanics;
+        private RunScoreMechanics _runScoreMechanics;
         private UltaChargeMechanics _ultaChargeMechanics;
         private UltaMechanics _ultaMechanics;
         private DeathMechanics _deathMechanics;
@@ -174,6 +178,11 @@ namespace Assets.Scripts.Gameplay
             _takeDamageMechanics = new TakeDamageMechanics(DamageEvent, _spriteAnimatorController, HamsterState, IsDamaged, Lives);
             _addOneCoinMechanics = new AddOneCoinMechanics(JumpOverEvent);
             _addCoinsOrBonusMechanics = new AddCoinsOrBonusMechanics(DestroyObstacleEvent, this);
+            _runScoreMechanics = new RunScoreMechanics(
+                CollectableCollectedEvent,
+                DestroyObstacleEvent,
+                Lives,
+                LevelController.Instance.LevelData.GameManager);
             _ultaChargeMechanics = new UltaChargeMechanics(DestroyObstacleEvent, UltaChargeAmount);
             _ultaMechanics = new UltaMechanics(UltaEvent, UltaChargeAmount);
             _deathMechanics = new DeathMechanics(Lives);
@@ -192,6 +201,7 @@ namespace Assets.Scripts.Gameplay
             _superJumpMechanics.OnEnable();
             _hamsterAnimationEventsMechanics.OnEnable();
             _takeDamageMechanics.OnEnable();
+            _runScoreMechanics.OnEnable();
             _addOneCoinMechanics.OnEnable();
             _addCoinsOrBonusMechanics.OnEnable();
             _ultaChargeMechanics.OnEnable();
@@ -208,6 +218,7 @@ namespace Assets.Scripts.Gameplay
             _superJumpMechanics.OnDisable();
             _hamsterAnimationEventsMechanics.OnDisable();
             _takeDamageMechanics.OnDisable();
+            _runScoreMechanics.OnDisable();
             _addOneCoinMechanics.OnDisable();
             _addCoinsOrBonusMechanics.OnDisable();
             _ultaChargeMechanics.OnDisable();
