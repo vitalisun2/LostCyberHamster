@@ -2,7 +2,6 @@ using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
 using LostCyberHamster.UI;
 using UnityEngine.UIElements;
-using Vues.GameCore;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -24,7 +23,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         public void OnUpdate()
         {
             _debugText.text = _character.HamsterState.Value.ToString();
-            //_scoreBar.text = MoneyStorage.GetCurrentBalance().ToString();    
             UpdateEnergyBar(_character.Energy.Value);
         }
 

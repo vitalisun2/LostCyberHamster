@@ -1,8 +1,4 @@
-using System;
 using Unity.Properties;
-using Unity.VisualScripting;
-using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.UIElements;
 using Vues.GameCore;
 
@@ -19,7 +15,7 @@ namespace LostCyberHamster.UI
 
         protected override void UpdateText()
         {
-            _label.text = CrystalStorage.GetCurrentBalance().ToString();
+            _label.text = ResourceManager.GetCurrentBalance(ResourceType.Crystals).ToString();
         }
 
     }

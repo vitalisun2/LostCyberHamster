@@ -170,10 +170,10 @@ namespace Vues.GameCore
             {
                 case (int)ResourceType.Coins:
                     GameEventsManager.EarnCoins(quest.RewardAmount);
-                    GameDataManager.PlayerData.Money += quest.RewardAmount;
+                    ResourceManager.AddResource(ResourceType.Coins, quest.RewardAmount);
                     break;
                 case (int)ResourceType.Crystals:
-                    GameDataManager.PlayerData.Crystals += quest.RewardAmount;
+                    ResourceManager.AddResource(ResourceType.Crystals, quest.RewardAmount);
                     break;
                 default:
                     break;

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.System;
 using GameManagement.Progress;
-using Unity.Services.CloudSave;
 using UnityEngine;
 using Vues.GameCore;
 
@@ -22,30 +21,14 @@ namespace GameManagement
 
     public static bool IsGameJustStarted = true;
 
-        public static async Task LoadDataAsync()
+        public static Task LoadDataAsync()
         {
-            var localData = LoadFromPlayerPrefs();
-            if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
-            {
-                PlayerData = localData;
-                SaveData();
-                EnsureProgressConsistency();
-                DebugManager.DiagStability("[AUTOMATION] Cloud Save load skipped for test-level run.");
-                return;
-            }
-
-            var cloudData = await LoadFromCloud();
-
-            DateTime.TryParse(localData.LastSaveDate, out var localLastSaveDate);
-            DateTime.TryParse(cloudData.LastSaveDate, out var cloudLastSaveDate);
-
-            PlayerData = cloudLastSaveDate > localLastSaveDate ? cloudData : localData;
-
+            PlayerData = LoadFromPlayerPrefs();
             SaveData();
-
             EnsureProgressConsistency();
 
-       }
+            return Task.CompletedTask;
+        }
 
         private static PlayerData LoadFromPlayerPrefs()
         {
@@ -57,27 +40,6 @@ namespace GameManagement
             var encryptedData = PlayerPrefs.GetString(_playerDataKey);
             var decryptedData = _cryptoService.Decrypt(encryptedData);
             return PlayerData.FromJson(decryptedData);
-        }
-
-        private static async Task<PlayerData> LoadFromCloud()
-        {
-            try
-            {
-                var keys = new HashSet<string> { _playerDataKey };
-                var cloudData = await CloudSaveService.Instance.Data.Player.LoadAsync(keys);
-
-                if (cloudData.TryGetValue(_playerDataKey, out var cloudJson))
-                {
-                    return PlayerData.FromJson(cloudJson.Value.GetAs<string>());
-                }
-
-           }
-            catch (Exception e)
-            {
-                Debug.LogWarning("Failed to load data from Cloud: " + e.Message);
-            }
-
-            return new PlayerData();
         }
 
         public static void SaveData()
@@ -95,31 +57,6 @@ namespace GameManagement
             {
                 PlayerData.PurchasedSkinIds.Add(skinId);
                 SaveData();
-                TrySaveToCloud();
-            }
-        }
-
-        private static async void TrySaveToCloud()
-        {
-            SaveData();
-            if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
-            {
-                DebugManager.DiagStability("[AUTOMATION] Cloud Save save skipped for test-level run.");
-                return;
-            }
-
-            var playerDataDict = new Dictionary<string, object>
-            {
-                { _playerDataKey, PlayerData.ToJson() }
-            };
-
-            try
-            {
-                await CloudSaveService.Instance.Data.Player.SaveAsync(playerDataDict);
-           }
-            catch (Exception e)
-            {
-                Debug.LogWarning("Failed to save data to Cloud: " + e.Message);
             }
         }
 
@@ -162,8 +99,6 @@ namespace GameManagement
             SaveData();
             SaveSettings();
 
-            MoneyStorage.Init(0);
-            CrystalStorage.Init(0);
         }
 
         private static void EnsureProgressConsistency()

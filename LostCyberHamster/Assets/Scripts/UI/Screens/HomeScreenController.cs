@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Assets.Scripts.Tutorial;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
-using Vues.GameCore;
 
 namespace LostCyberHamster.UI
 {
@@ -110,8 +109,6 @@ namespace LostCyberHamster.UI
 
             _buttonHome.style.display = DisplayStyle.None;
 
-            //_labelMoney.text = MoneyStorage.GetCurrentBalance().ToString();
-            //_labelCrystals.text = CrystalStorage.GetCurrentBalance().ToString();
         }
 
     }

@@ -1,18 +1,25 @@
+using GameManagement;
+
 namespace Vues.GameCore
 {
     /// <summary>
-    /// Общее хранилище ресурсов.
+    /// Единая точка чтения и изменения ресурсов в данных игрока.
     /// </summary>
     public static class ResourceManager
     {
         public static bool CanSpendResource(ResourceType resourceType, int amount)
         {
+            if (amount <= 0)
+            {
+                return false;
+            }
+
             switch (resourceType)
             {
                 case ResourceType.Crystals:
-                    return CrystalStorage.CanSpendCrystals(amount);
+                    return GameDataManager.PlayerData.Crystals >= amount;
                 case ResourceType.Coins:
-                    return MoneyStorage.CanSpendMoney(amount);
+                    return GameDataManager.PlayerData.Money >= amount;
                 default:
                     return false;
             }
@@ -20,13 +27,18 @@ namespace Vues.GameCore
 
         public static void AddResource(ResourceType resourceType, int amount)
         {
+            if (amount <= 0)
+            {
+                return;
+            }
+
             switch (resourceType)
             {
                 case ResourceType.Crystals:
-                    CrystalStorage.AddCrystals(amount);
+                    GameDataManager.PlayerData.Crystals += amount;
                     break;
                 case ResourceType.Coins:
-                    MoneyStorage.AddMoney(amount);
+                    GameDataManager.PlayerData.Money += amount;
                     break;
             }
         }
@@ -37,25 +49,68 @@ namespace Vues.GameCore
             switch (resourceType)
             {
                 case ResourceType.Crystals:
-                    return CrystalStorage.GetCurrentBalance();
+                    return GameDataManager.PlayerData.Crystals;
                 case ResourceType.Coins:
-                    return MoneyStorage.GetCurrentBalance();
+                    return GameDataManager.PlayerData.Money;
                 default:
                     return 0;
             }
         }
 
-        public static bool SpendResource(ResourceType resourceType, int amount)
+        public static void SetResourceBalance(ResourceType resourceType, int balance)
         {
             switch (resourceType)
             {
                 case ResourceType.Crystals:
-                    return CrystalStorage.SpendCrystals(amount);
+                    GameDataManager.PlayerData.Crystals = balance;
+                    break;
                 case ResourceType.Coins:
-                    return MoneyStorage.SpendMoney(amount);
+                    GameDataManager.PlayerData.Money = balance;
+                    break;
+            }
+        }
+
+        public static bool SpendResource(ResourceType resourceType, int amount)
+        {
+            if (!CanSpendResource(resourceType, amount))
+            {
+                return false;
+            }
+
+            switch (resourceType)
+            {
+                case ResourceType.Crystals:
+                    GameDataManager.PlayerData.Crystals -= amount;
+                    return true;
+                case ResourceType.Coins:
+                    GameDataManager.PlayerData.Money -= amount;
+                    return true;
                 default:
                     return false;
             }
+        }
+
+        public static void OnEnable()
+        {
+            OnDisable();
+            GameEventsManager.OnCoinCollected += AddCoins;
+            GameEventsManager.OnCrystalsCollected += AddCrystals;
+        }
+
+        public static void OnDisable()
+        {
+            GameEventsManager.OnCoinCollected -= AddCoins;
+            GameEventsManager.OnCrystalsCollected -= AddCrystals;
+        }
+
+        private static void AddCoins(int amount)
+        {
+            AddResource(ResourceType.Coins, amount);
+        }
+
+        private static void AddCrystals(int amount)
+        {
+            AddResource(ResourceType.Crystals, amount);
         }
     }
 }

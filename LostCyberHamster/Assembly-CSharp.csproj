@@ -198,7 +198,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\JumpFromRoofSpecification.cs" />
     <Compile Include="Assets\Scripts\Analytics\Events.cs" />
     <Compile Include="Assets\Scripts\System\Models\AssetsDataForPreload.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\Meta\Storages\MoneyStorage.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\CollectibleKind.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\GameplayDevToolsSnapshot.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialUiPrompt.cs" />
@@ -471,7 +470,6 @@
     <Compile Include="Assets\Scripts\Common\Models\PatternTemplate.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranchMetrics.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\Meta\Storages\CrystalStorage.cs" />
     <Compile Include="Assets\Scripts\DevTools\Root\RootDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitDecorationsLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoof\SuperJumpFromRoofStrategy.cs" />

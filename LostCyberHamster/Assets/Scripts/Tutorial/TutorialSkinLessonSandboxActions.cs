@@ -38,8 +38,7 @@ namespace Assets.Scripts.Tutorial
                 };
             }
 
-            CrystalStorage.SpendCrystals(TutorialMetaCoordinator.RewardCrystals);
-            GameDataManager.PlayerData.Crystals = CrystalStorage.GetCurrentBalance();
+            ResourceManager.SpendResource(ResourceType.Crystals, TutorialMetaCoordinator.RewardCrystals);
             UIManager.OnRepaintScreen?.Invoke();
             TutorialSandboxState.PreserveRealPersistentState();
         }

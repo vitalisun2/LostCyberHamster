@@ -52,9 +52,6 @@ namespace Assets.Scripts.Entry_Points
 
         private void Start()
         {
-            GameDataManager.PlayerData.Crystals = CrystalStorage.GetCurrentBalance();
-            GameDataManager.PlayerData.Money = MoneyStorage.GetCurrentBalance();
-
             GameDataManager.SaveData();
 
             // tutorial !GameDataManager.PlayerData.IsFirstLaunch

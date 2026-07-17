@@ -41,8 +41,7 @@ public class GameEventSystemController : MonoBehaviour
 #endif
         AnalyticsManager.OnEnable();
         LevelManager.OnEnable();
-        MoneyStorage.OnEnable();
-        CrystalStorage.OnEnable();
+        ResourceManager.OnEnable();
         VibrationManager.OnEnable();
     }
 
@@ -56,8 +55,7 @@ public class GameEventSystemController : MonoBehaviour
 #endif
         AnalyticsManager.OnDisable();
         LevelManager.OnDisable();
-        MoneyStorage.OnDisable();
-        CrystalStorage.OnDisable();
+        ResourceManager.OnDisable();
         VibrationManager.OnDisable();
     }
 

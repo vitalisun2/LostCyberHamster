@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Assets.Scripts.System;
-using Vues.GameCore;
 using GameManagement;
 using LoadingTasks;
 
@@ -26,8 +25,6 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
 
             await LevelCatalogRuntimeConfigurator.ApplyInspectorOverrideAsync();
 
-            MoneyStorage.Init(GameDataManager.PlayerData.Money);
-            CrystalStorage.Init(GameDataManager.PlayerData.Crystals);
         }
     }
 }

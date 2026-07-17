@@ -28,8 +28,7 @@ namespace Assets.Scripts.Tutorial
             EnsureSnapshot();
             IsActive = true;
             ApplyDefaultTrainingState();
-            GameDataManager.PlayerData.Crystals = trainingCrystals;
-            CrystalStorage.Init(trainingCrystals);
+            ResourceManager.SetResourceBalance(ResourceType.Crystals, trainingCrystals);
             Log($"prepared skin purchase crystals={trainingCrystals}");
         }
 
@@ -37,12 +36,10 @@ namespace Assets.Scripts.Tutorial
         {
             EnsureSnapshot();
             IsActive = true;
-            GameDataManager.PlayerData.Money = 0;
-            GameDataManager.PlayerData.Crystals = 0;
+            ResourceManager.SetResourceBalance(ResourceType.Coins, 0);
+            ResourceManager.SetResourceBalance(ResourceType.Crystals, 0);
             GameDataManager.PlayerData.AppliedSkinId = electricStrikeSkinId;
             GameDataManager.PlayerData.PurchasedSkinIds = new List<int> { _defaultSkinId, electricStrikeSkinId };
-            MoneyStorage.Init(0);
-            CrystalStorage.Init(0);
             Log($"prepared super hit skin={electricStrikeSkinId}");
         }
 
@@ -58,14 +55,12 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
 
-            GameDataManager.PlayerData.Money = _snapshot.Money;
-            GameDataManager.PlayerData.Crystals = _snapshot.Crystals;
+            ResourceManager.SetResourceBalance(ResourceType.Coins, _snapshot.Money);
+            ResourceManager.SetResourceBalance(ResourceType.Crystals, _snapshot.Crystals);
             GameDataManager.PlayerData.AppliedSkinId = _snapshot.AppliedSkinId;
             GameDataManager.PlayerData.PurchasedSkinIds = new List<int>(_snapshot.PurchasedSkinIds);
             GameDataManager.PlayerData.CurrentLevel = _snapshot.CurrentLevel;
             GameDataManager.PlayerData.IsTutorialCompleted = _snapshot.IsTutorialCompleted || markTutorialCompleted;
-            MoneyStorage.Init(_snapshot.Money);
-            CrystalStorage.Init(_snapshot.Crystals);
             GameDataManager.SaveData();
             IsActive = false;
             Log("restored real state");
@@ -94,10 +89,8 @@ namespace Assets.Scripts.Tutorial
         {
             GameDataManager.PlayerData.AppliedSkinId = _defaultSkinId;
             GameDataManager.PlayerData.PurchasedSkinIds = new List<int> { _defaultSkinId };
-            GameDataManager.PlayerData.Money = 0;
-            GameDataManager.PlayerData.Crystals = 0;
-            MoneyStorage.Init(0);
-            CrystalStorage.Init(0);
+            ResourceManager.SetResourceBalance(ResourceType.Coins, 0);
+            ResourceManager.SetResourceBalance(ResourceType.Crystals, 0);
         }
 
         private static void EnsureSnapshot()
