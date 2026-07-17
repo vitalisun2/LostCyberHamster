@@ -202,6 +202,7 @@
     <Compile Include="Assets\Scripts\System\Rendering\SpriteRendererMaterialHelper.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\IJumpFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpCollisionSpec.cs" />
+    <Compile Include="Assets\Scripts\GameManagement\Data\LevelProgressKey.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\Skin.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneTiming.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\AddCoinsOrBonusMechanics.cs" />
@@ -313,6 +314,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnRoof\JumpOnRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Execution\ActionTriggerGate.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RoofJumpOutcomeResolver.cs" />
+    <Compile Include="Assets\Scripts\GameManagement\Data\LevelProgressEntry.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialGameController.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\GameplayDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\Common\Models\SpriteOverride.cs" />
@@ -344,6 +346,7 @@
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelCatalogRuntimeConfigurator.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RoofJumpMechanics.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelSelectionModel.cs" />
+    <Compile Include="Assets\Scripts\GameManagement\Data\LevelProgressSnapshot.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\TapMechanics.cs" />
     <Compile Include="Assets\Scripts\Tutorial\InitTutorialRuntimeLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RunScoreMechanics.cs" />
@@ -417,7 +420,6 @@
     <Compile Include="Assets\Scripts\Bot\PlanState\BotActionKindRules.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoof\JumpFromRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\Tutorial\TutorialMetaOverlay.cs" />
-    <Compile Include="Assets\Scripts\GameManagement\Data\LevelProgressModels.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningSnapshotProjector.cs" />
     <Compile Include="Assets\Scripts\Gameplay\Models\ObstacleType.cs" />
     <Compile Include="Assets\Scripts\Entry Points\LoadingTaskPipeline.cs" />
