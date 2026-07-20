@@ -36,6 +36,7 @@ namespace GameManagement
                 }
 
                 ClearInvalidBackup();
+                Debug.Log("[GameData] Load outcome: Primary.");
 
                 return Task.CompletedTask;
             }
@@ -52,6 +53,7 @@ namespace GameManagement
                     PlayerPrefs.Save();
                 }
 
+                Debug.LogWarning("[GameData] Load outcome: Backup promoted.");
                 return Task.CompletedTask;
             }
 
@@ -60,6 +62,7 @@ namespace GameManagement
             EnsureValidated(PlayerData);
             PlayerPrefs.DeleteKey(_playerDataBackupKey);
             WritePrimary(PlayerData, rotateValidPrimary: false);
+            Debug.LogWarning("[GameData] Load outcome: Defaults created.");
 
             return Task.CompletedTask;
         }
@@ -93,10 +96,20 @@ namespace GameManagement
                     wasRepaired = true;
                 }
 
+                if (validation.Status == PlayerDataValidationStatus.Valid)
+                {
+                    Debug.Log($"[GameData] Validation {GetSourceName(key)}: {(wasRepaired ? "Repaired" : "Valid")}.");
+                }
+                else
+                {
+                    Debug.LogWarning($"[GameData] Validation {GetSourceName(key)}: Rejected ({validation.Reason}).");
+                }
+
                 return validation.Status == PlayerDataValidationStatus.Valid;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                Debug.LogWarning($"[GameData] Load {GetSourceName(key)}: failed ({exception.GetType().Name}).");
                 data = null;
                 wasRepaired = false;
                 json = string.Empty;
@@ -112,16 +125,27 @@ namespace GameManagement
 
         private static void WritePrimary(PlayerData data, bool rotateValidPrimary)
         {
+            bool backupRotated = false;
             if (rotateValidPrimary && TryGetStrictlyValidEncryptedData(_playerDataKey, out var currentPrimary))
             {
                 PlayerPrefs.SetString(_playerDataBackupKey, currentPrimary);
+                backupRotated = true;
             }
 
-            data.LastSaveDate = DateTime.UtcNow.ToString("o");
-            var serializedData = data.ToJson();
-            var encryptedData = _cryptoService.Encrypt(serializedData);
-            PlayerPrefs.SetString(_playerDataKey, encryptedData);
-            PlayerPrefs.Save();
+            try
+            {
+                data.LastSaveDate = DateTime.UtcNow.ToString("o");
+                var serializedData = data.ToJson();
+                var encryptedData = _cryptoService.Encrypt(serializedData);
+                PlayerPrefs.SetString(_playerDataKey, encryptedData);
+                PlayerPrefs.Save();
+                Debug.Log($"[GameData] Save: primary written; backup {(backupRotated ? "rotated" : "skipped")}.");
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[GameData] Save: failed ({exception.GetType().Name}).");
+                throw;
+            }
         }
 
         private static bool TryGetStrictlyValidEncryptedData(string key, out string encryptedData)
@@ -139,8 +163,9 @@ namespace GameManagement
                 var data = PlayerData.FromJson(json);
                 return PlayerDataValidator.Validate(data).Status == PlayerDataValidationStatus.Valid;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                Debug.LogWarning($"[GameData] Inspect {GetSourceName(key)}: failed ({exception.GetType().Name}).");
                 encryptedData = string.Empty;
                 return false;
             }
@@ -153,7 +178,15 @@ namespace GameManagement
             {
                 PlayerPrefs.DeleteKey(_playerDataBackupKey);
                 PlayerPrefs.Save();
+                Debug.LogWarning("[GameData] Recovery: rejected backup cleared.");
             }
+        }
+
+        private static string GetSourceName(string key)
+        {
+            return string.Equals(key, _playerDataBackupKey, StringComparison.Ordinal)
+                ? "Backup"
+                : "Primary";
         }
 
         private static void EnsureValidated(PlayerData data)
@@ -163,10 +196,12 @@ namespace GameManagement
             {
                 PlayerDataValidator.RepairSafe(data, validation);
                 validation = PlayerDataValidator.Validate(data);
+                Debug.Log("[GameData] Validation runtime: Repaired.");
             }
 
             if (validation.Status != PlayerDataValidationStatus.Valid)
             {
+                Debug.LogWarning($"[GameData] Validation runtime: Rejected ({validation.Reason}).");
                 throw new InvalidOperationException($"Player data rejected: {validation.Reason}");
             }
         }
@@ -208,6 +243,7 @@ namespace GameManagement
             PlayerData = defaultData;
             IsGameJustStarted = true;
             SaveData();
+            Debug.Log("[GameData] ResetPlayerProgress: success.");
         }
 
         public static void ResetSettings()
@@ -215,6 +251,7 @@ namespace GameManagement
             PlayerPrefs.DeleteKey(_settingsKey);
             Settings = new SettingsData();
             SaveSettings();
+            Debug.Log("[GameData] ResetSettings: success.");
         }
 
         private static void EnsureProgressConsistency()
