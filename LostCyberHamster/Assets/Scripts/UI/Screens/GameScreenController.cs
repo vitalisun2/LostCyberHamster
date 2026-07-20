@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Assets.Scripts.Common;
+using Assets.Scripts.GameEngine.Mechanics;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
@@ -36,6 +37,11 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnPause(PointerDownEvent evt)
         {
+            if (GameplayInputGate.IsBlocked)
+            {
+                return;
+            }
+
             UIManager.OnModalShow(ScreenEnum.PauseModal);
             _pauseAction?.Invoke();
         }
@@ -52,16 +58,31 @@ namespace LostCyberHamster.UI
 
         private void OnClickTap(PointerDownEvent evt)
         {
+            if (GameplayInputGate.IsBlocked)
+            {
+                return;
+            }
+
             _tapAction?.Invoke();
         }
 
         private void OnClickUltra(PointerDownEvent evt)
         {
+            if (GameplayInputGate.IsBlocked)
+            {
+                return;
+            }
+
             _ultraAction?.Invoke();
         }
 
         private void OnClickJump(PointerDownEvent evt)
         {
+            if (GameplayInputGate.IsBlocked)
+            {
+                return;
+            }
+
             bool isDoubleJump = _doubleJumpDetector.RegisterJump();
 
             if (isDoubleJump)
@@ -76,11 +97,21 @@ namespace LostCyberHamster.UI
 
         private void OnClickBuyEnergy(PointerDownEvent evt)
         {
+            if (GameplayInputGate.IsBlocked)
+            {
+                return;
+            }
+
             _buyEnergyAction?.Invoke();
         }
 
         private void OnClickBuyUltra(PointerDownEvent evt)
         {
+            if (GameplayInputGate.IsBlocked)
+            {
+                return;
+            }
+
             _buyUltraAction.Invoke();
         }
 

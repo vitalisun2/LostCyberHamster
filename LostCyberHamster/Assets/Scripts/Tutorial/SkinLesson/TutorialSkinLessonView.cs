@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using LostCyberHamster.UI;
 using UnityEngine;
@@ -17,9 +18,8 @@ namespace Assets.Scripts.Tutorial
         private const float _softFocusWidth = 48f;
         private const int _focusMaskMaxWidth = 512;
 
-        private readonly TutorialFocusMaskBuilder _focusMaskBuilder = new();
+        private readonly TutorialFocusOverlay _focusOverlay = new();
         private readonly TutorialUiInputBlocker _inputBlocker = new();
-        private readonly TutorialUiAutomation _automation = new();
 
         private TutorialSkinStep _activeStep;
         private VisualElement _activeRoot;
@@ -28,6 +28,9 @@ namespace Assets.Scripts.Tutorial
         private VisualElement _focusMask;
         private VisualElement _focusHighlight;
         private int _bindingVersion;
+        private UIDocument[] _documents;
+        private ScreenEnum? _cachedSurface;
+        private VisualElement _cachedSurfaceRoot;
         private bool _isDisposed;
 
         internal event Action<TutorialSkinAction> AllowedActionPerformed;
@@ -41,6 +44,11 @@ namespace Assets.Scripts.Tutorial
             if (step == null)
             {
                 throw new ArgumentNullException(nameof(step));
+            }
+
+            if (IsActiveBindingValid(step))
+            {
+                return;
             }
 
             if (!TryFindPromptTarget(step.Prompt, out var root, out var target))
@@ -86,16 +94,17 @@ namespace Assets.Scripts.Tutorial
             return skin != null && displayedSkinName == skin.Name;
         }
 
-        /// <summary>
-        /// Повторно планирует automation-click, когда текущий шаг ещё не выполнен.
-        /// </summary>
-        internal void RepeatAutomation()
+        internal void InvalidateDocumentCache()
         {
-            ThrowIfDisposed();
-            if (_activeTarget?.panel != null)
+            if (_isDisposed)
             {
-                _automation.Schedule(_activeTarget);
+                return;
             }
+
+            ClearBinding();
+            _documents = null;
+            _cachedSurface = null;
+            _cachedSurfaceRoot = null;
         }
 
         /// <summary>
@@ -122,8 +131,7 @@ namespace Assets.Scripts.Tutorial
             }
 
             ClearBinding();
-            _automation.Dispose();
-            _focusMaskBuilder.Dispose();
+            _focusOverlay.Dispose();
             AllowedActionPerformed = null;
             _isDisposed = true;
         }
@@ -144,8 +152,6 @@ namespace Assets.Scripts.Tutorial
             root.RegisterCallback<NavigationCancelEvent>(BlockNavigationCancel, TrickleDown.TrickleDown);
             CreateFocusOverlay(root, step.Prompt.Instruction);
             ScheduleFocusRefresh(0);
-            ScheduleFocusRefresh(100);
-            _automation.Schedule(target);
         }
 
         private void ObserveAllowedClick(ClickEvent evt)
@@ -245,24 +251,20 @@ namespace Assets.Scripts.Tutorial
             Rect focusRect = GetTargetRect(rootBounds, targetBounds);
             Rect rootRect = new Rect(0f, 0f, rootBounds.width, rootBounds.height);
 
-            // Сначала снимаем StyleBackground, затем builder уничтожает предыдущую texture.
-            _focusMask.style.backgroundImage = null;
-            Texture2D texture = _focusMaskBuilder.Build(
+            _focusOverlay.Apply(
+                _focusMask,
+                _focusHighlight,
                 focusRect,
                 _activeStep.Prompt.Shape,
                 rootRect,
                 _dimAlpha,
                 _softFocusWidth,
                 _focusMaskMaxWidth);
-            _focusMask.style.backgroundImage = new StyleBackground(Background.FromTexture2D(texture));
-            SetElementRect(_focusHighlight, focusRect);
-            ApplyFocusRadius(_focusHighlight, focusRect, _activeStep.Prompt.Shape);
         }
 
         private void ClearBinding()
         {
             _bindingVersion++;
-            _automation.Cancel();
             _inputBlocker.Detach();
 
             if (_activeRoot != null)
@@ -276,12 +278,7 @@ namespace Assets.Scripts.Tutorial
                     TrickleDown.TrickleDown);
             }
 
-            if (_focusMask != null)
-            {
-                _focusMask.style.backgroundImage = null;
-            }
-
-            _focusMaskBuilder.Clear();
+            _focusOverlay.Clear();
             _focusRoot?.RemoveFromHierarchy();
             _activeStep = null;
             _activeRoot = null;
@@ -291,16 +288,14 @@ namespace Assets.Scripts.Tutorial
             _focusHighlight = null;
         }
 
-        private static bool TryFindPromptTarget(
+        private bool TryFindPromptTarget(
             TutorialSkinPrompt prompt,
             out VisualElement root,
             out VisualElement target)
         {
             root = null;
             target = null;
-            foreach (var uiDocument in UnityEngine.Object.FindObjectsByType<UIDocument>(
-                         FindObjectsInactive.Exclude,
-                         FindObjectsSortMode.None))
+            foreach (UIDocument uiDocument in GetDocuments())
             {
                 VisualElement candidateRoot = uiDocument.rootVisualElement;
                 if (candidateRoot?.panel == null || !ContainsSurfaceMarker(candidateRoot, prompt.Surface))
@@ -316,18 +311,26 @@ namespace Assets.Scripts.Tutorial
 
                 root = candidateRoot;
                 target = candidateTarget;
+                _cachedSurface = prompt.Surface;
+                _cachedSurfaceRoot = root;
                 return true;
             }
 
             return false;
         }
 
-        private static bool TryFindSurfaceRoot(ScreenEnum surface, out VisualElement root)
+        private bool TryFindSurfaceRoot(ScreenEnum surface, out VisualElement root)
         {
+            if (_cachedSurface == surface
+                && _cachedSurfaceRoot?.panel != null
+                && ContainsSurfaceMarker(_cachedSurfaceRoot, surface))
+            {
+                root = _cachedSurfaceRoot;
+                return true;
+            }
+
             root = null;
-            foreach (var uiDocument in UnityEngine.Object.FindObjectsByType<UIDocument>(
-                         FindObjectsInactive.Exclude,
-                         FindObjectsSortMode.None))
+            foreach (UIDocument uiDocument in GetDocuments())
             {
                 VisualElement candidateRoot = uiDocument.rootVisualElement;
                 if (candidateRoot?.panel == null || !ContainsSurfaceMarker(candidateRoot, surface))
@@ -336,6 +339,8 @@ namespace Assets.Scripts.Tutorial
                 }
 
                 root = candidateRoot;
+                _cachedSurface = surface;
+                _cachedSurfaceRoot = root;
                 return true;
             }
 
@@ -350,6 +355,46 @@ namespace Assets.Scripts.Tutorial
                 ScreenEnum.CharacterScreen => root.Q<VisualElement>("btn-skin-next") != null,
                 _ => false
             };
+        }
+
+        private bool IsActiveBindingValid(TutorialSkinStep step)
+        {
+            return _activeStep == step
+                   && _activeRoot?.panel != null
+                   && _activeTarget?.panel != null
+                   && ContainsSurfaceMarker(_activeRoot, step.Prompt.Surface)
+                   && ResolveTarget(_activeRoot, step.Prompt.Target) == _activeTarget;
+        }
+
+        private UIDocument[] GetDocuments()
+        {
+            if (_documents == null || HasDetachedDocument(_documents))
+            {
+                _documents = UnityEngine.Object.FindObjectsByType<UIDocument>(
+                    FindObjectsInactive.Exclude,
+                    FindObjectsSortMode.None);
+            }
+
+            return _documents;
+        }
+
+        private static bool HasDetachedDocument(IReadOnlyList<UIDocument> documents)
+        {
+            if (documents.Count == 0)
+            {
+                return true;
+            }
+
+            for (int index = 0; index < documents.Count; index++)
+            {
+                UIDocument document = documents[index];
+                if (document == null || document.rootVisualElement?.panel == null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static VisualElement ResolveTarget(VisualElement root, TutorialSkinTarget target)
@@ -385,16 +430,7 @@ namespace Assets.Scripts.Tutorial
 
         private static Rect GetTargetRect(Rect rootBounds, Rect targetBounds)
         {
-            var focusRect = new Rect(
-                targetBounds.x - rootBounds.x - _focusPadding,
-                targetBounds.y - rootBounds.y - _focusPadding,
-                targetBounds.width + _focusPadding * 2f,
-                targetBounds.height + _focusPadding * 2f);
-            float xMin = Mathf.Clamp(focusRect.xMin, 0f, rootBounds.width);
-            float yMin = Mathf.Clamp(focusRect.yMin, 0f, rootBounds.height);
-            float xMax = Mathf.Clamp(focusRect.xMax, xMin, rootBounds.width);
-            float yMax = Mathf.Clamp(focusRect.yMax, yMin, rootBounds.height);
-            return Rect.MinMaxRect(xMin, yMin, xMax, yMax);
+            return TutorialFocusOverlay.GetTargetRect(rootBounds, targetBounds, _focusPadding);
         }
 
         private static VisualElement CreateInstructionBubble(string instruction)
@@ -443,30 +479,6 @@ namespace Assets.Scripts.Tutorial
             element.style.right = 0;
             element.style.bottom = 0;
             element.style.left = 0;
-        }
-
-        private static void SetElementRect(VisualElement element, Rect rect)
-        {
-            element.style.left = rect.x;
-            element.style.top = rect.y;
-            element.style.bottom = StyleKeyword.Auto;
-            element.style.marginLeft = 0;
-            element.style.width = rect.width;
-            element.style.height = rect.height;
-        }
-
-        private static void ApplyFocusRadius(
-            VisualElement element,
-            Rect rect,
-            TutorialFocusShape shape)
-        {
-            float radius = shape == TutorialFocusShape.Circle
-                ? Mathf.Min(rect.width, rect.height) * 0.5f
-                : 28f;
-            element.style.borderTopLeftRadius = radius;
-            element.style.borderTopRightRadius = radius;
-            element.style.borderBottomRightRadius = radius;
-            element.style.borderBottomLeftRadius = radius;
         }
 
         private void ThrowIfDisposed()

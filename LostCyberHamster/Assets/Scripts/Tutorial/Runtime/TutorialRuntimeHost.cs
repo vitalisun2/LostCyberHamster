@@ -92,7 +92,12 @@ namespace Assets.Scripts.Tutorial
             }
 
             _flow.EnsureGameplay(currentLevel, gameManager, hamster);
-            if (TryFindGameplayRoot(out var root) && !ReferenceEquals(root, _attachedGameplayRoot))
+            if (_attachedGameplayRoot?.panel == null)
+            {
+                _attachedGameplayRoot = null;
+            }
+
+            if (_attachedGameplayRoot == null && TryFindGameplayRoot(out var root))
             {
                 _flow.AttachGameplayRoot(root);
                 _attachedGameplayRoot = root;

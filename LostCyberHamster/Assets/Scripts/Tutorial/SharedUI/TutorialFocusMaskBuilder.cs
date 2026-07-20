@@ -11,6 +11,7 @@ namespace Assets.Scripts.Tutorial
         private const float _roundedRectCornerRadius = 28f;
 
         private Texture2D _texture;
+        private Color32[] _pixels;
         private bool _isDisposed;
 
         /// <summary>
@@ -31,13 +32,12 @@ namespace Assets.Scripts.Tutorial
             }
 
             // Строим пиксели в пониженном разрешении для дешёвого мягкого края.
-            ReleaseTexture();
             int safeMaxWidth = Mathf.Max(128, maxWidth);
             int maskWidth = Mathf.Clamp(Mathf.RoundToInt(rootRect.width / 2f), 128, safeMaxWidth);
             int maskHeight = Mathf.Max(1, Mathf.RoundToInt(maskWidth * rootRect.height / rootRect.width));
             float safeSoftFocusWidth = Mathf.Max(1f, softFocusWidth);
             float safeDimAlpha = Mathf.Clamp01(dimAlpha);
-            var pixels = new Color32[maskWidth * maskHeight];
+            EnsureTexture(maskWidth, maskHeight);
 
             for (int y = 0; y < maskHeight; y++)
             {
@@ -52,20 +52,12 @@ namespace Assets.Scripts.Tutorial
                         shape);
                     byte alpha = (byte)Mathf.RoundToInt(
                         Mathf.Clamp01(distance / safeSoftFocusWidth) * safeDimAlpha * 255f);
-                    pixels[y * maskWidth + x] = new Color32(0, 0, 0, alpha);
+                    _pixels[y * maskWidth + x] = new Color32(0, 0, 0, alpha);
                 }
             }
 
-            // Текстура остаётся собственностью builder до следующего Build, Clear или Dispose.
-            _texture = new Texture2D(maskWidth, maskHeight, TextureFormat.RGBA32, false)
-            {
-                name = "Tutorial Focus Mask",
-                hideFlags = HideFlags.HideAndDontSave,
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp
-            };
-            _texture.SetPixels32(pixels);
-            _texture.Apply(false, true);
+            _texture.SetPixels32(_pixels);
+            _texture.Apply(false, false);
             return _texture;
         }
 
@@ -147,6 +139,25 @@ namespace Assets.Scripts.Tutorial
 
             UnityEngine.Object.Destroy(_texture);
             _texture = null;
+            _pixels = null;
+        }
+
+        private void EnsureTexture(int width, int height)
+        {
+            if (_texture != null && _texture.width == width && _texture.height == height)
+            {
+                return;
+            }
+
+            ReleaseTexture();
+            _pixels = new Color32[width * height];
+            _texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            {
+                name = "Tutorial Focus Mask",
+                hideFlags = HideFlags.HideAndDontSave,
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
         }
 
         private void ThrowIfDisposed()

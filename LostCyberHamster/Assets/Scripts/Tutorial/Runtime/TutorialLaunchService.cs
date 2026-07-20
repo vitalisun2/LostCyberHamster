@@ -3,12 +3,10 @@ using GameManagement;
 namespace Assets.Scripts.Tutorial
 {
     /// <summary>
-    /// Управляет входом в tutorial, replay и одноразовым bypass первого уровня.
+    /// Управляет production-входом в tutorial и повторным запуском из меню.
     /// </summary>
     public static class TutorialLaunchService
     {
-        public const string ResetCompletedOnceKey = TutorialStorage.ResetCompletedOnceKey;
-
         /// <summary>
         /// Подменяет первый gameplay level на основной tutorial level при активных условиях запуска.
         /// </summary>
@@ -20,42 +18,15 @@ namespace Assets.Scripts.Tutorial
                 return false;
             }
 
-            bool isForcedReplay = TutorialStorage.HasForcedReplay;
-            bool isFirstGameplayLevel = TutorialConstants.IsFirstGameplayLevel(playerData.CurrentLevel);
-            bool hasFirstLevelBypass = isFirstGameplayLevel
-                                       && !isForcedReplay
-                                       && TutorialStorage.HasFirstLevelBypass;
-            bool willRedirect = isForcedReplay
-                                || (isFirstGameplayLevel
-                                    && !hasFirstLevelBypass
-                                    && (!playerData.IsTutorialCompleted
-                                        || TutorialStorage.HasCompletedResetRequest));
-            if (willRedirect)
-            {
-                EnsureSessionSnapshot();
-            }
-
-            ApplyCompletedResetIfRequested(playerData);
-
-            // Forced replay имеет приоритет над текущим level и completion flag.
-            if (TutorialStorage.ConsumeForcedReplay())
-            {
-                playerData.CurrentLevel = TutorialConstants.CoreLessonLevelAddress;
-                return true;
-            }
-
-            if (TutorialConstants.IsFirstGameplayLevel(playerData.CurrentLevel)
-                && TutorialStorage.ConsumeFirstLevelBypass())
+            TutorialRoutingDecision decision = DecideRouting(
+                playerData.CurrentLevel,
+                playerData.IsTutorialCompleted);
+            if (!decision.ShouldRedirect)
             {
                 return false;
             }
 
-            if (!ShouldRedirectToTutorial(playerData.CurrentLevel, playerData.IsTutorialCompleted))
-            {
-                return false;
-            }
-
-            playerData.CurrentLevel = TutorialConstants.CoreLessonLevelAddress;
+            ApplyRoutingDecision(playerData, decision);
             return true;
         }
 
@@ -64,9 +35,17 @@ namespace Assets.Scripts.Tutorial
         /// </summary>
         public static bool ShouldRedirectToTutorial(string levelAddress, bool isTutorialCompleted)
         {
-            return !isTutorialCompleted
-                   && !TutorialConstants.IsTutorialLevel(levelAddress)
-                   && TutorialConstants.IsFirstGameplayLevel(levelAddress);
+            return DecideRouting(levelAddress, isTutorialCompleted).ShouldRedirect;
+        }
+
+        public static TutorialRoutingDecision DecideRouting(string levelAddress, bool isTutorialCompleted)
+        {
+            bool shouldRedirect = !isTutorialCompleted
+                                  && !TutorialConstants.IsTutorialLevel(levelAddress)
+                                  && TutorialConstants.IsFirstGameplayLevel(levelAddress);
+            return shouldRedirect
+                ? TutorialRoutingDecision.RedirectTo(TutorialConstants.CoreLessonLevelAddress)
+                : TutorialRoutingDecision.None;
         }
 
         /// <summary>
@@ -80,37 +59,13 @@ namespace Assets.Scripts.Tutorial
             }
 
             EnsureSessionSnapshot();
-            TutorialStorage.RequestForcedReplay();
             GameDataManager.PlayerData.CurrentLevel = TutorialConstants.CoreLessonLevelAddress;
         }
 
-        /// <summary>
-        /// Разрешает один запуск настоящего первого gameplay level без tutorial redirect.
-        /// </summary>
-        public static void AllowFirstGameplayLevelOnce()
+        private static void ApplyRoutingDecision(PlayerData playerData, TutorialRoutingDecision decision)
         {
-            TutorialStorage.RequestFirstLevelBypass();
-        }
-
-        /// <summary>
-        /// Запрашивает одноразовый сброс completion flag перед следующим routing pass.
-        /// </summary>
-        public static void RequestCompletedResetOnce()
-        {
-            TutorialStorage.RequestCompletedReset();
-        }
-
-        public static void ClearCompletedResetRequest()
-        {
-            TutorialStorage.ClearCompletedReset();
-        }
-
-        private static void ApplyCompletedResetIfRequested(PlayerData playerData)
-        {
-            if (TutorialStorage.ConsumeCompletedReset())
-            {
-                playerData.IsTutorialCompleted = false;
-            }
+            EnsureSessionSnapshot();
+            playerData.CurrentLevel = decision.TargetLevelAddress;
         }
 
         private static void EnsureSessionSnapshot()

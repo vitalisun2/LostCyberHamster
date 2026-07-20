@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using GameManagement;
+using UnityEngine;
 using Vues.GameCore;
 
 namespace Assets.Scripts.Tutorial
@@ -32,7 +33,12 @@ namespace Assets.Scripts.Tutorial
             // Существующий backup имеет приоритет: новый запуск не должен затереть реальные данные игрока.
             if (TutorialStorage.HasPlayerDataBackup)
             {
-                _snapshot = ReadPersistentSnapshot();
+                _snapshot = ReadPersistentSnapshot(out bool wasRepaired);
+                if (wasRepaired)
+                {
+                    TutorialStorage.UpdatePlayerDataBackup(_snapshot.ToJson());
+                }
+
                 if (!TutorialStorage.IsPlayerDataBackupActive)
                 {
                     TutorialStorage.MarkPlayerDataBackupActive();
@@ -42,7 +48,7 @@ namespace Assets.Scripts.Tutorial
             }
 
             // Новый snapshot становится active только после успешной persistent-записи.
-            PlayerData snapshot = ClonePlayerData(GameDataManager.PlayerData);
+            PlayerData snapshot = CloneValidatedPlayerData(GameDataManager.PlayerData);
             TutorialStorage.CreatePlayerDataBackup(snapshot.ToJson());
             _snapshot = snapshot;
         }
@@ -95,9 +101,14 @@ namespace Assets.Scripts.Tutorial
         /// <summary>
         /// Восстанавливает исходные данные и фиксирует завершение tutorial.
         /// </summary>
-        public void Complete()
+        public void Complete(string nextLevelAddress)
         {
-            RestoreSnapshot(markTutorialCompleted: true);
+            if (string.IsNullOrWhiteSpace(nextLevelAddress))
+            {
+                throw new ArgumentException("Tutorial completion level cannot be empty.", nameof(nextLevelAddress));
+            }
+
+            RestoreSnapshot(markTutorialCompleted: true, nextLevelAddress);
         }
 
         /// <summary>
@@ -105,7 +116,7 @@ namespace Assets.Scripts.Tutorial
         /// </summary>
         public void Rollback()
         {
-            RestoreSnapshot(markTutorialCompleted: false);
+            RestoreSnapshot(markTutorialCompleted: false, nextLevelAddress: null);
         }
 
         /// <summary>
@@ -120,23 +131,29 @@ namespace Assets.Scripts.Tutorial
 
             if (!TutorialStorage.TryGetPlayerDataBackup(out string playerDataJson))
             {
-                TutorialStorage.ClearPlayerDataBackup();
+                Debug.LogError("Tutorial recovery failed: active snapshot marker has no backup data.");
                 return false;
             }
 
             PlayerData recoveredPlayerData;
+            bool wasRepaired;
             try
             {
-                recoveredPlayerData = DeserializePlayerData(playerDataJson);
+                recoveredPlayerData = DeserializeValidatedPlayerData(playerDataJson, out wasRepaired);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                TutorialStorage.ClearPlayerDataBackup();
+                Debug.LogError($"Tutorial recovery preserved invalid snapshot: {exception.Message}");
                 return false;
             }
 
+            if (wasRepaired)
+            {
+                TutorialStorage.UpdatePlayerDataBackup(recoveredPlayerData.ToJson());
+            }
+
             GameDataManager.PlayerData = recoveredPlayerData;
-            GameDataManager.SaveData();
+            PlayerProgressCommitter.Commit(CheckpointReason.CurrentLevelChanged);
             TutorialStorage.ClearPlayerDataBackup();
             return true;
         }
@@ -149,17 +166,30 @@ namespace Assets.Scripts.Tutorial
             }
         }
 
-        private static PlayerData ClonePlayerData(PlayerData playerData)
+        private static PlayerData CloneValidatedPlayerData(PlayerData playerData)
         {
-            return DeserializePlayerData(playerData.ToJson());
+            return DeserializeValidatedPlayerData(playerData.ToJson(), out _);
         }
 
-        private static PlayerData DeserializePlayerData(string playerDataJson)
+        private static PlayerData DeserializeValidatedPlayerData(string playerDataJson, out bool wasRepaired)
         {
             PlayerData playerData = PlayerData.FromJson(playerDataJson);
             if (playerData == null)
             {
                 throw new InvalidOperationException("Tutorial player data backup is empty.");
+            }
+
+            PlayerDataValidationResult validation = PlayerDataValidator.Validate(playerData);
+            wasRepaired = validation.Status == PlayerDataValidationStatus.Repairable;
+            if (wasRepaired)
+            {
+                PlayerDataValidator.RepairSafe(playerData, validation);
+                validation = PlayerDataValidator.Validate(playerData);
+            }
+
+            if (validation.Status != PlayerDataValidationStatus.Valid)
+            {
+                throw new InvalidOperationException($"Tutorial player data snapshot rejected: {validation.Reason}");
             }
 
             return playerData;
@@ -185,7 +215,7 @@ namespace Assets.Scripts.Tutorial
             ResourceManager.SetResourceBalance(ResourceType.Crystals, 0);
         }
 
-        private PlayerData ReadPersistentSnapshot()
+        private PlayerData ReadPersistentSnapshot(out bool wasRepaired)
         {
             if (!TutorialStorage.TryGetPlayerDataBackup(out string playerDataJson))
             {
@@ -194,7 +224,7 @@ namespace Assets.Scripts.Tutorial
 
             try
             {
-                return DeserializePlayerData(playerDataJson);
+                return DeserializeValidatedPlayerData(playerDataJson, out wasRepaired);
             }
             catch (Exception exception)
             {
@@ -202,7 +232,7 @@ namespace Assets.Scripts.Tutorial
             }
         }
 
-        private void RestoreSnapshot(bool markTutorialCompleted)
+        private void RestoreSnapshot(bool markTutorialCompleted, string nextLevelAddress)
         {
             PlayerData snapshot = GetSnapshotForRestore();
             if (snapshot == null)
@@ -212,9 +242,23 @@ namespace Assets.Scripts.Tutorial
 
             // Persistent backup удаляется только после успешного сохранения восстановленных данных.
             snapshot.IsTutorialCompleted |= markTutorialCompleted;
+            if (!string.IsNullOrWhiteSpace(nextLevelAddress))
+            {
+                snapshot.CurrentLevel = nextLevelAddress;
+            }
+
+            snapshot = CloneValidatedPlayerData(snapshot);
             TutorialStorage.UpdatePlayerDataBackup(snapshot.ToJson());
             GameDataManager.PlayerData = snapshot;
-            GameDataManager.SaveData();
+            if (markTutorialCompleted)
+            {
+                PlayerProgressCommitter.Commit(CheckpointReason.TutorialCompleted);
+            }
+            else
+            {
+                PlayerProgressCommitter.Commit(CheckpointReason.CurrentLevelChanged);
+            }
+
             TutorialStorage.ClearPlayerDataBackup();
             _snapshot = null;
         }
@@ -230,13 +274,19 @@ namespace Assets.Scripts.Tutorial
             {
                 if (TutorialStorage.IsPlayerDataBackupActive)
                 {
-                    TutorialStorage.ClearPlayerDataBackup();
+                    throw new InvalidOperationException(
+                        "Tutorial snapshot marker exists, but the protected player data backup is missing.");
                 }
 
                 return null;
             }
 
-            _snapshot = ReadPersistentSnapshot();
+            _snapshot = ReadPersistentSnapshot(out bool wasRepaired);
+            if (wasRepaired)
+            {
+                TutorialStorage.UpdatePlayerDataBackup(_snapshot.ToJson());
+            }
+
             return _snapshot;
         }
     }

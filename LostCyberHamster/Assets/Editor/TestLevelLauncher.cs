@@ -64,9 +64,6 @@ namespace LostCyberHamster.Editor
                     PlayerPrefs.DeleteKey(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey);
                     PlayerPrefs.Save();
                 }
-                Assets.Scripts.Tutorial.TutorialAutomation.Clear();
-                Assets.Scripts.Tutorial.TutorialLaunchService.ClearCompletedResetRequest();
-
                 LaunchPendingInteractiveLevelWhenReady();
             }
         }
@@ -143,22 +140,6 @@ namespace LostCyberHamster.Editor
             // Write override into PlayerPrefs so it survives domain reload on Play
             PlayerPrefs.SetString(OverridePrefsKey, effectiveLevelAddress);
             PlayerPrefs.SetInt(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey, interactive ? 0 : 1);
-
-            bool isAutomatedTutorialRoute =
-                !interactive
-                && (Assets.Scripts.Tutorial.TutorialConstants.IsTutorialLevel(effectiveLevelAddress)
-                    || Assets.Scripts.Tutorial.TutorialConstants.IsFirstGameplayLevel(effectiveLevelAddress));
-
-            if (isAutomatedTutorialRoute)
-            {
-                Assets.Scripts.Tutorial.TutorialAutomation.SetAutoPlay(true);
-                Assets.Scripts.Tutorial.TutorialLaunchService.RequestCompletedResetOnce();
-            }
-            else
-            {
-                Assets.Scripts.Tutorial.TutorialAutomation.ClearAutoPlay();
-                Assets.Scripts.Tutorial.TutorialLaunchService.ClearCompletedResetRequest();
-            }
 
             if (timeScaleOverride.HasValue)
                 PlayerPrefs.SetFloat(TimeScaleOverrideKey, Mathf.Clamp(timeScaleOverride.Value, 0.1f, 4.0f));

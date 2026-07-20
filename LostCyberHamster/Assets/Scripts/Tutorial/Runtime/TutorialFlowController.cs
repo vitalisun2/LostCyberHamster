@@ -48,6 +48,7 @@ namespace Assets.Scripts.Tutorial
             }
 
             DisposeGameplay();
+            _skinLesson.OnSceneLoaded();
             if (TutorialConstants.IsCoreLessonLevel(levelAddress))
             {
                 StartGameplayScenario(
@@ -128,7 +129,9 @@ namespace Assets.Scripts.Tutorial
                 _phase = TutorialPhase.SuperHit;
             }
 
-            _gameplay = new TutorialGameplayController(gameManager, hamster, scenario);
+            _gameplay = new TutorialGameplayController(
+                new TutorialGameplayWorldAdapter(gameManager, hamster),
+                scenario);
             _gameplay.ScenarioCompleted += HandleGameplayScenarioCompleted;
             _gameplay.SkipRequested += HandleSkipRequested;
             _activeGameplayLevel = levelAddress;
@@ -169,11 +172,6 @@ namespace Assets.Scripts.Tutorial
         private void ShowTutorialCompletion()
         {
             _phase = TutorialPhase.Completed;
-            if (TutorialAutomation.ShouldAutoPlay())
-            {
-                DebugManager.DiagStability("[TEST RESULT] WIN Tutorial completed");
-            }
-
             DeviceLogUploader.UploadDiagnosticLog("tutorial_completed");
             _gameplay.ShowCompletion(
                 "Поздравляю",
@@ -206,7 +204,6 @@ namespace Assets.Scripts.Tutorial
         private void StartFirstGameplayLevel()
         {
             CompleteSessionAtFirstGameplayLevel();
-            TutorialLaunchService.AllowFirstGameplayLevelOnce();
             SceneManager.LoadScene(TutorialConstants.GameSceneName);
         }
 
@@ -218,10 +215,8 @@ namespace Assets.Scripts.Tutorial
 
         private void CompleteSessionAtFirstGameplayLevel()
         {
-            _session.Complete();
+            _session.Complete(TutorialConstants.FirstGameplayLevelAddress);
             _phase = TutorialPhase.Completed;
-            GameDataManager.PlayerData.CurrentLevel = TutorialConstants.FirstGameplayLevelAddress;
-            GameDataManager.SaveData();
         }
 
         private void DisposeGameplay()

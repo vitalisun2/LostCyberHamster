@@ -154,7 +154,6 @@ namespace Assets.Scripts.Tutorial
             // Tutorial не выполняет game-команду: проверяет state после штатного CharacterScreen handler.
             if (!IsCurrentStepCompleted())
             {
-                _view.RepeatAutomation();
                 return;
             }
 
@@ -207,6 +206,14 @@ namespace Assets.Scripts.Tutorial
             if (_isDisposed)
             {
                 throw new ObjectDisposedException(nameof(TutorialSkinLessonController));
+            }
+        }
+
+        public void OnSceneLoaded()
+        {
+            if (!_isDisposed)
+            {
+                _view.InvalidateDocumentCache();
             }
         }
     }

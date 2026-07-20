@@ -36,11 +36,12 @@ namespace Assets.Scripts.Tutorial
         private readonly Button _skipButton;
         private readonly Button _primaryCompletionButton;
         private readonly Button _secondaryCompletionButton;
-        private readonly TutorialFocusMaskBuilder _focusMaskBuilder = new();
+        private readonly TutorialFocusOverlay _focusOverlay = new();
 
         private TutorialAction _currentPromptAction;
         private Rect _currentFocusRect;
         private bool _hasCurrentFocusRect;
+        private int _focusVersion;
         private bool _isDisposed;
 
         public TutorialGameplayView(VisualElement contentRoot)
@@ -104,15 +105,17 @@ namespace Assets.Scripts.Tutorial
             _root.style.display = DisplayStyle.Flex;
             _idleInputBlocker.style.display = DisplayStyle.None;
             _promptRoot.style.display = DisplayStyle.Flex;
-            ApplyFocusStyle(focusAction);
-            _promptRoot.schedule.Execute(() => ApplyFocusStyle(focusAction)).ExecuteLater(0);
+            _hasCurrentFocusRect = false;
+            int focusVersion = ++_focusVersion;
+            _promptRoot.schedule.Execute(() => ApplyFocusStyle(focusAction, focusVersion)).ExecuteLater(0);
         }
 
         public void HidePrompt()
         {
             _promptRoot.style.display = DisplayStyle.None;
+            _focusVersion++;
             _hasCurrentFocusRect = false;
-            ClearFocusMaskTexture();
+            _focusOverlay.Clear();
         }
 
         public void ShowCompletion(
@@ -138,8 +141,9 @@ namespace Assets.Scripts.Tutorial
             _root.style.display = DisplayStyle.None;
             _completeRoot.style.display = DisplayStyle.None;
             _idleInputBlocker.style.display = DisplayStyle.None;
+            _focusVersion++;
             _hasCurrentFocusRect = false;
-            ClearFocusMaskTexture();
+            _focusOverlay.Clear();
         }
 
         public void Dispose()
@@ -151,8 +155,7 @@ namespace Assets.Scripts.Tutorial
 
             _isDisposed = true;
             UnregisterCallbacks();
-            ClearFocusMaskTexture();
-            _focusMaskBuilder.Dispose();
+            _focusOverlay.Dispose();
             _root.RemoveFromHierarchy();
             _completeRoot.RemoveFromHierarchy();
             GameplayActionRequested = null;
@@ -205,8 +208,13 @@ namespace Assets.Scripts.Tutorial
             evt.StopImmediatePropagation();
         }
 
-        private void ApplyFocusStyle(TutorialAction focusAction)
+        private void ApplyFocusStyle(TutorialAction focusAction, int focusVersion)
         {
+            if (_isDisposed || focusVersion != _focusVersion || _promptRoot.panel == null)
+            {
+                return;
+            }
+
             switch (focusAction)
             {
                 case TutorialAction.Jump:
@@ -246,11 +254,7 @@ namespace Assets.Scripts.Tutorial
 
             Rect targetBounds = target.worldBound;
             float padding = addPadding ? _focusPadding : 0f;
-            return ClampRectToRoot(new Rect(
-                targetBounds.x - rootBounds.x - padding,
-                targetBounds.y - rootBounds.y - padding,
-                targetBounds.width + padding * 2f,
-                targetBounds.height + padding * 2f), rootBounds);
+            return TutorialFocusOverlay.GetTargetRect(rootBounds, targetBounds, padding);
         }
 
         private void ApplyFocusRect(Rect focusRect, TutorialFocusShape shape, bool showFinger)
@@ -263,22 +267,16 @@ namespace Assets.Scripts.Tutorial
             float rootHeight = rootBounds.height > 0f ? rootBounds.height : Screen.height;
             var rootRect = new Rect(0f, 0f, rootWidth, rootHeight);
 
-            ApplyFocusMask(focusRect, shape, rootRect);
-            SetElementRect(_focusHighlight, focusRect);
-            ApplyFocusRadius(_focusHighlight, focusRect, shape);
-            PositionFinger(focusRect, showFinger);
-        }
-
-        private void ApplyFocusMask(Rect focusRect, TutorialFocusShape shape, Rect rootRect)
-        {
-            Texture2D texture = _focusMaskBuilder.Build(
+            _focusOverlay.Apply(
+                _focusMask,
+                _focusHighlight,
                 focusRect,
                 shape,
                 rootRect,
                 _dimAlpha,
                 _softFocusWidth,
                 _focusMaskMaxWidth);
-            ReplaceFocusMaskTexture(texture);
+            PositionFinger(focusRect, showFinger);
         }
 
         private void PositionFinger(Rect focusRect, bool showFinger)
@@ -293,17 +291,6 @@ namespace Assets.Scripts.Tutorial
             _finger.style.top = focusRect.y + focusRect.height * 0.55f - _fingerSize * 0.5f;
             _finger.style.bottom = StyleKeyword.Auto;
             _finger.style.marginLeft = 0;
-        }
-
-        private void ReplaceFocusMaskTexture(Texture2D texture)
-        {
-            _focusMask.style.backgroundImage = new StyleBackground(Background.FromTexture2D(texture));
-        }
-
-        private void ClearFocusMaskTexture()
-        {
-            _focusMaskBuilder.Clear();
-            _focusMask.style.backgroundImage = null;
         }
 
         private static VisualElement CreateRoot()
@@ -583,36 +570,7 @@ namespace Assets.Scripts.Tutorial
 
         private static Rect ClampRectToRoot(Rect rect, Rect rootBounds)
         {
-            float xMin = Mathf.Clamp(rect.xMin, 0f, rootBounds.width);
-            float yMin = Mathf.Clamp(rect.yMin, 0f, rootBounds.height);
-            float xMax = Mathf.Clamp(rect.xMax, xMin, rootBounds.width);
-            float yMax = Mathf.Clamp(rect.yMax, yMin, rootBounds.height);
-            return Rect.MinMaxRect(xMin, yMin, xMax, yMax);
-        }
-
-        private static void SetElementRect(VisualElement element, Rect rect)
-        {
-            element.style.left = rect.x;
-            element.style.top = rect.y;
-            element.style.bottom = StyleKeyword.Auto;
-            element.style.marginLeft = 0;
-            element.style.width = rect.width;
-            element.style.height = rect.height;
-        }
-
-        private static void ApplyFocusRadius(
-            VisualElement element,
-            Rect rect,
-            TutorialFocusShape shape)
-        {
-            float radius = shape == TutorialFocusShape.Circle
-                ? Mathf.Min(rect.width, rect.height) * 0.5f
-                : 28f;
-
-            element.style.borderTopLeftRadius = radius;
-            element.style.borderTopRightRadius = radius;
-            element.style.borderBottomRightRadius = radius;
-            element.style.borderBottomLeftRadius = radius;
+            return TutorialFocusOverlay.ClampToRoot(rect, rootBounds.width, rootBounds.height);
         }
     }
 }

@@ -20,7 +20,6 @@ namespace LostCyberHamster.Editor
         private const string LaunchCommand = "launch_test_level";
         private const string RecompileCommand = "recompile_scripts";
         private const string RegenerateProjectFilesCommand = "regenerate_project_files";
-        private const string ProbeTutorialStopAfterStepCommand = "probe_tutorial_stop_after_step";
         private const string ProbeFirstLevelIntroCommand = "probe_first_level_intro";
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string FirstGameplayLevelAddress = "01_New_York/Morning/level_01";
@@ -58,7 +57,6 @@ namespace LostCyberHamster.Editor
             public string createdAtUtc;
             public string levelAddress;
             public float timeScale;
-            public int stopAfterStep;
         }
 
         [Serializable]
@@ -179,7 +177,6 @@ namespace LostCyberHamster.Editor
             if (!string.Equals(request.command, LaunchCommand, StringComparison.Ordinal) &&
                 !string.Equals(request.command, RecompileCommand, StringComparison.Ordinal) &&
                 !string.Equals(request.command, RegenerateProjectFilesCommand, StringComparison.Ordinal) &&
-                !string.Equals(request.command, ProbeTutorialStopAfterStepCommand, StringComparison.Ordinal) &&
                 !string.Equals(request.command, ProbeFirstLevelIntroCommand, StringComparison.Ordinal))
             {
                 WriteResponse(new BridgeResponse
@@ -270,25 +267,6 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
-            if (string.Equals(request.command, ProbeTutorialStopAfterStepCommand, StringComparison.Ordinal))
-            {
-                WriteResponse(new BridgeResponse
-                {
-                    requestId = request.requestId,
-                    command = request.command,
-                    state = "running",
-                    testResult = string.Empty,
-                    message = $"Request accepted. Probing tutorial stop after step {request.stopAfterStep}.",
-                    updatedAtUtc = DateTime.UtcNow.ToString("O"),
-                    diagnosticLogPath = DebugManager.GetDiagLogPath()
-                });
-
-                DisableAndroidLogcatForAutomation();
-                DebugManager.ClearDiagLog();
-                LaunchTutorialStopAfterStepProbe(Mathf.Max(1, request.stopAfterStep));
-                return;
-            }
-
             if (string.Equals(request.command, ProbeFirstLevelIntroCommand, StringComparison.Ordinal))
             {
                 WriteResponse(new BridgeResponse
@@ -369,32 +347,16 @@ namespace LostCyberHamster.Editor
             }
         }
 
-        private static void LaunchTutorialStopAfterStepProbe(int stopAfterStep)
-        {
-            PlayerPrefs.SetString(TestLevelPrefsKey, FirstGameplayLevelAddress);
-            PlayerPrefs.SetInt(SkipIntroPrefsKey, 1);
-            Assets.Scripts.Tutorial.TutorialAutomation.SetAutoPlay(true);
-            Assets.Scripts.Tutorial.TutorialLaunchService.RequestCompletedResetOnce();
-            Assets.Scripts.Tutorial.TutorialAutomation.SetStopAfterStep(stopAfterStep);
-
-            PlayerPrefs.Save();
-            EditorSceneManager.OpenScene(BootstrapScenePath);
-            EditorApplication.isPlaying = true;
-        }
-
         private static void LaunchFirstLevelIntroProbe(float timeScale)
         {
             PlayerPrefs.SetString(TestLevelPrefsKey, FirstGameplayLevelAddress);
             PlayerPrefs.SetInt(SkipIntroPrefsKey, 0);
-            Assets.Scripts.Tutorial.TutorialAutomation.Clear();
-            Assets.Scripts.Tutorial.TutorialLaunchService.ClearCompletedResetRequest();
 
             if (timeScale > 0f)
             {
                 PlayerPrefs.SetFloat(Assets.Scripts.System.AutomationRuntimePrefs.TimeScaleOverrideKey, timeScale);
             }
 
-            Assets.Scripts.Tutorial.TutorialLaunchService.AllowFirstGameplayLevelOnce();
             PlayerPrefs.Save();
 
             SessionState.SetBool(IntroProbeSkipScheduledSessionKey, false);
