@@ -1,58 +1,68 @@
-# Local Save System Refactoring
+# Рефакторинг локальных сохранений
 
-## Роль Local Save
+## Checkpoint policy
 
-Local Save — автономный источник игрового прогресса. Хранит экономику, уровни, скины, квесты, настройки прогресса и системные флаги. После сбоя восстанавливает последний подтверждённый checkpoint.
+- `SaveData` вызывается один раз после полного успешного изменения всей операции. Внутри `ResourceManager` сохранения нет.
+- Обязательные checkpoints:
+  - успешная покупка скина: списание ресурса и выдача скина завершены;
+  - завершение daily quest: progress достиг target и выставлен `IsCompleted`;
+  - завершение storyline quest: completion записан в сериализуемый storyline progress;
+  - получение награды за quest;
+  - применение скина: обновлён `AppliedSkinId`;
+  - результат уровня: обновлены stars, unlocks и current level;
+  - завершение tutorial;
+  - уход приложения в background.
+- Открытие menu — дополнительный страховочный checkpoint.
+- Не сохранять каждую монету, UI/read-операции и промежуточные шаги одной операции.
+- Не сохранять каждый quest progress event.
+- Не вызывать несколько `SaveData` внутри одной операции.
 
-Сейчас `GameDataManager` шифрует `PlayerData` в `PlayerPrefs`. После bootstrap Money/Crystals копируются в отдельные stateful storages. Settings хранятся отдельным JSON-ключом.
+## PlayerProgressCommitter
 
-## Основные проблемы
+- Подход: Unit of Work с единым commit boundary.
+- Domain use case полностью меняет `PlayerData`, затем вызывает `PlayerProgressCommitter.Commit(CheckpointReason reason)`.
+- Committer выполняет один local save. Позже он передаст тот же snapshot в Cloud Sync queue/retry.
+- `CheckpointReason` пока не меняет поведение. Он задаёт каталог checkpoints, упрощает поиск call sites, чтение кода и логи.
+- Reasons: `MenuEntered`, `SkinPurchased`, `SkinApplied`, `QuestListRefreshed`, `DailyQuestCompleted`, `StorylineQuestCompleted`, `QuestRewardClaimed`, `LevelCompleted`, `CurrentLevelChanged`, `TutorialCompleted`, `AccountPromptStateChanged`, `AppBackgrounded`.
+- Прямые `GameDataManager.SaveData` из gameplay запрещены. Технические load/reset/recovery остаются отдельными.
 
-- Money/Crystals имеют два расходящихся состояния: storages и `PlayerData`.
-- Частичные checkpoint’ы допускают потерю награды, возврат расхода, устаревший баланс.
-- Skin, current level, tutorial transitions, quest progress сохраняются не всегда.
-- Storyline quest dictionary не имеет полноценного writer и сериализуемой формы.
-- Load сохраняет данные до нормализации. Повреждённый pref не имеет fallback. Reset удаляет все `PlayerPrefs`.
+## Storyline progress
 
-## Целевые ответственности
+- Проблема: `PlayerData.ComplitedStorylineQuests` использует `Dictionary<string, bool>`. Unity `JsonUtility` не сериализует dictionary; надёжного writer при completion нет, состояние теряется.
+- Решение: заменить dictionary на сериализуемую коллекцию завершённых storyline quest IDs/entries.
+- Storyline completion flow обновляет коллекцию, затем один раз вызывает `Commit(CheckpointReason.StorylineQuestCompleted)`.
 
-- `PlayerData`: единственное состояние Money/Crystals, полный сериализуемый snapshot прогресса.
-- `ResourceManager`: stateless API и `ResourceType` routing напрямую над `PlayerData`; обработка collection events.
-- `GameDataManager`: local load, save, нормализация, scoped reset.
-- Gameplay-системы: доменные изменения и запрос checkpoint, без persistence-кода.
-- Settings: отдельный локальный контур.
+## Валидация игровых данных
 
-## Этапы
+- Code contracts предотвращают новые invalid states. Сохранение считается внешним вводом.
+- Load pipeline: deserialize, migrate, validate, safe repair, повторная validate.
+- Safe deterministic repairs отделены от ambiguous/rejected data.
+- Rejected data восстанавливается из backup/default и не перезаписывает good save.
+- Programmer errors используют exceptions/assert. Ожидаемые business rejects возвращают обычный result.
+- Load exceptions ловятся на persistence boundary.
+- `bool ValidateAndRepair` недостаточен: он не различает valid, repaired и rejected.
+- API: `PlayerDataValidationResult Validate(PlayerData data)` и `void RepairSafe(PlayerData data, PlayerDataValidationResult result)`.
 
-### 1. Единое состояние экономики
+## Safe reset
 
-- **Суть и ценность:** устранить рассинхронизацию Money/Crystals, сохранить generic routing для shop и skins.
-- **Минимальные изменения:** перевести `ResourceManager` на `GameDataManager.PlayerData`; перенести collection-event subscriptions; удалить `MoneyStorage`, `CrystalStorage`, bootstrap `Init`, storage-to-`PlayerData` sync.
+- Проблема: `PlayerPrefs.DeleteAll` удаляет progress, `Settings`, feature/tutorial и чужие keys.
+- `GameDataManager.ResetPlayerProgress()` удаляет только `PlayerData` key, создаёт default `PlayerData`, выполняет `Validate`, при repairable — `RepairSafe` и повторный `Validate`. Rejected data не сохраняется; после успешной validation сохраняется новый progress.
+- `Settings` и account не затрагиваются.
+- `ResetSettings()` сбрасывает только настройки.
+- Полный DevTools reset только оркестрирует нужные reset operations.
+- `PlayerPrefs.DeleteAll` больше не используется.
 
-### 2. Целостный snapshot
+## Тесты игровых данных
 
-- **Суть и ценность:** каждый local save фиксирует согласованный `PlayerData`, без runtime-copy.
-- **Минимальные изменения:** оставить `SaveData()` единственной записью игрового snapshot; сохранять актуальные поля через существующие serialization и encryption.
-
-### 3. Checkpoint policy
-
-- **Суть и ценность:** необратимые операции и завершённый прогресс переживают немедленный выход; частые collect events не пишут на диск.
-- **Минимальные изменения:** вызывать `SaveData()` после purchase, reward, результатов уровня, входа в menu, существующих app pause/quit boundaries. Не сохранять каждую монету.
-
-### 4. Остальные поля и quests
-
-- **Суть и ценность:** важные выборы, переходы, daily/storyline progress становятся долговечными.
-- **Минимальные изменения:** добавить checkpoint’ы для skin, current level, tutorial transitions, daily quest progress/claim. Заменить storyline dictionary сериализуемой формой, обновляемой quest flow.
-
-### 5. Безопасные load и reset
-
-- **Суть и ценность:** валидное состояние при первом запуске, повреждении данных, reset.
-- **Минимальные изменения:** порядок load, normalize, save; fallback на defaults; удаление только Local Save keys без Settings и чужих prefs.
-
-## Будущая Cloud Save
-
-Cloud Save дополняет Local Save: получает готовый snapshot, передаёт или применяет его. Игровые данные не формирует.
-
-## Правило реализации
-
-Дополнительный рефакторинг выполняется только при подтверждённой необходимости и после одобрения пользователя; архитектура заранее не усложняется.
+- Unit:
+  - valid data остаётся без изменений;
+  - safe repair: null collections, точные set-like duplicates, отсутствующий пустой catalog progress; повторная validate успешна;
+  - repair идемпотентен;
+  - null `PlayerData`, negative/overflow resources, contradictory reward flags, conflicting duplicate level records и unknown purchased skin отклоняются без silent mutation;
+  - insufficient funds, negative add и overflow не меняют данные и не вызывают commit;
+  - успешная domain operation полностью меняет данные, затем вызывает один commit;
+  - checkpoint передаёт правильный reason ровно один раз.
+- Обязательные узкие integration tests:
+  - missing/corrupt/old save восстанавливается без crash;
+  - полный `PlayerData` round-trip сохраняет storyline progress;
+  - progress-only reset сохраняет `Settings` и Account.
