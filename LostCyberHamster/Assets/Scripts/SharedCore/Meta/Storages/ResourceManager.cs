@@ -25,21 +25,33 @@ namespace Vues.GameCore
             }
         }
 
-        public static void AddResource(ResourceType resourceType, int amount)
+        public static bool AddResource(ResourceType resourceType, int amount)
         {
             if (amount <= 0)
             {
-                return;
+                return false;
             }
 
             switch (resourceType)
             {
                 case ResourceType.Crystals:
+                    if (GameDataManager.PlayerData.Crystals > int.MaxValue - amount)
+                    {
+                        return false;
+                    }
+
                     GameDataManager.PlayerData.Crystals += amount;
-                    break;
+                    return true;
                 case ResourceType.Coins:
+                    if (GameDataManager.PlayerData.Money > int.MaxValue - amount)
+                    {
+                        return false;
+                    }
+
                     GameDataManager.PlayerData.Money += amount;
-                    break;
+                    return true;
+                default:
+                    return false;
             }
         }
 
@@ -57,16 +69,23 @@ namespace Vues.GameCore
             }
         }
 
-        public static void SetResourceBalance(ResourceType resourceType, int balance)
+        public static bool SetResourceBalance(ResourceType resourceType, int balance)
         {
+            if (balance < 0)
+            {
+                return false;
+            }
+
             switch (resourceType)
             {
                 case ResourceType.Crystals:
                     GameDataManager.PlayerData.Crystals = balance;
-                    break;
+                    return true;
                 case ResourceType.Coins:
                     GameDataManager.PlayerData.Money = balance;
-                    break;
+                    return true;
+                default:
+                    return false;
             }
         }
 

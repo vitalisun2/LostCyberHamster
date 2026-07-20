@@ -13,11 +13,11 @@ namespace Assets.Scripts.Installers
             Container.Bind<ILoadingTask>().To<InitUnityServicesLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<StartAccountLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitAnalyticsManagerLoadingTask>().AsTransient();
+            Container.Bind<ILoadingTask>().To<InitSkinsLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitGameRepositoryLoadingTask>().AsTransient();
             //Container.Bind<ILoadingTask>().To<LoadAddressablesLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitLocalizationLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitAudioManagerLoadingTask>().AsTransient();
-            Container.Bind<ILoadingTask>().To<InitSkinsLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitLocationsListLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<LoadMainMenuLoadingTask>().AsTransient();
         }

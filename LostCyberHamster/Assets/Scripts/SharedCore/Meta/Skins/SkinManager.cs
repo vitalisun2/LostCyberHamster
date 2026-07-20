@@ -49,33 +49,41 @@ public static class SkinManager
     public static bool CanPurchaseSkin(int skinId)
     {
         var skin = _availableSkins.FirstOrDefault(x => x.Id == skinId);
-        return ResourceManager.CanSpendResource(skin.PriceType, skin.Price);
+        return skin != null &&
+               !GameDataManager.PlayerData.PurchasedSkinIds.Contains(skinId) &&
+               ResourceManager.CanSpendResource(skin.PriceType, skin.Price);
     }
 
     public static void PurchaseSkin(int skinId)
     {
         var skin = _availableSkins.FirstOrDefault(x => x.Id == skinId);
-        
-        if(ResourceManager.CanSpendResource(skin.PriceType, skin.Price) == false)
+
+        if (skin == null || GameDataManager.PlayerData.PurchasedSkinIds.Contains(skinId))
+        {
+            return;
+        }
+
+        if (!ResourceManager.SpendResource(skin.PriceType, skin.Price))
         {
             Debug.LogWarning("Not enough resources to purchase skin.");
             return;
         }
-        ResourceManager.SpendResource(skin.PriceType, skin.Price);
 
-        GameDataManager.PurchaseSkin(skinId);
+        GameDataManager.PlayerData.PurchasedSkinIds.Add(skinId);
         GameEventsManager.SkinPurchased(skinId, skin.PriceType, skin.Price);
+        PlayerProgressCommitter.Commit(CheckpointReason.SkinPurchased);
     }
 
     public static void PutOnSkin(int skinId)
     {
-        if (!GameDataManager.PlayerData.PurchasedSkinIds.Contains(skinId))
+        var skin = _availableSkins.FirstOrDefault(x => x.Id == skinId);
+        if (skin == null || !GameDataManager.PlayerData.PurchasedSkinIds.Contains(skinId))
         {
             Debug.LogWarning("Skin not purchased.");
             return;
         }
 
-        if (CurrentSkin.IsUltaActive.Value)
+        if (CurrentSkin?.IsUltaActive.Value == true)
         {
             Debug.LogWarning("Cannot change skin while Ulta is active.");
             return;
@@ -87,6 +95,8 @@ public static class SkinManager
         {
             HelpMethods.ApplyOverrideController(LevelController.Instance.LevelData.Hamster);
         }
+
+        PlayerProgressCommitter.Commit(CheckpointReason.SkinApplied);
     }
 
 

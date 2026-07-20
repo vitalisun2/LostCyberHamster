@@ -31,21 +31,19 @@ namespace Vues.GameCore
 
             CheckAndRefreshDailyQuests();
 
-            SetComplitedStoryLineQuests();
+            RestoreStorylineQuestProgress();
         }
 
-        private static void SetComplitedStoryLineQuests()
+        private static void RestoreStorylineQuestProgress()
         {
-            var completedQuests = GameDataManager.PlayerData.ComplitedStorylineQuests;
+            var savedProgress = GameDataManager.PlayerData.StorylineQuestProgress ?? new List<StorylineQuestProgressEntry>();
             foreach (var quest in StorylineQuests)
             {
-                if (completedQuests.Keys.Contains(quest.Id))
+                var entry = savedProgress.FirstOrDefault(candidate => candidate.QuestId == quest.Id);
+                if (entry != null)
                 {
                     quest.IsCompleted = true;
-                    if (completedQuests[quest.Id])
-                    {
-                        quest.IsRewardRecieved = true;
-                    }
+                    quest.IsRewardRecieved = entry.IsRewardClaimed;
                 }
             }
         }
@@ -89,12 +87,27 @@ namespace Vues.GameCore
 
         private static void UpdateQuests(ActionTypeEnum actionType, int progressAmount = 1, string objectName = "")
         {
-            UpdateQuestList(DailyTasks, actionType, progressAmount);
-            UpdateQuestList(StorylineQuests, actionType, progressAmount);
+            bool dailyCompleted = UpdateQuestList(DailyTasks, actionType, progressAmount, isStoryline: false);
+            bool storylineCompleted = UpdateQuestList(StorylineQuests, actionType, progressAmount, isStoryline: true);
+
+            if (storylineCompleted)
+            {
+                PlayerProgressCommitter.Commit(CheckpointReason.StorylineQuestCompleted);
+            }
+            else if (dailyCompleted)
+            {
+                PlayerProgressCommitter.Commit(CheckpointReason.DailyQuestCompleted);
+            }
         }
 
-        private static void UpdateQuestList(List<Quest> quests, ActionTypeEnum actionType, int progressAmount)
+        private static bool UpdateQuestList(
+            List<Quest> quests,
+            ActionTypeEnum actionType,
+            int progressAmount,
+            bool isStoryline)
         {
+            bool completed = false;
+
             foreach (var quest in quests)
             {
                 if (quest.ActionType == actionType && !quest.IsCompleted)
@@ -102,10 +115,18 @@ namespace Vues.GameCore
                     quest.Progress(progressAmount);
                     if (quest.IsCompleted)
                     {
+                        if (isStoryline)
+                        {
+                            GetOrCreateStorylineProgress(quest.Id);
+                        }
+
                         GameEventsManager.QuestCompleted(quest.Id);
+                        completed = true;
                     }
                 }
             }
+
+            return completed;
         }
 
 
@@ -119,7 +140,7 @@ namespace Vues.GameCore
                 var dailyTasks = GenerateDailyQuests(ConfigurationManager.Config.DailyTasksCount);
                 GameDataManager.PlayerData.DailyTasksRefreshDate = currentDate;
                 GameDataManager.PlayerData.DailyTasks = dailyTasks;
-                GameDataManager.SaveData();
+                PlayerProgressCommitter.Commit(CheckpointReason.QuestListRefreshed);
             }
 
             DailyTasks = GameDataManager.PlayerData.DailyTasks;
@@ -161,26 +182,63 @@ namespace Vues.GameCore
             return dailyQuests;
         }
 
-        public static void GetReward(Quest quest)
+        public static bool GetReward(Quest quest)
         {
-            if (!quest.IsCompleted)
-                return;
+            if (!quest.IsCompleted || quest.IsRewardRecieved || quest.RewardAmount <= 0)
+                return false;
 
+            bool rewardAdded;
             switch (quest.RewardTypeId)
             {
                 case (int)ResourceType.Coins:
+                    rewardAdded = ResourceManager.AddResource(ResourceType.Coins, quest.RewardAmount);
+                    if (!rewardAdded)
+                    {
+                        return false;
+                    }
+
                     GameEventsManager.EarnCoins(quest.RewardAmount);
-                    ResourceManager.AddResource(ResourceType.Coins, quest.RewardAmount);
                     break;
                 case (int)ResourceType.Crystals:
-                    ResourceManager.AddResource(ResourceType.Crystals, quest.RewardAmount);
+                    rewardAdded = ResourceManager.AddResource(ResourceType.Crystals, quest.RewardAmount);
+                    if (!rewardAdded)
+                    {
+                        return false;
+                    }
+
                     break;
                 default:
-                    break;
+                    return false;
             }
 
             quest.IsRewardRecieved = true;
+            if (StorylineQuests.Contains(quest))
+            {
+                GetOrCreateStorylineProgress(quest.Id).IsRewardClaimed = true;
+            }
+
             GameEventsManager.QuestRewardRecieved(quest.Id);
+            PlayerProgressCommitter.Commit(CheckpointReason.QuestRewardClaimed);
+            return true;
+        }
+
+        private static StorylineQuestProgressEntry GetOrCreateStorylineProgress(string questId)
+        {
+            GameDataManager.PlayerData.StorylineQuestProgress ??= new List<StorylineQuestProgressEntry>();
+
+            var entry = GameDataManager.PlayerData.StorylineQuestProgress
+                .FirstOrDefault(candidate => candidate.QuestId == questId);
+            if (entry != null)
+            {
+                return entry;
+            }
+
+            entry = new StorylineQuestProgressEntry
+            {
+                QuestId = questId
+            };
+            GameDataManager.PlayerData.StorylineQuestProgress.Add(entry);
+            return entry;
         }
     }
 }

@@ -332,7 +332,7 @@ namespace Assets.Scripts.System
             snapshot = service.HandleLevelCompleted(snapshot, progressKey, stars);
 
             playerData.Progress = snapshot;
-            GameDataManager.SaveData();
+            PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
         }
 
         private static LevelProgressSnapshot GetEffectiveProgress()

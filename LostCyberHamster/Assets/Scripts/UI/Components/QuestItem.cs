@@ -1,7 +1,6 @@
 using System;
 using Assets.Scripts.Common.Models;
 using Extensions;
-using GameManagement;
 using Unity.Properties;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -54,9 +53,10 @@ namespace LostCyberHamster.UI
 
             _buttonGet.RegisterCallback<ClickEvent>(async evt =>
             {
-                QuestManager.GetReward(quest);
-                _buttonGet.style.display = DisplayStyle.None;
-                GameDataManager.SaveData();
+                if (QuestManager.GetReward(quest))
+                {
+                    _buttonGet.style.display = DisplayStyle.None;
+                }
             });
         }
     }

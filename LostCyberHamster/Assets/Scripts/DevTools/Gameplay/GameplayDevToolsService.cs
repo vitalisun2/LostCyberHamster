@@ -49,7 +49,7 @@ namespace Assets.Scripts.DevTools.Gameplay
         public GameplayDevToolsActionResult ResetProgress()
         {
             // Очищаем сохраняемый прогресс и отдельно снимаем несохраняемый DEV override.
-            GameDataManager.ResetLocalData();
+            GameDataManager.ResetPlayerProgress();
             DevToolsRuntimeState.UnlockAllLevels = false;
             UIManager.OnRepaintScreen?.Invoke();
             return GameplayDevToolsActionResult.Success("Локальный прогресс сброшен");

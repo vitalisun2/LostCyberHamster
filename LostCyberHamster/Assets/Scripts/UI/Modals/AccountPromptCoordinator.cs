@@ -85,7 +85,7 @@ namespace LostCyberHamster.UI
                 var playerData = GameDataManager.PlayerData;
                 playerData.IsAccountPromptPending = false;
                 playerData.IsAccountPromptShown = true;
-                GameDataManager.SaveData();
+                PlayerProgressCommitter.Commit(CheckpointReason.AccountPromptStateChanged);
             }
             catch (Exception exception)
             {

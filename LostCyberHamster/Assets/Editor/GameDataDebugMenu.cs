@@ -52,7 +52,7 @@ namespace LostCyberHamster.Editor
         {
             try
             {
-                GameDataManager.ResetLocalData();
+                GameDataManager.ResetPlayerProgress();
 
                 ExportPlayerData();
 

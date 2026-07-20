@@ -1,3 +1,4 @@
+using GameManagement;
 using UnityEngine;
 
 // Handles wiping PlayerPrefs on first Android install so stale values do not survive reinstalls.
@@ -16,7 +17,8 @@ public static class FirstInstallPrefsWipe
 
         if (saved != current)
         {
-            PlayerPrefs.DeleteAll();
+            GameDataManager.ResetPlayerProgress();
+            GameDataManager.ResetSettings();
             PlayerPrefs.SetString(Key, current.ToString());
             PlayerPrefs.Save();
         }

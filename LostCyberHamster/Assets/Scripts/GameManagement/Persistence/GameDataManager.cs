@@ -15,48 +15,159 @@ namespace GameManagement
         public static SettingsData Settings = new SettingsData();
 
         private static readonly string _playerDataKey = "PlayerData";
+        private static readonly string _playerDataBackupKey = "PlayerData.Backup";
         private static readonly string _settingsKey = "Settings";
 
         private static readonly ICryptoService _cryptoService = new AesCryptoService();
 
-    public static bool IsGameJustStarted = true;
+        public static bool IsGameJustStarted = true;
 
         public static Task LoadDataAsync()
         {
-            PlayerData = LoadFromPlayerPrefs();
-            SaveData();
+            if (TryLoadValidated(_playerDataKey, out var primaryData, out var primaryWasRepaired, out var primaryJson))
+            {
+                PlayerData = primaryData;
+                EnsureProgressConsistency();
+                EnsureValidated(PlayerData);
+
+                if (primaryWasRepaired || !string.Equals(primaryJson, PlayerData.ToJson(), StringComparison.Ordinal))
+                {
+                    WritePrimary(PlayerData, rotateValidPrimary: !primaryWasRepaired);
+                }
+
+                ClearInvalidBackup();
+
+                return Task.CompletedTask;
+            }
+
+            if (TryLoadValidated(_playerDataBackupKey, out var backupData, out var backupWasRepaired, out _))
+            {
+                PlayerData = backupData;
+                EnsureProgressConsistency();
+                EnsureValidated(PlayerData);
+                WritePrimary(PlayerData, rotateValidPrimary: false);
+                if (backupWasRepaired)
+                {
+                    PlayerPrefs.SetString(_playerDataBackupKey, PlayerPrefs.GetString(_playerDataKey));
+                    PlayerPrefs.Save();
+                }
+
+                return Task.CompletedTask;
+            }
+
+            PlayerData = new PlayerData();
             EnsureProgressConsistency();
+            EnsureValidated(PlayerData);
+            PlayerPrefs.DeleteKey(_playerDataBackupKey);
+            WritePrimary(PlayerData, rotateValidPrimary: false);
 
             return Task.CompletedTask;
         }
 
-        private static PlayerData LoadFromPlayerPrefs()
+        private static bool TryLoadValidated(
+            string key,
+            out PlayerData data,
+            out bool wasRepaired,
+            out string json)
         {
-            if (!PlayerPrefs.HasKey(_playerDataKey))
+            data = null;
+            wasRepaired = false;
+            json = string.Empty;
+
+            if (!PlayerPrefs.HasKey(key))
             {
-               return new PlayerData();
+                return false;
             }
 
-            var encryptedData = PlayerPrefs.GetString(_playerDataKey);
-            var decryptedData = _cryptoService.Decrypt(encryptedData);
-            return PlayerData.FromJson(decryptedData);
+            try
+            {
+                var encryptedData = PlayerPrefs.GetString(key);
+                json = _cryptoService.Decrypt(encryptedData);
+                data = PlayerData.FromJson(json);
+
+                var validation = PlayerDataValidator.Validate(data);
+                if (validation.Status == PlayerDataValidationStatus.Repairable)
+                {
+                    PlayerDataValidator.RepairSafe(data, validation);
+                    validation = PlayerDataValidator.Validate(data);
+                    wasRepaired = true;
+                }
+
+                return validation.Status == PlayerDataValidationStatus.Valid;
+            }
+            catch (Exception)
+            {
+                data = null;
+                wasRepaired = false;
+                json = string.Empty;
+                return false;
+            }
         }
 
         public static void SaveData()
         {
-            PlayerData.LastSaveDate = DateTime.UtcNow.ToString("o");
-            var serializedData = PlayerData.ToJson();
-           var encryptedData = _cryptoService.Encrypt(serializedData);
+            EnsureValidated(PlayerData);
+            WritePrimary(PlayerData, rotateValidPrimary: true);
+        }
+
+        private static void WritePrimary(PlayerData data, bool rotateValidPrimary)
+        {
+            if (rotateValidPrimary && TryGetStrictlyValidEncryptedData(_playerDataKey, out var currentPrimary))
+            {
+                PlayerPrefs.SetString(_playerDataBackupKey, currentPrimary);
+            }
+
+            data.LastSaveDate = DateTime.UtcNow.ToString("o");
+            var serializedData = data.ToJson();
+            var encryptedData = _cryptoService.Encrypt(serializedData);
             PlayerPrefs.SetString(_playerDataKey, encryptedData);
             PlayerPrefs.Save();
         }
 
-        public static void PurchaseSkin(int skinId)
+        private static bool TryGetStrictlyValidEncryptedData(string key, out string encryptedData)
         {
-            if (!PlayerData.PurchasedSkinIds.Contains(skinId))
+            encryptedData = string.Empty;
+            if (!PlayerPrefs.HasKey(key))
             {
-                PlayerData.PurchasedSkinIds.Add(skinId);
-                SaveData();
+                return false;
+            }
+
+            try
+            {
+                encryptedData = PlayerPrefs.GetString(key);
+                var json = _cryptoService.Decrypt(encryptedData);
+                var data = PlayerData.FromJson(json);
+                return PlayerDataValidator.Validate(data).Status == PlayerDataValidationStatus.Valid;
+            }
+            catch (Exception)
+            {
+                encryptedData = string.Empty;
+                return false;
+            }
+        }
+
+        private static void ClearInvalidBackup()
+        {
+            if (PlayerPrefs.HasKey(_playerDataBackupKey) &&
+                !TryGetStrictlyValidEncryptedData(_playerDataBackupKey, out _))
+            {
+                PlayerPrefs.DeleteKey(_playerDataBackupKey);
+                PlayerPrefs.Save();
+            }
+        }
+
+        private static void EnsureValidated(PlayerData data)
+        {
+            var validation = PlayerDataValidator.Validate(data);
+            if (validation.Status == PlayerDataValidationStatus.Repairable)
+            {
+                PlayerDataValidator.RepairSafe(data, validation);
+                validation = PlayerDataValidator.Validate(data);
+            }
+
+            if (validation.Status != PlayerDataValidationStatus.Valid)
+            {
+                throw new InvalidOperationException($"Player data rejected: {validation.Reason}");
             }
         }
 
@@ -74,31 +185,36 @@ namespace GameManagement
                 var settingsJson = PlayerPrefs.GetString(_settingsKey);
                 Settings = JsonUtility.FromJson<SettingsData>(settingsJson);
             }
-
-            EnsureProgressConsistency();
         }
 
-        public static void ClearData()
+        public static void ResetPlayerProgress()
         {
-            PlayerPrefs.DeleteAll();
-        }
+            var defaultData = new PlayerData();
 
-        /// <summary>
-        /// Сбрасывает локальный прогресс и восстанавливает runtime-хранилища в начальное состояние.
-        /// </summary>
-        public static void ResetLocalData()
-        {
-            ClearData();
-            PlayerPrefs.Save();
+            var validation = PlayerDataValidator.Validate(defaultData);
+            if (validation.Status == PlayerDataValidationStatus.Repairable)
+            {
+                PlayerDataValidator.RepairSafe(defaultData, validation);
+                validation = PlayerDataValidator.Validate(defaultData);
+            }
 
-            PlayerData = new PlayerData();
-            Settings = new SettingsData();
+            if (validation.Status == PlayerDataValidationStatus.Rejected)
+            {
+                throw new InvalidOperationException($"Default player data rejected: {validation.Reason}");
+            }
+
+            PlayerPrefs.DeleteKey(_playerDataKey);
+            PlayerPrefs.DeleteKey(_playerDataBackupKey);
+            PlayerData = defaultData;
             IsGameJustStarted = true;
-
-            EnsureProgressConsistency();
             SaveData();
-            SaveSettings();
+        }
 
+        public static void ResetSettings()
+        {
+            PlayerPrefs.DeleteKey(_settingsKey);
+            Settings = new SettingsData();
+            SaveSettings();
         }
 
         private static void EnsureProgressConsistency()

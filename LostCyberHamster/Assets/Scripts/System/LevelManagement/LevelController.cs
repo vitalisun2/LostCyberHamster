@@ -107,7 +107,7 @@ namespace Assets.Scripts.System
                 return;
             }
 
-            SetCurrentLevelInternal(canonical, levelName);
+            SetCurrentLevelInternal(canonical);
         }
 
         public void SetCurrentLevel(int locationIndex, string partOfDayKey, int levelOrder = 0)
@@ -146,16 +146,15 @@ namespace Assets.Scripts.System
                 : descriptor.Address.Trim();
         }
 
-        private static void SetCurrentLevelInternal(string normalizedLevelIdentifier, string sourceIdentifier)
+        private static void SetCurrentLevelInternal(string normalizedLevelIdentifier)
         {
-            GameDataManager.PlayerData.CurrentLevel = normalizedLevelIdentifier;
+            if (string.Equals(GameDataManager.PlayerData.CurrentLevel, normalizedLevelIdentifier, StringComparison.Ordinal))
+            {
+                return;
+            }
 
-            if (!string.Equals(normalizedLevelIdentifier, sourceIdentifier, StringComparison.Ordinal))
-            {
-           }
-            else
-            {
-           }
+            GameDataManager.PlayerData.CurrentLevel = normalizedLevelIdentifier;
+            PlayerProgressCommitter.Commit(CheckpointReason.CurrentLevelChanged);
         }
 
         [Button]

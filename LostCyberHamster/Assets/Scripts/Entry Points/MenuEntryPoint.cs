@@ -30,6 +30,8 @@ namespace Assets.Scripts.Entry_Points
 
         private async Task Awake()
         {
+            PlayerProgressLifecycleCheckpoint.EnsureCreated();
+
             _uiManager = new UIManager(new IScreenController[]
             {
                 new HomeScreenController(_uiDocument),
@@ -52,7 +54,7 @@ namespace Assets.Scripts.Entry_Points
 
         private void Start()
         {
-            GameDataManager.SaveData();
+            PlayerProgressCommitter.Commit(CheckpointReason.MenuEntered);
 
             // tutorial !GameDataManager.PlayerData.IsFirstLaunch
 

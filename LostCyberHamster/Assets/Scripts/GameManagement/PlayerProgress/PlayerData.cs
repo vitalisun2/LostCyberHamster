@@ -24,7 +24,7 @@ namespace GameManagement
         [NonSerialized]
         private LevelProgressSnapshot _progressSnapshot = LevelProgressSnapshot.Empty;
 
-        public Dictionary<string, bool> ComplitedStorylineQuests = new();
+        public List<StorylineQuestProgressEntry> StorylineQuestProgress = new();
         public string LastSaveDate = DateTime.MinValue.ToString("o");
         public bool IsFirstLaunch = true;
         public bool IsTutorialCompleted;
@@ -47,6 +47,20 @@ namespace GameManagement
                 _progressSnapshot = value ?? LevelProgressSnapshot.Empty;
                 _serializedProgress = SerializeSnapshot(_progressSnapshot);
             }
+        }
+
+        internal bool HasSerializedProgressCollection => _serializedProgress != null;
+        internal IReadOnlyList<SerializableLevelProgressEntry> SerializedProgress => _serializedProgress;
+
+        internal void EnsureSerializedProgressCollection()
+        {
+            _serializedProgress ??= new List<SerializableLevelProgressEntry>();
+        }
+
+        internal void ReplaceSerializedProgress(List<SerializableLevelProgressEntry> entries)
+        {
+            _serializedProgress = entries ?? new List<SerializableLevelProgressEntry>();
+            RestoreSnapshot();
         }
 
         public string ToJson()
@@ -117,14 +131,5 @@ namespace GameManagement
                 : new LevelProgressSnapshot(models);
         }
 
-        [Serializable]
-        private class SerializableLevelProgressEntry
-        {
-            public string LocationId;
-            public string PartOfDayId;
-            public int LevelIndex;
-            public bool IsUnlocked;
-            public int Stars;
-        }
     }
 }
