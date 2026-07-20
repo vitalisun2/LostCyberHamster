@@ -39,8 +39,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
             else
             {
                 var completedLevelNumber = LevelManager.GetCurrentLevelNumber();
-                GameEventsManager.LevelCompleted(completedLevelNumber, _hamster.Lives.Value);
-
                 var playerData = GameDataManager.PlayerData;
                 if (completedLevelNumber == 1 &&
                     playerData != null &&
@@ -48,8 +46,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     !playerData.IsAccountPromptShown)
                 {
                     playerData.IsAccountPromptPending = true;
-                    GameDataManager.SaveData();
                 }
+
+                GameEventsManager.LevelCompleted(completedLevelNumber, _hamster.Lives.Value);
 
                 var winScreenController = _uiManager.GetController<WinModalController>();
                 winScreenController.SetParamsForInit(LevelManager.GetLocationName(), LevelManager.GetCurrentPartOfDay(), _hamster.Lives.Value);
