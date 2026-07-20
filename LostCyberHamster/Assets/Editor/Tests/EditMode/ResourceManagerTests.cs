@@ -83,6 +83,17 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(0, ResourceManager.GetCurrentBalance(ResourceType.Advertisement));
         }
 
+        [TestCase(ResourceType.Coins)]
+        [TestCase(ResourceType.Crystals)]
+        public void AddResource_RejectsOverflowWithoutChangingBalance(ResourceType resourceType)
+        {
+            Assert.IsTrue(ResourceManager.SetResourceBalance(resourceType, int.MaxValue));
+
+            Assert.IsFalse(ResourceManager.AddResource(resourceType, 1));
+
+            Assert.AreEqual(int.MaxValue, ResourceManager.GetCurrentBalance(resourceType));
+        }
+
         [Test]
         public void CollectionSubscriptions_AreIdempotentAndRemovable()
         {
