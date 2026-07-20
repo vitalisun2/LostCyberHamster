@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -64,21 +64,8 @@ namespace LostCyberHamster.Editor
                     PlayerPrefs.DeleteKey(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey);
                     PlayerPrefs.Save();
                 }
-                if (PlayerPrefs.HasKey(Assets.Scripts.Tutorial.TutorialAutomationSettings.AutoPlayKey))
-                {
-                    PlayerPrefs.DeleteKey(Assets.Scripts.Tutorial.TutorialAutomationSettings.AutoPlayKey);
-                    PlayerPrefs.Save();
-                }
-                if (PlayerPrefs.HasKey(Assets.Scripts.Tutorial.TutorialLaunchState.ResetCompletedOnceKey))
-                {
-                    PlayerPrefs.DeleteKey(Assets.Scripts.Tutorial.TutorialLaunchState.ResetCompletedOnceKey);
-                    PlayerPrefs.Save();
-                }
-                if (PlayerPrefs.HasKey(Assets.Scripts.Tutorial.TutorialAutomationSettings.StopAfterStepKey))
-                {
-                    PlayerPrefs.DeleteKey(Assets.Scripts.Tutorial.TutorialAutomationSettings.StopAfterStepKey);
-                    PlayerPrefs.Save();
-                }
+                Assets.Scripts.Tutorial.TutorialAutomation.Clear();
+                Assets.Scripts.Tutorial.TutorialLaunchService.ClearCompletedResetRequest();
 
                 LaunchPendingInteractiveLevelWhenReady();
             }
@@ -164,20 +151,13 @@ namespace LostCyberHamster.Editor
 
             if (isAutomatedTutorialRoute)
             {
-                PlayerPrefs.SetInt(Assets.Scripts.Tutorial.TutorialAutomationSettings.AutoPlayKey, 1);
-                PlayerPrefs.SetInt(Assets.Scripts.Tutorial.TutorialLaunchState.ResetCompletedOnceKey, 1);
+                Assets.Scripts.Tutorial.TutorialAutomation.SetAutoPlay(true);
+                Assets.Scripts.Tutorial.TutorialLaunchService.RequestCompletedResetOnce();
             }
             else
             {
-                if (PlayerPrefs.HasKey(Assets.Scripts.Tutorial.TutorialAutomationSettings.AutoPlayKey))
-                {
-                    PlayerPrefs.DeleteKey(Assets.Scripts.Tutorial.TutorialAutomationSettings.AutoPlayKey);
-                }
-
-                if (PlayerPrefs.HasKey(Assets.Scripts.Tutorial.TutorialLaunchState.ResetCompletedOnceKey))
-                {
-                    PlayerPrefs.DeleteKey(Assets.Scripts.Tutorial.TutorialLaunchState.ResetCompletedOnceKey);
-                }
+                Assets.Scripts.Tutorial.TutorialAutomation.ClearAutoPlay();
+                Assets.Scripts.Tutorial.TutorialLaunchService.ClearCompletedResetRequest();
             }
 
             if (timeScaleOverride.HasValue)

@@ -56,6 +56,11 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnUpdate()
         {
+            if (GameplayInputGate.IsBlocked || _keyboard == null)
+            {
+                return;
+            }
+
             if (_keyboard.upArrowKey.wasPressedThisFrame || _keyboard.downArrowKey.wasPressedThisFrame)
             {
                 OnShift();

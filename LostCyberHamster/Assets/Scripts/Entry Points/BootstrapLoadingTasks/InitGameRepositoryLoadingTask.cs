@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Assets.Scripts.System;
+using Assets.Scripts.Tutorial;
 using GameManagement;
 using LoadingTasks;
 
@@ -20,6 +21,7 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
             await LevelCatalogRuntimeConfigurator.ApplyInspectorOverrideAsync(forceRebuild: true);
 
             await GameDataManager.LoadDataAsync();
+            TutorialSession.TryRecoverInterruptedTutorial();
 
             GameDataManager.LoadSettings();
 

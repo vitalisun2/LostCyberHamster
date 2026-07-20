@@ -26,7 +26,6 @@ namespace LostCyberHamster.Editor
         private const string FirstGameplayLevelAddress = "01_New_York/Morning/level_01";
         private const string TestLevelPrefsKey = "TestLevel_Address";
         private const string SkipIntroPrefsKey = "TestLevel_SkipIntro";
-        private const string TutorialStopAfterStepPrefsKey = "Tutorial_StopAfterStep";
         private const string RequestIdSessionKey = "TestLevelAutomationBridge.RequestId";
         private const string CommandSessionKey = "TestLevelAutomationBridge.Command";
         private const string ResultSessionKey = "TestLevelAutomationBridge.Result";
@@ -374,9 +373,9 @@ namespace LostCyberHamster.Editor
         {
             PlayerPrefs.SetString(TestLevelPrefsKey, FirstGameplayLevelAddress);
             PlayerPrefs.SetInt(SkipIntroPrefsKey, 1);
-            PlayerPrefs.SetInt(Assets.Scripts.Tutorial.TutorialAutomationSettings.AutoPlayKey, 1);
-            PlayerPrefs.SetInt(Assets.Scripts.Tutorial.TutorialLaunchState.ResetCompletedOnceKey, 1);
-            PlayerPrefs.SetInt(TutorialStopAfterStepPrefsKey, stopAfterStep);
+            Assets.Scripts.Tutorial.TutorialAutomation.SetAutoPlay(true);
+            Assets.Scripts.Tutorial.TutorialLaunchService.RequestCompletedResetOnce();
+            Assets.Scripts.Tutorial.TutorialAutomation.SetStopAfterStep(stopAfterStep);
 
             PlayerPrefs.Save();
             EditorSceneManager.OpenScene(BootstrapScenePath);
@@ -387,16 +386,15 @@ namespace LostCyberHamster.Editor
         {
             PlayerPrefs.SetString(TestLevelPrefsKey, FirstGameplayLevelAddress);
             PlayerPrefs.SetInt(SkipIntroPrefsKey, 0);
-            PlayerPrefs.DeleteKey(Assets.Scripts.Tutorial.TutorialAutomationSettings.AutoPlayKey);
-            PlayerPrefs.DeleteKey(Assets.Scripts.Tutorial.TutorialLaunchState.ResetCompletedOnceKey);
-            PlayerPrefs.DeleteKey(TutorialStopAfterStepPrefsKey);
+            Assets.Scripts.Tutorial.TutorialAutomation.Clear();
+            Assets.Scripts.Tutorial.TutorialLaunchService.ClearCompletedResetRequest();
 
             if (timeScale > 0f)
             {
                 PlayerPrefs.SetFloat(Assets.Scripts.System.AutomationRuntimePrefs.TimeScaleOverrideKey, timeScale);
             }
 
-            Assets.Scripts.Tutorial.TutorialLaunchState.AllowFirstGameplayLevelOnce();
+            Assets.Scripts.Tutorial.TutorialLaunchService.AllowFirstGameplayLevelOnce();
             PlayerPrefs.Save();
 
             SessionState.SetBool(IntroProbeSkipScheduledSessionKey, false);

@@ -85,7 +85,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnTutorial(ClickEvent evt)
         {
-            TutorialLaunchState.StartReplayFromMenu();
+            TutorialLaunchService.StartReplayFromMenu();
             SceneManager.LoadScene("Game");
         }
 
