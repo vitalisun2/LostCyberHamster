@@ -10,34 +10,26 @@ using UnityEngine;
 namespace LostCyberHamster.Editor
 {
     /// <summary>
-    /// Editor tool for launching test levels directly from the menu.
-    /// Writes the target level address into PlayerPrefs, opens the Bootstrap
-    /// scene and enters Play mode. LoadMainMenuLoadingTask detects the
-    /// override, sets CurrentLevel, and loads Game instead of Menu.
-    /// Override auto-clears when Play Mode exits.
+    /// Сервис запуска тестовых уровней через automation bridge.
+    /// Сохраняет адрес уровня, открывает Bootstrap и включает Play Mode.
+    /// Временные параметры запуска очищаются после выхода из Play Mode.
     /// </summary>
     [InitializeOnLoad]
     public static class TestLevelLauncher
     {
-        /// <summary>PlayerPrefs key checked by LoadMainMenuLoadingTask.</summary>
+        /// <summary>Ключ адреса тестового уровня, читаемый LoadMainMenuLoadingTask.</summary>
         public const string OverridePrefsKey = "TestLevel_Address";
 
-        /// <summary>PlayerPrefs key: runtime timescale override. Shared with <see cref="Assets.Scripts.System.AutomationRuntimePrefs"/>.</summary>
+        /// <summary>Ключ переопределения runtime timescale.</summary>
         public static string TimeScaleOverrideKey => Assets.Scripts.System.AutomationRuntimePrefs.TimeScaleOverrideKey;
 
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string LocationsRootPath = "Assets/Content/locations";
         private const string LevelsFolderName = "levels";
         private const string TestLevelPrefix = "test";
-        private const string PendingInteractiveLaunchAddressSessionKey = "TestLevelLauncher.PendingInteractiveLaunchAddress";
-        private const string LaunchedInteractiveAddressesSessionKey = "TestLevelLauncher.LaunchedInteractiveAddresses";
-        private const string LastLaunchedInteractiveAddressSessionKey = "TestLevelLauncher.LastLaunchedInteractiveAddress";
 
-        /// <summary>Default timescale when launching through the automation bridge.</summary>
+        /// <summary>Стандартный timescale для запуска через automation bridge.</summary>
         private const float AutomationDefaultTimeScale = 1.0f;
-
-        /// <summary>Default timescale when launching via Tools menu for interactive visual inspection.</summary>
-        private const float ToolsDefaultTimeScale = 1.0f;
 
         static TestLevelLauncher()
         {
@@ -66,64 +58,29 @@ namespace LostCyberHamster.Editor
                 }
                 Assets.Scripts.Tutorial.TutorialAutomation.Clear();
                 Assets.Scripts.Tutorial.TutorialLaunchService.ClearCompletedResetRequest();
-
-                LaunchPendingInteractiveLevelWhenReady();
             }
         }
 
         /// <summary>
-        /// Opens the test-level address picker from Content/locations.
-        /// Unity does not support dynamic MenuItem creation from disk data,
-        /// so the list is built in a helper window from a static menu item.
-        /// </summary>
-        [MenuItem("Tools/Test Level/Launch...", priority = 50)]
-        private static void ShowLaunchMenu()
-        {
-            var testLevels = DiscoverTestLevels();
-            if (testLevels.Count == 0)
-            {
-                EditorUtility.DisplayDialog("Test Level", $"No test levels found under '{LocationsRootPath}'.", "OK");
-                return;
-            }
-
-            TestLevelPickerWindow.ShowWindow(testLevels);
-        }
-
-        /// <summary>
-        /// Launches a test level without UI dialogs for automation bridge control.
+        /// Запускает тестовый уровень без UI-диалогов для automation bridge.
         /// </summary>
         public static bool TryLaunchTestLevelAutomation(string levelAddress, float timeScale, out string errorMessage)
         {
             float effectiveTimeScale = timeScale > 0f ? timeScale : AutomationDefaultTimeScale;
             return TryLaunchTestLevel(
-                interactive: false,
                 levelAddress,
                 effectiveTimeScale,
                 out errorMessage);
         }
 
         private static bool TryLaunchTestLevel(
-            bool interactive,
             string levelAddress,
             float? timeScaleOverride,
             out string errorMessage)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
-                if (interactive)
-                {
-                    RequestInteractiveRelaunch(levelAddress);
-                    errorMessage = null;
-                    return true;
-                }
-
                 errorMessage = "Exit Play mode first.";
-                return false;
-            }
-
-            if (interactive && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-            {
-                errorMessage = "Launch cancelled because modified scenes were not saved.";
                 return false;
             }
 
@@ -142,12 +99,11 @@ namespace LostCyberHamster.Editor
 
             // Write override into PlayerPrefs so it survives domain reload on Play
             PlayerPrefs.SetString(OverridePrefsKey, effectiveLevelAddress);
-            PlayerPrefs.SetInt(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey, interactive ? 0 : 1);
+            PlayerPrefs.SetInt(Assets.Scripts.System.AutomationRuntimePrefs.SkipIntroKey, 1);
 
             bool isAutomatedTutorialRoute =
-                !interactive
-                && (Assets.Scripts.Tutorial.TutorialConstants.IsTutorialLevel(effectiveLevelAddress)
-                    || Assets.Scripts.Tutorial.TutorialConstants.IsFirstGameplayLevel(effectiveLevelAddress));
+                Assets.Scripts.Tutorial.TutorialConstants.IsTutorialLevel(effectiveLevelAddress)
+                || Assets.Scripts.Tutorial.TutorialConstants.IsFirstGameplayLevel(effectiveLevelAddress);
 
             if (isAutomatedTutorialRoute)
             {
@@ -173,36 +129,8 @@ namespace LostCyberHamster.Editor
             return true;
         }
 
-        private static void RequestInteractiveRelaunch(string levelAddress)
-        {
-            SessionState.SetString(PendingInteractiveLaunchAddressSessionKey, levelAddress ?? string.Empty);
-            EditorApplication.isPlaying = false;
-            EditorApplication.delayCall += LaunchPendingInteractiveLevelWhenReady;
-        }
-
-        private static void LaunchPendingInteractiveLevelWhenReady()
-        {
-            var levelAddress = SessionState.GetString(PendingInteractiveLaunchAddressSessionKey, string.Empty);
-            if (string.IsNullOrWhiteSpace(levelAddress))
-            {
-                return;
-            }
-
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
-            {
-                EditorApplication.delayCall += LaunchPendingInteractiveLevelWhenReady;
-                return;
-            }
-
-            SessionState.SetString(PendingInteractiveLaunchAddressSessionKey, string.Empty);
-            EditorApplication.delayCall += () =>
-            {
-                LaunchInteractive(levelAddress);
-            };
-        }
-
         /// <summary>
-        /// Collects test-level addresses from Content/locations/*/levels.
+        /// Собирает адреса тестовых уровней из Content/locations/*/levels.
         /// </summary>
         private static List<TestLevelEntry> DiscoverTestLevels()
         {
@@ -239,17 +167,6 @@ namespace LostCyberHamster.Editor
 
             testLevels.Sort((left, right) => string.CompareOrdinal(left.MenuLabel, right.MenuLabel));
             return testLevels;
-        }
-
-        private static bool LaunchInteractive(string levelAddress)
-        {
-            if (!TryLaunchTestLevel(interactive: true, levelAddress, ToolsDefaultTimeScale, out var errorMessage))
-            {
-                EditorUtility.DisplayDialog("Test Level", errorMessage, "OK");
-                return false;
-            }
-
-            return true;
         }
 
         private static bool TryGetDefaultTestLevelAddress(out string levelAddress)
@@ -320,239 +237,6 @@ namespace LostCyberHamster.Editor
             public string Address { get; }
 
             public string MenuLabel { get; }
-        }
-
-        private sealed class TestLevelPickerWindow : EditorWindow
-        {
-            private const float MinWindowWidth = 360f;
-            private const float MinWindowHeight = 360f;
-            private const float LaunchWithoutStartToggleWidth = 160f;
-            private static readonly Color LaunchedLevelBackgroundColor = new(0.68f, 0.86f, 0.68f, 1f);
-            private static readonly Color LaunchedBadgeTextColor = new(0.12f, 0.42f, 0.16f, 1f);
-            private static readonly Color LastLaunchedBadgeTextColor = new(0.1f, 0.3f, 0.72f, 1f);
-
-            private readonly List<TestLevelEntry> _testLevels = new();
-            private readonly HashSet<string> _launchedLevelAddresses = new(StringComparer.Ordinal);
-            private string _lastLaunchedLevelAddress;
-            private bool _launchWithoutStart;
-            private Vector2 _scrollPosition;
-            private static GUIStyle _launchedBadgeStyle;
-            private static GUIStyle _lastLaunchedBadgeStyle;
-
-            public static void ShowWindow(IEnumerable<TestLevelEntry> testLevels)
-            {
-                var entries = testLevels?.ToList() ?? new List<TestLevelEntry>();
-                if (entries.Count == 0)
-                {
-                    EditorUtility.DisplayDialog("Test Level", $"No test levels found under '{LocationsRootPath}'.", "OK");
-                    return;
-                }
-
-                ClearLaunchedLevelAddressesStorage();
-
-                var window = GetWindow<TestLevelPickerWindow>("Test Levels");
-                window.titleContent = new GUIContent("Test Levels");
-                window._testLevels.Clear();
-                window._testLevels.AddRange(entries);
-                window._launchWithoutStart = false;
-                window.LoadLaunchedLevelAddresses();
-                window.ApplyWindowSize();
-                window.Focus();
-            }
-
-            private void OnEnable()
-            {
-                LoadLaunchedLevelAddresses();
-
-                if (_testLevels.Count == 0)
-                {
-                    RefreshLevels(resetLaunchedState: false);
-                }
-            }
-
-            private void OnGUI()
-            {
-                // Header and window commands.
-                EditorGUILayout.HelpBox("Choose a test level to launch through Bootstrap with bot auto-start.", MessageType.Info);
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    EditorGUILayout.LabelField($"Found: {_testLevels.Count}", EditorStyles.miniLabel);
-                    GUILayout.FlexibleSpace();
-
-                    _launchWithoutStart = GUILayout.Toggle(
-                        _launchWithoutStart,
-                        "Launch without start",
-                        GUILayout.Width(LaunchWithoutStartToggleWidth));
-
-                    if (GUILayout.Button("Refresh", GUILayout.Width(80f)))
-                    {
-                        RefreshLevels(resetLaunchedState: true);
-                    }
-                }
-
-                GUILayout.Space(6f);
-
-                // Empty state.
-                if (_testLevels.Count == 0)
-                {
-                    EditorGUILayout.HelpBox($"No test levels found under '{LocationsRootPath}'.", MessageType.Warning);
-                    return;
-                }
-
-                // Test level list.
-                _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
-                foreach (var testLevel in _testLevels)
-                {
-                    DrawTestLevelRow(testLevel);
-                }
-
-                EditorGUILayout.EndScrollView();
-            }
-
-            private void DrawTestLevelRow(TestLevelEntry testLevel)
-            {
-                // Display state.
-                var wasLaunched = _launchedLevelAddresses.Contains(testLevel.Address);
-                var isLastLaunched = wasLaunched &&
-                    string.Equals(testLevel.Address, _lastLaunchedLevelAddress, StringComparison.Ordinal);
-
-                // Row surface.
-                var previousBackgroundColor = GUI.backgroundColor;
-                if (wasLaunched)
-                {
-                    GUI.backgroundColor = LaunchedLevelBackgroundColor;
-                }
-
-                using (new EditorGUILayout.VerticalScope("box"))
-                {
-                    GUI.backgroundColor = previousBackgroundColor;
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        EditorGUILayout.LabelField(testLevel.MenuLabel, EditorStyles.boldLabel);
-
-                        if (wasLaunched)
-                        {
-                            GUILayout.Label("Launched", GetLaunchedBadgeStyle(isLastLaunched), GUILayout.Width(72f));
-                        }
-
-                        // Launch command.
-                        if (GUILayout.Button("Launch", GUILayout.Width(90f)))
-                        {
-                            LaunchOrMarkTestLevel(testLevel.Address);
-                            GUIUtility.ExitGUI();
-                        }
-                    }
-                }
-            }
-
-            private void LaunchOrMarkTestLevel(string levelAddress)
-            {
-                if (_launchWithoutStart)
-                {
-                    RegisterLaunchedLevel(levelAddress);
-                    return;
-                }
-
-                if (LaunchInteractive(levelAddress))
-                {
-                    RegisterLaunchedLevel(levelAddress);
-                }
-            }
-
-            private static GUIStyle GetLaunchedBadgeStyle(bool isLastLaunched)
-            {
-                if (isLastLaunched)
-                {
-                    if (_lastLaunchedBadgeStyle == null)
-                    {
-                        _lastLaunchedBadgeStyle = CreateLaunchedBadgeStyle(LastLaunchedBadgeTextColor);
-                    }
-
-                    return _lastLaunchedBadgeStyle;
-                }
-
-                if (_launchedBadgeStyle == null)
-                {
-                    _launchedBadgeStyle = CreateLaunchedBadgeStyle(LaunchedBadgeTextColor);
-                }
-
-                return _launchedBadgeStyle;
-            }
-
-            private static GUIStyle CreateLaunchedBadgeStyle(Color textColor)
-            {
-                var style = new GUIStyle(EditorStyles.miniBoldLabel)
-                {
-                    alignment = TextAnchor.MiddleRight
-                };
-                style.normal.textColor = textColor;
-                return style;
-            }
-
-            private void RegisterLaunchedLevel(string levelAddress)
-            {
-                _launchedLevelAddresses.Add(levelAddress);
-                _lastLaunchedLevelAddress = levelAddress;
-                SaveLaunchedLevelAddresses();
-            }
-
-            private void RefreshLevels(bool resetLaunchedState)
-            {
-                _testLevels.Clear();
-                if (resetLaunchedState)
-                {
-                    ClearLaunchedLevelAddresses();
-                }
-
-                _testLevels.AddRange(DiscoverTestLevels());
-                ApplyWindowSize();
-            }
-
-            private void LoadLaunchedLevelAddresses()
-            {
-                _launchedLevelAddresses.Clear();
-                _lastLaunchedLevelAddress = SessionState.GetString(LastLaunchedInteractiveAddressSessionKey, string.Empty);
-
-                var launchedAddresses = SessionState.GetString(LaunchedInteractiveAddressesSessionKey, string.Empty);
-                if (string.IsNullOrWhiteSpace(launchedAddresses))
-                {
-                    return;
-                }
-
-                foreach (var launchedAddress in launchedAddresses.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    _launchedLevelAddresses.Add(launchedAddress);
-                }
-            }
-
-            private void SaveLaunchedLevelAddresses()
-            {
-                SessionState.SetString(
-                    LaunchedInteractiveAddressesSessionKey,
-                    string.Join("\n", _launchedLevelAddresses.OrderBy(address => address, StringComparer.Ordinal)));
-                SessionState.SetString(LastLaunchedInteractiveAddressSessionKey, _lastLaunchedLevelAddress ?? string.Empty);
-            }
-
-            private void ClearLaunchedLevelAddresses()
-            {
-                _launchedLevelAddresses.Clear();
-                _lastLaunchedLevelAddress = string.Empty;
-                ClearLaunchedLevelAddressesStorage();
-            }
-
-            private static void ClearLaunchedLevelAddressesStorage()
-            {
-                SessionState.SetString(LaunchedInteractiveAddressesSessionKey, string.Empty);
-                SessionState.SetString(LastLaunchedInteractiveAddressSessionKey, string.Empty);
-            }
-
-            private void ApplyWindowSize()
-            {
-                minSize = new Vector2(MinWindowWidth, MinWindowHeight);
-                maxSize = new Vector2(4096f, 4096f);
-            }
         }
     }
 }
