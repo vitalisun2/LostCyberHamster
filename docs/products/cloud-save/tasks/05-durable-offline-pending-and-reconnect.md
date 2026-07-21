@@ -1,62 +1,17 @@
-# 05. Durable offline pending и reconnect
+# 05. Durable pending и retry после offline
 
-## Цель
+## Результат
 
-Сохранить признак несинхронизированного снимка после потери сети или перезапуска и отправить новейший полный снимок после восстановления account/network readiness.
+Последний несинхронизированный снимок переживает перезапуск и отправляется после готовности аккаунта и сети. Зависит от задачи 04.
 
-## Depends on
+## Что сделать
 
-- [04 — очередь загрузки контрольных точек](04-checkpoint-upload-queue.md)
+- Добавить локальное хранилище pending-снимка: полные данные, владелец, локальная revision и базовая cloud revision.
+- Записывать pending до облачной попытки; новая версия заменяет старую.
+- После запуска дождаться аккаунта и отправить pending при совпадении `PlayerId`.
+- После возвращения сети использовать тот же путь отправки, что и очередь checkpoint.
+- Очищать pending только после подтверждения его актуальной revision.
 
-## Feature links
+## Проверка
 
-- [Офлайн-изменения и reconnect](../features/04-offline-pending-reconnect.md)
-
-## Scope
-
-- Durable-признак pending для конкретного `PlayerId` и версии снимка.
-- Восстановление pending после запуска приложения.
-- Неблокирующая отправка новейшего снимка после reconnect.
-- Снятие pending только после подтверждения актуальной cloud-записи.
-
-## Audit-based предполагаемые components
-
-- `GameDataManager` local persistence и checkpoint upload call sites.
-- `PlayerData` и progress/economy/runtime storages.
-- Account readiness/success transitions `AccountService`.
-- Существующая проверка доступности сети; без предположения, что bootstrap cloud load уже ждёт account resolution.
-
-## Минимальный алгоритм
-
-1. После local save durable-сохранить владельца и версию неподтверждённого полного снимка.
-2. При offline/error оставить pending после завершения процесса.
-3. На следующем запуске сначала дождаться разрешённого account state и определить текущий `PlayerId`.
-4. После доступности сети выбрать новейший pending-снимок этого владельца и неблокирующе отправить его.
-5. Удалить pending только если сервер подтвердил именно актуальную версию; иначе сохранить его для следующего повтора.
-
-## Acceptance
-
-- Офлайн-прогресс сразу сохраняется локально.
-- Pending переживает закрытие и повторный запуск.
-- Reconnect отправляет последний полный снимок, а не историю отдельных полей.
-- Pending одного `PlayerId` никогда не загружается в другой аккаунт.
-- Повторная ошибка не блокирует gameplay и не очищает pending.
-
-## Relevant manual scenario links
-
-- [05 — app close during upload](../manual-testing/05-app-close-during-upload.md)
-- [06 — offline durable pending](../manual-testing/06-offline-durable-pending.md)
-- [07 — reconnect uploads pending](../manual-testing/07-reconnect-uploads-pending.md)
-
-## Out of scope
-
-- Background upload при закрытом приложении.
-- Хранение всех промежуточных offline-снимков.
-- Multi-device conflict selection и sync UI.
-
-## KISS и сигналы рефакторинга
-
-- Хранить только новейший pending snapshot/version на владельца, без event log.
-- Если bootstrap снова читает облако до account resolution — предложить единый readiness gate и дождаться одобрения.
-- Если durable metadata прокидывается множеством отдельных параметров — предложить небольшой DTO и дождаться одобрения.
-- Если reconnect/retry дублирует checkpoint upload path — предложить один переиспользуемый upload path вместо второго.
+Unit-тесты с новым экземпляром сервиса проверяют перезапуск, хранение последней версии, владельца, сохранение pending после ошибки и защиту новой revision от старого подтверждения.
