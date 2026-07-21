@@ -18,7 +18,7 @@ namespace GameManagement.CloudSave
         private bool _isSnapshotUploadActive;
         private long _nextLocalRevision = 1;
 
-        /// <summary>Подписывает синхронизацию на успешное связывание текущего гостя.</summary>
+        /// <summary>Восстанавливает durable pending и подписывает очередь на account/lifecycle события.</summary>
         public CloudSyncService(ICloudSaveGateway gateway, AccountService accountService)
         {
             _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
@@ -28,8 +28,13 @@ namespace GameManagement.CloudSave
             }
 
             _accountService = accountService;
+            _pendingSnapshot = CloudPendingSnapshotStore.Load();
+            AdvanceLocalRevisionPast(_pendingSnapshot);
             accountService.CurrentGuestLinked += OnCurrentGuestLinked;
+            accountService.StateChanged += OnAccountStateChanged;
             PlayerProgressCommitter.CommitCompleted += OnCheckpointCommitted;
+            PlayerProgressLifecycleCheckpoint.ApplicationResumed += OnApplicationResumed;
+            TryUploadPendingForCurrentAccount();
         }
 
         /// <summary>Последняя подтверждённая сервером версия текущего процесса игры.</summary>
@@ -63,6 +68,7 @@ namespace GameManagement.CloudSave
                     GetNextLocalRevision());
                 _firstSnapshotAwaitingConfirmation = snapshot;
                 _pendingSnapshot = snapshot;
+                CloudPendingSnapshotStore.Save(snapshot);
 
                 await UploadPendingSnapshotAsync(isRetry: false);
             }
@@ -162,7 +168,9 @@ namespace GameManagement.CloudSave
         public void Dispose()
         {
             _accountService.CurrentGuestLinked -= OnCurrentGuestLinked;
+            _accountService.StateChanged -= OnAccountStateChanged;
             PlayerProgressCommitter.CommitCompleted -= OnCheckpointCommitted;
+            PlayerProgressLifecycleCheckpoint.ApplicationResumed -= OnApplicationResumed;
         }
 
         /// <summary>
@@ -179,6 +187,7 @@ namespace GameManagement.CloudSave
 
             // Обновляем только cloud base перед отправкой, сохраняя payload checkpoint неизменным.
             snapshot.BaseRevision = CurrentCloudVersion?.ServerRevision;
+            CloudPendingSnapshotStore.Save(snapshot);
 
             // Фиксируем active отдельно: новые checkpoint заменяют только pending.
             _pendingSnapshot = null;
@@ -194,6 +203,7 @@ namespace GameManagement.CloudSave
                 var result = await _gateway.SaveSnapshotAsync(snapshot);
                 CurrentCloudVersion = result
                     ?? throw new InvalidOperationException("Cloud Save returned no write result.");
+                CloudPendingSnapshotStore.ClearIfMatches(snapshot);
 
                 if (ReferenceEquals(_firstSnapshotAwaitingConfirmation, snapshot))
                     _firstSnapshotAwaitingConfirmation = null;
@@ -228,9 +238,30 @@ namespace GameManagement.CloudSave
                 await UploadPendingSnapshotAsync(isRetry: false);
         }
 
+        /// <summary>Продолжает pending владельца или создаёт первый снимок нового владельца.</summary>
         private void OnCurrentGuestLinked(string playerId)
         {
+            if (!_isSnapshotUploadActive &&
+                _pendingSnapshot != null &&
+                !string.Equals(_pendingSnapshot.PlayerId, playerId, StringComparison.Ordinal))
+            {
+                _pendingSnapshot = null;
+            }
+
             _ = UploadFirstSnapshotAsync(playerId);
+        }
+
+        /// <summary>Запускает durable retry после определения связанного аккаунта.</summary>
+        private void OnAccountStateChanged(AccountState state)
+        {
+            if (state == AccountState.Linked)
+                TryUploadPendingForCurrentAccount();
+        }
+
+        /// <summary>Повторяет durable pending после возврата приложения.</summary>
+        private void OnApplicationResumed()
+        {
+            TryUploadPendingForCurrentAccount();
         }
 
         /// <summary>Фиксирует успешный локальный checkpoint для связанного аккаунта.</summary>
@@ -250,11 +281,38 @@ namespace GameManagement.CloudSave
                 GetNextLocalRevision(),
                 CurrentCloudVersion?.ServerRevision);
             _pendingSnapshot = snapshot;
+            CloudPendingSnapshotStore.Save(snapshot);
 
             if (!_isSnapshotUploadActive)
                 _ = UploadPendingSnapshotAsync(isRetry: false);
         }
 
+        /// <summary>Отправляет durable pending только после определения его владельца.</summary>
+        private void TryUploadPendingForCurrentAccount()
+        {
+            if (_isSnapshotUploadActive ||
+                _pendingSnapshot == null ||
+                !_accountService.TryGetLinkedPlayerId(out var playerId) ||
+                !string.Equals(_pendingSnapshot.PlayerId, playerId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _ = UploadPendingSnapshotAsync(isRetry: true);
+        }
+
+        /// <summary>Продолжает локальную revision после восстановленного durable pending.</summary>
+        private void AdvanceLocalRevisionPast(CloudSaveSnapshot snapshot)
+        {
+            if (snapshot != null &&
+                long.TryParse(snapshot.Revision, NumberStyles.None, CultureInfo.InvariantCulture, out var revision) &&
+                revision >= _nextLocalRevision)
+            {
+                _nextLocalRevision = revision + 1;
+            }
+        }
+
+        /// <summary>Возвращает следующую локальную revision текущей сессии.</summary>
         private string GetNextLocalRevision()
         {
             return (_nextLocalRevision++).ToString(CultureInfo.InvariantCulture);

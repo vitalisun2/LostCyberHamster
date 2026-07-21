@@ -23,6 +23,8 @@ namespace Assets.Tests.EditMode
         private string _savedPrimary;
         private bool _hadBackup;
         private string _savedBackup;
+        private bool _hadPendingSnapshot;
+        private string _savedPendingSnapshot;
         private readonly List<CloudSyncService> _cloudSyncServices = new List<CloudSyncService>();
 
         [SetUp]
@@ -34,10 +36,15 @@ namespace Assets.Tests.EditMode
             _savedPrimary = PlayerPrefs.GetString(PlayerDataKey, string.Empty);
             _hadBackup = PlayerPrefs.HasKey(PlayerDataBackupKey);
             _savedBackup = PlayerPrefs.GetString(PlayerDataBackupKey, string.Empty);
+            _hadPendingSnapshot = PlayerPrefs.HasKey(CloudPendingSnapshotStore.StorageKey);
+            _savedPendingSnapshot = PlayerPrefs.GetString(
+                CloudPendingSnapshotStore.StorageKey,
+                string.Empty);
 
             LevelCatalogService.Reset();
             PlayerPrefs.DeleteKey(PlayerDataKey);
             PlayerPrefs.DeleteKey(PlayerDataBackupKey);
+            PlayerPrefs.DeleteKey(CloudPendingSnapshotStore.StorageKey);
             PlayerPrefs.Save();
         }
 
@@ -52,6 +59,10 @@ namespace Assets.Tests.EditMode
             LevelCatalogService.Configure(_previousCatalog);
             RestorePreference(PlayerDataKey, _hadPrimary, _savedPrimary);
             RestorePreference(PlayerDataBackupKey, _hadBackup, _savedBackup);
+            RestorePreference(
+                CloudPendingSnapshotStore.StorageKey,
+                _hadPendingSnapshot,
+                _savedPendingSnapshot);
             PlayerPrefs.Save();
         }
 
@@ -203,6 +214,8 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(1, gateway.SaveCallCount);
             Assert.AreEqual(activeSnapshot.PlayerDataJson, localDataAtUpload[0]);
             Assert.AreEqual(10, CloudSaveSnapshotCodec.RestorePlayerData(activeSnapshot).Money);
+            Assert.AreEqual(10, CloudSaveSnapshotCodec.RestorePlayerData(
+                CloudPendingSnapshotStore.Load()).Money);
 
             GameDataManager.PlayerData.Money = 20;
             PlayerProgressCommitter.Commit(CheckpointReason.SkinPurchased);
@@ -211,6 +224,8 @@ namespace Assets.Tests.EditMode
 
             Assert.AreEqual(1, gateway.SaveCallCount);
             Assert.AreEqual(10, CloudSaveSnapshotCodec.RestorePlayerData(activeSnapshot).Money);
+            Assert.AreEqual(30, CloudSaveSnapshotCodec.RestorePlayerData(
+                CloudPendingSnapshotStore.Load()).Money);
 
             var firstResult = new CloudSaveWriteResult(
                 "server-revision-01",
@@ -227,6 +242,7 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(firstResult.ServerRevision, newestSnapshot.BaseRevision);
             Assert.AreEqual(newestSnapshot.PlayerDataJson, localDataAtUpload[1]);
             Assert.AreSame(firstResult, cloudSync.CurrentCloudVersion);
+            Assert.AreEqual(firstResult.ServerRevision, CloudPendingSnapshotStore.Load().BaseRevision);
 
             var secondResult = new CloudSaveWriteResult(
                 "server-revision-02",
@@ -235,6 +251,7 @@ namespace Assets.Tests.EditMode
             await Task.Yield();
 
             Assert.AreSame(secondResult, cloudSync.CurrentCloudVersion);
+            Assert.IsNull(CloudPendingSnapshotStore.Load());
         }
 
         [Test]
@@ -263,6 +280,99 @@ namespace Assets.Tests.EditMode
 
             Assert.AreEqual(1, gateway.SaveCallCount);
             Assert.AreEqual("resolved-player-id", gateway.SavedSnapshot.PlayerId);
+        }
+
+        [Test]
+        public void DurablePending_SurvivesServiceRestartAndUploadsAfterAccountReady()
+        {
+            GameDataManager.PlayerData = CreatePlayerData(73);
+            var firstGateway = new FakeCloudSaveGateway
+            {
+                SaveTask = Task.FromException<CloudSaveWriteResult>(
+                    new InvalidOperationException("offline"))
+            };
+            var firstService = CreateCloudSync(
+                firstGateway,
+                CreateResolvedLinkedAccountService("linked-player-id"));
+
+            LogAssert.Expect(
+                LogType.Error,
+                "[CloudSave] First snapshot upload failed (InvalidOperationException).");
+            PlayerProgressCommitter.Commit(CheckpointReason.MenuEntered);
+
+            var storedSnapshot = CloudPendingSnapshotStore.Load();
+            Assert.AreEqual(73, CloudSaveSnapshotCodec.RestorePlayerData(storedSnapshot).Money);
+            Assert.AreEqual("linked-player-id", storedSnapshot.PlayerId);
+            firstService.Dispose();
+
+            var authentication = new FakeAccountAuthenticationGateway
+            {
+                SessionTokenExists = true,
+                IsSignedIn = true,
+                IsUnityPlayerAccountLinked = true,
+                PlayerId = "linked-player-id"
+            };
+            var restartedAccountService = new AccountService(
+                authentication,
+                new FakeUnityPlayerAccountGateway());
+            var restartedGateway = new FakeCloudSaveGateway();
+            CreateCloudSync(restartedGateway, restartedAccountService);
+
+            Assert.AreEqual(0, restartedGateway.SaveCallCount);
+
+            restartedAccountService.Start();
+
+            Assert.AreEqual(1, restartedGateway.SaveCallCount);
+            Assert.AreEqual("linked-player-id", restartedGateway.SavedSnapshot.PlayerId);
+            Assert.AreEqual(storedSnapshot.Revision, restartedGateway.SavedSnapshot.Revision);
+            Assert.IsNull(CloudPendingSnapshotStore.Load());
+        }
+
+        [Test]
+        public void DurablePending_DoesNotUploadForDifferentResolvedOwner()
+        {
+            var storedSnapshot = CloudSaveSnapshotCodec.Capture(
+                CreatePlayerData(52),
+                "first-player-id",
+                "7");
+            CloudPendingSnapshotStore.Save(storedSnapshot);
+            var accountService = CreateResolvedLinkedAccountService("second-player-id");
+            var gateway = new FakeCloudSaveGateway();
+
+            CreateCloudSync(gateway, accountService);
+
+            Assert.AreEqual(0, gateway.SaveCallCount);
+            Assert.AreEqual("first-player-id", CloudPendingSnapshotStore.Load().PlayerId);
+        }
+
+        [Test]
+        public void ApplicationResume_RetriesDurablePendingThroughQueue()
+        {
+            CloudPendingSnapshotStore.Save(CloudSaveSnapshotCodec.Capture(
+                CreatePlayerData(61),
+                "linked-player-id",
+                "4"));
+            var gateway = new FakeCloudSaveGateway
+            {
+                SaveTask = Task.FromException<CloudSaveWriteResult>(
+                    new InvalidOperationException("offline"))
+            };
+
+            LogAssert.Expect(
+                LogType.Error,
+                "[CloudSave] First snapshot upload failed (InvalidOperationException).");
+            CreateCloudSync(
+                gateway,
+                CreateResolvedLinkedAccountService("linked-player-id"));
+            Assert.AreEqual(1, gateway.SaveCallCount);
+
+            gateway.SaveTask = Task.FromResult(new CloudSaveWriteResult(
+                "server-revision-resumed",
+                new DateTime(2026, 7, 21, 16, 0, 0, DateTimeKind.Utc)));
+            PlayerProgressLifecycleCheckpoint.HandleApplicationPause(isPaused: false);
+
+            Assert.AreEqual(2, gateway.SaveCallCount);
+            Assert.IsNull(CloudPendingSnapshotStore.Load());
         }
 
         [Test]
