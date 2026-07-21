@@ -18,10 +18,10 @@ Bug Fix workflow: стадия реализации после Bug Regression Wo
 ## Процесс
 
 1. Кратко зафиксируй доказанный root cause и expected behavior.
-2. Следуй `.github/prompts/task-branch-workflow.prompt.md` для подготовки worktree, реализации, Unity-валидации и cleanup стенда.
+2. Следуй `.github/prompts/workflows/task-branch-workflow.prompt.md` для подготовки worktree, реализации, финального C# gate и cleanup стенда.
 3. Исправляй причину в слое-владельце инварианта, не добавляй symptom patch, threshold tuning, fallback/guard/override под конкретный симптом.
 4. Удали временную диагностику, если она больше не является устойчивой частью решения.
-5. Выполни релевантную проверку fix-а.
+5. Выполни финальный gate из Task Branch workflow. Другую проверку запускай только по явному запросу пользователя.
 
 ## Финальный ответ
 

@@ -21,7 +21,7 @@ Task Branch workflow: дефолт для feature-задач и bugfix. Созд
 
 1. Прочитай целевой код, соседние call sites и ближайший execution path.
 2. Реализуй минимальное полное изменение в task-worktree.
-3. Для C# правок проверь compile errors и `.csproj` включение новых/перемещённых файлов; для не-C# правок выполни только релевантную лёгкую проверку.
+3. После basic review C#-правок выполни финальный gate из `docs/rules/code_conventions.md`. Для документации regeneration и build не нужны.
 4. Если проверка упала по текущей задаче — исправь в task-worktree; если причина внешняя — остановись с блокером.
 
 ## Unity-стенд
@@ -32,7 +32,7 @@ Task Branch workflow: дефолт для feature-задач и bugfix. Созд
 2. Захвати lock: атомарно создай `.worktrees/.integration-lock/`.
 3. Запиши `owner.json` как лог стенда: `{"task":"<slug>","phase":"validation","branch":"task/<slug>","worktree":".worktrees/<slug>","timestamp":"<ISO 8601>"}`.
 4. Под lock перенеси snapshot/diff из `.worktrees/<slug>` в основной каталог на `integration/unity-live`.
-5. Запусти нужную Unity/automation/manual проверку на стенде.
+5. Запускай Unity/runtime-проверку только по явному запросу пользователя; она не входит в финальный C# gate.
 6. После проверки убери из `integration/unity-live` только snapshot этой задачи, верни стенд в исходное состояние и сними lock.
 7. Если проверка нашла проблему текущей задачи, исправь её в `.worktrees/<slug>` и повтори нужную валидацию.
 

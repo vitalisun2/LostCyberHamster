@@ -20,8 +20,10 @@
 
 Bridge-команды:
 - `launch_test_level` — запуск тестового уровня с ботом.
-- `recompile_scripts` — перекомпиляция скриптов по явному запросу пользователя.
-- `regenerate_project_files` — пересоздание `.csproj`/`.sln`; `invoke_open_unity_test_level.ps1` вызывает автоматически.
+- `recompile_scripts` — Unity recompile; по умолчанию вручную запускает пользователь, агент — только по явному запросу.
+- `regenerate_project_files` — пересоздание `.csproj`/`.sln`; первый шаг финального C# gate.
+
+Финальный C# gate описан в `docs/rules/code_conventions.md`. Test Runner и Unity recompile не входят в него и запускаются агентом только по явному запросу.
 
 Результат: `EditorLogs/automation/test_level_response.json` со `state`, `testResult`, `diagnosticLogPath`.
 
@@ -121,8 +123,8 @@ Bridge-команды:
 
 | Скрипт | Назначение |
 |---|---|
-| `tools/invoke_open_unity_test_level.ps1` | Рекомпиляция, запуск одного теста, получение результата |
-| `tools/invoke_run_all_test_levels.ps1` | Запуск всех `test*.json` уровней |
+| `tools/invoke_open_unity_test_level.ps1` | Runtime-прогон одного test level; включает Unity recompile |
+| `tools/invoke_run_all_test_levels.ps1` | Runtime-прогон всех `test*.json`; включает Unity recompile |
 | `tools/read_log_channel.ps1` | Чтение `STAB`/`BOT`/`ECO` каналов |
 | `tools/migrate_levels.ps1` | Миграция уровней в reference-based формат |
 | `tools/rename_to_snake_case.ps1` | Переименование анимационных файлов перед импортом |
