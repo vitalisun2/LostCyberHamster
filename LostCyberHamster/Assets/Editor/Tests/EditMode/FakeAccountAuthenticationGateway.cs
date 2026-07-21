@@ -5,6 +5,10 @@ namespace Assets.Tests.EditMode
 {
     internal sealed class FakeAccountAuthenticationGateway : IAccountAuthenticationGateway
     {
+        private bool _hasPreservedSession;
+        private bool _preservedSessionIsUnityPlayerAccountLinked;
+        private string _preservedPlayerId;
+
         public bool SessionTokenExists { get; set; }
 
         public bool IsUnityPlayerAccountLinked { get; set; }
@@ -14,8 +18,6 @@ namespace Assets.Tests.EditMode
         public string PlayerId { get; set; } = "guest-player-id";
 
         public string ExistingAccountPlayerId { get; set; } = "linked-player-id";
-
-        public string AnonymousPlayerId { get; set; } = "guest-player-id";
 
         public bool? LastCreateAccount { get; private set; }
 
@@ -41,9 +43,16 @@ namespace Assets.Tests.EditMode
             LastCreateAccount = createAccount;
             await SignInTask;
             IsSignedIn = true;
-            IsUnityPlayerAccountLinked = false;
-            if (!createAccount)
-                PlayerId = AnonymousPlayerId;
+
+            if (createAccount)
+            {
+                IsUnityPlayerAccountLinked = false;
+            }
+            else if (_hasPreservedSession)
+            {
+                IsUnityPlayerAccountLinked = _preservedSessionIsUnityPlayerAccountLinked;
+                PlayerId = _preservedPlayerId;
+            }
         }
 
         public Task<AccountLinkResult> LinkWithUnityAsync(string accessToken)
@@ -64,6 +73,14 @@ namespace Assets.Tests.EditMode
         public void SignOutPreservingCredentials()
         {
             PreserveCredentialsCallCount++;
+
+            if (!_hasPreservedSession)
+            {
+                _hasPreservedSession = true;
+                _preservedSessionIsUnityPlayerAccountLinked = IsUnityPlayerAccountLinked;
+                _preservedPlayerId = PlayerId;
+            }
+
             IsSignedIn = false;
         }
 
@@ -75,6 +92,9 @@ namespace Assets.Tests.EditMode
         public void SignOutAndClearLocalCredentials()
         {
             ClearCredentialsCallCount++;
+            _hasPreservedSession = false;
+            _preservedSessionIsUnityPlayerAccountLinked = false;
+            _preservedPlayerId = null;
             IsSignedIn = false;
             IsUnityPlayerAccountLinked = false;
         }
