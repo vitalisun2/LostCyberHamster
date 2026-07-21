@@ -23,6 +23,7 @@ namespace Assets.Tests.EditMode
         private string _savedPrimary;
         private bool _hadBackup;
         private string _savedBackup;
+        private readonly List<CloudSyncService> _cloudSyncServices = new List<CloudSyncService>();
 
         [SetUp]
         public void SetUp()
@@ -43,6 +44,10 @@ namespace Assets.Tests.EditMode
         [TearDown]
         public void TearDown()
         {
+            foreach (var cloudSyncService in _cloudSyncServices)
+                cloudSyncService.Dispose();
+
+            _cloudSyncServices.Clear();
             GameDataManager.PlayerData = _previousPlayerData;
             LevelCatalogService.Configure(_previousCatalog);
             RestorePreference(PlayerDataKey, _hadPrimary, _savedPrimary);
@@ -66,7 +71,7 @@ namespace Assets.Tests.EditMode
             {
                 SaveTask = pendingSave.Task
             };
-            var cloudSync = new CloudSyncService(gateway, accountService);
+            var cloudSync = CreateCloudSync(gateway, accountService);
             var serverResult = new CloudSaveWriteResult(
                 "server-revision-01",
                 new DateTime(2026, 7, 21, 12, 0, 0, DateTimeKind.Utc));
@@ -109,7 +114,7 @@ namespace Assets.Tests.EditMode
                 SaveTask = Task.FromException<CloudSaveWriteResult>(
                     new InvalidOperationException("offline"))
             };
-            var cloudSync = new CloudSyncService(
+            var cloudSync = CreateCloudSync(
                 gateway,
                 new AccountService(
                     new FakeAccountAuthenticationGateway(),
@@ -151,7 +156,7 @@ namespace Assets.Tests.EditMode
                 SaveTask = Task.FromException<CloudSaveWriteResult>(
                     new InvalidOperationException("offline"))
             };
-            var cloudSync = new CloudSyncService(
+            var cloudSync = CreateCloudSync(
                 gateway,
                 new AccountService(
                     new FakeAccountAuthenticationGateway(),
@@ -175,6 +180,88 @@ namespace Assets.Tests.EditMode
             GameDataManager.PlayerData = new PlayerData();
             await GameDataManager.LoadDataAsync();
             Assert.AreEqual(73, GameDataManager.PlayerData.Money);
+        }
+
+        [Test]
+        public async Task CheckpointQueue_KeepsActiveImmutableAndSendsOnlyNewestPendingSnapshot()
+        {
+            GameDataManager.PlayerData = CreatePlayerData(10);
+            var accountService = CreateResolvedLinkedAccountService("linked-player-id");
+            var firstSave = new TaskCompletionSource<CloudSaveWriteResult>();
+            var secondSave = new TaskCompletionSource<CloudSaveWriteResult>();
+            var localDataAtUpload = new List<string>();
+            var gateway = new FakeCloudSaveGateway
+            {
+                SaveTask = firstSave.Task,
+                SaveStarting = _ => localDataAtUpload.Add(ReadSavedPlayerData().ToJson())
+            };
+            var cloudSync = CreateCloudSync(gateway, accountService);
+
+            PlayerProgressCommitter.Commit(CheckpointReason.MenuEntered);
+
+            var activeSnapshot = gateway.SavedSnapshot;
+            Assert.AreEqual(1, gateway.SaveCallCount);
+            Assert.AreEqual(activeSnapshot.PlayerDataJson, localDataAtUpload[0]);
+            Assert.AreEqual(10, CloudSaveSnapshotCodec.RestorePlayerData(activeSnapshot).Money);
+
+            GameDataManager.PlayerData.Money = 20;
+            PlayerProgressCommitter.Commit(CheckpointReason.SkinPurchased);
+            GameDataManager.PlayerData.Money = 30;
+            PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+
+            Assert.AreEqual(1, gateway.SaveCallCount);
+            Assert.AreEqual(10, CloudSaveSnapshotCodec.RestorePlayerData(activeSnapshot).Money);
+
+            var firstResult = new CloudSaveWriteResult(
+                "server-revision-01",
+                new DateTime(2026, 7, 21, 15, 0, 0, DateTimeKind.Utc));
+            gateway.SaveTask = secondSave.Task;
+            firstSave.SetResult(firstResult);
+            await Task.Yield();
+
+            var newestSnapshot = gateway.SavedSnapshot;
+            Assert.AreEqual(2, gateway.SaveCallCount);
+            Assert.AreNotSame(activeSnapshot, newestSnapshot);
+            Assert.AreEqual(30, CloudSaveSnapshotCodec.RestorePlayerData(newestSnapshot).Money);
+            Assert.AreEqual("linked-player-id", newestSnapshot.PlayerId);
+            Assert.AreEqual(newestSnapshot.PlayerDataJson, localDataAtUpload[1]);
+            Assert.AreSame(firstResult, cloudSync.CurrentCloudVersion);
+
+            var secondResult = new CloudSaveWriteResult(
+                "server-revision-02",
+                new DateTime(2026, 7, 21, 15, 1, 0, DateTimeKind.Utc));
+            secondSave.SetResult(secondResult);
+            await Task.Yield();
+
+            Assert.AreSame(secondResult, cloudSync.CurrentCloudVersion);
+        }
+
+        [Test]
+        public void CheckpointUpload_RequiresResolvedLinkedAccountAndUsesItsPlayerId()
+        {
+            GameDataManager.PlayerData = CreatePlayerData(41);
+            var authentication = new FakeAccountAuthenticationGateway
+            {
+                SessionTokenExists = true,
+                IsSignedIn = true,
+                IsUnityPlayerAccountLinked = true,
+                PlayerId = "resolved-player-id"
+            };
+            var accountService = new AccountService(
+                authentication,
+                new FakeUnityPlayerAccountGateway());
+            var gateway = new FakeCloudSaveGateway();
+            CreateCloudSync(gateway, accountService);
+
+            PlayerProgressCommitter.Commit(CheckpointReason.MenuEntered);
+
+            Assert.AreEqual(0, gateway.SaveCallCount);
+
+            accountService.Start();
+            PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+
+            Assert.AreEqual(1, gateway.SaveCallCount);
+            Assert.AreEqual("resolved-player-id", gateway.SavedSnapshot.PlayerId);
         }
 
         [Test]
@@ -278,7 +365,7 @@ namespace Assets.Tests.EditMode
                 new FakeUnityPlayerAccountGateway());
             accountService.Start();
             var gateway = new FakeCloudSaveGateway();
-            var cloudSync = new CloudSyncService(gateway, accountService);
+            var cloudSync = CreateCloudSync(gateway, accountService);
             var coordinator = new ExistingAccountRestoreCoordinator(accountService, cloudSync);
 
             LogAssert.Expect(LogType.Warning, "[CloudSave] Existing account snapshot missing.");
@@ -308,7 +395,7 @@ namespace Assets.Tests.EditMode
             {
                 LoadTask = Task.FromResult(CreateReadResult("linked-player-id", CreatePlayerData(91)))
             };
-            var cloudSync = new CloudSyncService(gateway, accountService);
+            var cloudSync = CreateCloudSync(gateway, accountService);
             var coordinator = new ExistingAccountRestoreCoordinator(accountService, cloudSync);
 
             var result = await coordinator.RestoreAsync();
@@ -332,13 +419,37 @@ namespace Assets.Tests.EditMode
             };
         }
 
-        private static CloudSyncService CreateCloudSync(FakeCloudSaveGateway gateway)
+        private AccountService CreateResolvedLinkedAccountService(string playerId)
         {
-            return new CloudSyncService(
+            var accountService = new AccountService(
+                new FakeAccountAuthenticationGateway
+                {
+                    SessionTokenExists = true,
+                    IsSignedIn = true,
+                    IsUnityPlayerAccountLinked = true,
+                    PlayerId = playerId
+                },
+                new FakeUnityPlayerAccountGateway());
+            accountService.Start();
+            return accountService;
+        }
+
+        private CloudSyncService CreateCloudSync(FakeCloudSaveGateway gateway)
+        {
+            return CreateCloudSync(
                 gateway,
                 new AccountService(
                     new FakeAccountAuthenticationGateway(),
                     new FakeUnityPlayerAccountGateway()));
+        }
+
+        private CloudSyncService CreateCloudSync(
+            FakeCloudSaveGateway gateway,
+            AccountService accountService)
+        {
+            var cloudSyncService = new CloudSyncService(gateway, accountService);
+            _cloudSyncServices.Add(cloudSyncService);
+            return cloudSyncService;
         }
 
         private static CloudSaveReadResult CreateReadResult(string playerId, PlayerData data)

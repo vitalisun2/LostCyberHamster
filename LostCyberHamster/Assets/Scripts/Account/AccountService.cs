@@ -26,6 +26,23 @@ namespace Assets.Scripts.Account
         }
 
         /// <summary>
+        /// Возвращает Player ID только после подтверждённого определения связанного аккаунта.
+        /// </summary>
+        public bool TryGetLinkedPlayerId(out string playerId)
+        {
+            playerId = null;
+            if (State != AccountState.Linked)
+                return false;
+
+            var resolvedPlayerId = _authenticationGateway.PlayerId;
+            if (string.IsNullOrWhiteSpace(resolvedPlayerId))
+                return false;
+
+            playerId = resolvedPlayerId;
+            return true;
+        }
+
+        /// <summary>
         /// Привязывает текущего гостя к Unity Player Account без смены Player ID.
         /// </summary>
         public async Task<AccountLinkResult> LinkCurrentGuestAsync()

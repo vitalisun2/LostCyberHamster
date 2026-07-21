@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using Assets.Scripts.Account;
 using UnityEngine;
@@ -6,15 +7,16 @@ using UnityEngine;
 namespace GameManagement.CloudSave
 {
     /// <summary>
-    /// Создаёт первый облачный снимок после связывания текущего гостя.
+    /// Создаёт облачные снимки и последовательно отправляет последний checkpoint.
     /// </summary>
-    public sealed class CloudSyncService
+    public sealed class CloudSyncService : IDisposable
     {
-        private const string FirstLocalRevision = "1";
-
         private readonly ICloudSaveGateway _gateway;
-        private CloudSaveSnapshot _pendingFirstSnapshot;
-        private bool _isFirstSnapshotUploadActive;
+        private readonly AccountService _accountService;
+        private CloudSaveSnapshot _pendingSnapshot;
+        private CloudSaveSnapshot _firstSnapshotAwaitingConfirmation;
+        private bool _isSnapshotUploadActive;
+        private long _nextLocalRevision = 1;
 
         /// <summary>Подписывает синхронизацию на успешное связывание текущего гостя.</summary>
         public CloudSyncService(ICloudSaveGateway gateway, AccountService accountService)
@@ -25,22 +27,25 @@ namespace GameManagement.CloudSave
                 throw new ArgumentNullException(nameof(accountService));
             }
 
+            _accountService = accountService;
             accountService.CurrentGuestLinked += OnCurrentGuestLinked;
+            PlayerProgressCommitter.CommitCompleted += OnCheckpointCommitted;
         }
 
         /// <summary>Последняя подтверждённая сервером версия текущего процесса игры.</summary>
         public CloudSaveWriteResult CurrentCloudVersion { get; private set; }
 
         /// <summary>Есть первый снимок, который облако ещё не подтвердило.</summary>
-        public bool HasPendingFirstSnapshot => _pendingFirstSnapshot != null;
+        public bool HasPendingFirstSnapshot => _firstSnapshotAwaitingConfirmation != null;
 
         /// <summary>
         /// Сначала сохраняет полный прогресс локально, затем отправляет его первый снимок в облако.
         /// </summary>
         public async Task UploadFirstSnapshotAsync(string playerId)
         {
-            if (_isFirstSnapshotUploadActive ||
-                _pendingFirstSnapshot != null ||
+            if (_isSnapshotUploadActive ||
+                _pendingSnapshot != null ||
+                _firstSnapshotAwaitingConfirmation != null ||
                 CurrentCloudVersion != null)
             {
                 Debug.Log("[CloudSave] First snapshot upload skipped: already started.");
@@ -55,10 +60,11 @@ namespace GameManagement.CloudSave
                 var snapshot = CloudSaveSnapshotCodec.Capture(
                     GameDataManager.PlayerData,
                     playerId,
-                    FirstLocalRevision);
-                _pendingFirstSnapshot = snapshot;
+                    GetNextLocalRevision());
+                _firstSnapshotAwaitingConfirmation = snapshot;
+                _pendingSnapshot = snapshot;
 
-                await UploadPendingFirstSnapshotAsync(isRetry: false);
+                await UploadPendingSnapshotAsync(isRetry: false);
             }
             catch (Exception exception)
             {
@@ -69,19 +75,19 @@ namespace GameManagement.CloudSave
         /// <summary>Повторно отправляет тот же неподтверждённый снимок.</summary>
         public Task RetryPendingFirstSnapshotAsync()
         {
-            if (_isFirstSnapshotUploadActive)
+            if (_isSnapshotUploadActive)
             {
                 Debug.Log("[CloudSave] First snapshot retry skipped: upload active.");
                 return Task.CompletedTask;
             }
 
-            if (_pendingFirstSnapshot == null)
+            if (_pendingSnapshot == null)
             {
                 Debug.Log("[CloudSave] First snapshot retry skipped: no pending snapshot.");
                 return Task.CompletedTask;
             }
 
-            return UploadPendingFirstSnapshotAsync(isRetry: true);
+            return UploadPendingSnapshotAsync(isRetry: true);
         }
 
         /// <summary>
@@ -152,16 +158,29 @@ namespace GameManagement.CloudSave
             return ExistingAccountRestoreResult.Restored;
         }
 
-        private async Task UploadPendingFirstSnapshotAsync(bool isRetry)
+        /// <summary>Отписывает сервис от источников checkpoint.</summary>
+        public void Dispose()
         {
-            if (_isFirstSnapshotUploadActive)
+            _accountService.CurrentGuestLinked -= OnCurrentGuestLinked;
+            PlayerProgressCommitter.CommitCompleted -= OnCheckpointCommitted;
+        }
+
+        /// <summary>
+        /// Отправляет текущий pending и после него сразу продолжает с самым новым снимком.
+        /// </summary>
+        private async Task UploadPendingSnapshotAsync(bool isRetry)
+        {
+            if (_isSnapshotUploadActive)
                 return;
 
-            var snapshot = _pendingFirstSnapshot;
+            var snapshot = _pendingSnapshot;
             if (snapshot == null)
                 return;
 
-            _isFirstSnapshotUploadActive = true;
+            // Фиксируем active отдельно: новые checkpoint заменяют только pending.
+            _pendingSnapshot = null;
+            _isSnapshotUploadActive = true;
+            var continueWithNewerSnapshot = false;
 
             try
             {
@@ -173,8 +192,10 @@ namespace GameManagement.CloudSave
                 CurrentCloudVersion = result
                     ?? throw new InvalidOperationException("Cloud Save returned no write result.");
 
-                if (ReferenceEquals(_pendingFirstSnapshot, snapshot))
-                    _pendingFirstSnapshot = null;
+                if (ReferenceEquals(_firstSnapshotAwaitingConfirmation, snapshot))
+                    _firstSnapshotAwaitingConfirmation = null;
+
+                continueWithNewerSnapshot = _pendingSnapshot != null;
 
                 Debug.Log(isRetry
                     ? "[CloudSave] First snapshot retry completed."
@@ -182,17 +203,58 @@ namespace GameManagement.CloudSave
             }
             catch (Exception exception)
             {
+                // Новый pending важнее неудачного active; иначе сохраняем active для ручного retry.
+                continueWithNewerSnapshot = _pendingSnapshot != null;
+                if (!continueWithNewerSnapshot)
+                {
+                    _pendingSnapshot = snapshot;
+                }
+                else if (ReferenceEquals(_firstSnapshotAwaitingConfirmation, snapshot))
+                {
+                    _firstSnapshotAwaitingConfirmation = null;
+                }
+
                 Debug.LogError($"[CloudSave] First snapshot upload failed ({exception.GetType().Name}).");
             }
             finally
             {
-                _isFirstSnapshotUploadActive = false;
+                _isSnapshotUploadActive = false;
             }
+
+            if (continueWithNewerSnapshot)
+                await UploadPendingSnapshotAsync(isRetry: false);
         }
 
         private void OnCurrentGuestLinked(string playerId)
         {
             _ = UploadFirstSnapshotAsync(playerId);
+        }
+
+        /// <summary>Фиксирует успешный локальный checkpoint для связанного аккаунта.</summary>
+        private void OnCheckpointCommitted(CheckpointReason reason)
+        {
+            // AccountLinked уже создаёт первый снимок в отдельном Task 02 flow.
+            if (reason == CheckpointReason.AccountLinked ||
+                !_accountService.TryGetLinkedPlayerId(out var playerId))
+            {
+                return;
+            }
+
+            // JSON payload отделяет снимок от последующих изменений PlayerData.
+            var snapshot = CloudSaveSnapshotCodec.Capture(
+                GameDataManager.PlayerData,
+                playerId,
+                GetNextLocalRevision(),
+                CurrentCloudVersion?.ServerRevision);
+            _pendingSnapshot = snapshot;
+
+            if (!_isSnapshotUploadActive)
+                _ = UploadPendingSnapshotAsync(isRetry: false);
+        }
+
+        private string GetNextLocalRevision()
+        {
+            return (_nextLocalRevision++).ToString(CultureInfo.InvariantCulture);
         }
     }
 }

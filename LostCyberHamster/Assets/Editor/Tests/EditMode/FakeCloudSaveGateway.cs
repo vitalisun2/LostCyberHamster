@@ -20,6 +20,8 @@ namespace Assets.Tests.EditMode
 
         public int SaveCallCount { get; private set; }
 
+        public Action<CloudSaveSnapshot> SaveStarting { get; set; }
+
         public Task<CloudSaveReadResult> LoadSnapshotAsync()
         {
             LoadCallCount++;
@@ -30,6 +32,7 @@ namespace Assets.Tests.EditMode
         {
             SaveCallCount++;
             SavedSnapshot = snapshot;
+            SaveStarting?.Invoke(snapshot);
             return SaveTask;
         }
     }
