@@ -22,6 +22,7 @@ namespace Assets.Scripts.Installers
                 .To<UnityCloudSaveGateway>()
                 .AsSingle();
             Container.Bind<CloudSyncService>().AsSingle().NonLazy();
+            Container.Bind<ExistingAccountRestoreCoordinator>().AsSingle();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Container.Bind<DevToolsMenuOverlay>()
                 .FromNewComponentOnNewGameObject()

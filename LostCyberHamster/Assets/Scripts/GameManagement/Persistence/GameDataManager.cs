@@ -123,6 +123,56 @@ namespace GameManagement
             WritePrimary(PlayerData, rotateValidPrimary: true);
         }
 
+        /// <summary>
+        /// Проверяет и целиком заменяет локальные и текущие данные игрока.
+        /// </summary>
+        public static void ReplacePlayerData(PlayerData replacement)
+        {
+            if (replacement == null)
+                throw new ArgumentNullException(nameof(replacement));
+
+            EnsureValidated(replacement);
+
+            var previousPlayerData = PlayerData;
+            var hadPrimary = PlayerPrefs.HasKey(_playerDataKey);
+            var previousPrimary = PlayerPrefs.GetString(_playerDataKey, string.Empty);
+            var hadBackup = PlayerPrefs.HasKey(_playerDataBackupKey);
+            var previousBackup = PlayerPrefs.GetString(_playerDataBackupKey, string.Empty);
+
+            try
+            {
+                PlayerPrefs.DeleteKey(_playerDataBackupKey);
+                WritePrimary(replacement, rotateValidPrimary: false);
+                PlayerData = replacement;
+                Debug.Log("[GameData] ReplacePlayerData: success.");
+            }
+            catch
+            {
+                PlayerData = previousPlayerData;
+                RestorePlayerPrefsValue(_playerDataKey, hadPrimary, previousPrimary);
+                RestorePlayerPrefsValue(_playerDataBackupKey, hadBackup, previousBackup);
+
+                try
+                {
+                    PlayerPrefs.Save();
+                }
+                catch (Exception rollbackException)
+                {
+                    Debug.LogError($"[GameData] ReplacePlayerData rollback failed ({rollbackException.GetType().Name}).");
+                }
+
+                throw;
+            }
+        }
+
+        private static void RestorePlayerPrefsValue(string key, bool existed, string value)
+        {
+            if (existed)
+                PlayerPrefs.SetString(key, value);
+            else
+                PlayerPrefs.DeleteKey(key);
+        }
+
         private static void WritePrimary(PlayerData data, bool rotateValidPrimary)
         {
             bool backupRotated = false;

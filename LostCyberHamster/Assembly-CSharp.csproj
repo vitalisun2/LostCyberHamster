@@ -292,6 +292,7 @@
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\StorylineQuestProgressEntry.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\BotReplanDiagnostics.cs" />
     <Compile Include="Assets\Scripts\Common\Polyfills\IsExternalInit.cs" />
+    <Compile Include="Assets\Scripts\CloudSave\ExistingAccountRestoreCoordinator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvanceExecutor.cs" />
@@ -313,6 +314,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\JumpFromRoofFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningStateKey.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitBackground2LoadingTask.cs" />
+    <Compile Include="Assets\Scripts\CloudSave\ExistingAccountRestoreResult.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\JumpFromRoofTravel.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitLocalizationLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnSpecification.cs" />

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Assets.Scripts.Account;
 using GameAds;
 using GameManagement;
+using GameManagement.CloudSave;
 using LostCyberHamster.UI;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -20,12 +21,16 @@ namespace Assets.Scripts.Entry_Points
 
         private UIManager _uiManager;
         private AccountService _accountService;
+        private ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
         private AccountPromptCoordinator _accountPromptCoordinator;
 
         [Inject]
-        private void Construct(AccountService accountService)
+        private void Construct(
+            AccountService accountService,
+            ExistingAccountRestoreCoordinator existingAccountRestoreCoordinator)
         {
             _accountService = accountService;
+            _existingAccountRestoreCoordinator = existingAccountRestoreCoordinator;
         }
 
         private async Task Awake()
@@ -35,7 +40,10 @@ namespace Assets.Scripts.Entry_Points
             _uiManager = new UIManager(new IScreenController[]
             {
                 new HomeScreenController(_uiDocument),
-                new SettingsModalController(_uiDocument, _accountService),
+                new SettingsModalController(
+                    _uiDocument,
+                    _accountService,
+                    _existingAccountRestoreCoordinator),
                 new AccountPromptModalController(_uiDocument),
                 new CharacterScreenController(_uiDocument),
                 new QuestsScreenController(_uiDocument),

@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Assets.Scripts.Account;
 using Assets.Scripts.System;
 using GameManagement;
+using GameManagement.CloudSave;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
@@ -24,13 +25,19 @@ namespace LostCyberHamster.UI
         private Button _buttonCancel => _modalContent.Q<Button>("settings__btn-cancel");
 
         private readonly AccountService _accountService;
+        private readonly ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
         private SettingsData _settingsData = new();
         private bool _hasAccountLinkConflict;
         private int _accountUiVersion;
 
-        public SettingsModalController(UIDocument uiDocument, AccountService accountService): base(uiDocument)
+        public SettingsModalController(
+            UIDocument uiDocument,
+            AccountService accountService,
+            ExistingAccountRestoreCoordinator existingAccountRestoreCoordinator)
+            : base(uiDocument)
         {
             _accountService = accountService;
+            _existingAccountRestoreCoordinator = existingAccountRestoreCoordinator;
         }
 
         protected override async Task OnShowAsync()
@@ -116,11 +123,11 @@ namespace LostCyberHamster.UI
             {
                 if (_hasAccountLinkConflict)
                 {
-                    var signedIn = await _accountService.SignInExistingAccountAsync();
+                    var restoreResult = await _existingAccountRestoreCoordinator.RestoreAsync();
                     if (accountUiVersion != _accountUiVersion)
                         return;
 
-                    if (signedIn)
+                    if (restoreResult == ExistingAccountRestoreResult.Restored)
                     {
                         _hasAccountLinkConflict = false;
                         UpdateAccountState(_accountService.State);

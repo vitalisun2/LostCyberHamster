@@ -191,5 +191,42 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(AccountLinkResult.Linked, result);
             Assert.AreEqual(AccountState.Linked, service.State);
         }
+
+        [Test]
+        public async Task SignInExistingAccountAsync_AcceptedAccount_SetsLinkedAfterAcceptance()
+        {
+            var gateway = new FakeAccountAuthenticationGateway();
+            var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
+            service.Start();
+            string acceptedPlayerId = null;
+
+            var result = await service.SignInExistingAccountAsync(playerId =>
+            {
+                acceptedPlayerId = playerId;
+                Assert.AreEqual(AccountState.SigningIn, service.State);
+                return Task.FromResult(true);
+            });
+
+            Assert.IsTrue(result);
+            Assert.AreEqual("linked-player-id", acceptedPlayerId);
+            Assert.AreEqual(AccountState.Linked, service.State);
+        }
+
+        [Test]
+        public async Task SignInExistingAccountAsync_RejectedAccount_RestoresOriginalGuest()
+        {
+            var gateway = new FakeAccountAuthenticationGateway();
+            var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
+            service.Start();
+
+            LogAssert.Expect(
+                LogType.Error,
+                "[Account] Existing account sign-in failed. Original guest restored: True. Error type: InvalidOperationException.");
+            var result = await service.SignInExistingAccountAsync(_ => Task.FromResult(false));
+
+            Assert.IsFalse(result);
+            Assert.AreEqual("guest-player-id", gateway.PlayerId);
+            Assert.AreEqual(AccountState.Guest, service.State);
+        }
     }
 }

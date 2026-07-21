@@ -84,6 +84,74 @@ namespace GameManagement.CloudSave
             return UploadPendingFirstSnapshotAsync(isRetry: true);
         }
 
+        /// <summary>
+        /// Загружает и целиком применяет снимок подтверждённого существующего аккаунта.
+        /// </summary>
+        public async Task<ExistingAccountRestoreResult> LoadExistingAccountAsync(string playerId)
+        {
+            CloudSaveReadResult readResult;
+            try
+            {
+                readResult = await _gateway.LoadSnapshotAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[CloudSave] Existing account load failed ({exception.GetType().Name}).");
+                return ExistingAccountRestoreResult.LoadFailed;
+            }
+
+            if (readResult == null)
+            {
+                Debug.LogWarning("[CloudSave] Existing account snapshot missing.");
+                return ExistingAccountRestoreResult.SnapshotMissing;
+            }
+
+            if (!string.Equals(readResult.Snapshot.PlayerId, playerId, StringComparison.Ordinal))
+            {
+                Debug.LogWarning("[CloudSave] Existing account snapshot owner mismatch.");
+                return ExistingAccountRestoreResult.OwnerMismatch;
+            }
+
+            PlayerData restoredData;
+            try
+            {
+                restoredData = CloudSaveSnapshotCodec.RestorePlayerData(readResult.Snapshot);
+                var validation = PlayerDataValidator.Validate(restoredData);
+                if (validation.Status == PlayerDataValidationStatus.Repairable)
+                {
+                    PlayerDataValidator.RepairSafe(restoredData, validation);
+                    validation = PlayerDataValidator.Validate(restoredData);
+                }
+
+                if (validation.Status != PlayerDataValidationStatus.Valid)
+                {
+                    Debug.LogWarning($"[CloudSave] Existing account snapshot rejected ({validation.Reason}).");
+                    return ExistingAccountRestoreResult.SnapshotRejected;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[CloudSave] Existing account snapshot rejected ({exception.GetType().Name}).");
+                return ExistingAccountRestoreResult.SnapshotRejected;
+            }
+
+            try
+            {
+                GameDataManager.ReplacePlayerData(restoredData);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[CloudSave] Existing account snapshot apply failed ({exception.GetType().Name}).");
+                return ExistingAccountRestoreResult.ApplyFailed;
+            }
+
+            CurrentCloudVersion = new CloudSaveWriteResult(
+                readResult.ServerRevision,
+                readResult.ServerModifiedAtUtc);
+            Debug.Log("[CloudSave] Existing account snapshot restored.");
+            return ExistingAccountRestoreResult.Restored;
+        }
+
         private async Task UploadPendingFirstSnapshotAsync(bool isRetry)
         {
             if (_isFirstSnapshotUploadActive)

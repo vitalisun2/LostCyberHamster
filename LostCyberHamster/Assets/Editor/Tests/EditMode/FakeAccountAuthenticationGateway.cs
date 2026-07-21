@@ -13,6 +13,10 @@ namespace Assets.Tests.EditMode
 
         public string PlayerId { get; set; } = "guest-player-id";
 
+        public string ExistingAccountPlayerId { get; set; } = "linked-player-id";
+
+        public string AnonymousPlayerId { get; set; } = "guest-player-id";
+
         public bool? LastCreateAccount { get; private set; }
 
         public int SignInCallCount { get; private set; }
@@ -23,17 +27,23 @@ namespace Assets.Tests.EditMode
 
         public Task SignInTask { get; set; } = Task.CompletedTask;
 
+        public Task SignInWithUnityTask { get; set; } = Task.CompletedTask;
+
         public Task<AccountLinkResult> LinkTask { get; set; } = Task.FromResult(AccountLinkResult.Linked);
 
         public string LastAccessToken { get; private set; }
 
         public int LinkCallCount { get; private set; }
 
-        public Task SignInAnonymouslyAsync(bool createAccount)
+        public async Task SignInAnonymouslyAsync(bool createAccount)
         {
             SignInCallCount++;
             LastCreateAccount = createAccount;
-            return SignInTask;
+            await SignInTask;
+            IsSignedIn = true;
+            IsUnityPlayerAccountLinked = false;
+            if (!createAccount)
+                PlayerId = AnonymousPlayerId;
         }
 
         public Task<AccountLinkResult> LinkWithUnityAsync(string accessToken)
@@ -43,14 +53,18 @@ namespace Assets.Tests.EditMode
             return LinkTask;
         }
 
-        public Task SignInWithUnityAsync(string accessToken)
+        public async Task SignInWithUnityAsync(string accessToken)
         {
-            return Task.CompletedTask;
+            await SignInWithUnityTask;
+            IsSignedIn = true;
+            IsUnityPlayerAccountLinked = true;
+            PlayerId = ExistingAccountPlayerId;
         }
 
         public void SignOutPreservingCredentials()
         {
             PreserveCredentialsCallCount++;
+            IsSignedIn = false;
         }
 
         public Task UnlinkUnityAsync()
@@ -61,6 +75,8 @@ namespace Assets.Tests.EditMode
         public void SignOutAndClearLocalCredentials()
         {
             ClearCredentialsCallCount++;
+            IsSignedIn = false;
+            IsUnityPlayerAccountLinked = false;
         }
     }
 }

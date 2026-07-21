@@ -83,10 +83,14 @@ namespace Assets.Scripts.Account
         /// <summary>
         /// Переключает текущего гостя на существующий UGS-аккаунт, связанный с Unity Player Account.
         /// </summary>
-        public async Task<bool> SignInExistingAccountAsync()
+        public async Task<bool> SignInExistingAccountAsync(
+            Func<string, Task<bool>> acceptSignedInAccountAsync)
         {
             if (State != AccountState.Guest)
                 return false;
+
+            if (acceptSignedInAccountAsync == null)
+                throw new ArgumentNullException(nameof(acceptSignedInAccountAsync));
 
             var originalPlayerId = _authenticationGateway.PlayerId;
             if (!IsOriginalGuestSession(originalPlayerId))
@@ -120,6 +124,11 @@ namespace Assets.Scripts.Account
                 {
                     throw new InvalidOperationException("Existing linked account verification failed.");
                 }
+
+                if (!await acceptSignedInAccountAsync(_authenticationGateway.PlayerId))
+                    throw new InvalidOperationException("Existing linked account was not accepted.");
+
+                EnsureCurrentOperation(resolutionVersion);
 
                 SetState(AccountState.Linked);
                 Debug.Log("[Account] Existing linked account signed in.");
