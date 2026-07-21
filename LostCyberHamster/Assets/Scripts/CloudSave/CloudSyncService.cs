@@ -177,6 +177,9 @@ namespace GameManagement.CloudSave
             if (snapshot == null)
                 return;
 
+            // Обновляем только cloud base перед отправкой, сохраняя payload checkpoint неизменным.
+            snapshot.BaseRevision = CurrentCloudVersion?.ServerRevision;
+
             // Фиксируем active отдельно: новые checkpoint заменяют только pending.
             _pendingSnapshot = null;
             _isSnapshotUploadActive = true;

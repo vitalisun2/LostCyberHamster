@@ -224,6 +224,7 @@ namespace Assets.Tests.EditMode
             Assert.AreNotSame(activeSnapshot, newestSnapshot);
             Assert.AreEqual(30, CloudSaveSnapshotCodec.RestorePlayerData(newestSnapshot).Money);
             Assert.AreEqual("linked-player-id", newestSnapshot.PlayerId);
+            Assert.AreEqual(firstResult.ServerRevision, newestSnapshot.BaseRevision);
             Assert.AreEqual(newestSnapshot.PlayerDataJson, localDataAtUpload[1]);
             Assert.AreSame(firstResult, cloudSync.CurrentCloudVersion);
 
