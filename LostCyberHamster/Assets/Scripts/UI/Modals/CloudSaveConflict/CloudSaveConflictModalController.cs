@@ -10,7 +10,7 @@ namespace LostCyberHamster.UI
     {
         private const string DateFormat = "g";
 
-        private CloudSaveConflictModalData _data;
+        private CloudSaveConflictModalDto _data;
 
         protected override ScreenEnum _modalAssetName => ScreenEnum.CloudSaveConflictModal;
 
@@ -22,7 +22,7 @@ namespace LostCyberHamster.UI
         }
 
         /// <summary>Обновляет значения обеих карточек.</summary>
-        public void SetData(CloudSaveConflictModalData data)
+        public void SetData(CloudSaveConflictModalDto data)
         {
             _data = data ?? throw new ArgumentNullException(nameof(data));
             Render();
@@ -80,7 +80,7 @@ namespace LostCyberHamster.UI
             RenderCard("device", _data.ThisDevice);
         }
 
-        private void RenderCard(string prefix, CloudSaveConflictCardData data)
+        private void RenderCard(string prefix, CloudSaveConflictCardDto data)
         {
             SetText($"cloud-conflict__{prefix}-levels", data.CompletedLevels.ToString(CultureInfo.CurrentCulture));
             SetText($"cloud-conflict__{prefix}-money", data.Money.ToString(CultureInfo.CurrentCulture));

@@ -13,18 +13,21 @@ namespace GameManagement.CloudSave
     {
         private readonly ICloudSaveGateway _gateway;
         private readonly AccountService _accountService;
+        private readonly CloudSaveConflictService _conflictService;
         private CloudSaveSnapshot _pendingSnapshot;
         private CloudSaveSnapshot _firstSnapshotAwaitingConfirmation;
         private bool _isSnapshotUploadActive;
         private bool _isCloudRefreshActive;
-        private bool _isConflictResolutionActive;
         private string _currentCloudVersionPlayerId;
         private string _missingCloudPendingPlayerId;
         private string _missingCloudPendingRevision;
         private long _nextLocalRevision = 1;
 
         /// <summary>Восстанавливает durable pending и подписывает очередь на account/lifecycle события.</summary>
-        public CloudSyncService(ICloudSaveGateway gateway, AccountService accountService)
+        public CloudSyncService(
+            ICloudSaveGateway gateway,
+            AccountService accountService,
+            CloudSaveConflictService conflictService)
         {
             _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
             if (accountService == null)
@@ -33,6 +36,8 @@ namespace GameManagement.CloudSave
             }
 
             _accountService = accountService;
+            _conflictService = conflictService
+                ?? throw new ArgumentNullException(nameof(conflictService));
             _pendingSnapshot = CloudPendingSnapshotStore.Load();
             AdvanceLocalRevisionPast(_pendingSnapshot);
             accountService.CurrentGuestLinked += OnCurrentGuestLinked;
@@ -46,10 +51,14 @@ namespace GameManagement.CloudSave
         public CloudSaveWriteResult CurrentCloudVersion { get; private set; }
 
         /// <summary>Текущие две независимо изменённые ветки, ожидающие выбора.</summary>
-        public CloudSaveConflict CurrentConflict { get; private set; }
+        public CloudSaveConflictModel CurrentConflict => _conflictService.CurrentConflict;
 
         /// <summary>Возникает при обнаружении или обновлении данных конфликта.</summary>
-        public event Action<CloudSaveConflict> ConflictDetected;
+        public event Action<CloudSaveConflictModel> ConflictDetected
+        {
+            add => _conflictService.ConflictDetected += value;
+            remove => _conflictService.ConflictDetected -= value;
+        }
 
         /// <summary>Есть первый снимок, который облако ещё не подтвердило.</summary>
         public bool HasPendingFirstSnapshot => _firstSnapshotAwaitingConfirmation != null;
@@ -111,68 +120,24 @@ namespace GameManagement.CloudSave
         public async Task<bool> ResolveConflictWithCloudAsync()
         {
             var conflict = CurrentConflict;
-            if (_isConflictResolutionActive ||
-                conflict == null ||
-                !_accountService.TryGetLinkedPlayerId(out var playerId) ||
-                !string.Equals(conflict.LocalSnapshot.PlayerId, playerId, StringComparison.Ordinal))
-            {
+            var latestCloud = await _conflictService.ResolveWithCloudAsync();
+            if (conflict == null || latestCloud == null)
                 return false;
-            }
 
-            _isConflictResolutionActive = true;
             try
             {
-                var latestCloud = await _gateway.LoadSnapshotAsync();
-                if (latestCloud == null ||
-                    !string.Equals(latestCloud.Snapshot.PlayerId, playerId, StringComparison.Ordinal))
-                {
-                    Debug.LogError("[CloudSave] Cloud conflict choice failed: current cloud unavailable.");
-                    return false;
-                }
-
-                if (!ReferenceEquals(CurrentConflict, conflict) ||
-                    !string.Equals(
-                        latestCloud.ServerRevision,
-                        conflict.CloudVersion.ServerRevision,
-                        StringComparison.Ordinal))
-                {
-                    SetConflict(_pendingSnapshot ?? conflict.LocalSnapshot, latestCloud);
-                    return false;
-                }
-
-                if (!TryRestoreValidatedPlayerData(
-                        latestCloud.Snapshot,
-                        out var restoredData,
-                        out var rejectionReason))
-                {
-                    Debug.LogWarning($"[CloudSave] Conflict cloud snapshot rejected ({rejectionReason}).");
-                    return false;
-                }
-
-                try
-                {
-                    GameDataManager.ReplacePlayerData(restoredData);
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogError($"[CloudSave] Conflict cloud apply failed ({exception.GetType().Name}).");
-                    return false;
-                }
-
+                var playerId = conflict.LocalSnapshot.PlayerId;
                 DiscardPendingForOwner(playerId);
                 SetCurrentCloudVersion(playerId, latestCloud);
-                CurrentConflict = null;
-                Debug.Log("[CloudSave] Conflict resolved with cloud snapshot.");
                 return true;
             }
             catch (Exception exception)
             {
+                _conflictService.SetConflict(
+                    _pendingSnapshot ?? conflict.LocalSnapshot,
+                    latestCloud);
                 Debug.LogError($"[CloudSave] Cloud conflict choice failed ({exception.GetType().Name}).");
                 return false;
-            }
-            finally
-            {
-                _isConflictResolutionActive = false;
             }
         }
 
@@ -180,64 +145,41 @@ namespace GameManagement.CloudSave
         public async Task<bool> ResolveConflictWithLocalAsync()
         {
             var conflict = CurrentConflict;
-            if (_isConflictResolutionActive ||
-                conflict == null ||
-                !_accountService.TryGetLinkedPlayerId(out var playerId) ||
-                !string.Equals(conflict.LocalSnapshot.PlayerId, playerId, StringComparison.Ordinal))
+            var result = await _conflictService.ResolveWithLocalAsync();
+            if (conflict == null)
+                return false;
+
+            if (result == null)
             {
+                if (IsSamePending(_pendingSnapshot, conflict.LocalSnapshot))
+                    _pendingSnapshot = conflict.LocalSnapshot;
+
                 return false;
             }
 
-            _isConflictResolutionActive = true;
-            CloudSaveReadResult latestCloud = null;
-            var selectedSnapshot = CloneSnapshot(conflict.LocalSnapshot);
             try
             {
-                latestCloud = await _gateway.LoadSnapshotAsync();
-                if (latestCloud == null ||
-                    !string.Equals(latestCloud.Snapshot.PlayerId, playerId, StringComparison.Ordinal))
-                {
-                    Debug.LogError("[CloudSave] Local conflict choice failed: current cloud unavailable.");
-                    return false;
-                }
+                SetCurrentCloudVersion(conflict.LocalSnapshot.PlayerId, result);
+                CloudPendingSnapshotStore.ClearIfMatches(conflict.LocalSnapshot);
 
-                if (!ReferenceEquals(CurrentConflict, conflict))
-                    return false;
-
-                selectedSnapshot.BaseRevision = latestCloud.ServerRevision;
-                _pendingSnapshot = selectedSnapshot;
-                CloudPendingSnapshotStore.Save(selectedSnapshot);
-
-                var result = await _gateway.SaveSnapshotAsync(selectedSnapshot)
-                    ?? throw new InvalidOperationException("Cloud Save returned no write result.");
-                SetCurrentCloudVersion(playerId, result);
-                CloudPendingSnapshotStore.ClearIfMatches(selectedSnapshot);
-
-                if (IsSamePending(_pendingSnapshot, selectedSnapshot))
+                if (IsSamePending(_pendingSnapshot, conflict.LocalSnapshot))
                     _pendingSnapshot = null;
 
-                CurrentConflict = null;
                 RebasePendingTo(result.ServerRevision);
                 if (_pendingSnapshot != null)
                     _ = UploadPendingSnapshotAsync(isRetry: false);
 
-                Debug.Log("[CloudSave] Conflict resolved with local snapshot.");
                 return true;
             }
             catch (Exception exception)
             {
                 if (_pendingSnapshot == null)
-                    _pendingSnapshot = selectedSnapshot;
+                    _pendingSnapshot = conflict.LocalSnapshot;
 
-                if (latestCloud != null)
-                    SetConflict(_pendingSnapshot, latestCloud);
+                _conflictService.SetConflict(_pendingSnapshot, conflict.CloudVersion);
 
                 Debug.LogError($"[CloudSave] Local conflict choice failed ({exception.GetType().Name}).");
                 return false;
-            }
-            finally
-            {
-                _isConflictResolutionActive = false;
             }
         }
 
@@ -269,7 +211,7 @@ namespace GameManagement.CloudSave
                 return ExistingAccountRestoreResult.OwnerMismatch;
             }
 
-            if (!TryRestoreValidatedPlayerData(
+            if (!CloudSaveConflictService.TryRestoreValidatedPlayerData(
                     readResult.Snapshot,
                     out var restoredData,
                     out var rejectionReason))
@@ -289,7 +231,7 @@ namespace GameManagement.CloudSave
             }
 
             DiscardPendingForOwner(playerId);
-            CurrentConflict = null;
+            _conflictService.ClearConflict();
             SetCurrentCloudVersion(playerId, readResult);
             Debug.Log("[CloudSave] Existing account snapshot restored.");
             return ExistingAccountRestoreResult.Restored;
@@ -375,7 +317,7 @@ namespace GameManagement.CloudSave
                 {
                     ResetMissingCloudRetry();
                     RetainActiveSnapshot(snapshot);
-                    SetConflict(_pendingSnapshot, cloudVersion);
+                    _conflictService.SetConflict(_pendingSnapshot, cloudVersion);
                 }
                 else
                 {
@@ -461,7 +403,7 @@ namespace GameManagement.CloudSave
 
             if (CurrentConflict != null)
             {
-                SetConflict(snapshot, CurrentConflict.CloudVersion);
+                _conflictService.SetConflict(snapshot, CurrentConflict.CloudVersion);
             }
             else if (!_isSnapshotUploadActive)
             {
@@ -473,7 +415,7 @@ namespace GameManagement.CloudSave
         private void TryUploadPendingForCurrentAccount()
         {
             if (_isSnapshotUploadActive ||
-                _isConflictResolutionActive ||
+                _conflictService.IsResolutionActive ||
                 CurrentConflict != null ||
                 !_accountService.TryGetLinkedPlayerId(out var playerId))
             {
@@ -536,7 +478,7 @@ namespace GameManagement.CloudSave
                     return;
                 }
 
-                if (!TryRestoreValidatedPlayerData(
+                if (!CloudSaveConflictService.TryRestoreValidatedPlayerData(
                         cloudVersion.Snapshot,
                         out var restoredData,
                         out var rejectionReason))
@@ -601,39 +543,6 @@ namespace GameManagement.CloudSave
             CloudPendingSnapshotStore.SaveConfirmedVersion(playerId, version);
         }
 
-        private static bool TryRestoreValidatedPlayerData(
-            CloudSaveSnapshot snapshot,
-            out PlayerData restoredData,
-            out string rejectionReason)
-        {
-            restoredData = null;
-            rejectionReason = string.Empty;
-            try
-            {
-                var candidate = CloudSaveSnapshotCodec.RestorePlayerData(snapshot);
-                var validation = PlayerDataValidator.Validate(candidate);
-                if (validation.Status == PlayerDataValidationStatus.Repairable)
-                {
-                    PlayerDataValidator.RepairSafe(candidate, validation);
-                    validation = PlayerDataValidator.Validate(candidate);
-                }
-
-                if (validation.Status != PlayerDataValidationStatus.Valid)
-                {
-                    rejectionReason = validation.Reason;
-                    return false;
-                }
-
-                restoredData = candidate;
-                return true;
-            }
-            catch (Exception exception)
-            {
-                rejectionReason = exception.GetType().Name;
-                return false;
-            }
-        }
-
         private void DiscardPendingForOwner(string playerId)
         {
             if (_pendingSnapshot != null &&
@@ -662,34 +571,6 @@ namespace GameManagement.CloudSave
             }
 
             ResetMissingCloudRetry();
-        }
-
-        private static CloudSaveSnapshot CloneSnapshot(CloudSaveSnapshot snapshot)
-        {
-            return CloudSaveSnapshotCodec.Deserialize(
-                CloudSaveSnapshotCodec.Serialize(snapshot));
-        }
-
-        private void SetConflict(
-            CloudSaveSnapshot localSnapshot,
-            CloudSaveReadResult cloudVersion)
-        {
-            CurrentConflict = new CloudSaveConflict(localSnapshot, cloudVersion);
-            var handlers = ConflictDetected;
-            if (handlers == null)
-                return;
-
-            foreach (Action<CloudSaveConflict> handler in handlers.GetInvocationList())
-            {
-                try
-                {
-                    handler(CurrentConflict);
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogError($"[CloudSave] Conflict subscriber failed ({exception.GetType().Name}).");
-                }
-            }
         }
 
         private void CompleteConfirmedSnapshot(

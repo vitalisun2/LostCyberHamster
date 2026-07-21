@@ -447,7 +447,7 @@ namespace Assets.Tests.EditMode
             };
             var accountService = CreateUnstartedLinkedAccountService("linked-player-id");
             var cloudSync = CreateCloudSync(gateway, accountService);
-            CloudSaveConflict raisedConflict = null;
+            CloudSaveConflictModel raisedConflict = null;
             cloudSync.ConflictDetected += conflict => raisedConflict = conflict;
 
             accountService.Start();
@@ -771,7 +771,11 @@ namespace Assets.Tests.EditMode
             FakeCloudSaveGateway gateway,
             AccountService accountService)
         {
-            var cloudSyncService = new CloudSyncService(gateway, accountService);
+            var conflictService = new CloudSaveConflictService(gateway, accountService);
+            var cloudSyncService = new CloudSyncService(
+                gateway,
+                accountService,
+                conflictService);
             _cloudSyncServices.Add(cloudSyncService);
             return cloudSyncService;
         }

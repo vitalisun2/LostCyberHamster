@@ -3,10 +3,10 @@ using System;
 namespace GameManagement.CloudSave
 {
     /// <summary>Описывает две целые ветки одного аккаунта, ожидающие выбора игрока.</summary>
-    public sealed class CloudSaveConflict
+    public sealed class CloudSaveConflictModel
     {
         /// <summary>Создаёт независимые данные локальной и облачной веток.</summary>
-        public CloudSaveConflict(
+        public CloudSaveConflictModel(
             CloudSaveSnapshot localSnapshot,
             CloudSaveReadResult cloudVersion)
         {

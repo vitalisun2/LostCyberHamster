@@ -21,6 +21,7 @@ namespace Assets.Scripts.Installers
             Container.Bind<ICloudSaveGateway>()
                 .To<UnityCloudSaveGateway>()
                 .AsSingle();
+            Container.Bind<CloudSaveConflictService>().AsSingle();
             Container.Bind<CloudSyncService>().AsSingle().NonLazy();
             Container.Bind<ExistingAccountRestoreCoordinator>().AsSingle();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

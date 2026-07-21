@@ -3,10 +3,10 @@ using System;
 namespace LostCyberHamster.UI
 {
     /// <summary>Данные одной карточки выбора сохранения.</summary>
-    public sealed class CloudSaveConflictCardData
+    public sealed class CloudSaveConflictCardDto
     {
         /// <summary>Создаёт карточку с сохранёнными показателями прогресса.</summary>
-        public CloudSaveConflictCardData(
+        public CloudSaveConflictCardDto(
             int completedLevels,
             int money,
             int crystals,

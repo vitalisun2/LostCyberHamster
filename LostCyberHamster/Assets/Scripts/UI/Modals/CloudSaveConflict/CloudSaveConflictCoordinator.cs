@@ -51,7 +51,7 @@ namespace LostCyberHamster.UI
             _modalController.ThisDeviceSelected -= OnThisDeviceSelected;
         }
 
-        private void OnConflictDetected(CloudSaveConflict _)
+        private void OnConflictDetected(CloudSaveConflictModel _)
         {
             if (!_isResolutionInProgress)
                 PresentCurrentConflict();
@@ -138,18 +138,18 @@ namespace LostCyberHamster.UI
             }
         }
 
-        private static CloudSaveConflictModalData CreateModalData(CloudSaveConflict conflict)
+        private static CloudSaveConflictModalDto CreateModalData(CloudSaveConflictModel conflict)
         {
-            return new CloudSaveConflictModalData(
+            return new CloudSaveConflictModalDto(
                 CreateCard(conflict.CloudSnapshot, conflict.CloudVersion.ServerModifiedAtUtc),
                 CreateCard(conflict.LocalSnapshot, ParseSavedAt(conflict.LocalSnapshot.SavedAtUtc)));
         }
 
-        private static CloudSaveConflictCardData CreateCard(CloudSaveSnapshot snapshot, DateTime savedAt)
+        private static CloudSaveConflictCardDto CreateCard(CloudSaveSnapshot snapshot, DateTime savedAt)
         {
             var playerData = CloudSaveSnapshotCodec.RestorePlayerData(snapshot);
             var completedLevels = playerData.Progress.Entries.Count(entry => entry.IsCompleted);
-            return new CloudSaveConflictCardData(
+            return new CloudSaveConflictCardDto(
                 completedLevels,
                 playerData.Money,
                 playerData.Crystals,
