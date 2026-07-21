@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Text;
 using UnityEngine;
 using Vues.GameCore;
 
@@ -9,6 +11,9 @@ namespace GameManagement.CloudSave
     {
         /// <summary>Ключ PlayerPrefs для durable pending.</summary>
         public const string StorageKey = "CloudSave.PendingSnapshot";
+
+        /// <summary>Ключ PlayerPrefs последней подтверждённой облачной версии.</summary>
+        public const string ConfirmedVersionStorageKey = "CloudSave.ConfirmedVersion";
 
         private static readonly ICryptoService CryptoService = new AesCryptoService();
 
@@ -70,6 +75,69 @@ namespace GameManagement.CloudSave
             PlayerPrefs.DeleteKey(StorageKey);
             PlayerPrefs.Save();
             return true;
+        }
+
+        /// <summary>Возвращает подтверждённую версию только для указанного владельца.</summary>
+        public static CloudSaveWriteResult LoadConfirmedVersion(string playerId)
+        {
+            if (string.IsNullOrWhiteSpace(playerId) ||
+                !PlayerPrefs.HasKey(ConfirmedVersionStorageKey))
+            {
+                return null;
+            }
+
+            try
+            {
+                var parts = PlayerPrefs.GetString(ConfirmedVersionStorageKey).Split('|');
+                if (parts.Length != 3)
+                    throw new InvalidOperationException("Confirmed version metadata is incomplete.");
+
+                var storedPlayerId = Decode(parts[0]);
+                if (!string.Equals(storedPlayerId, playerId, StringComparison.Ordinal))
+                    return null;
+
+                var serverRevision = Decode(parts[1]);
+                var ticks = long.Parse(parts[2], NumberStyles.None, CultureInfo.InvariantCulture);
+                return new CloudSaveWriteResult(
+                    serverRevision,
+                    new DateTime(ticks, DateTimeKind.Utc));
+            }
+            catch (Exception exception)
+            {
+                PlayerPrefs.DeleteKey(ConfirmedVersionStorageKey);
+                PlayerPrefs.Save();
+                Debug.LogWarning($"[CloudSave] Invalid confirmed version removed ({exception.GetType().Name}).");
+                return null;
+            }
+        }
+
+        /// <summary>Сохраняет владельца и подтверждённые сервером revision/time.</summary>
+        public static void SaveConfirmedVersion(
+            string playerId,
+            CloudSaveWriteResult version)
+        {
+            if (string.IsNullOrWhiteSpace(playerId))
+                throw new ArgumentException("Player ID must be provided.", nameof(playerId));
+            if (version == null)
+                throw new ArgumentNullException(nameof(version));
+
+            var serialized = string.Join(
+                "|",
+                Encode(playerId),
+                Encode(version.ServerRevision),
+                version.ServerModifiedAtUtc.Ticks.ToString(CultureInfo.InvariantCulture));
+            PlayerPrefs.SetString(ConfirmedVersionStorageKey, serialized);
+            PlayerPrefs.Save();
+        }
+
+        private static string Encode(string value)
+        {
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
+        }
+
+        private static string Decode(string value)
+        {
+            return Encoding.UTF8.GetString(Convert.FromBase64String(value));
         }
     }
 }

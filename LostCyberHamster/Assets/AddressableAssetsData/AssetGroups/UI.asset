@@ -256,6 +256,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - screens
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7476f59b01f12344fbdb7e64c4fd5321
+    m_Address: CloudSaveConflictModal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - screens
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 34b9678d6c135de4f8499c03fabc2c47, type: 2}
   m_SchemaSet:

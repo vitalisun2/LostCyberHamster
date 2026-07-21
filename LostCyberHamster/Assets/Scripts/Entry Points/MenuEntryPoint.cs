@@ -23,14 +23,18 @@ namespace Assets.Scripts.Entry_Points
         private AccountService _accountService;
         private ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
         private AccountPromptCoordinator _accountPromptCoordinator;
+        private CloudSaveConflictCoordinator _cloudSaveConflictCoordinator;
+        private CloudSyncService _cloudSyncService;
 
         [Inject]
         private void Construct(
             AccountService accountService,
-            ExistingAccountRestoreCoordinator existingAccountRestoreCoordinator)
+            ExistingAccountRestoreCoordinator existingAccountRestoreCoordinator,
+            CloudSyncService cloudSyncService)
         {
             _accountService = accountService;
             _existingAccountRestoreCoordinator = existingAccountRestoreCoordinator;
+            _cloudSyncService = cloudSyncService;
         }
 
         private async Task Awake()
@@ -45,6 +49,7 @@ namespace Assets.Scripts.Entry_Points
                     _accountService,
                     _existingAccountRestoreCoordinator),
                 new AccountPromptModalController(_uiDocument),
+                new CloudSaveConflictModalController(_uiDocument),
                 new CharacterScreenController(_uiDocument),
                 new QuestsScreenController(_uiDocument),
                 new SelectLevelScreenController(_uiDocument),
@@ -54,8 +59,14 @@ namespace Assets.Scripts.Entry_Points
 
             await _uiManager.LoadScreenAsync(ScreenEnum.HomeScreen);
             _accountPromptCoordinator = new AccountPromptCoordinator(_uiManager, _accountService);
+            _cloudSaveConflictCoordinator = new CloudSaveConflictCoordinator(
+                _uiManager,
+                _cloudSyncService);
             if (isActiveAndEnabled)
+            {
+                _cloudSaveConflictCoordinator.Enable();
                 _accountPromptCoordinator.Enable();
+            }
             AdsManager.Initialize();
             await QuestManager.Init();
         }
@@ -72,12 +83,14 @@ namespace Assets.Scripts.Entry_Points
         private void OnEnable()
         {
             _uiManager?.SubscribeToEvents();
+            _cloudSaveConflictCoordinator?.Enable();
             _accountPromptCoordinator?.Enable();
         }
 
         private void OnDisable()
         {
             _accountPromptCoordinator?.Disable();
+            _cloudSaveConflictCoordinator?.Disable();
             _uiManager?.UnsubscribeFromEvents();
         }
     }

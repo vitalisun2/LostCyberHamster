@@ -6,8 +6,9 @@ namespace Assets.Tests.EditMode
 {
     internal sealed class FakeCloudSaveGateway : ICloudSaveGateway
     {
-        public Task<CloudSaveReadResult> LoadTask { get; set; } =
-            Task.FromResult<CloudSaveReadResult>(null);
+        private CloudSaveReadResult _savedCloudVersion;
+
+        public Task<CloudSaveReadResult> LoadTask { get; set; }
 
         public Task<CloudSaveWriteResult> SaveTask { get; set; } = Task.FromResult(
             new CloudSaveWriteResult(
@@ -25,15 +26,24 @@ namespace Assets.Tests.EditMode
         public Task<CloudSaveReadResult> LoadSnapshotAsync()
         {
             LoadCallCount++;
-            return LoadTask;
+            return LoadTask ?? Task.FromResult(_savedCloudVersion);
         }
 
-        public Task<CloudSaveWriteResult> SaveSnapshotAsync(CloudSaveSnapshot snapshot)
+        public async Task<CloudSaveWriteResult> SaveSnapshotAsync(CloudSaveSnapshot snapshot)
         {
             SaveCallCount++;
             SavedSnapshot = snapshot;
             SaveStarting?.Invoke(snapshot);
-            return SaveTask;
+            var result = await SaveTask;
+            if (result != null)
+            {
+                _savedCloudVersion = new CloudSaveReadResult(
+                    CloudSaveSnapshotCodec.Deserialize(CloudSaveSnapshotCodec.Serialize(snapshot)),
+                    result.ServerRevision,
+                    result.ServerModifiedAtUtc);
+            }
+
+            return result;
         }
     }
 }

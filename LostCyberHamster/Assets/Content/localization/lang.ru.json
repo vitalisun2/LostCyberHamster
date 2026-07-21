@@ -109,6 +109,50 @@
             "value": "ВОЙТИ"
         },
         {
+            "key": "cloud_save_conflict_title",
+            "value": "НАЙДЕНЫ ДВА СОХРАНЕНИЯ"
+        },
+        {
+            "key": "cloud_save_conflict_body",
+            "value": "Выберите прогресс, который хотите оставить."
+        },
+        {
+            "key": "cloud_save_conflict_cloud",
+            "value": "ОБЛАЧНОЕ"
+        },
+        {
+            "key": "cloud_save_conflict_device",
+            "value": "НА ЭТОМ УСТРОЙСТВЕ"
+        },
+        {
+            "key": "cloud_save_conflict_completed_levels",
+            "value": "Пройдено уровней"
+        },
+        {
+            "key": "cloud_save_conflict_money",
+            "value": "Монеты"
+        },
+        {
+            "key": "cloud_save_conflict_crystals",
+            "value": "Кристаллы"
+        },
+        {
+            "key": "cloud_save_conflict_saved",
+            "value": "Сохранено"
+        },
+        {
+            "key": "cloud_save_conflict_choose_cloud",
+            "value": "ВЫБРАТЬ ОБЛАЧНОЕ"
+        },
+        {
+            "key": "cloud_save_conflict_choose_device",
+            "value": "ВЫБРАТЬ ЛОКАЛЬНОЕ"
+        },
+        {
+            "key": "cloud_save_conflict_warning",
+            "value": "Выбранный прогресс заменит другое сохранение."
+        },
+        {
             "key": "lbl_version",
             "value": "ВЕРСИЯ"
         },

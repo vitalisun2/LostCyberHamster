@@ -109,6 +109,50 @@
             "value": "SIGN IN"
         },
         {
+            "key": "cloud_save_conflict_title",
+            "value": "TWO SAVES FOUND"
+        },
+        {
+            "key": "cloud_save_conflict_body",
+            "value": "Choose the progress you want to keep."
+        },
+        {
+            "key": "cloud_save_conflict_cloud",
+            "value": "CLOUD"
+        },
+        {
+            "key": "cloud_save_conflict_device",
+            "value": "THIS DEVICE"
+        },
+        {
+            "key": "cloud_save_conflict_completed_levels",
+            "value": "Levels completed"
+        },
+        {
+            "key": "cloud_save_conflict_money",
+            "value": "Coins"
+        },
+        {
+            "key": "cloud_save_conflict_crystals",
+            "value": "Crystals"
+        },
+        {
+            "key": "cloud_save_conflict_saved",
+            "value": "Saved"
+        },
+        {
+            "key": "cloud_save_conflict_choose_cloud",
+            "value": "CHOOSE CLOUD"
+        },
+        {
+            "key": "cloud_save_conflict_choose_device",
+            "value": "CHOOSE THIS DEVICE"
+        },
+        {
+            "key": "cloud_save_conflict_warning",
+            "value": "The selected progress will replace the other save."
+        },
+        {
             "key": "lbl_version",
             "value": "VERSION"
         },

@@ -1,0 +1,83 @@
+.cloud-save-conflict {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+}
+
+.cloud-save-conflict__title {
+    font-size: 44px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.cloud-save-conflict__body {
+    width: 90%;
+    margin-top: 8px;
+    font-size: 26px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.cloud-save-conflict__cards {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
+    margin-top: 16px;
+}
+
+.cloud-save-conflict__card {
+    min-width: 340px;
+    width: 44%;
+    margin: 10px;
+    padding: 18px;
+    background-color: rgba(217, 229, 154, 0.92);
+    border-width: 5px;
+    border-color: rgb(34, 130, 134);
+    border-radius: 18px;
+}
+
+.cloud-save-conflict__card-title {
+    color: rgb(30, 30, 30);
+    font-size: 30px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.cloud-save-conflict__row {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 6px;
+}
+
+.cloud-save-conflict__label,
+.cloud-save-conflict__value {
+    color: rgb(30, 30, 30);
+    font-size: 22px;
+}
+
+.cloud-save-conflict__value {
+    -unity-font-style: bold;
+}
+
+.cloud-save-conflict__button {
+    align-self: center;
+    width: 90%;
+    min-width: 260px;
+    height: 72px;
+    margin-top: 14px;
+    font-size: 24px;
+    white-space: normal;
+}
+
+.cloud-save-conflict__warning {
+    width: 90%;
+    margin-top: 8px;
+    color: rgb(30, 30, 30);
+    font-size: 20px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
