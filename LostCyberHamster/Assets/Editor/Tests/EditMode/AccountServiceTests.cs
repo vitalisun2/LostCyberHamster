@@ -35,11 +35,14 @@ namespace Assets.Tests.EditMode
                 IsUnityPlayerAccountLinked = true
             };
             var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
+            var guestLinkedCount = 0;
+            service.CurrentGuestLinked += _ => guestLinkedCount++;
 
             service.Start();
 
             Assert.AreEqual(false, gateway.LastCreateAccount);
             Assert.AreEqual(AccountState.Linked, service.State);
+            Assert.AreEqual(0, guestLinkedCount);
         }
 
         [Test]
@@ -112,6 +115,13 @@ namespace Assets.Tests.EditMode
                 PlayerId = "guest-player-id"
             };
             var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
+            var guestLinkedCount = 0;
+            string linkedPlayerId = null;
+            service.CurrentGuestLinked += playerId =>
+            {
+                guestLinkedCount++;
+                linkedPlayerId = playerId;
+            };
             service.Start();
 
             var result = await service.LinkCurrentGuestAsync();
@@ -121,6 +131,8 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual("access-token", gateway.LastAccessToken);
             Assert.AreEqual(1, gateway.LinkCallCount);
             Assert.AreEqual(AccountState.Linked, service.State);
+            Assert.AreEqual(1, guestLinkedCount);
+            Assert.AreEqual("guest-player-id", linkedPlayerId);
         }
 
         [Test]
@@ -132,6 +144,8 @@ namespace Assets.Tests.EditMode
                 LinkTask = Task.FromResult(AccountLinkResult.Conflict)
             };
             var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
+            var guestLinkedCount = 0;
+            service.CurrentGuestLinked += _ => guestLinkedCount++;
             service.Start();
 
             var result = await service.LinkCurrentGuestAsync();
@@ -140,6 +154,42 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(AccountState.Guest, service.State);
             Assert.AreEqual("guest-player-id", gateway.PlayerId);
             Assert.AreEqual(1, gateway.LinkCallCount);
+            Assert.AreEqual(0, guestLinkedCount);
+        }
+
+        [Test]
+        public async Task LinkCurrentGuestAsync_WhenLinkFails_DoesNotPublishGuestLinked()
+        {
+            var gateway = new FakeAccountAuthenticationGateway
+            {
+                LinkTask = Task.FromResult(AccountLinkResult.Failed)
+            };
+            var service = new AccountService(gateway, new FakeUnityPlayerAccountGateway());
+            var guestLinkedCount = 0;
+            service.CurrentGuestLinked += _ => guestLinkedCount++;
+            service.Start();
+
+            var result = await service.LinkCurrentGuestAsync();
+
+            Assert.AreEqual(AccountLinkResult.Failed, result);
+            Assert.AreEqual(AccountState.Guest, service.State);
+            Assert.AreEqual(0, guestLinkedCount);
+        }
+
+        [Test]
+        public async Task LinkCurrentGuestAsync_WhenSubscriberThrows_RemainsLinked()
+        {
+            var service = new AccountService(
+                new FakeAccountAuthenticationGateway(),
+                new FakeUnityPlayerAccountGateway());
+            service.CurrentGuestLinked += _ => throw new InvalidOperationException("subscriber failed");
+            service.Start();
+
+            LogAssert.Expect(LogType.Error, "[Account] Guest link subscriber failed: InvalidOperationException.");
+            var result = await service.LinkCurrentGuestAsync();
+
+            Assert.AreEqual(AccountLinkResult.Linked, result);
+            Assert.AreEqual(AccountState.Linked, service.State);
         }
     }
 }

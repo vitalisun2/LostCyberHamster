@@ -1,4 +1,5 @@
 using Assets.Scripts.Account;
+using GameManagement.CloudSave;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Assets.Scripts.DevTools;
 #endif
@@ -17,6 +18,10 @@ namespace Assets.Scripts.Installers
                 .To<UnityPlayerAccountGateway>()
                 .AsSingle();
             Container.Bind<AccountService>().AsSingle();
+            Container.Bind<ICloudSaveGateway>()
+                .To<UnityCloudSaveGateway>()
+                .AsSingle();
+            Container.Bind<CloudSyncService>().AsSingle().NonLazy();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Container.Bind<DevToolsMenuOverlay>()
                 .FromNewComponentOnNewGameObject()

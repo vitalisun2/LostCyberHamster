@@ -13,6 +13,7 @@ namespace GameManagement
         CurrentLevelChanged,
         TutorialCompleted,
         AccountPromptStateChanged,
+        AccountLinked,
         AppBackgrounded
     }
 }

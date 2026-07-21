@@ -13,6 +13,7 @@ namespace Assets.Scripts.Account
 
         public AccountState State { get; private set; } = AccountState.NotStarted;
         public event Action<AccountState> StateChanged;
+        public event Action<string> CurrentGuestLinked;
 
         public AccountService(
             IAccountAuthenticationGateway authenticationGateway,
@@ -67,6 +68,7 @@ namespace Assets.Scripts.Account
                 }
 
                 SetState(AccountState.Linked);
+                NotifyCurrentGuestLinked(playerId);
                 return AccountLinkResult.Linked;
             }
             catch
@@ -329,6 +331,25 @@ namespace Assets.Scripts.Account
                    _authenticationGateway.IsSignedIn &&
                    !_authenticationGateway.IsUnityPlayerAccountLinked &&
                    _authenticationGateway.PlayerId == originalPlayerId;
+        }
+
+        private void NotifyCurrentGuestLinked(string playerId)
+        {
+            var handlers = CurrentGuestLinked;
+            if (handlers == null)
+                return;
+
+            foreach (Action<string> handler in handlers.GetInvocationList())
+            {
+                try
+                {
+                    handler(playerId);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogError($"[Account] Guest link subscriber failed: {exception.GetType().Name}.");
+                }
+            }
         }
 
         /// <summary>

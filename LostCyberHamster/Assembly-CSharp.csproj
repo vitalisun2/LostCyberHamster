@@ -111,8 +111,8 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowCalculator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\JumpOnRoofFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\Installers\BootstrapSceneInstaller.cs" />
-    <Compile Include="Assets\Scripts\Account\AccountState.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialGameplayStep.cs" />
+    <Compile Include="Assets\Scripts\Account\AccountState.cs" />
     <Compile Include="Assets\Scripts\Installers\Roots\EnvironmentRoot.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoofOnRoof\SuperJumpFromRoofOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\ValueExtensions.cs" />
@@ -132,8 +132,8 @@
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\SerializableLevelProgressEntry.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\DevTools\Core\DevToolsNavigation.cs" />
-    <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitUnityServicesLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Persistence\PlayerProgressLifecycleCheckpoint.cs" />
+    <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitUnityServicesLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitSkyLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Persistence\CheckpointReason.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleRole.cs" />
@@ -392,6 +392,7 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinFactory.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneWindowFinder.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\EnergyShieldSkin.cs" />
+    <Compile Include="Assets\Scripts\CloudSave\CloudSyncService.cs" />
     <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinAction.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\IActionExecutionHandler.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Execution\LiveObstacleResolver.cs" />
