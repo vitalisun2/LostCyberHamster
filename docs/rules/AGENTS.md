@@ -14,10 +14,6 @@
 
 ## Что читать перед работой
 
-Для любой задачи: читать запрос, релевантный контекст, `docs/rules/agent_efficiency_playbook.md` с обязательным fast operating protocol и process lessons.
-
-Для обычной code-edit задачи по умолчанию fast path: читать целевой код, соседние call sites, ближайший execution path. Не читать автоматически документацию, историю, generated snapshots, rule files, широкие related patterns, если они не нужны для корректной правки.
-
 Дополнительные источники читать только по явной необходимости или по запросу:
 
 1. `docs/rules/code_conventions.md` — если надо уточнить разрешённую автоматизированную проверку, Unity/C# compile или формат проекта.
