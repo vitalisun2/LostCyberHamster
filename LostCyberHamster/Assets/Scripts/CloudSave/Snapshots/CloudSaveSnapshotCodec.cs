@@ -11,12 +11,13 @@ namespace GameManagement.CloudSave
         /// <summary>
         /// Фиксирует текущий PlayerData и метаданные в независимом снимке.
         /// </summary>
-        public static CloudSaveSnapshot Capture(
+        public static CloudSaveSnapshotDto Capture(
             PlayerData source,
             string playerId,
             string revision = null,
             string baseRevision = null)
         {
+            // Проверяем источник и владельца снимка.
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
@@ -27,7 +28,8 @@ namespace GameManagement.CloudSave
                 throw new ArgumentException("Player ID must be provided.", nameof(playerId));
             }
 
-            return new CloudSaveSnapshot
+            // Фиксируем полный payload и метаданные текущего сохранения.
+            return new CloudSaveSnapshotDto
             {
                 PlayerDataJson = source.ToJson(),
                 PlayerId = playerId,
@@ -38,31 +40,36 @@ namespace GameManagement.CloudSave
         }
 
         /// <summary>Сериализует целый облачный снимок.</summary>
-        public static string Serialize(CloudSaveSnapshot snapshot)
+        public static string Serialize(CloudSaveSnapshotDto snapshot)
         {
+            // Проверяем входной снимок.
             if (snapshot == null)
             {
                 throw new ArgumentNullException(nameof(snapshot));
             }
 
+            // Преобразуем снимок в JSON.
             return JsonUtility.ToJson(snapshot);
         }
 
         /// <summary>Десериализует целый облачный снимок.</summary>
-        public static CloudSaveSnapshot Deserialize(string json)
+        public static CloudSaveSnapshotDto Deserialize(string json)
         {
+            // Проверяем входной JSON.
             if (string.IsNullOrWhiteSpace(json))
             {
                 throw new ArgumentException("Snapshot JSON must be provided.", nameof(json));
             }
 
-            var snapshot = JsonUtility.FromJson<CloudSaveSnapshot>(json);
+            // Восстанавливаем снимок и отклоняем невалидный JSON.
+            var snapshot = JsonUtility.FromJson<CloudSaveSnapshotDto>(json);
             return snapshot ?? throw new InvalidOperationException("Snapshot JSON is invalid.");
         }
 
         /// <summary>Создаёт независимый PlayerData из payload снимка.</summary>
-        public static PlayerData RestorePlayerData(CloudSaveSnapshot snapshot)
+        public static PlayerData RestorePlayerData(CloudSaveSnapshotDto snapshot)
         {
+            // Проверяем снимок и наличие payload.
             if (snapshot == null)
             {
                 throw new ArgumentNullException(nameof(snapshot));
@@ -73,6 +80,7 @@ namespace GameManagement.CloudSave
                 throw new InvalidOperationException("Snapshot has no player data.");
             }
 
+            // Восстанавливаем независимые игровые данные.
             return PlayerData.FromJson(snapshot.PlayerDataJson);
         }
     }

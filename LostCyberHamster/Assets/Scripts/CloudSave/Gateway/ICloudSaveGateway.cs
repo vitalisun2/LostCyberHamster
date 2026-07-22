@@ -15,6 +15,6 @@ namespace GameManagement.CloudSave
         /// <summary>
         /// Записывает снимок с проверкой его базовой серверной revision.
         /// </summary>
-        Task<CloudSaveWriteResult> SaveSnapshotAsync(CloudSaveSnapshot snapshot);
+        Task<CloudSaveWriteResult> SaveSnapshotAsync(CloudSaveSnapshotDto snapshot);
     }
 }

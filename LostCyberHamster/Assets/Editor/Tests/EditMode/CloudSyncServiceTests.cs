@@ -17,16 +17,24 @@ namespace Assets.Tests.EditMode
         private const string PlayerDataKey = "PlayerData";
         private const string PlayerDataBackupKey = "PlayerData.Backup";
 
+        private static readonly string[] CloudSavePlayerIds =
+        {
+            "first-player-id",
+            "guest-player-id",
+            "linked-player-id",
+            "other-player-id",
+            "resolved-player-id",
+            "second-player-id"
+        };
+
         private PlayerData _previousPlayerData;
         private HierarchicalLevelCatalog _previousCatalog;
         private bool _hadPrimary;
         private string _savedPrimary;
         private bool _hadBackup;
         private string _savedBackup;
-        private bool _hadPendingSnapshot;
-        private string _savedPendingSnapshot;
-        private bool _hadConfirmedVersion;
-        private string _savedConfirmedVersion;
+        private readonly Dictionary<string, string> _savedCloudPreferences =
+            new Dictionary<string, string>();
         private readonly List<CloudSyncService> _cloudSyncServices = new List<CloudSyncService>();
 
         [SetUp]
@@ -38,21 +46,21 @@ namespace Assets.Tests.EditMode
             _savedPrimary = PlayerPrefs.GetString(PlayerDataKey, string.Empty);
             _hadBackup = PlayerPrefs.HasKey(PlayerDataBackupKey);
             _savedBackup = PlayerPrefs.GetString(PlayerDataBackupKey, string.Empty);
-            _hadPendingSnapshot = PlayerPrefs.HasKey(CloudPendingSnapshotStore.StorageKey);
-            _savedPendingSnapshot = PlayerPrefs.GetString(
-                CloudPendingSnapshotStore.StorageKey,
-                string.Empty);
-            _hadConfirmedVersion = PlayerPrefs.HasKey(
-                CloudPendingSnapshotStore.ConfirmedVersionStorageKey);
-            _savedConfirmedVersion = PlayerPrefs.GetString(
-                CloudPendingSnapshotStore.ConfirmedVersionStorageKey,
-                string.Empty);
+            _savedCloudPreferences.Clear();
+            foreach (var playerId in CloudSavePlayerIds)
+            {
+                foreach (var key in GetCloudStorageKeys(playerId))
+                {
+                    if (PlayerPrefs.HasKey(key))
+                        _savedCloudPreferences[key] = PlayerPrefs.GetString(key, string.Empty);
+
+                    PlayerPrefs.DeleteKey(key);
+                }
+            }
 
             LevelCatalogService.Reset();
             PlayerPrefs.DeleteKey(PlayerDataKey);
             PlayerPrefs.DeleteKey(PlayerDataBackupKey);
-            PlayerPrefs.DeleteKey(CloudPendingSnapshotStore.StorageKey);
-            PlayerPrefs.DeleteKey(CloudPendingSnapshotStore.ConfirmedVersionStorageKey);
             PlayerPrefs.Save();
         }
 
@@ -67,14 +75,15 @@ namespace Assets.Tests.EditMode
             LevelCatalogService.Configure(_previousCatalog);
             RestorePreference(PlayerDataKey, _hadPrimary, _savedPrimary);
             RestorePreference(PlayerDataBackupKey, _hadBackup, _savedBackup);
-            RestorePreference(
-                CloudPendingSnapshotStore.StorageKey,
-                _hadPendingSnapshot,
-                _savedPendingSnapshot);
-            RestorePreference(
-                CloudPendingSnapshotStore.ConfirmedVersionStorageKey,
-                _hadConfirmedVersion,
-                _savedConfirmedVersion);
+            foreach (var playerId in CloudSavePlayerIds)
+            {
+                foreach (var key in GetCloudStorageKeys(playerId))
+                    PlayerPrefs.DeleteKey(key);
+            }
+
+            foreach (var savedPreference in _savedCloudPreferences)
+                PlayerPrefs.SetString(savedPreference.Key, savedPreference.Value);
+
             PlayerPrefs.Save();
         }
 
@@ -114,7 +123,7 @@ namespace Assets.Tests.EditMode
             Assert.IsTrue(cloudSync.HasPendingFirstSnapshot);
 
             await cloudSync.UploadFirstSnapshotAsync("other-player-id");
-            await cloudSync.RetryPendingFirstSnapshotAsync();
+            await cloudSync.RetryPendingSnapshotAsync();
             Assert.AreEqual(1, gateway.SaveCallCount);
             Assert.AreEqual("guest-player-id", gateway.SavedSnapshot.PlayerId);
 
@@ -145,7 +154,7 @@ namespace Assets.Tests.EditMode
 
             LogAssert.Expect(
                 LogType.Error,
-                "[CloudSave] First snapshot upload failed (InvalidOperationException).");
+                "[CloudSave] Snapshot upload failed (InvalidOperationException).");
             await cloudSync.UploadFirstSnapshotAsync("guest-player-id");
 
             var firstSnapshot = gateway.SavedSnapshot;
@@ -160,7 +169,7 @@ namespace Assets.Tests.EditMode
                 new DateTime(2026, 7, 21, 13, 0, 0, DateTimeKind.Utc));
             gateway.SaveTask = Task.FromResult(serverResult);
 
-            await cloudSync.RetryPendingFirstSnapshotAsync();
+            await cloudSync.RetryPendingSnapshotAsync();
 
             Assert.AreEqual(2, gateway.SaveCallCount);
             Assert.AreSame(firstSnapshot, gateway.SavedSnapshot);
@@ -187,14 +196,14 @@ namespace Assets.Tests.EditMode
 
             LogAssert.Expect(
                 LogType.Error,
-                "[CloudSave] First snapshot upload failed (InvalidOperationException).");
+                "[CloudSave] Snapshot upload failed (InvalidOperationException).");
             await cloudSync.UploadFirstSnapshotAsync("guest-player-id");
             var firstSnapshot = gateway.SavedSnapshot;
 
             LogAssert.Expect(
                 LogType.Error,
-                "[CloudSave] First snapshot upload failed (InvalidOperationException).");
-            await cloudSync.RetryPendingFirstSnapshotAsync();
+                "[CloudSave] Snapshot upload failed (InvalidOperationException).");
+            await cloudSync.RetryPendingSnapshotAsync();
 
             Assert.AreEqual(2, gateway.SaveCallCount);
             Assert.AreSame(firstSnapshot, gateway.SavedSnapshot);
@@ -206,7 +215,7 @@ namespace Assets.Tests.EditMode
         }
 
         [Test]
-        public async Task CheckpointQueue_KeepsActiveImmutableAndSendsOnlyNewestPendingSnapshot()
+        public async Task ActiveUpload_KeepsActiveImmutableAndSendsOnlyNewestPendingSnapshot()
         {
             GameDataManager.PlayerData = CreatePlayerData(10);
             var accountService = CreateResolvedLinkedAccountService("linked-player-id");
@@ -227,7 +236,7 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(activeSnapshot.PlayerDataJson, localDataAtUpload[0]);
             Assert.AreEqual(10, CloudSaveSnapshotCodec.RestorePlayerData(activeSnapshot).Money);
             Assert.AreEqual(10, CloudSaveSnapshotCodec.RestorePlayerData(
-                CloudPendingSnapshotStore.Load()).Money);
+                PendingSnapshotStore.Load("linked-player-id")).Money);
 
             GameDataManager.PlayerData.Money = 20;
             PlayerProgressCommitter.Commit(CheckpointReason.SkinPurchased);
@@ -237,7 +246,7 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(1, gateway.SaveCallCount);
             Assert.AreEqual(10, CloudSaveSnapshotCodec.RestorePlayerData(activeSnapshot).Money);
             Assert.AreEqual(30, CloudSaveSnapshotCodec.RestorePlayerData(
-                CloudPendingSnapshotStore.Load()).Money);
+                PendingSnapshotStore.Load("linked-player-id")).Money);
 
             var firstResult = new CloudSaveWriteResult(
                 "server-revision-01",
@@ -254,7 +263,9 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(firstResult.ServerRevision, newestSnapshot.BaseRevision);
             Assert.AreEqual(newestSnapshot.PlayerDataJson, localDataAtUpload[1]);
             Assert.AreSame(firstResult, cloudSync.CurrentCloudVersion);
-            Assert.AreEqual(firstResult.ServerRevision, CloudPendingSnapshotStore.Load().BaseRevision);
+            Assert.AreEqual(
+                firstResult.ServerRevision,
+                PendingSnapshotStore.Load("linked-player-id").BaseRevision);
 
             var secondResult = new CloudSaveWriteResult(
                 "server-revision-02",
@@ -263,7 +274,7 @@ namespace Assets.Tests.EditMode
             await Task.Yield();
 
             Assert.AreSame(secondResult, cloudSync.CurrentCloudVersion);
-            Assert.IsNull(CloudPendingSnapshotStore.Load());
+            Assert.IsNull(PendingSnapshotStore.Load("linked-player-id"));
         }
 
         [Test]
@@ -309,10 +320,10 @@ namespace Assets.Tests.EditMode
 
             LogAssert.Expect(
                 LogType.Error,
-                "[CloudSave] First snapshot upload failed (InvalidOperationException).");
+                "[CloudSave] Snapshot upload failed (InvalidOperationException).");
             PlayerProgressCommitter.Commit(CheckpointReason.MenuEntered);
 
-            var storedSnapshot = CloudPendingSnapshotStore.Load();
+            var storedSnapshot = PendingSnapshotStore.Load("linked-player-id");
             Assert.AreEqual(73, CloudSaveSnapshotCodec.RestorePlayerData(storedSnapshot).Money);
             Assert.AreEqual("linked-player-id", storedSnapshot.PlayerId);
             firstService.Dispose();
@@ -337,7 +348,7 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(1, restartedGateway.SaveCallCount);
             Assert.AreEqual("linked-player-id", restartedGateway.SavedSnapshot.PlayerId);
             Assert.AreEqual(storedSnapshot.Revision, restartedGateway.SavedSnapshot.Revision);
-            Assert.IsNull(CloudPendingSnapshotStore.Load());
+            Assert.IsNull(PendingSnapshotStore.Load("linked-player-id"));
         }
 
         [Test]
@@ -347,20 +358,22 @@ namespace Assets.Tests.EditMode
                 CreatePlayerData(52),
                 "first-player-id",
                 "7");
-            CloudPendingSnapshotStore.Save(storedSnapshot);
+            PendingSnapshotStore.Save(storedSnapshot);
             var accountService = CreateResolvedLinkedAccountService("second-player-id");
             var gateway = new FakeCloudSaveGateway();
 
             CreateCloudSync(gateway, accountService);
 
             Assert.AreEqual(0, gateway.SaveCallCount);
-            Assert.AreEqual("first-player-id", CloudPendingSnapshotStore.Load().PlayerId);
+            Assert.AreEqual(
+                "first-player-id",
+                PendingSnapshotStore.Load("first-player-id").PlayerId);
         }
 
         [Test]
-        public void ApplicationResume_RetriesDurablePendingThroughQueue()
+        public void ApplicationResume_RetriesDurablePendingSnapshot()
         {
-            CloudPendingSnapshotStore.Save(CloudSaveSnapshotCodec.Capture(
+            PendingSnapshotStore.Save(CloudSaveSnapshotCodec.Capture(
                 CreatePlayerData(61),
                 "linked-player-id",
                 "4"));
@@ -372,7 +385,7 @@ namespace Assets.Tests.EditMode
 
             LogAssert.Expect(
                 LogType.Error,
-                "[CloudSave] First snapshot upload failed (InvalidOperationException).");
+                "[CloudSave] Snapshot upload failed (InvalidOperationException).");
             CreateCloudSync(
                 gateway,
                 CreateResolvedLinkedAccountService("linked-player-id"));
@@ -384,14 +397,14 @@ namespace Assets.Tests.EditMode
             PlayerProgressLifecycleCheckpoint.HandleApplicationPause(isPaused: false);
 
             Assert.AreEqual(2, gateway.SaveCallCount);
-            Assert.IsNull(CloudPendingSnapshotStore.Load());
+            Assert.IsNull(PendingSnapshotStore.Load("linked-player-id"));
         }
 
         [Test]
         public void LocalOnlyChange_WithMatchingBase_UploadsWithoutConflict()
         {
             var localSnapshot = CreateSnapshot("linked-player-id", 20, "2", "base-revision");
-            CloudPendingSnapshotStore.Save(localSnapshot);
+            PendingSnapshotStore.Save(localSnapshot);
             SaveConfirmedVersion("linked-player-id", "base-revision");
             var gateway = new FakeCloudSaveGateway
             {
@@ -408,7 +421,7 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual("base-revision", gateway.SavedSnapshot.BaseRevision);
             Assert.AreEqual(20, CloudSaveSnapshotCodec.RestorePlayerData(gateway.SavedSnapshot).Money);
             Assert.IsNull(cloudSync.CurrentConflict);
-            Assert.IsNull(CloudPendingSnapshotStore.Load());
+            Assert.IsNull(PendingSnapshotStore.Load("linked-player-id"));
         }
 
         [Test]
@@ -436,7 +449,7 @@ namespace Assets.Tests.EditMode
         [Test]
         public void DivergedLocalAndCloud_FromCommonBase_RaisesConflictWithoutUpload()
         {
-            CloudPendingSnapshotStore.Save(
+            PendingSnapshotStore.Save(
                 CreateSnapshot("linked-player-id", 20, "local-2", "base-revision"));
             SaveConfirmedVersion("linked-player-id", "base-revision");
             var gateway = new FakeCloudSaveGateway
@@ -458,14 +471,14 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(30, CloudSaveSnapshotCodec.RestorePlayerData(
                 raisedConflict.CloudSnapshot).Money);
             Assert.AreEqual(0, gateway.SaveCallCount);
-            Assert.IsNotNull(CloudPendingSnapshotStore.Load());
+            Assert.IsNotNull(PendingSnapshotStore.Load("linked-player-id"));
         }
 
         [Test]
         public void LostAcknowledgement_EquivalentCloudSnapshot_ClearsPendingWithoutConflict()
         {
             var pending = CreateSnapshot("linked-player-id", 20, "local-2", "base-revision");
-            CloudPendingSnapshotStore.Save(pending);
+            PendingSnapshotStore.Save(pending);
             SaveConfirmedVersion("linked-player-id", "base-revision");
             var gateway = new FakeCloudSaveGateway
             {
@@ -480,7 +493,7 @@ namespace Assets.Tests.EditMode
 
             Assert.AreEqual(0, gateway.SaveCallCount);
             Assert.IsNull(cloudSync.CurrentConflict);
-            Assert.IsNull(CloudPendingSnapshotStore.Load());
+            Assert.IsNull(PendingSnapshotStore.Load("linked-player-id"));
             Assert.AreEqual("acknowledged-revision", cloudSync.CurrentCloudVersion.ServerRevision);
         }
 
@@ -488,7 +501,7 @@ namespace Assets.Tests.EditMode
         public async Task CloudConflictChoice_WhenCloudChanged_RefreshesConflictAndRequiresRechoice()
         {
             GameDataManager.PlayerData = CreatePlayerData(20);
-            CloudPendingSnapshotStore.Save(
+            PendingSnapshotStore.Save(
                 CreateSnapshot("linked-player-id", 20, "local-2", "base-revision"));
             SaveConfirmedVersion("linked-player-id", "base-revision");
             var gateway = new FakeCloudSaveGateway
@@ -519,7 +532,7 @@ namespace Assets.Tests.EditMode
         [Test]
         public async Task LocalConflictChoice_ReloadsLatestRevisionAndWritesWholeLocalSnapshot()
         {
-            CloudPendingSnapshotStore.Save(
+            PendingSnapshotStore.Save(
                 CreateSnapshot("linked-player-id", 20, "local-2", "base-revision"));
             SaveConfirmedVersion("linked-player-id", "base-revision");
             var gateway = new FakeCloudSaveGateway
@@ -547,13 +560,13 @@ namespace Assets.Tests.EditMode
                 gateway.SavedSnapshot).Money);
             Assert.IsNull(cloudSync.CurrentConflict);
             Assert.AreEqual("local-choice-revision", cloudSync.CurrentCloudVersion.ServerRevision);
-            Assert.IsNull(CloudPendingSnapshotStore.Load());
+            Assert.IsNull(PendingSnapshotStore.Load("linked-player-id"));
         }
 
         [Test]
         public async Task KnownBaseWithMissingCloud_RetainsPendingThenRecreatesOnConfirmedRetry()
         {
-            CloudPendingSnapshotStore.Save(
+            PendingSnapshotStore.Save(
                 CreateSnapshot("linked-player-id", 20, "local-2", "base-revision"));
             SaveConfirmedVersion("linked-player-id", "base-revision");
             var gateway = new FakeCloudSaveGateway
@@ -569,14 +582,16 @@ namespace Assets.Tests.EditMode
             accountService.Start();
 
             Assert.AreEqual(0, gateway.SaveCallCount);
-            Assert.AreEqual("base-revision", CloudPendingSnapshotStore.Load().BaseRevision);
+            Assert.AreEqual(
+                "base-revision",
+                PendingSnapshotStore.Load("linked-player-id").BaseRevision);
             Assert.IsNull(cloudSync.CurrentConflict);
 
-            await cloudSync.RetryPendingFirstSnapshotAsync();
+            await cloudSync.RetryPendingSnapshotAsync();
 
             Assert.AreEqual(1, gateway.SaveCallCount);
             Assert.IsNull(gateway.SavedSnapshot.BaseRevision);
-            Assert.IsNull(CloudPendingSnapshotStore.Load());
+            Assert.IsNull(PendingSnapshotStore.Load("linked-player-id"));
         }
 
         [Test]
@@ -584,7 +599,7 @@ namespace Assets.Tests.EditMode
         {
             GameDataManager.PlayerData = CreatePlayerData(11);
             GameDataManager.SaveData();
-            CloudPendingSnapshotStore.Save(
+            PendingSnapshotStore.Save(
                 CreateSnapshot("linked-player-id", 17, "local-2", "base-revision"));
             var cloudData = CreatePlayerData(91);
             cloudData.PurchasedSkinIds = null;
@@ -605,7 +620,7 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(readResult.ServerRevision, cloudSync.CurrentCloudVersion.ServerRevision);
             Assert.AreEqual(readResult.ServerModifiedAtUtc, cloudSync.CurrentCloudVersion.ServerModifiedAtUtc);
             Assert.IsNull(cloudSync.CurrentConflict);
-            Assert.IsNull(CloudPendingSnapshotStore.Load());
+            Assert.IsNull(PendingSnapshotStore.Load("linked-player-id"));
         }
 
         [TestCase(ExistingAccountRestoreResult.SnapshotMissing)]
@@ -771,11 +786,16 @@ namespace Assets.Tests.EditMode
             FakeCloudSaveGateway gateway,
             AccountService accountService)
         {
-            var conflictService = new CloudSaveConflictService(gateway, accountService);
+            var uploadService = new SnapshotUploadService();
+            var conflictService = new CloudSaveConflictService(
+                gateway,
+                accountService,
+                uploadService);
             var cloudSyncService = new CloudSyncService(
                 gateway,
                 accountService,
-                conflictService);
+                conflictService,
+                uploadService);
             _cloudSyncServices.Add(cloudSyncService);
             return cloudSyncService;
         }
@@ -789,7 +809,7 @@ namespace Assets.Tests.EditMode
         }
 
         private static CloudSaveReadResult CreateReadResult(
-            CloudSaveSnapshot snapshot,
+            CloudSaveSnapshotDto snapshot,
             string serverRevision)
         {
             return new CloudSaveReadResult(
@@ -798,7 +818,7 @@ namespace Assets.Tests.EditMode
                 new DateTime(2026, 7, 21, 14, 0, 0, DateTimeKind.Utc));
         }
 
-        private static CloudSaveSnapshot CreateSnapshot(
+        private static CloudSaveSnapshotDto CreateSnapshot(
             string playerId,
             int money,
             string revision,
@@ -813,7 +833,7 @@ namespace Assets.Tests.EditMode
 
         private static void SaveConfirmedVersion(string playerId, string serverRevision)
         {
-            CloudPendingSnapshotStore.SaveConfirmedVersion(
+            ConfirmedVersionStore.Save(
                 playerId,
                 new CloudSaveWriteResult(
                     serverRevision,
@@ -837,6 +857,15 @@ namespace Assets.Tests.EditMode
             {
                 PlayerPrefs.DeleteKey(key);
             }
+        }
+
+        private static string[] GetCloudStorageKeys(string playerId)
+        {
+            return new[]
+            {
+                PendingSnapshotStore.GetStorageKey(playerId),
+                ConfirmedVersionStore.GetStorageKey(playerId)
+            };
         }
     }
 }

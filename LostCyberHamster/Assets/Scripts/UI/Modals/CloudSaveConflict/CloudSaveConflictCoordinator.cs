@@ -145,7 +145,7 @@ namespace LostCyberHamster.UI
                 CreateCard(conflict.LocalSnapshot, ParseSavedAt(conflict.LocalSnapshot.SavedAtUtc)));
         }
 
-        private static CloudSaveConflictCardDto CreateCard(CloudSaveSnapshot snapshot, DateTime savedAt)
+        private static CloudSaveConflictCardDto CreateCard(CloudSaveSnapshotDto snapshot, DateTime savedAt)
         {
             var playerData = CloudSaveSnapshotCodec.RestorePlayerData(snapshot);
             var completedLevels = playerData.Progress.Entries.Count(entry => entry.IsCompleted);

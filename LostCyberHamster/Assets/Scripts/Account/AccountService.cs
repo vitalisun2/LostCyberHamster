@@ -5,14 +5,39 @@ using UnityEngine;
 namespace Assets.Scripts.Account
 {
 
+    /// <summary>
+    /// Управляет определением, привязкой, переключением и тестовым сбросом аккаунта игрока.
+    /// </summary>
     public sealed class AccountService
     {
+        /// <summary>
+        /// Шлюз аутентификации игрока в Unity Gaming Services.
+        /// </summary>
         private readonly IAccountAuthenticationGateway _authenticationGateway;
+
+        /// <summary>
+        /// Шлюз сессии Unity Player Account.
+        /// </summary>
         private readonly IUnityPlayerAccountGateway _playerAccountGateway;
+
+        /// <summary>
+        /// Версия текущей операции определения или изменения аккаунта.
+        /// </summary>
         private int _resolutionVersion;
 
+        /// <summary>
+        /// Текущее состояние аккаунта игрока.
+        /// </summary>
         public AccountState State { get; private set; } = AccountState.NotStarted;
+
+        /// <summary>
+        /// Возникает после изменения состояния аккаунта.
+        /// </summary>
         public event Action<AccountState> StateChanged;
+
+        /// <summary>
+        /// Возникает после успешной привязки текущего гостя.
+        /// </summary>
         public event Action<string> CurrentGuestLinked;
 
         public AccountService(
@@ -47,15 +72,18 @@ namespace Assets.Scripts.Account
         /// </summary>
         public async Task<AccountLinkResult> LinkCurrentGuestAsync()
         {
+            // Привязка доступна только для подтверждённой гостевой сессии.
             if (State != AccountState.Guest)
                 return AccountLinkResult.Failed;
 
+            // Фиксируем гостя и помечаем операцию как текущую.
             var playerId = _authenticationGateway.PlayerId;
             var resolutionVersion = ++_resolutionVersion;
             SetState(AccountState.Linking);
 
             try
             {
+                // Получаем токен Player Account и привязываем его к гостю.
                 var accessToken = await _playerAccountGateway.SignInAsync();
                 if (resolutionVersion != _resolutionVersion)
                     return AccountLinkResult.Failed;
@@ -64,6 +92,7 @@ namespace Assets.Scripts.Account
                 if (resolutionVersion != _resolutionVersion)
                     return AccountLinkResult.Failed;
 
+                // Конфликт сохраняет исходную гостевую сессию.
                 if (result == AccountLinkResult.Conflict)
                 {
                     var playerIdPreserved = _authenticationGateway.PlayerId == playerId;
@@ -72,24 +101,28 @@ namespace Assets.Scripts.Account
                     return AccountLinkResult.Conflict;
                 }
 
+                // Любой другой неуспешный результат возвращает гостевое состояние.
                 if (result != AccountLinkResult.Linked)
                 {
                     SetState(AccountState.Guest);
                     return result;
                 }
 
+                // Успех допустим только без смены идентификатора текущего гостя.
                 if (_authenticationGateway.PlayerId != playerId)
                 {
                     SetState(AccountState.Guest);
                     return AccountLinkResult.Failed;
                 }
 
+                // Публикуем подтверждённую привязку гостя.
                 SetState(AccountState.Linked);
                 NotifyCurrentGuestLinked(playerId);
                 return AccountLinkResult.Linked;
             }
             catch
             {
+                // Актуальная неудачная операция возвращает гостевое состояние.
                 if (resolutionVersion == _resolutionVersion)
                     SetState(AccountState.Guest);
 
@@ -103,12 +136,14 @@ namespace Assets.Scripts.Account
         public async Task<bool> SignInExistingAccountAsync(
             Func<string, Task<bool>> acceptSignedInAccountAsync)
         {
+            // Переключение доступно только из подтверждённой гостевой сессии.
             if (State != AccountState.Guest)
                 return false;
 
             if (acceptSignedInAccountAsync == null)
                 throw new ArgumentNullException(nameof(acceptSignedInAccountAsync));
 
+            // Проверяем исходного гостя до смены identity.
             var originalPlayerId = _authenticationGateway.PlayerId;
             if (!IsOriginalGuestSession(originalPlayerId))
             {
@@ -121,16 +156,17 @@ namespace Assets.Scripts.Account
 
             try
             {
-                // Unity Player Account token must be acquired before leaving the current guest session.
+                // Получаем токен Player Account до выхода из гостевой сессии.
                 var accessToken = await _playerAccountGateway.SignInAsync();
                 EnsureCurrentOperation(resolutionVersion);
                 if (string.IsNullOrWhiteSpace(accessToken))
                     throw new InvalidOperationException("Unity Player Account access token is unavailable.");
 
-                // Keep the anonymous session token so a failed switch can restore the original guest.
+                // Сохраняем анонимный токен, чтобы при ошибке восстановить исходного гостя.
                 _authenticationGateway.SignOutPreservingCredentials();
                 EnsureCurrentOperation(resolutionVersion);
 
+                // Входим в связанный аккаунт и проверяем смену identity.
                 await _authenticationGateway.SignInWithUnityAsync(accessToken);
                 EnsureCurrentOperation(resolutionVersion);
 
@@ -142,22 +178,23 @@ namespace Assets.Scripts.Account
                     throw new InvalidOperationException("Existing linked account verification failed.");
                 }
 
+                // Перед commit передаём найденный аккаунт вызывающему сценарию.
                 if (!await acceptSignedInAccountAsync(_authenticationGateway.PlayerId))
                     throw new InvalidOperationException("Existing linked account was not accepted.");
-
-                EnsureCurrentOperation(resolutionVersion);
-
-                SetState(AccountState.Linked);
-                Debug.Log("[Account] Existing linked account signed in.");
-                return true;
             }
             catch (Exception exception)
             {
+                // При любой ошибке пытаемся вернуть исходную гостевую сессию.
                 var restored = await TryRestoreOriginalGuestAsync(originalPlayerId);
                 SetState(restored ? AccountState.Guest : AccountState.Error);
                 Debug.LogError($"[Account] Existing account sign-in failed. Original guest restored: {restored}. Error type: {exception.GetType().Name}.");
                 return false;
             }
+
+            // Успешный restore — финальная commit-точка: state notification не откатывает identity.
+            SetState(AccountState.Linked);
+            Debug.Log("[Account] Existing linked account signed in.");
+            return true;
         }
 
         /// <summary>
@@ -202,6 +239,7 @@ namespace Assets.Scripts.Account
         /// </summary>
         public async Task FullResetTestAccountAsync()
         {
+            // Фиксируем операцию и этапы частичного сброса.
             var resolutionVersion = ++_resolutionVersion;
             var localUgsIdentityCleared = false;
             var serverAccountUnlinked = false;
@@ -254,6 +292,7 @@ namespace Assets.Scripts.Account
             }
             catch (Exception exception)
             {
+                // После очистки UGS identity завершаем локальную очистку при любой ошибке.
                 if (localUgsIdentityCleared)
                 {
                     try
@@ -271,6 +310,7 @@ namespace Assets.Scripts.Account
                 if (serverAccountUnlinked)
                     Debug.LogError("[Account] Full reset partially completed: server link removed, but local completion failed.");
 
+                // Разделяем отмену устаревшей операции и фактическую ошибку сброса.
                 if (exception is OperationCanceledException)
                 {
                     Debug.LogWarning($"[Account] Full reset cancelled. Local UGS identity cleared: {localUgsIdentityCleared}.");
@@ -284,11 +324,15 @@ namespace Assets.Scripts.Account
             }
         }
 
+        /// <summary>
+        /// Очищает локальные данные Unity Authentication и активную сессию Player Account.
+        /// </summary>
         private void ClearLocalAccountState()
         {
             Exception authenticationException = null;
             Exception playerAccountException = null;
 
+            // Независимо очищаем Unity Authentication.
             try
             {
                 _authenticationGateway.SignOutAndClearLocalCredentials();
@@ -299,6 +343,7 @@ namespace Assets.Scripts.Account
                 Debug.LogError($"[Account] Local cleanup failed at Unity Authentication sign-out. Error type: {exception.GetType().Name}.");
             }
 
+            // Независимо завершаем активную сессию Player Account.
             try
             {
                 if (_playerAccountGateway.IsSignedIn)
@@ -310,6 +355,7 @@ namespace Assets.Scripts.Account
                 Debug.LogError($"[Account] Local cleanup failed at Player Accounts sign-out. Error type: {exception.GetType().Name}.");
             }
 
+            // Публикуем ошибку и сохраняем сведения обо всех неудачных этапах.
             if (authenticationException != null || playerAccountException != null)
             {
                 SetState(AccountState.Error);
@@ -319,10 +365,14 @@ namespace Assets.Scripts.Account
                 throw authenticationException ?? playerAccountException;
             }
 
+            // Полностью очищенная локальная identity требует нового определения аккаунта.
             SetState(AccountState.NotStarted);
         }
 #endif
 
+        /// <summary>
+        /// Прерывает продолжение операции, если её версия уже не актуальна.
+        /// </summary>
         private void EnsureCurrentOperation(int resolutionVersion)
         {
             if (resolutionVersion == _resolutionVersion)
@@ -331,16 +381,22 @@ namespace Assets.Scripts.Account
             throw new OperationCanceledException("Account operation was invalidated.");
         }
 
+        /// <summary>
+        /// Пытается восстановить исходную гостевую сессию после неудачного переключения аккаунта.
+        /// </summary>
         private async Task<bool> TryRestoreOriginalGuestAsync(string originalPlayerId)
         {
             try
             {
+                // Уже восстановленная сессия не требует повторного входа.
                 if (IsOriginalGuestSession(originalPlayerId))
                     return true;
 
+                // Освобождаем текущую identity, сохраняя локальные гостевые credentials.
                 if (_authenticationGateway.IsSignedIn)
                     _authenticationGateway.SignOutPreservingCredentials();
 
+                // Восстанавливаем существующего гостя без создания нового аккаунта.
                 await _authenticationGateway.SignInAnonymouslyAsync(createAccount: false);
                 return IsOriginalGuestSession(originalPlayerId);
             }
@@ -351,6 +407,9 @@ namespace Assets.Scripts.Account
             }
         }
 
+        /// <summary>
+        /// Проверяет, соответствует ли активная сессия исходному непривязанному гостю.
+        /// </summary>
         private bool IsOriginalGuestSession(string originalPlayerId)
         {
             return !string.IsNullOrWhiteSpace(originalPlayerId) &&
@@ -359,12 +418,17 @@ namespace Assets.Scripts.Account
                    _authenticationGateway.PlayerId == originalPlayerId;
         }
 
+        /// <summary>
+        /// Уведомляет подписчиков об успешной привязке гостя, изолируя ошибки обработчиков.
+        /// </summary>
         private void NotifyCurrentGuestLinked(string playerId)
         {
+            // Фиксируем текущий список подписчиков перед рассылкой.
             var handlers = CurrentGuestLinked;
             if (handlers == null)
                 return;
 
+            // Ошибка одного подписчика не прерывает остальных.
             foreach (Action<string> handler in handlers.GetInvocationList())
             {
                 try
@@ -424,11 +488,28 @@ namespace Assets.Scripts.Account
         /// </summary>
         private void SetState(AccountState state)
         {
+            // Повторное состояние не создаёт лишнее уведомление.
             if (State == state)
                 return;
 
+            // Фиксируем состояние и текущий список подписчиков.
             State = state;
-            StateChanged?.Invoke(state);
+            var handlers = StateChanged;
+            if (handlers == null)
+                return;
+
+            // Ошибка одного подписчика не прерывает остальных.
+            foreach (Action<AccountState> handler in handlers.GetInvocationList())
+            {
+                try
+                {
+                    handler(state);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogError($"[Account] State subscriber failed: {exception.GetType().Name}.");
+                }
+            }
         }
     }
 }

@@ -7,14 +7,15 @@ namespace GameManagement.CloudSave
     /// </summary>
     public sealed class CloudSaveWriteResult
     {
-        /// <summary>Создаёт результат успешной серверной записи.</summary>
         public CloudSaveWriteResult(string serverRevision, DateTime serverModifiedAtUtc)
         {
+            // Проверяем обязательную серверную revision.
             if (string.IsNullOrWhiteSpace(serverRevision))
             {
                 throw new ArgumentException("Server revision must be provided.", nameof(serverRevision));
             }
 
+            // Фиксируем подтверждённые сервером метаданные.
             ServerRevision = serverRevision;
             ServerModifiedAtUtc = serverModifiedAtUtc.ToUniversalTime();
         }

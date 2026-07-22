@@ -15,13 +15,13 @@ namespace Assets.Tests.EditMode
                 "server-revision",
                 new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
 
-        public CloudSaveSnapshot SavedSnapshot { get; private set; }
+        public CloudSaveSnapshotDto SavedSnapshot { get; private set; }
 
         public int LoadCallCount { get; private set; }
 
         public int SaveCallCount { get; private set; }
 
-        public Action<CloudSaveSnapshot> SaveStarting { get; set; }
+        public Action<CloudSaveSnapshotDto> SaveStarting { get; set; }
 
         public Task<CloudSaveReadResult> LoadSnapshotAsync()
         {
@@ -29,7 +29,7 @@ namespace Assets.Tests.EditMode
             return LoadTask ?? Task.FromResult(_savedCloudVersion);
         }
 
-        public async Task<CloudSaveWriteResult> SaveSnapshotAsync(CloudSaveSnapshot snapshot)
+        public async Task<CloudSaveWriteResult> SaveSnapshotAsync(CloudSaveSnapshotDto snapshot)
         {
             SaveCallCount++;
             SavedSnapshot = snapshot;

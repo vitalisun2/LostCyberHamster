@@ -7,24 +7,25 @@ namespace GameManagement.CloudSave
     /// </summary>
     public sealed class CloudSaveReadResult
     {
-        /// <summary>Создаёт результат успешной серверной загрузки.</summary>
         public CloudSaveReadResult(
-            CloudSaveSnapshot snapshot,
+            CloudSaveSnapshotDto snapshot,
             string serverRevision,
             DateTime serverModifiedAtUtc)
         {
+            // Проверяем обязательные данные ответа.
             Snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
             if (string.IsNullOrWhiteSpace(serverRevision))
             {
                 throw new ArgumentException("Server revision must be provided.", nameof(serverRevision));
             }
 
+            // Фиксируем подтверждённые сервером метаданные.
             ServerRevision = serverRevision;
             ServerModifiedAtUtc = serverModifiedAtUtc.ToUniversalTime();
         }
 
         /// <summary>Полный загруженный снимок.</summary>
-        public CloudSaveSnapshot Snapshot { get; }
+        public CloudSaveSnapshotDto Snapshot { get; }
 
         /// <summary>UGS write lock загруженной версии.</summary>
         public string ServerRevision { get; }

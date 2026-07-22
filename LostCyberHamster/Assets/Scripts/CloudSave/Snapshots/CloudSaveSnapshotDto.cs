@@ -6,7 +6,7 @@ namespace GameManagement.CloudSave
     /// Полный снимок игрового прогресса и его облачные метаданные.
     /// </summary>
     [Serializable]
-    public sealed class CloudSaveSnapshot
+    public sealed class CloudSaveSnapshotDto
     {
         /// <summary>Зафиксированный JSON полного PlayerData.</summary>
         public string PlayerDataJson;

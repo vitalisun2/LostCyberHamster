@@ -5,16 +5,17 @@ namespace GameManagement.CloudSave
     /// <summary>Описывает две целые ветки одного аккаунта, ожидающие выбора игрока.</summary>
     public sealed class CloudSaveConflictModel
     {
-        /// <summary>Создаёт независимые данные локальной и облачной веток.</summary>
         public CloudSaveConflictModel(
-            CloudSaveSnapshot localSnapshot,
+            CloudSaveSnapshotDto localSnapshot,
             CloudSaveReadResult cloudVersion)
         {
+            // Проверяем обе ветки до создания модели конфликта.
             if (localSnapshot == null)
                 throw new ArgumentNullException(nameof(localSnapshot));
             if (cloudVersion == null)
                 throw new ArgumentNullException(nameof(cloudVersion));
 
+            // Изолируем данные конфликта от последующих изменений runtime-снимков.
             LocalSnapshot = Clone(localSnapshot);
             CloudVersion = new CloudSaveReadResult(
                 Clone(cloudVersion.Snapshot),
@@ -23,15 +24,16 @@ namespace GameManagement.CloudSave
         }
 
         /// <summary>Полный локальный pending.</summary>
-        public CloudSaveSnapshot LocalSnapshot { get; }
+        public CloudSaveSnapshotDto LocalSnapshot { get; }
 
         /// <summary>Полная облачная версия с подтверждённой server revision.</summary>
         public CloudSaveReadResult CloudVersion { get; }
 
         /// <summary>Полный облачный снимок.</summary>
-        public CloudSaveSnapshot CloudSnapshot => CloudVersion.Snapshot;
+        public CloudSaveSnapshotDto CloudSnapshot => CloudVersion.Snapshot;
 
-        private static CloudSaveSnapshot Clone(CloudSaveSnapshot snapshot)
+        /// <summary>Создаёт независимую копию снимка через общий codec.</summary>
+        private static CloudSaveSnapshotDto Clone(CloudSaveSnapshotDto snapshot)
         {
             return CloudSaveSnapshotCodec.Deserialize(CloudSaveSnapshotCodec.Serialize(snapshot));
         }
