@@ -13,6 +13,20 @@ namespace Assets.Scripts
         public const string PlayerDataUrl = "games/c5c541fe-414a-4cb6-b979-d68795096998/players/current";
         public const string AuthKey = "AuthKey";
 
+        // Unity Leaderboards
+        public const string NewYorkMorningLeaderboardId = "weekly-01-new-york-morning";
+        public const string NewYorkAfternoonLeaderboardId = "weekly-01-new-york-afternoon";
+        public const string NewYorkEveningLeaderboardId = "weekly-01-new-york-evening";
+        public const string NewYorkNightLeaderboardId = "weekly-01-new-york-night";
+        public const string ParisMorningLeaderboardId = "weekly-02-paris-morning";
+        public const string ParisAfternoonLeaderboardId = "weekly-02-paris-afternoon";
+        public const string ParisEveningLeaderboardId = "weekly-02-paris-evening";
+        public const string ParisNightLeaderboardId = "weekly-02-paris-night";
+        public const string BarcelonaMorningLeaderboardId = "weekly-03-barcelona-morning";
+        public const string BarcelonaAfternoonLeaderboardId = "weekly-03-barcelona-afternoon";
+        public const string BarcelonaEveningLeaderboardId = "weekly-03-barcelona-evening";
+        public const string BarcelonaNightLeaderboardId = "weekly-03-barcelona-night";
+
         /// <summary>
         /// Идентификатор игры для платформы iOS
         /// </summary>

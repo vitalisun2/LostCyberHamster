@@ -1,0 +1,11 @@
+{
+  "$schema": "https://ugs-config-schemas.unity3d.com/v1/leaderboards.schema.json",
+  "Name": "Barcelona Evening",
+  "SortOrder": "desc",
+  "UpdateType": "keepBest",
+  "ResetConfig": {
+    "Start": "2026-07-20T00:00:00Z",
+    "Schedule": "0 0 * * 1",
+    "Archive": false
+  }
+}
