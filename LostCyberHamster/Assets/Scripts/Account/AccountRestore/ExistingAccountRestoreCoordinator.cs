@@ -1,18 +1,18 @@
 using System;
 using System.Threading.Tasks;
-using Assets.Scripts.Account;
+using GameManagement.CloudSave;
 
-namespace GameManagement.CloudSave
+namespace Assets.Scripts.Account
 {
     /// <summary>
     /// Завершает вход в существующий аккаунт только после успешного восстановления его данных.
     /// </summary>
     public sealed class ExistingAccountRestoreCoordinator
     {
-        /// <summary>Управляет переходом между гостевой и связанной account-сессией.</summary>
+        /// <summary>Управляет переходом между гостевой и связанной с аккаунтом сессией.</summary>
         private readonly AccountService _accountService;
 
-        /// <summary>Загружает и применяет cloud snapshot выбранного аккаунта.</summary>
+        /// <summary>Загружает и применяет облачный снимок выбранного аккаунта.</summary>
         private readonly CloudSyncService _cloudSyncService;
 
         public ExistingAccountRestoreCoordinator(
@@ -26,7 +26,7 @@ namespace GameManagement.CloudSave
         /// <summary>Входит в существующий аккаунт только после успешного восстановления его прогресса.</summary>
         public async Task<ExistingAccountRestoreResult> RestoreAsync()
         {
-            // Запускаем account flow и принимаем новую сессию только после cloud restore.
+            // Запускаем вход и принимаем новую сессию только после облачного восстановления.
             var restoreResult = ExistingAccountRestoreResult.SignInFailed;
             var signedIn = await _accountService.SignInExistingAccountAsync(async playerId =>
             {
@@ -35,12 +35,9 @@ namespace GameManagement.CloudSave
                 return restoreResult == ExistingAccountRestoreResult.Restored;
             });
 
-            // Возвращаем точный результат восстановления или сбой завершения входа.
-            if (signedIn)
-                return ExistingAccountRestoreResult.Restored;
-
-            return restoreResult == ExistingAccountRestoreResult.Restored
-                ? ExistingAccountRestoreResult.SignInFailed
+            // Возвращаем успех входа или точную причину отказа восстановления.
+            return signedIn
+                ? ExistingAccountRestoreResult.Restored
                 : restoreResult;
         }
     }

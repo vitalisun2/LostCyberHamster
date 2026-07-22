@@ -142,21 +142,21 @@ namespace GameManagement.CloudSave
             return UploadPendingSnapshotAsync(isRetry: true);
         }
 
-        /// <summary>Проверяет актуальность выбранного cloud snapshot и целиком применяет его локально.</summary>
+        /// <summary>Проверяет актуальность выбранного облачного снимка и целиком применяет его локально.</summary>
         public async Task<bool> ResolveConflictWithCloudAsync()
         {
             // Пропускаем выбор после освобождения сервиса.
             if (_isDisposed)
                 return false;
 
-            // Получаем проверенную актуальную cloud-ветку.
-            var conflict = CurrentConflict;
+            // Получаем результат выбора с исходным конфликтом и актуальной cloud-веткой.
             var operationToken = _lifecycleCancellation.Token;
-            var latestCloud = await _conflictService.ResolveWithCloudAsync(operationToken);
+            var outcome = await _conflictService.TryResolveWithCloudAsync(operationToken);
+            var conflict = outcome.Conflict;
 
             // Отбрасываем отменённый или устаревший результат.
             if (conflict == null ||
-                latestCloud == null ||
+                !outcome.IsSuccessful ||
                 !IsSnapshotOperationCurrent(conflict.LocalSnapshot.PlayerId, operationToken))
             {
                 return false;
@@ -168,7 +168,7 @@ namespace GameManagement.CloudSave
                 var playerId = conflict.LocalSnapshot.PlayerId;
                 _uploadService.DiscardForOwner(playerId);
                 _uploadService.ClearCloudMissingRecord();
-                SetCurrentCloudVersion(playerId, latestCloud);
+                SetCurrentCloudVersion(playerId, outcome.Version);
                 _conflictService.CompleteResolution(conflict);
                 return true;
             }
@@ -180,17 +180,17 @@ namespace GameManagement.CloudSave
             }
         }
 
-        /// <summary>Записывает выбранный local snapshot целиком поверх актуальной cloud revision.</summary>
+        /// <summary>Записывает выбранный локальный снимок поверх актуальной облачной версии.</summary>
         public async Task<bool> ResolveConflictWithLocalAsync()
         {
             // Пропускаем выбор после освобождения сервиса.
             if (_isDisposed)
                 return false;
 
-            // Записываем local-ветку поверх актуальной cloud version.
-            var conflict = CurrentConflict;
+            // Получаем результат записи вместе с исходным конфликтом.
             var operationToken = _lifecycleCancellation.Token;
-            var result = await _conflictService.ResolveWithLocalAsync(operationToken);
+            var outcome = await _conflictService.TryResolveWithLocalAsync(operationToken);
+            var conflict = outcome.Conflict;
 
             // Отбрасываем отменённый или устаревший результат.
             if (conflict == null ||
@@ -200,7 +200,7 @@ namespace GameManagement.CloudSave
             }
 
             // Сохраняем неподтверждённый выбор для retry.
-            if (result == null)
+            if (!outcome.IsSuccessful)
             {
                 if (_uploadService.IsPending(conflict.LocalSnapshot))
                     _uploadService.SetPendingSnapshot(conflict.LocalSnapshot);
@@ -211,8 +211,8 @@ namespace GameManagement.CloudSave
             try
             {
                 // Подтверждаем local choice и продолжаем newest pending.
-                SetCurrentCloudVersion(conflict.LocalSnapshot.PlayerId, result);
-                _uploadService.Confirm(conflict.LocalSnapshot, result.ServerRevision);
+                SetCurrentCloudVersion(conflict.LocalSnapshot.PlayerId, outcome.Version);
+                _uploadService.Confirm(conflict.LocalSnapshot, outcome.Version.ServerRevision);
                 _conflictService.CompleteResolution(conflict);
                 if (_uploadService.PendingSnapshot != null)
                     _ = UploadPendingSnapshotAsync(isRetry: false);

@@ -40,8 +40,8 @@ namespace GameManagement.CloudSave
         /// <summary>Показывает, что выбор ветки уже выполняется.</summary>
         internal bool IsResolutionActive => _isConflictResolutionActive;
 
-        /// <summary>Проверяет актуальность выбранного cloud snapshot и целиком применяет его локально.</summary>
-        public async Task<CloudSaveReadResult> ResolveWithCloudAsync(
+        /// <summary>Проверяет актуальность выбранного облачного снимка и целиком применяет его локально.</summary>
+        internal async Task<CloudSaveConflictResolutionOutcome<CloudSaveReadResult>> TryResolveWithCloudAsync(
             CancellationToken operationToken)
         {
             // Проверяем активный конфликт и владельца до сетевого вызова.
@@ -51,7 +51,7 @@ namespace GameManagement.CloudSave
                 !_accountService.TryGetLinkedPlayerId(out var playerId) ||
                 !string.Equals(conflict.LocalSnapshot.PlayerId, playerId, StringComparison.Ordinal))
             {
-                return null;
+                return CloudSaveConflictResolutionOutcome<CloudSaveReadResult>.Failure(conflict);
             }
 
             // Блокируем параллельный выбор и загружаем актуальную cloud-ветку.
@@ -60,14 +60,14 @@ namespace GameManagement.CloudSave
             {
                 var latestCloud = await _gateway.LoadSnapshotAsync();
                 if (!IsOperationCurrent(playerId, operationToken))
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveReadResult>.Failure(conflict);
 
                 // Отклоняем отсутствующую или чужую cloud-ветку.
                 if (latestCloud == null ||
                     !string.Equals(latestCloud.Snapshot.PlayerId, playerId, StringComparison.Ordinal))
                 {
                     Debug.LogError("[CloudSave] Cloud conflict choice failed: current cloud unavailable.");
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveReadResult>.Failure(conflict);
                 }
 
                 // Обновляем конфликт, если облако изменилось после показа выбора.
@@ -78,7 +78,7 @@ namespace GameManagement.CloudSave
                         StringComparison.Ordinal))
                 {
                     SetConflict(CurrentConflict?.LocalSnapshot ?? conflict.LocalSnapshot, latestCloud);
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveReadResult>.Failure(conflict);
                 }
 
                 // Восстанавливаем и проверяем выбранные данные до commit.
@@ -88,7 +88,7 @@ namespace GameManagement.CloudSave
                         out var rejectionReason))
                 {
                     Debug.LogWarning($"[CloudSave] Conflict cloud snapshot rejected ({rejectionReason}).");
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveReadResult>.Failure(conflict);
                 }
 
                 // Целиком применяем проверенную cloud-ветку.
@@ -99,20 +99,22 @@ namespace GameManagement.CloudSave
                 catch (Exception exception)
                 {
                     Debug.LogError($"[CloudSave] Conflict cloud apply failed ({exception.GetType().Name}).");
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveReadResult>.Failure(conflict);
                 }
 
                 Debug.Log("[CloudSave] Cloud conflict choice applied.");
-                return latestCloud;
+                return CloudSaveConflictResolutionOutcome<CloudSaveReadResult>.Success(
+                    conflict,
+                    latestCloud);
             }
             catch (Exception exception)
             {
                 // Устаревшая операция завершается без сообщения об ошибке.
                 if (!IsOperationCurrent(playerId, operationToken))
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveReadResult>.Failure(conflict);
 
                 Debug.LogError($"[CloudSave] Cloud conflict choice failed ({exception.GetType().Name}).");
-                return null;
+                return CloudSaveConflictResolutionOutcome<CloudSaveReadResult>.Failure(conflict);
             }
             finally
             {
@@ -121,8 +123,8 @@ namespace GameManagement.CloudSave
             }
         }
 
-        /// <summary>Записывает выбранный local snapshot целиком поверх актуальной cloud revision.</summary>
-        public async Task<CloudSaveWriteResult> ResolveWithLocalAsync(
+        /// <summary>Записывает выбранный локальный снимок поверх актуальной облачной версии.</summary>
+        internal async Task<CloudSaveConflictResolutionOutcome<CloudSaveWriteResult>> TryResolveWithLocalAsync(
             CancellationToken operationToken)
         {
             // Проверяем активный конфликт и владельца до сетевого вызова.
@@ -132,7 +134,7 @@ namespace GameManagement.CloudSave
                 !_accountService.TryGetLinkedPlayerId(out var playerId) ||
                 !string.Equals(conflict.LocalSnapshot.PlayerId, playerId, StringComparison.Ordinal))
             {
-                return null;
+                return CloudSaveConflictResolutionOutcome<CloudSaveWriteResult>.Failure(conflict);
             }
 
             // Блокируем параллельный выбор и загружаем актуальную cloud revision.
@@ -142,18 +144,18 @@ namespace GameManagement.CloudSave
             {
                 latestCloud = await _gateway.LoadSnapshotAsync();
                 if (!IsOperationCurrent(playerId, operationToken))
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveWriteResult>.Failure(conflict);
 
                 // Отклоняем отсутствующую или чужую cloud-ветку.
                 if (latestCloud == null ||
                     !string.Equals(latestCloud.Snapshot.PlayerId, playerId, StringComparison.Ordinal))
                 {
                     Debug.LogError("[CloudSave] Local conflict choice failed: current cloud unavailable.");
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveWriteResult>.Failure(conflict);
                 }
 
                 if (!ReferenceEquals(CurrentConflict, conflict))
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveWriteResult>.Failure(conflict);
 
                 // Перебазируем local-ветку и сохраняем её до отправки.
                 conflict.LocalSnapshot.BaseRevision = latestCloud.ServerRevision;
@@ -163,16 +165,18 @@ namespace GameManagement.CloudSave
                 var result = await _gateway.SaveSnapshotAsync(conflict.LocalSnapshot)
                     ?? throw new InvalidOperationException("Cloud Save returned no write result.");
                 if (!IsOperationCurrent(playerId, operationToken))
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveWriteResult>.Failure(conflict);
 
                 Debug.Log("[CloudSave] Local conflict choice uploaded.");
-                return result;
+                return CloudSaveConflictResolutionOutcome<CloudSaveWriteResult>.Success(
+                    conflict,
+                    result);
             }
             catch (Exception exception)
             {
                 // Устаревшая операция завершается без изменения текущего конфликта.
                 if (!IsOperationCurrent(playerId, operationToken))
-                    return null;
+                    return CloudSaveConflictResolutionOutcome<CloudSaveWriteResult>.Failure(conflict);
 
                 // Сохраняем последнюю прочитанную cloud-ветку для повторного выбора.
                 if (latestCloud != null)
@@ -183,7 +187,7 @@ namespace GameManagement.CloudSave
                 }
 
                 Debug.LogError($"[CloudSave] Local conflict choice failed ({exception.GetType().Name}).");
-                return null;
+                return CloudSaveConflictResolutionOutcome<CloudSaveWriteResult>.Failure(conflict);
             }
             finally
             {
