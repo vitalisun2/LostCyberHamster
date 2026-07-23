@@ -23,9 +23,6 @@ namespace LostCyberHamster.Editor.Testing
     /// <summary>Пошагово выполняет Cloud Save E2E-сценарии в Play Mode.</summary>
     public sealed class CloudSaveE2ERunner
     {
-        /// <summary>Пауза между автоматическими шагами.</summary>
-        private const int StepDelayMilliseconds = 500;
-
         /// <summary>Интервал проверки ожидаемого результата.</summary>
         private const int PollDelayMilliseconds = 200;
 
@@ -72,6 +69,9 @@ namespace LostCyberHamster.Editor.Testing
 
         /// <summary>Показывает, что тест ждёт действие вне окна Testing.</summary>
         private bool _waitsForExternalAction;
+
+        /// <summary>Продолжает текущий шаг после подтверждения.</summary>
+        private TaskCompletionSource<bool> _stepContinuation;
 
         /// <summary>Игрок текущего сценария.</summary>
         private string _playerId;
@@ -163,6 +163,15 @@ namespace LostCyberHamster.Editor.Testing
 
             State = CloudSaveE2ERunState.Running;
             Changed?.Invoke();
+
+            if (_stepContinuation != null)
+            {
+                var continuation = _stepContinuation;
+                _stepContinuation = null;
+                continuation.TrySetResult(true);
+                return;
+            }
+
             _ = RunContinueAsync(_runVersion, _cancellation.Token);
         }
 
@@ -794,7 +803,12 @@ namespace LostCyberHamster.Editor.Testing
             if (HasPlayerAccountClientId())
                 return;
 
-            SettingsService.OpenProjectSettings(PlayerAccountProjectSettings);
+            await RunStepAsync("Открываем настройки Unity Player Accounts.", () =>
+            {
+                SettingsService.OpenProjectSettings(
+                    PlayerAccountProjectSettings);
+            }, token);
+
             await WaitForExternalActionAsync(
                 "Настройте Unity Player Accounts Client ID. Тест продолжится сам.",
                 HasPlayerAccountClientId,
@@ -908,7 +922,7 @@ namespace LostCyberHamster.Editor.Testing
                     return cloudSave;
                 }
 
-                await Task.Delay(StepDelayMilliseconds, token);
+                await Task.Delay(PollDelayMilliseconds, token);
             }
 
             throw new TimeoutException(
@@ -981,19 +995,18 @@ namespace LostCyberHamster.Editor.Testing
             }
         }
 
-        /// <summary>Выполняет асинхронный шаг после короткой паузы.</summary>
+        /// <summary>Выполняет асинхронный шаг после подтверждения.</summary>
         private async Task RunStepAsync(
             string description,
             Func<Task> action,
             CancellationToken token)
         {
             WriteStep(description);
-            await Task.Delay(StepDelayMilliseconds, token);
-            token.ThrowIfCancellationRequested();
+            await WaitForStepConfirmationAsync(token);
             await action();
         }
 
-        /// <summary>Выполняет обычный шаг после короткой паузы.</summary>
+        /// <summary>Выполняет обычный шаг после подтверждения.</summary>
         private Task RunStepAsync(
             string description,
             Action action,
@@ -1007,6 +1020,27 @@ namespace LostCyberHamster.Editor.Testing
                     return Task.CompletedTask;
                 },
                 token);
+        }
+
+        /// <summary>Ждёт подтверждение текущего шага.</summary>
+        private async Task WaitForStepConfirmationAsync(CancellationToken token)
+        {
+            var continuation = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            _stepContinuation = continuation;
+            State = CloudSaveE2ERunState.WaitingForUser;
+            Changed?.Invoke();
+
+            try
+            {
+                await continuation.Task;
+                token.ThrowIfCancellationRequested();
+            }
+            finally
+            {
+                if (_stepContinuation == continuation)
+                    _stepContinuation = null;
+            }
         }
 
         /// <summary>Переводит сценарий в ожидание пользователя.</summary>
@@ -1074,6 +1108,9 @@ namespace LostCyberHamster.Editor.Testing
         private void StopCurrentRun()
         {
             _cancellation?.Cancel();
+            var continuation = _stepContinuation;
+            _stepContinuation = null;
+            continuation?.TrySetCanceled();
             _cancellation?.Dispose();
             _cancellation = null;
             _waitsForExternalAction = false;
