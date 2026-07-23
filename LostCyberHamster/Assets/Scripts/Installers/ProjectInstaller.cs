@@ -46,6 +46,7 @@ namespace Assets.Scripts.Installers
                 .To<CloudSaveVersionStore_>()
                 .AsSingle();
             Container.Bind<SnapshotService_>().AsSingle();
+            Container.Bind<ConflictService_>().AsSingle();
             Container.Bind<CloudSyncService_>().AsSingle().NonLazy();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             // Добавляем меню тестовых инструментов только в редакторе и development-сборках.

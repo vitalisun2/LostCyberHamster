@@ -2,7 +2,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using GameManagement;
-using GameManagement.CloudSave;
+using GameManagement.CloudSave_;
+using GameManagement.CloudSave_.Models;
 using UnityEngine;
 
 namespace LostCyberHamster.UI
@@ -11,7 +12,7 @@ namespace LostCyberHamster.UI
     public sealed class CloudSaveConflictCoordinator
     {
         private readonly UIManager _uiManager;
-        private readonly CloudSyncService _cloudSyncService;
+        private readonly ConflictService_ _conflictService;
         private readonly CloudSaveConflictModalController _modalController;
 
         private bool _isEnabled;
@@ -19,10 +20,12 @@ namespace LostCyberHamster.UI
         private bool _isShowInProgress;
         private bool _isResolutionInProgress;
 
-        public CloudSaveConflictCoordinator(UIManager uiManager, CloudSyncService cloudSyncService)
+        public CloudSaveConflictCoordinator(
+            UIManager uiManager,
+            ConflictService_ conflictService)
         {
             _uiManager = uiManager ?? throw new ArgumentNullException(nameof(uiManager));
-            _cloudSyncService = cloudSyncService ?? throw new ArgumentNullException(nameof(cloudSyncService));
+            _conflictService = conflictService ?? throw new ArgumentNullException(nameof(conflictService));
             _modalController = uiManager.GetController<CloudSaveConflictModalController>();
         }
 
@@ -33,7 +36,7 @@ namespace LostCyberHamster.UI
                 return;
 
             _isEnabled = true;
-            _cloudSyncService.ConflictDetected += OnConflictDetected;
+            _conflictService.ConflictDetected += OnConflictDetected;
             _modalController.CloudSelected += OnCloudSelected;
             _modalController.ThisDeviceSelected += OnThisDeviceSelected;
             PresentCurrentConflict();
@@ -46,12 +49,12 @@ namespace LostCyberHamster.UI
                 return;
 
             _isEnabled = false;
-            _cloudSyncService.ConflictDetected -= OnConflictDetected;
+            _conflictService.ConflictDetected -= OnConflictDetected;
             _modalController.CloudSelected -= OnCloudSelected;
             _modalController.ThisDeviceSelected -= OnThisDeviceSelected;
         }
 
-        private void OnConflictDetected(CloudSaveConflictModel _)
+        private void OnConflictDetected(CloudSaveConflict_ _)
         {
             if (!_isResolutionInProgress)
                 PresentCurrentConflict();
@@ -59,17 +62,17 @@ namespace LostCyberHamster.UI
 
         private void OnCloudSelected()
         {
-            _ = ResolveAsync(_cloudSyncService.ResolveConflictWithCloudAsync);
+            _ = ResolveAsync(_conflictService.ResolveWithCloudAsync);
         }
 
         private void OnThisDeviceSelected()
         {
-            _ = ResolveAsync(_cloudSyncService.ResolveConflictWithLocalAsync);
+            _ = ResolveAsync(_conflictService.ResolveWithLocalAsync);
         }
 
         private void PresentCurrentConflict()
         {
-            var conflict = _cloudSyncService.CurrentConflict;
+            var conflict = _conflictService.CurrentConflict;
             if (!_isEnabled || conflict == null)
                 return;
 
@@ -86,14 +89,14 @@ namespace LostCyberHamster.UI
             try
             {
                 await _uiManager.ShowModalAsync(ScreenEnum.CloudSaveConflictModal);
-                if (!_isEnabled || _cloudSyncService.CurrentConflict == null)
+                if (!_isEnabled || _conflictService.CurrentConflict == null)
                 {
                     _modalController.Close();
                     return;
                 }
 
                 _isVisible = true;
-                _modalController.SetData(CreateModalData(_cloudSyncService.CurrentConflict));
+                _modalController.SetData(CreateModalData(_conflictService.CurrentConflict));
             }
             catch (Exception exception)
             {
@@ -105,7 +108,7 @@ namespace LostCyberHamster.UI
             }
         }
 
-        private async Task ResolveAsync(Func<Task<bool>> resolve)
+        private async Task ResolveAsync(Func<Task> resolve)
         {
             if (!_isEnabled || !_isVisible || _isResolutionInProgress)
                 return;
@@ -115,15 +118,10 @@ namespace LostCyberHamster.UI
 
             try
             {
-                if (await resolve())
-                {
-                    _isVisible = false;
-                    _modalController.Close();
-                    UIManager.OnRepaintScreen?.Invoke();
-                    return;
-                }
-
-                PresentCurrentConflict();
+                await resolve();
+                _isVisible = false;
+                _modalController.Close();
+                UIManager.OnRepaintScreen?.Invoke();
             }
             catch (Exception exception)
             {
@@ -138,29 +136,22 @@ namespace LostCyberHamster.UI
             }
         }
 
-        private static CloudSaveConflictModalDto CreateModalData(CloudSaveConflictModel conflict)
+        private static CloudSaveConflictModalDto CreateModalData(CloudSaveConflict_ conflict)
         {
             return new CloudSaveConflictModalDto(
-                CreateCard(conflict.CloudSnapshot, conflict.CloudVersion.ServerModifiedAtUtc),
-                CreateCard(conflict.LocalSnapshot, ParseSavedAt(conflict.LocalSnapshot.SavedAtUtc)));
+                CreateCard(conflict.CloudSave.Snapshot),
+                CreateCard(conflict.LocalSnapshot));
         }
 
-        private static CloudSaveConflictCardDto CreateCard(CloudSaveSnapshotDto snapshot, DateTime savedAt)
+        private static CloudSaveConflictCardDto CreateCard(CloudSaveSnapshot_ snapshot)
         {
-            var playerData = CloudSaveSnapshotCodec.RestorePlayerData(snapshot);
+            var playerData = PlayerData.FromJson(snapshot.PlayerDataJson);
             var completedLevels = playerData.Progress.Entries.Count(entry => entry.IsCompleted);
             return new CloudSaveConflictCardDto(
                 completedLevels,
                 playerData.Money,
                 playerData.Crystals,
-                savedAt);
-        }
-
-        private static DateTime ParseSavedAt(string value)
-        {
-            return DateTime.TryParse(value, null, System.Globalization.DateTimeStyles.RoundtripKind, out var savedAt)
-                ? savedAt
-                : DateTime.MinValue;
+                snapshot.SavedAtUtc);
         }
     }
 }

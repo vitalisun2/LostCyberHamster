@@ -22,6 +22,9 @@ namespace GameManagement.CloudSave_
         /// <summary>Управляет локальным снимком.</summary>
         private readonly SnapshotService_ _snapshotService;
 
+        /// <summary>Управляет конфликтом прогресса.</summary>
+        private readonly ConflictService_ _conflictService;
+
         /// <summary>Не допускает параллельные отправки.</summary>
         private bool _isUploadActive;
 
@@ -32,13 +35,15 @@ namespace GameManagement.CloudSave_
             AccountService accountService,
             ICloudSaveVersionStore_ versionStore,
             ICloudSaveGateway_ gateway,
-            SnapshotService_ snapshotService)
+            SnapshotService_ snapshotService,
+            ConflictService_ conflictService)
         {
             // Сохраняем зависимости.
             _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
             _versionStore = versionStore ?? throw new ArgumentNullException(nameof(versionStore));
             _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
             _snapshotService = snapshotService ?? throw new ArgumentNullException(nameof(snapshotService));
+            _conflictService = conflictService ?? throw new ArgumentNullException(nameof(conflictService));
 
             // Подписываемся на события.
             _accountService.CurrentGuestLinked += OnAccountLinked;
@@ -184,7 +189,9 @@ namespace GameManagement.CloudSave_
                     break;
 
                 case CloudSyncStateEnum_.Conflict:
-                    // Разрешение конфликта добавим позже.
+                    _conflictService.SetConflict(
+                        _snapshotService.Snapshot,
+                        cloudSave);
                     break;
 
                 case CloudSyncStateEnum_.Synchronized:
