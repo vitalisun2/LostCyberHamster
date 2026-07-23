@@ -108,13 +108,16 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Описание текущего шага.</summary>
         public string CurrentStep { get; private set; } = string.Empty;
 
+        /// <summary>Результат текущего шага.</summary>
+        public string CurrentResult { get; private set; } = string.Empty;
+
         /// <summary>Показывает, можно ли продолжить ручной этап.</summary>
         public bool CanContinue =>
             State == CloudSaveE2ERunState.WaitingForUser &&
             !_waitsForExternalAction;
 
         /// <summary>Пауза между автоматическими шагами в секундах.</summary>
-        public int StepDelaySeconds { get; set; } = 2;
+        public int StepDelaySeconds { get; set; } = 3;
 
         /// <summary>Показывает, выполняется ли сценарий.</summary>
         public bool IsActive =>
@@ -137,12 +140,13 @@ namespace LostCyberHamster.Editor.Testing
             CurrentScenario = scenario;
             HasScenario = true;
             State = CloudSaveE2ERunState.Running;
+            CurrentResult = string.Empty;
             WriteStep($"Запущен сценарий: {CloudSaveE2EScenarioCatalog.GetTitle(scenario)}.");
 
             // Подключаемся только к работающей игре.
             if (!EditorApplication.isPlaying)
             {
-                Fail("Сценарий доступен только в Play Mode.");
+                Fail("Сначала запустите игру в Unity Editor.");
                 return;
             }
 
@@ -178,7 +182,7 @@ namespace LostCyberHamster.Editor.Testing
             StopCurrentRun();
             _runVersion++;
             State = CloudSaveE2ERunState.Cancelled;
-            WriteStep("Сценарий отменён.");
+            WriteResult("Сценарий отменён.");
         }
 
         /// <summary>Запускает начальные шаги выбранного сценария.</summary>
@@ -277,26 +281,26 @@ namespace LostCyberHamster.Editor.Testing
                 token,
                 requireNewAccount: true);
 
-            await RunStepAsync("Ждём завершения первого сохранения.", async () =>
+            await RunStepAsync("Ждём первое сохранение в облаке.", async () =>
             {
                 await WaitForSavedCloudAsync(token);
-            }, token);
+            }, () => "Первое сохранение появилось в облаке.", token);
 
-            await RunStepAsync("Проверяем сохранённый снимок.", async () =>
+            await RunStepAsync("Сравниваем прогресс устройства и облака.", async () =>
             {
                 RequireLinkedPlayer();
                 var cloudSave = await LoadCloudAsync(token);
-                Require(cloudSave != null, "Облачный снимок не создан.");
+                Require(cloudSave != null, "Первое облачное сохранение не создано.");
                 Require(
                     cloudSave.Snapshot.PlayerId == _playerId,
-                    "Облачный снимок принадлежит другому игроку.");
+                    "Облачное сохранение относится к другому аккаунту.");
                 RequirePlayerDataEqual(
                     cloudSave.Snapshot.PlayerDataJson,
                     GameDataManager.PlayerData.ToJson(),
                     "Облако не совпадает с текущим прогрессом.");
                 RequireConfirmedVersion(cloudSave);
                 RequireSavedState();
-            }, token);
+            }, () => "Прогресс устройства полностью сохранён в облаке.", token);
 
             Pass();
         }
@@ -304,31 +308,31 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Проверяет автоматическую синхронизацию.</summary>
         private async Task RunAutomaticSynchronizationAsync(CancellationToken token)
         {
-            await RunStepAsync("Проверяем исходное сохранение.", async () =>
+            await RunStepAsync("Проверяем текущий прогресс в облаке.", async () =>
             {
                 var cloudSave = await EnsureSavedCloudAsync(token);
                 _initialRevision = cloudSave.Version.ServerRevision;
                 _expectedMoney = GameDataManager.PlayerData.Money + 1;
-            }, token);
+            }, () => "Текущий прогресс уже сохранён в облаке.", token);
 
-            await RunStepAsync("Меняем прогресс и создаём checkpoint.", () =>
+            await RunStepAsync("Добавляем монету и сохраняем игру.", () =>
             {
                 GameDataManager.PlayerData.Money = _expectedMoney;
                 PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
-            }, token);
+            }, () => $"На устройстве сохранено {_expectedMoney} монет.", token);
 
             await WaitForNewSavedRevisionAsync(token);
 
-            await RunStepAsync("Проверяем новый снимок в облаке.", async () =>
+            await RunStepAsync("Проверяем новый прогресс в облаке.", async () =>
             {
                 var cloudSave = await LoadCloudAsync(token);
-                Require(cloudSave != null, "Новый облачный снимок не найден.");
+                Require(cloudSave != null, "Новый прогресс не появился в облаке.");
                 Require(
                     GetMoney(cloudSave.Snapshot.PlayerDataJson) == _expectedMoney,
                     "Облако не получило новое количество монет.");
                 RequireConfirmedVersion(cloudSave);
                 RequireSavedState();
-            }, token);
+            }, () => $"В облаке сохранено {_expectedMoney} монет.", token);
 
             Pass();
         }
@@ -336,15 +340,15 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Готовит проверку отложенной синхронизации.</summary>
         private async Task PrepareDeferredSynchronizationAsync(CancellationToken token)
         {
-            await RunStepAsync("Проверяем исходное сохранение.", async () =>
+            await RunStepAsync("Проверяем текущий прогресс в облаке.", async () =>
             {
                 var cloudSave = await EnsureSavedCloudAsync(token);
                 _initialRevision = cloudSave.Version.ServerRevision;
                 _expectedMoney = GameDataManager.PlayerData.Money + 1;
-            }, token);
+            }, () => "Текущий прогресс уже сохранён в облаке.", token);
 
             WaitForUser(
-                "Отключите сеть. Затем нажмите Continue, чтобы создать новое сохранение.");
+                "Отключите интернет и нажмите Continue. Игра сохранит новый прогресс на устройстве.");
         }
 
         /// <summary>Продолжает проверку отложенной синхронизации.</summary>
@@ -352,44 +356,44 @@ namespace LostCyberHamster.Editor.Testing
         {
             if (_manualStage == 0)
             {
-                await RunStepAsync("Создаём сохранение без сети.", () =>
+                await RunStepAsync("Добавляем монету и сохраняем игру без сети.", () =>
                 {
                     GameDataManager.PlayerData.Money = _expectedMoney;
                     PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
-                }, token);
+                }, () => $"На устройстве сохранено {_expectedMoney} монет.", token);
 
-                await RunStepAsync("Проверяем сохранённый pending.", async () =>
+                await RunStepAsync("Проверяем, что прогресс ждёт отправки.", async () =>
                 {
                     await WaitUntilAsync(
                         () => _snapshotService.Snapshot != null &&
                               _cloudSyncService.Status == CloudSyncStatusEnum.Pending,
-                        "Pending не был сохранён.",
+                        "Прогресс не остался на устройстве для последующей отправки.",
                         token);
-                }, token);
+                }, () => "Прогресс сохранён на устройстве и ждёт отправки.", token);
 
                 _manualStage = 1;
                 WaitForUser(
-                    "Включите сеть. Затем нажмите Continue, чтобы повторить отправку.");
+                    "Включите интернет и нажмите Continue. Игра повторит отправку прогресса в облако.");
                 return;
             }
 
-            await RunStepAsync("Повторяем синхронизацию после возврата сети.", () =>
+            await RunStepAsync("Повторно сохраняем прогресс после включения интернета.", () =>
             {
                 PlayerProgressLifecycleCheckpoint.HandleApplicationPause(isPaused: false);
-            }, token);
+            }, () => "Игра снова отправляет прогресс в облако.", token);
 
             await WaitForNewSavedRevisionAsync(token);
 
-            await RunStepAsync("Проверяем отправленный pending.", async () =>
+            await RunStepAsync("Проверяем прогресс в облаке.", async () =>
             {
                 var cloudSave = await LoadCloudAsync(token);
-                Require(cloudSave != null, "Облачный снимок не найден.");
+                Require(cloudSave != null, "Облачное сохранение не найдено.");
                 Require(
                     GetMoney(cloudSave.Snapshot.PlayerDataJson) == _expectedMoney,
                     "Ожидающий прогресс не попал в облако.");
                 RequireConfirmedVersion(cloudSave);
                 RequireSavedState();
-            }, token);
+            }, () => $"В облаке сохранено {_expectedMoney} монет.", token);
 
             Pass();
         }
@@ -401,12 +405,12 @@ namespace LostCyberHamster.Editor.Testing
                 unlinkServerAccount: false,
                 token);
 
-            await RunStepAsync("Создаём отдельный прогресс гостя.", () =>
+            await RunStepAsync("Добавляем гостю семь монет перед входом.", () =>
             {
                 GameDataManager.PlayerData.Money += 7;
                 PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
                 _initialLocalPlayerDataJson = GameDataManager.PlayerData.ToJson();
-            }, token);
+            }, () => $"Гостевой прогресс сохранён: {GameDataManager.PlayerData.Money} монет.", token);
 
             await OpenSettingsAndWaitForLinkedAccountAsync(token);
             await VerifyRestoreProgressAsync(token);
@@ -415,7 +419,7 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Проверяет восстановленный прогресс.</summary>
         private async Task VerifyRestoreProgressAsync(CancellationToken token)
         {
-            await RunStepAsync("Ждём завершения входа и восстановления.", async () =>
+            await RunStepAsync("Ждём восстановления прогресса аккаунта.", async () =>
             {
                 await WaitUntilAsync(
                     () => _accountService.TryGetLinkedPlayerId(out _) &&
@@ -423,9 +427,9 @@ namespace LostCyberHamster.Editor.Testing
                           _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
                     "Восстановление аккаунта не завершилось.",
                     token);
-            }, token);
+            }, () => "Вход завершён, прогресс аккаунта восстановлен.", token);
 
-            await RunStepAsync("Проверяем восстановленный прогресс.", async () =>
+            await RunStepAsync("Сравниваем прогресс устройства и облака.", async () =>
             {
                 RequireLinkedPlayer();
                 var cloudSave = await LoadCloudAsync(token);
@@ -442,7 +446,7 @@ namespace LostCyberHamster.Editor.Testing
                     "Для теста нужен аккаунт с прогрессом, отличным от гостевого.");
                 RequireConfirmedVersion(cloudSave);
                 RequireSavedState();
-            }, token);
+            }, () => $"На устройстве восстановлено {GameDataManager.PlayerData.Money} монет.", token);
 
             Pass();
         }
@@ -450,51 +454,71 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Проверяет получение прогресса другого устройства.</summary>
         private async Task RunMultipleDevicesAsync(CancellationToken token)
         {
-            await RunStepAsync("Создаём виртуальные устройства A и B.", async () =>
-            {
-                var cloudSave = await EnsureSavedCloudAsync(token);
-                _initialRevision = cloudSave.Version.ServerRevision;
-                _virtualDevices.Initialize(_playerId);
-                _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceB);
-                _expectedMoney = GameDataManager.PlayerData.Money + 10;
-            }, token);
+            await RunStepAsync(
+                "Готовим два устройства с одинаковым прогрессом.",
+                async () =>
+                {
+                    var cloudSave = await EnsureSavedCloudAsync(token);
+                    _initialRevision = cloudSave.Version.ServerRevision;
+                    _virtualDevices.Initialize(_playerId);
+                    _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceB);
+                    _expectedMoney = GameDataManager.PlayerData.Money + 10;
+                },
+                () => "Оба устройства начинают с одного сохранения.",
+                token);
 
-            await RunStepAsync("Устройство B сохраняет новый прогресс.", () =>
-            {
-                GameDataManager.PlayerData.Money = _expectedMoney;
-                PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
-            }, token);
+            await RunStepAsync(
+                "На устройстве B зарабатываем 10 монет.",
+                () =>
+                {
+                    GameDataManager.PlayerData.Money = _expectedMoney;
+                    PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+                },
+                () => $"На устройстве B стало {_expectedMoney} монет.",
+                token);
 
             await WaitForNewSavedRevisionAsync(token);
 
-            await RunStepAsync("Запоминаем состояние B и возвращаемся на A.", async () =>
-            {
-                var cloudSave = await LoadCloudAsync(token);
-                Require(cloudSave != null, "Устройство B не обновило облако.");
-                _expectedCloudPlayerDataJson = cloudSave.Snapshot.PlayerDataJson;
-                _initialRevision = cloudSave.Version.ServerRevision;
-                _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceA);
-            }, token);
+            await RunStepAsync(
+                "Возвращаемся на устройство A.",
+                async () =>
+                {
+                    var cloudSave = await LoadCloudAsync(token);
+                    Require(cloudSave != null, "Устройство B не обновило облако.");
+                    _expectedCloudPlayerDataJson = cloudSave.Snapshot.PlayerDataJson;
+                    _initialRevision = cloudSave.Version.ServerRevision;
+                    _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceA);
+                },
+                () => "Устройство A открыто со старым прогрессом.",
+                token);
 
-            await RunStepAsync("Устройство A проверяет облако.", () =>
-            {
-                PlayerProgressLifecycleCheckpoint.HandleApplicationPause(isPaused: false);
-            }, token);
+            await RunStepAsync(
+                "Проверяем, появился ли на устройстве A прогресс с устройства B.",
+                () =>
+                {
+                    PlayerProgressLifecycleCheckpoint.HandleApplicationPause(isPaused: false);
+                },
+                () => "Устройство A начало загружать изменения из облака.",
+                token);
 
-            await RunStepAsync("Проверяем применение прогресса B.", async () =>
-            {
-                await WaitUntilAsync(
-                    () => string.Equals(
-                              _versionStore.GetConfirmedRevision(_playerId),
-                              _initialRevision,
-                              StringComparison.Ordinal) &&
-                          ArePlayerDataEqual(
-                              GameDataManager.PlayerData.ToJson(),
-                              _expectedCloudPlayerDataJson),
-                    "Устройство A не приняло прогресс устройства B.",
-                    token);
-                RequireSavedState();
-            }, token);
+            await RunStepAsync(
+                "Ждём прогресс устройства B на устройстве A.",
+                async () =>
+                {
+                    await WaitUntilAsync(
+                        () => string.Equals(
+                                  _versionStore.GetConfirmedRevision(_playerId),
+                                  _initialRevision,
+                                  StringComparison.Ordinal) &&
+                              ArePlayerDataEqual(
+                                  GameDataManager.PlayerData.ToJson(),
+                                  _expectedCloudPlayerDataJson),
+                        "Устройство A не приняло прогресс устройства B.",
+                        token);
+                    RequireSavedState();
+                },
+                () => "Устройство A получило прогресс устройства B.",
+                token);
 
             Pass();
         }
@@ -502,101 +526,131 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Создаёт конфликт двух виртуальных устройств.</summary>
         private async Task PrepareConflictAsync(CancellationToken token)
         {
-            await RunStepAsync("Создаём одинаковые устройства A и B.", async () =>
-            {
-                var cloudSave = await EnsureSavedCloudAsync(token);
-                _initialRevision = cloudSave.Version.ServerRevision;
-                _virtualDevices.Initialize(_playerId);
-                _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceB);
-                _expectedMoney = GameDataManager.PlayerData.Money + 100;
-            }, token);
+            await RunStepAsync(
+                "Готовим два устройства с одинаковым прогрессом.",
+                async () =>
+                {
+                    var cloudSave = await EnsureSavedCloudAsync(token);
+                    _initialRevision = cloudSave.Version.ServerRevision;
+                    _virtualDevices.Initialize(_playerId);
+                    _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceB);
+                    _expectedMoney = GameDataManager.PlayerData.Money + 100;
+                },
+                () => "Оба устройства начинают с одного сохранения.",
+                token);
 
-            await RunStepAsync("Устройство B меняет облачный прогресс.", () =>
-            {
-                GameDataManager.PlayerData.Money = _expectedMoney;
-                PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
-            }, token);
+            await RunStepAsync(
+                "На устройстве B зарабатываем 100 монет.",
+                () =>
+                {
+                    GameDataManager.PlayerData.Money = _expectedMoney;
+                    PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+                },
+                () => $"На устройстве B стало {_expectedMoney} монет.",
+                token);
 
             await WaitForNewSavedRevisionAsync(token);
 
-            await RunStepAsync("Возвращаем старое состояние устройства A.", async () =>
-            {
-                var cloudSave = await LoadCloudAsync(token);
-                Require(cloudSave != null, "Устройство B не обновило облако.");
-                _expectedCloudPlayerDataJson = cloudSave.Snapshot.PlayerDataJson;
-                _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceA);
-            }, token);
+            await RunStepAsync(
+                "Возвращаемся на устройство A.",
+                async () =>
+                {
+                    var cloudSave = await LoadCloudAsync(token);
+                    Require(cloudSave != null, "Устройство B не обновило облако.");
+                    _expectedCloudPlayerDataJson = cloudSave.Snapshot.PlayerDataJson;
+                    _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceA);
+                },
+                () => "Устройство A открыто со старым прогрессом.",
+                token);
 
-            await RunStepAsync("Устройство A создаёт локальное изменение.", () =>
-            {
-                GameDataManager.PlayerData.Crystals++;
-                PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
-            }, token);
+            await RunStepAsync(
+                "На устройстве A получаем один кристалл.",
+                () =>
+                {
+                    GameDataManager.PlayerData.Crystals++;
+                    PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+                },
+                () => "На обоих устройствах теперь разные изменения.",
+                token);
 
-            await RunStepAsync("Проверяем конфликт и окно выбора.", async () =>
-            {
-                await WaitUntilAsync(
-                    () => _conflictService.CurrentConflict != null &&
-                          _cloudSyncService.Status == CloudSyncStatusEnum.Conflict,
-                    "Конфликт не был обнаружен.",
-                    token);
+            await RunStepAsync(
+                "Ждём предложение выбрать сохранение.",
+                async () =>
+                {
+                    await WaitUntilAsync(
+                        () => _conflictService.CurrentConflict != null &&
+                              _cloudSyncService.Status == CloudSyncStatusEnum.Conflict,
+                        "Игра не предложила выбрать между прогрессом устройства и облака.",
+                        token);
 
-                var conflict = _conflictService.CurrentConflict;
-                _expectedLocalPlayerDataJson = conflict.LocalSnapshot.PlayerDataJson;
-                await WaitUntilAsync(
-                    () => IsElementShown(FindElement<Button>("cloud-conflict__choose-cloud")) &&
-                          IsElementShown(FindElement<Button>("cloud-conflict__choose-device")),
-                    "Окно выбора конфликта не открылось.",
-                    token);
-            }, token);
+                    var conflict = _conflictService.CurrentConflict;
+                    _expectedLocalPlayerDataJson = conflict.LocalSnapshot.PlayerDataJson;
+                    await WaitUntilAsync(
+                        () => IsElementShown(FindElement<Button>("cloud-conflict__choose-cloud")) &&
+                              IsElementShown(FindElement<Button>("cloud-conflict__choose-device")),
+                        "Окно выбора конфликта не открылось.",
+                        token);
+                },
+                () => "Игра показала выбор между облаком и устройством.",
+                token);
 
             var choice = CurrentScenario == CloudSaveE2EScenario.ConflictChooseCloud
                 ? "облачный прогресс"
                 : "прогресс устройства";
             WaitForUser(
-                $"В открытом окне выберите {choice}. После завершения нажмите Continue.");
+                $"В окне выбора сохранения выберите {choice}, дождитесь закрытия окна и нажмите Continue.");
         }
 
         /// <summary>Проверяет выбранное разрешение конфликта.</summary>
         private async Task VerifyConflictResolutionAsync(CancellationToken token)
         {
-            await RunStepAsync("Ждём завершения выбора.", async () =>
-            {
-                await WaitUntilAsync(
-                    () => _conflictService.CurrentConflict == null &&
-                          _snapshotService.Snapshot == null &&
-                          _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
-                    "Конфликт не был завершён.",
-                    token);
-            }, token);
-
-            await RunStepAsync("Проверяем выбранный прогресс.", async () =>
-            {
-                if (CurrentScenario == CloudSaveE2EScenario.ConflictChooseCloud)
+            await RunStepAsync(
+                "Ждём применения выбора игрока.",
+                async () =>
                 {
-                    RequirePlayerDataEqual(
-                        GameDataManager.PlayerData.ToJson(),
-                        _expectedCloudPlayerDataJson,
-                        "На устройстве не применён облачный прогресс.");
-                }
-                else
+                    await WaitUntilAsync(
+                        () => _conflictService.CurrentConflict == null &&
+                              _snapshotService.Snapshot == null &&
+                              _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
+                        "Конфликт не был завершён.",
+                        token);
+                },
+                () => "Выбор применён, окно закрыто.",
+                token);
+
+            await RunStepAsync(
+                "Проверяем выбранный прогресс.",
+                async () =>
                 {
-                    RequirePlayerDataEqual(
-                        GameDataManager.PlayerData.ToJson(),
-                        _expectedLocalPlayerDataJson,
-                        "На устройстве изменился выбранный локальный прогресс.");
+                    if (CurrentScenario == CloudSaveE2EScenario.ConflictChooseCloud)
+                    {
+                        RequirePlayerDataEqual(
+                            GameDataManager.PlayerData.ToJson(),
+                            _expectedCloudPlayerDataJson,
+                            "На устройстве не применён облачный прогресс.");
+                    }
+                    else
+                    {
+                        RequirePlayerDataEqual(
+                            GameDataManager.PlayerData.ToJson(),
+                            _expectedLocalPlayerDataJson,
+                            "На устройстве изменился выбранный локальный прогресс.");
 
-                    var cloudSave = await LoadCloudAsync(token);
-                    Require(cloudSave != null, "Облачный снимок не найден.");
-                    RequirePlayerDataEqual(
-                        cloudSave.Snapshot.PlayerDataJson,
-                        _expectedLocalPlayerDataJson,
-                        "Локальный прогресс не записан в облако.");
-                    RequireConfirmedVersion(cloudSave);
-                }
+                        var cloudSave = await LoadCloudAsync(token);
+                        Require(cloudSave != null, "Облачное сохранение не найдено.");
+                        RequirePlayerDataEqual(
+                            cloudSave.Snapshot.PlayerDataJson,
+                            _expectedLocalPlayerDataJson,
+                            "Локальный прогресс не записан в облако.");
+                        RequireConfirmedVersion(cloudSave);
+                    }
 
-                RequireSavedState();
-            }, token);
+                    RequireSavedState();
+                },
+                () => CurrentScenario == CloudSaveE2EScenario.ConflictChooseCloud
+                    ? "На устройстве сохранён выбранный облачный прогресс."
+                    : "Прогресс устройства сохранён и в игре, и в облаке.",
+                token);
 
             Pass();
         }
@@ -604,15 +658,19 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Готовит проверку статуса синхронизации.</summary>
         private async Task PrepareSynchronizationStatusAsync(CancellationToken token)
         {
-            await RunStepAsync("Проверяем исходное сохранение.", async () =>
-            {
-                var cloudSave = await EnsureSavedCloudAsync(token);
-                _initialRevision = cloudSave.Version.ServerRevision;
-                _expectedMoney = GameDataManager.PlayerData.Money + 1;
-            }, token);
+            await RunStepAsync(
+                "Проверяем текущий прогресс в облаке.",
+                async () =>
+                {
+                    var cloudSave = await EnsureSavedCloudAsync(token);
+                    _initialRevision = cloudSave.Version.ServerRevision;
+                    _expectedMoney = GameDataManager.PlayerData.Money + 1;
+                },
+                () => "Прогресс сохранён и готов к проверке.",
+                token);
 
             WaitForUser(
-                "Откройте Settings и оставьте окно открытым. Затем нажмите Continue.");
+                "Откройте настройки игры и оставьте их открытыми. Затем нажмите Continue.");
         }
 
         /// <summary>Проверяет статус во время отправки и после неё.</summary>
@@ -622,20 +680,24 @@ namespace LostCyberHamster.Editor.Testing
             var statusLabel = FindElement<Label>("settings__lbl-cloud-sync-status");
             Require(
                 statusRow != null && statusLabel != null,
-                "В Settings не найдена строка статуса.");
+                "В настройках не показано состояние облачного сохранения.");
             Require(
                 statusRow.resolvedStyle.display != DisplayStyle.None,
-                "Строка статуса в Settings скрыта.");
+                "Состояние облачного сохранения скрыто в настройках.");
 
             _observedStatuses.Clear();
             _cloudSyncService.StatusChanged += OnStatusChanged;
             try
             {
-                await RunStepAsync("Запускаем синхронизацию прогресса.", () =>
-                {
-                    GameDataManager.PlayerData.Money = _expectedMoney;
-                    PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
-                }, token);
+                await RunStepAsync(
+                    "Зарабатываем одну монету.",
+                    () =>
+                    {
+                        GameDataManager.PlayerData.Money = _expectedMoney;
+                        PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+                    },
+                    () => "Игра начала сохранять новый прогресс.",
+                    token);
 
                 await WaitForNewSavedRevisionAsync(token);
             }
@@ -644,23 +706,27 @@ namespace LostCyberHamster.Editor.Testing
                 _cloudSyncService.StatusChanged -= OnStatusChanged;
             }
 
-            await RunStepAsync("Проверяем показанные статусы.", async () =>
-            {
-                Require(
-                    _observedStatuses.Contains(CloudSyncStatusEnum.Synchronizing),
-                    "Статус Synchronizing не был показан.");
+            await RunStepAsync(
+                "Проверяем сообщения о сохранении.",
+                async () =>
+                {
+                    Require(
+                        _observedStatuses.Contains(CloudSyncStatusEnum.Synchronizing),
+                        "Во время отправки игра не показала, что прогресс сохраняется.");
 
-                var savedText = LocalizationManager.GetLocalizedString(
-                    "cloud_sync_status_saved");
-                await WaitUntilAsync(
-                    () => statusLabel.text == savedText,
-                    "Settings не показал финальный статус Saved.",
-                    token);
-                Require(
-                    statusRow.resolvedStyle.display != DisplayStyle.None,
-                    "Строка статуса скрылась после синхронизации.");
-                RequireSavedState();
-            }, token);
+                    var savedText = LocalizationManager.GetLocalizedString(
+                        "cloud_sync_status_saved");
+                    await WaitUntilAsync(
+                        () => statusLabel.text == savedText,
+                        "После отправки настройки не показали, что прогресс сохранён.",
+                        token);
+                    Require(
+                        statusRow.resolvedStyle.display != DisplayStyle.None,
+                        "После отправки состояние облачного сохранения исчезло из настроек.");
+                    RequireSavedState();
+                },
+                () => "Игрок увидел начало и завершение сохранения.",
+                token);
 
             Pass();
         }
@@ -668,45 +734,55 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Ждёт новую подтверждённую версию и чистый pending.</summary>
         private Task WaitForNewSavedRevisionAsync(CancellationToken token)
         {
-            return RunStepAsync("Ждём подтверждения новой версии.", async () =>
-            {
-                await WaitUntilAsync(
-                    () => _snapshotService.Snapshot == null &&
-                          _cloudSyncService.Status == CloudSyncStatusEnum.Saved &&
-                          !string.Equals(
-                              _versionStore.GetConfirmedRevision(_playerId),
-                              _initialRevision,
-                              StringComparison.Ordinal),
-                    "Новая облачная версия не была подтверждена.",
-                    token);
-            }, token);
+            return RunStepAsync(
+                "Ждём сохранение нового прогресса в облаке.",
+                async () =>
+                {
+                    await WaitUntilAsync(
+                        () => _snapshotService.Snapshot == null &&
+                              _cloudSyncService.Status == CloudSyncStatusEnum.Saved &&
+                              !string.Equals(
+                                  _versionStore.GetConfirmedRevision(_playerId),
+                                  _initialRevision,
+                                  StringComparison.Ordinal),
+                        "Облако не подтвердило сохранение нового прогресса.",
+                        token);
+                },
+                () => "Новый прогресс сохранён в облаке.",
+                token);
         }
 
-        /// <summary>Ждёт готовое состояние аккаунта.</summary>
+        /// <summary>Готовит аккаунт к запуску теста.</summary>
         private Task EnsureAccountReadyAsync(CancellationToken token)
         {
-            return RunStepAsync("Проверяем состояние аккаунта.", async () =>
-            {
-                Require(
-                    _conflictService.CurrentConflict == null,
-                    "Сначала завершите текущий конфликт.");
+            return RunStepAsync(
+                "Определяем, как игрок вошёл в игру.",
+                async () =>
+                {
+                    Require(
+                        _conflictService.CurrentConflict == null,
+                        "Сначала выберите, какой прогресс сохранить в текущем конфликте.");
 
-                if (_accountService.State == AccountState.NotStarted)
-                    _accountService.Start();
+                    if (_accountService.State == AccountState.NotStarted)
+                        _accountService.Start();
 
-                await WaitUntilAsync(
-                    () => _accountService.State == AccountState.Guest ||
-                          _accountService.State == AccountState.Linked ||
-                          _accountService.State == AccountState.Error,
-                    "Аккаунт не завершил запуск.",
-                    token);
-                Require(
-                    _accountService.State != AccountState.Error,
-                    "Аккаунт завершил запуск с ошибкой.");
-            }, token);
+                    await WaitUntilAsync(
+                        () => _accountService.State == AccountState.Guest ||
+                              _accountService.State == AccountState.Linked ||
+                              _accountService.State == AccountState.Error,
+                        "Гостевой или связанный аккаунт не успел загрузиться.",
+                        token);
+                    Require(
+                        _accountService.State != AccountState.Error,
+                        "Не удалось загрузить гостевой или связанный аккаунт.");
+                },
+                () => _accountService.State == AccountState.Linked
+                    ? "Игрок продолжает с привязанным аккаунтом."
+                    : "Игрок продолжает как гость.",
+                token);
         }
 
-        /// <summary>Запускает сброс через игровой экран Dev Tools.</summary>
+        /// <summary>Удаляет привязку аккаунта или данные входа на устройстве.</summary>
         private async Task RunAccountResetThroughDevToolsAsync(
             bool fullReset,
             CancellationToken token)
@@ -714,42 +790,42 @@ namespace LostCyberHamster.Editor.Testing
             if (fullReset)
                 await EnsurePlayerAccountConfiguredAsync(token);
 
-            await RunStepAsync("Открываем сброс аккаунта в Dev Tools.", () =>
-            {
-                OpenDevToolsAccountScreen();
-            }, token);
+            OpenDevToolsAccountScreen();
 
             var buttonName = fullReset
                 ? "FullResetTestAccountButton"
                 : "ResetLocalAccountStateButton";
             var step = fullReset
-                ? "Запускаем Full Reset Linked Account."
-                : "Запускаем Local Account Reset.";
-            await RunStepAsync(step, () =>
-            {
-                ClickLegacyButton(buttonName);
-            }, token);
+                ? "Готовим игру как на новом устройстве."
+                : "Выходим из аккаунта на этом устройстве.";
+            var stepResult = fullReset
+                ? "Привязка аккаунта удалена, игрок вышел из аккаунта."
+                : "Игрок вышел из аккаунта на этом устройстве.";
+            await RunStepAsync(
+                step,
+                async () =>
+                {
+                    ClickLegacyButton(buttonName);
+                    if (fullReset)
+                    {
+                        await WaitForExternalActionAsync(
+                            "Подтвердите аккаунт через Google для удаления привязки.",
+                            () => _accountService.State == AccountState.NotStarted,
+                            GetAccountResetError,
+                            token);
+                    }
 
-            if (fullReset)
-            {
-                await WaitForExternalActionAsync(
-                    "Завершите Google-вход. После ответа Full Reset продолжится сам.",
-                    () => _accountService.State == AccountState.NotStarted,
-                    GetAccountResetError,
-                    token);
-            }
+                    Require(
+                        _accountService.State == AccountState.NotStarted,
+                        "Сброс аккаунта не завершился.");
+                },
+                () => stepResult,
+                token);
 
-            Require(
-                _accountService.State == AccountState.NotStarted,
-                "Сброс аккаунта не завершился.");
-
-            await RunStepAsync("Закрываем Dev Tools.", () =>
-            {
-                ClickLegacyButton("CloseButton");
-            }, token);
+            ClickLegacyButton("CloseButton");
         }
 
-        /// <summary>Открывает Settings и ждёт завершения входа.</summary>
+        /// <summary>Открывает настройки игры и ждёт завершения входа.</summary>
         private async Task OpenSettingsAndWaitForLinkedAccountAsync(
             CancellationToken token,
             bool requireNewAccount = false)
@@ -759,54 +835,68 @@ namespace LostCyberHamster.Editor.Testing
                 ? AuthenticationService.Instance.PlayerId
                 : null;
 
-            await RunStepAsync("Открываем Settings.", async () =>
-            {
-                Require(
-                    UIManager.OnModalShow != null,
-                    "Игровой UI ещё не готов.");
-                UIManager.OnModalShow.Invoke(ScreenEnum.SettingsModal);
-                await WaitUntilAsync(
-                    () => IsElementShown(
-                        FindElement<Button>("settings__btn-link-account")),
-                    "Кнопка аккаунта в Settings не открылась.",
-                    token);
-            }, token);
-
             var instruction = requireNewAccount
-                ? "В Settings нажмите кнопку аккаунта и выберите свободный тестовый Google account."
-                : "В Settings нажмите кнопку аккаунта. Для существующего аккаунта подтвердите вход ещё раз.";
-            await WaitForExternalActionAsync(
-                instruction,
-                () => _accountService.State == AccountState.Linked,
-                () => _accountService.State == AccountState.Error
-                    ? "Вход в аккаунт завершился с ошибкой."
-                    : null,
-                token);
+                ? "В настройках игры нажмите кнопку аккаунта и выберите свободный тестовый Google-аккаунт."
+                : "В настройках игры нажмите кнопку аккаунта. Для существующего аккаунта подтвердите вход ещё раз.";
+            var step = requireNewAccount
+                ? "Привязываем гостевой прогресс к новому аккаунту."
+                : "Входим в существующий аккаунт.";
+            await RunStepAsync(
+                step,
+                async () =>
+                {
+                    Require(
+                        UIManager.OnModalShow != null,
+                        "Интерфейс игры ещё не загрузился.");
+                    UIManager.OnModalShow.Invoke(ScreenEnum.SettingsModal);
+                    await WaitUntilAsync(
+                        () => IsElementShown(
+                            FindElement<Button>("settings__btn-link-account")),
+                        "В настройках не появилась кнопка входа в аккаунт.",
+                        token);
+                    await WaitForExternalActionAsync(
+                        instruction,
+                        () => _accountService.State == AccountState.Linked,
+                        () => _accountService.State == AccountState.Error
+                            ? "Вход в аккаунт завершился с ошибкой."
+                            : null,
+                        token);
 
-            RequireLinkedPlayer();
-            Require(
-                !requireNewAccount ||
-                string.Equals(_playerId, guestPlayerId, StringComparison.Ordinal),
-                "Выбран существующий аккаунт. Для первого сохранения нужен свободный тестовый аккаунт.");
+                    RequireLinkedPlayer();
+                    Require(
+                        !requireNewAccount ||
+                        string.Equals(
+                            _playerId,
+                            guestPlayerId,
+                            StringComparison.Ordinal),
+                        "Выбран существующий аккаунт. Для первого сохранения нужен свободный тестовый аккаунт.");
+                },
+                () => requireNewAccount
+                    ? "Гостевой прогресс привязан к новому аккаунту."
+                    : "Игрок вошёл в существующий аккаунт.",
+                token);
         }
 
-        /// <summary>Ждёт настройки Unity Player Accounts.</summary>
+        /// <summary>Открывает настройки входа, если они не заполнены.</summary>
         private async Task EnsurePlayerAccountConfiguredAsync(
             CancellationToken token)
         {
             if (HasPlayerAccountClientId())
                 return;
 
-            await RunStepAsync("Открываем настройки Unity Player Accounts.", () =>
-            {
-                SettingsService.OpenProjectSettings(
-                    PlayerAccountProjectSettings);
-            }, token);
-
-            await WaitForExternalActionAsync(
-                "Настройте Unity Player Accounts Client ID. Тест продолжится сам.",
-                HasPlayerAccountClientId,
-                getError: null,
+            await RunStepAsync(
+                "Готовим вход через Google.",
+                async () =>
+                {
+                    SettingsService.OpenProjectSettings(
+                        PlayerAccountProjectSettings);
+                    await WaitForExternalActionAsync(
+                        "Настройте вход через Google в открытых Project Settings.",
+                        HasPlayerAccountClientId,
+                        getError: null,
+                        token);
+                },
+                () => "Вход через Google настроен.",
                 token);
         }
 
@@ -817,42 +907,47 @@ namespace LostCyberHamster.Editor.Testing
         {
             await EnsureAccountReadyAsync(token);
 
-            await RunStepAsync("Очищаем ожидающий снимок.", () =>
-            {
-                _snapshotService.Clear();
-            }, token);
+            _snapshotService.Clear();
 
             var fullReset =
                 unlinkServerAccount &&
                 _accountService.State == AccountState.Linked;
             await RunAccountResetThroughDevToolsAsync(fullReset, token);
 
-            await RunStepAsync("Запускаем свежего гостя.", async () =>
-            {
-                Require(
-                    _accountService.State == AccountState.NotStarted,
-                    "Сброс аккаунта не завершился.");
-                _accountService.Start();
-                await WaitUntilAsync(
-                    () => _accountService.State == AccountState.Guest ||
-                          _accountService.State == AccountState.Error,
-                    "Свежий гость не был создан.",
-                    token);
-                Require(
-                    _accountService.State == AccountState.Guest,
-                    "Создание свежего гостя завершилось с ошибкой.");
-            }, token);
+            await RunStepAsync(
+                "Создаём нового гостя.",
+                async () =>
+                {
+                    Require(
+                        _accountService.State == AccountState.NotStarted,
+                        "Сброс аккаунта не завершился.");
+                    _accountService.Start();
+                    await WaitUntilAsync(
+                        () => _accountService.State == AccountState.Guest ||
+                              _accountService.State == AccountState.Error,
+                        "Новый гостевой аккаунт не был создан.",
+                        token);
+                    Require(
+                        _accountService.State == AccountState.Guest,
+                        "Не удалось создать новый гостевой аккаунт.");
+                },
+                () => "Создан новый гостевой аккаунт.",
+                token);
 
             if (!unlinkServerAccount)
                 return;
 
-            await RunStepAsync("Проверяем пустое облако гостя.", async () =>
-            {
-                var cloudSave = await LoadCloudAsync(token);
-                Require(
-                    cloudSave == null,
-                    "У свежего гостя уже есть облачное сохранение.");
-            }, token);
+            await RunStepAsync(
+                "Проверяем новый гостевой профиль.",
+                async () =>
+                {
+                    var cloudSave = await LoadCloudAsync(token);
+                    Require(
+                        cloudSave == null,
+                        "У свежего гостя уже есть облачное сохранение.");
+                },
+                () => "Новый гость начинает без облачного прогресса.",
+                token);
         }
 
         /// <summary>Подготавливает новый связанный тестовый аккаунт.</summary>
@@ -868,26 +963,26 @@ namespace LostCyberHamster.Editor.Testing
             await OpenSettingsAndWaitForLinkedAccountAsync(token);
         }
 
-        /// <summary>Подготавливает связанный аккаунт и согласованное облако.</summary>
+        /// <summary>Сохраняет текущий прогресс связанного аккаунта в облаке.</summary>
         private async Task<CloudSaveReadResult> EnsureSavedCloudAsync(
             CancellationToken token)
         {
             await EnsureLinkedAccountAsync(token);
             Require(
                 _conflictService.CurrentConflict == null,
-                "Сначала завершите текущий конфликт.");
-
-            await RunStepAsync("Синхронизируем исходное состояние.", () =>
-            {
-                PlayerProgressLifecycleCheckpoint.HandleApplicationPause(
-                    isPaused: false);
-            }, token);
+                "Сначала выберите, какой прогресс сохранить в текущем конфликте.");
 
             CloudSaveReadResult cloudSave = null;
-            await RunStepAsync("Ждём готовое облачное сохранение.", async () =>
-            {
-                cloudSave = await WaitForSavedCloudAsync(token);
-            }, token);
+            await RunStepAsync(
+                "Сохраняем текущий прогресс в облаке.",
+                async () =>
+                {
+                    PlayerProgressLifecycleCheckpoint.HandleApplicationPause(
+                        isPaused: false);
+                    cloudSave = await WaitForSavedCloudAsync(token);
+                },
+                () => "Прогресс игрока сохранён в облаке.",
+                token);
             return cloudSave;
         }
 
@@ -902,7 +997,7 @@ namespace LostCyberHamster.Editor.Testing
                 token.ThrowIfCancellationRequested();
                 Require(
                     _conflictService.CurrentConflict == null,
-                    "Сначала завершите текущий конфликт.");
+                    "Сначала выберите, какой прогресс сохранить в текущем конфликте.");
 
                 var cloudSave = await LoadCloudAsync(token);
                 if (cloudSave != null &&
@@ -920,7 +1015,7 @@ namespace LostCyberHamster.Editor.Testing
             }
 
             throw new TimeoutException(
-                "Локальное состояние и облако не были согласованы.");
+                "Прогресс на устройстве и в облаке не успел синхронизироваться.");
         }
 
         /// <summary>Получает Player ID связанного аккаунта.</summary>
@@ -936,10 +1031,10 @@ namespace LostCyberHamster.Editor.Testing
         {
             Require(
                 _snapshotService.Snapshot == null,
-                "После синхронизации остался pending.");
+                "После синхронизации прогресс всё ещё ждёт отправки.");
             Require(
                 _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
-                $"Ожидался статус Saved, получен {_cloudSyncService.Status}.");
+                "Облачное сохранение не завершилось.");
         }
 
         /// <summary>Проверяет подтверждённую версию облака.</summary>
@@ -951,7 +1046,7 @@ namespace LostCyberHamster.Editor.Testing
                     confirmedRevision,
                     cloudSave.Version.ServerRevision,
                     StringComparison.Ordinal),
-                "Локальная подтверждённая версия не совпадает с облаком.");
+                "Игра не подтвердила, что устройство и облако содержат один прогресс.");
         }
 
         /// <summary>Загружает облако с ограничением времени.</summary>
@@ -964,7 +1059,7 @@ namespace LostCyberHamster.Editor.Testing
             if (completedTask != loadTask)
             {
                 token.ThrowIfCancellationRequested();
-                throw new TimeoutException("UGS не ответил за отведённое время.");
+                throw new TimeoutException("Облако не ответило за отведённое время.");
             }
 
             return await loadTask;
@@ -981,7 +1076,7 @@ namespace LostCyberHamster.Editor.Testing
             {
                 token.ThrowIfCancellationRequested();
                 if (!EditorApplication.isPlaying)
-                    throw new InvalidOperationException("Play Mode остановлен.");
+                    throw new InvalidOperationException("Игра остановлена в Unity Editor.");
                 if (DateTime.UtcNow >= deadline)
                     throw new TimeoutException(timeoutMessage);
 
@@ -993,8 +1088,10 @@ namespace LostCyberHamster.Editor.Testing
         private async Task RunStepAsync(
             string description,
             Func<Task> action,
+            Func<string> getResult,
             CancellationToken token)
         {
+            CurrentResult = string.Empty;
             WriteStep(description);
             var delaySeconds = Math.Max(
                 MinStepDelaySeconds,
@@ -1003,12 +1100,17 @@ namespace LostCyberHamster.Editor.Testing
                 TimeSpan.FromSeconds(delaySeconds),
                 token);
             await action();
+            WriteResult(getResult());
+            await Task.Delay(
+                TimeSpan.FromSeconds(delaySeconds),
+                token);
         }
 
         /// <summary>Выполняет обычный шаг после паузы.</summary>
         private Task RunStepAsync(
             string description,
             Action action,
+            Func<string> getResult,
             CancellationToken token)
         {
             return RunStepAsync(
@@ -1018,6 +1120,7 @@ namespace LostCyberHamster.Editor.Testing
                     action();
                     return Task.CompletedTask;
                 },
+                getResult,
                 token);
         }
 
@@ -1025,6 +1128,7 @@ namespace LostCyberHamster.Editor.Testing
         private void WaitForUser(string instruction)
         {
             State = CloudSaveE2ERunState.WaitingForUser;
+            CurrentResult = string.Empty;
             WriteStep(instruction);
         }
 
@@ -1037,6 +1141,7 @@ namespace LostCyberHamster.Editor.Testing
         {
             _waitsForExternalAction = true;
             State = CloudSaveE2ERunState.WaitingForUser;
+            CurrentResult = string.Empty;
             WriteStep(instruction);
 
             try
@@ -1045,7 +1150,7 @@ namespace LostCyberHamster.Editor.Testing
                 {
                     token.ThrowIfCancellationRequested();
                     if (!EditorApplication.isPlaying)
-                        throw new InvalidOperationException("Play Mode остановлен.");
+                        throw new InvalidOperationException("Игра остановлена в Unity Editor.");
 
                     var error = getError?.Invoke();
                     if (!string.IsNullOrWhiteSpace(error))
@@ -1071,7 +1176,7 @@ namespace LostCyberHamster.Editor.Testing
         {
             StopCurrentRun();
             State = CloudSaveE2ERunState.Passed;
-            WriteStep("Сценарий пройден.");
+            WriteResult("Сценарий пройден.");
         }
 
         /// <summary>Завершает сценарий с ошибкой.</summary>
@@ -1079,7 +1184,7 @@ namespace LostCyberHamster.Editor.Testing
         {
             StopCurrentRun();
             State = CloudSaveE2ERunState.Failed;
-            WriteStep($"Ошибка: {message}");
+            WriteResult($"Ошибка: {message}");
         }
 
         /// <summary>Останавливает текущие ожидания.</summary>
@@ -1096,9 +1201,20 @@ namespace LostCyberHamster.Editor.Testing
         {
             CurrentStep = message;
             if (State == CloudSaveE2ERunState.Failed)
-                Debug.LogError($"[Cloud Save E2E] {message}");
+                Debug.LogError($"[Cloud Save E2E] Шаг: {message}");
             else
-                Debug.Log($"[Cloud Save E2E] {message}");
+                Debug.Log($"[Cloud Save E2E] Шаг: {message}");
+            Changed?.Invoke();
+        }
+
+        /// <summary>Показывает результат шага и пишет его в Console.</summary>
+        private void WriteResult(string message)
+        {
+            CurrentResult = message;
+            if (State == CloudSaveE2ERunState.Failed)
+                Debug.LogError($"[Cloud Save E2E] Результат: {message}");
+            else
+                Debug.Log($"[Cloud Save E2E] Результат: {message}");
             Changed?.Invoke();
         }
 
@@ -1106,7 +1222,19 @@ namespace LostCyberHamster.Editor.Testing
         private void OnStatusChanged(CloudSyncStatusEnum status)
         {
             _observedStatuses.Add(status);
-            WriteStep($"Статус: {status}.");
+            var result = status switch
+            {
+                CloudSyncStatusEnum.Saved =>
+                    "Прогресс сохранён в облаке.",
+                CloudSyncStatusEnum.Synchronizing =>
+                    "Прогресс отправляется в облако.",
+                CloudSyncStatusEnum.Pending =>
+                    "Прогресс сохранён на устройстве и ждёт отправки.",
+                CloudSyncStatusEnum.Conflict =>
+                    "Прогресс изменился на двух устройствах — нужно выбрать версию.",
+                _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
+            };
+            WriteResult(result);
         }
 
         /// <summary>Проверяет настройку Unity Player Accounts.</summary>
@@ -1159,10 +1287,10 @@ namespace LostCyberHamster.Editor.Testing
         private static void ClickLegacyButton(string name)
         {
             var button = FindLegacyComponent<LegacyButton>(name);
-            Require(button != null, $"В Dev Tools не найдена кнопка {name}.");
+            Require(button != null, "В меню разработчика не найдена нужная кнопка.");
             Require(
                 button.gameObject.activeInHierarchy,
-                $"Кнопка {name} сейчас скрыта.");
+                "Нужная кнопка в меню разработчика недоступна.");
             button.onClick.Invoke();
         }
 
@@ -1170,7 +1298,7 @@ namespace LostCyberHamster.Editor.Testing
         private string GetAccountResetError()
         {
             if (_accountService.State == AccountState.Error)
-                return "Full Reset завершился с ошибкой.";
+                return "Не удалось удалить привязку аккаунта.";
 
             var result = FindLegacyComponent<LegacyText>("ResetResult");
             if (result == null)
@@ -1179,11 +1307,11 @@ namespace LostCyberHamster.Editor.Testing
                     "Full reset was cancelled.",
                     StringComparison.Ordinal))
             {
-                return "Full Reset был отменён.";
+                return "Удаление привязки аккаунта отменено.";
             }
 
             return result.text.StartsWith("Error.", StringComparison.Ordinal)
-                ? "Full Reset не был завершён. Проверьте Dev Tools и Console."
+                ? "Не удалось удалить привязку аккаунта. Проверьте меню разработчика и Console."
                 : null;
         }
 
@@ -1282,7 +1410,7 @@ namespace LostCyberHamster.Editor.Testing
             error = null;
             if (!ProjectContext.HasInstance)
             {
-                error = "ProjectContext ещё не создан. Запустите игру через Bootstrap.";
+                error = "Игровые сервисы ещё не запущены. Запустите игру со сцены Bootstrap.";
                 return false;
             }
 
@@ -1311,7 +1439,7 @@ namespace LostCyberHamster.Editor.Testing
             if (missingServices.Count == 0)
                 return true;
 
-            error = $"В DI не найдены сервисы: {string.Join(", ", missingServices)}.";
+            error = "Не запустились необходимые сервисы аккаунта и облачных сохранений.";
             return false;
         }
     }

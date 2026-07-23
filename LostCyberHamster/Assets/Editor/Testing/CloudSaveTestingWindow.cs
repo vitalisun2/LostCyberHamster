@@ -25,6 +25,9 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Ширина поля паузы между автоматическими шагами.</summary>
         private const float StepDelayFieldWidth = 44f;
 
+        /// <summary>Размер текста шага и результата.</summary>
+        private const int OutputFontSize = 22;
+
         /// <summary>Выполняет выбранный сценарий.</summary>
         private CloudSaveE2ERunner _runner;
 
@@ -33,6 +36,9 @@ namespace LostCyberHamster.Editor.Testing
 
         /// <summary>Позиция списка сценариев.</summary>
         private Vector2 _scenarioScrollPosition;
+
+        /// <summary>Стиль крупного текста шага и результата.</summary>
+        private GUIStyle _outputStyle;
 
         /// <summary>Открывает общее окно тестирования.</summary>
         [MenuItem("Tools/Testing", priority = 700)]
@@ -175,9 +181,6 @@ namespace LostCyberHamster.Editor.Testing
                     CloudSaveE2EScenarioCatalog.GetTitle(_runner.CurrentScenario));
             }
 
-            if (!string.IsNullOrWhiteSpace(_runner.CurrentStep))
-                EditorGUILayout.HelpBox(_runner.CurrentStep, MessageType.None);
-
             using (new EditorGUILayout.HorizontalScope())
             {
                 using (new EditorGUI.DisabledScope(!_runner.CanContinue))
@@ -201,6 +204,36 @@ namespace LostCyberHamster.Editor.Testing
                         GUILayout.Width(StepDelayFieldWidth)));
             }
 
+            EditorGUILayout.Space(8f);
+            var outputStyle = GetOutputStyle();
+            if (!string.IsNullOrWhiteSpace(_runner.CurrentStep))
+            {
+                EditorGUILayout.LabelField(
+                    $"Шаг:\n{_runner.CurrentStep}",
+                    outputStyle);
+            }
+
+            if (!string.IsNullOrWhiteSpace(_runner.CurrentResult))
+            {
+                EditorGUILayout.LabelField(
+                    $"Результат:\n{_runner.CurrentResult}",
+                    outputStyle);
+            }
+        }
+
+        /// <summary>Возвращает стиль крупного вывода теста.</summary>
+        private GUIStyle GetOutputStyle()
+        {
+            if (_outputStyle != null)
+                return _outputStyle;
+
+            _outputStyle = new GUIStyle(EditorStyles.helpBox)
+            {
+                fontSize = OutputFontSize,
+                wordWrap = true,
+                padding = new RectOffset(12, 12, 10, 10)
+            };
+            return _outputStyle;
         }
 
         /// <summary>Отменяет тест при выходе из Play Mode.</summary>
