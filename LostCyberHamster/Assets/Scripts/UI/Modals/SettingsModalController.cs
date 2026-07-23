@@ -2,7 +2,8 @@ using System.Threading.Tasks;
 using Assets.Scripts.Account;
 using Assets.Scripts.System;
 using GameManagement;
-using GameManagement.CloudSave;
+using GameManagement.CloudSave_;
+using GameManagement.CloudSave_.Models;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
@@ -20,12 +21,15 @@ namespace LostCyberHamster.UI
         private Label _labelVersion => _modalContent.Q<Label>("settings__lbl-version");
         private Label _labelId => _modalContent.Q<Label>("settings__lbl-id");
         private Label _labelAccountState => _modalContent.Q<Label>("settings__lbl-account-state");
+        private VisualElement _cloudSyncStatusRow => _modalContent.Q<VisualElement>("settings__cloud-sync-status");
+        private Label _labelCloudSyncStatus => _modalContent.Q<Label>("settings__lbl-cloud-sync-status");
         private Button _buttonLinkAccount => _modalContent.Q<Button>("settings__btn-link-account");
         private Button _buttonSave => _modalContent.Q<Button>("settings__btn-save");
         private Button _buttonCancel => _modalContent.Q<Button>("settings__btn-cancel");
 
         private readonly AccountService _accountService;
         private readonly ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
+        private readonly CloudSyncService_ _cloudSyncService;
         private SettingsData _settingsData = new();
         private bool _hasAccountLinkConflict;
         private int _accountUiVersion;
@@ -33,11 +37,13 @@ namespace LostCyberHamster.UI
         public SettingsModalController(
             UIDocument uiDocument,
             AccountService accountService,
-            ExistingAccountRestoreCoordinator existingAccountRestoreCoordinator)
+            ExistingAccountRestoreCoordinator existingAccountRestoreCoordinator,
+            CloudSyncService_ cloudSyncService)
             : base(uiDocument)
         {
             _accountService = accountService;
             _existingAccountRestoreCoordinator = existingAccountRestoreCoordinator;
+            _cloudSyncService = cloudSyncService;
         }
 
         protected override async Task OnShowAsync()
@@ -62,6 +68,7 @@ namespace LostCyberHamster.UI
             _labelId.text = $"{SystemInfo.deviceUniqueIdentifier}";
 
             SubscribeToAccountState();
+            SubscribeToCloudSyncStatus();
             UpdateAccountState(_accountService.State);
         }
 
@@ -79,6 +86,22 @@ namespace LostCyberHamster.UI
         private void OnAccountStateChanged(AccountState state)
         {
             UpdateAccountState(state);
+        }
+
+        private void SubscribeToCloudSyncStatus()
+        {
+            _cloudSyncService.StatusChanged -= OnCloudSyncStatusChanged;
+            _cloudSyncService.StatusChanged += OnCloudSyncStatusChanged;
+        }
+
+        private void UnsubscribeFromCloudSyncStatus()
+        {
+            _cloudSyncService.StatusChanged -= OnCloudSyncStatusChanged;
+        }
+
+        private void OnCloudSyncStatusChanged(CloudSyncStatusEnum_ status)
+        {
+            UpdateCloudSyncStatus(status);
         }
 
         /// <summary>
@@ -110,6 +133,31 @@ namespace LostCyberHamster.UI
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
             _buttonLinkAccount.SetEnabled(state == AccountState.Guest);
+            UpdateCloudSyncStatus(_cloudSyncService.Status);
+        }
+
+        /// <summary>Показывает актуальное состояние облачного сохранения.</summary>
+        private void UpdateCloudSyncStatus(CloudSyncStatusEnum_ status)
+        {
+            // Показываем статус только связанному аккаунту.
+            var isLinked = _accountService.State == AccountState.Linked;
+            _cloudSyncStatusRow.style.display = isLinked
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+            if (!isLinked)
+                return;
+
+            // Выводим понятное состояние синхронизации.
+            var localizationKey = status switch
+            {
+                CloudSyncStatusEnum_.Saved => "cloud_sync_status_saved",
+                CloudSyncStatusEnum_.Synchronizing => "cloud_sync_status_synchronizing",
+                CloudSyncStatusEnum_.Pending => "cloud_sync_status_pending",
+                CloudSyncStatusEnum_.Conflict => "cloud_sync_status_conflict",
+                _ => "cloud_sync_status_pending"
+            };
+
+            _labelCloudSyncStatus.text = LocalizationManager.GetLocalizedString(localizationKey);
         }
 
         private async void OnClickButtonLinkAccount(ClickEvent evt)
@@ -176,6 +224,7 @@ namespace LostCyberHamster.UI
             GameDataManager.SaveSettings();
             ResetAccountConflictUi();
             UnsubscribeFromAccountState();
+            UnsubscribeFromCloudSyncStatus();
             Hide();
             UIManager.OnRepaintScreen();
         }
@@ -213,6 +262,7 @@ namespace LostCyberHamster.UI
         {
             ResetAccountConflictUi();
             UnsubscribeFromAccountState();
+            UnsubscribeFromCloudSyncStatus();
             Hide();
         }
 
@@ -220,6 +270,7 @@ namespace LostCyberHamster.UI
         {
             ResetAccountConflictUi();
             UnsubscribeFromAccountState();
+            UnsubscribeFromCloudSyncStatus();
         }
 
         private void ResetAccountConflictUi()
@@ -240,6 +291,7 @@ namespace LostCyberHamster.UI
             _buttonCloseModal.UnregisterCallback<ClickEvent>(OnClickButtonClose);
             ResetAccountConflictUi();
             UnsubscribeFromAccountState();
+            UnsubscribeFromCloudSyncStatus();
         }
 
     }

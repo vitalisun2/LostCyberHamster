@@ -24,16 +24,19 @@ namespace Assets.Scripts.Entry_Points
         private ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
         private AccountPromptCoordinator _accountPromptCoordinator;
         private CloudSaveConflictCoordinator _cloudSaveConflictCoordinator;
+        private CloudSyncService_ _cloudSyncService;
         private ConflictService_ _conflictService;
 
         [Inject]
         private void Construct(
             AccountService accountService,
             ExistingAccountRestoreCoordinator existingAccountRestoreCoordinator,
+            CloudSyncService_ cloudSyncService,
             ConflictService_ conflictService)
         {
             _accountService = accountService;
             _existingAccountRestoreCoordinator = existingAccountRestoreCoordinator;
+            _cloudSyncService = cloudSyncService;
             _conflictService = conflictService;
         }
 
@@ -47,7 +50,8 @@ namespace Assets.Scripts.Entry_Points
                 new SettingsModalController(
                     _uiDocument,
                     _accountService,
-                    _existingAccountRestoreCoordinator),
+                    _existingAccountRestoreCoordinator,
+                    _cloudSyncService),
                 new AccountPromptModalController(_uiDocument),
                 new CloudSaveConflictModalController(_uiDocument),
                 new CharacterScreenController(_uiDocument),

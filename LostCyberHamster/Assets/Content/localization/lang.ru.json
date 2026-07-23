@@ -45,6 +45,26 @@
             "value": "АККАУНТ"
         },
         {
+            "key": "lbl_cloud_save",
+            "value": "ОБЛАЧНОЕ СОХРАНЕНИЕ"
+        },
+        {
+            "key": "cloud_sync_status_saved",
+            "value": "Сохранено"
+        },
+        {
+            "key": "cloud_sync_status_synchronizing",
+            "value": "Синхронизация…"
+        },
+        {
+            "key": "cloud_sync_status_pending",
+            "value": "Ожидает синхронизации"
+        },
+        {
+            "key": "cloud_sync_status_conflict",
+            "value": "Требуется выбрать сохранение"
+        },
+        {
             "key": "account_state_not_started",
             "value": "Аккаунт ещё не готов"
         },

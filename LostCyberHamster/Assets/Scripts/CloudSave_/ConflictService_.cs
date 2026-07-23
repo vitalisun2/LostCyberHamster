@@ -34,6 +34,9 @@ namespace GameManagement.CloudSave_
         /// <summary>Возникает при обнаружении конфликта.</summary>
         public event Action<CloudSaveConflict_> ConflictDetected;
 
+        /// <summary>Возникает после разрешения конфликта.</summary>
+        public event Action ConflictResolved;
+
         /// <summary>Сохраняет обнаруженный конфликт.</summary>
         public void SetConflict(
             CloudSaveSnapshot_ localSnapshot,
@@ -61,6 +64,7 @@ namespace GameManagement.CloudSave_
                 conflict.CloudSave.Version.ServerRevision);
             _snapshotService.Clear();
             CurrentConflict = null;
+            ConflictResolved?.Invoke();
 
             return Task.CompletedTask;
         }
@@ -81,6 +85,7 @@ namespace GameManagement.CloudSave_
                 version.ServerRevision);
             _snapshotService.Clear();
             CurrentConflict = null;
+            ConflictResolved?.Invoke();
         }
     }
 }

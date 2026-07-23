@@ -49,7 +49,27 @@ namespace GameManagement.CloudSave_
             _accountService.CurrentGuestLinked += OnAccountLinked;
             PlayerProgressCommitter.CommitCompleted += OnCheckpointCommitted;
             PlayerProgressLifecycleCheckpoint.ApplicationResumed += OnApplicationResumed;
+            _conflictService.ConflictResolved += OnConflictResolved;
         }
+
+        /// <summary>Текущее состояние облачной синхронизации.</summary>
+        public CloudSyncStatusEnum_ Status
+        {
+            get
+            {
+                if (_conflictService.CurrentConflict != null)
+                    return CloudSyncStatusEnum_.Conflict;
+                if (_isUploadActive)
+                    return CloudSyncStatusEnum_.Synchronizing;
+                if (_snapshotService.Snapshot != null)
+                    return CloudSyncStatusEnum_.Pending;
+
+                return CloudSyncStatusEnum_.Saved;
+            }
+        }
+
+        /// <summary>Возникает при изменении состояния синхронизации.</summary>
+        public event Action<CloudSyncStatusEnum_> StatusChanged;
 
         #region Обработка событий
         /// <summary>Синхронизирует прогресс после привязки аккаунта.</summary>
@@ -105,6 +125,12 @@ namespace GameManagement.CloudSave_
             }
         }
 
+        /// <summary>Обновляет статус после разрешения конфликта.</summary>
+        private void OnConflictResolved()
+        {
+            NotifyStatusChanged();
+        }
+
         #endregion
 
         #region Основные методы
@@ -119,6 +145,7 @@ namespace GameManagement.CloudSave_
                 _snapshotService.SetPending(new CloudSaveSnapshot_(
                     playerId,
                     GameDataManager.PlayerData.ToJson()));
+                NotifyStatusChanged();
             }
 
             // Отправляем подготовленный снимок.
@@ -136,6 +163,7 @@ namespace GameManagement.CloudSave_
             _snapshotService.SetPending(new CloudSaveSnapshot_(
                 playerId,
                 GameDataManager.PlayerData.ToJson()));
+            NotifyStatusChanged();
 
             // Синхронизируем новое сохранение.
             await SynchronizeProgressAsync();
@@ -155,6 +183,7 @@ namespace GameManagement.CloudSave_
             // Заменяем локальный прогресс облачным.
             ApplyCloudProgress(playerId, cloudSave);
             _snapshotService.Clear();
+            NotifyStatusChanged();
         }
 
         /// <summary>Синхронизирует локальный и облачный прогресс.</summary>
@@ -192,6 +221,7 @@ namespace GameManagement.CloudSave_
                     _conflictService.SetConflict(
                         _snapshotService.Snapshot,
                         cloudSave);
+                    NotifyStatusChanged();
                     break;
 
                 case CloudSyncStateEnum_.Synchronized:
@@ -206,6 +236,7 @@ namespace GameManagement.CloudSave_
                 return;
 
             _isUploadActive = true;
+            NotifyStatusChanged();
 
             try
             {
@@ -231,6 +262,7 @@ namespace GameManagement.CloudSave_
             finally
             {
                 _isUploadActive = false;
+                NotifyStatusChanged();
             }
         }
 
@@ -278,6 +310,12 @@ namespace GameManagement.CloudSave_
                 cloudSave.Version.ServerRevision);
         }
 
+        /// <summary>Сообщает актуальное состояние синхронизации.</summary>
+        private void NotifyStatusChanged()
+        {
+            StatusChanged?.Invoke(Status);
+        }
+
         #endregion
 
         /// <summary>Останавливает сервис и убирает подписки.</summary>
@@ -290,6 +328,7 @@ namespace GameManagement.CloudSave_
             _accountService.CurrentGuestLinked -= OnAccountLinked;
             PlayerProgressCommitter.CommitCompleted -= OnCheckpointCommitted;
             PlayerProgressLifecycleCheckpoint.ApplicationResumed -= OnApplicationResumed;
+            _conflictService.ConflictResolved -= OnConflictResolved;
         }
     }
 }
