@@ -235,10 +235,13 @@ namespace Assets.Scripts.Account
         }
 
         /// <summary>
-        /// Входит в связанный серверный аккаунт, отвязывает Unity Player Account и очищает локальные сессии.
+        /// Отвязывает Unity Player Account от текущего связанного аккаунта и очищает локальные сессии.
         /// </summary>
         public async Task FullResetTestAccountAsync()
         {
+            if (!TryGetLinkedPlayerId(out var linkedPlayerId))
+                throw new InvalidOperationException("Full reset requires a linked account.");
+
             // Фиксируем операцию и этапы частичного сброса.
             var resolutionVersion = ++_resolutionVersion;
             var localUgsIdentityCleared = false;
@@ -276,8 +279,15 @@ namespace Assets.Scripts.Account
                 await _authenticationGateway.SignInWithUnityAsync(accessToken);
                 EnsureCurrentOperation(resolutionVersion);
 
-                if (!_authenticationGateway.IsSignedIn || !_authenticationGateway.IsUnityPlayerAccountLinked)
-                    throw new InvalidOperationException("Signed-in server account is not linked to Unity Player Accounts.");
+                if (!_authenticationGateway.IsSignedIn ||
+                    !_authenticationGateway.IsUnityPlayerAccountLinked ||
+                    !string.Equals(
+                        _authenticationGateway.PlayerId,
+                        linkedPlayerId,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Signed-in account does not match the current linked account.");
+                }
 
                 Debug.Log("[Account] Full reset stage: linked server account verified.");
 

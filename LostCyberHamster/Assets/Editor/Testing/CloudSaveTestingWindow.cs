@@ -19,9 +19,6 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Ширина кнопок управления.</summary>
         private const float CommandButtonWidth = 100f;
 
-        /// <summary>Высота журнала.</summary>
-        private const float LogHeight = 130f;
-
         /// <summary>Выполняет выбранный сценарий.</summary>
         private CloudSaveE2ERunner _runner;
 
@@ -30,9 +27,6 @@ namespace LostCyberHamster.Editor.Testing
 
         /// <summary>Позиция списка сценариев.</summary>
         private Vector2 _scenarioScrollPosition;
-
-        /// <summary>Позиция журнала.</summary>
-        private Vector2 _logScrollPosition;
 
         /// <summary>Открывает общее окно тестирования.</summary>
         [MenuItem("Tools/Testing", priority = 700)]
@@ -155,10 +149,7 @@ namespace LostCyberHamster.Editor.Testing
                                !EditorApplication.isPlaying || _runner.IsActive))
                     {
                         if (GUILayout.Button("Test", GUILayout.Width(TestButtonWidth)))
-                        {
-                            _logScrollPosition = Vector2.zero;
                             _runner.Start(scenario);
-                        }
                     }
                 }
             }
@@ -196,27 +187,6 @@ namespace LostCyberHamster.Editor.Testing
                 }
             }
 
-            EditorGUILayout.LabelField("Лог", EditorStyles.boldLabel);
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                _logScrollPosition = EditorGUILayout.BeginScrollView(
-                    _logScrollPosition,
-                    GUILayout.Height(LogHeight));
-
-                if (_runner.Log.Count == 0)
-                {
-                    EditorGUILayout.LabelField(
-                        "Запустите сценарий, чтобы увидеть шаги.",
-                        EditorStyles.miniLabel);
-                }
-                else
-                {
-                    foreach (var line in _runner.Log)
-                        EditorGUILayout.LabelField(line, EditorStyles.wordWrappedMiniLabel);
-                }
-
-                EditorGUILayout.EndScrollView();
-            }
         }
 
         /// <summary>Отменяет тест при выходе из Play Mode.</summary>

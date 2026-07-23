@@ -28,9 +28,9 @@
                 <Vues.GameCore.LocalizedButton key="btn_link_account" name="settings__btn-link-account" class="lcs_btn bg-primary" style="width: 240px; height: 52px; font-size: 22px; margin-top: 4px; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
             </engine:VisualElement>
         </engine:VisualElement>
-        <engine:VisualElement name="settings__cloud-sync-status" class="mb-12" style="flex-grow: 0; flex-direction: row; display: none;">
-            <Vues.GameCore.LocalizedLabel key="lbl_cloud_save" class="lcs-text w-px-320" />
-            <engine:Label name="settings__lbl-cloud-sync-status" class="lcs-text w-px-480" />
+        <engine:VisualElement name="settings__cloud-sync-status" class="mb-12" style="flex-grow: 0; flex-direction: row; align-items: flex-start; display: none;">
+            <Vues.GameCore.LocalizedLabel key="lbl_cloud_save" class="lcs-text w-px-320" style="white-space: normal; font-size: 28px;" />
+            <engine:Label name="settings__lbl-cloud-sync-status" class="lcs-text w-px-480" style="white-space: normal; font-size: 24px; color: rgb(0, 0, 0); -unity-text-outline-width: 0px;" />
         </engine:VisualElement>
         <engine:VisualElement class="mb-12" style="flex-grow: 0; flex-direction: row;">
             <Vues.GameCore.LocalizedLabel key="lbl_version" class="lcs-text w-px-320" />
