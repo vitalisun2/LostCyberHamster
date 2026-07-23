@@ -8,11 +8,15 @@ using GameManagement.CloudSave;
 using GameManagement.CloudSave.Gateway;
 using GameManagement.CloudSave.Models;
 using GameManagement.CloudSave.Version;
+using LostCyberHamster.UI;
 using UnityEditor;
 using UnityEngine;
+using Unity.Services.Authentication;
 using UnityEngine.UIElements;
 using Vues.GameCore;
 using Zenject;
+using LegacyButton = UnityEngine.UI.Button;
+using LegacyText = UnityEngine.UI.Text;
 
 namespace LostCyberHamster.Editor.Testing
 {
@@ -27,6 +31,14 @@ namespace LostCyberHamster.Editor.Testing
 
         /// <summary>Предельное время одного ожидания.</summary>
         private const int TimeoutMilliseconds = 30000;
+
+        /// <summary>Путь к настройкам Unity Player Accounts.</summary>
+        private const string PlayerAccountSettingsPath =
+            "Assets/Resources/UnityPlayerAccountSettings.asset";
+
+        /// <summary>Раздел настроек Unity Player Accounts.</summary>
+        private const string PlayerAccountProjectSettings =
+            "Project/Services/Unity Player Accounts";
 
         /// <summary>Собирает текущую сессию аккаунта.</summary>
         private AccountService _accountService;
@@ -57,6 +69,9 @@ namespace LostCyberHamster.Editor.Testing
 
         /// <summary>Текущий ручной этап сценария.</summary>
         private int _manualStage;
+
+        /// <summary>Показывает, что тест ждёт действие вне окна Testing.</summary>
+        private bool _waitsForExternalAction;
 
         /// <summary>Игрок текущего сценария.</summary>
         private string _playerId;
@@ -94,7 +109,9 @@ namespace LostCyberHamster.Editor.Testing
         public string CurrentStep { get; private set; } = string.Empty;
 
         /// <summary>Показывает, можно ли продолжить ручной этап.</summary>
-        public bool CanContinue => State == CloudSaveE2ERunState.WaitingForUser;
+        public bool CanContinue =>
+            State == CloudSaveE2ERunState.WaitingForUser &&
+            !_waitsForExternalAction;
 
         /// <summary>Показывает, выполняется ли сценарий.</summary>
         public bool IsActive =>
@@ -112,6 +129,7 @@ namespace LostCyberHamster.Editor.Testing
             _runVersion++;
             _cancellation = new CancellationTokenSource();
             _manualStage = 0;
+            _waitsForExternalAction = false;
             _observedStatuses.Clear();
             CurrentScenario = scenario;
             HasScenario = true;
@@ -221,10 +239,6 @@ namespace LostCyberHamster.Editor.Testing
                         await ContinueDeferredSynchronizationAsync(token);
                         break;
 
-                    case CloudSaveE2EScenario.RestoreProgress:
-                        await VerifyRestoreProgressAsync(token);
-                        break;
-
                     case CloudSaveE2EScenario.ConflictChooseCloud:
                     case CloudSaveE2EScenario.ConflictChooseDevice:
                         await VerifyConflictResolutionAsync(token);
@@ -256,19 +270,9 @@ namespace LostCyberHamster.Editor.Testing
                 unlinkServerAccount: true,
                 token);
 
-            await RunStepAsync(
-                "Привязываем свежего гостя. Завершите Google-вход.",
-                async () =>
-                {
-                    var result = await _accountService.LinkCurrentGuestAsync();
-                    Require(
-                        result != AccountLinkResult.Conflict,
-                        "Google account уже занят. Выберите свободный тестовый аккаунт.");
-                    Require(
-                        result == AccountLinkResult.Linked,
-                        $"Привязка гостя завершилась с результатом {result}.");
-                },
-                token);
+            await OpenSettingsAndWaitForLinkedAccountAsync(
+                token,
+                requireNewAccount: true);
 
             await RunStepAsync("Ждём завершения первого сохранения.", async () =>
             {
@@ -401,8 +405,8 @@ namespace LostCyberHamster.Editor.Testing
                 _initialLocalPlayerDataJson = GameDataManager.PlayerData.ToJson();
             }, token);
 
-            WaitForUser(
-                "Через Settings войдите в существующий аккаунт. После восстановления нажмите Continue.");
+            await OpenSettingsAndWaitForLinkedAccountAsync(token);
+            await VerifyRestoreProgressAsync(token);
         }
 
         /// <summary>Проверяет восстановленный прогресс.</summary>
@@ -699,6 +703,105 @@ namespace LostCyberHamster.Editor.Testing
             }, token);
         }
 
+        /// <summary>Запускает сброс через игровой экран Dev Tools.</summary>
+        private async Task RunAccountResetThroughDevToolsAsync(
+            bool fullReset,
+            CancellationToken token)
+        {
+            if (fullReset)
+                await EnsurePlayerAccountConfiguredAsync(token);
+
+            await RunStepAsync("Открываем сброс аккаунта в Dev Tools.", () =>
+            {
+                OpenDevToolsAccountScreen();
+            }, token);
+
+            var buttonName = fullReset
+                ? "FullResetTestAccountButton"
+                : "ResetLocalAccountStateButton";
+            var step = fullReset
+                ? "Запускаем Full Reset Linked Account."
+                : "Запускаем Local Account Reset.";
+            await RunStepAsync(step, () =>
+            {
+                ClickLegacyButton(buttonName);
+            }, token);
+
+            if (fullReset)
+            {
+                await WaitForExternalActionAsync(
+                    "Завершите Google-вход. После ответа Full Reset продолжится сам.",
+                    () => _accountService.State == AccountState.NotStarted,
+                    GetAccountResetError,
+                    token);
+            }
+
+            Require(
+                _accountService.State == AccountState.NotStarted,
+                "Сброс аккаунта не завершился.");
+
+            await RunStepAsync("Закрываем Dev Tools.", () =>
+            {
+                ClickLegacyButton("CloseButton");
+            }, token);
+        }
+
+        /// <summary>Открывает Settings и ждёт завершения входа.</summary>
+        private async Task OpenSettingsAndWaitForLinkedAccountAsync(
+            CancellationToken token,
+            bool requireNewAccount = false)
+        {
+            await EnsurePlayerAccountConfiguredAsync(token);
+            var guestPlayerId = requireNewAccount
+                ? AuthenticationService.Instance.PlayerId
+                : null;
+
+            await RunStepAsync("Открываем Settings.", async () =>
+            {
+                Require(
+                    UIManager.OnModalShow != null,
+                    "Игровой UI ещё не готов.");
+                UIManager.OnModalShow.Invoke(ScreenEnum.SettingsModal);
+                await WaitUntilAsync(
+                    () => IsElementShown(
+                        FindElement<Button>("settings__btn-link-account")),
+                    "Кнопка аккаунта в Settings не открылась.",
+                    token);
+            }, token);
+
+            var instruction = requireNewAccount
+                ? "В Settings нажмите кнопку аккаунта и выберите свободный тестовый Google account."
+                : "В Settings нажмите кнопку аккаунта. Для существующего аккаунта подтвердите вход ещё раз.";
+            await WaitForExternalActionAsync(
+                instruction,
+                () => _accountService.State == AccountState.Linked,
+                () => _accountService.State == AccountState.Error
+                    ? "Вход в аккаунт завершился с ошибкой."
+                    : null,
+                token);
+
+            RequireLinkedPlayer();
+            Require(
+                !requireNewAccount ||
+                string.Equals(_playerId, guestPlayerId, StringComparison.Ordinal),
+                "Выбран существующий аккаунт. Для первого сохранения нужен свободный тестовый аккаунт.");
+        }
+
+        /// <summary>Ждёт настройки Unity Player Accounts.</summary>
+        private async Task EnsurePlayerAccountConfiguredAsync(
+            CancellationToken token)
+        {
+            if (HasPlayerAccountClientId())
+                return;
+
+            SettingsService.OpenProjectSettings(PlayerAccountProjectSettings);
+            await WaitForExternalActionAsync(
+                "Настройте Unity Player Accounts Client ID. Тест продолжится сам.",
+                HasPlayerAccountClientId,
+                getError: null,
+                token);
+        }
+
         /// <summary>Создаёт новую локальную гостевую сессию.</summary>
         private async Task PrepareFreshGuestAsync(
             bool unlinkServerAccount,
@@ -711,24 +814,10 @@ namespace LostCyberHamster.Editor.Testing
                 _snapshotService.Clear();
             }, token);
 
-            if (unlinkServerAccount &&
-                _accountService.State == AccountState.Linked)
-            {
-                await RunStepAsync(
-                    "Сбрасываем связанный тестовый аккаунт. Завершите Google-вход.",
-                    async () =>
-                    {
-                        await _accountService.FullResetTestAccountAsync();
-                    },
-                    token);
-            }
-            else
-            {
-                await RunStepAsync("Очищаем локальную сессию аккаунта.", () =>
-                {
-                    _accountService.ResetLocalAccountStateForTesting();
-                }, token);
-            }
+            var fullReset =
+                unlinkServerAccount &&
+                _accountService.State == AccountState.Linked;
+            await RunAccountResetThroughDevToolsAsync(fullReset, token);
 
             await RunStepAsync("Запускаем свежего гостя.", async () =>
             {
@@ -768,29 +857,7 @@ namespace LostCyberHamster.Editor.Testing
                 return;
             }
 
-            await PrepareFreshGuestAsync(
-                unlinkServerAccount: true,
-                token);
-
-            await RunStepAsync(
-                "Привязываем тестовый аккаунт. Завершите Google-вход.",
-                async () =>
-                {
-                    var result = await _accountService.LinkCurrentGuestAsync();
-                    Require(
-                        result != AccountLinkResult.Conflict,
-                        "Google account уже занят. Выберите свободный тестовый аккаунт.");
-                    Require(
-                        result == AccountLinkResult.Linked,
-                        $"Привязка аккаунта завершилась с результатом {result}.");
-                },
-                token);
-
-            await WaitUntilAsync(
-                () => _accountService.State == AccountState.Linked,
-                "Тестовый аккаунт не был привязан.",
-                token);
-            RequireLinkedPlayer();
+            await OpenSettingsAndWaitForLinkedAccountAsync(token);
         }
 
         /// <summary>Подготавливает связанный аккаунт и согласованное облако.</summary>
@@ -949,6 +1016,44 @@ namespace LostCyberHamster.Editor.Testing
             WriteStep(instruction);
         }
 
+        /// <summary>Ждёт действие пользователя вне окна Testing.</summary>
+        private async Task WaitForExternalActionAsync(
+            string instruction,
+            Func<bool> isCompleted,
+            Func<string> getError,
+            CancellationToken token)
+        {
+            _waitsForExternalAction = true;
+            State = CloudSaveE2ERunState.WaitingForUser;
+            WriteStep(instruction);
+
+            try
+            {
+                while (!isCompleted())
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (!EditorApplication.isPlaying)
+                        throw new InvalidOperationException("Play Mode остановлен.");
+
+                    var error = getError?.Invoke();
+                    if (!string.IsNullOrWhiteSpace(error))
+                        throw new InvalidOperationException(error);
+
+                    await Task.Delay(PollDelayMilliseconds, token);
+                }
+            }
+            finally
+            {
+                _waitsForExternalAction = false;
+                if (State == CloudSaveE2ERunState.WaitingForUser &&
+                    !token.IsCancellationRequested)
+                {
+                    State = CloudSaveE2ERunState.Running;
+                    Changed?.Invoke();
+                }
+            }
+        }
+
         /// <summary>Завершает сценарий успешно.</summary>
         private void Pass()
         {
@@ -971,6 +1076,7 @@ namespace LostCyberHamster.Editor.Testing
             _cancellation?.Cancel();
             _cancellation?.Dispose();
             _cancellation = null;
+            _waitsForExternalAction = false;
         }
 
         /// <summary>Показывает текущий шаг и пишет его в Console.</summary>
@@ -989,6 +1095,100 @@ namespace LostCyberHamster.Editor.Testing
         {
             _observedStatuses.Add(status);
             WriteStep($"Статус: {status}.");
+        }
+
+        /// <summary>Проверяет настройку Unity Player Accounts.</summary>
+        private static bool HasPlayerAccountClientId()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(
+                PlayerAccountSettingsPath);
+            if (settings == null)
+                return false;
+
+            var serializedSettings = new SerializedObject(settings);
+            var clientId = serializedSettings.FindProperty("clientId");
+            return clientId != null &&
+                   !string.IsNullOrWhiteSpace(clientId.stringValue);
+        }
+
+        /// <summary>Открывает экран аккаунта в Dev Tools.</summary>
+        private static void OpenDevToolsAccountScreen()
+        {
+            var resetButton = FindLegacyComponent<LegacyButton>(
+                "ResetLocalAccountStateButton");
+            if (resetButton != null &&
+                resetButton.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            var accountButton = FindLegacyComponent<LegacyButton>("AccountButton");
+            if (accountButton != null &&
+                accountButton.gameObject.activeInHierarchy)
+            {
+                accountButton.onClick.Invoke();
+                return;
+            }
+
+            var backButton = FindLegacyComponent<LegacyButton>("BackButton");
+            if (backButton != null &&
+                backButton.gameObject.activeInHierarchy)
+            {
+                backButton.onClick.Invoke();
+                ClickLegacyButton("AccountButton");
+                return;
+            }
+
+            ClickLegacyButton("OpenButton");
+            ClickLegacyButton("AccountButton");
+        }
+
+        /// <summary>Нажимает кнопку игрового Dev Tools.</summary>
+        private static void ClickLegacyButton(string name)
+        {
+            var button = FindLegacyComponent<LegacyButton>(name);
+            Require(button != null, $"В Dev Tools не найдена кнопка {name}.");
+            Require(
+                button.gameObject.activeInHierarchy,
+                $"Кнопка {name} сейчас скрыта.");
+            button.onClick.Invoke();
+        }
+
+        /// <summary>Возвращает ошибку сброса аккаунта.</summary>
+        private string GetAccountResetError()
+        {
+            if (_accountService.State == AccountState.Error)
+                return "Full Reset завершился с ошибкой.";
+
+            var result = FindLegacyComponent<LegacyText>("ResetResult");
+            if (result == null)
+                return null;
+            if (result.text.StartsWith(
+                    "Full reset was cancelled.",
+                    StringComparison.Ordinal))
+            {
+                return "Full Reset был отменён.";
+            }
+
+            return result.text.StartsWith("Error.", StringComparison.Ordinal)
+                ? "Full Reset не был завершён. Проверьте Dev Tools и Console."
+                : null;
+        }
+
+        /// <summary>Находит компонент игрового Dev Tools.</summary>
+        private static T FindLegacyComponent<T>(string name)
+            where T : Component
+        {
+            var components = UnityEngine.Object.FindObjectsByType<T>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            foreach (var component in components)
+            {
+                if (component.name == name)
+                    return component;
+            }
+
+            return null;
         }
 
         /// <summary>Находит UI-элемент в открытых документах.</summary>

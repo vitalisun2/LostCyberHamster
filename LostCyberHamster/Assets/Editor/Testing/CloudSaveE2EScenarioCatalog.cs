@@ -46,13 +46,13 @@ namespace LostCyberHamster.Editor.Testing
             return scenario switch
             {
                 CloudSaveE2EScenario.FirstCloudSave =>
-                    "Сам создаёт свежего гостя и проверяет первое сохранение после привязки.",
+                    "Проводит через Full Reset и проверяет первое сохранение после привязки.",
                 CloudSaveE2EScenario.AutomaticSynchronization =>
                     "Проверяет отправку прогресса после обычного локального сохранения.",
                 CloudSaveE2EScenario.DeferredSynchronization =>
                     "Проверяет повтор отправки после временной недоступности облака.",
                 CloudSaveE2EScenario.RestoreProgress =>
-                    "Сам создаёт гостя с другим прогрессом и проверяет вход в существующий аккаунт.",
+                    "Проводит через сброс гостя и вход в существующий аккаунт.",
                 CloudSaveE2EScenario.MultipleDevices =>
                     "Проверяет получение изменений, сделанных на другом устройстве.",
                 CloudSaveE2EScenario.ConflictChooseCloud =>
