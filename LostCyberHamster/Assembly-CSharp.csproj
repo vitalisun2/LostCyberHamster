@@ -157,7 +157,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectModel.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperRoofJumpOutcomeResolver.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\RoofJumpOverChainModel.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Gateway\CloudSaveWriteResult.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerProgressMigration.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialGameplayView.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopItemType.cs" />
@@ -176,10 +175,8 @@
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitAnalyticsManagerLoadingTask.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\LoseModalController.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\ShopModalController.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Snapshots\CloudSaveSnapshotCodec.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\AddressableExtentions.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverExecutor.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Snapshots\CloudSaveSnapshotRestorer.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UnspawnOnJumpedOnMechanics.cs" />
     <Compile Include="Assets\Scripts\Analytics\AnalyticsManager.cs" />
     <Compile Include="Assets\Scripts\UI\Components\Healthbar.cs" />
@@ -225,7 +222,6 @@
     <Compile Include="Assets\Scripts\CloudSave_\Models\CloudSyncStateEnum_.cs" />
     <Compile Include="Assets\Scripts\DevTools\DevToolsMenuOverlay.cs" />
     <Compile Include="Assets\Scripts\Debug\FeatureFlagToggle.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Uploads\PendingSnapshotStore.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\RootTask.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Persistence\PlayerProgressCommitter.cs" />
     <Compile Include="Assets\Scripts\Common\Models\PatternRef.cs" />
@@ -290,7 +286,6 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopItemList.cs" />
     <Compile Include="Assets\Scripts\CloudSave_\Models\CloudSaveConflict_.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\KeyboardMechanics.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Versions\ConfirmedVersionStore.cs" />
     <Compile Include="Assets\Scripts\DevTools\Root\RootDevToolsView.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\QuestSystem\Quest.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\WorldSnapshot.cs" />
@@ -356,13 +351,11 @@
     <Compile Include="Assets\Scripts\GameEngine\Controllers\CollisionController.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CoinOneBonus.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\BotStrategyDiagnostics.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Conflicts\CloudSaveConflictService.cs" />
     <Compile Include="Assets\Scripts\Account\AccountRestore\ExistingAccountRestoreCoordinator.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelCatalogRuntimeConfigurator.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RoofJumpMechanics.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelSelectionModel.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\TapMechanics.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Snapshots\CloudSaveSnapshotDto.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RunScoreMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\PlannedAction.cs" />
@@ -409,7 +402,6 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinFactory.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneWindowFinder.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\EnergyShieldSkin.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\CloudSyncService.cs" />
     <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinAction.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\IActionExecutionHandler.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Execution\LiveObstacleResolver.cs" />
@@ -422,7 +414,6 @@
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningGraphNode.cs" />
     <Compile Include="Assets\Scripts\DevTools\Account\AccountDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CollectCoinsOrBonusAction.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Gateway\UnityCloudSaveGateway.cs" />
     <Compile Include="Assets\Scripts\UI\Components\BaseStorageUI.cs" />
     <Compile Include="Assets\Scripts\Account\UnityPlayerAccountGateway.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelInfo.cs" />
@@ -465,7 +456,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\RoofJumpOverActionResolver.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitModel.cs" />
     <Compile Include="Assets\Scripts\CloudSave_\Models\CloudSaveSnapshot_.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Conflicts\CloudSaveConflictResolutionOutcome.cs" />
     <Compile Include="Assets\Scripts\Common\ObstacleLaneResolver.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitBackgroundLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnWindowCalculator.cs" />
@@ -490,7 +480,6 @@
     <Compile Include="Assets\Scripts\System\ObstacleFactory.cs" />
     <Compile Include="Assets\Scripts\SharedCore\UI\UIElements\LocalizedLabel.cs" />
     <Compile Include="Assets\Scripts\Common\Models\PatternTemplate.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Gateway\ICloudSaveGateway.cs" />
     <Compile Include="Assets\Scripts\CloudSave_\Models\CloudSyncStatusEnum_.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranchMetrics.cs" />
@@ -500,7 +489,6 @@
     <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinStep.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitDecorationsLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoof\SuperJumpFromRoofStrategy.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Conflicts\CloudSaveConflictModel.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\RoofJumpOverFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneExecutor.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\HealthBarMechanics.cs" />
@@ -523,7 +511,6 @@
     <Compile Include="Assets\Scripts\Tutorial\Runtime\InitTutorialRuntimeLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Common\Models\Pattern.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoof\JumpFromRoofPolicy.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Uploads\SnapshotUploadService.cs" />
     <Compile Include="Assets\Scripts\Gameplay\BaseEffect.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\JumpFromRoofOnRoofTravel.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelDataProvider.cs" />
@@ -586,7 +573,6 @@
     <Compile Include="Assets\Scripts\Bot\Planning\PlanEvaluator.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinManagerDebugger.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitCurrentLevelAssetsLoadingTask.cs" />
-    <Compile Include="Assets\Scripts\CloudSave\Gateway\CloudSaveReadResult.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialGameplayWorldAdapter.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoofOnRoof\SuperJumpFromRoofOnRoofTiming.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\GameplayDevToolsActionResult.cs" />

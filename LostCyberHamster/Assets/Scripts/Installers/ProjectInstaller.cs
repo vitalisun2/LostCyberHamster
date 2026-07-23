@@ -1,5 +1,4 @@
 using Assets.Scripts.Account;
-using GameManagement.CloudSave;
 using GameManagement.CloudSave_;
 using GameManagement.CloudSave_.Gateway;
 using GameManagement.CloudSave_.Version;
@@ -28,17 +27,9 @@ namespace Assets.Scripts.Installers
                 .To<UnityPlayerAccountGateway>()
                 .AsSingle();
             Container.Bind<AccountService>().AsSingle();
-
-            // Регистрируем шлюз и сервисы облачной синхронизации.
-            Container.Bind<ICloudSaveGateway>()
-                .To<UnityCloudSaveGateway>()
-                .AsSingle();
-            Container.Bind<SnapshotUploadService>().AsSingle();
-            Container.Bind<CloudSaveConflictService>().AsSingle();
-            Container.Bind<CloudSyncService>().AsSingle().NonLazy();
             Container.Bind<ExistingAccountRestoreCoordinator>().AsSingle();
 
-            // Подключаем новую облачную синхронизацию.
+            // Подключаем облачную синхронизацию.
             Container.Bind<ICloudSaveGateway_>()
                 .To<UnityCloudSaveGateway_>()
                 .AsSingle();
