@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using GameManagement.CloudSave;
+using GameManagement.CloudSave_;
 
 namespace Assets.Scripts.Account
 {
@@ -13,11 +13,11 @@ namespace Assets.Scripts.Account
         private readonly AccountService _accountService;
 
         /// <summary>Загружает и применяет облачный снимок выбранного аккаунта.</summary>
-        private readonly CloudSyncService _cloudSyncService;
+        private readonly CloudSyncService_ _cloudSyncService;
 
         public ExistingAccountRestoreCoordinator(
             AccountService accountService,
-            CloudSyncService cloudSyncService)
+            CloudSyncService_ cloudSyncService)
         {
             _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
             _cloudSyncService = cloudSyncService ?? throw new ArgumentNullException(nameof(cloudSyncService));
@@ -27,18 +27,17 @@ namespace Assets.Scripts.Account
         public async Task<ExistingAccountRestoreResult> RestoreAsync()
         {
             // Запускаем вход и принимаем новую сессию только после облачного восстановления.
-            var restoreResult = ExistingAccountRestoreResult.SignInFailed;
             var signedIn = await _accountService.SignInExistingAccountAsync(async playerId =>
             {
                 // Загружаем прогресс новой сессии до её окончательного принятия.
-                restoreResult = await _cloudSyncService.LoadExistingAccountAsync(playerId);
-                return restoreResult == ExistingAccountRestoreResult.Restored;
+                await _cloudSyncService.RestoreProgressAsync(playerId);
+                return true;
             });
 
-            // Возвращаем успех входа или точную причину отказа восстановления.
+            // Неудачный вход означает отказ восстановления.
             return signedIn
                 ? ExistingAccountRestoreResult.Restored
-                : restoreResult;
+                : ExistingAccountRestoreResult.SignInFailed;
         }
     }
 }

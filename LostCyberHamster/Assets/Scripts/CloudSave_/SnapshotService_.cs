@@ -14,21 +14,13 @@ namespace GameManagement.CloudSave_
         {
             // Восстанавливаем снимок.
             if (!PlayerPrefs.HasKey(SnapshotKey))
-            {
-                Status = CloudSyncStatusEnum_.None;
                 return;
-            }
 
             Snapshot = CloudSaveSnapshot_.FromJson(PlayerPrefs.GetString(SnapshotKey));
-
-            Status = CloudSyncStatusEnum_.Pending;
         }
 
         /// <summary>Текущий снимок.</summary>
         public CloudSaveSnapshot_ Snapshot { get; private set; }
-
-        /// <summary>Статус текущего снимка.</summary>
-        public CloudSyncStatusEnum_ Status { get; private set; }
 
         /// <summary>Ставит снимок в очередь.</summary>
         public void SetPending(CloudSaveSnapshot_ snapshot)
@@ -37,7 +29,6 @@ namespace GameManagement.CloudSave_
                 throw new ArgumentNullException(nameof(snapshot));
 
             Snapshot = snapshot;
-            Status = CloudSyncStatusEnum_.Pending;
             Save();
         }
 
@@ -45,7 +36,6 @@ namespace GameManagement.CloudSave_
         public void Clear()
         {
             Snapshot = null;
-            Status = CloudSyncStatusEnum_.None;
             PlayerPrefs.DeleteKey(SnapshotKey);
             PlayerPrefs.Save();
         }

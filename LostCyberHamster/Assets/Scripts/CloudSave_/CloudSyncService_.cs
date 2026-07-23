@@ -43,10 +43,11 @@ namespace GameManagement.CloudSave_
             // Подписываемся на события.
             _accountService.CurrentGuestLinked += OnAccountLinked;
             PlayerProgressCommitter.CommitCompleted += OnCheckpointCommitted;
+            PlayerProgressLifecycleCheckpoint.ApplicationResumed += OnApplicationResumed;
         }
 
         #region Обработка событий
-        /// <summary>Создаёт первое сохранение после привязки аккаунта.</summary>
+        /// <summary>Синхронизирует прогресс после привязки аккаунта.</summary>
         private async void OnAccountLinked(string playerId)
         {
             if (_isDisposed)
@@ -54,14 +55,14 @@ namespace GameManagement.CloudSave_
 
             try
             {
-                await CreateFirstCloudSaveAsync(playerId);
+                await SynchronizeProgressAsync();
             }
             catch (Exception)
             {
             }
         }
 
-        /// <summary>Создаёт сохранение после локального сохранения.</summary>
+        /// <summary>Синхронизирует прогресс после локального сохранения.</summary>
         private async void OnCheckpointCommitted(CheckpointReason reason)
         {
             if (_isDisposed)
@@ -71,7 +72,28 @@ namespace GameManagement.CloudSave_
 
             try
             {
+                if (reason == CheckpointReason.MenuEntered)
+                {
+                    await SynchronizeProgressAsync();
+                    return;
+                }
+
                 await CreateCloudSaveAsync();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        /// <summary>Синхронизирует прогресс после возврата в игру.</summary>
+        private async void OnApplicationResumed()
+        {
+            if (_isDisposed)
+                return;
+
+            try
+            {
+                await SynchronizeProgressAsync();
             }
             catch (Exception)
             {
@@ -83,19 +105,9 @@ namespace GameManagement.CloudSave_
         #region Основные методы
 
         /// <summary>Создаёт первое облачное сохранение.</summary>
-        private async Task CreateFirstCloudSaveAsync(string linkedPlayerId)
+        private async Task CreateFirstCloudSaveAsync(string playerId)
         {
-            // Проверяем, можно ли создать первое сохранение.
-            if (!_accountService.TryGetLinkedPlayerId(out var playerId) ||
-                !string.Equals(playerId, linkedPlayerId, StringComparison.Ordinal))
-                return;
-            if (_versionStore.HasConfirmedVersion(playerId))
-                return;
-            if (_snapshotService.Snapshot != null &&
-                !string.Equals(_snapshotService.Snapshot.PlayerId, playerId, StringComparison.Ordinal))
-                return;
-
-            // Создаём первый снимок прогресса.
+            // Готовим первый снимок, если его ещё нет.
             if (_snapshotService.Snapshot == null)
             {
                 PlayerProgressCommitter.Commit(CheckpointReason.AccountLinked);
@@ -105,7 +117,7 @@ namespace GameManagement.CloudSave_
             }
 
             // Отправляем подготовленный снимок.
-            await UploadPendingSnapshotAsync();
+            await UploadPendingSnapshotAsync(null);
         }
 
         /// <summary>Создаёт облачное сохранение.</summary>
@@ -120,15 +132,72 @@ namespace GameManagement.CloudSave_
                 playerId,
                 GameDataManager.PlayerData.ToJson()));
 
-            // Отправляем подготовленный снимок.
-            await UploadPendingSnapshotAsync();
+            // Синхронизируем новое сохранение.
+            await SynchronizeProgressAsync();
+        }
+
+        /// <summary>Восстанавливает прогресс существующего аккаунта.</summary>
+        public async Task RestoreProgressAsync(string playerId)
+        {
+            // Загружаем прогресс аккаунта.
+            var cloudSave = await _gateway.LoadSnapshotAsync();
+            if (cloudSave == null)
+            {
+                await CreateFirstCloudSaveAsync(playerId);
+                return;
+            }
+
+            // Заменяем локальный прогресс облачным.
+            ApplyCloudProgress(playerId, cloudSave);
+            _snapshotService.Clear();
+        }
+
+        /// <summary>Синхронизирует локальный и облачный прогресс.</summary>
+        private async Task SynchronizeProgressAsync()
+        {
+            if (!_accountService.TryGetLinkedPlayerId(out var playerId) ||
+                _isUploadActive)
+                return;
+
+            // Получаем текущее состояние синхронизации.
+            var cloudSave = await _gateway.LoadSnapshotAsync();
+            var confirmedRevision = _versionStore.GetConfirmedRevision(playerId);
+            var syncState = GetSyncState(
+                cloudSave,
+                _snapshotService.Snapshot,
+                confirmedRevision);
+
+            // Выполняем нужный сценарий.
+            switch (syncState)
+            {
+                case CloudSyncStateEnum_.CloudMissing:
+                    await CreateFirstCloudSaveAsync(playerId);
+                    break;
+
+                case CloudSyncStateEnum_.LocalChanged:
+                    await UploadPendingSnapshotAsync(
+                        cloudSave.Version.ServerRevision);
+                    break;
+
+                case CloudSyncStateEnum_.CloudChanged:
+                    ApplyCloudProgress(playerId, cloudSave);
+                    break;
+
+                case CloudSyncStateEnum_.Conflict:
+                    // Разрешение конфликта добавим позже.
+                    break;
+
+                case CloudSyncStateEnum_.Synchronized:
+                    break;
+            }
         }
 
         /// <summary>Отправляет ожидающий снимок.</summary>
-        private async Task UploadPendingSnapshotAsync()
+        private async Task UploadPendingSnapshotAsync(string expectedRevision)
         {
-            if (_isUploadActive)
+            if (_isUploadActive || _snapshotService.Snapshot == null)
                 return;
+
             _isUploadActive = true;
 
             try
@@ -137,33 +206,16 @@ namespace GameManagement.CloudSave_
                 while (_snapshotService.Snapshot != null)
                 {
                     var snapshot = _snapshotService.Snapshot;
-
-                    // Выбираем безопасный способ записи.
-                    var cloud = await _gateway.LoadSnapshotAsync();
-                    CloudSaveVersion_ version;
-                    if (cloud == null)
-                    {
-                        version = await _gateway.SaveSnapshotAsync(snapshot, null);
-                    }
-                    else if (IsSameSnapshot(cloud.Snapshot, snapshot))
-                    {
-                        version = cloud.Version;
-                    }
-                    else if (CanUpdateSnapshot(cloud, snapshot))
-                    {
-                        version = await _gateway.SaveSnapshotAsync(
-                            snapshot,
-                            cloud.Version.ServerRevision);
-                    }
-                    else
-                    {
-                        return;
-                    }
+                    var version = await _gateway.SaveSnapshotAsync(
+                        snapshot,
+                        expectedRevision);
 
                     // Подтверждаем отправленный снимок.
                     _versionStore.SaveConfirmedVersion(snapshot.PlayerId, version.ServerRevision);
                     if (ReferenceEquals(_snapshotService.Snapshot, snapshot))
                         _snapshotService.Clear();
+
+                    expectedRevision = version.ServerRevision;
                 }
             }
             catch (Exception)
@@ -178,37 +230,45 @@ namespace GameManagement.CloudSave_
         #endregion
 
         #region Вспомогательные методы
-        /// <summary>Определяет, что снимок уже загружен.</summary>
-        private static bool IsSameSnapshot(
-            CloudSaveSnapshot_ cloudSnapshot,
-            CloudSaveSnapshot_ pendingSnapshot)
+        /// <summary>Определяет текущую ситуацию синхронизации.</summary>
+        private static CloudSyncStateEnum_ GetSyncState(
+            CloudSaveReadResult_ cloudSave,
+            CloudSaveSnapshot_ pendingSnapshot,
+            string confirmedRevision)
         {
-            return string.Equals(
-                       cloudSnapshot.PlayerId,
-                       pendingSnapshot.PlayerId,
-                       StringComparison.Ordinal) &&
-                   string.Equals(
-                       cloudSnapshot.PlayerDataJson,
-                       pendingSnapshot.PlayerDataJson,
-                       StringComparison.Ordinal);
+            // Определяем изменения с обеих сторон.
+            var hasCloudSave = cloudSave != null;
+            var hasPending = pendingSnapshot != null;
+            var cloudChanged = hasCloudSave &&
+                !string.Equals(
+                    confirmedRevision,
+                    cloudSave.Version.ServerRevision,
+                    StringComparison.Ordinal);
+
+            // Выбираем подходящий сценарий.
+            return (hasCloudSave, hasPending, cloudChanged) switch
+            {
+                (false, _, _) => CloudSyncStateEnum_.CloudMissing,
+                (true, false, false) => CloudSyncStateEnum_.Synchronized,
+                (true, true, false) => CloudSyncStateEnum_.LocalChanged,
+                (true, false, true) => CloudSyncStateEnum_.CloudChanged,
+                (true, true, true) => CloudSyncStateEnum_.Conflict
+            };
         }
 
-        /// <summary>Разрешает безопасно обновить облачный снимок.</summary>
-        private bool CanUpdateSnapshot(
-            CloudSaveReadResult_ cloud,
-            CloudSaveSnapshot_ pendingSnapshot)
+        /// <summary>Применяет облачный прогресс.</summary>
+        private void ApplyCloudProgress(
+            string playerId,
+            CloudSaveReadResult_ cloudSave)
         {
-            if (!string.Equals(
-                    cloud.Snapshot.PlayerId,
-                    pendingSnapshot.PlayerId,
-                    StringComparison.Ordinal))
-                return false;
+            // Заменяем локальный прогресс.
+            var restoredData = PlayerData.FromJson(cloudSave.Snapshot.PlayerDataJson);
+            GameDataManager.ReplacePlayerData(restoredData);
 
-            var confirmedRevision = _versionStore.GetConfirmedRevision(pendingSnapshot.PlayerId);
-            return string.Equals(
-                confirmedRevision,
-                cloud.Version.ServerRevision,
-                StringComparison.Ordinal);
+            // Запоминаем принятую облачную версию.
+            _versionStore.SaveConfirmedVersion(
+                playerId,
+                cloudSave.Version.ServerRevision);
         }
 
         #endregion
@@ -222,6 +282,7 @@ namespace GameManagement.CloudSave_
             _isDisposed = true;
             _accountService.CurrentGuestLinked -= OnAccountLinked;
             PlayerProgressCommitter.CommitCompleted -= OnCheckpointCommitted;
+            PlayerProgressLifecycleCheckpoint.ApplicationResumed -= OnApplicationResumed;
         }
     }
 }
