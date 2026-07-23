@@ -2,8 +2,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using GameManagement;
-using GameManagement.CloudSave_;
-using GameManagement.CloudSave_.Models;
+using GameManagement.CloudSave;
+using GameManagement.CloudSave.Models;
 using UnityEngine;
 
 namespace LostCyberHamster.UI
@@ -12,7 +12,7 @@ namespace LostCyberHamster.UI
     public sealed class CloudSaveConflictCoordinator
     {
         private readonly UIManager _uiManager;
-        private readonly ConflictService_ _conflictService;
+        private readonly ConflictService _conflictService;
         private readonly CloudSaveConflictModalController _modalController;
 
         private bool _isEnabled;
@@ -22,7 +22,7 @@ namespace LostCyberHamster.UI
 
         public CloudSaveConflictCoordinator(
             UIManager uiManager,
-            ConflictService_ conflictService)
+            ConflictService conflictService)
         {
             _uiManager = uiManager ?? throw new ArgumentNullException(nameof(uiManager));
             _conflictService = conflictService ?? throw new ArgumentNullException(nameof(conflictService));
@@ -54,7 +54,7 @@ namespace LostCyberHamster.UI
             _modalController.ThisDeviceSelected -= OnThisDeviceSelected;
         }
 
-        private void OnConflictDetected(CloudSaveConflict_ _)
+        private void OnConflictDetected(CloudSaveConflict _)
         {
             if (!_isResolutionInProgress)
                 PresentCurrentConflict();
@@ -136,14 +136,14 @@ namespace LostCyberHamster.UI
             }
         }
 
-        private static CloudSaveConflictModalDto CreateModalData(CloudSaveConflict_ conflict)
+        private static CloudSaveConflictModalDto CreateModalData(CloudSaveConflict conflict)
         {
             return new CloudSaveConflictModalDto(
                 CreateCard(conflict.CloudSave.Snapshot),
                 CreateCard(conflict.LocalSnapshot));
         }
 
-        private static CloudSaveConflictCardDto CreateCard(CloudSaveSnapshot_ snapshot)
+        private static CloudSaveConflictCardDto CreateCard(CloudSaveSnapshot snapshot)
         {
             var playerData = PlayerData.FromJson(snapshot.PlayerDataJson);
             var completedLevels = playerData.Progress.Entries.Count(entry => entry.IsCompleted);

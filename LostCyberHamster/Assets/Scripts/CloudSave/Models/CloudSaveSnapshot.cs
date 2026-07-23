@@ -2,11 +2,11 @@ using System;
 using System.Globalization;
 using UnityEngine;
 
-namespace GameManagement.CloudSave_.Models
+namespace GameManagement.CloudSave.Models
 {
     /// <summary>Фиксирует прогресс игрока для облачной синхронизации.</summary>
     [Serializable]
-    public sealed class CloudSaveSnapshot_
+    public sealed class CloudSaveSnapshot
     {
         /// <summary>Владелец снимка.</summary>
         [SerializeField]
@@ -20,7 +20,7 @@ namespace GameManagement.CloudSave_.Models
         [SerializeField]
         private string _savedAtUtc;
 
-        public CloudSaveSnapshot_(string playerId, string playerDataJson)
+        public CloudSaveSnapshot(string playerId, string playerDataJson)
             : this(
                 playerId,
                 playerDataJson,
@@ -28,7 +28,7 @@ namespace GameManagement.CloudSave_.Models
         {
         }
 
-        private CloudSaveSnapshot_(
+        private CloudSaveSnapshot(
             string playerId,
             string playerDataJson,
             string savedAtUtc)
@@ -63,12 +63,12 @@ namespace GameManagement.CloudSave_.Models
         }
 
         /// <summary>Восстанавливает снимок из облачного представления.</summary>
-        public static CloudSaveSnapshot_ FromJson(string json)
+        public static CloudSaveSnapshot FromJson(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
                 throw new ArgumentException("Snapshot JSON must be provided.", nameof(json));
 
-            var snapshot = JsonUtility.FromJson<CloudSaveSnapshot_>(json);
+            var snapshot = JsonUtility.FromJson<CloudSaveSnapshot>(json);
             if (snapshot == null ||
                 string.IsNullOrWhiteSpace(snapshot._playerId) ||
                 string.IsNullOrWhiteSpace(snapshot._playerDataJson) ||
@@ -81,7 +81,7 @@ namespace GameManagement.CloudSave_.Models
                 throw new InvalidOperationException("Snapshot JSON is invalid.");
             }
 
-            return new CloudSaveSnapshot_(
+            return new CloudSaveSnapshot(
                 snapshot._playerId,
                 snapshot._playerDataJson,
                 snapshot._savedAtUtc);

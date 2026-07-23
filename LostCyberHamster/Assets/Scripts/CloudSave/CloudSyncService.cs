@@ -1,29 +1,29 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Assets.Scripts.Account;
-using GameManagement.CloudSave_.Gateway;
-using GameManagement.CloudSave_.Models;
-using GameManagement.CloudSave_.Version;
+using GameManagement.CloudSave.Gateway;
+using GameManagement.CloudSave.Models;
+using GameManagement.CloudSave.Version;
 
-namespace GameManagement.CloudSave_
+namespace GameManagement.CloudSave
 {
     /// <summary>Создаёт и отправляет облачные сохранения.</summary>
-    public sealed class CloudSyncService_ : IDisposable
+    public sealed class CloudSyncService : IDisposable
     {
         /// <summary>Предоставляет текущий аккаунт.</summary>
         private readonly AccountService _accountService;
 
         /// <summary>Хранит подтверждённые облачные версии.</summary>
-        private readonly ICloudSaveVersionStore_ _versionStore;
+        private readonly ICloudSaveVersionStore _versionStore;
 
         /// <summary>Читает и записывает облачный снимок.</summary>
-        private readonly ICloudSaveGateway_ _gateway;
+        private readonly ICloudSaveGateway _gateway;
 
         /// <summary>Управляет локальным снимком.</summary>
-        private readonly SnapshotService_ _snapshotService;
+        private readonly SnapshotService _snapshotService;
 
         /// <summary>Управляет конфликтом прогресса.</summary>
-        private readonly ConflictService_ _conflictService;
+        private readonly ConflictService _conflictService;
 
         /// <summary>Не допускает параллельные отправки.</summary>
         private bool _isUploadActive;
@@ -31,12 +31,12 @@ namespace GameManagement.CloudSave_
         /// <summary>Запрещает обработку новых событий.</summary>
         private bool _isDisposed;
 
-        public CloudSyncService_(
+        public CloudSyncService(
             AccountService accountService,
-            ICloudSaveVersionStore_ versionStore,
-            ICloudSaveGateway_ gateway,
-            SnapshotService_ snapshotService,
-            ConflictService_ conflictService)
+            ICloudSaveVersionStore versionStore,
+            ICloudSaveGateway gateway,
+            SnapshotService snapshotService,
+            ConflictService conflictService)
         {
             // Сохраняем зависимости.
             _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
@@ -53,23 +53,23 @@ namespace GameManagement.CloudSave_
         }
 
         /// <summary>Текущее состояние облачной синхронизации.</summary>
-        public CloudSyncStatusEnum_ Status
+        public CloudSyncStatusEnum Status
         {
             get
             {
                 if (_conflictService.CurrentConflict != null)
-                    return CloudSyncStatusEnum_.Conflict;
+                    return CloudSyncStatusEnum.Conflict;
                 if (_isUploadActive)
-                    return CloudSyncStatusEnum_.Synchronizing;
+                    return CloudSyncStatusEnum.Synchronizing;
                 if (_snapshotService.Snapshot != null)
-                    return CloudSyncStatusEnum_.Pending;
+                    return CloudSyncStatusEnum.Pending;
 
-                return CloudSyncStatusEnum_.Saved;
+                return CloudSyncStatusEnum.Saved;
             }
         }
 
         /// <summary>Возникает при изменении состояния синхронизации.</summary>
-        public event Action<CloudSyncStatusEnum_> StatusChanged;
+        public event Action<CloudSyncStatusEnum> StatusChanged;
 
         #region Обработка событий
         /// <summary>Синхронизирует прогресс после привязки аккаунта.</summary>
@@ -142,7 +142,7 @@ namespace GameManagement.CloudSave_
             if (_snapshotService.Snapshot == null)
             {
                 PlayerProgressCommitter.Commit(CheckpointReason.AccountLinked);
-                _snapshotService.SetPending(new CloudSaveSnapshot_(
+                _snapshotService.SetPending(new CloudSaveSnapshot(
                     playerId,
                     GameDataManager.PlayerData.ToJson()));
                 NotifyStatusChanged();
@@ -160,7 +160,7 @@ namespace GameManagement.CloudSave_
                 return;
 
             // Готовим последний прогресс к отправке.
-            _snapshotService.SetPending(new CloudSaveSnapshot_(
+            _snapshotService.SetPending(new CloudSaveSnapshot(
                 playerId,
                 GameDataManager.PlayerData.ToJson()));
             NotifyStatusChanged();
@@ -204,27 +204,27 @@ namespace GameManagement.CloudSave_
             // Выполняем нужный сценарий.
             switch (syncState)
             {
-                case CloudSyncStateEnum_.CloudMissing:
+                case CloudSyncStateEnum.CloudMissing:
                     await CreateFirstCloudSaveAsync(playerId);
                     break;
 
-                case CloudSyncStateEnum_.LocalChanged:
+                case CloudSyncStateEnum.LocalChanged:
                     await UploadPendingSnapshotAsync(
                         cloudSave.Version.ServerRevision);
                     break;
 
-                case CloudSyncStateEnum_.CloudChanged:
+                case CloudSyncStateEnum.CloudChanged:
                     ApplyCloudProgress(playerId, cloudSave);
                     break;
 
-                case CloudSyncStateEnum_.Conflict:
+                case CloudSyncStateEnum.Conflict:
                     _conflictService.SetConflict(
                         _snapshotService.Snapshot,
                         cloudSave);
                     NotifyStatusChanged();
                     break;
 
-                case CloudSyncStateEnum_.Synchronized:
+                case CloudSyncStateEnum.Synchronized:
                     break;
             }
         }
@@ -270,9 +270,9 @@ namespace GameManagement.CloudSave_
 
         #region Вспомогательные методы
         /// <summary>Определяет текущую ситуацию синхронизации.</summary>
-        private static CloudSyncStateEnum_ GetSyncState(
-            CloudSaveReadResult_ cloudSave,
-            CloudSaveSnapshot_ pendingSnapshot,
+        private static CloudSyncStateEnum GetSyncState(
+            CloudSaveReadResult cloudSave,
+            CloudSaveSnapshot pendingSnapshot,
             string confirmedRevision)
         {
             // Определяем изменения с обеих сторон.
@@ -287,18 +287,18 @@ namespace GameManagement.CloudSave_
             // Выбираем подходящий сценарий.
             return (hasCloudSave, hasPending, cloudChanged) switch
             {
-                (false, _, _) => CloudSyncStateEnum_.CloudMissing,
-                (true, false, false) => CloudSyncStateEnum_.Synchronized,
-                (true, true, false) => CloudSyncStateEnum_.LocalChanged,
-                (true, false, true) => CloudSyncStateEnum_.CloudChanged,
-                (true, true, true) => CloudSyncStateEnum_.Conflict
+                (false, _, _) => CloudSyncStateEnum.CloudMissing,
+                (true, false, false) => CloudSyncStateEnum.Synchronized,
+                (true, true, false) => CloudSyncStateEnum.LocalChanged,
+                (true, false, true) => CloudSyncStateEnum.CloudChanged,
+                (true, true, true) => CloudSyncStateEnum.Conflict
             };
         }
 
         /// <summary>Применяет облачный прогресс.</summary>
         private void ApplyCloudProgress(
             string playerId,
-            CloudSaveReadResult_ cloudSave)
+            CloudSaveReadResult cloudSave)
         {
             // Заменяем локальный прогресс.
             var restoredData = PlayerData.FromJson(cloudSave.Snapshot.PlayerDataJson);

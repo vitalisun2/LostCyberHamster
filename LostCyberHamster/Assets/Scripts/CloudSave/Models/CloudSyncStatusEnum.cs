@@ -1,7 +1,7 @@
-namespace GameManagement.CloudSave_.Models
+namespace GameManagement.CloudSave.Models
 {
     /// <summary>Состояние облачной синхронизации.</summary>
-    public enum CloudSyncStatusEnum_
+    public enum CloudSyncStatusEnum
     {
         /// <summary>Прогресс сохранён в облаке.</summary>
         Saved,

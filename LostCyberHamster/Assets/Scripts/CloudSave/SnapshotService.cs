@@ -1,29 +1,29 @@
 using System;
-using GameManagement.CloudSave_.Models;
+using GameManagement.CloudSave.Models;
 using UnityEngine;
 
-namespace GameManagement.CloudSave_
+namespace GameManagement.CloudSave
 {
     /// <summary>Управляет текущим снимком синхронизации.</summary>
-    public sealed class SnapshotService_
+    public sealed class SnapshotService
     {
         /// <summary>Ключ снимка.</summary>
         private const string SnapshotKey = "CloudSave_.PendingSnapshot";
 
-        public SnapshotService_()
+        public SnapshotService()
         {
             // Восстанавливаем снимок.
             if (!PlayerPrefs.HasKey(SnapshotKey))
                 return;
 
-            Snapshot = CloudSaveSnapshot_.FromJson(PlayerPrefs.GetString(SnapshotKey));
+            Snapshot = CloudSaveSnapshot.FromJson(PlayerPrefs.GetString(SnapshotKey));
         }
 
         /// <summary>Текущий снимок.</summary>
-        public CloudSaveSnapshot_ Snapshot { get; private set; }
+        public CloudSaveSnapshot Snapshot { get; private set; }
 
         /// <summary>Ставит снимок в очередь.</summary>
-        public void SetPending(CloudSaveSnapshot_ snapshot)
+        public void SetPending(CloudSaveSnapshot snapshot)
         {
             if (snapshot == null)
                 throw new ArgumentNullException(nameof(snapshot));

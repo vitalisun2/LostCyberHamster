@@ -2,8 +2,8 @@ using System.Threading.Tasks;
 using Assets.Scripts.Account;
 using Assets.Scripts.System;
 using GameManagement;
-using GameManagement.CloudSave_;
-using GameManagement.CloudSave_.Models;
+using GameManagement.CloudSave;
+using GameManagement.CloudSave.Models;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
@@ -29,7 +29,7 @@ namespace LostCyberHamster.UI
 
         private readonly AccountService _accountService;
         private readonly ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
-        private readonly CloudSyncService_ _cloudSyncService;
+        private readonly CloudSyncService _cloudSyncService;
         private SettingsData _settingsData = new();
         private bool _hasAccountLinkConflict;
         private int _accountUiVersion;
@@ -38,7 +38,7 @@ namespace LostCyberHamster.UI
             UIDocument uiDocument,
             AccountService accountService,
             ExistingAccountRestoreCoordinator existingAccountRestoreCoordinator,
-            CloudSyncService_ cloudSyncService)
+            CloudSyncService cloudSyncService)
             : base(uiDocument)
         {
             _accountService = accountService;
@@ -99,7 +99,7 @@ namespace LostCyberHamster.UI
             _cloudSyncService.StatusChanged -= OnCloudSyncStatusChanged;
         }
 
-        private void OnCloudSyncStatusChanged(CloudSyncStatusEnum_ status)
+        private void OnCloudSyncStatusChanged(CloudSyncStatusEnum status)
         {
             UpdateCloudSyncStatus(status);
         }
@@ -137,7 +137,7 @@ namespace LostCyberHamster.UI
         }
 
         /// <summary>Показывает актуальное состояние облачного сохранения.</summary>
-        private void UpdateCloudSyncStatus(CloudSyncStatusEnum_ status)
+        private void UpdateCloudSyncStatus(CloudSyncStatusEnum status)
         {
             // Показываем статус только связанному аккаунту.
             var isLinked = _accountService.State == AccountState.Linked;
@@ -150,10 +150,10 @@ namespace LostCyberHamster.UI
             // Выводим понятное состояние синхронизации.
             var localizationKey = status switch
             {
-                CloudSyncStatusEnum_.Saved => "cloud_sync_status_saved",
-                CloudSyncStatusEnum_.Synchronizing => "cloud_sync_status_synchronizing",
-                CloudSyncStatusEnum_.Pending => "cloud_sync_status_pending",
-                CloudSyncStatusEnum_.Conflict => "cloud_sync_status_conflict",
+                CloudSyncStatusEnum.Saved => "cloud_sync_status_saved",
+                CloudSyncStatusEnum.Synchronizing => "cloud_sync_status_synchronizing",
+                CloudSyncStatusEnum.Pending => "cloud_sync_status_pending",
+                CloudSyncStatusEnum.Conflict => "cloud_sync_status_conflict",
                 _ => "cloud_sync_status_pending"
             };
 

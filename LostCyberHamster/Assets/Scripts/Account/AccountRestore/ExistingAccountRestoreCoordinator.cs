@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using GameManagement.CloudSave_;
+using GameManagement.CloudSave;
 
 namespace Assets.Scripts.Account
 {
@@ -13,11 +13,11 @@ namespace Assets.Scripts.Account
         private readonly AccountService _accountService;
 
         /// <summary>Загружает и применяет облачный снимок выбранного аккаунта.</summary>
-        private readonly CloudSyncService_ _cloudSyncService;
+        private readonly CloudSyncService _cloudSyncService;
 
         public ExistingAccountRestoreCoordinator(
             AccountService accountService,
-            CloudSyncService_ cloudSyncService)
+            CloudSyncService cloudSyncService)
         {
             _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
             _cloudSyncService = cloudSyncService ?? throw new ArgumentNullException(nameof(cloudSyncService));

@@ -1,11 +1,11 @@
 using System;
 
-namespace GameManagement.CloudSave_.Version
+namespace GameManagement.CloudSave.Version
 {
     /// <summary>Хранит версию, подтверждённую сервером.</summary>
-    public sealed class CloudSaveVersion_
+    public sealed class CloudSaveVersion
     {
-        public CloudSaveVersion_(string serverRevision)
+        public CloudSaveVersion(string serverRevision)
         {
             if (string.IsNullOrWhiteSpace(serverRevision))
                 throw new ArgumentException("Server revision must be provided.", nameof(serverRevision));

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Assets.Scripts.Account;
 using GameAds;
 using GameManagement;
-using GameManagement.CloudSave_;
+using GameManagement.CloudSave;
 using LostCyberHamster.UI;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -24,15 +24,15 @@ namespace Assets.Scripts.Entry_Points
         private ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
         private AccountPromptCoordinator _accountPromptCoordinator;
         private CloudSaveConflictCoordinator _cloudSaveConflictCoordinator;
-        private CloudSyncService_ _cloudSyncService;
-        private ConflictService_ _conflictService;
+        private CloudSyncService _cloudSyncService;
+        private ConflictService _conflictService;
 
         [Inject]
         private void Construct(
             AccountService accountService,
             ExistingAccountRestoreCoordinator existingAccountRestoreCoordinator,
-            CloudSyncService_ cloudSyncService,
-            ConflictService_ conflictService)
+            CloudSyncService cloudSyncService,
+            ConflictService conflictService)
         {
             _accountService = accountService;
             _existingAccountRestoreCoordinator = existingAccountRestoreCoordinator;

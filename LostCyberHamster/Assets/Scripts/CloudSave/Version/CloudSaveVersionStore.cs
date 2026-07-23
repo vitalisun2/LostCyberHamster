@@ -1,10 +1,10 @@
 using System;
 using UnityEngine;
 
-namespace GameManagement.CloudSave_.Version
+namespace GameManagement.CloudSave.Version
 {
     /// <summary>Хранит подтверждённую версию каждого игрока.</summary>
-    public sealed class CloudSaveVersionStore_ : ICloudSaveVersionStore_
+    public sealed class CloudSaveVersionStore : ICloudSaveVersionStore
     {
         /// <summary>Разделяет версии игроков.</summary>
         private const string StorageKeyPrefix = "CloudSave_.Version.";

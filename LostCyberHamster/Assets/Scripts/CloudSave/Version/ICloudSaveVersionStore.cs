@@ -1,7 +1,7 @@
-namespace GameManagement.CloudSave_.Version
+namespace GameManagement.CloudSave.Version
 {
     /// <summary>Хранит подтверждённую версию каждого игрока.</summary>
-    public interface ICloudSaveVersionStore_
+    public interface ICloudSaveVersionStore
     {
         /// <summary>Проверяет, подтверждён ли снимок игрока.</summary>
         bool HasConfirmedVersion(string playerId);

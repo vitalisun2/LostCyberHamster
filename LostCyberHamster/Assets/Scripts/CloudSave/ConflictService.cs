@@ -1,27 +1,27 @@
 using System;
 using System.Threading.Tasks;
-using GameManagement.CloudSave_.Gateway;
-using GameManagement.CloudSave_.Models;
-using GameManagement.CloudSave_.Version;
+using GameManagement.CloudSave.Gateway;
+using GameManagement.CloudSave.Models;
+using GameManagement.CloudSave.Version;
 
-namespace GameManagement.CloudSave_
+namespace GameManagement.CloudSave
 {
     /// <summary>Управляет выбором между локальным и облачным прогрессом.</summary>
-    public sealed class ConflictService_
+    public sealed class ConflictService
     {
         /// <summary>Читает и записывает облачный снимок.</summary>
-        private readonly ICloudSaveGateway_ _gateway;
+        private readonly ICloudSaveGateway _gateway;
 
         /// <summary>Хранит подтверждённые облачные версии.</summary>
-        private readonly ICloudSaveVersionStore_ _versionStore;
+        private readonly ICloudSaveVersionStore _versionStore;
 
         /// <summary>Управляет локальным снимком.</summary>
-        private readonly SnapshotService_ _snapshotService;
+        private readonly SnapshotService _snapshotService;
 
-        public ConflictService_(
-            ICloudSaveGateway_ gateway,
-            ICloudSaveVersionStore_ versionStore,
-            SnapshotService_ snapshotService)
+        public ConflictService(
+            ICloudSaveGateway gateway,
+            ICloudSaveVersionStore versionStore,
+            SnapshotService snapshotService)
         {
             _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
             _versionStore = versionStore ?? throw new ArgumentNullException(nameof(versionStore));
@@ -29,21 +29,21 @@ namespace GameManagement.CloudSave_
         }
 
         /// <summary>Текущий конфликт.</summary>
-        public CloudSaveConflict_ CurrentConflict { get; private set; }
+        public CloudSaveConflict CurrentConflict { get; private set; }
 
         /// <summary>Возникает при обнаружении конфликта.</summary>
-        public event Action<CloudSaveConflict_> ConflictDetected;
+        public event Action<CloudSaveConflict> ConflictDetected;
 
         /// <summary>Возникает после разрешения конфликта.</summary>
         public event Action ConflictResolved;
 
         /// <summary>Сохраняет обнаруженный конфликт.</summary>
         public void SetConflict(
-            CloudSaveSnapshot_ localSnapshot,
-            CloudSaveReadResult_ cloudSave)
+            CloudSaveSnapshot localSnapshot,
+            CloudSaveReadResult cloudSave)
         {
             // Сохраняем обе версии конфликта.
-            CurrentConflict = new CloudSaveConflict_(localSnapshot, cloudSave);
+            CurrentConflict = new CloudSaveConflict(localSnapshot, cloudSave);
 
             // Сообщаем об обнаруженном конфликте.
             ConflictDetected?.Invoke(CurrentConflict);

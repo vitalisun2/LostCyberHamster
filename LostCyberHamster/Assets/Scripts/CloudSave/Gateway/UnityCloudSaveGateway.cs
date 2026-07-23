@@ -1,21 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using GameManagement.CloudSave_.Models;
-using GameManagement.CloudSave_.Version;
+using GameManagement.CloudSave.Models;
+using GameManagement.CloudSave.Version;
 using Unity.Services.CloudSave;
 using Unity.Services.CloudSave.Models;
 
-namespace GameManagement.CloudSave_.Gateway
+namespace GameManagement.CloudSave.Gateway
 {
     /// <summary>Хранит полный снимок в UGS Cloud Save.</summary>
-    public sealed class UnityCloudSaveGateway_ : ICloudSaveGateway_
+    public sealed class UnityCloudSaveGateway : ICloudSaveGateway
     {
         /// <summary>Ключ полного снимка игрока.</summary>
         private const string SnapshotKey = "player_snapshot_";
 
         /// <summary>Возвращает облачный снимок или null.</summary>
-        public async Task<CloudSaveReadResult_> LoadSnapshotAsync()
+        public async Task<CloudSaveReadResult> LoadSnapshotAsync()
         {
             // Ищем текущее сохранение.
             var loaded = await CloudSaveService.Instance.Data.Player.LoadAsync(
@@ -27,14 +27,14 @@ namespace GameManagement.CloudSave_.Gateway
                 throw new InvalidOperationException("Cloud Save returned incomplete snapshot data.");
 
             // Собираем снимок с версией.
-            var snapshot = CloudSaveSnapshot_.FromJson(item.Value.GetAsString());
-            var version = new CloudSaveVersion_(item.WriteLock);
-            return new CloudSaveReadResult_(snapshot, version);
+            var snapshot = CloudSaveSnapshot.FromJson(item.Value.GetAsString());
+            var version = new CloudSaveVersion(item.WriteLock);
+            return new CloudSaveReadResult(snapshot, version);
         }
 
         /// <summary>Сохраняет снимок поверх ожидаемой версии.</summary>
-        public async Task<CloudSaveVersion_> SaveSnapshotAsync(
-            CloudSaveSnapshot_ snapshot,
+        public async Task<CloudSaveVersion> SaveSnapshotAsync(
+            CloudSaveSnapshot snapshot,
             string expectedServerRevision)
         {
             if (snapshot == null)
@@ -58,7 +58,7 @@ namespace GameManagement.CloudSave_.Gateway
                 string.IsNullOrWhiteSpace(serverRevision))
                 throw new InvalidOperationException("Cloud Save did not return snapshot revision.");
 
-            return new CloudSaveVersion_(serverRevision);
+            return new CloudSaveVersion(serverRevision);
         }
     }
 }

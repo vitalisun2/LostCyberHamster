@@ -1,18 +1,18 @@
 using System.Threading.Tasks;
-using GameManagement.CloudSave_.Models;
-using GameManagement.CloudSave_.Version;
+using GameManagement.CloudSave.Models;
+using GameManagement.CloudSave.Version;
 
-namespace GameManagement.CloudSave_.Gateway
+namespace GameManagement.CloudSave.Gateway
 {
     /// <summary>Работает с полным снимком в облаке.</summary>
-    public interface ICloudSaveGateway_
+    public interface ICloudSaveGateway
     {
         /// <summary>Возвращает облачный снимок или null.</summary>
-        Task<CloudSaveReadResult_> LoadSnapshotAsync();
+        Task<CloudSaveReadResult> LoadSnapshotAsync();
 
         /// <summary>Сохраняет снимок поверх ожидаемой версии.</summary>
-        Task<CloudSaveVersion_> SaveSnapshotAsync(
-            CloudSaveSnapshot_ snapshot,
+        Task<CloudSaveVersion> SaveSnapshotAsync(
+            CloudSaveSnapshot snapshot,
             string expectedServerRevision);
     }
 }

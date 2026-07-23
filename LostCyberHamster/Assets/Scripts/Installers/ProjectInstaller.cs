@@ -1,7 +1,7 @@
 using Assets.Scripts.Account;
-using GameManagement.CloudSave_;
-using GameManagement.CloudSave_.Gateway;
-using GameManagement.CloudSave_.Version;
+using GameManagement.CloudSave;
+using GameManagement.CloudSave.Gateway;
+using GameManagement.CloudSave.Version;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Assets.Scripts.DevTools;
 #endif
@@ -30,15 +30,15 @@ namespace Assets.Scripts.Installers
             Container.Bind<ExistingAccountRestoreCoordinator>().AsSingle();
 
             // Подключаем облачную синхронизацию.
-            Container.Bind<ICloudSaveGateway_>()
-                .To<UnityCloudSaveGateway_>()
+            Container.Bind<ICloudSaveGateway>()
+                .To<UnityCloudSaveGateway>()
                 .AsSingle();
-            Container.Bind<ICloudSaveVersionStore_>()
-                .To<CloudSaveVersionStore_>()
+            Container.Bind<ICloudSaveVersionStore>()
+                .To<CloudSaveVersionStore>()
                 .AsSingle();
-            Container.Bind<SnapshotService_>().AsSingle();
-            Container.Bind<ConflictService_>().AsSingle();
-            Container.Bind<CloudSyncService_>().AsSingle().NonLazy();
+            Container.Bind<SnapshotService>().AsSingle();
+            Container.Bind<ConflictService>().AsSingle();
+            Container.Bind<CloudSyncService>().AsSingle().NonLazy();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             // Добавляем меню тестовых инструментов только в редакторе и development-сборках.
             Container.Bind<DevToolsMenuOverlay>()

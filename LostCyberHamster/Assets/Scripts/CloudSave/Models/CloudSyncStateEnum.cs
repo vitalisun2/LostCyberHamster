@@ -1,7 +1,7 @@
-namespace GameManagement.CloudSave_.Models
+namespace GameManagement.CloudSave.Models
 {
     /// <summary>Ситуация синхронизации прогресса.</summary>
-    public enum CloudSyncStateEnum_
+    public enum CloudSyncStateEnum
     {
         /// <summary>Облачное сохранение отсутствует.</summary>
         CloudMissing,
