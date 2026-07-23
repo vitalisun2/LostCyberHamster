@@ -1,0 +1,972 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Assets.Scripts.Account;
+using GameManagement;
+using GameManagement.CloudSave;
+using GameManagement.CloudSave.Gateway;
+using GameManagement.CloudSave.Models;
+using GameManagement.CloudSave.Version;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UIElements;
+using Vues.GameCore;
+using Zenject;
+
+namespace LostCyberHamster.Editor.Testing
+{
+    /// <summary>Пошагово выполняет Cloud Save E2E-сценарии в Play Mode.</summary>
+    public sealed class CloudSaveE2ERunner
+    {
+        /// <summary>Пауза между автоматическими шагами.</summary>
+        private const int StepDelayMilliseconds = 500;
+
+        /// <summary>Интервал проверки ожидаемого результата.</summary>
+        private const int PollDelayMilliseconds = 200;
+
+        /// <summary>Предельное время одного ожидания.</summary>
+        private const int TimeoutMilliseconds = 30000;
+
+        /// <summary>Журнал текущего запуска.</summary>
+        private readonly List<string> _log = new List<string>();
+
+        /// <summary>Неизменяемое представление журнала.</summary>
+        private readonly IReadOnlyList<string> _readOnlyLog;
+
+        /// <summary>Собирает текущую сессию аккаунта.</summary>
+        private AccountService _accountService;
+
+        /// <summary>Запускает облачную синхронизацию.</summary>
+        private CloudSyncService _cloudSyncService;
+
+        /// <summary>Разрешает конфликты сохранений.</summary>
+        private ConflictService _conflictService;
+
+        /// <summary>Хранит ожидающий снимок.</summary>
+        private SnapshotService _snapshotService;
+
+        /// <summary>Читает текущий снимок из UGS.</summary>
+        private ICloudSaveGateway _cloudSaveGateway;
+
+        /// <summary>Хранит подтверждённую облачную версию.</summary>
+        private ICloudSaveVersionStore _versionStore;
+
+        /// <summary>Переключает локальное состояние виртуальных устройств.</summary>
+        private CloudSaveVirtualDeviceStorage _virtualDevices;
+
+        /// <summary>Останавливает текущий асинхронный запуск.</summary>
+        private CancellationTokenSource _cancellation;
+
+        /// <summary>Отделяет завершения разных запусков.</summary>
+        private int _runVersion;
+
+        /// <summary>Текущий ручной этап сценария.</summary>
+        private int _manualStage;
+
+        /// <summary>Игрок текущего сценария.</summary>
+        private string _playerId;
+
+        /// <summary>Версия облака перед проверяемым изменением.</summary>
+        private string _initialRevision;
+
+        /// <summary>Локальный прогресс перед восстановлением.</summary>
+        private string _initialLocalPlayerDataJson;
+
+        /// <summary>Ожидаемый облачный прогресс.</summary>
+        private string _expectedCloudPlayerDataJson;
+
+        /// <summary>Ожидаемый локальный прогресс.</summary>
+        private string _expectedLocalPlayerDataJson;
+
+        /// <summary>Ожидаемое количество монет.</summary>
+        private int _expectedMoney;
+
+        /// <summary>Статусы, полученные во время проверки.</summary>
+        private readonly List<CloudSyncStatusEnum> _observedStatuses =
+            new List<CloudSyncStatusEnum>();
+
+        public CloudSaveE2ERunner()
+        {
+            _readOnlyLog = _log.AsReadOnly();
+        }
+
+        /// <summary>Текущее состояние запуска.</summary>
+        public CloudSaveE2ERunState State { get; private set; } =
+            CloudSaveE2ERunState.Idle;
+
+        /// <summary>Выбранный сценарий.</summary>
+        public CloudSaveE2EScenario CurrentScenario { get; private set; }
+
+        /// <summary>Показывает, выбран ли сценарий.</summary>
+        public bool HasScenario { get; private set; }
+
+        /// <summary>Описание текущего шага.</summary>
+        public string CurrentStep { get; private set; } = string.Empty;
+
+        /// <summary>Журнал текущего запуска.</summary>
+        public IReadOnlyList<string> Log => _readOnlyLog;
+
+        /// <summary>Показывает, можно ли продолжить ручной этап.</summary>
+        public bool CanContinue => State == CloudSaveE2ERunState.WaitingForUser;
+
+        /// <summary>Показывает, выполняется ли сценарий.</summary>
+        public bool IsActive =>
+            State == CloudSaveE2ERunState.Running ||
+            State == CloudSaveE2ERunState.WaitingForUser;
+
+        /// <summary>Возникает после изменения запуска.</summary>
+        public event Action Changed;
+
+        /// <summary>Запускает выбранный сценарий.</summary>
+        public void Start(CloudSaveE2EScenario scenario)
+        {
+            // Начинаем новый независимый запуск.
+            StopCurrentRun();
+            _runVersion++;
+            _cancellation = new CancellationTokenSource();
+            _manualStage = 0;
+            _log.Clear();
+            _observedStatuses.Clear();
+            CurrentScenario = scenario;
+            HasScenario = true;
+            State = CloudSaveE2ERunState.Running;
+            WriteStep($"Запущен сценарий: {CloudSaveE2EScenarioCatalog.GetTitle(scenario)}.");
+
+            // Подключаемся только к работающей игре.
+            if (!EditorApplication.isPlaying)
+            {
+                Fail("Сценарий доступен только в Play Mode.");
+                return;
+            }
+
+            if (!TryResolveServices(out var error))
+            {
+                Fail(error);
+                return;
+            }
+
+            _virtualDevices = new CloudSaveVirtualDeviceStorage(
+                _snapshotService,
+                _versionStore);
+            _ = RunStartAsync(_runVersion, _cancellation.Token);
+        }
+
+        /// <summary>Продолжает сценарий после действия пользователя.</summary>
+        public void Continue()
+        {
+            if (!CanContinue || _cancellation == null)
+                return;
+
+            State = CloudSaveE2ERunState.Running;
+            Changed?.Invoke();
+            _ = RunContinueAsync(_runVersion, _cancellation.Token);
+        }
+
+        /// <summary>Отменяет текущий сценарий.</summary>
+        public void Cancel()
+        {
+            if (!IsActive)
+                return;
+
+            StopCurrentRun();
+            _runVersion++;
+            State = CloudSaveE2ERunState.Cancelled;
+            WriteStep("Сценарий отменён.");
+        }
+
+        /// <summary>Запускает начальные шаги выбранного сценария.</summary>
+        private async Task RunStartAsync(int runVersion, CancellationToken token)
+        {
+            try
+            {
+                switch (CurrentScenario)
+                {
+                    case CloudSaveE2EScenario.FirstCloudSave:
+                        await PrepareFirstCloudSaveAsync(token);
+                        break;
+
+                    case CloudSaveE2EScenario.AutomaticSynchronization:
+                        await RunAutomaticSynchronizationAsync(token);
+                        break;
+
+                    case CloudSaveE2EScenario.DeferredSynchronization:
+                        await PrepareDeferredSynchronizationAsync(token);
+                        break;
+
+                    case CloudSaveE2EScenario.RestoreProgress:
+                        await PrepareRestoreProgressAsync(token);
+                        break;
+
+                    case CloudSaveE2EScenario.MultipleDevices:
+                        await RunMultipleDevicesAsync(token);
+                        break;
+
+                    case CloudSaveE2EScenario.ConflictChooseCloud:
+                    case CloudSaveE2EScenario.ConflictChooseDevice:
+                        await PrepareConflictAsync(token);
+                        break;
+
+                    case CloudSaveE2EScenario.SynchronizationStatus:
+                        await PrepareSynchronizationStatusAsync(token);
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+            }
+            catch (Exception exception)
+            {
+                if (runVersion == _runVersion)
+                    Fail(exception.Message);
+            }
+        }
+
+        /// <summary>Выполняет шаг после нажатия Continue.</summary>
+        private async Task RunContinueAsync(int runVersion, CancellationToken token)
+        {
+            try
+            {
+                switch (CurrentScenario)
+                {
+                    case CloudSaveE2EScenario.FirstCloudSave:
+                        await VerifyFirstCloudSaveAsync(token);
+                        break;
+
+                    case CloudSaveE2EScenario.DeferredSynchronization:
+                        await ContinueDeferredSynchronizationAsync(token);
+                        break;
+
+                    case CloudSaveE2EScenario.RestoreProgress:
+                        await VerifyRestoreProgressAsync(token);
+                        break;
+
+                    case CloudSaveE2EScenario.ConflictChooseCloud:
+                    case CloudSaveE2EScenario.ConflictChooseDevice:
+                        await VerifyConflictResolutionAsync(token);
+                        break;
+
+                    case CloudSaveE2EScenario.SynchronizationStatus:
+                        await RunSynchronizationStatusAsync(token);
+                        break;
+
+                    default:
+                        throw new InvalidOperationException(
+                            "Этот сценарий не ожидает ручного продолжения.");
+                }
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+            }
+            catch (Exception exception)
+            {
+                if (runVersion == _runVersion)
+                    Fail(exception.Message);
+            }
+        }
+
+        /// <summary>Готовит проверку первого облачного сохранения.</summary>
+        private async Task PrepareFirstCloudSaveAsync(CancellationToken token)
+        {
+            await RunStepAsync("Проверяем свежего гостя.", async () =>
+            {
+                Require(
+                    _accountService.State == AccountState.Guest,
+                    "Для сценария нужен свежий гостевой аккаунт.");
+                Require(
+                    _snapshotService.Snapshot == null,
+                    "Перед первым сохранением не должно быть pending.");
+
+                var cloudSave = await LoadCloudAsync(token);
+                Require(
+                    cloudSave == null,
+                    "У гостя уже есть облачное сохранение. Нужен свежий аккаунт.");
+                _initialLocalPlayerDataJson = GameDataManager.PlayerData.ToJson();
+            }, token);
+
+            WaitForUser(
+                "Откройте Settings и привяжите свежего гостя. После завершения нажмите Continue.");
+        }
+
+        /// <summary>Проверяет результат первого облачного сохранения.</summary>
+        private async Task VerifyFirstCloudSaveAsync(CancellationToken token)
+        {
+            await RunStepAsync("Ждём завершения первого сохранения.", async () =>
+            {
+                await WaitUntilAsync(
+                    () => _accountService.TryGetLinkedPlayerId(out _) &&
+                          _snapshotService.Snapshot == null &&
+                          _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
+                    "Первое сохранение не завершилось.",
+                    token);
+            }, token);
+
+            await RunStepAsync("Проверяем сохранённый снимок.", async () =>
+            {
+                RequireLinkedPlayer();
+                var cloudSave = await LoadCloudAsync(token);
+                Require(cloudSave != null, "Облачный снимок не создан.");
+                Require(
+                    cloudSave.Snapshot.PlayerId == _playerId,
+                    "Облачный снимок принадлежит другому игроку.");
+                RequirePlayerDataEqual(
+                    cloudSave.Snapshot.PlayerDataJson,
+                    GameDataManager.PlayerData.ToJson(),
+                    "Облако не совпадает с текущим прогрессом.");
+                RequireConfirmedVersion(cloudSave);
+                RequireSavedState();
+            }, token);
+
+            Pass();
+        }
+
+        /// <summary>Проверяет автоматическую синхронизацию.</summary>
+        private async Task RunAutomaticSynchronizationAsync(CancellationToken token)
+        {
+            await RunStepAsync("Проверяем исходное сохранение.", async () =>
+            {
+                var cloudSave = await RequireSavedCloudAsync(token);
+                _initialRevision = cloudSave.Version.ServerRevision;
+                _expectedMoney = GameDataManager.PlayerData.Money + 1;
+            }, token);
+
+            await RunStepAsync("Меняем прогресс и создаём checkpoint.", () =>
+            {
+                GameDataManager.PlayerData.Money = _expectedMoney;
+                PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+            }, token);
+
+            await WaitForNewSavedRevisionAsync(token);
+
+            await RunStepAsync("Проверяем новый снимок в облаке.", async () =>
+            {
+                var cloudSave = await LoadCloudAsync(token);
+                Require(cloudSave != null, "Новый облачный снимок не найден.");
+                Require(
+                    GetMoney(cloudSave.Snapshot.PlayerDataJson) == _expectedMoney,
+                    "Облако не получило новое количество монет.");
+                RequireConfirmedVersion(cloudSave);
+                RequireSavedState();
+            }, token);
+
+            Pass();
+        }
+
+        /// <summary>Готовит проверку отложенной синхронизации.</summary>
+        private async Task PrepareDeferredSynchronizationAsync(CancellationToken token)
+        {
+            await RunStepAsync("Проверяем исходное сохранение.", async () =>
+            {
+                var cloudSave = await RequireSavedCloudAsync(token);
+                _initialRevision = cloudSave.Version.ServerRevision;
+                _expectedMoney = GameDataManager.PlayerData.Money + 1;
+            }, token);
+
+            WaitForUser(
+                "Отключите сеть. Затем нажмите Continue, чтобы создать новое сохранение.");
+        }
+
+        /// <summary>Продолжает проверку отложенной синхронизации.</summary>
+        private async Task ContinueDeferredSynchronizationAsync(CancellationToken token)
+        {
+            if (_manualStage == 0)
+            {
+                await RunStepAsync("Создаём сохранение без сети.", () =>
+                {
+                    GameDataManager.PlayerData.Money = _expectedMoney;
+                    PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+                }, token);
+
+                await RunStepAsync("Проверяем сохранённый pending.", async () =>
+                {
+                    await WaitUntilAsync(
+                        () => _snapshotService.Snapshot != null &&
+                              _cloudSyncService.Status == CloudSyncStatusEnum.Pending,
+                        "Pending не был сохранён.",
+                        token);
+                }, token);
+
+                _manualStage = 1;
+                WaitForUser(
+                    "Включите сеть. Затем нажмите Continue, чтобы повторить отправку.");
+                return;
+            }
+
+            await RunStepAsync("Повторяем синхронизацию после возврата сети.", () =>
+            {
+                PlayerProgressLifecycleCheckpoint.HandleApplicationPause(isPaused: false);
+            }, token);
+
+            await WaitForNewSavedRevisionAsync(token);
+
+            await RunStepAsync("Проверяем отправленный pending.", async () =>
+            {
+                var cloudSave = await LoadCloudAsync(token);
+                Require(cloudSave != null, "Облачный снимок не найден.");
+                Require(
+                    GetMoney(cloudSave.Snapshot.PlayerDataJson) == _expectedMoney,
+                    "Ожидающий прогресс не попал в облако.");
+                RequireConfirmedVersion(cloudSave);
+                RequireSavedState();
+            }, token);
+
+            Pass();
+        }
+
+        /// <summary>Готовит проверку восстановления прогресса.</summary>
+        private Task PrepareRestoreProgressAsync(CancellationToken token)
+        {
+            return RunStepAsync("Запоминаем текущий гостевой прогресс.", () =>
+            {
+                Require(
+                    _accountService.State == AccountState.Guest,
+                    "Для восстановления нужен гостевой аккаунт.");
+                _initialLocalPlayerDataJson = GameDataManager.PlayerData.ToJson();
+                WaitForUser(
+                    "Через Settings войдите в тестовый аккаунт с другим прогрессом. После восстановления нажмите Continue.");
+            }, token);
+        }
+
+        /// <summary>Проверяет восстановленный прогресс.</summary>
+        private async Task VerifyRestoreProgressAsync(CancellationToken token)
+        {
+            await RunStepAsync("Ждём завершения входа и восстановления.", async () =>
+            {
+                await WaitUntilAsync(
+                    () => _accountService.TryGetLinkedPlayerId(out _) &&
+                          _snapshotService.Snapshot == null &&
+                          _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
+                    "Восстановление аккаунта не завершилось.",
+                    token);
+            }, token);
+
+            await RunStepAsync("Проверяем восстановленный прогресс.", async () =>
+            {
+                RequireLinkedPlayer();
+                var cloudSave = await LoadCloudAsync(token);
+                Require(cloudSave != null, "У существующего аккаунта нет снимка.");
+                var localJson = GameDataManager.PlayerData.ToJson();
+                RequirePlayerDataEqual(
+                    cloudSave.Snapshot.PlayerDataJson,
+                    localJson,
+                    "Локальный прогресс не совпадает с облачным.");
+                Require(
+                    !ArePlayerDataEqual(
+                        cloudSave.Snapshot.PlayerDataJson,
+                        _initialLocalPlayerDataJson),
+                    "Для теста нужен аккаунт с прогрессом, отличным от гостевого.");
+                RequireConfirmedVersion(cloudSave);
+                RequireSavedState();
+            }, token);
+
+            Pass();
+        }
+
+        /// <summary>Проверяет получение прогресса другого устройства.</summary>
+        private async Task RunMultipleDevicesAsync(CancellationToken token)
+        {
+            await RunStepAsync("Создаём виртуальные устройства A и B.", async () =>
+            {
+                var cloudSave = await RequireSavedCloudAsync(token);
+                _initialRevision = cloudSave.Version.ServerRevision;
+                _virtualDevices.Initialize(_playerId);
+                _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceB);
+                _expectedMoney = GameDataManager.PlayerData.Money + 10;
+            }, token);
+
+            await RunStepAsync("Устройство B сохраняет новый прогресс.", () =>
+            {
+                GameDataManager.PlayerData.Money = _expectedMoney;
+                PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+            }, token);
+
+            await WaitForNewSavedRevisionAsync(token);
+
+            await RunStepAsync("Запоминаем состояние B и возвращаемся на A.", async () =>
+            {
+                var cloudSave = await LoadCloudAsync(token);
+                Require(cloudSave != null, "Устройство B не обновило облако.");
+                _expectedCloudPlayerDataJson = cloudSave.Snapshot.PlayerDataJson;
+                _initialRevision = cloudSave.Version.ServerRevision;
+                _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceA);
+            }, token);
+
+            await RunStepAsync("Устройство A проверяет облако.", () =>
+            {
+                PlayerProgressLifecycleCheckpoint.HandleApplicationPause(isPaused: false);
+            }, token);
+
+            await RunStepAsync("Проверяем применение прогресса B.", async () =>
+            {
+                await WaitUntilAsync(
+                    () => string.Equals(
+                              _versionStore.GetConfirmedRevision(_playerId),
+                              _initialRevision,
+                              StringComparison.Ordinal) &&
+                          ArePlayerDataEqual(
+                              GameDataManager.PlayerData.ToJson(),
+                              _expectedCloudPlayerDataJson),
+                    "Устройство A не приняло прогресс устройства B.",
+                    token);
+                RequireSavedState();
+            }, token);
+
+            Pass();
+        }
+
+        /// <summary>Создаёт конфликт двух виртуальных устройств.</summary>
+        private async Task PrepareConflictAsync(CancellationToken token)
+        {
+            await RunStepAsync("Создаём одинаковые устройства A и B.", async () =>
+            {
+                var cloudSave = await RequireSavedCloudAsync(token);
+                _initialRevision = cloudSave.Version.ServerRevision;
+                _virtualDevices.Initialize(_playerId);
+                _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceB);
+                _expectedMoney = GameDataManager.PlayerData.Money + 100;
+            }, token);
+
+            await RunStepAsync("Устройство B меняет облачный прогресс.", () =>
+            {
+                GameDataManager.PlayerData.Money = _expectedMoney;
+                PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+            }, token);
+
+            await WaitForNewSavedRevisionAsync(token);
+
+            await RunStepAsync("Возвращаем старое состояние устройства A.", async () =>
+            {
+                var cloudSave = await LoadCloudAsync(token);
+                Require(cloudSave != null, "Устройство B не обновило облако.");
+                _expectedCloudPlayerDataJson = cloudSave.Snapshot.PlayerDataJson;
+                _virtualDevices.SwitchTo(CloudSaveVirtualDeviceStorage.DeviceA);
+            }, token);
+
+            await RunStepAsync("Устройство A создаёт локальное изменение.", () =>
+            {
+                GameDataManager.PlayerData.Crystals++;
+                PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+            }, token);
+
+            await RunStepAsync("Проверяем конфликт и окно выбора.", async () =>
+            {
+                await WaitUntilAsync(
+                    () => _conflictService.CurrentConflict != null &&
+                          _cloudSyncService.Status == CloudSyncStatusEnum.Conflict,
+                    "Конфликт не был обнаружен.",
+                    token);
+
+                var conflict = _conflictService.CurrentConflict;
+                _expectedLocalPlayerDataJson = conflict.LocalSnapshot.PlayerDataJson;
+                await WaitUntilAsync(
+                    () => IsElementShown(FindElement<Button>("cloud-conflict__choose-cloud")) &&
+                          IsElementShown(FindElement<Button>("cloud-conflict__choose-device")),
+                    "Окно выбора конфликта не открылось.",
+                    token);
+            }, token);
+
+            var choice = CurrentScenario == CloudSaveE2EScenario.ConflictChooseCloud
+                ? "облачный прогресс"
+                : "прогресс устройства";
+            WaitForUser(
+                $"В открытом окне выберите {choice}. После завершения нажмите Continue.");
+        }
+
+        /// <summary>Проверяет выбранное разрешение конфликта.</summary>
+        private async Task VerifyConflictResolutionAsync(CancellationToken token)
+        {
+            await RunStepAsync("Ждём завершения выбора.", async () =>
+            {
+                await WaitUntilAsync(
+                    () => _conflictService.CurrentConflict == null &&
+                          _snapshotService.Snapshot == null &&
+                          _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
+                    "Конфликт не был завершён.",
+                    token);
+            }, token);
+
+            await RunStepAsync("Проверяем выбранный прогресс.", async () =>
+            {
+                if (CurrentScenario == CloudSaveE2EScenario.ConflictChooseCloud)
+                {
+                    RequirePlayerDataEqual(
+                        GameDataManager.PlayerData.ToJson(),
+                        _expectedCloudPlayerDataJson,
+                        "На устройстве не применён облачный прогресс.");
+                }
+                else
+                {
+                    RequirePlayerDataEqual(
+                        GameDataManager.PlayerData.ToJson(),
+                        _expectedLocalPlayerDataJson,
+                        "На устройстве изменился выбранный локальный прогресс.");
+
+                    var cloudSave = await LoadCloudAsync(token);
+                    Require(cloudSave != null, "Облачный снимок не найден.");
+                    RequirePlayerDataEqual(
+                        cloudSave.Snapshot.PlayerDataJson,
+                        _expectedLocalPlayerDataJson,
+                        "Локальный прогресс не записан в облако.");
+                    RequireConfirmedVersion(cloudSave);
+                }
+
+                RequireSavedState();
+            }, token);
+
+            Pass();
+        }
+
+        /// <summary>Готовит проверку статуса синхронизации.</summary>
+        private async Task PrepareSynchronizationStatusAsync(CancellationToken token)
+        {
+            await RunStepAsync("Проверяем исходное сохранение.", async () =>
+            {
+                var cloudSave = await RequireSavedCloudAsync(token);
+                _initialRevision = cloudSave.Version.ServerRevision;
+                _expectedMoney = GameDataManager.PlayerData.Money + 1;
+            }, token);
+
+            WaitForUser(
+                "Откройте Settings и оставьте окно открытым. Затем нажмите Continue.");
+        }
+
+        /// <summary>Проверяет статус во время отправки и после неё.</summary>
+        private async Task RunSynchronizationStatusAsync(CancellationToken token)
+        {
+            var statusRow = FindElement<VisualElement>("settings__cloud-sync-status");
+            var statusLabel = FindElement<Label>("settings__lbl-cloud-sync-status");
+            Require(
+                statusRow != null && statusLabel != null,
+                "В Settings не найдена строка статуса.");
+            Require(
+                statusRow.resolvedStyle.display != DisplayStyle.None,
+                "Строка статуса в Settings скрыта.");
+
+            _observedStatuses.Clear();
+            _cloudSyncService.StatusChanged += OnStatusChanged;
+            try
+            {
+                await RunStepAsync("Запускаем синхронизацию прогресса.", () =>
+                {
+                    GameDataManager.PlayerData.Money = _expectedMoney;
+                    PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+                }, token);
+
+                await WaitForNewSavedRevisionAsync(token);
+            }
+            finally
+            {
+                _cloudSyncService.StatusChanged -= OnStatusChanged;
+            }
+
+            await RunStepAsync("Проверяем показанные статусы.", async () =>
+            {
+                Require(
+                    _observedStatuses.Contains(CloudSyncStatusEnum.Synchronizing),
+                    "Статус Synchronizing не был показан.");
+
+                var savedText = LocalizationManager.GetLocalizedString(
+                    "cloud_sync_status_saved");
+                await WaitUntilAsync(
+                    () => statusLabel.text == savedText,
+                    "Settings не показал финальный статус Saved.",
+                    token);
+                Require(
+                    statusRow.resolvedStyle.display != DisplayStyle.None,
+                    "Строка статуса скрылась после синхронизации.");
+                RequireSavedState();
+            }, token);
+
+            Pass();
+        }
+
+        /// <summary>Ждёт новую подтверждённую версию и чистый pending.</summary>
+        private Task WaitForNewSavedRevisionAsync(CancellationToken token)
+        {
+            return RunStepAsync("Ждём подтверждения новой версии.", async () =>
+            {
+                await WaitUntilAsync(
+                    () => _snapshotService.Snapshot == null &&
+                          _cloudSyncService.Status == CloudSyncStatusEnum.Saved &&
+                          !string.Equals(
+                              _versionStore.GetConfirmedRevision(_playerId),
+                              _initialRevision,
+                              StringComparison.Ordinal),
+                    "Новая облачная версия не была подтверждена.",
+                    token);
+            }, token);
+        }
+
+        /// <summary>Проверяет связанный аккаунт и согласованное облако.</summary>
+        private async Task<CloudSaveReadResult> RequireSavedCloudAsync(
+            CancellationToken token)
+        {
+            RequireLinkedPlayer();
+            RequireSavedState();
+
+            var cloudSave = await LoadCloudAsync(token);
+            Require(cloudSave != null, "Облачный снимок не найден.");
+            RequireConfirmedVersion(cloudSave);
+            return cloudSave;
+        }
+
+        /// <summary>Получает Player ID связанного аккаунта.</summary>
+        private void RequireLinkedPlayer()
+        {
+            Require(
+                _accountService.TryGetLinkedPlayerId(out _playerId),
+                "Для сценария нужен связанный аккаунт.");
+        }
+
+        /// <summary>Проверяет завершённое состояние синхронизации.</summary>
+        private void RequireSavedState()
+        {
+            Require(
+                _snapshotService.Snapshot == null,
+                "После синхронизации остался pending.");
+            Require(
+                _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
+                $"Ожидался статус Saved, получен {_cloudSyncService.Status}.");
+        }
+
+        /// <summary>Проверяет подтверждённую версию облака.</summary>
+        private void RequireConfirmedVersion(CloudSaveReadResult cloudSave)
+        {
+            var confirmedRevision = _versionStore.GetConfirmedRevision(_playerId);
+            Require(
+                string.Equals(
+                    confirmedRevision,
+                    cloudSave.Version.ServerRevision,
+                    StringComparison.Ordinal),
+                "Локальная подтверждённая версия не совпадает с облаком.");
+        }
+
+        /// <summary>Загружает облако с ограничением времени.</summary>
+        private async Task<CloudSaveReadResult> LoadCloudAsync(
+            CancellationToken token)
+        {
+            var loadTask = _cloudSaveGateway.LoadSnapshotAsync();
+            var timeoutTask = Task.Delay(TimeoutMilliseconds, token);
+            var completedTask = await Task.WhenAny(loadTask, timeoutTask);
+            if (completedTask != loadTask)
+            {
+                token.ThrowIfCancellationRequested();
+                throw new TimeoutException("UGS не ответил за отведённое время.");
+            }
+
+            return await loadTask;
+        }
+
+        /// <summary>Ждёт выполнения условия без блокировки Editor.</summary>
+        private static async Task WaitUntilAsync(
+            Func<bool> condition,
+            string timeoutMessage,
+            CancellationToken token)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(TimeoutMilliseconds);
+            while (!condition())
+            {
+                token.ThrowIfCancellationRequested();
+                if (!EditorApplication.isPlaying)
+                    throw new InvalidOperationException("Play Mode остановлен.");
+                if (DateTime.UtcNow >= deadline)
+                    throw new TimeoutException(timeoutMessage);
+
+                await Task.Delay(PollDelayMilliseconds, token);
+            }
+        }
+
+        /// <summary>Выполняет асинхронный шаг после короткой паузы.</summary>
+        private async Task RunStepAsync(
+            string description,
+            Func<Task> action,
+            CancellationToken token)
+        {
+            WriteStep(description);
+            await Task.Delay(StepDelayMilliseconds, token);
+            token.ThrowIfCancellationRequested();
+            await action();
+        }
+
+        /// <summary>Выполняет обычный шаг после короткой паузы.</summary>
+        private Task RunStepAsync(
+            string description,
+            Action action,
+            CancellationToken token)
+        {
+            return RunStepAsync(
+                description,
+                () =>
+                {
+                    action();
+                    return Task.CompletedTask;
+                },
+                token);
+        }
+
+        /// <summary>Переводит сценарий в ожидание пользователя.</summary>
+        private void WaitForUser(string instruction)
+        {
+            State = CloudSaveE2ERunState.WaitingForUser;
+            WriteStep(instruction);
+        }
+
+        /// <summary>Завершает сценарий успешно.</summary>
+        private void Pass()
+        {
+            StopCurrentRun();
+            State = CloudSaveE2ERunState.Passed;
+            WriteStep("Сценарий пройден.");
+        }
+
+        /// <summary>Завершает сценарий с ошибкой.</summary>
+        private void Fail(string message)
+        {
+            StopCurrentRun();
+            State = CloudSaveE2ERunState.Failed;
+            WriteStep($"Ошибка: {message}");
+        }
+
+        /// <summary>Останавливает текущие ожидания.</summary>
+        private void StopCurrentRun()
+        {
+            _cancellation?.Cancel();
+            _cancellation?.Dispose();
+            _cancellation = null;
+        }
+
+        /// <summary>Добавляет шаг в журнал и обновляет окно.</summary>
+        private void WriteStep(string message)
+        {
+            CurrentStep = message;
+            _log.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+            if (State == CloudSaveE2ERunState.Failed)
+                Debug.LogError($"[Cloud Save E2E] {message}");
+            else
+                Debug.Log($"[Cloud Save E2E] {message}");
+            Changed?.Invoke();
+        }
+
+        /// <summary>Запоминает опубликованный статус.</summary>
+        private void OnStatusChanged(CloudSyncStatusEnum status)
+        {
+            _observedStatuses.Add(status);
+            WriteStep($"Статус: {status}.");
+        }
+
+        /// <summary>Находит UI-элемент в открытых документах.</summary>
+        private static T FindElement<T>(string name)
+            where T : VisualElement
+        {
+            var documents = UnityEngine.Object.FindObjectsByType<UIDocument>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            foreach (var document in documents)
+            {
+                var element = document.rootVisualElement?.Q<T>(name);
+                if (element != null)
+                    return element;
+            }
+
+            return null;
+        }
+
+        /// <summary>Проверяет, что UI-элемент действительно показан.</summary>
+        private static bool IsElementShown(VisualElement element)
+        {
+            if (element == null)
+                return false;
+
+            for (var current = element; current != null; current = current.parent)
+            {
+                if (current.resolvedStyle.display == DisplayStyle.None)
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>Возвращает число монет из снимка.</summary>
+        private static int GetMoney(string playerDataJson)
+        {
+            return PlayerData.FromJson(playerDataJson).Money;
+        }
+
+        /// <summary>Проверяет равенство прогресса без времени локальной записи.</summary>
+        private static void RequirePlayerDataEqual(
+            string firstJson,
+            string secondJson,
+            string message)
+        {
+            Require(ArePlayerDataEqual(firstJson, secondJson), message);
+        }
+
+        /// <summary>Сравнивает прогресс без времени локальной записи.</summary>
+        private static bool ArePlayerDataEqual(string firstJson, string secondJson)
+        {
+            if (string.IsNullOrWhiteSpace(firstJson) ||
+                string.IsNullOrWhiteSpace(secondJson))
+            {
+                return false;
+            }
+
+            var first = PlayerData.FromJson(firstJson);
+            var second = PlayerData.FromJson(secondJson);
+            first.LastSaveDate = string.Empty;
+            second.LastSaveDate = string.Empty;
+            return string.Equals(
+                first.ToJson(),
+                second.ToJson(),
+                StringComparison.Ordinal);
+        }
+
+        /// <summary>Прерывает сценарий при невыполненном условии.</summary>
+        private static void Require(bool condition, string message)
+        {
+            if (!condition)
+                throw new InvalidOperationException(message);
+        }
+
+        /// <summary>Получает runtime-сервисы из ProjectContext.</summary>
+        private bool TryResolveServices(out string error)
+        {
+            error = null;
+            if (!ProjectContext.HasInstance)
+            {
+                error = "ProjectContext ещё не создан. Запустите игру через Bootstrap.";
+                return false;
+            }
+
+            var container = ProjectContext.Instance.Container;
+            _accountService = container.TryResolve<AccountService>();
+            _cloudSyncService = container.TryResolve<CloudSyncService>();
+            _conflictService = container.TryResolve<ConflictService>();
+            _snapshotService = container.TryResolve<SnapshotService>();
+            _cloudSaveGateway = container.TryResolve<ICloudSaveGateway>();
+            _versionStore = container.TryResolve<ICloudSaveVersionStore>();
+
+            var missingServices = new List<string>();
+            if (_accountService == null)
+                missingServices.Add(nameof(AccountService));
+            if (_cloudSyncService == null)
+                missingServices.Add(nameof(CloudSyncService));
+            if (_conflictService == null)
+                missingServices.Add(nameof(ConflictService));
+            if (_snapshotService == null)
+                missingServices.Add(nameof(SnapshotService));
+            if (_cloudSaveGateway == null)
+                missingServices.Add(nameof(ICloudSaveGateway));
+            if (_versionStore == null)
+                missingServices.Add(nameof(ICloudSaveVersionStore));
+
+            if (missingServices.Count == 0)
+                return true;
+
+            error = $"В DI не найдены сервисы: {string.Join(", ", missingServices)}.";
+            return false;
+        }
+    }
+}
