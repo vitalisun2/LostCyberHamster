@@ -19,6 +19,12 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Ширина кнопок управления.</summary>
         private const float CommandButtonWidth = 100f;
 
+        /// <summary>Минимальная пауза между автоматическими шагами.</summary>
+        private const int MinStepDelaySeconds = 1;
+
+        /// <summary>Ширина поля паузы между автоматическими шагами.</summary>
+        private const float StepDelayFieldWidth = 44f;
+
         /// <summary>Выполняет выбранный сценарий.</summary>
         private CloudSaveE2ERunner _runner;
 
@@ -185,6 +191,14 @@ namespace LostCyberHamster.Editor.Testing
                     if (GUILayout.Button("Cancel", GUILayout.Width(CommandButtonWidth)))
                         _runner.Cancel();
                 }
+
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.LabelField("Пауза, сек.", GUILayout.Width(78f));
+                _runner.StepDelaySeconds = Mathf.Max(
+                    MinStepDelaySeconds,
+                    EditorGUILayout.IntField(
+                        _runner.StepDelaySeconds,
+                        GUILayout.Width(StepDelayFieldWidth)));
             }
 
         }
