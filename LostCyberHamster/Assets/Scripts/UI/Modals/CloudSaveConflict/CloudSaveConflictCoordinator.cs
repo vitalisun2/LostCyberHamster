@@ -91,7 +91,7 @@ namespace LostCyberHamster.UI
                 await _uiManager.ShowModalAsync(ScreenEnum.CloudSaveConflictModal);
                 if (!_isEnabled || _conflictService.CurrentConflict == null)
                 {
-                    _modalController.Close();
+                    _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
                     return;
                 }
 
@@ -120,7 +120,7 @@ namespace LostCyberHamster.UI
             {
                 await resolve();
                 _isVisible = false;
-                _modalController.Close();
+                _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
                 UIManager.OnRepaintScreen?.Invoke();
             }
             catch (Exception exception)

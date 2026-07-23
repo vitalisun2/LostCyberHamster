@@ -99,9 +99,7 @@ namespace LostCyberHamster.UI
 
         private void ClosePrompt()
         {
-            var controller = _uiManager.GetController<AccountPromptModalController>();
-            controller.UnsubscribeFromEvents();
-            controller.Close();
+            _uiManager.CloseModal(ScreenEnum.AccountPromptModal);
         }
     }
 }

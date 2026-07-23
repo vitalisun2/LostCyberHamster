@@ -36,7 +36,6 @@ namespace LostCyberHamster.UI
 
         private async void OnModalShowHandlerAsync(ScreenEnum modal)
         {
-            _currentModal = modal;
             await ShowModalAsync(modal);
         }
 
@@ -81,6 +80,13 @@ namespace LostCyberHamster.UI
         {
             if (_screenControllers.TryGetValue(modal, out var modalController))
             {
+                if (_currentModal.HasValue &&
+                    _screenControllers.TryGetValue(_currentModal.Value, out var currentModalController))
+                {
+                    currentModalController.UnsubscribeFromEvents();
+                }
+
+                _currentModal = modal;
                 await (modalController as ModalController).ShowAsync();
             }
         }
@@ -89,7 +95,19 @@ namespace LostCyberHamster.UI
         {
             if (_screenControllers.TryGetValue(modal, out var modalController))
             {
+                modalController.UnsubscribeFromEvents();
                 (modalController as ModalController).Hide();
+                _currentModal = null;
+            }
+        }
+
+        /// <summary>Закрывает модальное окно.</summary>
+        public void CloseModal(ScreenEnum modal)
+        {
+            if (_screenControllers.TryGetValue(modal, out var modalController))
+            {
+                modalController.UnsubscribeFromEvents();
+                (modalController as ModalController).Close();
                 _currentModal = null;
             }
         }
