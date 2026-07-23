@@ -935,11 +935,11 @@ PlayerSettings:
   captureStartupLogs: {}
   activeInputHandler: 1
   windowsGamepadBackendHint: 0
-  cloudProjectId: dbe769ab-b1cc-418c-936c-e1de05982be6
+  cloudProjectId: 19cc3ec6-7ed0-4dd9-8779-965df8c285e5
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: LostCyberHamster
-  organizationId: vues-dev
+  projectName: Lost Cyber Hamster
+  organizationId: vitalisun
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}
