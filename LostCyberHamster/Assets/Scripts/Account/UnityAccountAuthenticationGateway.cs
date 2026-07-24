@@ -1,4 +1,6 @@
+using System;
 using System.Threading.Tasks;
+using UnityEngine;
 using Unity.Services.Authentication;
 
 namespace Assets.Scripts.Account
@@ -16,12 +18,18 @@ namespace Assets.Scripts.Account
 
         public string PlayerId => AuthenticationService.Instance.PlayerId;
 
-        public Task SignInAnonymouslyAsync(bool createAccount)
+        /// <summary>
+        /// Возвращает полное публичное имя текущего игрока.
+        /// </summary>
+        public string PlayerName => AuthenticationService.Instance.PlayerName;
+
+        public async Task SignInAnonymouslyAsync(bool createAccount)
         {
-            return AuthenticationService.Instance.SignInAnonymouslyAsync(new SignInOptions
+            await AuthenticationService.Instance.SignInAnonymouslyAsync(new SignInOptions
             {
                 CreateAccount = createAccount
             });
+            await EnsurePlayerNameAsync();
         }
 
         /// <summary>
@@ -35,6 +43,7 @@ namespace Assets.Scripts.Account
                 {
                     ForceLink = false
                 });
+                await EnsurePlayerNameAsync();
                 return AccountLinkResult.Linked;
             }
             catch (AuthenticationException exception)
@@ -49,14 +58,23 @@ namespace Assets.Scripts.Account
         }
 
         /// <summary>
+        /// Обновляет публичное имя текущего игрока и возвращает сохранённое полное имя.
+        /// </summary>
+        public Task<string> UpdatePlayerNameAsync(string playerName)
+        {
+            return AuthenticationService.Instance.UpdatePlayerNameAsync(playerName);
+        }
+
+        /// <summary>
         /// Входит в существующий UGS-аккаунт без создания нового аккаунта.
         /// </summary>
-        public Task SignInWithUnityAsync(string accessToken)
+        public async Task SignInWithUnityAsync(string accessToken)
         {
-            return AuthenticationService.Instance.SignInWithUnityAsync(accessToken, new SignInOptions
+            await AuthenticationService.Instance.SignInWithUnityAsync(accessToken, new SignInOptions
             {
                 CreateAccount = false
             });
+            await EnsurePlayerNameAsync();
         }
 
         public void SignOutPreservingCredentials()
@@ -77,6 +95,27 @@ namespace Assets.Scripts.Account
         public void SignOutAndClearLocalCredentials()
         {
             AuthenticationService.Instance.SignOut(clearCredentials: true);
+        }
+
+        /// <summary>
+        /// Получает сохранённое имя игрока или поручает Unity создать его автоматически.
+        /// </summary>
+        private static async Task EnsurePlayerNameAsync()
+        {
+            // Уже загруженное имя не требует повторного запроса.
+            if (!string.IsNullOrWhiteSpace(AuthenticationService.Instance.PlayerName))
+                return;
+
+            // Ошибка имени не отменяет успешно установленную игровую сессию.
+            try
+            {
+                await AuthenticationService.Instance.GetPlayerNameAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(
+                    $"[Account] Player name resolution failed. Error type: {exception.GetType().Name}.");
+            }
         }
     }
 }

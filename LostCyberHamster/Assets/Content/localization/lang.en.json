@@ -45,6 +45,34 @@
             "value": "ACCOUNT"
         },
         {
+            "key": "lbl_player_name",
+            "value": "PLAYER NAME"
+        },
+        {
+            "key": "btn_change_player_name",
+            "value": "CHANGE"
+        },
+        {
+            "key": "btn_save_player_name",
+            "value": "SAVE NAME"
+        },
+        {
+            "key": "btn_cancel_player_name",
+            "value": "CANCEL"
+        },
+        {
+            "key": "player_name_saving",
+            "value": "SAVING…"
+        },
+        {
+            "key": "player_name_validation_error",
+            "value": "Name must be 3–16 characters with no spaces or #."
+        },
+        {
+            "key": "player_name_save_error",
+            "value": "Could not save name. Try again."
+        },
+        {
             "key": "lbl_cloud_save",
             "value": "CLOUD SAVE"
         },

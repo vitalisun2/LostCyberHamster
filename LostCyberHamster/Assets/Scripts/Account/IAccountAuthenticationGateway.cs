@@ -15,9 +15,19 @@ namespace Assets.Scripts.Account
 
         string PlayerId { get; }
 
+        /// <summary>
+        /// Возвращает полное публичное имя текущего игрока.
+        /// </summary>
+        string PlayerName { get; }
+
         Task SignInAnonymouslyAsync(bool createAccount);
 
         Task<AccountLinkResult> LinkWithUnityAsync(string accessToken);
+
+        /// <summary>
+        /// Обновляет публичное имя текущего игрока и возвращает сохранённое полное имя.
+        /// </summary>
+        Task<string> UpdatePlayerNameAsync(string playerName);
 
         /// <summary>
         /// Входит в существующий UGS-аккаунт по Unity Player Account без создания нового аккаунта.

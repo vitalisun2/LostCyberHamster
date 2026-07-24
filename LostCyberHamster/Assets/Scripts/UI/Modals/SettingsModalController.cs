@@ -12,6 +12,9 @@ namespace LostCyberHamster.UI
 {
     public class SettingsModalController : ModalController
     {
+        private const int MinPlayerNameLength = 3;
+        private const int MaxPlayerNameLength = 16;
+
         protected override ScreenEnum _modalAssetName => ScreenEnum.SettingsModal;
 
         private DropdownField _dropdownLanguages => _modalContent.Q<DropdownField>("settings__dd-languages");
@@ -24,6 +27,14 @@ namespace LostCyberHamster.UI
         private VisualElement _cloudSyncStatusRow => _modalContent.Q<VisualElement>("settings__cloud-sync-status");
         private Label _labelCloudSyncStatus => _modalContent.Q<Label>("settings__lbl-cloud-sync-status");
         private Button _buttonLinkAccount => _modalContent.Q<Button>("settings__btn-link-account");
+        private VisualElement _playerNameView => _modalContent.Q<VisualElement>("settings__player-name-view");
+        private Label _labelPlayerName => _modalContent.Q<Label>("settings__lbl-player-name");
+        private Button _buttonChangePlayerName => _modalContent.Q<Button>("settings__btn-change-player-name");
+        private VisualElement _playerNameEdit => _modalContent.Q<VisualElement>("settings__player-name-edit");
+        private TextField _textFieldPlayerName => _modalContent.Q<TextField>("settings__txt-player-name");
+        private Button _buttonSavePlayerName => _modalContent.Q<Button>("settings__btn-save-player-name");
+        private Button _buttonCancelPlayerName => _modalContent.Q<Button>("settings__btn-cancel-player-name");
+        private Label _labelPlayerNameError => _modalContent.Q<Label>("settings__lbl-player-name-error");
         private Button _buttonSave => _modalContent.Q<Button>("settings__btn-save");
         private Button _buttonCancel => _modalContent.Q<Button>("settings__btn-cancel");
 
@@ -32,6 +43,7 @@ namespace LostCyberHamster.UI
         private readonly CloudSyncService _cloudSyncService;
         private SettingsData _settingsData = new();
         private bool _hasAccountLinkConflict;
+        private bool _isPlayerNameSaving;
         private int _accountUiVersion;
 
         public SettingsModalController(
@@ -70,6 +82,9 @@ namespace LostCyberHamster.UI
             SubscribeToAccountState();
             SubscribeToCloudSyncStatus();
             UpdateAccountState(_accountService.State);
+            ShowPlayerName(_accountService.PlayerName);
+            SetPlayerNameEditMode(false);
+            SetPlayerNameBusy(false);
         }
 
         private void SubscribeToAccountState()
@@ -133,6 +148,11 @@ namespace LostCyberHamster.UI
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
             _buttonLinkAccount.SetEnabled(state == AccountState.Guest);
+            _buttonChangePlayerName.SetEnabled(
+                state == AccountState.Guest || state == AccountState.Linked);
+            if (state == AccountState.Guest || state == AccountState.Linked)
+                ShowPlayerName(_accountService.PlayerName);
+
             UpdateCloudSyncStatus(_cloudSyncService.Status);
         }
 
@@ -208,6 +228,127 @@ namespace LostCyberHamster.UI
             }
         }
 
+        private void OnClickChangePlayerName(ClickEvent evt)
+        {
+            _textFieldPlayerName.value = GetPlayerNameBase(_accountService.PlayerName);
+            _labelPlayerNameError.style.display = DisplayStyle.None;
+            SetPlayerNameEditMode(true);
+        }
+
+        /// <summary>
+        /// Проверяет новое имя и сохраняет его через сервис аккаунта.
+        /// </summary>
+        private async void OnClickSavePlayerName(ClickEvent evt)
+        {
+            if (_isPlayerNameSaving)
+                return;
+
+            // Отклоняем имя, не соответствующее правилам поля.
+            var playerName = _textFieldPlayerName.value?.Trim() ?? string.Empty;
+            if (!IsPlayerNameValid(playerName))
+            {
+                ShowPlayerNameError("player_name_validation_error");
+                return;
+            }
+
+            // Блокируем повторный запрос и сохраняем имя на сервере.
+            var accountUiVersion = _accountUiVersion;
+            SetPlayerNameBusy(true);
+            try
+            {
+                var updatedPlayerName = await _accountService.UpdatePlayerNameAsync(playerName);
+                if (accountUiVersion != _accountUiVersion)
+                    return;
+
+                ShowPlayerName(updatedPlayerName);
+                SetPlayerNameEditMode(false);
+            }
+            catch
+            {
+                if (accountUiVersion == _accountUiVersion)
+                    ShowPlayerNameError("player_name_save_error");
+            }
+            finally
+            {
+                if (accountUiVersion == _accountUiVersion)
+                    SetPlayerNameBusy(false);
+            }
+        }
+
+        private void OnClickCancelPlayerName(ClickEvent evt)
+        {
+            _textFieldPlayerName.value = GetPlayerNameBase(_accountService.PlayerName);
+            _labelPlayerNameError.style.display = DisplayStyle.None;
+            SetPlayerNameEditMode(false);
+        }
+
+        private void ShowPlayerName(string playerName)
+        {
+            _labelPlayerName.text = playerName ?? string.Empty;
+        }
+
+        private void ShowPlayerNameError(string localizationKey)
+        {
+            _labelPlayerNameError.text = LocalizationManager.GetLocalizedString(localizationKey);
+            _labelPlayerNameError.style.display = DisplayStyle.Flex;
+        }
+
+        private void SetPlayerNameEditMode(bool isEditing)
+        {
+            _playerNameView.style.display = isEditing
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
+            _playerNameEdit.style.display = isEditing
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
+
+        private void SetPlayerNameBusy(bool isBusy)
+        {
+            // Блокируем элементы отдельной операции имени.
+            _isPlayerNameSaving = isBusy;
+            _textFieldPlayerName.SetEnabled(!isBusy);
+            _buttonSavePlayerName.SetEnabled(!isBusy);
+            _buttonCancelPlayerName.SetEnabled(!isBusy);
+
+            // Показываем состояние серверного сохранения на его кнопке.
+            _buttonSavePlayerName.text = LocalizationManager.GetLocalizedString(
+                isBusy ? "player_name_saving" : "btn_save_player_name");
+        }
+
+        private static bool IsPlayerNameValid(string playerName)
+        {
+            // Проверяем границы и служебный разделитель Unity Player Names.
+            if (playerName.Length < MinPlayerNameLength ||
+                playerName.Length > MaxPlayerNameLength ||
+                playerName.Contains("#"))
+            {
+                return false;
+            }
+
+            // Запрещаем все виды пробельных символов.
+            foreach (var symbol in playerName)
+            {
+                if (char.IsWhiteSpace(symbol))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string GetPlayerNameBase(string playerName)
+        {
+            // Пустое полное имя даёт пустое поле редактирования.
+            if (string.IsNullOrWhiteSpace(playerName))
+                return string.Empty;
+
+            // Убираем назначенный Unity суффикс.
+            var suffixIndex = playerName.LastIndexOf('#');
+            return suffixIndex > 0
+                ? playerName.Substring(0, suffixIndex)
+                : playerName;
+        }
+
         private async void OnChangeLanguageAsync(ChangeEvent<string> evt)
         {
             _settingsData.Language = (int)LocalizationManager.GetLanguage(evt.newValue);
@@ -234,6 +375,9 @@ namespace LostCyberHamster.UI
             _buttonSave?.RegisterCallback<ClickEvent>(OnClickButtonSave);
             _buttonCancel?.RegisterCallback<ClickEvent>(OnClickButtonCancel);
             _buttonLinkAccount?.RegisterCallback<ClickEvent>(OnClickButtonLinkAccount);
+            _buttonChangePlayerName?.RegisterCallback<ClickEvent>(OnClickChangePlayerName);
+            _buttonSavePlayerName?.RegisterCallback<ClickEvent>(OnClickSavePlayerName);
+            _buttonCancelPlayerName?.RegisterCallback<ClickEvent>(OnClickCancelPlayerName);
             _dropdownLanguages?.RegisterValueChangedCallback(OnChangeLanguageAsync);
             _toggleMusic?.RegisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.RegisterValueChangedCallback(OnChangeSoundAsync);
@@ -284,6 +428,9 @@ namespace LostCyberHamster.UI
             _buttonSave?.UnregisterCallback<ClickEvent>(OnClickButtonSave);
             _buttonCancel?.UnregisterCallback<ClickEvent>(OnClickButtonCancel);
             _buttonLinkAccount?.UnregisterCallback<ClickEvent>(OnClickButtonLinkAccount);
+            _buttonChangePlayerName?.UnregisterCallback<ClickEvent>(OnClickChangePlayerName);
+            _buttonSavePlayerName?.UnregisterCallback<ClickEvent>(OnClickSavePlayerName);
+            _buttonCancelPlayerName?.UnregisterCallback<ClickEvent>(OnClickCancelPlayerName);
             _dropdownLanguages?.UnregisterValueChangedCallback(OnChangeLanguageAsync);
             _toggleMusic?.UnregisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.UnregisterValueChangedCallback(OnChangeSoundAsync);

@@ -17,6 +17,8 @@ namespace Assets.Tests.EditMode
 
         public string PlayerId { get; set; } = "guest-player-id";
 
+        public string PlayerName { get; set; } = "Guest#0000";
+
         public string ExistingAccountPlayerId { get; set; } = "linked-player-id";
 
         public bool? LastCreateAccount { get; private set; }
@@ -60,6 +62,12 @@ namespace Assets.Tests.EditMode
             LinkCallCount++;
             LastAccessToken = accessToken;
             return LinkTask;
+        }
+
+        public Task<string> UpdatePlayerNameAsync(string playerName)
+        {
+            PlayerName = playerName;
+            return Task.FromResult(PlayerName);
         }
 
         public async Task SignInWithUnityAsync(string accessToken)

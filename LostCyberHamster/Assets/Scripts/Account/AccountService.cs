@@ -31,6 +31,11 @@ namespace Assets.Scripts.Account
         public AccountState State { get; private set; } = AccountState.NotStarted;
 
         /// <summary>
+        /// Возвращает полное публичное имя текущего игрока.
+        /// </summary>
+        public string PlayerName => _authenticationGateway.PlayerName;
+
+        /// <summary>
         /// Возникает после изменения состояния аккаунта.
         /// </summary>
         public event Action<AccountState> StateChanged;
@@ -65,6 +70,14 @@ namespace Assets.Scripts.Account
 
             playerId = resolvedPlayerId;
             return true;
+        }
+
+        /// <summary>
+        /// Обновляет публичное имя текущего игрока и возвращает сохранённое полное имя.
+        /// </summary>
+        public Task<string> UpdatePlayerNameAsync(string playerName)
+        {
+            return _authenticationGateway.UpdatePlayerNameAsync(playerName);
         }
 
         /// <summary>

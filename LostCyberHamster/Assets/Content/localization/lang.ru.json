@@ -45,6 +45,34 @@
             "value": "АККАУНТ"
         },
         {
+            "key": "lbl_player_name",
+            "value": "ИМЯ ИГРОКА"
+        },
+        {
+            "key": "btn_change_player_name",
+            "value": "ИЗМЕНИТЬ"
+        },
+        {
+            "key": "btn_save_player_name",
+            "value": "СОХРАНИТЬ ИМЯ"
+        },
+        {
+            "key": "btn_cancel_player_name",
+            "value": "ОТМЕНА"
+        },
+        {
+            "key": "player_name_saving",
+            "value": "СОХРАНЕНИЕ…"
+        },
+        {
+            "key": "player_name_validation_error",
+            "value": "Имя должно содержать 3–16 символов без пробелов и #."
+        },
+        {
+            "key": "player_name_save_error",
+            "value": "Не удалось сохранить имя. Попробуйте ещё раз."
+        },
+        {
             "key": "lbl_cloud_save",
             "value": "ОБЛАЧНОЕ СОХРАНЕНИЕ"
         },
