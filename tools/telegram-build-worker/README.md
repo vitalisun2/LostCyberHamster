@@ -4,6 +4,8 @@
 
 Git не меняется: без commit, merge и push. APK и Telegram summary содержат commit, dirty-state и diff hash.
 
+Перед batch-build содержимое `Assets`, `Packages` и `ProjectSettings` зеркалируется в отдельный sandbox. Если исходники меняются прямо во время копирования, sync повторяется до получения стабильного snapshot. Правки после snapshot не отменяют текущий build и попадут в следующий.
+
 ## Архитектура
 
 ```text

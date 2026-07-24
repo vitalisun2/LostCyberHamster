@@ -109,6 +109,27 @@ function Get-SourceDiffHash {
     }
 }
 
+function Get-SourceSnapshot {
+    return [pscustomobject]@{
+        branch = Get-GitValue -GitArgs @('rev-parse', '--abbrev-ref', 'HEAD')
+        shortSha = Get-GitValue -GitArgs @('rev-parse', '--short', 'HEAD')
+        dirty = Get-SourceDirty
+        diffHash = Get-SourceDiffHash
+    }
+}
+
+function Test-SourceSnapshotsEqual {
+    param(
+        [object]$Before,
+        [object]$After
+    )
+
+    return $Before.branch -ceq $After.branch -and
+        $Before.shortSha -ceq $After.shortSha -and
+        $Before.dirty -eq $After.dirty -and
+        $Before.diffHash -ceq $After.diffHash
+}
+
 function Invoke-RobocopyMirror {
     param(
         [string]$Source,
@@ -389,9 +410,19 @@ function Invoke-UnityAndroidBuild {
 
     Write-Step "Starting Unity Android build. Unity log: $LogPath"
     $argumentLine = Convert-ToProcessArgumentLine -Arguments $unityArgs
-    $process = Start-Process -FilePath $UnityExe -ArgumentList $argumentLine -Wait -PassThru
-    if ($process.ExitCode -ne 0) {
-        throw "Unity Android build failed with exit code $($process.ExitCode). See log: $LogPath"
+    $process = Start-Process -FilePath $UnityExe -ArgumentList $argumentLine -PassThru
+    $exitCode = $null
+    try {
+        [void]$process.Handle
+        $process.WaitForExit()
+        $exitCode = $process.ExitCode
+    }
+    finally {
+        $process.Dispose()
+    }
+
+    if ($exitCode -ne 0) {
+        throw "Unity Android build failed with exit code $exitCode. See log: $LogPath"
     }
 }
 
@@ -426,10 +457,31 @@ if ($SourceWorktree.TrimEnd('\', '/') -ieq $SandboxRoot.TrimEnd('\', '/')) {
 New-Item -ItemType Directory -Force -Path $SandboxRoot | Out-Null
 New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 
-$branch = Get-GitValue -GitArgs @('rev-parse', '--abbrev-ref', 'HEAD')
-$shortSha = Get-GitValue -GitArgs @('rev-parse', '--short', 'HEAD')
-$dirty = Get-SourceDirty
-$diffHash = Get-SourceDiffHash
+Write-Step "Preparing sandbox: $SandboxRoot"
+$stableSnapshot = $null
+$maxSyncAttempts = 3
+for ($syncAttempt = 1; $syncAttempt -le $maxSyncAttempts; $syncAttempt++) {
+    $snapshotBeforeSync = Get-SourceSnapshot
+    Write-Step "Sync attempt $syncAttempt of $maxSyncAttempts."
+    $sandboxProjectPath = Sync-UnityProjectSnapshot -SourceRoot $SourceWorktree -TargetRoot $SandboxRoot
+    $snapshotAfterSync = Get-SourceSnapshot
+
+    if (Test-SourceSnapshotsEqual -Before $snapshotBeforeSync -After $snapshotAfterSync) {
+        $stableSnapshot = $snapshotAfterSync
+        break
+    }
+
+    Write-Step "Source snapshot changed during sync attempt $syncAttempt; retrying."
+}
+
+if ($null -eq $stableSnapshot) {
+    throw "Source snapshot changed during all $maxSyncAttempts sandbox sync attempts. Build was not started."
+}
+
+$branch = $stableSnapshot.branch
+$shortSha = $stableSnapshot.shortSha
+$dirty = $stableSnapshot.dirty
+$diffHash = $stableSnapshot.diffHash
 
 if ([string]::IsNullOrWhiteSpace($branch)) {
     $branch = 'unknown'
@@ -455,8 +507,6 @@ $unityLogPath = Join-Path $outputDir 'unity-android.log'
 $summaryPath = Join-Path $outputDir 'build-summary.codex.json'
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
-Write-Step "Preparing sandbox: $SandboxRoot"
-$sandboxProjectPath = Sync-UnityProjectSnapshot -SourceRoot $SourceWorktree -TargetRoot $SandboxRoot
 $postprocessorTemplatePath = Join-Path $PSScriptRoot "sandbox-overrides\$androidGradlePostprocessorRelativePath"
 $postprocessorTargetPath = Join-Path $sandboxProjectPath $androidGradlePostprocessorRelativePath
 Assert-PathExists -Path $postprocessorTemplatePath -Description 'Sandbox Android Gradle postprocessor template'

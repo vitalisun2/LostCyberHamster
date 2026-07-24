@@ -311,14 +311,21 @@ try {
         }
     }
 
-    Assert-Equal -Actual $build.sourceBranch -Expected $snapshotBefore.branch `
-        -Code 'BuildBranchMismatch' -Message 'Build result branch does not match source snapshot.'
-    Assert-Equal -Actual $build.sourceCommit -Expected $snapshotBefore.shortCommit `
-        -Code 'BuildCommitMismatch' -Message 'Build result commit does not match source snapshot.'
-    Assert-Equal -Actual ([bool]$build.sourceDirty) -Expected $snapshotBefore.dirty `
-        -Code 'BuildDirtyMismatch' -Message 'Build result dirty state does not match source snapshot.'
-    Assert-Equal -Actual $build.sourceDiffHash -Expected $snapshotBefore.sourceDiffHash `
-        -Code 'BuildDiffMismatch' -Message 'Build result diff hash does not match source snapshot.'
+    Assert-Equal -Actual $build.sourceBranch -Expected $expectedBranch `
+        -Code 'BuildBranchMismatch' -Message 'Stable build snapshot is not from the expected branch.'
+    if ([string]::IsNullOrWhiteSpace([string]$build.sourceCommit) -or
+        [string]::IsNullOrWhiteSpace([string]$build.sourceDiffHash)) {
+        Stop-Workflow `
+            -Code 'BuildSnapshotIncomplete' `
+            -Message 'Build result does not identify its stable source snapshot.'
+    }
+
+    # The build script captures and verifies a stable snapshot around sandbox
+    # synchronization. Edits made after that snapshot belong to the next build.
+    $result.sourceBranch = [string]$build.sourceBranch
+    $result.sourceCommit = [string]$build.sourceCommit
+    $result.sourceDirty = [bool]$build.sourceDirty
+    $result.sourceDiffHash = [string]$build.sourceDiffHash
 
     $apkPath = Get-FullPath -Path ([string]$build.apk)
     $allowedApkRoot = Join-Path $RepositoryRoot 'Builds\telegram-buffer'
@@ -342,14 +349,14 @@ try {
 
     Assert-Equal -Actual $summary.buildId -Expected $build.buildId `
         -Code 'BuildSummaryMismatch' -Message 'Build summary buildId does not match build result.'
-    Assert-Equal -Actual $summary.sourceBranch -Expected $snapshotBefore.branch `
-        -Code 'BuildSummaryMismatch' -Message 'Build summary branch does not match source snapshot.'
-    Assert-Equal -Actual $summary.sourceCommit -Expected $snapshotBefore.shortCommit `
-        -Code 'BuildSummaryMismatch' -Message 'Build summary commit does not match source snapshot.'
-    Assert-Equal -Actual ([bool]$summary.sourceDirty) -Expected $snapshotBefore.dirty `
-        -Code 'BuildSummaryMismatch' -Message 'Build summary dirty state does not match source snapshot.'
-    Assert-Equal -Actual $summary.sourceDiffHash -Expected $snapshotBefore.sourceDiffHash `
-        -Code 'BuildSummaryMismatch' -Message 'Build summary diff hash does not match source snapshot.'
+    Assert-Equal -Actual $summary.sourceBranch -Expected $build.sourceBranch `
+        -Code 'BuildSummaryMismatch' -Message 'Build summary branch does not match build result.'
+    Assert-Equal -Actual $summary.sourceCommit -Expected $build.sourceCommit `
+        -Code 'BuildSummaryMismatch' -Message 'Build summary commit does not match build result.'
+    Assert-Equal -Actual ([bool]$summary.sourceDirty) -Expected ([bool]$build.sourceDirty) `
+        -Code 'BuildSummaryMismatch' -Message 'Build summary dirty state does not match build result.'
+    Assert-Equal -Actual $summary.sourceDiffHash -Expected $build.sourceDiffHash `
+        -Code 'BuildSummaryMismatch' -Message 'Build summary diff hash does not match build result.'
     Assert-Equal -Actual (Get-FullPath -Path ([string]$summary.apk)) -Expected $apkPath `
         -Code 'BuildSummaryMismatch' -Message 'Build summary APK does not match build result.'
 
@@ -357,10 +364,6 @@ try {
     $result.apkPath = $apkPath
     $result.apkSizeBytes = [long](Get-Item -LiteralPath $apkPath).Length
     $result.buildSummaryPath = $summaryPath
-
-    $snapshotBeforeUpload = Get-SourceSnapshot
-    Assert-Equal -Actual $snapshotBeforeUpload.guardHash -Expected $snapshotBefore.guardHash `
-        -Code 'SourceChangedDuringWorkflow' -Message 'Source worktree changed during build; APK was not uploaded.'
 
     $botApiReachable = Test-EndpointReachable -ApiBaseUrl $localBotApiEndpoint
     if (-not $botApiReachable) {
