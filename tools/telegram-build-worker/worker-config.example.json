@@ -1,0 +1,8 @@
+{
+  "repositoryRoot": "C:\\Main\\crystal_wave\\LostCyberHamster_2025",
+  "telegramConfigPath": "%USERPROFILE%\\.codex\\telegram-buffer.local.json",
+  "botApiConfigPath": "%USERPROFILE%\\.codex\\telegram-bot-api.local.json",
+  "stateDirectory": "%LOCALAPPDATA%\\LostCyberHamster\\TelegramBuildWorker",
+  "taskName": "LostCyberHamster Telegram Build Worker",
+  "pollTimeoutSeconds": 30
+}
