@@ -11,10 +11,14 @@ namespace Vues.GameCore
 {
     public static class QuestManager
     {
+        private const string BasicQuestDefinitionId = "quest-002";
+
         /// <summary>
         /// Pool of daily quests to generate from.
         /// </summary>
         private static List<Quest> _dailyTasksPool = new List<Quest>();
+        private static BasicQuestLifecycle _basicQuestLifecycle;
+        private static bool _isTracking;
 
         public static List<Quest> DailyTasks = new List<Quest>();
         public static List<Quest> StorylineQuests = new List<Quest>();
@@ -26,6 +30,7 @@ namespace Vues.GameCore
 
             StorylineQuests = quests.StorylineQuests.ToList();
             _dailyTasksPool = quests.DailyTasksPool.ToList();
+            InitializeBasicQuestLifecycle();
 
             //GameRepository.GameData.PlayerData.DailyQuestRefreshDate = "2021-01-01";
 
@@ -50,6 +55,8 @@ namespace Vues.GameCore
 
         public static void OnEnable()
         {
+            _isTracking = true;
+            _basicQuestLifecycle?.StartTracking();
             GameEventsManager.OnCoinCollected += HandleCoinCollected;
             GameEventsManager.OnCrystalsCollected += HandleCrystallCollected;
             GameEventsManager.OnObstacleJumpedOver += HandleObstacleJumpedOver;
@@ -58,10 +65,28 @@ namespace Vues.GameCore
 
         public static void OnDisable()
         {
+            _isTracking = false;
+            _basicQuestLifecycle?.StopTracking();
             GameEventsManager.OnCoinCollected -= HandleCoinCollected;
             GameEventsManager.OnCrystalsCollected -= HandleCrystallCollected;
             GameEventsManager.OnObstacleJumpedOver -= HandleObstacleJumpedOver;
             GameEventsManager.OnObstacleJumpedOn -= HandleObstacleJumpedOn;
+        }
+
+        private static void InitializeBasicQuestLifecycle()
+        {
+            var definition = _dailyTasksPool.FirstOrDefault(quest => quest.Id == BasicQuestDefinitionId);
+            if (definition == null)
+            {
+                return;
+            }
+
+            _basicQuestLifecycle?.StopTracking();
+            _basicQuestLifecycle = new BasicQuestLifecycle(definition, GameDataManager.PlayerData);
+            if (_isTracking)
+            {
+                _basicQuestLifecycle.StartTracking();
+            }
         }
 
 

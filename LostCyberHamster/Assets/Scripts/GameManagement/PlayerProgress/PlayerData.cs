@@ -17,6 +17,7 @@ namespace GameManagement
         public string CurrentLevel = "level_01";
         public string DailyTasksRefreshDate;
         public List<Quest> DailyTasks;
+        public BasicQuestState BasicQuest = new();
 
         [SerializeField]
         private List<SerializableLevelProgressEntry> _serializedProgress = new();
