@@ -1,0 +1,48 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement name="leaderboard-screen" style="flex-grow: 1; min-width: 0; min-height: 0;">
+        <engine:Instance template="Toolbar" name="toolbar" style="flex-grow: 0; flex-shrink: 0; height: 120px;" />
+        <engine:VisualElement style="flex-grow: 1; min-width: 0; min-height: 0; align-items: center; padding-top: 8px; padding-right: 28px; padding-bottom: 20px; padding-left: 28px;">
+            <Vues.GameCore.LocalizedLabel key="leaderboard_title" class="lcs-text" style="flex-grow: 0; flex-shrink: 0; width: 1000px; height: 64px; margin-bottom: 4px; font-size: 52px; -unity-text-align: middle-center;" />
+
+            <engine:VisualElement name="leaderboard__location-carousel" style="flex-grow: 0; flex-shrink: 0; height: 132px; width: 1080px; flex-direction: row; justify-content: center; align-items: center;">
+                <engine:Button text="◀" name="leaderboard__location-previous" class="lcs_btn bg-primary" style="flex-grow: 0; flex-shrink: 0; width: 123px; height: 114px; margin-top: 8px; margin-right: 16px; margin-bottom: 8px; margin-left: 8px; padding: 0; font-size: 51px;" />
+                <engine:Label name="leaderboard__location-title" class="lcs-text" style="flex-grow: 0; flex-shrink: 0; width: 720px; height: 88px; padding-right: 24px; padding-left: 24px; background-color: rgba(242, 233, 196, 0.96); border-top-width: 6px; border-right-width: 6px; border-bottom-width: 6px; border-left-width: 6px; border-top-color: rgb(34, 130, 134); border-right-color: rgb(34, 130, 134); border-bottom-color: rgb(34, 130, 134); border-left-color: rgb(34, 130, 134); border-top-left-radius: 24px; border-top-right-radius: 24px; border-bottom-right-radius: 24px; border-bottom-left-radius: 24px; color: rgb(50, 43, 34); font-size: 48px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -unity-text-align: middle-center; -unity-text-outline-width: 0px;" />
+                <engine:Button text="▶" name="leaderboard__location-next" class="lcs_btn bg-primary" style="flex-grow: 0; flex-shrink: 0; width: 123px; height: 114px; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 16px; padding: 0; font-size: 51px;" />
+            </engine:VisualElement>
+
+            <engine:VisualElement name="leaderboard__results" style="flex-grow: 1; min-width: 0; min-height: 0; width: 100%; flex-direction: row; justify-content: center; align-items: stretch;">
+                <engine:VisualElement name="leaderboard__part-tabs" style="flex-grow: 0; flex-shrink: 0; width: 244px; justify-content: center; align-items: flex-end;">
+                    <Vues.GameCore.LocalizedButton key="leaderboard_morning" name="leaderboard__part-morning" class="lcs_btn bg-warning" style="flex-shrink: 1; width: 244px; height: 114px; min-height: 76px; margin-top: 14px; margin-right: 0; margin-bottom: 14px; margin-left: 0; padding-right: 12px; padding-left: 12px; font-size: 23px; white-space: normal; border-right-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0;" />
+                    <Vues.GameCore.LocalizedButton key="leaderboard_afternoon" name="leaderboard__part-afternoon" class="lcs_btn bg-primary" style="flex-shrink: 1; width: 220px; height: 114px; min-height: 76px; margin-top: 14px; margin-right: 12px; margin-bottom: 14px; margin-left: 0; padding-right: 12px; padding-left: 12px; font-size: 23px; white-space: normal;" />
+                    <Vues.GameCore.LocalizedButton key="leaderboard_evening" name="leaderboard__part-evening" class="lcs_btn bg-primary" style="flex-shrink: 1; width: 220px; height: 114px; min-height: 76px; margin-top: 14px; margin-right: 12px; margin-bottom: 14px; margin-left: 0; padding-right: 12px; padding-left: 12px; font-size: 23px; white-space: normal;" />
+                    <Vues.GameCore.LocalizedButton key="leaderboard_night" name="leaderboard__part-night" class="lcs_btn bg-primary" style="flex-shrink: 1; width: 220px; height: 114px; min-height: 76px; margin-top: 14px; margin-right: 12px; margin-bottom: 14px; margin-left: 0; padding-right: 12px; padding-left: 12px; font-size: 23px; white-space: normal;" />
+                </engine:VisualElement>
+
+                <engine:VisualElement name="leaderboard__table-panel" style="flex-grow: 0; flex-shrink: 1; width: 1344px; min-width: 900px; max-width: 1344px; min-height: 0; margin-right: 0; margin-left: 0; padding-top: 14px; padding-right: 14px; padding-bottom: 14px; padding-left: 14px; background-color: rgba(242, 233, 196, 0.96); border-top-width: 6px; border-right-width: 6px; border-bottom-width: 6px; border-left-width: 6px; border-top-color: rgb(34, 130, 134); border-right-color: rgb(34, 130, 134); border-bottom-color: rgb(34, 130, 134); border-left-color: rgb(34, 130, 134); border-top-left-radius: 24px; border-top-right-radius: 24px; border-bottom-right-radius: 24px; border-bottom-left-radius: 24px;">
+                    <engine:VisualElement style="flex-grow: 0; flex-shrink: 0; height: 52px; flex-direction: row; align-items: center; padding-right: 20px; padding-left: 20px; margin-bottom: 8px; background-color: rgba(34, 130, 134, 0.16); border-top-left-radius: 14px; border-top-right-radius: 14px; border-bottom-right-radius: 14px; border-bottom-left-radius: 14px;">
+                        <Vues.GameCore.LocalizedLabel key="leaderboard_rank" class="lcs-text" style="flex-grow: 0; width: 110px; color: rgb(50, 43, 34); font-size: 22px; -unity-text-outline-width: 0px;" />
+                        <Vues.GameCore.LocalizedLabel key="leaderboard_player" class="lcs-text" style="flex-grow: 1; min-width: 0; color: rgb(50, 43, 34); font-size: 22px; -unity-text-outline-width: 0px;" />
+                        <Vues.GameCore.LocalizedLabel key="leaderboard_score" class="lcs-text" style="flex-grow: 0; width: 180px; color: rgb(50, 43, 34); font-size: 22px; -unity-text-align: middle-right; -unity-text-outline-width: 0px;" />
+                    </engine:VisualElement>
+                    <engine:VisualElement style="flex-grow: 1; flex-shrink: 1; min-height: 0;">
+                        <Vues.GameCore.LocalizedLabel key="leaderboard_loading" name="leaderboard__loading" class="lcs-text" style="flex-grow: 1; color: rgb(50, 43, 34); font-size: 28px; -unity-text-align: middle-center; -unity-text-outline-width: 0px;" />
+                        <engine:VisualElement name="leaderboard__error" style="display: none; flex-grow: 1; align-items: center; justify-content: center; padding-right: 28px; padding-left: 28px;">
+                            <Vues.GameCore.LocalizedLabel key="leaderboard_error" class="lcs-text" style="font-size: 26px; color: rgb(50, 43, 34); white-space: normal; -unity-text-align: middle-center; -unity-text-outline-width: 0px;" />
+                            <Vues.GameCore.LocalizedButton key="leaderboard_retry" name="leaderboard__btn-retry" class="lcs_btn bg-primary" style="width: 280px; height: 72px; margin: 16px; font-size: 24px;" />
+                        </engine:VisualElement>
+                        <Vues.GameCore.LocalizedLabel key="leaderboard_empty" name="leaderboard__empty" class="lcs-text" style="display: none; flex-grow: 1; color: rgb(50, 43, 34); font-size: 28px; -unity-text-align: middle-center; -unity-text-outline-width: 0px;" />
+                        <engine:ScrollView name="leaderboard__rows" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" style="display: none; flex-grow: 1; flex-shrink: 1; min-height: 0; width: 100%;" />
+                    </engine:VisualElement>
+                    <engine:VisualElement name="leaderboard__current-player" style="display: none; flex-grow: 0; flex-shrink: 0; height: 64px; margin-top: 8px; padding-top: 8px; padding-right: 20px; padding-left: 20px; flex-direction: row; align-items: center; background-color: rgba(255, 228, 92, 0.9); border-top-width: 4px; border-top-color: rgb(34, 130, 134);">
+                        <engine:Label name="leaderboard__current-rank" class="lcs-text" style="flex-grow: 0; width: 110px; color: rgb(50, 43, 34); font-size: 26px; -unity-text-outline-width: 0px;" />
+                        <engine:Label name="leaderboard__current-name" class="lcs-text" style="flex-grow: 1; min-width: 0; color: rgb(50, 43, 34); font-size: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -unity-text-outline-width: 0px;" />
+                        <engine:Label name="leaderboard__current-score" class="lcs-text" style="flex-grow: 0; width: 180px; color: rgb(50, 43, 34); font-size: 26px; -unity-text-align: middle-right; -unity-text-outline-width: 0px;" />
+                    </engine:VisualElement>
+                </engine:VisualElement>
+                <engine:VisualElement name="leaderboard__right-balance" style="flex-grow: 0; flex-shrink: 0; width: 244px;" />
+            </engine:VisualElement>
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

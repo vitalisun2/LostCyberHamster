@@ -177,6 +177,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ae0a0d292f9dec94fa31fc4294c1c22c
+    m_Address: LeaderboardScreen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: af472ae585e9c4e46a4fc6ab78afda13
     m_Address: story-008
     m_ReadOnly: 0

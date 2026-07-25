@@ -188,6 +188,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiGameOverMechanics.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LegacyLevelCatalog.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Persistence\GameDataManager.cs" />
+    <Compile Include="Assets\Scripts\UI\Screens\LeaderboardScreenController.cs" />
     <Compile Include="Assets\Scripts\Common\Models\PartOfDayEnum.cs" />
     <Compile Include="Assets\Scripts\System\AutomationRuntimePrefs.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelCatalogService.cs" />
@@ -410,6 +411,7 @@
     <Compile Include="Assets\Scripts\System\InstantiatedObstacle.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LocationAssetFallback.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnTravel.cs" />
+    <Compile Include="Assets\Scripts\Leaderboard\LeaderboardService.cs" />
     <Compile Include="Assets\Scripts\Gameplay\LifeBonus.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UltaMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningGraphNode.cs" />
@@ -631,6 +633,7 @@
     <None Include="Assets\Content\ui\uxml\MainButtonGroup.uxml" />
     <None Include="Assets\Content\ui\uxml\Screen.uxml" />
     <None Include="Assets\Content\ui\styles\CloudSaveConflictModal.uss" />
+    <None Include="Assets\Content\ui\uxml\LeaderboardScreen.uxml" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
@@ -1901,6 +1904,10 @@
       <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Core.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Services.Leaderboards.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Services.Leaderboards.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.Multiplayer.Center.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Editor.dll</HintPath>
       <Private>False</Private>
@@ -1915,6 +1922,10 @@
     </Reference>
     <Reference Include="Unity.Toolchain.Linux-x86_64">
       <HintPath>Library\ScriptAssemblies\Unity.Toolchain.Linux-x86_64.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Services.Leaderboards">
+      <HintPath>Library\ScriptAssemblies\Unity.Services.Leaderboards.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Collections.Editor">

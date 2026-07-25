@@ -4,6 +4,7 @@ using Assets.Scripts.Account;
 using GameAds;
 using GameManagement;
 using GameManagement.CloudSave;
+using GameManagement.Leaderboard;
 using LostCyberHamster.UI;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -57,6 +58,9 @@ namespace Assets.Scripts.Entry_Points
                 new CharacterScreenController(_uiDocument),
                 new QuestsScreenController(_uiDocument),
                 new SelectLevelScreenController(_uiDocument),
+                new LeaderboardScreenController(
+                    _uiDocument,
+                    new LeaderboardService()),
                 new ShopModalController(_uiDocument),
                 new DailyTasksScreenController(_uiDocument),
             });

@@ -10,6 +10,7 @@ namespace LostCyberHamster.UI
     {
         private Button _buttonStart => _contentRoot.Q<Button>("btn_play");
         private Button _buttonSelectLevel => _contentRoot.Q<Button>("btn_select-level");
+        private Button _buttonLeaderboard => _contentRoot.Q<Button>("btn_leaderboard");
 
         private Button _buttonSettings => _contentRoot.Q<Button>("btn_settings");
 
@@ -47,10 +48,16 @@ namespace LostCyberHamster.UI
             UIManager.OnModalShow(ScreenEnum.SettingsModal);
         }
 
+        private void OnClickBtnLeaderboard(ClickEvent evt)
+        {
+            UIManager.OnScreenShow(ScreenEnum.LeaderboardScreen);
+        }
+
         protected override void OnSubscribeToEvents()
         {
             _buttonStart?.RegisterCallback<ClickEvent>(OnClickBtnStart);
             _buttonSelectLevel?.RegisterCallback<ClickEvent>(OnClickBtnSelectLevel);
+            _buttonLeaderboard?.RegisterCallback<ClickEvent>(OnClickBtnLeaderboard);
             _buttonSettings?.RegisterCallback<ClickEvent>(OnClickBtnSettings);
             _buttonCharacter?.RegisterCallback<ClickEvent>(OnClickBtnCharacter);
             _buttonTutorial?.RegisterCallback<ClickEvent>(OnClickBtnTutorial);
@@ -94,6 +101,7 @@ namespace LostCyberHamster.UI
         {
             _buttonStart?.UnregisterCallback<ClickEvent>(OnClickBtnStart);
             _buttonSelectLevel?.UnregisterCallback<ClickEvent>(OnClickBtnSelectLevel);
+            _buttonLeaderboard?.UnregisterCallback<ClickEvent>(OnClickBtnLeaderboard);
             _buttonSettings?.UnregisterCallback<ClickEvent>(OnClickBtnSettings);
             _buttonCharacter?.UnregisterCallback<ClickEvent>(OnClickBtnCharacter);
             _buttonTutorial?.UnregisterCallback<ClickEvent>(OnClickBtnTutorial);

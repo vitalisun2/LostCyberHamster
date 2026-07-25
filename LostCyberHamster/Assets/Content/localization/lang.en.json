@@ -13,6 +13,62 @@
             "value": "Main menu"
         },
         {
+            "key": "btn_leaderboard",
+            "value": "LEADERBOARDS"
+        },
+        {
+            "key": "leaderboard_title",
+            "value": "Leaderboards"
+        },
+        {
+            "key": "leaderboard_morning",
+            "value": "MORNING"
+        },
+        {
+            "key": "leaderboard_afternoon",
+            "value": "AFTERNOON"
+        },
+        {
+            "key": "leaderboard_evening",
+            "value": "EVENING"
+        },
+        {
+            "key": "leaderboard_night",
+            "value": "NIGHT"
+        },
+        {
+            "key": "leaderboard_loading",
+            "value": "LOADING…"
+        },
+        {
+            "key": "leaderboard_error",
+            "value": "COULD NOT LOAD LEADERBOARD"
+        },
+        {
+            "key": "leaderboard_retry",
+            "value": "RETRY"
+        },
+        {
+            "key": "leaderboard_empty",
+            "value": "NO RESULTS YET"
+        },
+        {
+            "key": "leaderboard_you",
+            "value": "YOU"
+        },
+        {
+            "key": "leaderboard_rank",
+            "value": "RANK"
+        },
+        {
+            "key": "leaderboard_player",
+            "value": "PLAYER"
+        },
+        {
+            "key": "leaderboard_score",
+            "value": "SCORE"
+        },
+        {
             "key": "btn_resume",
             "value": "Resume"
         },

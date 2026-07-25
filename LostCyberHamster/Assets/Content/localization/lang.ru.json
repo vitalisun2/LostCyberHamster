@@ -13,6 +13,62 @@
             "value": "Главное меню"
         },
         {
+            "key": "btn_leaderboard",
+            "value": "РЕЙТИНГИ"
+        },
+        {
+            "key": "leaderboard_title",
+            "value": "Рейтинги"
+        },
+        {
+            "key": "leaderboard_morning",
+            "value": "УТРО"
+        },
+        {
+            "key": "leaderboard_afternoon",
+            "value": "ДЕНЬ"
+        },
+        {
+            "key": "leaderboard_evening",
+            "value": "ВЕЧЕР"
+        },
+        {
+            "key": "leaderboard_night",
+            "value": "НОЧЬ"
+        },
+        {
+            "key": "leaderboard_loading",
+            "value": "ЗАГРУЗКА…"
+        },
+        {
+            "key": "leaderboard_error",
+            "value": "НЕ УДАЛОСЬ ЗАГРУЗИТЬ РЕЙТИНГ"
+        },
+        {
+            "key": "leaderboard_retry",
+            "value": "ПОВТОРИТЬ"
+        },
+        {
+            "key": "leaderboard_empty",
+            "value": "ПОКА НЕТ РЕЗУЛЬТАТОВ"
+        },
+        {
+            "key": "leaderboard_you",
+            "value": "ВЫ"
+        },
+        {
+            "key": "leaderboard_rank",
+            "value": "МЕСТО"
+        },
+        {
+            "key": "leaderboard_player",
+            "value": "ИГРОК"
+        },
+        {
+            "key": "leaderboard_score",
+            "value": "ОЧКИ"
+        },
+        {
             "key": "btn_resume",
             "value": "Продолжить"
         },
