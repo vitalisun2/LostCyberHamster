@@ -14,7 +14,7 @@ namespace GameManagement
         public int Crystals;
         public int AppliedSkinId = 0;
         public List<int> PurchasedSkinIds = new() { 0 };
-        public string CurrentLevel = "level_01";
+        public string CurrentLevel;
         public string DailyTasksRefreshDate;
         public List<Quest> DailyTasks;
         public BasicQuestState BasicQuest = new();

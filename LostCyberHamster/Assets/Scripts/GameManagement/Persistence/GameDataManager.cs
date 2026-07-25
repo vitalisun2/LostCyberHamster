@@ -57,7 +57,7 @@ namespace GameManagement
                 return Task.CompletedTask;
             }
 
-            PlayerData = new PlayerData();
+            PlayerData = CreateDefaultPlayerData();
             EnsureProgressConsistency();
             EnsureValidated(PlayerData);
             PlayerPrefs.DeleteKey(_playerDataBackupKey);
@@ -274,7 +274,7 @@ namespace GameManagement
 
         public static void ResetPlayerProgress()
         {
-            var defaultData = new PlayerData();
+            var defaultData = CreateDefaultPlayerData();
 
             var validation = PlayerDataValidator.Validate(defaultData);
             if (validation.Status == PlayerDataValidationStatus.Repairable)
@@ -348,6 +348,38 @@ namespace GameManagement
             {
                 Debug.LogWarning($"[GameDataManager] Failed to align player progress with catalog: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Создаёт данные нового игрока с полным адресом первого уровня настроенного каталога.
+        /// </summary>
+        private static PlayerData CreateDefaultPlayerData()
+        {
+            // Требуем готовый непустой каталог до создания сохраняемых данных игрока.
+            var catalog = LevelCatalogService.Catalog;
+            if (catalog.IsEmpty)
+            {
+                throw new InvalidOperationException(
+                    "Cannot create default player data: level catalog is not configured or empty.");
+            }
+
+            // Берём первый уровень в иерархическом порядке и сохраняем его полный address.
+            var firstLevel = catalog.EnumerateLevels()
+                .OrderBy(level => level.LocationIndex)
+                .ThenBy(level => level.PartIndex)
+                .ThenBy(level => level.LevelIndex)
+                .FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(firstLevel.Address))
+            {
+                throw new InvalidOperationException(
+                    "Cannot create default player data: first catalog level has no address.");
+            }
+
+            return new PlayerData
+            {
+                CurrentLevel = firstLevel.Address.Trim()
+            };
         }
 
         private static void EnsureCurrentLevelValid(HierarchicalLevelCatalog catalog)
