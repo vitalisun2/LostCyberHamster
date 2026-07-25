@@ -16,8 +16,8 @@ namespace LostCyberHamster.UI
     /// </summary>
     public sealed class LeaderboardScreenController : ScreenController
     {
-        // Временный режим визуальной проверки. Для возврата к серверным данным сменить на false.
-        private static readonly bool _useVisualQaMockData = true;
+        // Временный режим визуальной проверки. Включать только для оценки вёрстки.
+        private static readonly bool _useVisualQaMockData = false;
         private const int _mockTopCount = 50;
 
         private static readonly string[] _mockPlayerNames =
@@ -56,6 +56,14 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<Button>("leaderboard__part-evening");
         private Button _buttonNight =>
             _contentRoot.Q<Button>("leaderboard__part-night");
+        private VisualElement _morningLock =>
+            _contentRoot.Q<VisualElement>("leaderboard__part-morning-lock");
+        private VisualElement _afternoonLock =>
+            _contentRoot.Q<VisualElement>("leaderboard__part-afternoon-lock");
+        private VisualElement _eveningLock =>
+            _contentRoot.Q<VisualElement>("leaderboard__part-evening-lock");
+        private VisualElement _nightLock =>
+            _contentRoot.Q<VisualElement>("leaderboard__part-night-lock");
         private Label _loading =>
             _contentRoot.Q<Label>("leaderboard__loading");
         private VisualElement _error =>
@@ -88,6 +96,7 @@ namespace LostCyberHamster.UI
             Array.Empty<LevelSelectionModel.PartView>();
         private LevelSelectionModel.LocationView _selectedLocation;
         private LevelSelectionModel.PartView _selectedPart;
+        private int _openedLocationCount;
         private int _currentLocationIndex;
         private int _requestVersion;
 
@@ -107,36 +116,32 @@ namespace LostCyberHamster.UI
         /// </summary>
         protected override async Task OnLoadAsync()
         {
-            // Собираем локации для текущего режима в порядке игрового каталога.
+            // Собираем полный каталог и отдельно фиксируем реальную границу доступности.
             _requestVersion++;
             var selectionModel = LevelSelectionModel.Create();
-            var openedLocationCount = Math.Min(
+            _openedLocationCount = Math.Min(
                 LevelManager.OpenedLocations.Count,
                 selectionModel.Locations.Count);
-            _visibleLocations = _useVisualQaMockData
-                ? selectionModel.Locations.ToList()
-                : selectionModel.Locations.Take(openedLocationCount).ToList();
+            _visibleLocations = selectionModel.Locations.ToList();
 
             await ChangeBackgroundAsync("BackgroundScreenSprite");
 
-            // Карусель нужна только когда в каталоге больше одной видимой локации.
-            var hasMultipleLocations = _visibleLocations.Count > 1;
-            _buttonPreviousLocation.SetEnabled(hasMultipleLocations);
-            _buttonNextLocation.SetEnabled(hasMultipleLocations);
-
             // Экран всегда начинает с первой локации и вкладки утра.
-            if (_visibleLocations.Count == 0)
+            _currentLocationIndex = _visibleLocations
+                .ToList()
+                .FindIndex(IsLocationOpen);
+            UpdateLocationArrows();
+            if (_currentLocationIndex < 0)
             {
                 _selectedLocation = null;
                 _selectedPart = null;
                 _locationTitle.text = "—";
                 _visibleParts = Array.Empty<LevelSelectionModel.PartView>();
                 UpdatePartButtons(null);
-                ShowEmpty();
+                ShowUnavailable();
                 return;
             }
 
-            _currentLocationIndex = 0;
             await OpenLocationAsync(_visibleLocations[_currentLocationIndex]);
         }
 
@@ -145,29 +150,29 @@ namespace LostCyberHamster.UI
         /// </summary>
         private async Task OpenLocationAsync(LevelSelectionModel.LocationView location)
         {
+            if (!IsLocationOpen(location))
+                return;
+
             _requestVersion++;
 
-            // Собираем части дня для текущего режима.
+            // Показываем все части дня, сохраняя их реальную доступность отдельно.
             _selectedLocation = location;
-            _visibleParts = _useVisualQaMockData
-                ? location.Parts.ToList()
-                : location.Parts
-                    .Where(part => part.Levels.Any(
-                        level => LevelManager.IsLevelOpen(level.Address)))
-                    .ToList();
+            _visibleParts = location.Parts.ToList();
 
             // Обновляем карусель без промежуточного экрана выбора.
             _locationTitle.text = location.DisplayName;
 
             // Выбираем утро или первую видимую часть дня.
             var defaultPart = _visibleParts.FirstOrDefault(
-                                  part => MatchesPart(part, "morning"))
-                              ?? _visibleParts.FirstOrDefault();
+                                  part =>
+                                      IsPartOpen(part) &&
+                                      MatchesPart(part, "morning"))
+                              ?? _visibleParts.FirstOrDefault(IsPartOpen);
             UpdatePartButtons(defaultPart);
             if (defaultPart == null)
             {
                 _selectedPart = null;
-                ShowEmpty();
+                ShowUnavailable();
                 return;
             }
 
@@ -176,22 +181,23 @@ namespace LostCyberHamster.UI
 
         private async void OnClickPreviousLocation(ClickEvent evt)
         {
-            if (_visibleLocations.Count <= 1)
+            var previousIndex = _currentLocationIndex - 1;
+            if (!CanOpenLocationAt(previousIndex))
                 return;
 
-            _currentLocationIndex =
-                (_currentLocationIndex - 1 + _visibleLocations.Count) %
-                _visibleLocations.Count;
+            _currentLocationIndex = previousIndex;
+            UpdateLocationArrows();
             await OpenLocationAsync(_visibleLocations[_currentLocationIndex]);
         }
 
         private async void OnClickNextLocation(ClickEvent evt)
         {
-            if (_visibleLocations.Count <= 1)
+            var nextIndex = _currentLocationIndex + 1;
+            if (!CanOpenLocationAt(nextIndex))
                 return;
 
-            _currentLocationIndex =
-                (_currentLocationIndex + 1) % _visibleLocations.Count;
+            _currentLocationIndex = nextIndex;
+            UpdateLocationArrows();
             await OpenLocationAsync(_visibleLocations[_currentLocationIndex]);
         }
 
@@ -219,7 +225,7 @@ namespace LostCyberHamster.UI
         {
             var part = _visibleParts.FirstOrDefault(
                 candidate => MatchesPart(candidate, partKey));
-            if (part != null && part != _selectedPart)
+            if (part != null && IsPartOpen(part) && part != _selectedPart)
                 await LoadResultsAsync(part);
         }
 
@@ -265,34 +271,100 @@ namespace LostCyberHamster.UI
 
         private void UpdatePartButtons(LevelSelectionModel.PartView selectedPart)
         {
-            UpdatePartButton(_buttonMorning, "morning", selectedPart);
-            UpdatePartButton(_buttonAfternoon, "afternoon", selectedPart);
-            UpdatePartButton(_buttonEvening, "evening", selectedPart);
-            UpdatePartButton(_buttonNight, "night", selectedPart);
+            UpdatePartButton(
+                _buttonMorning,
+                _morningLock,
+                "morning",
+                selectedPart);
+            UpdatePartButton(
+                _buttonAfternoon,
+                _afternoonLock,
+                "afternoon",
+                selectedPart);
+            UpdatePartButton(
+                _buttonEvening,
+                _eveningLock,
+                "evening",
+                selectedPart);
+            UpdatePartButton(
+                _buttonNight,
+                _nightLock,
+                "night",
+                selectedPart);
         }
 
         private void UpdatePartButton(
             Button button,
+            VisualElement lockElement,
             string partKey,
             LevelSelectionModel.PartView selectedPart)
         {
-            // Скрываем недоступные части дня в реальном режиме.
-            var visiblePart = _visibleParts.FirstOrDefault(
+            // Оставляем все настроенные части дня видимыми.
+            var configuredPart = _visibleParts.FirstOrDefault(
                 part => MatchesPart(part, partKey));
-            button.style.display = visiblePart == null
+            button.parent.style.display = configuredPart == null
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
-            button.SetEnabled(visiblePart != null);
+            var isOpen = configuredPart != null && IsPartOpen(configuredPart);
+            button.SetEnabled(isOpen);
+            button.style.opacity = 1;
+            lockElement.style.display = configuredPart != null && !isOpen
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
 
-            // Активный таб соединяем с левой границей таблицы.
-            var isSelected = visiblePart == selectedPart;
+            // Активный tab соединяем с таблицей, закрытый оставляем белым.
+            var isSelected = isOpen && configuredPart == selectedPart;
             button.EnableInClassList("bg-warning", isSelected);
-            button.EnableInClassList("bg-primary", !isSelected);
+            button.EnableInClassList("bg-primary", isOpen && !isSelected);
+            button.style.backgroundColor = isOpen
+                ? StyleKeyword.Null
+                : Color.white;
             button.style.width = isSelected ? 244 : 220;
             button.style.marginRight = isSelected ? 0 : 12;
+            button.style.paddingRight = isOpen ? 12 : 64;
             button.style.borderRightWidth = isSelected ? 0 : 6;
             button.style.borderTopRightRadius = isSelected ? 0 : 24;
             button.style.borderBottomRightRadius = isSelected ? 0 : 24;
+        }
+
+        private bool IsLocationOpen(LevelSelectionModel.LocationView location)
+        {
+            return location != null &&
+                   location.Index >= 0 &&
+                   location.Index < _openedLocationCount;
+        }
+
+        private bool CanOpenLocationAt(int index)
+        {
+            return index >= 0 &&
+                   index < _visibleLocations.Count &&
+                   IsLocationOpen(_visibleLocations[index]);
+        }
+
+        private void UpdateLocationArrows()
+        {
+            UpdateLocationArrow(
+                _buttonPreviousLocation,
+                CanOpenLocationAt(_currentLocationIndex - 1));
+            UpdateLocationArrow(
+                _buttonNextLocation,
+                CanOpenLocationAt(_currentLocationIndex + 1));
+        }
+
+        private static void UpdateLocationArrow(Button button, bool isAvailable)
+        {
+            button.SetEnabled(isAvailable);
+            button.style.backgroundColor = isAvailable
+                ? StyleKeyword.Null
+                : new Color(0.45f, 0.45f, 0.45f);
+            button.style.opacity = isAvailable ? 1 : 0.55f;
+        }
+
+        private static bool IsPartOpen(LevelSelectionModel.PartView part)
+        {
+            return part != null &&
+                   part.Levels.Any(
+                       level => LevelManager.IsLevelOpen(level.Address));
         }
 
         private static bool MatchesPart(
@@ -380,6 +452,15 @@ namespace LostCyberHamster.UI
             _loading.style.display = DisplayStyle.None;
             _error.style.display = DisplayStyle.None;
             _empty.style.display = DisplayStyle.Flex;
+            _rows.style.display = DisplayStyle.None;
+            _currentPlayer.style.display = DisplayStyle.None;
+        }
+
+        private void ShowUnavailable()
+        {
+            _loading.style.display = DisplayStyle.None;
+            _error.style.display = DisplayStyle.None;
+            _empty.style.display = DisplayStyle.None;
             _rows.style.display = DisplayStyle.None;
             _currentPlayer.style.display = DisplayStyle.None;
         }

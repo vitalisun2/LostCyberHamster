@@ -22,6 +22,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent _jumpEvent;
         private readonly AtomicEvent _superJumpEvent;
         private readonly GameScreenStatusFormatter _statusFormatter = new GameScreenStatusFormatter();
+        private int _lastRunScore = -1;
 
         public UiGameScreenMechanics(UIManager uiManager, GameManager gameManager, Hamster character)
         {
@@ -62,6 +63,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             OnLifesChanged(_character.Lives.Value);
             SyncUltraControls();
             OnEnergyChanged(_character.Energy.Value);
+            SyncRunScore();
         }
 
         public void Unsubscribe()
@@ -94,6 +96,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnUpdate()
         {
+            SyncRunScore();
+
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD
             return;
 #endif
@@ -101,6 +105,24 @@ namespace Assets.Scripts.GameEngine.Mechanics
             {
                 _gameScreenController.SetHamsterState(formattedText);
             }
+        }
+
+        private void SyncRunScore()
+        {
+            if (_character == null)
+            {
+                return;
+            }
+
+            // Не создаём новую строку каждый кадр, пока счёт не изменился.
+            var runScore = _character.RunScore;
+            if (runScore == _lastRunScore)
+            {
+                return;
+            }
+
+            _lastRunScore = runScore;
+            _gameScreenController?.SetRunScore(runScore);
         }
 
         private void OnJump()

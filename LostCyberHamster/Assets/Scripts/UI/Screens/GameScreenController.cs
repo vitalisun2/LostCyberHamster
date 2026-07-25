@@ -13,6 +13,7 @@ namespace LostCyberHamster.UI
         private Button _buttonPause;
         private Energybar _energyBar;
         private Healthbar _healthBar;
+        private Label _runScore;
         private Label _hamsterState;
         private Button _jumpButton;
         private Button _buyEnergyButton;
@@ -130,6 +131,7 @@ namespace LostCyberHamster.UI
             _buttonPause = _contentRoot.Q<Button>("btn_pause");
             _energyBar = _contentRoot.Q<Energybar>();
             _healthBar = _contentRoot.Q<Healthbar>();
+            _runScore = _contentRoot.Q<Label>("run-score");
             _hamsterState = _contentRoot.Q<Label>("hamster-state-debug-label");
             _hamsterState ??= _contentRoot.Q<Label>("debug-game");
             _jumpButton = _contentRoot.Q<Button>("btn_jump");
@@ -156,6 +158,27 @@ namespace LostCyberHamster.UI
         public void SetHealth(int health)
         {
             _healthBar.value = health;
+        }
+
+        /// <summary>
+        /// Показывает неотрицательные очки забега и уменьшает шрифт для длинных значений.
+        /// </summary>
+        public void SetRunScore(int score)
+        {
+            if (_runScore == null)
+            {
+                return;
+            }
+
+            // Обновляем значение и сохраняем его в доступной ширине верхней полосы.
+            var scoreText = Math.Max(0, score).ToString();
+            _runScore.text = scoreText;
+            _runScore.style.fontSize = scoreText.Length switch
+            {
+                <= 4 => 52,
+                <= 7 => 44,
+                _ => 36
+            };
         }
 
         public void SetHamsterState(string state)
