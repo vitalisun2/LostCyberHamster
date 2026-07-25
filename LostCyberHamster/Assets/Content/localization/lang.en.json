@@ -13,6 +13,14 @@
             "value": "Main menu"
         },
         {
+            "key": "btn_back",
+            "value": "BACK"
+        },
+        {
+            "key": "settings_title",
+            "value": "Settings"
+        },
+        {
             "key": "btn_leaderboard",
             "value": "LEADERBOARDS"
         },

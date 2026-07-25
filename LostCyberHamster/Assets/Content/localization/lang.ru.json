@@ -13,6 +13,14 @@
             "value": "Главное меню"
         },
         {
+            "key": "btn_back",
+            "value": "НАЗАД"
+        },
+        {
+            "key": "settings_title",
+            "value": "Настройки"
+        },
+        {
             "key": "btn_leaderboard",
             "value": "РЕЙТИНГИ"
         },

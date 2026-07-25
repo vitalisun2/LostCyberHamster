@@ -619,7 +619,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickSettings(ClickEvent evt)
         {
-            UIManager.OnModalShow(ScreenEnum.SettingsModal);
+            SettingsScreenController.OpenFrom(ScreenEnum.LeaderboardScreen);
         }
 
         private void OnClickShop(ClickEvent evt)

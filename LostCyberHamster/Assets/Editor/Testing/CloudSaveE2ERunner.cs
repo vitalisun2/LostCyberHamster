@@ -846,9 +846,9 @@ namespace LostCyberHamster.Editor.Testing
                 async () =>
                 {
                     Require(
-                        UIManager.OnModalShow != null,
+                        UIManager.OnScreenShow != null,
                         "Интерфейс игры ещё не загрузился.");
-                    UIManager.OnModalShow.Invoke(ScreenEnum.SettingsModal);
+                    SettingsScreenController.OpenFrom(ScreenEnum.HomeScreen);
                     await WaitUntilAsync(
                         () => IsElementShown(
                             FindElement<Button>("settings__btn-link-account")),

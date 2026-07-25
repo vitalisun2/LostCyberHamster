@@ -158,6 +158,7 @@
     <Compile Include="Assets\Scripts\CloudSave\Models\CloudSaveSnapshot.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\LevelProgressEntry.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\IJumpOnRoofPolicy.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\RunResultSubmissionState.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\BotDiagnostics.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectModel.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperRoofJumpOutcomeResolver.cs" />
@@ -353,6 +354,7 @@
     <Compile Include="Assets\Scripts\Infrastructure\FirstInstallPrefsWipe.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\CollisionController.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CoinOneBonus.cs" />
+    <Compile Include="Assets\Scripts\UI\Screens\SettingsScreenController.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\BotStrategyDiagnostics.cs" />
     <Compile Include="Assets\Scripts\Account\AccountRestore\ExistingAccountRestoreCoordinator.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelCatalogRuntimeConfigurator.cs" />
@@ -366,7 +368,6 @@
     <Compile Include="Assets\Scripts\Entry Points\GameSceneEntryPoint.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOver\JumpOverSimulator.cs" />
-    <Compile Include="Assets\Scripts\UI\Modals\SettingsModalController.cs" />
     <Compile Include="Assets\Scripts\System\ObstacleSpawner.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\QuestsScreenController.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CrystalBonus.cs" />
@@ -374,6 +375,7 @@
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictCoordinator.cs" />
     <Compile Include="Assets\Scripts\Diagnostics\DeviceLogUploader.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\LoadAddressablesLoadingTask.cs" />
+    <Compile Include="Assets\Scripts\Leaderboard\LeaderboardSubmissionResult.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelEnum.cs" />
     <Compile Include="Assets\Scripts\DevTools\Core\IDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitExecutor.cs" />
@@ -544,6 +546,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Models\ActionFireResult.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictModalDto.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningState.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\RunResultData.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\AccountPromptModalController.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\SpriteAnimatorEventsDispatcher.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\ISimulator.cs" />
@@ -595,6 +598,7 @@
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelData.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Persistence\PlayerDataValidator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofExecutor.cs" />
+    <Compile Include="Assets\Scripts\UI\Common\MenuNavigationRequest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Content\ui\uxml\ShopModal.uxml" />
@@ -618,7 +622,7 @@
     <None Include="Assets\Content\ui\uxml\GameScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\SelectLevelScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\Toolbar.uxml" />
-    <None Include="Assets\Content\ui\uxml\SettingsModal.uxml" />
+    <None Include="Assets\Content\ui\uxml\SettingsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\EnergyBar.uxml" />
     <None Include="Assets\Content\ui\uxml\HealthItem.uxml" />
     <None Include="Assets\Content\ui\styles\global.uss" />

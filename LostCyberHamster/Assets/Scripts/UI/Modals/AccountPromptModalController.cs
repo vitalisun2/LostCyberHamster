@@ -55,8 +55,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickLinkAccount(ClickEvent evt)
         {
-            Close();
-            UIManager.OnModalShow?.Invoke(ScreenEnum.SettingsModal);
+            SettingsScreenController.OpenFrom(ScreenEnum.HomeScreen);
         }
 
         private void OnClickLater(ClickEvent evt)

@@ -63,7 +63,7 @@ namespace Assets.Scripts.Entry_Points
             _uiManager = new UIManager(new IScreenController[]
             {
                 new HomeScreenController(_uiDocument),
-                new SettingsModalController(
+                new SettingsScreenController(
                     _uiDocument,
                     _accountService,
                     _existingAccountRestoreCoordinator,

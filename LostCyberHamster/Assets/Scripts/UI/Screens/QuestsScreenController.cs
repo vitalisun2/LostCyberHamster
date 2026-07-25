@@ -65,7 +65,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnSettings(ClickEvent evt)
         {
-            UIManager.OnModalShow(ScreenEnum.SettingsModal);
+            SettingsScreenController.OpenFrom(ScreenEnum.QuestsScreen);
         }
 
         private void OnClickBtnAddMoney(ClickEvent evt)

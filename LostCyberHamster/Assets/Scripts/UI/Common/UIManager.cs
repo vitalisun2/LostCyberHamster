@@ -30,6 +30,11 @@ namespace LostCyberHamster.UI
 
         private async void OnScreenShowHandlerAsync(ScreenEnum screen)
         {
+            // Закрываем активную модалку перед заменой основного экрана.
+            if (_currentModal.HasValue)
+                CloseModal(_currentModal.Value);
+
+            // Загружаем выбранный экран через общий screen lifecycle.
             _currentScreen = screen;
             await LoadScreenAsync(screen);
         }

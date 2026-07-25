@@ -132,7 +132,7 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 99fa2fb198d734d5c8fc9cf3258776f7
-    m_Address: SettingsModal
+    m_Address: SettingsScreen
     m_ReadOnly: 0
     m_SerializedLabels:
     - screens

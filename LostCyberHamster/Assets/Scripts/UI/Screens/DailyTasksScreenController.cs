@@ -109,7 +109,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnSettings(ClickEvent evt)
         {
-            UIManager.OnModalShow(ScreenEnum.SettingsModal);
+            SettingsScreenController.OpenFrom(ScreenEnum.DailyTasksScreen);
         }
 
         private void OnClickBtnAddMoney(ClickEvent evt)

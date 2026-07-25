@@ -10,43 +10,48 @@ using Vues.GameCore;
 
 namespace LostCyberHamster.UI
 {
-    public class SettingsModalController : ModalController
+    public class SettingsScreenController : ScreenController
     {
         private const int MinPlayerNameLength = 3;
         private const int MaxPlayerNameLength = 16;
 
-        protected override ScreenEnum _modalAssetName => ScreenEnum.SettingsModal;
+        protected override ScreenEnum _screenAssetName => ScreenEnum.SettingsScreen;
 
-        private DropdownField _dropdownLanguages => _modalContent.Q<DropdownField>("settings__dd-languages");
-        private Toggle _toggleMusic => _modalContent.Q<Toggle>("settings__cbx-music");
-        private Toggle _toggleSound => _modalContent.Q<Toggle>("settings__cbx-sound");
-        private Toggle _toggleVibration => _modalContent.Q<Toggle>("settings__cbx-vibrate");
-        private Label _labelVersion => _modalContent.Q<Label>("settings__lbl-version");
-        private Label _labelId => _modalContent.Q<Label>("settings__lbl-id");
-        private Label _labelAccountState => _modalContent.Q<Label>("settings__lbl-account-state");
-        private VisualElement _cloudSyncStatusRow => _modalContent.Q<VisualElement>("settings__cloud-sync-status");
-        private Label _labelCloudSyncStatus => _modalContent.Q<Label>("settings__lbl-cloud-sync-status");
-        private Button _buttonLinkAccount => _modalContent.Q<Button>("settings__btn-link-account");
-        private VisualElement _playerNameView => _modalContent.Q<VisualElement>("settings__player-name-view");
-        private Label _labelPlayerName => _modalContent.Q<Label>("settings__lbl-player-name");
-        private Button _buttonChangePlayerName => _modalContent.Q<Button>("settings__btn-change-player-name");
-        private VisualElement _playerNameEdit => _modalContent.Q<VisualElement>("settings__player-name-edit");
-        private TextField _textFieldPlayerName => _modalContent.Q<TextField>("settings__txt-player-name");
-        private Button _buttonSavePlayerName => _modalContent.Q<Button>("settings__btn-save-player-name");
-        private Button _buttonCancelPlayerName => _modalContent.Q<Button>("settings__btn-cancel-player-name");
-        private Label _labelPlayerNameError => _modalContent.Q<Label>("settings__lbl-player-name-error");
-        private Button _buttonSave => _modalContent.Q<Button>("settings__btn-save");
-        private Button _buttonCancel => _modalContent.Q<Button>("settings__btn-cancel");
+        private DropdownField _dropdownLanguages => _contentRoot.Q<DropdownField>("settings__dd-languages");
+        private Toggle _toggleMusic => _contentRoot.Q<Toggle>("settings__cbx-music");
+        private Toggle _toggleSound => _contentRoot.Q<Toggle>("settings__cbx-sound");
+        private Toggle _toggleVibration => _contentRoot.Q<Toggle>("settings__cbx-vibrate");
+        private Label _labelVersion => _contentRoot.Q<Label>("settings__lbl-version");
+        private Label _labelId => _contentRoot.Q<Label>("settings__lbl-id");
+        private Label _labelAccountState => _contentRoot.Q<Label>("settings__lbl-account-state");
+        private VisualElement _cloudSyncStatusRow => _contentRoot.Q<VisualElement>("settings__cloud-sync-status");
+        private Label _labelCloudSyncStatus => _contentRoot.Q<Label>("settings__lbl-cloud-sync-status");
+        private Button _buttonLinkAccount => _contentRoot.Q<Button>("settings__btn-link-account");
+        private VisualElement _playerNameView => _contentRoot.Q<VisualElement>("settings__player-name-view");
+        private Label _labelPlayerName => _contentRoot.Q<Label>("settings__lbl-player-name");
+        private Button _buttonChangePlayerName => _contentRoot.Q<Button>("settings__btn-change-player-name");
+        private VisualElement _playerNameEdit => _contentRoot.Q<VisualElement>("settings__player-name-edit");
+        private TextField _textFieldPlayerName => _contentRoot.Q<TextField>("settings__txt-player-name");
+        private Button _buttonSavePlayerName => _contentRoot.Q<Button>("settings__btn-save-player-name");
+        private Button _buttonCancelPlayerName => _contentRoot.Q<Button>("settings__btn-cancel-player-name");
+        private Label _labelPlayerNameError => _contentRoot.Q<Label>("settings__lbl-player-name-error");
+        private Button _buttonHome => _contentRoot.Q<Button>("btn_home");
+        private Button _buttonBack => _contentRoot.Q<Button>("btn_back");
+        private Button _buttonSettings => _contentRoot.Q<Button>("btn_settings");
 
         private readonly AccountService _accountService;
         private readonly ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
         private readonly CloudSyncService _cloudSyncService;
+        private static ScreenEnum _returnScreen = ScreenEnum.HomeScreen;
         private SettingsData _settingsData = new();
         private bool _hasAccountLinkConflict;
         private bool _isPlayerNameSaving;
+        private bool _isActive;
+        private bool _isLanguageSaving;
+        private string _playerNameErrorLocalizationKey;
         private int _accountUiVersion;
 
-        public SettingsModalController(
+        public SettingsScreenController(
             UIDocument uiDocument,
             AccountService accountService,
             ExistingAccountRestoreCoordinator existingAccountRestoreCoordinator,
@@ -58,11 +63,22 @@ namespace LostCyberHamster.UI
             _cloudSyncService = cloudSyncService;
         }
 
-        protected override async Task OnShowAsync()
+        /// <summary>Открывает настройки и запоминает один экран для возврата.</summary>
+        public static void OpenFrom(ScreenEnum sourceScreen)
         {
+            _returnScreen = sourceScreen == ScreenEnum.SettingsScreen
+                ? ScreenEnum.HomeScreen
+                : sourceScreen;
+            UIManager.OnScreenShow?.Invoke(ScreenEnum.SettingsScreen);
+        }
+
+        protected override async Task OnLoadAsync()
+        {
+            _isActive = true;
             _hasAccountLinkConflict = false;
+            _playerNameErrorLocalizationKey = null;
             _accountUiVersion++;
-            _settingsData = new SettingsData();
+            _settingsData = GameDataManager.Settings ?? new SettingsData();
 
             _settingsData.MusicVolume = AudioManager.MusicVolume;
             _settingsData.SfxVolume = AudioManager.SfxVolume;
@@ -75,9 +91,14 @@ namespace LostCyberHamster.UI
 
             _toggleMusic.value = AudioManager.MusicVolume > 0;
             _toggleSound.value = AudioManager.SfxVolume > 0;
+            _toggleVibration.value = VibrationManager.EnableVibration;
 
             _labelVersion.text = $"{Application.version}";
             _labelId.text = $"{SystemInfo.deviceUniqueIdentifier}";
+            _buttonHome.style.display = DisplayStyle.None;
+            _buttonBack.text = LocalizationManager.GetLocalizedString("btn_back");
+            _buttonBack.style.display = DisplayStyle.Flex;
+            _buttonSettings.style.display = DisplayStyle.None;
 
             SubscribeToAccountState();
             SubscribeToCloudSyncStatus();
@@ -85,6 +106,7 @@ namespace LostCyberHamster.UI
             ShowPlayerName(_accountService.PlayerName);
             SetPlayerNameEditMode(false);
             SetPlayerNameBusy(false);
+            await ChangeBackgroundAsync("BackgroundScreenSprite");
         }
 
         private void SubscribeToAccountState()
@@ -213,10 +235,7 @@ namespace LostCyberHamster.UI
                 if (accountUiVersion != _accountUiVersion)
                     return;
 
-                var modal = _modal;
-                if (result == AccountLinkResult.Conflict &&
-                    modal != null &&
-                    modal.resolvedStyle.display == DisplayStyle.Flex)
+                if (result == AccountLinkResult.Conflict && _isActive)
                 {
                     _hasAccountLinkConflict = true;
                     UpdateAccountState(_accountService.State);
@@ -231,6 +250,7 @@ namespace LostCyberHamster.UI
         private void OnClickChangePlayerName(ClickEvent evt)
         {
             _textFieldPlayerName.value = GetPlayerNameBase(_accountService.PlayerName);
+            _playerNameErrorLocalizationKey = null;
             _labelPlayerNameError.style.display = DisplayStyle.None;
             SetPlayerNameEditMode(true);
         }
@@ -278,6 +298,7 @@ namespace LostCyberHamster.UI
         private void OnClickCancelPlayerName(ClickEvent evt)
         {
             _textFieldPlayerName.value = GetPlayerNameBase(_accountService.PlayerName);
+            _playerNameErrorLocalizationKey = null;
             _labelPlayerNameError.style.display = DisplayStyle.None;
             SetPlayerNameEditMode(false);
         }
@@ -289,6 +310,7 @@ namespace LostCyberHamster.UI
 
         private void ShowPlayerNameError(string localizationKey)
         {
+            _playerNameErrorLocalizationKey = localizationKey;
             _labelPlayerNameError.text = LocalizationManager.GetLocalizedString(localizationKey);
             _labelPlayerNameError.style.display = DisplayStyle.Flex;
         }
@@ -351,29 +373,35 @@ namespace LostCyberHamster.UI
 
         private async void OnChangeLanguageAsync(ChangeEvent<string> evt)
         {
-            _settingsData.Language = (int)LocalizationManager.GetLanguage(evt.newValue);
-        }
+            if (_isLanguageSaving)
+                return;
 
-        private async void OnClickButtonSave(ClickEvent evt)
-        {
-            AudioManager.SetMusicVolume(_settingsData.MusicVolume);
-            AudioManager.SetSfxVolume(_settingsData.SfxVolume);
-            await LocalizationManager.SetLanguageAsync((SystemLanguage)_settingsData.Language);
-            VibrationManager.EnableVibration = _settingsData.EnableVibration;
-
-            GameDataManager.Settings = _settingsData;
-            GameDataManager.SaveSettings();
-            ResetAccountConflictUi();
-            UnsubscribeFromAccountState();
-            UnsubscribeFromCloudSyncStatus();
-            Hide();
-            UIManager.OnRepaintScreen();
+            _isLanguageSaving = true;
+            _dropdownLanguages.SetEnabled(false);
+            try
+            {
+                var language = LocalizationManager.GetLanguage(evt.newValue);
+                await LocalizationManager.SetLanguageAsync(language);
+                _settingsData.Language = (int)language;
+                SaveSettings();
+                if (_isActive)
+                    RefreshLocalizedText();
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[Settings] Failed to change language: {exception.Message}");
+            }
+            finally
+            {
+                _isLanguageSaving = false;
+                if (_isActive)
+                    _dropdownLanguages.SetEnabled(true);
+            }
         }
 
         protected override void OnSubscribeToEvents()
         {
-            _buttonSave?.RegisterCallback<ClickEvent>(OnClickButtonSave);
-            _buttonCancel?.RegisterCallback<ClickEvent>(OnClickButtonCancel);
+            _buttonBack?.RegisterCallback<ClickEvent>(OnClickButtonBack);
             _buttonLinkAccount?.RegisterCallback<ClickEvent>(OnClickButtonLinkAccount);
             _buttonChangePlayerName?.RegisterCallback<ClickEvent>(OnClickChangePlayerName);
             _buttonSavePlayerName?.RegisterCallback<ClickEvent>(OnClickSavePlayerName);
@@ -382,36 +410,75 @@ namespace LostCyberHamster.UI
             _toggleMusic?.RegisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.RegisterValueChangedCallback(OnChangeSoundAsync);
             _toggleVibration?.RegisterValueChangedCallback(OnChangeVibrationAsync);
-            _buttonCloseModal.UnregisterCallback<ClickEvent>(OnClickButtonClose);
-            _buttonCloseModal.RegisterCallback<ClickEvent>(OnClickButtonClose);
         }
 
         private void OnChangeSoundAsync(ChangeEvent<bool> evt)
         {
             _settingsData.SfxVolume = evt.newValue ? 1 : 0;
+            AudioManager.SetSfxVolume(_settingsData.SfxVolume);
+            SaveSettings();
         }
 
 
         private void OnChangeMusicAsync(ChangeEvent<bool> evt)
         {
             _settingsData.MusicVolume = evt.newValue ? 1 : 0;
+            AudioManager.SetMusicVolume(_settingsData.MusicVolume);
+            SaveSettings();
         }
 
         private void OnChangeVibrationAsync(ChangeEvent<bool> evt)
         {
             _settingsData.EnableVibration = evt.newValue;
+            VibrationManager.EnableVibration = evt.newValue;
+            SaveSettings();
         }
 
-        private void OnClickButtonCancel(ClickEvent evt)
+        private void RefreshLocalizedText()
         {
-            ResetAccountConflictUi();
-            UnsubscribeFromAccountState();
-            UnsubscribeFromCloudSyncStatus();
-            Hide();
+            // Обновляем локализованные элементы без перезагрузки экрана и потери введённого имени.
+            _contentRoot.Query<LocalizedLabel>().ForEach(label =>
+            {
+                if (!string.IsNullOrEmpty(label.key))
+                    label.text = LocalizationManager.GetLocalizedString(label.key);
+            });
+            _contentRoot.Query<LocalizedButton>().ForEach(button =>
+            {
+                if (!string.IsNullOrEmpty(button.key))
+                    button.text = LocalizationManager.GetLocalizedString(button.key);
+            });
+
+            // Обновляем динамические подписи, которые не управляются ключом UXML напрямую.
+            _buttonBack.text = LocalizationManager.GetLocalizedString("btn_back");
+            UpdateAccountState(_accountService.State);
+            if (!string.IsNullOrEmpty(_playerNameErrorLocalizationKey))
+            {
+                _labelPlayerNameError.text =
+                    LocalizationManager.GetLocalizedString(_playerNameErrorLocalizationKey);
+            }
+            SetPlayerNameBusy(_isPlayerNameSaving);
         }
 
-        private void OnClickButtonClose(ClickEvent evt)
+        private void OnClickButtonBack(ClickEvent evt)
         {
+            var returnScreen = _returnScreen;
+            _returnScreen = ScreenEnum.HomeScreen;
+            EndSession();
+            UIManager.OnScreenShow?.Invoke(returnScreen);
+        }
+
+        private void SaveSettings()
+        {
+            GameDataManager.Settings = _settingsData;
+            GameDataManager.SaveSettings();
+        }
+
+        private void EndSession()
+        {
+            if (!_isActive)
+                return;
+
+            _isActive = false;
             ResetAccountConflictUi();
             UnsubscribeFromAccountState();
             UnsubscribeFromCloudSyncStatus();
@@ -425,8 +492,7 @@ namespace LostCyberHamster.UI
 
         protected override void OnUnsubscribeFromEvents()
         {
-            _buttonSave?.UnregisterCallback<ClickEvent>(OnClickButtonSave);
-            _buttonCancel?.UnregisterCallback<ClickEvent>(OnClickButtonCancel);
+            _buttonBack?.UnregisterCallback<ClickEvent>(OnClickButtonBack);
             _buttonLinkAccount?.UnregisterCallback<ClickEvent>(OnClickButtonLinkAccount);
             _buttonChangePlayerName?.UnregisterCallback<ClickEvent>(OnClickChangePlayerName);
             _buttonSavePlayerName?.UnregisterCallback<ClickEvent>(OnClickSavePlayerName);
@@ -435,10 +501,7 @@ namespace LostCyberHamster.UI
             _toggleMusic?.UnregisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.UnregisterValueChangedCallback(OnChangeSoundAsync);
             _toggleVibration?.UnregisterValueChangedCallback(OnChangeVibrationAsync);
-            _buttonCloseModal.UnregisterCallback<ClickEvent>(OnClickButtonClose);
-            ResetAccountConflictUi();
-            UnsubscribeFromAccountState();
-            UnsubscribeFromCloudSyncStatus();
+            EndSession();
         }
 
     }

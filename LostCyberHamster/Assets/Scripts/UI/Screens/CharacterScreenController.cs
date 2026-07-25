@@ -130,7 +130,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnSettings(ClickEvent evt)
         {
-            UIManager.OnModalShow(ScreenEnum.SettingsModal);
+            SettingsScreenController.OpenFrom(ScreenEnum.CharacterScreen);
         }
 
         private async void OnClickBtnNextSkin(ClickEvent evt)

@@ -45,7 +45,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnSettings(ClickEvent evt)
         {
-            UIManager.OnModalShow(ScreenEnum.SettingsModal);
+            SettingsScreenController.OpenFrom(ScreenEnum.HomeScreen);
         }
 
         private void OnClickBtnLeaderboard(ClickEvent evt)
