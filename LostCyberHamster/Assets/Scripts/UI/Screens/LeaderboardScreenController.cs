@@ -99,6 +99,8 @@ namespace LostCyberHamster.UI
         private int _openedLocationCount;
         private int _currentLocationIndex;
         private int _requestVersion;
+        private string _initialLocationId;
+        private string _initialPartId;
 
         protected override ScreenEnum _screenAssetName => ScreenEnum.LeaderboardScreen;
 
@@ -112,7 +114,16 @@ namespace LostCyberHamster.UI
         }
 
         /// <summary>
-        /// Загружает фон и сразу открывает рейтинг первой локации каталога.
+        /// Сохраняет цель первого открытия экрана рейтингов.
+        /// </summary>
+        public void SetInitialSelection(string locationId, string partId)
+        {
+            _initialLocationId = locationId?.Trim();
+            _initialPartId = partId?.Trim();
+        }
+
+        /// <summary>
+        /// Загружает фон и открывает запрошенный либо первый доступный рейтинг.
         /// </summary>
         protected override async Task OnLoadAsync()
         {
@@ -126,10 +137,15 @@ namespace LostCyberHamster.UI
 
             await ChangeBackgroundAsync("BackgroundScreenSprite");
 
-            // Экран всегда начинает с первой локации и вкладки утра.
-            _currentLocationIndex = _visibleLocations
+            // Ищем запрошенную открытую локацию, затем используем первую доступную.
+            var requestedLocationIndex = _visibleLocations
                 .ToList()
-                .FindIndex(IsLocationOpen);
+                .FindIndex(location =>
+                    IsLocationOpen(location) &&
+                    MatchesLocation(location, _initialLocationId));
+            _currentLocationIndex = requestedLocationIndex >= 0
+                ? requestedLocationIndex
+                : _visibleLocations.ToList().FindIndex(IsLocationOpen);
             UpdateLocationArrows();
             if (_currentLocationIndex < 0)
             {
@@ -139,6 +155,7 @@ namespace LostCyberHamster.UI
                 _visibleParts = Array.Empty<LevelSelectionModel.PartView>();
                 UpdatePartButtons(null);
                 ShowUnavailable();
+                ClearInitialSelection();
                 return;
             }
 
@@ -162,13 +179,21 @@ namespace LostCyberHamster.UI
             // Обновляем карусель без промежуточного экрана выбора.
             _locationTitle.text = location.DisplayName;
 
-            // Выбираем утро или первую видимую часть дня.
-            var defaultPart = _visibleParts.FirstOrDefault(
+            // Выбираем запрошенную часть, затем утро или первую доступную.
+            var requestedPart = MatchesLocation(location, _initialLocationId)
+                ? _visibleParts.FirstOrDefault(
+                    part =>
+                        IsPartOpen(part) &&
+                        MatchesPart(part, _initialPartId))
+                : null;
+            var defaultPart = requestedPart
+                              ?? _visibleParts.FirstOrDefault(
                                   part =>
                                       IsPartOpen(part) &&
                                       MatchesPart(part, "morning"))
                               ?? _visibleParts.FirstOrDefault(IsPartOpen);
             UpdatePartButtons(defaultPart);
+            ClearInitialSelection();
             if (defaultPart == null)
             {
                 _selectedPart = null;
@@ -379,6 +404,28 @@ namespace LostCyberHamster.UI
                        part.Key,
                        partKey,
                        StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool MatchesLocation(
+            LevelSelectionModel.LocationView location,
+            string locationId)
+        {
+            return location != null &&
+                   !string.IsNullOrWhiteSpace(locationId) &&
+                   (string.Equals(
+                        location.Id,
+                        locationId,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(
+                        location.Key,
+                        locationId,
+                        StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void ClearInitialSelection()
+        {
+            _initialLocationId = null;
+            _initialPartId = null;
         }
 
         /// <summary>

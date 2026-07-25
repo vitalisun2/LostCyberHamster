@@ -22,6 +22,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _winModalController.SetExitAction(OnExit);
             _winModalController.SetRestartAction(OnRestart);
             _winModalController.SetResumeAction(OnNextLevel);
+            _winModalController.SetLeaderboardAction(OnLeaderboard);
         }
 
         private void OnExit()
@@ -39,6 +40,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             _winModalController.Close();
             LevelController.Instance.PlayNextLevel();
+        }
+
+        private void OnLeaderboard(string locationId, string partId)
+        {
+            MenuNavigationRequest.OpenLeaderboard(locationId, partId);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(_sceneName);
         }
     }
 }

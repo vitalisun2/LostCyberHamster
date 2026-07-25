@@ -19,9 +19,11 @@ namespace GameManagement.Leaderboard
         private const int _topCount = 50;
 
         /// <summary>
-        /// Публикует успешный забег, только если улучшен рекорд текущего уровня.
+        /// Проверяет недельный рекорд и публикует успешный забег только при улучшении.
         /// </summary>
-        public async Task SubmitSuccessfulRunAsync(LevelProgressKey levelKey, int runScore)
+        public async Task<LeaderboardSubmissionResult> SubmitSuccessfulRunAsync(
+            LevelProgressKey levelKey,
+            int runScore)
         {
             // Проверяем результат и выбираем таблицу.
             if (runScore < 0)
@@ -57,7 +59,11 @@ namespace GameManagement.Leaderboard
             if (levelBestScores.TryGetValue(levelId, out var levelBestScore) &&
                 runScore <= levelBestScore)
             {
-                return;
+                return new LeaderboardSubmissionResult(
+                    levelBestScore,
+                    levelBestScores.Values.Sum(),
+                    false,
+                    false);
             }
 
             // Обновляем рекорд уровня и публикуем новую сумму части дня.
@@ -68,6 +74,12 @@ namespace GameManagement.Leaderboard
                 leaderboardId,
                 partOfDayTotalScore,
                 new AddPlayerScoreOptions { Metadata = levelBestScores });
+
+            return new LeaderboardSubmissionResult(
+                runScore,
+                partOfDayTotalScore,
+                true,
+                true);
         }
 
         /// <summary>

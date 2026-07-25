@@ -45,6 +45,21 @@ namespace Assets.Scripts.Entry_Points
         {
             PlayerProgressLifecycleCheckpoint.EnsureCreated();
 
+            // Потребляем одноразовую цель до создания контроллеров меню.
+            var openLeaderboard = MenuNavigationRequest.TryConsumeLeaderboard(
+                out var leaderboardLocationId,
+                out var leaderboardPartId);
+            var leaderboardScreenController = new LeaderboardScreenController(
+                _uiDocument,
+                new LeaderboardService());
+            if (openLeaderboard)
+            {
+                leaderboardScreenController.SetInitialSelection(
+                    leaderboardLocationId,
+                    leaderboardPartId);
+            }
+
+            // Создаём UI и сразу открываем запрошенный экран либо обычное главное меню.
             _uiManager = new UIManager(new IScreenController[]
             {
                 new HomeScreenController(_uiDocument),
@@ -58,14 +73,15 @@ namespace Assets.Scripts.Entry_Points
                 new CharacterScreenController(_uiDocument),
                 new QuestsScreenController(_uiDocument),
                 new SelectLevelScreenController(_uiDocument),
-                new LeaderboardScreenController(
-                    _uiDocument,
-                    new LeaderboardService()),
+                leaderboardScreenController,
                 new ShopModalController(_uiDocument),
                 new DailyTasksScreenController(_uiDocument),
             });
 
-            await _uiManager.LoadScreenAsync(ScreenEnum.HomeScreen);
+            await _uiManager.LoadScreenAsync(
+                openLeaderboard
+                    ? ScreenEnum.LeaderboardScreen
+                    : ScreenEnum.HomeScreen);
             _accountPromptCoordinator = new AccountPromptCoordinator(_uiManager, _accountService);
             _cloudSaveConflictCoordinator = new CloudSaveConflictCoordinator(
                 _uiManager,

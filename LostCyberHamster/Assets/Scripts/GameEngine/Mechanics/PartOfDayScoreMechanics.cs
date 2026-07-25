@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.System;
@@ -18,6 +19,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicVariable<int> _lives;
         private readonly GameManager _gameManager;
         private readonly LeaderboardService _leaderboardService = new();
+
+        public RunResultData LatestResult { get; private set; }
+
+        public event Action<RunResultData> ResultChanged;
 
         public PartOfDayScoreMechanics(
             RunScoreMechanics runScoreMechanics,
@@ -54,25 +59,69 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             var runScore = _runScoreMechanics.CurrentScore;
 
+            // Сохраняем локальный результат и сразу открываем состояние загрузки.
             PartOfDayScoreService.RecordSuccessfulRun(progressKey, runScore);
-            _ = SubmitScoreAsync(progressKey, runScore);
+            var pendingResult = new RunResultData(
+                progressKey,
+                runScore,
+                0,
+                0,
+                false,
+                IsLastLevelOfPart(progressKey),
+                RunResultSubmissionState.Pending);
+            PublishResult(pendingResult);
+
+            // Получаем авторитетный недельный рекорд из Unity Leaderboards.
+            _ = SubmitScoreAsync(pendingResult);
         }
 
-        private async Task SubmitScoreAsync(
-            LevelProgressKey progressKey,
-            int runScore)
+        private async Task SubmitScoreAsync(RunResultData pendingResult)
         {
             try
             {
-                await _leaderboardService.SubmitSuccessfulRunAsync(
-                    progressKey,
-                    runScore);
+                var submission = await _leaderboardService.SubmitSuccessfulRunAsync(
+                    pendingResult.LevelKey,
+                    pendingResult.RunScore);
+                PublishResult(new RunResultData(
+                    pendingResult.LevelKey,
+                    pendingResult.RunScore,
+                    submission.LevelBestScore,
+                    submission.PartOfDayTotalScore,
+                    submission.IsNewRecord,
+                    pendingResult.IsLastLevelOfPart,
+                    submission.WasSubmitted
+                        ? RunResultSubmissionState.Submitted
+                        : RunResultSubmissionState.NotRequired));
             }
             catch (Exception exception)
             {
                 Debug.LogWarning(
                     $"[Leaderboard] Score submission failed: {exception.Message}");
+                PublishResult(new RunResultData(
+                    pendingResult.LevelKey,
+                    pendingResult.RunScore,
+                    0,
+                    0,
+                    false,
+                    pendingResult.IsLastLevelOfPart,
+                    RunResultSubmissionState.Failed));
             }
+        }
+
+        private static bool IsLastLevelOfPart(LevelProgressKey progressKey)
+        {
+            var levelCount = LevelManager
+                .GetLevelsForPartOfDay(
+                    LevelManager.GetLocationIndex(),
+                    progressKey.PartOfDayId)
+                .Count();
+            return levelCount > 0 && progressKey.LevelIndex == levelCount - 1;
+        }
+
+        private void PublishResult(RunResultData result)
+        {
+            LatestResult = result;
+            ResultChanged?.Invoke(result);
         }
     }
 }

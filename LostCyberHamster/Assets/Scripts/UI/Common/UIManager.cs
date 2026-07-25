@@ -44,6 +44,7 @@ namespace LostCyberHamster.UI
         {
             if (_screenControllers.TryGetValue(screen, out var screenController))
             {
+                _currentScreen = screen;
                 await (screenController as ScreenController).LoadScreenAsync();
             }
         }

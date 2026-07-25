@@ -69,6 +69,38 @@
             "value": "ОЧКИ"
         },
         {
+            "key": "win_run_score",
+            "value": "ОЧКИ ЗА ЗАБЕГ: {0}"
+        },
+        {
+            "key": "win_new_record",
+            "value": "НОВЫЙ РЕКОРД: {0}"
+        },
+        {
+            "key": "win_existing_record",
+            "value": "РЕКОРД УРОВНЯ: {0}"
+        },
+        {
+            "key": "win_part_total",
+            "value": "ИТОГ — {0}: {1}"
+        },
+        {
+            "key": "win_submit_pending",
+            "value": "ОТПРАВКА РЕЗУЛЬТАТА…"
+        },
+        {
+            "key": "win_submit_success",
+            "value": "РЕЙТИНГ ОБНОВЛЁН"
+        },
+        {
+            "key": "win_submit_error",
+            "value": "НЕ УДАЛОСЬ ОБНОВИТЬ РЕЙТИНГ"
+        },
+        {
+            "key": "win_open_leaderboard",
+            "value": "РЕЙТИНГ: {0}"
+        },
+        {
             "key": "btn_resume",
             "value": "Продолжить"
         },

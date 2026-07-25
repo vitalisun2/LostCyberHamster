@@ -69,6 +69,38 @@
             "value": "SCORE"
         },
         {
+            "key": "win_run_score",
+            "value": "RUN SCORE: {0}"
+        },
+        {
+            "key": "win_new_record",
+            "value": "NEW RECORD: {0}"
+        },
+        {
+            "key": "win_existing_record",
+            "value": "LEVEL RECORD: {0}"
+        },
+        {
+            "key": "win_part_total",
+            "value": "{0} TOTAL: {1}"
+        },
+        {
+            "key": "win_submit_pending",
+            "value": "SUBMITTING RESULT…"
+        },
+        {
+            "key": "win_submit_success",
+            "value": "LEADERBOARD UPDATED"
+        },
+        {
+            "key": "win_submit_error",
+            "value": "COULD NOT UPDATE LEADERBOARD"
+        },
+        {
+            "key": "win_open_leaderboard",
+            "value": "{0} LEADERBOARD"
+        },
+        {
             "key": "btn_resume",
             "value": "Resume"
         },

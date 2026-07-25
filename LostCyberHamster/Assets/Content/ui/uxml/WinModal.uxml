@@ -5,14 +5,21 @@
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
     <engine:VisualElement style="flex-grow: 1; flex-direction: column; align-items: center; justify-content: space-between;">
         <engine:VisualElement style="flex-grow: 1;" />
-        <engine:Label text="Label" name="level_location" class="lcs-text" style="font-size: 64px;" />
-        <engine:Label text="Label" name="level_name" class="lcs-text" />
-        <engine:VisualElement name="stars_container" style="flex-grow: 0; flex-direction: row; height: 160px; align-items: center; width: 360px; justify-content: space-around;">
-            <engine:VisualElement name="star1" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 100px; height: 100px;" />
-            <engine:VisualElement name="star2" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 100px; height: 100px;" />
-            <engine:VisualElement name="star3" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 100px; height: 100px;" />
+        <engine:Label text="Label" name="level_location" class="lcs-text" style="flex-shrink: 0; font-size: 56px;" />
+        <engine:Label text="Label" name="level_name" class="lcs-text" style="flex-shrink: 0; font-size: 42px;" />
+        <engine:VisualElement name="stars_container" style="flex-grow: 0; flex-shrink: 0; flex-direction: row; height: 88px; align-items: center; width: 280px; justify-content: space-around;">
+            <engine:VisualElement name="star1" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 72px; height: 72px;" />
+            <engine:VisualElement name="star2" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 72px; height: 72px;" />
+            <engine:VisualElement name="star3" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 72px; height: 72px;" />
         </engine:VisualElement>
-        <engine:VisualElement style="flex-grow: 0; flex-direction: row; align-items: flex-end;">
+        <engine:VisualElement name="win_result" style="display: none; flex-grow: 0; flex-shrink: 0; width: 700px; min-height: 104px; align-items: center; justify-content: center;">
+            <engine:Label text="" name="win_run_score" class="lcs-text" style="flex-shrink: 0; font-size: 28px; -unity-text-align: middle-center; white-space: normal;" />
+            <engine:Label text="" name="win_record" class="lcs-text" style="flex-shrink: 0; font-size: 22px; -unity-text-align: middle-center; white-space: normal;" />
+            <engine:Label text="" name="win_part_total" class="lcs-text" style="flex-shrink: 0; font-size: 22px; -unity-text-align: middle-center; white-space: normal;" />
+            <engine:Label text="" name="win_submission_status" class="lcs-text" style="display: none; flex-shrink: 0; font-size: 20px; -unity-text-align: middle-center; white-space: normal;" />
+        </engine:VisualElement>
+        <engine:Button text="" name="btn_leaderboard" class="lcs_btn bg-primary" style="display: none; flex-grow: 0; flex-shrink: 0; width: 520px; height: 60px; margin-top: 4px; margin-right: 0; margin-bottom: 4px; margin-left: 0; padding-right: 16px; padding-left: 16px; font-size: 22px; white-space: normal;" />
+        <engine:VisualElement style="flex-grow: 0; flex-shrink: 0; flex-direction: row; align-items: flex-end;">
             <engine:Instance template="HomeButton" />
             <engine:Instance template="GameButton" />
             <engine:Instance template="PlayButton" />

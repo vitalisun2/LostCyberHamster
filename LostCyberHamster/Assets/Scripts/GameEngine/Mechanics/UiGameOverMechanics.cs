@@ -23,11 +23,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
         public void Subscribe()
         {
             _gameManager.OnFinish += OnFinish;
+            _hamster.RunResultChanged += OnRunResultChanged;
         }
 
         public void Unsubscribe()
         {
             _gameManager.OnFinish -= OnFinish;
+            _hamster.RunResultChanged -= OnRunResultChanged;
         }
 
         private void OnFinish()
@@ -52,8 +54,16 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 var winScreenController = _uiManager.GetController<WinModalController>();
                 winScreenController.SetParamsForInit(LevelManager.GetLocationName(), LevelManager.GetCurrentPartOfDay(), _hamster.Lives.Value);
+                winScreenController.SetRunResult(_hamster.LatestRunResult);
                 _uiManager.ShowModalAsync(ScreenEnum.WinModal);
             }
+        }
+
+        private void OnRunResultChanged(RunResultData result)
+        {
+            _uiManager
+                .GetController<WinModalController>()
+                .SetRunResult(result);
         }
     }
 }

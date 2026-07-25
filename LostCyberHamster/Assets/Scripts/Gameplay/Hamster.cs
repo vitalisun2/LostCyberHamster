@@ -32,6 +32,22 @@ namespace Assets.Scripts.Gameplay
         public float LeftX { get; private set; }
         public float RightX { get; private set; }
         public int RunScore => _runScoreMechanics?.CurrentScore ?? 0;
+        public RunResultData LatestRunResult =>
+            _partOfDayScoreMechanics?.LatestResult;
+
+        public event Action<RunResultData> RunResultChanged
+        {
+            add
+            {
+                if (_partOfDayScoreMechanics != null)
+                    _partOfDayScoreMechanics.ResultChanged += value;
+            }
+            remove
+            {
+                if (_partOfDayScoreMechanics != null)
+                    _partOfDayScoreMechanics.ResultChanged -= value;
+            }
+        }
 
         public AtomicVariable<HamsterStateEnum> HamsterState = new(HamsterStateEnum.Run);
 
