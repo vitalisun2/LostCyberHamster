@@ -4,6 +4,8 @@ param(
     [string]$BuildLabel = '',
     [string]$UnityExe = 'C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Unity.exe',
     [string]$AndroidSigningConfigPath = '',
+    [ValidateRange(60, 6600)]
+    [int]$UnityBuildTimeoutSeconds = 4800,
     [switch]$Development,
     [switch]$SkipUnityEditorReferenceCheck,
     [switch]$Json
@@ -54,21 +56,28 @@ function Get-SafeName {
 function Get-GitValue {
     param([string[]]$GitArgs)
 
-    try {
-        $value = & git -C $SourceWorktree @GitArgs 2>$null | Select-Object -First 1
-        if ($null -eq $value) {
-            return ''
-        }
-
-        return [string]$value
-    }
-    catch {
+    $value = Invoke-GitLines -GitArgs $GitArgs | Select-Object -First 1
+    if ($null -eq $value) {
         return ''
     }
+
+    return [string]$value
+}
+
+function Invoke-GitLines {
+    param([string[]]$GitArgs)
+
+    $lines = @(& git -C $SourceWorktree @GitArgs 2>$null)
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        throw "git failed with exit code $exitCode while reading source snapshot."
+    }
+
+    return $lines
 }
 
 function Get-SourceDirty {
-    $status = @(& git -C $SourceWorktree status --short 2>$null)
+    $status = @(Invoke-GitLines -GitArgs @('status', '--short'))
     return $status.Count -gt 0
 }
 
@@ -85,18 +94,14 @@ function Get-FileSha256 {
 function Get-SourceDiffHash {
     $builder = New-Object System.Text.StringBuilder
 
-    try {
-        [void]$builder.AppendLine((& git -C $SourceWorktree status --short 2>$null) -join "`n")
-        [void]$builder.AppendLine((& git -C $SourceWorktree diff --binary 2>$null) -join "`n")
+    [void]$builder.AppendLine((Invoke-GitLines -GitArgs @('status', '--short')) -join "`n")
+    [void]$builder.AppendLine((Invoke-GitLines -GitArgs @('diff', '--binary')) -join "`n")
+    [void]$builder.AppendLine((Invoke-GitLines -GitArgs @('diff', '--cached', '--binary')) -join "`n")
 
-        $untracked = @(& git -C $SourceWorktree ls-files --others --exclude-standard 2>$null)
-        foreach ($relativePath in $untracked) {
-            $fullPath = Join-Path $SourceWorktree $relativePath
-            [void]$builder.AppendLine("UNTRACKED $relativePath $(Get-FileSha256 -Path $fullPath)")
-        }
-    }
-    catch {
-        [void]$builder.AppendLine("diff-hash-error: $($_.Exception.Message)")
+    $untracked = @(Invoke-GitLines -GitArgs @('ls-files', '--others', '--exclude-standard'))
+    foreach ($relativePath in $untracked) {
+        $fullPath = Join-Path $SourceWorktree $relativePath
+        [void]$builder.AppendLine("UNTRACKED $relativePath $(Get-FileSha256 -Path $fullPath)")
     }
 
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($builder.ToString())
@@ -256,8 +261,6 @@ function Get-UnityProjectProcesses {
     param([string]$UnityProjectPath)
 
     $projectFullPath = [System.IO.Path]::GetFullPath($UnityProjectPath).TrimEnd('\', '/')
-    $projectName = Split-Path -Leaf $projectFullPath
-    $normalizedProjectPath = $projectFullPath.Replace('/', '\')
 
     $processesById = @{}
     foreach ($process in Get-Process Unity -ErrorAction SilentlyContinue) {
@@ -270,11 +273,30 @@ function Get-UnityProjectProcesses {
             continue
         }
 
-        $commandLine = if ($cimProcess.CommandLine) { $cimProcess.CommandLine.Replace('/', '\') } else { '' }
-        $title = $process.MainWindowTitle
-        $openedThisProject =
-            $commandLine.Contains($normalizedProjectPath) -or
-            (-not [string]::IsNullOrWhiteSpace($title) -and $title.Contains($projectName))
+        $commandLine = if ($cimProcess.CommandLine) { [string]$cimProcess.CommandLine } else { '' }
+        $projectPathMatch = [regex]::Match(
+            $commandLine,
+            '(?i)(?:^|\s)-projectPath\s+(?:"(?<path>[^"]+)"|(?<path>\S+))'
+        )
+        if (-not $projectPathMatch.Success) {
+            continue
+        }
+
+        try {
+            $processProjectPath = [System.IO.Path]::GetFullPath(
+                $projectPathMatch.Groups['path'].Value
+            ).TrimEnd('\', '/')
+        }
+        catch {
+            continue
+        }
+
+        # Source and sandbox projects share the same leaf name. Window title
+        # cannot safely identify which worktree owns the Unity process.
+        $openedThisProject = $processProjectPath.Equals(
+            $projectFullPath,
+            [System.StringComparison]::OrdinalIgnoreCase
+        )
 
         if ($openedThisProject) {
             $process
@@ -414,6 +436,17 @@ function Invoke-UnityAndroidBuild {
     $exitCode = $null
     try {
         [void]$process.Handle
+        $completed = $process.WaitForExit($UnityBuildTimeoutSeconds * 1000)
+        if (-not $completed) {
+            & taskkill.exe /PID $process.Id /T /F *> $null
+            $terminated = $process.WaitForExit(15000)
+            if (-not $terminated) {
+                throw "Timed-out Unity process tree could not be terminated. PID: $($process.Id)."
+            }
+
+            throw "Unity Android build exceeded timeout of $UnityBuildTimeoutSeconds seconds. See log: $LogPath"
+        }
+
         $process.WaitForExit()
         $exitCode = $process.ExitCode
     }
@@ -498,13 +531,17 @@ if ([string]::IsNullOrWhiteSpace($BuildLabel)) {
 $safeLabel = Get-SafeName -Value $BuildLabel
 $safeSha = Get-SafeName -Value $shortSha
 $dirtySuffix = if ($dirty) { 'dirty' } else { 'clean' }
-$buildStamp = Get-Date -Format 'yyyy-MM-dd_HHmmss'
+$runToken = [Guid]::NewGuid().ToString('N').Substring(0, 8)
+$buildStamp = Get-Date -Format 'yyyy-MM-dd_HHmmssfff'
 $builtAtUtc = (Get-Date).ToUniversalTime().ToString('o')
-$buildId = "${buildStamp}_android_${safeLabel}_${safeSha}_${dirtySuffix}"
-$outputDirStamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
-$outputDir = Join-Path $outputRoot ("{0}_{1}_{2}" -f $outputDirStamp, (Get-SafeName -Value $branch), $safeSha)
+$buildId = "${buildStamp}_android_${safeLabel}_${safeSha}_${dirtySuffix}_${runToken}"
+$outputDirStamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'
+$outputDir = Join-Path $outputRoot ("{0}_{1}_{2}_{3}" -f $outputDirStamp, (Get-SafeName -Value $branch), $safeSha, $runToken)
 $unityLogPath = Join-Path $outputDir 'unity-android.log'
 $summaryPath = Join-Path $outputDir 'build-summary.codex.json'
+if (Test-Path -LiteralPath $outputDir) {
+    throw "Unique build output directory already exists: $outputDir"
+}
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
 $postprocessorTemplatePath = Join-Path $PSScriptRoot "sandbox-overrides\$androidGradlePostprocessorRelativePath"
@@ -546,11 +583,14 @@ Invoke-UnityAndroidBuild `
     -SigningConfigPath $AndroidSigningConfigPath
 
 $apkPath = Join-Path $outputDir 'LostCyberHamster.apk'
-if (-not (Test-Path -LiteralPath $apkPath)) {
+if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) {
     throw "Android build completed but APK was not found: $apkPath"
 }
 
 $apk = Get-Item -LiteralPath $apkPath
+if ($apk.Length -le 0) {
+    throw "Android build produced an empty APK: $apkPath"
+}
 $outputManifestPath = Join-Path $outputDir 'build-manifest.codex.json'
 ([pscustomobject]$manifest) | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $outputManifestPath -Encoding UTF8
 
