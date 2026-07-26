@@ -28,6 +28,12 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Размер текста шага и результата.</summary>
         private const int OutputFontSize = 22;
 
+        /// <summary>Ширина кнопок выбора продукта.</summary>
+        private const float ProductButtonWidth = 190f;
+
+        /// <summary>Высота кнопок выбора продукта.</summary>
+        private const float ProductButtonHeight = 34f;
+
         /// <summary>Выполняет выбранный сценарий.</summary>
         private CloudSaveE2ERunner _runner;
 
@@ -88,8 +94,24 @@ namespace LostCyberHamster.Editor.Testing
             EditorGUILayout.LabelField("Testing", EditorStyles.boldLabel);
             EditorGUILayout.Space(8f);
 
-            if (GUILayout.Button("Cloud Save Testing", GUILayout.Height(42f)))
-                _showCloudSaveTesting = true;
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button(
+                        "Cloud Save Testing",
+                        GUILayout.Width(ProductButtonWidth),
+                        GUILayout.Height(ProductButtonHeight)))
+                {
+                    _showCloudSaveTesting = true;
+                }
+
+                if (GUILayout.Button(
+                        "Game Progress Testing",
+                        GUILayout.Width(ProductButtonWidth),
+                        GUILayout.Height(ProductButtonHeight)))
+                {
+                    GameProgress.GameProgressTestingWindow.ShowWindow();
+                }
+            }
         }
 
         /// <summary>Рисует страницу Cloud Save.</summary>
