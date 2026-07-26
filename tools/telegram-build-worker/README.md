@@ -19,6 +19,7 @@ Telegram channel_post: build
 ```
 
 - `telegram_build_worker.ps1` — polling, проверка `chatId`, offset, lock, статусы.
+- `launch_worker_hidden.vbs` — запускает PowerShell worker без консольного окна и возвращает его exit code в Scheduled Task.
 - `invoke_codex_build.ps1` — проверка ветки/source snapshot, запуск одного headless Codex, строгая проверка JSON-результата.
 - `run_build_and_publish.ps1` — единственный deterministic build/publish entrypoint, разрешенный Codex.
 - `install_worker_task.ps1` — скрытый Scheduled Task текущего пользователя, `AtLogOn`, restart policy.
@@ -78,7 +79,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\telegram-build-w
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\telegram-build-worker\install_worker_task.ps1 -NoStart
 ```
 
-Task запускается скрыто при входе текущего пользователя. Падение вызывает restart. Второй экземпляр и параллельный билд блокируются.
+Task запускается через `wscript.exe` без консольного окна при входе текущего пользователя. Временные polling warnings остаются скрытыми. Падение вызывает restart. Второй экземпляр и параллельный билд блокируются.
 
 ## Запуск и статус
 

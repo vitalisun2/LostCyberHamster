@@ -81,6 +81,9 @@ if ([string]::IsNullOrWhiteSpace($StateDirectory)) {
 $workerPath = Resolve-RequiredFile `
     -Path (Join-Path $PSScriptRoot 'telegram_build_worker.ps1') `
     -Description 'Worker script'
+$hiddenLauncherPath = Resolve-RequiredFile `
+    -Path (Join-Path $PSScriptRoot 'launch_worker_hidden.vbs') `
+    -Description 'Hidden worker launcher'
 $dispatchPath = Resolve-RequiredFile `
     -Path (Join-Path $PSScriptRoot 'invoke_codex_build.ps1') `
     -Description 'Codex dispatch script'
@@ -110,6 +113,10 @@ $powershellPath = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powersh
 if (-not (Test-Path -LiteralPath $powershellPath -PathType Leaf)) {
     throw "Windows PowerShell not found: $powershellPath"
 }
+$wscriptPath = Join-Path $env:WINDIR 'System32\wscript.exe'
+if (-not (Test-Path -LiteralPath $wscriptPath -PathType Leaf)) {
+    throw "Windows Script Host not found: $wscriptPath"
+}
 
 $resolvedStateDirectory = [System.IO.Path]::GetFullPath($StateDirectory)
 $statePath = Join-Path $resolvedStateDirectory 'state.json'
@@ -125,34 +132,44 @@ if (-not (Test-Path -LiteralPath $resolvedStateDirectory -PathType Container)) {
     }
 }
 
-$workerArguments = @(
+$workerArgumentValues = @(
     '-NoLogo'
     '-NoProfile'
     '-NonInteractive'
-    '-WindowStyle'
-    'Hidden'
     '-ExecutionPolicy'
     'Bypass'
     '-File'
-    (Quote-TaskArgument -Value $workerPath)
+    $workerPath
     '-ConfigPath'
-    (Quote-TaskArgument -Value $resolvedTelegramConfigPath)
+    $resolvedTelegramConfigPath
     '-BotApiConfigPath'
-    (Quote-TaskArgument -Value $resolvedBotApiConfigPath)
+    $resolvedBotApiConfigPath
     '-StatePath'
-    (Quote-TaskArgument -Value $statePath)
+    $statePath
     '-DispatchPath'
-    (Quote-TaskArgument -Value $dispatchPath)
+    $dispatchPath
     '-RepositoryRoot'
-    (Quote-TaskArgument -Value $resolvedRepositoryRoot)
+    $resolvedRepositoryRoot
     '-StateDirectory'
-    (Quote-TaskArgument -Value $resolvedStateDirectory)
-) -join ' '
+    $resolvedStateDirectory
+)
+$launcherArguments = @(
+    '//B'
+    '//NoLogo'
+    (Quote-TaskArgument -Value $hiddenLauncherPath)
+    (Quote-TaskArgument -Value $powershellPath)
+)
+$launcherArguments += @(
+    $workerArgumentValues | ForEach-Object {
+        Quote-TaskArgument -Value $_
+    }
+)
+$launcherArguments = $launcherArguments -join ' '
 
 $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $action = New-ScheduledTaskAction `
-    -Execute $powershellPath `
-    -Argument $workerArguments `
+    -Execute $wscriptPath `
+    -Argument $launcherArguments `
     -WorkingDirectory $PSScriptRoot
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $currentUser
 $principal = New-ScheduledTaskPrincipal `
