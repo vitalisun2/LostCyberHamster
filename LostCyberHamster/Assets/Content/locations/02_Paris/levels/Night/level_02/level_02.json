@@ -43,11 +43,11 @@
             "overrides": [
                 {
                     "obstacleId": 32,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                    "spriteName": "obstacle_new_york_car_1"
                 },
                 {
                     "obstacleId": 34,
-                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                    "spriteName": "obstacle_new_york_manhole"
                 }
             ]
         },
