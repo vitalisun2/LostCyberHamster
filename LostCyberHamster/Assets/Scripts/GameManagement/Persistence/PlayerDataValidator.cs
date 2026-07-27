@@ -86,7 +86,9 @@ namespace GameManagement
                 return PlayerDataValidationResult.Rejected("invalid_level_progress");
             }
 
-            bool needsRepair = data.PurchasedSkinIds == null ||
+            bool needsRepair = data.ExperiencePoints < 0 ||
+                               data.PlayerLevel < 1 ||
+                               data.PurchasedSkinIds == null ||
                                data.DailyTasks == null ||
                                data.StorylineQuestProgress == null ||
                                !data.HasSerializedProgressCollection ||
@@ -123,6 +125,8 @@ namespace GameManagement
                 return;
             }
 
+            data.ExperiencePoints = Math.Max(0, data.ExperiencePoints);
+            data.PlayerLevel = Math.Max(1, data.PlayerLevel);
             data.PurchasedSkinIds ??= new List<int>();
             if (!data.PurchasedSkinIds.Contains(0))
             {

@@ -153,6 +153,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitPlanner.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerData.cs" />
     <Compile Include="Assets\Scripts\DevTools\Core\DevToolsOverlayShell.cs" />
+    <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerExperienceService.cs" />
     <Compile Include="Assets\Scripts\Bot\Execution\PlanExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\IRoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\AwaitExtensions.cs" />
