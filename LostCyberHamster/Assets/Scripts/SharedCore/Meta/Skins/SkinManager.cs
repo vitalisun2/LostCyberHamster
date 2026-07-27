@@ -2,9 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.Common;
-using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.System;
-using Atomic.Elements;
 using GameManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -12,14 +10,8 @@ using Vues.GameCore;
 
 public static class SkinManager
 {
-    private const int DefaultSkinId = 0;
-
     public static List<string> AvailableSkinsNames => _availableSkins.Select(x => x.Name).ToList();
     public static string CurrentSkinName => CurrentSkin?.Name;
-    public static bool IsUltaActive => CurrentSkin?.IsUltaActive.Value ?? false;
-    public static int UltaChargeAmount => LevelController.Instance.LevelData.Hamster?.UltaChargeAmount.Value ?? 0;
-    public static bool IsDefaultSkin => CurrentSkin == null || CurrentSkin.Id == DefaultSkinId;
-
 
     public static List<Skin> AvailableSkins => _availableSkins;
 
@@ -80,12 +72,6 @@ public static class SkinManager
         if (skin == null || !GameDataManager.PlayerData.PurchasedSkinIds.Contains(skinId))
         {
             Debug.LogWarning("Skin not purchased.");
-            return;
-        }
-
-        if (CurrentSkin?.IsUltaActive.Value == true)
-        {
-            Debug.LogWarning("Cannot change skin while Ulta is active.");
             return;
         }
 

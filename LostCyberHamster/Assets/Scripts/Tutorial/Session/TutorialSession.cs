@@ -81,24 +81,6 @@ namespace Assets.Scripts.Tutorial
         }
 
         /// <summary>
-        /// Готовит состояние для урока суперудара с указанным скином.
-        /// </summary>
-        public void PrepareSuperHitLesson(int skinId)
-        {
-            if (skinId < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(skinId), skinId, "Tutorial skin id cannot be negative.");
-            }
-
-            Begin();
-
-            ResourceManager.SetResourceBalance(ResourceType.Coins, 0);
-            ResourceManager.SetResourceBalance(ResourceType.Crystals, 0);
-            GameDataManager.PlayerData.AppliedSkinId = skinId;
-            GameDataManager.PlayerData.PurchasedSkinIds = CreateTrainingSkinIds(skinId);
-        }
-
-        /// <summary>
         /// Восстанавливает исходные данные и фиксирует завершение tutorial.
         /// </summary>
         public void Complete(string nextLevelAddress)
@@ -193,17 +175,6 @@ namespace Assets.Scripts.Tutorial
             }
 
             return playerData;
-        }
-
-        private static List<int> CreateTrainingSkinIds(int skinId)
-        {
-            var skinIds = new List<int> { DefaultSkinId };
-            if (skinId != DefaultSkinId)
-            {
-                skinIds.Add(skinId);
-            }
-
-            return skinIds;
         }
 
         private void ApplyDefaultTrainingState()

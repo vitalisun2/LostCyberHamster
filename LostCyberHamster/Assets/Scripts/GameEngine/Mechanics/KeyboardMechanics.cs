@@ -17,7 +17,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent _superRoofJumpRequest;
         private readonly AtomicEvent _jumpEvent;
         private readonly AtomicEvent _superJumpEvent;
-        private readonly AtomicEvent _ultaEvent;
         private readonly UIManager _uiManager;
         private readonly GameManager _gameManager;
         private readonly Keyboard _keyboard;
@@ -33,7 +32,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _superRoofJumpRequest = hamster.SuperRoofJumpRequest;
             _jumpEvent = hamster.JumpRequest;
             _superJumpEvent = hamster.SuperJumpRequest;
-            _ultaEvent = hamster.UltaEvent;
             _gameManager = gameManager;
             _keyboard = Keyboard.current;
             _tapRequest = hamster.TapRequest;
@@ -85,11 +83,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 TogglePauseResume();
             }
 
-            if (_keyboard.bKey.wasPressedThisFrame)
-            {
-                OnUlta();
-            }
-
             // Bot hotkey
             if (_keyboard.f1Key.wasPressedThisFrame)
             {
@@ -99,11 +92,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     bot.ToggleEnabled();
                 }
             }
-        }
-
-        private void OnUlta()
-        {
-            _ultaEvent?.Invoke();
         }
 
         private void OnShift()

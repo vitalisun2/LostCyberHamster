@@ -6,7 +6,6 @@ using Atomic.Elements;
 using LostCyberHamster.UI;
 using UnityEngine;
 using Vues.GameCore;
-using NotImplementedException = System.NotImplementedException;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -40,16 +39,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _gameScreenController.SetSuperJumpAction(OnSuperJump);
             _gameScreenController.SetJumpAction(OnJump);
             _gameScreenController.SetTapAction(OnTap);
-            _gameScreenController.SetUltraAction(OnUlta);
             _gameScreenController.SetPauseAction(OnPause);
             _gameScreenController.SetBuyEnergyAction(OnBuyEnergy);
-            _gameScreenController.SetBuyUltraAction(OnBuyUltra);
         }
 
         public void Subscribe()
         {
             _character?.Lives.Subscribe(OnLifesChanged);
-            _character?.UltaChargeAmount.Subscribe(OnUltaChargeAmountChanged);
             _character?.Energy.Subscribe(OnEnergyChanged);
         }
 
@@ -69,7 +65,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         public void Unsubscribe()
         {
             _character?.Lives.Unsubscribe(OnLifesChanged);
-            _character?.UltaChargeAmount.Unsubscribe(OnUltaChargeAmountChanged);
             _character?.Energy.Unsubscribe(OnEnergyChanged);
         }
 
@@ -80,12 +75,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnUltaChargeAmountChanged(int value)
         {
-            if (SkinManager.IsDefaultSkin)
-            {
-                _gameScreenController?.SetUltraControlsVisible(false);
-                return;
-            }
-
             _gameScreenController?.SetUltraValue(value);
         }
 
@@ -165,11 +154,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnUlta()
         {
-            if (SkinManager.IsDefaultSkin)
-            {
-                return;
-            }
-
             _character.UltaEvent?.Invoke();
         }
 
@@ -190,11 +174,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnBuyUltra()
         {
-            if (SkinManager.IsDefaultSkin)
-            {
-                return;
-            }
-
             const int price = 100;
             if (ResourceManager.CanSpendResource(ResourceType.Coins, price))
             {
@@ -205,13 +184,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void SyncUltraControls()
         {
-            bool ultraAvailable = !SkinManager.IsDefaultSkin;
-            _gameScreenController?.SetUltraControlsVisible(ultraAvailable);
-
-            if (ultraAvailable)
-            {
-                OnUltaChargeAmountChanged(_character.UltaChargeAmount.Value);
-            }
+            _gameScreenController?.SetUltraControlsVisible(false);
         }
     }
 }

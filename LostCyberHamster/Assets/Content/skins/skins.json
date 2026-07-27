@@ -6,10 +6,7 @@
       "Price": 0,
       "PriceType": 2,
       "SkinSprite": "skin_default",
-      "HamsterOverrideController": "DefaultSkinAnimator",
-      "UltaPrefab": "",
-      "UltaDuration": 0,
-      "UltaCharge": 0
+      "HamsterOverrideController": "DefaultSkinAnimator"
     },
     {
       "Id": 2,
@@ -17,10 +14,7 @@
       "Price": 20,
       "PriceType": 2,
       "SkinSprite": "skin_electric-strike",
-      "HamsterOverrideController": "ElectricStrikeSkinAnimator",
-      "UltaPrefab": "ElectricStrikePrefab",
-      "UltaDuration": 0,
-      "UltaCharge": 35
+      "HamsterOverrideController": "ElectricStrikeSkinAnimator"
     },
     {
       "Id": 1,
@@ -28,10 +22,7 @@
       "Price": 10,
       "PriceType": 2,
       "SkinSprite": "skin_energy-shield",
-      "HamsterOverrideController": "EnergyShieldSkinAnimator",
-      "UltaPrefab": "EnergyShieldPrefab",
-      "UltaDuration": 5,
-      "UltaCharge": 20
+      "HamsterOverrideController": "EnergyShieldSkinAnimator"
     }
   ]
 }

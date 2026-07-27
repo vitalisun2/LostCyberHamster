@@ -9,7 +9,4 @@ public class SkinData
     public ResourceType PriceType;
     public string SkinSprite;
     public string HamsterOverrideController;
-    public string UltaPrefab;
-    public float UltaDuration;
-    public int UltaCharge;
 }

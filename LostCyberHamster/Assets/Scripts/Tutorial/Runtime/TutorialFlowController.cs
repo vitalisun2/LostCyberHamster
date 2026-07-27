@@ -1,5 +1,4 @@
 using System;
-using Assets.Scripts;
 using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
@@ -37,7 +36,7 @@ namespace Assets.Scripts.Tutorial
         public bool CanShutdown => _phase == TutorialPhase.Completed && !_session.IsActive;
 
         /// <summary>
-        /// Создаёт gameplay-controller для активного tutorial level ровно один раз на scene context.
+        /// Запускает основной gameplay-урок или завершает устаревший SuperHit-переход.
         /// </summary>
         public void EnsureGameplay(string levelAddress, GameManager gameManager, Hamster hamster)
         {
@@ -54,18 +53,14 @@ namespace Assets.Scripts.Tutorial
                 StartGameplayScenario(
                     levelAddress,
                     gameManager,
-                    hamster,
-                    TutorialGameplayScenario.CoreControls);
+                    hamster);
                 return;
             }
 
             if (TutorialConstants.IsSuperHitLessonLevel(levelAddress))
             {
-                StartGameplayScenario(
-                    levelAddress,
-                    gameManager,
-                    hamster,
-                    TutorialGameplayScenario.SuperHit);
+                _session.Begin();
+                StartFirstGameplayLevel();
             }
         }
 
@@ -114,24 +109,15 @@ namespace Assets.Scripts.Tutorial
         private void StartGameplayScenario(
             string levelAddress,
             GameManager gameManager,
-            Hamster hamster,
-            TutorialGameplayScenario scenario)
+            Hamster hamster)
         {
-            if (scenario == TutorialGameplayScenario.CoreControls)
-            {
-                _skinLesson.Reset();
-                _session.PrepareCoreLesson();
-                _phase = TutorialPhase.CoreControls;
-            }
-            else
-            {
-                _session.PrepareSuperHitLesson(TutorialSkinLessonController.TargetSkinId);
-                _phase = TutorialPhase.SuperHit;
-            }
+            _skinLesson.Reset();
+            _session.PrepareCoreLesson();
+            _phase = TutorialPhase.CoreControls;
 
             _gameplay = new TutorialGameplayController(
                 new TutorialGameplayWorldAdapter(gameManager, hamster),
-                scenario);
+                TutorialGameplayScenario.CoreControls);
             _gameplay.ScenarioCompleted += HandleGameplayScenarioCompleted;
             _gameplay.SkipRequested += HandleSkipRequested;
             _activeGameplayLevel = levelAddress;
@@ -144,13 +130,7 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
 
-            if (_gameplay.Scenario == TutorialGameplayScenario.CoreControls)
-            {
-                StartSkinLessonTransition();
-                return;
-            }
-
-            ShowTutorialCompletion();
+            StartSkinLessonTransition();
         }
 
         private void StartSkinLessonTransition()
@@ -169,22 +149,10 @@ namespace Assets.Scripts.Tutorial
                 OpenMenuForSkinLesson);
         }
 
-        private void ShowTutorialCompletion()
-        {
-            _phase = TutorialPhase.Completed;
-            DeviceLogUploader.UploadDiagnosticLog("tutorial_completed");
-            _gameplay.ShowCompletion(
-                "Поздравляю",
-                "Вы прошли обучение",
-                StartFirstGameplayLevel,
-                OpenMenuAfterCompletion);
-        }
-
         private void HandleSkinLessonCompleted()
         {
-            _phase = TutorialPhase.SuperHit;
-            GameDataManager.PlayerData.CurrentLevel = TutorialConstants.SuperHitLessonLevelAddress;
-            SceneManager.LoadScene(TutorialConstants.GameSceneName);
+            DeviceLogUploader.UploadDiagnosticLog("tutorial_completed");
+            StartFirstGameplayLevel();
         }
 
         private void HandleSkipRequested()
@@ -205,12 +173,6 @@ namespace Assets.Scripts.Tutorial
         {
             CompleteSessionAtFirstGameplayLevel();
             SceneManager.LoadScene(TutorialConstants.GameSceneName);
-        }
-
-        private void OpenMenuAfterCompletion()
-        {
-            CompleteSessionAtFirstGameplayLevel();
-            SceneManager.LoadScene(TutorialConstants.MenuSceneName);
         }
 
         private void CompleteSessionAtFirstGameplayLevel()

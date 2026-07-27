@@ -1,3 +1,4 @@
+using System;
 using Atomic.Elements;
 using UnityEngine;
 
@@ -7,16 +8,24 @@ namespace Assets.Scripts.GameEngine.Mechanics
     {
         private readonly AtomicEvent _ultaEvent;
         private readonly AtomicVariable<int> _ultaChargeAmount;
+        private readonly Action _applyAttack;
+        private readonly Action _updateAttack;
 
-        public UltaMechanics(AtomicEvent ultaEvent, AtomicVariable<int> ultaChargeAmount)
+        public UltaMechanics(
+            AtomicEvent ultaEvent,
+            AtomicVariable<int> ultaChargeAmount,
+            Action applyAttack,
+            Action updateAttack)
         {
             _ultaEvent = ultaEvent;
             _ultaChargeAmount = ultaChargeAmount;
+            _applyAttack = applyAttack;
+            _updateAttack = updateAttack;
         }
 
         public void OnUpdate()
         {
-           SkinManager.CurrentSkin.UpdateUlta();
+            _updateAttack?.Invoke();
         }
 
         public void OnEnable()
@@ -31,7 +40,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnUltaEvent()
         {
-            if (SkinManager.IsDefaultSkin)
+            if (_applyAttack == null)
             {
                 return;
             }
@@ -43,8 +52,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             }
 
             _ultaChargeAmount.Value = 0;
-
-            SkinManager.CurrentSkin.ApplyUlta();
+            _applyAttack.Invoke();
             GameEventsManager.UltaUsed();
         }
     }

@@ -96,8 +96,6 @@ namespace Assets.Scripts.Gameplay
         private AddCoinsOrBonusMechanics _addCoinsOrBonusMechanics;
         private RunScoreMechanics _runScoreMechanics;
         private PartOfDayScoreMechanics _partOfDayScoreMechanics;
-        private UltaChargeMechanics _ultaChargeMechanics;
-        private UltaMechanics _ultaMechanics;
         private DeathMechanics _deathMechanics;
         private TapMechanics _tapMechanics;
 
@@ -204,14 +202,11 @@ namespace Assets.Scripts.Gameplay
                 _runScoreMechanics,
                 Lives,
                 LevelController.Instance.LevelData.GameManager);
-            _ultaChargeMechanics = new UltaChargeMechanics(DestroyObstacleEvent, UltaChargeAmount);
-            _ultaMechanics = new UltaMechanics(UltaEvent, UltaChargeAmount);
             _deathMechanics = new DeathMechanics(Lives);
         }
 
         private void Update()
         {
-            _ultaMechanics.OnUpdate();
             _roofRunMechanics.OnUpdate();
             _tapMechanics.OnUpdate();
         }
@@ -226,8 +221,6 @@ namespace Assets.Scripts.Gameplay
             _partOfDayScoreMechanics.OnEnable();
             _addOneCoinMechanics.OnEnable();
             _addCoinsOrBonusMechanics.OnEnable();
-            _ultaChargeMechanics.OnEnable();
-            _ultaMechanics.OnEnable();
             _deathMechanics.OnEnable();
             _roofJumpMechanics.OnEnable();
             _superRoofJumpMechanics.OnEnable();
@@ -244,8 +237,6 @@ namespace Assets.Scripts.Gameplay
             _partOfDayScoreMechanics.OnDisable();
             _addOneCoinMechanics.OnDisable();
             _addCoinsOrBonusMechanics.OnDisable();
-            _ultaChargeMechanics.OnDisable();
-            _ultaMechanics.OnDisable();
             _deathMechanics.OnDisable();
             _roofJumpMechanics.OnDisable();
             _superRoofJumpMechanics.OnDisable();
@@ -260,12 +251,6 @@ namespace Assets.Scripts.Gameplay
             {
                 GameEventsManager.EnergyAdded(energyToAdd);
             }
-        }
-
-        public void AddUltaCharge()
-        {
-            var value = SkinManager.CurrentSkin.UltaCharge;
-            AddUltaCharge(value);
         }
 
         public void AddUltaCharge(int value)

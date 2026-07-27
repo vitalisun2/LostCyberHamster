@@ -111,12 +111,12 @@
     <Compile Include="Assets\Scripts\System\Resources\AddressableLocationsLease.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenController.cs" />
     <Compile Include="Assets\Scripts\SharedCore\VibrationManager.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\ElectricStrikeSkin.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\QuestSystem\QuestData.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\GameplayDevToolsView.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\HamsterSnapshot.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowCalculator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\JumpOnRoofFireWindowFinder.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\ElectricStrikeAttack.cs" />
     <Compile Include="Assets\Scripts\Installers\BootstrapSceneInstaller.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialGameplayStep.cs" />
     <Compile Include="Assets\Scripts\Account\AccountState.cs" />
@@ -306,7 +306,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvanceExecutor.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitObstaclesPoolLoadingTask.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\DefaultSkin.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnRoof\SuperJumpOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Gameplay\Obstacle.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\BoomEffectAction.cs" />
@@ -381,6 +380,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofSpecification.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictCoordinator.cs" />
     <Compile Include="Assets\Scripts\Diagnostics\DeviceLogUploader.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\EnergyShieldAttack.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\LoadAddressablesLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\LeaderboardSubmissionResult.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelEnum.cs" />
@@ -411,7 +411,6 @@
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\ProgressService.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinFactory.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneWindowFinder.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\EnergyShieldSkin.cs" />
     <Compile Include="Assets\Scripts\CloudSave\CloudSyncService.cs" />
     <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinAction.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\IActionExecutionHandler.cs" />
