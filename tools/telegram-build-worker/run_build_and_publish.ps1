@@ -4,6 +4,7 @@ param(
     [string]$BuildLabel = 'telegram-worker',
     [string]$TelegramConfigPath = '',
     [string]$SkillRoot = '',
+    [switch]$ShowDevelopmentConsole,
     [switch]$Json
 )
 
@@ -281,6 +282,7 @@ try {
                 -SandboxRoot $SandboxRoot `
                 -BuildLabel $BuildLabel `
                 -Development `
+                -ShowDevelopmentConsole:$ShowDevelopmentConsole.IsPresent `
                 -Json `
                 2>$null 3>$null 4>$null 5>$null 6>$null
         )
@@ -365,6 +367,39 @@ try {
     $result.apkSizeBytes = [long](Get-Item -LiteralPath $apkPath).Length
     $result.buildSummaryPath = $summaryPath
 
+    $safeBuildId = ([string]$build.buildId -replace '[^A-Za-z0-9_.-]', '_').Trim('_')
+    if ([string]::IsNullOrWhiteSpace($safeBuildId)) {
+        Stop-Workflow -Code 'TelegramArtifactNameInvalid' -Message 'BuildId cannot produce a safe Telegram artifact name.'
+    }
+
+    # Telegram receives a unique filename for every build. Reusing the constant
+    # LostCyberHamster.apk name makes old client-side downloads indistinguishable
+    # from a fresh APK, especially while size and Android version stay unchanged.
+    $publishApkPath = Join-Path `
+        (Split-Path -Parent $apkPath) `
+        "LostCyberHamster_$safeBuildId.apk"
+    if (Test-Path -LiteralPath $publishApkPath) {
+        Stop-Workflow -Code 'TelegramArtifactAlreadyExists' -Message 'Unique Telegram APK path already exists.'
+    }
+
+    try {
+        New-Item -ItemType HardLink -Path $publishApkPath -Target $apkPath -ErrorAction Stop | Out-Null
+    }
+    catch {
+        try {
+            Copy-Item -LiteralPath $apkPath -Destination $publishApkPath -ErrorAction Stop
+        }
+        catch {
+            Stop-Workflow -Code 'TelegramArtifactPreparationFailed' -Message 'Could not prepare the uniquely named Telegram APK.'
+        }
+    }
+
+    $apkSha256 = Get-FileSha256 -Path $apkPath
+    if ((Get-Item -LiteralPath $publishApkPath).Length -ne $result.apkSizeBytes -or
+        (Get-FileSha256 -Path $publishApkPath) -cne $apkSha256) {
+        Stop-Workflow -Code 'TelegramArtifactMismatch' -Message 'Uniquely named Telegram APK does not match the built artifact.'
+    }
+
     $botApiReachable = Test-EndpointReachable -ApiBaseUrl $localBotApiEndpoint
     if (-not $botApiReachable) {
         try {
@@ -400,12 +435,15 @@ try {
         "Commit: $($build.sourceCommit)"
         "Dirty tree: $($build.sourceDirty)"
         "Diff hash: $($build.sourceDiffHash)"
+        "Development console: $($build.developmentConsoleVisible)"
+        "Artifact: $(Split-Path -Leaf $publishApkPath)"
+        "APK SHA-256: $apkSha256"
     ) -join "`n"
 
     try {
         $publishArguments = @{
             RepositoryRoot = $RepositoryRoot
-            ApkPath = $apkPath
+            ApkPath = $publishApkPath
             Caption = $caption
         }
         if (-not [string]::IsNullOrWhiteSpace($TelegramConfigPath)) {

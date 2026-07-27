@@ -256,6 +256,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofTiming.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Runtime\TutorialRuntimeHost.cs" />
+    <Compile Include="Assets\Scripts\DevTools\Core\DevelopmentConsolePolicy.cs" />
     <Compile Include="Assets\Scripts\Common\DoubleJumpDetector.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RoofRunMechanics.cs" />
     <Compile Include="Assets\Scripts\System\Resources\AddressableLease.cs" />

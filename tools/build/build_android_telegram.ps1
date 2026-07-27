@@ -7,12 +7,17 @@ param(
     [ValidateRange(60, 6600)]
     [int]$UnityBuildTimeoutSeconds = 4800,
     [switch]$Development,
+    [switch]$ShowDevelopmentConsole,
     [switch]$SkipUnityEditorReferenceCheck,
     [switch]$Json
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ($ShowDevelopmentConsole.IsPresent -and -not $Development.IsPresent) {
+    throw '-ShowDevelopmentConsole requires -Development.'
+}
 
 $unityProjectRelativePath = 'LostCyberHamster'
 $buildAutomationRelativePath = 'Assets\Editor\LostCyberHamsterBuildAutomation.cs'
@@ -67,7 +72,7 @@ function Get-GitValue {
 function Invoke-GitLines {
     param([string[]]$GitArgs)
 
-    $lines = @(& git -C $SourceWorktree @GitArgs 2>$null)
+    $lines = @(& git -C $SourceWorktree -c core.safecrlf=false @GitArgs 2>$null)
     $exitCode = $LASTEXITCODE
     if ($exitCode -ne 0) {
         throw "git failed with exit code $exitCode while reading source snapshot."
@@ -417,6 +422,7 @@ function Invoke-UnityAndroidBuild {
     Assert-PathExists -Path (Join-Path $ProjectPath $buildAutomationRelativePath) -Description 'Repo-owned Unity build automation'
 
     $developmentValue = if ($Development.IsPresent) { 'true' } else { 'false' }
+    $showDevelopmentConsoleValue = if ($ShowDevelopmentConsole.IsPresent) { 'true' } else { 'false' }
     $unityArgs = @(
         '-batchmode',
         '-quit',
@@ -426,6 +432,7 @@ function Invoke-UnityAndroidBuild {
         '-executeMethod', 'LostCyberHamster.Editor.LostCyberHamsterBuildAutomation.BuildAndroidApk',
         '-codexBuildOutput', $OutputDir,
         '-codexBuildDevelopment', $developmentValue,
+        '-codexShowDevelopmentConsole', $showDevelopmentConsoleValue,
         '-lostCyberHamsterAndroidSigningConfig', $SigningConfigPath,
         '-logFile', $LogPath
     )
@@ -568,6 +575,7 @@ $manifest = [ordered]@{
     builtAtUtc = $builtAtUtc
     platform = 'Android'
     development = $Development.IsPresent
+    developmentConsoleVisible = $ShowDevelopmentConsole.IsPresent
     androidSigningKeyAlias = $androidSigning.keyAliasName
     androidSigningCertificateSha256 = $androidSigning.certificateSha256
 }
@@ -611,6 +619,7 @@ $result = [ordered]@{
     apkSizeBytes = $apk.Length
     platform = 'Android'
     development = $Development.IsPresent
+    developmentConsoleVisible = $ShowDevelopmentConsole.IsPresent
     builtAtUtc = $builtAtUtc
     androidSigningConfigPath = $AndroidSigningConfigPath
     androidSigningKeyAlias = $androidSigning.keyAliasName

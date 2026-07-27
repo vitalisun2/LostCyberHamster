@@ -16,6 +16,8 @@ namespace LostCyberHamster.Editor
     {
         private const string OutputArg = "-codexBuildOutput";
         private const string DevelopmentArg = "-codexBuildDevelopment";
+        private const string ShowDevelopmentConsoleArg = "-codexShowDevelopmentConsole";
+        private const string ShowDevelopmentConsoleDefine = "LCH_SHOW_DEVELOPMENT_CONSOLE";
         private const string AndroidSigningConfigArg = "-lostCyberHamsterAndroidSigningConfig";
         private const string AndroidSigningConfigEnvironmentVariable = "LOSTCYBERHAMSTER_ANDROID_SIGNING_CONFIG";
         private const string DefaultAndroidSigningConfigRelativePath = @".lostcyberhamster\android-dev-signing\signing.local.json";
@@ -38,6 +40,7 @@ namespace LostCyberHamster.Editor
                 Directory.CreateDirectory(outputRoot);
 
                 var development = GetBoolArg(DevelopmentArg);
+                var showDevelopmentConsole = GetBoolArg(ShowDevelopmentConsoleArg);
                 EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroup, target);
                 BuildAddressables();
 
@@ -62,7 +65,10 @@ namespace LostCyberHamster.Editor
                     target = target,
                     targetGroup = targetGroup,
                     locationPathName = buildPath,
-                    options = options
+                    options = options,
+                    extraScriptingDefines = showDevelopmentConsole
+                        ? new[] { ShowDevelopmentConsoleDefine }
+                        : Array.Empty<string>()
                 };
 
                 AndroidSigningScope androidSigning = null;
@@ -71,7 +77,13 @@ namespace LostCyberHamster.Editor
                     androidSigning = ApplyAndroidSigningIfNeeded(target);
 
                     var report = BuildPipeline.BuildPlayer(buildOptions);
-                    WriteSummary(outputRoot, buildPath, report, development, androidSigning);
+                    WriteSummary(
+                        outputRoot,
+                        buildPath,
+                        report,
+                        development,
+                        showDevelopmentConsole,
+                        androidSigning);
 
                     if (report.summary.result != BuildResult.Succeeded)
                         throw new InvalidOperationException($"Build failed: {report.summary.result}");
@@ -219,6 +231,7 @@ namespace LostCyberHamster.Editor
             string buildPath,
             BuildReport report,
             bool development,
+            bool showDevelopmentConsole,
             AndroidSigningScope androidSigning)
         {
             var summary = report.summary;
@@ -230,6 +243,8 @@ namespace LostCyberHamster.Editor
             builder.AppendLine($"  \"totalSize\": {summary.totalSize},");
             builder.AppendLine($"  \"totalTime\": \"{Escape(summary.totalTime.ToString())}\",");
             builder.AppendLine($"  \"development\": {development.ToString().ToLowerInvariant()},");
+            builder.AppendLine(
+                $"  \"developmentConsoleVisible\": {showDevelopmentConsole.ToString().ToLowerInvariant()},");
             builder.AppendLine($"  \"androidSigningConfigured\": {(androidSigning != null).ToString().ToLowerInvariant()},");
             builder.AppendLine($"  \"androidSigningKeyAlias\": {JsonStringOrNull(androidSigning?.KeyAliasName)},");
             builder.AppendLine($"  \"androidSigningCertificateSha256\": {JsonStringOrNull(androidSigning?.CertificateSha256)}");
