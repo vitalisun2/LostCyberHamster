@@ -17,14 +17,13 @@ namespace Assets.Scripts.DevTools.Gameplay
         private readonly Button _unlockAllButton;
         private readonly Text _unlockAllButtonText;
         private readonly Image _unlockAllButtonImage;
-        private readonly Button _completeLevelButton;
-        private readonly Button _resetProgressButton;
+        private readonly Button _gameProgressTestingButton;
         private readonly GameObject _statusCard;
         private readonly Text _statusText;
 
         public GameplayDevToolsView(Transform parent, DevToolsUiFactory uiFactory)
         {
-            RootObject = uiFactory.CreateStaticPage("GameplayScreen", parent, out Transform content);
+            RootObject = uiFactory.CreateScrollPage("GameplayScreen", parent, out Transform content);
 
             uiFactory.CreateSectionHeading("ActionsHeading", content, "GAMEPLAY И ПРОГРЕСС");
             _botButton = uiFactory.CreateButton(
@@ -45,18 +44,12 @@ namespace Assets.Scripts.DevTools.Gameplay
             _unlockAllButtonText = _unlockAllButton.GetComponentInChildren<Text>();
             _unlockAllButtonImage = _unlockAllButton.GetComponent<Image>();
 
-            _completeLevelButton = uiFactory.CreateButton(
-                "CompleteLevelButton",
+            _gameProgressTestingButton = uiFactory.CreateButton(
+                "GameProgressTestingButton",
                 content,
-                "Complete Level (3 Stars)",
-                DevToolsTheme.Button,
-                () => CompleteLevelRequested?.Invoke());
-            _resetProgressButton = uiFactory.CreateButton(
-                "ResetProgressButton",
-                content,
-                "Reset Progress",
-                DevToolsTheme.Button,
-                () => ResetProgressRequested?.Invoke());
+                "Game Progress Testing",
+                DevToolsTheme.Navigation,
+                () => GameProgressTestingRequested?.Invoke());
 
             Transform statusCard = uiFactory.CreateCard("StatusCard", content, DevToolsTheme.StatusCard);
             _statusCard = statusCard.gameObject;
@@ -65,8 +58,7 @@ namespace Assets.Scripts.DevTools.Gameplay
 
         public event Action BotToggleRequested;
         public event Action UnlockAllToggleRequested;
-        public event Action CompleteLevelRequested;
-        public event Action ResetProgressRequested;
+        public event Action GameProgressTestingRequested;
 
         public GameObject RootObject { get; }
 
@@ -79,8 +71,7 @@ namespace Assets.Scripts.DevTools.Gameplay
             _unlockAllButtonText.text = presentation.UnlockAllLabel;
             _unlockAllButtonImage.color = presentation.UnlockAllLevels ? DevToolsTheme.Enabled : DevToolsTheme.Disabled;
             _unlockAllButton.interactable = presentation.ActionsAvailable;
-            _completeLevelButton.interactable = presentation.CompleteLevelAvailable;
-            _resetProgressButton.interactable = presentation.ActionsAvailable;
+            _gameProgressTestingButton.interactable = presentation.ActionsAvailable;
 
             _statusText.text = presentation.Status;
             _statusCard.SetActive(!string.IsNullOrWhiteSpace(presentation.Status));

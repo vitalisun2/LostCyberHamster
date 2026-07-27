@@ -9,19 +9,16 @@ namespace Assets.Scripts.DevTools.Gameplay
         public GameplayDevToolsSnapshot(
             bool botAvailable,
             bool botEnabled,
-            bool unlockAllLevels,
-            bool completeLevelAvailable)
+            bool unlockAllLevels)
         {
             BotAvailable = botAvailable;
             BotEnabled = botEnabled;
             UnlockAllLevels = unlockAllLevels;
-            CompleteLevelAvailable = completeLevelAvailable;
         }
 
         public bool BotAvailable { get; }
         public bool BotEnabled { get; }
         public bool UnlockAllLevels { get; }
-        public bool CompleteLevelAvailable { get; }
     }
 }
 #endif

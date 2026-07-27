@@ -1,6 +1,7 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Assets.Scripts.Account;
 using Assets.Scripts.DevTools.Account;
+using Assets.Scripts.DevTools.GameProgressTesting;
 using Assets.Scripts.DevTools.Gameplay;
 using Assets.Scripts.DevTools.Root;
 using UnityEngine;
@@ -25,8 +26,11 @@ namespace Assets.Scripts.DevTools.Core
         private const float _baseRootPanelHeight = 220f;
         private const float _baseFeaturePanelWidth = 540f;
         private const float _baseFeaturePanelHeight = 569f;
+        private const float _baseMinimumPanelWidth = 300f;
+        private const float _baseMinimumPanelHeight = 220f;
         private const float _baseInset = 16f;
         private const float _baseBackButtonWidth = 88f;
+        private const float _baseResizeHandleSize = 44f;
 
         private static readonly Color _openButtonColor = new Color(1f, 1f, 1f, 0.72f);
         private static readonly Color _panelColor = new Color(1f, 1f, 1f, 0.985f);
@@ -36,6 +40,8 @@ namespace Assets.Scripts.DevTools.Core
         private readonly RectTransform _openButtonRect;
         private readonly GameObject _panelObject;
         private readonly RectTransform _panelRect;
+        private readonly RectTransform _dragHandleRect;
+        private readonly RectTransform _resizeHandleRect;
         private readonly Text _titleText;
         private readonly RectTransform _titleRect;
         private readonly GameObject _backButtonObject;
@@ -49,6 +55,11 @@ namespace Assets.Scripts.DevTools.Core
         private IDevToolsScreen _activeScreen;
         private bool _isPanelOpen;
         private bool _isFeatureScreenOpen;
+        private bool _hasPanelLayout;
+        private bool _hasUserPanelSize;
+        private bool _layoutWasFeatureScreen;
+        private Vector2 _panelTopLeft;
+        private Vector2 _panelSize;
 
         public DevToolsOverlayShell(GameObject host, AccountService accountService)
         {
@@ -86,6 +97,19 @@ namespace Assets.Scripts.DevTools.Core
             Image panelImage = _panelObject.GetComponent<Image>();
             panelImage.color = _panelColor;
             panelImage.raycastTarget = true;
+
+            GameObject dragHandle = new GameObject(
+                "DragHandle",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(DevToolsPointerDragHandle));
+            dragHandle.transform.SetParent(_panelObject.transform, false);
+            Image dragHandleImage = dragHandle.GetComponent<Image>();
+            dragHandleImage.color = new Color(1f, 1f, 1f, 0.001f);
+            dragHandleImage.raycastTarget = true;
+            dragHandle.GetComponent<DevToolsPointerDragHandle>().Configure(MovePanel);
+            _dragHandleRect = dragHandle.GetComponent<RectTransform>();
 
             _titleText = ui.CreateText(
                 "Title",
@@ -128,9 +152,22 @@ namespace Assets.Scripts.DevTools.Core
             _gameplayScreen = new GameplayDevToolsScreen(
                 _panelObject.transform,
                 font,
-                ClosePanel,
                 ShowRootScreen,
                 SetTitle);
+
+            Button resizeHandle = ui.CreateButton(
+                "ResizeHandle",
+                _panelObject.transform,
+                "↘",
+                DevToolsTheme.Navigation,
+                () => { },
+                _baseResizeHandleSize);
+            resizeHandle.navigation = new Navigation { mode = Navigation.Mode.None };
+            resizeHandle.gameObject
+                .AddComponent<DevToolsPointerDragHandle>()
+                .Configure(ResizePanel);
+            _resizeHandleRect = resizeHandle.GetComponent<RectTransform>();
+            resizeHandle.transform.SetAsLastSibling();
 
             ShowRootScreen();
             SetPanelOpen(false);
@@ -141,6 +178,7 @@ namespace Assets.Scripts.DevTools.Core
         {
             EnsureEventSystem();
             ApplyLayout();
+            GameProgressTestRunner.Shared.Tick();
             if (_isPanelOpen)
             {
                 _activeScreen?.RefreshPresentation();
@@ -237,25 +275,52 @@ namespace Assets.Scripts.DevTools.Core
             float scale = GetScale();
             float margin = _baseMargin * scale;
             Rect safeArea = GetSafeArea();
-            float left = safeArea.xMin + margin;
-            float top = Mathf.Max(margin, Screen.height - safeArea.yMax + margin);
+
+            // DEV launcher остаётся в штатной позиции независимо от пользовательского layout окна.
+            float defaultLeft = safeArea.xMin + margin;
+            float defaultTop = Mathf.Max(margin, Screen.height - safeArea.yMax + margin);
             DevToolsUiFactory.SetTopLeft(
                 _openButtonRect,
-                left,
-                top,
+                defaultLeft,
+                defaultTop,
                 _baseOpenButtonWidth * scale,
                 _baseHeaderHeight * scale);
 
-            float availableWidth = Mathf.Max(_baseOpenButtonWidth * scale, safeArea.xMax - left - margin);
+            float availableWidth = Mathf.Max(
+                _baseOpenButtonWidth * scale,
+                safeArea.width - margin * 2f);
             float availableHeight = Mathf.Max(_baseHeaderHeight * scale, safeArea.height - margin * 2f);
             float baseWidth = _isFeatureScreenOpen ? _baseFeaturePanelWidth : _baseRootPanelWidth;
             float baseHeight = _isFeatureScreenOpen ? _baseFeaturePanelHeight : _baseRootPanelHeight;
-            float panelWidth = Mathf.Min(baseWidth * scale, availableWidth);
-            float panelHeight = Mathf.Min(baseHeight * scale, availableHeight);
+            Vector2 defaultSize = new Vector2(
+                Mathf.Min(baseWidth * scale, availableWidth),
+                Mathf.Min(baseHeight * scale, availableHeight));
+
+            // До первого resize сохраняем прежние root/feature размеры, затем используем пользовательский размер.
+            if (!_hasPanelLayout)
+            {
+                _panelTopLeft = new Vector2(defaultLeft, defaultTop);
+                _panelSize = defaultSize;
+                _hasPanelLayout = true;
+            }
+            else if (!_hasUserPanelSize && _layoutWasFeatureScreen != _isFeatureScreenOpen)
+            {
+                _panelSize = defaultSize;
+            }
+
+            _layoutWasFeatureScreen = _isFeatureScreenOpen;
+            ClampPanelLayout(safeArea, margin, scale);
+
+            float left = _panelTopLeft.x;
+            float top = _panelTopLeft.y;
+            float panelWidth = _panelSize.x;
+            float panelHeight = _panelSize.y;
             DevToolsUiFactory.SetTopLeft(_panelRect, left, top, panelWidth, panelHeight);
 
+            // Header и drag/resize handles перестраиваются вместе с окном.
             float inset = _baseInset * scale;
             float rowHeight = _baseHeaderHeight * scale;
+            float resizeHandleSize = _baseResizeHandleSize * scale;
             float titleY = inset * 0.65f;
             float backWidth = _baseBackButtonWidth * scale;
             float titleLeft = _isFeatureScreenOpen ? inset + backWidth + inset * 0.5f : inset;
@@ -272,14 +337,89 @@ namespace Assets.Scripts.DevTools.Core
                 titleY,
                 rowHeight,
                 rowHeight);
+            DevToolsUiFactory.SetTopLeft(
+                _dragHandleRect,
+                0f,
+                0f,
+                panelWidth,
+                titleY + rowHeight + inset * 0.35f);
+            DevToolsUiFactory.SetTopLeft(
+                _resizeHandleRect,
+                panelWidth - resizeHandleSize,
+                panelHeight - resizeHandleSize,
+                resizeHandleSize,
+                resizeHandleSize);
 
+            // Active screen получает responsive viewport и не перекрывает touch resize handle.
             float contentTop = titleY + rowHeight + inset;
-            _activeScreen?.ApplyLayout(inset, contentTop, inset, inset);
+            float contentRight = Mathf.Max(inset, resizeHandleSize * 0.75f);
+            float contentBottom = Mathf.Max(inset, resizeHandleSize * 0.75f);
+            _activeScreen?.ApplyLayout(inset, contentTop, contentRight, contentBottom);
             _titleText.fontSize = Mathf.RoundToInt(16f * scale);
             foreach (Text text in _openButtonObject.GetComponentsInChildren<Text>(true))
             {
                 text.fontSize = Mathf.RoundToInt(DevToolsTheme.ButtonFontSize * scale);
             }
+        }
+
+        private void MovePanel(Vector2 pointerDelta)
+        {
+            if (!_hasPanelLayout)
+                return;
+
+            float scale = GetScale();
+            _panelTopLeft += new Vector2(pointerDelta.x, -pointerDelta.y);
+            ClampPanelLayout(GetSafeArea(), _baseMargin * scale, scale);
+            ApplyLayout();
+        }
+
+        private void ResizePanel(Vector2 pointerDelta)
+        {
+            if (!_hasPanelLayout)
+                return;
+
+            float scale = GetScale();
+            float margin = _baseMargin * scale;
+            Rect safeArea = GetSafeArea();
+            float safeRight = safeArea.xMax - margin;
+            float safeBottom = Screen.height - safeArea.yMin - margin;
+            float minimumWidth = Mathf.Min(
+                _baseMinimumPanelWidth * scale,
+                safeRight - _panelTopLeft.x);
+            float minimumHeight = Mathf.Min(
+                _baseMinimumPanelHeight * scale,
+                safeBottom - _panelTopLeft.y);
+
+            _panelSize = new Vector2(
+                Mathf.Clamp(
+                    _panelSize.x + pointerDelta.x,
+                    minimumWidth,
+                    safeRight - _panelTopLeft.x),
+                Mathf.Clamp(
+                    _panelSize.y - pointerDelta.y,
+                    minimumHeight,
+                    safeBottom - _panelTopLeft.y));
+            _hasUserPanelSize = true;
+            ApplyLayout();
+        }
+
+        private void ClampPanelLayout(Rect safeArea, float margin, float scale)
+        {
+            float safeLeft = safeArea.xMin + margin;
+            float safeTop = Mathf.Max(margin, Screen.height - safeArea.yMax + margin);
+            float safeRight = safeArea.xMax - margin;
+            float safeBottom = Screen.height - safeArea.yMin - margin;
+            float availableWidth = Mathf.Max(1f, safeRight - safeLeft);
+            float availableHeight = Mathf.Max(1f, safeBottom - safeTop);
+            float minimumWidth = Mathf.Min(_baseMinimumPanelWidth * scale, availableWidth);
+            float minimumHeight = Mathf.Min(_baseMinimumPanelHeight * scale, availableHeight);
+
+            _panelSize = new Vector2(
+                Mathf.Clamp(_panelSize.x, minimumWidth, availableWidth),
+                Mathf.Clamp(_panelSize.y, minimumHeight, availableHeight));
+            _panelTopLeft = new Vector2(
+                Mathf.Clamp(_panelTopLeft.x, safeLeft, safeRight - _panelSize.x),
+                Mathf.Clamp(_panelTopLeft.y, safeTop, safeBottom - _panelSize.y));
         }
 
         private static Font LoadDefaultFont()

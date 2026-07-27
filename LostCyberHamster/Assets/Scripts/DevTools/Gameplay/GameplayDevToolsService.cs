@@ -17,14 +17,11 @@ namespace Assets.Scripts.DevTools.Gameplay
         public GameplayDevToolsSnapshot GetSnapshot()
         {
             RuntimeBotController bot = FindBot();
-            bool canCompleteLevel =
-                LevelController.Instance?.LevelData?.GameManager?.State == GameState.PLAYING;
 
             return new GameplayDevToolsSnapshot(
                 bot != null,
                 bot != null && bot.IsEnabled,
-                DevToolsRuntimeState.UnlockAllLevels,
-                canCompleteLevel);
+                DevToolsRuntimeState.UnlockAllLevels);
         }
 
         public GameplayDevToolsActionResult ToggleBot()

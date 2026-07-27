@@ -13,7 +13,6 @@ namespace Assets.Scripts.DevTools.Gameplay
             bool botEnabled,
             bool unlockAllLevels,
             bool botActionAvailable,
-            bool completeLevelAvailable,
             bool actionsAvailable)
         {
             BotLabel = botLabel;
@@ -22,7 +21,6 @@ namespace Assets.Scripts.DevTools.Gameplay
             BotEnabled = botEnabled;
             UnlockAllLevels = unlockAllLevels;
             BotActionAvailable = botActionAvailable;
-            CompleteLevelAvailable = completeLevelAvailable;
             ActionsAvailable = actionsAvailable;
         }
 
@@ -32,7 +30,6 @@ namespace Assets.Scripts.DevTools.Gameplay
         public bool BotEnabled { get; }
         public bool UnlockAllLevels { get; }
         public bool BotActionAvailable { get; }
-        public bool CompleteLevelAvailable { get; }
         public bool ActionsAvailable { get; }
     }
 }

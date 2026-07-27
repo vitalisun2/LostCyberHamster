@@ -34,7 +34,7 @@ namespace Assets.Scripts.DevTools.Account
             _setTitle = setTitle;
 
             var uiFactory = new DevToolsUiFactory(font);
-            RootObject = uiFactory.CreateStaticPage("AccountScreen", parent, out Transform content);
+            RootObject = uiFactory.CreateScrollPage("AccountScreen", parent, out Transform content);
             _rootRect = RootObject.GetComponent<RectTransform>();
 
             uiFactory.CreateSectionHeading("LocalResetHeading", content, "Local Account Reset");

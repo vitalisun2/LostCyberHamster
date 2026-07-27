@@ -10,7 +10,7 @@ namespace Assets.Scripts.DevTools.Gameplay
     {
         private readonly GameplayDevToolsService _service;
         private readonly GameplayDevToolsView _view;
-        private readonly Action _closePanel;
+        private readonly Action _openGameProgressTesting;
 
         private bool _isBusy;
         private string _lastStatus = string.Empty;
@@ -18,16 +18,15 @@ namespace Assets.Scripts.DevTools.Gameplay
         public GameplayDevToolsController(
             GameplayDevToolsService service,
             GameplayDevToolsView view,
-            Action closePanel)
+            Action openGameProgressTesting)
         {
             _service = service;
             _view = view;
-            _closePanel = closePanel;
+            _openGameProgressTesting = openGameProgressTesting;
 
             _view.BotToggleRequested += ToggleBot;
             _view.UnlockAllToggleRequested += ToggleUnlockAll;
-            _view.CompleteLevelRequested += CompleteLevel;
-            _view.ResetProgressRequested += ResetProgress;
+            _view.GameProgressTestingRequested += OpenGameProgressTesting;
         }
 
         public void RefreshPresentation()
@@ -41,7 +40,6 @@ namespace Assets.Scripts.DevTools.Gameplay
                 snapshot.BotEnabled,
                 snapshot.UnlockAllLevels,
                 snapshot.BotAvailable && !_isBusy,
-                snapshot.CompleteLevelAvailable && !_isBusy,
                 !_isBusy));
         }
 
@@ -55,14 +53,10 @@ namespace Assets.Scripts.DevTools.Gameplay
             RunAction(_service.ToggleUnlockAll);
         }
 
-        private void CompleteLevel()
+        private void OpenGameProgressTesting()
         {
-            RunAction(_service.CompleteLevelWithThreeStars);
-        }
-
-        private void ResetProgress()
-        {
-            RunAction(_service.ResetProgress);
+            if (!_isBusy)
+                _openGameProgressTesting?.Invoke();
         }
 
         private void RunAction(Func<GameplayDevToolsActionResult> action)
@@ -77,8 +71,6 @@ namespace Assets.Scripts.DevTools.Gameplay
             {
                 GameplayDevToolsActionResult result = action();
                 _lastStatus = result.Message;
-                if (result.Succeeded && result.ClosePanel)
-                    _closePanel?.Invoke();
             }
             catch (Exception exception)
             {

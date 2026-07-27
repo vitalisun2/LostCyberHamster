@@ -4,9 +4,16 @@ using UnityEngine;
 
 namespace LostCyberHamster.Editor.Testing
 {
-    /// <summary>Показывает и запускает пошаговые Cloud Save E2E-сценарии.</summary>
+    /// <summary>Показывает общий Tools/Testing с Cloud Save и Game Progress страницами.</summary>
     public sealed class CloudSaveTestingWindow : EditorWindow
     {
+        private enum TestingPage
+        {
+            Start,
+            CloudSave,
+            GameProgress
+        }
+
         /// <summary>Минимальная ширина окна.</summary>
         private const float MinWindowWidth = 520f;
 
@@ -37,8 +44,11 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Выполняет выбранный сценарий.</summary>
         private CloudSaveE2ERunner _runner;
 
-        /// <summary>Показывает страницу Cloud Save.</summary>
-        private bool _showCloudSaveTesting;
+        /// <summary>Рисует и обслуживает страницу Game Progress Testing.</summary>
+        private GameProgress.GameProgressTestingPage _gameProgressPage;
+
+        /// <summary>Текущая страница общего окна Testing.</summary>
+        private TestingPage _currentPage;
 
         /// <summary>Позиция списка сценариев.</summary>
         private Vector2 _scenarioScrollPosition;
@@ -55,37 +65,45 @@ namespace LostCyberHamster.Editor.Testing
             window.Focus();
         }
 
-        /// <summary>Подключает окно к runner и Play Mode.</summary>
+        /// <summary>Создаёт обе testing-страницы и подключает единый Play Mode callback.</summary>
         private void OnEnable()
         {
             _runner = new CloudSaveE2ERunner();
             _runner.Changed += Repaint;
+            _gameProgressPage = new GameProgress.GameProgressTestingPage(Repaint);
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        /// <summary>Останавливает работу при закрытии окна.</summary>
+        /// <summary>Освобождает обе testing-страницы при закрытии окна.</summary>
         private void OnDisable()
         {
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
 
-            if (_runner == null)
-                return;
+            if (_runner != null)
+            {
+                _runner.Changed -= Repaint;
+                if (_runner.IsActive)
+                    _runner.Cancel();
+            }
 
-            _runner.Changed -= Repaint;
-            if (_runner.IsActive)
-                _runner.Cancel();
+            _gameProgressPage?.Dispose();
         }
 
         /// <summary>Рисует текущую страницу окна.</summary>
         private void OnGUI()
         {
-            if (_showCloudSaveTesting)
+            switch (_currentPage)
             {
-                DrawCloudSavePage();
-                return;
+                case TestingPage.CloudSave:
+                    DrawCloudSavePage();
+                    break;
+                case TestingPage.GameProgress:
+                    _gameProgressPage.Draw(() => _currentPage = TestingPage.Start);
+                    break;
+                default:
+                    DrawStartPage();
+                    break;
             }
-
-            DrawStartPage();
         }
 
         /// <summary>Рисует список доступных продуктов.</summary>
@@ -101,7 +119,7 @@ namespace LostCyberHamster.Editor.Testing
                         GUILayout.Width(ProductButtonWidth),
                         GUILayout.Height(ProductButtonHeight)))
                 {
-                    _showCloudSaveTesting = true;
+                    _currentPage = TestingPage.CloudSave;
                 }
 
                 if (GUILayout.Button(
@@ -109,7 +127,7 @@ namespace LostCyberHamster.Editor.Testing
                         GUILayout.Width(ProductButtonWidth),
                         GUILayout.Height(ProductButtonHeight)))
                 {
-                    GameProgress.GameProgressTestingWindow.ShowWindow();
+                    _currentPage = TestingPage.GameProgress;
                 }
             }
         }
@@ -138,7 +156,7 @@ namespace LostCyberHamster.Editor.Testing
                 using (new EditorGUI.DisabledScope(_runner.IsActive))
                 {
                     if (GUILayout.Button("Back", GUILayout.Width(70f)))
-                        _showCloudSaveTesting = false;
+                        _currentPage = TestingPage.Start;
                 }
 
                 EditorGUILayout.LabelField("Cloud Save Testing", EditorStyles.boldLabel);
@@ -258,7 +276,7 @@ namespace LostCyberHamster.Editor.Testing
             return _outputStyle;
         }
 
-        /// <summary>Отменяет тест при выходе из Play Mode.</summary>
+        /// <summary>Передаёт смену Play Mode обеим testing-страницам.</summary>
         private void OnPlayModeStateChanged(PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.ExitingPlayMode &&
@@ -268,6 +286,7 @@ namespace LostCyberHamster.Editor.Testing
                 _runner.Cancel();
             }
 
+            _gameProgressPage?.HandlePlayModeStateChanged(state);
             Repaint();
         }
 
