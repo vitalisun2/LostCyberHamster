@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
-    public sealed class ElectricStrikeAttack
+    public sealed class ElectricStrikeAttack : ISuperAttackRuntime
     {
         public const string EffectAddress = "ElectricStrikePrefab";
         public const int DefaultChargePerObstacle = 35;
@@ -27,7 +27,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             ChargePerObstacle = chargePerObstacle;
         }
 
-        public void Apply()
+        public bool TryActivate()
         {
             var hamster = LevelController.Instance.LevelData.Hamster;
             HelpMethods.CreateUltaEffect(_effectPrefab, hamster);
@@ -37,6 +37,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             {
                 hamster.StartCoroutine(DestroyObstaclesWithDelay(obstaclesInRange, 0.1f));
             }
+
+            return true;
         }
 
         public void Update()

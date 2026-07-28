@@ -155,6 +155,7 @@
     <Compile Include="Assets\Scripts\DevTools\Core\DevToolsOverlayShell.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerExperienceService.cs" />
     <Compile Include="Assets\Scripts\Bot\Execution\PlanExecutor.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\ISuperAttackRuntime.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\IRoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\AwaitExtensions.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Models\CloudSaveConflict.cs" />

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
-    public sealed class EnergyShieldAttack
+    public sealed class EnergyShieldAttack : ISuperAttackRuntime
     {
         public const string EffectAddress = "EnergyShieldPrefab";
         public const float DefaultDuration = 5f;
@@ -29,17 +29,18 @@ namespace Assets.Scripts.GameEngine.Mechanics
             ChargePerObstacle = chargePerObstacle;
         }
 
-        public void Apply()
+        public bool TryActivate()
         {
             if (IsActive)
             {
                 Debug.LogWarning("Ulta is already active");
-                return;
+                return false;
             }
 
             _timeLeft = _duration;
             var hamster = LevelController.Instance.LevelData.Hamster;
             hamster.StartCoroutine(RunAttack(hamster));
+            return true;
         }
 
         public void Update()
