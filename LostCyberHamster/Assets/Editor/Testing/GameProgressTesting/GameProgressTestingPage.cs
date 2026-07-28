@@ -9,7 +9,7 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
     internal sealed class GameProgressTestingPage : IDisposable
     {
         private const float CommandButtonWidth = 190f;
-        private const int OutputFontSize = 20;
+        private const int OutputFontSize = 16;
         private const int OutputHeadingFontSize = 20;
 
         private readonly Action _repaint;
@@ -115,9 +115,60 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
         private void DrawStatus()
         {
             EditorGUILayout.Space(8f);
-            DrawOutputSection("Current Target", _runner.CurrentPoint);
+            DrawOutputSection(
+                "Current Target",
+                FormatCurrentTarget(_runner.CurrentPoint));
             DrawOutputSection("Status", _runner.Status);
             DrawOutputSection("Action Log", _runner.CurrentAction);
+        }
+
+        private static string FormatCurrentTarget(string target)
+        {
+            if (string.IsNullOrWhiteSpace(target))
+                return string.Empty;
+
+            var readableTarget = target.Trim();
+            var technicalSuffixIndex = readableTarget.LastIndexOf(
+                " (",
+                StringComparison.Ordinal);
+            if (technicalSuffixIndex > 0 &&
+                readableTarget.EndsWith(")", StringComparison.Ordinal))
+            {
+                readableTarget = readableTarget.Substring(0, technicalSuffixIndex);
+            }
+
+            readableTarget = readableTarget.Replace(" / level ", " / Level ");
+            var addressParts = readableTarget.Split('/');
+            if (addressParts.Length != 3 || readableTarget.Contains(" / "))
+                return readableTarget;
+
+            var locationName = FormatIdentifier(addressParts[0], skipNumericPrefix: true);
+            var partName = FormatIdentifier(addressParts[1], skipNumericPrefix: false);
+            var levelName = FormatIdentifier(addressParts[2], skipNumericPrefix: false);
+            return $"{locationName} / {partName} / {levelName}";
+        }
+
+        private static string FormatIdentifier(
+            string identifier,
+            bool skipNumericPrefix)
+        {
+            var words = identifier.Trim().Split('_');
+            var firstWordIndex = skipNumericPrefix &&
+                                 words.Length > 1 &&
+                                 int.TryParse(words[0], out _)
+                ? 1
+                : 0;
+
+            for (var index = firstWordIndex; index < words.Length; index++)
+            {
+                if (int.TryParse(words[index], out var number))
+                    words[index] = number.ToString();
+                else if (index == firstWordIndex && words[index].Length > 0)
+                    words[index] = char.ToUpperInvariant(words[index][0]) +
+                                   words[index].Substring(1);
+            }
+
+            return string.Join(" ", words, firstWordIndex, words.Length - firstWordIndex);
         }
 
         private void DrawOutputSection(string heading, string value)
