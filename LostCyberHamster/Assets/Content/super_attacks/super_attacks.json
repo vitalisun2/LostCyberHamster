@@ -1,0 +1,22 @@
+{
+  "SuperAttacks": [
+    {
+      "Id": 1,
+      "NameLocalizationKey": "energy shield",
+      "IconAddress": "skin_energy-shield",
+      "UltaPrefab": "EnergyShieldPrefab",
+      "UltaDuration": 5,
+      "UltaCharge": 20,
+      "RequiredPlayerLevel": 2
+    },
+    {
+      "Id": 2,
+      "NameLocalizationKey": "electric strike",
+      "IconAddress": "skin_electric-strike",
+      "UltaPrefab": "ElectricStrikePrefab",
+      "UltaDuration": 0,
+      "UltaCharge": 35,
+      "RequiredPlayerLevel": 3
+    }
+  ]
+}

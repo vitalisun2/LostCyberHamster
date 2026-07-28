@@ -7,7 +7,7 @@ using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
 using UnityEngine;
 
-namespace Assets.Scripts.GameEngine.Mechanics
+namespace Vues.GameCore
 {
     public sealed class ElectricStrikeAttack : ISuperAttackRuntime
     {

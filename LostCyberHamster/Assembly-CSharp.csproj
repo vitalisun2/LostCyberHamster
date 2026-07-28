@@ -72,6 +72,7 @@
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitRoadLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Account\AccountService.cs" />
     <Compile Include="Assets\Scripts\UI\Components\CrystalStorageUI.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Catalog\SuperAttackData.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvanceStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectPlanner.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoof\SuperJumpFromRoofPolicy.cs" />
@@ -116,7 +117,6 @@
     <Compile Include="Assets\Scripts\Bot\Perception\HamsterSnapshot.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowCalculator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\JumpOnRoofFireWindowFinder.cs" />
-    <Compile Include="Assets\Scripts\GameEngine\Mechanics\ElectricStrikeAttack.cs" />
     <Compile Include="Assets\Scripts\Installers\BootstrapSceneInstaller.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialGameplayStep.cs" />
     <Compile Include="Assets\Scripts\Account\AccountState.cs" />
@@ -148,14 +148,16 @@
     <Compile Include="Assets\Scripts\DevTools\Core\DevToolsUiFactory.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneWindow.cs" />
     <Compile Include="Assets\Scripts\Debug\AndroidDiagnosticsHelper.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\UltaMechanics.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Version\CloudSaveVersionStore.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Effects\EnergyShieldUlta.cs" />
     <Compile Include="Assets\Scripts\UI\ResourceUIHelper.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitPlanner.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerData.cs" />
     <Compile Include="Assets\Scripts\DevTools\Core\DevToolsOverlayShell.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerExperienceService.cs" />
     <Compile Include="Assets\Scripts\Bot\Execution\PlanExecutor.cs" />
-    <Compile Include="Assets\Scripts\GameEngine\Mechanics\ISuperAttackRuntime.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\ISuperAttackRuntime.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\IRoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\AwaitExtensions.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Models\CloudSaveConflict.cs" />
@@ -217,6 +219,7 @@
     <Compile Include="Assets\Scripts\System\Models\AssetsDataForPreload.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\CollectibleKind.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\GameplayDevToolsSnapshot.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\EnergyShieldAttack.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Configuration\ConfigurationManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\JumpOnRoofActionResolver.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\JumpFromRoofOnRoofFireWindowFinder.cs" />
@@ -350,12 +353,13 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneTargetResolver.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\RoofJumpResolveContext.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Simulation\InProgressProjectionOptions.cs" />
+    <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitSuperAttacksLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Gameplay\EnergeticBonus.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\Ultas\ElectricStrikeUlta.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\IJumpFromRoofOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\BotDiagnosticLevel.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\JumpFromRoofOnRoofWindowCalculator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Timing\SafeInterval.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\ElectricStrikeAttack.cs" />
     <Compile Include="Assets\Scripts\UI\Components\LevelItem.cs" />
     <Compile Include="Assets\Scripts\CloudSave\ConflictService.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameEntryPoint.cs" />
@@ -384,7 +388,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofSpecification.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictCoordinator.cs" />
     <Compile Include="Assets\Scripts\Diagnostics\DeviceLogUploader.cs" />
-    <Compile Include="Assets\Scripts\GameEngine\Mechanics\EnergyShieldAttack.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\LoadAddressablesLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\LeaderboardSubmissionResult.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelEnum.cs" />
@@ -410,6 +413,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnRoof\JumpOnRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictModalController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\RoofJumpOverTravel.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Catalog\SuperAttackDataList.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperRoofJumpOver\SuperRoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\System\Resources\AddressableSetLease.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\ProgressService.cs" />
@@ -426,7 +430,6 @@
     <Compile Include="Assets\Scripts\Leaderboard\LeaderboardService.cs" />
     <Compile Include="Assets\Scripts\Gameplay\LifeBonus.cs" />
     <Compile Include="Assets\Scripts\DevTools\GameProgressTesting\GameProgressTestRunner.cs" />
-    <Compile Include="Assets\Scripts\GameEngine\Mechanics\UltaMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningGraphNode.cs" />
     <Compile Include="Assets\Scripts\DevTools\Account\AccountDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CollectCoinsOrBonusAction.cs" />
@@ -497,6 +500,7 @@
     <Compile Include="Assets\Scripts\SharedCore\UI\UIElements\LocalizedLabel.cs" />
     <Compile Include="Assets\Scripts\Common\Models\PatternTemplate.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Gateway\ICloudSaveGateway.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\UltaChargeMechanics.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranchMetrics.cs" />
     <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinTarget.cs" />
@@ -511,6 +515,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\HealthBarMechanics.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialGameplayStepCatalog.cs" />
     <Compile Include="Assets\Scripts\Consts.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\SuperAttackService.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\PartOfDayScoreMechanics.cs" />
     <Compile Include="Assets\Scripts\System\Models\PreloadedEffect.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverPolicy.cs" />
@@ -548,12 +553,12 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoofOnRoof\SuperJumpFromRoofOnRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\DevTools\Core\DevToolsPointerDragHandle.cs" />
     <Compile Include="Assets\Scripts\Diagnostics\DeviceLogUploadSettings.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\Ultas\EnergyShieldUlta.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\ActionGenerator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ResourceType.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\IntroScreenController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Timing\UnsafeInterval.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Effects\ElectricStrikeUlta.cs" />
     <Compile Include="Assets\Scripts\Diagnostics\DeviceLogStartupProbe.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Models\ActionFireResult.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictModalDto.cs" />
@@ -575,7 +580,6 @@
     <Compile Include="Assets\Scripts\GameManagerLogic\IInstaller.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapEntryPoint.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvanceModel.cs" />
-    <Compile Include="Assets\Scripts\GameEngine\Mechanics\UltaChargeMechanics.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiPauseMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\RoofExitSafety.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\TargetRemovalPostActionSafety.cs" />

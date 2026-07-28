@@ -14,6 +14,7 @@ namespace Assets.Scripts.Installers
             Container.Bind<ILoadingTask>().To<StartAccountLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitAnalyticsManagerLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitSkinsLoadingTask>().AsTransient();
+            Container.Bind<ILoadingTask>().To<InitSuperAttacksLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitGameRepositoryLoadingTask>().AsTransient();
             //Container.Bind<ILoadingTask>().To<LoadAddressablesLoadingTask>().AsTransient();
             Container.Bind<ILoadingTask>().To<InitLocalizationLoadingTask>().AsTransient();

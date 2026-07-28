@@ -2,7 +2,7 @@ using System;
 using Atomic.Elements;
 using UnityEngine;
 
-namespace Assets.Scripts.GameEngine.Mechanics
+namespace Vues.GameCore
 {
     public class UltaMechanics
     {

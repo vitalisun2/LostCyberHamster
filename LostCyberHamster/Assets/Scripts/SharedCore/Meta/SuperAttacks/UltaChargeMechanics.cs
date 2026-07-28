@@ -2,7 +2,7 @@ using Atomic.Elements;
 using Assets.Scripts.Gameplay;
 using UnityEngine;
 
-namespace Assets.Scripts.GameEngine.Mechanics
+namespace Vues.GameCore
 {
     public class UltaChargeMechanics
     {

@@ -1,4 +1,4 @@
-namespace Assets.Scripts.GameEngine.Mechanics
+namespace Vues.GameCore
 {
     /// <summary>
     /// Описывает суперудар, готовый к применению в забеге.
