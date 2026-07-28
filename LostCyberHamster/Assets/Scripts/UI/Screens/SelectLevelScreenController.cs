@@ -122,6 +122,9 @@ namespace LostCyberHamster.UI
         private async Task InitLocation()
         {
             var openedLocations = LevelManager.OpenedLocations;
+            _currentLocationIndex = openedLocations.Count > 0
+                ? Mathf.Clamp(_currentLocationIndex, 0, openedLocations.Count - 1)
+                : 0;
             var locationView = GetCurrentLocationView();
             Sprite resolvedSprite = null;
 
@@ -137,11 +140,6 @@ namespace LostCyberHamster.UI
 
             if (resolvedSprite == null)
             {
-                if (_currentLocationIndex >= openedLocations.Count)
-                {
-                    _currentLocationIndex = openedLocations.Count > 0 ? openedLocations.Count - 1 : 0;
-                }
-
                 if (openedLocations.Count > 0 && _currentLocationIndex < openedLocations.Count)
                 {
                     var fallbackInfo = openedLocations[_currentLocationIndex];
