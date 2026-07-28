@@ -63,6 +63,7 @@ namespace Assets.Scripts.Entry_Points
             _uiManager = new UIManager(new IScreenController[]
             {
                 new HomeScreenController(_uiDocument),
+                new SuperAttacksScreenController(_uiDocument),
                 new SettingsScreenController(
                     _uiDocument,
                     _accountService,

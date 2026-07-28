@@ -108,18 +108,33 @@ namespace Vues.GameCore
         }
 
         /// <summary>
-        /// Выбирает открытый суперудар и заменяет предыдущий выбор.
+        /// Выбирает открытый суперудар и откатывает выбор при ошибке сохранения.
         /// </summary>
         public static bool TrySelect(int id)
         {
-            if (!IsUnlocked(id, GameDataManager.PlayerData.PlayerLevel))
+            // Проверяем доступность до изменения данных игрока.
+            var playerData = GameDataManager.PlayerData;
+            if (!IsUnlocked(id, playerData.PlayerLevel))
             {
                 return false;
             }
 
-            GameDataManager.PlayerData.ActiveSuperAttackId = id;
-            PlayerProgressCommitter.Commit(CheckpointReason.SuperAttackSelected);
-            return true;
+            // Сохраняем выбор транзакционно с откатом in-memory состояния.
+            int previousActiveSuperAttackId =
+                playerData.ActiveSuperAttackId;
+            playerData.ActiveSuperAttackId = id;
+            try
+            {
+                PlayerProgressCommitter.Commit(
+                    CheckpointReason.SuperAttackSelected);
+                return true;
+            }
+            catch
+            {
+                playerData.ActiveSuperAttackId =
+                    previousActiveSuperAttackId;
+                throw;
+            }
         }
 
         private static void Validate(SuperAttackData data)

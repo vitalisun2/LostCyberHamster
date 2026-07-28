@@ -95,6 +95,12 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7476f59b01f12344fbdb7e64c4fd5321
+    m_Address: CloudSaveConflictModal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - screens
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7713a4d386f4d46a9b14adda64c9fb70
     m_Address: IntroScreen
     m_ReadOnly: 0
@@ -162,11 +168,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: df9a4ecd64704169af5792a98783a9df
-    m_Address: barcelona_preview
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a78d210370ef54037aaf094ba0053894
     m_Address: GameScreen
     m_ReadOnly: 0
@@ -218,6 +219,17 @@ MonoBehaviour:
     m_SerializedLabels:
     - screens
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: de0d824a896bdfe489c56ca72cfb2f2f
+    m_Address: SuperAttacksScreen
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - screens
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: df9a4ecd64704169af5792a98783a9df
+    m_Address: barcelona_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e0fdcc782c1a44d6aa8c6c5419e95460
     m_Address: story-004
     m_ReadOnly: 0
@@ -257,12 +269,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: fa68dbf0fc0be4a1fa0c6360873d61c2
     m_Address: CharacterScreen
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - screens
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7476f59b01f12344fbdb7e64c4fd5321
-    m_Address: CloudSaveConflictModal
     m_ReadOnly: 0
     m_SerializedLabels:
     - screens

@@ -395,6 +395,78 @@
         {
             "key": "story-009-title",
             "value": "Collect 10 Energy Items"
+        },
+        {
+            "key": "energy shield",
+            "value": "Energy Shield"
+        },
+        {
+            "key": "electric strike",
+            "value": "Electric Strike"
+        },
+        {
+            "key": "super_attacks_back",
+            "value": "< BACK"
+        },
+        {
+            "key": "super_attacks_title",
+            "value": "SUPER ATTACKS"
+        },
+        {
+            "key": "super_attacks_hint",
+            "value": "Earn XP, raise your level, unlock super attacks"
+        },
+        {
+            "key": "super_attacks_level",
+            "value": "Level {0}"
+        },
+        {
+            "key": "super_attacks_level_short",
+            "value": "LVL"
+        },
+        {
+            "key": "super_attacks_xp_marker",
+            "value": "XP"
+        },
+        {
+            "key": "super_attacks_active",
+            "value": "✓ Active"
+        },
+        {
+            "key": "super_attacks_available",
+            "value": "Available"
+        },
+        {
+            "key": "super_attacks_select",
+            "value": "Select"
+        },
+        {
+            "key": "super_attacks_locked",
+            "value": "Locked"
+        },
+        {
+            "key": "super_attacks_unlocked_at_level",
+            "value": "Unlocked: Level {0}"
+        },
+        {
+            "key": "super_attacks_requires_level",
+            "value": "Requires Level {0}"
+        },
+        {
+            "key": "super_attacks_xp_threshold",
+            "value": "Threshold: {0} XP"
+        },
+        {
+            "key": "super_attacks_icon_load_error",
+            "value": "Could not load super attack icon '{0}': {1}"
+        },
+        {
+            "key": "super_attacks_refresh_error",
+            "value": "Could not refresh super attack cards: {0}"
+        },
+        {
+            "key": "super_attacks_selection_error",
+            "value": "Could not select super attack: {0}"
         }
     ]
 }

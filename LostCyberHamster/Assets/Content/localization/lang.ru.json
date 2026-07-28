@@ -395,6 +395,78 @@
         {
             "key": "story-009-title",
             "value": "Собери 10 энергетических предметов"
+        },
+        {
+            "key": "energy shield",
+            "value": "Энергетический щит"
+        },
+        {
+            "key": "electric strike",
+            "value": "Электрический удар"
+        },
+        {
+            "key": "super_attacks_back",
+            "value": "< НАЗАД"
+        },
+        {
+            "key": "super_attacks_title",
+            "value": "СУПЕРУДАРЫ"
+        },
+        {
+            "key": "super_attacks_hint",
+            "value": "Получай XP, повышай уровень, открывай суперудары"
+        },
+        {
+            "key": "super_attacks_level",
+            "value": "Уровень {0}"
+        },
+        {
+            "key": "super_attacks_level_short",
+            "value": "УР."
+        },
+        {
+            "key": "super_attacks_xp_marker",
+            "value": "XP"
+        },
+        {
+            "key": "super_attacks_active",
+            "value": "✓ Активен"
+        },
+        {
+            "key": "super_attacks_available",
+            "value": "Доступен"
+        },
+        {
+            "key": "super_attacks_select",
+            "value": "Выбрать"
+        },
+        {
+            "key": "super_attacks_locked",
+            "value": "Закрыт"
+        },
+        {
+            "key": "super_attacks_unlocked_at_level",
+            "value": "Открыт: уровень {0}"
+        },
+        {
+            "key": "super_attacks_requires_level",
+            "value": "Нужен уровень {0}"
+        },
+        {
+            "key": "super_attacks_xp_threshold",
+            "value": "Порог: {0} XP"
+        },
+        {
+            "key": "super_attacks_icon_load_error",
+            "value": "Не удалось загрузить иконку суперудара '{0}': {1}"
+        },
+        {
+            "key": "super_attacks_refresh_error",
+            "value": "Не удалось обновить карточки суперударов: {0}"
+        },
+        {
+            "key": "super_attacks_selection_error",
+            "value": "Не удалось выбрать суперудар: {0}"
         }
     ]
 }

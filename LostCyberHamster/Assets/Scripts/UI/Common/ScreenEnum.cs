@@ -17,6 +17,7 @@ namespace LostCyberHamster.UI
         PauseModal,
         WinModal,
         LoseModal,
+        SuperAttacksScreen,
 
     }
 

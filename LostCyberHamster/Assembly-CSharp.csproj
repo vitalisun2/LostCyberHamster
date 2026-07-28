@@ -449,6 +449,7 @@
     <Compile Include="Assets\Scripts\Diagnostics\DeviceLogReporter.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Session\TutorialStorage.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofPolicy.cs" />
+    <Compile Include="Assets\Scripts\UI\Screens\SuperAttacksScreenController.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\Listeners.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\LoadMainMenuLoadingTask.cs" />
     <Compile Include="Assets\Scripts\UI\Common\UIManager.cs" />
@@ -633,6 +634,7 @@
     <None Include="Assets\Content\ui\uxml\PlayButton.uxml" />
     <None Include="Assets\Content\ui\uxml\HomeButton.uxml" />
     <None Include="Assets\Content\ui\uxml\HomeScreen.uxml" />
+    <None Include="Assets\Content\ui\styles\SuperAttacksScreen.uss" />
     <None Include="Assets\Content\ui\uxml\LevelUI.uxml" />
     <None Include="Assets\Content\ui\uxml\IntroScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\GameScreen.uxml" />
@@ -654,6 +656,7 @@
     <None Include="Assets\Content\ui\uxml\Screen.uxml" />
     <None Include="Assets\Content\ui\styles\CloudSaveConflictModal.uss" />
     <None Include="Assets\Content\ui\uxml\LeaderboardScreen.uxml" />
+    <None Include="Assets\Content\ui\uxml\SuperAttacksScreen.uxml" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

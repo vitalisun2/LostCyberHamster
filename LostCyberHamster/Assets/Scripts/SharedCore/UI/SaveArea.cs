@@ -1,12 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// Manages the safe area borders for devices with notches or rounded corners. This uses a
-/// container element on top of all UIs that need to respect the safe area. Then, it adjusts the
-/// borderWidth property to match the Screen.safeArea property values.
+/// Преобразует физические границы safe area в координаты UI Toolkit panel.
 /// </summary>
 [ExecuteInEditMode]
 public class SaveArea : MonoBehaviour
@@ -82,33 +78,70 @@ public class SaveArea : MonoBehaviour
         ApplySafeArea();
     }
 
-    // Applies the safe area to the borders
+    /// <summary>
+    /// Применяет safe area к границам выбранного UI-контейнера.
+    /// </summary>
     void ApplySafeArea()
     {
         if (_root == null)
             return;
 
         Rect safeArea = Screen.safeArea;
+        float panelUnitsPerScreenPixel =
+            GetPanelUnitsPerScreenPixel();
 
-        // Calculate borders based on safe area rect
-        _leftBorder = safeArea.x;
-        _rightBorder = Screen.width - safeArea.xMax;
-        _topBorder = Screen.height - safeArea.yMax;
-        _bottomBorder = safeArea.y;
+        // Переводим физические пиксели экрана в координаты panel.
+        _leftBorder =
+            safeArea.x * panelUnitsPerScreenPixel;
+        _rightBorder =
+            (Screen.width - safeArea.xMax) *
+            panelUnitsPerScreenPixel;
+        _topBorder =
+            (Screen.height - safeArea.yMax) *
+            panelUnitsPerScreenPixel;
+        _bottomBorder =
+            safeArea.y * panelUnitsPerScreenPixel;
 
 
-        // Set border widths regardless of orientation
+        // Применяем границы независимо от ориентации.
         _root.style.borderTopWidth = _topBorder * _multiplier;
         _root.style.borderBottomWidth = _bottomBorder * _multiplier;
         _root.style.borderLeftWidth = _leftBorder * _multiplier;
         _root.style.borderRightWidth = _rightBorder * _multiplier;
 
 
-        // Apply border color
+        // Применяем цвет границ.
         _root.style.borderBottomColor = _borderColor;
         _root.style.borderTopColor = _borderColor;
         _root.style.borderLeftColor = _borderColor;
         _root.style.borderRightColor = _borderColor;
+    }
+
+    /// <summary>
+    /// Возвращает количество координат panel в одном физическом пикселе экрана.
+    /// </summary>
+    float GetPanelUnitsPerScreenPixel()
+    {
+        if (Screen.width <= 0)
+        {
+            return 1f;
+        }
+
+        float panelWidth =
+            _document.rootVisualElement.resolvedStyle.width;
+        if (!float.IsNaN(panelWidth) &&
+            !float.IsInfinity(panelWidth) &&
+            panelWidth > 0f)
+        {
+            return panelWidth / Screen.width;
+        }
+
+        // До первого layout используем reference width режима Match Width.
+        float referenceWidth =
+            _document.panelSettings?.referenceResolution.x ?? 0;
+        return referenceWidth > 0f
+            ? referenceWidth / Screen.width
+            : 1f;
     }
 }
 

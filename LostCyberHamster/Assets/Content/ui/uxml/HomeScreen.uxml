@@ -1,9 +1,25 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
     <engine:Template name="MainButtonGroup" src="project://database/Assets/Content/ui/uxml/MainButtonGroup.uxml?fileID=9197481963319205126&amp;guid=bda278450cb444e77baf19c884d0a62a&amp;type=3#MainButtonGroup" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <Style src="../styles/SuperAttacksScreen.uss" />
     <engine:VisualElement name="homescreen" style="flex-grow: 1;">
-        <engine:Instance template="Toolbar" name="toolbar" />
+        <engine:VisualElement name="home__hud" class="home-hud">
+            <engine:VisualElement class="home-hud__side home-hud__left">
+                <engine:Button text="DEF" name="btn_character" class="lcs_btn home-hud__character-button" />
+                <LostCyberHamster.UI.MoneyStorageUI />
+                <LostCyberHamster.UI.CrystalStorageUI />
+            </engine:VisualElement>
+            <engine:VisualElement name="home__xp-panel" class="home-super-attacks-xp-panel">
+                <engine:Label name="home__player-level" class="lcs-text home-super-attacks-xp-panel__level" picking-mode="Ignore" />
+                <engine:ProgressBar name="home__xp-progress" value="0" high-value="240" title="" class="home-super-attacks-xp-panel__progress" picking-mode="Ignore" />
+                <engine:Label name="home__xp-label" class="lcs-text home-super-attacks-xp-panel__xp" picking-mode="Ignore" />
+                <engine:Button name="super-attacks__xp-button" class="home-super-attacks-xp-panel__hit-area" />
+            </engine:VisualElement>
+            <engine:VisualElement class="home-hud__side home-hud__right">
+                <engine:Button icon-image="project://database/Assets/Content/ui/textures/ui_atlas.psd?fileID=9013006513900664874&amp;guid=29047d9fdf8ef4acdbb6f67516476d96&amp;type=3#settings_icon" name="btn_settings" class="lcs_btn home-hud__settings-button" />
+            </engine:VisualElement>
+        </engine:VisualElement>
+        <engine:Button name="btn_home" style="display: none;" />
         <engine:VisualElement style="flex-grow: 1; justify-content: center; align-items: center; min-width: 10%;">
             <Vues.GameCore.LocalizedButton key="btn_play" name="btn_play" class="lcs_btn" />
             <Vues.GameCore.LocalizedLabel key="lbl_or" class="lcs-text" />

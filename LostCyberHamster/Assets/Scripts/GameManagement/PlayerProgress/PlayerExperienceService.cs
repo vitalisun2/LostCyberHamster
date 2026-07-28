@@ -7,7 +7,11 @@ namespace GameManagement.Progress
     /// </summary>
     public sealed class PlayerExperienceService
     {
-        private const int PlayerLevelThreshold = 240;
+        /// <summary>
+        /// Количество XP, необходимое для повышения Player Level.
+        /// </summary>
+        public const int PlayerLevelThreshold = 240;
+
         private const int ExperiencePerImprovedStar = 10;
         private const int WeeklyLeaderboardRecordExperienceReward = 50;
         private const int DailyQuestExperienceReward = 20;
