@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Assets.Scripts.System.Resources;
+using GameManagement;
 using UnityEngine;
 
 namespace Vues.GameCore
@@ -20,6 +21,11 @@ namespace Vues.GameCore
         /// Все суперудары в порядке каталога.
         /// </summary>
         public static IReadOnlyList<SuperAttackData> Items => _items;
+
+        /// <summary>
+        /// ID выбранного суперудара или пустое значение до первого выбора.
+        /// </summary>
+        public static int? ActiveSuperAttackId { get; private set; }
 
         /// <summary>
         /// Загружает каталог суперударов из Addressables.
@@ -92,6 +98,20 @@ namespace Vues.GameCore
 
             return TryGet(id, out SuperAttackData data) &&
                    playerLevel >= data.RequiredPlayerLevel;
+        }
+
+        /// <summary>
+        /// Выбирает открытый суперудар и заменяет предыдущий выбор.
+        /// </summary>
+        public static bool TrySelect(int id)
+        {
+            if (!IsUnlocked(id, GameDataManager.PlayerData.PlayerLevel))
+            {
+                return false;
+            }
+
+            ActiveSuperAttackId = id;
+            return true;
         }
 
         private static void Validate(SuperAttackData data)
