@@ -366,7 +366,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                     StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
-                    $"Открыт {currentLevel}; target теста {_state.TargetLevelAddress}. " +
+                    $"Открыт {FormatTarget(currentLevel)}; target теста " +
+                    $"{FormatTarget(_state.TargetLevelAddress)}. " +
                     "Нажмите Continue и выберите target.");
             }
 
@@ -465,14 +466,15 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 token);
             _selectionNavigationReachedMenu = true;
 
-            var selectLevelButton = FindVisibleElement<Button>("btn_select-level");
-            if (selectLevelButton == null)
-                throw new InvalidOperationException("Кнопка Select Level не найдена.");
-
             SetStatus(
                 $"Открывается Select Level для {FormatTarget(focusLevelAddress)}.",
                 $"Navigation: opening Select Level for {FormatTarget(focusLevelAddress)}.");
-            SendClick(selectLevelButton);
+
+            // UI route ждёт transition gate, пока HomeScreen завершает async-загрузку.
+            var showScreen = UIManager.OnScreenShow ??
+                             throw new InvalidOperationException(
+                                 "UI navigation route недоступен.");
+            showScreen(ScreenEnum.SelectLevelScreen);
             await WaitUntilAsync(
                 IsSelectLevelScreenShown,
                 "Select Level не открылся.",
@@ -494,7 +496,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             if (!TryResolvePart(targetLevelAddress, out var part))
             {
                 throw new InvalidOperationException(
-                    $"Day part для {targetLevelAddress} не найден.");
+                    $"Day part для {FormatTarget(targetLevelAddress)} не найден.");
             }
 
             var firstLevelAddress = part.Levels.FirstOrDefault().Address;
@@ -755,15 +757,15 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                     StringComparison.OrdinalIgnoreCase));
 
             if (string.IsNullOrWhiteSpace(level.Address))
-                return levelAddress ?? "unknown";
+                return "unknown location / unknown part of day / level";
 
             var location = model.Locations.FirstOrDefault(candidate =>
                 candidate.Index == level.LocationIndex);
             var part = location?.Parts.FirstOrDefault(candidate =>
                 candidate.Index == level.PartIndex);
-            return $"{location?.DisplayName ?? level.LocationId} / " +
-                   $"{part?.DisplayName ?? level.PartId} / level {level.LevelIndex + 1} " +
-                   $"({level.Address.Trim()})";
+            return $"{location?.DisplayName ?? "unknown location"} / " +
+                   $"{part?.DisplayName ?? "unknown part of day"} / " +
+                   $"level {level.LevelIndex + 1}";
         }
 
         private static string BuildOpeningActionTitle(string levelAddress)
@@ -782,7 +784,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                     levelAddress?.Trim(),
                     StringComparison.OrdinalIgnoreCase));
             if (string.IsNullOrWhiteSpace(level.Address))
-                return string.IsNullOrWhiteSpace(levelAddress) ? "level" : levelAddress;
+                return "unknown location / unknown part of day / level";
 
             return $"{FormatLocationAndPart(levelAddress)} / level {level.LevelIndex + 1}";
         }
@@ -802,8 +804,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 candidate.Index == level.LocationIndex);
             var part = location?.Parts.FirstOrDefault(candidate =>
                 candidate.Index == level.PartIndex);
-            return $"{location?.DisplayName ?? level.LocationId} / " +
-                   $"{part?.DisplayName ?? level.PartId}";
+            return $"{location?.DisplayName ?? "unknown location"} / " +
+                   $"{part?.DisplayName ?? "unknown part of day"}";
         }
 
         private static bool TryResolvePart(
