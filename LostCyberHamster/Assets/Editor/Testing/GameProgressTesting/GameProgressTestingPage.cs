@@ -85,6 +85,18 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
 
         private void DrawCommands()
         {
+            using (new EditorGUI.DisabledScope(!_runner.CanPrepareLevelUp))
+            {
+                if (GUILayout.Button(
+                        "Prepare Level Up",
+                        GUILayout.Width(CommandButtonWidth),
+                        GUILayout.Height(34f)))
+                {
+                    _runner.PrepareLevelUp();
+                }
+            }
+
+            EditorGUILayout.Space(4f);
             using (new EditorGUILayout.HorizontalScope())
             {
                 using (new EditorGUI.DisabledScope(!_runner.CanUsePrimaryAction))

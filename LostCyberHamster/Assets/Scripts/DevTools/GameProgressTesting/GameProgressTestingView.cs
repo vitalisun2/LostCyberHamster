@@ -11,6 +11,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
     {
         private const int OutputFontSize = 18;
 
+        private readonly Button _prepareLevelUpButton;
         private readonly Button _primaryButton;
         private readonly Text _primaryButtonText;
         private readonly Button _cancelButton;
@@ -35,6 +36,12 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 content,
                 "Start and Reset Progress reset real local progress. Level results use the normal game save flow.");
 
+            _prepareLevelUpButton = uiFactory.CreateButton(
+                "PrepareLevelUpButton",
+                content,
+                "Prepare Level Up",
+                DevToolsTheme.Button,
+                () => PrepareLevelUpRequested?.Invoke());
             _primaryButton = uiFactory.CreateButton(
                 "PrimaryButton",
                 content,
@@ -73,6 +80,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 "Current Action");
         }
 
+        public event Action PrepareLevelUpRequested;
         public event Action PrimaryRequested;
         public event Action CancelRequested;
         public event Action ResetProgressRequested;
@@ -81,6 +89,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
 
         public void Render(GameProgressTestRunner runner)
         {
+            _prepareLevelUpButton.interactable = runner.CanPrepareLevelUp;
             _primaryButtonText.text = runner.PrimaryActionTitle;
             _primaryButton.interactable = runner.CanUsePrimaryAction;
             _cancelButton.interactable = runner.CanCancel;

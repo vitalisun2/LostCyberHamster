@@ -23,6 +23,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
 
             var uiFactory = new DevToolsUiFactory(font);
             _view = new GameProgressTestingView(parent, uiFactory);
+            _view.PrepareLevelUpRequested += _runner.PrepareLevelUp;
             _view.PrimaryRequested += _runner.RunPrimaryAction;
             _view.CancelRequested += _runner.Cancel;
             _view.ResetProgressRequested += _runner.ResetProgress;

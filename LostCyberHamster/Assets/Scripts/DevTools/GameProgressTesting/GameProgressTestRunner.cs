@@ -31,6 +31,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         private const string PlayerPrefsStateKey = "DevTools.GameProgressTesting.RunState";
         private const string ConsoleLogTag = "[Game Progress Testing]";
         private const int MaxRandomScore = 50;
+        private const int PreparedExperiencePoints =
+            PlayerExperienceService.PlayerLevelThreshold - 1;
         private const int PollDelayMilliseconds = 100;
         private const int VisibleActionDelayMilliseconds = 250;
         private const double DefaultTimeoutSeconds = 20d;
@@ -87,6 +89,13 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             Application.isPlaying &&
             IsGameDataReady() &&
             !_state.IsBusy;
+
+        public bool CanPrepareLevelUp =>
+            Application.isPlaying &&
+            IsGameDataReady() &&
+            !_state.IsBusy &&
+            IsTargetGameplayActive() &&
+            !IsLevelUpPrepared();
 
         public string PrimaryActionTitle
         {
@@ -192,6 +201,28 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             ClearNavigationContext(
                 $"{resetResult.Message}. Нажмите Start.",
                 $"Reset Progress: {resetResult.Message}; navigation context очищен.");
+            SaveState();
+            Changed?.Invoke();
+        }
+
+        /// <summary>Сохраняет XP в точке перед Level Up, не начисляя награду и не вызывая Level Up flow.</summary>
+        public void PrepareLevelUp()
+        {
+            if (!CanPrepareLevelUp)
+                return;
+
+            var playerData = GameDataManager.PlayerData;
+            if (playerData == null)
+                return;
+
+            playerData.ExperiencePoints = PreparedExperiencePoints;
+            GameDataManager.SaveData();
+            UIManager.OnRepaintScreen?.Invoke();
+
+            var status =
+                $"Level Up prepared: {PreparedExperiencePoints} / " +
+                PlayerExperienceService.PlayerLevelThreshold;
+            SetStatus(status, status);
             SaveState();
             Changed?.Invoke();
         }
@@ -882,6 +913,9 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                     $"Intro: {FormatTarget(currentLevel)}. Skip intro manually.",
                 GameState.PLAYING when isTarget && HasBlockingModal() =>
                     $"Gameplay: {FormatTarget(currentLevel)} перекрыт modal. Закройте его вручную.",
+                GameState.PLAYING when isTarget && IsLevelUpPrepared() =>
+                    $"Level Up prepared: {PreparedExperiencePoints} / " +
+                    PlayerExperienceService.PlayerLevelThreshold,
                 GameState.PLAYING when isTarget =>
                     $"Gameplay ready: {FormatTarget(currentLevel)}. Можно выполнить Win with random score.",
                 GameState.PAUSED when isTarget =>
@@ -898,6 +932,12 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             SetStatus(status, $"Runtime state detected: {status}");
             SaveState();
             Changed?.Invoke();
+        }
+
+        private static bool IsLevelUpPrepared()
+        {
+            return GameDataManager.PlayerData?.ExperiencePoints ==
+                   PreparedExperiencePoints;
         }
 
         private void CancelSupersededSelectionNavigation(
