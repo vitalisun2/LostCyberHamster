@@ -387,6 +387,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOver\JumpOverSimulator.cs" />
     <Compile Include="Assets\Scripts\System\ObstacleSpawner.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\QuestsScreenController.cs" />
+    <Compile Include="Assets\Scripts\DevTools\ExperienceProgressTesting\ExperienceProgressTestingView.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CrystalBonus.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofSpecification.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictCoordinator.cs" />
@@ -435,6 +436,7 @@
     <Compile Include="Assets\Scripts\DevTools\GameProgressTesting\GameProgressTestRunner.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningGraphNode.cs" />
     <Compile Include="Assets\Scripts\DevTools\Account\AccountDevToolsScreen.cs" />
+    <Compile Include="Assets\Scripts\DevTools\ExperienceProgressTesting\ExperienceProgressTestingScreen.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CollectCoinsOrBonusAction.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Gateway\UnityCloudSaveGateway.cs" />
     <Compile Include="Assets\Scripts\UI\Components\BaseStorageUI.cs" />

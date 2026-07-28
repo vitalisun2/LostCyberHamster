@@ -18,6 +18,7 @@ namespace Assets.Scripts.DevTools.Gameplay
         private readonly Text _unlockAllButtonText;
         private readonly Image _unlockAllButtonImage;
         private readonly Button _gameProgressTestingButton;
+        private readonly Button _experienceProgressTestingButton;
         private readonly GameObject _statusCard;
         private readonly Text _statusText;
 
@@ -50,6 +51,12 @@ namespace Assets.Scripts.DevTools.Gameplay
                 "Game Progress Testing",
                 DevToolsTheme.Navigation,
                 () => GameProgressTestingRequested?.Invoke());
+            _experienceProgressTestingButton = uiFactory.CreateButton(
+                "ExperienceProgressTestingButton",
+                content,
+                "XP/Level Progress Testing",
+                DevToolsTheme.Navigation,
+                () => ExperienceProgressTestingRequested?.Invoke());
 
             Transform statusCard = uiFactory.CreateCard("StatusCard", content, DevToolsTheme.StatusCard);
             _statusCard = statusCard.gameObject;
@@ -59,6 +66,7 @@ namespace Assets.Scripts.DevTools.Gameplay
         public event Action BotToggleRequested;
         public event Action UnlockAllToggleRequested;
         public event Action GameProgressTestingRequested;
+        public event Action ExperienceProgressTestingRequested;
 
         public GameObject RootObject { get; }
 
@@ -72,6 +80,8 @@ namespace Assets.Scripts.DevTools.Gameplay
             _unlockAllButtonImage.color = presentation.UnlockAllLevels ? DevToolsTheme.Enabled : DevToolsTheme.Disabled;
             _unlockAllButton.interactable = presentation.ActionsAvailable;
             _gameProgressTestingButton.interactable = presentation.ActionsAvailable;
+            _experienceProgressTestingButton.interactable =
+                presentation.ActionsAvailable;
 
             _statusText.text = presentation.Status;
             _statusCard.SetActive(!string.IsNullOrWhiteSpace(presentation.Status));

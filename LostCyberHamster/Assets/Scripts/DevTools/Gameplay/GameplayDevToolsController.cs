@@ -11,6 +11,7 @@ namespace Assets.Scripts.DevTools.Gameplay
         private readonly GameplayDevToolsService _service;
         private readonly GameplayDevToolsView _view;
         private readonly Action _openGameProgressTesting;
+        private readonly Action _openExperienceProgressTesting;
 
         private bool _isBusy;
         private string _lastStatus = string.Empty;
@@ -18,15 +19,19 @@ namespace Assets.Scripts.DevTools.Gameplay
         public GameplayDevToolsController(
             GameplayDevToolsService service,
             GameplayDevToolsView view,
-            Action openGameProgressTesting)
+            Action openGameProgressTesting,
+            Action openExperienceProgressTesting)
         {
             _service = service;
             _view = view;
             _openGameProgressTesting = openGameProgressTesting;
+            _openExperienceProgressTesting = openExperienceProgressTesting;
 
             _view.BotToggleRequested += ToggleBot;
             _view.UnlockAllToggleRequested += ToggleUnlockAll;
             _view.GameProgressTestingRequested += OpenGameProgressTesting;
+            _view.ExperienceProgressTestingRequested +=
+                OpenExperienceProgressTesting;
         }
 
         public void RefreshPresentation()
@@ -57,6 +62,12 @@ namespace Assets.Scripts.DevTools.Gameplay
         {
             if (!_isBusy)
                 _openGameProgressTesting?.Invoke();
+        }
+
+        private void OpenExperienceProgressTesting()
+        {
+            if (!_isBusy)
+                _openExperienceProgressTesting?.Invoke();
         }
 
         private void RunAction(Func<GameplayDevToolsActionResult> action)
