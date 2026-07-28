@@ -41,12 +41,16 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _gameScreenController.SetTapAction(OnTap);
             _gameScreenController.SetPauseAction(OnPause);
             _gameScreenController.SetBuyEnergyAction(OnBuyEnergy);
+            _gameScreenController.SetUltraAction(OnUlta);
+            _gameScreenController.SetBuyUltraAction(OnBuyUltra);
         }
 
         public void Subscribe()
         {
             _character?.Lives.Subscribe(OnLifesChanged);
             _character?.Energy.Subscribe(OnEnergyChanged);
+            _character?.UltaChargeAmount.Subscribe(
+                OnUltaChargeAmountChanged);
         }
 
         public void SyncState()
@@ -66,6 +70,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             _character?.Lives.Unsubscribe(OnLifesChanged);
             _character?.Energy.Unsubscribe(OnEnergyChanged);
+            _character?.UltaChargeAmount.Unsubscribe(
+                OnUltaChargeAmountChanged);
         }
 
         private void OnLifesChanged(int lives)
@@ -174,17 +180,36 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnBuyUltra()
         {
+            // Разрешаем покупку заряда только настроенному суперудару.
+            if (_character?.HasSuperAttack != true)
+            {
+                return;
+            }
+
+            // Сохраняем прежнее поведение покупки полного заряда.
             const int price = 100;
             if (ResourceManager.CanSpendResource(ResourceType.Coins, price))
             {
                 ResourceManager.SpendResource(ResourceType.Coins, price);
-                _character.AddUltaCharge(100);
+                _character?.AddUltaCharge(100);
             }
         }
 
         private void SyncUltraControls()
         {
-            _gameScreenController?.SetUltraControlsVisible(false);
+            // Показываем элементы только для выбранного суперудара.
+            bool hasSuperAttack =
+                _character != null &&
+                _character.HasSuperAttack;
+            _gameScreenController?.SetUltraControlsVisible(
+                hasSuperAttack);
+
+            // Синхронизируем текущий заряд после загрузки экрана.
+            if (hasSuperAttack)
+            {
+                OnUltaChargeAmountChanged(
+                    _character.UltaChargeAmount.Value);
+            }
         }
     }
 }

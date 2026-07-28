@@ -98,6 +98,11 @@ namespace Assets.Scripts.Gameplay
         private PartOfDayScoreMechanics _partOfDayScoreMechanics;
         private DeathMechanics _deathMechanics;
         private TapMechanics _tapMechanics;
+        private ISuperAttackRuntime _superAttackRuntime;
+        private UltaMechanics _ultaMechanics;
+        private UltaChargeMechanics _ultaChargeMechanics;
+
+        public bool HasSuperAttack => _superAttackRuntime != null;
 
         private void Awake()
         {
@@ -209,6 +214,7 @@ namespace Assets.Scripts.Gameplay
         {
             _roofRunMechanics.OnUpdate();
             _tapMechanics.OnUpdate();
+            _ultaMechanics?.OnUpdate();
         }
 
         private void OnEnable()
@@ -225,6 +231,8 @@ namespace Assets.Scripts.Gameplay
             _roofJumpMechanics.OnEnable();
             _superRoofJumpMechanics.OnEnable();
             _tapMechanics.OnEnable();
+            _ultaChargeMechanics?.OnEnable();
+            _ultaMechanics?.OnEnable();
         }
 
         private void OnDisable()
@@ -241,6 +249,40 @@ namespace Assets.Scripts.Gameplay
             _roofJumpMechanics.OnDisable();
             _superRoofJumpMechanics.OnDisable();
             _tapMechanics.OnDisable();
+            _ultaChargeMechanics?.OnDisable();
+            _ultaMechanics?.OnDisable();
+        }
+
+        private void OnDestroy()
+        {
+            _superAttackRuntime?.Dispose();
+        }
+
+        public void ConfigureSuperAttack(ISuperAttackRuntime runtime)
+        {
+            // Подключаем прежние механику заряда и механику применения.
+            _superAttackRuntime = runtime;
+            if (_superAttackRuntime == null)
+            {
+                return;
+            }
+
+            _ultaMechanics = new UltaMechanics(
+                UltaEvent,
+                UltaChargeAmount,
+                () => runtime.TryActivate(),
+                runtime.Update);
+            _ultaChargeMechanics = new UltaChargeMechanics(
+                DestroyObstacleEvent,
+                UltaChargeAmount,
+                runtime.ChargePerObstacle);
+
+            // Настройка активного персонажа включает подписки сразу.
+            if (isActiveAndEnabled)
+            {
+                _ultaChargeMechanics.OnEnable();
+                _ultaMechanics.OnEnable();
+            }
         }
 
         public void AddEnergy(int value = 30)
@@ -255,6 +297,11 @@ namespace Assets.Scripts.Gameplay
 
         public void AddUltaCharge(int value)
         {
+            if (!HasSuperAttack)
+            {
+                return;
+            }
+
             var ultaToAdd = Mathf.Min(100 - UltaChargeAmount.Value, value);
             UltaChargeAmount.Value += ultaToAdd;
 

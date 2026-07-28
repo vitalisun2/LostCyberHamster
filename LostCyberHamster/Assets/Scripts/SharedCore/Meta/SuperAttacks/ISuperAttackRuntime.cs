@@ -1,9 +1,11 @@
+using System;
+
 namespace Vues.GameCore
 {
     /// <summary>
     /// Описывает суперудар, готовый к применению в забеге.
     /// </summary>
-    public interface ISuperAttackRuntime
+    public interface ISuperAttackRuntime : IDisposable
     {
         /// <summary>
         /// Возвращает заряд за одно уничтоженное препятствие.

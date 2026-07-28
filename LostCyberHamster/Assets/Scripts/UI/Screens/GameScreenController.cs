@@ -113,7 +113,7 @@ namespace LostCyberHamster.UI
                 return;
             }
 
-            _buyUltraAction.Invoke();
+            _buyUltraAction?.Invoke();
         }
 
         protected override void OnUnsubscribeFromEvents()

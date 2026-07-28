@@ -8,6 +8,7 @@ using Assets.Scripts.Installers.Roots;
 using Assets.Scripts.System;
 using LoadingTasks;
 using UnityEngine;
+using Vues.GameCore;
 
 namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 {
@@ -28,18 +29,40 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             _characterPrefab = (Hamster)bundle["characterPrefab"];
             _environmentRoot = (EnvironmentRoot)bundle["environmentRoot"];
 
-            CreateHamster();
+            await CreateHamsterAsync();
         }
 
-        private void CreateHamster()
+        private async Task CreateHamsterAsync()
         {
+            // Создаём персонажа до подключения runtime забега.
             var hamster = GameObject.Instantiate(_characterPrefab,
                 new Vector3(Consts.HamsterXPos, Consts.HamsterYPos, 0), Quaternion.identity, _environmentRoot.transform);
 
+            await ConfigureSuperAttackAsync(hamster);
+
+            // Завершаем прежнюю настройку персонажа.
             AddGameListeners(hamster);
             HelpMethods.ApplyOverrideController(hamster);
 
             LevelController.Instance.LevelData.Hamster = hamster;
+        }
+
+        private static async Task ConfigureSuperAttackAsync(Hamster hamster)
+        {
+            int? activeSuperAttackId =
+                SuperAttackService.ActiveSuperAttackId;
+            if (!activeSuperAttackId.HasValue ||
+                !SuperAttackService.TryGet(
+                    activeSuperAttackId.Value,
+                    out SuperAttackData data))
+            {
+                hamster.ConfigureSuperAttack(null);
+                return;
+            }
+
+            ISuperAttackRuntime runtime =
+                await SuperAttackFactory.CreateAsync(data);
+            hamster.ConfigureSuperAttack(runtime);
         }
 
         private void AddGameListeners(Hamster hamster)
