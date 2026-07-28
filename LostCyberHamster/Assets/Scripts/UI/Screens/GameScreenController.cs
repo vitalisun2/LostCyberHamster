@@ -69,12 +69,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickUltra(PointerDownEvent evt)
         {
-            if (GameplayInputGate.IsBlocked)
-            {
-                return;
-            }
-
-            _ultraAction?.Invoke();
+            TryActivateUltra();
         }
 
         private void OnClickJump(PointerDownEvent evt)
@@ -229,6 +224,22 @@ namespace LostCyberHamster.UI
                 _ultraButton.text = "S";
                 _ultraButton.SetEnabled(true);
             }
+        }
+
+        /// <summary>
+        /// Активирует суперудар через готовую и доступную кнопку игрового HUD.
+        /// </summary>
+        public bool TryActivateUltra()
+        {
+            if (GameplayInputGate.IsBlocked ||
+                _ultraButton?.enabledInHierarchy != true ||
+                _ultraAction == null)
+            {
+                return false;
+            }
+
+            _ultraAction.Invoke();
+            return true;
         }
 
         private static void SetElementVisible(VisualElement element, bool visible)

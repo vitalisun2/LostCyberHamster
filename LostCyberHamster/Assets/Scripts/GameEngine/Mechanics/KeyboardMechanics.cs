@@ -22,6 +22,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly Keyboard _keyboard;
         private readonly AtomicEvent _tapRequest;
         private readonly Hamster _character;
+        private readonly GameScreenController _gameScreenController;
         private DoubleJumpDetector _doubleJumpDetector;
 
         public KeyboardMechanics(Hamster hamster, UIManager uiManager, GameManager gameManager)
@@ -37,6 +38,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _tapRequest = hamster.TapRequest;
 
             _uiManager = uiManager;
+            _gameScreenController =
+                uiManager.GetController<GameScreenController>();
 
             _doubleJumpDetector = new DoubleJumpDetector();
             _doubleJumpDetector.Reset();
@@ -81,6 +84,11 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (_keyboard.escapeKey.wasPressedThisFrame)
             {
                 TogglePauseResume();
+            }
+
+            if (_keyboard.bKey.wasPressedThisFrame)
+            {
+                _gameScreenController.TryActivateUltra();
             }
 
             // Bot hotkey
