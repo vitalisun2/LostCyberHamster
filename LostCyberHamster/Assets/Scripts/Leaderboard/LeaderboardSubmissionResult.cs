@@ -6,12 +6,16 @@ namespace GameManagement.Leaderboard
     public sealed class LeaderboardSubmissionResult
     {
         public LeaderboardSubmissionResult(
+            int previousWeeklyBestRunScore,
             int weeklyBestRunScore,
             bool isNewRecord)
         {
+            PreviousWeeklyBestRunScore = previousWeeklyBestRunScore;
             WeeklyBestRunScore = weeklyBestRunScore;
             IsNewRecord = isNewRecord;
         }
+
+        public int PreviousWeeklyBestRunScore { get; }
 
         public int WeeklyBestRunScore { get; }
 

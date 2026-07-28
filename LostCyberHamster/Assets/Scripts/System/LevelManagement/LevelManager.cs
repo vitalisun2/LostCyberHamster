@@ -302,30 +302,26 @@ namespace Assets.Scripts.System
             GameEventsManager.OnLevelCompleted -= HandleLevelCompleted;
         }
 
-        private static void HandleLevelCompleted(int _, int stars)
+        /// <summary>
+        /// Завершает указанный уровень через штатные progress, XP и checkpoint сервисы.
+        /// </summary>
+        public static bool CompleteLevel(string levelKey, int stars)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_developmentProgressSaveSuppression?.Invoke() == true)
             {
-                return;
+                return false;
             }
 #endif
 
+            // Проверяем player data и разрешаем явный ключ уровня в реальном каталоге.
             var playerData = GameDataManager.PlayerData;
-            if (playerData == null)
+            if (playerData == null ||
+                string.IsNullOrWhiteSpace(levelKey) ||
+                !HasCatalog ||
+                !TryResolveProgressKey(levelKey, out var progressKey))
             {
-                return;
-            }
-
-            var currentLevel = playerData.CurrentLevel;
-            if (string.IsNullOrWhiteSpace(currentLevel))
-            {
-                return;
-            }
-
-            if (!HasCatalog || !TryResolveProgressKey(currentLevel, out var progressKey))
-            {
-                return;
+                return false;
             }
 
             // Обновляем best stars через существующую progress-логику.
@@ -344,6 +340,15 @@ namespace Assets.Scripts.System
             // Сохраняем stars и XP одним существующим checkpoint.
             playerData.Progress = updatedSnapshot;
             PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+            return true;
+        }
+
+        private static void HandleLevelCompleted(int _, int stars)
+        {
+            // Runtime win завершает текущий выбранный уровень через общий контракт.
+            CompleteLevel(
+                GameDataManager.PlayerData?.CurrentLevel,
+                stars);
         }
 
         private static LevelProgressSnapshot GetEffectiveProgress()

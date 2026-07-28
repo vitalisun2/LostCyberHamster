@@ -4,14 +4,15 @@ using UnityEngine;
 
 namespace LostCyberHamster.Editor.Testing
 {
-    /// <summary>Показывает общий Tools/Testing с Cloud Save и Game Progress страницами.</summary>
+    /// <summary>Показывает общий Tools/Testing с доступными testing-страницами.</summary>
     public sealed class CloudSaveTestingWindow : EditorWindow
     {
         private enum TestingPage
         {
             Start,
             CloudSave,
-            GameProgress
+            GameProgress,
+            ExperienceProgress
         }
 
         /// <summary>Минимальная ширина окна.</summary>
@@ -47,6 +48,9 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Рисует и обслуживает страницу Game Progress Testing.</summary>
         private GameProgress.GameProgressTestingPage _gameProgressPage;
 
+        /// <summary>Рисует и обслуживает страницу XP/Level Progress Testing.</summary>
+        private ExperienceProgress.ExperienceProgressTestingPage _experienceProgressPage;
+
         /// <summary>Текущая страница общего окна Testing.</summary>
         private TestingPage _currentPage;
 
@@ -65,16 +69,18 @@ namespace LostCyberHamster.Editor.Testing
             window.Focus();
         }
 
-        /// <summary>Создаёт обе testing-страницы и подключает единый Play Mode callback.</summary>
+        /// <summary>Создаёт testing-страницы и подключает единый Play Mode callback.</summary>
         private void OnEnable()
         {
             _runner = new CloudSaveE2ERunner();
             _runner.Changed += Repaint;
             _gameProgressPage = new GameProgress.GameProgressTestingPage(Repaint);
+            _experienceProgressPage =
+                new ExperienceProgress.ExperienceProgressTestingPage(Repaint);
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        /// <summary>Освобождает обе testing-страницы при закрытии окна.</summary>
+        /// <summary>Освобождает testing-страницы при закрытии окна.</summary>
         private void OnDisable()
         {
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
@@ -87,6 +93,7 @@ namespace LostCyberHamster.Editor.Testing
             }
 
             _gameProgressPage?.Dispose();
+            _experienceProgressPage?.Dispose();
         }
 
         /// <summary>Рисует текущую страницу окна.</summary>
@@ -99,6 +106,10 @@ namespace LostCyberHamster.Editor.Testing
                     break;
                 case TestingPage.GameProgress:
                     _gameProgressPage.Draw(() => _currentPage = TestingPage.Start);
+                    break;
+                case TestingPage.ExperienceProgress:
+                    _experienceProgressPage.Draw(
+                        () => _currentPage = TestingPage.Start);
                     break;
                 default:
                     DrawStartPage();
@@ -129,6 +140,15 @@ namespace LostCyberHamster.Editor.Testing
                 {
                     _currentPage = TestingPage.GameProgress;
                 }
+            }
+
+            EditorGUILayout.Space(6f);
+            if (GUILayout.Button(
+                    "XP/Level Progress Testing",
+                    GUILayout.Width(ProductButtonWidth),
+                    GUILayout.Height(ProductButtonHeight)))
+            {
+                _currentPage = TestingPage.ExperienceProgress;
             }
         }
 
@@ -276,7 +296,7 @@ namespace LostCyberHamster.Editor.Testing
             return _outputStyle;
         }
 
-        /// <summary>Передаёт смену Play Mode обеим testing-страницам.</summary>
+        /// <summary>Передаёт смену Play Mode testing-страницам.</summary>
         private void OnPlayModeStateChanged(PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.ExitingPlayMode &&
@@ -287,6 +307,7 @@ namespace LostCyberHamster.Editor.Testing
             }
 
             _gameProgressPage?.HandlePlayModeStateChanged(state);
+            _experienceProgressPage?.HandlePlayModeStateChanged(state);
             Repaint();
         }
 

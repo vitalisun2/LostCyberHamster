@@ -32,27 +32,15 @@ namespace GameManagement.Leaderboard
                 levelKey.PartOfDayId);
 
             // Загружаем лучший score одного забега текущей weekly location+part таблицы.
-            var weeklyBestRunScore = 0;
-            var hasWeeklyEntry = false;
-            try
-            {
-                var playerScore = await LeaderboardsService.Instance.GetPlayerScoreAsync(
-                    leaderboardId);
-                weeklyBestRunScore = checked((int)playerScore.Score);
-                hasWeeklyEntry = true;
-            }
-            catch (LeaderboardsException exception) when (
-                exception.Reason == LeaderboardsExceptionReason.EntryNotFound ||
-                exception.Reason == LeaderboardsExceptionReason.ScoreSubmissionRequired)
-            {
-                // В текущей неделе у игрока ещё нет результата.
-            }
+            var weeklyBest = await GetPlayerWeeklyBestRunScoreAsync(
+                leaderboardId);
 
             // Сравниваем один забег с прежним weekly best всей location+part таблицы.
-            if (hasWeeklyEntry && runScore <= weeklyBestRunScore)
+            if (weeklyBest.HasEntry && runScore <= weeklyBest.Score)
             {
                 return new LeaderboardSubmissionResult(
-                    weeklyBestRunScore,
+                    weeklyBest.Score,
+                    weeklyBest.Score,
                     false);
             }
 
@@ -62,8 +50,26 @@ namespace GameManagement.Leaderboard
                 runScore);
 
             return new LeaderboardSubmissionResult(
+                weeklyBest.Score,
                 runScore,
                 true);
+        }
+
+        /// <summary>
+        /// Возвращает лучший weekly score текущего игрока для location и части дня уровня.
+        /// </summary>
+        public async Task<int> GetPlayerWeeklyBestRunScoreAsync(
+            LevelProgressKey levelKey)
+        {
+            // Выбираем реальную weekly таблицу по scope уровня.
+            var leaderboardId = ResolveLeaderboardId(
+                levelKey.LocationId,
+                levelKey.PartOfDayId);
+
+            // Для первой попытки возвращаем нулевую базу нового рекорда.
+            var weeklyBest = await GetPlayerWeeklyBestRunScoreAsync(
+                leaderboardId);
+            return weeklyBest.Score;
         }
 
         /// <summary>
@@ -100,6 +106,25 @@ namespace GameManagement.Leaderboard
             }
 
             return (topScores.Results, currentPlayer);
+        }
+
+        private static async Task<(bool HasEntry, int Score)>
+            GetPlayerWeeklyBestRunScoreAsync(string leaderboardId)
+        {
+            try
+            {
+                var playerScore =
+                    await LeaderboardsService.Instance.GetPlayerScoreAsync(
+                        leaderboardId);
+                return (true, checked((int)playerScore.Score));
+            }
+            catch (LeaderboardsException exception) when (
+                exception.Reason == LeaderboardsExceptionReason.EntryNotFound ||
+                exception.Reason ==
+                LeaderboardsExceptionReason.ScoreSubmissionRequired)
+            {
+                return (false, 0);
+            }
         }
 
         /// <summary>
