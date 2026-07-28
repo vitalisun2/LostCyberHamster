@@ -467,6 +467,22 @@
         {
             "key": "super_attacks_selection_error",
             "value": "Не удалось выбрать суперудар: {0}"
+        },
+        {
+            "key": "level_up_title",
+            "value": "LEVEL UP!"
+        },
+        {
+            "key": "level_up_transition",
+            "value": "УРОВЕНЬ {0} → {1}"
+        },
+        {
+            "key": "level_up_attack_available",
+            "value": "СУПЕРУДАР ДОСТУПЕН"
+        },
+        {
+            "key": "level_up_ok",
+            "value": "OK"
         }
     ]
 }

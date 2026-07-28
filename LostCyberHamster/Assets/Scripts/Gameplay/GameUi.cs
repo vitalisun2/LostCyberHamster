@@ -48,6 +48,9 @@ namespace Assets.Scripts.Gameplay
                 new PauseModalController(_uiDocument),
                 new LoseModalController(_uiDocument),
                 new WinModalController(_uiDocument),
+                new LevelUpModalController(
+                    _uiDocument,
+                    CloseLevelUpModal),
             });
 
             _uiGameScreenMechanics = new UiGameScreenMechanics(_uiManager, _gameManager, _character);
@@ -72,6 +75,11 @@ namespace Assets.Scripts.Gameplay
             _uiGameScreenMechanics.SyncState();
 
             _isInitialized = true;
+        }
+
+        private void CloseLevelUpModal()
+        {
+            _uiManager.CloseModal(ScreenEnum.LevelUpModal);
         }
 
         private void Update()

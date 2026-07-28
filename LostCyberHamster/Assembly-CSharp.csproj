@@ -233,6 +233,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\AddCoinsOrBonusMechanics.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LocationTheme.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverStrategy.cs" />
+    <Compile Include="Assets\Scripts\UI\Modals\LevelUpModalController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneSimulator.cs" />
     <Compile Include="Assets\Scripts\DevTools\DevToolsMenuOverlay.cs" />
     <Compile Include="Assets\Scripts\Debug\FeatureFlagToggle.cs" />
@@ -635,7 +636,9 @@
     <None Include="Assets\Content\ui\uxml\PlayButton.uxml" />
     <None Include="Assets\Content\ui\uxml\HomeButton.uxml" />
     <None Include="Assets\Content\ui\uxml\HomeScreen.uxml" />
+    <None Include="Assets\Content\ui\uxml\LevelUpModal.uxml" />
     <None Include="Assets\Content\ui\styles\SuperAttacksScreen.uss" />
+    <None Include="Assets\Content\ui\styles\LevelUpModal.uss" />
     <None Include="Assets\Content\ui\uxml\LevelUI.uxml" />
     <None Include="Assets\Content\ui\uxml\IntroScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\GameScreen.uxml" />

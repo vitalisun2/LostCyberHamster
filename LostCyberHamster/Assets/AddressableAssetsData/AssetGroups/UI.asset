@@ -261,6 +261,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f52d602154f2cdc41bfc0ec71b78cd6e
+    m_Address: LevelUpModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f58ab194c573e425289636e0923c36ff
     m_Address: BackgroundScreenSprite
     m_ReadOnly: 0

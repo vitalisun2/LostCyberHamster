@@ -108,6 +108,29 @@ namespace Vues.GameCore
         }
 
         /// <summary>
+        /// Находит первый суперудар, открывшийся между двумя уровнями игрока.
+        /// </summary>
+        public static bool TryGetFirstUnlockedBetweenLevels(
+            int previousPlayerLevel,
+            int currentPlayerLevel,
+            out SuperAttackData data)
+        {
+            // Сохраняем порядок суперударов из JSON-каталога.
+            foreach (SuperAttackData item in _items)
+            {
+                if (item.RequiredPlayerLevel > previousPlayerLevel &&
+                    item.RequiredPlayerLevel <= currentPlayerLevel)
+                {
+                    data = item;
+                    return true;
+                }
+            }
+
+            data = null;
+            return false;
+        }
+
+        /// <summary>
         /// Выбирает открытый суперудар и откатывает выбор при ошибке сохранения.
         /// </summary>
         public static bool TrySelect(int id)
