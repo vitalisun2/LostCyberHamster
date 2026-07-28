@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts;
 using GameManagement.Progress;
-using Newtonsoft.Json;
 using Unity.Services.Leaderboards;
 using Unity.Services.Leaderboards.Exceptions;
 using LeaderboardEntry = Unity.Services.Leaderboards.Models.LeaderboardEntry;
@@ -33,52 +31,38 @@ namespace GameManagement.Leaderboard
                 levelKey.LocationId,
                 levelKey.PartOfDayId);
 
-            // Загружаем серверные рекорды уровней или создаём пустой набор.
-            Dictionary<string, int> levelBestScores;
+            // Загружаем лучший score одного забега текущей weekly location+part таблицы.
+            var weeklyBestRunScore = 0;
+            var hasWeeklyEntry = false;
             try
             {
                 var playerScore = await LeaderboardsService.Instance.GetPlayerScoreAsync(
-                    leaderboardId,
-                    new GetPlayerScoreOptions { IncludeMetadata = true });
-
-                levelBestScores = string.IsNullOrWhiteSpace(playerScore.Metadata)
-                    ? new Dictionary<string, int>()
-                    : JsonConvert.DeserializeObject<Dictionary<string, int>>(
-                          playerScore.Metadata)
-                      ?? new Dictionary<string, int>();
+                    leaderboardId);
+                weeklyBestRunScore = checked((int)playerScore.Score);
+                hasWeeklyEntry = true;
             }
             catch (LeaderboardsException exception) when (
                 exception.Reason == LeaderboardsExceptionReason.EntryNotFound ||
                 exception.Reason == LeaderboardsExceptionReason.ScoreSubmissionRequired)
             {
-                levelBestScores = new Dictionary<string, int>();
+                // В текущей неделе у игрока ещё нет результата.
             }
 
-            // Завершаем без отправки, если рекорд уровня не улучшен.
-            var levelId = levelKey.LevelIndex.ToString();
-            if (levelBestScores.TryGetValue(levelId, out var levelBestScore) &&
-                runScore <= levelBestScore)
+            // Сравниваем один забег с прежним weekly best всей location+part таблицы.
+            if (hasWeeklyEntry && runScore <= weeklyBestRunScore)
             {
                 return new LeaderboardSubmissionResult(
-                    levelBestScore,
-                    levelBestScores.Values.Sum(),
-                    false,
+                    weeklyBestRunScore,
                     false);
             }
 
-            // Обновляем рекорд уровня и публикуем новую сумму части дня.
-            levelBestScores[levelId] = runScore;
-            var partOfDayTotalScore = levelBestScores.Values.Sum();
-
+            // Публикуем новый weekly best одного успешного забега без накопления score.
             await LeaderboardsService.Instance.AddPlayerScoreAsync(
                 leaderboardId,
-                partOfDayTotalScore,
-                new AddPlayerScoreOptions { Metadata = levelBestScores });
+                runScore);
 
             return new LeaderboardSubmissionResult(
                 runScore,
-                partOfDayTotalScore,
-                true,
                 true);
         }
 

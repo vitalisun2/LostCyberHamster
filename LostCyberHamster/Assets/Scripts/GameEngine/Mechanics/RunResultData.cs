@@ -10,16 +10,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
         public RunResultData(
             LevelProgressKey levelKey,
             int runScore,
-            int levelBestScore,
-            int partOfDayTotalScore,
+            int weeklyBestRunScore,
             bool isNewRecord,
             bool isLastLevelOfPart,
             RunResultSubmissionState submissionState)
         {
             LevelKey = levelKey;
             RunScore = runScore;
-            LevelBestScore = levelBestScore;
-            PartOfDayTotalScore = partOfDayTotalScore;
+            WeeklyBestRunScore = weeklyBestRunScore;
             IsNewRecord = isNewRecord;
             IsLastLevelOfPart = isLastLevelOfPart;
             SubmissionState = submissionState;
@@ -29,9 +27,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public int RunScore { get; }
 
-        public int LevelBestScore { get; }
-
-        public int PartOfDayTotalScore { get; }
+        public int WeeklyBestRunScore { get; }
 
         public bool IsNewRecord { get; }
 

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.System;
 using Atomic.Elements;
+using GameManagement;
 using GameManagement.Leaderboard;
 using GameManagement.Progress;
 using UnityEngine;
@@ -11,7 +12,7 @@ using UnityEngine;
 namespace Assets.Scripts.GameEngine.Mechanics
 {
     /// <summary>
-    /// Передаёт результат успешного забега в локальный расчёт и Unity Leaderboards.
+    /// Сравнивает успешный забег с недельным рекордом Unity Leaderboards.
     /// </summary>
     public sealed class PartOfDayScoreMechanics
     {
@@ -19,6 +20,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicVariable<int> _lives;
         private readonly GameManager _gameManager;
         private readonly LeaderboardService _leaderboardService = new();
+        private readonly PlayerExperienceService _playerExperienceService = new();
+        private bool _isScoreSubmissionStarted;
 
         public RunResultData LatestResult { get; private set; }
 
@@ -57,14 +60,18 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return;
             }
 
+            if (_isScoreSubmissionStarted)
+            {
+                return;
+            }
+
+            _isScoreSubmissionStarted = true;
             var runScore = _runScoreMechanics.CurrentScore;
 
-            // Сохраняем локальный результат и сразу открываем состояние загрузки.
-            PartOfDayScoreService.RecordSuccessfulRun(progressKey, runScore);
+            // Сразу открываем состояние загрузки серверного weekly best.
             var pendingResult = new RunResultData(
                 progressKey,
                 runScore,
-                0,
                 0,
                 false,
                 IsLastLevelOfPart(progressKey),
@@ -82,14 +89,23 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 var submission = await _leaderboardService.SubmitSuccessfulRunAsync(
                     pendingResult.LevelKey,
                     pendingResult.RunScore);
+
+                if (submission.IsNewRecord)
+                {
+                    _playerExperienceService
+                        .GrantExperienceForWeeklyLeaderboardRecord(
+                            GameDataManager.PlayerData);
+                    PlayerProgressCommitter.Commit(
+                        CheckpointReason.WeeklyLeaderboardRecordRewarded);
+                }
+
                 PublishResult(new RunResultData(
                     pendingResult.LevelKey,
                     pendingResult.RunScore,
-                    submission.LevelBestScore,
-                    submission.PartOfDayTotalScore,
+                    submission.WeeklyBestRunScore,
                     submission.IsNewRecord,
                     pendingResult.IsLastLevelOfPart,
-                    submission.WasSubmitted
+                    submission.IsNewRecord
                         ? RunResultSubmissionState.Submitted
                         : RunResultSubmissionState.NotRequired));
             }
@@ -100,7 +116,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 PublishResult(new RunResultData(
                     pendingResult.LevelKey,
                     pendingResult.RunScore,
-                    0,
                     0,
                     false,
                     pendingResult.IsLastLevelOfPart,

@@ -226,7 +226,6 @@
     <Compile Include="Assets\Scripts\Tutorial\SharedUI\TutorialFocusOverlay.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\Skin.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneTiming.cs" />
-    <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PartOfDayScoreService.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\AddCoinsOrBonusMechanics.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LocationTheme.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverStrategy.cs" />

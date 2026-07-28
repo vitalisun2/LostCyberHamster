@@ -82,15 +82,11 @@
         },
         {
             "key": "win_new_record",
-            "value": "NEW RECORD: {0}"
+            "value": "{0} · NEW WEEKLY BEST RUN: {1}"
         },
         {
             "key": "win_existing_record",
-            "value": "LEVEL RECORD: {0}"
-        },
-        {
-            "key": "win_part_total",
-            "value": "{0} TOTAL: {1}"
+            "value": "{0} · WEEKLY BEST RUN: {1}"
         },
         {
             "key": "win_submit_pending",

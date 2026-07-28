@@ -27,9 +27,6 @@ namespace LostCyberHamster.UI
         private Label _recordLabel =>
             _modalContent.Q<Label>("win_record");
 
-        private Label _partTotalLabel =>
-            _modalContent.Q<Label>("win_part_total");
-
         private Label _submissionStatusLabel =>
             _modalContent.Q<Label>("win_submission_status");
 
@@ -189,14 +186,11 @@ namespace LostCyberHamster.UI
                 "win_open_leaderboard",
                 GetLocalizedPartName(_runResult.LevelKey.PartOfDayId));
 
-            // Рекорд и сумма появляются после авторитетного ответа сервера.
+            // Лучший забег недели появляется после авторитетного ответа сервера.
             var isResolved =
                 _runResult.SubmissionState == RunResultSubmissionState.Submitted ||
                 _runResult.SubmissionState == RunResultSubmissionState.NotRequired;
             _recordLabel.style.display = isResolved
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
-            _partTotalLabel.style.display = isResolved
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
             if (isResolved)
@@ -205,11 +199,8 @@ namespace LostCyberHamster.UI
                     _runResult.IsNewRecord
                         ? "win_new_record"
                         : "win_existing_record",
-                    _runResult.LevelBestScore.ToString("0"));
-                _partTotalLabel.text = FormatLocalized(
-                    "win_part_total",
                     GetLocalizedPartName(_runResult.LevelKey.PartOfDayId),
-                    _runResult.PartOfDayTotalScore.ToString("0"));
+                    _runResult.WeeklyBestRunScore.ToString("0"));
             }
 
             // Статус отличает отправку, реальный успех, no-op и ошибку.

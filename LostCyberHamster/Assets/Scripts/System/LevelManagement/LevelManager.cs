@@ -14,6 +14,7 @@ namespace Assets.Scripts.System
     public static class LevelManager
     {
         private const int _starUnlockOffset = 2;
+        private static readonly PlayerExperienceService _playerExperienceService = new();
         private static ProgressService _progressService;
         private static HierarchicalLevelCatalog _progressCatalog;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -327,11 +328,21 @@ namespace Assets.Scripts.System
                 return;
             }
 
-            var service = RequireProgressService();
-            var snapshot = playerData.Progress;
-            snapshot = service.HandleLevelCompleted(snapshot, progressKey, stars);
+            // Обновляем best stars через существующую progress-логику.
+            var progressService = RequireProgressService();
+            var updatedSnapshot = progressService.HandleLevelCompleted(
+                playerData.Progress,
+                progressKey,
+                stars);
 
-            playerData.Progress = snapshot;
+            // Передаём сервису обновлённый snapshot до замены сохранённого состояния.
+            _playerExperienceService.GrantExperienceForImprovedStars(
+                playerData,
+                progressKey,
+                updatedSnapshot);
+
+            // Сохраняем stars и XP одним существующим checkpoint.
+            playerData.Progress = updatedSnapshot;
             PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
         }
 

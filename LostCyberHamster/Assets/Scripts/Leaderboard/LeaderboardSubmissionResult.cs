@@ -1,28 +1,20 @@
 namespace GameManagement.Leaderboard
 {
     /// <summary>
-    /// Содержит авторитетный недельный результат после проверки Unity Leaderboards.
+    /// Содержит лучший одиночный забег недели после проверки Unity Leaderboards.
     /// </summary>
     public sealed class LeaderboardSubmissionResult
     {
         public LeaderboardSubmissionResult(
-            int levelBestScore,
-            int partOfDayTotalScore,
-            bool isNewRecord,
-            bool wasSubmitted)
+            int weeklyBestRunScore,
+            bool isNewRecord)
         {
-            LevelBestScore = levelBestScore;
-            PartOfDayTotalScore = partOfDayTotalScore;
+            WeeklyBestRunScore = weeklyBestRunScore;
             IsNewRecord = isNewRecord;
-            WasSubmitted = wasSubmitted;
         }
 
-        public int LevelBestScore { get; }
-
-        public int PartOfDayTotalScore { get; }
+        public int WeeklyBestRunScore { get; }
 
         public bool IsNewRecord { get; }
-
-        public bool WasSubmitted { get; }
     }
 }

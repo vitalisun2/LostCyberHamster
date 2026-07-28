@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GameManagement;
+using GameManagement.Progress;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -18,6 +19,7 @@ namespace Vues.GameCore
         /// </summary>
         private static List<Quest> _dailyTasksPool = new List<Quest>();
         private static BasicQuestLifecycle _basicQuestLifecycle;
+        private static readonly PlayerExperienceService _playerExperienceService = new();
         private static bool _isTracking;
 
         public static List<Quest> DailyTasks = new List<Quest>();
@@ -212,6 +214,8 @@ namespace Vues.GameCore
             if (!quest.IsCompleted || quest.IsRewardRecieved || quest.RewardAmount <= 0)
                 return false;
 
+            var isStoryline = StorylineQuests.Contains(quest);
+            var isDaily = DailyTasks.Contains(quest);
             bool rewardAdded;
             switch (quest.RewardTypeId)
             {
@@ -237,9 +241,18 @@ namespace Vues.GameCore
             }
 
             quest.IsRewardRecieved = true;
-            if (StorylineQuests.Contains(quest))
+            if (isStoryline)
             {
                 GetOrCreateStorylineProgress(quest.Id).IsRewardClaimed = true;
+                _playerExperienceService
+                    .GrantExperienceForClaimedStorylineQuest(
+                        GameDataManager.PlayerData);
+            }
+            else if (isDaily)
+            {
+                _playerExperienceService
+                    .GrantExperienceForClaimedDailyQuest(
+                        GameDataManager.PlayerData);
             }
 
             GameEventsManager.QuestRewardRecieved(quest.Id);

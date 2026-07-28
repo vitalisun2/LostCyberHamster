@@ -9,6 +9,7 @@ namespace GameManagement
         DailyQuestCompleted,
         StorylineQuestCompleted,
         QuestRewardClaimed,
+        WeeklyLeaderboardRecordRewarded,
         LevelCompleted,
         CurrentLevelChanged,
         TutorialCompleted,
