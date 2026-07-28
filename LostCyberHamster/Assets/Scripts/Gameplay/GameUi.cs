@@ -28,6 +28,8 @@ namespace Assets.Scripts.Gameplay
         private UiLoseModalMechanics _uiLoseModalMechanics;
         private UiWinModalMechanics _uiWinModalMechanics;
         private KeyboardMechanics _keyboardMechanics;
+        private XpRewardBannerController
+            _xpRewardBannerController;
 
         [Inject]
         public async Task Construct()
@@ -55,15 +57,24 @@ namespace Assets.Scripts.Gameplay
 
             _uiGameScreenMechanics = new UiGameScreenMechanics(_uiManager, _gameManager, _character);
             _uiPauseScreenMechanics = new UiPauseScreenMechanics(_uiManager, _gameManager);
+            _xpRewardBannerController =
+                new XpRewardBannerController(_uiDocument);
             _energyMechanics = new EnergyMechanics(
                 _character.Energy,
                 _character.JumpRequest,
                 _character.RoofJumpRequest,
                 _character.SuperJumpRequest,
                 _character.SuperRoofJumpRequest);
-            _uiGameOverMechanics = new UiGameOverMechanics(_uiManager, _gameManager, _character);
+            _uiGameOverMechanics = new UiGameOverMechanics(
+                _uiManager,
+                _gameManager,
+                _character,
+                _xpRewardBannerController);
             _uiLoseModalMechanics = new UiLoseModalMechanics(_uiManager, _gameManager, _character);
-            _uiWinModalMechanics = new UiWinModalMechanics(_uiManager, _gameManager);
+            _uiWinModalMechanics = new UiWinModalMechanics(
+                _uiManager,
+                _gameManager,
+                _xpRewardBannerController);
             _keyboardMechanics = new KeyboardMechanics(_character, _uiManager, _gameManager);
 
             _uiManager.SubscribeToEvents();
@@ -108,6 +119,7 @@ namespace Assets.Scripts.Gameplay
             _energyMechanics.Unsubscribe();
             _uiGameScreenMechanics.Unsubscribe();
             _uiGameOverMechanics.Unsubscribe();
+            _xpRewardBannerController?.Dispose();
         }
     }
 }

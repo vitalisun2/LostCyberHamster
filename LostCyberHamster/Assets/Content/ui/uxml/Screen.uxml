@@ -5,4 +5,14 @@
         <engine:VisualElement name="content" style="flex-grow: 1;" />
     </engine:VisualElement>
     <engine:Instance template="Modal" name="modal" style="position: absolute; bottom: 0; right: 0; top: 0; left: 0;" />
+    <engine:VisualElement name="xp-reward-overlay" picking-mode="Ignore" class="xp-reward-overlay">
+        <engine:VisualElement name="xp-reward-banner" picking-mode="Ignore" class="xp-reward-banner">
+            <engine:VisualElement picking-mode="Ignore" class="xp-reward-banner__progress-row">
+                <engine:Label text="LEVEL 1" name="xp-reward-level" picking-mode="Ignore" class="xp-reward-banner__level" />
+                <engine:ProgressBar name="xp-reward-progress" picking-mode="Ignore" low-value="0" high-value="240" value="0" title="" class="xp-reward-banner__progress" />
+                <engine:Label text="0/240 XP" name="xp-reward-value" picking-mode="Ignore" class="xp-reward-banner__value" />
+            </engine:VisualElement>
+            <engine:Label text="+0 XP" name="xp-reward-amount" picking-mode="Ignore" class="xp-reward-banner__amount" />
+        </engine:VisualElement>
+    </engine:VisualElement>
 </engine:UXML>

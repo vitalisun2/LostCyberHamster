@@ -12,15 +12,23 @@ namespace Assets.Scripts.GameEngine.Mechanics
     {
         private readonly UIManager _uiManager;
         private readonly GameManager _gameManager;
+        private readonly XpRewardBannerController
+            _xpRewardBannerController;
         private WinModalController _winModalController;
 
         private string _sceneName = "Menu";
         private int _previousPlayerLevel;
+        private bool _isTransitionPending;
 
-        public UiWinModalMechanics(UIManager uiManager, GameManager gameManager)
+        public UiWinModalMechanics(
+            UIManager uiManager,
+            GameManager gameManager,
+            XpRewardBannerController xpRewardBannerController)
         {
             _uiManager = uiManager;
             _gameManager = gameManager;
+            _xpRewardBannerController =
+                xpRewardBannerController;
             _previousPlayerLevel =
                 GameDataManager.PlayerData.PlayerLevel;
 
@@ -51,14 +59,42 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 () => LevelController.Instance.PlayNextLevel());
         }
 
-        private void OnLeaderboard(string locationId, string partId)
+        private async void OnLeaderboard(
+            string locationId,
+            string partId)
         {
-            MenuNavigationRequest.OpenLeaderboard(locationId, partId);
-            UnityEngine.SceneManagement.SceneManager.LoadScene(_sceneName);
+            if (_isTransitionPending)
+            {
+                return;
+            }
+
+            _isTransitionPending = true;
+            try
+            {
+                // Сохраняем существующий маршрут после полного показа XP.
+                await _xpRewardBannerController
+                    .WaitForCompletionAsync();
+                MenuNavigationRequest.OpenLeaderboard(
+                    locationId,
+                    partId);
+                UnityEngine.SceneManagement.SceneManager.LoadScene(
+                    _sceneName);
+            }
+            catch (Exception exception)
+            {
+                _isTransitionPending = false;
+                Debug.LogException(exception);
+            }
         }
 
         private async void ContinueAfterLevelUp(Action action)
         {
+            if (_isTransitionPending)
+            {
+                return;
+            }
+
+            _isTransitionPending = true;
             bool actionInvoked = false;
 
             void InvokeActionOnce()
@@ -74,6 +110,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             try
             {
+                // Ждём полного показа награды перед переходом из WinModal.
+                await _xpRewardBannerController
+                    .WaitForCompletionAsync();
+
                 int previousPlayerLevel = _previousPlayerLevel;
                 int currentPlayerLevel =
                     GameDataManager.PlayerData.PlayerLevel;

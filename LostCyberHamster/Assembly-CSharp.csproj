@@ -207,6 +207,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\SuperJumpOutcomeResolver.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Runtime\TutorialPhase.cs" />
+    <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\RunExperienceCollector.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleChainBuilder.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOver\JumpOverSpecification.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\DecisionPoint.cs" />
@@ -516,6 +517,7 @@
     <Compile Include="Assets\Scripts\DevTools\GameProgressTesting\GameProgressTestingScreen.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneExecutor.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\HealthBarMechanics.cs" />
+    <Compile Include="Assets\Scripts\UI\Components\XpRewardBannerController.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialGameplayStepCatalog.cs" />
     <Compile Include="Assets\Scripts\Consts.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\SuperAttackService.cs" />
@@ -523,6 +525,7 @@
     <Compile Include="Assets\Scripts\System\Models\PreloadedEffect.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnStrategy.cs" />
+    <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\RunExperienceResult.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneTarget.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ModalController.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\GameState.cs" />
