@@ -2,17 +2,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Commit to Unity Live",
-            "type": "shell",
-            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/tools/commit_to_unity_live.ps1'",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared",
-                "focus": true
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "Codebase Compact Watcher",
             "type": "shell",
             "command": "pwsh",
