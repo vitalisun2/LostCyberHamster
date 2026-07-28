@@ -15,6 +15,7 @@ namespace GameManagement
         public int ExperiencePoints;
         public int PlayerLevel = 1;
         public int AppliedSkinId = 0;
+        public int ActiveSuperAttackId = 0;
         public List<int> PurchasedSkinIds = new() { 0 };
         public string CurrentLevel;
         public string DailyTasksRefreshDate;

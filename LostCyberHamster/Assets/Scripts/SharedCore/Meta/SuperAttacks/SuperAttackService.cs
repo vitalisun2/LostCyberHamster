@@ -25,7 +25,14 @@ namespace Vues.GameCore
         /// <summary>
         /// ID выбранного суперудара или пустое значение до первого выбора.
         /// </summary>
-        public static int? ActiveSuperAttackId { get; private set; }
+        public static int? ActiveSuperAttackId
+        {
+            get
+            {
+                int id = GameDataManager.PlayerData.ActiveSuperAttackId;
+                return id == 0 ? null : id;
+            }
+        }
 
         /// <summary>
         /// Загружает каталог суперударов из Addressables.
@@ -110,7 +117,8 @@ namespace Vues.GameCore
                 return false;
             }
 
-            ActiveSuperAttackId = id;
+            GameDataManager.PlayerData.ActiveSuperAttackId = id;
+            PlayerProgressCommitter.Commit(CheckpointReason.SuperAttackSelected);
             return true;
         }
 

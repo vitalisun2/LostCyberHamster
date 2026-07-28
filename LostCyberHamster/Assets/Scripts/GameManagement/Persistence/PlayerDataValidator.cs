@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.System;
 using GameManagement.Progress;
+using Vues.GameCore;
 
 namespace GameManagement
 {
@@ -53,6 +54,25 @@ namespace GameManagement
                 if (data.PurchasedSkinIds.Any(skinId => !knownSkinIds.Contains(skinId)))
                 {
                     return PlayerDataValidationResult.Rejected("unknown_purchased_skin");
+                }
+            }
+
+            if (data.ActiveSuperAttackId < 0)
+            {
+                return PlayerDataValidationResult.Rejected("invalid_active_super_attack");
+            }
+
+            if (data.ActiveSuperAttackId > 0 && SuperAttackService.Items.Count > 0)
+            {
+                if (!SuperAttackService.TryGet(data.ActiveSuperAttackId, out SuperAttackData superAttack))
+                {
+                    return PlayerDataValidationResult.Rejected("unknown_active_super_attack");
+                }
+
+                if (data.PlayerLevel >= 1 &&
+                    data.PlayerLevel < superAttack.RequiredPlayerLevel)
+                {
+                    return PlayerDataValidationResult.Rejected("locked_active_super_attack");
                 }
             }
 

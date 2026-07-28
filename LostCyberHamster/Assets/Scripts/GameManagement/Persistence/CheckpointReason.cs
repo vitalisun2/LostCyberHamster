@@ -5,6 +5,7 @@ namespace GameManagement
         MenuEntered,
         SkinPurchased,
         SkinApplied,
+        SuperAttackSelected,
         QuestListRefreshed,
         DailyQuestCompleted,
         StorylineQuestCompleted,
