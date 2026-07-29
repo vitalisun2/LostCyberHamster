@@ -65,11 +65,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4cdc77280b52f4c07a29752546dba2e7
-    m_Address: DailyTasksScreen
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 53ef3fc4478f849abaaa97cb8052a325
     m_Address: evening_preview
     m_ReadOnly: 0

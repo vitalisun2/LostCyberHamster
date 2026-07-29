@@ -4,6 +4,7 @@ using System.Linq;
 using Assets.Scripts.System;
 using GameManagement.Progress;
 using Vues.GameCore;
+using Vues.GameCore.Quests;
 
 namespace GameManagement
 {
@@ -21,14 +22,13 @@ namespace GameManagement
                 return PlayerDataValidationResult.Rejected("negative_resource_balance");
             }
 
-            if (data.DailyTasks != null && data.DailyTasks.Any(quest => quest == null))
+            var questStatesResult = ValidateQuestStates(
+                data.QuestStates,
+                out bool hasExactQuestStateDuplicates);
+            if (questStatesResult?.Status ==
+                PlayerDataValidationStatus.Rejected)
             {
-                return PlayerDataValidationResult.Rejected("daily_quest_missing");
-            }
-
-            if (data.DailyTasks != null && data.DailyTasks.Any(quest => quest.IsRewardRecieved && !quest.IsCompleted))
-            {
-                return PlayerDataValidationResult.Rejected("daily_reward_without_completion");
+                return questStatesResult;
             }
 
             if (data.PurchasedSkinIds != null && data.PurchasedSkinIds.Any(skinId => skinId < 0))
@@ -76,12 +76,6 @@ namespace GameManagement
                 }
             }
 
-            var storylineResult = ValidateStorylineProgress(data.StorylineQuestProgress);
-            if (storylineResult != null)
-            {
-                return storylineResult;
-            }
-
             var serializedProgressResult = ValidateSerializedProgress(data, out bool hasExactProgressDuplicates);
             if (serializedProgressResult?.Status == PlayerDataValidationStatus.Rejected)
             {
@@ -109,12 +103,11 @@ namespace GameManagement
             bool needsRepair = data.ExperiencePoints < 0 ||
                                data.PlayerLevel < 1 ||
                                data.PurchasedSkinIds == null ||
-                               data.DailyTasks == null ||
-                               data.StorylineQuestProgress == null ||
+                               data.QuestStates == null ||
                                !data.HasSerializedProgressCollection ||
                                !data.PurchasedSkinIds.Contains(0) ||
                                HasExactDuplicates(data.PurchasedSkinIds) ||
-                               HasExactStorylineDuplicates(data.StorylineQuestProgress) ||
+                               hasExactQuestStateDuplicates ||
                                hasExactProgressDuplicates ||
                                NeedsCatalogProgress(progress);
 
@@ -152,12 +145,11 @@ namespace GameManagement
             {
                 data.PurchasedSkinIds.Add(0);
             }
-            data.DailyTasks ??= new List<Vues.GameCore.Quest>();
-            data.StorylineQuestProgress ??= new List<StorylineQuestProgressEntry>();
+            data.QuestStates ??= new List<QuestState>();
             data.EnsureSerializedProgressCollection();
 
             data.PurchasedSkinIds = data.PurchasedSkinIds.Distinct().ToList();
-            data.StorylineQuestProgress = data.StorylineQuestProgress
+            data.QuestStates = data.QuestStates
                 .GroupBy(entry => entry.QuestId, StringComparer.Ordinal)
                 .Select(group => group.First())
                 .ToList();
@@ -169,25 +161,52 @@ namespace GameManagement
             }
         }
 
-        private static PlayerDataValidationResult ValidateStorylineProgress(
-            IReadOnlyCollection<StorylineQuestProgressEntry> progress)
+        private static PlayerDataValidationResult ValidateQuestStates(
+            IReadOnlyCollection<QuestState> states,
+            out bool hasExactDuplicates)
         {
-            if (progress == null)
+            hasExactDuplicates = false;
+            if (states == null)
             {
                 return null;
             }
 
-            if (progress.Any(entry => entry == null || string.IsNullOrWhiteSpace(entry.QuestId)))
+            var statesById =
+                new Dictionary<string, QuestState>(
+                    StringComparer.Ordinal);
+            foreach (QuestState state in states)
             {
-                return PlayerDataValidationResult.Rejected("invalid_storyline_progress");
+                if (state == null ||
+                    string.IsNullOrWhiteSpace(state.QuestId) ||
+                    state.CurrentProgress < 0 ||
+                    state.IsRewardClaimed && !state.IsCompleted)
+                {
+                    return PlayerDataValidationResult.Rejected(
+                        "invalid_quest_state");
+                }
+
+                if (!statesById.TryGetValue(
+                        state.QuestId,
+                        out QuestState existing))
+                {
+                    statesById.Add(state.QuestId, state);
+                    continue;
+                }
+
+                if (existing.CurrentProgress != state.CurrentProgress ||
+                    existing.IsCompleted != state.IsCompleted ||
+                    existing.IsRewardClaimed != state.IsRewardClaimed)
+                {
+                    return PlayerDataValidationResult.Rejected(
+                        "conflicting_quest_state");
+                }
+
+                hasExactDuplicates = true;
             }
 
-            bool hasConflict = progress
-                .GroupBy(entry => entry.QuestId, StringComparer.Ordinal)
-                .Any(group => group.Select(entry => entry.IsRewardClaimed).Distinct().Count() > 1);
-
-            return hasConflict
-                ? PlayerDataValidationResult.Rejected("conflicting_storyline_progress")
+            return hasExactDuplicates
+                ? PlayerDataValidationResult.Repairable(
+                    "duplicate_quest_state")
                 : null;
         }
 
@@ -254,14 +273,6 @@ namespace GameManagement
         private static bool HasExactDuplicates(IEnumerable<int> values)
         {
             return values.GroupBy(value => value).Any(group => group.Count() > 1);
-        }
-
-        private static bool HasExactStorylineDuplicates(
-            IEnumerable<StorylineQuestProgressEntry> progress)
-        {
-            return progress
-                .GroupBy(entry => new { entry.QuestId, entry.IsRewardClaimed })
-                .Any(group => group.Count() > 1);
         }
 
         private static bool NeedsCatalogProgress(LevelProgressSnapshot progress)

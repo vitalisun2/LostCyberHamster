@@ -14,6 +14,8 @@ namespace GameManagement
         public static PlayerData PlayerData = new PlayerData();
         public static SettingsData Settings = new SettingsData();
 
+        public static event Action PlayerDataReplaced;
+
         private static readonly string _playerDataKey = "PlayerData";
         private static readonly string _playerDataBackupKey = "PlayerData.Backup";
         private static readonly string _settingsKey = "Settings";
@@ -37,6 +39,7 @@ namespace GameManagement
 
                 ClearInvalidBackup();
                 Debug.Log("[GameData] Load outcome: Primary.");
+                PlayerDataReplaced?.Invoke();
 
                 return Task.CompletedTask;
             }
@@ -54,6 +57,7 @@ namespace GameManagement
                 }
 
                 Debug.LogWarning("[GameData] Load outcome: Backup promoted.");
+                PlayerDataReplaced?.Invoke();
                 return Task.CompletedTask;
             }
 
@@ -63,6 +67,7 @@ namespace GameManagement
             PlayerPrefs.DeleteKey(_playerDataBackupKey);
             WritePrimary(PlayerData, rotateValidPrimary: false);
             Debug.LogWarning("[GameData] Load outcome: Defaults created.");
+            PlayerDataReplaced?.Invoke();
 
             return Task.CompletedTask;
         }
@@ -142,9 +147,10 @@ namespace GameManagement
             try
             {
                 PlayerPrefs.DeleteKey(_playerDataBackupKey);
-                WritePrimary(replacement, rotateValidPrimary: false);
                 PlayerData = replacement;
+                WritePrimary(PlayerData, rotateValidPrimary: false);
                 Debug.Log("[GameData] ReplacePlayerData: success.");
+                PlayerDataReplaced?.Invoke();
             }
             catch
             {
@@ -161,6 +167,7 @@ namespace GameManagement
                     Debug.LogError($"[GameData] ReplacePlayerData rollback failed ({rollbackException.GetType().Name}).");
                 }
 
+                PlayerDataReplaced?.Invoke();
                 throw;
             }
         }
@@ -293,6 +300,7 @@ namespace GameManagement
             PlayerData = defaultData;
             IsGameJustStarted = true;
             SaveData();
+            PlayerDataReplaced?.Invoke();
             Debug.Log("[GameData] ResetPlayerProgress: success.");
         }
 

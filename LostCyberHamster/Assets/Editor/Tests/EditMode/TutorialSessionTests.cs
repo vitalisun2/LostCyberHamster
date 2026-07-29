@@ -7,7 +7,7 @@ using GameManagement;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Vues.GameCore;
+using Vues.GameCore.Quests;
 
 namespace Assets.Tests.EditMode
 {
@@ -122,8 +122,7 @@ namespace Assets.Tests.EditMode
                 Crystals = crystals,
                 PurchasedSkinIds = new List<int> { 0 },
                 AppliedSkinId = 0,
-                DailyTasks = new List<Quest>(),
-                StorylineQuestProgress = new List<StorylineQuestProgressEntry>()
+                QuestStates = new List<QuestState>()
             };
         }
 

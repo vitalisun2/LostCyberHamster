@@ -5,7 +5,6 @@ namespace LostCyberHamster.UI
         HomeScreen,
         CharacterScreen,
         QuestsScreen,
-        DailyTasksScreen,
         SelectLevelScreen,
         LeaderboardScreen,
         IntroScreen,

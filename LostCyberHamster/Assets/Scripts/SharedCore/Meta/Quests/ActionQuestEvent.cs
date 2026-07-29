@@ -8,12 +8,6 @@ namespace Vues.GameCore.Quests
     public sealed class ActionQuestEvent : QuestEvent
     {
         /// <summary>
-        /// Идентификатор действия «перепрыгнуть препятствие».
-        /// </summary>
-        public const string ObstacleJumpedOverActionId =
-            "obstacle_jumped_over";
-
-        /// <summary>
         /// Идентификатор выполненного действия.
         /// </summary>
         public string ActionId { get; }

@@ -1,12 +1,10 @@
-using System;
 using Assets.Scripts.Common.Models;
 using Extensions;
 using Unity.Properties;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.UIElements;
 using Vues.GameCore;
+using Vues.GameCore.Quests;
 
 namespace LostCyberHamster.UI
 {
@@ -30,33 +28,36 @@ namespace LostCyberHamster.UI
         {
         }
 
-        public QuestItem(Quest quest)
+        public QuestItem(QuestViewData quest)
         {
-            AddressableExtentions.LoadAssetSync<VisualTreeAsset>("QuestItem.uxml").CloneTree(this);
-            var image = AddressableExtentions.LoadAssetSync<Sprite>(quest.Id);
+            AddressableExtentions
+                .LoadAssetSync<VisualTreeAsset>("QuestItem.uxml")
+                .CloneTree(this);
+            var image =
+                AddressableExtentions.LoadAssetSync<Sprite>(quest.Id);
             _image.style.backgroundImage = new StyleBackground(image.texture);
             _title.text = quest.Title;
-            _progressLabel.text = $"{quest.CurrentAmount} / {quest.TargetAmount}";
+            _progressLabel.text =
+                $"{quest.CurrentProgress} / {quest.TargetAmount}";
             _rewardAmount.text = quest.RewardAmount.ToString();
 
-            var rewardImage =ResourceUIHelper.GetResourceImage(quest.RewardType);
-            _rewardTypeImage.style.backgroundImage = new StyleBackground(rewardImage);
-            
+            var rewardImage =
+                ResourceUIHelper.GetResourceImage(quest.RewardType);
+            _rewardTypeImage.style.backgroundImage =
+                new StyleBackground(rewardImage);
+
             UpdateRewardState(quest);
 
             _buttonGet.RegisterCallback<ClickEvent>(evt =>
             {
-                if (QuestManager.GetReward(quest))
-                {
-                    UpdateRewardState(quest);
-                }
+                QuestManager.ClaimReward(quest.Id);
             });
         }
 
-        private void UpdateRewardState(Quest quest)
+        private void UpdateRewardState(QuestViewData quest)
         {
             // После получения награды заменяем кнопку постоянным статусом.
-            bool isRewardClaimed = quest.IsRewardRecieved;
+            bool isRewardClaimed = quest.IsRewardClaimed;
             _buttonGet.style.display = isRewardClaimed
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
@@ -67,7 +68,7 @@ namespace LostCyberHamster.UI
             // До завершения квеста видимая кнопка остаётся неактивной.
             _buttonGet.SetEnabled(
                 !isRewardClaimed &&
-                quest.CurrentAmount >= quest.TargetAmount);
+                quest.IsCompleted);
         }
     }
 }

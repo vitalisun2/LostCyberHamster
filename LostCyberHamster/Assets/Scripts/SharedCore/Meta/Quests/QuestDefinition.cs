@@ -14,9 +14,23 @@ namespace Vues.GameCore.Quests
         public string Id;
 
         /// <summary>
-        /// Текст квеста для текущего MVP.
+        /// Ключ локализованного названия квеста.
         /// </summary>
-        public string Title;
+        public string TitleLocalizationKey;
+
+        /// <summary>
+        /// Локализованное читаемое название квеста.
+        /// </summary>
+        public string Title =>
+            LocalizationManager.GetLocalizedString(
+                TitleLocalizationKey) ??
+            TitleLocalizationKey;
+
+        /// <summary>
+        /// Раздел production-каталога.
+        /// </summary>
+        [NonSerialized]
+        public QuestCategory Category;
 
         /// <summary>
         /// Широкий тип логики квеста.
@@ -32,5 +46,15 @@ namespace Vues.GameCore.Quests
         /// Значение прогресса для завершения.
         /// </summary>
         public int TargetAmount;
+
+        /// <summary>
+        /// Ресурс награды за квест.
+        /// </summary>
+        public ResourceType RewardType;
+
+        /// <summary>
+        /// Количество ресурса в награде.
+        /// </summary>
+        public int RewardAmount;
     }
 }

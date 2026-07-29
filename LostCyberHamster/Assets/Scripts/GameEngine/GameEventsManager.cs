@@ -6,15 +6,11 @@ using Vues.GameCore.Quests;
 public static class GameEventsManager
 {
     public static event Action OnShowShopScreen;
-    public static event Action OnShowQuestScreen;
     public static event Action OnShowLevelsScreen;
     public static event Action OnStartGame;
 
     public static event Action<string> OnErrorOccurred;
     public static event Action<string> OnPutSkin;
-
-
-    public static event Action<string> OnDailyTaskCompleted;
 
 
     public static event Action OnShowAd;
@@ -24,14 +20,10 @@ public static class GameEventsManager
     public static void AdCompleted() => OnAdCompleted?.Invoke();
 
     public static void ShowShopScreen() => OnShowShopScreen?.Invoke();
-    public static void ShowQuestScreen() => OnShowQuestScreen?.Invoke();
     public static void ShowLevelsScreen() => OnShowLevelsScreen?.Invoke();
     public static void StartGame() => OnStartGame?.Invoke();
     public static void ErrorOccurred(string errorMessage) => OnErrorOccurred?.Invoke(errorMessage);
     public static void PutSkin(string skinId) => OnPutSkin?.Invoke(skinId);
-    public static void DailyTaskCompleted(string taskId) => OnDailyTaskCompleted?.Invoke(taskId);
-
-
     public static event Action<int, ResourceType, int> OnItemBought;
     public static void ItemBought(int itemId, ResourceType resourceType, int amount) => OnItemBought?.Invoke(itemId, resourceType, amount);
 
@@ -56,7 +48,7 @@ public static class GameEventsManager
         OnObstacleJumpedOver?.Invoke(obstacleName);
         PublishActionQuestEvent(
             new ActionQuestEvent(
-                ActionQuestEvent.ObstacleJumpedOverActionId,
+                GameplayActionIds.ObstacleJumpedOver,
                 1));
     }
 
@@ -84,7 +76,14 @@ public static class GameEventsManager
     /// Триггер события OnObstacleJumpedOn
     /// </summary>
     /// <param name="obstacleNames">Идентификатор препятствия, на которое был совершен прыжок</param>
-    public static void ObstacleJumpedOn(string obstacleName) => OnObstacleJumpedOn?.Invoke(obstacleName);
+    public static void ObstacleJumpedOn(string obstacleName)
+    {
+        OnObstacleJumpedOn?.Invoke(obstacleName);
+        PublishActionQuestEvent(
+            new ActionQuestEvent(
+                GameplayActionIds.ObstacleJumpedOn,
+                1));
+    }
 
     /// <summary>
     /// Событие завершения квеста
@@ -100,13 +99,14 @@ public static class GameEventsManager
     /// <summary>
     /// Событие получения награды за квест
     /// </summary>
-    public static event Action<string> OnQuestRewardRecieved;
+    public static event Action<string> OnQuestRewardReceived;
 
     /// <summary>
     /// Триггер события OnQuestGetReward
     /// </summary>
     /// <param name="questId"></param>
-    public static void QuestRewardRecieved(string questId) => OnQuestRewardRecieved?.Invoke(questId);
+    public static void QuestRewardReceived(string questId) =>
+        OnQuestRewardReceived?.Invoke(questId);
 
     /// <summary>
     /// Состояние квеста изменилось после обработки игровой команды.

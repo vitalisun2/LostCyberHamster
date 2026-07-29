@@ -255,6 +255,8 @@ namespace Assets.Scripts.GameManagerLogic
 
             TimeScaleCoefficient = 1f; 
             _state = GameState.PLAYING;
+            GameEventsManager.LevelStarted(
+                LevelManager.GetCurrentLevelNumber());
             DebugManager.DiagStability($"[GAME START] completed state={_state}");
         }
 

@@ -8,9 +8,4 @@ public class Config
     /// </summary>
     public int DisplayQuestsCount = 3;
 
-    /// <summary>
-    /// Количество ежедневных заданий
-    /// </summary>
-    public int DailyTasksCount = 5;
-
 }

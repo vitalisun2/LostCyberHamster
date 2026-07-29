@@ -66,16 +66,16 @@ namespace Assets.Scripts.DevTools.QuestTesting
             IsReady &&
             !_isBusy &&
             State.IsCompleted &&
-            !QuestView.IsRewardRecieved;
+            !QuestView.IsRewardClaimed;
 
         private static QuestDefinition Definition =>
-            QuestManager.MvpQuestDefinitionForTesting;
+            QuestManager.ActiveDefinitionForTesting;
 
         private static QuestState State =>
-            QuestManager.MvpQuestStateForTesting;
+            QuestManager.ActiveStateForTesting;
 
-        private static Quest QuestView =>
-            QuestManager.MvpQuestViewForTesting;
+        private static QuestViewData QuestView =>
+            QuestManager.ActiveViewForTesting;
 
         /// <summary>
         /// Сбрасывает реальное сохранённое состояние активного MVP-квеста.
@@ -86,7 +86,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 "Generate/Reset",
                 () =>
                 {
-                    if (!QuestManager.ResetMvpQuestForTesting())
+                    if (!QuestManager.ResetActiveQuestForTesting())
                     {
                         throw new InvalidOperationException(
                             "QuestManager не инициализирован.");
@@ -139,7 +139,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 "Claim Reward",
                 () =>
                 {
-                    if (!QuestManager.GetReward(QuestView))
+                    if (!QuestManager.ClaimReward(QuestView.Id))
                     {
                         throw new InvalidOperationException(
                             "QuestManager отклонил получение награды.");
@@ -184,8 +184,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     GameEventsManager.LevelStarted(levelId);
                     for (int index = 0; index < actionCount; index++)
                     {
-                        GameEventsManager.ObstacleJumpedOver(
-                            $"quest-testing-{index + 1}");
+                        PublishConfiguredAction(index);
                     }
 
                     // До победы attempt buffer не должен менять сохранённый прогресс.
@@ -239,6 +238,23 @@ namespace Assets.Scripts.DevTools.QuestTesting
             }
         }
 
+        private static void PublishConfiguredAction(int index)
+        {
+            string sourceId = $"quest-testing-{index + 1}";
+            switch (Definition.ActionId)
+            {
+                case GameplayActionIds.ObstacleJumpedOver:
+                    GameEventsManager.ObstacleJumpedOver(sourceId);
+                    break;
+                case GameplayActionIds.ObstacleJumpedOn:
+                    GameEventsManager.ObstacleJumpedOn(sourceId);
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        $"Тест-тул не поддерживает действие {Definition.ActionId}.");
+            }
+        }
+
         private void ResetTransientState(
             string status,
             string afterState)
@@ -259,7 +275,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
             string progress =
                 $"{State.CurrentProgress}/{Definition.TargetAmount}";
-            if (QuestView.IsRewardRecieved)
+            if (QuestView.IsRewardClaimed)
             {
                 return $"Награда получена, {progress}";
             }

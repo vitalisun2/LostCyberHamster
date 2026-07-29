@@ -22,5 +22,10 @@ namespace Vues.GameCore.Quests
         /// Признак достижения цели.
         /// </summary>
         public bool IsCompleted;
+
+        /// <summary>
+        /// Признак уже полученной награды.
+        /// </summary>
+        public bool IsRewardClaimed;
     }
 }

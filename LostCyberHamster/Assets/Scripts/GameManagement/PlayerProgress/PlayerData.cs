@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using GameManagement.Progress;
 using UnityEngine;
-using Vues.GameCore;
 using Vues.GameCore.Quests;
 
 namespace GameManagement
@@ -19,9 +18,7 @@ namespace GameManagement
         public int ActiveSuperAttackId = 0;
         public List<int> PurchasedSkinIds = new() { 0 };
         public string CurrentLevel;
-        public string DailyTasksRefreshDate;
-        public List<Quest> DailyTasks;
-        public QuestState BasicQuest = new();
+        public List<QuestState> QuestStates = new();
 
         [SerializeField]
         private List<SerializableLevelProgressEntry> _serializedProgress = new();
@@ -29,7 +26,6 @@ namespace GameManagement
         [NonSerialized]
         private LevelProgressSnapshot _progressSnapshot = LevelProgressSnapshot.Empty;
 
-        public List<StorylineQuestProgressEntry> StorylineQuestProgress = new();
         public string LastSaveDate = DateTime.MinValue.ToString("o");
         public bool IsFirstLaunch = true;
         public bool IsTutorialCompleted;

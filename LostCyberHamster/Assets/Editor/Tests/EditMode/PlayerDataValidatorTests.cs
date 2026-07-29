@@ -3,7 +3,7 @@ using Assets.Scripts.System;
 using GameManagement;
 using NUnit.Framework;
 using UnityEngine;
-using Vues.GameCore;
+using Vues.GameCore.Quests;
 
 namespace Assets.Tests.EditMode
 {
@@ -40,8 +40,7 @@ namespace Assets.Tests.EditMode
         public void RepairSafe_NullCollectionsAndExactDuplicates_RevalidatesAndIsIdempotent()
         {
             var data = CreateValidData();
-            data.DailyTasks = null;
-            data.StorylineQuestProgress = null;
+            data.QuestStates = null;
             data.PurchasedSkinIds = new List<int> { 0, 0 };
 
             var initialResult = PlayerDataValidator.Validate(data);
@@ -52,8 +51,7 @@ namespace Assets.Tests.EditMode
             var repairedResult = PlayerDataValidator.Validate(data);
             Assert.AreEqual(PlayerDataValidationStatus.Valid, repairedResult.Status);
             CollectionAssert.AreEqual(new[] { 0 }, data.PurchasedSkinIds);
-            Assert.IsNotNull(data.DailyTasks);
-            Assert.IsNotNull(data.StorylineQuestProgress);
+            Assert.IsNotNull(data.QuestStates);
 
             string jsonAfterFirstRepair = data.ToJson();
             PlayerDataValidator.RepairSafe(data, repairedResult);
@@ -87,16 +85,17 @@ namespace Assets.Tests.EditMode
         public void Validate_RewardWithoutCompletion_IsRejected()
         {
             var data = CreateValidData();
-            data.DailyTasks.Add(new Quest
+            data.QuestStates.Add(new QuestState
             {
+                QuestId = "quest-002",
                 IsCompleted = false,
-                IsRewardRecieved = true
+                IsRewardClaimed = true
             });
 
             var result = PlayerDataValidator.Validate(data);
 
             Assert.AreEqual(PlayerDataValidationStatus.Rejected, result.Status);
-            Assert.AreEqual("daily_reward_without_completion", result.Reason);
+            Assert.AreEqual("invalid_quest_state", result.Reason);
         }
 
         [TestCase(
@@ -155,16 +154,15 @@ namespace Assets.Tests.EditMode
             {
                 PurchasedSkinIds = new List<int> { 0 },
                 AppliedSkinId = 0,
-                DailyTasks = new List<Quest>(),
-                StorylineQuestProgress = new List<StorylineQuestProgressEntry>()
+                QuestStates = new List<QuestState>()
             };
         }
 
         private static PlayerData FromRawProgressJson(string entriesJson)
         {
             string json =
-                "{\"PurchasedSkinIds\":[0],\"AppliedSkinId\":0,\"DailyTasks\":[]," +
-                "\"StorylineQuestProgress\":[],\"_serializedProgress\":[" + entriesJson + "]}";
+                "{\"PurchasedSkinIds\":[0],\"AppliedSkinId\":0,\"QuestStates\":[]," +
+                "\"_serializedProgress\":[" + entriesJson + "]}";
             return JsonUtility.FromJson<PlayerData>(json);
         }
     }

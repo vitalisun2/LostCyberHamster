@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine.UIElements;
 using Vues.GameCore;
+using Vues.GameCore.Quests;
 
 namespace LostCyberHamster.UI
 {
@@ -30,10 +31,10 @@ namespace LostCyberHamster.UI
         private bool _showDailyTasks = true;
         private int _currentQuestIndex;
 
-        private IReadOnlyList<Quest> ActiveQuests =>
+        private IReadOnlyList<QuestViewData> ActiveQuests =>
             _showDailyTasks
-                ? QuestManager.DailyTasks
-                : QuestManager.StorylineQuests;
+                ? QuestManager.DailyQuests
+                : QuestManager.StoryQuests;
 
         public QuestsScreenController(UIDocument uiDocument) : base(uiDocument)
         {
@@ -52,7 +53,7 @@ namespace LostCyberHamster.UI
 
         private void RenderActivePage()
         {
-            IReadOnlyList<Quest> quests = ActiveQuests;
+            IReadOnlyList<QuestViewData> quests = ActiveQuests;
             int pageSize = ConfigurationManager.Config.DisplayQuestsCount;
 
             // Нормализуем страницу после смены набора или количества квестов.
@@ -64,7 +65,7 @@ namespace LostCyberHamster.UI
 
             // Перестраиваем видимую страницу и состояние навигации.
             _questsContainer.Clear();
-            foreach (Quest quest in quests
+            foreach (QuestViewData quest in quests
                          .Skip(_currentQuestIndex)
                          .Take(pageSize))
             {
@@ -144,7 +145,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickNextQuestPage(ClickEvent evt)
         {
-            IReadOnlyList<Quest> quests = ActiveQuests;
+            IReadOnlyList<QuestViewData> quests = ActiveQuests;
             _currentQuestIndex +=
                 ConfigurationManager.Config.DisplayQuestsCount;
             if (_currentQuestIndex >= quests.Count)

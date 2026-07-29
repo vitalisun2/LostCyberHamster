@@ -90,6 +90,7 @@ namespace Vues.GameCore.Quests
                 State.QuestId = Definition.Id;
                 State.CurrentProgress = 0;
                 State.IsCompleted = false;
+                State.IsRewardClaimed = false;
                 return;
             }
 
@@ -99,9 +100,13 @@ namespace Vues.GameCore.Quests
                 Definition.TargetAmount);
             State.IsCompleted =
                 State.CurrentProgress >= Definition.TargetAmount;
+            if (!State.IsCompleted)
+            {
+                State.IsRewardClaimed = false;
+            }
         }
 
-        private static void ValidateDefinition(
+        internal static void ValidateDefinition(
             QuestDefinition definition)
         {
             if (definition == null)
@@ -110,14 +115,18 @@ namespace Vues.GameCore.Quests
             }
 
             if (string.IsNullOrWhiteSpace(definition.Id) ||
-                string.IsNullOrWhiteSpace(definition.Title))
+                string.IsNullOrWhiteSpace(
+                    definition.TitleLocalizationKey))
             {
                 throw new ArgumentException(
                     "Описание квеста содержит пустые обязательные данные.",
                     nameof(definition));
             }
 
-            if (definition.Type == QuestType.None)
+            if (!Enum.IsDefined(
+                    typeof(QuestType),
+                    definition.Type) ||
+                definition.Type == QuestType.None)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(definition),
@@ -126,10 +135,10 @@ namespace Vues.GameCore.Quests
             }
 
             if (definition.Type == QuestType.ActionCounter &&
-                string.IsNullOrWhiteSpace(definition.ActionId))
+                !GameplayActionIds.IsKnown(definition.ActionId))
             {
                 throw new ArgumentException(
-                    "Действие квеста-счётчика не задано.",
+                    "Действие квеста-счётчика не поддерживается.",
                     nameof(definition));
             }
 
@@ -139,6 +148,23 @@ namespace Vues.GameCore.Quests
                     nameof(definition),
                     definition.TargetAmount,
                     "Цель квеста должна быть положительной.");
+            }
+
+            if (definition.RewardType != ResourceType.Coins &&
+                definition.RewardType != ResourceType.Crystals)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition),
+                    definition.RewardType,
+                    "Тип награды квеста не поддерживается.");
+            }
+
+            if (definition.RewardAmount <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition),
+                    definition.RewardAmount,
+                    "Награда квеста должна быть положительной.");
             }
         }
     }

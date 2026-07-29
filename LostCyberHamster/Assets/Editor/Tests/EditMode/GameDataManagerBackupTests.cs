@@ -4,6 +4,7 @@ using GameManagement;
 using NUnit.Framework;
 using UnityEngine;
 using Vues.GameCore;
+using Vues.GameCore.Quests;
 
 namespace Assets.Tests.EditMode
 {
@@ -141,8 +142,7 @@ namespace Assets.Tests.EditMode
             {
                 Money = money,
                 PurchasedSkinIds = new List<int> { 0 },
-                DailyTasks = new List<Quest>(),
-                StorylineQuestProgress = new List<StorylineQuestProgressEntry>()
+                QuestStates = new List<QuestState>()
             };
         }
 
