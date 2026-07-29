@@ -483,6 +483,10 @@
         {
             "key": "level_up_ok",
             "value": "OK"
+        },
+        {
+            "key": "quest_reward_claimed",
+            "value": "Награда получена"
         }
     ]
 }

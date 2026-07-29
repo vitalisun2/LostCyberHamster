@@ -79,6 +79,7 @@ namespace Assets.Scripts.Entry_Points
                 new DailyTasksScreenController(_uiDocument),
             });
 
+            await QuestManager.Init();
             await _uiManager.LoadScreenAsync(
                 openLeaderboard
                     ? ScreenEnum.LeaderboardScreen
@@ -93,7 +94,6 @@ namespace Assets.Scripts.Entry_Points
                 _accountPromptCoordinator.Enable();
             }
             AdsManager.Initialize();
-            await QuestManager.Init();
         }
 
         private void Start()

@@ -4,6 +4,7 @@ using System.Linq;
 using GameManagement.Progress;
 using UnityEngine;
 using Vues.GameCore;
+using Vues.GameCore.Quests;
 
 namespace GameManagement
 {
@@ -20,7 +21,7 @@ namespace GameManagement
         public string CurrentLevel;
         public string DailyTasksRefreshDate;
         public List<Quest> DailyTasks;
-        public BasicQuestState BasicQuest = new();
+        public QuestState BasicQuest = new();
 
         [SerializeField]
         private List<SerializableLevelProgressEntry> _serializedProgress = new();

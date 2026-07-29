@@ -1,4 +1,11 @@
 {
+  "MvpQuest": {
+    "Id": "quest-002",
+    "Title": "Jump over 5 obstacles",
+    "Type": 1,
+    "ActionId": "obstacle_jumped_over",
+    "TargetAmount": 5
+  },
   "DailyTasksPool": [
     {
       "Id": "quest-001",

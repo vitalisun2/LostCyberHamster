@@ -23,6 +23,8 @@ namespace LostCyberHamster.UI
         private Label _progressLabel => this.Q<Label>("quest-item__progress");
 
         private LocalizedButton _buttonGet => this.Q<LocalizedButton>("quest-item__reward-get");
+        private VisualElement _rewardClaimed =>
+            this.Q<VisualElement>("quest-item__reward-claimed");
 
         public QuestItem()
         {
@@ -40,24 +42,32 @@ namespace LostCyberHamster.UI
             var rewardImage =ResourceUIHelper.GetResourceImage(quest.RewardType);
             _rewardTypeImage.style.backgroundImage = new StyleBackground(rewardImage);
             
-            _buttonGet.SetEnabled(false);
-            if (quest.CurrentAmount >= quest.TargetAmount && !quest.IsRewardRecieved)
-            {
-                _buttonGet.SetEnabled(true);
-            }
+            UpdateRewardState(quest);
 
-            if(quest.IsRewardRecieved)
-            {
-                _buttonGet.style.display = DisplayStyle.None;
-            }
-
-            _buttonGet.RegisterCallback<ClickEvent>(async evt =>
+            _buttonGet.RegisterCallback<ClickEvent>(evt =>
             {
                 if (QuestManager.GetReward(quest))
                 {
-                    _buttonGet.style.display = DisplayStyle.None;
+                    UpdateRewardState(quest);
                 }
             });
+        }
+
+        private void UpdateRewardState(Quest quest)
+        {
+            // После получения награды заменяем кнопку постоянным статусом.
+            bool isRewardClaimed = quest.IsRewardRecieved;
+            _buttonGet.style.display = isRewardClaimed
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
+            _rewardClaimed.style.display = isRewardClaimed
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+
+            // До завершения квеста видимая кнопка остаётся неактивной.
+            _buttonGet.SetEnabled(
+                !isRewardClaimed &&
+                quest.CurrentAmount >= quest.TargetAmount);
         }
     }
 }

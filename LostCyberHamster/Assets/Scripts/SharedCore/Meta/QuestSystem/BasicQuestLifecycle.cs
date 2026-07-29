@@ -1,35 +1,47 @@
-using System;
 using GameManagement;
+using Vues.GameCore.Quests;
 
 namespace Vues.GameCore
 {
     /// <summary>
-    /// Отслеживает выполнение одного квеста на перепрыгивание препятствий.
+    /// Сохраняет старый вход к первому квесту поверх нового ядра.
     /// </summary>
     public sealed class BasicQuestLifecycle
     {
-        private readonly Quest _definition;
-        private readonly BasicQuestState _state;
+        private readonly QuestSystem _questSystem;
         private bool _isTracking;
 
         /// <summary>
-        /// Связывает определение квеста с его состоянием в данных игрока.
+        /// Связывает старое описание квеста с новым ядром и состоянием игрока.
         /// </summary>
         public BasicQuestLifecycle(Quest definition, PlayerData playerData)
         {
-            _definition = definition ?? throw new ArgumentNullException(nameof(definition));
-            if (playerData == null)
+            if (definition == null)
             {
-                throw new ArgumentNullException(nameof(playerData));
+                throw new System.ArgumentNullException(nameof(definition));
             }
 
-            _state = playerData.BasicQuest ??= new BasicQuestState();
-            if (_state.QuestId != definition.Id)
+            if (playerData == null)
             {
-                _state.QuestId = definition.Id;
-                _state.CurrentProgress = 0;
-                _state.IsCompleted = false;
+                throw new System.ArgumentNullException(nameof(playerData));
             }
+
+            var questDefinition = new QuestDefinition
+            {
+                Id = definition.Id,
+                Title = string.IsNullOrWhiteSpace(definition.Title)
+                    ? definition.Id
+                    : definition.Title,
+                Type = QuestType.ActionCounter,
+                ActionId =
+                    ActionQuestEvent.ObstacleJumpedOverActionId,
+                TargetAmount = definition.TargetAmount
+            };
+            playerData.BasicQuest ??= new QuestState();
+            _questSystem = new QuestSystem(
+                questDefinition,
+                playerData.BasicQuest,
+                new ActionCounterQuestStrategy());
         }
 
         /// <summary>
@@ -42,7 +54,7 @@ namespace Vues.GameCore
                 return;
             }
 
-            GameEventsManager.OnObstacleJumpedOver += HandleObstacleJumpedOver;
+            GameEventsManager.OnActionQuestEvent += HandleActionQuestEvent;
             _isTracking = true;
         }
 
@@ -56,19 +68,14 @@ namespace Vues.GameCore
                 return;
             }
 
-            GameEventsManager.OnObstacleJumpedOver -= HandleObstacleJumpedOver;
+            GameEventsManager.OnActionQuestEvent -= HandleActionQuestEvent;
             _isTracking = false;
         }
 
-        private void HandleObstacleJumpedOver(string _)
+        private void HandleActionQuestEvent(
+            ActionQuestEvent questEvent)
         {
-            if (_state.IsCompleted)
-            {
-                return;
-            }
-
-            _state.CurrentProgress = Math.Min(_state.CurrentProgress + 1, _definition.TargetAmount);
-            _state.IsCompleted = _state.CurrentProgress >= _definition.TargetAmount;
+            _questSystem.Handle(questEvent);
         }
     }
 }

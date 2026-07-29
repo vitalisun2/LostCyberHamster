@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Vues.GameCore;
+using Vues.GameCore.Quests;
 
 public static class GameEventsManager
 {
@@ -42,10 +43,36 @@ public static class GameEventsManager
     public static event Action<string> OnObstacleJumpedOver;
 
     /// <summary>
+    /// Типизированные события действий для квестов-счётчиков.
+    /// </summary>
+    public static event Action<ActionQuestEvent> OnActionQuestEvent;
+
+    /// <summary>
     /// Триггер события OnObstacleJumpedOver
     /// </summary>
     /// <param name="obstacleName">Идентификатор препятствия, через которое был совершен прыжок</param>
-    public static void ObstacleJumpedOver(string obstacleName) => OnObstacleJumpedOver?.Invoke(obstacleName);
+    public static void ObstacleJumpedOver(string obstacleName)
+    {
+        OnObstacleJumpedOver?.Invoke(obstacleName);
+        PublishActionQuestEvent(
+            new ActionQuestEvent(
+                ActionQuestEvent.ObstacleJumpedOverActionId,
+                1));
+    }
+
+    /// <summary>
+    /// Публикует одно типизированное действие для квестовой системы.
+    /// </summary>
+    public static void PublishActionQuestEvent(
+        ActionQuestEvent questEvent)
+    {
+        if (questEvent == null)
+        {
+            throw new ArgumentNullException(nameof(questEvent));
+        }
+
+        OnActionQuestEvent?.Invoke(questEvent);
+    }
 
 
     /// <summary>
@@ -80,6 +107,17 @@ public static class GameEventsManager
     /// </summary>
     /// <param name="questId"></param>
     public static void QuestRewardRecieved(string questId) => OnQuestRewardRecieved?.Invoke(questId);
+
+    /// <summary>
+    /// Состояние квеста изменилось после обработки игровой команды.
+    /// </summary>
+    public static event Action<string> OnQuestStateChanged;
+
+    /// <summary>
+    /// Сообщает подписчикам об актуальном состоянии квеста.
+    /// </summary>
+    public static void QuestStateChanged(string questId) =>
+        OnQuestStateChanged?.Invoke(questId);
 
 
 #region Уровень

@@ -7,20 +7,19 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.XR;
+using Vues.GameCore.Quests;
 
 namespace Vues.GameCore
 {
     public static class QuestManager
     {
-        private const string BasicQuestDefinitionId = "quest-002";
-
         /// <summary>
         /// Pool of daily quests to generate from.
         /// </summary>
         private static List<Quest> _dailyTasksPool = new List<Quest>();
-        private static BasicQuestLifecycle _basicQuestLifecycle;
+        private static QuestSystem _mvpQuestSystem;
+        private static Quest _mvpQuestView;
         private static readonly PlayerExperienceService _playerExperienceService = new();
-        private static bool _isTracking;
 
         public static List<Quest> DailyTasks = new List<Quest>();
         public static List<Quest> StorylineQuests = new List<Quest>();
@@ -32,11 +31,7 @@ namespace Vues.GameCore
 
             StorylineQuests = quests.StorylineQuests.ToList();
             _dailyTasksPool = quests.DailyTasksPool.ToList();
-            InitializeBasicQuestLifecycle();
-
-            //GameRepository.GameData.PlayerData.DailyQuestRefreshDate = "2021-01-01";
-
-            CheckAndRefreshDailyQuests();
+            InitializeMvpQuest(quests.MvpQuest);
 
             RestoreStorylineQuestProgress();
         }
@@ -57,40 +52,53 @@ namespace Vues.GameCore
 
         public static void OnEnable()
         {
-            _isTracking = true;
-            _basicQuestLifecycle?.StartTracking();
+            GameEventsManager.OnActionQuestEvent +=
+                HandleActionQuestEvent;
             GameEventsManager.OnCoinCollected += HandleCoinCollected;
             GameEventsManager.OnCrystalsCollected += HandleCrystallCollected;
-            GameEventsManager.OnObstacleJumpedOver += HandleObstacleJumpedOver;
             GameEventsManager.OnObstacleJumpedOn += HandleObstacleJumpedOn;
         }
 
         public static void OnDisable()
         {
-            _isTracking = false;
-            _basicQuestLifecycle?.StopTracking();
+            GameEventsManager.OnActionQuestEvent -=
+                HandleActionQuestEvent;
             GameEventsManager.OnCoinCollected -= HandleCoinCollected;
             GameEventsManager.OnCrystalsCollected -= HandleCrystallCollected;
-            GameEventsManager.OnObstacleJumpedOver -= HandleObstacleJumpedOver;
             GameEventsManager.OnObstacleJumpedOn -= HandleObstacleJumpedOn;
         }
 
-        private static void InitializeBasicQuestLifecycle()
+        private static void InitializeMvpQuest(
+            QuestDefinition definition)
         {
-            var definition = _dailyTasksPool.FirstOrDefault(quest => quest.Id == BasicQuestDefinitionId);
-            if (definition == null)
-            {
-                return;
-            }
+            // Запускаем новое ядро на сохранённом состоянии игрока.
+            GameDataManager.PlayerData.BasicQuest ??= new QuestState();
+            _mvpQuestSystem = new QuestSystem(
+                definition,
+                GameDataManager.PlayerData.BasicQuest,
+                new ActionCounterQuestStrategy());
 
-            _basicQuestLifecycle?.StopTracking();
-            _basicQuestLifecycle = new BasicQuestLifecycle(definition, GameDataManager.PlayerData);
-            if (_isTracking)
+            // Собираем временную модель для существующей карточки и награды.
+            Quest rewardTemplate = _dailyTasksPool.FirstOrDefault(
+                quest => quest.Id == definition.Id);
+            Quest savedQuest = GameDataManager.PlayerData.DailyTasks?
+                .FirstOrDefault(quest => quest.Id == definition.Id);
+            _mvpQuestView = new Quest
             {
-                _basicQuestLifecycle.StartTracking();
-            }
+                Id = definition.Id,
+                Title = definition.Title,
+                TargetAmount = definition.TargetAmount,
+                RewardTypeId = rewardTemplate?.RewardTypeId ?? 0,
+                RewardAmount = rewardTemplate?.RewardAmount ?? 0,
+                ActionTypeString =
+                    ActionTypeEnum.JumpOverObstacles.ToString(),
+                IsRewardRecieved =
+                    savedQuest?.IsRewardRecieved ?? false
+            };
+            SyncMvpQuestView();
+            DailyTasks = new List<Quest> { _mvpQuestView };
+            GameDataManager.PlayerData.DailyTasks = DailyTasks;
         }
-
 
         private static void HandleCoinCollected(int amount)
         {
@@ -102,14 +110,51 @@ namespace Vues.GameCore
             UpdateQuests(ActionTypeEnum.CollectCrystals, amount);
         }
 
-        private static void HandleObstacleJumpedOver(string obstacleName)
+        private static void HandleActionQuestEvent(
+            ActionQuestEvent questEvent)
         {
-            UpdateQuests(ActionTypeEnum.JumpOverObstacles, 1, obstacleName);
+            if (_mvpQuestSystem == null)
+            {
+                return;
+            }
+
+            // Новое ядро меняет сохранённое состояние только для своего action ID.
+            bool wasCompleted = _mvpQuestSystem.State.IsCompleted;
+            if (!_mvpQuestSystem.Handle(questEvent))
+            {
+                return;
+            }
+
+            // Старый UI получает актуальный снимок без своей квестовой логики.
+            SyncMvpQuestView();
+            if (!wasCompleted && _mvpQuestSystem.State.IsCompleted)
+            {
+                GameEventsManager.QuestCompleted(
+                    _mvpQuestSystem.Definition.Id);
+                PlayerProgressCommitter.Commit(
+                    CheckpointReason.DailyQuestCompleted);
+            }
+
+            GameEventsManager.QuestStateChanged(
+                _mvpQuestSystem.Definition.Id);
         }
 
         private static void HandleObstacleJumpedOn(string obstacleName)
         {
             UpdateQuests(ActionTypeEnum.JumpOnObstacles, 1, obstacleName);
+        }
+
+        private static void SyncMvpQuestView()
+        {
+            if (_mvpQuestSystem == null || _mvpQuestView == null)
+            {
+                return;
+            }
+
+            _mvpQuestView.CurrentAmount =
+                _mvpQuestSystem.State.CurrentProgress;
+            _mvpQuestView.IsCompleted =
+                _mvpQuestSystem.State.IsCompleted;
         }
 
         private static void UpdateQuests(ActionTypeEnum actionType, int progressAmount = 1, string objectName = "")
@@ -140,6 +185,7 @@ namespace Vues.GameCore
                 if (quest.ActionType == actionType && !quest.IsCompleted)
                 {
                     quest.Progress(progressAmount);
+                    GameEventsManager.QuestStateChanged(quest.Id);
                     if (quest.IsCompleted)
                     {
                         if (isStoryline)
@@ -256,6 +302,7 @@ namespace Vues.GameCore
             }
 
             GameEventsManager.QuestRewardRecieved(quest.Id);
+            GameEventsManager.QuestStateChanged(quest.Id);
             PlayerProgressCommitter.Commit(CheckpointReason.QuestRewardClaimed);
             return true;
         }

@@ -93,6 +93,8 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
+            GameEventsManager.OnQuestStateChanged +=
+                HandleQuestStateChanged;
             _buttonSettings?.RegisterCallback<ClickEvent>(OnClickBtnSettings);
             _buttonHome?.RegisterCallback<ClickEvent>(OnClickBtnHome);
             _buttonAddMoney?.RegisterCallback<ClickEvent>(OnClickBtnAddMoney);
@@ -117,8 +119,22 @@ namespace LostCyberHamster.UI
             UIManager.OnModalShow(ScreenEnum.ShopModal);
         }
 
+        private void HandleQuestStateChanged(string questId)
+        {
+            if (!QuestManager.DailyTasks.Any(
+                    quest => quest.Id == questId))
+            {
+                return;
+            }
+
+            // Обновляем карточку после завершения текущего UI-события.
+            _questsContainer?.schedule.Execute(() => _ = Init());
+        }
+
         protected override void OnUnsubscribeFromEvents()
         {
+            GameEventsManager.OnQuestStateChanged -=
+                HandleQuestStateChanged;
             _buttonSettings?.UnregisterCallback<ClickEvent>(OnClickBtnSettings);
             _buttonHome?.UnregisterCallback<ClickEvent>(OnClickBtnHome);
             _buttonAddMoney?.UnregisterCallback<ClickEvent>(OnClickBtnAddMoney);

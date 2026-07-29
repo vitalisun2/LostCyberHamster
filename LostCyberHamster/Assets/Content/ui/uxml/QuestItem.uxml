@@ -13,6 +13,10 @@
                 <engine:VisualElement name="quest-item__reward-image" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/shop/watchad.png?fileID=2800000&amp;guid=c1c4ec069be1646b88b2cafee0e2ec86&amp;type=3#watchad&quot;); width: 80px; height: 80px; margin-left: 0;" />
             </engine:VisualElement>
             <Vues.GameCore.LocalizedButton key="btn_get" name="quest-item__reward-get" class="lcs_btn" style="height: 80px; width: 320px; margin-left: 12px; margin-top: 12px; margin-right: 12px; margin-bottom: 12px; background-color: rgb(107, 229, 207);" />
+            <engine:VisualElement name="quest-item__reward-claimed" style="display: none; height: 80px; width: 320px; margin-left: 12px; margin-top: 12px; margin-right: 12px; margin-bottom: 12px; flex-direction: row; align-items: center; justify-content: center;">
+                <engine:Label text="✓" style="font-size: 42px; color: rgb(82, 222, 112); -unity-font-style: bold;" />
+                <Vues.GameCore.LocalizedLabel key="quest_reward_claimed" class="lcs-text" style="font-size: 26px; margin-left: 10px;" />
+            </engine:VisualElement>
         </engine:VisualElement>
         <engine:VisualElement name="quest-item__image" style="flex-grow: 0; flex-direction: row; align-self: center; align-items: center; background-image: url(&quot;project://database/Assets/Content/quests/quest-002.png?fileID=2800000&amp;guid=8c77fdb7a4fe84591a39202b6dfa20f6&amp;type=3#quest-002&quot;); width: 180px; height: 180px; margin-top: 8px; justify-content: center; max-width: none; max-height: none; min-width: auto; min-height: auto; margin-right: 12px; margin-left: 12px; position: absolute; top: -90px;" />
     </engine:VisualElement>
