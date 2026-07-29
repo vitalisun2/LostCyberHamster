@@ -485,6 +485,14 @@
             "value": "OK"
         },
         {
+            "key": "quests_tab_daily",
+            "value": "ЕЖЕДНЕВНЫЕ"
+        },
+        {
+            "key": "quests_tab_story",
+            "value": "СЮЖЕТНЫЕ"
+        },
+        {
             "key": "quest_reward_claimed",
             "value": "Награда получена"
         }

@@ -76,7 +76,6 @@ namespace Assets.Scripts.Entry_Points
                 new SelectLevelScreenController(_uiDocument),
                 leaderboardScreenController,
                 new ShopModalController(_uiDocument),
-                new DailyTasksScreenController(_uiDocument),
             });
 
             await QuestManager.Init();

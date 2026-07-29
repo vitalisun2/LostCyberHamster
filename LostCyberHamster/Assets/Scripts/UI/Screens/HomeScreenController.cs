@@ -21,7 +21,6 @@ namespace LostCyberHamster.UI
         private Button _buttonTutorial => _contentRoot.Q<Button>("btn_tutorial");
 
         private Button _buttonQuests => _contentRoot.Q<Button>("btn_quests");
-        private Button _buttonTasks => _contentRoot.Q<Button>("btn_tasks");
         private Button _buttonSuperAttacks =>
             _contentRoot.Q<Button>("super-attacks__xp-button");
         private Button _buttonShop => _contentRoot.Q<Button>("btn_shop");
@@ -72,7 +71,6 @@ namespace LostCyberHamster.UI
             _buttonCharacter?.RegisterCallback<ClickEvent>(OnClickBtnCharacter);
             _buttonTutorial?.RegisterCallback<ClickEvent>(OnClickBtnTutorial);
             _buttonQuests?.RegisterCallback<ClickEvent>(OnClickBtnQuests);
-            _buttonTasks?.RegisterCallback<ClickEvent>(OnClickBtnTasks);
             _buttonSuperAttacks?.RegisterCallback<ClickEvent>(OnClickBtnSuperAttacks);
             _buttonShop?.RegisterCallback<ClickEvent>(OnClickBtnShop);
         }
@@ -81,12 +79,6 @@ namespace LostCyberHamster.UI
         {
             UIManager.OnScreenShow(ScreenEnum.SuperAttacksScreen);
         }
-
-        private void OnClickBtnTasks(ClickEvent evt)
-        {
-            UIManager.OnScreenShow(ScreenEnum.DailyTasksScreen);
-        }
-
 
         private void OnClickBtnShop(ClickEvent evt)
         {
@@ -121,7 +113,6 @@ namespace LostCyberHamster.UI
             _buttonCharacter?.UnregisterCallback<ClickEvent>(OnClickBtnCharacter);
             _buttonTutorial?.UnregisterCallback<ClickEvent>(OnClickBtnTutorial);
             _buttonQuests?.UnregisterCallback<ClickEvent>(OnClickBtnQuests);
-            _buttonTasks?.UnregisterCallback<ClickEvent>(OnClickBtnTasks);
             _buttonSuperAttacks?.UnregisterCallback<ClickEvent>(OnClickBtnSuperAttacks);
             _buttonShop?.UnregisterCallback<ClickEvent>(OnClickBtnShop);
         }

@@ -485,6 +485,14 @@
             "value": "OK"
         },
         {
+            "key": "quests_tab_daily",
+            "value": "DAILY"
+        },
+        {
+            "key": "quests_tab_story",
+            "value": "STORY"
+        },
+        {
             "key": "quest_reward_claimed",
             "value": "Reward claimed"
         }
