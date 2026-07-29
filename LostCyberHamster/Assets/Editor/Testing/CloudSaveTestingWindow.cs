@@ -12,7 +12,8 @@ namespace LostCyberHamster.Editor.Testing
             Start,
             CloudSave,
             GameProgress,
-            ExperienceProgress
+            ExperienceProgress,
+            Quests
         }
 
         /// <summary>Минимальная ширина окна.</summary>
@@ -51,6 +52,9 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Рисует и обслуживает страницу XP/Level Progress Testing.</summary>
         private ExperienceProgress.ExperienceProgressTestingPage _experienceProgressPage;
 
+        /// <summary>Рисует и обслуживает страницу Quest Testing.</summary>
+        private QuestTesting.QuestTestingPage _questTestingPage;
+
         /// <summary>Текущая страница общего окна Testing.</summary>
         private TestingPage _currentPage;
 
@@ -77,6 +81,7 @@ namespace LostCyberHamster.Editor.Testing
             _gameProgressPage = new GameProgress.GameProgressTestingPage(Repaint);
             _experienceProgressPage =
                 new ExperienceProgress.ExperienceProgressTestingPage(Repaint);
+            _questTestingPage = new QuestTesting.QuestTestingPage(Repaint);
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
@@ -94,6 +99,7 @@ namespace LostCyberHamster.Editor.Testing
 
             _gameProgressPage?.Dispose();
             _experienceProgressPage?.Dispose();
+            _questTestingPage?.Dispose();
         }
 
         /// <summary>Рисует текущую страницу окна.</summary>
@@ -110,6 +116,9 @@ namespace LostCyberHamster.Editor.Testing
                 case TestingPage.ExperienceProgress:
                     _experienceProgressPage.Draw(
                         () => _currentPage = TestingPage.Start);
+                    break;
+                case TestingPage.Quests:
+                    _questTestingPage.Draw(() => _currentPage = TestingPage.Start);
                     break;
                 default:
                     DrawStartPage();
@@ -149,6 +158,15 @@ namespace LostCyberHamster.Editor.Testing
                     GUILayout.Height(ProductButtonHeight)))
             {
                 _currentPage = TestingPage.ExperienceProgress;
+            }
+
+            EditorGUILayout.Space(6f);
+            if (GUILayout.Button(
+                    "Quests",
+                    GUILayout.Width(ProductButtonWidth),
+                    GUILayout.Height(ProductButtonHeight)))
+            {
+                _currentPage = TestingPage.Quests;
             }
         }
 
@@ -308,6 +326,7 @@ namespace LostCyberHamster.Editor.Testing
 
             _gameProgressPage?.HandlePlayModeStateChanged(state);
             _experienceProgressPage?.HandlePlayModeStateChanged(state);
+            _questTestingPage?.HandlePlayModeStateChanged(state);
             Repaint();
         }
 
