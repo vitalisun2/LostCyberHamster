@@ -24,6 +24,16 @@ namespace Vues.GameCore
         public static List<Quest> DailyTasks = new List<Quest>();
         public static List<Quest> StorylineQuests = new List<Quest>();
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public static QuestDefinition MvpQuestDefinitionForTesting =>
+            _mvpQuestSystem?.Definition;
+
+        public static QuestState MvpQuestStateForTesting =>
+            _mvpQuestSystem?.State;
+
+        public static Quest MvpQuestViewForTesting => _mvpQuestView;
+#endif
+
         public static async Task Init()
         {
             var questData = await Addressables.LoadAssetAsync<TextAsset>("questData").Task;
@@ -156,6 +166,30 @@ namespace Vues.GameCore
             _mvpQuestView.IsCompleted =
                 _mvpQuestSystem.State.IsCompleted;
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Сбрасывает сохранённое состояние единственного MVP-квеста для повторного прогона.
+        /// </summary>
+        public static bool ResetMvpQuestForTesting()
+        {
+            if (_mvpQuestSystem == null || _mvpQuestView == null)
+            {
+                return false;
+            }
+
+            QuestState state = _mvpQuestSystem.State;
+            state.QuestId = _mvpQuestSystem.Definition.Id;
+            state.CurrentProgress = 0;
+            state.IsCompleted = false;
+            _mvpQuestView.IsRewardRecieved = false;
+            SyncMvpQuestView();
+            GameDataManager.SaveData();
+            GameEventsManager.QuestStateChanged(
+                _mvpQuestSystem.Definition.Id);
+            return true;
+        }
+#endif
 
         private static void UpdateQuests(ActionTypeEnum actionType, int progressAmount = 1, string objectName = "")
         {
