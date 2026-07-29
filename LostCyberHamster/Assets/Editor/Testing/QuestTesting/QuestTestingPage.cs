@@ -36,7 +36,8 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
             }
             EditorGUILayout.HelpBox(
                 "Generate/Reset сбрасывает реальный MVP-квест и сохраняет состояние. " +
-                "Advance/Complete публикуют ActionQuestEvent. " +
+                "Advance/Complete проводят попытку через LevelStarted, " +
+                "ObstacleJumpedOver и LevelCompleted. " +
                 "Claim Reward вызывает QuestManager.GetReward.",
                 MessageType.Info);
 

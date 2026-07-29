@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
+using Assets.Scripts.System;
 using UnityEngine;
 using Vues.GameCore;
 using Vues.GameCore.Quests;
@@ -106,7 +107,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
             int partialProgress = Math.Min(
                 Math.Max(1, Definition.TargetAmount / 2),
                 Definition.TargetAmount - 1);
-            PublishProgress(partialProgress);
+            RunAttempt("Advance", partialProgress);
         }
 
         /// <summary>
@@ -121,9 +122,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
             int remainingProgress =
                 Definition.TargetAmount - State.CurrentProgress;
-            RunAction(
-                "Complete",
-                () => PublishActionQuestEvent(remainingProgress));
+            RunAttempt("Complete", remainingProgress);
         }
 
         /// <summary>
@@ -168,19 +167,47 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 "Ожидание QuestManager.Init.");
         }
 
-        private void PublishProgress(int progress)
+        private void RunAttempt(
+            string actionName,
+            int actionCount)
         {
             RunAction(
-                "Advance",
-                () => PublishActionQuestEvent(progress));
-        }
+                actionName,
+                () =>
+                {
+                    int progressBeforeAttempt =
+                        State.CurrentProgress;
+                    int levelId =
+                        LevelManager.GetCurrentLevelNumber();
 
-        private static void PublishActionQuestEvent(int progress)
-        {
-            GameEventsManager.PublishActionQuestEvent(
-                new ActionQuestEvent(
-                    Definition.ActionId,
-                    progress));
+                    // Открываем настоящую попытку через игровой event contract.
+                    GameEventsManager.LevelStarted(levelId);
+                    for (int index = 0; index < actionCount; index++)
+                    {
+                        GameEventsManager.ObstacleJumpedOver(
+                            $"quest-testing-{index + 1}");
+                    }
+
+                    // До победы attempt buffer не должен менять сохранённый прогресс.
+                    if (State.CurrentProgress !=
+                        progressBeforeAttempt)
+                    {
+                        throw new InvalidOperationException(
+                            "Прогресс изменился до победы.");
+                    }
+
+                    // Закрываем попытку штатным событием победы.
+                    GameEventsManager.LevelCompleted(levelId, 3);
+                    int expectedProgress = Math.Min(
+                        progressBeforeAttempt + actionCount,
+                        Definition.TargetAmount);
+                    if (State.CurrentProgress != expectedProgress)
+                    {
+                        throw new InvalidOperationException(
+                            $"Ожидался прогресс {expectedProgress}, " +
+                            $"получен {State.CurrentProgress}.");
+                    }
+                });
         }
 
         private void RunAction(string actionName, Action action)
