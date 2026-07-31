@@ -122,7 +122,7 @@ namespace Assets.Tests.EditMode
                 Crystals = crystals,
                 PurchasedSkinIds = new List<int> { 0 },
                 AppliedSkinId = 0,
-                QuestStates = new List<QuestState>()
+                QuestStates = new List<Quest>()
             };
         }
 

@@ -27,8 +27,7 @@ public static class GameEventsManager
     public static event Action<int, ResourceType, int> OnItemBought;
     public static void ItemBought(int itemId, ResourceType resourceType, int amount) => OnItemBought?.Invoke(itemId, resourceType, amount);
 
-
-
+#region Квесты
     /// <summary>
     /// Прыжок через препятствие
     /// </summary>
@@ -47,26 +46,11 @@ public static class GameEventsManager
     public static void ObstacleJumpedOver(string obstacleName)
     {
         OnObstacleJumpedOver?.Invoke(obstacleName);
-        PublishActionCounterQuestEvent(
+        OnActionCounterQuestEvent?.Invoke(
             new ActionCounterQuestEvent(
                 GameplayActionIds.ObstacleJumpedOver,
                 1));
     }
-
-    /// <summary>
-    /// Публикует одно типизированное действие для квестовой системы.
-    /// </summary>
-    public static void PublishActionCounterQuestEvent(
-        ActionCounterQuestEvent questEvent)
-    {
-        if (questEvent == null)
-        {
-            throw new ArgumentNullException(nameof(questEvent));
-        }
-
-        OnActionCounterQuestEvent?.Invoke(questEvent);
-    }
-
 
     /// <summary>
     /// Прыжок на препятствие
@@ -80,7 +64,7 @@ public static class GameEventsManager
     public static void ObstacleJumpedOn(string obstacleName)
     {
         OnObstacleJumpedOn?.Invoke(obstacleName);
-        PublishActionCounterQuestEvent(
+        OnActionCounterQuestEvent?.Invoke(
             new ActionCounterQuestEvent(
                 GameplayActionIds.ObstacleJumpedOn,
                 1));
@@ -120,6 +104,7 @@ public static class GameEventsManager
     public static void QuestStateChanged(string questId) =>
         OnQuestStateChanged?.Invoke(questId);
 
+#endregion
 
 #region Уровень
     /// <summary>

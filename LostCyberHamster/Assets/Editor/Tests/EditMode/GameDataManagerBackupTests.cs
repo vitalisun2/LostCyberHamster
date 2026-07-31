@@ -142,7 +142,7 @@ namespace Assets.Tests.EditMode
             {
                 Money = money,
                 PurchasedSkinIds = new List<int> { 0 },
-                QuestStates = new List<QuestState>()
+                QuestStates = new List<Quest>()
             };
         }
 

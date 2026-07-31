@@ -6,6 +6,7 @@ namespace Vues.GameCore.Quests
     public enum QuestType
     {
         None = 0,
-        ActionCounter = 1
+        ActionCounter = 1,
+        LevelResult = 2
     }
 }

@@ -16,7 +16,7 @@
 ## Story
 
 - `story-001` — Complete New York Level. Цель: 1. Награда: тип 1, количество 200. Action: `CompleteLevel`.
-- `story-002` — Complete New York Level with 3 Stars. Цель: 1. Награда: тип 1, количество 300. Action: `CompleteLevelWithThreeStars`.
+- `story-002` — возвращён в production-каталог как `LevelResult`: завершить уровень 1 с тремя звёздами. Награда: тип 1, количество 300.
 - `story-003` — Unlock a New Location. Цель: 10. Награда: тип 2, количество 500. Action: `UnlockNewLocation`.
 - `story-004` — Collect 100 coins. Цель: 100. Награда: тип 0, количество 200. Action: `CollectMoneyItems`.
 - `story-005` — Collect 200 coins. Цель: 200. Награда: тип 0, количество 300. Action: `CollectMoneyItems`.

@@ -31,7 +31,7 @@ namespace LostCyberHamster.UI
         private bool _showDailyTasks = true;
         private int _currentQuestIndex;
 
-        private IReadOnlyList<QuestViewData> ActiveQuests =>
+        private IReadOnlyList<Quest> ActiveQuests =>
             _showDailyTasks
                 ? QuestManager.DailyQuests
                 : QuestManager.StoryQuests;
@@ -53,7 +53,7 @@ namespace LostCyberHamster.UI
 
         private void RenderActivePage()
         {
-            IReadOnlyList<QuestViewData> quests = ActiveQuests;
+            IReadOnlyList<Quest> quests = ActiveQuests;
             int pageSize = ConfigurationManager.Config.DisplayQuestsCount;
 
             // Нормализуем страницу после смены набора или количества квестов.
@@ -65,7 +65,7 @@ namespace LostCyberHamster.UI
 
             // Перестраиваем видимую страницу и состояние навигации.
             _questsContainer.Clear();
-            foreach (QuestViewData quest in quests
+            foreach (Quest quest in quests
                          .Skip(_currentQuestIndex)
                          .Take(pageSize))
             {
@@ -145,7 +145,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickNextQuestPage(ClickEvent evt)
         {
-            IReadOnlyList<QuestViewData> quests = ActiveQuests;
+            IReadOnlyList<Quest> quests = ActiveQuests;
             _currentQuestIndex +=
                 ConfigurationManager.Config.DisplayQuestsCount;
             if (_currentQuestIndex >= quests.Count)

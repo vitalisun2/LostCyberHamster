@@ -12,9 +12,9 @@ namespace Assets.Tests.EditMode
         {
             var source = new PlayerData
             {
-                QuestStates = new List<QuestState>
+                QuestStates = new List<Quest>
                 {
-                    new QuestState
+                    new Quest
                     {
                         QuestId = "storyline_quest_01",
                         CurrentProgress = 5,

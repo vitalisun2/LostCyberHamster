@@ -9,48 +9,61 @@ using Vues.GameCore.Quests;
 namespace Vues.GameCore
 {
     /// <summary>
-    /// Связывает активный квест с событиями игры, сейвом и UI.
+    /// Связывает активные квесты с событиями игры, сейвом и UI.
     /// </summary>
     public static class QuestManager
     {
-        private static QuestSystem _activeQuest;
-        private static IReadOnlyList<QuestViewData> _dailyQuests =
-            Array.Empty<QuestViewData>();
+        private static readonly IReadOnlyDictionary<QuestType, IQuestStrategy>
+            _strategies = new Dictionary<QuestType, IQuestStrategy>
+            {
+                [QuestType.ActionCounter] =
+                    new ActionCounterQuestStrategy(),
+                [QuestType.LevelResult] =
+                    new LevelResultQuestStrategy()
+            };
+
         private static readonly QuestAttemptBuffer _attemptBuffer = new();
         private static readonly PlayerExperienceService
             _playerExperienceService = new();
 
-        public static IReadOnlyList<QuestViewData> DailyQuests =>
+        private static IReadOnlyList<Quest> _activeQuests =
+            Array.Empty<Quest>();
+        private static IReadOnlyList<Quest> _dailyQuests =
+            Array.Empty<Quest>();
+        private static IReadOnlyList<Quest> _storyQuests =
+            Array.Empty<Quest>();
+
+        public static IReadOnlyList<Quest> DailyQuests =>
             _dailyQuests;
 
-        public static IReadOnlyList<QuestViewData> StoryQuests { get; } =
-            Array.Empty<QuestViewData>();
+        public static IReadOnlyList<Quest> StoryQuests =>
+            _storyQuests;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        public static QuestDefinition ActiveDefinitionForTesting =>
-            _activeQuest?.Definition;
-
-        public static QuestState ActiveStateForTesting =>
-            _activeQuest?.State;
-
-        public static QuestViewData ActiveViewForTesting =>
-            _dailyQuests.Count == 1
-                ? _dailyQuests[0]
-                : null;
+        public static Quest ActiveQuestForTesting =>
+            _dailyQuests.FirstOrDefault();
 #endif
 
+        /// <summary>
+        /// Загружает каталог и восстанавливает активные квесты.
+        /// </summary>
         public static async Task Init()
         {
             await QuestCatalog.LoadAsync();
-            if (QuestCatalog.DailyDefinitions.Count != 1)
+            if (QuestCatalog.DailyDefinitions.Count != 1 ||
+                QuestCatalog.StoryDefinitions.Count != 1)
             {
                 throw new InvalidOperationException(
-                    "MVP-каталог должен содержать один дневной квест.");
+                    "MVP-каталог должен содержать один дневной " +
+                    "и один сюжетный квест.");
             }
 
-            BindActiveQuest(QuestCatalog.DailyDefinitions[0]);
+            BindActiveQuests();
         }
 
+        /// <summary>
+        /// Подключает обработчики игровых событий.
+        /// </summary>
         public static void OnEnable()
         {
             GameEventsManager.OnLevelStarted += HandleLevelStarted;
@@ -60,6 +73,9 @@ namespace Vues.GameCore
             GameDataManager.PlayerDataReplaced += HandlePlayerDataReplaced;
         }
 
+        /// <summary>
+        /// Отключает обработчики и очищает текущую попытку.
+        /// </summary>
         public static void OnDisable()
         {
             GameEventsManager.OnLevelStarted -= HandleLevelStarted;
@@ -70,48 +86,75 @@ namespace Vues.GameCore
             _attemptBuffer.DiscardAttempt();
         }
 
-        private static void BindActiveQuest(
-            QuestDefinition definition)
+        private static void BindActiveQuests()
         {
-            QuestState state = GetOrCreateState(definition.Id);
-            _activeQuest = new QuestSystem(
-                definition,
-                state,
-                new ActionCounterQuestStrategy());
+            _dailyQuests = BindDefinitions(
+                QuestCatalog.DailyDefinitions);
+            _storyQuests = BindDefinitions(
+                QuestCatalog.StoryDefinitions);
+
+            var activeQuests = new List<Quest>(
+                _dailyQuests.Count + _storyQuests.Count);
+            activeQuests.AddRange(_dailyQuests);
+            activeQuests.AddRange(_storyQuests);
+            _activeQuests = activeQuests.AsReadOnly();
             _attemptBuffer.DiscardAttempt();
-            RefreshView();
         }
 
-        private static QuestState GetOrCreateState(string questId)
+        private static IReadOnlyList<Quest> BindDefinitions(
+            IReadOnlyList<QuestDefinition> definitions)
         {
-            GameDataManager.PlayerData.QuestStates ??=
-                new List<QuestState>();
-            QuestState state = GameDataManager.PlayerData.QuestStates
-                .FirstOrDefault(savedState =>
-                    savedState.QuestId == questId);
-            if (state != null)
+            var quests = new List<Quest>(definitions.Count);
+            foreach (QuestDefinition definition in definitions)
             {
-                return state;
+                Quest quest = GetOrCreateQuest(definition.Id);
+                if (!_strategies.TryGetValue(
+                        definition.Type,
+                        out IQuestStrategy strategy))
+                {
+                    throw new InvalidOperationException(
+                        $"Стратегия типа {definition.Type} не подключена.");
+                }
+
+                quest.Bind(definition, strategy);
+                quests.Add(quest);
             }
 
-            state = new QuestState
+            return quests.AsReadOnly();
+        }
+
+        private static Quest GetOrCreateQuest(string questId)
+        {
+            GameDataManager.PlayerData.QuestStates ??=
+                new List<Quest>();
+            Quest quest = GameDataManager.PlayerData.QuestStates
+                .FirstOrDefault(savedQuest =>
+                    savedQuest.QuestId == questId);
+            if (quest != null)
+            {
+                return quest;
+            }
+
+            quest = new Quest
             {
                 QuestId = questId
             };
-            GameDataManager.PlayerData.QuestStates.Add(state);
-            return state;
+            GameDataManager.PlayerData.QuestStates.Add(quest);
+            return quest;
         }
 
         private static void HandlePlayerDataReplaced()
         {
-            if (_activeQuest == null)
+            if (_activeQuests.Count == 0)
             {
                 return;
             }
 
-            string questId = _activeQuest.Definition.Id;
-            BindActiveQuest(_activeQuest.Definition);
-            GameEventsManager.QuestStateChanged(questId);
+            BindActiveQuests();
+            foreach (Quest quest in _activeQuests)
+            {
+                GameEventsManager.QuestStateChanged(quest.Id);
+            }
         }
 
         private static void HandleActionCounterQuestEvent(
@@ -125,109 +168,118 @@ namespace Vues.GameCore
             _attemptBuffer.StartAttempt();
         }
 
-        private static void HandleLevelCompleted(int _, int __)
+        private static void HandleLevelCompleted(int levelId, int stars)
         {
             IReadOnlyList<ActionCounterQuestEvent> bufferedEvents =
                 _attemptBuffer.CompleteAttempt();
-            if (_activeQuest == null || bufferedEvents.Count == 0)
+            var levelResultEvent =
+                new LevelResultQuestEvent(levelId, stars);
+            var changedQuests = new List<Quest>();
+            var completedQuests = new List<Quest>();
+
+            // Применяем факты завершённой попытки ко всем активным квестам.
+            foreach (Quest quest in _activeQuests)
             {
-                return;
-            }
-
-            bool wasCompleted = _activeQuest.State.IsCompleted;
-            bool progressChanged = false;
-            foreach (ActionCounterQuestEvent questEvent in bufferedEvents)
-            {
-                progressChanged |= _activeQuest.Handle(questEvent);
-            }
-
-            if (!progressChanged)
-            {
-                return;
-            }
-
-            RefreshView();
-            bool questCompleted =
-                !wasCompleted && _activeQuest.State.IsCompleted;
-            PlayerProgressCommitter.Commit(
-                questCompleted
-                    ? CheckpointReason.DailyQuestCompleted
-                    : CheckpointReason.DailyQuestProgressed);
-
-            if (questCompleted)
-            {
-                GameEventsManager.QuestCompleted(
-                    _activeQuest.Definition.Id);
-            }
-
-            GameEventsManager.QuestStateChanged(
-                _activeQuest.Definition.Id);
-        }
-
-        private static void RefreshView()
-        {
-            _dailyQuests = _activeQuest == null
-                ? Array.Empty<QuestViewData>()
-                : new[]
+                bool wasCompleted = quest.IsCompleted;
+                bool progressChanged = quest.Handle(levelResultEvent);
+                foreach (ActionCounterQuestEvent questEvent in bufferedEvents)
                 {
-                    new QuestViewData(
-                        _activeQuest.Definition,
-                        _activeQuest.State)
-                };
+                    progressChanged |= quest.Handle(questEvent);
+                }
+
+                if (!progressChanged)
+                {
+                    continue;
+                }
+
+                changedQuests.Add(quest);
+                if (!wasCompleted && quest.IsCompleted)
+                {
+                    completedQuests.Add(quest);
+                }
+            }
+
+            if (changedQuests.Count == 0)
+            {
+                return;
+            }
+
+            // Сохраняем все изменения попытки одним checkpoint.
+            PlayerProgressCommitter.Commit(
+                completedQuests.Count > 0
+                    ? CheckpointReason.QuestCompleted
+                    : CheckpointReason.QuestProgressed);
+
+            // Уведомляем о завершении и любом изменённом состоянии.
+            foreach (Quest quest in completedQuests)
+            {
+                GameEventsManager.QuestCompleted(quest.Id);
+            }
+
+            foreach (Quest quest in changedQuests)
+            {
+                GameEventsManager.QuestStateChanged(quest.Id);
+            }
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Сбрасывает дневной MVP-квест для dev-тестирования.
+        /// </summary>
         public static bool ResetActiveQuestForTesting()
         {
-            if (_activeQuest == null)
+            Quest quest = ActiveQuestForTesting;
+            if (quest == null)
             {
                 return false;
             }
 
-            QuestState state = _activeQuest.State;
-            state.QuestId = _activeQuest.Definition.Id;
-            state.CurrentProgress = 0;
-            state.IsCompleted = false;
-            state.IsRewardClaimed = false;
+            quest.Reset();
             _attemptBuffer.DiscardAttempt();
-            RefreshView();
             GameDataManager.SaveData();
-            GameEventsManager.QuestStateChanged(
-                _activeQuest.Definition.Id);
+            GameEventsManager.QuestStateChanged(quest.Id);
             return true;
         }
 #endif
 
+        /// <summary>
+        /// Выдаёт награду завершённого активного квеста один раз.
+        /// </summary>
         public static bool ClaimReward(string questId)
         {
-            if (_activeQuest == null ||
-                questId != _activeQuest.Definition.Id ||
-                !_activeQuest.State.IsCompleted ||
-                _activeQuest.State.IsRewardClaimed)
+            Quest quest = _activeQuests.FirstOrDefault(
+                activeQuest => activeQuest.Id == questId);
+            if (quest == null || !quest.CanClaimReward)
             {
                 return false;
             }
 
-            QuestDefinition definition = _activeQuest.Definition;
             bool rewardAdded = ResourceManager.AddResource(
-                definition.RewardType,
-                definition.RewardAmount);
+                quest.RewardType,
+                quest.RewardAmount);
             if (!rewardAdded)
             {
                 return false;
             }
 
-            if (definition.RewardType == ResourceType.Coins)
+            if (quest.RewardType == ResourceType.Coins)
             {
-                GameEventsManager.EarnCoins(
-                    definition.RewardAmount);
+                GameEventsManager.EarnCoins(quest.RewardAmount);
             }
 
-            _activeQuest.State.IsRewardClaimed = true;
-            _playerExperienceService
-                .GrantExperienceForClaimedDailyQuest(
+            quest.MarkRewardClaimed();
+            if (quest.Category == QuestCategory.Daily)
+            {
+                _playerExperienceService.GrantExperienceForClaimedDailyQuest(
                     GameDataManager.PlayerData);
-            RefreshView();
+            }
+            else if (quest.Category == QuestCategory.Story)
+            {
+                _playerExperienceService
+                    .GrantExperienceForClaimedStorylineQuest(
+                        GameDataManager.PlayerData);
+            }
+
             PlayerProgressCommitter.Commit(
                 CheckpointReason.QuestRewardClaimed);
 

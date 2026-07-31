@@ -36,7 +36,14 @@ namespace Vues.GameCore.Quests
         /// </summary>
         public static Task LoadAsync()
         {
-            return _loadTask ??= LoadInternalAsync();
+            if (_loadTask == null ||
+                _loadTask.IsCanceled ||
+                _loadTask.IsFaulted)
+            {
+                _loadTask = LoadInternalAsync();
+            }
+
+            return _loadTask;
         }
 
         private static async Task LoadInternalAsync()
@@ -57,16 +64,23 @@ namespace Vues.GameCore.Quests
                     "Каталог квестов не загружен.");
             }
 
+            List<QuestDefinition> dailyDefinitions = PrepareDefinitions(
+                data.DailyDefinitions,
+                QuestCategory.Daily);
+            List<QuestDefinition> storyDefinitions = PrepareDefinitions(
+                data.StoryDefinitions,
+                QuestCategory.Story);
+            QuestValidator.ValidateCatalog(
+                dailyDefinitions,
+                storyDefinitions);
+
+            // Публикуем проверенные списки и индекс по Id.
+            _dailyDefinitions = dailyDefinitions.AsReadOnly();
+            _storyDefinitions = storyDefinitions.AsReadOnly();
             var definitionsById =
                 new Dictionary<string, QuestDefinition>();
-            _dailyDefinitions = PrepareDefinitions(
-                data.DailyDefinitions,
-                QuestCategory.Daily,
-                definitionsById);
-            _storyDefinitions = PrepareDefinitions(
-                data.StoryDefinitions,
-                QuestCategory.Story,
-                definitionsById);
+            IndexDefinitions(dailyDefinitions, definitionsById);
+            IndexDefinitions(storyDefinitions, definitionsById);
             _definitionsById = definitionsById;
         }
 
@@ -102,37 +116,31 @@ namespace Vues.GameCore.Quests
                 out definition);
         }
 
-        private static IReadOnlyList<QuestDefinition> PrepareDefinitions(
+        private static List<QuestDefinition> PrepareDefinitions(
             List<QuestDefinition> definitions,
-            QuestCategory category,
-            Dictionary<string, QuestDefinition> definitionsById)
+            QuestCategory category)
         {
-            if (definitions == null)
-            {
-                return Array.Empty<QuestDefinition>();
-            }
+            definitions ??= new List<QuestDefinition>();
 
             foreach (QuestDefinition definition in definitions)
             {
-                if (definition == null ||
-                    string.IsNullOrWhiteSpace(definition.Id))
+                if (definition != null)
                 {
-                    throw new InvalidOperationException(
-                        "Каталог содержит квест без Id.");
-                }
-
-                definition.Category = category;
-                QuestSystem.ValidateDefinition(definition);
-                if (!definitionsById.TryAdd(
-                        definition.Id,
-                        definition))
-                {
-                    throw new InvalidOperationException(
-                        $"Id квеста повторяется: {definition.Id}.");
+                    definition.Category = category;
                 }
             }
 
-            return definitions.AsReadOnly();
+            return definitions;
+        }
+
+        private static void IndexDefinitions(
+            IEnumerable<QuestDefinition> definitions,
+            IDictionary<string, QuestDefinition> definitionsById)
+        {
+            foreach (QuestDefinition definition in definitions)
+            {
+                definitionsById.Add(definition.Id, definition);
+            }
         }
     }
 }

@@ -18,7 +18,7 @@ namespace GameManagement
         public int ActiveSuperAttackId = 0;
         public List<int> PurchasedSkinIds = new() { 0 };
         public string CurrentLevel;
-        public List<QuestState> QuestStates = new();
+        public List<Quest> QuestStates = new();
 
         [SerializeField]
         private List<SerializableLevelProgressEntry> _serializedProgress = new();

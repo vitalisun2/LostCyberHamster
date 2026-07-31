@@ -30,17 +30,27 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
         public bool IsReady =>
             Application.isPlaying &&
-            Definition != null &&
-            State != null &&
-            QuestView != null;
+            ActiveQuest != null;
 
-        public string Title => Definition == null
-            ? "MVP-квест не загружен"
-            : $"{Definition.Title} ({Definition.Id})";
+        public string Title
+        {
+            get
+            {
+                if (ActiveQuest == null)
+                {
+                    return "MVP-квест не загружен";
+                }
 
-        public string Kind => Definition == null
+                string title = LocalizationManager.GetLocalizedString(
+                    ActiveQuest.TitleLocalizationKey) ??
+                    ActiveQuest.TitleLocalizationKey;
+                return $"{title} ({ActiveQuest.Id})";
+            }
+        }
+
+        public string Kind => ActiveQuest == null
             ? "—"
-            : $"{Definition.Type} / {Definition.ActionId}";
+            : $"{ActiveQuest.Type} / {ActiveQuest.ActionId}";
 
         public string BeforeState => _beforeState;
 
@@ -53,29 +63,22 @@ namespace Assets.Scripts.DevTools.QuestTesting
         public bool CanAdvance =>
             IsReady &&
             !_isBusy &&
-            Definition.TargetAmount > 1 &&
-            State.CurrentProgress == 0 &&
-            !State.IsCompleted;
+            ActiveQuest.TargetAmount > 1 &&
+            ActiveQuest.CurrentProgress == 0 &&
+            !ActiveQuest.IsCompleted;
 
         public bool CanComplete =>
             IsReady &&
             !_isBusy &&
-            !State.IsCompleted;
+            !ActiveQuest.IsCompleted;
 
         public bool CanClaimReward =>
             IsReady &&
             !_isBusy &&
-            State.IsCompleted &&
-            !QuestView.IsRewardClaimed;
+            ActiveQuest.CanClaimReward;
 
-        private static QuestDefinition Definition =>
-            QuestManager.ActiveDefinitionForTesting;
-
-        private static QuestState State =>
-            QuestManager.ActiveStateForTesting;
-
-        private static QuestViewData QuestView =>
-            QuestManager.ActiveViewForTesting;
+        private static Quest ActiveQuest =>
+            QuestManager.ActiveQuestForTesting;
 
         /// <summary>
         /// Сбрасывает реальное сохранённое состояние активного MVP-квеста.
@@ -105,8 +108,8 @@ namespace Assets.Scripts.DevTools.QuestTesting
             }
 
             int partialProgress = Math.Min(
-                Math.Max(1, Definition.TargetAmount / 2),
-                Definition.TargetAmount - 1);
+                Math.Max(1, ActiveQuest.TargetAmount / 2),
+                ActiveQuest.TargetAmount - 1);
             RunAttempt("Advance", partialProgress);
         }
 
@@ -121,7 +124,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
             }
 
             int remainingProgress =
-                Definition.TargetAmount - State.CurrentProgress;
+                ActiveQuest.TargetAmount - ActiveQuest.CurrentProgress;
             RunAttempt("Complete", remainingProgress);
         }
 
@@ -139,7 +142,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 "Claim Reward",
                 () =>
                 {
-                    if (!QuestManager.ClaimReward(QuestView.Id))
+                    if (!QuestManager.ClaimReward(ActiveQuest.Id))
                     {
                         throw new InvalidOperationException(
                             "QuestManager отклонил получение награды.");
@@ -176,7 +179,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 () =>
                 {
                     int progressBeforeAttempt =
-                        State.CurrentProgress;
+                        ActiveQuest.CurrentProgress;
                     int levelId =
                         LevelManager.GetCurrentLevelNumber();
 
@@ -188,7 +191,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     }
 
                     // До победы attempt buffer не должен менять сохранённый прогресс.
-                    if (State.CurrentProgress !=
+                    if (ActiveQuest.CurrentProgress !=
                         progressBeforeAttempt)
                     {
                         throw new InvalidOperationException(
@@ -199,12 +202,12 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     GameEventsManager.LevelCompleted(levelId, 3);
                     int expectedProgress = Math.Min(
                         progressBeforeAttempt + actionCount,
-                        Definition.TargetAmount);
-                    if (State.CurrentProgress != expectedProgress)
+                        ActiveQuest.TargetAmount);
+                    if (ActiveQuest.CurrentProgress != expectedProgress)
                     {
                         throw new InvalidOperationException(
                             $"Ожидался прогресс {expectedProgress}, " +
-                            $"получен {State.CurrentProgress}.");
+                            $"получен {ActiveQuest.CurrentProgress}.");
                     }
                 });
         }
@@ -241,7 +244,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
         private static void PublishConfiguredAction(int index)
         {
             string sourceId = $"quest-testing-{index + 1}";
-            switch (Definition.ActionId)
+            switch (ActiveQuest.ActionId)
             {
                 case GameplayActionIds.ObstacleJumpedOver:
                     GameEventsManager.ObstacleJumpedOver(sourceId);
@@ -251,7 +254,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     break;
                 default:
                     throw new InvalidOperationException(
-                        $"Тест-тул не поддерживает действие {Definition.ActionId}.");
+                        $"Тест-тул не поддерживает действие {ActiveQuest.ActionId}.");
             }
         }
 
@@ -268,24 +271,24 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
         private static string FormatState()
         {
-            if (Definition == null || State == null || QuestView == null)
+            if (ActiveQuest == null)
             {
                 return "QuestManager не инициализирован";
             }
 
             string progress =
-                $"{State.CurrentProgress}/{Definition.TargetAmount}";
-            if (QuestView.IsRewardClaimed)
+                $"{ActiveQuest.CurrentProgress}/{ActiveQuest.TargetAmount}";
+            if (ActiveQuest.IsRewardClaimed)
             {
                 return $"Награда получена, {progress}";
             }
 
-            if (State.IsCompleted)
+            if (ActiveQuest.IsCompleted)
             {
                 return $"Выполнен, {progress}";
             }
 
-            if (State.CurrentProgress > 0)
+            if (ActiveQuest.CurrentProgress > 0)
             {
                 return $"Частично выполнен, {progress}";
             }

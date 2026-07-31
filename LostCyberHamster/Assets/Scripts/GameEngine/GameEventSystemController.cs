@@ -34,13 +34,14 @@ public class GameEventSystemController : MonoBehaviour
     void OnEnable()
     {
         AdsManager.OnEnable();
+        // Сначала сохраняем результат уровня, затем зависящие от него квесты.
+        LevelManager.OnEnable();
         QuestManager.OnEnable();
         // Disable runtime debug logging subscriptions on device to avoid jank
 #if UNITY_EDITOR
         DebugManager.OnEnable();
 #endif
         AnalyticsManager.OnEnable();
-        LevelManager.OnEnable();
         ResourceManager.OnEnable();
         VibrationManager.OnEnable();
     }
@@ -49,12 +50,12 @@ public class GameEventSystemController : MonoBehaviour
     {
         AdsManager.OnDisable();
         QuestManager.OnDisable();
+        LevelManager.OnDisable();
         // Disable runtime debug logging subscriptions on device to avoid jank
 #if UNITY_EDITOR
         DebugManager.OnDisable();
 #endif
         AnalyticsManager.OnDisable();
-        LevelManager.OnDisable();
         ResourceManager.OnDisable();
         VibrationManager.OnDisable();
     }

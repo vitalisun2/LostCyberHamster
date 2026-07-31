@@ -10,5 +10,16 @@
       "RewardAmount": 10
     }
   ],
-  "StoryDefinitions": []
+  "StoryDefinitions": [
+    {
+      "Id": "story-002",
+      "TitleLocalizationKey": "story-002-title",
+      "Type": 2,
+      "RequiredLevelId": 1,
+      "RequiredStars": 3,
+      "TargetAmount": 1,
+      "RewardType": 1,
+      "RewardAmount": 300
+    }
+  ]
 }

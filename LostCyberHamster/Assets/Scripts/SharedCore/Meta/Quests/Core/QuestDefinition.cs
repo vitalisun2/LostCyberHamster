@@ -19,14 +19,6 @@ namespace Vues.GameCore.Quests
         public string TitleLocalizationKey;
 
         /// <summary>
-        /// Локализованное читаемое название квеста.
-        /// </summary>
-        public string Title =>
-            LocalizationManager.GetLocalizedString(
-                TitleLocalizationKey) ??
-            TitleLocalizationKey;
-
-        /// <summary>
         /// Раздел production-каталога.
         /// </summary>
         [NonSerialized]
@@ -41,6 +33,16 @@ namespace Vues.GameCore.Quests
         /// Действие, которое даёт прогресс счётчику.
         /// </summary>
         public string ActionId;
+
+        /// <summary>
+        /// Номер уровня для квеста результата уровня.
+        /// </summary>
+        public int RequiredLevelId;
+
+        /// <summary>
+        /// Минимальное количество звёзд для результата уровня.
+        /// </summary>
+        public int RequiredStars;
 
         /// <summary>
         /// Значение прогресса для завершения.

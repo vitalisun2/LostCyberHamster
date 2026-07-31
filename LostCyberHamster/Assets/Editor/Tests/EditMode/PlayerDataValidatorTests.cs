@@ -85,7 +85,7 @@ namespace Assets.Tests.EditMode
         public void Validate_RewardWithoutCompletion_IsRejected()
         {
             var data = CreateValidData();
-            data.QuestStates.Add(new QuestState
+            data.QuestStates.Add(new Quest
             {
                 QuestId = "quest-002",
                 IsCompleted = false,
@@ -154,7 +154,7 @@ namespace Assets.Tests.EditMode
             {
                 PurchasedSkinIds = new List<int> { 0 },
                 AppliedSkinId = 0,
-                QuestStates = new List<QuestState>()
+                QuestStates = new List<Quest>()
             };
         }
 

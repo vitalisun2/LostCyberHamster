@@ -145,7 +145,7 @@ namespace GameManagement
             {
                 data.PurchasedSkinIds.Add(0);
             }
-            data.QuestStates ??= new List<QuestState>();
+            data.QuestStates ??= new List<Quest>();
             data.EnsureSerializedProgressCollection();
 
             data.PurchasedSkinIds = data.PurchasedSkinIds.Distinct().ToList();
@@ -162,7 +162,7 @@ namespace GameManagement
         }
 
         private static PlayerDataValidationResult ValidateQuestStates(
-            IReadOnlyCollection<QuestState> states,
+            IReadOnlyCollection<Quest> states,
             out bool hasExactDuplicates)
         {
             hasExactDuplicates = false;
@@ -172,14 +172,11 @@ namespace GameManagement
             }
 
             var statesById =
-                new Dictionary<string, QuestState>(
+                new Dictionary<string, Quest>(
                     StringComparer.Ordinal);
-            foreach (QuestState state in states)
+            foreach (Quest state in states)
             {
-                if (state == null ||
-                    string.IsNullOrWhiteSpace(state.QuestId) ||
-                    state.CurrentProgress < 0 ||
-                    state.IsRewardClaimed && !state.IsCompleted)
+                if (!QuestValidator.IsSavedQuestValid(state))
                 {
                     return PlayerDataValidationResult.Rejected(
                         "invalid_quest_state");
@@ -187,7 +184,7 @@ namespace GameManagement
 
                 if (!statesById.TryGetValue(
                         state.QuestId,
-                        out QuestState existing))
+                        out Quest existing))
                 {
                     statesById.Add(state.QuestId, state);
                     continue;

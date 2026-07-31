@@ -28,7 +28,7 @@ namespace LostCyberHamster.UI
         {
         }
 
-        public QuestItem(QuestViewData quest)
+        public QuestItem(Quest quest)
         {
             AddressableExtentions
                 .LoadAssetSync<VisualTreeAsset>("QuestItem.uxml")
@@ -36,7 +36,9 @@ namespace LostCyberHamster.UI
             var image =
                 AddressableExtentions.LoadAssetSync<Sprite>(quest.Id);
             _image.style.backgroundImage = new StyleBackground(image.texture);
-            _title.text = quest.Title;
+            _title.text = LocalizationManager.GetLocalizedString(
+                quest.TitleLocalizationKey) ??
+                quest.TitleLocalizationKey;
             _progressLabel.text =
                 $"{quest.CurrentProgress} / {quest.TargetAmount}";
             _rewardAmount.text = quest.RewardAmount.ToString();
@@ -54,7 +56,7 @@ namespace LostCyberHamster.UI
             });
         }
 
-        private void UpdateRewardState(QuestViewData quest)
+        private void UpdateRewardState(Quest quest)
         {
             // После получения награды заменяем кнопку постоянным статусом.
             bool isRewardClaimed = quest.IsRewardClaimed;
