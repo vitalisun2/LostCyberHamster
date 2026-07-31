@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
+using System.Collections.Generic;
 using Assets.Scripts.System;
 using UnityEngine;
 using Vues.GameCore;
@@ -8,15 +9,17 @@ using Vues.GameCore.Quests;
 namespace Assets.Scripts.DevTools.QuestTesting
 {
     /// <summary>
-    /// Проводит единственный MVP-квест через реальный QuestManager.
+    /// Проводит выбранный квест через реальные игровые события и QuestManager.
     /// </summary>
     public sealed class QuestTestRunner
     {
         private bool _isBusy;
+        private QuestCategory _selectedCategory = QuestCategory.Daily;
+        private string _selectedQuestId;
         private string _beforeState = "—";
         private string _afterState = "Ожидание QuestManager.Init.";
         private string _status =
-            "Generate/Reset начнёт новый прогон активного MVP-квеста.";
+            "Выберите квест и начните прогон с Generate/Reset.";
 
         private QuestTestRunner()
         {
@@ -28,6 +31,30 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
         public bool IsBusy => _isBusy;
 
+        public QuestCategory SelectedCategory => _selectedCategory;
+
+        public IReadOnlyList<Quest> AvailableQuests =>
+            _selectedCategory == QuestCategory.Daily
+                ? QuestManager.DailyQuests
+                : QuestManager.StoryQuests;
+
+        public int SelectedQuestIndex
+        {
+            get
+            {
+                IReadOnlyList<Quest> quests = AvailableQuests;
+                for (int index = 0; index < quests.Count; index++)
+                {
+                    if (quests[index].Id == _selectedQuestId)
+                    {
+                        return index;
+                    }
+                }
+
+                return 0;
+            }
+        }
+
         public bool IsReady =>
             Application.isPlaying &&
             ActiveQuest != null;
@@ -38,19 +65,34 @@ namespace Assets.Scripts.DevTools.QuestTesting
             {
                 if (ActiveQuest == null)
                 {
-                    return "MVP-квест не загружен";
+                    return "Квест не загружен";
                 }
 
-                string title = LocalizationManager.GetLocalizedString(
-                    ActiveQuest.TitleLocalizationKey) ??
-                    ActiveQuest.TitleLocalizationKey;
-                return $"{title} ({ActiveQuest.Id})";
+                return FormatTitle(ActiveQuest);
             }
         }
 
-        public string Kind => ActiveQuest == null
-            ? "—"
-            : $"{ActiveQuest.Type} / {ActiveQuest.ActionId}";
+        public string Kind
+        {
+            get
+            {
+                if (ActiveQuest == null)
+                {
+                    return "—";
+                }
+
+                return ActiveQuest.Type switch
+                {
+                    QuestType.ActionCounter =>
+                        $"{ActiveQuest.Type} / {ActiveQuest.ActionId}",
+                    QuestType.LevelResult =>
+                        $"{ActiveQuest.Type} / уровень " +
+                        $"{ActiveQuest.Definition.RequiredLevelId}, " +
+                        $"{ActiveQuest.Definition.RequiredStars} звезды",
+                    _ => ActiveQuest.Type.ToString()
+                };
+            }
+        }
 
         public string BeforeState => _beforeState;
 
@@ -63,6 +105,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
         public bool CanAdvance =>
             IsReady &&
             !_isBusy &&
+            ActiveQuest.Type == QuestType.ActionCounter &&
             ActiveQuest.TargetAmount > 1 &&
             ActiveQuest.CurrentProgress == 0 &&
             !ActiveQuest.IsCompleted;
@@ -70,6 +113,8 @@ namespace Assets.Scripts.DevTools.QuestTesting
         public bool CanComplete =>
             IsReady &&
             !_isBusy &&
+            (ActiveQuest.Type == QuestType.ActionCounter ||
+             ActiveQuest.Type == QuestType.LevelResult) &&
             !ActiveQuest.IsCompleted;
 
         public bool CanClaimReward =>
@@ -77,11 +122,83 @@ namespace Assets.Scripts.DevTools.QuestTesting
             !_isBusy &&
             ActiveQuest.CanClaimReward;
 
-        private static Quest ActiveQuest =>
-            QuestManager.ActiveQuestForTesting;
+        private Quest ActiveQuest
+        {
+            get
+            {
+                IReadOnlyList<Quest> quests = AvailableQuests;
+                if (quests.Count == 0)
+                {
+                    return null;
+                }
+
+                for (int index = 0; index < quests.Count; index++)
+                {
+                    if (quests[index].Id == _selectedQuestId)
+                    {
+                        return quests[index];
+                    }
+                }
+
+                return quests[0];
+            }
+        }
 
         /// <summary>
-        /// Сбрасывает реальное сохранённое состояние активного MVP-квеста.
+        /// Возвращает локализованные названия квестов выбранной категории.
+        /// </summary>
+        public string[] GetQuestOptions()
+        {
+            IReadOnlyList<Quest> quests = AvailableQuests;
+            var options = new string[quests.Count];
+            for (int index = 0; index < quests.Count; index++)
+            {
+                options[index] = FormatTitle(quests[index]);
+            }
+
+            return options;
+        }
+
+        /// <summary>
+        /// Выбирает Daily или Story из активных квестов QuestManager.
+        /// </summary>
+        public void SelectCategory(QuestCategory category)
+        {
+            if (_isBusy ||
+                category == QuestCategory.None ||
+                category == _selectedCategory)
+            {
+                return;
+            }
+
+            _selectedCategory = category;
+            _selectedQuestId = null;
+            ResetSelectionState();
+        }
+
+        /// <summary>
+        /// Выбирает активный квест по индексу в текущей категории.
+        /// </summary>
+        public void SelectQuest(int index)
+        {
+            IReadOnlyList<Quest> quests = AvailableQuests;
+            if (_isBusy || index < 0 || index >= quests.Count)
+            {
+                return;
+            }
+
+            string questId = quests[index].Id;
+            if (questId == _selectedQuestId)
+            {
+                return;
+            }
+
+            _selectedQuestId = questId;
+            ResetSelectionState();
+        }
+
+        /// <summary>
+        /// Сбрасывает реальное сохранённое состояние выбранного квеста.
         /// </summary>
         public void GenerateOrReset()
         {
@@ -89,10 +206,10 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 "Generate/Reset",
                 () =>
                 {
-                    if (!QuestManager.ResetActiveQuestForTesting())
+                    if (!QuestManager.ResetQuestForTesting(ActiveQuest.Id))
                     {
                         throw new InvalidOperationException(
-                            "QuestManager не инициализирован.");
+                            "Выбранный квест не найден в QuestManager.");
                     }
                 });
         }
@@ -110,7 +227,10 @@ namespace Assets.Scripts.DevTools.QuestTesting
             int partialProgress = Math.Min(
                 Math.Max(1, ActiveQuest.TargetAmount / 2),
                 ActiveQuest.TargetAmount - 1);
-            RunAttempt("Advance", partialProgress);
+            RunActionCounterAttempt(
+                ActiveQuest,
+                "Advance",
+                partialProgress);
         }
 
         /// <summary>
@@ -123,9 +243,19 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 return;
             }
 
-            int remainingProgress =
-                ActiveQuest.TargetAmount - ActiveQuest.CurrentProgress;
-            RunAttempt("Complete", remainingProgress);
+            Quest quest = ActiveQuest;
+            if (quest.Type == QuestType.ActionCounter)
+            {
+                int remainingProgress =
+                    quest.TargetAmount - quest.CurrentProgress;
+                RunActionCounterAttempt(
+                    quest,
+                    "Complete",
+                    remainingProgress);
+                return;
+            }
+
+            RunLevelResultAttempt(quest);
         }
 
         /// <summary>
@@ -170,7 +300,8 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 "Ожидание QuestManager.Init.");
         }
 
-        private void RunAttempt(
+        private void RunActionCounterAttempt(
+            Quest quest,
             string actionName,
             int actionCount)
         {
@@ -178,36 +309,62 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 actionName,
                 () =>
                 {
-                    int progressBeforeAttempt =
-                        ActiveQuest.CurrentProgress;
-                    int levelId =
-                        LevelManager.GetCurrentLevelNumber();
+                    int progressBeforeAttempt = quest.CurrentProgress;
+                    int levelId = GetValidAttemptLevelId();
 
                     // Открываем настоящую попытку через игровой event contract.
                     GameEventsManager.LevelStarted(levelId);
                     for (int index = 0; index < actionCount; index++)
                     {
-                        PublishConfiguredAction(index);
+                        PublishConfiguredAction(quest, index);
                     }
 
                     // До победы attempt buffer не должен менять сохранённый прогресс.
-                    if (ActiveQuest.CurrentProgress !=
-                        progressBeforeAttempt)
+                    if (quest.CurrentProgress != progressBeforeAttempt)
                     {
                         throw new InvalidOperationException(
                             "Прогресс изменился до победы.");
                     }
 
-                    // Закрываем попытку штатным событием победы.
-                    GameEventsManager.LevelCompleted(levelId, 3);
+                    // Закрываем Daily-попытку победой с одной звездой, не завершая Story-квест.
+                    GameEventsManager.LevelCompleted(levelId, 1);
                     int expectedProgress = Math.Min(
                         progressBeforeAttempt + actionCount,
-                        ActiveQuest.TargetAmount);
-                    if (ActiveQuest.CurrentProgress != expectedProgress)
+                        quest.TargetAmount);
+                    if (quest.CurrentProgress != expectedProgress)
                     {
                         throw new InvalidOperationException(
                             $"Ожидался прогресс {expectedProgress}, " +
-                            $"получен {ActiveQuest.CurrentProgress}.");
+                            $"получен {quest.CurrentProgress}.");
+                    }
+                });
+        }
+
+        private void RunLevelResultAttempt(Quest quest)
+        {
+            RunAction(
+                "Complete",
+                () =>
+                {
+                    QuestDefinition definition = quest.Definition;
+                    int progressBeforeAttempt = quest.CurrentProgress;
+
+                    // Публикуем реальный результат уровня из выбранного definition.
+                    GameEventsManager.LevelStarted(
+                        definition.RequiredLevelId);
+                    if (quest.CurrentProgress != progressBeforeAttempt)
+                    {
+                        throw new InvalidOperationException(
+                            "Прогресс изменился до победы.");
+                    }
+
+                    GameEventsManager.LevelCompleted(
+                        definition.RequiredLevelId,
+                        definition.RequiredStars);
+                    if (!quest.IsCompleted)
+                    {
+                        throw new InvalidOperationException(
+                            "Событие результата уровня не завершило квест.");
                     }
                 });
         }
@@ -241,10 +398,12 @@ namespace Assets.Scripts.DevTools.QuestTesting
             }
         }
 
-        private static void PublishConfiguredAction(int index)
+        private static void PublishConfiguredAction(
+            Quest quest,
+            int index)
         {
             string sourceId = $"quest-testing-{index + 1}";
-            switch (ActiveQuest.ActionId)
+            switch (quest.ActionId)
             {
                 case GameplayActionIds.ObstacleJumpedOver:
                     GameEventsManager.ObstacleJumpedOver(sourceId);
@@ -254,8 +413,49 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     break;
                 default:
                     throw new InvalidOperationException(
-                        $"Тест-тул не поддерживает действие {ActiveQuest.ActionId}.");
+                        $"Тест-тул не поддерживает действие {quest.ActionId}.");
             }
+        }
+
+        private static int GetValidAttemptLevelId()
+        {
+            int levelId = LevelManager.GetCurrentLevelNumber();
+            if (levelId > 0)
+            {
+                return levelId;
+            }
+
+            foreach (Quest quest in QuestManager.StoryQuests)
+            {
+                if (quest.Type == QuestType.LevelResult &&
+                    quest.Definition.RequiredLevelId > 0)
+                {
+                    return quest.Definition.RequiredLevelId;
+                }
+            }
+
+            throw new InvalidOperationException(
+                "Не найден валидный уровень для попытки.");
+        }
+
+        private static string FormatTitle(Quest quest)
+        {
+            string title = LocalizationManager.GetLocalizedString(
+                quest.TitleLocalizationKey) ??
+                quest.TitleLocalizationKey;
+            return $"{title} ({quest.Id})";
+        }
+
+        private void ResetSelectionState()
+        {
+            _beforeState = "—";
+            _afterState = IsReady
+                ? FormatState()
+                : "Ожидание QuestManager.Init.";
+            _status = ActiveQuest == null
+                ? "В выбранной категории нет активных квестов."
+                : $"Выбран {Title}.";
+            Changed?.Invoke();
         }
 
         private void ResetTransientState(
@@ -269,7 +469,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
             Changed?.Invoke();
         }
 
-        private static string FormatState()
+        private string FormatState()
         {
             if (ActiveQuest == null)
             {

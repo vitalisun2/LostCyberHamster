@@ -39,11 +39,6 @@ namespace Vues.GameCore
         public static IReadOnlyList<Quest> StoryQuests =>
             _storyQuests;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        public static Quest ActiveQuestForTesting =>
-            _dailyQuests.FirstOrDefault();
-#endif
-
         /// <summary>
         /// Загружает каталог и восстанавливает активные квесты.
         /// </summary>
@@ -224,11 +219,12 @@ namespace Vues.GameCore
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
-        /// Сбрасывает дневной MVP-квест для dev-тестирования.
+        /// Сбрасывает выбранный активный квест для dev-тестирования.
         /// </summary>
-        public static bool ResetActiveQuestForTesting()
+        public static bool ResetQuestForTesting(string questId)
         {
-            Quest quest = ActiveQuestForTesting;
+            Quest quest = _activeQuests.FirstOrDefault(
+                activeQuest => activeQuest.Id == questId);
             if (quest == null)
             {
                 return false;
