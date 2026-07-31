@@ -13,7 +13,7 @@ namespace Vues.GameCore.Quests
             QuestDefinition definition,
             QuestEvent questEvent)
         {
-            if (questEvent is not ActionQuestEvent actionEvent)
+            if (questEvent is not ActionCounterQuestEvent actionEvent)
             {
                 return 0;
             }

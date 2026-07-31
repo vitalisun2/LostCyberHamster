@@ -54,8 +54,8 @@ namespace Vues.GameCore
         public static void OnEnable()
         {
             GameEventsManager.OnLevelStarted += HandleLevelStarted;
-            GameEventsManager.OnActionQuestEvent +=
-                HandleActionQuestEvent;
+            GameEventsManager.OnActionCounterQuestEvent +=
+                HandleActionCounterQuestEvent;
             GameEventsManager.OnLevelCompleted += HandleLevelCompleted;
             GameDataManager.PlayerDataReplaced += HandlePlayerDataReplaced;
         }
@@ -63,8 +63,8 @@ namespace Vues.GameCore
         public static void OnDisable()
         {
             GameEventsManager.OnLevelStarted -= HandleLevelStarted;
-            GameEventsManager.OnActionQuestEvent -=
-                HandleActionQuestEvent;
+            GameEventsManager.OnActionCounterQuestEvent -=
+                HandleActionCounterQuestEvent;
             GameEventsManager.OnLevelCompleted -= HandleLevelCompleted;
             GameDataManager.PlayerDataReplaced -= HandlePlayerDataReplaced;
             _attemptBuffer.DiscardAttempt();
@@ -114,8 +114,8 @@ namespace Vues.GameCore
             GameEventsManager.QuestStateChanged(questId);
         }
 
-        private static void HandleActionQuestEvent(
-            ActionQuestEvent questEvent)
+        private static void HandleActionCounterQuestEvent(
+            ActionCounterQuestEvent questEvent)
         {
             _attemptBuffer.Add(questEvent);
         }
@@ -127,7 +127,7 @@ namespace Vues.GameCore
 
         private static void HandleLevelCompleted(int _, int __)
         {
-            IReadOnlyList<ActionQuestEvent> bufferedEvents =
+            IReadOnlyList<ActionCounterQuestEvent> bufferedEvents =
                 _attemptBuffer.CompleteAttempt();
             if (_activeQuest == null || bufferedEvents.Count == 0)
             {
@@ -136,7 +136,7 @@ namespace Vues.GameCore
 
             bool wasCompleted = _activeQuest.State.IsCompleted;
             bool progressChanged = false;
-            foreach (ActionQuestEvent questEvent in bufferedEvents)
+            foreach (ActionCounterQuestEvent questEvent in bufferedEvents)
             {
                 progressChanged |= _activeQuest.Handle(questEvent);
             }

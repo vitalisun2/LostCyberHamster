@@ -5,7 +5,7 @@ namespace Vues.GameCore.Quests
     /// <summary>
     /// Сообщает о выполненном игроком действии.
     /// </summary>
-    public sealed class ActionQuestEvent : QuestEvent
+    public sealed class ActionCounterQuestEvent : QuestEvent
     {
         /// <summary>
         /// Идентификатор выполненного действия.
@@ -20,7 +20,7 @@ namespace Vues.GameCore.Quests
         /// <summary>
         /// Создаёт событие выполненного действия.
         /// </summary>
-        public ActionQuestEvent(string actionId, int count)
+        public ActionCounterQuestEvent(string actionId, int count)
         {
             if (string.IsNullOrWhiteSpace(actionId))
             {

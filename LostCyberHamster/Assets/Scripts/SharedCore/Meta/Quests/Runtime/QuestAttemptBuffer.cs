@@ -23,7 +23,7 @@ namespace Vues.GameCore.Quests
         /// <summary>
         /// Добавляет действие в активную попытку.
         /// </summary>
-        public void Add(ActionQuestEvent questEvent)
+        public void Add(ActionCounterQuestEvent questEvent)
         {
             if (questEvent == null)
             {
@@ -45,19 +45,22 @@ namespace Vues.GameCore.Quests
         /// <summary>
         /// Завершает успешную попытку и возвращает накопленные действия.
         /// </summary>
-        public IReadOnlyList<ActionQuestEvent> CompleteAttempt()
+        public IReadOnlyList<ActionCounterQuestEvent> CompleteAttempt()
         {
             if (!_isActive)
             {
-                return Array.Empty<ActionQuestEvent>();
+                return Array.Empty<ActionCounterQuestEvent>();
             }
 
             var bufferedEvents =
-                new List<ActionQuestEvent>(_actionCounts.Count);
+                new List<ActionCounterQuestEvent>(
+                    _actionCounts.Count);
             foreach (KeyValuePair<string, int> action in _actionCounts)
             {
                 bufferedEvents.Add(
-                    new ActionQuestEvent(action.Key, action.Value));
+                    new ActionCounterQuestEvent(
+                        action.Key,
+                        action.Value));
             }
 
             DiscardAttempt();

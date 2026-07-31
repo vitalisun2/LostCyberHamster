@@ -37,7 +37,8 @@ public static class GameEventsManager
     /// <summary>
     /// Типизированные события действий для квестов-счётчиков.
     /// </summary>
-    public static event Action<ActionQuestEvent> OnActionQuestEvent;
+    public static event Action<ActionCounterQuestEvent>
+        OnActionCounterQuestEvent;
 
     /// <summary>
     /// Триггер события OnObstacleJumpedOver
@@ -46,8 +47,8 @@ public static class GameEventsManager
     public static void ObstacleJumpedOver(string obstacleName)
     {
         OnObstacleJumpedOver?.Invoke(obstacleName);
-        PublishActionQuestEvent(
-            new ActionQuestEvent(
+        PublishActionCounterQuestEvent(
+            new ActionCounterQuestEvent(
                 GameplayActionIds.ObstacleJumpedOver,
                 1));
     }
@@ -55,15 +56,15 @@ public static class GameEventsManager
     /// <summary>
     /// Публикует одно типизированное действие для квестовой системы.
     /// </summary>
-    public static void PublishActionQuestEvent(
-        ActionQuestEvent questEvent)
+    public static void PublishActionCounterQuestEvent(
+        ActionCounterQuestEvent questEvent)
     {
         if (questEvent == null)
         {
             throw new ArgumentNullException(nameof(questEvent));
         }
 
-        OnActionQuestEvent?.Invoke(questEvent);
+        OnActionCounterQuestEvent?.Invoke(questEvent);
     }
 
 
@@ -79,8 +80,8 @@ public static class GameEventsManager
     public static void ObstacleJumpedOn(string obstacleName)
     {
         OnObstacleJumpedOn?.Invoke(obstacleName);
-        PublishActionQuestEvent(
-            new ActionQuestEvent(
+        PublishActionCounterQuestEvent(
+            new ActionCounterQuestEvent(
                 GameplayActionIds.ObstacleJumpedOn,
                 1));
     }
