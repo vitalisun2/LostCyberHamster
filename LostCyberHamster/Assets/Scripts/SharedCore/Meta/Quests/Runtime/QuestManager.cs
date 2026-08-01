@@ -45,12 +45,12 @@ namespace Vues.GameCore
         public static async Task Init()
         {
             await QuestCatalog.LoadAsync();
-            if (QuestCatalog.DailyDefinitions.Count != 1 ||
-                QuestCatalog.StoryDefinitions.Count != 1)
+            if (QuestCatalog.DailyDefinitions.Count == 0 ||
+                QuestCatalog.StoryDefinitions.Count == 0)
             {
                 throw new InvalidOperationException(
-                    "MVP-каталог должен содержать один дневной " +
-                    "и один сюжетный квест.");
+                    "MVP-каталог должен содержать дневные квесты " +
+                    "и сюжетные квесты.");
             }
 
             BindActiveQuests();
