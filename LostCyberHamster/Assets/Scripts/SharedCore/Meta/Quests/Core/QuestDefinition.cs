@@ -35,7 +35,7 @@ namespace Vues.GameCore.Quests
         public string ActionId;
 
         /// <summary>
-        /// Номер уровня для квеста результата уровня.
+        /// Номер уровня для квеста результата уровня. Ноль означает любой уровень.
         /// </summary>
         public int RequiredLevelId;
 

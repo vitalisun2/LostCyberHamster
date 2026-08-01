@@ -17,6 +17,16 @@
       "TargetAmount": 3,
       "RewardType": 1,
       "RewardAmount": 10
+    },
+    {
+      "Id": "daily-003",
+      "TitleLocalizationKey": "daily-003-title",
+      "Type": 2,
+      "RequiredLevelId": 0,
+      "RequiredStars": 1,
+      "TargetAmount": 1,
+      "RewardType": 1,
+      "RewardAmount": 10
     }
   ],
   "StoryDefinitions": [

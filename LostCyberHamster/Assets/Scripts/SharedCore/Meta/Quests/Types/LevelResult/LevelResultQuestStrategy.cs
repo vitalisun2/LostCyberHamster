@@ -1,7 +1,7 @@
 namespace Vues.GameCore.Quests
 {
     /// <summary>
-    /// Проверяет результат выбранного уровня.
+    /// Проверяет успешный результат выбранного или любого уровня.
     /// </summary>
     public sealed class LevelResultQuestStrategy : IQuestStrategy
     {
@@ -18,7 +18,9 @@ namespace Vues.GameCore.Quests
                 return 0;
             }
 
-            return levelResult.LevelId == definition.RequiredLevelId &&
+            bool matchesLevel = definition.RequiredLevelId == 0 ||
+                                levelResult.LevelId == definition.RequiredLevelId;
+            return matchesLevel &&
                    levelResult.Stars >= definition.RequiredStars
                 ? 1
                 : 0;

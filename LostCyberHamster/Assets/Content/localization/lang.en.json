@@ -337,6 +337,10 @@
             "value": "Jump on 3 obstacles"
         },
         {
+            "key": "daily-003-title",
+            "value": "Complete any level"
+        },
+        {
             "key": "story-001-title",
             "value": "Complete New York Level with 3 Stars"
         },

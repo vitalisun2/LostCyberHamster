@@ -48,12 +48,12 @@ namespace Vues.GameCore.Quests
             }
 
             if (definition.Type == QuestType.LevelResult &&
-                definition.RequiredLevelId <= 0)
+                definition.RequiredLevelId < 0)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(definition),
                     definition.RequiredLevelId,
-                    "Номер уровня должен быть положительным.");
+                    "Номер уровня не должен быть отрицательным.");
             }
 
             if (definition.Type == QuestType.LevelResult &&

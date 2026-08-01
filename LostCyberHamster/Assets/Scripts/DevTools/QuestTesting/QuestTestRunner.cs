@@ -86,8 +86,10 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     QuestType.ActionCounter =>
                         $"{ActiveQuest.Type} / {ActiveQuest.ActionId}",
                     QuestType.LevelResult =>
-                        $"{ActiveQuest.Type} / уровень " +
-                        $"{ActiveQuest.Definition.RequiredLevelId}, " +
+                        $"{ActiveQuest.Type} / " +
+                        (ActiveQuest.Definition.RequiredLevelId == 0
+                            ? "любой уровень, "
+                            : $"уровень {ActiveQuest.Definition.RequiredLevelId}, ") +
                         $"{ActiveQuest.Definition.RequiredStars} звезды",
                     _ => ActiveQuest.Type.ToString()
                 };
@@ -348,10 +350,12 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 {
                     QuestDefinition definition = quest.Definition;
                     int progressBeforeAttempt = quest.CurrentProgress;
+                    int levelId = definition.RequiredLevelId == 0
+                        ? GetValidAttemptLevelId()
+                        : definition.RequiredLevelId;
 
-                    // Публикуем реальный результат уровня из выбранного definition.
-                    GameEventsManager.LevelStarted(
-                        definition.RequiredLevelId);
+                    // Публикуем успешный результат через игровой event contract.
+                    GameEventsManager.LevelStarted(levelId);
                     if (quest.CurrentProgress != progressBeforeAttempt)
                     {
                         throw new InvalidOperationException(
@@ -359,7 +363,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     }
 
                     GameEventsManager.LevelCompleted(
-                        definition.RequiredLevelId,
+                        levelId,
                         definition.RequiredStars);
                     if (!quest.IsCompleted)
                     {
