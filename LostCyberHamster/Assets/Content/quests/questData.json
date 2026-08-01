@@ -3,6 +3,9 @@
     {
       "Id": "daily-001",
       "TitleLocalizationKey": "daily-001-title",
+      "TitleDescription": "Перепрыгни через 5 препятствий",
+      "ConditionDescription": "Перепрыгнуть препятствие и успешно завершить уровень.",
+      "GoalDescription": "Количество засчитанных перепрыгиваний.",
       "Type": 1,
       "ActionId": "obstacle_jumped_over",
       "TargetAmount": 5,
@@ -12,6 +15,9 @@
     {
       "Id": "daily-002",
       "TitleLocalizationKey": "daily-002-title",
+      "TitleDescription": "Напрыгни на 3 препятствия",
+      "ConditionDescription": "Напрыгнуть на препятствие и успешно завершить уровень.",
+      "GoalDescription": "Количество засчитанных напрыгиваний.",
       "Type": 1,
       "ActionId": "obstacle_jumped_on",
       "TargetAmount": 3,
@@ -21,6 +27,9 @@
     {
       "Id": "daily-003",
       "TitleLocalizationKey": "daily-003-title",
+      "TitleDescription": "Пройди любой уровень",
+      "ConditionDescription": "Успешно завершить любой уровень.",
+      "GoalDescription": "Количество завершённых уровней.",
       "Type": 2,
       "RequiredLevelId": 0,
       "RequiredStars": 1,
@@ -33,6 +42,9 @@
     {
       "Id": "story-001",
       "TitleLocalizationKey": "story-001-title",
+      "TitleDescription": "Заверши уровень Нью-Йорк с 3 звездами",
+      "ConditionDescription": "Успешно завершить указанный уровень с нужным количеством звёзд.",
+      "GoalDescription": "Количество подходящих результатов уровня.",
       "Type": 2,
       "RequiredLevelId": 1,
       "RequiredStars": 3,
