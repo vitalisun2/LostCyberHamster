@@ -8,11 +8,10 @@
                 <LostCyberHamster.UI.MoneyStorageUI />
                 <LostCyberHamster.UI.CrystalStorageUI />
             </engine:VisualElement>
-            <engine:VisualElement name="home__xp-panel" class="home-super-attacks-xp-panel">
+            <engine:VisualElement name="home__xp-panel" class="home-super-attacks-xp-panel" picking-mode="Ignore">
                 <engine:Label name="home__player-level" class="lcs-text home-super-attacks-xp-panel__level" picking-mode="Ignore" />
                 <engine:ProgressBar name="home__xp-progress" value="0" high-value="240" title="" class="home-super-attacks-xp-panel__progress" picking-mode="Ignore" />
                 <engine:Label name="home__xp-label" class="lcs-text home-super-attacks-xp-panel__xp" picking-mode="Ignore" />
-                <engine:Button name="super-attacks__xp-button" class="home-super-attacks-xp-panel__hit-area" />
             </engine:VisualElement>
             <engine:VisualElement class="home-hud__side home-hud__right">
                 <engine:Button icon-image="project://database/Assets/Content/ui/textures/ui_atlas.psd?fileID=9013006513900664874&amp;guid=29047d9fdf8ef4acdbb6f67516476d96&amp;type=3#settings_icon" name="btn_settings" class="lcs_btn home-hud__settings-button" />

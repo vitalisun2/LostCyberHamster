@@ -22,7 +22,7 @@ namespace LostCyberHamster.UI
 
         private Button _buttonQuests => _contentRoot.Q<Button>("btn_quests");
         private Button _buttonSuperAttacks =>
-            _contentRoot.Q<Button>("super-attacks__xp-button");
+            _contentRoot.Q<Button>("btn_super-attacks");
         private Button _buttonShop => _contentRoot.Q<Button>("btn_shop");
 
         private Button _buttonHome => _contentRoot.Q<Button>("btn_home");

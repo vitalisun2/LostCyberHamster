@@ -5,6 +5,7 @@
         <ui:Button text="&#10;" icon-image="project://database/Assets/Content/ui/textures/ui_atlas.psd?fileID=428085105501800460&amp;guid=29047d9fdf8ef4acdbb6f67516476d96&amp;type=3#hamster_face_icon" name="btn_character" class="lcs_btn" style="width: 120px; height: 120px;" />
         <ui:Button text="Обучение" name="btn_tutorial" class="lcs_btn" style="width: 180px; height: 120px; font-size: 26px;" />
         <ui:Button icon-image="project://database/Assets/Content/ui/textures/ui_atlas.psd?fileID=7448841341171803087&amp;guid=29047d9fdf8ef4acdbb6f67516476d96&amp;type=3#quests_icon" name="btn_quests" class="lcs_btn" style="width: 120px; height: 120px;" />
+        <ui:Button text="XP" name="btn_super-attacks" class="lcs_btn" style="width: 120px; height: 120px; font-size: 46px;" />
         <ui:Button text="L" name="btn_leaderboard" class="lcs_btn" style="width: 120px; height: 120px; font-size: 64px;" />
     </ui:VisualElement>
 </ui:UXML>
