@@ -5,7 +5,6 @@
     <engine:VisualElement name="homescreen" style="flex-grow: 1;">
         <engine:VisualElement name="home__hud" class="home-hud">
             <engine:VisualElement class="home-hud__side home-hud__left">
-                <engine:Button text="DEF" name="btn_character" class="lcs_btn home-hud__character-button" />
                 <LostCyberHamster.UI.MoneyStorageUI />
                 <LostCyberHamster.UI.CrystalStorageUI />
             </engine:VisualElement>
