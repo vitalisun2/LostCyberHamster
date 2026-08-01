@@ -20,7 +20,9 @@ namespace Vues.GameCore
                 [QuestType.ActionCounter] =
                     new ActionCounterQuestStrategy(),
                 [QuestType.LevelResult] =
-                    new LevelResultQuestStrategy()
+                    new LevelResultQuestStrategy(),
+                [QuestType.PlayerState] =
+                    new PlayerStateQuestStrategy()
             };
 
         private static readonly QuestAttemptBuffer _attemptBuffer = new();
@@ -66,6 +68,7 @@ namespace Vues.GameCore
             GameEventsManager.OnActionCounterQuestEvent +=
                 HandleActionCounterQuestEvent;
             GameEventsManager.OnLevelCompleted += HandleLevelCompleted;
+            GameEventsManager.OnSkinPurchased += HandleSkinPurchased;
             GameDataManager.PlayerDataReplaced += HandlePlayerDataReplaced;
         }
 
@@ -78,6 +81,7 @@ namespace Vues.GameCore
             GameEventsManager.OnActionCounterQuestEvent -=
                 HandleActionCounterQuestEvent;
             GameEventsManager.OnLevelCompleted -= HandleLevelCompleted;
+            GameEventsManager.OnSkinPurchased -= HandleSkinPurchased;
             GameDataManager.PlayerDataReplaced -= HandlePlayerDataReplaced;
             _attemptBuffer.DiscardAttempt();
         }
@@ -114,6 +118,7 @@ namespace Vues.GameCore
 
                 quest.Bind(definition, strategy);
                 RestoreUniqueLevelProgress(quest);
+                RestorePlayerStateProgress(quest);
                 quests.Add(quest);
             }
 
@@ -157,6 +162,25 @@ namespace Vues.GameCore
             }
         }
 
+        private static void RestorePlayerStateProgress(Quest quest)
+        {
+            QuestDefinition definition = quest.Definition;
+            if (definition.Type != QuestType.PlayerState ||
+                definition.StateId != PlayerStateIds.SkinOwned ||
+                !int.TryParse(definition.EntityId, out int skinId) ||
+                GameDataManager.PlayerData?.PurchasedSkinIds?.Contains(
+                    skinId) != true)
+            {
+                return;
+            }
+
+            quest.Handle(
+                new PlayerStateQuestEvent(
+                    definition.StateId,
+                    definition.EntityId,
+                    1));
+        }
+
         private static Quest GetOrCreateQuest(string questId)
         {
             GameDataManager.PlayerData.QuestStates ??=
@@ -195,6 +219,35 @@ namespace Vues.GameCore
             ActionCounterQuestEvent questEvent)
         {
             _attemptBuffer.Add(questEvent);
+        }
+
+        private static void HandleSkinPurchased(
+            int skinId,
+            ResourceType _,
+            int __)
+        {
+            // Применяем постоянный факт сразу, без буфера попытки уровня.
+            var questEvent = new PlayerStateQuestEvent(
+                PlayerStateIds.SkinOwned,
+                skinId.ToString(),
+                1);
+            foreach (Quest quest in _activeQuests)
+            {
+                bool wasCompleted = quest.IsCompleted;
+                if (!quest.Handle(questEvent))
+                {
+                    continue;
+                }
+
+                if (!wasCompleted && quest.IsCompleted)
+                {
+                    GameEventsManager.QuestCompleted(quest.Id);
+                }
+
+                GameEventsManager.QuestStateChanged(quest.Id);
+            }
+
+            // SkinManager сохраняет покупку и обновлённый квест одним checkpoint после события.
         }
 
         private static void HandleLevelStarted(int _)

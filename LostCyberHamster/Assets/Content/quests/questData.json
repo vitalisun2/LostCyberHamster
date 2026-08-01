@@ -78,6 +78,20 @@
       "TargetAmount": 3,
       "RewardType": 1,
       "RewardAmount": 300
+    },
+    {
+      "Id": "story-002",
+      "TitleLocalizationKey": "story-002-title",
+      "TitleDescription": "Купи новый скин",
+      "ConditionDescription": "Купить скин Energy Shield.",
+      "GoalDescription": "Скин Energy Shield куплен.",
+      "Type": 3,
+      "StateId": "skin_owned",
+      "EntityId": "1",
+      "RequiredValue": 1,
+      "TargetAmount": 1,
+      "RewardType": 1,
+      "RewardAmount": 300
     }
   ]
 }

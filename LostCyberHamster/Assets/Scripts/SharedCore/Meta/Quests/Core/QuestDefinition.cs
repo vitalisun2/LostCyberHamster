@@ -60,6 +60,21 @@ namespace Vues.GameCore.Quests
         public int RequiredStars;
 
         /// <summary>
+        /// Идентификатор постоянного состояния игрока.
+        /// </summary>
+        public string StateId;
+
+        /// <summary>
+        /// Идентификатор сущности, состояние которой проверяет квест.
+        /// </summary>
+        public string EntityId;
+
+        /// <summary>
+        /// Значение состояния, достаточное для выполнения условия.
+        /// </summary>
+        public int RequiredValue;
+
+        /// <summary>
         /// Значение прогресса для завершения.
         /// </summary>
         public int TargetAmount;

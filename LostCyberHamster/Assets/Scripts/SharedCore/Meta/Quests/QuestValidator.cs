@@ -78,6 +78,33 @@ namespace Vues.GameCore.Quests
                     nameof(definition));
             }
 
+            if (definition.Type == QuestType.PlayerState &&
+                (!PlayerStateIds.IsKnown(definition.StateId) ||
+                 string.IsNullOrWhiteSpace(definition.EntityId)))
+            {
+                throw new ArgumentException(
+                    "Состояние игрока или идентификатор сущности не поддерживается.",
+                    nameof(definition));
+            }
+
+            if (definition.Type == QuestType.PlayerState &&
+                definition.RequiredValue <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition),
+                    definition.RequiredValue,
+                    "Требуемое значение состояния должно быть положительным.");
+            }
+
+            if (definition.Type == QuestType.PlayerState &&
+                definition.TargetAmount != 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition),
+                    definition.TargetAmount,
+                    "Цель квеста состояния игрока должна быть равна одному.");
+            }
+
             if (definition.TargetAmount <= 0)
             {
                 throw new ArgumentOutOfRangeException(

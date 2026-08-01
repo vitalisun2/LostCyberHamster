@@ -35,9 +35,14 @@ Quests/
 │   │   ├── ActionCounterQuestStrategy.cs
 │   │   └── GameplayActionIds.cs
 │   │
-│   └── LevelResult/
-│       ├── LevelResultQuestEvent.cs
-│       └── LevelResultQuestStrategy.cs
+│   ├── LevelResult/
+│   │   ├── LevelResultQuestEvent.cs
+│   │   └── LevelResultQuestStrategy.cs
+│   │
+│   └── PlayerState/
+│       ├── PlayerStateQuestEvent.cs
+│       ├── PlayerStateQuestStrategy.cs
+│       └── PlayerStateIds.cs
 │
 └── Runtime/
     ├── QuestManager.cs
@@ -92,6 +97,7 @@ UI и общая игровая инфраструктура находятся 
    - `QuestEvent.cs` — общий контракт события.
    - `ActionCounterQuestEvent.cs` — событие выполненного игрового действия.
    - `LevelResultQuestEvent.cs` — событие результата уровня.
+   - `PlayerStateQuestEvent.cs` — событие постоянного состояния сущности игрока.
    - `GameEventsManager.cs` — публикует игровые события.
    - `QuestManager.cs` — создаёт типизированное событие результата уровня.
 
@@ -99,9 +105,11 @@ UI и общая игровая инфраструктура находятся 
    - `IQuestStrategy.cs` — общий контракт стратегии.
    - `ActionCounterQuestStrategy.cs` — считает подходящие действия.
    - `LevelResultQuestStrategy.cs` — проверяет уровень и число звёзд.
+   - `PlayerStateQuestStrategy.cs` — проверяет постоянное состояние игрока.
 
 3. **Идентификаторы действий** — связывают каталог, события и стратегию.
    - `GameplayActionIds.cs` — хранит стабильные ID игровых действий.
+   - `PlayerStateIds.cs` — хранит стабильные ID состояний игрока.
 
 4. **Валидация** — проверяет данные и связи системы.
    - `QuestValidator.cs` — проверяет определения, стратегии, каталог и состояние.
@@ -133,11 +141,11 @@ UI и общая игровая инфраструктура находятся 
 
 1. **Счётчик действий (`ActionCounter`)** — считает выбранные игровые действия.
 2. **Результат уровня (`LevelResult`)** — проверяет результат выбранного уровня.
+3. **Состояние игрока (`PlayerState`)** — проверяет постоянный прогресс игрока.
 
 ### Запланировано
 
-1. **Состояние игрока (`PlayerState`)** — проверяет постоянный прогресс игрока.
-2. **Составной квест (`Composite`)** — проверяет выполнение нескольких других квестов.
+1. **Составной квест (`Composite`)** — проверяет выполнение нескольких других квестов.
 
 ## Общий поток
 

@@ -7,6 +7,7 @@ namespace Vues.GameCore.Quests
     {
         None = 0,
         ActionCounter = 1,
-        LevelResult = 2
+        LevelResult = 2,
+        PlayerState = 3
     }
 }

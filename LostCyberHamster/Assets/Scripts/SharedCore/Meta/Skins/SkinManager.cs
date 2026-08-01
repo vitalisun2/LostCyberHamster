@@ -66,6 +66,32 @@ public static class SkinManager
         PlayerProgressCommitter.Commit(CheckpointReason.SkinPurchased);
     }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    /// <summary>
+    /// Возвращает скин в состояние до покупки для повторной проверки через dev tool.
+    /// </summary>
+    public static bool ResetSkinPurchaseForTesting(int skinId)
+    {
+        if (skinId <= 0 || _availableSkins.All(skin => skin.Id != skinId))
+        {
+            return false;
+        }
+
+        // Удаляем владение целевым скином.
+        GameDataManager.PlayerData.PurchasedSkinIds ??= new List<int>();
+        GameDataManager.PlayerData.PurchasedSkinIds.RemoveAll(
+            purchasedSkinId => purchasedSkinId == skinId);
+
+        // Возвращаем безопасный default, если целевой скин был надет.
+        if (GameDataManager.PlayerData.AppliedSkinId == skinId)
+        {
+            GameDataManager.PlayerData.AppliedSkinId = 0;
+        }
+
+        return true;
+    }
+#endif
+
     public static void PutOnSkin(int skinId)
     {
         var skin = _availableSkins.FirstOrDefault(x => x.Id == skinId);

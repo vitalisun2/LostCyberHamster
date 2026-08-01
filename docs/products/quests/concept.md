@@ -29,8 +29,24 @@
 
 1. `ActionCounter` — считает выбранные игровые действия.
 2. `LevelResult` — проверяет номер уровня и полученные звёзды.
+3. `PlayerState` — проверяет постоянное состояние игрока.
 
-## Следующие типы
+## Контракты базовых типов
 
-1. `PlayerState` — проверяет постоянный прогресс игрока.
-2. `Composite` — объединяет несколько условий.
+### ActionCounter
+
+- Definition хранит `ActionId` и `TargetAmount`.
+- `ActionCounterQuestEvent` передаёт `ActionId` и `Count`.
+- `CalculateProgress` возвращает `Count`, когда `ActionId` совпадает.
+
+### LevelResult
+
+- Definition хранит фильтры уровня, локации, времени суток и звёзд.
+- `LevelResultQuestEvent` передаёт фактический результат уровня.
+- `CalculateProgress` возвращает `1`, когда результат проходит все фильтры.
+
+### PlayerState
+
+- Definition хранит `StateId`, `EntityId` и `RequiredValue`.
+- `PlayerStateQuestEvent` передаёт `StateId`, `EntityId` и текущее `Value`.
+- `CalculateProgress` возвращает `1`, когда ID совпадают и `Value` достигло `RequiredValue`.

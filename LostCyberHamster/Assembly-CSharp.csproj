@@ -113,6 +113,7 @@
     <Compile Include="Assets\Scripts\System\Resources\AddressableLocationsLease.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenController.cs" />
     <Compile Include="Assets\Scripts\SharedCore\VibrationManager.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\PlayerState\PlayerStateQuestEvent.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\GameplayDevToolsView.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\HamsterSnapshot.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowCalculator.cs" />
@@ -299,6 +300,7 @@
     <Compile Include="Assets\Scripts\DevTools\GameProgressTesting\GameProgressTestingView.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Persistence\ICryptoService.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoofOnRoof\JumpFromRoofOnRoofStrategy.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\PlayerState\PlayerStateQuestStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnStrategy.cs" />
     <Compile Include="Assets\Scripts\UI\Components\Energybar.cs" />
     <Compile Include="Assets\Scripts\Bot\RuntimeBotController.cs" />
@@ -559,6 +561,7 @@
     <Compile Include="Assets\Scripts\Gameplay\Enums\HamsterStateEnum.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoof\SuperJumpFromRoofExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOver\JumpOverChainModel.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\PlayerState\PlayerStateIds.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\JumpFromRoofChainModel.cs" />
     <Compile Include="Assets\Scripts\Gameplay\PizzaBonus.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\AccountPromptCoordinator.cs" />

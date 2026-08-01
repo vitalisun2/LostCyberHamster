@@ -92,6 +92,11 @@ namespace Assets.Scripts.DevTools.QuestTesting
                         FormatLevelResultCondition(
                             ActiveQuest.Definition) +
                         $"{ActiveQuest.Definition.RequiredStars} звезды",
+                    QuestType.PlayerState =>
+                        $"{ActiveQuest.Type} / " +
+                        $"{ActiveQuest.Definition.StateId} / " +
+                        $"{ActiveQuest.Definition.EntityId} >= " +
+                        ActiveQuest.Definition.RequiredValue,
                     _ => ActiveQuest.Type.ToString()
                 };
             }
@@ -117,7 +122,8 @@ namespace Assets.Scripts.DevTools.QuestTesting
             IsReady &&
             !_isBusy &&
             (ActiveQuest.Type == QuestType.ActionCounter ||
-             ActiveQuest.Type == QuestType.LevelResult) &&
+             ActiveQuest.Type == QuestType.LevelResult ||
+             ActiveQuest.Type == QuestType.PlayerState) &&
             !ActiveQuest.IsCompleted;
 
         public bool CanClaimReward =>
@@ -201,7 +207,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
         }
 
         /// <summary>
-        /// Сбрасывает реальное сохранённое состояние выбранного квеста.
+        /// Сбрасывает сохранённое состояние выбранного квеста и его тестируемой цели.
         /// </summary>
         public void GenerateOrReset()
         {
@@ -209,7 +215,18 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 "Generate/Reset",
                 () =>
                 {
-                    if (!QuestManager.ResetQuestForTesting(ActiveQuest.Id))
+                    Quest quest = ActiveQuest;
+                    if (quest.Type == QuestType.PlayerState)
+                    {
+                        Skin skin = GetPlayerStateSkin(quest.Definition);
+                        if (!SkinManager.ResetSkinPurchaseForTesting(skin.Id))
+                        {
+                            throw new InvalidOperationException(
+                                "Целевой скин не удалось подготовить.");
+                        }
+                    }
+
+                    if (!QuestManager.ResetQuestForTesting(quest.Id))
                     {
                         throw new InvalidOperationException(
                             "Выбранный квест не найден в QuestManager.");
@@ -237,7 +254,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
         }
 
         /// <summary>
-        /// Публикует точный остаток реальных действий до завершения.
+        /// Выполняет выбранный квест через его реальный игровой путь.
         /// </summary>
         public void Complete()
         {
@@ -247,18 +264,26 @@ namespace Assets.Scripts.DevTools.QuestTesting
             }
 
             Quest quest = ActiveQuest;
-            if (quest.Type == QuestType.ActionCounter)
+            switch (quest.Type)
             {
-                int remainingProgress =
-                    quest.TargetAmount - quest.CurrentProgress;
-                RunActionCounterAttempt(
-                    quest,
-                    "Complete",
-                    remainingProgress);
-                return;
+                case QuestType.ActionCounter:
+                    int remainingProgress =
+                        quest.TargetAmount - quest.CurrentProgress;
+                    RunActionCounterAttempt(
+                        quest,
+                        "Complete",
+                        remainingProgress);
+                    return;
+                case QuestType.LevelResult:
+                    RunLevelResultAttempt(quest);
+                    return;
+                case QuestType.PlayerState:
+                    RunPlayerStateQuest(quest);
+                    return;
+                default:
+                    throw new InvalidOperationException(
+                        $"Тест-тул не поддерживает тип {quest.Type}.");
             }
-
-            RunLevelResultAttempt(quest);
         }
 
         /// <summary>
@@ -378,6 +403,65 @@ namespace Assets.Scripts.DevTools.QuestTesting
                             "Событие результата уровня не завершило квест.");
                     }
                 });
+        }
+
+        private void RunPlayerStateQuest(Quest quest)
+        {
+            RunAction(
+                "Complete",
+                () =>
+                {
+                    // Проверяем целевой скин и состояние владения.
+                    Skin skin = GetPlayerStateSkin(quest.Definition);
+
+                    if (skin.IsPurchased)
+                    {
+                        throw new InvalidOperationException(
+                            "Скин уже куплен. Сначала выполните Generate/Reset.");
+                    }
+
+                    // Готовим минимальный баланс и выполняем реальную покупку.
+                    int missingResource = Math.Max(
+                        0,
+                        skin.Price - ResourceManager.GetCurrentBalance(
+                            skin.PriceType));
+                    if (missingResource > 0 &&
+                        !ResourceManager.AddResource(
+                            skin.PriceType,
+                            missingResource))
+                    {
+                        throw new InvalidOperationException(
+                            "Не удалось подготовить ресурсы для покупки скина.");
+                    }
+
+                    SkinManager.PurchaseSkin(skin.Id);
+                    if (!quest.IsCompleted)
+                    {
+                        throw new InvalidOperationException(
+                            "Покупка скина не завершила квест.");
+                    }
+                });
+        }
+
+        private static Skin GetPlayerStateSkin(
+            QuestDefinition definition)
+        {
+            if (definition.StateId != PlayerStateIds.SkinOwned)
+            {
+                throw new InvalidOperationException(
+                    $"Тест-тул не поддерживает состояние {definition.StateId}.");
+            }
+
+            if (!int.TryParse(definition.EntityId, out int skinId))
+            {
+                throw new InvalidOperationException(
+                    $"Некорректный ID скина {definition.EntityId}.");
+            }
+
+            Skin skin = SkinManager.AvailableSkins.FirstOrDefault(
+                availableSkin => availableSkin.Id == skinId);
+            return skin ?? throw new InvalidOperationException(
+                $"Скин {skinId} не найден.");
         }
 
         private static void CompleteUniqueLevelResultQuest(
