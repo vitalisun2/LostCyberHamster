@@ -506,6 +506,9 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 case GameplayActionIds.ObstacleJumpedOn:
                     GameEventsManager.ObstacleJumpedOn(sourceId);
                     break;
+                case GameplayActionIds.ObstacleJumpedOnFromRoof:
+                    GameEventsManager.ObstacleJumpedOnFromRoof();
+                    break;
                 case GameplayActionIds.VehicleRoofRunCompleted:
                     GameEventsManager.VehicleRoofRunCompleted();
                     break;

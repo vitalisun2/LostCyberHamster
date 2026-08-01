@@ -345,6 +345,10 @@
             "value": "Run across 3 vehicle roofs"
         },
         {
+            "key": "daily-005-title",
+            "value": "Jump from a roof onto a living obstacle"
+        },
+        {
             "key": "story-001-title",
             "value": "Complete all New York Morning levels with 3 Stars"
         },

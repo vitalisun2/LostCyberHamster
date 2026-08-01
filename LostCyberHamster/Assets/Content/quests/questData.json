@@ -41,11 +41,23 @@
       "Id": "daily-004",
       "TitleLocalizationKey": "daily-004-title",
       "TitleDescription": "Пробеги по крышам 3 автомобилей",
-      "ConditionDescription": "Пробежать текущую крышу автомобиля до конца и успешно завершить уровень.",
+      "ConditionDescription": "Пробеги по крышам трёх автомобилей, не обязательно подряд.",
       "GoalDescription": "Количество полностью пройденных крыш автомобилей.",
       "Type": 1,
       "ActionId": "vehicle_roof_run_completed",
       "TargetAmount": 3,
+      "RewardType": 1,
+      "RewardAmount": 10
+    },
+    {
+      "Id": "daily-005",
+      "TitleLocalizationKey": "daily-005-title",
+      "TitleDescription": "Напрыгни с крыши на живое препятствие",
+      "ConditionDescription": "Успешно напрыгнуть с крыши на живое препятствие.",
+      "GoalDescription": "Количество успешных напрыгиваний с крыши на живое препятствие.",
+      "Type": 1,
+      "ActionId": "obstacle_jumped_on_from_roof",
+      "TargetAmount": 1,
       "RewardType": 1,
       "RewardAmount": 10
     }

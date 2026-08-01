@@ -71,6 +71,17 @@ public static class GameEventsManager
     }
 
     /// <summary>
+    /// Успешное напрыгивание с крыши на живое препятствие.
+    /// </summary>
+    public static void ObstacleJumpedOnFromRoof()
+    {
+        OnActionCounterQuestEvent?.Invoke(
+            new ActionCounterQuestEvent(
+                GameplayActionIds.ObstacleJumpedOnFromRoof,
+                1));
+    }
+
+    /// <summary>
     /// Успешно завершён бег по крыше автомобиля.
     /// </summary>
     public static void VehicleRoofRunCompleted()
