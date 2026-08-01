@@ -84,7 +84,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             if (result.State == HamsterStateEnum.JumpOnObstacleFromRoof)
             {
-                GameEventsManager.ObstacleJumpedOn(result.Target!.name);
                 GameEventsManager.ObstacleJumpedOnFromRoof();
             }
 
