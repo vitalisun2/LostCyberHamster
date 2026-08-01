@@ -84,7 +84,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             if (result.State == HamsterStateEnum.JumpOnObstacleFromRoof)
             {
-                GameEventsManager.ObstacleJumpedOnFromRoof();
+                GameEventsManager.ObstacleJumpedOnFromRoof(
+                    result.Target!.name);
             }
 
             ApplyRoofClips(sourceRoof, result);

@@ -227,6 +227,8 @@ public static class DebugManager
         GameEventsManager.OnCrystalsCollected += CrystallCollected;
         GameEventsManager.OnObstacleJumpedOver += ObstacleJumpedOver;
         GameEventsManager.OnObstacleJumpedOn += ObstacleJumpedOn;
+        GameEventsManager.OnObstacleJumpedOnFromRoof +=
+            ObstacleJumpedOnFromRoof;
         GameEventsManager.OnCoinCollected += CoinCollected;
         GameEventsManager.OnQuestCompleted += QuestCompleted;
         GameEventsManager.OnSkinPurchased += SkinPurchased;
@@ -237,6 +239,8 @@ public static class DebugManager
         GameEventsManager.OnCrystalsCollected -= CrystallCollected;
         GameEventsManager.OnObstacleJumpedOver -= ObstacleJumpedOver;
         GameEventsManager.OnObstacleJumpedOn -= ObstacleJumpedOn;
+        GameEventsManager.OnObstacleJumpedOnFromRoof -=
+            ObstacleJumpedOnFromRoof;
         GameEventsManager.OnCoinCollected -= CoinCollected;
         GameEventsManager.OnQuestCompleted -= QuestCompleted;
         GameEventsManager.OnSkinPurchased -= SkinPurchased;
@@ -263,6 +267,11 @@ public static class DebugManager
     private static void ObstacleJumpedOn(string obj)
     {
         Log("Obstacle jumped on: " + obj);
+    }
+
+    private static void ObstacleJumpedOnFromRoof(string obj)
+    {
+        Log("Obstacle jumped on from roof: " + obj);
     }
 
 

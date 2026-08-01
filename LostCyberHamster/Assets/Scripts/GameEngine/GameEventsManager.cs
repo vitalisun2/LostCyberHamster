@@ -73,8 +73,14 @@ public static class GameEventsManager
     /// <summary>
     /// Успешное напрыгивание с крыши на живое препятствие.
     /// </summary>
-    public static void ObstacleJumpedOnFromRoof()
+    public static event Action<string> OnObstacleJumpedOnFromRoof;
+
+    /// <summary>
+    /// Публикует успешное напрыгивание с крыши на живое препятствие.
+    /// </summary>
+    public static void ObstacleJumpedOnFromRoof(string obstacleName)
     {
+        OnObstacleJumpedOnFromRoof?.Invoke(obstacleName);
         OnActionCounterQuestEvent?.Invoke(
             new ActionCounterQuestEvent(
                 GameplayActionIds.ObstacleJumpedOnFromRoof,
