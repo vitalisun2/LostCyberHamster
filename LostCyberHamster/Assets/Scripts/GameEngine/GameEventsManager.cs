@@ -71,6 +71,17 @@ public static class GameEventsManager
     }
 
     /// <summary>
+    /// Успешно завершён бег по крыше автомобиля.
+    /// </summary>
+    public static void VehicleRoofRunCompleted()
+    {
+        OnActionCounterQuestEvent?.Invoke(
+            new ActionCounterQuestEvent(
+                GameplayActionIds.VehicleRoofRunCompleted,
+                1));
+    }
+
+    /// <summary>
     /// Событие завершения квеста
     /// </summary>
     public static event Action<string> OnQuestCompleted;

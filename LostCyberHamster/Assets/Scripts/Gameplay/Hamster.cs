@@ -168,6 +168,7 @@ namespace Assets.Scripts.Gameplay
                 lastObstacle: LastObstacle,
                 hamsterState: HamsterState,
                 isOnBottomLine: IsOnBottomLine,
+                isDamaged: IsDamaged,
                 transformAnimatorController: _transformAnimatorController,
                 hamsterWidthInUnits: ColliderWidth);
 

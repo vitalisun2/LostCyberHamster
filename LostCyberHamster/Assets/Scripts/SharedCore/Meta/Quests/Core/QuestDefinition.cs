@@ -40,6 +40,21 @@ namespace Vues.GameCore.Quests
         public int RequiredLevelId;
 
         /// <summary>
+        /// Идентификатор нужной локации. Пустое значение означает любую локацию.
+        /// </summary>
+        public string RequiredLocationId;
+
+        /// <summary>
+        /// Идентификатор нужной части суток. Пустое значение означает любую часть суток.
+        /// </summary>
+        public string RequiredPartOfDayId;
+
+        /// <summary>
+        /// Засчитывать каждый подходящий уровень только один раз.
+        /// </summary>
+        public bool CountUniqueLevels;
+
+        /// <summary>
         /// Минимальное количество звёзд для результата уровня.
         /// </summary>
         public int RequiredStars;

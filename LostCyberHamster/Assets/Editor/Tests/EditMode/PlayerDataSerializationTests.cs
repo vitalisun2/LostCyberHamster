@@ -19,7 +19,12 @@ namespace Assets.Tests.EditMode
                         QuestId = "storyline_quest_01",
                         CurrentProgress = 5,
                         IsCompleted = true,
-                        IsRewardClaimed = true
+                        IsRewardClaimed = true,
+                        CountedLevelKeys = new List<string>
+                        {
+                            "01_New_York:Morning:0",
+                            "01_New_York:Morning:1"
+                        }
                     }
                 }
             };
@@ -33,6 +38,9 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(5, restored.QuestStates[0].CurrentProgress);
             Assert.IsTrue(restored.QuestStates[0].IsCompleted);
             Assert.IsTrue(restored.QuestStates[0].IsRewardClaimed);
+            CollectionAssert.AreEqual(
+                source.QuestStates[0].CountedLevelKeys,
+                restored.QuestStates[0].CountedLevelKeys);
         }
     }
 }

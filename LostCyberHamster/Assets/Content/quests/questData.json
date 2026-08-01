@@ -36,19 +36,34 @@
       "TargetAmount": 1,
       "RewardType": 1,
       "RewardAmount": 10
+    },
+    {
+      "Id": "daily-004",
+      "TitleLocalizationKey": "daily-004-title",
+      "TitleDescription": "Пробеги по крышам 3 автомобилей",
+      "ConditionDescription": "Пробежать текущую крышу автомобиля до конца и успешно завершить уровень.",
+      "GoalDescription": "Количество полностью пройденных крыш автомобилей.",
+      "Type": 1,
+      "ActionId": "vehicle_roof_run_completed",
+      "TargetAmount": 3,
+      "RewardType": 1,
+      "RewardAmount": 10
     }
   ],
   "StoryDefinitions": [
     {
       "Id": "story-001",
       "TitleLocalizationKey": "story-001-title",
-      "TitleDescription": "Заверши уровень Нью-Йорк с 3 звездами",
-      "ConditionDescription": "Успешно завершить указанный уровень с нужным количеством звёзд.",
-      "GoalDescription": "Количество подходящих результатов уровня.",
+      "TitleDescription": "Заверши все уровни Нью-Йорк Morning с 3 звёздами",
+      "ConditionDescription": "Завершить каждый уровень New York / Morning с 3 звёздами. Повтор одного уровня не засчитывается.",
+      "GoalDescription": "Количество разных уровней New York / Morning, завершённых с 3 звёздами.",
       "Type": 2,
-      "RequiredLevelId": 1,
+      "RequiredLevelId": 0,
+      "RequiredLocationId": "01_New_York",
+      "RequiredPartOfDayId": "Morning",
+      "CountUniqueLevels": true,
       "RequiredStars": 3,
-      "TargetAmount": 1,
+      "TargetAmount": 3,
       "RewardType": 1,
       "RewardAmount": 300
     }

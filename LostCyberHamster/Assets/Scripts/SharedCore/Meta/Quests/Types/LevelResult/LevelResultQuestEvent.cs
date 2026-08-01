@@ -13,6 +13,21 @@ namespace Vues.GameCore.Quests
         public int LevelId { get; }
 
         /// <summary>
+        /// Стабильный ключ уровня из каталога прогресса.
+        /// </summary>
+        public string LevelKey { get; }
+
+        /// <summary>
+        /// Идентификатор локации завершённого уровня.
+        /// </summary>
+        public string LocationId { get; }
+
+        /// <summary>
+        /// Идентификатор части суток завершённого уровня.
+        /// </summary>
+        public string PartOfDayId { get; }
+
+        /// <summary>
         /// Полученное количество звёзд.
         /// </summary>
         public int Stars { get; }
@@ -20,7 +35,12 @@ namespace Vues.GameCore.Quests
         /// <summary>
         /// Создаёт результат успешно завершённого уровня.
         /// </summary>
-        public LevelResultQuestEvent(int levelId, int stars)
+        public LevelResultQuestEvent(
+            int levelId,
+            int stars,
+            string levelKey,
+            string locationId,
+            string partOfDayId)
         {
             // Проверяем идентификатор завершённого уровня.
             if (levelId <= 0)
@@ -42,6 +62,9 @@ namespace Vues.GameCore.Quests
 
             LevelId = levelId;
             Stars = stars;
+            LevelKey = levelKey?.Trim() ?? string.Empty;
+            LocationId = locationId?.Trim() ?? string.Empty;
+            PartOfDayId = partOfDayId?.Trim() ?? string.Empty;
         }
     }
 }

@@ -9,11 +9,14 @@ namespace Vues.GameCore.Quests
             "obstacle_jumped_over";
         public const string ObstacleJumpedOn =
             "obstacle_jumped_on";
+        public const string VehicleRoofRunCompleted =
+            "vehicle_roof_run_completed";
 
         public static bool IsKnown(string actionId)
         {
             return actionId == ObstacleJumpedOver ||
-                   actionId == ObstacleJumpedOn;
+                   actionId == ObstacleJumpedOn ||
+                   actionId == VehicleRoofRunCompleted;
         }
     }
 }

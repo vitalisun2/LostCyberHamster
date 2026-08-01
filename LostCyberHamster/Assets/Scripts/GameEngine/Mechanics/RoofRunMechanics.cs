@@ -12,6 +12,7 @@ public class RoofRunMechanics
     private readonly Transform _transform;
     private readonly AtomicVariable<Obstacle> _lastObstacle;
     private readonly AtomicVariable<bool> _isOnBottomLine;
+    private readonly AtomicVariable<bool> _isDamaged;
     private readonly AtomicVariable<HamsterStateEnum> _hamsterState;
     private readonly EnvironmentRoot _environmentRoot;
     private TransformAnimatorController _transformAnimatorController;
@@ -21,6 +22,7 @@ public class RoofRunMechanics
         AtomicVariable<Obstacle> lastObstacle,
         AtomicVariable<HamsterStateEnum> hamsterState,
         AtomicVariable<bool> isOnBottomLine,
+        AtomicVariable<bool> isDamaged,
         TransformAnimatorController transformAnimatorController,
         float hamsterWidthInUnits)
     {
@@ -28,6 +30,7 @@ public class RoofRunMechanics
         _lastObstacle = lastObstacle;
         _hamsterState = hamsterState;
         _isOnBottomLine = isOnBottomLine;
+        _isDamaged = isDamaged;
         _transformAnimatorController = transformAnimatorController;
         _hamsterWidthInUnits = hamsterWidthInUnits;
 
@@ -99,6 +102,9 @@ public class RoofRunMechanics
 
         if (!HasReachedNextRoofCheckPoint(hamsterRight, roofRight))
             return;
+
+        if (!_isDamaged.Value)
+            GameEventsManager.VehicleRoofRunCompleted();
 
         var nextObstacle = FindNextBigNotAliveOnSameLine(
             current, _environmentRoot, _isOnBottomLine.Value, hamsterLeft, hamsterRight);

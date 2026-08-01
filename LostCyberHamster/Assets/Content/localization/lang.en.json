@@ -341,8 +341,12 @@
             "value": "Complete any level"
         },
         {
+            "key": "daily-004-title",
+            "value": "Run across 3 vehicle roofs"
+        },
+        {
             "key": "story-001-title",
-            "value": "Complete New York Level with 3 Stars"
+            "value": "Complete all New York Morning levels with 3 Stars"
         },
         {
             "key": "energy shield",

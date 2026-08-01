@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Vues.GameCore.Quests
 {
@@ -33,6 +34,11 @@ namespace Vues.GameCore.Quests
         /// Признак уже полученной награды.
         /// </summary>
         public bool IsRewardClaimed;
+
+        /// <summary>
+        /// Уровни, уже засчитанные квестом с уникальными результатами.
+        /// </summary>
+        public List<string> CountedLevelKeys = new();
 
         /// <summary>
         /// Подключённое описание квеста.
@@ -101,6 +107,24 @@ namespace Vues.GameCore.Quests
                 return false;
             }
 
+            // Отсекаем повторный результат уровня для квестов на разные уровни.
+            if (_definition.CountUniqueLevels)
+            {
+                if (questEvent is not LevelResultQuestEvent levelResult ||
+                    string.IsNullOrWhiteSpace(levelResult.LevelKey))
+                {
+                    return false;
+                }
+
+                CountedLevelKeys ??= new List<string>();
+                if (CountedLevelKeys.Contains(levelResult.LevelKey))
+                {
+                    return false;
+                }
+
+                CountedLevelKeys.Add(levelResult.LevelKey);
+            }
+
             // Добавляем прогресс в пределах цели.
             int remainingProgress =
                 _definition.TargetAmount - CurrentProgress;
@@ -127,6 +151,8 @@ namespace Vues.GameCore.Quests
             CurrentProgress = 0;
             IsCompleted = false;
             IsRewardClaimed = false;
+            CountedLevelKeys ??= new List<string>();
+            CountedLevelKeys.Clear();
         }
 
         /// <summary>
@@ -151,10 +177,22 @@ namespace Vues.GameCore.Quests
                 return;
             }
 
-            CurrentProgress = Math.Clamp(
-                CurrentProgress,
-                0,
-                _definition.TargetAmount);
+            CountedLevelKeys ??= new List<string>();
+            if (_definition.CountUniqueLevels)
+            {
+                CurrentProgress = Math.Clamp(
+                    CountedLevelKeys.Count,
+                    0,
+                    _definition.TargetAmount);
+            }
+            else
+            {
+                CountedLevelKeys.Clear();
+                CurrentProgress = Math.Clamp(
+                    CurrentProgress,
+                    0,
+                    _definition.TargetAmount);
+            }
             IsCompleted =
                 CurrentProgress >= _definition.TargetAmount;
             if (!IsCompleted)

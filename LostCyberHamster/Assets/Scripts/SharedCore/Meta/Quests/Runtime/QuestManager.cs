@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Assets.Scripts.System;
 using GameManagement;
 using GameManagement.Progress;
 using Vues.GameCore.Quests;
@@ -112,10 +113,48 @@ namespace Vues.GameCore
                 }
 
                 quest.Bind(definition, strategy);
+                RestoreUniqueLevelProgress(quest);
                 quests.Add(quest);
             }
 
             return quests.AsReadOnly();
+        }
+
+        private static void RestoreUniqueLevelProgress(Quest quest)
+        {
+            QuestDefinition definition = quest.Definition;
+            if (!definition.CountUniqueLevels)
+            {
+                return;
+            }
+
+            LevelProgressSnapshot progress =
+                GameDataManager.PlayerData?.Progress ??
+                LevelProgressSnapshot.Empty;
+            foreach (HierarchicalLevelCatalog.LevelDescriptor descriptor in
+                     LevelCatalogService.Catalog.EnumerateLevels())
+            {
+                var progressKey = new LevelProgressKey(
+                    descriptor.LocationId,
+                    descriptor.PartId,
+                    descriptor.LevelIndex);
+                int stars = progress.GetStars(progressKey);
+                if (stars < definition.RequiredStars ||
+                    !LevelManager.TryParseLevelNumber(
+                        descriptor.Address,
+                        out int levelId))
+                {
+                    continue;
+                }
+
+                quest.Handle(
+                    new LevelResultQuestEvent(
+                        levelId,
+                        stars,
+                        progressKey.ToString(),
+                        progressKey.LocationId,
+                        progressKey.PartOfDayId));
+            }
         }
 
         private static Quest GetOrCreateQuest(string questId)
@@ -167,8 +206,16 @@ namespace Vues.GameCore
         {
             IReadOnlyList<ActionCounterQuestEvent> bufferedEvents =
                 _attemptBuffer.CompleteAttempt();
+            bool hasProgressKey =
+                LevelManager.TryGetCurrentProgressKey(
+                    out LevelProgressKey progressKey);
             var levelResultEvent =
-                new LevelResultQuestEvent(levelId, stars);
+                new LevelResultQuestEvent(
+                    levelId,
+                    stars,
+                    hasProgressKey ? progressKey.ToString() : string.Empty,
+                    hasProgressKey ? progressKey.LocationId : string.Empty,
+                    hasProgressKey ? progressKey.PartOfDayId : string.Empty);
             var changedQuests = new List<Quest>();
             var completedQuests = new List<Quest>();
 

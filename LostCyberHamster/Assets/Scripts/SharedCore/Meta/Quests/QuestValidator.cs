@@ -66,6 +66,18 @@ namespace Vues.GameCore.Quests
                     "Количество звёзд должно быть от 1 до 3.");
             }
 
+            if (definition.Type == QuestType.LevelResult &&
+                definition.CountUniqueLevels &&
+                (string.IsNullOrWhiteSpace(
+                     definition.RequiredLocationId) ||
+                 string.IsNullOrWhiteSpace(
+                     definition.RequiredPartOfDayId)))
+            {
+                throw new ArgumentException(
+                    "Квест на разные уровни должен задавать локацию и часть суток.",
+                    nameof(definition));
+            }
+
             if (definition.TargetAmount <= 0)
             {
                 throw new ArgumentOutOfRangeException(

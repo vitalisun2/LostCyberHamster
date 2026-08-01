@@ -1,7 +1,9 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Assets.Scripts.System;
+using GameManagement;
 using UnityEngine;
 using Vues.GameCore;
 using Vues.GameCore.Quests;
@@ -87,9 +89,8 @@ namespace Assets.Scripts.DevTools.QuestTesting
                         $"{ActiveQuest.Type} / {ActiveQuest.ActionId}",
                     QuestType.LevelResult =>
                         $"{ActiveQuest.Type} / " +
-                        (ActiveQuest.Definition.RequiredLevelId == 0
-                            ? "любой уровень, "
-                            : $"уровень {ActiveQuest.Definition.RequiredLevelId}, ") +
+                        FormatLevelResultCondition(
+                            ActiveQuest.Definition) +
                         $"{ActiveQuest.Definition.RequiredStars} звезды",
                     _ => ActiveQuest.Type.ToString()
                 };
@@ -350,6 +351,12 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 {
                     QuestDefinition definition = quest.Definition;
                     int progressBeforeAttempt = quest.CurrentProgress;
+                    if (definition.CountUniqueLevels)
+                    {
+                        CompleteUniqueLevelResultQuest(quest);
+                        return;
+                    }
+
                     int levelId = definition.RequiredLevelId == 0
                         ? GetValidAttemptLevelId()
                         : definition.RequiredLevelId;
@@ -371,6 +378,90 @@ namespace Assets.Scripts.DevTools.QuestTesting
                             "Событие результата уровня не завершило квест.");
                     }
                 });
+        }
+
+        private static void CompleteUniqueLevelResultQuest(
+            Quest quest)
+        {
+            QuestDefinition definition = quest.Definition;
+            if (!LevelCatalogService.Catalog.TryResolveLocationId(
+                    definition.RequiredLocationId,
+                    out int locationIndex))
+            {
+                throw new InvalidOperationException(
+                    $"Локация {definition.RequiredLocationId} не найдена.");
+            }
+
+            List<string> levelAddresses = LevelManager
+                .GetLevelsForPartOfDay(
+                    locationIndex,
+                    definition.RequiredPartOfDayId)
+                .ToList();
+            if (levelAddresses.Count != definition.TargetAmount)
+            {
+                throw new InvalidOperationException(
+                    $"Каталог содержит {levelAddresses.Count} уровней, " +
+                    $"цель квеста — {definition.TargetAmount}.");
+            }
+
+            if (LevelController.Instance == null)
+            {
+                throw new InvalidOperationException(
+                    "LevelController не запущен.");
+            }
+
+            string originalLevel =
+                GameDataManager.PlayerData?.CurrentLevel;
+            try
+            {
+                // Проверяем, что повтор первого уровня не меняет прогресс.
+                CompleteLevel(levelAddresses[0], definition.RequiredStars);
+                int progressAfterFirstCompletion = quest.CurrentProgress;
+                CompleteLevel(levelAddresses[0], definition.RequiredStars);
+                if (quest.CurrentProgress != progressAfterFirstCompletion)
+                {
+                    throw new InvalidOperationException(
+                        "Повтор уровня ошибочно увеличил прогресс.");
+                }
+
+                // Завершаем остальные разные уровни выбранной части суток.
+                for (int index = 1; index < levelAddresses.Count; index++)
+                {
+                    CompleteLevel(
+                        levelAddresses[index],
+                        definition.RequiredStars);
+                }
+            }
+            finally
+            {
+                if (!string.IsNullOrWhiteSpace(originalLevel))
+                {
+                    LevelController.Instance.SetCurrentLevel(originalLevel);
+                }
+            }
+
+            if (!quest.IsCompleted)
+            {
+                throw new InvalidOperationException(
+                    "Разные уровни не завершили квест.");
+            }
+        }
+
+        private static void CompleteLevel(
+            string levelAddress,
+            int stars)
+        {
+            LevelController.Instance.SetCurrentLevel(levelAddress);
+            if (!LevelManager.TryParseLevelNumber(
+                    levelAddress,
+                    out int levelId))
+            {
+                throw new InvalidOperationException(
+                    $"Уровень {levelAddress} не найден в каталоге.");
+            }
+
+            GameEventsManager.LevelStarted(levelId);
+            GameEventsManager.LevelCompleted(levelId, stars);
         }
 
         private void RunAction(string actionName, Action action)
@@ -415,6 +506,9 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 case GameplayActionIds.ObstacleJumpedOn:
                     GameEventsManager.ObstacleJumpedOn(sourceId);
                     break;
+                case GameplayActionIds.VehicleRoofRunCompleted:
+                    GameEventsManager.VehicleRoofRunCompleted();
+                    break;
                 default:
                     throw new InvalidOperationException(
                         $"Тест-тул не поддерживает действие {quest.ActionId}.");
@@ -431,10 +525,31 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
             foreach (Quest quest in QuestManager.StoryQuests)
             {
-                if (quest.Type == QuestType.LevelResult &&
-                    quest.Definition.RequiredLevelId > 0)
+                if (quest.Type != QuestType.LevelResult)
+                {
+                    continue;
+                }
+
+                if (quest.Definition.RequiredLevelId > 0)
                 {
                     return quest.Definition.RequiredLevelId;
+                }
+
+                if (LevelCatalogService.Catalog.TryResolveLocationId(
+                        quest.Definition.RequiredLocationId,
+                        out int locationIndex))
+                {
+                    string levelAddress = LevelManager
+                        .GetLevelsForPartOfDay(
+                            locationIndex,
+                            quest.Definition.RequiredPartOfDayId)
+                        .FirstOrDefault();
+                    if (LevelManager.TryParseLevelNumber(
+                            levelAddress,
+                            out int catalogLevelId))
+                    {
+                        return catalogLevelId;
+                    }
                 }
             }
 
@@ -448,6 +563,23 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 quest.TitleLocalizationKey) ??
                 quest.TitleLocalizationKey;
             return $"{title} ({quest.Id})";
+        }
+
+        private static string FormatLevelResultCondition(
+            QuestDefinition definition)
+        {
+            if (!string.IsNullOrWhiteSpace(
+                    definition.RequiredLocationId) &&
+                !string.IsNullOrWhiteSpace(
+                    definition.RequiredPartOfDayId))
+            {
+                return $"{definition.RequiredLocationId} / " +
+                       $"{definition.RequiredPartOfDayId}, ";
+            }
+
+            return definition.RequiredLevelId == 0
+                ? "любой уровень, "
+                : $"уровень {definition.RequiredLevelId}, ";
         }
 
         private void ResetSelectionState()
