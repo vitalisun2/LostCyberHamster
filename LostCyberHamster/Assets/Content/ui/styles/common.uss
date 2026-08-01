@@ -482,39 +482,57 @@
     margin-top: 16px;
     flex-direction: row;
     justify-content: center;
-    align-items: stretch;
+    align-items: center;
 }
 
 .quests-tab {
     width: 340px;
     height: 88px;
-    margin: 0;
+    margin-top: 0;
+    margin-right: 12px;
+    margin-bottom: 0;
+    margin-left: 12px;
     padding-right: 20px;
     padding-left: 20px;
-    background-color: var(--primary);
+    border-width: 6px;
+    border-color: var(--black);
+    border-radius: 18px;
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
     font-size: 32px;
     white-space: normal;
 }
 
 #btn__quests-tab-daily {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    border-right-width: 3px;
+    background-color: rgb(221, 142, 47);
+    border-color: var(--black);
 }
 
 #btn__quests-tab-story {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-left-width: 3px;
+    background-color: rgb(59, 107, 125);
+    border-color: var(--black);
 }
 
-.quests-tab:hover {
-    background-color: rgb(255, 250, 184);
+#btn__quests-tab-daily:hover,
+#btn__quests-tab-daily:focus {
+    background-color: rgb(235, 158, 57);
 }
 
-.quests-tab--active,
-.quests-tab--active:hover {
-    background-color: var(--yellow);
+#btn__quests-tab-story:hover,
+#btn__quests-tab-story:focus {
+    background-color: rgb(74, 124, 143);
+}
+
+#btn__quests-tab-daily:active {
+    background-color: rgb(197, 119, 37);
+}
+
+#btn__quests-tab-story:active {
+    background-color: rgb(47, 90, 106);
+}
+
+.quests-tab--active {
     border-bottom-width: 10px;
-    border-bottom-color: var(--primary);
+    border-bottom-color: var(--black);
 }

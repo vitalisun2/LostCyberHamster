@@ -429,6 +429,10 @@
             "value": "OK"
         },
         {
+            "key": "quests_title",
+            "value": "Квесты"
+        },
+        {
             "key": "quests_tab_daily",
             "value": "ЕЖЕДНЕВНЫЕ"
         },
