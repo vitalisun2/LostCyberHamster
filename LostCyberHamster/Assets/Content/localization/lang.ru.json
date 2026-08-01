@@ -329,72 +329,16 @@
             "value": "ПРОПУСТИТЬ"
         },
         {
-            "key": "quest-001-title",
-            "value": "Собери 10 монет"
-        },
-        {
-            "key": "quest-002-title",
+            "key": "daily-001-title",
             "value": "Перепрыгни через 5 препятствий"
         },
         {
-            "key": "quest-003-title",
-            "value": "Прыгни на 5 препятствий"
-        },
-        {
-            "key": "quest-004-title",
-            "value": "Собери 3 кристалла"
-        },
-        {
-            "key": "quest-005-title",
-            "value": "Собери 1 энергетический предмет"
-        },
-        {
-            "key": "quest-006-title",
-            "value": "Заверши 1 уровень"
-        },
-        {
-            "key": "quest-007-title",
-            "value": "Пробежись по 3 крышам автомобилей"
-        },
-        {
-            "key": "quest-008-title",
-            "value": "Посмотри рекламу"
+            "key": "daily-002-title",
+            "value": "Напрыгни на 3 препятствия"
         },
         {
             "key": "story-001-title",
-            "value": "Заверши уровень Нью-Йорк"
-        },
-        {
-            "key": "story-002-title",
             "value": "Заверши уровень Нью-Йорк с 3 звездами"
-        },
-        {
-            "key": "story-003-title",
-            "value": "Открой новую локацию"
-        },
-        {
-            "key": "story-004-title",
-            "value": "Собери 100 монет"
-        },
-        {
-            "key": "story-005-title",
-            "value": "Собери 200 монет"
-        },
-        {
-            "key": "story-006-title",
-            "value": "Собери 500 монет"
-        },
-        {
-            "key": "story-007-title",
-            "value": "Собери 5 кристаллов"
-        },
-        {
-            "key": "story-008-title",
-            "value": "Собери 10 кристаллов"
-        },
-        {
-            "key": "story-009-title",
-            "value": "Собери 10 энергетических предметов"
         },
         {
             "key": "energy shield",

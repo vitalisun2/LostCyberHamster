@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: 778a69bdf2972421bab1a38f3046a4a1
   m_SerializeEntries:
   - m_GUID: 11883244e327d4886b3a2a8ae21252e9
-    m_Address: quest-001
+    m_Address: daily-001
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

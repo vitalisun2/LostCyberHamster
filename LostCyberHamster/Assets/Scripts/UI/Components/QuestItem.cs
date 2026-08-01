@@ -33,8 +33,11 @@ namespace LostCyberHamster.UI
             AddressableExtentions
                 .LoadAssetSync<VisualTreeAsset>("QuestItem.uxml")
                 .CloneTree(this);
+            string imageAddress = quest.Category == QuestCategory.Daily
+                ? "daily-001"
+                : "story-001";
             var image =
-                AddressableExtentions.LoadAssetSync<Sprite>(quest.Id);
+                AddressableExtentions.LoadAssetSync<Sprite>(imageAddress);
             _image.style.backgroundImage = new StyleBackground(image.texture);
             _title.text = LocalizationManager.GetLocalizedString(
                 quest.TitleLocalizationKey) ??

@@ -1,19 +1,28 @@
 {
   "DailyDefinitions": [
     {
-      "Id": "quest-002",
-      "TitleLocalizationKey": "quest-002-title",
+      "Id": "daily-001",
+      "TitleLocalizationKey": "daily-001-title",
       "Type": 1,
       "ActionId": "obstacle_jumped_over",
       "TargetAmount": 5,
+      "RewardType": 1,
+      "RewardAmount": 10
+    },
+    {
+      "Id": "daily-002",
+      "TitleLocalizationKey": "daily-002-title",
+      "Type": 1,
+      "ActionId": "obstacle_jumped_on",
+      "TargetAmount": 3,
       "RewardType": 1,
       "RewardAmount": 10
     }
   ],
   "StoryDefinitions": [
     {
-      "Id": "story-002",
-      "TitleLocalizationKey": "story-002-title",
+      "Id": "story-001",
+      "TitleLocalizationKey": "story-001-title",
       "Type": 2,
       "RequiredLevelId": 1,
       "RequiredStars": 3,

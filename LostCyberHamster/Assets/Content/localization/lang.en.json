@@ -329,72 +329,16 @@
             "value": "SKIP"
         },
         {
-            "key": "quest-001-title",
-            "value": "Collect 10 coins"
-        },
-        {
-            "key": "quest-002-title",
+            "key": "daily-001-title",
             "value": "Jump over 5 obstacles"
         },
         {
-            "key": "quest-003-title",
-            "value": "Jump on 5 obstacles"
-        },
-        {
-            "key": "quest-004-title",
-            "value": "Collect 3 crystals"
-        },
-        {
-            "key": "quest-005-title",
-            "value": "Collect 1 energy item"
-        },
-        {
-            "key": "quest-006-title",
-            "value": "Finish 1 level"
-        },
-        {
-            "key": "quest-007-title",
-            "value": "Run on 3 car roofs"
-        },
-        {
-            "key": "quest-008-title",
-            "value": "Watch an ad"
+            "key": "daily-002-title",
+            "value": "Jump on 3 obstacles"
         },
         {
             "key": "story-001-title",
-            "value": "Complete New York Level"
-        },
-        {
-            "key": "story-002-title",
             "value": "Complete New York Level with 3 Stars"
-        },
-        {
-            "key": "story-003-title",
-            "value": "Unlock a New Location"
-        },
-        {
-            "key": "story-004-title",
-            "value": "Collect 100 coins"
-        },
-        {
-            "key": "story-005-title",
-            "value": "Collect 200 coins"
-        },
-        {
-            "key": "story-006-title",
-            "value": "Collect 500 coins"
-        },
-        {
-            "key": "story-007-title",
-            "value": "Collect 5 crystals"
-        },
-        {
-            "key": "story-008-title",
-            "value": "Collect 10 crystals"
-        },
-        {
-            "key": "story-009-title",
-            "value": "Collect 10 Energy Items"
         },
         {
             "key": "energy shield",
