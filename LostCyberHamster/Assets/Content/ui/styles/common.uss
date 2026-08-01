@@ -411,68 +411,75 @@
     border-color: rgb(0, 0, 0);
 }
 
-.arrow-btn-right {
-    width: 0;
-    height: 0;
-    max-width: 0;
+.carousel-nav-button {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 123px;
+    height: 114px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 0;
+    font-size: 51px;
+}
+
+.carousel-nav-button--previous {
+    margin-right: 16px;
+    margin-left: 8px;
+}
+
+.carousel-nav-button--next {
+    margin-right: 8px;
+    margin-left: 16px;
+}
+
+.carousel-navigation-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding-right: 28px;
+    padding-left: 28px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.quests-page {
+    flex-grow: 1;
+    flex-shrink: 1;
     min-width: 0;
     min-height: 0;
-    max-height: 0;
-    border-top-color: rgba(255, 0, 0, 0);
-    border-right-color: rgba(0, 11, 195, 0);
-    border-bottom-color: rgba(0, 255, 94, 0);
-    border-left-color: var(--yellow);
-    border-top-width: 150px;
-    border-right-width: 150px;
-    border-bottom-width: 150px;
-    border-left-width: 150px;
-    padding-top: 0;
-    padding-right: 0;
-    padding-bottom: 0;
-    padding-left: 0;
-    background-color: rgba(188, 188, 188, 0);
-    overflow: hidden;
-    visibility: visible;
-    margin-left: 0;
-    margin-right: 0;
-    margin-top: 0;
-    margin-bottom: 0;
+    width: 100%;
+    padding-top: 8px;
+    padding-right: 24px;
+    padding-bottom: 8px;
+    padding-left: 24px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
 }
 
-.arrow-btn-left {
-    width: 0;
-    height: 0;
-    max-width: 0;
+.quests-container {
+    flex-grow: 1;
+    flex-shrink: 1;
     min-width: 0;
     min-height: 0;
-    max-height: 0;
-    border-top-color: rgba(0, 0, 0, 0);
-    border-right-color: var(--yellow);
-    border-bottom-color: rgba(0, 0, 0, 0);
-    border-left-color: rgba(0, 0, 0, 0);
-    border-top-width: 150px;
-    border-right-width: 150px;
-    border-bottom-width: 150px;
-    border-left-width: 150px;
-    padding-top: 0;
-    padding-right: 0;
-    padding-bottom: 0;
-    padding-left: 0;
-    background-color: rgba(188, 188, 188, 0);
-    overflow: hidden;
-    visibility: visible;
-    margin-left: 0;
-    margin-right: 0;
-    margin-top: 0;
-    margin-bottom: 0;
+    width: 1280px;
+    max-width: 1280px;
+    height: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
 }
 
-.arrow-btn-left:active {
-    border-right-color: var(--primary);
-}
-
-.arrow-btn-right:active {
-    border-left-color: var(--primary);
+.quest-card {
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-height: 0;
+    width: 360px;
+    height: 100%;
+    max-height: 540px;
 }
 
 .quests-tabs {

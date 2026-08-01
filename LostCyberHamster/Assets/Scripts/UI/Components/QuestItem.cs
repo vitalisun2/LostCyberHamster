@@ -30,9 +30,10 @@ namespace LostCyberHamster.UI
 
         public QuestItem()
         {
+            AddToClassList("quest-card");
         }
 
-        public QuestItem(Quest quest)
+        public QuestItem(Quest quest) : this()
         {
             AddressableExtentions
                 .LoadAssetSync<VisualTreeAsset>("QuestItem.uxml")

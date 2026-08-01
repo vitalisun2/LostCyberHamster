@@ -4,9 +4,9 @@
     <engine:VisualElement name="characterscreen" style="flex-grow: 1;">
         <engine:Instance template="Toolbar" name="toolbar" />
         <engine:VisualElement style="flex-grow: 1; justify-content: center; align-items: center; min-width: 10%; flex-direction: row;">
-            <engine:VisualElement style="flex-grow: 1; position: absolute; flex-direction: row; width: 1920px; justify-content: space-between;">
-                <engine:Button name="btn-skin-prev" class="block arrow-btn-left" style="rotate: 0; width: 300px; height: 300px; -unity-background-scale-mode: stretch-to-fill; background-image: none; border-top-right-radius: 0;" />
-                <engine:Button name="btn-skin-next" class="arrow-btn-right" />
+            <engine:VisualElement class="carousel-navigation-overlay" picking-mode="Ignore">
+                <engine:Button text="◀" name="btn-skin-prev" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--previous" />
+                <engine:Button text="▶" name="btn-skin-next" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--next" />
             </engine:VisualElement>
             <engine:VisualElement style="flex-grow: 0; align-items: center; width: 1200px;">
                 <engine:Label text="Label" name="skin-name" class="lcs-text" />

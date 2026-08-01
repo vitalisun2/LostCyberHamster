@@ -4,9 +4,9 @@
     <engine:VisualElement name="selectlevelscreen" style="flex-grow: 1;">
         <engine:Instance template="Toolbar" name="toolbar" />
         <engine:VisualElement style="flex-grow: 1; justify-content: center; align-items: center; min-width: 10%; flex-direction: row;">
-            <engine:VisualElement style="flex-grow: 0; flex-direction: row; width: 1920px; justify-content: space-between; position: absolute;">
-                <engine:Button text="Button" name="btn__location-prev" class="arrow-btn-left" />
-                <engine:Button text="Button" name="btn__location-next" class="arrow-btn-right" />
+            <engine:VisualElement class="carousel-navigation-overlay" picking-mode="Ignore">
+                <engine:Button text="◀" name="btn__location-prev" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--previous" />
+                <engine:Button text="▶" name="btn__location-next" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--next" />
             </engine:VisualElement>
             <engine:VisualElement name="location__image" style="flex-grow: 0; background-image: none; width: 1200px; height: 720px; margin-bottom: 12px; position: absolute;" />
             <engine:VisualElement name="levels_container" style="flex-grow: 1; flex-direction: row; width: 1280px; justify-content: space-around; align-self: center; align-items: center; position: absolute; padding-top: 120px;" />

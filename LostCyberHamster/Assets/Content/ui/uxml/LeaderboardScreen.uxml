@@ -7,9 +7,9 @@
             <Vues.GameCore.LocalizedLabel key="leaderboard_title" class="lcs-text" style="flex-grow: 0; flex-shrink: 0; width: 1000px; height: 64px; margin-bottom: 4px; font-size: 52px; -unity-text-align: middle-center;" />
 
             <engine:VisualElement name="leaderboard__location-carousel" style="flex-grow: 0; flex-shrink: 0; height: 132px; width: 1080px; flex-direction: row; justify-content: center; align-items: center;">
-                <engine:Button text="◀" name="leaderboard__location-previous" class="lcs_btn bg-primary" style="flex-grow: 0; flex-shrink: 0; width: 123px; height: 114px; margin-top: 8px; margin-right: 16px; margin-bottom: 8px; margin-left: 8px; padding: 0; font-size: 51px;" />
+                <engine:Button text="◀" name="leaderboard__location-previous" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--previous" />
                 <engine:Label name="leaderboard__location-title" class="lcs-text" style="flex-grow: 0; flex-shrink: 0; width: 720px; height: 88px; padding-right: 24px; padding-left: 24px; background-color: rgba(242, 233, 196, 0.96); border-top-width: 6px; border-right-width: 6px; border-bottom-width: 6px; border-left-width: 6px; border-top-color: rgb(34, 130, 134); border-right-color: rgb(34, 130, 134); border-bottom-color: rgb(34, 130, 134); border-left-color: rgb(34, 130, 134); border-top-left-radius: 24px; border-top-right-radius: 24px; border-bottom-right-radius: 24px; border-bottom-left-radius: 24px; color: rgb(50, 43, 34); font-size: 48px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -unity-text-align: middle-center; -unity-text-outline-width: 0px;" />
-                <engine:Button text="▶" name="leaderboard__location-next" class="lcs_btn bg-primary" style="flex-grow: 0; flex-shrink: 0; width: 123px; height: 114px; margin-top: 8px; margin-right: 8px; margin-bottom: 8px; margin-left: 16px; padding: 0; font-size: 51px;" />
+                <engine:Button text="▶" name="leaderboard__location-next" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--next" />
             </engine:VisualElement>
 
             <engine:VisualElement name="leaderboard__results" style="flex-grow: 1; min-width: 0; min-height: 0; width: 100%; flex-direction: row; justify-content: center; align-items: stretch;">

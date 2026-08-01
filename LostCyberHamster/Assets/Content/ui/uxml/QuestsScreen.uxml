@@ -1,19 +1,17 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
-    <engine:VisualElement name="questsscreen" style="flex-grow: 1;">
-        <engine:Instance template="Toolbar" name="toolbar" />
+    <engine:VisualElement name="questsscreen" style="flex-grow: 1; min-width: 0; min-height: 0;">
+        <engine:Instance template="Toolbar" name="toolbar" style="flex-grow: 0; flex-shrink: 0; height: 120px;" />
         <Vues.GameCore.LocalizedLabel key="quests_title" class="lcs-text" style="flex-grow: 0; flex-shrink: 0; width: 100%; height: 64px; margin-top: 16px; font-size: 52px; -unity-text-align: middle-center;" />
         <engine:VisualElement name="quests-tabs" class="quests-tabs">
             <Vues.GameCore.LocalizedButton key="quests_tab_daily" name="btn__quests-tab-daily" class="lcs_btn quests-tab quests-tab--active" />
             <Vues.GameCore.LocalizedButton key="quests_tab_story" name="btn__quests-tab-story" class="lcs_btn quests-tab" />
         </engine:VisualElement>
-        <engine:VisualElement style="flex-grow: 1; justify-content: center; align-items: center; min-width: 10%; flex-direction: row;">
-            <engine:VisualElement style="flex-grow: 0; flex-direction: row; width: 1920px; justify-content: space-between; position: absolute;">
-                <engine:Button text="Button" name="btn__quests-prev" class="arrow-btn-left" />
-                <engine:Button text="Button" name="btn__quests-next" class="arrow-btn-right" />
-            </engine:VisualElement>
-            <engine:VisualElement name="quests_container" style="flex-grow: 1; flex-direction: row; width: 1280px; justify-content: space-around; align-self: center; align-items: center; position: absolute; padding-top: 120px; transform-origin: center; translate: 0 -40px;" />
+        <engine:VisualElement name="quests-page" class="quests-page" picking-mode="Ignore">
+            <engine:Button text="◀" name="btn__quests-prev" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--previous" />
+            <engine:VisualElement name="quests_container" class="quests-container" picking-mode="Ignore" />
+            <engine:Button text="▶" name="btn__quests-next" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--next" />
         </engine:VisualElement>
     </engine:VisualElement>
 </engine:UXML>

@@ -112,8 +112,8 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitSimulator.cs" />
     <Compile Include="Assets\Scripts\System\Resources\AddressableLocationsLease.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenController.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\VibrationManager.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\PlayerState\PlayerStateQuestEvent.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\VibrationManager.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\GameplayDevToolsView.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\HamsterSnapshot.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowCalculator.cs" />
