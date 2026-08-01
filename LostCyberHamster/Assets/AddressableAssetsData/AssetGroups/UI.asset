@@ -25,18 +25,8 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 1ce8441ea148c41c2a2762a5a05f8454
-    m_Address: quest-007
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 29047d9fdf8ef4acdbb6f67516476d96
     m_Address: ui_atlas
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3233ff3132b05469f9a5e6332266d805
-    m_Address: quest-008
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -47,11 +37,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 34221b9f30e814806bfc22646114e644
     m_Address: QuestsScreen
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3bf1371959723406b9ac25823fba2dc7
-    m_Address: quest-004
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -67,16 +52,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 53ef3fc4478f849abaaa97cb8052a325
     m_Address: evening_preview
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 563371a807bdd4181a88e9f56ba0753a
-    m_Address: story-005
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 62d327090259f4d62b26421aa2da2f30
-    m_Address: story-007
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -98,11 +73,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7713a4d386f4d46a9b14adda64c9fb70
     m_Address: IntroScreen
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7d508fc7ac56948c89befc24fb4ce373
-    m_Address: story-001
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -143,11 +113,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9d86ad8de91fd4698ba8ea5ec6ae9c3a
-    m_Address: quest-005
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a0ed9eba09b3644f4a085fc31c6541c7
     m_Address: ShopModal
     m_ReadOnly: 0
@@ -178,28 +143,13 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: af472ae585e9c4e46a4fc6ab78afda13
-    m_Address: story-008
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: af8d8b5f944b1446d88abcf3df77f86d
-    m_Address: story-010
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: b071bf131c1bf4b728810efcd1da1a3b
-    m_Address: story-009
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b7a10e98e3c1e4c46a04eca067fe4227
     m_Address: star_empty
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b89bfc84c2fee4688b072a222f116662
-    m_Address: story-002
+    m_Address: story-001
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -225,31 +175,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e0fdcc782c1a44d6aa8c6c5419e95460
-    m_Address: story-004
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e182fd01247e448ff9389314d415c69b
-    m_Address: story-003
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: eaf3c790223074b1980ae25d6a39f19f
-    m_Address: quest-006
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ef1cd1ccf849b4bf69426b63be69aea5
     m_Address: HomeScreenSprite
     m_ReadOnly: 0
     m_SerializedLabels:
     - textures
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ef1d92421519244efa4366179960b4ef
-    m_Address: quest-009
-    m_ReadOnly: 0
-    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f1f21ae0b1dcb4903abafd4ad99ac9d8
     m_Address: morning_preview
