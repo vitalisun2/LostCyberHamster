@@ -87,6 +87,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (result.State == HamsterStateEnum.SuperJumpOnObstacleFromRoof)
                 GameEventsManager.ObstacleJumpedOn(result.Target!.name);
 
+            if (result.State == HamsterStateEnum.SuperRoofJump &&
+                sourceRoof != null &&
+                result.Target != null &&
+                sourceRoof != result.Target)
+            {
+                GameEventsManager.RoofToRoofJump();
+            }
+
             // стейты, для которых нужно проиграть анимацию
             if (result.State is HamsterStateEnum.SuperRoofJump
                 or HamsterStateEnum.SuperRoofJumpDamage

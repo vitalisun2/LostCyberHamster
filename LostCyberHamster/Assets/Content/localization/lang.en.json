@@ -349,6 +349,10 @@
             "value": "Jump from a roof onto a living obstacle"
         },
         {
+            "key": "daily-006-title",
+            "value": "Make 3 roof-to-roof jumps"
+        },
+        {
             "key": "story-001-title",
             "value": "Complete all New York Morning levels with 3 Stars"
         },

@@ -596,6 +596,9 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 case GameplayActionIds.VehicleRoofRunCompleted:
                     GameEventsManager.VehicleRoofRunCompleted();
                     break;
+                case GameplayActionIds.RoofToRoofJump:
+                    GameEventsManager.RoofToRoofJump();
+                    break;
                 default:
                     throw new InvalidOperationException(
                         $"Тест-тул не поддерживает действие {quest.ActionId}.");

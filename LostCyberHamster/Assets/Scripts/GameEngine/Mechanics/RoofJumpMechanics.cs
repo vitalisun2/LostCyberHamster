@@ -88,6 +88,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     result.Target!.name);
             }
 
+            if (result.State == HamsterStateEnum.RoofJump &&
+                sourceRoof != null &&
+                result.Target != null &&
+                sourceRoof != result.Target)
+            {
+                GameEventsManager.RoofToRoofJump();
+            }
+
             ApplyRoofClips(sourceRoof, result);
             _transformAnimatorController.SetRoofJumpAnimationTrigger(_hamsterState);
             _spriteAnimatorController.Jump();

@@ -99,6 +99,17 @@ public static class GameEventsManager
     }
 
     /// <summary>
+    /// Успешный прыжок с одной крыши на другую.
+    /// </summary>
+    public static void RoofToRoofJump()
+    {
+        OnActionCounterQuestEvent?.Invoke(
+            new ActionCounterQuestEvent(
+                GameplayActionIds.RoofToRoofJump,
+                1));
+    }
+
+    /// <summary>
     /// Событие завершения квеста
     /// </summary>
     public static event Action<string> OnQuestCompleted;

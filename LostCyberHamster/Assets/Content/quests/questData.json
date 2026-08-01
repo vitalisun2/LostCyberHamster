@@ -60,6 +60,18 @@
       "TargetAmount": 1,
       "RewardType": 1,
       "RewardAmount": 10
+    },
+    {
+      "Id": "daily-006",
+      "TitleLocalizationKey": "daily-006-title",
+      "TitleDescription": "Сделай 3 прыжка с крыши на крышу",
+      "ConditionDescription": "Перепрыгни с крыши одного автомобиля на крышу другого без столкновения.",
+      "GoalDescription": "Количество успешных прыжков с одной крыши на другую.",
+      "Type": 1,
+      "ActionId": "roof_to_roof_jump",
+      "TargetAmount": 3,
+      "RewardType": 1,
+      "RewardAmount": 10
     }
   ],
   "StoryDefinitions": [
