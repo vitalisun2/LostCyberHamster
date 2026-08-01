@@ -5,7 +5,7 @@
             <engine:VisualElement name="quest-item__image-circle" style="width: 180px; height: 180px; flex-grow: 0; flex-shrink: 0; align-items: center; justify-content: center; overflow: hidden; background-color: rgb(217, 211, 225); border-top-left-radius: 90px; border-top-right-radius: 90px; border-bottom-right-radius: 90px; border-bottom-left-radius: 90px;">
                 <engine:VisualElement name="quest-item__image" style="width: 142px; height: 142px; flex-grow: 0; flex-shrink: 0; -unity-background-scale-mode: scale-to-fit;" />
             </engine:VisualElement>
-            <engine:Label text="Quest title" name="quest-item__title" class="lcs-text" style="width: 100%; height: 92px; flex-grow: 0; flex-shrink: 0; margin-top: 14px; color: rgb(38, 54, 59); font-size: 20px; white-space: normal; -unity-font-style: bold; -unity-text-align: middle-center; -unity-text-outline-width: 0px;" />
+            <engine:Label text="Quest title" name="quest-item__title" class="lcs-text" style="width: 100%; height: 92px; flex-grow: 0; flex-shrink: 0; margin-top: 14px; color: rgb(38, 54, 59); font-size: 24px; white-space: normal; -unity-font-style: bold; -unity-text-align: middle-center; -unity-text-outline-width: 0px;" />
             <engine:Label text="0 / 0" name="quest-item__progress" class="lcs-text" style="flex-grow: 0; flex-shrink: 0; margin-bottom: 12px; color: rgb(54, 73, 78); font-size: 22px; -unity-text-align: middle-center; -unity-text-outline-width: 0px;" />
             <engine:VisualElement style="flex-grow: 1;" />
             <engine:VisualElement name="quest-item__reward-action" style="width: 270px; height: 70px; flex-grow: 0; flex-shrink: 0; margin-bottom: 16px;">
