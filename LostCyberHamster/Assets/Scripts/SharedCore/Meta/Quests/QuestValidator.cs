@@ -154,6 +154,50 @@ namespace Vues.GameCore.Quests
         }
 
         /// <summary>
+        /// Проверяет настройки генерируемых сюжетных квестов.
+        /// </summary>
+        public static void ValidateStoryGenerationSettings(
+            StoryQuestGenerationSettings settings)
+        {
+            if (settings == null)
+            {
+                throw new ArgumentNullException(nameof(settings));
+            }
+
+            if (string.IsNullOrWhiteSpace(
+                    settings.PrimaryTitleLocalizationKey) ||
+                string.IsNullOrWhiteSpace(
+                    settings.PrimaryNightTitleLocalizationKey) ||
+                string.IsNullOrWhiteSpace(
+                    settings.MasteryTitleLocalizationKey))
+            {
+                throw new ArgumentException(
+                    "Настройки Story-генерации содержат пустой ключ локализации.",
+                    nameof(settings));
+            }
+
+            bool hasUnsupportedReward =
+                settings.PrimaryRewardType != ResourceType.Coins &&
+                settings.PrimaryRewardType != ResourceType.Crystals ||
+                settings.MasteryRewardType != ResourceType.Coins &&
+                settings.MasteryRewardType != ResourceType.Crystals;
+            if (hasUnsupportedReward)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(settings),
+                    "Тип награды Story-генерации не поддерживается.");
+            }
+
+            if (settings.PrimaryRewardAmount <= 0 ||
+                settings.MasteryRewardAmount <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(settings),
+                    "Награда Story-генерации должна быть положительной.");
+            }
+        }
+
+        /// <summary>
         /// Проверяет соответствие определения и стратегии.
         /// </summary>
         public static void ValidateBinding(

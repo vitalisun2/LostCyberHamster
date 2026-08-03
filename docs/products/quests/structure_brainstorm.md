@@ -38,6 +38,7 @@ Quests/
 │   └── DailyQuestSetState.cs
 │
 ├── Story/
+│   ├── StoryQuestGenerationSettings.cs
 │   └── StoryQuestSetState.cs
 │
 ├── Types/
@@ -79,7 +80,7 @@ UI и общая игровая инфраструктура находятся 
 
 1. `QuestCatalog.cs` — загружает, индексирует и выдаёт определения.
 2. `QuestCatalogData.cs` — описывает структуру JSON-каталога.
-3. `questData.json` — хранит реальные определения квестов.
+3. `questData.json` — хранит определения квестов и настройки Story-генерации.
 
 ## 3. Управление квестами
 

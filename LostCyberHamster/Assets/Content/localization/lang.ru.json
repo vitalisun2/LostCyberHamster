@@ -401,6 +401,18 @@
             "value": "Сделай 8 прыжков с крыши на крышу"
         },
         {
+            "key": "story-primary-title",
+            "value": "Пройди {0} {1}"
+        },
+        {
+            "key": "story-primary-night-title",
+            "value": "Открой новую локацию"
+        },
+        {
+            "key": "story-mastery-title",
+            "value": "Пройди все уровни {0} {1} на три звезды"
+        },
+        {
             "key": "story-001-title",
             "value": "Заверши все уровни Нью-Йорк Morning с 3 звёздами"
         },

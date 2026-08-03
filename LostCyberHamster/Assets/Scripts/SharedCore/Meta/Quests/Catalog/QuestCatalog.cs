@@ -15,6 +15,8 @@ namespace Vues.GameCore.Quests
             Array.Empty<QuestDefinition>();
         private static IReadOnlyList<QuestDefinition> _storyDefinitions =
             Array.Empty<QuestDefinition>();
+        private static StoryQuestGenerationSettings
+            _storyGenerationSettings;
         private static Dictionary<string, QuestDefinition> _definitionsById =
             new();
         private static Task _loadTask;
@@ -30,6 +32,12 @@ namespace Vues.GameCore.Quests
         /// </summary>
         public static IReadOnlyList<QuestDefinition> StoryDefinitions =>
             _storyDefinitions;
+
+        /// <summary>
+        /// Настройки генерируемых сюжетных квестов.
+        /// </summary>
+        public static StoryQuestGenerationSettings StoryGenerationSettings =>
+            _storyGenerationSettings;
 
         /// <summary>
         /// Загружает единственный production-каталог квестов.
@@ -73,10 +81,13 @@ namespace Vues.GameCore.Quests
             QuestValidator.ValidateCatalog(
                 dailyDefinitions,
                 storyDefinitions);
+            QuestValidator.ValidateStoryGenerationSettings(
+                data.StoryGenerationSettings);
 
             // Публикуем проверенные списки и индекс по Id.
             _dailyDefinitions = dailyDefinitions.AsReadOnly();
             _storyDefinitions = storyDefinitions.AsReadOnly();
+            _storyGenerationSettings = data.StoryGenerationSettings;
             var definitionsById =
                 new Dictionary<string, QuestDefinition>();
             IndexDefinitions(dailyDefinitions, definitionsById);

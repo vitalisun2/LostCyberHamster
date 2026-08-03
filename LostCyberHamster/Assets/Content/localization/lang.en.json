@@ -401,6 +401,18 @@
             "value": "Make 8 roof-to-roof jumps"
         },
         {
+            "key": "story-primary-title",
+            "value": "Complete {0} {1}"
+        },
+        {
+            "key": "story-primary-night-title",
+            "value": "Unlock a new location"
+        },
+        {
+            "key": "story-mastery-title",
+            "value": "Complete all {0} {1} levels with 3 Stars"
+        },
+        {
             "key": "story-001-title",
             "value": "Complete all New York Morning levels with 3 Stars"
         },

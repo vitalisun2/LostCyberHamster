@@ -256,6 +256,15 @@
       "RewardAmount": 10
     }
   ],
+  "StoryGenerationSettings": {
+    "PrimaryTitleLocalizationKey": "story-primary-title",
+    "PrimaryNightTitleLocalizationKey": "story-primary-night-title",
+    "PrimaryRewardType": 1,
+    "PrimaryRewardAmount": 300,
+    "MasteryTitleLocalizationKey": "story-mastery-title",
+    "MasteryRewardType": 1,
+    "MasteryRewardAmount": 300
+  },
   "StoryDefinitions": [
     {
       "Id": "story-001",
