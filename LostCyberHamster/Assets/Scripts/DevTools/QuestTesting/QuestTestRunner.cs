@@ -21,7 +21,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
         private string _beforeState = "—";
         private string _afterState = "Ожидание QuestManager.Init.";
         private string _status =
-            "Выберите квест и начните прогон с Generate/Reset.";
+            "Выберите квест и начните прогон с Reset Quest.";
 
         private QuestTestRunner()
         {
@@ -83,7 +83,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     return "—";
                 }
 
-                return ActiveQuest.Type switch
+                string kind = ActiveQuest.Type switch
                 {
                     QuestType.ActionCounter =>
                         $"{ActiveQuest.Type} / {ActiveQuest.ActionId}",
@@ -99,6 +99,11 @@ namespace Assets.Scripts.DevTools.QuestTesting
                         ActiveQuest.Definition.RequiredValue,
                     _ => ActiveQuest.Type.ToString()
                 };
+
+                return ActiveQuest.Category == QuestCategory.Daily
+                    ? $"{ActiveQuest.Definition.DailyDifficulty} / " +
+                      $"{ActiveQuest.Definition.DailyMechanicId} / {kind}"
+                    : kind;
             }
         }
 
@@ -108,12 +113,19 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
         public string Status => _status;
 
-        public bool CanGenerateOrReset => IsReady && !_isBusy;
+        public bool CanResetQuest => IsReady && !_isBusy;
+
+        public bool CanGenerateNextDailySet =>
+            IsReady &&
+            !_isBusy &&
+            _selectedCategory == QuestCategory.Daily;
 
         public bool CanAdvance =>
             IsReady &&
             !_isBusy &&
-            ActiveQuest.Type == QuestType.ActionCounter &&
+            (ActiveQuest.Type == QuestType.ActionCounter ||
+             ActiveQuest.Type == QuestType.LevelResult &&
+             !ActiveQuest.Definition.CountUniqueLevels) &&
             ActiveQuest.TargetAmount > 1 &&
             ActiveQuest.CurrentProgress == 0 &&
             !ActiveQuest.IsCompleted;
@@ -162,7 +174,11 @@ namespace Assets.Scripts.DevTools.QuestTesting
             var options = new string[quests.Count];
             for (int index = 0; index < quests.Count; index++)
             {
-                options[index] = FormatTitle(quests[index]);
+                Quest quest = quests[index];
+                options[index] = quest.Category == QuestCategory.Daily
+                    ? $"{quest.Definition.DailyDifficulty}: " +
+                      FormatTitle(quest)
+                    : FormatTitle(quest);
             }
 
             return options;
@@ -209,10 +225,10 @@ namespace Assets.Scripts.DevTools.QuestTesting
         /// <summary>
         /// Сбрасывает сохранённое состояние выбранного квеста и его тестируемой цели.
         /// </summary>
-        public void GenerateOrReset()
+        public void ResetQuest()
         {
             RunAction(
-                "Generate/Reset",
+                "Reset Quest",
                 () =>
                 {
                     Quest quest = ActiveQuest;
@@ -235,6 +251,28 @@ namespace Assets.Scripts.DevTools.QuestTesting
         }
 
         /// <summary>
+        /// Генерирует следующий Daily-набор через QuestManager.
+        /// </summary>
+        public void GenerateNextDailySet()
+        {
+            if (!CanGenerateNextDailySet)
+            {
+                return;
+            }
+
+            RunAction(
+                "Generate Next Daily Set",
+                () =>
+                {
+                    if (!QuestManager.GenerateNextDailySetForTesting())
+                    {
+                        throw new InvalidOperationException(
+                            "Следующий Daily-набор не удалось сгенерировать.");
+                    }
+                });
+        }
+
+        /// <summary>
         /// Публикует реальное действие до частичного прогресса.
         /// </summary>
         public void Advance()
@@ -247,8 +285,18 @@ namespace Assets.Scripts.DevTools.QuestTesting
             int partialProgress = Math.Min(
                 Math.Max(1, ActiveQuest.TargetAmount / 2),
                 ActiveQuest.TargetAmount - 1);
-            RunActionCounterAttempt(
-                ActiveQuest,
+            Quest quest = ActiveQuest;
+            if (quest.Type == QuestType.ActionCounter)
+            {
+                RunActionCounterAttempt(
+                    quest,
+                    "Advance",
+                    partialProgress);
+                return;
+            }
+
+            RunLevelResultAttempts(
+                quest,
                 "Advance",
                 partialProgress);
         }
@@ -275,7 +323,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                         remainingProgress);
                     return;
                 case QuestType.LevelResult:
-                    RunLevelResultAttempt(quest);
+                    RunLevelResultQuest(quest);
                     return;
                 case QuestType.PlayerState:
                     RunPlayerStateQuest(quest);
@@ -328,6 +376,32 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 "Ожидание QuestManager.Init.");
         }
 
+        /// <summary>
+        /// Обновляет выбор после штатной смены Daily-набора.
+        /// </summary>
+        public void HandleDailyQuestSetChanged()
+        {
+            if (_selectedCategory != QuestCategory.Daily)
+            {
+                return;
+            }
+
+            bool selectedQuestStillActive = AvailableQuests.Any(
+                quest => quest.Id == _selectedQuestId);
+            if (!selectedQuestStillActive)
+            {
+                _selectedQuestId = null;
+            }
+
+            if (_isBusy)
+            {
+                Changed?.Invoke();
+                return;
+            }
+
+            ResetSelectionState();
+        }
+
         private void RunActionCounterAttempt(
             Quest quest,
             string actionName,
@@ -368,39 +442,64 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 });
         }
 
-        private void RunLevelResultAttempt(Quest quest)
+        private void RunLevelResultQuest(Quest quest)
+        {
+            if (quest.Definition.CountUniqueLevels)
+            {
+                RunAction(
+                    "Complete",
+                    () => CompleteUniqueLevelResultQuest(quest));
+                return;
+            }
+
+            int remainingProgress =
+                quest.TargetAmount - quest.CurrentProgress;
+            RunLevelResultAttempts(
+                quest,
+                "Complete",
+                remainingProgress);
+        }
+
+        private void RunLevelResultAttempts(
+            Quest quest,
+            string actionName,
+            int completionCount)
         {
             RunAction(
-                "Complete",
+                actionName,
                 () =>
                 {
                     QuestDefinition definition = quest.Definition;
                     int progressBeforeAttempt = quest.CurrentProgress;
-                    if (definition.CountUniqueLevels)
-                    {
-                        CompleteUniqueLevelResultQuest(quest);
-                        return;
-                    }
-
                     int levelId = definition.RequiredLevelId == 0
                         ? GetValidAttemptLevelId()
                         : definition.RequiredLevelId;
 
-                    // Публикуем успешный результат через игровой event contract.
-                    GameEventsManager.LevelStarted(levelId);
-                    if (quest.CurrentProgress != progressBeforeAttempt)
+                    // Публикуем нужное количество успешных результатов уровней.
+                    for (int index = 0; index < completionCount; index++)
                     {
-                        throw new InvalidOperationException(
-                            "Прогресс изменился до победы.");
+                        int progressBeforeLevel = quest.CurrentProgress;
+                        GameEventsManager.LevelStarted(levelId);
+                        if (quest.CurrentProgress != progressBeforeLevel)
+                        {
+                            throw new InvalidOperationException(
+                                "Прогресс изменился до победы.");
+                        }
+
+                        GameEventsManager.LevelCompleted(
+                            levelId,
+                            definition.RequiredStars);
                     }
 
-                    GameEventsManager.LevelCompleted(
-                        levelId,
-                        definition.RequiredStars);
-                    if (!quest.IsCompleted)
+                    // Проверяем точный прирост от опубликованных побед.
+                    int expectedProgress = Math.Min(
+                        progressBeforeAttempt + completionCount,
+                        quest.TargetAmount);
+                    if (quest.CurrentProgress != expectedProgress)
                     {
                         throw new InvalidOperationException(
-                            "Событие результата уровня не завершило квест.");
+                            $"Ожидался прогресс {expectedProgress}, " +
+                            $"получен {quest.CurrentProgress}.");
                     }
                 });
         }
@@ -417,7 +516,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     if (skin.IsPurchased)
                     {
                         throw new InvalidOperationException(
-                            "Скин уже куплен. Сначала выполните Generate/Reset.");
+                            "Скин уже куплен. Сначала выполните Reset Quest.");
                     }
 
                     // Готовим минимальный баланс и выполняем реальную покупку.

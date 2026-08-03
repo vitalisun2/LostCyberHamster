@@ -24,6 +24,8 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
             _repaint = repaint ?? throw new ArgumentNullException(nameof(repaint));
             _runner = QuestTestRunner.Shared;
             _runner.Changed += _repaint;
+            GameEventsManager.OnDailyQuestSetChanged +=
+                _runner.HandleDailyQuestSetChanged;
         }
 
         /// <summary>Рисует выбор квеста и команды его реального жизненного цикла.</summary>
@@ -41,7 +43,7 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
             EditorGUILayout.HelpBox(
                 "Daily: Advance/Complete публикуют действия и победу с одной звездой. " +
                 "Story: Complete публикует требуемые level/stars. " +
-                "Reset и Claim Reward идут через QuestManager.",
+                "Generate Next Daily Set, Reset Quest и Claim Reward идут через QuestManager.",
                 MessageType.Info);
 
             // Выбираем категорию и активный квест из QuestManager.
@@ -68,6 +70,8 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
         public void Dispose()
         {
             _runner.Changed -= _repaint;
+            GameEventsManager.OnDailyQuestSetChanged -=
+                _runner.HandleDailyQuestSetChanged;
         }
 
         private void DrawHeader(Action navigateBack)
@@ -139,6 +143,18 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
                 {
                     _runner.SelectQuest(selectedQuest);
                 }
+
+                if (_runner.SelectedCategory == QuestCategory.Daily)
+                {
+                    using (new EditorGUI.DisabledScope(
+                               !_runner.CanGenerateNextDailySet))
+                    {
+                        if (GUILayout.Button("Generate Next Daily Set"))
+                        {
+                            _runner.GenerateNextDailySet();
+                        }
+                    }
+                }
             }
         }
 
@@ -162,13 +178,13 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
             using (new EditorGUILayout.HorizontalScope())
             {
                 using (new EditorGUI.DisabledScope(
-                           runnerUnavailable || !_runner.CanGenerateOrReset))
+                           runnerUnavailable || !_runner.CanResetQuest))
                 {
                     if (GUILayout.Button(
-                            "Generate/Reset",
+                            "Reset Quest",
                             GUILayout.Width(GenerateButtonWidth)))
                     {
-                        _runner.GenerateOrReset();
+                        _runner.ResetQuest();
                     }
                 }
 
