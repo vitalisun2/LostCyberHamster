@@ -69,6 +69,8 @@ namespace LostCyberHamster.UI
         {
             // После получения награды заменяем CTA постоянным статусом.
             bool isRewardClaimed = quest.IsRewardClaimed;
+            bool canClaimReward =
+                !isRewardClaimed && quest.IsCompleted;
             _rewardAction.style.display = isRewardClaimed
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
@@ -77,9 +79,10 @@ namespace LostCyberHamster.UI
                 : DisplayStyle.None;
 
             // До завершения квеста видимая кнопка остаётся неактивной.
-            _buttonGet.SetEnabled(
-                !isRewardClaimed &&
-                quest.IsCompleted);
+            _buttonGet.SetEnabled(canClaimReward);
+            _rewardAction.EnableInClassList(
+                "quest-reward--disabled",
+                !canClaimReward);
         }
 
         private void ApplyCategoryStyle(QuestCategory category)
