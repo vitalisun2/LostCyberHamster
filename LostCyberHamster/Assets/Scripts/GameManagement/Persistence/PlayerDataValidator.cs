@@ -107,6 +107,9 @@ namespace GameManagement
                                data.DailyQuestSet == null ||
                                data.DailyQuestSet?.ActiveQuestIds == null ||
                                data.DailyQuestSet?.LastGeneratedQuestIds == null ||
+                               data.StoryQuestSet == null ||
+                               data.StoryQuestSet?.ActivePrimaryQuestId == null ||
+                               data.StoryQuestSet?.ActiveSecondaryQuestId == null ||
                                !data.HasSerializedProgressCollection ||
                                !data.PurchasedSkinIds.Contains(0) ||
                                HasExactDuplicates(data.PurchasedSkinIds) ||
@@ -152,6 +155,9 @@ namespace GameManagement
             data.DailyQuestSet ??= new DailyQuestSetState();
             data.DailyQuestSet.ActiveQuestIds ??= new List<string>();
             data.DailyQuestSet.LastGeneratedQuestIds ??= new List<string>();
+            data.StoryQuestSet ??= new StoryQuestSetState();
+            data.StoryQuestSet.ActivePrimaryQuestId ??= string.Empty;
+            data.StoryQuestSet.ActiveSecondaryQuestId ??= string.Empty;
             data.EnsureSerializedProgressCollection();
 
             data.PurchasedSkinIds = data.PurchasedSkinIds.Distinct().ToList();

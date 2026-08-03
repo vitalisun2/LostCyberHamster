@@ -20,6 +20,7 @@ namespace GameManagement
         public string CurrentLevel;
         public List<Quest> QuestStates = new();
         public DailyQuestSetState DailyQuestSet = new();
+        public StoryQuestSetState StoryQuestSet = new();
 
         [SerializeField]
         private List<SerializableLevelProgressEntry> _serializedProgress = new();

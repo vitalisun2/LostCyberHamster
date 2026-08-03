@@ -37,6 +37,9 @@ Quests/
 │   ├── DailyQuestService.cs
 │   └── DailyQuestSetState.cs
 │
+├── Story/
+│   └── StoryQuestSetState.cs
+│
 ├── Types/
 │   ├── ActionCounter/
 │   │   ├── ActionCounterQuestEvent.cs
@@ -138,7 +141,8 @@ UI и общая игровая инфраструктура находятся 
    - `QuestAttemptBuffer.cs` — хранит действия текущей попытки.
 
 6. **Сохранение состояния** — хранит прогресс квестов в общем профиле игрока.
-   - `PlayerData.cs` — хранит прогресс квестов и активный набор Daily.
+   - `PlayerData.cs` — хранит прогресс квестов, активный набор Daily и `StoryQuestSet`.
+   - `StoryQuestSetState.cs` — хранит `ActivePrimaryQuestId` и `ActiveSecondaryQuestId`.
    - `PlayerDataValidator.cs` — проверяет сохранённые состояния.
    - `GameDataManager.cs` — загружает и сохраняет профиль игрока.
    - `PlayerProgressCommitter.cs` — фиксирует изменение прогресса.
