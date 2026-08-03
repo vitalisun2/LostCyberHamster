@@ -39,6 +39,28 @@ namespace Vues.GameCore.Quests
                     "Тип квеста не задан.");
             }
 
+            if (definition.Category == QuestCategory.Daily &&
+                string.IsNullOrWhiteSpace(
+                    definition.DailyMechanicId))
+            {
+                throw new ArgumentException(
+                    "Механика дневного квеста не задана.",
+                    nameof(definition));
+            }
+
+            if (definition.Category == QuestCategory.Daily &&
+                (!Enum.IsDefined(
+                     typeof(DailyQuestDifficulty),
+                     definition.DailyDifficulty) ||
+                 definition.DailyDifficulty ==
+                 DailyQuestDifficulty.None))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition),
+                    definition.DailyDifficulty,
+                    "Сложность дневного квеста не задана.");
+            }
+
             if (definition.Type == QuestType.ActionCounter &&
                 !GameplayActionIds.IsKnown(definition.ActionId))
             {
@@ -180,6 +202,7 @@ namespace Vues.GameCore.Quests
                 storyDefinitions,
                 QuestCategory.Story,
                 ids);
+            ValidateDailyDifficultyCoverage(dailyDefinitions);
         }
 
         private static void ValidateCatalogGroup(
@@ -206,6 +229,41 @@ namespace Vues.GameCore.Quests
                 {
                     throw new InvalidOperationException(
                         $"Id квеста повторяется: {definition.Id}.");
+                }
+            }
+        }
+
+        private static void ValidateDailyDifficultyCoverage(
+            IReadOnlyCollection<QuestDefinition> definitions)
+        {
+            // Собираем сложности, представленные в дневном каталоге.
+            var availableDifficulties =
+                new HashSet<DailyQuestDifficulty>();
+            if (definitions != null)
+            {
+                foreach (QuestDefinition definition in definitions)
+                {
+                    if (definition != null)
+                    {
+                        availableDifficulties.Add(
+                            definition.DailyDifficulty);
+                    }
+                }
+            }
+
+            // Проверяем наличие кандидата для каждого дневного слота.
+            foreach (DailyQuestDifficulty difficulty in new[]
+                     {
+                         DailyQuestDifficulty.Simple,
+                         DailyQuestDifficulty.Medium,
+                         DailyQuestDifficulty.Hard
+                     })
+            {
+                if (!availableDifficulties.Contains(difficulty))
+                {
+                    throw new InvalidOperationException(
+                        $"Каталог дневных квестов не содержит " +
+                        $"квест сложности {difficulty}.");
                 }
             }
         }

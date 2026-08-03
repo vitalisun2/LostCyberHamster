@@ -25,6 +25,16 @@ namespace Vues.GameCore.Quests
         public QuestCategory Category;
 
         /// <summary>
+        /// Стабильный идентификатор механики дневного квеста.
+        /// </summary>
+        public string DailyMechanicId;
+
+        /// <summary>
+        /// Сложность дневного квеста.
+        /// </summary>
+        public DailyQuestDifficulty DailyDifficulty;
+
+        /// <summary>
         /// Широкий тип логики квеста.
         /// </summary>
         public QuestType Type;

@@ -26,6 +26,9 @@ namespace Vues.GameCore
             };
 
         private static readonly QuestAttemptBuffer _attemptBuffer = new();
+        private static readonly DailyQuestService _dailyQuestService = new(
+            new DailyQuestGenerator(),
+            new DailyQuestScheduler());
         private static readonly PlayerExperienceService
             _playerExperienceService = new();
 
@@ -56,7 +59,49 @@ namespace Vues.GameCore
                     "и сюжетные квесты.");
             }
 
+            bool dailySetChanged = InitDailyQuestSet(DateTime.Now);
             BindActiveQuests();
+            if (dailySetChanged)
+            {
+                PlayerProgressCommitter.Commit(
+                    CheckpointReason.DailyQuestSetRotated);
+            }
+        }
+
+        /// <summary>
+        /// Проверяет смену локального дня и обновляет активные дневные квесты.
+        /// </summary>
+        public static void Update()
+        {
+            if (!_dailyQuestService.IsInitialized)
+            {
+                return;
+            }
+
+            // Обновляем сохранённый набор после наступления нового дня.
+            List<string> previousIds =
+                _dailyQuestService.State.ActiveQuestIds.ToList();
+            if (!_dailyQuestService.Update(
+                    DateTime.Now,
+                    GameDataManager.PlayerData.QuestStates))
+            {
+                return;
+            }
+
+            CompleteDailySetChange(previousIds);
+        }
+
+        private static void CompleteDailySetChange(
+            IReadOnlyCollection<string> previousIds)
+        {
+            // Переподключаем активные квесты и сохраняем новый набор.
+            ApplyDailySetChange(previousIds, hadGeneratedSet: true);
+            BindActiveQuests(discardAttempt: false);
+            PlayerProgressCommitter.Commit(
+                CheckpointReason.DailyQuestSetRotated);
+
+            // Уведомляем открытые экраны об изменении набора.
+            GameEventsManager.DailyQuestSetChanged();
         }
 
         /// <summary>
@@ -86,19 +131,94 @@ namespace Vues.GameCore
             _attemptBuffer.DiscardAttempt();
         }
 
-        private static void BindActiveQuests()
+        private static void BindActiveQuests(bool discardAttempt = true)
         {
+            // Подключаем выбранные Daily и все доступные Story.
             _dailyQuests = BindDefinitions(
-                QuestCatalog.DailyDefinitions);
+                ResolveActiveDailyDefinitions());
             _storyQuests = BindDefinitions(
                 QuestCatalog.StoryDefinitions);
 
+            // Собираем единый список для обработки игровых событий.
             var activeQuests = new List<Quest>(
                 _dailyQuests.Count + _storyQuests.Count);
             activeQuests.AddRange(_dailyQuests);
             activeQuests.AddRange(_storyQuests);
             _activeQuests = activeQuests.AsReadOnly();
-            _attemptBuffer.DiscardAttempt();
+            // Полная переинициализация завершает старую попытку.
+            if (discardAttempt)
+            {
+                _attemptBuffer.DiscardAttempt();
+            }
+        }
+
+        private static bool InitDailyQuestSet(DateTime localNow)
+        {
+            // Сохраняем прежний набор для очистки устаревшего прогресса.
+            DailyQuestSetState savedState =
+                GameDataManager.PlayerData.DailyQuestSet;
+            bool hadGeneratedSet =
+                !string.IsNullOrWhiteSpace(savedState?.GenerationDate);
+            List<string> previousIds =
+                savedState?.ActiveQuestIds?.ToList() ?? new List<string>();
+
+            // Подключаем сохранённое состояние и создаём набор при необходимости.
+            bool changed = _dailyQuestService.Init(
+                QuestCatalog.DailyDefinitions,
+                savedState,
+                GameDataManager.PlayerData.QuestStates,
+                localNow);
+            GameDataManager.PlayerData.DailyQuestSet =
+                _dailyQuestService.State;
+            // Удаляем состояния квестов, покинувших активный набор.
+            if (changed)
+            {
+                ApplyDailySetChange(previousIds, hadGeneratedSet);
+            }
+
+            return changed;
+        }
+
+        private static void ApplyDailySetChange(
+            IReadOnlyCollection<string> previousIds,
+            bool hadGeneratedSet)
+        {
+            var expiredIds = new HashSet<string>(
+                hadGeneratedSet
+                    ? previousIds.Where(questId =>
+                        !_dailyQuestService.RetainsProgress(questId))
+                    : QuestCatalog.DailyDefinitions.Select(
+                        definition => definition.Id),
+                StringComparer.Ordinal);
+
+            GameDataManager.PlayerData.QuestStates.RemoveAll(
+                quest => quest != null &&
+                         expiredIds.Contains(quest.QuestId));
+            GameDataManager.PlayerData.DailyQuestSet =
+                _dailyQuestService.State;
+        }
+
+        private static IReadOnlyList<QuestDefinition>
+            ResolveActiveDailyDefinitions()
+        {
+            var definitions = new List<QuestDefinition>(
+                _dailyQuestService.State.ActiveQuestIds.Count);
+            foreach (string questId in
+                     _dailyQuestService.State.ActiveQuestIds)
+            {
+                if (!QuestCatalog.TryGet(
+                        questId,
+                        out QuestDefinition definition) ||
+                    definition.Category != QuestCategory.Daily)
+                {
+                    throw new InvalidOperationException(
+                        $"Дневной квест {questId} отсутствует в каталоге.");
+                }
+
+                definitions.Add(definition);
+            }
+
+            return definitions.AsReadOnly();
         }
 
         private static IReadOnlyList<Quest> BindDefinitions(
@@ -208,7 +328,15 @@ namespace Vues.GameCore
                 return;
             }
 
+            bool dailySetChanged = InitDailyQuestSet(DateTime.Now);
             BindActiveQuests();
+            if (dailySetChanged)
+            {
+                PlayerProgressCommitter.Commit(
+                    CheckpointReason.DailyQuestSetRotated);
+                GameEventsManager.DailyQuestSetChanged();
+            }
+
             foreach (Quest quest in _activeQuests)
             {
                 GameEventsManager.QuestStateChanged(quest.Id);
@@ -318,6 +446,28 @@ namespace Vues.GameCore
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Генерирует следующий набор Daily через штатный DailyQuestService.
+        /// </summary>
+        public static bool GenerateNextDailySetForTesting()
+        {
+            if (!_dailyQuestService.IsInitialized)
+            {
+                return false;
+            }
+
+            List<string> previousIds =
+                _dailyQuestService.State.ActiveQuestIds.ToList();
+            if (!_dailyQuestService.GenerateNextSetForTesting(
+                    GameDataManager.PlayerData.QuestStates))
+            {
+                return false;
+            }
+
+            CompleteDailySetChange(previousIds);
+            return true;
+        }
+
         /// <summary>
         /// Сбрасывает выбранный активный квест для dev-тестирования.
         /// </summary>

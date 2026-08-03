@@ -60,6 +60,11 @@ public class GameEventSystemController : MonoBehaviour
         VibrationManager.OnDisable();
     }
 
+    void Update()
+    {
+        QuestManager.Update();
+    }
+
     private static void EnsureSingleEventSystem()
     {
         var all = Object.FindObjectsOfType<EventSystem>(true);

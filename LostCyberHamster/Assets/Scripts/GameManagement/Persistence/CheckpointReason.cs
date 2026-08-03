@@ -9,6 +9,7 @@ namespace GameManagement
         QuestCompleted,
         QuestProgressed,
         QuestRewardClaimed,
+        DailyQuestSetRotated,
         WeeklyLeaderboardRecordRewarded,
         LevelCompleted,
         CurrentLevelChanged,

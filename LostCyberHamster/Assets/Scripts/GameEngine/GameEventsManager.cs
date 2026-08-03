@@ -143,6 +143,17 @@ public static class GameEventsManager
     public static void QuestStateChanged(string questId) =>
         OnQuestStateChanged?.Invoke(questId);
 
+    /// <summary>
+    /// Активный набор дневных квестов изменился.
+    /// </summary>
+    public static event Action OnDailyQuestSetChanged;
+
+    /// <summary>
+    /// Сообщает подписчикам о новом наборе дневных квестов.
+    /// </summary>
+    public static void DailyQuestSetChanged() =>
+        OnDailyQuestSetChanged?.Invoke();
+
 #endregion
 
 #region Уровень

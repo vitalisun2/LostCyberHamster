@@ -104,6 +104,9 @@ namespace GameManagement
                                data.PlayerLevel < 1 ||
                                data.PurchasedSkinIds == null ||
                                data.QuestStates == null ||
+                               data.DailyQuestSet == null ||
+                               data.DailyQuestSet?.ActiveQuestIds == null ||
+                               data.DailyQuestSet?.LastGeneratedQuestIds == null ||
                                !data.HasSerializedProgressCollection ||
                                !data.PurchasedSkinIds.Contains(0) ||
                                HasExactDuplicates(data.PurchasedSkinIds) ||
@@ -146,6 +149,9 @@ namespace GameManagement
                 data.PurchasedSkinIds.Add(0);
             }
             data.QuestStates ??= new List<Quest>();
+            data.DailyQuestSet ??= new DailyQuestSetState();
+            data.DailyQuestSet.ActiveQuestIds ??= new List<string>();
+            data.DailyQuestSet.LastGeneratedQuestIds ??= new List<string>();
             data.EnsureSerializedProgressCollection();
 
             data.PurchasedSkinIds = data.PurchasedSkinIds.Distinct().ToList();

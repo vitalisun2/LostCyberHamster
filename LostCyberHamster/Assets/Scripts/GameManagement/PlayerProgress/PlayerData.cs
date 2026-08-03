@@ -19,6 +19,7 @@ namespace GameManagement
         public List<int> PurchasedSkinIds = new() { 0 };
         public string CurrentLevel;
         public List<Quest> QuestStates = new();
+        public DailyQuestSetState DailyQuestSet = new();
 
         [SerializeField]
         private List<SerializableLevelProgressEntry> _serializedProgress = new();

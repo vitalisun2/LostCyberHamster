@@ -91,6 +91,8 @@ namespace LostCyberHamster.UI
         {
             GameEventsManager.OnQuestStateChanged +=
                 HandleQuestStateChanged;
+            GameEventsManager.OnDailyQuestSetChanged +=
+                HandleDailyQuestSetChanged;
             _buttonSettings?.RegisterCallback<ClickEvent>(
                 OnClickBtnSettings);
             _buttonHome?.RegisterCallback<ClickEvent>(OnClickBtnHome);
@@ -179,10 +181,20 @@ namespace LostCyberHamster.UI
             _questsContainer?.schedule.Execute(RenderActivePage);
         }
 
+        private void HandleDailyQuestSetChanged()
+        {
+            if (_showDailyTasks)
+            {
+                _questsContainer?.schedule.Execute(RenderActivePage);
+            }
+        }
+
         protected override void OnUnsubscribeFromEvents()
         {
             GameEventsManager.OnQuestStateChanged -=
                 HandleQuestStateChanged;
+            GameEventsManager.OnDailyQuestSetChanged -=
+                HandleDailyQuestSetChanged;
             _buttonSettings?.UnregisterCallback<ClickEvent>(
                 OnClickBtnSettings);
             _buttonHome?.UnregisterCallback<ClickEvent>(OnClickBtnHome);

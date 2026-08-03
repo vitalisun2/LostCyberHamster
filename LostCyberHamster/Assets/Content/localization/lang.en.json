@@ -333,24 +333,72 @@
             "value": "Jump over 5 obstacles"
         },
         {
+            "key": "daily-001-medium-title",
+            "value": "Jump over 10 obstacles"
+        },
+        {
+            "key": "daily-001-hard-title",
+            "value": "Jump over 20 obstacles"
+        },
+        {
             "key": "daily-002-title",
             "value": "Jump on 3 obstacles"
+        },
+        {
+            "key": "daily-002-medium-title",
+            "value": "Jump on 5 obstacles"
+        },
+        {
+            "key": "daily-002-hard-title",
+            "value": "Jump on 10 obstacles"
         },
         {
             "key": "daily-003-title",
             "value": "Complete any level"
         },
         {
+            "key": "daily-003-medium-title",
+            "value": "Complete any 2 levels"
+        },
+        {
+            "key": "daily-003-hard-title",
+            "value": "Complete any 3 levels"
+        },
+        {
             "key": "daily-004-title",
             "value": "Run across 3 vehicle roofs"
+        },
+        {
+            "key": "daily-004-medium-title",
+            "value": "Run across 5 vehicle roofs"
+        },
+        {
+            "key": "daily-004-hard-title",
+            "value": "Run across 8 vehicle roofs"
         },
         {
             "key": "daily-005-title",
             "value": "Jump from a roof onto a living obstacle"
         },
         {
+            "key": "daily-005-medium-title",
+            "value": "Jump from a roof onto 2 living obstacles"
+        },
+        {
+            "key": "daily-005-hard-title",
+            "value": "Jump from a roof onto 3 living obstacles"
+        },
+        {
             "key": "daily-006-title",
             "value": "Make 3 roof-to-roof jumps"
+        },
+        {
+            "key": "daily-006-medium-title",
+            "value": "Make 5 roof-to-roof jumps"
+        },
+        {
+            "key": "daily-006-hard-title",
+            "value": "Make 8 roof-to-roof jumps"
         },
         {
             "key": "story-001-title",

@@ -333,24 +333,72 @@
             "value": "Перепрыгни через 5 препятствий"
         },
         {
+            "key": "daily-001-medium-title",
+            "value": "Перепрыгни через 10 препятствий"
+        },
+        {
+            "key": "daily-001-hard-title",
+            "value": "Перепрыгни через 20 препятствий"
+        },
+        {
             "key": "daily-002-title",
             "value": "Напрыгни на 3 препятствия"
+        },
+        {
+            "key": "daily-002-medium-title",
+            "value": "Напрыгни на 5 препятствий"
+        },
+        {
+            "key": "daily-002-hard-title",
+            "value": "Напрыгни на 10 препятствий"
         },
         {
             "key": "daily-003-title",
             "value": "Пройди любой уровень"
         },
         {
+            "key": "daily-003-medium-title",
+            "value": "Пройди 2 любых уровня"
+        },
+        {
+            "key": "daily-003-hard-title",
+            "value": "Пройди 3 любых уровня"
+        },
+        {
             "key": "daily-004-title",
             "value": "Пробеги по крышам 3 автомобилей"
+        },
+        {
+            "key": "daily-004-medium-title",
+            "value": "Пробеги по крышам 5 автомобилей"
+        },
+        {
+            "key": "daily-004-hard-title",
+            "value": "Пробеги по крышам 8 автомобилей"
         },
         {
             "key": "daily-005-title",
             "value": "Напрыгни с крыши на живое препятствие"
         },
         {
+            "key": "daily-005-medium-title",
+            "value": "Напрыгни с крыши на 2 живых препятствия"
+        },
+        {
+            "key": "daily-005-hard-title",
+            "value": "Напрыгни с крыши на 3 живых препятствия"
+        },
+        {
             "key": "daily-006-title",
             "value": "Сделай 3 прыжка с крыши на крышу"
+        },
+        {
+            "key": "daily-006-medium-title",
+            "value": "Сделай 5 прыжков с крыши на крышу"
+        },
+        {
+            "key": "daily-006-hard-title",
+            "value": "Сделай 8 прыжков с крыши на крышу"
         },
         {
             "key": "story-001-title",
