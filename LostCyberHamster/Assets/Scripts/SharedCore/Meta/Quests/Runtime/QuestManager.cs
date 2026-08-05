@@ -31,6 +31,7 @@ namespace Vues.GameCore
             new DailyQuestScheduler());
         private static readonly PlayerExperienceService
             _playerExperienceService = new();
+        private static StoryQuestGenerator _storyQuestGenerator;
 
         private static IReadOnlyList<Quest> _activeQuests =
             Array.Empty<Quest>();
@@ -38,6 +39,8 @@ namespace Vues.GameCore
             Array.Empty<Quest>();
         private static IReadOnlyList<Quest> _storyQuests =
             Array.Empty<Quest>();
+        private static IReadOnlyList<QuestDefinition>
+            _storyQuestDefinitions = Array.Empty<QuestDefinition>();
 
         public static IReadOnlyList<Quest> DailyQuests =>
             _dailyQuests;
@@ -46,25 +49,32 @@ namespace Vues.GameCore
             _storyQuests;
 
         /// <summary>
-        /// Загружает каталог и восстанавливает активные квесты.
+        /// Загружает каталог, восстанавливает или создаёт активные квесты.
         /// </summary>
         public static async Task Init()
         {
+            // Загружаем и проверяем обязательный production-каталог.
             await QuestCatalog.LoadAsync();
-            if (QuestCatalog.DailyDefinitions.Count == 0 ||
-                QuestCatalog.StoryDefinitions.Count == 0)
+            if (QuestCatalog.DailyDefinitions.Count == 0)
             {
                 throw new InvalidOperationException(
-                    "MVP-каталог должен содержать дневные квесты " +
-                    "и сюжетные квесты.");
+                    "MVP-каталог должен содержать дневные квесты.");
             }
 
+            // Восстанавливаем оба набора и связываем их runtime-состояния.
+            _storyQuestGenerator = new StoryQuestGenerator(
+                QuestCatalog.StoryGenerationSettings);
             bool dailySetChanged = InitDailyQuestSet(DateTime.Now);
+            bool storySetChanged = InitStoryQuestSet();
             BindActiveQuests();
-            if (dailySetChanged)
+
+            // Сохраняем созданные или исправленные наборы одним checkpoint.
+            if (dailySetChanged || storySetChanged)
             {
                 PlayerProgressCommitter.Commit(
-                    CheckpointReason.DailyQuestSetRotated);
+                    dailySetChanged
+                        ? CheckpointReason.DailyQuestSetRotated
+                        : CheckpointReason.StoryQuestSetChanged);
             }
         }
 
@@ -133,11 +143,11 @@ namespace Vues.GameCore
 
         private static void BindActiveQuests(bool discardAttempt = true)
         {
-            // Подключаем выбранные Daily и все доступные Story.
+            // Подключаем выбранные Daily и два сохранённых Story-слота.
             _dailyQuests = BindDefinitions(
                 ResolveActiveDailyDefinitions());
             _storyQuests = BindDefinitions(
-                QuestCatalog.StoryDefinitions);
+                _storyQuestDefinitions);
 
             // Собираем единый список для обработки игровых событий.
             var activeQuests = new List<Quest>(
@@ -219,6 +229,116 @@ namespace Vues.GameCore
             }
 
             return definitions.AsReadOnly();
+        }
+
+        private static bool InitStoryQuestSet()
+        {
+            // Проверяем runtime-зависимости и подключаем сохранённый набор.
+            if (_storyQuestGenerator == null)
+            {
+                throw new InvalidOperationException(
+                    "Генератор сюжетных квестов не инициализирован.");
+            }
+
+            PlayerData playerData = GameDataManager.PlayerData ??
+                throw new InvalidOperationException(
+                    "Данные игрока недоступны для Story-генерации.");
+            StoryQuestSetState savedState = playerData.StoryQuestSet;
+            StoryQuestSetState state =
+                savedState ?? new StoryQuestSetState();
+            string previousPrimaryQuestId =
+                state.ActivePrimaryQuestId;
+            string previousSecondaryQuestId =
+                state.ActiveSecondaryQuestId;
+            LevelProgressOverview progressOverview =
+                LevelManager.SavedProgressOverview;
+            var definitions = new List<QuestDefinition>(2);
+
+            // Восстанавливаем последовательный слот или создаём его заново.
+            QuestDefinition primaryDefinition =
+                ResolvePrimaryStoryDefinition(
+                    state.ActivePrimaryQuestId,
+                    progressOverview);
+            state.ActivePrimaryQuestId =
+                primaryDefinition?.Id ?? string.Empty;
+            if (primaryDefinition != null)
+            {
+                definitions.Add(primaryDefinition);
+            }
+
+            // Восстанавливаем случайный слот или выбираем новую доступную цель.
+            QuestDefinition secondaryDefinition =
+                ResolveSecondaryStoryDefinition(
+                    state.ActiveSecondaryQuestId,
+                    progressOverview,
+                    playerData);
+            state.ActiveSecondaryQuestId =
+                secondaryDefinition?.Id ?? string.Empty;
+            if (secondaryDefinition != null)
+            {
+                definitions.Add(secondaryDefinition);
+            }
+
+            // Публикуем нормализованное состояние и определения двух слотов.
+            playerData.StoryQuestSet = state;
+            _storyQuestDefinitions = definitions.AsReadOnly();
+            return savedState == null ||
+                   !string.Equals(
+                       previousPrimaryQuestId,
+                       state.ActivePrimaryQuestId,
+                       StringComparison.Ordinal) ||
+                   !string.Equals(
+                       previousSecondaryQuestId,
+                       state.ActiveSecondaryQuestId,
+                       StringComparison.Ordinal);
+        }
+
+        private static QuestDefinition ResolvePrimaryStoryDefinition(
+            string savedQuestId,
+            LevelProgressOverview progressOverview)
+        {
+            // Стабильный сохранённый слот имеет приоритет над новой целью.
+            if (_storyQuestGenerator.TryRestorePrimaryDefinition(
+                    savedQuestId,
+                    progressOverview,
+                    out QuestDefinition definition))
+            {
+                return definition;
+            }
+
+            // Пустой или устаревший слот заполняем по текущему прогрессу.
+            return _storyQuestGenerator.TryCreatePrimaryDefinition(
+                progressOverview,
+                out definition)
+                    ? definition
+                    : null;
+        }
+
+        private static QuestDefinition ResolveSecondaryStoryDefinition(
+            string savedQuestId,
+            LevelProgressOverview progressOverview,
+            PlayerData playerData)
+        {
+            // Стабильный сохранённый слот имеет приоритет над случайным выбором.
+            if (_storyQuestGenerator.TryRestoreSecondaryDefinition(
+                    savedQuestId,
+                    progressOverview,
+                    SkinManager.AvailableSkins,
+                    SuperAttackService.Items,
+                    out QuestDefinition definition))
+            {
+                return definition;
+            }
+
+            // Пустой или устаревший слот заполняем доступной случайной целью.
+            return _storyQuestGenerator.TryCreateSecondaryDefinition(
+                progressOverview,
+                playerData,
+                SkinManager.AvailableSkins,
+                SuperAttackService.Items,
+                out definition)
+                    ? definition
+                    : null;
         }
 
         private static IReadOnlyList<Quest> BindDefinitions(
@@ -349,12 +469,23 @@ namespace Vues.GameCore
                 return;
             }
 
+            // Пересобираем оба набора поверх нового состояния игрока.
             bool dailySetChanged = InitDailyQuestSet(DateTime.Now);
+            bool storySetChanged = InitStoryQuestSet();
             BindActiveQuests();
-            if (dailySetChanged)
+
+            // Сохраняем исправленные наборы одним checkpoint.
+            if (dailySetChanged || storySetChanged)
             {
                 PlayerProgressCommitter.Commit(
-                    CheckpointReason.DailyQuestSetRotated);
+                    dailySetChanged
+                        ? CheckpointReason.DailyQuestSetRotated
+                        : CheckpointReason.StoryQuestSetChanged);
+            }
+
+            // Уведомляем UI об изменениях Daily и состояний активных квестов.
+            if (dailySetChanged)
+            {
                 GameEventsManager.DailyQuestSetChanged();
             }
 

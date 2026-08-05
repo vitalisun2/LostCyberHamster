@@ -16,6 +16,7 @@ namespace GameManagement
         TutorialCompleted,
         AccountPromptStateChanged,
         AccountLinked,
-        AppBackgrounded
+        AppBackgrounded,
+        StoryQuestSetChanged
     }
 }
