@@ -31,7 +31,7 @@ namespace Assets.Tests.EditMode
             Capture(3, AccountKey);
             Capture(4, ForeignKey);
 
-            LevelCatalogService.Reset();
+            LevelCatalogService.Configure(PlayerProgressTestCatalog.Create());
         }
 
         [TearDown]
@@ -68,7 +68,11 @@ namespace Assets.Tests.EditMode
             PlayerPrefs.SetString(PlayerDataBackupKey, "obsolete-backup");
             PlayerPrefs.Save();
 
-            GameDataManager.PlayerData = new PlayerData { Money = 99 };
+            GameDataManager.PlayerData = new PlayerData
+            {
+                Money = 99,
+                CurrentLevel = PlayerProgressTestCatalog.FirstLevelAddress
+            };
             GameDataManager.SaveData();
 
             GameDataManager.ResetPlayerProgress();

@@ -30,7 +30,7 @@ namespace Assets.Tests.EditMode
             _hadBackup = PlayerPrefs.HasKey(PlayerDataBackupKey);
             _savedBackup = PlayerPrefs.GetString(PlayerDataBackupKey, string.Empty);
 
-            LevelCatalogService.Reset();
+            LevelCatalogService.Configure(PlayerProgressTestCatalog.Create());
             PlayerPrefs.DeleteKey(PlayerDataKey);
             PlayerPrefs.DeleteKey(PlayerDataBackupKey);
             PlayerPrefs.Save();
@@ -141,6 +141,7 @@ namespace Assets.Tests.EditMode
             return new PlayerData
             {
                 Money = money,
+                CurrentLevel = PlayerProgressTestCatalog.FirstLevelAddress,
                 PurchasedSkinIds = new List<int> { 0 },
                 QuestStates = new List<Quest>()
             };

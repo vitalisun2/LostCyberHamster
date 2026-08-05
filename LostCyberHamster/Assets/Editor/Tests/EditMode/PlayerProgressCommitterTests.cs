@@ -1,3 +1,4 @@
+using Assets.Scripts.System;
 using GameManagement;
 using NUnit.Framework;
 using UnityEngine;
@@ -11,6 +12,7 @@ namespace Assets.Tests.EditMode
         private const string PlayerDataBackupKey = "PlayerData.Backup";
 
         private PlayerData _previousPlayerData;
+        private HierarchicalLevelCatalog _previousCatalog;
         private bool _hadSavedPlayerData;
         private string _savedPlayerData;
         private bool _hadSavedBackup;
@@ -20,16 +22,19 @@ namespace Assets.Tests.EditMode
         public void SetUp()
         {
             _previousPlayerData = GameDataManager.PlayerData;
+            _previousCatalog = LevelCatalogService.Catalog;
             _hadSavedPlayerData = PlayerPrefs.HasKey(PlayerDataKey);
             _savedPlayerData = PlayerPrefs.GetString(PlayerDataKey, string.Empty);
             _hadSavedBackup = PlayerPrefs.HasKey(PlayerDataBackupKey);
             _savedBackup = PlayerPrefs.GetString(PlayerDataBackupKey, string.Empty);
+            LevelCatalogService.Configure(PlayerProgressTestCatalog.Create());
         }
 
         [TearDown]
         public void TearDown()
         {
             GameDataManager.PlayerData = _previousPlayerData;
+            LevelCatalogService.Configure(_previousCatalog);
 
             if (_hadSavedPlayerData)
             {
@@ -58,7 +63,8 @@ namespace Assets.Tests.EditMode
             GameDataManager.PlayerData = new PlayerData
             {
                 Money = 27,
-                Crystals = 4
+                Crystals = 4,
+                CurrentLevel = PlayerProgressTestCatalog.FirstLevelAddress
             };
 
             PlayerProgressCommitter.Commit(CheckpointReason.MenuEntered);
