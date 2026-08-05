@@ -24,9 +24,23 @@ namespace Assets.Scripts.System
 
         public static LocationInfoList LocationInfoList { get; private set; } = new();
 
-        public static List<LocationInfoModel> OpenedLocations => BuildOpenedLocations();
-
         public static int StarsToOpenNewLocation => CalculateStarsToOpenNextLocation();
+
+        /// <summary>
+        /// Возвращает модель прогресса для UI с учётом development override.
+        /// </summary>
+        public static LevelProgressOverview ProgressOverview => HasCatalog
+            ? RequireProgressService().GetOverview(Progress)
+            : LevelProgressOverview.Empty;
+
+        /// <summary>
+        /// Возвращает модель сохранённого прогресса без development override.
+        /// </summary>
+        public static LevelProgressOverview SavedProgressOverview => HasCatalog
+            ? RequireProgressService().GetOverview(
+                GameDataManager.PlayerData?.Progress ??
+                LevelProgressSnapshot.Empty)
+            : LevelProgressOverview.Empty;
 
         private static HierarchicalLevelCatalog Catalog => LevelCatalogService.Catalog;
 
@@ -226,6 +240,9 @@ namespace Assets.Scripts.System
             return descriptor.LocationIndex;
         }
 
+        /// <summary>
+        /// Проверяет готовое состояние доступности уровня.
+        /// </summary>
         public static bool IsLevelOpen(string levelKey)
         {
             if (!TryResolveProgressKey(levelKey, out var progressKey))
@@ -233,9 +250,14 @@ namespace Assets.Scripts.System
                 return false;
             }
 
-            return Progress.IsLevelUnlocked(progressKey);
+            return ProgressOverview.TryGetLevel(progressKey, out var level)
+                ? level.IsUnlocked
+                : Progress.IsLevelUnlocked(progressKey);
         }
 
+        /// <summary>
+        /// Возвращает готовое количество звёзд уровня.
+        /// </summary>
         public static int GetLevelStars(string levelKey)
         {
             if (!TryResolveProgressKey(levelKey, out var progressKey))
@@ -243,7 +265,9 @@ namespace Assets.Scripts.System
                 return 0;
             }
 
-            return Progress.GetStars(progressKey);
+            return ProgressOverview.TryGetLevel(progressKey, out var level)
+                ? level.Stars
+                : Progress.GetStars(progressKey);
         }
 
         public static string GetLocationName()
@@ -460,18 +484,6 @@ namespace Assets.Scripts.System
 
             var service = RequireProgressService();
             return service.GetStarsToOpenNextLocation(Progress);
-        }
-
-        private static List<LocationInfoModel> BuildOpenedLocations()
-        {
-            if (!HasCatalog)
-            {
-                return new List<LocationInfoModel>();
-            }
-
-            var service = RequireProgressService();
-            var opened = service.BuildOpenedLocations(Progress, LocationInfoList);
-            return opened?.ToList() ?? new List<LocationInfoModel>();
         }
 
         private static async Task InitLocationsList()

@@ -90,13 +90,12 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<CrystalStorageUI>()?.ButtonAdd;
 
         private readonly LeaderboardService _leaderboardService;
-        private IReadOnlyList<LevelSelectionModel.LocationView> _visibleLocations =
-            Array.Empty<LevelSelectionModel.LocationView>();
-        private IReadOnlyList<LevelSelectionModel.PartView> _visibleParts =
-            Array.Empty<LevelSelectionModel.PartView>();
-        private LevelSelectionModel.LocationView _selectedLocation;
-        private LevelSelectionModel.PartView _selectedPart;
-        private int _openedLocationCount;
+        private IReadOnlyList<LocationView> _visibleLocations =
+            Array.Empty<LocationView>();
+        private IReadOnlyList<PartView> _visibleParts =
+            Array.Empty<PartView>();
+        private LocationView _selectedLocation;
+        private PartView _selectedPart;
         private int _currentLocationIndex;
         private int _requestVersion;
         private string _initialLocationId;
@@ -127,12 +126,9 @@ namespace LostCyberHamster.UI
         /// </summary>
         protected override async Task OnLoadAsync()
         {
-            // Собираем полный каталог и отдельно фиксируем реальную границу доступности.
+            // Получаем каталог с единым доменным состоянием доступности.
             _requestVersion++;
             var selectionModel = LevelSelectionModel.Create();
-            _openedLocationCount = Math.Min(
-                LevelManager.OpenedLocations.Count,
-                selectionModel.Locations.Count);
             _visibleLocations = selectionModel.Locations.ToList();
 
             await ChangeBackgroundAsync("BackgroundScreenSprite");
@@ -152,7 +148,7 @@ namespace LostCyberHamster.UI
                 _selectedLocation = null;
                 _selectedPart = null;
                 _locationTitle.text = "—";
-                _visibleParts = Array.Empty<LevelSelectionModel.PartView>();
+                _visibleParts = Array.Empty<PartView>();
                 UpdatePartButtons(null);
                 ShowUnavailable();
                 ClearInitialSelection();
@@ -165,7 +161,7 @@ namespace LostCyberHamster.UI
         /// <summary>
         /// Открывает локацию и выбирает первую видимую часть дня.
         /// </summary>
-        private async Task OpenLocationAsync(LevelSelectionModel.LocationView location)
+        private async Task OpenLocationAsync(LocationView location)
         {
             if (!IsLocationOpen(location))
                 return;
@@ -257,7 +253,7 @@ namespace LostCyberHamster.UI
         /// <summary>
         /// Получает серверные результаты и показывает только актуальный ответ.
         /// </summary>
-        private async Task LoadResultsAsync(LevelSelectionModel.PartView part)
+        private async Task LoadResultsAsync(PartView part)
         {
             // Фиксируем выбранную таблицу и показываем загрузку.
             _selectedPart = part;
@@ -294,7 +290,7 @@ namespace LostCyberHamster.UI
             }
         }
 
-        private void UpdatePartButtons(LevelSelectionModel.PartView selectedPart)
+        private void UpdatePartButtons(PartView selectedPart)
         {
             UpdatePartButton(
                 _buttonMorning,
@@ -322,7 +318,7 @@ namespace LostCyberHamster.UI
             Button button,
             VisualElement lockElement,
             string partKey,
-            LevelSelectionModel.PartView selectedPart)
+            PartView selectedPart)
         {
             // Оставляем все настроенные части дня видимыми.
             var configuredPart = _visibleParts.FirstOrDefault(
@@ -352,11 +348,9 @@ namespace LostCyberHamster.UI
             button.style.borderBottomRightRadius = isSelected ? 0 : 24;
         }
 
-        private bool IsLocationOpen(LevelSelectionModel.LocationView location)
+        private bool IsLocationOpen(LocationView location)
         {
-            return location != null &&
-                   location.Index >= 0 &&
-                   location.Index < _openedLocationCount;
+            return location?.IsUnlocked == true;
         }
 
         private bool CanOpenLocationAt(int index)
@@ -385,15 +379,13 @@ namespace LostCyberHamster.UI
             button.style.opacity = isAvailable ? 1 : 0.55f;
         }
 
-        private static bool IsPartOpen(LevelSelectionModel.PartView part)
+        private static bool IsPartOpen(PartView part)
         {
-            return part != null &&
-                   part.Levels.Any(
-                       level => LevelManager.IsLevelOpen(level.Address));
+            return part?.IsUnlocked == true;
         }
 
         private static bool MatchesPart(
-            LevelSelectionModel.PartView part,
+            PartView part,
             string partKey)
         {
             return string.Equals(
@@ -407,7 +399,7 @@ namespace LostCyberHamster.UI
         }
 
         private static bool MatchesLocation(
-            LevelSelectionModel.LocationView location,
+            LocationView location,
             string locationId)
         {
             return location != null &&
@@ -434,7 +426,7 @@ namespace LostCyberHamster.UI
         private (
             IReadOnlyList<LeaderboardEntry> Top,
             LeaderboardEntry CurrentPlayer) CreateMockResults(
-            LevelSelectionModel.PartView part)
+            PartView part)
         {
             // Меняем числа между таблицами, сохраняя правдоподобный порядок.
             var tableSeed = StringComparer.OrdinalIgnoreCase.GetHashCode(

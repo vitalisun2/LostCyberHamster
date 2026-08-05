@@ -253,32 +253,53 @@ namespace Vues.GameCore
                 return;
             }
 
-            LevelProgressSnapshot progress =
-                GameDataManager.PlayerData?.Progress ??
-                LevelProgressSnapshot.Empty;
-            foreach (HierarchicalLevelCatalog.LevelDescriptor descriptor in
-                     LevelCatalogService.Catalog.EnumerateLevels())
+            LevelProgressOverview progressOverview =
+                LevelManager.SavedProgressOverview;
+
+            // Квест с заданной частью восстанавливаем из её агрегата.
+            if (!string.IsNullOrWhiteSpace(definition.RequiredLocationId) &&
+                !string.IsNullOrWhiteSpace(definition.RequiredPartOfDayId))
             {
-                var progressKey = new LevelProgressKey(
-                    descriptor.LocationId,
-                    descriptor.PartId,
-                    descriptor.LevelIndex);
-                int stars = progress.GetStars(progressKey);
-                if (stars < definition.RequiredStars ||
-                    !LevelManager.TryParseLevelNumber(
-                        descriptor.Address,
-                        out int levelId))
+                if (progressOverview.TryGetPart(
+                        definition.RequiredLocationId,
+                        definition.RequiredPartOfDayId,
+                        out PartProgress part))
+                {
+                    RestoreUniqueLevelProgress(
+                        quest,
+                        definition,
+                        part.Levels);
+                }
+
+                return;
+            }
+
+            // Остальные квесты восстанавливаем по всем игровым уровням.
+            RestoreUniqueLevelProgress(
+                quest,
+                definition,
+                progressOverview.Levels);
+        }
+
+        private static void RestoreUniqueLevelProgress(
+            Quest quest,
+            QuestDefinition definition,
+            IReadOnlyList<LevelProgress> levels)
+        {
+            foreach (LevelProgress level in levels)
+            {
+                if (level.Stars < definition.RequiredStars)
                 {
                     continue;
                 }
 
                 quest.Handle(
                     new LevelResultQuestEvent(
-                        levelId,
-                        stars,
-                        progressKey.ToString(),
-                        progressKey.LocationId,
-                        progressKey.PartOfDayId));
+                        level.LevelNumber,
+                        level.Stars,
+                        level.Key.ToString(),
+                        level.Key.LocationId,
+                        level.Key.PartOfDayId));
             }
         }
 

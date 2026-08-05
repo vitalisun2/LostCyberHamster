@@ -707,7 +707,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             SetStatus(status, status);
         }
 
-        private static IReadOnlyList<LevelSelectionModel.LevelReference> GetOrderedLevels()
+        private static IReadOnlyList<LevelProgress> GetOrderedLevels()
         {
             return LevelSelectionModel.Create().FlattenedLevels;
         }
@@ -742,7 +742,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
 
             progressKey = new LevelProgressKey(
                 level.LocationId,
-                level.PartId,
+                level.PartOfDayId,
                 level.LevelIndex);
             return true;
         }
@@ -810,7 +810,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
 
         private static bool TryResolvePart(
             string levelAddress,
-            out LevelSelectionModel.PartView part)
+            out PartView part)
         {
             var model = LevelSelectionModel.Create();
             var level = model.FlattenedLevels.FirstOrDefault(candidate =>
@@ -1022,7 +1022,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         }
 
         private static bool IsTargetPartLevelsShown(
-            LevelSelectionModel.PartView part)
+            PartView part)
         {
             if (!IsSelectLevelScreenShown() ||
                 FindVisibleElement<Button>("btn_back") == null)
@@ -1035,7 +1035,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         }
 
         private static bool IsGameSceneForPart(
-            LevelSelectionModel.PartView part)
+            PartView part)
         {
             return string.Equals(
                        SceneManager.GetActiveScene().name,
@@ -1047,7 +1047,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         }
 
         private static bool PartContainsLevel(
-            LevelSelectionModel.PartView part,
+            PartView part,
             string levelAddress)
         {
             return part?.Levels != null &&

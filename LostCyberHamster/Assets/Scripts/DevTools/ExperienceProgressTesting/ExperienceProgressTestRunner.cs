@@ -231,7 +231,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
         }
 
         private bool TryGetTargetLevel(
-            out LevelSelectionModel.LevelReference level)
+            out LevelProgress level)
         {
             level = default;
             if (!IsGameDataReady())
@@ -304,7 +304,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
         }
 
         private static string FormatLevel(
-            LevelSelectionModel.LevelReference level,
+            LevelProgress level,
             bool includeAddress = true)
         {
             var model = LevelSelectionModel.Create();
@@ -313,7 +313,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
             var part = location?.Parts.FirstOrDefault(candidate =>
                 candidate.Index == level.PartIndex);
             var title = $"{location?.DisplayName ?? level.LocationId} / " +
-                        $"{part?.DisplayName ?? level.PartId} / " +
+                        $"{part?.DisplayName ?? level.PartOfDayId} / " +
                         $"Level {level.LevelIndex + 1}";
             return includeAddress
                 ? $"{title} ({level.Address?.Trim()})"
@@ -321,16 +321,16 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
         }
 
         private static LevelProgressKey CreateProgressKey(
-            LevelSelectionModel.LevelReference level)
+            LevelProgress level)
         {
             return new LevelProgressKey(
                 level.LocationId,
-                level.PartId,
+                level.PartOfDayId,
                 level.LevelIndex);
         }
 
         private static string BuildCompletedStatus(
-            LevelSelectionModel.LevelReference level,
+            LevelProgress level,
             LeaderboardSubmissionResult submission,
             int starsExperienceReward,
             int recordExperienceReward,

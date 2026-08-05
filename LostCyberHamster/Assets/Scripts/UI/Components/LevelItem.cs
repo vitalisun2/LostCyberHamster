@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Assets.Scripts.System;
+using GameManagement.Progress;
 using Extensions;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -31,26 +32,53 @@ namespace LostCyberHamster.UI
             EnsureTemplateLoaded();
         }
 
-        public void ConfigureForPart(string partKey, string displayName, string previewAddress, string levelKeyForProgress)
+        /// <summary>
+        /// Настраивает карточку части суток по готовому состоянию прогресса.
+        /// </summary>
+        public void ConfigureForPart(
+            string partKey,
+            string displayName,
+            string previewAddress,
+            string levelKey,
+            bool isUnlocked,
+            int stars)
         {
             EnsureTemplateLoaded();
             var resolvedDisplay = TryLocalize(partKey, displayName);
             var resolvedPreview = string.IsNullOrWhiteSpace(previewAddress)
                 ? GetDefaultPreviewAddress(partKey)
                 : previewAddress;
-            SetupCard(resolvedDisplay, resolvedPreview, string.IsNullOrWhiteSpace(levelKeyForProgress) ? levelKeyForProgress : levelKeyForProgress.Trim());
+            SetupCard(
+                resolvedDisplay,
+                resolvedPreview,
+                string.IsNullOrWhiteSpace(levelKey) ? levelKey : levelKey.Trim(),
+                isUnlocked,
+                stars);
         }
-        public void ConfigureForLevel(LevelSelectionModel.LevelReference level, int displayIndex, string partKey, string previewAddress)
+
+        /// <summary>
+        /// Настраивает карточку уровня по готовому состоянию прогресса.
+        /// </summary>
+        public void ConfigureForLevel(
+            LevelProgress level,
+            int displayIndex,
+            string partKey,
+            string previewAddress)
         {
             EnsureTemplateLoaded();
-            var label = displayIndex > 0 ? displayIndex.ToString() : level.Key;
+            var label = displayIndex > 0 ? displayIndex.ToString() : level.LevelKey;
             var resolvedPreview = string.IsNullOrWhiteSpace(previewAddress)
                 ? GetDefaultPreviewAddress(partKey)
                 : previewAddress;
             var canonicalLevelKey = string.IsNullOrWhiteSpace(level.Address)
-                ? level.Key
+                ? level.LevelKey
                 : level.Address.Trim();
-            SetupCard(label, resolvedPreview, canonicalLevelKey);
+            SetupCard(
+                label,
+                resolvedPreview,
+                canonicalLevelKey,
+                level.IsUnlocked,
+                level.Stars);
         }
 
 
@@ -80,7 +108,12 @@ namespace LostCyberHamster.UI
             _templateLoaded = true;
         }
 
-        private void SetupCard(string displayName, string previewAddress, string levelKey)
+        private void SetupCard(
+            string displayName,
+            string previewAddress,
+            string levelKey,
+            bool isUnlocked,
+            int stars)
         {
             if (_name != null)
             {
@@ -103,16 +136,18 @@ namespace LostCyberHamster.UI
                 }
             }
 
-            ApplyProgressState(levelKey);
+            ApplyProgressState(levelKey, isUnlocked, stars);
         }
 
-        private void ApplyProgressState(string levelKey)
+        private void ApplyProgressState(
+            string levelKey,
+            bool isUnlocked,
+            int stars)
         {
             LevelName = levelKey;
 
-            if (!string.IsNullOrEmpty(levelKey) && LevelManager.IsLevelOpen(levelKey))
+            if (!string.IsNullOrEmpty(levelKey) && isUnlocked)
             {
-                var stars = LevelManager.GetLevelStars(levelKey);
                 for (int i = 0; i < _starElements.Count; i++)
                 {
                     if (i < stars && _fullStarSprite != null)

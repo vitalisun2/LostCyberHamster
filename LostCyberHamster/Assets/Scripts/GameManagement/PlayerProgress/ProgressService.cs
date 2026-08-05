@@ -1,22 +1,32 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Assets.Scripts.Common.Models;
 using Assets.Scripts.System;
 
 namespace GameManagement.Progress
 {
+    /// <summary>
+    /// Обновляет сохранённый прогресс уровней и предоставляет его агрегированное состояние для чтения.
+    /// </summary>
     public sealed class ProgressService
     {
         private readonly HierarchicalLevelCatalog _catalog;
         private readonly IUnlockPolicy _unlockPolicy;
+        private LevelProgressSnapshot _overviewSnapshot;
+        private LevelProgressOverview _overview = LevelProgressOverview.Empty;
 
+        /// <summary>
+        /// Создаёт сервис прогресса для заданного каталога и правил открытия уровней.
+        /// </summary>
         public ProgressService(HierarchicalLevelCatalog catalog, IUnlockPolicy unlockPolicy)
         {
             _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             _unlockPolicy = unlockPolicy ?? throw new ArgumentNullException(nameof(unlockPolicy));
         }
 
+        /// <summary>
+        /// Применяет результат прохождения и открывает следующий доступный уровень или локацию.
+        /// </summary>
         public LevelProgressSnapshot HandleLevelCompleted(LevelProgressSnapshot snapshot, LevelProgressKey progressKey, int stars)
         {
             if (snapshot == null)
@@ -24,6 +34,7 @@ namespace GameManagement.Progress
                 throw new ArgumentNullException(nameof(snapshot));
             }
 
+            // Обновляет лучший результат завершённого уровня.
             var clampedStars = ClampStars(stars);
 
             if (!snapshot.TryGet(progressKey, out var entry))
@@ -33,6 +44,7 @@ namespace GameManagement.Progress
 
             snapshot = snapshot.Set(entry.ApplyStars(clampedStars));
 
+            // Применяет правила открытия к следующему элементу каталога.
             if (TryGetNextProgressKey(progressKey, out var nextKey))
             {
                 var shouldUnlock = string.Equals(progressKey.LocationId, nextKey.LocationId, StringComparison.OrdinalIgnoreCase)
@@ -49,48 +61,31 @@ namespace GameManagement.Progress
             return snapshot;
         }
 
-        public IReadOnlyList<LocationInfo> BuildOpenedLocations(LevelProgressSnapshot snapshot, LocationInfoList infoList)
+        /// <summary>
+        /// Возвращает агрегированное состояние прогресса, повторно используя результат для того же LevelProgressSnapshot.
+        /// </summary>
+        public LevelProgressOverview GetOverview(LevelProgressSnapshot snapshot)
         {
             if (snapshot == null)
             {
                 throw new ArgumentNullException(nameof(snapshot));
             }
 
-            var result = new List<LocationInfo>();
-            var infos = infoList?.locations ?? Array.Empty<LocationInfo>();
-
-            for (int index = 0; index < _catalog.LocationCount; index++)
+            // Возвращает кэш для того же неизменяемого снимка.
+            if (ReferenceEquals(snapshot, _overviewSnapshot))
             {
-                var locationId = _catalog.GetLocationId(index);
-                var entries = snapshot.EnumerateLocation(locationId);
-                var isUnlocked = entries.Any(entry => entry.IsUnlocked);
-
-                if (!isUnlocked && index == 0)
-                {
-                    isUnlocked = true;
-                }
-
-                if (!isUnlocked)
-                {
-                    break;
-                }
-
-                var info = index < infos.Length && infos[index] != null
-                    ? infos[index]
-                    : new LocationInfo
-                    {
-                        name = _catalog.Locations[index].Key ?? $"Location {index + 1}",
-                        image = string.Empty,
-                        sysname = _catalog.Locations[index].Key ?? string.Empty,
-                        levels = Array.Empty<string>()
-                    };
-
-                result.Add(info);
+                return _overview;
             }
 
-            return result;
+            // Перестраивает модель чтения после замены снимка прогресса.
+            _overview = LevelProgressOverview.Create(_catalog, snapshot);
+            _overviewSnapshot = snapshot;
+            return _overview;
         }
 
+        /// <summary>
+        /// Возвращает количество звёзд, необходимых для открытия следующей локации.
+        /// </summary>
         public int GetStarsToOpenNextLocation(LevelProgressSnapshot snapshot)
         {
             if (snapshot == null)
@@ -98,21 +93,29 @@ namespace GameManagement.Progress
                 throw new ArgumentNullException(nameof(snapshot));
             }
 
-            var openedCount = GetContiguousUnlockedLocationCount(snapshot);
+            // Определяет текущую открытую границу каталога.
+            var openedCount = GetContiguousUnlockedLocationCount(GetOverview(snapshot));
             if (openedCount == 0 || openedCount >= _catalog.LocationCount)
             {
                 return 0;
             }
 
+            // Запрашивает требование правила открытия для текущей локации.
             var currentLocationId = _catalog.GetLocationId(openedCount - 1);
             return _unlockPolicy.GetRequiredStarsForNextLocation(snapshot, currentLocationId);
         }
 
+        /// <summary>
+        /// Создаёт начальное состояние прогресса из текущего каталога.
+        /// </summary>
         public LevelProgressSnapshot ResetProgress()
         {
             return LevelProgressSnapshot.CreateFromCatalog(_catalog);
         }
 
+        /// <summary>
+        /// Пытается найти следующий ключ прогресса в порядке каталога.
+        /// </summary>
         public bool TryGetNextProgressKey(LevelProgressKey current, out LevelProgressKey next)
         {
             return InternalTryGetNextProgressKey(current, out next);
@@ -132,6 +135,7 @@ namespace GameManagement.Progress
                 return false;
             }
 
+            // Ищет следующий уровень в текущей части суток.
             var orderedLevels = partEntry.Levels?.OrderBy(level => level.Order).ToList()
                                 ?? new List<HierarchicalLevelCatalog.LevelEntry>();
             var nextLevelIndex = current.LevelIndex + 1;
@@ -144,6 +148,7 @@ namespace GameManagement.Progress
                 return true;
             }
 
+            // Ищет первую непустую часть суток в текущей локации.
             var location = _catalog.Locations[locationIndex];
             for (int i = partIndex + 1; i < location.PartsOfDay.Count; i++)
             {
@@ -160,6 +165,7 @@ namespace GameManagement.Progress
                 return true;
             }
 
+            // Ищет первый уровень следующих локаций.
             for (int nextLocationIndex = locationIndex + 1; nextLocationIndex < _catalog.LocationCount; nextLocationIndex++)
             {
                 var locationEntry = _catalog.Locations[nextLocationIndex];
@@ -200,22 +206,16 @@ namespace GameManagement.Progress
             return value;
         }
 
-        private int GetContiguousUnlockedLocationCount(LevelProgressSnapshot snapshot)
+        private static int GetContiguousUnlockedLocationCount(LevelProgressOverview overview)
         {
             int count = 0;
 
-            for (int index = 0; index < _catalog.LocationCount; index++)
+            foreach (var location in overview.Locations)
             {
-                var locationId = _catalog.GetLocationId(index);
-                var isUnlocked = snapshot.EnumerateLocation(locationId).Any(entry => entry.IsUnlocked);
+                var isUnlocked = location.IsUnlocked;
 
                 if (!isUnlocked)
                 {
-                    if (index == 0)
-                    {
-                        count++;
-                    }
-
                     break;
                 }
 
