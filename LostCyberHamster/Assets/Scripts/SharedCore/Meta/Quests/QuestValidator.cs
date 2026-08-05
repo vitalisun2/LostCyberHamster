@@ -195,6 +195,93 @@ namespace Vues.GameCore.Quests
                     nameof(settings),
                     "Награда Story-генерации должна быть положительной.");
             }
+
+            ValidateStoryDevelopmentTemplates(
+                settings.DevelopmentTemplates);
+        }
+
+        private static void ValidateStoryDevelopmentTemplates(
+            IReadOnlyCollection<StoryQuestDevelopmentTemplate> templates)
+        {
+            const int requiredTemplateCount = 3;
+
+            // Проверяем полноту универсального набора шаблонов.
+            if (templates == null)
+            {
+                throw new ArgumentNullException(nameof(templates));
+            }
+
+            if (templates.Count != requiredTemplateCount)
+            {
+                throw new ArgumentException(
+                    "Story-генерация должна содержать три шаблона развития.",
+                    nameof(templates));
+            }
+
+            // Готовим обязательный набор состояний и уникальные ID.
+            var requiredStateIds = new HashSet<string>(
+                StringComparer.Ordinal)
+            {
+                PlayerStateIds.PlayerLevel,
+                PlayerStateIds.SkinApplied,
+                PlayerStateIds.SuperAttackActive
+            };
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            foreach (StoryQuestDevelopmentTemplate template in templates)
+            {
+                ValidateStoryDevelopmentTemplate(template);
+                if (!ids.Add(template.Id))
+                {
+                    throw new ArgumentException(
+                        $"ID Story-шаблона развития повторяется: {template.Id}.",
+                        nameof(templates));
+                }
+
+                if (!requiredStateIds.Remove(template.StateId))
+                {
+                    throw new ArgumentException(
+                        $"Состояние Story-шаблона развития не поддерживается " +
+                        $"или повторяется: {template.StateId}.",
+                        nameof(templates));
+                }
+            }
+        }
+
+        private static void ValidateStoryDevelopmentTemplate(
+            StoryQuestDevelopmentTemplate template)
+        {
+            if (template == null)
+            {
+                throw new ArgumentNullException(nameof(template));
+            }
+
+            // Проверяем обязательные данные шаблона.
+            if (string.IsNullOrWhiteSpace(template.Id) ||
+                string.IsNullOrWhiteSpace(template.TitleLocalizationKey) ||
+                string.IsNullOrWhiteSpace(template.StateId))
+            {
+                throw new ArgumentException(
+                    "Story-шаблон развития содержит пустые обязательные данные.",
+                    nameof(template));
+            }
+
+            // Проверяем награду будущего runtime-квеста.
+            if (template.RewardType != ResourceType.Coins &&
+                template.RewardType != ResourceType.Crystals)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(template),
+                    template.RewardType,
+                    "Тип награды Story-шаблона не поддерживается.");
+            }
+
+            if (template.RewardAmount <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(template),
+                    template.RewardAmount,
+                    "Награда Story-шаблона должна быть положительной.");
+            }
         }
 
         /// <summary>

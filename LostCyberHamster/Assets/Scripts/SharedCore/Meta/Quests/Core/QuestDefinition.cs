@@ -19,6 +19,12 @@ namespace Vues.GameCore.Quests
         public string TitleLocalizationKey;
 
         /// <summary>
+        /// Runtime-аргументы названия: ключи локализации или fallback-текст.
+        /// </summary>
+        [NonSerialized]
+        public string[] TitleLocalizationArguments = Array.Empty<string>();
+
+        /// <summary>
         /// Раздел production-каталога.
         /// </summary>
         [NonSerialized]

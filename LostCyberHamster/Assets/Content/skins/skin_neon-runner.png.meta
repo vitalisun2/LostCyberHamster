@@ -97,7 +97,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: skin_electric-strike_0
+      name: skin_neon-runner_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,7 +128,7 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      skin_electric-strike_0: 1355653939
+      skin_neon-runner_0: 1355653939
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

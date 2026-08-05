@@ -263,7 +263,30 @@
     "PrimaryRewardAmount": 300,
     "MasteryTitleLocalizationKey": "story-mastery-title",
     "MasteryRewardType": 1,
-    "MasteryRewardAmount": 300
+    "MasteryRewardAmount": 300,
+    "DevelopmentTemplates": [
+      {
+        "Id": "story-development-player-level",
+        "TitleLocalizationKey": "story-development-player-level-title",
+        "StateId": "player_level",
+        "RewardType": 1,
+        "RewardAmount": 300
+      },
+      {
+        "Id": "story-development-skin-applied",
+        "TitleLocalizationKey": "story-development-skin-applied-title",
+        "StateId": "skin_applied",
+        "RewardType": 1,
+        "RewardAmount": 300
+      },
+      {
+        "Id": "story-development-super-attack-active",
+        "TitleLocalizationKey": "story-development-super-attack-active-title",
+        "StateId": "super_attack_active",
+        "RewardType": 1,
+        "RewardAmount": 300
+      }
+    ]
   },
   "StoryDefinitions": [
     {
@@ -279,20 +302,6 @@
       "CountUniqueLevels": true,
       "RequiredStars": 3,
       "TargetAmount": 3,
-      "RewardType": 1,
-      "RewardAmount": 300
-    },
-    {
-      "Id": "story-002",
-      "TitleLocalizationKey": "story-002-title",
-      "TitleDescription": "Купи новый скин",
-      "ConditionDescription": "Купить скин Energy Shield.",
-      "GoalDescription": "Скин Energy Shield куплен.",
-      "Type": 3,
-      "StateId": "skin_owned",
-      "EntityId": "1",
-      "RequiredValue": 1,
-      "TargetAmount": 1,
       "RewardType": 1,
       "RewardAmount": 300
     }

@@ -417,8 +417,44 @@
             "value": "Заверши все уровни Нью-Йорк Morning с 3 звёздами"
         },
         {
-            "key": "story-002-title",
-            "value": "Купи новый скин"
+            "key": "story-development-player-level-title",
+            "value": "Повысь уровень игрока до {0}"
+        },
+        {
+            "key": "story-development-skin-applied-title",
+            "value": "Примерь новый образ «{0}»"
+        },
+        {
+            "key": "story-development-super-attack-active-title",
+            "value": "Активируй супер-атаку «{0}»"
+        },
+        {
+            "key": "01_New_York",
+            "value": "Нью-Йорк"
+        },
+        {
+            "key": "02_Paris",
+            "value": "Париж"
+        },
+        {
+            "key": "03_Barcelona",
+            "value": "Барселона"
+        },
+        {
+            "key": "Morning",
+            "value": "Утро"
+        },
+        {
+            "key": "Afternoon",
+            "value": "День"
+        },
+        {
+            "key": "Evening",
+            "value": "Вечер"
+        },
+        {
+            "key": "Night",
+            "value": "Ночь"
         },
         {
             "key": "energy shield",
@@ -523,6 +559,18 @@
         {
             "key": "quest_reward_claimed",
             "value": "Награда получена"
+        },
+        {
+            "key": "skin_name_classic",
+            "value": "Классический"
+        },
+        {
+            "key": "skin_name_quantum_scout",
+            "value": "Квантовый разведчик"
+        },
+        {
+            "key": "skin_name_neon_runner",
+            "value": "Неоновый гонщик"
         }
     ]
 }

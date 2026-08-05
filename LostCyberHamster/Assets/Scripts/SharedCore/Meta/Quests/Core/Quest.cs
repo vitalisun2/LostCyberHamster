@@ -48,6 +48,13 @@ namespace Vues.GameCore.Quests
         public string Id => _definition?.Id ?? QuestId;
         public string TitleLocalizationKey =>
             _definition?.TitleLocalizationKey ?? QuestId;
+
+        /// <summary>
+        /// Возвращает runtime-аргументы локализованного названия.
+        /// </summary>
+        public string[] TitleLocalizationArguments =>
+            _definition?.TitleLocalizationArguments ??
+            Array.Empty<string>();
         public QuestCategory Category =>
             _definition?.Category ?? QuestCategory.None;
         public QuestType Type => _definition?.Type ?? QuestType.None;

@@ -28,12 +28,12 @@ MonoBehaviour:
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1bd14aa037e924e6bb59d24f1b2a4d40
-    m_Address: skin_energy-shield
+    m_Address: skin_quantum-scout
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6f939148836434acc83a6d2ad15934e9
-    m_Address: skin_electric-strike
+    m_Address: skin_neon-runner
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

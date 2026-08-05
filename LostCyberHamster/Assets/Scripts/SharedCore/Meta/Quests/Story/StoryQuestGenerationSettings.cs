@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Vues.GameCore.Quests
 {
@@ -42,5 +43,11 @@ namespace Vues.GameCore.Quests
         /// Размер награды квеста мастерства.
         /// </summary>
         public int MasteryRewardAmount;
+
+        /// <summary>
+        /// Универсальные шаблоны квестов развития персонажа.
+        /// </summary>
+        public List<StoryQuestDevelopmentTemplate> DevelopmentTemplates =
+            new();
     }
 }

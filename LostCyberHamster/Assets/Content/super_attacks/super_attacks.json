@@ -3,7 +3,7 @@
     {
       "Id": 1,
       "NameLocalizationKey": "energy shield",
-      "IconAddress": "skin_energy-shield",
+      "IconAddress": "skin_quantum-scout",
       "UltaPrefab": "EnergyShieldPrefab",
       "UltaDuration": 5,
       "UltaCharge": 20,
@@ -12,7 +12,7 @@
     {
       "Id": 2,
       "NameLocalizationKey": "electric strike",
-      "IconAddress": "skin_electric-strike",
+      "IconAddress": "skin_neon-runner",
       "UltaPrefab": "ElectricStrikePrefab",
       "UltaDuration": 0,
       "UltaCharge": 35,

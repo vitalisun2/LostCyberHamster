@@ -4,7 +4,7 @@ TextureImporter:
   internalIDToNameTable:
   - first:
       213: 7046159198833234881
-    second: skins_energy-shield_0
+    second: skin_quantum-scout_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,7 +100,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: skins_energy-shield_0
+      name: skin_quantum-scout_0
       rect:
         serializedVersion: 2
         x: 0
@@ -131,7 +131,7 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      skins_energy-shield_0: 7046159198833234881
+      skin_quantum-scout_0: 7046159198833234881
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

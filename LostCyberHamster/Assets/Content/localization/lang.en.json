@@ -417,8 +417,44 @@
             "value": "Complete all New York Morning levels with 3 Stars"
         },
         {
-            "key": "story-002-title",
-            "value": "Buy a new skin"
+            "key": "story-development-player-level-title",
+            "value": "Increase your player level to {0}"
+        },
+        {
+            "key": "story-development-skin-applied-title",
+            "value": "Try on the new “{0}” look"
+        },
+        {
+            "key": "story-development-super-attack-active-title",
+            "value": "Activate the “{0}” Super Attack"
+        },
+        {
+            "key": "01_New_York",
+            "value": "New York"
+        },
+        {
+            "key": "02_Paris",
+            "value": "Paris"
+        },
+        {
+            "key": "03_Barcelona",
+            "value": "Barcelona"
+        },
+        {
+            "key": "Morning",
+            "value": "Morning"
+        },
+        {
+            "key": "Afternoon",
+            "value": "Afternoon"
+        },
+        {
+            "key": "Evening",
+            "value": "Evening"
+        },
+        {
+            "key": "Night",
+            "value": "Night"
         },
         {
             "key": "energy shield",
@@ -523,6 +559,18 @@
         {
             "key": "quest_reward_claimed",
             "value": "Reward claimed"
+        },
+        {
+            "key": "skin_name_classic",
+            "value": "Classic"
+        },
+        {
+            "key": "skin_name_quantum_scout",
+            "value": "Quantum Scout"
+        },
+        {
+            "key": "skin_name_neon_runner",
+            "value": "Neon Runner"
         }
     ]
 }

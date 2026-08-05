@@ -2,7 +2,7 @@
   "skins": [
     {
       "Id": 0,
-      "NameLocalizationKey": "default",
+      "NameLocalizationKey": "skin_name_classic",
       "Price": 0,
       "PriceType": 2,
       "SkinSprite": "skin_default",
@@ -10,18 +10,18 @@
     },
     {
       "Id": 2,
-      "NameLocalizationKey": "electric strike",
+      "NameLocalizationKey": "skin_name_neon_runner",
       "Price": 20,
       "PriceType": 2,
-      "SkinSprite": "skin_electric-strike",
+      "SkinSprite": "skin_neon-runner",
       "HamsterOverrideController": "ElectricStrikeSkinAnimator"
     },
     {
       "Id": 1,
-      "NameLocalizationKey": "energy shield",
+      "NameLocalizationKey": "skin_name_quantum_scout",
       "Price": 10,
       "PriceType": 2,
-      "SkinSprite": "skin_energy-shield",
+      "SkinSprite": "skin_quantum-scout",
       "HamsterOverrideController": "EnergyShieldSkinAnimator"
     }
   ]
