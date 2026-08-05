@@ -38,6 +38,7 @@ Quests/
 │   └── DailyQuestSetState.cs
 │
 ├── Story/
+│   ├── StoryQuestGenerator.cs
 │   ├── StoryQuestGenerationSettings.cs
 │   └── StoryQuestSetState.cs
 │
