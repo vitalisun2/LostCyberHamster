@@ -4,6 +4,8 @@ param(
     [string]$BuildLabel = 'telegram-worker',
     [string]$TelegramConfigPath = '',
     [string]$SkillRoot = '',
+    [ValidateRange(0, 1800)]
+    [int]$BotApiRecoveryTimeoutSeconds = 600,
     [switch]$ShowDevelopmentConsole,
     [switch]$Json
 )
@@ -182,6 +184,30 @@ function Test-LocalBotApi {
     catch {
         return $false
     }
+}
+
+function Wait-LocalBotApi {
+    param(
+        [string]$TestScript,
+        [string]$LocalConfigPath,
+        [string]$ApiBaseUrl,
+        [int]$TimeoutSeconds
+    )
+
+    $deadlineUtc = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        if ((Test-EndpointReachable -ApiBaseUrl $ApiBaseUrl) -and
+            (Test-LocalBotApi -TestScript $TestScript -LocalConfigPath $LocalConfigPath)) {
+            return $true
+        }
+
+        if ([DateTime]::UtcNow -ge $deadlineUtc) {
+            return $false
+        }
+
+        $remainingSeconds = [Math]::Ceiling(($deadlineUtc - [DateTime]::UtcNow).TotalSeconds)
+        Start-Sleep -Seconds ([Math]::Min(5, [Math]::Max(1, $remainingSeconds)))
+    } while ($true)
 }
 
 $previousTelegramConfig = $null
@@ -409,23 +435,21 @@ try {
                 *> $null
         }
         catch {
-            Stop-Workflow -Code 'BotApiStartFailed' -Message 'Local Telegram Bot API could not be started.'
+            # Docker Desktop may restart while Unity is building. The existing
+            # container has restart policy and can recover without another build.
         }
 
-        if (-not (Test-LocalBotApi `
-            -TestScript $testBotScript `
-            -LocalConfigPath $localBotApiConfig.ConfigPath
-        )) {
-            Stop-Workflow -Code 'BotApiUnavailable' -Message 'Local Telegram Bot API is unavailable after one start attempt.'
-        }
     }
-    elseif (-not (Test-LocalBotApi `
+
+    if (-not (Wait-LocalBotApi `
         -TestScript $testBotScript `
-        -LocalConfigPath $localBotApiConfig.ConfigPath
+        -LocalConfigPath $localBotApiConfig.ConfigPath `
+        -ApiBaseUrl $localBotApiEndpoint `
+        -TimeoutSeconds $BotApiRecoveryTimeoutSeconds
     )) {
         Stop-Workflow `
-            -Code 'BotApiValidationFailed' `
-            -Message 'Local Telegram Bot API is reachable, but bot or channel validation failed.'
+            -Code 'BotApiUnavailable' `
+            -Message "Local Telegram Bot API did not recover within $BotApiRecoveryTimeoutSeconds seconds."
     }
 
     $caption = @(

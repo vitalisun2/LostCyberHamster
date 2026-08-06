@@ -454,13 +454,13 @@ function Get-BuildProgress {
             $progress = [Math]::Max($progress, 55)
             $phase = "Bee, IL2CPP and clang"
         }
-        if ($unityLogTail -match "(Gradle|Postprocess|post-process)") {
+        if ($unityLogTail -match '(DisplayProgressbar: Building Gradle project|Android PostProcess task "Building Gradle project"|org\.gradle\.launcher\.GradleMain.*assemble)') {
             $progress = [Math]::Max($progress, 75)
             $phase = "Gradle and postprocess"
         }
 
         $apkPath = Join-Path $BuildDirectory "LostCyberHamster.apk"
-        if ($unityLogTail -match "(Build Successful|Build succeeded|Build completed with a result of 'Succeeded')" -or
+        if ($unityLogTail -match "(Build Successful|Build succeeded|Build Finished, Result: Success|Build completed with a result of 'Succeeded')" -or
             (Test-Path -LiteralPath $apkPath -PathType Leaf)) {
             $progress = [Math]::Max($progress, 90)
             $phase = "APK ready"
@@ -721,6 +721,33 @@ function Wait-BuildDispatch {
     }
     finally {
         $process.Dispose()
+    }
+
+    # Capture APK and summary files created between the last polling interval
+    # and process exit so the final status reflects the completed build phase.
+    try {
+        $progress = Get-BuildProgress `
+            -CommandStartedAtUtc $Dispatch.StartedAtUtc `
+            -CurrentProgress $currentBucket `
+            -BuildDirectory $buildDirectory
+        $buildDirectory = $progress.BuildDirectory
+        $targetBucket = [int]([Math]::Floor([double]$progress.Progress / 10) * 10)
+        $targetBucket = [Math]::Min(90, $targetBucket)
+        $progressElapsed = (Get-Date) - $startedAt
+
+        while ($currentBucket + 10 -le $targetBucket) {
+            $currentBucket += 10
+            $currentPhase = Get-BucketPhase -Bucket $currentBucket
+            Send-TelegramStatusSafe -Text (
+                Format-ProgressStatus `
+                    -Percent $currentBucket `
+                    -Phase $currentPhase `
+                    -Elapsed $progressElapsed
+            )
+        }
+    }
+    catch {
+        Write-Warning "Final dispatch progress refresh failed."
     }
 
     $elapsed = (Get-Date) - $startedAt
