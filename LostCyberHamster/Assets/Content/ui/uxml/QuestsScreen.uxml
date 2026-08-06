@@ -13,20 +13,5 @@
             <engine:VisualElement name="quests_container" class="quests-container" picking-mode="Ignore" />
             <engine:Button text="▶" name="btn__quests-next" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--next" />
         </engine:VisualElement>
-        <engine:VisualElement name="daily-common-reward" class="daily-common-reward">
-            <Vues.GameCore.LocalizedLabel key="quests_daily_common_reward_title" class="lcs-text daily-common-reward__title" />
-            <engine:Label text="0 / 3" name="daily-common-reward__progress" class="lcs-text daily-common-reward__progress" />
-            <engine:VisualElement name="daily-common-reward__action" class="daily-common-reward__action">
-                <Vues.GameCore.LocalizedButton key="btn_get" name="daily-common-reward__claim" class="lcs_btn daily-common-reward__claim" />
-                <engine:VisualElement picking-mode="Ignore" class="daily-common-reward__amount-container">
-                    <engine:Label text="0" name="daily-common-reward__amount" class="daily-common-reward__amount" />
-                    <engine:VisualElement name="daily-common-reward__image" class="daily-common-reward__image" />
-                </engine:VisualElement>
-            </engine:VisualElement>
-            <engine:VisualElement name="daily-common-reward__claimed" class="daily-common-reward__claimed">
-                <engine:Label text="✓" class="daily-common-reward__check" />
-                <Vues.GameCore.LocalizedLabel key="quest_reward_claimed" class="lcs-text daily-common-reward__claimed-label" />
-            </engine:VisualElement>
-        </engine:VisualElement>
     </engine:VisualElement>
 </engine:UXML>

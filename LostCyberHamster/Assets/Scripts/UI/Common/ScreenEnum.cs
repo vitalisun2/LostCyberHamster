@@ -18,6 +18,7 @@ namespace LostCyberHamster.UI
         LoseModal,
         SuperAttacksScreen,
         LevelUpModal,
+        DailyQuestRewardModal,
 
     }
 

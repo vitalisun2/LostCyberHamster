@@ -178,17 +178,6 @@ public static class GameEventsManager
     public static void StoryQuestSetChanged() =>
         OnStoryQuestSetChanged?.Invoke();
 
-    /// <summary>
-    /// Состояние общей награды Daily-набора изменилось.
-    /// </summary>
-    public static event Action OnDailyQuestCommonRewardChanged;
-
-    /// <summary>
-    /// Сообщает подписчикам об актуальном состоянии общей Daily-награды.
-    /// </summary>
-    public static void DailyQuestCommonRewardChanged() =>
-        OnDailyQuestCommonRewardChanged?.Invoke();
-
 #endregion
 
 #region Уровень

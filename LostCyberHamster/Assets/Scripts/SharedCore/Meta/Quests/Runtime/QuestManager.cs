@@ -62,6 +62,13 @@ namespace Vues.GameCore
         private static IReadOnlyList<Quest> _activeQuests =
             Array.Empty<Quest>();
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Ограничивает синхронные игровые события Quest Testing выбранным квестом.
+        /// </summary>
+        private static string _questIdUnderTest;
+#endif
+
         /// <summary>
         /// Активные runtime-состояния Daily-квестов.
         /// </summary>
@@ -89,13 +96,7 @@ namespace Vues.GameCore
             _dailyQuests;
 
         /// <summary>
-        /// Количество квестов в активном Daily-наборе.
-        /// </summary>
-        public static int DailyQuestCount =>
-            _dailyQuests.Count;
-
-        /// <summary>
-        /// Проверяет смену локального дня и обновляет активные дневные квесты.
+        /// Проверяет смену локального дня и обновляет активные наборы.
         /// </summary>
         public static void Update()
         {
@@ -114,16 +115,36 @@ namespace Vues.GameCore
                 return;
             }
 
-            CompleteDailySetChange(previousIds);
+            CompleteQuestDayChange(previousIds);
         }
 
         /// <summary>
-        /// Применяет, сохраняет и публикует новый Daily-набор.
+        /// Применяет и публикует суточную смену активных квестов.
         /// </summary>
-        private static void CompleteDailySetChange(
+        private static void CompleteQuestDayChange(
             IReadOnlyCollection<string> previousIds)
         {
-            // Переподключаем активные квесты и сохраняем новый набор.
+            // Обновляем полученные Story-квесты вместе с Daily-набором.
+            StoryQuestSetState previousStoryState =
+                GameDataManager.PlayerData.StoryQuestSet;
+            string previousPrimaryQuestId =
+                previousStoryState?.ActivePrimaryQuestId;
+            string previousSecondaryQuestId =
+                previousStoryState?.ActiveSecondaryQuestId;
+            InitStoryQuestSet();
+            StoryQuestSetState currentStoryState =
+                GameDataManager.PlayerData.StoryQuestSet;
+            bool storySetChanged =
+                !string.Equals(
+                    previousPrimaryQuestId,
+                    currentStoryState.ActivePrimaryQuestId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    previousSecondaryQuestId,
+                    currentStoryState.ActiveSecondaryQuestId,
+                    StringComparison.Ordinal);
+
+            // Переподключаем активные квесты и сохраняем оба набора.
             ApplyDailySetChange(previousIds, hadGeneratedSet: true);
             BindActiveQuests(discardAttempt: false);
             PlayerProgressCommitter.Commit(
@@ -131,6 +152,10 @@ namespace Vues.GameCore
 
             // Уведомляем открытые экраны об изменении набора.
             GameEventsManager.DailyQuestSetChanged();
+            if (storySetChanged)
+            {
+                GameEventsManager.StoryQuestSetChanged();
+            }
         }
 
         /// <summary>
@@ -257,10 +282,21 @@ namespace Vues.GameCore
             StoryQuestSetState savedState = playerData.StoryQuestSet;
             StoryQuestSetState state =
                 savedState ?? new StoryQuestSetState();
+            state.GenerationDate ??= string.Empty;
+            state.ActivePrimaryQuestId ??= string.Empty;
+            state.ActiveSecondaryQuestId ??= string.Empty;
+            string currentGenerationDate =
+                _dailyQuestService.State.GenerationDate;
+            string previousGenerationDate = state.GenerationDate;
             string previousPrimaryQuestId =
                 state.ActivePrimaryQuestId;
             string previousSecondaryQuestId =
                 state.ActiveSecondaryQuestId;
+            bool rotateClaimedQuests =
+                !string.Equals(
+                    previousGenerationDate,
+                    currentGenerationDate,
+                    StringComparison.Ordinal);
             if (string.Equals(
                     state.ActivePrimaryQuestId,
                     LegacyStoryQuestId,
@@ -284,11 +320,10 @@ namespace Vues.GameCore
             // Восстанавливаем последовательный слот или создаём его заново.
             QuestDefinition primaryDefinition =
                 ResolvePrimaryStoryDefinition(
-                    IsQuestRewardClaimed(
+                    GetRestorableStoryQuestId(
                         playerData,
-                        state.ActivePrimaryQuestId)
-                            ? string.Empty
-                            : state.ActivePrimaryQuestId,
+                        state.ActivePrimaryQuestId,
+                        rotateClaimedQuests),
                     progressOverview,
                     playerData);
             state.ActivePrimaryQuestId =
@@ -301,11 +336,10 @@ namespace Vues.GameCore
             // Восстанавливаем случайный слот или выбираем новую доступную цель.
             QuestDefinition secondaryDefinition =
                 ResolveSecondaryStoryDefinition(
-                    IsQuestRewardClaimed(
+                    GetRestorableStoryQuestId(
                         playerData,
-                        state.ActiveSecondaryQuestId)
-                            ? string.Empty
-                            : state.ActiveSecondaryQuestId,
+                        state.ActiveSecondaryQuestId,
+                        rotateClaimedQuests),
                     progressOverview,
                     playerData);
             state.ActiveSecondaryQuestId =
@@ -316,10 +350,15 @@ namespace Vues.GameCore
             }
 
             // Публикуем нормализованное состояние и определения двух слотов.
+            state.GenerationDate = currentGenerationDate;
             playerData.StoryQuestSet = state;
             _storyQuestDefinitions = definitions.AsReadOnly();
             return legacyStateRemoved ||
                    savedState == null ||
+                   !string.Equals(
+                       previousGenerationDate,
+                       state.GenerationDate,
+                       StringComparison.Ordinal) ||
                    !string.Equals(
                        previousPrimaryQuestId,
                        state.ActivePrimaryQuestId,
@@ -327,7 +366,7 @@ namespace Vues.GameCore
                    !string.Equals(
                        previousSecondaryQuestId,
                        state.ActiveSecondaryQuestId,
-                   StringComparison.Ordinal);
+                       StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -375,6 +414,20 @@ namespace Vues.GameCore
                            questId,
                            StringComparison.Ordinal) &&
                        quest.IsRewardClaimed) == true;
+        }
+
+        /// <summary>
+        /// Возвращает Story-квест для восстановления в текущем суточном периоде.
+        /// </summary>
+        private static string GetRestorableStoryQuestId(
+            PlayerData playerData,
+            string questId,
+            bool rotateClaimedQuests)
+        {
+            return rotateClaimedQuests &&
+                   IsQuestRewardClaimed(playerData, questId)
+                ? string.Empty
+                : questId;
         }
 
         /// <summary>
@@ -722,6 +775,11 @@ namespace Vues.GameCore
                 value);
             foreach (Quest quest in _activeQuests)
             {
+                if (!ShouldHandleProgress(quest))
+                {
+                    continue;
+                }
+
                 bool wasCompleted = quest.IsCompleted;
                 if (!quest.Handle(questEvent))
                 {
@@ -769,6 +827,11 @@ namespace Vues.GameCore
             // Применяем факты завершённой попытки ко всем активным квестам.
             foreach (Quest quest in _activeQuests)
             {
+                if (!ShouldHandleProgress(quest))
+                {
+                    continue;
+                }
+
                 bool wasCompleted = quest.IsCompleted;
                 bool progressChanged = quest.Handle(levelResultEvent);
                 foreach (ActionCounterQuestEvent questEvent in bufferedEvents)
@@ -811,15 +874,33 @@ namespace Vues.GameCore
             }
         }
 
+        /// <summary>
+        /// Проверяет, может ли квест получить текущее игровое событие.
+        /// </summary>
+        private static bool ShouldHandleProgress(Quest quest)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!string.IsNullOrWhiteSpace(_questIdUnderTest))
+            {
+                return string.Equals(
+                    quest.Id,
+                    _questIdUnderTest,
+                    StringComparison.Ordinal);
+            }
+#endif
+
+            return true;
+        }
+
         #endregion
 
         #region Инструменты разработки
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
-        /// Генерирует следующий набор Daily через штатный DailyQuestService.
+        /// Переводит Daily и Story-квесты в следующий суточный период.
         /// </summary>
-        public static bool GenerateNextDailySetForTesting()
+        public static bool AdvanceQuestDayForTesting()
         {
             if (!_dailyQuestService.IsInitialized)
             {
@@ -834,8 +915,51 @@ namespace Vues.GameCore
                 return false;
             }
 
-            CompleteDailySetChange(previousIds);
+            CompleteQuestDayChange(previousIds);
             return true;
+        }
+
+        /// <summary>
+        /// Проводит прогресс выбранного квеста, не изменяя другие активные квесты.
+        /// </summary>
+        public static void RunQuestProgressForTesting(
+            string questId,
+            Action progressAction)
+        {
+            if (string.IsNullOrWhiteSpace(questId))
+            {
+                throw new ArgumentException(
+                    "Quest ID is required.",
+                    nameof(questId));
+            }
+
+            if (progressAction == null)
+            {
+                throw new ArgumentNullException(nameof(progressAction));
+            }
+
+            if (!_activeQuests.Any(quest => quest.Id == questId))
+            {
+                throw new InvalidOperationException(
+                    $"Active quest {questId} was not found.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(_questIdUnderTest))
+            {
+                throw new InvalidOperationException(
+                    "Another isolated quest progress action is already running.");
+            }
+
+            _questIdUnderTest = questId;
+            try
+            {
+                progressAction();
+            }
+            finally
+            {
+                _questIdUnderTest = null;
+                _attemptBuffer.DiscardAttempt();
+            }
         }
 
         /// <summary>
@@ -873,18 +997,6 @@ namespace Vues.GameCore
         /// </summary>
         public static int DailyCommonRewardAmount =>
             QuestCatalog.DailyCommonRewardDefinition?.RewardAmount ?? 0;
-
-        /// <summary>
-        /// Количество завершённых квестов активного Daily-набора.
-        /// </summary>
-        public static int DailyCommonRewardCompletedCount =>
-            _dailyQuests.Count(quest => quest.IsCompleted);
-
-        /// <summary>
-        /// Признак уже полученной общей награды Daily-набора.
-        /// </summary>
-        public static bool IsDailyCommonRewardClaimed =>
-            _dailyQuestService.State?.CommonRewardClaimed == true;
 
         /// <summary>
         /// Признак готовности общей награды Daily-набора к получению.
@@ -926,7 +1038,6 @@ namespace Vues.GameCore
             NotifyEarnedResource(
                 definition.RewardType,
                 definition.RewardAmount);
-            GameEventsManager.DailyQuestCommonRewardChanged();
             return true;
         }
 
@@ -951,9 +1062,8 @@ namespace Vues.GameCore
                 return false;
             }
 
-            // Фиксируем награду, XP и ротацию сюжетного слота.
+            // Фиксируем награду и опыт выбранной категории.
             quest.MarkRewardClaimed();
-            bool storyQuestRotated = false;
             if (quest.Category == QuestCategory.Daily)
             {
                 _playerExperienceService.GrantExperienceForClaimedDailyQuest(
@@ -964,8 +1074,6 @@ namespace Vues.GameCore
                 _playerExperienceService
                     .GrantExperienceForClaimedStorylineQuest(
                         GameDataManager.PlayerData);
-                RotateStoryQuest(questId);
-                storyQuestRotated = true;
             }
 
             // Сохраняем результат перед уведомлением UI и экономики.
@@ -977,48 +1085,8 @@ namespace Vues.GameCore
                 quest.RewardAmount);
             GameEventsManager.QuestRewardReceived(questId);
             GameEventsManager.QuestStateChanged(questId);
-            if (storyQuestRotated)
-            {
-                GameEventsManager.StoryQuestSetChanged();
-            }
 
             return true;
-        }
-
-        /// <summary>
-        /// Освобождает завершённый Story-слот и создаёт следующую цель.
-        /// </summary>
-        private static void RotateStoryQuest(string questId)
-        {
-            StoryQuestSetState state =
-                GameDataManager.PlayerData.StoryQuestSet ??
-                throw new InvalidOperationException(
-                    "Активный Story-набор не инициализирован.");
-
-            // Освобождаем только слот полученного Story-квеста.
-            if (string.Equals(
-                    state.ActivePrimaryQuestId,
-                    questId,
-                    StringComparison.Ordinal))
-            {
-                state.ActivePrimaryQuestId = string.Empty;
-            }
-            else if (string.Equals(
-                         state.ActiveSecondaryQuestId,
-                         questId,
-                         StringComparison.Ordinal))
-            {
-                state.ActiveSecondaryQuestId = string.Empty;
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"Story-квест {questId} не принадлежит активному набору.");
-            }
-
-            // Заполняем освобождённый слот и переподключаем runtime-квесты.
-            InitStoryQuestSet();
-            BindActiveQuests(discardAttempt: false);
         }
 
         /// <summary>

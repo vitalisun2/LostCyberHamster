@@ -729,12 +729,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             string levelAddress,
             out LevelProgressKey progressKey)
         {
-            var level = GetOrderedLevels().FirstOrDefault(candidate =>
-                string.Equals(
-                    candidate.Address?.Trim(),
-                    levelAddress?.Trim(),
-                    StringComparison.OrdinalIgnoreCase));
-            if (string.IsNullOrWhiteSpace(level.Address))
+            var level = FindLevel(GetOrderedLevels(), levelAddress);
+            if (level == null)
             {
                 progressKey = default;
                 return false;
@@ -750,13 +746,9 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         private static string FormatTarget(string levelAddress)
         {
             var model = LevelSelectionModel.Create();
-            var level = model.FlattenedLevels.FirstOrDefault(candidate =>
-                string.Equals(
-                    candidate.Address?.Trim(),
-                    levelAddress?.Trim(),
-                    StringComparison.OrdinalIgnoreCase));
+            var level = FindLevel(model.FlattenedLevels, levelAddress);
 
-            if (string.IsNullOrWhiteSpace(level.Address))
+            if (level == null)
                 return "unknown location / unknown part of day / level";
 
             var location = model.Locations.FirstOrDefault(candidate =>
@@ -778,12 +770,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         private static string FormatShortTarget(string levelAddress)
         {
             var model = LevelSelectionModel.Create();
-            var level = model.FlattenedLevels.FirstOrDefault(candidate =>
-                string.Equals(
-                    candidate.Address?.Trim(),
-                    levelAddress?.Trim(),
-                    StringComparison.OrdinalIgnoreCase));
-            if (string.IsNullOrWhiteSpace(level.Address))
+            var level = FindLevel(model.FlattenedLevels, levelAddress);
+            if (level == null)
                 return "unknown location / unknown part of day / level";
 
             return $"{FormatLocationAndPart(levelAddress)} / level {level.LevelIndex + 1}";
@@ -792,12 +780,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         private static string FormatLocationAndPart(string levelAddress)
         {
             var model = LevelSelectionModel.Create();
-            var level = model.FlattenedLevels.FirstOrDefault(candidate =>
-                string.Equals(
-                    candidate.Address?.Trim(),
-                    levelAddress?.Trim(),
-                    StringComparison.OrdinalIgnoreCase));
-            if (string.IsNullOrWhiteSpace(level.Address))
+            var level = FindLevel(model.FlattenedLevels, levelAddress);
+            if (level == null)
                 return "Select Level";
 
             var location = model.Locations.FirstOrDefault(candidate =>
@@ -813,16 +797,37 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             out PartView part)
         {
             var model = LevelSelectionModel.Create();
-            var level = model.FlattenedLevels.FirstOrDefault(candidate =>
-                string.Equals(
-                    candidate.Address?.Trim(),
-                    levelAddress?.Trim(),
-                    StringComparison.OrdinalIgnoreCase));
+            var level = FindLevel(model.FlattenedLevels, levelAddress);
+            if (level == null)
+            {
+                part = null;
+                return false;
+            }
+
             var location = model.Locations.FirstOrDefault(candidate =>
                 candidate.Index == level.LocationIndex);
             part = location?.Parts.FirstOrDefault(candidate =>
                 candidate.Index == level.PartIndex);
-            return !string.IsNullOrWhiteSpace(level.Address) && part != null;
+            return part != null;
+        }
+
+        /// <summary>
+        /// Finds a catalog level by address or returns <see langword="null"/> when the address is unavailable.
+        /// </summary>
+        private static LevelProgress FindLevel(
+            IReadOnlyList<LevelProgress> levels,
+            string levelAddress)
+        {
+            if (levels == null || string.IsNullOrWhiteSpace(levelAddress))
+                return null;
+
+            var normalizedAddress = levelAddress.Trim();
+            return levels.FirstOrDefault(candidate =>
+                !string.IsNullOrWhiteSpace(candidate?.Address) &&
+                string.Equals(
+                    candidate.Address.Trim(),
+                    normalizedAddress,
+                    StringComparison.OrdinalIgnoreCase));
         }
 
         private void ClearNavigationContext(

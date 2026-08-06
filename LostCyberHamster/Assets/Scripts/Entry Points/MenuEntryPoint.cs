@@ -76,6 +76,9 @@ namespace Assets.Scripts.Entry_Points
                 new SelectLevelScreenController(_uiDocument),
                 leaderboardScreenController,
                 new ShopModalController(_uiDocument),
+                new DailyQuestRewardModalController(
+                    _uiDocument,
+                    CloseDailyQuestRewardModal),
             });
 
             await QuestManager.Init();
@@ -116,6 +119,11 @@ namespace Assets.Scripts.Entry_Points
             _accountPromptCoordinator?.Disable();
             _cloudSaveConflictCoordinator?.Disable();
             _uiManager?.UnsubscribeFromEvents();
+        }
+
+        private void CloseDailyQuestRewardModal()
+        {
+            _uiManager.CloseModal(ScreenEnum.DailyQuestRewardModal);
         }
     }
 }

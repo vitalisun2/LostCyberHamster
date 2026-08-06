@@ -26,6 +26,8 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
             _runner.Changed += _repaint;
             GameEventsManager.OnDailyQuestSetChanged +=
                 _runner.HandleDailyQuestSetChanged;
+            GameEventsManager.OnStoryQuestSetChanged +=
+                _runner.HandleStoryQuestSetChanged;
         }
 
         /// <summary>Рисует выбор квеста и команды его реального жизненного цикла.</summary>
@@ -43,7 +45,8 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
             EditorGUILayout.HelpBox(
                 "Daily: Advance/Complete публикуют действия и победу с одной звездой. " +
                 "Story: Complete публикует требуемые level/stars. " +
-                "Generate Next Daily Set, Reset Quest и Claim Reward идут через QuestManager.",
+                "Прогресс получает только выбранный квест. " +
+                "Advance Quest Day, Reset Quest и Claim Reward идут через QuestManager.",
                 MessageType.Info);
 
             // Выбираем категорию и активный квест из QuestManager.
@@ -72,6 +75,8 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
             _runner.Changed -= _repaint;
             GameEventsManager.OnDailyQuestSetChanged -=
                 _runner.HandleDailyQuestSetChanged;
+            GameEventsManager.OnStoryQuestSetChanged -=
+                _runner.HandleStoryQuestSetChanged;
         }
 
         private void DrawHeader(Action navigateBack)
@@ -144,15 +149,12 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
                     _runner.SelectQuest(selectedQuest);
                 }
 
-                if (_runner.SelectedCategory == QuestCategory.Daily)
+                using (new EditorGUI.DisabledScope(
+                           !_runner.CanAdvanceQuestDay))
                 {
-                    using (new EditorGUI.DisabledScope(
-                               !_runner.CanGenerateNextDailySet))
+                    if (GUILayout.Button("Advance Quest Day"))
                     {
-                        if (GUILayout.Button("Generate Next Daily Set"))
-                        {
-                            _runner.GenerateNextDailySet();
-                        }
+                        _runner.AdvanceQuestDay();
                     }
                 }
             }

@@ -108,6 +108,7 @@ namespace GameManagement
                                data.DailyQuestSet?.ActiveQuestIds == null ||
                                data.DailyQuestSet?.LastGeneratedQuestIds == null ||
                                data.StoryQuestSet == null ||
+                               data.StoryQuestSet?.GenerationDate == null ||
                                data.StoryQuestSet?.ActivePrimaryQuestId == null ||
                                data.StoryQuestSet?.ActiveSecondaryQuestId == null ||
                                !data.HasSerializedProgressCollection ||
@@ -156,6 +157,7 @@ namespace GameManagement
             data.DailyQuestSet.ActiveQuestIds ??= new List<string>();
             data.DailyQuestSet.LastGeneratedQuestIds ??= new List<string>();
             data.StoryQuestSet ??= new StoryQuestSetState();
+            data.StoryQuestSet.GenerationDate ??= string.Empty;
             data.StoryQuestSet.ActivePrimaryQuestId ??= string.Empty;
             data.StoryQuestSet.ActiveSecondaryQuestId ??= string.Empty;
             data.EnsureSerializedProgressCollection();

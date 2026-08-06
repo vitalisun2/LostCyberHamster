@@ -1,0 +1,54 @@
+.daily-quest-reward-modal {
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+    padding: 32px 64px;
+    align-items: center;
+    justify-content: center;
+}
+
+.daily-quest-reward-modal__title {
+    width: 900px;
+    max-width: 90%;
+    min-height: 136px;
+    color: var(--yellow);
+    font-size: 52px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.daily-quest-reward-modal__claim {
+    width: 430px;
+    height: 92px;
+    margin-top: 28px;
+    padding-right: 28px;
+    padding-left: 28px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(221, 142, 47);
+    border-width: 5px;
+    border-color: var(--secondary);
+    border-radius: 20px;
+}
+
+.daily-quest-reward-modal__claim-label,
+.daily-quest-reward-modal__amount {
+    color: var(--white);
+    font-size: 30px;
+    -unity-font-style: bold;
+    -unity-text-outline-width: 2px;
+    -unity-text-outline-color: var(--secondary);
+}
+
+.daily-quest-reward-modal__amount {
+    margin-left: 18px;
+}
+
+.daily-quest-reward-modal__image {
+    width: 46px;
+    height: 46px;
+    margin-left: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+}

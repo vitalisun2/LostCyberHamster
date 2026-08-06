@@ -3,11 +3,16 @@ using System;
 namespace Vues.GameCore.Quests
 {
     /// <summary>
-    /// Хранит идентификаторы двух активных сюжетных квестов.
+    /// Хранит суточное состояние двух активных сюжетных квестов.
     /// </summary>
     [Serializable]
     public sealed class StoryQuestSetState
     {
+        /// <summary>
+        /// Дата последней суточной ротации завершённых квестов.
+        /// </summary>
+        public string GenerationDate = string.Empty;
+
         /// <summary>
         /// Идентификатор последовательного квеста по прогрессу уровней.
         /// </summary>

@@ -557,12 +557,8 @@
             "value": "Reward claimed"
         },
         {
-            "key": "quests_daily_common_reward_title",
-            "value": "Bonus for all daily quests"
-        },
-        {
-            "key": "quests_daily_common_reward_progress",
-            "value": "Daily quests: {0} / {1}"
+            "key": "quests_daily_all_completed",
+            "value": "All three daily quests completed"
         },
         {
             "key": "skin_name_classic",

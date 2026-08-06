@@ -12,7 +12,7 @@ using Vues.GameCore.Quests;
 namespace Assets.Scripts.DevTools.QuestTesting
 {
     /// <summary>
-    /// Проводит выбранный квест через реальные игровые события и QuestManager.
+    /// Проводит выбранный квест через игровые события и QuestManager, не изменяя другие квесты.
     /// </summary>
     public sealed class QuestTestRunner
     {
@@ -125,10 +125,9 @@ namespace Assets.Scripts.DevTools.QuestTesting
             (ActiveQuest.Type != QuestType.PlayerState ||
              CanResetPlayerStateQuest(ActiveQuest));
 
-        public bool CanGenerateNextDailySet =>
+        public bool CanAdvanceQuestDay =>
             IsReady &&
-            !_isBusy &&
-            _selectedCategory == QuestCategory.Daily;
+            !_isBusy;
 
         public bool CanAdvance =>
             IsReady &&
@@ -267,23 +266,23 @@ namespace Assets.Scripts.DevTools.QuestTesting
         }
 
         /// <summary>
-        /// Генерирует следующий Daily-набор через QuestManager.
+        /// Переводит Daily и Story-квесты в следующий суточный период.
         /// </summary>
-        public void GenerateNextDailySet()
+        public void AdvanceQuestDay()
         {
-            if (!CanGenerateNextDailySet)
+            if (!CanAdvanceQuestDay)
             {
                 return;
             }
 
             RunAction(
-                "Generate Next Daily Set",
+                "Advance Quest Day",
                 () =>
                 {
-                    if (!QuestManager.GenerateNextDailySetForTesting())
+                    if (!QuestManager.AdvanceQuestDayForTesting())
                     {
                         throw new InvalidOperationException(
-                            "Следующий Daily-набор не удалось сгенерировать.");
+                            "Следующий квестовый день не удалось создать.");
                     }
                 });
         }
@@ -397,7 +396,23 @@ namespace Assets.Scripts.DevTools.QuestTesting
         /// </summary>
         public void HandleDailyQuestSetChanged()
         {
-            if (_selectedCategory != QuestCategory.Daily)
+            HandleQuestSetChanged(QuestCategory.Daily);
+        }
+
+        /// <summary>
+        /// Обновляет выбор после штатной смены Story-набора.
+        /// </summary>
+        public void HandleStoryQuestSetChanged()
+        {
+            HandleQuestSetChanged(QuestCategory.Story);
+        }
+
+        /// <summary>
+        /// Нормализует выбранный квест после смены активного набора.
+        /// </summary>
+        private void HandleQuestSetChanged(QuestCategory category)
+        {
+            if (_selectedCategory != category)
             {
                 return;
             }
@@ -423,7 +438,8 @@ namespace Assets.Scripts.DevTools.QuestTesting
             string actionName,
             int actionCount)
         {
-            RunAction(
+            RunQuestProgressAction(
+                quest,
                 actionName,
                 () =>
                 {
@@ -462,7 +478,8 @@ namespace Assets.Scripts.DevTools.QuestTesting
         {
             if (quest.Definition.CountUniqueLevels)
             {
-                RunAction(
+                RunQuestProgressAction(
+                    quest,
                     "Complete",
                     () => CompleteUniqueLevelResultQuest(quest));
                 return;
@@ -481,7 +498,8 @@ namespace Assets.Scripts.DevTools.QuestTesting
             string actionName,
             int completionCount)
         {
-            RunAction(
+            RunQuestProgressAction(
+                quest,
                 actionName,
                 () =>
                 {
@@ -522,7 +540,8 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
         private void RunPlayerStateQuest(Quest quest)
         {
-            RunAction(
+            RunQuestProgressAction(
+                quest,
                 "Complete",
                 () =>
                 {
@@ -908,6 +927,21 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 _isBusy = false;
                 Changed?.Invoke();
             }
+        }
+
+        /// <summary>
+        /// Проводит прогресс через QuestManager только для выбранного квеста.
+        /// </summary>
+        private void RunQuestProgressAction(
+            Quest quest,
+            string actionName,
+            Action action)
+        {
+            RunAction(
+                actionName,
+                () => QuestManager.RunQuestProgressForTesting(
+                    quest.Id,
+                    action));
         }
 
         private static void PublishConfiguredAction(

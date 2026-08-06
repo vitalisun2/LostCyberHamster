@@ -40,7 +40,7 @@ namespace Vues.GameCore.Quests
         }
 
         /// <summary>
-        /// Проверяет готовность общей награды текущего Daily-набора.
+        /// Проверяет получение наград всех квестов текущего Daily-набора.
         /// </summary>
         public bool CanClaimCommonReward(
             IReadOnlyCollection<Quest> dailyQuests)
@@ -61,6 +61,7 @@ namespace Vues.GameCore.Quests
             {
                 if (quest == null ||
                     !quest.IsCompleted ||
+                    !quest.IsRewardClaimed ||
                     !questIds.Add(quest.Id))
                 {
                     return false;

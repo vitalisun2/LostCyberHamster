@@ -536,6 +536,7 @@
     <Compile Include="Assets\Scripts\DevTools\GameProgressTesting\GameProgressTestingScreen.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneExecutor.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\HealthBarMechanics.cs" />
+    <Compile Include="Assets\Scripts\UI\Modals\DailyQuestRewardModalController.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialGameplayStepCatalog.cs" />
     <Compile Include="Assets\Scripts\Consts.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\SuperAttackService.cs" />
@@ -652,6 +653,7 @@
     <None Include="Assets\Content\ui\uxml\RepeatButton.uxml" />
     <None Include="Assets\Content\ui\uxml\StorageUI.uxml" />
     <None Include="Assets\Content\ui\uxml\ShopItem.uxml" />
+    <None Include="Assets\Content\ui\uxml\DailyQuestRewardModal.uxml" />
     <None Include="Assets\Content\ui\uxml\LevelItem.uxml" />
     <None Include="Assets\Content\ui\uxml\PauseModal.uxml" />
     <None Include="Assets\Content\ui\styles\GameUI.uss" />
@@ -686,6 +688,7 @@
     <None Include="Assets\Content\ui\uxml\MainButtonGroup.uxml" />
     <None Include="Assets\Content\ui\uxml\Screen.uxml" />
     <None Include="Assets\Content\ui\styles\CloudSaveConflictModal.uss" />
+    <None Include="Assets\Content\ui\styles\DailyQuestRewardModal.uss" />
     <None Include="Assets\Content\ui\uxml\LeaderboardScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\SuperAttacksScreen.uxml" />
   </ItemGroup>

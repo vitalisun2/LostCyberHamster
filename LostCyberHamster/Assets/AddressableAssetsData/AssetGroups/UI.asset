@@ -25,6 +25,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2259c195880f5dc4db5850d0d6d3d750
+    m_Address: DailyQuestRewardModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 29047d9fdf8ef4acdbb6f67516476d96
     m_Address: ui_atlas
     m_ReadOnly: 0
