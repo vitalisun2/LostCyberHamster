@@ -7,7 +7,7 @@ namespace Vues.GameCore.Quests
     internal sealed class QuestCatalogData
     {
         public List<QuestDefinition> DailyDefinitions;
+        public DailyCommonRewardDefinition DailyCommonRewardDefinition;
         public StoryQuestGenerationSettings StoryGenerationSettings;
-        public List<QuestDefinition> StoryDefinitions;
     }
 }

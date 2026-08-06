@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.Common;
@@ -7,6 +8,7 @@ using GameManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using Vues.GameCore;
+using Vues.GameCore.Quests;
 
 public static class SkinManager
 {
@@ -46,6 +48,9 @@ public static class SkinManager
                ResourceManager.CanSpendResource(skin.PriceType, skin.Price);
     }
 
+    /// <summary>
+    /// Покупает доступный скин и сохраняет новое состояние игрока.
+    /// </summary>
     public static void PurchaseSkin(int skinId)
     {
         var skin = _availableSkins.FirstOrDefault(x => x.Id == skinId);
@@ -63,6 +68,9 @@ public static class SkinManager
 
         GameDataManager.PlayerData.PurchasedSkinIds.Add(skinId);
         GameEventsManager.SkinPurchased(skinId, skin.PriceType, skin.Price);
+        GameEventsManager.PlayerStateChanged(
+            PlayerStateIds.SkinOwned,
+            skinId.ToString(CultureInfo.InvariantCulture));
         PlayerProgressCommitter.Commit(CheckpointReason.SkinPurchased);
     }
 
@@ -92,6 +100,9 @@ public static class SkinManager
     }
 #endif
 
+    /// <summary>
+    /// Применяет принадлежащий игроку скин и сохраняет выбор.
+    /// </summary>
     public static void PutOnSkin(int skinId)
     {
         var skin = _availableSkins.FirstOrDefault(x => x.Id == skinId);
@@ -108,6 +119,9 @@ public static class SkinManager
             HelpMethods.ApplyOverrideController(LevelController.Instance.LevelData.Hamster);
         }
 
+        GameEventsManager.PlayerStateChanged(
+            PlayerStateIds.SkinApplied,
+            skinId.ToString(CultureInfo.InvariantCulture));
         PlayerProgressCommitter.Commit(CheckpointReason.SkinApplied);
     }
 

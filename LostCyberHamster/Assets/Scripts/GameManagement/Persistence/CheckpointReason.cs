@@ -17,6 +17,7 @@ namespace GameManagement
         AccountPromptStateChanged,
         AccountLinked,
         AppBackgrounded,
-        StoryQuestSetChanged
+        StoryQuestSetChanged,
+        DailyQuestCommonRewardClaimed
     }
 }

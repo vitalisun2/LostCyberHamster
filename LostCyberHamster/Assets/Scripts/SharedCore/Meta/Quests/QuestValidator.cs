@@ -318,49 +318,61 @@ namespace Vues.GameCore.Quests
         }
 
         /// <summary>
-        /// Проверяет определения и уникальность идентификаторов каталога.
+        /// Проверяет Daily-определения и уникальность их идентификаторов.
         /// </summary>
         public static void ValidateCatalog(
-            IReadOnlyCollection<QuestDefinition> dailyDefinitions,
-            IReadOnlyCollection<QuestDefinition> storyDefinitions)
+            IReadOnlyCollection<QuestDefinition> dailyDefinitions)
         {
             var ids = new HashSet<string>(StringComparer.Ordinal);
-            ValidateCatalogGroup(
-                dailyDefinitions,
-                QuestCategory.Daily,
-                ids);
-            ValidateCatalogGroup(
-                storyDefinitions,
-                QuestCategory.Story,
-                ids);
+            if (dailyDefinitions != null)
+            {
+                foreach (QuestDefinition definition in dailyDefinitions)
+                {
+                    ValidateDefinition(definition);
+                    if (definition.Category != QuestCategory.Daily)
+                    {
+                        throw new InvalidOperationException(
+                            $"Квест {definition.Id} находится " +
+                            "в неверной категории.");
+                    }
+
+                    if (!ids.Add(definition.Id))
+                    {
+                        throw new InvalidOperationException(
+                            $"Id квеста повторяется: {definition.Id}.");
+                    }
+                }
+            }
+
             ValidateDailyDifficultyCoverage(dailyDefinitions);
         }
 
-        private static void ValidateCatalogGroup(
-            IReadOnlyCollection<QuestDefinition> definitions,
-            QuestCategory expectedCategory,
-            ISet<string> ids)
+        /// <summary>
+        /// Проверяет контентную награду за завершение Daily-набора.
+        /// </summary>
+        public static void ValidateDailyCommonRewardDefinition(
+            DailyCommonRewardDefinition definition)
         {
-            if (definitions == null)
+            if (definition == null)
             {
-                return;
+                throw new ArgumentNullException(nameof(definition));
             }
 
-            foreach (QuestDefinition definition in definitions)
+            if (definition.RewardType != ResourceType.Coins &&
+                definition.RewardType != ResourceType.Crystals)
             {
-                ValidateDefinition(definition);
-                if (definition.Category != expectedCategory)
-                {
-                    throw new InvalidOperationException(
-                        $"Квест {definition.Id} находится " +
-                        "в неверной категории.");
-                }
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition),
+                    definition.RewardType,
+                    "Тип общей Daily-награды не поддерживается.");
+            }
 
-                if (!ids.Add(definition.Id))
-                {
-                    throw new InvalidOperationException(
-                        $"Id квеста повторяется: {definition.Id}.");
-                }
+            if (definition.RewardAmount <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition),
+                    definition.RewardAmount,
+                    "Общая Daily-награда должна быть положительной.");
             }
         }
 

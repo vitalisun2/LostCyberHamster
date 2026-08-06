@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 using Assets.Scripts.System.Resources;
 using GameManagement;
@@ -131,7 +132,7 @@ namespace Vues.GameCore
         }
 
         /// <summary>
-        /// Выбирает открытый суперудар и откатывает выбор при ошибке сохранения.
+        /// Выбирает открытый суперудар и сохраняет его вместе с прогрессом квеста.
         /// </summary>
         public static bool TrySelect(int id)
         {
@@ -142,22 +143,14 @@ namespace Vues.GameCore
                 return false;
             }
 
-            // Сохраняем выбор транзакционно с откатом in-memory состояния.
-            int previousActiveSuperAttackId =
-                playerData.ActiveSuperAttackId;
+            // Обновляем выбор и зависимый прогресс до единственного checkpoint.
             playerData.ActiveSuperAttackId = id;
-            try
-            {
-                PlayerProgressCommitter.Commit(
-                    CheckpointReason.SuperAttackSelected);
-                return true;
-            }
-            catch
-            {
-                playerData.ActiveSuperAttackId =
-                    previousActiveSuperAttackId;
-                throw;
-            }
+            GameEventsManager.PlayerStateChanged(
+                Quests.PlayerStateIds.SuperAttackActive,
+                id.ToString(CultureInfo.InvariantCulture));
+            PlayerProgressCommitter.Commit(
+                CheckpointReason.SuperAttackSelected);
+            return true;
         }
 
         private static void Validate(SuperAttackData data)

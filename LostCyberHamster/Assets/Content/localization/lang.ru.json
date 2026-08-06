@@ -413,10 +413,6 @@
             "value": "Пройди все уровни {0} {1} на три звезды"
         },
         {
-            "key": "story-001-title",
-            "value": "Заверши все уровни Нью-Йорк Morning с 3 звёздами"
-        },
-        {
             "key": "story-development-player-level-title",
             "value": "Повысь уровень игрока до {0}"
         },
@@ -559,6 +555,14 @@
         {
             "key": "quest_reward_claimed",
             "value": "Награда получена"
+        },
+        {
+            "key": "quests_daily_common_reward_title",
+            "value": "Бонус за все ежедневные квесты"
+        },
+        {
+            "key": "quests_daily_common_reward_progress",
+            "value": "Ежедневные квесты: {0} / {1}"
         },
         {
             "key": "skin_name_classic",

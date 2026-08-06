@@ -232,6 +232,7 @@
     <Compile Include="Assets\Scripts\System\Rendering\SpriteRendererMaterialHelper.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\IJumpFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpCollisionSpec.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\PlayerState\PlayerStateValueResolver.cs" />
     <Compile Include="Assets\Scripts\Tutorial\SharedUI\TutorialFocusOverlay.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\Skin.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Core\IQuestStrategy.cs" />
@@ -508,6 +509,7 @@
     <Compile Include="Assets\Scripts\Bot\Diagnostics\BotDiagnosticCategory.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\HomeScreenController.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpObstacleData.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\UI\QuestTitleFormatter.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleChainElement.cs" />
     <Compile Include="Assets\Scripts\Gameplay\BoomEffect.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Session\TutorialSession.cs" />
@@ -620,6 +622,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOver\SuperJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\System\Models\PreloadedObstaclePattern.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanEvaluator.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Daily\DailyCommonRewardDefinition.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinManagerDebugger.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitCurrentLevelAssetsLoadingTask.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Gateway\CloudSaveReadResult.cs" />

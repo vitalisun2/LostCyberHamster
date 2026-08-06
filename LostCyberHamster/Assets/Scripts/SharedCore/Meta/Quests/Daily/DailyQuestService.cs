@@ -39,6 +39,45 @@ namespace Vues.GameCore.Quests
             return _retainedQuestIds.Contains(questId);
         }
 
+        /// <summary>
+        /// Проверяет готовность общей награды текущего Daily-набора.
+        /// </summary>
+        public bool CanClaimCommonReward(
+            IReadOnlyCollection<Quest> dailyQuests)
+        {
+            if (!IsInitialized ||
+                State.CommonRewardClaimed ||
+                dailyQuests == null ||
+                dailyQuests.Count != DailyQuestCount)
+            {
+                return false;
+            }
+
+            var activeIds = new HashSet<string>(
+                State.ActiveQuestIds,
+                StringComparer.Ordinal);
+            var questIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (Quest quest in dailyQuests)
+            {
+                if (quest == null ||
+                    !quest.IsCompleted ||
+                    !questIds.Add(quest.Id))
+                {
+                    return false;
+                }
+            }
+
+            return activeIds.SetEquals(questIds);
+        }
+
+        /// <summary>
+        /// Отмечает общую награду проверенного Daily-набора полученной.
+        /// </summary>
+        internal void MarkCommonRewardClaimed()
+        {
+            State.CommonRewardClaimed = true;
+        }
+
         public DailyQuestService(
             DailyQuestGenerator generator,
             DailyQuestScheduler scheduler)

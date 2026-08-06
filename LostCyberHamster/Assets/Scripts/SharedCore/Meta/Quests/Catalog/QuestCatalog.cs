@@ -7,14 +7,14 @@ using UnityEngine.AddressableAssets;
 namespace Vues.GameCore.Quests
 {
     /// <summary>
-    /// Загружает и предоставляет определения реальных квестов.
+    /// Загружает Daily-каталог, общую награду и настройки Story-генерации.
     /// </summary>
     public static class QuestCatalog
     {
         private static IReadOnlyList<QuestDefinition> _dailyDefinitions =
             Array.Empty<QuestDefinition>();
-        private static IReadOnlyList<QuestDefinition> _storyDefinitions =
-            Array.Empty<QuestDefinition>();
+        private static DailyCommonRewardDefinition
+            _dailyCommonRewardDefinition;
         private static StoryQuestGenerationSettings
             _storyGenerationSettings;
         private static Dictionary<string, QuestDefinition> _definitionsById =
@@ -28,10 +28,10 @@ namespace Vues.GameCore.Quests
             _dailyDefinitions;
 
         /// <summary>
-        /// Сюжетные квесты из production JSON.
+        /// Контентная награда за завершение всего Daily-набора.
         /// </summary>
-        public static IReadOnlyList<QuestDefinition> StoryDefinitions =>
-            _storyDefinitions;
+        public static DailyCommonRewardDefinition
+            DailyCommonRewardDefinition => _dailyCommonRewardDefinition;
 
         /// <summary>
         /// Настройки генерируемых сюжетных квестов.
@@ -72,45 +72,27 @@ namespace Vues.GameCore.Quests
                     "Каталог квестов не загружен.");
             }
 
-            List<QuestDefinition> dailyDefinitions = PrepareDefinitions(
-                data.DailyDefinitions,
-                QuestCategory.Daily);
-            List<QuestDefinition> storyDefinitions = PrepareDefinitions(
-                data.StoryDefinitions,
-                QuestCategory.Story);
-            QuestValidator.ValidateCatalog(
-                dailyDefinitions,
-                storyDefinitions);
+            List<QuestDefinition> dailyDefinitions =
+                PrepareDailyDefinitions(data.DailyDefinitions);
+            QuestValidator.ValidateCatalog(dailyDefinitions);
+            QuestValidator.ValidateDailyCommonRewardDefinition(
+                data.DailyCommonRewardDefinition);
             QuestValidator.ValidateStoryGenerationSettings(
                 data.StoryGenerationSettings);
 
-            // Публикуем проверенные списки и индекс по Id.
+            // Публикуем проверенный Daily-каталог и настройки Story-генерации.
             _dailyDefinitions = dailyDefinitions.AsReadOnly();
-            _storyDefinitions = storyDefinitions.AsReadOnly();
+            _dailyCommonRewardDefinition =
+                data.DailyCommonRewardDefinition;
             _storyGenerationSettings = data.StoryGenerationSettings;
             var definitionsById =
                 new Dictionary<string, QuestDefinition>();
             IndexDefinitions(dailyDefinitions, definitionsById);
-            IndexDefinitions(storyDefinitions, definitionsById);
             _definitionsById = definitionsById;
         }
 
         /// <summary>
-        /// Возвращает определения выбранной категории.
-        /// </summary>
-        public static IReadOnlyList<QuestDefinition> GetDefinitions(
-            QuestCategory category)
-        {
-            return category switch
-            {
-                QuestCategory.Daily => DailyDefinitions,
-                QuestCategory.Story => StoryDefinitions,
-                _ => Array.Empty<QuestDefinition>()
-            };
-        }
-
-        /// <summary>
-        /// Ищет определение по стабильному идентификатору.
+        /// Ищет Daily-определение по стабильному идентификатору.
         /// </summary>
         public static bool TryGet(
             string questId,
@@ -127,9 +109,8 @@ namespace Vues.GameCore.Quests
                 out definition);
         }
 
-        private static List<QuestDefinition> PrepareDefinitions(
-            List<QuestDefinition> definitions,
-            QuestCategory category)
+        private static List<QuestDefinition> PrepareDailyDefinitions(
+            List<QuestDefinition> definitions)
         {
             definitions ??= new List<QuestDefinition>();
 
@@ -137,7 +118,7 @@ namespace Vues.GameCore.Quests
             {
                 if (definition != null)
                 {
-                    definition.Category = category;
+                    definition.Category = QuestCategory.Daily;
                 }
             }
 

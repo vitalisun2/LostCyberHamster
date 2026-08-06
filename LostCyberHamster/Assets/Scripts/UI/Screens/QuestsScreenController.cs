@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,6 +28,20 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<Button>("btn__quests-tab-daily");
         private Button _buttonStoryTab =>
             _contentRoot.Q<Button>("btn__quests-tab-story");
+        private VisualElement _dailyCommonReward =>
+            _contentRoot.Q<VisualElement>("daily-common-reward");
+        private Label _dailyCommonRewardProgress =>
+            _contentRoot.Q<Label>("daily-common-reward__progress");
+        private VisualElement _dailyCommonRewardAction =>
+            _contentRoot.Q<VisualElement>("daily-common-reward__action");
+        private Button _buttonDailyCommonRewardClaim =>
+            _contentRoot.Q<Button>("daily-common-reward__claim");
+        private Label _dailyCommonRewardAmount =>
+            _contentRoot.Q<Label>("daily-common-reward__amount");
+        private VisualElement _dailyCommonRewardImage =>
+            _contentRoot.Q<VisualElement>("daily-common-reward__image");
+        private VisualElement _dailyCommonRewardClaimed =>
+            _contentRoot.Q<VisualElement>("daily-common-reward__claimed");
 
         private bool _showDailyTasks = true;
         private int _currentQuestIndex;
@@ -79,12 +94,51 @@ namespace LostCyberHamster.UI
             _buttonQuestsNext.style.display = navigationDisplay;
             _buttonQuestsPrev.style.display = navigationDisplay;
 
+            // Обновляем активную вкладку и связанный с ней общий бонус.
             _buttonDailyTab.EnableInClassList(
                 "quests-tab--active",
                 _showDailyTasks);
             _buttonStoryTab.EnableInClassList(
                 "quests-tab--active",
                 !_showDailyTasks);
+            RenderDailyCommonReward();
+        }
+
+        private void RenderDailyCommonReward()
+        {
+            // Общая награда относится только к Daily-вкладке.
+            _dailyCommonReward.style.display = _showDailyTasks
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+            if (!_showDailyTasks)
+            {
+                return;
+            }
+
+            // Показываем актуальный прогресс и конфигурацию награды.
+            _dailyCommonRewardProgress.text = FormatLocalized(
+                "quests_daily_common_reward_progress",
+                QuestManager.DailyCommonRewardCompletedCount,
+                QuestManager.DailyQuestCount);
+            _dailyCommonRewardAmount.text =
+                QuestManager.DailyCommonRewardAmount.ToString();
+            _dailyCommonRewardImage.style.backgroundImage =
+                new StyleBackground(ResourceUIHelper.GetResourceImage(
+                    QuestManager.DailyCommonRewardType));
+
+            // После получения заменяем CTA постоянным статусом.
+            bool isClaimed = QuestManager.IsDailyCommonRewardClaimed;
+            bool canClaim = QuestManager.CanClaimDailyCommonReward;
+            _dailyCommonRewardAction.style.display = isClaimed
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
+            _dailyCommonRewardClaimed.style.display = isClaimed
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+            _buttonDailyCommonRewardClaim.SetEnabled(canClaim);
+            _dailyCommonRewardAction.EnableInClassList(
+                "quest-reward--disabled",
+                !canClaim);
         }
 
         protected override void OnSubscribeToEvents()
@@ -93,6 +147,10 @@ namespace LostCyberHamster.UI
                 HandleQuestStateChanged;
             GameEventsManager.OnDailyQuestSetChanged +=
                 HandleDailyQuestSetChanged;
+            GameEventsManager.OnStoryQuestSetChanged +=
+                HandleStoryQuestSetChanged;
+            GameEventsManager.OnDailyQuestCommonRewardChanged +=
+                HandleDailyCommonRewardChanged;
             _buttonSettings?.RegisterCallback<ClickEvent>(
                 OnClickBtnSettings);
             _buttonHome?.RegisterCallback<ClickEvent>(OnClickBtnHome);
@@ -106,6 +164,8 @@ namespace LostCyberHamster.UI
                 OnClickPreviousQuestPage);
             _buttonDailyTab?.RegisterCallback<ClickEvent>(OnClickDailyTab);
             _buttonStoryTab?.RegisterCallback<ClickEvent>(OnClickStoryTab);
+            _buttonDailyCommonRewardClaim?.RegisterCallback<ClickEvent>(
+                OnClickDailyCommonRewardClaim);
         }
 
         private void OnClickBtnHome(ClickEvent evt)
@@ -131,6 +191,11 @@ namespace LostCyberHamster.UI
         private void OnClickStoryTab(ClickEvent evt)
         {
             ShowTab(showDailyTasks: false);
+        }
+
+        private void OnClickDailyCommonRewardClaim(ClickEvent evt)
+        {
+            QuestManager.ClaimDailyCommonReward();
         }
 
         private void ShowTab(bool showDailyTasks)
@@ -189,12 +254,33 @@ namespace LostCyberHamster.UI
             }
         }
 
+        private void HandleStoryQuestSetChanged()
+        {
+            if (!_showDailyTasks)
+            {
+                _questsContainer?.schedule.Execute(RenderActivePage);
+            }
+        }
+
+        private void HandleDailyCommonRewardChanged()
+        {
+            if (_showDailyTasks)
+            {
+                _dailyCommonReward?.schedule.Execute(
+                    RenderDailyCommonReward);
+            }
+        }
+
         protected override void OnUnsubscribeFromEvents()
         {
             GameEventsManager.OnQuestStateChanged -=
                 HandleQuestStateChanged;
             GameEventsManager.OnDailyQuestSetChanged -=
                 HandleDailyQuestSetChanged;
+            GameEventsManager.OnStoryQuestSetChanged -=
+                HandleStoryQuestSetChanged;
+            GameEventsManager.OnDailyQuestCommonRewardChanged -=
+                HandleDailyCommonRewardChanged;
             _buttonSettings?.UnregisterCallback<ClickEvent>(
                 OnClickBtnSettings);
             _buttonHome?.UnregisterCallback<ClickEvent>(OnClickBtnHome);
@@ -210,6 +296,26 @@ namespace LostCyberHamster.UI
                 OnClickDailyTab);
             _buttonStoryTab?.UnregisterCallback<ClickEvent>(
                 OnClickStoryTab);
+            _buttonDailyCommonRewardClaim?.UnregisterCallback<ClickEvent>(
+                OnClickDailyCommonRewardClaim);
+        }
+
+        private static string FormatLocalized(
+            string localizationKey,
+            params object[] arguments)
+        {
+            // Получаем локализованный шаблон с fallback на ключ.
+            string template = LocalizationManager.GetLocalizedString(
+                localizationKey) ?? localizationKey;
+            // Ошибка контентного шаблона не должна ломать экран.
+            try
+            {
+                return string.Format(template, arguments);
+            }
+            catch (FormatException)
+            {
+                return template;
+            }
         }
     }
 }

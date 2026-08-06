@@ -256,6 +256,10 @@
       "RewardAmount": 10
     }
   ],
+  "DailyCommonRewardDefinition": {
+    "RewardType": 1,
+    "RewardAmount": 30
+  },
   "StoryGenerationSettings": {
     "PrimaryTitleLocalizationKey": "story-primary-title",
     "PrimaryNightTitleLocalizationKey": "story-primary-night-title",
@@ -287,23 +291,5 @@
         "RewardAmount": 300
       }
     ]
-  },
-  "StoryDefinitions": [
-    {
-      "Id": "story-001",
-      "TitleLocalizationKey": "story-001-title",
-      "TitleDescription": "Заверши все уровни Нью-Йорк Morning с 3 звёздами",
-      "ConditionDescription": "Завершить каждый уровень New York / Morning с 3 звёздами. Повтор одного уровня не засчитывается.",
-      "GoalDescription": "Количество разных уровней New York / Morning, завершённых с 3 звёздами.",
-      "Type": 2,
-      "RequiredLevelId": 0,
-      "RequiredLocationId": "01_New_York",
-      "RequiredPartOfDayId": "Morning",
-      "CountUniqueLevels": true,
-      "RequiredStars": 3,
-      "TargetAmount": 3,
-      "RewardType": 1,
-      "RewardAmount": 300
-    }
-  ]
+  }
 }

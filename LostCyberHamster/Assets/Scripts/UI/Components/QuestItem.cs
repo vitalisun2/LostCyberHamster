@@ -1,4 +1,3 @@
-using System;
 using Assets.Scripts.Common.Models;
 using Extensions;
 using Unity.Properties;
@@ -39,6 +38,7 @@ namespace LostCyberHamster.UI
         /// </summary>
         public QuestItem(Quest quest) : this()
         {
+            // Загружаем шаблон и визуал выбранной категории.
             AddressableExtentions
                 .LoadAssetSync<VisualTreeAsset>("QuestItem.uxml")
                 .CloneTree(this);
@@ -49,7 +49,9 @@ namespace LostCyberHamster.UI
                 AddressableExtentions.LoadAssetSync<Sprite>(imageAddress);
             _image.style.backgroundImage = new StyleBackground(image.texture);
             ApplyCategoryStyle(quest.Category);
-            _title.text = GetLocalizedTitle(quest);
+
+            // Заполняем название, прогресс и награду квеста.
+            _title.text = QuestTitleFormatter.Format(quest);
             _progressLabel.text =
                 $"{quest.CurrentProgress} / {quest.TargetAmount}";
             _rewardAmount.text = quest.RewardAmount.ToString();
@@ -59,46 +61,13 @@ namespace LostCyberHamster.UI
             _rewardTypeImage.style.backgroundImage =
                 new StyleBackground(rewardImage);
 
+            // Настраиваем текущее состояние и получение награды.
             UpdateRewardState(quest);
 
             _buttonGet.RegisterCallback<ClickEvent>(evt =>
             {
                 QuestManager.ClaimReward(quest.Id);
             });
-        }
-
-        private static string GetLocalizedTitle(Quest quest)
-        {
-            // Локализуем шаблон, сохраняя прежний fallback на ключ.
-            string titleTemplate = LocalizationManager.GetLocalizedString(
-                quest.TitleLocalizationKey) ??
-                quest.TitleLocalizationKey;
-            string[] arguments = quest.TitleLocalizationArguments;
-            if (arguments.Length == 0)
-            {
-                return titleTemplate;
-            }
-
-            // Локализуем каждый аргумент с fallback на исходный текст.
-            var localizedArguments = new object[arguments.Length];
-            for (int i = 0; i < arguments.Length; i++)
-            {
-                string argument = arguments[i];
-                localizedArguments[i] = string.IsNullOrWhiteSpace(argument)
-                    ? string.Empty
-                    : LocalizationManager.GetLocalizedString(argument) ??
-                      argument;
-            }
-
-            // Ошибка одного контентного шаблона не должна ломать весь UI.
-            try
-            {
-                return string.Format(titleTemplate, localizedArguments);
-            }
-            catch (FormatException)
-            {
-                return titleTemplate;
-            }
         }
 
         private void UpdateRewardState(Quest quest)

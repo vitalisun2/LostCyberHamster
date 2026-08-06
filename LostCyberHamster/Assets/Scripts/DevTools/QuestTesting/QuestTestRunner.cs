@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.System;
 using GameManagement;
+using GameManagement.Progress;
 using UnityEngine;
 using Vues.GameCore;
 using Vues.GameCore.Quests;
@@ -21,7 +22,9 @@ namespace Assets.Scripts.DevTools.QuestTesting
         private string _beforeState = "—";
         private string _afterState = "Ожидание QuestManager.Init.";
         private string _status =
-            "Выберите квест и начните прогон с Reset Quest.";
+            "Выберите квест и доступную команду прогона.";
+        private readonly PlayerExperienceService _playerExperienceService =
+            new();
 
         private QuestTestRunner()
         {
@@ -113,7 +116,14 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
         public string Status => _status;
 
-        public bool CanResetQuest => IsReady && !_isBusy;
+        /// <summary>
+        /// Проверяет возможность безопасно сбросить квест и его внешнюю цель.
+        /// </summary>
+        public bool CanResetQuest =>
+            IsReady &&
+            !_isBusy &&
+            (ActiveQuest.Type != QuestType.PlayerState ||
+             CanResetPlayerStateQuest(ActiveQuest));
 
         public bool CanGenerateNextDailySet =>
             IsReady &&
@@ -130,12 +140,16 @@ namespace Assets.Scripts.DevTools.QuestTesting
             ActiveQuest.CurrentProgress == 0 &&
             !ActiveQuest.IsCompleted;
 
+        /// <summary>
+        /// Проверяет поддержку штатного пути завершения выбранного квеста.
+        /// </summary>
         public bool CanComplete =>
             IsReady &&
             !_isBusy &&
             (ActiveQuest.Type == QuestType.ActionCounter ||
              ActiveQuest.Type == QuestType.LevelResult ||
-             ActiveQuest.Type == QuestType.PlayerState) &&
+             ActiveQuest.Type == QuestType.PlayerState &&
+             CanCompletePlayerStateQuest(ActiveQuest)) &&
             !ActiveQuest.IsCompleted;
 
         public bool CanClaimReward =>
@@ -227,21 +241,23 @@ namespace Assets.Scripts.DevTools.QuestTesting
         /// </summary>
         public void ResetQuest()
         {
+            if (!CanResetQuest)
+            {
+                return;
+            }
+
             RunAction(
                 "Reset Quest",
                 () =>
                 {
                     Quest quest = ActiveQuest;
+                    // Возвращаем поддерживаемую внешнюю цель в исходное состояние.
                     if (quest.Type == QuestType.PlayerState)
                     {
-                        Skin skin = GetPlayerStateSkin(quest.Definition);
-                        if (!SkinManager.ResetSkinPurchaseForTesting(skin.Id))
-                        {
-                            throw new InvalidOperationException(
-                                "Целевой скин не удалось подготовить.");
-                        }
+                        ResetPlayerStateTarget(quest);
                     }
 
+                    // Сбрасываем сохранённое состояние самого квеста.
                     if (!QuestManager.ResetQuestForTesting(quest.Id))
                     {
                         throw new InvalidOperationException(
@@ -510,57 +526,275 @@ namespace Assets.Scripts.DevTools.QuestTesting
                 "Complete",
                 () =>
                 {
-                    // Проверяем целевой скин и состояние владения.
-                    Skin skin = GetPlayerStateSkin(quest.Definition);
-
-                    if (skin.IsPurchased)
-                    {
-                        throw new InvalidOperationException(
-                            "Скин уже куплен. Сначала выполните Reset Quest.");
-                    }
-
-                    // Готовим минимальный баланс и выполняем реальную покупку.
-                    int missingResource = Math.Max(
-                        0,
-                        skin.Price - ResourceManager.GetCurrentBalance(
-                            skin.PriceType));
-                    if (missingResource > 0 &&
-                        !ResourceManager.AddResource(
-                            skin.PriceType,
-                            missingResource))
-                    {
-                        throw new InvalidOperationException(
-                            "Не удалось подготовить ресурсы для покупки скина.");
-                    }
-
-                    SkinManager.PurchaseSkin(skin.Id);
+                    // Выполняем реальное действие, связанное с PlayerState.
+                    CompletePlayerStateTarget(quest.Definition);
+                    // Проверяем результат через обновлённый runtime-квест.
                     if (!quest.IsCompleted)
                     {
                         throw new InvalidOperationException(
-                            "Покупка скина не завершила квест.");
+                            "Изменение состояния игрока не завершило квест.");
                     }
                 });
         }
 
-        private static Skin GetPlayerStateSkin(
+        private static bool CanResetPlayerStateQuest(Quest quest)
+        {
+            QuestDefinition definition = quest.Definition;
+            switch (definition.StateId)
+            {
+                case PlayerStateIds.SkinOwned:
+                    return TryGetPlayerStateSkin(definition, out Skin ownedSkin) &&
+                           (!ownedSkin.IsPurchased || ownedSkin.Id > 0);
+                case PlayerStateIds.SkinApplied:
+                    return TryGetPlayerStateSkin(definition, out Skin appliedSkin) &&
+                           (GameDataManager.PlayerData.AppliedSkinId !=
+                            appliedSkin.Id ||
+                            TryGetAlternativePurchasedSkin(
+                                appliedSkin.Id,
+                                out _));
+                case PlayerStateIds.SuperAttackActive:
+                    return TryGetPlayerStateEntityId(
+                               definition,
+                               out int superAttackId) &&
+                           (GameDataManager.PlayerData.ActiveSuperAttackId !=
+                            superAttackId ||
+                            TryGetAlternativeSuperAttack(
+                                superAttackId,
+                                out _));
+                default:
+                    return false;
+            }
+        }
+
+        private static bool CanCompletePlayerStateQuest(Quest quest)
+        {
+            QuestDefinition definition = quest.Definition;
+            switch (definition.StateId)
+            {
+                case PlayerStateIds.SkinOwned:
+                    return TryGetPlayerStateSkin(definition, out Skin ownedSkin) &&
+                           !ownedSkin.IsPurchased;
+                case PlayerStateIds.SkinApplied:
+                    return TryGetPlayerStateSkin(definition, out Skin appliedSkin) &&
+                           GameDataManager.PlayerData.AppliedSkinId !=
+                           appliedSkin.Id;
+                case PlayerStateIds.SuperAttackActive:
+                    return TryGetPlayerStateEntityId(
+                               definition,
+                               out int superAttackId) &&
+                           SuperAttackService.IsUnlocked(
+                               superAttackId,
+                               GameDataManager.PlayerData.PlayerLevel) &&
+                           GameDataManager.PlayerData.ActiveSuperAttackId !=
+                           superAttackId;
+                case PlayerStateIds.PlayerLevel:
+                    return definition.EntityId == PlayerStateEntityIds.Player &&
+                           definition.RequiredValue >
+                           GameDataManager.PlayerData.PlayerLevel;
+                default:
+                    return false;
+            }
+        }
+
+        private static void ResetPlayerStateTarget(Quest quest)
+        {
+            QuestDefinition definition = quest.Definition;
+            switch (definition.StateId)
+            {
+                case PlayerStateIds.SkinOwned:
+                    ResetSkinOwnedTarget(definition);
+                    return;
+                case PlayerStateIds.SkinApplied:
+                    ResetSkinAppliedTarget(definition);
+                    return;
+                case PlayerStateIds.SuperAttackActive:
+                    ResetSuperAttackTarget(definition);
+                    return;
+            }
+        }
+
+        private static void ResetSkinOwnedTarget(QuestDefinition definition)
+        {
+            if (!TryGetPlayerStateSkin(definition, out Skin skin) ||
+                !skin.IsPurchased)
+            {
+                return;
+            }
+
+            if (!SkinManager.ResetSkinPurchaseForTesting(skin.Id))
+            {
+                throw new InvalidOperationException(
+                    "Целевой скин не удалось подготовить.");
+            }
+        }
+
+        private static void ResetSkinAppliedTarget(
             QuestDefinition definition)
         {
-            if (definition.StateId != PlayerStateIds.SkinOwned)
+            if (!TryGetPlayerStateSkin(definition, out Skin skin) ||
+                GameDataManager.PlayerData.AppliedSkinId != skin.Id)
             {
-                throw new InvalidOperationException(
-                    $"Тест-тул не поддерживает состояние {definition.StateId}.");
+                return;
             }
 
-            if (!int.TryParse(definition.EntityId, out int skinId))
+            if (!TryGetAlternativePurchasedSkin(
+                    skin.Id,
+                    out Skin alternativeSkin))
             {
                 throw new InvalidOperationException(
-                    $"Некорректный ID скина {definition.EntityId}.");
+                    "Нет другого купленного скина для сброса.");
             }
 
-            Skin skin = SkinManager.AvailableSkins.FirstOrDefault(
+            SkinManager.PutOnSkin(alternativeSkin.Id);
+        }
+
+        private static void ResetSuperAttackTarget(
+            QuestDefinition definition)
+        {
+            if (!TryGetPlayerStateEntityId(
+                    definition,
+                    out int superAttackId) ||
+                GameDataManager.PlayerData.ActiveSuperAttackId !=
+                superAttackId)
+            {
+                return;
+            }
+
+            if (!TryGetAlternativeSuperAttack(
+                    superAttackId,
+                    out int alternativeId) ||
+                !SuperAttackService.TrySelect(alternativeId))
+            {
+                throw new InvalidOperationException(
+                    "Нет другого доступного суперудара для сброса.");
+            }
+        }
+
+        private void CompletePlayerStateTarget(QuestDefinition definition)
+        {
+            switch (definition.StateId)
+            {
+                case PlayerStateIds.SkinOwned:
+                    CompleteSkinOwnedTarget(definition);
+                    return;
+                case PlayerStateIds.SkinApplied:
+                    CompleteSkinOwnedTarget(definition);
+                    SkinManager.PutOnSkin(ParsePlayerStateEntityId(definition));
+                    return;
+                case PlayerStateIds.SuperAttackActive:
+                    if (!SuperAttackService.TrySelect(
+                            ParsePlayerStateEntityId(definition)))
+                    {
+                        throw new InvalidOperationException(
+                            "Суперудар не удалось выбрать.");
+                    }
+
+                    return;
+                case PlayerStateIds.PlayerLevel:
+                    CompletePlayerLevelTarget(definition);
+                    return;
+            }
+        }
+
+        private static void CompleteSkinOwnedTarget(
+            QuestDefinition definition)
+        {
+            if (!TryGetPlayerStateSkin(definition, out Skin skin))
+            {
+                throw new InvalidOperationException(
+                    $"Скин {definition.EntityId} не найден.");
+            }
+
+            // Готовим минимальный баланс и выполняем реальную покупку.
+            int missingResource = Math.Max(
+                0,
+                skin.Price - ResourceManager.GetCurrentBalance(
+                    skin.PriceType));
+            if (missingResource > 0 &&
+                !ResourceManager.AddResource(
+                    skin.PriceType,
+                    missingResource))
+            {
+                throw new InvalidOperationException(
+                    "Не удалось подготовить ресурсы для покупки скина.");
+            }
+
+            SkinManager.PurchaseSkin(skin.Id);
+        }
+
+        private void CompletePlayerLevelTarget(QuestDefinition definition)
+        {
+            // Начисляем штатный Story XP до заданного Player Level.
+            while (GameDataManager.PlayerData.PlayerLevel <
+                   definition.RequiredValue)
+            {
+                _playerExperienceService
+                    .GrantExperienceForClaimedStorylineQuest(
+                        GameDataManager.PlayerData);
+            }
+
+            // Сохраняем весь dev-прогон одним checkpoint.
+            PlayerProgressCommitter.Commit(
+                CheckpointReason.QuestProgressed);
+        }
+
+        private static bool TryGetPlayerStateSkin(
+            QuestDefinition definition,
+            out Skin skin)
+        {
+            skin = null;
+            if (!TryGetPlayerStateEntityId(definition, out int skinId))
+            {
+                return false;
+            }
+
+            skin = SkinManager.AvailableSkins.FirstOrDefault(
                 availableSkin => availableSkin.Id == skinId);
-            return skin ?? throw new InvalidOperationException(
-                $"Скин {skinId} не найден.");
+            return skin != null;
+        }
+
+        private static bool TryGetAlternativePurchasedSkin(
+            int excludedSkinId,
+            out Skin skin)
+        {
+            skin = SkinManager.AvailableSkins.FirstOrDefault(
+                availableSkin =>
+                    availableSkin.Id != excludedSkinId &&
+                    availableSkin.IsPurchased);
+            return skin != null;
+        }
+
+        private static bool TryGetAlternativeSuperAttack(
+            int excludedSuperAttackId,
+            out int superAttackId)
+        {
+            SuperAttackData superAttack = SuperAttackService.Items
+                .FirstOrDefault(item =>
+                    item.Id != excludedSuperAttackId &&
+                    SuperAttackService.IsUnlocked(
+                        item.Id,
+                        GameDataManager.PlayerData.PlayerLevel));
+            superAttackId = superAttack?.Id ?? 0;
+            return superAttack != null;
+        }
+
+        private static int ParsePlayerStateEntityId(
+            QuestDefinition definition)
+        {
+            if (TryGetPlayerStateEntityId(definition, out int entityId))
+            {
+                return entityId;
+            }
+
+            throw new InvalidOperationException(
+                $"Некорректный ID цели {definition.EntityId}.");
+        }
+
+        private static bool TryGetPlayerStateEntityId(
+            QuestDefinition definition,
+            out int entityId)
+        {
+            return int.TryParse(definition.EntityId, out entityId);
         }
 
         private static void CompleteUniqueLevelResultQuest(
@@ -748,10 +982,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
         private static string FormatTitle(Quest quest)
         {
-            string title = LocalizationManager.GetLocalizedString(
-                quest.TitleLocalizationKey) ??
-                quest.TitleLocalizationKey;
-            return $"{title} ({quest.Id})";
+            return $"{QuestTitleFormatter.Format(quest)} ({quest.Id})";
         }
 
         private static string FormatLevelResultCondition(

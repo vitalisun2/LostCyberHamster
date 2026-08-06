@@ -1,4 +1,5 @@
 using System;
+using Vues.GameCore.Quests;
 
 namespace GameManagement.Progress
 {
@@ -126,6 +127,13 @@ namespace GameManagement.Progress
             playerData.ExperiencePoints =
                 updatedExperiencePoints % PlayerLevelThreshold;
             playerData.PlayerLevel = updatedPlayerLevel;
+
+            if (playerLevelsGained > 0)
+            {
+                GameEventsManager.PlayerStateChanged(
+                    PlayerStateIds.PlayerLevel,
+                    PlayerStateEntityIds.Player);
+            }
 
             // Фиксируем каждое фактическое начисление в economy diagnostics.
             DebugManager.DiagEconomy(

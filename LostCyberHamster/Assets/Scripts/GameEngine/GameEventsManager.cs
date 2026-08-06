@@ -40,6 +40,19 @@ public static class GameEventsManager
         OnActionCounterQuestEvent;
 
     /// <summary>
+    /// Постоянное состояние сущности игрока изменилось.
+    /// </summary>
+    public static event Action<string, string> OnPlayerStateChanged;
+
+    /// <summary>
+    /// Сообщает идентификаторы изменившегося состояния и сущности.
+    /// </summary>
+    public static void PlayerStateChanged(
+        string stateId,
+        string entityId) =>
+        OnPlayerStateChanged?.Invoke(stateId, entityId);
+
+    /// <summary>
     /// Триггер события OnObstacleJumpedOver
     /// </summary>
     /// <param name="obstacleName">Идентификатор препятствия, через которое был совершен прыжок</param>
@@ -153,6 +166,28 @@ public static class GameEventsManager
     /// </summary>
     public static void DailyQuestSetChanged() =>
         OnDailyQuestSetChanged?.Invoke();
+
+    /// <summary>
+    /// Активный набор сюжетных квестов изменился.
+    /// </summary>
+    public static event Action OnStoryQuestSetChanged;
+
+    /// <summary>
+    /// Сообщает подписчикам о новом наборе сюжетных квестов.
+    /// </summary>
+    public static void StoryQuestSetChanged() =>
+        OnStoryQuestSetChanged?.Invoke();
+
+    /// <summary>
+    /// Состояние общей награды Daily-набора изменилось.
+    /// </summary>
+    public static event Action OnDailyQuestCommonRewardChanged;
+
+    /// <summary>
+    /// Сообщает подписчикам об актуальном состоянии общей Daily-награды.
+    /// </summary>
+    public static void DailyQuestCommonRewardChanged() =>
+        OnDailyQuestCommonRewardChanged?.Invoke();
 
 #endregion
 
