@@ -72,35 +72,18 @@
     height: 120px;
 }
 
-.super-attacks__xp-progress .unity-progress-bar__container {
-    flex-grow: 1;
-    flex-shrink: 0;
-    width: 100%;
-    height: 100%;
-    align-self: stretch;
-    align-items: center;
-    justify-content: center;
-}
-
 .super-attacks__xp-progress .unity-progress-bar__background {
-    flex-grow: 1;
-    flex-shrink: 0;
     min-height: 0;
-    width: 100%;
-    height: 100%;
-    align-self: stretch;
-    position: relative;
-    overflow: hidden;
+    height: 120px;
     background-color: var(--ui-progress-track-original);
     border-color: var(--ui-border);
 }
 
 .super-attacks__xp-progress .unity-progress-bar__progress {
     min-height: 0;
-    position: absolute;
-    left: 0;
     top: 28px;
-    bottom: 28px;
+    bottom: auto;
+    height: 52px;
     background-color: var(--ui-border);
 }
 
