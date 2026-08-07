@@ -8,13 +8,13 @@ namespace Vues.GameCore
     {
         private readonly AtomicEvent _ultaEvent;
         private readonly AtomicVariable<int> _ultaChargeAmount;
-        private readonly Action _applyAttack;
+        private readonly Func<bool> _applyAttack;
         private readonly Action _updateAttack;
 
         public UltaMechanics(
             AtomicEvent ultaEvent,
             AtomicVariable<int> ultaChargeAmount,
-            Action applyAttack,
+            Func<bool> applyAttack,
             Action updateAttack)
         {
             _ultaEvent = ultaEvent;
@@ -40,6 +40,7 @@ namespace Vues.GameCore
 
         private void OnUltaEvent()
         {
+            // Проверяем наличие runtime и полный заряд.
             if (_applyAttack == null)
             {
                 return;
@@ -51,8 +52,13 @@ namespace Vues.GameCore
                 return;
             }
 
+            // Списываем заряд только после успешной активации runtime.
+            if (!_applyAttack.Invoke())
+            {
+                return;
+            }
+
             _ultaChargeAmount.Value = 0;
-            _applyAttack.Invoke();
             GameEventsManager.UltaUsed();
         }
     }
