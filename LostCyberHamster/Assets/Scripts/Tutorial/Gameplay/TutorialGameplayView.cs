@@ -332,7 +332,7 @@ namespace Assets.Scripts.Tutorial
                 pickingMode = PickingMode.Position
             };
             FillScreen(blocker);
-            blocker.style.backgroundColor = Color.clear;
+            blocker.AddToClassList("tutorial-transparent");
             return blocker;
         }
 
@@ -368,7 +368,7 @@ namespace Assets.Scripts.Tutorial
         {
             var root = new VisualElement { name = _completeRootName, pickingMode = PickingMode.Position };
             FillScreen(root);
-            root.style.backgroundColor = new Color(0f, 0f, 0f, 0.55f);
+            root.AddToClassList("tutorial-overlay");
             root.style.justifyContent = Justify.Center;
             root.style.alignItems = Align.Center;
 
@@ -410,7 +410,7 @@ namespace Assets.Scripts.Tutorial
                 pickingMode = PickingMode.Ignore
             };
             highlight.style.position = Position.Absolute;
-            highlight.style.backgroundColor = Color.clear;
+            highlight.AddToClassList("tutorial-transparent");
             return highlight;
         }
 
@@ -422,7 +422,7 @@ namespace Assets.Scripts.Tutorial
                 pickingMode = PickingMode.Position
             };
             FillScreen(capture);
-            capture.style.backgroundColor = Color.clear;
+            capture.AddToClassList("tutorial-transparent");
             return capture;
         }
 
@@ -462,7 +462,7 @@ namespace Assets.Scripts.Tutorial
             bubble.style.paddingRight = 28;
             bubble.style.paddingBottom = 20;
             bubble.style.paddingLeft = 28;
-            bubble.style.backgroundColor = new Color(0.98f, 0.92f, 0.45f, 0.96f);
+            bubble.AddToClassList("tutorial-surface");
             bubble.style.borderTopLeftRadius = 28;
             bubble.style.borderTopRightRadius = 28;
             bubble.style.borderBottomRightRadius = 28;
@@ -482,7 +482,7 @@ namespace Assets.Scripts.Tutorial
             container.style.paddingRight = 36;
             container.style.paddingBottom = 36;
             container.style.paddingLeft = 36;
-            container.style.backgroundColor = new Color(0.98f, 0.92f, 0.45f, 0.98f);
+            container.AddToClassList("tutorial-surface");
             container.style.borderTopLeftRadius = 28;
             container.style.borderTopRightRadius = 28;
             container.style.borderBottomRightRadius = 28;
@@ -502,36 +502,29 @@ namespace Assets.Scripts.Tutorial
         private static Label CreateLabel(string name, int fontSize, TextAnchor alignment)
         {
             var label = new Label { name = name, pickingMode = PickingMode.Ignore };
-            label.style.color = Color.white;
+            label.AddToClassList("tutorial-text");
             label.style.fontSize = fontSize;
             label.style.unityFontStyleAndWeight = FontStyle.Bold;
             label.style.unityTextAlign = alignment;
             label.style.unityTextOutlineWidth = 3;
-            label.style.unityTextOutlineColor = new Color(0.13f, 0.51f, 0.53f, 1f);
             return label;
         }
 
         private static Button CreateButton(string name, string text)
         {
             var button = new Button { name = name, text = text };
-            button.style.backgroundColor = new Color(0.85f, 0.9f, 0.6f, 1f);
+            button.AddToClassList("tutorial-button");
             button.style.borderTopWidth = 6;
             button.style.borderRightWidth = 6;
             button.style.borderBottomWidth = 6;
             button.style.borderLeftWidth = 6;
-            button.style.borderTopColor = new Color(0.13f, 0.51f, 0.53f, 1f);
-            button.style.borderRightColor = new Color(0.13f, 0.51f, 0.53f, 1f);
-            button.style.borderBottomColor = new Color(0.13f, 0.51f, 0.53f, 1f);
-            button.style.borderLeftColor = new Color(0.13f, 0.51f, 0.53f, 1f);
             button.style.borderTopLeftRadius = 20;
             button.style.borderTopRightRadius = 20;
             button.style.borderBottomRightRadius = 20;
             button.style.borderBottomLeftRadius = 20;
-            button.style.color = Color.white;
             button.style.fontSize = 38;
             button.style.unityFontStyleAndWeight = FontStyle.Bold;
             button.style.unityTextOutlineWidth = 2;
-            button.style.unityTextOutlineColor = new Color(0.13f, 0.51f, 0.53f, 1f);
             return button;
         }
 

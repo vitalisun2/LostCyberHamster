@@ -1,0 +1,23 @@
+.bg-primary {
+    background-color: var(--ui-surface);
+}
+
+.bg-secondary {
+    background-color: var(--ui-border);
+}
+
+.bg-danger {
+    background-color: var(--ui-status-danger);
+}
+
+.bg-warning {
+    background-color: var(--ui-status-warning);
+}
+
+.bg-info {
+    background-color: var(--ui-status-info);
+}
+
+.bg-yellow {
+    background-color: var(--ui-surface);
+}

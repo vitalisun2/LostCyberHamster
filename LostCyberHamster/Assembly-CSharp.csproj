@@ -106,8 +106,8 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitSimulator.cs" />
     <Compile Include="Assets\Scripts\System\Resources\AddressableLocationsLease.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenController.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\PlayerState\PlayerStateQuestEvent.cs" />
     <Compile Include="Assets\Scripts\SharedCore\VibrationManager.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\PlayerState\PlayerStateQuestEvent.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\GameplayDevToolsView.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\HamsterSnapshot.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowCalculator.cs" />
@@ -147,8 +147,8 @@
     <Compile Include="Assets\Scripts\Debug\AndroidDiagnosticsHelper.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PartProgress.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\UltaMechanics.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Effects\EnergyShieldUlta.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Version\CloudSaveVersionStore.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Effects\EnergyShieldUlta.cs" />
     <Compile Include="Assets\Scripts\UI\ResourceUIHelper.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitPlanner.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerData.cs" />
@@ -376,8 +376,8 @@
     <Compile Include="Assets\Scripts\CloudSave\ConflictService.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameEntryPoint.cs" />
     <Compile Include="Assets\Scripts\Common\CollisionUtils.cs" />
-    <Compile Include="Assets\Scripts\Infrastructure\FirstInstallPrefsWipe.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningGraphBuilder.cs" />
+    <Compile Include="Assets\Scripts\Infrastructure\FirstInstallPrefsWipe.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\CollisionController.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CoinOneBonus.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\SettingsScreenController.cs" />
@@ -649,14 +649,21 @@
     <Compile Include="Assets\Scripts\UI\Common\MenuNavigationRequest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\Content\ui\styles\components\forms.uss" />
+    <None Include="Assets\Content\ui\styles\screens\SelectLevelScreen.uss" />
     <None Include="Assets\Content\ui\uxml\ShopModal.uxml" />
+    <None Include="Assets\Content\ui\styles\components\runtime-states.uss" />
+    <None Include="Assets\Content\ui\styles\screens\Bootstrap.uss" />
     <None Include="Assets\Content\ui\uxml\RepeatButton.uxml" />
     <None Include="Assets\Content\ui\uxml\StorageUI.uxml" />
     <None Include="Assets\Content\ui\uxml\ShopItem.uxml" />
     <None Include="Assets\Content\ui\uxml\DailyQuestRewardModal.uxml" />
     <None Include="Assets\Content\ui\uxml\LevelItem.uxml" />
+    <None Include="Assets\Content\ui\styles\screens\GameScreen.uss" />
     <None Include="Assets\Content\ui\uxml\PauseModal.uxml" />
     <None Include="Assets\Content\ui\styles\GameUI.uss" />
+    <None Include="Assets\Content\ui\styles\theme\tokens.uss" />
+    <None Include="Assets\Content\ui\styles\base\typography.uss" />
     <None Include="Assets\Content\ui\uxml\Modal.uxml" />
     <None Include="Assets\Content\ui\uxml\QuestsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\WinModal.uxml" />
@@ -666,29 +673,48 @@
     <None Include="Assets\Content\ui\uxml\PlayButton.uxml" />
     <None Include="Assets\Content\ui\uxml\HomeButton.uxml" />
     <None Include="Assets\Content\ui\uxml\HomeScreen.uxml" />
+    <None Include="Assets\Content\ui\styles\screens\HomeScreen.uss" />
     <None Include="Assets\Content\ui\uxml\LevelUpModal.uxml" />
+    <None Include="Assets\Content\ui\styles\utilities\debug.uss" />
     <None Include="Assets\Content\ui\styles\SuperAttacksScreen.uss" />
     <None Include="Assets\Content\ui\styles\LevelUpModal.uss" />
     <None Include="Assets\Content\ui\uxml\LevelUI.uxml" />
+    <None Include="Assets\Content\ui\styles\components\progress.uss" />
     <None Include="Assets\Content\ui\uxml\IntroScreen.uxml" />
+    <None Include="Assets\Content\ui\styles\components\account-prompt.uss" />
     <None Include="Assets\Content\ui\uxml\GameScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\SelectLevelScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\Toolbar.uxml" />
+    <None Include="Assets\Content\ui\styles\components\toolbar.uss" />
+    <None Include="Assets\Content\ui\styles\screens\SuperAttacksScreen.uss" />
     <None Include="Assets\Content\ui\uxml\SettingsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\EnergyBar.uxml" />
+    <None Include="Assets\Content\ui\styles\components\storage.uss" />
+    <None Include="Assets\Content\ui\styles\utilities\sizing.uss" />
     <None Include="Assets\Content\ui\uxml\HealthItem.uxml" />
     <None Include="Assets\Content\ui\styles\global.uss" />
     <None Include="Assets\Content\ui\uxml\AccountPromptModal.uxml" />
+    <None Include="Assets\Content\ui\styles\screens\SettingsScreen.uss" />
     <None Include="Assets\Content\ui\uxml\CharacterScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\GameUI.uxml" />
+    <None Include="Assets\Content\ui\styles\utilities\backgrounds.uss" />
+    <None Include="Assets\Content\ui\styles\components\modals.uss" />
+    <None Include="Assets\Content\ui\styles\screens\QuestsScreen.uss" />
+    <None Include="Assets\Content\ui\styles\utilities\borders.uss" />
+    <None Include="Assets\Content\ui\styles\components\shop.uss" />
     <None Include="Assets\Content\ui\uxml\QuestItem.uxml" />
+    <None Include="Assets\Content\ui\styles\components\carousel.uss" />
     <None Include="Assets\Content\ui\styles\common.uss" />
     <None Include="Assets\Content\ui\uxml\test.uxml" />
+    <None Include="Assets\Content\ui\styles\components\gameplay-bars.uss" />
     <None Include="Assets\Content\ui\uxml\Bootstrap.uxml" />
     <None Include="Assets\Content\ui\uxml\MainButtonGroup.uxml" />
     <None Include="Assets\Content\ui\uxml\Screen.uxml" />
+    <None Include="Assets\Content\ui\styles\components\theme-roles.uss" />
     <None Include="Assets\Content\ui\styles\CloudSaveConflictModal.uss" />
+    <None Include="Assets\Content\ui\styles\components\buttons.uss" />
     <None Include="Assets\Content\ui\styles\DailyQuestRewardModal.uss" />
+    <None Include="Assets\Content\ui\styles\screens\LeaderboardScreen.uss" />
     <None Include="Assets\Content\ui\uxml\LeaderboardScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\SuperAttacksScreen.uxml" />
   </ItemGroup>
@@ -1981,12 +2007,12 @@
       <HintPath>Library\ScriptAssemblies\Unity.Toolchain.Linux-x86_64.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Services.Leaderboards">
-      <HintPath>Library\ScriptAssemblies\Unity.Services.Leaderboards.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.Collections.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.Collections.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Services.Leaderboards">
+      <HintPath>Library\ScriptAssemblies\Unity.Services.Leaderboards.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Vues.Core">

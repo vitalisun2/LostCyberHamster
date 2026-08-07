@@ -87,13 +87,13 @@ public class LicenseManager : MonoBehaviour
             {
                 width = new Length(100, LengthUnit.Percent),
                 height = new Length(100, LengthUnit.Percent),
-                backgroundColor = new Color(0, 0, 0, 0.92f),
                 flexDirection = FlexDirection.Column,
                 justifyContent = Justify.Center,
                 alignItems = Align.Center,
                 position = Position.Absolute
             }
         };
+        _fullScreenView.AddToClassList("license-overlay");
 
         // Create a title label
         var titleLabel = new Label(title)
@@ -101,11 +101,11 @@ public class LicenseManager : MonoBehaviour
             style =
             {
                 fontSize = 24,
-                color = Color.white,
                 unityTextAlign = TextAnchor.MiddleCenter,
                 marginBottom = 10
             }
         };
+        titleLabel.AddToClassList("license-overlay-text");
 
         // Create a message label
         var messageLabel = new Label(message)
@@ -113,10 +113,10 @@ public class LicenseManager : MonoBehaviour
             style =
             {
                 fontSize = 18,
-                color = Color.white,
                 unityTextAlign = TextAnchor.MiddleCenter
             }
         };
+        messageLabel.AddToClassList("license-overlay-text");
 
         // Add labels to the full-screen view
         _fullScreenView.Add(titleLabel);

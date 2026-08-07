@@ -1,0 +1,30 @@
+.lcs_btn {
+    margin: 24px;
+    background-color: var(--ui-surface);
+    border-radius: var(--ui-radius-main);
+    border-width: 6px;
+    border-color: var(--ui-border);
+    height: 96px;
+    width: 200px;
+    color: var(--ui-text-fill);
+    -unity-text-outline-width: 3px;
+    -unity-text-outline-color: var(--ui-text-outline);
+    -unity-font-style: bold;
+    font-size: var(--ui-font-size);
+}
+
+.lcs_btn:hover {
+    background-color: var(--ui-surface-hover);
+    border-color: var(--ui-border);
+}
+
+.lcs_btn:active:hover:focus,
+.lcs_btn:active:focus,
+.lcs_btn:active {
+    background-color: var(--ui-surface-active);
+    border-color: var(--ui-border);
+}
+
+.lcs_btn:focus {
+    border-color: var(--ui-border);
+}

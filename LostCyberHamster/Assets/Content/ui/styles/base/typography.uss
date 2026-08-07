@@ -1,0 +1,13 @@
+:root {
+    color: var(--ui-compact-text);
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: var(--ui-compact-text);
+}
+
+.lcs-text {
+    color: var(--ui-text-fill);
+    -unity-text-outline-width: 3px;
+    -unity-text-outline-color: var(--ui-text-outline);
+    -unity-font-style: bold;
+    font-size: var(--ui-font-size);
+}

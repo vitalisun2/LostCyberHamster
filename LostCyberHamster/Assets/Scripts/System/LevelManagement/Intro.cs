@@ -67,11 +67,11 @@ public class Intro : MonoBehaviour
             {
                 width = Length.Percent(100),
                 height = Length.Percent(100),
-                backgroundColor = new StyleColor(new Color(0.663f, 0.416f, 0.235f, 1)),
                 position = Position.Absolute,
                 justifyContent = Justify.Center
             }
         };
+        _introScreen.AddToClassList("intro-surface");
         _uiDocument.rootVisualElement.Add(_introScreen);
         InitImages(introSprites);
         AddSkipButton();

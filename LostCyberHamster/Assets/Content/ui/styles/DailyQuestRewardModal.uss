@@ -11,7 +11,8 @@
     width: 900px;
     max-width: 90%;
     min-height: 136px;
-    color: var(--yellow);
+    color: var(--ui-text-fill);
+    -unity-text-outline-color: var(--ui-text-outline);
     font-size: 52px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -27,19 +28,18 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    background-color: rgb(221, 142, 47);
+    background-color: var(--ui-quest-daily);
     border-width: 5px;
-    border-color: var(--secondary);
+    border-color: var(--ui-border);
     border-radius: 20px;
 }
 
 .daily-quest-reward-modal__claim-label,
 .daily-quest-reward-modal__amount {
-    color: var(--white);
+    color: var(--ui-compact-text);
     font-size: 30px;
     -unity-font-style: bold;
-    -unity-text-outline-width: 2px;
-    -unity-text-outline-color: var(--secondary);
+    -unity-text-outline-width: 0;
 }
 
 .daily-quest-reward-modal__amount {

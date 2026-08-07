@@ -1,0 +1,94 @@
+:root {
+    /* Core menu palette: center reference. */
+    --ui-surface: rgb(78, 181, 240);
+    --ui-surface-hover: rgb(112, 198, 244);
+    --ui-surface-active: rgb(50, 155, 216);
+    --ui-panel-muted: rgba(78, 181, 240, 0.92);
+    --ui-panel-surface: rgba(78, 181, 240, 0.96);
+    --ui-border: rgb(53, 95, 145);
+    --ui-text-fill: rgb(223, 211, 179);
+    --ui-text-outline: rgb(53, 95, 145);
+    --ui-backdrop: rgba(0, 0, 0, 0.5);
+    --ui-overlay: var(--ui-backdrop);
+    --ui-overlay-panel: rgba(53, 95, 145, 0.95);
+
+    /* Content-card interiors intentionally preserve the original art direction. */
+    --ui-content-card-surface: rgba(242, 233, 196, 0.96);
+    --ui-content-card-surface-solid: rgb(255, 255, 255);
+    --ui-content-card-text: rgb(50, 43, 34);
+    --ui-content-card-accent: rgb(34, 130, 134);
+    --ui-content-card-header: rgba(34, 130, 134, 0.16);
+    --ui-content-row-default: rgba(255, 255, 255, 0.78);
+    --ui-level-card-shell: rgb(217, 229, 154);
+    --ui-progress-track-original: rgb(220, 252, 250);
+    --ui-progress-fill-original: rgb(217, 229, 154);
+    --ui-control-hover-original: rgb(255, 250, 184);
+    --ui-compact-text: rgb(30, 30, 30);
+    --ui-tab-active: rgb(78, 181, 240);
+    --ui-tab-active-hover: rgb(112, 198, 244);
+    --ui-tab-inactive: rgb(168, 197, 211);
+    --ui-tab-inactive-hover: rgb(187, 211, 222);
+    --ui-leaderboard-tab-available: rgb(116, 223, 201);
+
+    /* Runtime and status roles. */
+    --ui-status-danger: rgb(204, 48, 78);
+    --ui-status-warning: rgb(156, 204, 48);
+    --ui-status-warning-muted: rgba(156, 204, 48, 0.28);
+    --ui-status-success: rgb(74, 126, 24);
+    --ui-status-info: rgb(48, 204, 174);
+    --ui-status-selected: rgb(156, 204, 48);
+    --ui-status-disabled: rgb(115, 115, 115);
+    --ui-status-current: rgba(255, 228, 92, 0.9);
+    --ui-status-default: var(--ui-panel-surface);
+
+    /* Leaderboard ranks. */
+    --ui-rank-gold: rgb(226, 185, 59);
+    --ui-rank-silver: rgb(185, 193, 200);
+    --ui-rank-bronze: rgb(184, 115, 51);
+    --ui-rank-default: rgb(53, 95, 145);
+
+    /* Quest-card interiors preserve their original category identity. */
+    --ui-quest-card-surface: rgb(255, 247, 228);
+    --ui-quest-card-control-border: rgb(43, 61, 66);
+    --ui-quest-title: rgb(38, 54, 59);
+    --ui-quest-progress: rgb(54, 73, 78);
+    --ui-quest-control-text: rgb(255, 255, 255);
+    --ui-quest-claimed-check: rgb(67, 173, 91);
+    --ui-quest-daily: rgb(221, 142, 47);
+    --ui-quest-daily-hover: rgb(235, 158, 57);
+    --ui-quest-daily-active: rgb(197, 119, 37);
+    --ui-quest-story: rgb(59, 107, 125);
+    --ui-quest-story-hover: rgb(74, 124, 143);
+    --ui-quest-story-active: rgb(47, 90, 106);
+    --ui-quest-image-daily: rgb(217, 211, 225);
+    --ui-quest-image-story: rgb(197, 224, 224);
+
+    /* Gameplay-only colors. */
+    --game-energy: rgb(0, 170, 255);
+    --game-bar-track: rgb(30, 30, 30);
+    --game-input-border: rgba(0, 0, 0, 0.4);
+
+    /* Shared metrics. */
+    --ui-radius-main: 24px;
+    --ui-radius-secondary: 18px;
+    --ui-font-size: 48px;
+    --ui-font-size-small: 36px;
+
+    /* Compatibility aliases for existing UXML and runtime class contracts. */
+    --primary: var(--ui-surface);
+    --secondary: var(--ui-border);
+    --danger: var(--ui-status-danger);
+    --warning: var(--ui-status-warning);
+    --info: var(--ui-status-info);
+    --bg: var(--ui-overlay-panel);
+    --white: var(--ui-text-fill);
+    --black: var(--game-bar-track);
+    --energy: var(--game-energy);
+    --yellow: var(--ui-surface);
+    --main-border-radius: var(--ui-radius-main);
+    --secondary-border-radius: var(--ui-radius-secondary);
+    --font-size: var(--ui-font-size);
+    --font-size-small: var(--ui-font-size-small);
+    --ui-surface-muted: var(--ui-panel-muted);
+    --ui-surface-panel: var(--ui-panel-surface);
+}

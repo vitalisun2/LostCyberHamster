@@ -1,0 +1,19 @@
+.w-px-480 {
+    width: 480px;
+}
+
+.w-px-380 {
+    width: 380px;
+}
+
+.w-px-320 {
+    width: 320px;
+}
+
+.w-px-240 {
+    width: 240px;
+}
+
+.mb-12 {
+    margin-bottom: 12px;
+}

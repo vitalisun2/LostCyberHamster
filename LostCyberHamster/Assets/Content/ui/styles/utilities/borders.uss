@@ -1,0 +1,5 @@
+.border {
+    border-radius: var(--ui-radius-main);
+    border-width: 6px;
+    border-color: var(--ui-border);
+}

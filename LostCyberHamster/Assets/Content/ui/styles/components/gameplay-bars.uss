@@ -1,0 +1,25 @@
+#energybar {
+    height: 20px;
+    width: 200px;
+}
+
+#energybar > #background {
+    overflow: hidden;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: var(--game-bar-track);
+    background-color: var(--game-bar-track);
+    flex-grow: 1;
+}
+
+#energybar > #background > #foreground {
+    overflow: hidden;
+    flex-grow: 1;
+    background-color: var(--game-energy);
+    transform-origin: left bottom;
+}
+
+#healthbar {
+    height: 30px;
+    width: 200px;
+}

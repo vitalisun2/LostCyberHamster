@@ -1,0 +1,42 @@
+.unity-toggle__checkmark {
+    background-color: var(--ui-text-fill);
+    border-color: var(--ui-border);
+    border-width: 6px;
+    border-radius: 12px;
+    width: 64px;
+    height: 64px;
+}
+
+.unity-toggle__input:checked > #unity-checkmark {
+    background-color: var(--ui-surface);
+    border-color: var(--ui-border);
+}
+
+.unity-toggle__input:focus > #unity-checkmark {
+    border-color: var(--ui-border);
+}
+
+.unity-base-popup-field__input {
+    background-color: var(--ui-surface);
+    border-color: var(--ui-border);
+    border-width: 6px;
+    border-radius: 12px;
+    min-width: 128px;
+    height: 64px;
+}
+
+.unity-base-popup-field__text {
+    color: var(--ui-text-fill);
+    -unity-text-outline-width: 2px;
+    -unity-text-outline-color: var(--ui-text-outline);
+    font-size: var(--ui-font-size-small);
+}
+
+.unity-base-dropdown .unity-list-view {
+    background-color: var(--ui-surface);
+    border-color: var(--ui-border);
+    border-width: 3px;
+    border-radius: 12px;
+    color: var(--ui-text-fill);
+    font-size: var(--ui-font-size-small);
+}

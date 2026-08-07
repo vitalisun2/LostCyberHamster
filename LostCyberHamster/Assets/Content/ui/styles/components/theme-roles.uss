@@ -1,0 +1,95 @@
+.ui-surface {
+    background-color: var(--ui-surface);
+}
+
+.ui-panel-surface {
+    background-color: var(--ui-panel-surface);
+}
+
+.ui-panel-muted {
+    background-color: var(--ui-panel-muted);
+}
+
+.ui-backdrop {
+    background-color: var(--ui-backdrop);
+}
+
+.ui-bordered {
+    border-color: var(--ui-border);
+}
+
+.ui-text {
+    color: var(--ui-text-fill);
+    -unity-text-outline-color: var(--ui-text-outline);
+}
+
+.ui-text-plain,
+.ui-text-compact {
+    color: var(--ui-compact-text);
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: var(--ui-compact-text);
+}
+
+.ui-text-compact-light {
+    color: var(--ui-text-fill);
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: var(--ui-text-outline);
+}
+
+.ui-text-outlined {
+    color: var(--ui-text-fill);
+    -unity-text-outline-width: 3px;
+    -unity-text-outline-color: var(--ui-text-outline);
+}
+
+.ui-danger-text {
+    color: var(--ui-status-danger);
+}
+
+.ui-info-text {
+    color: var(--ui-status-info);
+}
+
+.ui-success-text {
+    color: var(--ui-status-success);
+}
+
+.ui-warning-surface {
+    background-color: var(--ui-status-warning);
+}
+
+.ui-energy-surface {
+    background-color: var(--game-energy);
+}
+
+.ui-status-selected-surface {
+    background-color: var(--ui-status-selected);
+}
+
+.ui-status-disabled-surface {
+    background-color: var(--ui-status-disabled);
+}
+
+.ui-status-current-surface {
+    background-color: var(--ui-status-current);
+}
+
+.ui-status-default-surface {
+    background-color: var(--ui-status-default);
+}
+
+.ui-quest-daily-surface {
+    background-color: var(--ui-quest-daily);
+}
+
+.ui-quest-story-surface {
+    background-color: var(--ui-quest-story);
+}
+
+.ui-quest-image-daily-surface {
+    background-color: var(--ui-quest-image-daily);
+}
+
+.ui-quest-image-story-surface {
+    background-color: var(--ui-quest-image-story);
+}

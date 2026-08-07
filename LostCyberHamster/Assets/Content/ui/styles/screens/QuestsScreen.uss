@@ -1,0 +1,151 @@
+.quests-page {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    padding-top: 8px;
+    padding-right: 24px;
+    padding-bottom: 8px;
+    padding-left: 24px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.quests-container {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    min-height: 0;
+    width: 1280px;
+    max-width: 1280px;
+    height: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.quest-card {
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+    min-height: 0;
+    width: 380px;
+    height: 100%;
+    max-height: 540px;
+}
+
+.quest-reward--disabled {
+    opacity: 0.45;
+}
+
+.quests-tabs {
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 88px;
+    margin-top: 16px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.quests-tab {
+    width: 340px;
+    height: 88px;
+    margin-top: 0;
+    margin-right: 12px;
+    margin-bottom: 0;
+    margin-left: 12px;
+    padding-right: 20px;
+    padding-left: 20px;
+    border-width: 0;
+    border-radius: var(--ui-radius-secondary);
+    background-color: var(--ui-tab-inactive);
+    color: var(--ui-compact-text);
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
+    font-size: 32px;
+    white-space: normal;
+}
+
+.quests-tab:hover,
+.quests-tab:focus {
+    background-color: var(--ui-tab-inactive-hover);
+}
+
+.quests-tab:active {
+    background-color: var(--ui-content-card-accent);
+}
+
+.quests-tab--active {
+    background-color: var(--ui-tab-active);
+}
+
+.quests-tab--active:hover,
+.quests-tab--active:focus {
+    background-color: var(--ui-tab-active-hover);
+}
+
+.quests-tab--active:active {
+    background-color: var(--ui-surface-active);
+}
+
+.quest-item {
+    background-color: var(--ui-quest-card-surface);
+}
+
+.quest-item__frame {
+    background-color: var(--ui-quest-card-surface);
+    border-color: var(--ui-border);
+}
+
+.quest-item__image-circle {
+    background-color: var(--ui-quest-image-daily);
+}
+
+.quest-item__title,
+.quest-item__claimed-text {
+    color: var(--ui-quest-title);
+    -unity-text-outline-width: 0;
+}
+
+.quest-item__progress {
+    color: var(--ui-quest-progress);
+    -unity-text-outline-width: 0;
+}
+
+.quest-item__reward-button {
+    background-color: var(--ui-quest-daily);
+    border-color: var(--ui-quest-card-control-border);
+    color: var(--ui-quest-control-text);
+    -unity-text-outline-width: 0;
+}
+
+.quest-item__reward-amount {
+    color: var(--ui-quest-control-text);
+    -unity-text-outline-width: 0;
+}
+
+.quest-item__claimed-check {
+    color: var(--ui-quest-claimed-check);
+    -unity-text-outline-width: 0;
+}
+
+.quest-item__reward-button.quest-action--daily:hover,
+.quest-item__reward-button.quest-action--daily:focus {
+    background-color: var(--ui-quest-daily-hover);
+}
+
+.quest-item__reward-button.quest-action--daily:active {
+    background-color: var(--ui-quest-daily-active);
+}
+
+.quest-item__reward-button.quest-action--story:hover,
+.quest-item__reward-button.quest-action--story:focus {
+    background-color: var(--ui-quest-story-hover);
+}
+
+.quest-item__reward-button.quest-action--story:active {
+    background-color: var(--ui-quest-story-active);
+}

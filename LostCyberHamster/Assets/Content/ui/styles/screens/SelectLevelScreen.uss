@@ -1,0 +1,14 @@
+.level-card {
+    background-color: var(--ui-level-card-shell);
+    border-color: var(--ui-border);
+}
+
+.level-card > .level-card__content {
+    background-color: var(--ui-content-card-surface-solid);
+    border-color: var(--ui-border);
+}
+
+.level-card__title {
+    color: var(--ui-content-card-accent);
+    -unity-text-outline-width: 0;
+}

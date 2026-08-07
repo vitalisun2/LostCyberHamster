@@ -93,12 +93,10 @@ namespace LostCyberHamster.UI
         private void ApplyCategoryStyle(QuestCategory category)
         {
             bool isDaily = category == QuestCategory.Daily;
-            _buttonGet.style.backgroundColor = isDaily
-                ? new StyleColor(new Color32(221, 142, 47, 255))
-                : new StyleColor(new Color32(59, 107, 125, 255));
-            _imageCircle.style.backgroundColor = isDaily
-                ? new StyleColor(new Color32(217, 211, 225, 255))
-                : new StyleColor(new Color32(197, 224, 224, 255));
+            _buttonGet.EnableInClassList("quest-action--daily", isDaily);
+            _buttonGet.EnableInClassList("quest-action--story", !isDaily);
+            _imageCircle.EnableInClassList("quest-image--daily", isDaily);
+            _imageCircle.EnableInClassList("quest-image--story", !isDaily);
         }
     }
 }

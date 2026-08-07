@@ -1,0 +1,25 @@
+.modal__background {
+    background-color: var(--ui-overlay);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#modal {
+    display: none;
+}
+
+#modal__content {
+    margin: 24px;
+}
+
+#modal__container {
+    border-radius: var(--ui-radius-main);
+    border-width: 6px;
+    border-color: var(--ui-border);
+}

@@ -1,7 +1,7 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <engine:Template name="MainButtonGroup" src="project://database/Assets/Content/ui/uxml/MainButtonGroup.uxml?fileID=9197481963319205126&amp;guid=bda278450cb444e77baf19c884d0a62a&amp;type=3#MainButtonGroup" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
-    <Style src="../styles/SuperAttacksScreen.uss" />
+    <Style src="../styles/screens/HomeScreen.uss" />
     <engine:VisualElement name="homescreen" style="flex-grow: 1;">
         <engine:VisualElement name="home__hud" class="home-hud">
             <engine:VisualElement class="home-hud__side home-hud__left">

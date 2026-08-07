@@ -333,13 +333,13 @@ namespace LostCyberHamster.UI
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
 
-            // Активный tab соединяем с таблицей, закрытый оставляем белым.
+            // Активный tab соединяем с таблицей, остальные получают класс состояния.
             var isSelected = isOpen && configuredPart == selectedPart;
-            button.EnableInClassList("bg-warning", isSelected);
-            button.EnableInClassList("bg-primary", isOpen && !isSelected);
-            button.style.backgroundColor = isOpen
-                ? StyleKeyword.Null
-                : Color.white;
+            button.EnableInClassList("leaderboard-part--selected", isSelected);
+            button.EnableInClassList(
+                "leaderboard-part--available",
+                isOpen && !isSelected);
+            button.EnableInClassList("leaderboard-part--disabled", !isOpen);
             button.style.width = isSelected ? 244 : 220;
             button.style.marginRight = isSelected ? 0 : 12;
             button.style.paddingRight = isOpen ? 12 : 64;
@@ -373,9 +373,9 @@ namespace LostCyberHamster.UI
         private static void UpdateLocationArrow(Button button, bool isAvailable)
         {
             button.SetEnabled(isAvailable);
-            button.style.backgroundColor = isAvailable
-                ? StyleKeyword.Null
-                : new Color(0.45f, 0.45f, 0.45f);
+            button.EnableInClassList(
+                "leaderboard-location-arrow--disabled",
+                !isAvailable);
             button.style.opacity = isAvailable ? 1 : 0.55f;
         }
 
@@ -566,9 +566,10 @@ namespace LostCyberHamster.UI
             row.style.paddingRight = 20;
             row.style.paddingLeft = 20;
             row.style.marginBottom = 4;
-            row.style.backgroundColor = isCurrentPlayer
-                ? new Color(1f, 0.89f, 0.36f, 0.9f)
-                : new Color(1f, 1f, 1f, 0.78f);
+            row.AddToClassList(
+                isCurrentPlayer
+                    ? "leaderboard-result-row--current"
+                    : "leaderboard-result-row--default");
 
             // Выравниваем значения по тем же колонкам, что и заголовок таблицы.
             row.Add(CreateResultLabel((entry.Rank + 1).ToString(), 110));
@@ -585,11 +586,8 @@ namespace LostCyberHamster.UI
         {
             var label = new Label(text ?? string.Empty);
             label.AddToClassList("lcs-text");
+            label.AddToClassList("leaderboard-result-label");
             label.style.fontSize = 26;
-            label.style.color = new Color(
-                50f / 255f,
-                43f / 255f,
-                34f / 255f);
             label.style.unityTextOutlineWidth = 0;
             label.style.unityTextAlign = alignRight
                 ? TextAnchor.MiddleRight

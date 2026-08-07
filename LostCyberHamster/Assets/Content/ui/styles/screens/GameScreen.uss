@@ -1,0 +1,42 @@
+.top-block {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    flex-direction: row;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+}
+
+.bottom-block {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    flex-direction: row;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+}
+
+#btn-jump {
+    width: 80px;
+    height: 80px;
+    border-radius: 40px;
+    background-color: var(--ui-status-warning);
+}
+
+#tap {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60%;
+    height: 70%;
+    border-width: 1px;
+    border-color: var(--game-input-border);
+}

@@ -13,11 +13,11 @@
             <engine:VisualElement name="star3" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 72px; height: 72px;" />
         </engine:VisualElement>
         <engine:VisualElement name="win_result" style="display: none; flex-grow: 0; flex-shrink: 0; width: 700px; min-height: 104px; align-items: center; justify-content: center;">
-            <engine:Label text="" name="win_run_score" class="lcs-text" style="flex-shrink: 0; font-size: 28px; -unity-text-align: middle-center; white-space: normal;" />
-            <engine:Label text="" name="win_record" class="lcs-text" style="flex-shrink: 0; font-size: 22px; -unity-text-align: middle-center; white-space: normal;" />
-            <engine:Label text="" name="win_submission_status" class="lcs-text" style="display: none; flex-shrink: 0; font-size: 20px; -unity-text-align: middle-center; white-space: normal;" />
+            <engine:Label text="" name="win_run_score" class="lcs-text ui-text-compact" style="flex-shrink: 0; font-size: 28px; -unity-text-align: middle-center; white-space: normal;" />
+            <engine:Label text="" name="win_record" class="lcs-text ui-text-compact" style="flex-shrink: 0; font-size: 22px; -unity-text-align: middle-center; white-space: normal;" />
+            <engine:Label text="" name="win_submission_status" class="lcs-text ui-text-compact" style="display: none; flex-shrink: 0; font-size: 20px; -unity-text-align: middle-center; white-space: normal;" />
         </engine:VisualElement>
-        <engine:Button text="" name="btn_leaderboard" class="lcs_btn bg-primary" style="display: none; flex-grow: 0; flex-shrink: 0; width: 520px; height: 60px; margin-top: 4px; margin-right: 0; margin-bottom: 4px; margin-left: 0; padding-right: 16px; padding-left: 16px; font-size: 22px; white-space: normal;" />
+        <engine:Button text="" name="btn_leaderboard" class="lcs_btn bg-primary ui-text-compact" style="display: none; flex-grow: 0; flex-shrink: 0; width: 520px; height: 60px; margin-top: 4px; margin-right: 0; margin-bottom: 4px; margin-left: 0; padding-right: 16px; padding-left: 16px; font-size: 22px; white-space: normal;" />
         <engine:VisualElement style="flex-grow: 0; flex-shrink: 0; flex-direction: row; align-items: flex-end;">
             <engine:Instance template="HomeButton" />
             <engine:Instance template="GameButton" />

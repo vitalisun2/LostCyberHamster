@@ -1,0 +1,183 @@
+#main_btn_group .lcs_btn {
+    margin-left: 20px;
+    margin-right: 20px;
+    margin-bottom: 12px;
+    margin-top: 12px;
+}
+
+#btn_play {
+    min-width: 160px;
+    width: auto;
+    max-width: 480px;
+    height: 160px;
+    font-size: 64px;
+    padding: 24px;
+    margin-bottom: 16px;
+    margin-top: 12px;
+}
+
+#btn_select-level {
+    min-width: 140px;
+    width: auto;
+    max-width: 320px;
+    height: 130px;
+    padding: 12px;
+    margin-bottom: 12px;
+    margin-top: 16px;
+}
+
+.home-hud {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 100%;
+    height: 112px;
+    padding-top: 10px;
+    padding-right: 18px;
+    padding-bottom: 10px;
+    padding-left: 18px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.home-hud__side {
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: 0;
+    min-width: 0;
+    height: 100%;
+    flex-direction: row;
+    align-items: center;
+}
+
+.home-hud__left {
+    justify-content: flex-start;
+}
+
+.home-hud__right {
+    justify-content: flex-end;
+}
+
+.home-hud__character-button,
+.home-hud__settings-button {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 104px;
+    height: 82px;
+    margin: 0;
+    padding: 8px;
+    font-size: 28px;
+}
+
+.home-hud .storage-container {
+    flex-grow: 0;
+    flex-shrink: 1;
+    width: 220px;
+    min-width: 160px;
+    height: 70px;
+    margin-left: 12px;
+}
+
+.home-hud .storage-image {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+}
+
+.home-hud .storage-label {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    margin-left: 6px;
+    font-size: 28px;
+    color: var(--ui-compact-text);
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: var(--ui-compact-text);
+}
+
+.home-hud #storage__btn-add {
+    display: none;
+}
+
+.home-super-attacks-xp-panel {
+    position: relative;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 620px;
+    height: 82px;
+    padding-top: 10px;
+    padding-right: 14px;
+    padding-bottom: 10px;
+    padding-left: 14px;
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--ui-content-card-surface);
+    border-top-width: 6px;
+    border-right-width: 6px;
+    border-bottom-width: 6px;
+    border-left-width: 6px;
+    border-top-color: var(--ui-border);
+    border-right-color: var(--ui-border);
+    border-bottom-color: var(--ui-border);
+    border-left-color: var(--ui-border);
+    border-top-left-radius: var(--ui-radius-main);
+    border-top-right-radius: var(--ui-radius-main);
+    border-bottom-right-radius: var(--ui-radius-main);
+    border-bottom-left-radius: var(--ui-radius-main);
+}
+
+.home-super-attacks-xp-panel__level {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 100px;
+    height: 52px;
+    color: var(--ui-content-card-text);
+    font-size: 26px;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.home-super-attacks-xp-panel__progress {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    min-width: 0;
+    height: 48px;
+    margin-right: 12px;
+    margin-left: 12px;
+}
+
+.home-super-attacks-xp-panel__progress .unity-progress-bar__background {
+    min-height: 0;
+    height: 48px;
+    background-color: var(--ui-progress-track-original);
+    border-top-width: 4px;
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    border-left-width: 4px;
+    border-color: var(--ui-border);
+}
+
+.home-super-attacks-xp-panel__progress .unity-progress-bar__progress {
+    min-height: 0;
+    height: 36px;
+    background-color: var(--ui-progress-fill-original);
+}
+
+.home-super-attacks-xp-panel__progress .unity-progress-bar__title {
+    color: var(--ui-content-card-text);
+    font-size: 18px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.home-super-attacks-xp-panel__xp {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 132px;
+    color: var(--ui-content-card-text);
+    font-size: 24px;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}

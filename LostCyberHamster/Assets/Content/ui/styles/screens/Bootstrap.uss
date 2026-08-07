@@ -1,0 +1,4 @@
+#loading_task__progress {
+    align-self: center;
+    border-radius: var(--ui-radius-main);
+}

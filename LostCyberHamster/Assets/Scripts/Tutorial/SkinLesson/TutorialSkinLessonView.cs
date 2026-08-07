@@ -214,7 +214,7 @@ namespace Assets.Scripts.Tutorial
                 pickingMode = PickingMode.Ignore
             };
             _focusHighlight.style.position = Position.Absolute;
-            _focusHighlight.style.backgroundColor = Color.clear;
+            _focusHighlight.AddToClassList("tutorial-transparent");
 
             _focusRoot.Add(_focusMask);
             _focusRoot.Add(_focusHighlight);
@@ -450,7 +450,7 @@ namespace Assets.Scripts.Tutorial
             bubble.style.paddingRight = 28;
             bubble.style.paddingBottom = 20;
             bubble.style.paddingLeft = 28;
-            bubble.style.backgroundColor = new Color(0.98f, 0.92f, 0.45f, 0.96f);
+            bubble.AddToClassList("tutorial-surface");
             bubble.style.borderTopLeftRadius = 28;
             bubble.style.borderTopRightRadius = 28;
             bubble.style.borderBottomRightRadius = 28;
@@ -461,12 +461,11 @@ namespace Assets.Scripts.Tutorial
                 name = "tutorial-skin-instruction",
                 pickingMode = PickingMode.Ignore
             };
-            label.style.color = Color.white;
+            label.AddToClassList("tutorial-text");
             label.style.fontSize = 38;
             label.style.unityFontStyleAndWeight = FontStyle.Bold;
             label.style.unityTextAlign = TextAnchor.MiddleCenter;
             label.style.unityTextOutlineWidth = 3;
-            label.style.unityTextOutlineColor = new Color(0.13f, 0.51f, 0.53f, 1f);
             label.style.whiteSpace = WhiteSpace.Normal;
             bubble.Add(label);
             return bubble;

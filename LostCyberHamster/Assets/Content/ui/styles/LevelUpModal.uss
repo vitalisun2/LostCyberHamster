@@ -9,7 +9,8 @@
 
 .level-up-modal__title {
     min-height: 58px;
-    color: var(--yellow);
+    color: var(--ui-text-fill);
+    -unity-text-outline-color: var(--ui-text-outline);
     font-size: 48px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -18,7 +19,8 @@
 .level-up-modal__transition {
     min-height: 52px;
     margin-top: 2px;
-    color: var(--white);
+    color: var(--ui-text-fill);
+    -unity-text-outline-color: var(--ui-text-outline);
     font-size: 36px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -31,8 +33,8 @@
     padding: 16px 24px;
     align-items: center;
     justify-content: center;
-    background-color: var(--yellow);
-    border-color: var(--secondary);
+    background-color: var(--ui-surface);
+    border-color: var(--ui-border);
     border-width: 6px;
     border-radius: 20px;
 }
@@ -47,7 +49,8 @@
 .level-up-modal__attack-name {
     min-height: 48px;
     margin-top: 4px;
-    color: var(--secondary);
+    color: var(--ui-text-fill);
+    -unity-text-outline-color: var(--ui-text-outline);
     font-size: 32px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -57,7 +60,8 @@
 .level-up-modal__attack-status {
     min-height: 40px;
     margin-top: 2px;
-    color: var(--secondary);
+    color: var(--ui-compact-text);
+    -unity-text-outline-width: 0;
     font-size: 25px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -68,4 +72,6 @@
     height: 72px;
     margin-top: 14px;
     font-size: 30px;
+    color: var(--ui-compact-text);
+    -unity-text-outline-width: 0;
 }

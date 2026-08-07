@@ -1,0 +1,33 @@
+.carousel-nav-button {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 123px;
+    height: 114px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 0;
+    font-size: 51px;
+}
+
+.carousel-nav-button--previous {
+    margin-right: 16px;
+    margin-left: 8px;
+}
+
+.carousel-nav-button--next {
+    margin-right: 8px;
+    margin-left: 16px;
+}
+
+.carousel-navigation-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding-right: 28px;
+    padding-left: 28px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}

@@ -1,0 +1,98 @@
+.intro-surface {
+    background-color: var(--ui-surface);
+}
+
+.leaderboard-part--selected {
+    background-color: var(--ui-status-selected);
+}
+
+.leaderboard-part--available,
+.leaderboard-result-row--default {
+    background-color: var(--ui-status-default);
+}
+
+.leaderboard-part--disabled,
+.leaderboard-location-arrow--disabled {
+    background-color: var(--ui-status-disabled);
+}
+
+.leaderboard-result-row--current {
+    background-color: var(--ui-status-current);
+}
+
+.leaderboard-result-label {
+    color: var(--ui-text-fill);
+}
+
+.runtime-status--danger {
+    background-color: var(--ui-status-danger);
+}
+
+.runtime-status--warning {
+    background-color: var(--ui-status-warning);
+}
+
+.runtime-status--info {
+    background-color: var(--ui-status-info);
+}
+
+.runtime-status--success {
+    background-color: var(--ui-status-success);
+}
+
+.quest-action--daily {
+    background-color: var(--ui-quest-daily);
+}
+
+.quest-action--story {
+    background-color: var(--ui-quest-story);
+}
+
+.quest-image--daily {
+    background-color: var(--ui-quest-image-daily);
+}
+
+.quest-image--story {
+    background-color: var(--ui-quest-image-story);
+}
+
+.tutorial-overlay {
+    background-color: var(--ui-overlay);
+}
+
+.license-overlay {
+    background-color: var(--ui-overlay);
+}
+
+.license-overlay-text {
+    color: var(--ui-text-fill);
+}
+
+.tutorial-surface {
+    background-color: var(--ui-surface);
+}
+
+.tutorial-transparent {
+    background-color: transparent;
+}
+
+.tutorial-text {
+    color: var(--ui-text-fill);
+    -unity-text-outline-color: var(--ui-text-outline);
+}
+
+.tutorial-button {
+    background-color: var(--ui-surface);
+    border-color: var(--ui-border);
+    color: var(--ui-text-fill);
+    -unity-text-outline-color: var(--ui-text-outline);
+}
+
+.tutorial-button:hover,
+.tutorial-button:focus {
+    background-color: var(--ui-surface-hover);
+}
+
+.tutorial-button:active {
+    background-color: var(--ui-surface-active);
+}

@@ -30,32 +30,32 @@
                     <engine:VisualElement class="mb-12" style="width: 100%; min-width: 0; flex-grow: 0; flex-direction: row; align-items: flex-start;">
                         <Vues.GameCore.LocalizedLabel key="lbl_account" class="lcs-text" style="width: 300px; flex-grow: 0; flex-shrink: 0; margin-top: 12px; white-space: normal;" />
                         <engine:VisualElement style="width: 100%; max-width: 760px; min-width: 0; flex-grow: 1; flex-shrink: 1;">
-                            <engine:Label name="settings__lbl-account-state" class="lcs-text" style="width: 100%; min-width: 0; white-space: normal; font-size: 24px; color: rgb(0, 0, 0); -unity-text-outline-width: 0px;" />
-                            <Vues.GameCore.LocalizedButton key="btn_link_account" name="settings__btn-link-account" class="lcs_btn bg-primary" style="width: 240px; height: 52px; font-size: 22px; margin-top: 4px; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+                            <engine:Label name="settings__lbl-account-state" class="lcs-text ui-text-plain" style="width: 100%; min-width: 0; white-space: normal; font-size: 24px; -unity-text-outline-width: 0px;" />
+                            <Vues.GameCore.LocalizedButton key="btn_link_account" name="settings__btn-link-account" class="lcs_btn bg-primary ui-text-compact" style="width: 240px; height: 52px; font-size: 22px; margin-top: 4px; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
                         </engine:VisualElement>
                     </engine:VisualElement>
                     <engine:VisualElement name="settings__player-name" class="mb-12" style="width: 100%; min-width: 0; flex-grow: 0; flex-direction: row; align-items: flex-start;">
                         <Vues.GameCore.LocalizedLabel key="lbl_player_name" class="lcs-text" style="width: 300px; flex-grow: 0; flex-shrink: 0; margin-top: 12px; white-space: normal;" />
                         <engine:VisualElement style="width: 100%; max-width: 760px; min-width: 0; flex-grow: 1; flex-shrink: 1;">
                             <engine:VisualElement name="settings__player-name-view" style="width: 100%; min-width: 0; flex-grow: 0; flex-direction: row; align-items: center;">
-                                <engine:Label name="settings__lbl-player-name" class="lcs-text" style="min-width: 0; flex-grow: 1; flex-shrink: 1; white-space: normal; font-size: 24px; color: rgb(0, 0, 0); -unity-text-outline-width: 0px;" />
-                                <Vues.GameCore.LocalizedButton key="btn_change_player_name" name="settings__btn-change-player-name" class="lcs_btn bg-primary" style="width: 240px; height: 52px; flex-grow: 0; flex-shrink: 0; font-size: 22px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 12px;" />
+                                <engine:Label name="settings__lbl-player-name" class="lcs-text ui-text-plain" style="min-width: 0; flex-grow: 1; flex-shrink: 1; white-space: normal; font-size: 24px; -unity-text-outline-width: 0px;" />
+                                <Vues.GameCore.LocalizedButton key="btn_change_player_name" name="settings__btn-change-player-name" class="lcs_btn bg-primary ui-text-compact" style="width: 240px; height: 52px; flex-grow: 0; flex-shrink: 0; font-size: 22px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 12px;" />
                             </engine:VisualElement>
                             <engine:VisualElement name="settings__player-name-edit" style="width: 100%; min-width: 0; flex-grow: 0; display: none;">
                                 <engine:VisualElement style="width: 100%; min-width: 0; flex-grow: 0;">
                                     <engine:TextField name="settings__txt-player-name" max-length="16" style="width: 100%; max-width: 560px; min-width: 0; height: 52px; flex-grow: 0; flex-shrink: 1; font-size: 22px;" />
                                     <engine:VisualElement style="width: 100%; min-width: 0; flex-grow: 0; flex-direction: row; flex-wrap: wrap; align-items: center; margin-top: 8px;">
-                                        <Vues.GameCore.LocalizedButton key="btn_save_player_name" name="settings__btn-save-player-name" class="lcs_btn bg-primary" style="width: 220px; height: 52px; flex-grow: 0; flex-shrink: 0; font-size: 22px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 12px;" />
-                                        <Vues.GameCore.LocalizedButton key="btn_cancel_player_name" name="settings__btn-cancel-player-name" class="lcs_btn bg-danger" style="width: 160px; height: 52px; flex-grow: 0; flex-shrink: 0; font-size: 22px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 12px;" />
+                                        <Vues.GameCore.LocalizedButton key="btn_save_player_name" name="settings__btn-save-player-name" class="lcs_btn bg-primary ui-text-compact" style="width: 220px; height: 52px; flex-grow: 0; flex-shrink: 0; font-size: 22px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 12px;" />
+                                        <Vues.GameCore.LocalizedButton key="btn_cancel_player_name" name="settings__btn-cancel-player-name" class="lcs_btn bg-danger ui-text-compact-light" style="width: 160px; height: 52px; flex-grow: 0; flex-shrink: 0; font-size: 22px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 12px;" />
                                     </engine:VisualElement>
                                 </engine:VisualElement>
-                                <Vues.GameCore.LocalizedLabel key="player_name_validation_error" name="settings__lbl-player-name-error" class="lcs-text" style="display: none; width: 100%; min-width: 0; margin-top: 8px; white-space: normal; font-size: 22px; color: rgb(180, 32, 32); -unity-text-outline-width: 0px;" />
+                                <Vues.GameCore.LocalizedLabel key="player_name_validation_error" name="settings__lbl-player-name-error" class="lcs-text ui-danger-text" style="display: none; width: 100%; min-width: 0; margin-top: 8px; white-space: normal; font-size: 22px; -unity-text-outline-width: 0px;" />
                             </engine:VisualElement>
                         </engine:VisualElement>
                     </engine:VisualElement>
                     <engine:VisualElement name="settings__cloud-sync-status" class="mb-12" style="width: 100%; min-width: 0; flex-grow: 0; flex-direction: row; align-items: flex-start; display: none;">
-                        <Vues.GameCore.LocalizedLabel key="lbl_cloud_save" class="lcs-text" style="width: 300px; flex-grow: 0; flex-shrink: 0; white-space: normal; font-size: 28px;" />
-                        <engine:Label name="settings__lbl-cloud-sync-status" class="lcs-text" style="width: 100%; max-width: 760px; min-width: 0; flex-grow: 1; flex-shrink: 1; white-space: normal; font-size: 24px; color: rgb(0, 0, 0); -unity-text-outline-width: 0px;" />
+                        <Vues.GameCore.LocalizedLabel key="lbl_cloud_save" class="lcs-text ui-text-compact" style="width: 300px; flex-grow: 0; flex-shrink: 0; white-space: normal; font-size: 28px;" />
+                        <engine:Label name="settings__lbl-cloud-sync-status" class="lcs-text ui-text-plain" style="width: 100%; max-width: 760px; min-width: 0; flex-grow: 1; flex-shrink: 1; white-space: normal; font-size: 24px; -unity-text-outline-width: 0px;" />
                     </engine:VisualElement>
                     <engine:VisualElement class="mb-12" style="width: 100%; min-width: 0; flex-grow: 0; flex-direction: row; align-items: center;">
                         <Vues.GameCore.LocalizedLabel key="lbl_version" class="lcs-text" style="width: 300px; flex-grow: 0; flex-shrink: 0; white-space: normal;" />

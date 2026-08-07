@@ -1,0 +1,22 @@
+.unity-progress-bar__background {
+    background-color: var(--ui-text-fill);
+    border-width: 6px;
+    border-color: var(--ui-border);
+    min-height: 76px;
+    border-radius: var(--ui-radius-main);
+}
+
+.unity-progress-bar__progress {
+    background-color: var(--ui-surface);
+    margin: 0;
+    min-height: 40px;
+    border-radius: var(--ui-radius-secondary);
+}
+
+.unity-progress-bar__title {
+    color: var(--ui-text-fill);
+    -unity-text-outline-width: 3px;
+    -unity-text-outline-color: var(--ui-text-outline);
+    -unity-font-style: bold;
+    font-size: var(--ui-font-size);
+}

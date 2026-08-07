@@ -17,6 +17,8 @@
     font-size: 26px;
     -unity-text-align: middle-center;
     white-space: normal;
+    color: var(--ui-compact-text);
+    -unity-text-outline-width: 0;
 }
 
 .cloud-save-conflict__cards {
@@ -33,14 +35,15 @@
     width: 44%;
     margin: 10px;
     padding: 18px;
-    background-color: rgba(217, 229, 154, 0.92);
+    background-color: var(--ui-panel-muted);
     border-width: 5px;
-    border-color: rgb(34, 130, 134);
+    border-color: var(--ui-border);
     border-radius: 18px;
 }
 
 .cloud-save-conflict__card-title {
-    color: rgb(30, 30, 30);
+    color: var(--ui-compact-text);
+    -unity-text-outline-width: 0;
     font-size: 30px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -54,7 +57,8 @@
 
 .cloud-save-conflict__label,
 .cloud-save-conflict__value {
-    color: rgb(30, 30, 30);
+    color: var(--ui-compact-text);
+    -unity-text-outline-width: 0;
     font-size: 22px;
 }
 
@@ -70,12 +74,15 @@
     margin-top: 14px;
     font-size: 24px;
     white-space: normal;
+    color: var(--ui-compact-text);
+    -unity-text-outline-width: 0;
 }
 
 .cloud-save-conflict__warning {
     width: 90%;
     margin-top: 8px;
-    color: rgb(30, 30, 30);
+    color: var(--ui-compact-text);
+    -unity-text-outline-width: 0;
     font-size: 20px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
