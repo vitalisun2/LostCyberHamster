@@ -28,7 +28,7 @@ namespace LostCyberHamster.UI
 
         private VisualElement _levelsContainer => _contentRoot.Q<VisualElement>("levels_container");
         private VisualElement _locationImage => _contentRoot.Q<VisualElement>("location__image");
-        private VisualElement _locationTitle => _contentRoot.Q<VisualElement>("location__title");
+        private Label _locationTitle => _contentRoot.Q<Label>("location__title");
 
         private readonly List<Action> _onClickedLevelSubscribe = new();
         private readonly List<Action> _onClickedLevelUnsubscribe = new();
@@ -104,7 +104,9 @@ namespace LostCyberHamster.UI
             if (_state == SelectionState.Levels && _selectedPartView != null)
             {
                 PopulateLevelCards(_selectedPartView);
-                UpdateTitle(_selectedPartView.DisplayName);
+                UpdateTitle(ResolveLocalizedTitle(
+                    _selectedPartView.Key,
+                    _selectedPartView.DisplayName));
                 UpdateBackButton(true);
                 UpdateLevelPagingButtons(_selectedPartView);
             }
@@ -114,7 +116,9 @@ namespace LostCyberHamster.UI
                 _selectedPartView = null;
                 var locationView = GetCurrentLocationView();
                 PopulateDayCards(locationView);
-                UpdateTitle(locationView?.DisplayName ?? string.Empty);
+                UpdateTitle(ResolveLocalizedTitle(
+                    locationView?.Key,
+                    locationView?.DisplayName));
                 UpdateBackButton(false);
                 ResetLocationButtons();
             }
@@ -299,7 +303,7 @@ namespace LostCyberHamster.UI
                     for (float i = 0; i < 1; i += 0.1f)
                     {
                         levelItem.style.opacity = i;
-                        await Task.Delay(20);
+                        await Task.Delay(10);
                     }
                 }
             }
@@ -487,10 +491,27 @@ namespace LostCyberHamster.UI
 
         private void UpdateTitle(string text)
         {
-            if (_locationTitle is Label label)
+            if (_locationTitle != null)
             {
-                label.text = text;
+                _locationTitle.text = text;
             }
+        }
+
+        /// <summary>
+        /// Возвращает локализованный заголовок экрана с резервным отображаемым именем.
+        /// </summary>
+        private static string ResolveLocalizedTitle(string key, string fallback)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return fallback ?? string.Empty;
+            }
+
+            var localized = LocalizationManager.GetLocalizedString(key);
+            return string.IsNullOrWhiteSpace(localized) ||
+                   string.Equals(localized, key, StringComparison.Ordinal)
+                ? fallback ?? key
+                : localized;
         }
 
         private void UpdateBackButton(bool visible)

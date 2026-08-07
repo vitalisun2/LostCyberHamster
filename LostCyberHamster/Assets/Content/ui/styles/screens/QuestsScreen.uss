@@ -62,11 +62,19 @@
     border-width: 0;
     border-radius: var(--ui-radius-secondary);
     background-color: var(--ui-tab-inactive);
-    color: var(--ui-compact-text);
+    color: var(--ui-quest-control-text);
     -unity-font-style: bold;
     -unity-text-outline-width: 0;
     font-size: 32px;
     white-space: normal;
+}
+
+.quests-tab,
+.quests-tab:hover,
+.quests-tab:focus,
+.quests-tab:active {
+    color: var(--ui-quest-control-text);
+    -unity-text-outline-width: 0;
 }
 
 .quests-tab:hover,
