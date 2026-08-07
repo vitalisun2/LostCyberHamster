@@ -60,6 +60,7 @@ namespace Assets.Scripts.Gameplay
         public AtomicEvent JumpOverEvent = new();
         public AtomicEvent<ObstacleTypeEnum> CollectableCollectedEvent = new();
         public AtomicEvent<Obstacle> DestroyObstacleEvent = new();
+        public AtomicEvent<Obstacle> DestroyObstacleBySuperAttackEvent = new();
         public AtomicEvent DamageEvent = new();
         public AtomicEvent UltaEvent = new();
         public AtomicEvent TapRequest = new();
@@ -76,7 +77,7 @@ namespace Assets.Scripts.Gameplay
 
         // ulta variables
         public AtomicVariable<bool> IsProtected = new(false);
-        public AtomicVariable<bool> IsDestructiveOnCollision = new(false);
+        public AtomicVariable<bool> IsSuperAttackDestructiveOnCollision = new(false);
         public AtomicVariable<int> UltaChargeAmount = new(0);
 
         private ShiftTransformAnimatorController _shiftTransformAnimatorController;
@@ -202,6 +203,7 @@ namespace Assets.Scripts.Gameplay
             _runScoreMechanics = new RunScoreMechanics(
                 CollectableCollectedEvent,
                 DestroyObstacleEvent,
+                DestroyObstacleBySuperAttackEvent,
                 Lives,
                 LevelController.Instance.LevelData.GameManager);
             _partOfDayScoreMechanics = new PartOfDayScoreMechanics(

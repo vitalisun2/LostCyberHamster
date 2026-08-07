@@ -10,6 +10,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
     {
         private readonly Hamster _hamster;
         private readonly Obstacle _obstacleScript;
+        private readonly AtomicEvent<Obstacle> _destroyObstacleBySuperAttackEvent;
         private readonly AtomicEvent<GameObject> _onObstacleUnspawn;
         private readonly BoomEffectAction _boomEffectAction;
         private readonly GameManager _gameManager;
@@ -18,6 +19,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             _hamster = obstacleScript.Hamster;
             _obstacleScript = obstacleScript;
+            _destroyObstacleBySuperAttackEvent =
+                _hamster.DestroyObstacleBySuperAttackEvent;
             _onObstacleUnspawn = obstacleScript.OnObstacleUnspawned;
             _boomEffectAction = obstacleScript.BoomEffectAction;
             _gameManager = obstacleScript.GameManager;
@@ -25,15 +28,17 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnEnable()
         {
-            _hamster.DestroyObstacleEvent.Subscribe(OnJumpedOn);
+            _hamster.DestroyObstacleEvent.Subscribe(OnObstacleDestroyed);
+            _destroyObstacleBySuperAttackEvent.Subscribe(OnObstacleDestroyed);
         }
 
         public void OnDisable()
         {
-            _hamster.DestroyObstacleEvent.Unsubscribe(OnJumpedOn);
+            _hamster.DestroyObstacleEvent.Unsubscribe(OnObstacleDestroyed);
+            _destroyObstacleBySuperAttackEvent.Unsubscribe(OnObstacleDestroyed);
         }
 
-        private void OnJumpedOn(Obstacle destroyedObstacle)
+        private void OnObstacleDestroyed(Obstacle destroyedObstacle)
         {
             if(destroyedObstacle != _obstacleScript)
                 return;

@@ -89,13 +89,13 @@ namespace Vues.GameCore
         private IEnumerator RunAttack(Hamster hamster)
         {
             hamster.IsProtected.Value = true;
-            hamster.IsDestructiveOnCollision.Value = true;
+            hamster.IsSuperAttackDestructiveOnCollision.Value = true;
 
             var attackEffect = HelpMethods.CreateUltaEffect(_effectPrefab, hamster);
             yield return new WaitForSeconds(_duration);
 
             hamster.IsProtected.Value = false;
-            hamster.IsDestructiveOnCollision.Value = false;
+            hamster.IsSuperAttackDestructiveOnCollision.Value = false;
 
             if (attackEffect != null)
             {

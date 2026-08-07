@@ -17,6 +17,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private readonly AtomicEvent<ObstacleTypeEnum> _collectableCollectedEvent;
         private readonly AtomicEvent<Obstacle> _destroyObstacleEvent;
+        private readonly AtomicEvent<Obstacle> _destroyObstacleBySuperAttackEvent;
         private readonly AtomicVariable<int> _lives;
         private readonly GameManager _gameManager;
 
@@ -25,20 +26,27 @@ namespace Assets.Scripts.GameEngine.Mechanics
         public RunScoreMechanics(
             AtomicEvent<ObstacleTypeEnum> collectableCollectedEvent,
             AtomicEvent<Obstacle> destroyObstacleEvent,
+            AtomicEvent<Obstacle> destroyObstacleBySuperAttackEvent,
             AtomicVariable<int> lives,
             GameManager gameManager)
         {
             _collectableCollectedEvent = collectableCollectedEvent;
             _destroyObstacleEvent = destroyObstacleEvent;
+            _destroyObstacleBySuperAttackEvent =
+                destroyObstacleBySuperAttackEvent;
             _lives = lives;
             _gameManager = gameManager;
         }
 
         public void OnEnable()
         {
+            // Сбрасываем score нового забега.
             Reset();
+
+            // Учитываем collectables и разрушения обоих источников.
             _collectableCollectedEvent.Subscribe(OnCollectableCollected);
             _destroyObstacleEvent.Subscribe(OnObstacleDestroyed);
+            _destroyObstacleBySuperAttackEvent.Subscribe(OnObstacleDestroyed);
             _gameManager.OnFinish += OnFinish;
         }
 
@@ -46,6 +54,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             _collectableCollectedEvent.Unsubscribe(OnCollectableCollected);
             _destroyObstacleEvent.Unsubscribe(OnObstacleDestroyed);
+            _destroyObstacleBySuperAttackEvent.Unsubscribe(OnObstacleDestroyed);
             _gameManager.OnFinish -= OnFinish;
         }
 

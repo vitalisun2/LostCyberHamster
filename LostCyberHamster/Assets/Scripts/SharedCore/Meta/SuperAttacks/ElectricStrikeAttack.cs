@@ -2,8 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Assets.Scripts;
 using Assets.Scripts.Common;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
 using Assets.Scripts.System.Resources;
@@ -12,12 +12,15 @@ using UnityEngine;
 namespace Vues.GameCore
 {
     /// <summary>
-    /// Уничтожает препятствия впереди хомяка на текущей линии.
+    /// Уничтожает случайные 30–70% активных препятствий на текущей линии хомяка.
     /// </summary>
     public sealed class ElectricStrikeAttack : ISuperAttackRuntime
     {
         public const string EffectAddress = "ElectricStrikePrefab";
         public const int DefaultChargePerObstacle = 35;
+
+        private const int _minDestroyedPercentage = 30;
+        private const int _maxDestroyedPercentage = 70;
 
         private readonly AddressableLease<GameObject> _effectPrefabLease;
         private readonly GameObject _effectPrefab;
@@ -49,17 +52,17 @@ namespace Vues.GameCore
         }
 
         /// <summary>
-        /// Создаёт эффект и запускает последовательное уничтожение препятствий.
+        /// Создаёт эффект и уничтожает случайные 30–70% препятствий текущей линии.
         /// </summary>
         public bool TryActivate()
         {
             var hamster = LevelController.Instance.LevelData.Hamster;
             HelpMethods.CreateUltaEffect(_effectPrefab, hamster);
 
-            var obstaclesInRange = FindObstaclesOnSameLaneInRange(hamster);
-            if (obstaclesInRange.Any())
+            var selectedObstacles = FindRandomObstaclesOnSameLane(hamster);
+            if (selectedObstacles.Any())
             {
-                hamster.StartCoroutine(DestroyObstaclesWithDelay(obstaclesInRange, 0.1f));
+                hamster.StartCoroutine(DestroyObstaclesWithDelay(selectedObstacles, 0.1f));
             }
 
             return true;
@@ -85,38 +88,63 @@ namespace Vues.GameCore
             foreach (var obstacle in obstacles)
             {
                 var hamster = LevelController.Instance.LevelData.Hamster;
-                hamster.DestroyObstacleEvent?.Invoke(obstacle);
+                hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);
                 yield return new WaitForSeconds(delay);
             }
         }
 
-        private static List<Obstacle> FindObstaclesOnSameLaneInRange(Hamster hamster)
+        private static List<Obstacle> FindRandomObstaclesOnSameLane(Hamster hamster)
         {
-            var spawnedObstacles = ObstacleSpawner.Instance.SpawnedObstacles
+            // Собираем активные обычные препятствия только с текущей линии.
+            var sameLaneObstacles = ObstacleSpawner.Instance.SpawnedObstacles
                 .Select(x => x.ObstacleScript)
+                .Where(obstacle => obstacle != null
+                    && obstacle.isActiveAndEnabled
+                    && IsRegularObstacle(obstacle)
+                    && HelpMethods.IsOnSameLine(hamster.IsOnBottomLine.Value, obstacle))
                 .ToList();
-            var obstaclesInRange = new List<Obstacle>();
 
-            foreach (var obstacle in spawnedObstacles)
+            if (sameLaneObstacles.Count == 0)
+                return sameLaneObstacles;
+
+            // Выбираем случайное количество целей в диапазоне 30–70%.
+            int minTargetCount = Mathf.Max(
+                1,
+                Mathf.CeilToInt(
+                    sameLaneObstacles.Count * _minDestroyedPercentage / 100f));
+            int maxTargetCount = Mathf.Max(
+                minTargetCount,
+                Mathf.FloorToInt(
+                    sameLaneObstacles.Count * _maxDestroyedPercentage / 100f));
+            int targetCount = UnityEngine.Random.Range(
+                minTargetCount,
+                maxTargetCount + 1);
+
+            // Перемешиваем цели и возвращаем рассчитанную долю.
+            for (int i = sameLaneObstacles.Count - 1; i > 0; i--)
             {
-                if (obstacle.transform.position.x < hamster.transform.position.x)
-                {
-                    continue;
-                }
-
-                if (!HelpMethods.IsOnSameLine(hamster.IsOnBottomLine.Value, obstacle))
-                {
-                    continue;
-                }
-
-                float distX = Mathf.Abs(hamster.transform.position.x - obstacle.transform.position.x);
-                if (distX <= Consts.StrikeRangeMax)
-                {
-                    obstaclesInRange.Add(obstacle);
-                }
+                int randomIndex = UnityEngine.Random.Range(0, i + 1);
+                (sameLaneObstacles[i], sameLaneObstacles[randomIndex]) =
+                    (sameLaneObstacles[randomIndex], sameLaneObstacles[i]);
             }
 
-            return obstaclesInRange;
+            return sameLaneObstacles.Take(targetCount).ToList();
+        }
+
+        private static bool IsRegularObstacle(Obstacle obstacle)
+        {
+            switch (obstacle.ObstacleType.ObstacleTypeEnum)
+            {
+                case ObstacleTypeEnum.smallAlive:
+                case ObstacleTypeEnum.bigAlive:
+                case ObstacleTypeEnum.smallNotAliveRoad:
+                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                case ObstacleTypeEnum.bigNotAlive:
+                case ObstacleTypeEnum.mediumNotAlive:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

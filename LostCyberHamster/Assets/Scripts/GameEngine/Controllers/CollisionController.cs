@@ -285,7 +285,7 @@ public class CollisionController : MonoBehaviour
                 $"[CollisionController] damage source={triggerSource} reason={reason} " +
                 $"state={_hamster.HamsterState.Value} livesBefore={_hamster.Lives.Value} " +
                 $"isDamaged={_hamster.IsDamaged.Value} protected={_hamster.IsProtected.Value} " +
-                $"destructive={_hamster.IsDestructiveOnCollision.Value} " +
+                $"superAttackDestructive={_hamster.IsSuperAttackDestructiveOnCollision.Value} " +
                 $"lane={(_hamster.IsOnBottomLine.Value ? "bottom" : "top")} " +
                 $"{FormatHamsterBounds()} " +
                 $"obstacle={FormatObstacle(obstacle)} " +
@@ -298,10 +298,10 @@ public class CollisionController : MonoBehaviour
             _hamster.DamageEvent.Invoke();
         }
 
-        // Удаляем препятствие, если хомяк умеет ломать его при столкновении.
-        if (_hamster.IsDestructiveOnCollision.Value)
+        // Удаляем препятствие через поток суперудара без drops и нового заряда.
+        if (_hamster.IsSuperAttackDestructiveOnCollision.Value)
         {
-            _hamster.DestroyObstacleEvent?.Invoke(obstacle);
+            _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);
         }
     }
 
