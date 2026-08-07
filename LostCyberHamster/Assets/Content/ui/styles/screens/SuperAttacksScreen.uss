@@ -69,22 +69,7 @@
     flex-grow: 1;
     flex-shrink: 1;
     min-width: 0;
-    height: 120px;
-}
-
-.super-attacks__xp-progress .unity-progress-bar__background {
-    min-height: 0;
-    height: 120px;
-    background-color: var(--ui-progress-track-original);
-    border-color: var(--ui-border);
-}
-
-.super-attacks__xp-progress .unity-progress-bar__progress {
-    min-height: 0;
-    top: 28px;
-    bottom: auto;
-    height: 52px;
-    background-color: var(--ui-border);
+    height: 72px;
 }
 
 .super-attacks__xp-progress .unity-progress-bar__title {

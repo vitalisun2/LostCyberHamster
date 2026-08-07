@@ -148,28 +148,9 @@
     flex-shrink: 1;
     min-height: 0;
     min-width: 0;
-    height: 88px;
+    height: 72px;
     margin-right: 12px;
     margin-left: 12px;
-}
-
-.home-super-attacks-xp-panel__progress .unity-progress-bar__background {
-    min-height: 0;
-    height: 88px;
-    background-color: var(--ui-progress-track-original);
-    border-top-width: 4px;
-    border-right-width: 4px;
-    border-bottom-width: 4px;
-    border-left-width: 4px;
-    border-color: var(--ui-border);
-}
-
-.home-super-attacks-xp-panel__progress .unity-progress-bar__progress {
-    min-height: 0;
-    top: 16px;
-    bottom: auto;
-    height: 48px;
-    background-color: var(--ui-border);
 }
 
 .home-super-attacks-xp-panel__progress .unity-progress-bar__title {
