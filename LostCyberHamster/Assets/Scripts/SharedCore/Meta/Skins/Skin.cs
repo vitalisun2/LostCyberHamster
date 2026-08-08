@@ -10,8 +10,7 @@ public class Skin
     public int Price;
     public ResourceType PriceType;
     public Sprite HamsterSprite;
-    public RuntimeAnimatorController HamsterOverrideController;
+    public string SkinVisualAddress;
 
     public bool IsPurchased => GameDataManager.PlayerData.PurchasedSkinIds.Contains(Id);
 }
-

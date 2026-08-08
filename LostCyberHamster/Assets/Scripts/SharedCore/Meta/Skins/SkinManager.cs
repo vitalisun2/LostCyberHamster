@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using Assets.Scripts.Common;
 using Assets.Scripts.System;
 using GameManagement;
 using UnityEngine;
@@ -18,11 +17,13 @@ public static class SkinManager
     public static List<Skin> AvailableSkins => _availableSkins;
 
     public static Skin CurrentSkin => _availableSkins.FirstOrDefault(x => x.Id == GameDataManager.PlayerData.AppliedSkinId);
+    public static Skin DefaultSkin => _availableSkins.FirstOrDefault(x => x.Id == 0);
 
     private static List<Skin> _availableSkins = new();
 
     public static async Task Init()
     {
+        _availableSkins.Clear();
         string json = await LoadJsonFromAddressables();
 
         var skinDatas = JsonUtility.FromJson<SkinDataList>(json).skins;
@@ -113,11 +114,6 @@ public static class SkinManager
         }
 
         GameDataManager.PlayerData.AppliedSkinId = skinId;
-
-        if (LevelController.Instance.LevelData.Hamster != null)
-        {
-            HelpMethods.ApplyOverrideController(LevelController.Instance.LevelData.Hamster);
-        }
 
         GameEventsManager.PlayerStateChanged(
             PlayerStateIds.SkinApplied,

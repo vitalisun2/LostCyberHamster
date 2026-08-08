@@ -1,30 +1,36 @@
 using Assets.Scripts.GameEngine.Controllers;
-using Assets.Scripts.Gameplay.Enums;
+using Assets.Scripts.GameManagerLogic;
 using Atomic.Elements;
-using UnityEngine;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
-    public class TakeDamageMechanics
+    /// <summary>
+    /// Управляет gameplay-длительностью damage immunity независимо от visual-клипа.
+    /// </summary>
+    public sealed class TakeDamageMechanics
     {
-        private AtomicEvent _damageEvent;
-        private SpriteAnimatorController _spriteAnimatorController;
-        private AtomicVariable<HamsterStateEnum> _hamsterState;
+        private const float DamageDuration = 1f;
+
+        private readonly AtomicEvent _damageEvent;
+        private readonly SpriteAnimatorController _spriteAnimatorController;
         private readonly AtomicVariable<bool> _isDamaged;
         private readonly AtomicVariable<int> _lives;
+        private readonly GameManager _gameManager;
+
+        private float _remainingDamageTime;
 
         public TakeDamageMechanics(
             AtomicEvent damageEvent,
             SpriteAnimatorController spriteAnimatorController,
-            AtomicVariable<HamsterStateEnum> hamsterState,
             AtomicVariable<bool> isDamaged,
-            AtomicVariable<int> lives)
+            AtomicVariable<int> lives,
+            GameManager gameManager)
         {
             _damageEvent = damageEvent;
             _spriteAnimatorController = spriteAnimatorController;
-            _hamsterState = hamsterState;
             _isDamaged = isDamaged;
             _lives = lives;
+            _gameManager = gameManager;
         }
 
         public void OnEnable()
@@ -37,14 +43,28 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _damageEvent.Unsubscribe(OnDamageEvent);
         }
 
-        private void OnDamageEvent()
+        public void OnUpdate(float deltaTime)
         {
-            var lifesToLost = 1;
-            _lives.Value -= lifesToLost;
-            _spriteAnimatorController.Blink();
-            _isDamaged.Value = true;
-            GameEventsManager.LivesLost(lifesToLost);
+            if (!_isDamaged.Value || _gameManager.State != GameState.PLAYING)
+                return;
+
+            _remainingDamageTime -= deltaTime;
+            if (_remainingDamageTime > 0f)
+                return;
+
+            _remainingDamageTime = 0f;
+            _isDamaged.Value = false;
+            _spriteAnimatorController.SetDamaged(false);
         }
 
+        private void OnDamageEvent()
+        {
+            const int livesToLose = 1;
+            _lives.Value -= livesToLose;
+            _remainingDamageTime = DamageDuration;
+            _isDamaged.Value = true;
+            _spriteAnimatorController.SetDamaged(true);
+            GameEventsManager.LivesLost(livesToLose);
+        }
     }
 }

@@ -41,7 +41,6 @@ namespace Assets.Scripts.Tutorial
 
         public void Prepare(TutorialGameplayScenario scenario)
         {
-            HelpMethods.ApplyOverrideController(_hamster);
             if (scenario == TutorialGameplayScenario.SuperHit)
             {
                 _hamster.AddUltaCharge(100);

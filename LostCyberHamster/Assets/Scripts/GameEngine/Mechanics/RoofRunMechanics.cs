@@ -16,6 +16,7 @@ public class RoofRunMechanics
     private readonly AtomicVariable<HamsterStateEnum> _hamsterState;
     private readonly EnvironmentRoot _environmentRoot;
     private TransformAnimatorController _transformAnimatorController;
+    private readonly SpriteAnimatorController _spriteAnimatorController;
     private readonly float _hamsterWidthInUnits;
 
     public RoofRunMechanics(Transform transform,
@@ -24,6 +25,7 @@ public class RoofRunMechanics
         AtomicVariable<bool> isOnBottomLine,
         AtomicVariable<bool> isDamaged,
         TransformAnimatorController transformAnimatorController,
+        SpriteAnimatorController spriteAnimatorController,
         float hamsterWidthInUnits)
     {
         _transform = transform;
@@ -32,6 +34,7 @@ public class RoofRunMechanics
         _isOnBottomLine = isOnBottomLine;
         _isDamaged = isDamaged;
         _transformAnimatorController = transformAnimatorController;
+        _spriteAnimatorController = spriteAnimatorController;
         _hamsterWidthInUnits = hamsterWidthInUnits;
 
         _environmentRoot = GameObject.FindWithTag("EnvironmentRoot").GetComponent<EnvironmentRoot>();
@@ -136,6 +139,7 @@ public class RoofRunMechanics
     {
         _hamsterState.Value = HamsterStateEnum.RunFromRoof;
         _transformAnimatorController.SetRunAnimationTrigger(_hamsterState);
+        _spriteAnimatorController.PlayForState(_hamsterState.Value);
     }
 
     /// <summary>

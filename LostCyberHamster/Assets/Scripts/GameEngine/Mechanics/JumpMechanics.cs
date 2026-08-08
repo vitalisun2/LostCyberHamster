@@ -96,7 +96,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 SwapRoofClipsIfNeeded(result);
                 _transformAnimatorController.SetJumpAnimationTrigger(_hamsterState);
-                _spriteAnimatorController.Jump();
+                _spriteAnimatorController.PlayForState(_hamsterState.Value);
             }
         }
 

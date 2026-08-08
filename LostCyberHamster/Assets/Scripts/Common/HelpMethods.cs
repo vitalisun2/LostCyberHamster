@@ -5,7 +5,6 @@ using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Installers.Roots;
-using GameManagement;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -30,21 +29,6 @@ namespace Assets.Scripts.Common
 
             return (isTopObstacle && isHamsterOnTopLine) ||
                    (!isTopObstacle && !isHamsterOnTopLine);
-        }
-
-        public static void ApplyOverrideController(Hamster hamster)
-        {
-            var spriteAnimatorController = hamster.GetComponentInChildren<SpriteAnimatorController>();
-            var animator = spriteAnimatorController.gameObject.GetComponent<Animator>();
-
-            if (SkinManager.CurrentSkin.HamsterOverrideController == null)
-            {
-                Debug.LogWarning("Hamster override controller is null, default skin applied");
-                GameDataManager.PlayerData.AppliedSkinId = 0;
-            }
-
-            animator.runtimeAnimatorController = SkinManager.CurrentSkin.HamsterOverrideController;
-            animator.enabled = true;
         }
 
         public static GameObject CreateUltaEffect(GameObject ultaPrefab, Hamster hamster)

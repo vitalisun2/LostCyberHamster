@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.GameEngine.Skins;
 using Assets.Scripts.Installers.Roots;
 using Assets.Scripts.System;
 using LoadingTasks;
@@ -38,13 +39,23 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             var hamster = GameObject.Instantiate(_characterPrefab,
                 new Vector3(Consts.HamsterXPos, Consts.HamsterYPos, 0), Quaternion.identity, _environmentRoot.transform);
 
-            await ConfigureSuperAttackAsync(hamster);
+            try
+            {
+                // Собираем runtime-зависимости персонажа до регистрации gameplay listeners.
+                await ConfigureSuperAttackAsync(hamster);
+                SkinVisualRuntime skinVisualRuntime = await SkinVisualRuntimeFactory.CreateSelectedAsync(hamster);
+                hamster.ConfigureSkinVisual(skinVisualRuntime);
 
-            // Завершаем прежнюю настройку персонажа.
-            AddGameListeners(hamster);
-            HelpMethods.ApplyOverrideController(hamster);
-
-            LevelController.Instance.LevelData.Hamster = hamster;
+                // Подключаем только постоянные gameplay listeners после сборки visual.
+                AddGameListeners(hamster);
+                LevelController.Instance.LevelData.Hamster = hamster;
+            }
+            catch
+            {
+                // Уничтожение Hamster освобождает уже созданные super attack и skin leases.
+                GameObject.Destroy(hamster.gameObject);
+                throw;
+            }
         }
 
         private static async Task ConfigureSuperAttackAsync(Hamster hamster)
@@ -82,6 +93,14 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                 {
                     if (listener is Listeners.IGameStartListener startListener)
                         startListener.OnStart();
+                }
+            }
+            else if (gameManager.State == GameState.INTRO)
+            {
+                foreach (var listener in listeners)
+                {
+                    if (listener is Listeners.IGameIntroListener introListener)
+                        introListener.OnIntro();
                 }
             }
         }

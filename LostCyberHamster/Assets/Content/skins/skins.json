@@ -6,7 +6,7 @@
       "Price": 0,
       "PriceType": 2,
       "SkinSprite": "skin_default",
-      "HamsterOverrideController": "DefaultSkinAnimator"
+      "SkinVisualAddress": "skin-visual/default"
     },
     {
       "Id": 2,
@@ -14,7 +14,7 @@
       "Price": 20,
       "PriceType": 2,
       "SkinSprite": "skin_neon-runner",
-      "HamsterOverrideController": "ElectricStrikeSkinAnimator"
+      "SkinVisualAddress": "skin-visual/neon-runner"
     },
     {
       "Id": 1,
@@ -22,7 +22,15 @@
       "Price": 10,
       "PriceType": 2,
       "SkinSprite": "skin_quantum-scout",
-      "HamsterOverrideController": "EnergyShieldSkinAnimator"
+      "SkinVisualAddress": "skin-visual/quantum-scout"
+    },
+    {
+      "Id": 3,
+      "NameLocalizationKey": "skin_name_skateboard",
+      "Price": 10,
+      "PriceType": 2,
+      "SkinSprite": "skin_default",
+      "SkinVisualAddress": "skin-visual/skateboard"
     }
   ]
 }

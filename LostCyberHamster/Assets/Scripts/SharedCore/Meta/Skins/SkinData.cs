@@ -8,5 +8,5 @@ public class SkinData
     public int Price;
     public ResourceType PriceType;
     public string SkinSprite;
-    public string HamsterOverrideController;
+    public string SkinVisualAddress;
 }

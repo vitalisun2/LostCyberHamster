@@ -10,9 +10,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
     public class HamsterAnimationEventsMechanics
     {
         private TransformAnimatorEventsDispatcher _transformAnimatorEventsDispatcher;
-        private SpriteAnimatorEventsDispatcher _spriteAnimatorEventsDispatcher;
+        private readonly SpriteAnimatorController _spriteAnimatorController;
         private readonly AtomicVariable<HamsterStateEnum> _hamsterState;
-        private readonly AtomicVariable<bool> _isDamaged;
         private readonly AtomicVariable<bool> _needCheckCollisionInRunFromRoofAfterShift;
         private readonly AtomicEvent _jumpOverEvent;
         private readonly AtomicEvent<Obstacle> _destroyObstacleEvent;
@@ -20,9 +19,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent _damageEvent;
 
         public HamsterAnimationEventsMechanics(TransformAnimatorEventsDispatcher transformAnimatorEventsDispatcher,
-            SpriteAnimatorEventsDispatcher spriteAnimatorEventsDispatcher,
+            SpriteAnimatorController spriteAnimatorController,
             AtomicVariable<HamsterStateEnum> hamsterState,
-            AtomicVariable<bool> isDamaged,
             AtomicVariable<bool> needCheckCollisionInRunFromRoofAfterShift,
             AtomicEvent jumpOverEvent,
             AtomicEvent<Obstacle> destroyObstacleEvent,
@@ -31,25 +29,22 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             _transformAnimatorEventsDispatcher = transformAnimatorEventsDispatcher;
             _hamsterState = hamsterState;
-            _isDamaged = isDamaged;
             _needCheckCollisionInRunFromRoofAfterShift = needCheckCollisionInRunFromRoofAfterShift;
             _jumpOverEvent = jumpOverEvent;
             _destroyObstacleEvent = destroyObstacleEvent;
             _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
-            _spriteAnimatorEventsDispatcher = spriteAnimatorEventsDispatcher;
+            _spriteAnimatorController = spriteAnimatorController;
             _damageEvent = damageEvent;
         }
 
         public void OnEnable()
         {
             _transformAnimatorEventsDispatcher.OnEvent += OnEvent;
-            _spriteAnimatorEventsDispatcher.OnEvent += OnEvent;
         }
 
         public void OnDisable()
         {
             _transformAnimatorEventsDispatcher.OnEvent -= OnEvent;
-            _spriteAnimatorEventsDispatcher.OnEvent -= OnEvent;
         }
 
         private void OnEvent(string animEvent)
@@ -70,6 +65,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     _damageEvent?.Invoke();
 
                 _hamsterState.Value = HamsterStateEnum.RoofRun;
+                _spriteAnimatorController.PlayForState(_hamsterState.Value);
             }
 
             if (animEvent == "transform_roof_jump_end")
@@ -81,6 +77,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     _damageEvent?.Invoke();
 
                 _hamsterState.Value = HamsterStateEnum.RoofRun;
+                _spriteAnimatorController.PlayForState(_hamsterState.Value);
             }
 
             if (animEvent == "transform_jump_from_roof_end")
@@ -92,10 +89,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     _damageEvent?.Invoke();
 
                 _hamsterState.Value = HamsterStateEnum.Run;
+                _spriteAnimatorController.PlayForState(_hamsterState.Value);
             }
-
-            if (animEvent == "sprite_blink_end")
-                _isDamaged.Value = false;
 
             if (animEvent == "check_collision_in_run_from_roof_after_shift")
                 _needCheckCollisionInRunFromRoofAfterShift.Value = true;
@@ -152,6 +147,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 _pendingJumpedOnObstacle.Value = null;
                 _hamsterState.Value = HamsterStateEnum.Run;
+                _spriteAnimatorController.PlayForState(_hamsterState.Value);
             }
 
             if (animEvent == "transform_jump_mid")

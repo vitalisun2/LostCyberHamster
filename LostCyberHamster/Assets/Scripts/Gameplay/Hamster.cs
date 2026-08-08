@@ -2,6 +2,7 @@
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Mechanics;
+using Assets.Scripts.GameEngine.Skins;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -9,10 +10,8 @@ using Assets.Scripts.Installers.Roots;
 using Atomic.Elements;
 using Atomic.Objects;
 using Sirenix.OdinInspector;
-using Unity.VisualScripting;
 using UnityEngine;
 using Vues.GameCore;
-using Zenject;
 
 namespace Assets.Scripts.Gameplay
 {
@@ -83,7 +82,7 @@ namespace Assets.Scripts.Gameplay
         private ShiftTransformAnimatorController _shiftTransformAnimatorController;
         private TransformAnimatorController _transformAnimatorController;
         private SpriteAnimatorController _spriteAnimatorController;
-        private SpriteAnimatorEventsDispatcher _spriteAnimatorEventsDispatcher;
+        private SkinVisualHost _skinVisualHost;
         private TransformAnimatorEventsDispatcher _transformAnimatorEventsDispatcher;
 
         private JumpMechanics _jumpMechanics;
@@ -100,6 +99,7 @@ namespace Assets.Scripts.Gameplay
         private DeathMechanics _deathMechanics;
         private TapMechanics _tapMechanics;
         private ISuperAttackRuntime _superAttackRuntime;
+        private SkinVisualRuntime _skinVisualRuntime;
         private UltaMechanics _ultaMechanics;
         private UltaChargeMechanics _ultaChargeMechanics;
 
@@ -112,7 +112,7 @@ namespace Assets.Scripts.Gameplay
             _shiftTransformAnimatorController = GetComponentInChildren<ShiftTransformAnimatorController>();
             _transformAnimatorController = GetComponentInChildren<TransformAnimatorController>();
             _spriteAnimatorController = GetComponentInChildren<SpriteAnimatorController>();
-            _spriteAnimatorEventsDispatcher = GetComponentInChildren<SpriteAnimatorEventsDispatcher>();
+            _skinVisualHost = GetComponentInChildren<SkinVisualHost>(true);
             _transformAnimatorEventsDispatcher = GetComponentInChildren<TransformAnimatorEventsDispatcher>();
 
             var environmentRoot = GameObject.FindWithTag("EnvironmentRoot").GetComponent<EnvironmentRoot>();
@@ -155,9 +155,8 @@ namespace Assets.Scripts.Gameplay
 
             _hamsterAnimationEventsMechanics = new HamsterAnimationEventsMechanics(
                 transformAnimatorEventsDispatcher: _transformAnimatorEventsDispatcher,
-                spriteAnimatorEventsDispatcher: _spriteAnimatorEventsDispatcher,
+                spriteAnimatorController: _spriteAnimatorController,
                 hamsterState: HamsterState,
-                isDamaged: IsDamaged,
                 needCheckCollisionInRunFromRoofAfterShift: NeedCheckCollisionInRunFromRoofAfterShift,
                 jumpOverEvent: JumpOverEvent,
                 destroyObstacleEvent: DestroyObstacleEvent,
@@ -171,6 +170,7 @@ namespace Assets.Scripts.Gameplay
                 isOnBottomLine: IsOnBottomLine,
                 isDamaged: IsDamaged,
                 transformAnimatorController: _transformAnimatorController,
+                spriteAnimatorController: _spriteAnimatorController,
                 hamsterWidthInUnits: ColliderWidth);
 
             _roofJumpMechanics = new RoofJumpMechanics(
@@ -197,7 +197,12 @@ namespace Assets.Scripts.Gameplay
                 energy: Energy,
                 hamsterWidthInUnits: ColliderWidth);
 
-            _takeDamageMechanics = new TakeDamageMechanics(DamageEvent, _spriteAnimatorController, HamsterState, IsDamaged, Lives);
+            _takeDamageMechanics = new TakeDamageMechanics(
+                DamageEvent,
+                _spriteAnimatorController,
+                IsDamaged,
+                Lives,
+                LevelController.Instance.LevelData.GameManager);
             _addOneCoinMechanics = new AddOneCoinMechanics(JumpOverEvent);
             _addCoinsOrBonusMechanics = new AddCoinsOrBonusMechanics(DestroyObstacleEvent, this);
             _runScoreMechanics = new RunScoreMechanics(
@@ -217,6 +222,7 @@ namespace Assets.Scripts.Gameplay
         {
             _roofRunMechanics.OnUpdate();
             _tapMechanics.OnUpdate();
+            _takeDamageMechanics.OnUpdate(Time.deltaTime);
             _ultaMechanics?.OnUpdate();
         }
 
@@ -258,7 +264,16 @@ namespace Assets.Scripts.Gameplay
 
         private void OnDestroy()
         {
+            _skinVisualRuntime?.Dispose();
             _superAttackRuntime?.Dispose();
+        }
+
+        public SkinVisualHost SkinVisualHost => _skinVisualHost;
+
+        public void ConfigureSkinVisual(SkinVisualRuntime runtime)
+        {
+            _skinVisualRuntime?.Dispose();
+            _skinVisualRuntime = runtime ?? throw new ArgumentNullException(nameof(runtime));
         }
 
         public void ConfigureSuperAttack(ISuperAttackRuntime runtime)

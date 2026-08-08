@@ -104,7 +104,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             {
                 ApplyRoofClips(sourceRoof, result);
                 _transformAnimatorController.SetSuperRoofJumpAnimationTrigger(_hamsterState);
-                _spriteAnimatorController.Jump();
+                _spriteAnimatorController.PlayForState(_hamsterState.Value);
             }
         }
 
