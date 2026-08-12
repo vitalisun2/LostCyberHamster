@@ -16,8 +16,8 @@ namespace LostCyberHamster.Editor
     /// </summary>
     public static class SkinVisualContentValidator
     {
-        private const string HamsterPrefabPath = "Assets/Content/prefabs/Hamster.prefab";
-        private const string VisualPrefabRoot = "Assets/Content/prefabs/skins";
+        private const string HamsterPrefabPath = "Assets/Content/prefabs/Hamster/Hamster.prefab";
+        private const string VisualPrefabRoot = "Assets/Content/prefabs/skins/normal_mode";
         private const string VisualAddressablesGroup = "Skin Visuals";
 
         private static readonly string[] SkinSlugs =
@@ -25,7 +25,6 @@ namespace LostCyberHamster.Editor
             "default",
             "neon-runner",
             "quantum-scout",
-            "skateboard",
         };
 
         [MenuItem("Tools/Skins/Validate Skin Visuals")]
@@ -47,7 +46,6 @@ namespace LostCyberHamster.Editor
             ValidatePrefabs(errors);
             ValidateHamster(errors);
             ValidateAddressables(errors);
-            ValidateSkateboardPlaceholder(errors);
             return errors;
         }
 
@@ -103,19 +101,6 @@ namespace LostCyberHamster.Editor
                 string expectedAddress = $"skin-visual/{slug}";
                 if (group.entries.All(entry => entry.address != expectedAddress))
                     errors.Add($"Addressable entry '{expectedAddress}' is missing.");
-            }
-        }
-
-        private static void ValidateSkateboardPlaceholder(ICollection<string> errors)
-        {
-            string clipsRoot = "Assets/Animations/Hamster/skin_visuals/skateboard/clips";
-            string spritesRoot = "Assets/Content/skins/skateboard/sprites";
-            foreach (string actionName in new[] { "run", "jump", "jump_on", "jump_on_from_roof" })
-            {
-                if (AssetDatabase.LoadAssetAtPath<AnimationClip>($"{clipsRoot}/{actionName}.anim") == null)
-                    errors.Add($"Skateboard clip '{actionName}' is missing.");
-                if (AssetDatabase.LoadAssetAtPath<Texture2D>($"{spritesRoot}/{actionName}.png") == null)
-                    errors.Add($"Skateboard sheet '{actionName}' is missing.");
             }
         }
 

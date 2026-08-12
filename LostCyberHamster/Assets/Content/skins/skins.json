@@ -23,14 +23,6 @@
       "PriceType": 2,
       "SkinSprite": "skin_quantum-scout",
       "SkinVisualAddress": "skin-visual/quantum-scout"
-    },
-    {
-      "Id": 3,
-      "NameLocalizationKey": "skin_name_skateboard",
-      "Price": 10,
-      "PriceType": 2,
-      "SkinSprite": "skin_default",
-      "SkinVisualAddress": "skin-visual/skateboard"
     }
   ]
 }

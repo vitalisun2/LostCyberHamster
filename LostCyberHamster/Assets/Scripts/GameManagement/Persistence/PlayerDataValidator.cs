@@ -10,6 +10,8 @@ namespace GameManagement
 {
     public static class PlayerDataValidator
     {
+        private const int RemovedSkateboardSkinId = 3;
+
         public static PlayerDataValidationResult Validate(PlayerData data)
         {
             if (data == null)
@@ -36,14 +38,17 @@ namespace GameManagement
                 return PlayerDataValidationResult.Rejected("invalid_purchased_skin");
             }
 
-            if (data.PurchasedSkinIds == null && data.AppliedSkinId != 0)
+            if (data.PurchasedSkinIds == null &&
+                data.AppliedSkinId != 0 &&
+                data.AppliedSkinId != RemovedSkateboardSkinId)
             {
                 return PlayerDataValidationResult.Rejected("applied_skin_not_purchased");
             }
 
             if (data.PurchasedSkinIds != null &&
                 !data.PurchasedSkinIds.Contains(data.AppliedSkinId) &&
-                data.AppliedSkinId != 0)
+                data.AppliedSkinId != 0 &&
+                data.AppliedSkinId != RemovedSkateboardSkinId)
             {
                 return PlayerDataValidationResult.Rejected("applied_skin_not_purchased");
             }
@@ -51,7 +56,9 @@ namespace GameManagement
             if (SkinManager.AvailableSkins.Count > 0 && data.PurchasedSkinIds != null)
             {
                 var knownSkinIds = new HashSet<int>(SkinManager.AvailableSkins.Select(skin => skin.Id));
-                if (data.PurchasedSkinIds.Any(skinId => !knownSkinIds.Contains(skinId)))
+                if (data.PurchasedSkinIds.Any(skinId =>
+                        skinId != RemovedSkateboardSkinId &&
+                        !knownSkinIds.Contains(skinId)))
                 {
                     return PlayerDataValidationResult.Rejected("unknown_purchased_skin");
                 }
@@ -112,6 +119,8 @@ namespace GameManagement
                                data.StoryQuestSet?.ActivePrimaryQuestId == null ||
                                data.StoryQuestSet?.ActiveSecondaryQuestId == null ||
                                !data.HasSerializedProgressCollection ||
+                               data.AppliedSkinId == RemovedSkateboardSkinId ||
+                               data.PurchasedSkinIds?.Contains(RemovedSkateboardSkinId) == true ||
                                !data.PurchasedSkinIds.Contains(0) ||
                                HasExactDuplicates(data.PurchasedSkinIds) ||
                                hasExactQuestStateDuplicates ||
@@ -148,6 +157,12 @@ namespace GameManagement
             data.ExperiencePoints = Math.Max(0, data.ExperiencePoints);
             data.PlayerLevel = Math.Max(1, data.PlayerLevel);
             data.PurchasedSkinIds ??= new List<int>();
+            data.PurchasedSkinIds.RemoveAll(skinId => skinId == RemovedSkateboardSkinId);
+            if (data.AppliedSkinId == RemovedSkateboardSkinId)
+            {
+                data.AppliedSkinId = 0;
+            }
+
             if (!data.PurchasedSkinIds.Contains(0))
             {
                 data.PurchasedSkinIds.Add(0);

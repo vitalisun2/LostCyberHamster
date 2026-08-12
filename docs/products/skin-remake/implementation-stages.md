@@ -16,9 +16,9 @@
 
 Создать новые каталоги, prefab contract, Addressables-группу и правила sprite sheets. Добавить проверку структуры скина, action mapping и обязательных visual-ассетов.
 
-## 5. Pilot skateboard skin
+## 5. Pilot visual prefab
 
-Собрать технический prefab на art default skin, но с отдельными `run`, `jump`, `jump_on`, `jump_on_from_roof`. Проверить заменяемость будущих sheets, переиспользование клипов, Normal/Super действия и синхронизацию с существующими transform clips.
+Собрать технический prefab на art одного существующего скина, но с отдельными `run`, `jump`, `jump_on`, `jump_on_from_roof`. Проверить заменяемость будущих sheets, переиспользование клипов, Normal/Super действия и синхронизацию с существующими transform clips.
 
 ## 6. Перенос текущих скинов
 
@@ -30,4 +30,4 @@
 
 ## 8. Финальная проверка
 
-Проверить gameplay collision, все jump/roof/super/damage действия, паузу, старт, сохранения, Addressables lifetime и сборку. Зафиксировать визуальный паритет текущих скинов и готовность инфраструктуры skateboard к замене заглушки финальным art.
+Проверить gameplay collision, все jump/roof/super/damage действия, паузу, старт, сохранения, Addressables lifetime и сборку. Зафиксировать визуальный паритет текущих скинов и готовность инфраструктуры к новым visual prefabs.

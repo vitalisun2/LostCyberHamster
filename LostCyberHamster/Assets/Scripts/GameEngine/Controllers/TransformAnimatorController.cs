@@ -248,7 +248,7 @@ namespace Assets.Scripts.GameEngine.Controllers
 
 #if UNITY_EDITOR
             // Ищет editor-only medium roof clip asset.
-            const string basePath = "Assets/Animations/Hamster/";
+            const string basePath = "Assets/Animations/Hamster/normal_mode/";
             clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{basePath}{clipName}.anim");
             return clip != null;
 #else
@@ -449,7 +449,7 @@ namespace Assets.Scripts.GameEngine.Controllers
         private void LoadMediumRoofClips()
         {
 #if UNITY_EDITOR
-            const string basePath = "Assets/Animations/Hamster/";
+            const string basePath = "Assets/Animations/Hamster/normal_mode/";
             foreach (var kvp in RoofClipMapping)
             {
                 var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{basePath}{kvp.Value}.anim");

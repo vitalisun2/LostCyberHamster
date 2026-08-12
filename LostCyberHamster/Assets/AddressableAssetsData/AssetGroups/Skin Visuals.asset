@@ -15,13 +15,18 @@ MonoBehaviour:
   m_GroupName: Skin Visuals
   m_GUID: 5f508a0ef88855c49b604f6820efb103
   m_SerializeEntries:
-  - m_GUID: 8074b4264e27d814193bc41fa802e341
-    m_Address: skin-visual/skateboard
+  - m_GUID: 547a2074922ceec4990442c212cf7119
+    m_Address: skin-visual/skateboard/quantum-scout
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8dcdcb3cd0e95764fab72581c5642ec6
     m_Address: skin-visual/neon-runner
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 98613753ad61c05458c22fe3ca95a05e
+    m_Address: skin-visual/skateboard/neon-runner
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -32,6 +37,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cae743ef45500144c9bb9d5ea60ce015
     m_Address: skin-visual/quantum-scout
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cba33f17df6f47a4883d74f5e6b54a26
+    m_Address: skin-visual/skateboard/default
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

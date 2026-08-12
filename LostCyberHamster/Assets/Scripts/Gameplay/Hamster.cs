@@ -1,5 +1,6 @@
 ﻿using System;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.GameEngine.Actors;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Skins;
@@ -82,7 +83,9 @@ namespace Assets.Scripts.Gameplay
         private ShiftTransformAnimatorController _shiftTransformAnimatorController;
         private TransformAnimatorController _transformAnimatorController;
         private SpriteAnimatorController _spriteAnimatorController;
-        private SkinVisualHost _skinVisualHost;
+        [SerializeField] private HamsterActorSwitcher _actorSwitcher;
+        [SerializeField] private SkinVisualHost _normalSkinVisualHost;
+        [SerializeField] private SkinVisualHost _skateboardSkinVisualHost;
         private TransformAnimatorEventsDispatcher _transformAnimatorEventsDispatcher;
 
         private JumpMechanics _jumpMechanics;
@@ -112,7 +115,6 @@ namespace Assets.Scripts.Gameplay
             _shiftTransformAnimatorController = GetComponentInChildren<ShiftTransformAnimatorController>();
             _transformAnimatorController = GetComponentInChildren<TransformAnimatorController>();
             _spriteAnimatorController = GetComponentInChildren<SpriteAnimatorController>();
-            _skinVisualHost = GetComponentInChildren<SkinVisualHost>(true);
             _transformAnimatorEventsDispatcher = GetComponentInChildren<TransformAnimatorEventsDispatcher>();
 
             var environmentRoot = GameObject.FindWithTag("EnvironmentRoot").GetComponent<EnvironmentRoot>();
@@ -268,7 +270,10 @@ namespace Assets.Scripts.Gameplay
             _superAttackRuntime?.Dispose();
         }
 
-        public SkinVisualHost SkinVisualHost => _skinVisualHost;
+        public HamsterActorSwitcher ActorSwitcher => _actorSwitcher;
+        public SkinVisualHost SkinVisualHost => _normalSkinVisualHost;
+        public SkinVisualHost NormalSkinVisualHost => _normalSkinVisualHost;
+        public SkinVisualHost SkateboardSkinVisualHost => _skateboardSkinVisualHost;
 
         public void ConfigureSkinVisual(SkinVisualRuntime runtime)
         {

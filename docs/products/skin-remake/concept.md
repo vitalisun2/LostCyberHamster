@@ -87,7 +87,7 @@ Transform action всегда authoritative. Для one-shot используе�
 
 Visual clip рисуется под длительность соответствующего transform action. `FitToAction` исправляет небольшое расхождение, а не компенсирует неподходящий art. Если один clip переиспользуется действиями с заметно разной длительностью, художник и геймдизайнер принимают ускорение либо добавляют отдельный clip. Удержания последнего кадра нет.
 
-`ContactTime` нужен только сложным visuals. Будущий режим может отдельно подгонять фазы до и после контакта. MVP skateboard обходится без visual contact marker; gameplay contact остаётся точным.
+`ContactTime` нужен только сложным visuals. Отдельный gameplay mode может сам подгонять фазы до и после контакта; gameplay contact остаётся точным.
 
 ## 5. Каталоги и naming
 
@@ -144,36 +144,18 @@ Assets/Content/skins/
 | Этап | Изменение | Условие выхода |
 |---|---|---|
 | 1. Host | Добавить common `collision_body`, `skin_slot`, host/router и additive catalog field. Legacy visual остаётся рабочим. | Старые три скина без визуальных и gameplay-регрессий. |
-| 2. Pilot | Добавить только skateboard prefab через новый путь. Legacy skins продолжают override path. | Полный action mapping, корректный spawn, pause/start и release. |
+| 2. Pilot | Добавить один visual prefab через новый путь. Legacy skins продолжают override path. | Полный action mapping, корректный spawn, pause/start и release. |
 | 3. Migration | Перенести default, neon runner, quantum scout в отдельные prefabs. | Visual parity и сохранение старых ID/save. |
 | 4. Cutover | Удалить `HelpMethods.ApplyOverrideController`, controller field, override assets и orphan states. | Все skins используют prefab path; legacy content больше не referenced. |
 
 Временное удвоение старых и новых assets допустимо до cutover. Новые prefab не должны ссылаться на legacy clips/sheets.
 
-## 8. Первый minimal skateboard skin
-
-Набор: `run`, `jump`, `jump_on`, `jump_on_from_roof`.
-
-Финальный art ещё не нарисован. Первый prefab — техническая заглушка на спрайтах default skin. При этом четыре action-слота, clips, controller states и mapping создаются раздельно: будущие sprite sheets заменяются без изменений runtime-кода и prefab contract.
-
-| Context | Visual clip | Timing |
-|---|---|---|
-| `GroundRun`, `RoofRun` | `run` | `Loop` |
-| `GroundJump`, `RoofJump`, `JumpFromRoof` | `jump` | `FitToAction` |
-| `RunFromRoof` | `jump` | `FitToAction` |
-| `JumpOnObstacle`, `JumpOnRoof` | `jump_on` | `FitToAction` |
-| `JumpOnObstacleFromRoof` | `jump_on_from_roof` | `FitToAction` |
-| Любой `Variant=Super` | Те же clips MVP | Не перезапускать при том же mapping |
-| `Outcome=Damage` | Тот же action clip + общий damage feedback | Gameplay duration `1` с |
-
-MVP не требует отдельных roof-run, super или damage clips. Их можно добавить mapping-правилами без изменений gameplay и transform controllers.
-
-## 9. Критерии готовности pilot
+## 8. Критерии готовности pilot
 
 - Collider совпадает с текущим default и не зависит от visual prefab.
 - Все текущие action-context разрешаются mapping без `IsJump` fallback в gameplay.
 - Transform events остаются единственным источником contact/end.
-- Skateboard загружается один раз на забег; lease освобождается.
-- Skateboard-заглушка имеет четыре независимых visual action asset, хотя временно использует один default art.
+- Pilot visual загружается один раз на забег; lease освобождается.
+- Pilot имеет независимые visual action assets, хотя временно может использовать общий art.
 - Смена в меню влияет только на следующий spawn.
 - Старые скины, tutorial ID `2`, quests и saves работают без миграции данных.
