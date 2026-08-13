@@ -49,10 +49,10 @@ Assets/Content/prefabs/skins/
   skateboard_mode/<slug>/<slug>-skin-visual.prefab
 
 Assets/Content/skins/
-  normal_mode/<slug>/sprites/
-  skateboard_mode/<slug>/sprites/
+  normal_mode/<slug>/*.png
+  skateboard_mode/<slug>/*.png
 
-Assets/Content/prefabs/Hamster/
+Assets/Content/prefabs/
   Hamster.prefab
   Hamster-old.prefab
 ```
@@ -77,7 +77,7 @@ Shapes не вычислять каждый frame. При загрузке visua
 
 ## Фактическое состояние файлового шага
 
-- Canonical prefab перенесён в `Assets/Content/prefabs/Hamster/Hamster.prefab` вместе с `.meta`.
+- Canonical prefab лежит в `Assets/Content/prefabs/Hamster.prefab` вместе с `.meta`.
 - GUID `0be6ee3d4483271438e1571674c81ec6` и Hamster component fileID `2971939310045773830` сохранены; `Game.unity` продолжает ссылаться на них.
 - `Hamster-old.prefab` хранит исходную hierarchy; его новый GUID `16bf434ef07c2f047ba105fb0a22ce11`, AssetBundle name очищен.
 - Canonical hierarchy перестроена: sibling `normal_actor` active и `skateboard_actor` inactive под общим shift-root; root refs и оба hosts заполнены.

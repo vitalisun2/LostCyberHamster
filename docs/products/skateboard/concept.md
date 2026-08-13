@@ -97,8 +97,8 @@ Assets/Content/prefabs/skins/
   skateboard_mode/<slug>/<slug>-skin-visual.prefab
 
 Assets/Content/skins/
-  normal_mode/<slug>/sprites/
-  skateboard_mode/<slug>/sprites/
+  normal_mode/<slug>/*.png
+  skateboard_mode/<slug>/*.png
 ```
 
 `skins.json`, portraits и shared effects остаются общими, вне mode-folders.
@@ -183,9 +183,9 @@ Assets/Content/skins/
 
 ## Current prefab-prep status
 
-- Canonical moved: `Assets/Content/prefabs/Hamster/Hamster.prefab`.
+- Canonical: `Assets/Content/prefabs/Hamster.prefab`.
 - Его GUID `0be6ee3d4483271438e1571674c81ec6` и Hamster fileID `2971939310045773830` сохранены; `Game.unity` link жив.
-- `Hamster-old.prefab` создан с отдельным GUID; он хранит исходную hierarchy.
+- `Assets/Content/prefabs/Hamster-old.prefab` создан с отдельным GUID; он хранит исходную hierarchy.
 - Canonical prefab уже имеет active `normal_actor`, inactive `skateboard_actor`, switcher, два hosts и заполненные root refs.
 - Skateboard actor уже имеет placeholder polygon collider, collision controller, collider-sync stub и `skin_slot`; лишнего `effects_slot` нет.
 - Existing normal assets перенесены в `normal_mode` вместе с `.meta`; content hash `108/108` совпал.

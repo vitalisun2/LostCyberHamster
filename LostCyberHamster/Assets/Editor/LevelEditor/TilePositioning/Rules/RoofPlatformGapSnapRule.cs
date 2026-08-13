@@ -12,7 +12,7 @@ public class RoofPlatformGapSnapRule : ITilePlacementRule
     private const float SameLineTolerance = Consts.GridSnapStep * 0.5f + 0.001f;
     private const float GapTolerance = 0.001f;
     private const float FallbackHamsterColliderWidth = 1.64f;
-    private const string HamsterPrefabPath = "Assets/Content/prefabs/Hamster/Hamster.prefab";
+    private const string HamsterPrefabPath = "Assets/Content/prefabs/Hamster.prefab";
 
     private static float? _cachedHamsterWidth;
 

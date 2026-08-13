@@ -16,7 +16,7 @@ namespace LostCyberHamster.Editor
     /// </summary>
     public static class SkinVisualContentValidator
     {
-        private const string HamsterPrefabPath = "Assets/Content/prefabs/Hamster/Hamster.prefab";
+        private const string HamsterPrefabPath = "Assets/Content/prefabs/Hamster.prefab";
         private const string VisualPrefabRoot = "Assets/Content/prefabs/skins/normal_mode";
         private const string VisualAddressablesGroup = "Skin Visuals";
 
