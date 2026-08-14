@@ -221,7 +221,9 @@ namespace Vues.GameCore
         /// </summary>
         public bool TryStartJump()
         {
-            if (!_isActive || _jumpsRemaining <= 0)
+            if (!_isActive ||
+                _hamster.IsDamaged.Value ||
+                _jumpsRemaining <= 0)
                 return false;
 
             // Из ride начинаем новую серию без ожидания следующего Update.
@@ -247,7 +249,7 @@ namespace Vues.GameCore
         /// </summary>
         public bool TryUpgradeToSuperJump()
         {
-            if (!_isActive)
+            if (!_isActive || _hamster.IsDamaged.Value)
                 return false;
 
             // Upgrade перезапускает authoritative timing усиленного sprite jump.

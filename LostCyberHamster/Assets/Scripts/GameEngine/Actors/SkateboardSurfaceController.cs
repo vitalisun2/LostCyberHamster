@@ -98,7 +98,10 @@ namespace Assets.Scripts.GameEngine.Actors
         /// <summary>
         /// Отличает разрешённый контакт сверху с текущей roof-chain от столкновения с препятствием.
         /// </summary>
-        public RoofContact ClassifyRoofContact(Obstacle roof, bool isOnBottomLine)
+        public RoofContact ClassifyRoofContact(
+            Obstacle roof,
+            bool isOnBottomLine,
+            bool allowHigherRoof)
         {
             EnsureInitialized();
 
@@ -108,14 +111,14 @@ namespace Assets.Scripts.GameEngine.Actors
             // Road никогда не получает новую roof support через collision. Допускается только текущая chain.
             bool belongsToCurrentChain =
                 roof == _currentRoof ||
-                IsContinuationCandidate(roof, isOnBottomLine, allowHigherRoof: true);
+                IsContinuationCandidate(roof, isOnBottomLine, allowHigherRoof);
             return belongsToCurrentChain && IsTopContact(roof)
                 ? RoofContact.Support
                 : RoofContact.Obstacle;
         }
 
         /// <summary>
-        /// При приземлении с roof-chain выбирает любую крышу текущей линии под actor.
+        /// При приземлении продолжает roof-chain вниз или принимает более высокую крышу при верхнем контакте.
         /// </summary>
         public bool ResolveLandingSupport(bool isOnBottomLine)
         {
@@ -125,9 +128,19 @@ namespace Assets.Scripts.GameEngine.Actors
             if (State != SurfaceState.Roof)
                 return false;
 
+            // Текущая крыша остаётся support без выравнивания по промежуточному sprite frame.
+            if (IsValidRoof(_currentRoof) &&
+                HelpMethods.IsOnSameLine(isOnBottomLine, _currentRoof) &&
+                HasHorizontalOverlap(_currentRoof))
+            {
+                return true;
+            }
+
+            // Равная/нижняя крыша продолжает chain; высокая требует фактический контакт сверху.
             Obstacle support = FindRoofUnderActor(
                 isOnBottomLine,
-                allowHigherRoof: true);
+                allowHigherRoof: true,
+                requireTopContactForHigherRoof: true);
             if (support != null)
             {
                 EnterRoof(support);
@@ -169,7 +182,8 @@ namespace Assets.Scripts.GameEngine.Actors
             // Roof может продолжиться другой крышей той же линии. Road-to-roof здесь невозможен.
             Obstacle continuation = FindRoofUnderActor(
                 isOnBottomLine,
-                allowHigherRoof: false);
+                allowHigherRoof: false,
+                requireTopContactForHigherRoof: false);
             if (continuation != null)
             {
                 EnterRoof(continuation);
@@ -193,7 +207,8 @@ namespace Assets.Scripts.GameEngine.Actors
 
         private Obstacle FindRoofUnderActor(
             bool isOnBottomLine,
-            bool allowHigherRoof)
+            bool allowHigherRoof,
+            bool requireTopContactForHigherRoof)
         {
             if (ObstacleSpawner.Instance == null)
                 return null;
@@ -214,6 +229,12 @@ namespace Assets.Scripts.GameEngine.Actors
 
                 // Более высокая доступная крыша даёт ближайшую поверхность под actor.
                 CollisionUtils.GetObstacleYInterval(candidate, out _, out float candidateTop);
+                bool requiresTopContact =
+                    requireTopContactForHigherRoof &&
+                    candidateTop > _currentRoofTop + _supportTolerance;
+                if (requiresTopContact && !IsTopContact(candidate))
+                    continue;
+
                 if (candidateTop > bestTop)
                 {
                     best = candidate;
@@ -253,7 +274,12 @@ namespace Assets.Scripts.GameEngine.Actors
                 return false;
 
             CollisionUtils.GetObstacleYInterval(roof, out _, out float roofTop);
-            return Mathf.Abs(_skateboardCollider.bounds.min.y - roofTop) <= _supportTolerance;
+            Bounds skateboardBounds = _skateboardCollider.bounds;
+
+            // Верхний подход: низ уже достиг roof top, но центр collider остаётся над ним.
+            bool reachesRoofTop = skateboardBounds.min.y <= roofTop + _supportTolerance;
+            bool centerIsAboveRoofTop = skateboardBounds.center.y >= roofTop;
+            return reachesRoofTop && centerIsAboveRoofTop;
         }
 
         private bool HasHorizontalOverlap(Obstacle roof)

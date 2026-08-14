@@ -291,6 +291,13 @@ namespace Assets.Scripts.Gameplay
         public SkinVisualHost SkateboardSkinVisualHost => _skateboardSkinVisualHost;
 
         /// <summary>
+        /// Возвращает признак активного skateboard gameplay mode.
+        /// </summary>
+        public bool IsSkateboardModeActive =>
+            _superAttackRuntime is SkateboardAttack skateboardAttack &&
+            skateboardAttack.IsActive;
+
+        /// <summary>
         /// Возвращает признак разрушительного collision-состояния skateboard jump.
         /// </summary>
         public bool IsSkateboardJumpCollisionActive =>

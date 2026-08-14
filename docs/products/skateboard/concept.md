@@ -32,7 +32,7 @@ Skateboard actor не меняет Transform по Y. Прыжок нарисов
 - Ride: hamster уязвим; collision обрабатывается как обычный run damage.
 - Shift между двумя линиями работает всегда.
 - Обычный vertical Transform jump отключён.
-- Любой skateboard jump: hamster неуязвим; physical contact уничтожает obstacle.
+- Skateboard jump и landing: hamster неуязвим; physical contact уничтожает obstacle через super-attack channel.
 - До первого jump действует timeout `10 s` gameplay time.
 - Первый jump отменяет timeout навсегда.
 - Всего ровно `3` jumps: `1+1+1`, `2+1`, `1+2`, `3`.
@@ -163,12 +163,14 @@ Assets/Content/skins/
 - super-attack destroy event;
 - camera shake request.
 
-`CollisionController` — расширить позже ранней skateboard policy:
+`CollisionController` применяет skateboard collision policy:
 
 - ride -> current damage;
-- jump -> ignore damage + destroy regular obstacle.
+- jump/landing -> ignore damage + destroy regular obstacle;
+- roof top -> support, остаётся жив;
+- roof side -> ride damage или jump/landing destroy.
 
-Текущий destructive flag недостаточен: он проверяется внутри damage path.
+Destroy проходит отдельной ранней веткой до обычного damage path.
 
 ## Что переиспользовать
 

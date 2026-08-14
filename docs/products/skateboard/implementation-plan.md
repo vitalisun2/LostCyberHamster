@@ -20,7 +20,7 @@
 
 - [x] ✅ Поддержать `Run` и `RoofRun`: отдельный `surface_transform`, roof-chain, landing на крышу, плавный спуск на дорогу. Roof top остаётся опорой; road-to-roof отсутствует.
 
-- [ ] Расширить collision policy: skateboard jump игнорирует damage и уничтожает obstacle через super-attack channel.
+- [x] ✅ Расширить collision policy: ride получает обычный damage; jump и landing уничтожают obstacle через super-attack channel. Roof top остаётся опорой.
 
 - [ ] Реализовать landing impact: snapshot обеих линий, bump, delayed destroy с pool token guard, radius/wave/falloff, camera shake.
 

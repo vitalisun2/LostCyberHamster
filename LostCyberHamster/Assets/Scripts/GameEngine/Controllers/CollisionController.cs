@@ -1,6 +1,7 @@
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Common;
+using Assets.Scripts.GameEngine.Actors;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
@@ -68,6 +69,9 @@ public class CollisionController : MonoBehaviour
 
     private bool ShouldCheckHeldRunCollision(bool checkRunFromRoofAfterShift)
     {
+        if (_hamster.IsSkateboardJumpCollisionActive)
+            return true;
+
         HamsterStateEnum state = _hamster.HamsterState.Value;
 
         return state == HamsterStateEnum.Run
@@ -80,6 +84,9 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void ProcessTriggerEnter(Obstacle obstacle)
     {
+        if (TryHandleSkateboardCollision(obstacle, "Enter"))
+            return;
+
         // Прерываем обработку для уже повреждённого хомяка.
         if (_hamster.IsDamaged.Value)
             return;
@@ -115,6 +122,9 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void ProcessTriggerStay(Obstacle obstacle)
     {
+        if (TryHandleSkateboardCollision(obstacle, "Stay"))
+            return;
+
         if (_hamster.IsDamaged.Value)
             return;
 
@@ -128,6 +138,52 @@ public class CollisionController : MonoBehaviour
         {
             HandleDamage(obstacle, "Stay", "RunState");
         }
+    }
+
+    /// <summary>
+    /// Обрабатывает особую roof и jump collision policy активного skateboard mode.
+    /// </summary>
+    private bool TryHandleSkateboardCollision(
+        Obstacle obstacle,
+        string triggerSource)
+    {
+        if (!_hamster.IsSkateboardModeActive)
+            return false;
+
+        // Collectable сохраняют обычный pickup path.
+        if (IsObstacleCollectable(obstacle))
+            return false;
+
+        ObstacleTypeEnum obstacleType = obstacle.ObstacleType.ObstacleTypeEnum;
+        if (CollisionUtils.IsRoofObstacle(obstacleType))
+        {
+            SkateboardSurfaceController.RoofContact roofContact =
+                _hamster.SkateboardSurfaceController.ClassifyRoofContact(
+                    obstacle,
+                    _hamster.IsOnBottomLine.Value,
+                    allowHigherRoof: _hamster.IsSkateboardJumpCollisionActive);
+            if (roofContact == SkateboardSurfaceController.RoofContact.Support)
+                return true;
+
+            // Roof side остаётся обычным опасным препятствием во время ride.
+            if (!_hamster.IsSkateboardJumpCollisionActive)
+            {
+                if (!_hamster.IsDamaged.Value)
+                    HandleDamage(obstacle, triggerSource, "SkateboardRoofSide");
+                return true;
+            }
+        }
+
+        if (!_hamster.IsSkateboardJumpCollisionActive)
+            return false;
+
+        // Остальные нефизические контакты во время jump не дают damage/destroy.
+        if (!IsPhysicalObstacle(obstacle))
+            return true;
+
+        // Side/road obstacle уничтожается без damage, drops и нового charge.
+        _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);
+        return true;
     }
 
     /// <summary>
@@ -243,6 +299,22 @@ public class CollisionController : MonoBehaviour
     private bool IsObstacleCollectable(Obstacle obstacle)
     {
         return _collectableTypes.Contains(obstacle.ObstacleType.ObstacleTypeEnum);
+    }
+
+    private static bool IsPhysicalObstacle(Obstacle obstacle)
+    {
+        switch (obstacle.ObstacleType.ObstacleTypeEnum)
+        {
+            case ObstacleTypeEnum.smallAlive:
+            case ObstacleTypeEnum.bigAlive:
+            case ObstacleTypeEnum.smallNotAliveRoad:
+            case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+            case ObstacleTypeEnum.bigNotAlive:
+            case ObstacleTypeEnum.mediumNotAlive:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /// <summary>
