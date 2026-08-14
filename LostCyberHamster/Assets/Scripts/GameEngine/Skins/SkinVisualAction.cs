@@ -14,5 +14,9 @@ namespace Assets.Scripts.GameEngine.Skins
         RoofJump,
         JumpFromRoof,
         JumpOnObstacleFromRoof,
+        SkateboardRideA,
+        SkateboardRideB,
+        SkateboardPush,
+        SkateboardJump,
     }
 }

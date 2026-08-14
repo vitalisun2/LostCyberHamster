@@ -78,18 +78,18 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 851019927
+  m_SortingLayer: 7
   m_SortingOrder: 0
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -6505081703546308038, guid: b1c0dd0edda73dd42b7d43f495a84e0e, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 2.4, y: 6.5}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!95 &7305374401001479192
@@ -128,4 +128,44 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.GameEngine.Skins.SkinVisual
   _animator: {fileID: 7305374401001479192}
   _spriteRenderer: {fileID: 1512420957971275200}
-  _mappings: []
+  _mappings:
+  - Action: 9
+    MatchAnyVariant: 1
+    Variant: 0
+    MatchAnyOutcome: 1
+    Outcome: 0
+    StateName: ride_1
+    Clip: {fileID: 7400000, guid: 91246427f6911ce4cb40255b929854ac, type: 2}
+    Loop: 1
+  - Action: 10
+    MatchAnyVariant: 1
+    Variant: 0
+    MatchAnyOutcome: 1
+    Outcome: 0
+    StateName: ride_2
+    Clip: {fileID: 7400000, guid: 91d4942000108b44294ad7367ff772ea, type: 2}
+    Loop: 1
+  - Action: 11
+    MatchAnyVariant: 1
+    Variant: 0
+    MatchAnyOutcome: 1
+    Outcome: 0
+    StateName: push
+    Clip: {fileID: 7400000, guid: 14f63ca55b57cd84e8538a7c2d159e19, type: 2}
+    Loop: 1
+  - Action: 12
+    MatchAnyVariant: 0
+    Variant: 0
+    MatchAnyOutcome: 1
+    Outcome: 0
+    StateName: jump
+    Clip: {fileID: 7400000, guid: ba8ca525ddcf8a041847adb5e08406f7, type: 2}
+    Loop: 0
+  - Action: 12
+    MatchAnyVariant: 0
+    Variant: 1
+    MatchAnyOutcome: 1
+    Outcome: 0
+    StateName: super_jump
+    Clip: {fileID: 7400000, guid: b03896f582ad9244da97be5a68ddda71, type: 2}
+    Loop: 0

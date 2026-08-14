@@ -4,7 +4,7 @@
 
 - [x] ✅ Добавить skateboard sprite assets. Настроить общие pivot, PPU и Custom Physics Shapes для всех кадров.
 
-- [ ] Собрать skateboard Animator Controllers, clips и `SkinVisual` mappings: ride A/B, push, jump, super-jump, landing.
+- [x] ✅ Собрать skateboard Animator Controller, clips и `SkinVisual` mappings: ride A/B, push, jump, super-jump; landing живёт в хвосте jump clips.
 
 - [ ] Расширить skin catalog и visual loading: normal/skateboard variant одного slug, fallback skateboard `default`.
 

@@ -28,6 +28,10 @@ namespace Assets.Scripts.GameEngine.Skins
             ActionId = actionId;
         }
 
-        public bool IsLoop => Action is SkinVisualAction.GroundRun or SkinVisualAction.RoofRun;
+        public bool IsLoop => Action is SkinVisualAction.GroundRun
+            or SkinVisualAction.RoofRun
+            or SkinVisualAction.SkateboardRideA
+            or SkinVisualAction.SkateboardRideB
+            or SkinVisualAction.SkateboardPush;
     }
 }
