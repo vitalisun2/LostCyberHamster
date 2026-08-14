@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Assets.Scripts;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
+using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
@@ -31,8 +33,8 @@ namespace Vues.GameCore
         private const float _comboTwoWaveDuration = 0.16f;
         private const float _comboTwoStrength = 1.5f;
         private const float _comboTwoMinimumFalloff = 0.55f;
-        private const float _comboThreeStrength = 1.8f;
-        private const float _comboThreeMinimumFalloff = 0.4f;
+        private const float _comboThreeStrength = 2.1f;
+        private const float _comboThreeMinimumFalloff = 0.45f;
         private const float _superJumpRadiusMultiplier = 2f;
         private const float _maximumStartJitter = 0.012f;
         private const int _waveGroupCount = 3;
@@ -138,8 +140,9 @@ namespace Vues.GameCore
                 if (result == ImpactTarget.TickResult.Pending)
                     continue;
 
-                if (result == ImpactTarget.TickResult.ReadyToDestroy &&
+                if (result == ImpactTarget.TickResult.ReadyToComplete &&
                     target.IsCurrentLiveSpawn() &&
+                    target.CompletionOutcome == ImpactTarget.Outcome.Destroy &&
                     !IsCurrentRoof(target.Obstacle))
                 {
                     target.RestorePosition();
@@ -212,9 +215,15 @@ namespace Vues.GameCore
             float radius = hamsterWidth * ResolveRadiusInHamsterWidths(
                 clampedComboDepth,
                 isSuperCycle);
+            float rightCaptureTravel = clampedComboDepth == _maximumComboDepth
+                ? ResolveMaximumPendingLifecycle() *
+                  Consts.RoadScrollSpeed *
+                  ScrollLeftMechanics.SpeedMultiplier
+                : 0f;
+            float impactRight = screenRight + rightCaptureTravel;
             float maximumWaveDistance = Mathf.Max(
                 Mathf.Abs(hamsterX - screenLeft),
-                Mathf.Abs(screenRight - hamsterX));
+                Mathf.Abs(impactRight - hamsterX));
             Obstacle currentRoof = _hamster.SkateboardSurfaceController.CurrentRoof;
 
             List<InstantiatedObstacle> spawnedObstacles = spawner.SpawnedObstacles;
@@ -235,7 +244,8 @@ namespace Vues.GameCore
                         screenLeft,
                         screenRight,
                         screenBottom,
-                        screenTop))
+                        screenTop,
+                        rightCaptureTravel))
                 {
                     continue;
                 }
@@ -265,6 +275,7 @@ namespace Vues.GameCore
 
                 _targets.Add(new ImpactTarget(
                     spawnEntry,
+                    ResolveOutcome(obstacle),
                     bumpHeight,
                     waveDelay,
                     _bumpDuration,
@@ -307,6 +318,21 @@ namespace Vues.GameCore
                 _hamster.SkateboardSurfaceController.CurrentRoof);
         }
 
+        private static ImpactTarget.Outcome ResolveOutcome(Obstacle obstacle)
+        {
+            switch (obstacle.ObstacleType.ObstacleTypeEnum)
+            {
+                case ObstacleTypeEnum.collectableEnergetic:
+                case ObstacleTypeEnum.collectablePizza:
+                case ObstacleTypeEnum.collectableCrystal:
+                case ObstacleTypeEnum.collectableLife:
+                case ObstacleTypeEnum.collectableCoin:
+                    return ImpactTarget.Outcome.RestoreOnly;
+                default:
+                    return ImpactTarget.Outcome.Destroy;
+            }
+        }
+
         private static bool IsImpactTarget(Obstacle obstacle, Obstacle currentRoof)
         {
             if (obstacle == null ||
@@ -343,12 +369,23 @@ namespace Vues.GameCore
             float screenLeft,
             float screenRight,
             float screenBottom,
-            float screenTop)
+            float screenTop,
+            float rightCaptureTravel)
         {
             return bounds.max.x >= screenLeft &&
-                   bounds.min.x <= screenRight &&
+                   bounds.min.x <= screenRight +
+                   rightCaptureTravel +
+                   (rightCaptureTravel > 0f ? bounds.size.x : 0f) &&
                    bounds.max.y >= screenBottom &&
                    bounds.min.y <= screenTop;
+        }
+
+        private float ResolveMaximumPendingLifecycle()
+        {
+            return _comboThreeWaveDuration +
+                   _maximumStartJitter +
+                   _bumpDuration +
+                   _destroyDelay;
         }
 
         private static float GetHorizontalDistance(float originX, Bounds bounds)
@@ -444,7 +481,13 @@ namespace Vues.GameCore
             {
                 Pending,
                 Invalid,
-                ReadyToDestroy
+                ReadyToComplete
+            }
+
+            public enum Outcome
+            {
+                Destroy,
+                RestoreOnly
             }
 
             private readonly InstantiatedObstacle _spawnEntry;
@@ -461,9 +504,11 @@ namespace Vues.GameCore
             private bool _disposed;
 
             public Obstacle Obstacle { get; }
+            public Outcome CompletionOutcome { get; }
 
             public ImpactTarget(
                 InstantiatedObstacle spawnEntry,
+                Outcome completionOutcome,
                 float bumpHeight,
                 float waveDelay,
                 float bumpDuration,
@@ -475,6 +520,7 @@ namespace Vues.GameCore
                     throw new ArgumentException(
                         "Spawn entry must contain an obstacle.",
                         nameof(spawnEntry));
+                CompletionOutcome = completionOutcome;
                 _identity = Obstacle.gameObject;
                 _instanceId = Obstacle.GetInstanceID();
                 _baseY = Obstacle.transform.position.y;
@@ -515,7 +561,7 @@ namespace Vues.GameCore
 
                 SetWorldY(_baseY);
                 return impactTime >= _bumpDuration + _destroyDelay
-                    ? TickResult.ReadyToDestroy
+                    ? TickResult.ReadyToComplete
                     : TickResult.Pending;
             }
 

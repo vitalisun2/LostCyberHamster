@@ -57,9 +57,9 @@ Combo растёт только у последовательных jumps без
 | 2 подряд | `3 hamster widths` | `6 hamster widths` | x2 |
 | 3 подряд | весь visible screen | весь visible screen | x3 |
 
-Obstacle делает короткую дугу за `5 frames @ 60 FPS`; через ещё `3 frames` — destroy. Высота: combo 1 `13%..9.1%`, combo 2 `19.5%..10.725%`, combo 3 `23.4%..9.36%` от высоты obstacle. Ближние targets стартуют раньше и прыгают выше. Три wave-группы: combo 1 `0 / 0.04 / 0.08 s`, combo 2 `0 / 0.08 / 0.16 s`, combo 3 `0 / 0.13 / 0.26 s`; каждый target получает jitter `0..12 ms` внутри своей группы. Camera shake: `0.18 s`, базовая амплитуда `0.08 units`, множитель combo `1x/2x/3x`.
+Obstacle делает короткую дугу за `5 frames @ 60 FPS`; через ещё `3 frames` — destroy. Высота: combo 1 `13%..9.1%`, combo 2 `19.5%..10.725%`, combo 3 `27.3%..12.285%` от высоты obstacle. Combo 3 сильнее combo 2 на любой равной normalized distance. Ближние targets стартуют раньше и прыгают выше. Три wave-группы: combo 1 `0 / 0.04 / 0.08 s`, combo 2 `0 / 0.08 / 0.16 s`, combo 3 `0 / 0.13 / 0.26 s`; каждый target получает jitter `0..12 ms` внутри своей группы. Camera shake: `0.18 s`, базовая амплитуда `0.08 units`, множитель combo `1x/2x/3x`.
 
-Destroy идёт через существующий super-attack channel/pool unspawn. Snapshot содержит gameplay obstacles и collectables обеих линий; decor и текущая roof support исключены. Collectable уничтожается без pickup reward. Delayed target инвалидируется через `OnObstacleUnspawned`, повторно проверяется по live-list и CurrentRoof. Pool subscription симметрична enable/disable: reused object не получает старый или дублированный impact.
+Destroy physical obstacle идёт через существующий super-attack channel/pool unspawn. Collectable участвует в wave/bump, восстанавливает позицию и остаётся доступным для pickup. Decor и текущая roof support исключены. Combo 3 захватывает справа scroll-запас `~1.54 units + target width`; естественный выход после третьего landing не отменяет pending wave. Damage/finish/manual abort отменяют её. Delayed target инвалидируется через `OnObstacleUnspawned`, повторно проверяется по live-list и CurrentRoof. Pool subscription симметрична enable/disable.
 
 ## State flow
 

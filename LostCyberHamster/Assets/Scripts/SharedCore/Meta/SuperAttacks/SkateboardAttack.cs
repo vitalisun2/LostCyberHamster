@@ -456,7 +456,8 @@ namespace Vues.GameCore
             // Третий landing завершается только после visual tail.
             if (_jumpsRemaining <= 0)
             {
-                Deactivate();
+                // Natural mode exit не обрывает уже запущенную дальнюю landing-wave.
+                Deactivate(cancelLandingImpact: false);
                 return;
             }
 
@@ -558,9 +559,10 @@ namespace Vues.GameCore
             _visualHost.SetPlaybackEnabled(isEnabled);
         }
 
-        private void Deactivate()
+        private void Deactivate(bool cancelLandingImpact = true)
         {
-            _landingImpactMechanics.Cancel();
+            if (cancelLandingImpact)
+                _landingImpactMechanics.Cancel();
             bool shouldRestoreSurface =
                 _isActive || _actorSwitcher.IsSkateboardActive;
             Obstacle roof = shouldRestoreSurface &&
