@@ -122,3 +122,15 @@ Super attack catalog: skateboard ID `3`, unlock level `4`, charge per obstacle `
 ## File-review gate
 
 Проверено: один canonical GUID; backup имеет другой GUID; scene указывает canonical; normal actor active; skateboard actor inactive; оба `skin_slot` имеют host; root serialized refs non-null; normal Addressables GUID не изменились; три skateboard addresses уникальны. `git diff --check` чистый. Compile/runtime review отложен до полной реализации feature.
+
+## Tools/Testing: базовый Skateboard runner
+
+`Tools/Testing` получает одну root-кнопку `Skateboard Mode Testing` и отдельную IMGUI page. Prefab/scene object не нужен.
+
+Preparation-команда `Unlock & Select Skateboard` работает после Bootstrap: проверяет ID `3`, читает `RequiredPlayerLevel` из каталога, через testing-only seam `PlayerExperienceService` начисляет ровно недостающий XP по production level-up математике, проверяет unlock и вызывает настоящий `SuperAttackService.TrySelect(3)`. Экран Super Attacks открывать не требуется. Уже созданный gameplay Hamster не заменяет runtime: после выбора нужен следующий вход в уровень.
+
+Gameplay-команды используют production events: charge `100` + `UltaEvent` для входа, `JumpRequest`/`SuperJumpRequest` для cycles. Есть timeout и четыре state-driven сценария: `1+1+1`, `2+1`, `1+2`, `3`; toggle `Super Jump` усиливает каждый cycle, не дублируя кнопки. Runner ждёт реальные `Ride / Landing`, а не фиксированные задержки, и проверяет impact depths. `Pause / Resume / Cancel` управляют lifecycle.
+
+Повторное нажатие любой activation/scenario-кнопки при active mode проверяет rejected activation: budget, combo и phase не должны сброситься; текущий scenario продолжает работу. Отдельная кнопка для этого не нужна.
+
+Jump collision, landing impact и roof behavior пока наблюдаются на обычном уровне во время сценариев. Dedicated obstacle staging, forced finish, pool-reuse race и skin-fallback automation отложены; в базовую page не входят.

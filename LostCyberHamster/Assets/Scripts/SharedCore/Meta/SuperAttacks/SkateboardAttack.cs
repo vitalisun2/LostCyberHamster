@@ -94,6 +94,11 @@ namespace Vues.GameCore
             _state is SkateboardState.Jump or SkateboardState.SuperJump;
 
         /// <summary>
+        /// Возвращает признак усиленного skateboard jump.
+        /// </summary>
+        public bool IsSuperJumping => _state == SkateboardState.SuperJump;
+
+        /// <summary>
         /// Возвращает признак landing tail после контакта с землёй.
         /// </summary>
         public bool IsLanding => _state == SkateboardState.Landing;

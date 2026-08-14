@@ -87,6 +87,18 @@ namespace GameManagement.Progress
                 StorylineQuestExperienceReward);
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Начисляет точное количество XP через production-математику для DEV testing tools.
+        /// </summary>
+        public bool GrantExperienceForTesting(
+            PlayerData playerData,
+            int experienceReward)
+        {
+            return GrantExperience(playerData, experienceReward);
+        }
+#endif
+
         /// <summary>
         /// Начисляет XP, переносит остаток и возвращает признак хотя бы одного повышения Player Level.
         /// </summary>

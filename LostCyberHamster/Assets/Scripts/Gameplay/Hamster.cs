@@ -110,6 +110,14 @@ namespace Assets.Scripts.Gameplay
 
         public bool HasSuperAttack => _superAttackRuntime != null;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Возвращает настроенный skateboard runtime только DEV testing tools.
+        /// </summary>
+        public SkateboardAttack SkateboardAttackRuntimeForTesting =>
+            _superAttackRuntime as SkateboardAttack;
+#endif
+
         private void Awake()
         {
             // Normal actor должен быть включён до кеширования обычных mechanics-компонентов.

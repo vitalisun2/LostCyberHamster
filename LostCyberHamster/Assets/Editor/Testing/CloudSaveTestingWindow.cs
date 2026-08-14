@@ -13,7 +13,8 @@ namespace LostCyberHamster.Editor.Testing
             CloudSave,
             GameProgress,
             ExperienceProgress,
-            Quests
+            Quests,
+            Skateboard
         }
 
         /// <summary>Минимальная ширина окна.</summary>
@@ -55,6 +56,9 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Рисует и обслуживает страницу Quest Testing.</summary>
         private QuestTesting.QuestTestingPage _questTestingPage;
 
+        /// <summary>Рисует и обслуживает страницу Skateboard Mode Testing.</summary>
+        private SkateboardTesting.SkateboardTestingPage _skateboardTestingPage;
+
         /// <summary>Текущая страница общего окна Testing.</summary>
         private TestingPage _currentPage;
 
@@ -82,6 +86,8 @@ namespace LostCyberHamster.Editor.Testing
             _experienceProgressPage =
                 new ExperienceProgress.ExperienceProgressTestingPage(Repaint);
             _questTestingPage = new QuestTesting.QuestTestingPage(Repaint);
+            _skateboardTestingPage =
+                new SkateboardTesting.SkateboardTestingPage(Repaint);
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
@@ -100,6 +106,7 @@ namespace LostCyberHamster.Editor.Testing
             _gameProgressPage?.Dispose();
             _experienceProgressPage?.Dispose();
             _questTestingPage?.Dispose();
+            _skateboardTestingPage?.Dispose();
         }
 
         /// <summary>Рисует текущую страницу окна.</summary>
@@ -119,6 +126,10 @@ namespace LostCyberHamster.Editor.Testing
                     break;
                 case TestingPage.Quests:
                     _questTestingPage.Draw(() => _currentPage = TestingPage.Start);
+                    break;
+                case TestingPage.Skateboard:
+                    _skateboardTestingPage.Draw(
+                        () => _currentPage = TestingPage.Start);
                     break;
                 default:
                     DrawStartPage();
@@ -167,6 +178,15 @@ namespace LostCyberHamster.Editor.Testing
                     GUILayout.Height(ProductButtonHeight)))
             {
                 _currentPage = TestingPage.Quests;
+            }
+
+            EditorGUILayout.Space(6f);
+            if (GUILayout.Button(
+                    "Skateboard Mode Testing",
+                    GUILayout.Width(ProductButtonWidth),
+                    GUILayout.Height(ProductButtonHeight)))
+            {
+                _currentPage = TestingPage.Skateboard;
             }
         }
 
@@ -327,6 +347,7 @@ namespace LostCyberHamster.Editor.Testing
             _gameProgressPage?.HandlePlayModeStateChanged(state);
             _experienceProgressPage?.HandlePlayModeStateChanged(state);
             _questTestingPage?.HandlePlayModeStateChanged(state);
+            _skateboardTestingPage?.HandlePlayModeStateChanged(state);
             Repaint();
         }
 
