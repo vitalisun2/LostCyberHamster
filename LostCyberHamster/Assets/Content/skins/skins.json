@@ -6,7 +6,8 @@
       "Price": 0,
       "PriceType": 2,
       "SkinSprite": "skin_default",
-      "SkinVisualAddress": "skin-visual/default"
+      "SkinVisualAddress": "skin-visual/default",
+      "SkateboardSkinVisualAddress": "skin-visual/skateboard/default"
     },
     {
       "Id": 2,
@@ -14,7 +15,8 @@
       "Price": 20,
       "PriceType": 2,
       "SkinSprite": "skin_neon-runner",
-      "SkinVisualAddress": "skin-visual/neon-runner"
+      "SkinVisualAddress": "skin-visual/neon-runner",
+      "SkateboardSkinVisualAddress": ""
     },
     {
       "Id": 1,
@@ -22,7 +24,8 @@
       "Price": 10,
       "PriceType": 2,
       "SkinSprite": "skin_quantum-scout",
-      "SkinVisualAddress": "skin-visual/quantum-scout"
+      "SkinVisualAddress": "skin-visual/quantum-scout",
+      "SkateboardSkinVisualAddress": ""
     }
   ]
 }

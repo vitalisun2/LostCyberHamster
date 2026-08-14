@@ -43,8 +43,9 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             {
                 // Собираем runtime-зависимости персонажа до регистрации gameplay listeners.
                 await ConfigureSuperAttackAsync(hamster);
-                SkinVisualRuntime skinVisualRuntime = await SkinVisualRuntimeFactory.CreateSelectedAsync(hamster);
-                hamster.ConfigureSkinVisual(skinVisualRuntime);
+                (SkinVisualRuntime normalVisual, SkinVisualRuntime skateboardVisual) =
+                    await SkinVisualRuntimeFactory.CreateSelectedAsync(hamster);
+                hamster.ConfigureSkinVisuals(normalVisual, skateboardVisual);
 
                 // Подключаем только постоянные gameplay listeners после сборки visual.
                 AddGameListeners(hamster);

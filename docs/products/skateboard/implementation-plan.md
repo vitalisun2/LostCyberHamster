@@ -6,7 +6,7 @@
 
 - [x] ✅ Собрать skateboard Animator Controller, clips и `SkinVisual` mappings: ride A/B, push, jump, super-jump; landing живёт в хвосте jump clips.
 
-- [ ] Расширить skin catalog и visual loading: normal/skateboard variant одного slug, fallback skateboard `default`.
+- [x] ✅ Расширить skin catalog и visual loading: normal/skateboard variant одного slug, fallback skateboard `default`.
 
 - [ ] Реализовать `HamsterActorSwitcher`: active actor, текущий mode, возврат normal actor. Сохранить общий lane shift.
 

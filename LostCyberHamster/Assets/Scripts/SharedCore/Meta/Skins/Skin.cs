@@ -11,6 +11,7 @@ public class Skin
     public ResourceType PriceType;
     public Sprite HamsterSprite;
     public string SkinVisualAddress;
+    public string SkateboardSkinVisualAddress;
 
     public bool IsPurchased => GameDataManager.PlayerData.PurchasedSkinIds.Contains(Id);
 }

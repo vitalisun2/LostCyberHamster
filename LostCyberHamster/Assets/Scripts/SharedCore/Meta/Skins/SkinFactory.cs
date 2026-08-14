@@ -21,6 +21,7 @@ public static class SkinFactory
             PriceType = data.PriceType,
             HamsterSprite = await LoadSpriteAsync(data.SkinSprite),
             SkinVisualAddress = data.SkinVisualAddress,
+            SkateboardSkinVisualAddress = data.SkateboardSkinVisualAddress,
         };
     }
 

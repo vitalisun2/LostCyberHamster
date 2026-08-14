@@ -9,4 +9,5 @@ public class SkinData
     public ResourceType PriceType;
     public string SkinSprite;
     public string SkinVisualAddress;
+    public string SkateboardSkinVisualAddress;
 }

@@ -102,7 +102,8 @@ namespace Assets.Scripts.Gameplay
         private DeathMechanics _deathMechanics;
         private TapMechanics _tapMechanics;
         private ISuperAttackRuntime _superAttackRuntime;
-        private SkinVisualRuntime _skinVisualRuntime;
+        private SkinVisualRuntime _normalSkinVisualRuntime;
+        private SkinVisualRuntime _skateboardSkinVisualRuntime;
         private UltaMechanics _ultaMechanics;
         private UltaChargeMechanics _ultaChargeMechanics;
 
@@ -266,7 +267,8 @@ namespace Assets.Scripts.Gameplay
 
         private void OnDestroy()
         {
-            _skinVisualRuntime?.Dispose();
+            _normalSkinVisualRuntime?.Dispose();
+            _skateboardSkinVisualRuntime?.Dispose();
             _superAttackRuntime?.Dispose();
         }
 
@@ -275,10 +277,24 @@ namespace Assets.Scripts.Gameplay
         public SkinVisualHost NormalSkinVisualHost => _normalSkinVisualHost;
         public SkinVisualHost SkateboardSkinVisualHost => _skateboardSkinVisualHost;
 
-        public void ConfigureSkinVisual(SkinVisualRuntime runtime)
+        /// <summary>
+        /// Передаёт Hamster владение visual runtimes обоих actor modes.
+        /// </summary>
+        public void ConfigureSkinVisuals(
+            SkinVisualRuntime normal,
+            SkinVisualRuntime skateboard)
         {
-            _skinVisualRuntime?.Dispose();
-            _skinVisualRuntime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+            // Оба mode visuals обязательны до передачи ownership.
+            if (normal == null)
+                throw new ArgumentNullException(nameof(normal));
+            if (skateboard == null)
+                throw new ArgumentNullException(nameof(skateboard));
+
+            // Заменяем прежние leases только после полной проверки аргументов.
+            _normalSkinVisualRuntime?.Dispose();
+            _skateboardSkinVisualRuntime?.Dispose();
+            _normalSkinVisualRuntime = normal;
+            _skateboardSkinVisualRuntime = skateboard;
         }
 
         public void ConfigureSuperAttack(ISuperAttackRuntime runtime)
