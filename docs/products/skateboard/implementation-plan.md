@@ -2,7 +2,7 @@
 
 - [x] ✅ Подготовить prefab и asset skeleton: canonical/old Hamster, два actor, flat skin sprite folders, normal/skateboard modes, пустые skateboard visual prefabs и Addressables entries.
 
-- [ ] Добавить skateboard sprite assets. Настроить общие pivot, PPU и Custom Physics Shapes для всех кадров.
+- [x] ✅ Добавить skateboard sprite assets. Настроить общие pivot, PPU и Custom Physics Shapes для всех кадров.
 
 - [ ] Собрать skateboard Animator Controllers, clips и `SkinVisual` mappings: ride A/B, push, jump, super-jump, landing.
 
