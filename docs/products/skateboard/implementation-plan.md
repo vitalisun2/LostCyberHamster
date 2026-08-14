@@ -10,7 +10,7 @@
 
 - [x] ✅ Реализовать `HamsterActorSwitcher`: active actor, текущий mode, возврат normal actor. Сохранить общий lane shift.
 
-- [ ] Реализовать `SpritePhysicsShapeColliderSync`: cache physics paths при visual load, `PolygonCollider2D.SetPath()` при смене sprite.
+- [x] ✅ Реализовать `SpritePhysicsShapeColliderSync`: cache physics paths при visual load, `PolygonCollider2D.SetPath()` при смене sprite.
 
 - [ ] Добавить `SkateboardAttack : ISuperAttackRuntime`: activation только из stable `Run`, lifecycle, cleanup, timeout `10 s` до первого jump.
 

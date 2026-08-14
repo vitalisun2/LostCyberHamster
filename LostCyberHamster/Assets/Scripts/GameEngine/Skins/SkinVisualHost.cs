@@ -15,6 +15,9 @@ namespace Assets.Scripts.GameEngine.Skins
         private bool _isPlaybackEnabled = true;
 
         public Transform Slot => transform;
+        public SkinVisual CurrentVisual => _visual;
+
+        public event Action<SkinVisual> VisualChanged;
 
         /// <summary>
         /// Подключает единственный visual и восстанавливает накопленное состояние host.
@@ -32,6 +35,8 @@ namespace Assets.Scripts.GameEngine.Skins
             _visual.SetDamaged(_isDamaged);
             if (_pendingContext.HasValue)
                 _visual.Play(_pendingContext.Value);
+
+            VisualChanged?.Invoke(_visual);
         }
 
         /// <summary>
@@ -39,8 +44,11 @@ namespace Assets.Scripts.GameEngine.Skins
         /// </summary>
         public void Unbind(SkinVisual visual)
         {
-            if (_visual == visual)
-                _visual = null;
+            if (_visual != visual)
+                return;
+
+            _visual = null;
+            VisualChanged?.Invoke(null);
         }
 
         /// <summary>

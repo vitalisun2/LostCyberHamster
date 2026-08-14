@@ -577,7 +577,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec107c9376738b48b45db67c9824496, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.GameEngine.Actors.SpritePhysicsShapeColliderSync
-  _spriteRenderer: {fileID: 0}
+  _skinVisualHost: {fileID: 3968324932185031552}
   _polygonCollider: {fileID: 5907161091823306923}
 --- !u!1 &8026135549605994228
 GameObject:

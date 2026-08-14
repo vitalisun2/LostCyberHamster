@@ -187,6 +187,7 @@ namespace LostCyberHamster.Editor
             {
                 ValidateSkateboardJumpVariant(errors, visual, slug, SkinVisualVariant.Normal);
                 ValidateSkateboardJumpVariant(errors, visual, slug, SkinVisualVariant.Super);
+                ValidatePhysicsShapeSprites(errors, visual, slug);
             }
 
             foreach (SkinVisualActionMapping mapping in visual.Mappings
@@ -211,6 +212,46 @@ namespace LostCyberHamster.Editor
                 mapping.Variant == variant);
             if (!exists)
                 errors.Add($"{slug}: SkateboardJump/{variant} mapping is missing.");
+        }
+
+        private static void ValidatePhysicsShapeSprites(
+            ICollection<string> errors,
+            SkinVisual visual,
+            string slug)
+        {
+            // Проверяем manifest и наличие импортированной формы у каждого sprite.
+            var configuredSprites = new HashSet<Sprite>();
+            foreach (Sprite sprite in visual.PhysicsShapeSprites)
+            {
+                if (sprite == null)
+                {
+                    errors.Add($"{slug}: Physics Shape sprite manifest contains null.");
+                    continue;
+                }
+
+                if (!configuredSprites.Add(sprite))
+                    errors.Add($"{slug}: sprite '{sprite.name}' is duplicated in Physics Shape manifest.");
+                if (sprite.GetPhysicsShapeCount() == 0)
+                    errors.Add($"{slug}: sprite '{sprite.name}' has no custom Physics Shape.");
+            }
+
+            // Каждый sprite из animation clips должен заранее попасть в runtime cache manifest.
+            foreach (SkinVisualActionMapping mapping in visual.Mappings.Where(mapping => mapping?.Clip != null))
+            {
+                EditorCurveBinding[] bindings = AnimationUtility.GetObjectReferenceCurveBindings(mapping.Clip);
+                foreach (EditorCurveBinding binding in bindings.Where(binding =>
+                             binding.type == typeof(SpriteRenderer) &&
+                             binding.propertyName == "m_Sprite"))
+                {
+                    ObjectReferenceKeyframe[] keyframes =
+                        AnimationUtility.GetObjectReferenceCurve(mapping.Clip, binding);
+                    foreach (Sprite sprite in keyframes.Select(keyframe => keyframe.value).OfType<Sprite>())
+                    {
+                        if (!configuredSprites.Contains(sprite))
+                            errors.Add($"{slug}: animated sprite '{sprite.name}' is missing from Physics Shape manifest.");
+                    }
+                }
+            }
         }
 
         private static void ValidateMapping(

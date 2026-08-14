@@ -15,6 +15,7 @@ namespace Assets.Scripts.GameEngine.Skins
         [SerializeField] private Animator _animator;
         [SerializeField] private SpriteRenderer _spriteRenderer;
         [SerializeField] private List<SkinVisualActionMapping> _mappings = new();
+        [SerializeField] private List<Sprite> _physicsShapeSprites = new();
 
         private int _activeStateHash;
         private long _activeActionId = -1;
@@ -23,6 +24,8 @@ namespace Assets.Scripts.GameEngine.Skins
         private float _damageElapsed;
 
         public IReadOnlyList<SkinVisualActionMapping> Mappings => _mappings;
+        public IReadOnlyList<Sprite> PhysicsShapeSprites => _physicsShapeSprites;
+        public SpriteRenderer SpriteRenderer => _spriteRenderer;
 
         private void Awake()
         {
@@ -107,11 +110,14 @@ namespace Assets.Scripts.GameEngine.Skins
         public void ConfigureEditor(
             Animator animator,
             SpriteRenderer spriteRenderer,
-            List<SkinVisualActionMapping> mappings)
+            List<SkinVisualActionMapping> mappings,
+            List<Sprite> physicsShapeSprites = null)
         {
             _animator = animator;
             _spriteRenderer = spriteRenderer;
             _mappings = mappings;
+            if (physicsShapeSprites != null)
+                _physicsShapeSprites = physicsShapeSprites;
         }
 #endif
 
