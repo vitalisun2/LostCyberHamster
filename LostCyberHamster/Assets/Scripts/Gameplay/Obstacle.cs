@@ -68,7 +68,7 @@ namespace Assets.Scripts.Gameplay
             _boomEffect = new AtomicVariable<BoomEffect>(LevelController.Instance.LevelData.BoomEffectPrefab);
             BoomEffectAction = new BoomEffectAction(_boomEffect);
 
-            _unspawnOnJumpedOnMechanics = new UnspawnOnJumpedOnMechanics(this);
+            _unspawnOnJumpedOnMechanics ??= new UnspawnOnJumpedOnMechanics(this);
             
             // Create additional movement mechanics for walking obstacles
             if (AnimationType == Common.Models.AnimationType.Walk)
@@ -80,6 +80,16 @@ namespace Assets.Scripts.Gameplay
             _unspawnOnJumpedOnMechanics.OnEnable();
 
             enabled = true;
+        }
+
+        private void OnEnable()
+        {
+            _unspawnOnJumpedOnMechanics?.OnEnable();
+        }
+
+        private void OnDisable()
+        {
+            _unspawnOnJumpedOnMechanics?.OnDisable();
         }
 
         public void OnUpdate(float deltaTime)
@@ -111,7 +121,7 @@ namespace Assets.Scripts.Gameplay
 
         private void OnDestroy()
         {
-            _unspawnOnJumpedOnMechanics.OnDisable();
+            _unspawnOnJumpedOnMechanics?.OnDisable();
         }
 
         private float GetBoxColliderWidth()

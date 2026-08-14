@@ -14,6 +14,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent<GameObject> _onObstacleUnspawn;
         private readonly BoomEffectAction _boomEffectAction;
         private readonly GameManager _gameManager;
+        private bool _isEnabled;
 
         public UnspawnOnJumpedOnMechanics(Obstacle obstacleScript)
         {
@@ -28,14 +29,22 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnEnable()
         {
+            if (_isEnabled)
+                return;
+
             _hamster.DestroyObstacleEvent.Subscribe(OnObstacleDestroyed);
             _destroyObstacleBySuperAttackEvent.Subscribe(OnObstacleDestroyed);
+            _isEnabled = true;
         }
 
         public void OnDisable()
         {
+            if (!_isEnabled)
+                return;
+
             _hamster.DestroyObstacleEvent.Unsubscribe(OnObstacleDestroyed);
             _destroyObstacleBySuperAttackEvent.Unsubscribe(OnObstacleDestroyed);
+            _isEnabled = false;
         }
 
         private void OnObstacleDestroyed(Obstacle destroyedObstacle)

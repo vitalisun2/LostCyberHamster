@@ -46,6 +46,7 @@ namespace Vues.GameCore
         private int _comboDepth;
         private bool _isJumpQueued;
         private bool _isQueuedJumpSuper;
+        private bool _isCurrentJumpSuper;
         private bool _isWaitingForFirstJump;
         private bool _isVisualPlaybackEnabled;
         private bool _isActive;
@@ -53,9 +54,9 @@ namespace Vues.GameCore
         private SkateboardState _state;
 
         /// <summary>
-        /// Сообщает уровень combo в момент контакта skateboard с землёй.
+        /// Сообщает уровень combo и тип jump-cycle в момент контакта с землёй.
         /// </summary>
-        public event Action<int> LandingImpact;
+        public event Action<int, bool> LandingImpact;
 
         /// <summary>
         /// Возвращает заряд за одно уничтоженное препятствие.
@@ -209,6 +210,7 @@ namespace Vues.GameCore
             _rideVisualIndex = 0;
             _isJumpQueued = false;
             _isQueuedJumpSuper = false;
+            _isCurrentJumpSuper = false;
             _actorSwitcher.ActivateSkateboard();
             _visualHost.Rebind();
             SetVisualPlaybackEnabled(isEnabled: true);
@@ -273,6 +275,7 @@ namespace Vues.GameCore
             // Upgrade перезапускает authoritative timing усиленного sprite jump.
             if (_state == SkateboardState.Jump)
             {
+                _isCurrentJumpSuper = true;
                 _state = SkateboardState.SuperJump;
                 _stateTimeLeft = _landingContactTime;
                 PlayJump(SkinVisualVariant.Super, _currentJumpActionId);
@@ -417,6 +420,7 @@ namespace Vues.GameCore
             _comboDepth = continuesCombo ? Mathf.Min(_comboDepth + 1, _jumpBudget) : 1;
             _isJumpQueued = false;
             _isQueuedJumpSuper = false;
+            _isCurrentJumpSuper = isSuper;
             NotifyFirstJumpStarted();
 
             // Новый cycle получает ActionId; normal-to-super upgrade сохраняет его.
@@ -440,7 +444,7 @@ namespace Vues.GameCore
             _surfaceController.ResolveLandingSupport(
                 _hamster.IsOnBottomLine.Value);
             SyncHamsterSurfaceState();
-            LandingImpact?.Invoke(_comboDepth);
+            LandingImpact?.Invoke(_comboDepth, _isCurrentJumpSuper);
         }
 
         private void UpdateLanding(float deltaTime)
@@ -472,6 +476,7 @@ namespace Vues.GameCore
             _comboDepth = 0;
             _isJumpQueued = false;
             _isQueuedJumpSuper = false;
+            _isCurrentJumpSuper = false;
             PlayNextRideVisual();
         }
 
@@ -575,6 +580,7 @@ namespace Vues.GameCore
             _comboDepth = 0;
             _isJumpQueued = false;
             _isQueuedJumpSuper = false;
+            _isCurrentJumpSuper = false;
             _state = SkateboardState.Inactive;
             SetVisualPlaybackEnabled(isEnabled: false);
 

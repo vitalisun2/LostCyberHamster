@@ -22,7 +22,7 @@ Hamster                                      active
          │  │  ├─ CollisionController
          │  │  └─ SpritePhysicsShapeColliderSync
          │  └─ skin_slot
-         └─ collectible_sensor                BoxCollider2D trigger
+         └─ gameplay_collision_sensor         BoxCollider2D trigger
 ```
 
 Нет `actor_slot`. Оба actor — прямые children общего shift-root. Включён ровно один actor целиком. Vertical Transform Animator существует только в `normal_actor`. Skateboard jump не двигает Transform; `surface_transform` меняет Y только для roof/road alignment.
@@ -43,7 +43,7 @@ Normal `RoofRunMechanics` молчит при active skateboard. На exit те�
 
 Gameplay FSM держит timing, Animator Events не участвуют. Jump contact наступает через `10/12 s`, полный cycle — `1.25 s`. Landing tail принимает следующий cycle в combo. Double input усиливает текущий cycle до super variant без второго списания budget.
 
-Landing impact реализован отдельной mechanics. В contact frame она фиксирует regular physical obstacles обеих линий; roof platforms, collectables и decor не входят. Combo 1 имеет радиус `1 hamster width`, combo 2 — `3 hamster widths`, combo 3 — весь visible screen. Bump: base `10%` высоты, combo 2 `15%..8.25%`, combo 3 `18%..7.2%` с затуханием по расстоянию; дуга `5 frames`, destroy через `3 frames`. Combo 2/3 идут тремя wave-группами: `0 / 0.08 / 0.16 s` и `0 / 0.13 / 0.26 s`. Shake: `0.08 units`, `0.18 s`, множители `1/2/3`. Pause замораживает timers и снимает camera offset; finish/dispose возвращает временные offsets. Pool reuse защищён invalidation-событием и повторной reference-проверкой live-list.
+Landing impact реализован отдельной mechanics. В contact frame она фиксирует gameplay obstacles и collectables обеих линий; decor и точная CurrentRoof не входят. Normal radii: `1 / 3 / весь экран`; Super radii: `2 / 6 / весь экран`. Bump усилен на `30%`: combo 1 `13%..9.1%`, combo 2 `19.5%..10.725%`, combo 3 `23.4%..9.36%` высоты с distance falloff. Три wave-группы: combo 1 `0/.04/.08 s`, combo 2 `0/.08/.16 s`, combo 3 `0/.13/.26 s`; per-target jitter `0..12 ms`. Ду́га `5 frames`, destroy через `3 frames`. Collectables уничтожаются без pickup reward. Shake: `0.08 units`, `0.18 s`, множители `1/2/3`. Pause замораживает timers. Pool reuse защищён invalidation, live-list/CurrentRoof recheck и idempotent enable/disable subscription.
 
 Камера приходит явно через Zenject composition root: `GameSceneInstaller -> GameEntryPoint bundle -> InitCharacterLoadingTask -> SuperAttackFactory`. `SkateboardAttack` создаёт scoped `ICameraShake`; глобального `Camera.main` внутри gameplay mechanics нет.
 
@@ -98,7 +98,7 @@ Shapes не вычислять каждый frame. При загрузке visua
 
 `visual_collision_root` масштабирует только skateboard visual и collider до `0.7`. `skateboard_actor.localPosition.y = 0.39225`: ride physics bottom `-1.1675 * 0.7 + 0.39225` совпадает с normal collider bottom `-0.425`. Общий sprite pivot `(0.5, 0.225)` сохраняется. `surface_transform.localY = 0` остаётся чистой road-точкой для roof/road controller.
 
-`collectible_sensor` остаётся вне scaled root. Его trigger `1.64 x 0.85`, local Y `-0.39225`; world baseline совпадает с normal collider. Sensor использует общий pickup/reward/pool path и не фильтрует физический контакт по уже переключённому logical lane. Main PolygonCollider сохраняет точную damage/destroy geometry.
+`gameplay_collision_sensor` остаётся вне scaled root. Его trigger `1.64 x 0.85`, local Y `-0.39225`; world baseline совпадает с normal collider. Sensor закрывает прозрачные gaps точного sprite shape и проводит все шесть physical types и collectibles через общий collision policy. Main PolygonCollider продолжает следовать нарисованному frame.
 
 ## Ownership и DI
 

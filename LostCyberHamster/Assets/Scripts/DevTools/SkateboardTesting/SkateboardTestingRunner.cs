@@ -512,12 +512,15 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             return true;
         }
 
-        private void OnLandingImpact(int comboDepth)
+        private void OnLandingImpact(int comboDepth, bool isSuperCycle)
         {
             if (!_isBusy || _isTimeoutScenario)
                 return;
 
             _observedImpactDepths.Add(comboDepth);
+            SetStatus(
+                $"RUNNING: {_scenarioTitle}; impact combo={comboDepth}, " +
+                $"cycle={(isSuperCycle ? "Super" : "Normal")}.");
         }
 
         private void ValidateAndPassComboScenario()

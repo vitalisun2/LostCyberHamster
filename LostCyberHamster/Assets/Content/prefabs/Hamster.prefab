@@ -707,7 +707,7 @@ GameObject:
   - component: {fileID: 691000000000000003}
   - component: {fileID: 691000000000000004}
   m_Layer: 0
-  m_Name: collectible_sensor
+  m_Name: gameplay_collision_sensor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -785,7 +785,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 21f6c0d1d44d43f0b7f746f9e8506547, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.GameEngine.Actors.SkateboardCollectibleSensor
+  m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.GameEngine.Actors.SkateboardCollisionSensor
   _collisionController: {fileID: 60041700247703712}
 --- !u!1 &8077355510775999944
 GameObject:

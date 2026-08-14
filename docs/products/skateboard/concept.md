@@ -24,7 +24,7 @@ Hamster                                      active
          │  │  ├─ CollisionController
          │  │  └─ SpritePhysicsShapeColliderSync
          │  └─ skin_slot                     SkinVisualHost
-         └─ collectible_sensor                skateboard pickup trigger
+         └─ gameplay_collision_sensor         stable skateboard trigger
 ```
 
 Skateboard actor не меняет Transform по Y. Прыжок нарисован sprite animation. Новый skateboard `effects_slot` пока не нужен: визуальные эффекты живут в его animations.
@@ -51,15 +51,15 @@ Skateboard actor не меняет Transform по Y. Прыжок нарисов
 
 Combo растёт только у последовательных jumps без возврата в ride-chain:
 
-| Landing | Обе линии | Shake | Bump |
+| Landing | Normal jump | Super jump | Shake |
 |---|---|---|---|
-| 1 / single | радиус `1 hamster width` | x1 | base |
-| 2 подряд | радиус `3 hamster widths` | x2 | stronger + distance falloff |
-| 3 подряд | весь visible screen | x3 | strongest |
+| 1 / single | `1 hamster width` | `2 hamster widths` | x1 |
+| 2 подряд | `3 hamster widths` | `6 hamster widths` | x2 |
+| 3 подряд | весь visible screen | весь visible screen | x3 |
 
-Obstacle делает короткую дугу за `5 frames @ 60 FPS`; через ещё `3 frames` — destroy. Base bump — `10%` высоты. Combo 2: `15%` рядом, затухает до `8.25%` у края радиуса; wave-группы `0 / 0.08 / 0.16 s`. Combo 3: `18%` рядом, затухает до `7.2%` у края экрана; wave-группы `0 / 0.13 / 0.26 s`. Camera shake: `0.18 s`, базовая амплитуда `0.08 units`, множитель combo `1x/2x/3x`.
+Obstacle делает короткую дугу за `5 frames @ 60 FPS`; через ещё `3 frames` — destroy. Высота: combo 1 `13%..9.1%`, combo 2 `19.5%..10.725%`, combo 3 `23.4%..9.36%` от высоты obstacle. Ближние targets стартуют раньше и прыгают выше. Три wave-группы: combo 1 `0 / 0.04 / 0.08 s`, combo 2 `0 / 0.08 / 0.16 s`, combo 3 `0 / 0.13 / 0.26 s`; каждый target получает jitter `0..12 ms` внутри своей группы. Camera shake: `0.18 s`, базовая амплитуда `0.08 units`, множитель combo `1x/2x/3x`.
 
-Destroy идёт через существующий super-attack channel/pool unspawn. Snapshot содержит только regular physical obstacles обеих линий; collectables, decor и все roof platforms исключены. Delayed target инвалидируется через `OnObstacleUnspawned` и перед destroy повторно проверяется по ссылке в live-list: reused pooled object не получает старый impact.
+Destroy идёт через существующий super-attack channel/pool unspawn. Snapshot содержит gameplay obstacles и collectables обеих линий; decor и текущая roof support исключены. Collectable уничтожается без pickup reward. Delayed target инвалидируется через `OnObstacleUnspawned`, повторно проверяется по live-list и CurrentRoof. Pool subscription симметрична enable/disable: reused object не получает старый или дублированный impact.
 
 ## State flow
 
@@ -131,7 +131,7 @@ Assets/Content/skins/
 
 `visual_collision_root` масштабирует только skateboard visual и collider до `0.7`. `skateboard_actor.localY = 0.39225` совмещает низ ride-collider с normal baseline `-0.425`. Sprite pivot остаётся общим `(0.5, 0.225)`, `surface_transform.localY = 0` остаётся базой roof/road alignment.
 
-`collectible_sensor` — отдельный trigger `1.64 x 0.85` на normal baseline. Он обрабатывает только collectibles через общий reward/pool path. Физические obstacle продолжают использовать точный sprite PolygonCollider.
+`gameplay_collision_sensor` — отдельный trigger `1.64 x 0.85` на normal baseline. Он гарантирует стабильный контакт со всеми шестью physical obstacle types и collectibles, когда точный sprite PolygonCollider имеет прозрачные gaps. Все результаты проходят общий collision policy: ride damage, jump destroy, collectible pickup, roof support.
 
 ## Ownership
 

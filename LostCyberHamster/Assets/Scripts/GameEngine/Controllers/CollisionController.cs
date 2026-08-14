@@ -212,7 +212,8 @@ public class CollisionController : MonoBehaviour
             return false;
         }
 
-        return true;
+        // Поглощаем второй callback после синхронного возврата obstacle в пул.
+        return obstacle.isActiveAndEnabled;
     }
 
     /// <summary>
@@ -224,9 +225,9 @@ public class CollisionController : MonoBehaviour
     }
 
     /// <summary>
-    /// Подбирает collectible из отдельного skateboard sensor через общий reward path.
+    /// Обрабатывает контакт сплошного skateboard sensor через общий collision policy.
     /// </summary>
-    public bool TryCollectSkateboardCollectable(Collider2D other)
+    public bool TryHandleSkateboardSensorCollision(Collider2D other, bool isStay)
     {
         if (!_hamster.IsSkateboardModeActive ||
             !TryResolveObstacle(other, out Obstacle obstacle))
@@ -234,7 +235,23 @@ public class CollisionController : MonoBehaviour
             return false;
         }
 
-        return TryHandleCollectable(obstacle);
+        // Collectable сохраняют штатные rewards и не проходят physical policy.
+        if (TryHandleCollectable(obstacle))
+            return true;
+
+        // Сплошной sensor дополняет sprite shape только для реальных препятствий.
+        if (!IsPhysicalObstacle(obstacle) ||
+            !HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle))
+        {
+            return false;
+        }
+
+        if (isStay)
+            ProcessTriggerStay(obstacle);
+        else
+            ProcessTriggerEnter(obstacle);
+
+        return true;
     }
 
     private bool TryHandleCollectable(Obstacle obstacle)

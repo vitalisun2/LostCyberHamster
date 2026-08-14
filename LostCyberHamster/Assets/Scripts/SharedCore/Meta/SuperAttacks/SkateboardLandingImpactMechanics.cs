@@ -24,12 +24,17 @@ namespace Vues.GameCore
         public const float DefaultDestroyDelay = 3f / 60f;
         public const float DefaultComboThreeWaveDuration = 0.26f;
 
+        private const float _bumpHeightFeedbackMultiplier = 1.3f;
+        private const float _comboOneWaveDuration = 0.08f;
+        private const float _comboOneMinimumFalloff = 0.7f;
         private const float _comboTwoRadiusInHamsterWidths = 3f;
         private const float _comboTwoWaveDuration = 0.16f;
         private const float _comboTwoStrength = 1.5f;
         private const float _comboTwoMinimumFalloff = 0.55f;
         private const float _comboThreeStrength = 1.8f;
         private const float _comboThreeMinimumFalloff = 0.4f;
+        private const float _superJumpRadiusMultiplier = 2f;
+        private const float _maximumStartJitter = 0.012f;
         private const int _waveGroupCount = 3;
         private const int _maximumComboDepth = 3;
 
@@ -43,6 +48,7 @@ namespace Vues.GameCore
         private readonly float _destroyDelay;
         private readonly float _comboThreeWaveDuration;
         private readonly List<ImpactTarget> _targets = new(32);
+        private readonly System.Random _startJitterRandom = new();
 
         private bool _isDisposed;
 
@@ -133,7 +139,8 @@ namespace Vues.GameCore
                     continue;
 
                 if (result == ImpactTarget.TickResult.ReadyToDestroy &&
-                    target.IsCurrentLiveSpawn())
+                    target.IsCurrentLiveSpawn() &&
+                    !IsCurrentRoof(target.Obstacle))
                 {
                     target.RestorePosition();
                     _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(target.Obstacle);
@@ -181,7 +188,7 @@ namespace Vues.GameCore
             Cancel();
         }
 
-        private void OnLandingImpact(int comboDepth)
+        private void OnLandingImpact(int comboDepth, bool isSuperCycle)
         {
             if (_isDisposed || _gameManager.State != GameState.PLAYING)
                 return;
@@ -203,17 +210,19 @@ namespace Vues.GameCore
             float hamsterX = _hamster.transform.position.x;
             float hamsterWidth = Mathf.Abs(_hamster.RightX - _hamster.LeftX);
             float radius = hamsterWidth * ResolveRadiusInHamsterWidths(
-                clampedComboDepth);
+                clampedComboDepth,
+                isSuperCycle);
             float maximumWaveDistance = Mathf.Max(
                 Mathf.Abs(hamsterX - screenLeft),
                 Mathf.Abs(screenRight - hamsterX));
+            Obstacle currentRoof = _hamster.SkateboardSurfaceController.CurrentRoof;
 
             List<InstantiatedObstacle> spawnedObstacles = spawner.SpawnedObstacles;
             for (int index = 0; index < spawnedObstacles.Count; index++)
             {
                 InstantiatedObstacle spawnEntry = spawnedObstacles[index];
                 Obstacle obstacle = spawnEntry?.ObstacleScript;
-                if (!IsImpactTarget(obstacle) || HasPendingTarget(obstacle))
+                if (!IsImpactTarget(obstacle, currentRoof) || HasPendingTarget(obstacle))
                     continue;
 
                 BoxCollider2D collider = obstacle.GetComponentInChildren<BoxCollider2D>();
@@ -245,11 +254,14 @@ namespace Vues.GameCore
                 float waveDelay = ResolveWaveDelay(
                     clampedComboDepth,
                     normalizedDistance,
-                    _comboThreeWaveDuration);
+                    _comboThreeWaveDuration) + ResolveStartJitter();
                 float strength = ResolveStrength(
                     clampedComboDepth,
                     normalizedDistance);
-                float bumpHeight = bounds.size.y * _bumpHeightFraction * strength;
+                float bumpHeight = bounds.size.y *
+                                   _bumpHeightFraction *
+                                   _bumpHeightFeedbackMultiplier *
+                                   strength;
 
                 _targets.Add(new ImpactTarget(
                     spawnEntry,
@@ -288,22 +300,39 @@ namespace Vues.GameCore
             _targets.Clear();
         }
 
-        private static bool IsImpactTarget(Obstacle obstacle)
+        private bool IsCurrentRoof(Obstacle obstacle)
+        {
+            return ReferenceEquals(
+                obstacle,
+                _hamster.SkateboardSurfaceController.CurrentRoof);
+        }
+
+        private static bool IsImpactTarget(Obstacle obstacle, Obstacle currentRoof)
         {
             if (obstacle == null ||
                 !obstacle.isActiveAndEnabled ||
-                obstacle.ObstacleType == null)
+                obstacle.ObstacleType == null ||
+                ReferenceEquals(obstacle, currentRoof))
             {
                 return false;
             }
 
             switch (obstacle.ObstacleType.ObstacleTypeEnum)
             {
+                // Gameplay obstacles и collectables получают общий bump/destroy без pickup reward.
                 case ObstacleTypeEnum.smallAlive:
                 case ObstacleTypeEnum.bigAlive:
                 case ObstacleTypeEnum.smallNotAliveRoad:
                 case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
+                case ObstacleTypeEnum.bigNotAlive:
+                case ObstacleTypeEnum.collectableEnergetic:
+                case ObstacleTypeEnum.collectablePizza:
+                case ObstacleTypeEnum.collectableCrystal:
+                case ObstacleTypeEnum.collectableLife:
+                case ObstacleTypeEnum.collectableCoin:
+                case ObstacleTypeEnum.mediumNotAlive:
                     return true;
+                case ObstacleTypeEnum.decor:
                 default:
                     return false;
             }
@@ -335,6 +364,14 @@ namespace Vues.GameCore
             int comboDepth,
             float normalizedDistance)
         {
+            if (comboDepth == 1)
+            {
+                return Mathf.Lerp(
+                    1f,
+                    _comboOneMinimumFalloff,
+                    normalizedDistance);
+            }
+
             if (comboDepth == 2)
             {
                 float comboTwoFalloff = Mathf.Lerp(
@@ -354,11 +391,16 @@ namespace Vues.GameCore
             return _comboThreeStrength * comboThreeFalloff;
         }
 
-        private static float ResolveRadiusInHamsterWidths(int comboDepth)
+        private static float ResolveRadiusInHamsterWidths(
+            int comboDepth,
+            bool isSuperCycle)
         {
-            return comboDepth == 2
+            float normalRadius = comboDepth == 2
                 ? _comboTwoRadiusInHamsterWidths
                 : comboDepth;
+            return isSuperCycle && comboDepth < _maximumComboDepth
+                ? normalRadius * _superJumpRadiusMultiplier
+                : normalRadius;
         }
 
         private static float ResolveWaveDelay(
@@ -366,12 +408,20 @@ namespace Vues.GameCore
             float normalizedDistance,
             float comboThreeWaveDuration)
         {
-            if (comboDepth < 2)
-                return 0f;
+            float waveDuration;
+            switch (comboDepth)
+            {
+                case 1:
+                    waveDuration = _comboOneWaveDuration;
+                    break;
+                case 2:
+                    waveDuration = _comboTwoWaveDuration;
+                    break;
+                default:
+                    waveDuration = comboThreeWaveDuration;
+                    break;
+            }
 
-            float waveDuration = comboDepth == 2
-                ? _comboTwoWaveDuration
-                : comboThreeWaveDuration;
             if (waveDuration <= 0f)
                 return 0f;
 
@@ -381,6 +431,11 @@ namespace Vues.GameCore
                 Mathf.FloorToInt(normalizedDistance * _waveGroupCount));
             return waveDuration * groupIndex /
                    (_waveGroupCount - 1);
+        }
+
+        private float ResolveStartJitter()
+        {
+            return (float)_startJitterRandom.NextDouble() * _maximumStartJitter;
         }
 
         private sealed class ImpactTarget
