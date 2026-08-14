@@ -640,6 +640,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             out SkateboardAttack attack,
             out GameManager gameManager)
         {
+            hamster = null;
             attack = null;
             gameManager = null;
             if (!Application.isPlaying || !TryFindHamster(out hamster))
