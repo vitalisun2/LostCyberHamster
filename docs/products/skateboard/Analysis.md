@@ -35,6 +35,8 @@ Roof top — support. При landing выбирается любая roof suppor
 
 Collision policy готова. Ride использует обычный damage path. Jump и landing не получают damage и уничтожают regular obstacle через super-attack channel. Roof top остаётся support и не уничтожается. Roof side следует общей policy: ride damage, jump/landing destroy.
 
+Принятый ride-damage lifecycle: `DamageEvent` сначала выполняет обычную потерю life и включает damage immunity/visual, затем `SkateboardAttack` немедленно завершает mode lease. Pending impact/shake очищаются, normal actor включается, текущая живая roof support восстанавливается; уже unspawned roof трактуется как road. Повторная активация блокируется, пока `Hamster.IsDamaged == true`.
+
 Normal `RoofRunMechanics` молчит при active skateboard. На exit текущая support возвращается в `Hamster.LastObstacle`; road exit сбрасывает normal Transform Animator в default pose.
 
 Gameplay FSM держит timing, Animator Events не участвуют. Jump contact наступает через `10/12 s`, полный cycle — `1.25 s`. Landing tail принимает следующий cycle в combo. Double input усиливает текущий cycle до super variant без второго списания budget.

@@ -178,6 +178,7 @@ namespace Vues.GameCore
             _hamster.RoofJumpRequest.Subscribe(OnJumpRequested);
             _hamster.SuperJumpRequest.Subscribe(OnSuperJumpRequested);
             _hamster.SuperRoofJumpRequest.Subscribe(OnSuperJumpRequested);
+            _hamster.DamageEvent.Subscribe(OnDamageReceived);
         }
 
         /// <summary>
@@ -355,6 +356,7 @@ namespace Vues.GameCore
             _hamster.RoofJumpRequest.Unsubscribe(OnJumpRequested);
             _hamster.SuperJumpRequest.Unsubscribe(OnSuperJumpRequested);
             _hamster.SuperRoofJumpRequest.Unsubscribe(OnSuperJumpRequested);
+            _hamster.DamageEvent.Unsubscribe(OnDamageReceived);
             _landingImpactMechanics.Dispose();
             Deactivate();
             LandingImpact = null;
@@ -376,6 +378,13 @@ namespace Vues.GameCore
             TryUpgradeToSuperJump();
         }
 
+        private void OnDamageReceived()
+        {
+            // Ride использует обычный damage path, затем сразу освобождает mode lease.
+            if (_isActive && _state == SkateboardState.Ride)
+                Deactivate();
+        }
+
         private bool CanActivateFromCurrentSurface()
         {
             if (_hamster.HamsterState.Value == HamsterStateEnum.Run)
@@ -384,7 +393,11 @@ namespace Vues.GameCore
             if (_hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
                 return false;
 
-            Obstacle roof = _hamster.LastObstacle.Value;
+            return IsValidRoofSupport(_hamster.LastObstacle.Value);
+        }
+
+        private static bool IsValidRoofSupport(Obstacle roof)
+        {
             return roof != null &&
                    roof.isActiveAndEnabled &&
                    roof.ObstacleType != null &&
@@ -545,6 +558,8 @@ namespace Vues.GameCore
                             SkateboardSurfaceController.SurfaceState.Roof
                 ? _surfaceController.CurrentRoof
                 : null;
+            if (!IsValidRoofSupport(roof))
+                roof = null;
 
             _isActive = false;
             _isWaitingForFirstJump = false;

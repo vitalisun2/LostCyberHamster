@@ -24,7 +24,7 @@
 
 - [x] ✅ Реализовать landing impact: snapshot обеих линий, bump, delayed destroy с pool reuse guard, radius/wave/falloff, camera shake.
 
-- [ ] Подтвердить exit policy после ride damage. Landing timing и shake параметры уже зафиксированы.
+- [x] ✅ При ride damage выполнить обычную потерю life и немедленно завершить mode с восстановлением normal actor/surface. Landing timing и shake параметры зафиксированы.
 
 - [ ] Пройти integration проверки: timeout, combos, pause, finish, ride damage, jump destroy, обе линии, pooled reuse, cleanup и visual fallback.
 

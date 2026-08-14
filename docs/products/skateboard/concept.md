@@ -70,7 +70,7 @@ Inactive
   -> Exit, если jumpsLeft == 0
 
 Riding timeout до первого jump -> Exit
-Damage during Riding -> обычная damage policy; mode policy TBD
+Damage during Riding -> обычная потеря life/damage immunity -> немедленный Exit
 Level finish / dispose -> cleanup -> Normal actor
 ```
 
@@ -146,6 +146,7 @@ Assets/Content/skins/
 
 - mode lease/lifecycle;
 - timeout, 3 jumps, combo FSM, Road/Roof surface flow;
+- немедленный exit после принятого ride damage;
 - gates normal jump/roof mechanics;
 - cleanup на exit/finish/dispose.
 
@@ -222,10 +223,8 @@ Destroy проходит отдельной ранней веткой до об�
 
 ## TBD
 
-- exit policy после ride damage;
 - exact visual catalog/address schema;
 - collider update event from visual Animator/SpriteRenderer;
-- exit policy after ride damage.
 
 ## Минимальный план
 
