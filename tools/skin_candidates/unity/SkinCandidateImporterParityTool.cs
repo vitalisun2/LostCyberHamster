@@ -15,6 +15,7 @@ public static class SkinCandidateImporterParityTool
     private const string SourceRootArgument = "-skinSourceRoot";
     private const string CandidateRootArgument = "-skinCandidateRoot";
     private const string SheetsArgument = "-skinSheets";
+    private const string PreserveCandidateIdsArgument = "-skinPreserveCandidateIds";
     private const string LogPrefix = "[SkinCandidateImporterParity]";
 
     /// <summary>
@@ -32,6 +33,7 @@ public static class SkinCandidateImporterParityTool
         ValidateAssetRoot(sourceRoot, "source");
         ValidateAssetRoot(candidateRoot, "candidate");
         var sheetNames = ResolveSheetNames(arguments, sourceRoot, candidateRoot);
+        var preserveCandidateIds = GetBooleanFlag(arguments, PreserveCandidateIdsArgument);
 
         // Обрабатываем все sheets и собираем полный список ошибок.
         var configuredCount = 0;
@@ -42,7 +44,7 @@ public static class SkinCandidateImporterParityTool
             var candidatePath = $"{candidateRoot}/{sheetName}";
             try
             {
-                ConfigureSheet(sourcePath, candidatePath);
+                ConfigureSheet(sourcePath, candidatePath, preserveCandidateIds);
                 configuredCount++;
             }
             catch (Exception exception)
@@ -53,9 +55,10 @@ public static class SkinCandidateImporterParityTool
 
         AssetDatabase.SaveAssets();
         // Пишем batch summary и возвращаем failure через executeMethod exception.
+        var mode = preserveCandidateIds ? "preserve-candidate-ids" : "fresh-candidate-ids";
         var summary =
             $"{LogPrefix} configured={configuredCount}, failed={failures.Count}, " +
-            $"source={sourceRoot}, candidate={candidateRoot}";
+            $"mode={mode}, source={sourceRoot}, candidate={candidateRoot}";
         if (failures.Count > 0)
         {
             var details = string.Join(Environment.NewLine, failures);
@@ -69,12 +72,32 @@ public static class SkinCandidateImporterParityTool
     /// <summary>
     /// Копирует texture settings, platform settings и Sprite Editor data одного sheet.
     /// </summary>
-    private static void ConfigureSheet(string sourcePath, string candidatePath)
+    private static void ConfigureSheet(
+        string sourcePath,
+        string candidatePath,
+        bool preserveCandidateIds)
     {
-        // Сначала применяем TextureImporter contract и завершаем reimport.
+        // Проверяем assets и фиксируем tracked identity до первой mutation.
         ValidatePngAsset(sourcePath, "source");
         ValidatePngAsset(candidatePath, "candidate");
+        var candidateTextureGuid = AssetDatabase.AssetPathToGUID(candidatePath);
+        if (preserveCandidateIds && string.IsNullOrWhiteSpace(candidateTextureGuid))
+            throw new InvalidOperationException($"Candidate texture GUID unavailable: {candidatePath}");
 
+        SpriteRect[] preservedRects = null;
+        SpriteNameFileIdPair[] preservedNamePairs = null;
+        Dictionary<string, long> preservedLocalFileIds = null;
+        if (preserveCandidateIds)
+        {
+            CaptureCandidateIdentity(
+                candidatePath,
+                candidateTextureGuid,
+                out preservedRects,
+                out preservedNamePairs,
+                out preservedLocalFileIds);
+        }
+
+        // Применяем TextureImporter contract и завершаем reimport.
         var sourceImporter = AssetImporter.GetAtPath(sourcePath) as TextureImporter;
         var candidateImporter = AssetImporter.GetAtPath(candidatePath) as TextureImporter;
         if (sourceImporter == null || candidateImporter == null)
@@ -92,8 +115,24 @@ public static class SkinCandidateImporterParityTool
         if (sourceImporter == null || candidateImporter == null)
             throw new InvalidOperationException($"TextureImporter lost after reimport: {candidatePath}");
 
-        CopySpriteData(sourceImporter, candidateImporter);
+        CopySpriteData(
+            sourceImporter,
+            candidateImporter,
+            preserveCandidateIds,
+            preservedRects,
+            preservedNamePairs);
         AssetDatabase.ImportAsset(candidatePath, ImportAssetOptions.ForceUpdate);
+
+        // Preserve mode проверяет identity после финального reimport.
+        if (preserveCandidateIds)
+        {
+            VerifyCandidateIdentity(
+                candidatePath,
+                candidateTextureGuid,
+                preservedRects,
+                preservedNamePairs,
+                preservedLocalFileIds);
+        }
     }
 
     /// <summary>
@@ -132,10 +171,10 @@ public static class SkinCandidateImporterParityTool
         candidateImporter.compressionQuality = sourceImporter.compressionQuality;
         candidateImporter.crunchedCompression = sourceImporter.crunchedCompression;
 
-        // Удаляем лишние candidate platforms и копируем source platform list.
+        // Пересобираем candidate platform list в точном source order.
         var sourcePlatforms = ReadPlatformNames(sourceImporter.assetPath + ".meta");
         var candidatePlatforms = ReadPlatformNames(candidateImporter.assetPath + ".meta");
-        foreach (var platformName in candidatePlatforms.Except(sourcePlatforms, StringComparer.Ordinal))
+        foreach (var platformName in candidatePlatforms)
         {
             if (!string.Equals(platformName, "DefaultTexturePlatform", StringComparison.Ordinal))
                 candidateImporter.ClearPlatformTextureSettings(platformName);
@@ -149,11 +188,14 @@ public static class SkinCandidateImporterParityTool
     }
 
     /// <summary>
-    /// Копирует Sprite Editor data с новыми candidate GUID и точными custom outlines.
+    /// Копирует Sprite Editor data; preserve mode сохраняет candidate IDs и names.
     /// </summary>
     private static void CopySpriteData(
         TextureImporter sourceImporter,
-        TextureImporter candidateImporter)
+        TextureImporter candidateImporter,
+        bool preserveCandidateIds,
+        SpriteRect[] preservedRects,
+        SpriteNameFileIdPair[] preservedNamePairs)
     {
         // Получаем data providers и проверяем source metadata.
         var factories = new SpriteDataProviderFactories();
@@ -191,26 +233,86 @@ public static class SkinCandidateImporterParityTool
             throw new InvalidOperationException("Required Sprite Editor data provider unavailable.");
         }
 
-        // Строим candidate rects и outlines с новыми sprite GUID.
+        // Проверяем existing IDs и name/fileID mappings для preserve mode.
+        var existingCandidateRects = preserveCandidateIds
+            ? preservedRects
+            : Array.Empty<SpriteRect>();
+        var existingNamePairs = preserveCandidateIds
+            ? preservedNamePairs
+            : Array.Empty<SpriteNameFileIdPair>();
+        if (preserveCandidateIds)
+        {
+            if (existingCandidateRects == null || existingCandidateRects.Length != sourceRects.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Candidate SpriteRect count must equal source count in preserve mode: " +
+                    $"source={sourceRects.Length}, candidate={existingCandidateRects?.Length ?? 0}");
+            }
+            if (existingNamePairs == null || existingNamePairs.Length != sourceRects.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Candidate name/fileID count must equal source count in preserve mode: " +
+                    $"source={sourceRects.Length}, candidate={existingNamePairs?.Length ?? 0}");
+            }
+
+            foreach (var existingPair in existingNamePairs)
+            {
+                if (string.IsNullOrWhiteSpace(existingPair.name) ||
+                    existingPair.GetFileGUID().Empty())
+                {
+                    throw new InvalidOperationException(
+                        $"Candidate name/fileID mapping is invalid: {candidateImporter.assetPath}");
+                }
+            }
+        }
+
+        // Строим candidate rects и outlines в выбранном ID mode.
         var candidateRects = new SpriteRect[sourceRects.Length];
         var idPairs = new List<SpriteNameFileIdPair>(sourceRects.Length);
+        if (preserveCandidateIds)
+        {
+            idPairs.AddRange(
+                existingNamePairs.Select(
+                    pair => new SpriteNameFileIdPair(pair.name, pair.GetFileGUID())));
+        }
+
         var physicsById = new List<(GUID id, List<Vector2[]> outlines)>(sourceRects.Length);
         var outlineById = new List<(GUID id, List<Vector2[]> outlines)>(sourceRects.Length);
 
         for (var index = 0; index < sourceRects.Length; index++)
         {
             var sourceRect = sourceRects[index];
-            var candidateId = GUID.Generate();
+            var existingCandidateRect = preserveCandidateIds
+                ? existingCandidateRects[index]
+                : null;
+            var candidateId = preserveCandidateIds
+                ? existingCandidateRect.spriteID
+                : GUID.Generate();
+            var candidateName = preserveCandidateIds
+                ? existingCandidateRect.name
+                : sourceRect.name;
+            if (preserveCandidateIds)
+            {
+                if (candidateId.Empty() ||
+                    string.IsNullOrWhiteSpace(candidateName))
+                {
+                    throw new InvalidOperationException(
+                        $"Candidate SpriteRect identity is invalid at index {index}: " +
+                        candidateImporter.assetPath);
+                }
+            }
+
             candidateRects[index] = new SpriteRect
             {
-                name = sourceRect.name,
+                name = candidateName,
                 rect = sourceRect.rect,
                 border = sourceRect.border,
                 alignment = sourceRect.alignment,
                 pivot = sourceRect.pivot,
                 spriteID = candidateId
             };
-            idPairs.Add(new SpriteNameFileIdPair(sourceRect.name, candidateId));
+            if (!preserveCandidateIds)
+                idPairs.Add(new SpriteNameFileIdPair(sourceRect.name, candidateId));
 
             var expectedCounts = expectedPhysicsVertexCounts[index];
             var physicsShapes = CloneOutlines(
@@ -230,6 +332,204 @@ public static class SkinCandidateImporterParityTool
         foreach (var entry in outlineById)
             candidateOutline.SetOutlines(entry.id, entry.outlines);
         candidateProvider.Apply();
+    }
+
+    /// <summary>
+    /// Фиксирует identity tracked candidate до первой importer mutation.
+    /// </summary>
+    private static void CaptureCandidateIdentity(
+        string candidatePath,
+        string candidateTextureGuid,
+        out SpriteRect[] candidateRects,
+        out SpriteNameFileIdPair[] candidateNamePairs,
+        out Dictionary<string, long> candidateLocalFileIds)
+    {
+        // Читаем Sprite Editor identity и проверяем mapping по index.
+        var importer = AssetImporter.GetAtPath(candidatePath) as TextureImporter;
+        if (importer == null)
+            throw new InvalidOperationException($"TextureImporter unavailable: {candidatePath}");
+
+        var factories = new SpriteDataProviderFactories();
+        factories.Init();
+        var provider = factories.GetSpriteEditorDataProviderFromObject(importer);
+        if (provider == null)
+            throw new InvalidOperationException($"Sprite Editor Data Provider unavailable: {candidatePath}");
+
+        provider.InitSpriteEditorDataProvider();
+        var nameProvider = provider.GetDataProvider<ISpriteNameFileIdDataProvider>();
+        if (nameProvider == null)
+            throw new InvalidOperationException($"Sprite name/fileID provider unavailable: {candidatePath}");
+
+        var existingRects = provider.GetSpriteRects();
+        var existingNamePairs = nameProvider.GetNameFileIdPairs()?.ToArray()
+            ?? Array.Empty<SpriteNameFileIdPair>();
+        if (existingRects == null || existingRects.Length == 0)
+            throw new InvalidOperationException($"Candidate has no SpriteRects: {candidatePath}");
+        if (existingNamePairs.Length != existingRects.Length)
+        {
+            throw new InvalidOperationException(
+                $"Candidate name/fileID count must equal SpriteRect count: " +
+                $"names={existingNamePairs.Length}, rects={existingRects.Length}, path={candidatePath}");
+        }
+
+        candidateRects = new SpriteRect[existingRects.Length];
+        candidateNamePairs = new SpriteNameFileIdPair[existingNamePairs.Length];
+        for (var index = 0; index < existingRects.Length; index++)
+        {
+            var existingRect = existingRects[index];
+            var existingPair = existingNamePairs[index];
+            if (existingRect.spriteID.Empty() ||
+                string.IsNullOrWhiteSpace(existingRect.name) ||
+                !string.Equals(existingRect.name, existingPair.name, StringComparison.Ordinal) ||
+                !existingRect.spriteID.Equals(existingPair.GetFileGUID()))
+            {
+                throw new InvalidOperationException(
+                    $"Candidate SpriteRect/name mapping is invalid at index {index}: {candidatePath}");
+            }
+
+            candidateRects[index] = new SpriteRect
+            {
+                name = existingRect.name,
+                rect = existingRect.rect,
+                border = existingRect.border,
+                alignment = existingRect.alignment,
+                pivot = existingRect.pivot,
+                spriteID = existingRect.spriteID
+            };
+            candidateNamePairs[index] =
+                new SpriteNameFileIdPair(existingPair.name, existingPair.GetFileGUID());
+        }
+
+        // Фиксируем реальные Unity local fileIDs всех sprite subassets.
+        candidateLocalFileIds = ReadSpriteLocalFileIds(
+            candidatePath,
+            candidateTextureGuid,
+            candidateRects.Length);
+    }
+
+    /// <summary>
+    /// Проверяет сохранение texture GUID, SpriteRect identities и local fileIDs после финального reimport.
+    /// </summary>
+    private static void VerifyCandidateIdentity(
+        string candidatePath,
+        string expectedTextureGuid,
+        SpriteRect[] expectedRects,
+        SpriteNameFileIdPair[] expectedNamePairs,
+        Dictionary<string, long> expectedLocalFileIds)
+    {
+        // Создаём новый provider после финального reimport.
+        var importer = AssetImporter.GetAtPath(candidatePath) as TextureImporter;
+        if (importer == null)
+            throw new InvalidOperationException($"TextureImporter unavailable after reimport: {candidatePath}");
+        if (!string.Equals(
+                expectedTextureGuid,
+                AssetDatabase.AssetPathToGUID(candidatePath),
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Candidate texture GUID changed: {candidatePath}");
+        }
+
+        var factories = new SpriteDataProviderFactories();
+        factories.Init();
+        var candidateProvider = factories.GetSpriteEditorDataProviderFromObject(importer);
+        if (candidateProvider == null)
+            throw new InvalidOperationException($"Sprite Editor Data Provider unavailable: {candidatePath}");
+
+        candidateProvider.InitSpriteEditorDataProvider();
+        var candidateNames = candidateProvider.GetDataProvider<ISpriteNameFileIdDataProvider>();
+        if (candidateNames == null)
+            throw new InvalidOperationException($"Sprite name/fileID provider unavailable: {candidatePath}");
+
+        // Проверяем SpriteRect IDs и names в исходном index order.
+        var appliedRects = candidateProvider.GetSpriteRects();
+        if (appliedRects == null || appliedRects.Length != expectedRects.Length)
+            throw new InvalidOperationException($"Candidate SpriteRect count changed: {candidatePath}");
+        for (var index = 0; index < expectedRects.Length; index++)
+        {
+            if (!appliedRects[index].spriteID.Equals(expectedRects[index].spriteID) ||
+                !string.Equals(
+                    appliedRects[index].name,
+                    expectedRects[index].name,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Candidate SpriteRect identity changed at index {index}: {candidatePath}");
+            }
+        }
+
+        // Проверяем полный ordered name/fileID mapping list.
+        var appliedNamePairs = candidateNames.GetNameFileIdPairs()?.ToArray()
+            ?? Array.Empty<SpriteNameFileIdPair>();
+        if (appliedNamePairs.Length != expectedNamePairs.Length)
+            throw new InvalidOperationException($"Candidate name/fileID count changed: {candidatePath}");
+        for (var index = 0; index < expectedNamePairs.Length; index++)
+        {
+            if (!string.Equals(
+                    appliedNamePairs[index].name,
+                    expectedNamePairs[index].name,
+                    StringComparison.Ordinal) ||
+                !appliedNamePairs[index].GetFileGUID().Equals(
+                    expectedNamePairs[index].GetFileGUID()))
+            {
+                throw new InvalidOperationException(
+                    $"Candidate name/fileID mapping changed at index {index}: {candidatePath}");
+            }
+        }
+
+        // Сверяем реальные local fileIDs, используемые clips/prefabs.
+        var appliedLocalFileIds = ReadSpriteLocalFileIds(
+            candidatePath,
+            expectedTextureGuid,
+            expectedRects.Length);
+        foreach (var expectedEntry in expectedLocalFileIds)
+        {
+            if (!appliedLocalFileIds.TryGetValue(expectedEntry.Key, out var appliedFileId) ||
+                appliedFileId != expectedEntry.Value)
+            {
+                throw new InvalidOperationException(
+                    $"Candidate sprite local fileID changed for {expectedEntry.Key}: {candidatePath}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Возвращает sprite name/local fileID mapping для imported texture asset.
+    /// </summary>
+    private static Dictionary<string, long> ReadSpriteLocalFileIds(
+        string assetPath,
+        string expectedTextureGuid,
+        int expectedCount)
+    {
+        var result = new Dictionary<string, long>(StringComparer.Ordinal);
+        foreach (var sprite in AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath).OfType<Sprite>())
+        {
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(
+                    sprite,
+                    out string spriteTextureGuid,
+                    out long localFileId))
+            {
+                throw new InvalidOperationException(
+                    $"Cannot read sprite local fileID for {sprite.name}: {assetPath}");
+            }
+            if (localFileId == 0)
+                throw new InvalidOperationException($"Sprite local fileID is zero: {sprite.name}, {assetPath}");
+
+            if (!string.Equals(expectedTextureGuid, spriteTextureGuid, StringComparison.Ordinal))
+                throw new InvalidOperationException($"Sprite texture GUID mismatch: {assetPath}");
+            if (result.ContainsKey(sprite.name))
+                throw new InvalidOperationException($"Duplicate sprite name {sprite.name}: {assetPath}");
+
+            result.Add(sprite.name, localFileId);
+        }
+
+        if (result.Count != expectedCount)
+        {
+            throw new InvalidOperationException(
+                $"Imported sprite count must equal SpriteRect count: " +
+                $"sprites={result.Count}, rects={expectedCount}, path={assetPath}");
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -494,6 +794,27 @@ public static class SkinCandidateImporterParityTool
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException($"Missing required argument: {name} <Assets/...>");
         return value;
+    }
+
+    /// <summary>
+    /// Возвращает presence flag; explicit true/false переопределяет presence.
+    /// </summary>
+    private static bool GetBooleanFlag(string[] arguments, string name)
+    {
+        for (var index = 0; index < arguments.Length; index++)
+        {
+            if (!string.Equals(arguments[index], name, StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (index + 1 < arguments.Length &&
+                bool.TryParse(arguments[index + 1], out var explicitValue))
+            {
+                return explicitValue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>

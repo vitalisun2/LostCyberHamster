@@ -229,6 +229,31 @@ def mismatch_count(left: np.ndarray, right: np.ndarray) -> int | None:
     return int(np.count_nonzero(left != right))
 
 
+def integer_sprite_rect(
+    sprite: dict[str, Any],
+    canvas_size: tuple[int, int],
+) -> tuple[int, int, int, int, int, bool]:
+    rect = sprite["rect"]
+    x = int(rect["x"])
+    y = int(rect["y"])
+    width = int(rect["width"])
+    height = int(rect["height"])
+    top = canvas_size[1] - y - height
+    valid = bool(
+        rect["x"] == x
+        and rect["y"] == y
+        and rect["width"] == width
+        and rect["height"] == height
+        and width > 0
+        and height > 0
+        and x >= 0
+        and top >= 0
+        and x + width <= canvas_size[0]
+        and top + height <= canvas_size[1]
+    )
+    return x, y, width, height, top, valid
+
+
 def validate_sheet(source_path: Path, candidate_path: Path, cell_width: int, cell_height: int) -> dict[str, Any]:
     errors: list[str] = []
     source_ihdr = png_ihdr(source_path)
@@ -255,46 +280,71 @@ def validate_sheet(source_path: Path, candidate_path: Path, cell_width: int, cel
         candidate_path.with_suffix(candidate_path.suffix + ".meta"),
     )
     source_sprites = meta["source_sprites"]
+    parsed_rects = [integer_sprite_rect(sprite, source_size) for sprite in source_sprites]
+    intrinsic_cell_width = parsed_rects[0][2] if parsed_rects else 0
+    intrinsic_cell_height = parsed_rects[0][3] if parsed_rects else 0
+    metadata_uniform_grid = bool(
+        parsed_rects
+        and intrinsic_cell_width > 0
+        and intrinsic_cell_height > 0
+        and source_size[0] % intrinsic_cell_width == 0
+        and source_size[1] % intrinsic_cell_height == 0
+        and all(
+            valid
+            and width == intrinsic_cell_width
+            and height == intrinsic_cell_height
+            and x % intrinsic_cell_width == 0
+            and y % intrinsic_cell_height == 0
+            for x, y, width, height, _top, valid in parsed_rects
+        )
+    )
+    uniform_grid = bool(
+        metadata_uniform_grid
+        and grid_integral
+        and intrinsic_cell_width == cell_width
+        and intrinsic_cell_height == cell_height
+    )
+    layout_mode = "uniform_grid" if metadata_uniform_grid else "source_meta_rects"
     sprite_rect_contract = bool(source_sprites)
     occupied_cells: set[tuple[int, int]] = set()
+    rect_coverage = np.zeros(source_alpha.shape, dtype=np.uint16)
     frames: list[dict[str, Any]] = []
-    for sprite in source_sprites:
-        rect = sprite["rect"]
-        x = int(rect["x"])
-        y = int(rect["y"])
-        width = int(rect["width"])
-        height = int(rect["height"])
-        top = source_size[1] - y - height
-        rect_valid = (
-            rect["x"] == x
-            and rect["y"] == y
-            and rect["width"] == width
-            and rect["height"] == height
-            and width == cell_width
-            and height == cell_height
-            and x % cell_width == 0
-            and y % cell_height == 0
-            and x >= 0
-            and top >= 0
-            and x + width <= source_size[0]
-            and top + height <= source_size[1]
+    for sprite, parsed_rect in zip(source_sprites, parsed_rects):
+        x, y, width, height, top, bounds_valid = parsed_rect
+        rect_valid = bool(
+            bounds_valid
+            and (
+                layout_mode == "source_meta_rects"
+                or (
+                    width == cell_width
+                    and height == cell_height
+                    and x % cell_width == 0
+                    and y % cell_height == 0
+                )
+            )
         )
         sprite_rect_contract = sprite_rect_contract and rect_valid
         if not rect_valid or not dimensions_match:
             frames.append({"name": sprite["name"], "rect_valid": rect_valid, "alpha_match": False, "mask_match": False})
             continue
-        occupied_cells.add((x // cell_width, top // cell_height))
+        rect_coverage[top : top + height, x : x + width] += 1
+        if layout_mode == "uniform_grid":
+            occupied_cells.add((x // cell_width, top // cell_height))
         source_cell = source_alpha[top : top + height, x : x + width]
         candidate_cell = candidate_alpha[top : top + height, x : x + width]
+        source_cell_bbox = alpha_bbox(source_cell)
+        candidate_cell_bbox = alpha_bbox(candidate_cell)
         frames.append(
             {
                 "name": sprite["name"],
                 "rect_unity": [x, y, width, height],
-                "cell": [x // cell_width, top // cell_height],
+                "cell": [x // cell_width, top // cell_height]
+                if layout_mode == "uniform_grid"
+                else None,
                 "rect_valid": True,
-                "source_bbox": alpha_bbox(source_cell),
-                "candidate_bbox": alpha_bbox(candidate_cell),
-                "bbox_match": alpha_bbox(source_cell) == alpha_bbox(candidate_cell),
+                "source_bbox": source_cell_bbox,
+                "candidate_bbox": candidate_cell_bbox,
+                "bbox_match": source_cell_bbox == candidate_cell_bbox,
                 "alpha_match": arrays_equal(source_cell, candidate_cell),
                 "alpha_mismatch_pixels": mismatch_count(source_cell, candidate_cell),
                 "mask_match": arrays_equal(source_cell > 0, candidate_cell > 0),
@@ -304,7 +354,7 @@ def validate_sheet(source_path: Path, candidate_path: Path, cell_width: int, cel
 
     cells: list[dict[str, Any]] = []
     empty_cell_spill = 0
-    if grid_integral and dimensions_match:
+    if layout_mode == "uniform_grid" and grid_integral and dimensions_match:
         for row in range(rows):
             for column in range(columns):
                 y0 = row * cell_height
@@ -326,6 +376,37 @@ def validate_sheet(source_path: Path, candidate_path: Path, cell_width: int, cel
                         "spill": spill,
                     }
                 )
+    elif dimensions_match:
+        for frame in frames:
+            if not frame.get("rect_valid"):
+                continue
+            cells.append(
+                {
+                    "sprite": frame["name"],
+                    "rect_unity": frame["rect_unity"],
+                    "meta_empty": False,
+                    "source_bbox": frame["source_bbox"],
+                    "candidate_bbox": frame["candidate_bbox"],
+                    "bbox_match": frame["bbox_match"],
+                    "alpha_match": frame["alpha_match"],
+                    "mask_match": frame["mask_match"],
+                    "spill": False,
+                }
+            )
+
+    rects_non_overlapping = bool(source_sprites) and bool(np.all(rect_coverage <= 1))
+    sprite_rect_contract = sprite_rect_contract and rects_non_overlapping
+    outside_rects = rect_coverage == 0
+    source_opaque_outside_rects = int(np.count_nonzero((source_alpha > 0) & outside_rects))
+    candidate_opaque_outside_rects = int(np.count_nonzero((candidate_alpha > 0) & outside_rects))
+    if layout_mode == "source_meta_rects":
+        empty_cell_spill = candidate_opaque_outside_rects
+    layout_valid = bool(
+        sprite_rect_contract
+        and (uniform_grid or layout_mode == "source_meta_rects")
+        and source_opaque_outside_rects == 0
+        and candidate_opaque_outside_rects == 0
+    )
 
     checks = {
         "dimensions_match": dimensions_match,
@@ -347,6 +428,12 @@ def validate_sheet(source_path: Path, candidate_path: Path, cell_width: int, cel
         "grid_integral": grid_integral,
         "grid": [columns, rows],
         "cell_size": [cell_width, cell_height],
+        "layout_mode": layout_mode,
+        "metadata_uniform_grid": metadata_uniform_grid,
+        "layout_valid": layout_valid,
+        "sprite_rects_non_overlapping": rects_non_overlapping,
+        "source_opaque_outside_sprite_rects": source_opaque_outside_rects,
+        "candidate_opaque_outside_sprite_rects": candidate_opaque_outside_rects,
         "source_meta_frame_count": len(source_sprites),
         "sprite_rect_contract": sprite_rect_contract,
         "all_frame_bboxes_match": bool(frames) and all(frame.get("bbox_match", False) for frame in frames),
@@ -362,7 +449,7 @@ def validate_sheet(source_path: Path, candidate_path: Path, cell_width: int, cel
         "candidate_rgba8",
         "full_alpha_match",
         "full_mask_match",
-        "grid_integral",
+        "layout_valid",
         "sprite_rect_contract",
         "all_frame_bboxes_match",
         "all_frame_alpha_match",

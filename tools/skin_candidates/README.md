@@ -10,7 +10,8 @@ roots.
   frame order, empty cells и alpha bytes сохраняются.
 - `unity/SkinCandidateImporterParityTool.cs` переносит texture importer,
   sprite rects/names/pivots, platform settings и custom physics shapes через
-  Unity API.
+  Unity API. Flag `-skinPreserveCandidateIds` сохраняет tracked target GUID,
+  sprite IDs, names и name/fileID mappings.
 - `validate_skin_candidate.py` проверяет PNG, per-cell geometry, alpha/masks,
   importer settings, sprite metadata и physics-shape parity.
 - `promote_skin_candidate.py` переносит validated top-level PNG + `.meta` без
@@ -61,6 +62,25 @@ Unity.exe -batchmode -quit `
 `-skinSheets` опционален. Без него tool находит top-level candidate PNG с
 matching source. Roots задаются как project-relative `Assets/...` paths.
 
+Для нового candidate flag `-skinPreserveCandidateIds` не используется: tool
+создаёт новые sprite IDs и source names. Для tracked target, уже referenced из
+clips/prefabs, добавить flag:
+
+```powershell
+Unity.exe -batchmode -quit `
+  -projectPath <unity-project> `
+  -executeMethod SkinCandidateImporterParityTool.Run `
+  -skinSourceRoot Assets/Content/skins/normal_mode/default `
+  -skinCandidateRoot Assets/Content/skins/normal_mode/quantum-scout `
+  -skinPreserveCandidateIds `
+  -logFile <log-path>
+```
+
+Preserve mode требует одинаковый sprite count. Texture GUID, каждый existing
+`SpriteRect.spriteID`, sprite name и name/fileID mapping сохраняются по index.
+Source задаёт rect, border, alignment, pivot, outlines, custom physics,
+importer contract и platform settings.
+
 ## Validation
 
 ```powershell
@@ -106,6 +126,8 @@ Unity `.meta` парой. Move-only contract сохраняет GUID без dupl
 - Production/default PNG и source `.meta` остаются неизменными до explicit
   promotion.
 - Candidate importer настраивает Unity API.
+- Tracked targets, referenced из clips/prefabs, настраиваются только с
+  `-skinPreserveCandidateIds` и после backup.
 - Canvas dimensions, grid, frame order, alpha, silhouette, position,
   proportions и physics geometry совпадают с source.
 - Palette, clothing, materials, patterns и compact details меняются только

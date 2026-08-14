@@ -142,6 +142,7 @@ Bridge-команды:
 - `validate_skin_candidate.py` — per-frame alpha, silhouette и sprite grid QA.
 - `promote_skin_candidate.py` — validation-gated move финальных PNG + `.meta` без duplicate GUID.
 - `unity/SkinCandidateImporterParityTool.cs` — Unity importer parity для PPU, pivot и custom physics shapes.
+  Flag `-skinPreserveCandidateIds` сохраняет texture GUID, sprite IDs, names и name/fileID mappings tracked target по index; использовать для assets, уже referenced из clips/prefabs.
 - `README.md` — источник команд запуска и рабочего процесса.
 
 Production/default assets остаются неизменными. Candidate `.meta` настраивает только Unity API. Assets и QA reports сохраняются в `_generated_candidates`.
