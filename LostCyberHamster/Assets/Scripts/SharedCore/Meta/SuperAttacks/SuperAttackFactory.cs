@@ -24,6 +24,7 @@ namespace Vues.GameCore
             SuperAttackData data,
             Hamster hamster,
             GameManager gameManager,
+            Camera gameCamera,
             CancellationToken cancellationToken = default)
         {
             // Проверяем регистрацию runtime до загрузки ресурсов.
@@ -40,6 +41,7 @@ namespace Vues.GameCore
                 return new SkateboardAttack(
                     hamster,
                     gameManager,
+                    gameCamera,
                     data.UltaDuration,
                     data.UltaCharge);
             }

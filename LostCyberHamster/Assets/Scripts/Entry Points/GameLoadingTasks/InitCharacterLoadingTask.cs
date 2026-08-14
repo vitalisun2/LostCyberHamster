@@ -24,11 +24,13 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
         private EnvironmentRoot _environmentRoot;
         private Hamster _characterPrefab;
+        private Camera _gameCamera;
 
         public async Task LoadAsync(Dictionary<string, object> bundle)
         {
             _characterPrefab = (Hamster)bundle["characterPrefab"];
             _environmentRoot = (EnvironmentRoot)bundle["environmentRoot"];
+            _gameCamera = (Camera)bundle["gameCamera"];
 
             await CreateHamsterAsync();
         }
@@ -42,7 +44,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             try
             {
                 // Собираем runtime-зависимости персонажа до регистрации gameplay listeners.
-                await ConfigureSuperAttackAsync(hamster);
+                await ConfigureSuperAttackAsync(hamster, _gameCamera);
                 (SkinVisualRuntime normalVisual, SkinVisualRuntime skateboardVisual) =
                     await SkinVisualRuntimeFactory.CreateSelectedAsync(hamster);
                 hamster.ConfigureSkinVisuals(normalVisual, skateboardVisual);
@@ -59,7 +61,9 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             }
         }
 
-        private static async Task ConfigureSuperAttackAsync(Hamster hamster)
+        private static async Task ConfigureSuperAttackAsync(
+            Hamster hamster,
+            Camera gameCamera)
         {
             int? activeSuperAttackId =
                 SuperAttackService.ActiveSuperAttackId;
@@ -74,7 +78,11 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
             var gameManager = LevelController.Instance.LevelData.GameManager;
             ISuperAttackRuntime runtime =
-                await SuperAttackFactory.CreateAsync(data, hamster, gameManager);
+                await SuperAttackFactory.CreateAsync(
+                    data,
+                    hamster,
+                    gameManager,
+                    gameCamera);
             hamster.ConfigureSuperAttack(runtime);
         }
 

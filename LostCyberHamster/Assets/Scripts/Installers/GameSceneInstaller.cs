@@ -25,6 +25,7 @@ namespace Assets.Scripts.Installers
             Container.Bind<Hamster>().FromInstance(_hamsterPrefab).AsSingle();
             Container.Bind<EnvironmentRoot>().FromInstance(_environmentRoot).AsSingle();
             Container.Bind<UiRoot>().FromInstance(_uiRoot).AsSingle();
+            Container.Bind<Camera>().FromComponentInHierarchy().AsSingle();
         }
 
     }

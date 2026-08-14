@@ -39,6 +39,10 @@ Normal `RoofRunMechanics` молчит при active skateboard. На exit те�
 
 Gameplay FSM держит timing, Animator Events не участвуют. Jump contact наступает через `10/12 s`, полный cycle — `1.25 s`. Landing tail принимает следующий cycle в combo. Double input усиливает текущий cycle до super variant без второго списания budget.
 
+Landing impact реализован отдельной mechanics. В contact frame она фиксирует regular physical obstacles обеих линий; roof platforms, collectables и decor не входят. Combo 1/2 используют радиус `1/2` ширины Hamster, combo 3 — весь visible screen с волной до `0.25 s`. Bump: `5%` высоты, дуга `4 frames`, destroy через `3 frames`; shake `0.08 units`, `0.18 s`, множители `1/2/3`. Pause замораживает timers и снимает camera offset; finish/dispose возвращает временные offsets. Pool reuse защищён invalidation-событием и повторной reference-проверкой live-list.
+
+Камера приходит явно через Zenject composition root: `GameSceneInstaller -> GameEntryPoint bundle -> InitCharacterLoadingTask -> SuperAttackFactory`. `SkateboardAttack` создаёт scoped `ICameraShake`; глобального `Camera.main` внутри gameplay mechanics нет.
+
 Новый skateboard `effects_slot` сейчас не нужен. Dust/flip/impact рисуются внутри его visual animations. Отдельный effect host добавлять только после реального требования.
 
 `HamsterActorSwitcher` — отдельный компонент на том же GameObject, что `Hamster`. Он хранит только refs `normal_actor`/`skateboard_actor`, переключает active state и сообщает mode. Timer, прыжки, combo, damage, visual loading сюда не входят. Термин и отдельный слой `endpoints` не нужны: конкретные refs добавляются только когда появится реальная зависимость.

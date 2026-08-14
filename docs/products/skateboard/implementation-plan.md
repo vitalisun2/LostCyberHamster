@@ -22,9 +22,9 @@
 
 - [x] ✅ Расширить collision policy: ride получает обычный damage; jump и landing уничтожают obstacle через super-attack channel. Roof top остаётся опорой.
 
-- [ ] Реализовать landing impact: snapshot обеих линий, bump, delayed destroy с pool token guard, radius/wave/falloff, camera shake.
+- [x] ✅ Реализовать landing impact: snapshot обеих линий, bump, delayed destroy с pool reuse guard, radius/wave/falloff, camera shake.
 
-- [ ] Подтвердить exit policy после ride damage. Зафиксировать bump/destroy/wave timing и shake параметры.
+- [ ] Подтвердить exit policy после ride damage. Landing timing и shake параметры уже зафиксированы.
 
 - [ ] Пройти integration проверки: timeout, combos, pause, finish, ride damage, jump destroy, обе линии, pooled reuse, cleanup и visual fallback.
 

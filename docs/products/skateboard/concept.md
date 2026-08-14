@@ -55,9 +55,9 @@ Combo растёт только у последовательных jumps без
 | 2 подряд | радиус `2 hamster widths` | x2 | stronger |
 | 3 подряд | весь visible screen | x3 | strongest |
 
-Obstacle сначала подпрыгивает примерно на `5%` своей высоты. Через несколько frames — destroy. Combo 3 идёт волной по расстоянию; bump/shake/destroy falloff — TBD.
+Obstacle делает короткую дугу высотой `5%` своей высоты за `4 frames @ 60 FPS`; через ещё `3 frames` — destroy. Combo 2 усиливает bump до `1.25x`. Combo 3: bump `1.5x` рядом, затухает до `0.975x` у края; wave растягивается максимум на `0.25 s`. Camera shake: `0.18 s`, базовая амплитуда `0.08 units`, множитель combo `1x/2x/3x`.
 
-Destroy идёт через существующий super-attack channel/pool unspawn. Delayed target обязан иметь instance/token guard: pooled object мог уже смениться.
+Destroy идёт через существующий super-attack channel/pool unspawn. Snapshot содержит только regular physical obstacles обеих линий; collectables, decor и все roof platforms исключены. Delayed target инвалидируется через `OnObstacleUnspawned` и перед destroy повторно проверяется по ссылке в live-list: reused pooled object не получает старый impact.
 
 ## State flow
 
@@ -156,12 +156,13 @@ Assets/Content/skins/
 - выравнивает общий `surface_transform` по реальному roof bounds;
 - возвращает normal actor на фактическую поверхность.
 
-`SkateboardLandingImpactMechanics` — позже
+`SkateboardLandingImpactMechanics`
 
 - snapshot visible obstacles обеих линий;
 - radius/wave/bump/delay/falloff;
 - super-attack destroy event;
-- camera shake request.
+- gameplay-time pause/finish/pool guards;
+- явный `ICameraShake`, полученный через composition root.
 
 `CollisionController` применяет skateboard collision policy:
 
@@ -222,8 +223,6 @@ Destroy проходит отдельной ранней веткой до об�
 ## TBD
 
 - exit policy после ride damage;
-- bump/destroy/wave timing and curves;
-- camera shake parameters;
 - exact visual catalog/address schema;
 - collider update event from visual Animator/SpriteRenderer;
 - exit policy after ride damage.
@@ -236,5 +235,5 @@ Destroy проходит отдельной ранней веткой до об�
 4. Добавить mode FSM, Road/Roof surface flow и gates normal mechanics.
 5. Реализовать cached sprite collider sync.
 6. Добавить jump collision policy.
-7. Добавить landing bump/destroy/wave/shake.
+7. Добавить landing bump/destroy/wave/shake. ✅
 8. Проверить timeout, `1+1+1`, `2+1`, `3`, pause, damage ride, destroy jump, both lanes, pooled reuse, cleanup.

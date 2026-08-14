@@ -1,6 +1,7 @@
 using System;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Actors;
+using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Skins;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
@@ -28,6 +29,8 @@ namespace Vues.GameCore
         private readonly SkateboardSurfaceController _surfaceController;
         private readonly SkinVisualHost _visualHost;
         private readonly GameManager _gameManager;
+        private readonly ICameraShake _cameraShake;
+        private readonly SkateboardLandingImpactMechanics _landingImpactMechanics;
         private readonly float _firstJumpTimeout;
         private readonly float _jumpDuration;
         private readonly float _landingContactTime;
@@ -101,6 +104,7 @@ namespace Vues.GameCore
         public SkateboardAttack(
             Hamster hamster,
             GameManager gameManager,
+            Camera camera,
             float firstJumpTimeout = DefaultFirstJumpTimeout,
             int chargePerObstacle = DefaultChargePerObstacle,
             float jumpDuration = DefaultJumpDuration,
@@ -115,6 +119,8 @@ namespace Vues.GameCore
             _visualHost = hamster.SkateboardSkinVisualHost ??
                 throw new MissingReferenceException("Skateboard SkinVisualHost is missing.");
             _gameManager = gameManager ?? throw new ArgumentNullException(nameof(gameManager));
+            _cameraShake = new CameraShakeController(
+                camera ?? throw new ArgumentNullException(nameof(camera)));
 
             if (firstJumpTimeout <= 0f)
             {
@@ -161,6 +167,12 @@ namespace Vues.GameCore
             _landingContactTime = landingContactTime;
             _jumpBudget = jumpBudget;
             ChargePerObstacle = chargePerObstacle;
+            _landingImpactMechanics = new SkateboardLandingImpactMechanics(
+                _hamster,
+                this,
+                _gameManager,
+                camera,
+                _cameraShake);
             _gameManager.OnFinish += OnGameFinished;
             _hamster.JumpRequest.Subscribe(OnJumpRequested);
             _hamster.RoofJumpRequest.Subscribe(OnJumpRequested);
@@ -343,6 +355,7 @@ namespace Vues.GameCore
             _hamster.RoofJumpRequest.Unsubscribe(OnJumpRequested);
             _hamster.SuperJumpRequest.Unsubscribe(OnSuperJumpRequested);
             _hamster.SuperRoofJumpRequest.Unsubscribe(OnSuperJumpRequested);
+            _landingImpactMechanics.Dispose();
             Deactivate();
             LandingImpact = null;
             _isDisposed = true;
@@ -524,6 +537,7 @@ namespace Vues.GameCore
 
         private void Deactivate()
         {
+            _landingImpactMechanics.Cancel();
             bool shouldRestoreSurface =
                 _isActive || _actorSwitcher.IsSkateboardActive;
             Obstacle roof = shouldRestoreSurface &&
