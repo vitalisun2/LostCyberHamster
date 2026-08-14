@@ -22,6 +22,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent _superJumpEvent;
         private readonly GameScreenStatusFormatter _statusFormatter = new GameScreenStatusFormatter();
         private int _lastRunScore = -1;
+        private bool _wasSkateboardActive;
 
         public UiGameScreenMechanics(UIManager uiManager, GameManager gameManager, Hamster character)
         {
@@ -35,6 +36,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _superJumpEvent = character.SuperJumpRequest;
 
             _gameScreenController = _uiManager.GetController<GameScreenController>();
+            _wasSkateboardActive = character.ActorSwitcher.IsSkateboardActive;
 
             _gameScreenController.SetSuperJumpAction(OnSuperJump);
             _gameScreenController.SetJumpAction(OnJump);
@@ -91,6 +93,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnUpdate()
         {
+            ResetJumpSequenceIfModeChanged();
             SyncRunScore();
 
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD
@@ -122,6 +125,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnJump()
         {
+            if (_character.ActorSwitcher.IsSkateboardActive)
+            {
+                _jumpEvent?.Invoke();
+                return;
+            }
+
             if (_characterHamsterState.Value == HamsterStateEnum.RoofRun)
                 _roofJumpRequest.Invoke();
 
@@ -132,6 +141,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnSuperJump()
         {
+            if (_character.ActorSwitcher.IsSkateboardActive)
+            {
+                _superJumpEvent?.Invoke();
+                return;
+            }
+
             if (_characterHamsterState.Value == HamsterStateEnum.RoofJump ||
                 _characterHamsterState.Value == HamsterStateEnum.JumpFromRoof ||
                 _characterHamsterState.Value == HamsterStateEnum.JumpFromRoofDamage ||
@@ -210,6 +225,16 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 OnUltaChargeAmountChanged(
                     _character.UltaChargeAmount.Value);
             }
+        }
+
+        private void ResetJumpSequenceIfModeChanged()
+        {
+            bool isSkateboardActive = _character.ActorSwitcher.IsSkateboardActive;
+            if (isSkateboardActive == _wasSkateboardActive)
+                return;
+
+            _gameScreenController.ResetJumpSequence();
+            _wasSkateboardActive = isSkateboardActive;
         }
     }
 }

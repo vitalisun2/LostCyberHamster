@@ -15,14 +15,27 @@ Hamster                                      active
    │     ├─ skin_slot
    │     └─ effects_slot
    └─ skateboard_actor                       inactive
-      ├─ collision_body
-      │  ├─ PolygonCollider2D
-      │  ├─ CollisionController
-      │  └─ SpritePhysicsShapeColliderSync
-      └─ skin_slot
+      └─ surface_transform
+         ├─ collision_body
+         │  ├─ PolygonCollider2D
+         │  ├─ CollisionController
+         │  └─ SpritePhysicsShapeColliderSync
+         └─ skin_slot
 ```
 
-Нет `actor_slot`. Оба actor — прямые children общего shift-root. Включён ровно один actor целиком. Vertical Transform Animator существует только в `normal_actor`; skateboard root по Y не двигается.
+Нет `actor_slot`. Оба actor — прямые children общего shift-root. Включён ровно один actor целиком. Vertical Transform Animator существует только в `normal_actor`. Skateboard jump не двигает Transform; `surface_transform` меняет Y только для roof/road alignment.
+
+## Road и roof
+
+Активация: stable `Run` или `RoofRun`. Air state отклоняется.
+
+`SkateboardSurfaceController` держит независимое состояние `Road / Roof / DroppingToRoad`. На крыше collider и visual стоят под общим `surface_transform`. Высота берётся из реального obstacle bounds, без чисел normal transform clips.
+
+Roof top — support. При landing выбирается любая roof support текущей линии под actor; same/next identity не важен. Roof side — obstacle. С крыши можно продолжить roof-chain или плавно спуститься на road. Из road новая roof support не создаётся.
+
+Normal `RoofRunMechanics` молчит при active skateboard. На exit текущая support возвращается в `Hamster.LastObstacle`; road exit сбрасывает normal Transform Animator в default pose.
+
+Gameplay FSM держит timing, Animator Events не участвуют. Jump contact наступает через `10/12 s`, полный cycle — `1.25 s`. Landing tail принимает следующий cycle в combo. Double input усиливает текущий cycle до super variant без второго списания budget.
 
 Новый skateboard `effects_slot` сейчас не нужен. Dust/flip/impact рисуются внутри его visual animations. Отдельный effect host добавлять только после реального требования.
 
@@ -77,7 +90,7 @@ Shapes не вычислять каждый frame. При загрузке visua
 
 - `Hamster`: общие state/events/mechanics и явные refs на switcher + оба hosts.
 - `HamsterActorSwitcher`: только actor active state.
-- `SkateboardAttack : ISuperAttackRuntime`: activation из живого `Run`, mode lifecycle, timeout `10 s` до первого jump, finish/dispose cleanup. Будущий FSM вызывает `NotifyFirstJumpStarted()` и `Complete()`.
+- `SkateboardAttack : ISuperAttackRuntime`: activation из живого `Run`/`RoofRun`, mode lifecycle, timeout `10 s`, три jump cycles, combo, surface flow, finish/dispose cleanup.
 - Skateboard visual Animator: ride/push/jump/super-jump/landing timing.
 - Общий shift Animator: lane shift обоих actor.
 

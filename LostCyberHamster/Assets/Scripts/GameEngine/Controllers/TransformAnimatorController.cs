@@ -491,6 +491,17 @@ namespace Assets.Scripts.GameEngine.Controllers
             _animator.enabled = true;
         }
 
+        /// <summary>
+        /// Возвращает normal actor в дорожную default pose после skateboard roof mode.
+        /// </summary>
+        public void ResetToRunSurface()
+        {
+            _roofHeightTransitionCompensator.Reset();
+            ClearActiveRoofHeightTransition();
+            SwapRoofClips(isMedium: false);
+            _animator.Rebind();
+        }
+
         public void OnFinish()
         {
             _roofHeightTransitionCompensator.Reset();

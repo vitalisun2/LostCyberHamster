@@ -262,6 +262,11 @@ namespace LostCyberHamster.UI
             _superJumpAction = action;
         }
 
+        public void ResetJumpSequence()
+        {
+            _doubleJumpDetector.Reset();
+        }
+
         public void SetUltraAction(Action action)
         {
             _ultraAction = action;

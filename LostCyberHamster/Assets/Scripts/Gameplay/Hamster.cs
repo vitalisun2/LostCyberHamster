@@ -84,6 +84,7 @@ namespace Assets.Scripts.Gameplay
         private TransformAnimatorController _transformAnimatorController;
         private SpriteAnimatorController _spriteAnimatorController;
         [SerializeField] private HamsterActorSwitcher _actorSwitcher;
+        [SerializeField] private SkateboardSurfaceController _skateboardSurfaceController;
         [SerializeField] private SkinVisualHost _normalSkinVisualHost;
         [SerializeField] private SkinVisualHost _skateboardSkinVisualHost;
         private TransformAnimatorEventsDispatcher _transformAnimatorEventsDispatcher;
@@ -142,6 +143,7 @@ namespace Assets.Scripts.Gameplay
                 isDamaged: IsDamaged,
                 transformAnimatorController: _transformAnimatorController,
                 spriteAnimatorController: _spriteAnimatorController,
+                actorSwitcher: _actorSwitcher,
                 characterTransform: transform,
                 lastObstacle: LastObstacle,
                 pendingJumpedOnObstacle: PendingJumpedOnObstacle,
@@ -156,6 +158,7 @@ namespace Assets.Scripts.Gameplay
                 isDamaged: IsDamaged,
                 transformAnimatorController: _transformAnimatorController,
                 spriteAnimatorController: _spriteAnimatorController,
+                actorSwitcher: _actorSwitcher,
                 characterTransform: transform,
                 lastObstacle: LastObstacle,
                 pendingJumpedOnObstacle: PendingJumpedOnObstacle,
@@ -186,6 +189,7 @@ namespace Assets.Scripts.Gameplay
                 hamsterState: HamsterState,
                 transformAnimatorController: _transformAnimatorController,
                 spriteAnimatorController: _spriteAnimatorController,
+                actorSwitcher: _actorSwitcher,
                 transform: transform,
                 isOnBottomLine: IsOnBottomLine,
                 lastObstacle: LastObstacle,
@@ -198,6 +202,7 @@ namespace Assets.Scripts.Gameplay
                 hamsterState: HamsterState,
                 transformAnimatorController: _transformAnimatorController,
                 spriteAnimatorController: _spriteAnimatorController,
+                actorSwitcher: _actorSwitcher,
                 transform: transform,
                 isOnBottomLine: IsOnBottomLine,
                 lastObstacle: LastObstacle,
@@ -228,7 +233,8 @@ namespace Assets.Scripts.Gameplay
 
         private void Update()
         {
-            _roofRunMechanics.OnUpdate();
+            if (!_actorSwitcher.IsSkateboardActive)
+                _roofRunMechanics.OnUpdate();
             _tapMechanics.OnUpdate();
             _takeDamageMechanics.OnUpdate(Time.deltaTime);
             _ultaMechanics?.OnUpdate();
@@ -278,9 +284,43 @@ namespace Assets.Scripts.Gameplay
         }
 
         public HamsterActorSwitcher ActorSwitcher => _actorSwitcher;
+        public SkateboardSurfaceController SkateboardSurfaceController =>
+            _skateboardSurfaceController;
         public SkinVisualHost SkinVisualHost => _normalSkinVisualHost;
         public SkinVisualHost NormalSkinVisualHost => _normalSkinVisualHost;
         public SkinVisualHost SkateboardSkinVisualHost => _skateboardSkinVisualHost;
+
+        /// <summary>
+        /// Возвращает признак разрушительного collision-состояния skateboard jump.
+        /// </summary>
+        public bool IsSkateboardJumpCollisionActive =>
+            _superAttackRuntime is SkateboardAttack skateboardAttack &&
+            skateboardAttack.IsActive &&
+            (skateboardAttack.IsJumping || skateboardAttack.IsLanding);
+
+        /// <summary>
+        /// Подготавливает normal actor к возврату на дорогу или текущую roof support.
+        /// </summary>
+        public void RestoreNormalSurface(Obstacle roof)
+        {
+            if (roof == null)
+            {
+                // Road exit очищает stale roof state и возвращает transform Animator в default pose.
+                LastObstacle.Value = null;
+                HamsterState.Value = HamsterStateEnum.Run;
+                _transformAnimatorController.ResetToRunSurface();
+                _spriteAnimatorController.PlayForState(HamsterStateEnum.Run);
+                return;
+            }
+
+            // Roof exit сохраняет текущую опору и выбирает clips её высоты.
+            LastObstacle.Value = roof;
+            HamsterState.Value = HamsterStateEnum.RoofRun;
+            bool isMediumRoof =
+                roof.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.mediumNotAlive;
+            _transformAnimatorController.SwapRoofClips(isMediumRoof);
+            _spriteAnimatorController.PlayForState(HamsterStateEnum.RoofRun);
+        }
 
         /// <summary>
         /// Передаёт Hamster владение visual runtimes обоих actor modes.

@@ -3,6 +3,7 @@ using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
+using Assets.Scripts.GameEngine.Actors;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
@@ -23,6 +24,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
         private readonly Transform _transform;
         private readonly AtomicVariable<int> _energy;
+        private readonly HamsterActorSwitcher _actorSwitcher;
 
         private const string CLIP_ROOF_JUMP = "transform_roof_jump";
         private const string CLIP_JUMP_FROM_ROOF = "transform_jump_from_roof";
@@ -36,6 +38,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             AtomicVariable<HamsterStateEnum> hamsterState,
             TransformAnimatorController transformAnimatorController,
             SpriteAnimatorController spriteAnimatorController,
+            HamsterActorSwitcher actorSwitcher,
             Transform transform,
             AtomicVariable<bool> isOnBottomLine,
             AtomicVariable<Obstacle> lastObstacle,
@@ -48,6 +51,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _transformAnimatorController = transformAnimatorController;
             _spriteAnimatorController = spriteAnimatorController;
             _transform = transform;
+            _actorSwitcher = actorSwitcher;
             _isOnBottomLine = isOnBottomLine;
             _lastObstacle = lastObstacle;
             _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
@@ -71,6 +75,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnRoofJump()
         {
+            if (_actorSwitcher.IsSkateboardActive) return;
             if (_energy.Value < 10) return;
 
             Obstacle sourceRoof = _lastObstacle.Value;

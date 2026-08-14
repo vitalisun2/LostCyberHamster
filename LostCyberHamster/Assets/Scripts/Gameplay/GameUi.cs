@@ -60,7 +60,8 @@ namespace Assets.Scripts.Gameplay
                 _character.JumpRequest,
                 _character.RoofJumpRequest,
                 _character.SuperJumpRequest,
-                _character.SuperRoofJumpRequest);
+                _character.SuperRoofJumpRequest,
+                _character.ActorSwitcher);
             _uiGameOverMechanics = new UiGameOverMechanics(_uiManager, _gameManager, _character);
             _uiLoseModalMechanics = new UiLoseModalMechanics(_uiManager, _gameManager, _character);
             _uiWinModalMechanics = new UiWinModalMechanics(_uiManager, _gameManager);

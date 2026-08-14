@@ -17,11 +17,12 @@ Hamster                                      active
    │     ├─ skin_slot
    │     └─ effects_slot
    └─ skateboard_actor                       inactive default
-      ├─ collision_body
-      │  ├─ PolygonCollider2D
-      │  ├─ CollisionController
-      │  └─ SpritePhysicsShapeColliderSync
-      └─ skin_slot                           SkinVisualHost
+      └─ surface_transform                    road/roof alignment
+         ├─ collision_body
+         │  ├─ PolygonCollider2D
+         │  ├─ CollisionController
+         │  └─ SpritePhysicsShapeColliderSync
+         └─ skin_slot                        SkinVisualHost
 ```
 
 Skateboard actor не меняет Transform по Y. Прыжок нарисован sprite animation. Новый skateboard `effects_slot` пока не нужен: визуальные эффекты живут в его animations.
@@ -35,7 +36,14 @@ Skateboard actor не меняет Transform по Y. Прыжок нарисов
 - До первого jump действует timeout `10 s` gameplay time.
 - Первый jump отменяет timeout навсегда.
 - Всего ровно `3` jumps: `1+1+1`, `2+1`, `1+2`, `3`.
-- Mode заканчивается после landing impact третьего израсходованного jump.
+- Mode заканчивается после landing tail третьего израсходованного jump; impact срабатывает в contact frame.
+- Активация разрешена из stable `Run` и `RoofRun`.
+- Roof top — опора: ride/jump landing её не уничтожают.
+- Roof side — obstacle: ride получает damage, jump уничтожает.
+- Roof-chain продолжается на крыше текущей линии. Без опоры `surface_transform` плавно опускает visual и collider на дорогу вместе.
+- Road остаётся road: skateboard jump не создаёт новое приземление на крышу.
+
+Один jump-cycle тратит один из трёх jumps. Double input до contact усиливает текущий cycle до super-jump и второй jump не списывает. Contact: `0.833 s`; полный clip: `1.25 s`. Следующий cycle ставится в очередь в landing tail. Без очереди mode возвращается в Ride и combo сбрасывается.
 
 ## Combo и landing impact
 
@@ -66,7 +74,15 @@ Damage during Riding -> обычная damage policy; mode policy TBD
 Level finish / dispose -> cleanup -> Normal actor
 ```
 
-Активация в воздухе/на крыше: минимально безопасное правило — разрешать только stable ground `Run`; иначе charge не списывать. Подтвердить.
+Независимо от jump phase работает surface state:
+
+```text
+Road
+Roof
+DroppingToRoad
+```
+
+Jump остаётся sprite-only. `surface_transform` меняет Y только при roof alignment/спуске и двигает visual с collider вместе.
 
 ## Visual assets
 
@@ -126,12 +142,19 @@ Assets/Content/skins/
 - current mode;
 - без timer/jump/combo/damage/loading.
 
-`SkateboardAttack : ISuperAttackRuntime` — позже
+`SkateboardAttack : ISuperAttackRuntime`
 
 - mode lease/lifecycle;
-- timeout, 3 jumps, combo FSM;
+- timeout, 3 jumps, combo FSM, Road/Roof surface flow;
 - gates normal jump/roof mechanics;
 - cleanup на exit/finish/dispose.
+
+`SkateboardSurfaceController`
+
+- хранит `Road / Roof / DroppingToRoad`;
+- ведёт текущую roof support текущей линии;
+- выравнивает общий `surface_transform` по реальному roof bounds;
+- возвращает normal actor на фактическую поверхность.
 
 `SkateboardLandingImpactMechanics` — позже
 
@@ -196,9 +219,7 @@ Assets/Content/skins/
 
 ## TBD
 
-- activation policy damage/roof/air;
-- combo input window;
-- landing contact frame;
+- exit policy после ride damage;
 - bump/destroy/wave timing and curves;
 - camera shake parameters;
 - exact visual catalog/address schema;
@@ -210,7 +231,7 @@ Assets/Content/skins/
 1. Завершить prefab/asset skeleton через Unity AssetDatabase. Без gameplay logic.
 2. Добавить skateboard ID/catalog + runtime class.
 3. Реализовать actor switch и visual selection/fallback.
-4. Добавить mode FSM и gates normal mechanics.
+4. Добавить mode FSM, Road/Roof surface flow и gates normal mechanics.
 5. Реализовать cached sprite collider sync.
 6. Добавить jump collision policy.
 7. Добавить landing bump/destroy/wave/shake.

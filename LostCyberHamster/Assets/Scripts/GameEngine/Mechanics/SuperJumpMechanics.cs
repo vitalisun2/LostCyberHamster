@@ -4,6 +4,7 @@ using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
+using Assets.Scripts.GameEngine.Actors;
 using Assets.Scripts.GameEngine.Mechanics.Models;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
@@ -32,6 +33,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicVariable<bool> _isDamaged;
         private readonly TransformAnimatorController _transformAnimatorController;
         private readonly SpriteAnimatorController _spriteAnimatorController;
+        private readonly HamsterActorSwitcher _actorSwitcher;
         private readonly Transform _characterTransform;
         private readonly AtomicVariable<Obstacle> _lastObstacle;
         private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
@@ -50,6 +52,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             AtomicVariable<bool> isDamaged,
             TransformAnimatorController transformAnimatorController,
             SpriteAnimatorController spriteAnimatorController,
+            HamsterActorSwitcher actorSwitcher,
             Transform characterTransform,
             AtomicVariable<Obstacle> lastObstacle,
             AtomicVariable<Obstacle> pendingJumpedOnObstacle,
@@ -63,6 +66,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _transformAnimatorController = transformAnimatorController;
             _spriteAnimatorController = spriteAnimatorController;
             _characterTransform = characterTransform;
+            _actorSwitcher = actorSwitcher;
             _lastObstacle = lastObstacle;
             _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
 
@@ -80,6 +84,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         /// </summary>
         private void OnSuperJump()
         {
+            if (_actorSwitcher.IsSkateboardActive) return;
             if (_energy.Value < ENERGY_COST_SUPER_JUMP) return;
 
             JumpResult result = CalculateSuperJumpState();

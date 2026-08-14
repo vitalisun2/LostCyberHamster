@@ -24,6 +24,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly Hamster _character;
         private readonly GameScreenController _gameScreenController;
         private DoubleJumpDetector _doubleJumpDetector;
+        private bool _wasSkateboardActive;
 
         public KeyboardMechanics(Hamster hamster, UIManager uiManager, GameManager gameManager)
         {
@@ -43,6 +44,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             _doubleJumpDetector = new DoubleJumpDetector();
             _doubleJumpDetector.Reset();
+            _wasSkateboardActive = hamster.ActorSwitcher.IsSkateboardActive;
         }
 
         public void Subscribe()
@@ -57,6 +59,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnUpdate()
         {
+            ResetJumpSequenceIfModeChanged();
+
             if (GameplayInputGate.IsBlocked || _keyboard == null)
             {
                 return;
@@ -109,6 +113,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnJump()
         {
+            if (_character.ActorSwitcher.IsSkateboardActive)
+            {
+                _jumpEvent?.Invoke();
+                return;
+            }
+
             if (_characterHamsterState.Value == HamsterStateEnum.RoofRun)
                 _roofJumpRequest.Invoke();
 
@@ -119,6 +129,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnSuperJump()
         {
+            if (_character.ActorSwitcher.IsSkateboardActive)
+            {
+                _superJumpEvent?.Invoke();
+                return;
+            }
+
             if(_characterHamsterState.Value == HamsterStateEnum.RoofJump ||
                 _characterHamsterState.Value == HamsterStateEnum.RoofJumpDamage ||
                 _characterHamsterState.Value == HamsterStateEnum.JumpFromRoof ||
@@ -153,6 +169,16 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 _uiManager.ShowModalAsync(ScreenEnum.PauseModal);
                 _gameManager.Pause();
             }
+        }
+
+        private void ResetJumpSequenceIfModeChanged()
+        {
+            bool isSkateboardActive = _character.ActorSwitcher.IsSkateboardActive;
+            if (isSkateboardActive == _wasSkateboardActive)
+                return;
+
+            _doubleJumpDetector.Reset();
+            _wasSkateboardActive = isSkateboardActive;
         }
     }
 }

@@ -1,4 +1,5 @@
 using Atomic.Elements;
+using Assets.Scripts.GameEngine.Actors;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -14,6 +15,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent _roofJumpRequest;
         private readonly AtomicEvent _superJumpRequest;
         private readonly AtomicEvent _superRoofJumpRequest;
+        private readonly HamsterActorSwitcher _actorSwitcher;
 
         private float _energyTimer = 0f;
 
@@ -24,13 +26,15 @@ namespace Assets.Scripts.GameEngine.Mechanics
             AtomicEvent jumpRequest,
             AtomicEvent roofJumpRequest,
             AtomicEvent superJumpRequest,
-            AtomicEvent superRoofJumpRequest)
+            AtomicEvent superRoofJumpRequest,
+            HamsterActorSwitcher actorSwitcher)
         {
             _energy = energy;
             _jumpRequest = jumpRequest;
             _roofJumpRequest = roofJumpRequest;
             _superJumpRequest = superJumpRequest;
             _superRoofJumpRequest = superRoofJumpRequest;
+            _actorSwitcher = actorSwitcher;
         }
 
         public void Subscribe()
@@ -51,6 +55,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnJump()
         {
+            if (_actorSwitcher.IsSkateboardActive) return;
             if (_energy.Value < ENERGY_COST_JUMP) return;
 
             _energy.Value -= ENERGY_COST_JUMP;
@@ -59,6 +64,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnRoofJump()
         {
+            if (_actorSwitcher.IsSkateboardActive) return;
             if (_energy.Value < ENERGY_COST_ROOF_JUMP) return;
 
             _energy.Value -= ENERGY_COST_ROOF_JUMP;
@@ -67,6 +73,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnSuperJump()
         {
+            if (_actorSwitcher.IsSkateboardActive) return;
             if (_energy.Value < ENERGY_COST_SUPER_JUMP) return;
 
             _energy.Value -= ENERGY_COST_SUPER_JUMP;
@@ -75,6 +82,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnSuperRoofJump()
         {
+            if (_actorSwitcher.IsSkateboardActive) return;
             if (_energy.Value < ENERGY_COST_SUPER_ROOF_JUMP) return;
 
             _energy.Value -= ENERGY_COST_SUPER_ROOF_JUMP;

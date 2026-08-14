@@ -14,15 +14,17 @@
 
 - [x] ✅ Добавить `SkateboardAttack : ISuperAttackRuntime`: activation только из stable `Run`, lifecycle, cleanup, timeout `10 s` до первого jump.
 
-- [ ] Добавить skateboard FSM: ride, jump, super-jump, landing impact, три jumps и combo `1+1+1`, `2+1`, `1+2`, `3`.
+- [x] ✅ Добавить skateboard FSM: ride, jump, super-jump, landing impact, три jumps и combo `1+1+1`, `2+1`, `1+2`, `3`.
 
-- [ ] Добавить единый gate normal jump/roof/energy mechanics на active skateboard mode. Ride оставляет current damage policy.
+- [x] ✅ Добавить единый gate normal jump/roof/energy mechanics на active skateboard mode. Ride оставляет current damage policy.
+
+- [x] ✅ Поддержать `Run` и `RoofRun`: отдельный `surface_transform`, roof-chain, landing на крышу, плавный спуск на дорогу. Roof top остаётся опорой; road-to-roof отсутствует.
 
 - [ ] Расширить collision policy: skateboard jump игнорирует damage и уничтожает obstacle через super-attack channel.
 
 - [ ] Реализовать landing impact: snapshot обеих линий, bump, delayed destroy с pool token guard, radius/wave/falloff, camera shake.
 
-- [ ] Подтвердить activation и exit policy для damage, roof и air. Зафиксировать combo window, landing frame, bump/destroy/wave timing, shake параметры.
+- [ ] Подтвердить exit policy после ride damage. Зафиксировать bump/destroy/wave timing и shake параметры.
 
 - [ ] Пройти integration проверки: timeout, combos, pause, finish, ride damage, jump destroy, обе линии, pooled reuse, cleanup и visual fallback.
 
