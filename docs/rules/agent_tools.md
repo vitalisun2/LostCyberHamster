@@ -2,6 +2,17 @@
 
 Каталог проектных инструментов LostCyberHamster. Читать только когда задача требует Unity automation, логов, test-level validation или editor tools.
 
+## Карта разделов
+
+- [Automation Bridge](#automation-bridge)
+- [Diagnostic Log](#diagnostic-log)
+- [Android Device Logs через ngrok + Dropbox](#android-device-logs-через-ngrok--dropbox)
+- [Test Levels](#test-levels)
+- [Unity Editor Tools](#unity-editor-tools)
+- [Skin Candidate Pipeline](#skin-candidate-pipeline)
+- [Build / Telegram Publishing](#build--telegram-publishing)
+- [PowerShell Scripts](#powershell-scripts)
+
 ## Automation Bridge
 
 Файловый IPC для управления Unity Editor извне.
@@ -38,6 +49,8 @@ Bridge-команды:
 
 Путь: `EditorLogs/diagnostic_log.txt`.
 
+Диагностика разделена по профильным классам и каналам. Сначала выбрать источник записи, затем читать нужный канал.
+
 Запись/расширение:
 - Для runtime/bot фактов использовать `Assets.Scripts.Bot.Diagnostics.BotDiagnostics` и профильные helpers из `LostCyberHamster/Assets/Scripts/Bot/Diagnostics/`.
 - `DebugManager` — только низкоуровневый transport/sink diagnostic file (`DiagLog`, `DiagLogVerbose`, `DiagChannel`).
@@ -61,7 +74,9 @@ Bridge-команды:
 
 ## Android Device Logs через ngrok + Dropbox
 
-Установленные Android APK могут сами отправлять snapshots `diagnostic_log.txt` через ngrok на receiver-ноутбук. Collector receiver-ноутбука пишет uploads в Dropbox Exchange, а остальные ноутбуки читают уже синхронизированные файлы. Owner-документ: `docs/android_ngrok_device_logging.md`.
+Установленные Android APK могут сами отправлять snapshots `diagnostic_log.txt` через ngrok на receiver-ноутбук. Collector пишет uploads в Dropbox Exchange.
+
+Остальные ноутбуки читают уже синхронизированные файлы. Owner-документ: `docs/android_ngrok_device_logging.md`.
 
 Ключевые точки:
 - Unity config: `LostCyberHamster/Assets/Resources/Diagnostics/device_log_settings.json`.
@@ -83,6 +98,8 @@ Bridge-команды:
 
 Источник правды по тестовым уровням: все `test*.json` под `LostCyberHamster/Assets/Content/locations/**/levels/**`.
 
+Таблица содержит основные адреса для ручного и автоматизированного запуска.
+
 | Уровень | Адрес |
 |---|---|
 | SwitchLane | `01_New_York/Morning/test_switch_lane` |
@@ -100,6 +117,8 @@ Bridge-команды:
 
 ## Unity Editor Tools
 
+Основные ручные команды Unity Editor:
+
 - `Tools → Test Level → Launch...` — ручной запуск test level.
 - `Tools → Diagnostics → View/Clear/Open Log` — просмотр и очистка diagnostic log.
 - `Tools → Level Tilemap Editor` — визуальный редактор уровней.
@@ -113,6 +132,20 @@ Bridge-команды:
 - `Tools → Check OnDestroy in Scripts` — поиск утечек подписок без `OnDestroy`.
 - `Tools → Export/Import Tilemap to JSON` — экспорт/импорт tilemap.
 
+## Skin Candidate Pipeline
+
+Канонический каталог reusable-инструментов: `tools/skin_candidates/`.
+
+Файлы:
+
+- `generate_geometry_safe_skin.py` — source-mask-preserving recolor/compositing.
+- `validate_skin_candidate.py` — per-frame alpha, silhouette и sprite grid QA.
+- `promote_skin_candidate.py` — validation-gated move финальных PNG + `.meta` без duplicate GUID.
+- `unity/SkinCandidateImporterParityTool.cs` — Unity importer parity для PPU, pivot и custom physics shapes.
+- `README.md` — источник команд запуска и рабочего процесса.
+
+Production/default assets остаются неизменными. Candidate `.meta` настраивает только Unity API. Assets и QA reports сохраняются в `_generated_candidates`.
+
 ## Build / Telegram Publishing
 
 - Owner-документ процесса: `docs/rules/build_and_telegram_publishing.md`.
@@ -120,6 +153,8 @@ Bridge-команды:
 - Перед запуском сборки или публикации читать owner-документ и `SKILL.md` skill-а.
 
 ## PowerShell Scripts
+
+Краткий индекс project automation scripts:
 
 | Скрипт | Назначение |
 |---|---|
