@@ -84,19 +84,15 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void ProcessTriggerEnter(Obstacle obstacle)
     {
+        if (TryHandleCollectable(obstacle))
+            return;
+
         if (TryHandleSkateboardCollision(obstacle, "Enter"))
             return;
 
         // Прерываем обработку для уже повреждённого хомяка.
         if (_hamster.IsDamaged.Value)
             return;
-
-        // Подбираем бонусы и коллекционные объекты.
-        if (IsCollectableState() && IsObstacleCollectable(obstacle))
-        {
-            HandleCollectable(obstacle);
-            return;
-        }
 
         // Применяем урон, если текущее состояние допускает столкновение на входе в триггер.
         if (HasCollisionInRunState(obstacle))
@@ -122,17 +118,14 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void ProcessTriggerStay(Obstacle obstacle)
     {
+        if (TryHandleCollectable(obstacle))
+            return;
+
         if (TryHandleSkateboardCollision(obstacle, "Stay"))
             return;
 
         if (_hamster.IsDamaged.Value)
             return;
-
-        if (IsCollectableState() && IsObstacleCollectable(obstacle))
-        {
-            HandleCollectable(obstacle);
-            return;
-        }
 
         if (HasCollisionInRunState(obstacle))
         {
@@ -191,9 +184,21 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private bool TryResolveSameLaneObstacle(Collider2D other, out Obstacle obstacle)
     {
+        if (!TryResolveObstacle(other, out obstacle))
+            return false;
+
+        // Игнорируем объекты на другой линии движения.
+        if (!HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle))
+            return false;
+
+        return true;
+    }
+
+    private static bool TryResolveObstacle(Collider2D other, out Obstacle obstacle)
+    {
         obstacle = null;
 
-        var otherRoot = other.transform.parent?.parent?.gameObject;
+        GameObject otherRoot = other.transform.parent?.parent?.gameObject;
         if (otherRoot == null)
         {
             Debug.LogError("Root object not found");
@@ -207,10 +212,6 @@ public class CollisionController : MonoBehaviour
             return false;
         }
 
-        // Игнорируем объекты на другой линии движения.
-        if (!HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle))
-            return false;
-
         return true;
     }
 
@@ -220,6 +221,33 @@ public class CollisionController : MonoBehaviour
     private bool IsCollectableState()
     {
         return !_hamster.IsDamaged.Value && _hamster.HamsterState.Value != HamsterStateEnum.Dead;
+    }
+
+    /// <summary>
+    /// Подбирает collectible из отдельного skateboard sensor через общий reward path.
+    /// </summary>
+    public bool TryCollectSkateboardCollectable(Collider2D other)
+    {
+        if (!_hamster.IsSkateboardModeActive ||
+            !TryResolveObstacle(other, out Obstacle obstacle))
+        {
+            return false;
+        }
+
+        return TryHandleCollectable(obstacle);
+    }
+
+    private bool TryHandleCollectable(Obstacle obstacle)
+    {
+        if (obstacle == null || !IsObstacleCollectable(obstacle))
+            return false;
+
+        // Первый collider синхронно возвращает obstacle в пул. Второй callback только поглощается.
+        if (!obstacle.isActiveAndEnabled || !IsCollectableState())
+            return true;
+
+        HandleCollectable(obstacle);
+        return true;
     }
 
     /// <summary>

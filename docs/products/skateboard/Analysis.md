@@ -16,11 +16,13 @@ Hamster                                      active
    │     └─ effects_slot
    └─ skateboard_actor                       inactive
       └─ surface_transform
-         ├─ collision_body
-         │  ├─ PolygonCollider2D
-         │  ├─ CollisionController
-         │  └─ SpritePhysicsShapeColliderSync
-         └─ skin_slot
+         ├─ visual_collision_root             scale 0.7
+         │  ├─ collision_body
+         │  │  ├─ PolygonCollider2D
+         │  │  ├─ CollisionController
+         │  │  └─ SpritePhysicsShapeColliderSync
+         │  └─ skin_slot
+         └─ collectible_sensor                BoxCollider2D trigger
 ```
 
 Нет `actor_slot`. Оба actor — прямые children общего shift-root. Включён ровно один actor целиком. Vertical Transform Animator существует только в `normal_actor`. Skateboard jump не двигает Transform; `surface_transform` меняет Y только для roof/road alignment.
@@ -41,7 +43,7 @@ Normal `RoofRunMechanics` молчит при active skateboard. На exit те�
 
 Gameplay FSM держит timing, Animator Events не участвуют. Jump contact наступает через `10/12 s`, полный cycle — `1.25 s`. Landing tail принимает следующий cycle в combo. Double input усиливает текущий cycle до super variant без второго списания budget.
 
-Landing impact реализован отдельной mechanics. В contact frame она фиксирует regular physical obstacles обеих линий; roof platforms, collectables и decor не входят. Combo 1/2 используют радиус `1/2` ширины Hamster, combo 3 — весь visible screen с волной до `0.25 s`. Bump: `5%` высоты, дуга `4 frames`, destroy через `3 frames`; shake `0.08 units`, `0.18 s`, множители `1/2/3`. Pause замораживает timers и снимает camera offset; finish/dispose возвращает временные offsets. Pool reuse защищён invalidation-событием и повторной reference-проверкой live-list.
+Landing impact реализован отдельной mechanics. В contact frame она фиксирует regular physical obstacles обеих линий; roof platforms, collectables и decor не входят. Combo 1 имеет радиус `1 hamster width`, combo 2 — `3 hamster widths`, combo 3 — весь visible screen. Bump: base `10%` высоты, combo 2 `15%..8.25%`, combo 3 `18%..7.2%` с затуханием по расстоянию; дуга `5 frames`, destroy через `3 frames`. Combo 2/3 идут тремя wave-группами: `0 / 0.08 / 0.16 s` и `0 / 0.13 / 0.26 s`. Shake: `0.08 units`, `0.18 s`, множители `1/2/3`. Pause замораживает timers и снимает camera offset; finish/dispose возвращает временные offsets. Pool reuse защищён invalidation-событием и повторной reference-проверкой live-list.
 
 Камера приходит явно через Zenject composition root: `GameSceneInstaller -> GameEntryPoint bundle -> InitCharacterLoadingTask -> SuperAttackFactory`. `SkateboardAttack` создаёт scoped `ICameraShake`; глобального `Camera.main` внутри gameplay mechanics нет.
 
@@ -94,7 +96,9 @@ Shapes не вычислять каждый frame. При загрузке visua
 
 Реализация: каждый skateboard visual хранит serialized manifest кадров. Host сообщает sync о bind/unbind visual. Sync заранее кеширует все paths, а в `LateUpdate` реагирует только на смену ссылки `Sprite`; несколько paths сохраняют отдельные контуры тела и доски.
 
-Road baseline задаёт `skateboard_actor.localPosition.y = 0.756`. Смещение поднимает visual и collider вместе до высоты normal actor. Общий sprite pivot `(0.5, 0.225)` сохраняется: его изменение потребовало бы пересобрать Custom Physics Shapes всех кадров. `surface_transform.localY = 0` остаётся чистой road-точкой для roof/road controller.
+`visual_collision_root` масштабирует только skateboard visual и collider до `0.7`. `skateboard_actor.localPosition.y = 0.39225`: ride physics bottom `-1.1675 * 0.7 + 0.39225` совпадает с normal collider bottom `-0.425`. Общий sprite pivot `(0.5, 0.225)` сохраняется. `surface_transform.localY = 0` остаётся чистой road-точкой для roof/road controller.
+
+`collectible_sensor` остаётся вне scaled root. Его trigger `1.64 x 0.85`, local Y `-0.39225`; world baseline совпадает с normal collider. Sensor использует общий pickup/reward/pool path и не фильтрует физический контакт по уже переключённому logical lane. Main PolygonCollider сохраняет точную damage/destroy geometry.
 
 ## Ownership и DI
 

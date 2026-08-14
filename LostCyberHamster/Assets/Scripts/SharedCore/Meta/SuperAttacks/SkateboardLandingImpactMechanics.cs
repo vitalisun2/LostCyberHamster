@@ -19,14 +19,18 @@ namespace Vues.GameCore
         Listeners.IGameFinishListener,
         IDisposable
     {
-        public const float DefaultBumpHeightFraction = 0.05f;
-        public const float DefaultBumpDuration = 4f / 60f;
+        public const float DefaultBumpHeightFraction = 0.1f;
+        public const float DefaultBumpDuration = 5f / 60f;
         public const float DefaultDestroyDelay = 3f / 60f;
-        public const float DefaultComboThreeWaveDuration = 0.25f;
+        public const float DefaultComboThreeWaveDuration = 0.26f;
 
-        private const float _comboTwoStrength = 1.25f;
-        private const float _comboThreeStrength = 1.5f;
-        private const float _comboThreeMinimumFalloff = 0.65f;
+        private const float _comboTwoRadiusInHamsterWidths = 3f;
+        private const float _comboTwoWaveDuration = 0.16f;
+        private const float _comboTwoStrength = 1.5f;
+        private const float _comboTwoMinimumFalloff = 0.55f;
+        private const float _comboThreeStrength = 1.8f;
+        private const float _comboThreeMinimumFalloff = 0.4f;
+        private const int _waveGroupCount = 3;
         private const int _maximumComboDepth = 3;
 
         private readonly Hamster _hamster;
@@ -198,7 +202,8 @@ namespace Vues.GameCore
             float screenTop = _camera.transform.position.y + halfScreenHeight;
             float hamsterX = _hamster.transform.position.x;
             float hamsterWidth = Mathf.Abs(_hamster.RightX - _hamster.LeftX);
-            float radius = hamsterWidth * clampedComboDepth;
+            float radius = hamsterWidth * ResolveRadiusInHamsterWidths(
+                clampedComboDepth);
             float maximumWaveDistance = Mathf.Max(
                 Mathf.Abs(hamsterX - screenLeft),
                 Mathf.Abs(screenRight - hamsterX));
@@ -230,12 +235,17 @@ namespace Vues.GameCore
                 if (clampedComboDepth < _maximumComboDepth && distance > radius)
                     continue;
 
-                float normalizedDistance = maximumWaveDistance > 0f
-                    ? Mathf.Clamp01(distance / maximumWaveDistance)
+                float attenuationDistance =
+                    clampedComboDepth == _maximumComboDepth
+                        ? maximumWaveDistance
+                        : radius;
+                float normalizedDistance = attenuationDistance > 0f
+                    ? Mathf.Clamp01(distance / attenuationDistance)
                     : 0f;
-                float waveDelay = clampedComboDepth == _maximumComboDepth
-                    ? normalizedDistance * _comboThreeWaveDuration
-                    : 0f;
+                float waveDelay = ResolveWaveDelay(
+                    clampedComboDepth,
+                    normalizedDistance,
+                    _comboThreeWaveDuration);
                 float strength = ResolveStrength(
                     clampedComboDepth,
                     normalizedDistance);
@@ -326,16 +336,51 @@ namespace Vues.GameCore
             float normalizedDistance)
         {
             if (comboDepth == 2)
-                return _comboTwoStrength;
+            {
+                float comboTwoFalloff = Mathf.Lerp(
+                    1f,
+                    _comboTwoMinimumFalloff,
+                    normalizedDistance);
+                return _comboTwoStrength * comboTwoFalloff;
+            }
 
             if (comboDepth < _maximumComboDepth)
                 return 1f;
 
-            float falloff = Mathf.Lerp(
+            float comboThreeFalloff = Mathf.Lerp(
                 1f,
                 _comboThreeMinimumFalloff,
                 normalizedDistance);
-            return _comboThreeStrength * falloff;
+            return _comboThreeStrength * comboThreeFalloff;
+        }
+
+        private static float ResolveRadiusInHamsterWidths(int comboDepth)
+        {
+            return comboDepth == 2
+                ? _comboTwoRadiusInHamsterWidths
+                : comboDepth;
+        }
+
+        private static float ResolveWaveDelay(
+            int comboDepth,
+            float normalizedDistance,
+            float comboThreeWaveDuration)
+        {
+            if (comboDepth < 2)
+                return 0f;
+
+            float waveDuration = comboDepth == 2
+                ? _comboTwoWaveDuration
+                : comboThreeWaveDuration;
+            if (waveDuration <= 0f)
+                return 0f;
+
+            // Три группы дают читаемые отдельные удары: рядом, середина, дальняя граница.
+            int groupIndex = Mathf.Min(
+                _waveGroupCount - 1,
+                Mathf.FloorToInt(normalizedDistance * _waveGroupCount));
+            return waveDuration * groupIndex /
+                   (_waveGroupCount - 1);
         }
 
         private sealed class ImpactTarget
