@@ -17,6 +17,15 @@
       "UltaDuration": 0,
       "UltaCharge": 35,
       "RequiredPlayerLevel": 3
+    },
+    {
+      "Id": 3,
+      "NameLocalizationKey": "skateboard",
+      "IconAddress": "skin_default",
+      "UltaPrefab": "",
+      "UltaDuration": 10,
+      "UltaCharge": 20,
+      "RequiredPlayerLevel": 4
     }
   ]
 }

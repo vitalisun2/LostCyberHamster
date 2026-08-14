@@ -77,9 +77,11 @@ Shapes не вычислять каждый frame. При загрузке visua
 
 - `Hamster`: общие state/events/mechanics и явные refs на switcher + оба hosts.
 - `HamsterActorSwitcher`: только actor active state.
-- Будущий `SkateboardAttack : ISuperAttackRuntime`: mode lifecycle/FSM/timeout/3 jumps/combo.
+- `SkateboardAttack : ISuperAttackRuntime`: activation из живого `Run`, mode lifecycle, timeout `10 s` до первого jump, finish/dispose cleanup. Будущий FSM вызывает `NotifyFirstJumpStarted()` и `Complete()`.
 - Skateboard visual Animator: ride/push/jump/super-jump/landing timing.
 - Общий shift Animator: lane shift обоих actor.
+
+Super attack catalog: skateboard ID `3`, unlock level `4`, charge per obstacle `20`. До отдельной UI-иконки карточка использует `skin_default`; gameplay effect prefab не нужен.
 
 Проект использует Zenject, не Ninject. `GameSceneInstaller` bind-ит Hamster prefab; `GameEntryPoint` получает его через `[Inject]`; runtime instance создаётся обычным `Instantiate`. Prefab refs сериализуются Inspector-ом. Отдельный Zenject binding для switcher не нужен.
 

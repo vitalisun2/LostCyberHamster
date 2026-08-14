@@ -24,7 +24,7 @@ namespace Vues.GameCore
         public string IconAddress;
 
         /// <summary>
-        /// Адрес prefab эффекта суперудара.
+        /// Адрес prefab эффекта для суперудара с отдельным visual effect.
         /// </summary>
         public string UltaPrefab;
 

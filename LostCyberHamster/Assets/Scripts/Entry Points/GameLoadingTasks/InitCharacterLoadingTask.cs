@@ -72,8 +72,9 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                 return;
             }
 
+            var gameManager = LevelController.Instance.LevelData.GameManager;
             ISuperAttackRuntime runtime =
-                await SuperAttackFactory.CreateAsync(data);
+                await SuperAttackFactory.CreateAsync(data, hamster, gameManager);
             hamster.ConfigureSuperAttack(runtime);
         }
 

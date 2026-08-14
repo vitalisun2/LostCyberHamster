@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Assets.Scripts.GameManagerLogic;
+using Assets.Scripts.Gameplay;
 using Assets.Scripts.System.Resources;
 using UnityEngine;
 
@@ -13,12 +15,15 @@ namespace Vues.GameCore
     {
         private const int EnergyShieldId = 1;
         private const int ElectricStrikeId = 2;
+        private const int SkateboardId = 3;
 
         /// <summary>
-        /// Загружает prefab эффекта и передаёт runtime параметры из каталога.
+        /// Создаёт runtime и загружает effect prefab только для атак, которым он нужен.
         /// </summary>
         public static async Task<ISuperAttackRuntime> CreateAsync(
             SuperAttackData data,
+            Hamster hamster,
+            GameManager gameManager,
             CancellationToken cancellationToken = default)
         {
             // Проверяем регистрацию runtime до загрузки ресурсов.
@@ -28,6 +33,22 @@ namespace Vues.GameCore
             }
 
             ValidateSupportedId(data.Id);
+
+            // Skateboard использует actor Hamster и не требует отдельного effect prefab.
+            if (data.Id == SkateboardId)
+            {
+                return new SkateboardAttack(
+                    hamster,
+                    gameManager,
+                    data.UltaDuration,
+                    data.UltaCharge);
+            }
+
+            if (string.IsNullOrWhiteSpace(data.UltaPrefab))
+            {
+                throw new InvalidOperationException(
+                    $"Суперудар {data.Id} не содержит адрес prefab эффекта.");
+            }
 
             // Загружаем эффект на время жизни забега.
             AddressableLease<GameObject> effectPrefabLease =
@@ -66,7 +87,9 @@ namespace Vues.GameCore
 
         private static void ValidateSupportedId(int id)
         {
-            if (id != EnergyShieldId && id != ElectricStrikeId)
+            if (id != EnergyShieldId &&
+                id != ElectricStrikeId &&
+                id != SkateboardId)
             {
                 throw new NotSupportedException(
                     $"Не поддерживается ID суперудара: {id}.");

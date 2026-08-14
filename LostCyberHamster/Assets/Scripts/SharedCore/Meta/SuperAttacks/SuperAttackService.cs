@@ -169,8 +169,7 @@ namespace Vues.GameCore
             }
 
             if (string.IsNullOrWhiteSpace(data.NameLocalizationKey) ||
-                string.IsNullOrWhiteSpace(data.IconAddress) ||
-                string.IsNullOrWhiteSpace(data.UltaPrefab))
+                string.IsNullOrWhiteSpace(data.IconAddress))
             {
                 throw new InvalidOperationException(
                     $"Суперудар {data.Id} содержит пустые обязательные данные.");
