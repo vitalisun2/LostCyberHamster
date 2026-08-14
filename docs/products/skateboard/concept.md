@@ -127,6 +127,8 @@ Assets/Content/skins/
 
 `SpritePhysicsShapeColliderSync` живёт на `collision_body`. Текущий `SpriteRenderer` приходит из visual prefab/host при runtime bind. До появления sprites collider может иметь только placeholder shape.
 
+`skateboard_actor` имеет базовый local Y `0.756`: visual и collider вместе совпадают с road baseline normal actor. Sprite pivot остаётся общим `(0.5, 0.225)`, `surface_transform.localY = 0` остаётся базой roof/road alignment.
+
 ## Ownership
 
 `Hamster`

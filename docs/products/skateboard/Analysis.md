@@ -94,6 +94,8 @@ Shapes не вычислять каждый frame. При загрузке visua
 
 Реализация: каждый skateboard visual хранит serialized manifest кадров. Host сообщает sync о bind/unbind visual. Sync заранее кеширует все paths, а в `LateUpdate` реагирует только на смену ссылки `Sprite`; несколько paths сохраняют отдельные контуры тела и доски.
 
+Road baseline задаёт `skateboard_actor.localPosition.y = 0.756`. Смещение поднимает visual и collider вместе до высоты normal actor. Общий sprite pivot `(0.5, 0.225)` сохраняется: его изменение потребовало бы пересобрать Custom Physics Shapes всех кадров. `surface_transform.localY = 0` остаётся чистой road-точкой для roof/road controller.
+
 ## Ownership и DI
 
 - `Hamster`: общие state/events/mechanics и явные refs на switcher + оба hosts.
