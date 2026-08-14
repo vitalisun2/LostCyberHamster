@@ -28,6 +28,8 @@ Hamster                                      active
 
 `HamsterActorSwitcher` — отдельный компонент на том же GameObject, что `Hamster`. Он хранит только refs `normal_actor`/`skateboard_actor`, переключает active state и сообщает mode. Timer, прыжки, combo, damage, visual loading сюда не входят. Термин и отдельный слой `endpoints` не нужны: конкретные refs добавляются только когда появится реальная зависимость.
 
+Switcher реализован как idempotent full-branch toggle. При старте нормализует prefab в `normal_actor active / skateboard_actor inactive`; при смене сначала выключает прежнюю ветку, затем включает целевую. Общий `shift_transform_animations` не меняется.
+
 ## Visual skins двух режимов
 
 Skateboard — gameplay mode, не skin. Но выбранный character skin имеет две visual-версии: normal и skateboard.

@@ -111,6 +111,11 @@ namespace Assets.Scripts.Gameplay
 
         private void Awake()
         {
+            // Normal actor должен быть включён до кеширования обычных mechanics-компонентов.
+            if (_actorSwitcher == null)
+                throw new MissingReferenceException("HamsterActorSwitcher reference is missing.");
+            _actorSwitcher.Initialize();
+
             CacheHorizontalBounds();
 
             _shiftTransformAnimatorController = GetComponentInChildren<ShiftTransformAnimatorController>();
