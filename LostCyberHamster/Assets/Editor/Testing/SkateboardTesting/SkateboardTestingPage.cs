@@ -29,7 +29,7 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
         }
 
         /// <summary>
-        /// Рисует подготовку, ручные команды, сценарии и live status режима.
+        /// Рисует preparation, scripted scenarios, guided checks и live status.
         /// </summary>
         public void Draw(Action navigateBack)
         {
@@ -44,13 +44,11 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
 
             DrawPreparation();
             EditorGUILayout.Space(8f);
-            DrawModeControls();
+            DrawScriptedComboScenarios();
             EditorGUILayout.Space(8f);
-            DrawScenarioControls();
+            DrawGuidedBehaviorChecks();
             EditorGUILayout.Space(8f);
-            DrawLifecycleControls();
-            EditorGUILayout.Space(8f);
-            DrawStatus();
+            DrawLiveStatus();
         }
 
         /// <summary>
@@ -94,71 +92,25 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
         private void DrawPreparation()
         {
             EditorGUILayout.LabelField("Preparation", EditorStyles.boldLabel);
-            using (new EditorGUI.DisabledScope(!_runner.CanPrepare))
-            {
-                if (GUILayout.Button(
-                        "Unlock & Select Skateboard",
-                        GUILayout.Width(CommandButtonWidth)))
-                {
-                    _runner.PrepareUnlockAndSelectSkateboard();
-                }
-            }
-        }
-
-        private void DrawModeControls()
-        {
-            EditorGUILayout.LabelField("Mode", EditorStyles.boldLabel);
             using (new EditorGUILayout.HorizontalScope())
             {
+                using (new EditorGUI.DisabledScope(!_runner.CanPrepare))
+                {
+                    if (GUILayout.Button(
+                            "Unlock & Select Skateboard",
+                            GUILayout.Width(CommandButtonWidth)))
+                    {
+                        _runner.PrepareUnlockAndSelectSkateboard();
+                    }
+                }
+
                 using (new EditorGUI.DisabledScope(!_runner.CanEnterMode))
                 {
                     if (GUILayout.Button("Enter Mode"))
                         _runner.EnterMode();
                 }
-
-                using (new EditorGUI.DisabledScope(!_runner.CanRunScenario))
-                {
-                    if (GUILayout.Button("Timeout"))
-                        _runner.RunTimeoutScenario();
-                }
             }
 
-            using (new EditorGUI.DisabledScope(_runner.IsBusy))
-            {
-                bool useSuperJump = EditorGUILayout.ToggleLeft(
-                    "Super Jump",
-                    _runner.UseSuperJump);
-                if (useSuperJump != _runner.UseSuperJump)
-                    _runner.SetUseSuperJump(useSuperJump);
-            }
-        }
-
-        private void DrawScenarioControls()
-        {
-            EditorGUILayout.LabelField("Combo scenarios", EditorStyles.boldLabel);
-            using (new EditorGUI.DisabledScope(!_runner.CanRunScenario))
-            {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    if (GUILayout.Button("1 + 1 + 1"))
-                        _runner.RunOnePlusOnePlusOneScenario();
-                    if (GUILayout.Button("2 + 1"))
-                        _runner.RunTwoPlusOneScenario();
-                }
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    if (GUILayout.Button("1 + 2"))
-                        _runner.RunOnePlusTwoScenario();
-                    if (GUILayout.Button("3"))
-                        _runner.RunThreeComboScenario();
-                }
-            }
-        }
-
-        private void DrawLifecycleControls()
-        {
-            EditorGUILayout.LabelField("Lifecycle", EditorStyles.boldLabel);
             using (new EditorGUILayout.HorizontalScope())
             {
                 using (new EditorGUI.DisabledScope(!_runner.CanPause))
@@ -181,14 +133,131 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
             }
         }
 
-        private void DrawStatus()
+        private void DrawScriptedComboScenarios()
+        {
+            EditorGUILayout.LabelField(
+                "Scripted Combo Scenarios",
+                EditorStyles.boldLabel);
+            using (new EditorGUI.DisabledScope(!_runner.CanRunScenario))
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    bool useSuperJump = EditorGUILayout.ToggleLeft(
+                        "Super Jump",
+                        _runner.UseSuperJump);
+                    if (useSuperJump != _runner.UseSuperJump)
+                        _runner.SetUseSuperJump(useSuperJump);
+
+                    bool onRoof = EditorGUILayout.ToggleLeft(
+                        "On Roof",
+                        _runner.OnRoof);
+                    if (onRoof != _runner.OnRoof)
+                        _runner.SetOnRoof(onRoof);
+                }
+            }
+
+            using (new EditorGUI.DisabledScope(!_runner.CanRunScenario))
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("1+1+1"))
+                        _runner.RunOnePlusOnePlusOneScenario();
+                    if (GUILayout.Button("2+1"))
+                        _runner.RunTwoPlusOneScenario();
+                    if (GUILayout.Button("1+2"))
+                        _runner.RunOnePlusTwoScenario();
+                    if (GUILayout.Button("3 Combo"))
+                        _runner.RunThreeComboScenario();
+                }
+            }
+        }
+
+        private void DrawGuidedBehaviorChecks()
+        {
+            EditorGUILayout.LabelField(
+                "Guided Behavior Checks",
+                EditorStyles.boldLabel);
+            using (new EditorGUI.DisabledScope(!_runner.CanStartGuidedCheck))
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("Timeout (automatic)"))
+                        _runner.RunTimeoutCheck();
+                    if (GUILayout.Button("Ride Damage"))
+                        _runner.StartRideDamageCheck();
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("Jump Collision"))
+                        _runner.StartJumpCollisionCheck();
+                    if (GUILayout.Button("Lane Shift"))
+                        _runner.StartLaneShiftCheck();
+                }
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                using (new EditorGUI.DisabledScope(!_runner.CanStopCheck))
+                {
+                    if (GUILayout.Button("Stop Check"))
+                        _runner.StopCheck();
+                }
+
+                using (new EditorGUI.DisabledScope(!_runner.CanCancel))
+                {
+                    if (GUILayout.Button("Cancel"))
+                        _runner.Cancel();
+                }
+            }
+
+            if (!string.IsNullOrEmpty(_runner.Instruction))
+                EditorGUILayout.HelpBox(_runner.Instruction, MessageType.Info);
+            DrawChecklist();
+        }
+
+        private void DrawChecklist()
+        {
+            foreach (SkateboardTestingRunner.ChecklistItem item in
+                     _runner.Checklist)
+            {
+                Color color;
+                string prefix;
+                switch (item.State)
+                {
+                    case SkateboardTestingRunner.ChecklistState.Pass:
+                        color = new Color(0.2f, 0.75f, 0.25f);
+                        prefix = "PASS";
+                        break;
+                    case SkateboardTestingRunner.ChecklistState.Fail:
+                        color = new Color(0.9f, 0.25f, 0.2f);
+                        prefix = "FAIL";
+                        break;
+                    default:
+                        color = Color.gray;
+                        prefix = "[ ]";
+                        break;
+                }
+
+                Color previousColor = GUI.contentColor;
+                GUI.contentColor = color;
+                string details = string.IsNullOrEmpty(item.Details)
+                    ? string.Empty
+                    : $" — {item.Details}";
+                EditorGUILayout.LabelField(
+                    $"{prefix} {item.Label}{details}",
+                    StatusStyle);
+                GUI.contentColor = previousColor;
+            }
+        }
+
+        private void DrawLiveStatus()
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                EditorGUILayout.LabelField("Status", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("Live Status", EditorStyles.boldLabel);
                 EditorGUILayout.LabelField(_runner.Status, StatusStyle);
                 EditorGUILayout.Space(4f);
-                EditorGUILayout.LabelField("Live", EditorStyles.boldLabel);
                 EditorGUILayout.LabelField(_runner.LiveStatus, StatusStyle);
             }
         }

@@ -278,6 +278,7 @@ namespace Vues.GameCore
                 _isCurrentJumpSuper = true;
                 _state = SkateboardState.SuperJump;
                 _stateTimeLeft = _landingContactTime;
+                SetHamsterJumpState(isSuper: true);
                 PlayJump(SkinVisualVariant.Super, _currentJumpActionId);
                 return true;
             }
@@ -345,7 +346,7 @@ namespace Vues.GameCore
                     UpdateJump(Time.deltaTime);
                     break;
                 case SkateboardState.Landing:
-                    UpdateSurface(Time.deltaTime);
+                    UpdateSurface(Time.deltaTime, syncHamsterState: false);
                     UpdateLanding(Time.deltaTime);
                     break;
             }
@@ -427,6 +428,7 @@ namespace Vues.GameCore
             _currentJumpActionId = ++_nextActionId;
             _state = isSuper ? SkateboardState.SuperJump : SkateboardState.Jump;
             _stateTimeLeft = _landingContactTime;
+            SetHamsterJumpState(isSuper);
             PlayJump(
                 isSuper ? SkinVisualVariant.Super : SkinVisualVariant.Normal,
                 _currentJumpActionId);
@@ -443,7 +445,6 @@ namespace Vues.GameCore
             _stateTimeLeft = _jumpDuration - _landingContactTime;
             _surfaceController.ResolveLandingSupport(
                 _hamster.IsOnBottomLine.Value);
-            SyncHamsterSurfaceState();
             LandingImpact?.Invoke(_comboDepth, _isCurrentJumpSuper);
         }
 
@@ -478,6 +479,7 @@ namespace Vues.GameCore
             _isJumpQueued = false;
             _isQueuedJumpSuper = false;
             _isCurrentJumpSuper = false;
+            SyncHamsterSurfaceState();
             PlayNextRideVisual();
         }
 
@@ -528,12 +530,29 @@ namespace Vues.GameCore
                 actionId));
         }
 
-        private void UpdateSurface(float deltaTime)
+        private void UpdateSurface(
+            float deltaTime,
+            bool syncHamsterState = true)
         {
             _surfaceController.Tick(
                 deltaTime,
                 _hamster.IsOnBottomLine.Value);
-            SyncHamsterSurfaceState();
+            if (syncHamsterState)
+                SyncHamsterSurfaceState();
+        }
+
+        private void SetHamsterJumpState(bool isSuper)
+        {
+            bool isOnRoof =
+                _surfaceController.State ==
+                SkateboardSurfaceController.SurfaceState.Roof;
+            _hamster.HamsterState.Value = isOnRoof
+                ? isSuper
+                    ? HamsterStateEnum.SuperRoofJump
+                    : HamsterStateEnum.RoofJump
+                : isSuper
+                    ? HamsterStateEnum.SuperJump
+                    : HamsterStateEnum.Jump;
         }
 
         private void SyncHamsterSurfaceState()

@@ -5,6 +5,7 @@ using Assets.Scripts.GameEngine.Actors;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -15,6 +16,61 @@ using Assets.Scripts;
 /// </summary>
 public class CollisionController : MonoBehaviour
 {
+    /// <summary>
+    /// Результат контакта active Skateboard с gameplay-объектом.
+    /// </summary>
+    public enum SkateboardCollisionOutcome
+    {
+        Damage,
+        Destroy,
+        Support,
+        Collect,
+        Ignored,
+    }
+
+    /// <summary>
+    /// Снимок результата Skateboard-контакта для DEV-наблюдателей.
+    /// </summary>
+    public readonly struct SkateboardCollisionDiagnostic
+    {
+        public SkateboardCollisionDiagnostic(
+            Hamster hamster,
+            ObstacleTypeEnum obstacleType,
+            SkateboardCollisionOutcome outcome,
+            int livesBefore,
+            int livesAfter,
+            bool obstacleActiveAfter,
+            bool wasJumpCollisionActive,
+            bool roofSupportActiveAfter)
+        {
+            Hamster = hamster;
+            ObstacleType = obstacleType;
+            Outcome = outcome;
+            LivesBefore = livesBefore;
+            LivesAfter = livesAfter;
+            ObstacleActiveAfter = obstacleActiveAfter;
+            WasJumpCollisionActive = wasJumpCollisionActive;
+            RoofSupportActiveAfter = roofSupportActiveAfter;
+        }
+
+        public Hamster Hamster { get; }
+        public ObstacleTypeEnum ObstacleType { get; }
+        public SkateboardCollisionOutcome Outcome { get; }
+        public int LivesBefore { get; }
+        public int LivesAfter { get; }
+        public bool ObstacleActiveAfter { get; }
+        public bool WasJumpCollisionActive { get; }
+        public bool RoofSupportActiveAfter { get; }
+    }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    /// <summary>
+    /// Сообщает точный итог обработанного Skateboard-контакта DEV-инструментам.
+    /// </summary>
+    public static event Action<SkateboardCollisionDiagnostic>
+        SkateboardCollisionProcessed;
+#endif
+
     /// <summary>
     /// Ссылка на хомяка, состояние которого используется при проверке столкновений.
     /// </summary>
@@ -97,7 +153,19 @@ public class CollisionController : MonoBehaviour
         // Применяем урон, если текущее состояние допускает столкновение на входе в триггер.
         if (HasCollisionInRunState(obstacle))
         {
+            bool wasSkateboardModeActive = _hamster.IsSkateboardModeActive;
+            int livesBefore = _hamster.Lives.Value;
             HandleDamage(obstacle, "Enter", "RunState");
+            if (wasSkateboardModeActive)
+            {
+                PublishSkateboardCollision(
+                    obstacle,
+                    _hamster.Lives.Value == livesBefore - 1
+                        ? SkateboardCollisionOutcome.Damage
+                        : SkateboardCollisionOutcome.Ignored,
+                    livesBefore,
+                    wasJumpCollisionActive: false);
+            }
             return;
         }
 
@@ -129,7 +197,19 @@ public class CollisionController : MonoBehaviour
 
         if (HasCollisionInRunState(obstacle))
         {
+            bool wasSkateboardModeActive = _hamster.IsSkateboardModeActive;
+            int livesBefore = _hamster.Lives.Value;
             HandleDamage(obstacle, "Stay", "RunState");
+            if (wasSkateboardModeActive)
+            {
+                PublishSkateboardCollision(
+                    obstacle,
+                    _hamster.Lives.Value == livesBefore - 1
+                        ? SkateboardCollisionOutcome.Damage
+                        : SkateboardCollisionOutcome.Ignored,
+                    livesBefore,
+                    wasJumpCollisionActive: false);
+            }
         }
     }
 
@@ -156,13 +236,29 @@ public class CollisionController : MonoBehaviour
                     _hamster.IsOnBottomLine.Value,
                     allowHigherRoof: _hamster.IsSkateboardJumpCollisionActive);
             if (roofContact == SkateboardSurfaceController.RoofContact.Support)
+            {
+                PublishSkateboardCollision(
+                    obstacle,
+                    SkateboardCollisionOutcome.Support,
+                    _hamster.Lives.Value,
+                    _hamster.IsSkateboardJumpCollisionActive);
                 return true;
+            }
 
             // Roof side остаётся обычным опасным препятствием во время ride.
             if (!_hamster.IsSkateboardJumpCollisionActive)
             {
-                if (!_hamster.IsDamaged.Value)
+                int livesBefore = _hamster.Lives.Value;
+                bool damageApplied = !_hamster.IsDamaged.Value;
+                if (damageApplied)
                     HandleDamage(obstacle, triggerSource, "SkateboardRoofSide");
+                PublishSkateboardCollision(
+                    obstacle,
+                    damageApplied && _hamster.Lives.Value == livesBefore - 1
+                        ? SkateboardCollisionOutcome.Damage
+                        : SkateboardCollisionOutcome.Ignored,
+                    livesBefore,
+                    wasJumpCollisionActive: false);
                 return true;
             }
         }
@@ -172,10 +268,24 @@ public class CollisionController : MonoBehaviour
 
         // Остальные нефизические контакты во время jump не дают damage/destroy.
         if (!IsPhysicalObstacle(obstacle))
+        {
+            PublishSkateboardCollision(
+                obstacle,
+                SkateboardCollisionOutcome.Ignored,
+                _hamster.Lives.Value,
+                wasJumpCollisionActive: true);
             return true;
+        }
 
         // Side/road obstacle уничтожается без damage, drops и нового charge.
+        int livesBeforeDestroy = _hamster.Lives.Value;
         _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);
+        PublishSkateboardCollision(
+            obstacle,
+            SkateboardCollisionOutcome.Destroy,
+            livesBeforeDestroy,
+            wasJumpCollisionActive: true,
+            obstacleTypeOverride: obstacleType);
         return true;
     }
 
@@ -263,8 +373,49 @@ public class CollisionController : MonoBehaviour
         if (!obstacle.isActiveAndEnabled || !IsCollectableState())
             return true;
 
+        bool wasSkateboardModeActive = _hamster.IsSkateboardModeActive;
+        int livesBefore = _hamster.Lives.Value;
+        ObstacleTypeEnum obstacleType = obstacle.ObstacleType.ObstacleTypeEnum;
         HandleCollectable(obstacle);
+        if (wasSkateboardModeActive)
+        {
+            PublishSkateboardCollision(
+                obstacle,
+                SkateboardCollisionOutcome.Collect,
+                livesBefore,
+                _hamster.IsSkateboardJumpCollisionActive,
+                obstacleType);
+        }
         return true;
+    }
+
+    /// <summary>
+    /// Публикует один post-outcome снимок без изменения collision policy.
+    /// </summary>
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    private void PublishSkateboardCollision(
+        Obstacle obstacle,
+        SkateboardCollisionOutcome outcome,
+        int livesBefore,
+        bool wasJumpCollisionActive,
+        ObstacleTypeEnum? obstacleTypeOverride = null)
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Obstacle roofSupport = _hamster.SkateboardSurfaceController.CurrentRoof;
+        bool roofSupportActiveAfter =
+            roofSupport == null || roofSupport.isActiveAndEnabled;
+        SkateboardCollisionProcessed?.Invoke(
+            new SkateboardCollisionDiagnostic(
+                _hamster,
+                obstacleTypeOverride ?? obstacle.ObstacleType.ObstacleTypeEnum,
+                outcome,
+                livesBefore,
+                _hamster.Lives.Value,
+                obstacle.isActiveAndEnabled,
+                wasJumpCollisionActive,
+                roofSupportActiveAfter));
+#endif
     }
 
     /// <summary>

@@ -129,14 +129,25 @@ Super attack catalog: skateboard ID `3`, unlock level `4`, charge per obstacle `
 
 Проверено: один canonical GUID; backup имеет другой GUID; scene указывает canonical; normal actor active; skateboard actor inactive; оба `skin_slot` имеют host; root serialized refs non-null; normal Addressables GUID не изменились; три skateboard addresses уникальны. `git diff --check` чистый. Compile/runtime review отложен до полной реализации feature.
 
-## Tools/Testing: базовый Skateboard runner
+## Tools/Testing: Skateboard runner
 
 `Tools/Testing` получает одну root-кнопку `Skateboard Mode Testing` и отдельную IMGUI page. Prefab/scene object не нужен.
 
 Preparation-команда `Unlock & Select Skateboard` работает после Bootstrap: проверяет ID `3`, читает `RequiredPlayerLevel` из каталога, через testing-only seam `PlayerExperienceService` начисляет ровно недостающий XP по production level-up математике, проверяет unlock и вызывает настоящий `SuperAttackService.TrySelect(3)`. Экран Super Attacks открывать не требуется. Уже созданный gameplay Hamster не заменяет runtime: после выбора нужен следующий вход в уровень.
 
-Gameplay-команды используют production events: charge `100` + `UltaEvent` для входа, `JumpRequest`/`SuperJumpRequest` для cycles. Есть timeout и четыре state-driven сценария: `1+1+1`, `2+1`, `1+2`, `3`; toggle `Super Jump` усиливает каждый cycle, не дублируя кнопки. Runner ждёт реальные `Ride / Landing`, а не фиксированные задержки, и проверяет impact depths. `Pause / Resume / Cancel` управляют lifecycle.
+Scripted model использует production events: charge `100` + `UltaEvent`, затем `JumpRequest`/`SuperJumpRequest`. Ровно четыре combo-кнопки: `1+1+1`, `2+1`, `1+2`, `3 Combo`. `Super Jump` выбирает normal или super cycle. `On Roof` задаёт строгий gate: stable road `Run` или stable `RoofRun` с живой support. Mismatch оставляет scenario выключенным и показывает короткую инструкцию. Runner ждёт реальные `Ride / Jump / Landing`, проверяет impact depths, budget и natural completion.
+
+Guided model наблюдает ручной input. Одновременно активен один passive watcher. Общие `Stop Check`, `Cancel`, status и checklist сохраняются при Pause; timers и watchdog в `PAUSED` стоят.
+
+- `Timeout` сам активирует mode, не отправляет jump, ждёт `10` gameplay seconds. Проверяет first-jump waiting, целый budget, выключенный Skateboard и включённый normal actor.
+- `Ride Damage` собирает шесть physical types в любом порядке. Каждый контакт обязан дать ровно `life -1`, завершить mode, включить normal actor и сохранить obstacle. Roof support не входит.
+- `Jump Collision` собирает те же types. Контакт обязан пройти в jump collision phase, сохранить life, убрать obstacle через super-attack и сохранить current roof support. Collectibles не входят.
+- `Lane Shift` наблюдает ручной input. Проверяет Ride tap с завершением на другой линии, принятый jump во время active shift и отклонённый tap после старта jump.
+
+Для точной корреляции `CollisionController` публикует один DEV diagnostic event: physical type, outcome, lives, obstacle live-state, jump phase и current roof support live-state. Event только наблюдает post-outcome state.
+
+Normal lane contract: tap разрешён только в `Run/RoofRun` вне shift; jump во время shift принимается; tap после jump отклоняется. Skateboard держит non-run Hamster state через jump и landing tail, затем синхронизирует surface при возврате в Ride.
 
 Повторное нажатие любой activation/scenario-кнопки при active mode проверяет rejected activation: budget, combo и phase не должны сброситься; текущий scenario продолжает работу. Отдельная кнопка для этого не нужна.
 
-Jump collision, landing impact и roof behavior пока наблюдаются на обычном уровне во время сценариев. Dedicated obstacle staging, forced finish, pool-reuse race и skin-fallback automation отложены; в базовую page не входят.
+Page всегда заново resolve-ит live `Hamster`, configured `SkateboardAttack` и `GameManager`. Runtime refs живут только внутри active check.

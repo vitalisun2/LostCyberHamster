@@ -26,8 +26,12 @@
 
 - [x] ✅ При ride damage выполнить обычную потерю life и немедленно завершить mode с восстановлением normal actor/surface. Landing timing и shake параметры зафиксированы.
 
-- [x] ✅ Добавить базовый `Tools/Testing > Skateboard Mode Testing`: unlock/select через XP и catalog, activation, timeout, четыре combo patterns, Super Jump toggle, pause/resume/cancel и live status.
+- [x] ✅ Доработать `Tools/Testing > Skateboard Mode Testing`: preparation, четыре scripted combos, `Super Jump`, `On Roof` gate, automatic timeout, passive Ride Damage / Jump Collision / Lane Shift watchers, общий checklist/status, pause-safe lifecycle.
 
-- [ ] Пройти integration проверки: timeout, combos, pause, finish, ride damage, jump destroy, обе линии, pooled reuse, cleanup и visual fallback.
+- [x] ✅ Добавить узкий Skateboard collision diagnostic event. Проверять post-outcome physical type, damage/destroy/support/collect, lives, obstacle и current roof support.
+
+- [x] ✅ Выровнять lane input contract: jump принимается во время shift; tap блокируется на всём jump/landing tail до Ride.
+
+- [ ] Пройти Unity Live проверки: timeout с Pause/Resume, road/roof combos, Ride Damage checklist, Jump Collision checklist, Lane Shift guide, finish, pooled reuse, cleanup и visual fallback.
 
 - [ ] Пересобрать Addressables/Windows AssetBundles после prefab migration. Проверить новый canonical Hamster path в catalog.

@@ -1,8 +1,10 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
+using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using GameManagement;
 using GameManagement.Progress;
@@ -13,33 +15,64 @@ using Vues.GameCore;
 namespace Assets.Scripts.DevTools.SkateboardTesting
 {
     /// <summary>
-    /// Управляет подготовкой Skateboard и state-driven gameplay-сценариями Tools/Testing.
+    /// Управляет подготовкой Skateboard, scripted scenarios и passive guided checks.
     /// </summary>
     public sealed class SkateboardTestingRunner
     {
         private const int _skateboardId = 3;
         private const float _betweenGroupsDelay = 0.5f;
+        private const float _timeoutTolerance = 0.1f;
+
+        private static readonly ObstacleTypeEnum[] _physicalTypes =
+        {
+            ObstacleTypeEnum.smallAlive,
+            ObstacleTypeEnum.bigAlive,
+            ObstacleTypeEnum.smallNotAliveRoad,
+            ObstacleTypeEnum.smallNotAliveRoadAndRoof,
+            ObstacleTypeEnum.bigNotAlive,
+            ObstacleTypeEnum.mediumNotAlive,
+        };
+
+        private static readonly string[] _physicalLabels =
+        {
+            "smallAlive",
+            "bigAlive",
+            "smallNotAliveRoad",
+            "smallNotAliveRoadAndRoof",
+            "bigNotAlive side",
+            "mediumNotAlive side",
+        };
 
         private readonly PlayerExperienceService _experienceService = new();
         private readonly List<int> _observedImpactDepths = new(3);
+        private readonly List<ChecklistItem> _checklist = new(6);
 
         private Hamster _hamster;
         private SkateboardAttack _attack;
         private GameManager _gameManager;
+        private RunnerMode _mode;
+        private LaneCheckStage _laneStage;
         private int[] _comboGroups = Array.Empty<int>();
         private int[] _expectedImpactDepths = Array.Empty<int>();
         private int _groupIndex;
         private int _cycleInGroup;
         private int _cyclesScheduled;
         private float _nextGroupAt;
+        private float _timeoutStartedAt;
+        private int _timeoutInitialBudget;
+        private bool _timeoutWaitingStayedTrue;
+        private bool _timeoutBudgetStayedUntouched;
         private bool _waitingForQueuedCycle;
         private bool _waitingForRide;
         private bool _waitingForCompletion;
         private bool _landingHandled;
-        private bool _isTimeoutScenario;
         private bool _useSuperJump;
-        private bool _isBusy;
+        private bool _onRoof;
+        private bool _lastObservedLane;
+        private bool _laneStart;
+        private bool _laneTarget;
         private string _scenarioTitle = string.Empty;
+        private string _instruction = string.Empty;
         private string _status = "Запустите Bootstrap. Подготовку выполняйте в Menu.";
 
         private SkateboardTestingRunner()
@@ -50,29 +83,53 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
         public event Action Changed;
 
-        public bool IsBusy => _isBusy;
+        public enum ChecklistState
+        {
+            Pending,
+            Pass,
+            Fail,
+        }
+
+        public readonly struct ChecklistItem
+        {
+            public ChecklistItem(string label, ChecklistState state, string details = "")
+            {
+                Label = label;
+                State = state;
+                Details = details;
+            }
+
+            public string Label { get; }
+            public ChecklistState State { get; }
+            public string Details { get; }
+        }
+
+        public bool IsBusy => _mode != RunnerMode.None;
         public bool UseSuperJump => _useSuperJump;
+        public bool OnRoof => _onRoof;
         public string Status => _status;
+        public string Instruction => _instruction;
+        public IReadOnlyList<ChecklistItem> Checklist => _checklist;
         public string LiveStatus => BuildLiveStatus();
 
         public bool CanPrepare =>
-            Application.isPlaying &&
-            !_isBusy &&
+            Application.isPlaying && !IsBusy &&
             GameDataManager.PlayerData != null &&
             SuperAttackService.TryGet(_skateboardId, out _);
-
-        // Во время активного scenario кнопки остаются доступны: повторное нажатие
-        // проверяет rejected activation без сброса текущего mode.
         public bool CanEnterMode =>
             TryResolveGameplay(out _, out _, out GameManager manager) &&
-            manager.State == GameState.PLAYING;
-        public bool CanRunScenario => CanEnterMode;
+            manager.State == GameState.PLAYING &&
+            (_mode == RunnerMode.None || IsGuidedMode(_mode));
+        public bool CanRunScenario =>
+            !IsBusy && TryResolvePlayingGameplay(out _, out _, out _);
+        public bool CanStartGuidedCheck => CanRunScenario;
         public bool CanPause => TryGetGameManager(out GameManager manager) &&
                                 manager.State == GameState.PLAYING;
         public bool CanResume => TryGetGameManager(out GameManager manager) &&
                                  manager.State == GameState.PAUSED;
+        public bool CanStopCheck => IsBusy;
         public bool CanCancel =>
-            _isBusy ||
+            IsBusy ||
             (TryResolveGameplay(out _, out SkateboardAttack attack, out _) &&
              attack.IsActive);
 
@@ -83,46 +140,29 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         {
             if (!CanPrepare)
             {
-                SetStatus("Подготовка недоступна: дождитесь загрузки PlayerData и каталога.");
+                SetStatus("Подготовка недоступна: дождитесь PlayerData и каталога.");
                 return;
             }
 
             try
             {
                 PlayerData playerData = GameDataManager.PlayerData;
-                if (!SuperAttackService.TryGet(
-                        _skateboardId,
-                        out SuperAttackData skateboard))
-                {
-                    throw new InvalidOperationException(
-                        "Skateboard ID 3 отсутствует в каталоге.");
-                }
+                if (!SuperAttackService.TryGet(_skateboardId, out SuperAttackData skateboard))
+                    throw new InvalidOperationException("Skateboard ID 3 отсутствует в каталоге.");
 
                 int beforeLevel = playerData.PlayerLevel;
                 int beforeExperience = playerData.ExperiencePoints;
                 int missingExperience = CalculateMissingExperience(
-                    playerData,
-                    skateboard.RequiredPlayerLevel);
+                    playerData, skateboard.RequiredPlayerLevel);
                 if (missingExperience > 0)
-                {
-                    _experienceService.GrantExperienceForTesting(
-                        playerData,
-                        missingExperience);
-                }
+                    _experienceService.GrantExperienceForTesting(playerData, missingExperience);
 
-                if (!SuperAttackService.IsUnlocked(
-                        _skateboardId,
-                        playerData.PlayerLevel))
-                {
-                    throw new InvalidOperationException(
-                        "Skateboard не открылся после начисления XP.");
-                }
-
+                if (!SuperAttackService.IsUnlocked(_skateboardId, playerData.PlayerLevel))
+                    throw new InvalidOperationException("Skateboard не открылся после начисления XP.");
                 if (!SuperAttackService.TrySelect(_skateboardId) ||
                     SuperAttackService.ActiveSuperAttackId != _skateboardId)
                 {
-                    throw new InvalidOperationException(
-                        "SuperAttackService не выбрал Skateboard.");
+                    throw new InvalidOperationException("SuperAttackService не выбрал Skateboard.");
                 }
 
                 UIManager.OnRepaintScreen?.Invoke();
@@ -130,10 +170,10 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                     ? " Текущий Hamster не заменяется: войдите в следующий уровень."
                     : string.Empty;
                 SetStatus(
-                    $"PASS: Skateboard открыт и выбран. " +
-                    $"Level {beforeLevel}, XP {beforeExperience} -> " +
-                    $"Level {playerData.PlayerLevel}, XP {playerData.ExperiencePoints}; " +
-                    $"добавлено {missingExperience} XP.{runtimeNote}");
+                    $"PASS: Skateboard открыт и выбран. Level {beforeLevel}, " +
+                    $"XP {beforeExperience} -> Level {playerData.PlayerLevel}, " +
+                    $"XP {playerData.ExperiencePoints}; добавлено {missingExperience} XP." +
+                    runtimeNote);
             }
             catch (Exception exception)
             {
@@ -146,10 +186,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         /// </summary>
         public void EnterMode()
         {
-            if (!TryResolveGameplay(
-                    out Hamster hamster,
-                    out SkateboardAttack attack,
-                    out _))
+            if (!TryResolvePlayingGameplay(out Hamster hamster, out SkateboardAttack attack, out _))
             {
                 SetStatus(GetGameplayUnavailableStatus());
                 return;
@@ -170,130 +207,197 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             SetStatus("PASS: Skateboard mode активирован через charge + UltaEvent.");
         }
 
-        public void RunTimeoutScenario()
+        /// <summary>
+        /// Запускает passive timeout check без отправки jump input.
+        /// </summary>
+        public void RunTimeoutCheck()
         {
-            StartScenario("Timeout 10 s", Array.Empty<int>(), Array.Empty<int>());
-        }
-
-        public void RunOnePlusOnePlusOneScenario()
-        {
-            StartScenario("1 + 1 + 1", new[] { 1, 1, 1 }, new[] { 1, 1, 1 });
-        }
-
-        public void RunTwoPlusOneScenario()
-        {
-            StartScenario("2 + 1", new[] { 2, 1 }, new[] { 1, 2, 1 });
-        }
-
-        public void RunOnePlusTwoScenario()
-        {
-            StartScenario("1 + 2", new[] { 1, 2 }, new[] { 1, 1, 2 });
-        }
-
-        public void RunThreeComboScenario()
-        {
-            StartScenario("3 Combo", new[] { 3 }, new[] { 1, 2, 3 });
-        }
-
-        public void SetUseSuperJump(bool useSuperJump)
-        {
-            if (_isBusy)
+            if (!TryStartAutomaticCheck(
+                    out Hamster hamster,
+                    out SkateboardAttack attack,
+                    out GameManager gameManager))
+            {
                 return;
+            }
 
-            _useSuperJump = useSuperJump;
-            SetStatus(useSuperJump
-                ? "Super Jump включён для каждого cycle."
-                : "Обычный Jump включён для каждого cycle.");
+            _hamster = hamster;
+            _attack = attack;
+            _gameManager = gameManager;
+            _mode = RunnerMode.Timeout;
+            _scenarioTitle = "Timeout 10 gameplay s";
+            _instruction = "Ничего не нажимайте. Runner ждёт 10 gameplay seconds.";
+            _timeoutStartedAt = Time.time;
+            _timeoutInitialBudget = attack.JumpsRemaining;
+            _timeoutWaitingStayedTrue = attack.IsWaitingForFirstJump;
+            _timeoutBudgetStayedUntouched =
+                _timeoutInitialBudget == SkateboardAttack.DefaultJumpBudget;
+            SetChecklist(new[]
+            {
+                "First-jump waiting stayed active",
+                "Jump budget untouched",
+                "Skateboard actor disabled",
+                "Normal actor enabled",
+            });
+            attack.LandingImpact += OnLandingImpact;
+            SetStatus($"RUNNING: {_scenarioTitle}. {_instruction}");
+        }
+
+        public void RunOnePlusOnePlusOneScenario() =>
+            StartComboScenario("1+1+1", new[] { 1, 1, 1 }, new[] { 1, 1, 1 });
+        public void RunTwoPlusOneScenario() =>
+            StartComboScenario("2+1", new[] { 2, 1 }, new[] { 1, 2, 1 });
+        public void RunOnePlusTwoScenario() =>
+            StartComboScenario("1+2", new[] { 1, 2 }, new[] { 1, 1, 2 });
+        public void RunThreeComboScenario() =>
+            StartComboScenario("3 Combo", new[] { 3 }, new[] { 1, 2, 3 });
+
+        public void StartRideDamageCheck() => StartCollisionCheck(
+            RunnerMode.RideDamage,
+            "Ride Damage",
+            "Активируйте Skateboard и столкнитесь боком с pending obstacle.");
+
+        public void StartJumpCollisionCheck() => StartCollisionCheck(
+            RunnerMode.JumpCollision,
+            "Jump Collision",
+            "Активируйте Skateboard, начните jump и попадите в pending obstacle.");
+
+        /// <summary>
+        /// Запускает guided watcher lane shift без scripted input.
+        /// </summary>
+        public void StartLaneShiftCheck()
+        {
+            if (!TryStartGuidedCheck(
+                    out Hamster hamster,
+                    out SkateboardAttack attack,
+                    out GameManager gameManager))
+            {
+                return;
+            }
+
+            _hamster = hamster;
+            _attack = attack;
+            _gameManager = gameManager;
+            _mode = RunnerMode.LaneShift;
+            _scenarioTitle = "Lane Shift";
+            _laneStage = LaneCheckStage.AwaitRideTap;
+            _lastObservedLane = hamster.IsOnBottomLine.Value;
+            SetChecklist(new[]
+            {
+                "Ride tap starts shift and finishes on other lane",
+                "Jump during active shift is accepted",
+                "Tap after jump start is rejected",
+            });
+            hamster.TapRequest.Subscribe(OnGuidedTapRequested);
+            hamster.JumpRequest.Subscribe(OnGuidedJumpRequested);
+            _instruction = "Активируйте Skateboard. В Ride смените линию и дождитесь конца shift.";
+            SetStatus($"RUNNING: {_scenarioTitle}. {_instruction}");
+        }
+
+        public void SetUseSuperJump(bool value)
+        {
+            if (IsBusy) return;
+            _useSuperJump = value;
+            SetStatus(value
+                ? "Scripted cycles используют Super Jump."
+                : "Scripted cycles используют normal Jump.");
+        }
+
+        public void SetOnRoof(bool value)
+        {
+            if (IsBusy) return;
+            _onRoof = value;
+            SetStatus(value
+                ? "Scripted surface gate: stable Roof/RoofRun."
+                : "Scripted surface gate: stable road Ride/Run.");
         }
 
         public void Pause()
         {
-            if (!CanPause || !TryGetGameManager(out GameManager manager))
-                return;
-
+            if (!CanPause || !TryGetGameManager(out GameManager manager)) return;
             manager.Pause();
-            SetStatus(_isBusy
-                ? $"PAUSED: {_scenarioTitle}. Scenario продолжится после Resume."
-                : "Game paused.");
+            SetStatus(IsBusy ? $"PAUSED: {_scenarioTitle}. Check сохранён." : "Game paused.");
         }
 
         public void Resume()
         {
-            if (!CanResume || !TryGetGameManager(out GameManager manager))
-                return;
-
+            if (!CanResume || !TryGetGameManager(out GameManager manager)) return;
             manager.Resume();
-            SetStatus(_isBusy
-                ? $"RUNNING: {_scenarioTitle}."
-                : "Game resumed.");
+            SetStatus(IsBusy ? $"RUNNING: {_scenarioTitle}. {_instruction}" : "Game resumed.");
         }
 
+        /// <summary>
+        /// Останавливает active runner, сохраняя текущий gameplay mode.
+        /// </summary>
+        public void StopCheck()
+        {
+            if (!IsBusy) return;
+            string title = _scenarioTitle;
+            StopActiveCheck(clearChecklist: false);
+            SetStatus($"STOPPED: {title}. Gameplay mode не изменён.");
+        }
+
+        /// <summary>
+        /// Останавливает active runner и завершает Skateboard mode.
+        /// </summary>
         public void Cancel()
         {
             SkateboardAttack attack = _attack;
-            StopScenario(clearStatus: false);
+            StopActiveCheck(clearChecklist: false);
             if (attack == null &&
                 TryResolveGameplay(out _, out SkateboardAttack resolved, out _))
             {
                 attack = resolved;
             }
 
-            if (attack?.IsActive == true)
-                attack.Complete();
-
-            SetStatus("Scenario отменён; Skateboard mode завершён.");
+            if (attack?.IsActive == true) attack.Complete();
+            SetStatus("Check отменён; Skateboard mode завершён.");
         }
 
         /// <summary>
-        /// Продвигает runner только по реально наблюдаемым состояниям Skateboard FSM.
+        /// Продвигает active check только в gameplay time и по live runtime state.
         /// </summary>
         public void Tick()
         {
-            if (!_isBusy)
-                return;
-
+            if (!IsBusy) return;
             if (_gameManager == null || _attack == null || _hamster == null)
             {
-                FailScenario("Gameplay runtime потерян.");
+                FailActiveCheck("Gameplay runtime потерян.");
                 return;
             }
 
-            if (_gameManager.State == GameState.PAUSED)
-                return;
+            if (_gameManager.State == GameState.PAUSED) return;
             if (_gameManager.State != GameState.PLAYING)
             {
-                FailScenario($"GameState стал {_gameManager.State}.");
+                FailActiveCheck($"GameState стал {_gameManager.State}.");
                 return;
             }
 
-            if (_isTimeoutScenario)
+            switch (_mode)
             {
-                if (!_attack.IsActive)
-                    PassScenario("Mode завершился после timeout и вернул normal actor.");
-                return;
+                case RunnerMode.Combo: TickComboScenario(); break;
+                case RunnerMode.Timeout: TickTimeoutCheck(); break;
+                case RunnerMode.LaneShift: TickLaneShiftCheck(); break;
             }
-
-            TickComboScenario();
         }
 
         public void HandlePlayModeStarted()
         {
-            StopScenario(clearStatus: true);
+            StopActiveCheck(clearChecklist: true);
             SetStatus("Play Mode готов. В Menu подготовьте и выберите Skateboard.");
         }
 
         public void HandlePlayModeStopped()
         {
-            StopScenario(clearStatus: true);
+            StopActiveCheck(clearChecklist: true);
             SetStatus("Play Mode остановлен.");
         }
 
-        private void StartScenario(
+        private void StartComboScenario(
             string title,
             int[] comboGroups,
             int[] expectedImpactDepths)
         {
-            if (!TryResolveGameplay(
+            if (!TryResolvePlayingGameplay(
                     out Hamster hamster,
                     out SkateboardAttack attack,
                     out GameManager gameManager))
@@ -302,16 +406,21 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 return;
             }
 
-            // Повторная scenario-кнопка проверяет active rejection и не заменяет текущий script.
+            if (IsBusy)
+            {
+                SetStatus("Сначала завершите active check.");
+                return;
+            }
+
             if (attack.IsActive)
             {
                 ProbeRejectedActivation(hamster, attack);
                 return;
             }
 
-            if (_isBusy)
+            if (!ValidateScriptedSurface(hamster, out string instruction))
             {
-                SetStatus("Scenario уже выполняется, но active mode не найден.", isError: true);
+                SetStatus(instruction);
                 return;
             }
 
@@ -324,6 +433,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             _hamster = hamster;
             _attack = attack;
             _gameManager = gameManager;
+            _mode = RunnerMode.Combo;
             _comboGroups = comboGroups;
             _expectedImpactDepths = expectedImpactDepths;
             _observedImpactDepths.Clear();
@@ -335,11 +445,12 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             _waitingForRide = false;
             _waitingForCompletion = false;
             _landingHandled = false;
-            _isTimeoutScenario = comboGroups.Length == 0;
             _scenarioTitle = title;
-            _isBusy = true;
-            _attack.LandingImpact += OnLandingImpact;
-            SetStatus($"RUNNING: {title}; jump={(_useSuperJump ? "Super" : "Normal")}.");
+            _instruction = "Runner отправляет реальные jump requests и ждёт FSM.";
+            attack.LandingImpact += OnLandingImpact;
+            SetStatus(
+                $"RUNNING: {title}; jump={(_useSuperJump ? "Super" : "Normal")}, " +
+                $"surface={(_onRoof ? "Roof" : "Road")}.");
         }
 
         private void TickComboScenario()
@@ -353,7 +464,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 }
                 else
                 {
-                    FailScenario(
+                    FailActiveCheck(
                         $"Mode завершился раньше: cycles={_cyclesScheduled}/" +
                         $"{SkateboardAttack.DefaultJumpBudget}.");
                 }
@@ -361,9 +472,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 return;
             }
 
-            if (_waitingForCompletion)
-                return;
-
+            if (_waitingForCompletion) return;
             if (_waitingForQueuedCycle)
             {
                 if (_attack.IsJumping)
@@ -371,18 +480,15 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                     _waitingForQueuedCycle = false;
                     _landingHandled = false;
                     SetStatus(
-                        $"RUNNING: {_scenarioTitle}; cycle {_cyclesScheduled}/3 started, " +
+                        $"RUNNING: {_scenarioTitle}; cycle {_cyclesScheduled}/3, " +
                         $"combo {_attack.ComboDepth}.");
                 }
-
                 return;
             }
 
             if (_waitingForRide)
             {
-                if (!_attack.IsRiding)
-                    return;
-
+                if (!_attack.IsRiding) return;
                 _waitingForRide = false;
                 _groupIndex++;
                 _cycleInGroup = 0;
@@ -393,77 +499,343 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
             if (_cycleInGroup == 0)
             {
-                if (!_attack.IsRiding || Time.time < _nextGroupAt)
-                    return;
-
+                if (!_attack.IsRiding || Time.time < _nextGroupAt) return;
                 if (!RequestJumpCycle())
                 {
-                    FailScenario("Первый jump группы отклонён runtime.");
+                    FailActiveCheck("Первый jump группы отклонён runtime.");
                     return;
                 }
 
                 _cycleInGroup = 1;
                 _cyclesScheduled++;
                 _landingHandled = false;
-                SetStatus(
-                    $"RUNNING: {_scenarioTitle}; cycle {_cyclesScheduled}/3 started.");
+                SetStatus($"RUNNING: {_scenarioTitle}; cycle {_cyclesScheduled}/3.");
                 return;
             }
 
-            if (!_attack.IsLanding || _landingHandled)
-                return;
-
+            if (!_attack.IsLanding || _landingHandled) return;
             _landingHandled = true;
             int groupSize = _comboGroups[_groupIndex];
             if (_cycleInGroup < groupSize)
             {
                 if (!RequestJumpCycle())
                 {
-                    FailScenario("Queued jump группы отклонён runtime.");
+                    FailActiveCheck("Queued jump группы отклонён runtime.");
                     return;
                 }
 
                 _cycleInGroup++;
                 _cyclesScheduled++;
                 _waitingForQueuedCycle = true;
-                SetStatus(
-                    $"RUNNING: {_scenarioTitle}; queued cycle {_cyclesScheduled}/3.");
+                SetStatus($"RUNNING: {_scenarioTitle}; queued cycle {_cyclesScheduled}/3.");
                 return;
             }
 
-            bool isLastGroup = _groupIndex == _comboGroups.Length - 1;
-            if (isLastGroup)
+            if (_groupIndex == _comboGroups.Length - 1)
             {
+                if (_attack.JumpsRemaining != 0)
+                {
+                    FailActiveCheck(
+                        $"Final impact оставил budget={_attack.JumpsRemaining}.");
+                    return;
+                }
                 _waitingForCompletion = true;
                 SetStatus($"RUNNING: {_scenarioTitle}; ждём final landing tail.");
             }
             else
             {
                 _waitingForRide = true;
-                SetStatus($"RUNNING: {_scenarioTitle}; ждём Ride перед следующей группой.");
+                SetStatus($"RUNNING: {_scenarioTitle}; ждём Ride.");
             }
+        }
+
+        private void TickTimeoutCheck()
+        {
+            if (_attack.IsActive)
+            {
+                _timeoutWaitingStayedTrue &= _attack.IsWaitingForFirstJump;
+                _timeoutBudgetStayedUntouched &=
+                    _attack.JumpsRemaining == _timeoutInitialBudget;
+                if (!_timeoutWaitingStayedTrue || !_timeoutBudgetStayedUntouched)
+                {
+                    SetChecklistResult(
+                        0,
+                        _timeoutWaitingStayedTrue,
+                        "first-jump waiting");
+                    SetChecklistResult(
+                        1,
+                        _timeoutBudgetStayedUntouched,
+                        "jump budget");
+                    FailActiveCheck("Получен jump input или расходован jump budget.");
+                }
+                return;
+            }
+
+            float gameplaySeconds = Time.time - _timeoutStartedAt;
+            bool waitedFullTimeout =
+                gameplaySeconds >= SkateboardAttack.DefaultFirstJumpTimeout -
+                _timeoutTolerance;
+            bool normalActorRestored =
+                !_hamster.ActorSwitcher.IsSkateboardActive &&
+                _hamster.ActorSwitcher.NormalActor.activeSelf;
+            SetChecklistResult(
+                0,
+                _timeoutWaitingStayedTrue,
+                "first-jump waiting");
+            SetChecklistResult(
+                1,
+                _timeoutBudgetStayedUntouched,
+                "jump budget");
+            SetChecklistResult(
+                2,
+                !_hamster.ActorSwitcher.IsSkateboardActive,
+                "Skateboard actor");
+            SetChecklistResult(
+                3,
+                _hamster.ActorSwitcher.NormalActor.activeSelf,
+                "normal actor");
+            if (!waitedFullTimeout || !_timeoutWaitingStayedTrue ||
+                !_timeoutBudgetStayedUntouched || !normalActorRestored)
+            {
+                FailActiveCheck(
+                    $"elapsed={gameplaySeconds:F2}, waiting={_timeoutWaitingStayedTrue}, " +
+                    $"budget={_timeoutBudgetStayedUntouched}, normal={normalActorRestored}.");
+                return;
+            }
+
+            PassActiveCheck(
+                "First-jump waiting сохранился, budget не расходован, " +
+                "Skateboard выключен, normal actor включён.");
+        }
+
+        private void TickLaneShiftCheck()
+        {
+            if (_laneStage == LaneCheckStage.WaitRideShiftCompletion &&
+                !_hamster.IsShifting.Value)
+            {
+                bool passed =
+                    _hamster.IsOnBottomLine.Value == _laneTarget &&
+                    _laneTarget != _laneStart;
+                SetChecklistResult(
+                    0,
+                    passed,
+                    passed ? "shift завершён на другой линии" : "линия не изменилась");
+                _laneStage = LaneCheckStage.AwaitShiftTap;
+                _instruction =
+                    "В Ride начните новый shift и нажмите Jump, пока shift ещё идёт.";
+                SetStatus($"RUNNING: {_scenarioTitle}. {_instruction}");
+            }
+
+            if (_laneStage == LaneCheckStage.WaitShiftJumpRecovery &&
+                !_hamster.IsShifting.Value &&
+                (!_attack.IsActive || _attack.IsRiding))
+            {
+                _laneStage = LaneCheckStage.AwaitJumpForRejectedTap;
+                _instruction =
+                    "В Ride начните Jump без shift, затем смените линию во время jump.";
+                SetStatus($"RUNNING: {_scenarioTitle}. {_instruction}");
+            }
+
+            _lastObservedLane = _hamster.IsOnBottomLine.Value;
+        }
+
+        private void OnGuidedTapRequested()
+        {
+            if (_mode != RunnerMode.LaneShift ||
+                _gameManager.State != GameState.PLAYING) return;
+
+            bool laneChanged = _hamster.IsOnBottomLine.Value != _lastObservedLane;
+            bool shiftStarted = _hamster.IsShifting.Value && laneChanged;
+            if (_laneStage == LaneCheckStage.AwaitRideTap)
+            {
+                if (!_attack.IsActive || !_attack.IsRiding || !shiftStarted) return;
+                _laneStart = _lastObservedLane;
+                _laneTarget = _hamster.IsOnBottomLine.Value;
+                _laneStage = LaneCheckStage.WaitRideShiftCompletion;
+                _instruction = "Дождитесь завершения текущего shift.";
+                SetStatus($"RUNNING: {_scenarioTitle}. Shift начат.");
+                return;
+            }
+
+            if (_laneStage == LaneCheckStage.AwaitShiftTap)
+            {
+                if (!_attack.IsActive || !_attack.IsRiding || !shiftStarted) return;
+                _laneStage = LaneCheckStage.AwaitJumpDuringShift;
+                _instruction = "Нажмите Jump до завершения shift.";
+                SetStatus($"RUNNING: {_scenarioTitle}. {_instruction}");
+                return;
+            }
+
+            if (_laneStage != LaneCheckStage.AwaitTapDuringJump) return;
+            bool rejected =
+                !laneChanged && !_hamster.IsShifting.Value &&
+                (_attack.IsJumping || _attack.IsLanding);
+            SetChecklistResult(
+                2,
+                rejected,
+                rejected ? "lane не изменилась" : "tap запустил shift во время jump");
+            if (AllChecklistItemsPassed())
+                PassActiveCheck("Skateboard повторяет normal lane-shift input contract.");
+            else if (!rejected)
+                SetStatus("FAIL: Lane Shift. Tap после jump был принят.", isError: true);
+        }
+
+        private void OnGuidedJumpRequested()
+        {
+            if (_mode != RunnerMode.LaneShift ||
+                _gameManager.State != GameState.PLAYING) return;
+
+            if (_laneStage == LaneCheckStage.AwaitJumpDuringShift)
+            {
+                bool accepted =
+                    _hamster.IsShifting.Value && _attack.IsActive && _attack.IsJumping;
+                SetChecklistResult(
+                    1,
+                    accepted,
+                    accepted ? "jump принят во время shift" : "jump отклонён");
+                _laneStage = LaneCheckStage.WaitShiftJumpRecovery;
+                _instruction = "Дождитесь возврата в Ride.";
+                SetStatus(accepted
+                        ? $"RUNNING: {_scenarioTitle}. {_instruction}"
+                        : "FAIL: Lane Shift. Jump во время shift отклонён.",
+                    isError: !accepted);
+                return;
+            }
+
+            if (_laneStage == LaneCheckStage.AwaitJumpForRejectedTap &&
+                !_hamster.IsShifting.Value && _attack.IsActive && _attack.IsJumping)
+            {
+                _laneStage = LaneCheckStage.AwaitTapDuringJump;
+                _instruction = "Сейчас смените линию до возврата в Ride.";
+                SetStatus($"RUNNING: {_scenarioTitle}. {_instruction}");
+            }
+        }
+
+        private void StartCollisionCheck(
+            RunnerMode mode,
+            string title,
+            string instruction)
+        {
+            if (!TryStartGuidedCheck(
+                    out Hamster hamster,
+                    out SkateboardAttack attack,
+                    out GameManager gameManager))
+            {
+                return;
+            }
+
+            _hamster = hamster;
+            _attack = attack;
+            _gameManager = gameManager;
+            _mode = mode;
+            _scenarioTitle = title;
+            _instruction = instruction;
+            SetChecklist(_physicalLabels);
+            CollisionController.SkateboardCollisionProcessed +=
+                OnSkateboardCollisionProcessed;
+            SetStatus($"RUNNING: {title}. {instruction}");
+        }
+
+        private void OnSkateboardCollisionProcessed(
+            CollisionController.SkateboardCollisionDiagnostic diagnostic)
+        {
+            if (diagnostic.Hamster != _hamster ||
+                (_mode != RunnerMode.RideDamage &&
+                 _mode != RunnerMode.JumpCollision)) return;
+
+            if (diagnostic.Outcome ==
+                CollisionController.SkateboardCollisionOutcome.Support)
+            {
+                SetStatus(
+                    $"RUNNING: {_scenarioTitle}. Roof top/support пропущен; " +
+                    "нужен side/road contact.");
+                return;
+            }
+
+            if (diagnostic.Outcome ==
+                CollisionController.SkateboardCollisionOutcome.Collect)
+            {
+                SetStatus($"RUNNING: {_scenarioTitle}. Collectible не входит в checklist.");
+                return;
+            }
+
+            int index = FindPhysicalTypeIndex(diagnostic.ObstacleType);
+            if (index < 0 || _checklist[index].State == ChecklistState.Pass) return;
+
+            bool passed;
+            string details;
+            if (_mode == RunnerMode.RideDamage)
+            {
+                bool lifeLostExactlyOnce =
+                    diagnostic.LivesAfter == diagnostic.LivesBefore - 1;
+                bool modeCompleted = !_attack.IsActive;
+                bool normalActorActive =
+                    !_hamster.ActorSwitcher.IsSkateboardActive &&
+                    _hamster.ActorSwitcher.NormalActor.activeSelf;
+                passed =
+                    diagnostic.Outcome ==
+                    CollisionController.SkateboardCollisionOutcome.Damage &&
+                    lifeLostExactlyOnce && modeCompleted && normalActorActive &&
+                    diagnostic.ObstacleActiveAfter;
+                details = passed
+                    ? "life -1, mode завершён, normal actor, obstacle сохранён"
+                    : $"outcome={diagnostic.Outcome}, lives=" +
+                      $"{diagnostic.LivesBefore}->{diagnostic.LivesAfter}, " +
+                      $"modeOff={modeCompleted}, normal={normalActorActive}, " +
+                      $"obstacleAlive={diagnostic.ObstacleActiveAfter}";
+            }
+            else
+            {
+                bool lifeUnchanged = diagnostic.LivesAfter == diagnostic.LivesBefore;
+                passed =
+                    diagnostic.Outcome ==
+                    CollisionController.SkateboardCollisionOutcome.Destroy &&
+                    diagnostic.WasJumpCollisionActive && lifeUnchanged &&
+                    !diagnostic.ObstacleActiveAfter &&
+                    diagnostic.RoofSupportActiveAfter;
+                details = passed
+                    ? "jump phase, no damage, obstacle destroyed, support сохранён"
+                    : $"outcome={diagnostic.Outcome}, " +
+                      $"jumpPhase={diagnostic.WasJumpCollisionActive}, " +
+                      $"lives={diagnostic.LivesBefore}->{diagnostic.LivesAfter}, " +
+                      $"obstacleAlive={diagnostic.ObstacleActiveAfter}, " +
+                      $"supportAlive={diagnostic.RoofSupportActiveAfter}";
+            }
+
+            SetChecklistResult(index, passed, details);
+            if (!passed)
+            {
+                SetStatus(
+                    $"FAIL: {_scenarioTitle}; {_physicalLabels[index]}. {details}",
+                    isError: true);
+                return;
+            }
+
+            if (AllChecklistItemsPassed())
+            {
+                PassActiveCheck("Все 6 physical obstacle types прошли.");
+                return;
+            }
+
+            _instruction = _mode == RunnerMode.RideDamage
+                ? "Заново активируйте Skateboard и продолжайте с pending type."
+                : "Продолжайте: active jump должен попасть в pending side/road type.";
+            SetStatus($"PASS: {_physicalLabels[index]}. {_instruction}");
         }
 
         private bool RequestJumpCycle()
         {
             int beforeBudget = _attack.JumpsRemaining;
             _hamster.JumpRequest.Invoke();
-
-            // В Landing budget уменьшится только при фактическом старте queued cycle.
             bool accepted = _attack.IsJumping ||
                             (_attack.IsLanding &&
                              _attack.JumpsRemaining == beforeBudget);
-            if (!accepted)
-                return false;
-
-            if (_useSuperJump)
-                _hamster.SuperJumpRequest.Invoke();
+            if (!accepted) return false;
+            if (_useSuperJump) _hamster.SuperJumpRequest.Invoke();
             return true;
         }
 
-        private void ProbeRejectedActivation(
-            Hamster hamster,
-            SkateboardAttack attack)
+        private void ProbeRejectedActivation(Hamster hamster, SkateboardAttack attack)
         {
             int previousCharge = hamster.UltaChargeAmount.Value;
             int jumpsBefore = attack.JumpsRemaining;
@@ -471,7 +843,6 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             bool wasRiding = attack.IsRiding;
             bool wasJumping = attack.IsJumping;
             bool wasLanding = attack.IsLanding;
-
             hamster.UltaChargeAmount.Value = 100;
             hamster.UltaEvent.Invoke();
             hamster.UltaChargeAmount.Value = previousCharge;
@@ -483,8 +854,8 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                              attack.IsJumping == wasJumping &&
                              attack.IsLanding == wasLanding;
             SetStatus(unchanged
-                ? "PASS: repeated activation отклонена; текущий mode не сброшен."
-                : "FAIL: repeated activation изменила active Skateboard state.",
+                    ? "PASS: repeated activation отклонена; active mode не сброшен."
+                    : "FAIL: repeated activation изменила active Skateboard state.",
                 isError: !unchanged);
         }
 
@@ -503,8 +874,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             hamster.UltaEvent.Invoke();
             if (!attack.IsActive)
             {
-                error =
-                    "UltaEvent не активировал Skateboard. Требуется PLAYING + stable Run/RoofRun.";
+                error = "UltaEvent не активировал Skateboard. Нужен stable Run/RoofRun.";
                 return false;
             }
 
@@ -514,8 +884,14 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
         private void OnLandingImpact(int comboDepth, bool isSuperCycle)
         {
-            if (!_isBusy || _isTimeoutScenario)
+            if (_mode == RunnerMode.Timeout)
+            {
+                SetChecklistResult(0, false, "jump started");
+                SetChecklistResult(1, false, "budget spent");
+                FailActiveCheck("Timeout получил jump/landing impact.");
                 return;
+            }
+            if (_mode != RunnerMode.Combo) return;
 
             _observedImpactDepths.Add(comboDepth);
             SetStatus(
@@ -525,9 +901,18 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
         private void ValidateAndPassComboScenario()
         {
+            bool normalActorRestored =
+                !_hamster.ActorSwitcher.IsSkateboardActive &&
+                _hamster.ActorSwitcher.NormalActor.activeSelf;
+            if (!normalActorRestored)
+            {
+                FailActiveCheck("Natural completion не восстановил normal actor.");
+                return;
+            }
+
             if (_observedImpactDepths.Count != _expectedImpactDepths.Length)
             {
-                FailScenario(
+                FailActiveCheck(
                     $"Impact count {_observedImpactDepths.Count}, " +
                     $"expected {_expectedImpactDepths.Length}.");
                 return;
@@ -535,42 +920,114 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
             for (int index = 0; index < _expectedImpactDepths.Length; index++)
             {
-                if (_observedImpactDepths[index] == _expectedImpactDepths[index])
-                    continue;
-
-                FailScenario(
+                if (_observedImpactDepths[index] == _expectedImpactDepths[index]) continue;
+                FailActiveCheck(
                     $"Impact #{index + 1}: {_observedImpactDepths[index]}, " +
                     $"expected {_expectedImpactDepths[index]}.");
                 return;
             }
 
-            PassScenario(
+            PassActiveCheck(
                 $"Impacts [{string.Join(",", _observedImpactDepths)}], " +
                 "budget exhausted, normal actor restored.");
         }
 
-        private void PassScenario(string details)
+        private bool ValidateScriptedSurface(Hamster hamster, out string instruction)
+        {
+            bool commonStable =
+                !hamster.IsShifting.Value && !hamster.IsDamaged.Value &&
+                !hamster.ActorSwitcher.IsSkateboardActive;
+            if (!_onRoof)
+            {
+                bool stableRoad =
+                    commonStable && hamster.HamsterState.Value == HamsterStateEnum.Run;
+                instruction = stableRoad
+                    ? string.Empty
+                    : "Перейдите на дорогу, дождитесь stable Run и нажмите снова.";
+                return stableRoad;
+            }
+
+            Obstacle roof = hamster.LastObstacle.Value;
+            bool stableRoof =
+                commonStable && hamster.HamsterState.Value == HamsterStateEnum.RoofRun &&
+                roof != null && roof.isActiveAndEnabled && roof.ObstacleType != null &&
+                (roof.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.bigNotAlive ||
+                 roof.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.mediumNotAlive);
+            instruction = stableRoof
+                ? string.Empty
+                : "Перейдите на крышу, дождитесь stable RoofRun и нажмите снова.";
+            return stableRoof;
+        }
+
+        private bool TryStartAutomaticCheck(
+            out Hamster hamster,
+            out SkateboardAttack attack,
+            out GameManager gameManager)
+        {
+            if (!TryStartGuidedCheck(out hamster, out attack, out gameManager))
+                return false;
+            if (attack.IsActive)
+            {
+                SetStatus("Сначала завершите текущий Skateboard mode.");
+                return false;
+            }
+            if (!TryEnterMode(hamster, attack, out string error))
+            {
+                SetStatus($"FAIL: {error}", isError: true);
+                return false;
+            }
+            return true;
+        }
+
+        private bool TryStartGuidedCheck(
+            out Hamster hamster,
+            out SkateboardAttack attack,
+            out GameManager gameManager)
+        {
+            if (!TryResolvePlayingGameplay(out hamster, out attack, out gameManager))
+            {
+                SetStatus(GetGameplayUnavailableStatus());
+                return false;
+            }
+            if (IsBusy)
+            {
+                SetStatus($"Сначала завершите active check: {_scenarioTitle}.");
+                return false;
+            }
+            _checklist.Clear();
+            return true;
+        }
+
+        private void PassActiveCheck(string details)
         {
             string title = _scenarioTitle;
-            StopScenario(clearStatus: false);
+            StopActiveCheck(clearChecklist: false);
             SetStatus($"PASS: {title}. {details}");
         }
 
-        private void FailScenario(string details)
+        private void FailActiveCheck(string details)
         {
             string title = _scenarioTitle;
-            StopScenario(clearStatus: false);
+            StopActiveCheck(clearChecklist: false);
             SetStatus($"FAIL: {title}. {details}", isError: true);
         }
 
-        private void StopScenario(bool clearStatus)
+        private void StopActiveCheck(bool clearChecklist)
         {
-            if (_attack != null)
-                _attack.LandingImpact -= OnLandingImpact;
+            if (_attack != null) _attack.LandingImpact -= OnLandingImpact;
+            if (_hamster != null)
+            {
+                _hamster.TapRequest.Unsubscribe(OnGuidedTapRequested);
+                _hamster.JumpRequest.Unsubscribe(OnGuidedJumpRequested);
+            }
+            CollisionController.SkateboardCollisionProcessed -=
+                OnSkateboardCollisionProcessed;
 
             _hamster = null;
             _attack = null;
             _gameManager = null;
+            _mode = RunnerMode.None;
+            _laneStage = LaneCheckStage.None;
             _comboGroups = Array.Empty<int>();
             _expectedImpactDepths = Array.Empty<int>();
             _observedImpactDepths.Clear();
@@ -581,20 +1038,49 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             _waitingForRide = false;
             _waitingForCompletion = false;
             _landingHandled = false;
-            _isTimeoutScenario = false;
             _scenarioTitle = string.Empty;
-            _isBusy = false;
-            if (clearStatus)
-                _status = string.Empty;
+            _instruction = string.Empty;
+            if (clearChecklist) _checklist.Clear();
         }
 
-        private static int CalculateMissingExperience(
-            PlayerData playerData,
-            int requiredLevel)
+        private void SetChecklist(IReadOnlyList<string> labels)
         {
-            if (playerData.PlayerLevel >= requiredLevel)
-                return 0;
+            _checklist.Clear();
+            for (int index = 0; index < labels.Count; index++)
+                _checklist.Add(new ChecklistItem(labels[index], ChecklistState.Pending));
+        }
 
+        private void SetChecklistResult(int index, bool passed, string details)
+        {
+            _checklist[index] = new ChecklistItem(
+                _checklist[index].Label,
+                passed ? ChecklistState.Pass : ChecklistState.Fail,
+                details);
+            Changed?.Invoke();
+        }
+
+        private bool AllChecklistItemsPassed()
+        {
+            if (_checklist.Count == 0) return false;
+            for (int index = 0; index < _checklist.Count; index++)
+            {
+                if (_checklist[index].State != ChecklistState.Pass) return false;
+            }
+            return true;
+        }
+
+        private static int FindPhysicalTypeIndex(ObstacleTypeEnum type)
+        {
+            for (int index = 0; index < _physicalTypes.Length; index++)
+            {
+                if (_physicalTypes[index] == type) return index;
+            }
+            return -1;
+        }
+
+        private static int CalculateMissingExperience(PlayerData playerData, int requiredLevel)
+        {
+            if (playerData.PlayerLevel >= requiredLevel) return 0;
             int levelsMissing = checked(requiredLevel - playerData.PlayerLevel);
             return checked(
                 levelsMissing * PlayerExperienceService.PlayerLevelThreshold -
@@ -608,13 +1094,13 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 ? "PlayerData: unavailable"
                 : $"Player: level={playerData.PlayerLevel}, xp={playerData.ExperiencePoints}, " +
                   $"selected={SuperAttackService.ActiveSuperAttackId?.ToString() ?? "none"}";
-
             if (!TryResolveGameplay(
                     out Hamster hamster,
                     out SkateboardAttack attack,
                     out GameManager gameManager))
             {
-                return player + "\nGameplay: unavailable; enter a level after selecting Skateboard.";
+                return player +
+                       "\nGameplay: unavailable; enter level after selecting Skateboard.";
             }
 
             string phase = !attack.IsActive
@@ -625,17 +1111,26 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                         ? "Landing"
                         : attack.IsSuperJumping
                             ? "SuperJump"
-                            : attack.IsJumping
-                                ? "Jump"
-                                : "Unknown";
+                            : attack.IsJumping ? "Jump" : "Unknown";
             return player + "\n" +
                    $"Game={gameManager.State}, Hamster={hamster.HamsterState.Value}, " +
-                   $"lane={(hamster.IsOnBottomLine.Value ? "Bottom" : "Top")}\n" +
+                   $"lane={(hamster.IsOnBottomLine.Value ? "Bottom" : "Top")}, " +
+                   $"shifting={hamster.IsShifting.Value}\n" +
                    $"Mode={phase}, actor=" +
                    $"{(hamster.ActorSwitcher.IsSkateboardActive ? "Skateboard" : "Normal")}, " +
                    $"surface={hamster.SkateboardSurfaceController.State}\n" +
                    $"jumps={attack.JumpsRemaining}, combo={attack.ComboDepth}, " +
+                   $"firstJumpWaiting={attack.IsWaitingForFirstJump}, " +
                    $"charge={hamster.UltaChargeAmount.Value}, lives={hamster.Lives.Value}";
+        }
+
+        private static bool TryResolvePlayingGameplay(
+            out Hamster hamster,
+            out SkateboardAttack attack,
+            out GameManager gameManager)
+        {
+            return TryResolveGameplay(out hamster, out attack, out gameManager) &&
+                   gameManager.State == GameState.PLAYING;
         }
 
         private static bool TryResolveGameplay(
@@ -646,9 +1141,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             hamster = null;
             attack = null;
             gameManager = null;
-            if (!Application.isPlaying || !TryFindHamster(out hamster))
-                return false;
-
+            if (!Application.isPlaying || !TryFindHamster(out hamster)) return false;
             attack = hamster.SkateboardAttackRuntimeForTesting;
             gameManager = LevelController.Instance?.LevelData?.GameManager;
             return attack != null && gameManager != null;
@@ -657,9 +1150,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         private static bool TryFindHamster(out Hamster hamster)
         {
             hamster = LevelController.Instance?.LevelData?.Hamster;
-            if (hamster != null)
-                return true;
-
+            if (hamster != null) return true;
             hamster = UnityEngine.Object.FindAnyObjectByType<Hamster>(
                 FindObjectsInactive.Include);
             return hamster != null;
@@ -671,6 +1162,13 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             return Application.isPlaying && gameManager != null;
         }
 
+        private static bool IsGuidedMode(RunnerMode mode)
+        {
+            return mode == RunnerMode.RideDamage ||
+                   mode == RunnerMode.JumpCollision ||
+                   mode == RunnerMode.LaneShift;
+        }
+
         private static string GetGameplayUnavailableStatus()
         {
             return "Gameplay Skateboard runtime недоступен. " +
@@ -680,11 +1178,30 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         private void SetStatus(string status, bool isError = false)
         {
             _status = status;
-            if (isError)
-                Debug.LogError($"[Skateboard Testing] {status}");
-            else
-                Debug.Log($"[Skateboard Testing] {status}");
+            if (isError) Debug.LogError($"[Skateboard Testing] {status}");
             Changed?.Invoke();
+        }
+
+        private enum RunnerMode
+        {
+            None,
+            Combo,
+            Timeout,
+            RideDamage,
+            JumpCollision,
+            LaneShift,
+        }
+
+        private enum LaneCheckStage
+        {
+            None,
+            AwaitRideTap,
+            WaitRideShiftCompletion,
+            AwaitShiftTap,
+            AwaitJumpDuringShift,
+            WaitShiftJumpRecovery,
+            AwaitJumpForRejectedTap,
+            AwaitTapDuringJump,
         }
     }
 }
