@@ -1,7 +1,6 @@
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Common;
-using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameEngine.Actors;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;
@@ -233,19 +232,6 @@ public class CollisionController : MonoBehaviour
                 phase,
                 hasJumpSnapshot && jumpSnapshot.StartedOnRoof,
                 isRideSupport: isRideSupport);
-        if (SkateboardInteractionPolicy.IsRoof(obstacleType))
-        {
-            SkateboardDiagnostics.RoofContact(
-                _hamster,
-                attack,
-                _hamster.SkateboardSurfaceController,
-                obstacle,
-                triggerSource,
-                phase,
-                outcome,
-                isRideSupport);
-        }
-
         int livesBefore = _hamster.Lives.Value;
         switch (outcome)
         {
@@ -266,13 +252,6 @@ public class CollisionController : MonoBehaviour
                     obstacleTypeOverride: obstacleType);
                 return true;
             case SkateboardInteractionPolicy.Outcome.Destroy:
-                SkateboardDiagnostics.DestroyRequest(
-                    attack,
-                    obstacle,
-                    $"CollisionController/{triggerSource}",
-                    phase,
-                    outcome,
-                    isRideSupport);
                 _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);
                 PublishSkateboardCollision(
                     obstacle,
@@ -535,11 +514,6 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private void HandleDamage(Obstacle obstacle, string triggerSource, string reason)
     {
-        SkateboardDiagnostics.Damage(
-            _hamster,
-            obstacle,
-            $"{triggerSource}/{reason}");
-
         if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.RuntimeEvents))
         {
             BotDiagnostics.Log(
@@ -564,9 +538,6 @@ public class CollisionController : MonoBehaviour
         // Удаляем препятствие через поток суперудара без drops и нового заряда.
         if (_hamster.IsSuperAttackDestructiveOnCollision.Value)
         {
-            SkateboardDiagnostics.DestroyRequestFromExecution(
-                obstacle,
-                $"CollisionController/{triggerSource}/GenericDamage");
             _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);
         }
     }

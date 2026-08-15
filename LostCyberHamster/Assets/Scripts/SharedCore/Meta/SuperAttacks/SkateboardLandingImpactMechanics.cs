@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
-using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameManagerLogic;
@@ -174,13 +173,6 @@ namespace Vues.GameCore
                     target.CompletionOutcome ==
                     SkateboardInteractionPolicy.Outcome.Destroy)
                 {
-                    SkateboardDiagnostics.DestroyRequest(
-                        target.Obstacle,
-                        target.ActionId,
-                        "Landing",
-                        target.StartedOnRoof,
-                        "LandingImpact/Wave",
-                        "landing_wave_destroy");
                     target.RestorePosition();
                     _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(target.Obstacle);
                 }
@@ -351,13 +343,6 @@ namespace Vues.GameCore
                     request.StartedOnRoof);
             if (outcome == SkateboardInteractionPolicy.Outcome.Destroy)
             {
-                SkateboardDiagnostics.DestroyRequest(
-                    missedRoof,
-                    request.ActionId,
-                    "Landing",
-                    request.StartedOnRoof,
-                    "LandingImpact/Miss",
-                    "concrete_roof_miss");
                 _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(missedRoof);
             }
         }

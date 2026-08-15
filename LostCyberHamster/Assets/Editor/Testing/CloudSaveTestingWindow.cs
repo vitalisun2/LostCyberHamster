@@ -14,7 +14,8 @@ namespace LostCyberHamster.Editor.Testing
             GameProgress,
             ExperienceProgress,
             Quests,
-            Skateboard
+            Skateboard,
+            Skin
         }
 
         /// <summary>Минимальная ширина окна.</summary>
@@ -59,6 +60,9 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Рисует и обслуживает страницу Skateboard Mode Testing.</summary>
         private SkateboardTesting.SkateboardTestingPage _skateboardTestingPage;
 
+        /// <summary>Рисует и обслуживает страницу Skin Testing.</summary>
+        private SkinTesting.SkinTestingPage _skinTestingPage;
+
         /// <summary>Текущая страница общего окна Testing.</summary>
         private TestingPage _currentPage;
 
@@ -88,6 +92,7 @@ namespace LostCyberHamster.Editor.Testing
             _questTestingPage = new QuestTesting.QuestTestingPage(Repaint);
             _skateboardTestingPage =
                 new SkateboardTesting.SkateboardTestingPage(Repaint);
+            _skinTestingPage = new SkinTesting.SkinTestingPage(Repaint);
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
@@ -107,6 +112,7 @@ namespace LostCyberHamster.Editor.Testing
             _experienceProgressPage?.Dispose();
             _questTestingPage?.Dispose();
             _skateboardTestingPage?.Dispose();
+            _skinTestingPage?.Dispose();
         }
 
         /// <summary>Рисует текущую страницу окна.</summary>
@@ -130,6 +136,9 @@ namespace LostCyberHamster.Editor.Testing
                 case TestingPage.Skateboard:
                     _skateboardTestingPage.Draw(
                         () => _currentPage = TestingPage.Start);
+                    break;
+                case TestingPage.Skin:
+                    _skinTestingPage.Draw(() => _currentPage = TestingPage.Start);
                     break;
                 default:
                     DrawStartPage();
@@ -187,6 +196,15 @@ namespace LostCyberHamster.Editor.Testing
                     GUILayout.Height(ProductButtonHeight)))
             {
                 _currentPage = TestingPage.Skateboard;
+            }
+
+            EditorGUILayout.Space(6f);
+            if (GUILayout.Button(
+                    "Skin Testing",
+                    GUILayout.Width(ProductButtonWidth),
+                    GUILayout.Height(ProductButtonHeight)))
+            {
+                _currentPage = TestingPage.Skin;
             }
         }
 
@@ -348,6 +366,7 @@ namespace LostCyberHamster.Editor.Testing
             _experienceProgressPage?.HandlePlayModeStateChanged(state);
             _questTestingPage?.HandlePlayModeStateChanged(state);
             _skateboardTestingPage?.HandlePlayModeStateChanged(state);
+            _skinTestingPage?.HandlePlayModeStateChanged(state);
             Repaint();
         }
 

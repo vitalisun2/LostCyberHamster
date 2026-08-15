@@ -1,4 +1,3 @@
-using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
@@ -50,22 +49,19 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnObstacleDestroyedByNormalJump(Obstacle destroyedObstacle)
         {
-            OnObstacleDestroyed(destroyedObstacle, "DestroyObstacleEvent");
+            OnObstacleDestroyed(destroyedObstacle);
         }
 
         private void OnObstacleDestroyedBySuperAttack(Obstacle destroyedObstacle)
         {
-            OnObstacleDestroyed(
-                destroyedObstacle,
-                "DestroyObstacleBySuperAttackEvent");
+            OnObstacleDestroyed(destroyedObstacle);
         }
 
-        private void OnObstacleDestroyed(Obstacle destroyedObstacle, string path)
+        private void OnObstacleDestroyed(Obstacle destroyedObstacle)
         {
             if(destroyedObstacle != _obstacleScript)
                 return;
 
-            SkateboardDiagnostics.DestroyRequestFromChannel(destroyedObstacle, path);
             _onObstacleUnspawn.Invoke(_obstacleScript.gameObject);
             _boomEffectAction.Invoke(_obstacleScript.transform.position, _gameManager);
         }

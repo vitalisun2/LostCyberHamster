@@ -1,6 +1,5 @@
 using System;
 using Assets.Scripts.Common;
-using Assets.Scripts.Diagnostics;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
 using UnityEngine;
@@ -136,56 +135,32 @@ namespace Assets.Scripts.GameEngine.Actors
         {
             EnsureInitialized();
 
-            SurfaceState previousState = State;
-            Obstacle previousSupport = _currentRoof;
-            float previousY = _surfaceTransform.position.y;
-
             _currentRoof = null;
             _currentRoofTop = 0f;
             SetSurfaceLocalY(_roadLocalY);
             State = SurfaceState.Road;
-            SkateboardDiagnostics.SurfaceTransition(
-                previousState,
-                State,
-                null,
-                "end",
-                previousY,
-                _surfaceTransform.position.y,
-                previousSupport);
         }
 
         /// <summary>
         /// Ставит общий visual+collision root на верх переданной крыши.
         /// </summary>
-        private void EnterRoof(Obstacle roof, string reason)
+        private void EnterRoof(Obstacle roof)
         {
-            PrepareRoof(roof, reason);
+            PrepareRoof(roof);
             AlignBoardContactTo(_currentRoofTop);
         }
 
         /// <summary>
         /// Фиксирует initial roof ownership до включения skateboard colliders.
         /// </summary>
-        public void PrepareRoof(Obstacle roof, string reason = "adopt")
+        public void PrepareRoof(Obstacle roof)
         {
             EnsureInitialized();
             ValidateRoof(roof);
 
-            SurfaceState previousState = State;
-            Obstacle previousSupport = _currentRoof;
-            float previousY = _surfaceTransform.position.y;
-
             CollisionUtils.GetObstacleYInterval(roof, out _, out _currentRoofTop);
             _currentRoof = roof;
             State = SurfaceState.Roof;
-            SkateboardDiagnostics.SurfaceTransition(
-                previousState,
-                State,
-                roof,
-                reason,
-                previousY,
-                _surfaceTransform.position.y,
-                previousSupport);
         }
 
         /// <summary>
@@ -195,15 +170,7 @@ namespace Assets.Scripts.GameEngine.Actors
         {
             EnsureInitialized();
             ValidateRoof(_currentRoof);
-            float previousY = _surfaceTransform.position.y;
             AlignBoardContactTo(_currentRoofTop);
-            SkateboardDiagnostics.SurfaceTransition(
-                State,
-                State,
-                _currentRoof,
-                "alignment",
-                previousY,
-                _surfaceTransform.position.y);
         }
 
         /// <summary>
@@ -305,11 +272,11 @@ namespace Assets.Scripts.GameEngine.Actors
             EnsureInitialized();
             if (plan.Support != null)
             {
-                EnterRoof(plan.Support, "prediction");
+                EnterRoof(plan.Support);
                 return new LandingSurfaceResult(plan.Support, missedRoof: null);
             }
 
-            BeginDropToRoad("end");
+            BeginDropToRoad();
             return new LandingSurfaceResult(support: null, missedRoof: null);
         }
 
@@ -320,7 +287,7 @@ namespace Assets.Scripts.GameEngine.Actors
         {
             EnsureInitialized();
             if (State != SurfaceState.Road)
-                BeginDropToRoad("end");
+                BeginDropToRoad();
         }
 
         /// <summary>
@@ -355,11 +322,11 @@ namespace Assets.Scripts.GameEngine.Actors
             Obstacle continuation = FindRideContinuation(isOnBottomLine);
             if (continuation != null)
             {
-                EnterRoof(continuation, "adopt");
+                EnterRoof(continuation);
                 return;
             }
 
-            BeginDropToRoad("gap");
+            BeginDropToRoad();
         }
 
         private Obstacle FindRideContinuation(bool isOnBottomLine)
@@ -399,35 +366,15 @@ namespace Assets.Scripts.GameEngine.Actors
 
             if (Mathf.Approximately(nextY, _roadLocalY))
             {
-                SurfaceState previousState = State;
-                float previousY = _surfaceTransform.position.y;
                 State = SurfaceState.Road;
-                SkateboardDiagnostics.SurfaceTransition(
-                    previousState,
-                    State,
-                    null,
-                    "end",
-                    previousY,
-                    _surfaceTransform.position.y);
             }
         }
 
-        private void BeginDropToRoad(string reason)
+        private void BeginDropToRoad()
         {
-            SurfaceState previousState = State;
-            Obstacle previousSupport = _currentRoof;
-            float previousY = _surfaceTransform.position.y;
             _currentRoof = null;
             _currentRoofTop = 0f;
             State = SurfaceState.DroppingToRoad;
-            SkateboardDiagnostics.SurfaceTransition(
-                previousState,
-                State,
-                null,
-                reason,
-                previousY,
-                _surfaceTransform.position.y,
-                previousSupport);
         }
 
         /// <summary>

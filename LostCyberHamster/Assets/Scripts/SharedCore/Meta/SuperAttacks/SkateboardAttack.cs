@@ -1,6 +1,5 @@
 using System;
 using Assets.Scripts;
-using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameEngine.Actors;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Skins;
@@ -187,8 +186,6 @@ namespace Vues.GameCore
             // Source surface фиксируется до actor switch и первого physics callback.
             bool startsOnRoof = _hamster.HamsterState.Value == HamsterStateEnum.RoofRun;
             Obstacle initialRoof = startsOnRoof ? _hamster.LastObstacle.Value : null;
-            SkateboardDiagnostics.BeginSession();
-
             _firstJumpTimeLeft = _firstJumpTimeout;
             _isWaitingForFirstJump = true;
             _jumpsRemaining = _jumpBudget;
@@ -213,10 +210,6 @@ namespace Vues.GameCore
             EnterRide();
             if (startsOnRoof)
                 _surfaceController.AlignToPreparedRoof();
-            SkateboardDiagnostics.Activate(
-                _hamster,
-                _actorSwitcher,
-                _surfaceController);
             return true;
         }
 
@@ -278,12 +271,6 @@ namespace Vues.GameCore
                     _currentJumpSnapshot.ActionId,
                     _currentJumpSnapshot.StartedOnRoof);
                 SetHamsterJumpState(isSuper: true);
-                SkateboardDiagnostics.JumpStart(
-                    _hamster,
-                    _currentJumpSnapshot,
-                    isSuper: true,
-                    _surfaceController.CurrentRoof,
-                    _state.ToString());
                 PlayJump(SkinVisualVariant.Super, _currentJumpSnapshot.ActionId);
                 return true;
             }
@@ -452,12 +439,6 @@ namespace Vues.GameCore
             _state = isSuper ? SkateboardState.SuperJump : SkateboardState.Jump;
             _stateTimeLeft = _landingContactTime;
             SetHamsterJumpState(isSuper);
-            SkateboardDiagnostics.JumpStart(
-                _hamster,
-                _currentJumpSnapshot,
-                isSuper,
-                _surfaceController.CurrentRoof,
-                _state.ToString());
             PlayJump(
                 isSuper ? SkinVisualVariant.Super : SkinVisualVariant.Normal,
                 actionId);
@@ -469,12 +450,6 @@ namespace Vues.GameCore
             if (_stateTimeLeft > 0f)
                 return;
 
-            float landingElapsed = _landingContactTime - _stateTimeLeft;
-            SkateboardDiagnostics.LandingContact(
-                _currentJumpSnapshot,
-                landingElapsed,
-                _surfaceController.CurrentRoof,
-                _surfaceController);
             _state = SkateboardState.Landing;
             _stateTimeLeft = _jumpDuration - _landingContactTime;
 
@@ -488,12 +463,6 @@ namespace Vues.GameCore
             {
                 _surfaceController.ResolveRoadLanding();
             }
-            SkateboardDiagnostics.LandingResolve(
-                _currentJumpSnapshot,
-                landingElapsed,
-                surfaceResult,
-                _surfaceController);
-
             // Miss и wave используют тот же immutable cycle origin; поздний surface state не читается.
             var impactRequest = new SkateboardLandingImpactMechanics.ImpactRequest(
                 _currentJumpSnapshot.ActionId,
@@ -686,7 +655,6 @@ namespace Vues.GameCore
                 _actorSwitcher.ActivateNormal();
             if (shouldRestoreSurface)
                 _surfaceController.Reset();
-            SkateboardDiagnostics.EndMode();
         }
 
         private enum SkateboardState

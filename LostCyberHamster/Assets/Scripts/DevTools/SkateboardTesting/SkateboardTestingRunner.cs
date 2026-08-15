@@ -188,7 +188,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         }
 
         /// <summary>
-        /// Запускает passive timeout check без отправки jump input.
+        /// Запускает timeout check, не перехватывая ручной jump input.
         /// </summary>
         public void RunTimeoutCheck()
         {
@@ -205,7 +205,9 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             _gameManager = gameManager;
             _mode = RunnerMode.Timeout;
             _scenarioTitle = "Timeout 10 gameplay s";
-            _instruction = "Ничего не нажимайте. Runner ждёт 10 gameplay seconds.";
+            _instruction =
+                "Для automatic timeout ничего не нажимайте. " +
+                "Ручные Jump и Super Jump разрешены и остановят только check.";
             _timeoutStartedAt = Time.time;
             _timeoutInitialBudget = attack.JumpsRemaining;
             _timeoutWaitingStayedTrue = attack.IsWaitingForFirstJump;
@@ -569,16 +571,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                     _attack.JumpsRemaining == _timeoutInitialBudget;
                 if (!_timeoutWaitingStayedTrue || !_timeoutBudgetStayedUntouched)
                 {
-                    SetChecklistResult(
-                        1,
-                        _timeoutWaitingStayedTrue,
-                        "first-jump waiting");
-                    SetChecklistResult(
-                        2,
-                        _timeoutBudgetStayedUntouched,
-                        "jump budget");
-                    SetChecklistResult(5, false, "jump input detected");
-                    FailActiveCheck("Получен jump input или расходован jump budget.");
+                    ReleaseTimeoutCheckForManualJump();
                 }
                 return;
             }
@@ -929,10 +922,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         {
             if (_mode == RunnerMode.Timeout)
             {
-                SetChecklistResult(1, false, "jump started");
-                SetChecklistResult(2, false, "budget spent");
-                SetChecklistResult(5, false, "jump input detected");
-                FailActiveCheck("Timeout получил jump/landing impact.");
+                ReleaseTimeoutCheckForManualJump();
                 return;
             }
             if (_mode != RunnerMode.Combo) return;
@@ -1127,6 +1117,17 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             if (attack?.IsActive == true)
                 attack.Complete();
             SetStatus($"PASS: {title}. {details}");
+        }
+
+        private void ReleaseTimeoutCheckForManualJump()
+        {
+            string jumpKind = _attack?.IsSuperJumping == true
+                ? "Super Jump"
+                : "Jump";
+            StopActiveCheck(clearChecklist: true);
+            SetStatus(
+                $"MANUAL: {jumpKind} принят. Timeout check остановлен; " +
+                "Skateboard gameplay продолжает работать.");
         }
 
         private void FailActiveCheck(string details)

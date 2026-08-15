@@ -16,7 +16,7 @@
       "PriceType": 2,
       "SkinSprite": "skin_neon-runner",
       "SkinVisualAddress": "skin-visual/neon-runner",
-      "SkateboardSkinVisualAddress": ""
+      "SkateboardSkinVisualAddress": "skin-visual/skateboard/neon-runner"
     },
     {
       "Id": 1,
@@ -25,7 +25,7 @@
       "PriceType": 2,
       "SkinSprite": "skin_quantum-scout",
       "SkinVisualAddress": "skin-visual/quantum-scout",
-      "SkateboardSkinVisualAddress": ""
+      "SkateboardSkinVisualAddress": "skin-visual/skateboard/quantum-scout"
     }
   ]
 }
