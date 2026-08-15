@@ -17,33 +17,6 @@ namespace LostCyberHamster.Editor
     /// </summary>
     public static class SkinVisualContentValidator
     {
-        private const string HamsterPrefabPath = "Assets/Content/prefabs/Hamster.prefab";
-        private const string SkinCatalogPath = "Assets/Content/skins/skins.json";
-        private const string NormalVisualPrefabRoot = "Assets/Content/prefabs/skins/normal_mode";
-        private const string SkateboardVisualPrefabRoot = "Assets/Content/prefabs/skins/skateboard_mode";
-        private const string VisualAddressablesGroup = "Skin Visuals";
-
-        private static readonly SkinVisualAction[] NormalActions =
-        {
-            SkinVisualAction.GroundRun,
-            SkinVisualAction.RoofRun,
-            SkinVisualAction.RunFromRoof,
-            SkinVisualAction.GroundJump,
-            SkinVisualAction.JumpOnObstacle,
-            SkinVisualAction.JumpOnRoof,
-            SkinVisualAction.RoofJump,
-            SkinVisualAction.JumpFromRoof,
-            SkinVisualAction.JumpOnObstacleFromRoof,
-        };
-
-        private static readonly SkinVisualAction[] SkateboardActions =
-        {
-            SkinVisualAction.SkateboardRideA,
-            SkinVisualAction.SkateboardRideB,
-            SkinVisualAction.SkateboardPush,
-            SkinVisualAction.SkateboardJump,
-        };
-
         [MenuItem("Tools/Skins/Validate Skin Visuals")]
         public static void ValidateMenu()
         {
@@ -70,13 +43,25 @@ namespace LostCyberHamster.Editor
 
         private static IReadOnlyList<SkinData> LoadSkinCatalog(ICollection<string> errors)
         {
-            TextAsset catalog = AssetDatabase.LoadAssetAtPath<TextAsset>(SkinCatalogPath);
-            SkinDataList data = catalog != null
-                ? JsonUtility.FromJson<SkinDataList>(catalog.text)
-                : null;
+            TextAsset catalog = AssetDatabase.LoadAssetAtPath<TextAsset>(
+                SkinVisualContentLayout.SkinCatalogPath);
+            SkinDataList data = null;
+            try
+            {
+                if (catalog != null)
+                    data = JsonUtility.FromJson<SkinDataList>(catalog.text);
+            }
+            catch (Exception exception)
+            {
+                errors.Add(
+                    $"Skin catalog JSON cannot be read: {exception.Message}");
+                return Array.Empty<SkinData>();
+            }
             if (data?.skins == null)
             {
-                errors.Add($"Skin catalog is missing or invalid: {SkinCatalogPath}");
+                errors.Add(
+                    $"Skin catalog is missing or invalid: " +
+                    SkinVisualContentLayout.SkinCatalogPath);
                 return Array.Empty<SkinData>();
             }
 
@@ -88,19 +73,49 @@ namespace LostCyberHamster.Editor
             IReadOnlyList<SkinData> skins)
         {
             foreach (IGrouping<int, SkinData> duplicate in skins
+                         .Where(skin => skin != null)
                          .GroupBy(skin => skin.Id)
                          .Where(group => group.Count() > 1))
             {
                 errors.Add($"Duplicate skin ID: {duplicate.Key}.");
             }
 
-            if (skins.Count(skin => skin.Id == 0) != 1)
+            if (skins.Count(skin =>
+                    skin != null &&
+                    skin.Id == SkinVisualContentLayout.DefaultSkinId) != 1)
+            {
                 errors.Add("Skin catalog must contain exactly one default skin with ID 0.");
+            }
 
-            var normalAddresses = new HashSet<string>();
-            var skateboardAddresses = new HashSet<string>();
+            var localizationKeys = new HashSet<string>(StringComparer.Ordinal);
+            var normalAddresses = new HashSet<string>(StringComparer.Ordinal);
+            var skateboardAddresses = new HashSet<string>(StringComparer.Ordinal);
             foreach (SkinData skin in skins)
             {
+                if (skin == null)
+                {
+                    errors.Add("Skin catalog contains a null entry.");
+                    continue;
+                }
+
+                if (skin.Id < 0)
+                    errors.Add($"Skin {skin.Id}: ID must not be negative.");
+                if (string.IsNullOrWhiteSpace(skin.NameLocalizationKey))
+                {
+                    errors.Add(
+                        $"Skin {skin.Id}: NameLocalizationKey is empty.");
+                }
+                else if (!localizationKeys.Add(skin.NameLocalizationKey))
+                {
+                    errors.Add(
+                        $"Duplicate skin localization key: " +
+                        skin.NameLocalizationKey);
+                }
+                if (skin.Price < 0)
+                    errors.Add($"Skin {skin.Id}: Price must not be negative.");
+                if (string.IsNullOrWhiteSpace(skin.SkinSprite))
+                    errors.Add($"Skin {skin.Id}: SkinSprite is empty.");
+
                 if (string.IsNullOrWhiteSpace(skin.SkinVisualAddress))
                 {
                     errors.Add($"Skin {skin.Id}: SkinVisualAddress is empty.");
@@ -109,14 +124,69 @@ namespace LostCyberHamster.Editor
                 {
                     errors.Add($"Duplicate normal visual address: {skin.SkinVisualAddress}.");
                 }
+                else if (SkinVisualContentLayout.IsSkateboardAddress(
+                             skin.SkinVisualAddress))
+                {
+                    errors.Add(
+                        $"Skin {skin.Id}: normal visual address has " +
+                        "skateboard namespace.");
+                }
+
+                string normalSlug = SkinVisualContentLayout.GetSlug(
+                    skin.SkinVisualAddress);
+                if (!SkinVisualContentLayout.IsValidSlug(normalSlug))
+                {
+                    errors.Add($"Skin {skin.Id}: normal slug is invalid.");
+                }
+                else if (!string.Equals(
+                             skin.SkinVisualAddress,
+                             SkinVisualContentLayout.GetVisualAddress(
+                                 normalSlug,
+                                 isSkateboard: false),
+                             StringComparison.Ordinal))
+                {
+                    errors.Add(
+                        $"Skin {skin.Id}: normal visual address has wrong " +
+                        "format.");
+                }
 
                 if (string.IsNullOrWhiteSpace(skin.SkateboardSkinVisualAddress))
+                {
+                    errors.Add(
+                        $"Skin {skin.Id}: SkateboardSkinVisualAddress is empty.");
                     continue;
+                }
+
+                if (!SkinVisualContentLayout.IsSkateboardAddress(
+                        skin.SkateboardSkinVisualAddress))
+                {
+                    errors.Add(
+                        $"Skin {skin.Id}: skateboard visual address has wrong namespace.");
+                }
 
                 if (!skateboardAddresses.Add(skin.SkateboardSkinVisualAddress))
                     errors.Add($"Duplicate skateboard visual address: {skin.SkateboardSkinVisualAddress}.");
-                if (GetSlug(skin.SkinVisualAddress) != GetSlug(skin.SkateboardSkinVisualAddress))
+                if (SkinVisualContentLayout.GetSlug(skin.SkinVisualAddress) !=
+                    SkinVisualContentLayout.GetSlug(
+                        skin.SkateboardSkinVisualAddress))
                     errors.Add($"Skin {skin.Id}: normal and skateboard visual slugs differ.");
+                string skateboardSlug = SkinVisualContentLayout.GetSlug(
+                    skin.SkateboardSkinVisualAddress);
+                if (!SkinVisualContentLayout.IsValidSlug(skateboardSlug))
+                {
+                    errors.Add($"Skin {skin.Id}: skateboard slug is invalid.");
+                }
+                else if (!string.Equals(
+                             skin.SkateboardSkinVisualAddress,
+                             SkinVisualContentLayout.GetVisualAddress(
+                                 skateboardSlug,
+                                 isSkateboard: true),
+                             StringComparison.Ordinal))
+                {
+                    errors.Add(
+                        $"Skin {skin.Id}: skateboard visual address has " +
+                        "wrong format.");
+                }
             }
         }
 
@@ -124,25 +194,58 @@ namespace LostCyberHamster.Editor
             ICollection<string> errors,
             IReadOnlyList<SkinData> skins)
         {
+            List<SkinData> defaults = skins.Where(skin =>
+                    skin != null &&
+                    skin.Id == SkinVisualContentLayout.DefaultSkinId)
+                .ToList();
+            if (defaults.Count != 1)
+                return;
+            SkinData defaultSkin = defaults[0];
+
+            SkinVisual normalTemplate = LoadVisual(
+                errors,
+                defaultSkin.SkinVisualAddress,
+                "normal default");
+            SkinVisual skateboardTemplate = LoadVisual(
+                errors,
+                defaultSkin.SkateboardSkinVisualAddress,
+                "skateboard default");
+            if (normalTemplate == null || skateboardTemplate == null)
+                return;
+            if (normalTemplate.Mappings == null ||
+                normalTemplate.Mappings.Count == 0 ||
+                skateboardTemplate.Mappings == null ||
+                skateboardTemplate.Mappings.Count == 0)
+            {
+                errors.Add(
+                    "Default SkinVisual templates must contain action mappings.");
+                return;
+            }
+
             foreach (SkinData skin in skins)
             {
-                string normalSlug = GetSlug(skin.SkinVisualAddress);
+                if (skin == null)
+                    continue;
+
+                string normalSlug = SkinVisualContentLayout.GetSlug(
+                    skin.SkinVisualAddress);
                 ValidatePrefab(
                     errors,
-                    NormalVisualPrefabRoot,
+                    SkinVisualContentLayout.NormalVisualPrefabRoot,
                     normalSlug,
-                    NormalActions,
+                    normalTemplate,
                     false);
 
                 if (string.IsNullOrWhiteSpace(skin.SkateboardSkinVisualAddress))
                     continue;
 
-                string skateboardSlug = GetSlug(skin.SkateboardSkinVisualAddress);
+                string skateboardSlug = SkinVisualContentLayout.GetSlug(
+                    skin.SkateboardSkinVisualAddress);
                 ValidatePrefab(
                     errors,
-                    SkateboardVisualPrefabRoot,
+                    SkinVisualContentLayout.SkateboardVisualPrefabRoot,
                     skateboardSlug,
-                    SkateboardActions,
+                    skateboardTemplate,
                     true);
             }
         }
@@ -151,7 +254,7 @@ namespace LostCyberHamster.Editor
             ICollection<string> errors,
             string root,
             string slug,
-            IReadOnlyList<SkinVisualAction> requiredActions,
+            SkinVisual template,
             bool isSkateboard)
         {
             if (string.IsNullOrWhiteSpace(slug))
@@ -176,49 +279,74 @@ namespace LostCyberHamster.Editor
                 errors.Add($"{slug}: SpriteRenderer has no sprite in {prefabPath}.");
             if (controller == null)
                 errors.Add($"{slug}: AnimatorController is missing in {prefabPath}.");
-
-            foreach (SkinVisualAction action in requiredActions)
+            if (visual.Mappings == null || template.Mappings == null)
             {
-                if (visual.Mappings.All(mapping => mapping == null || mapping.Action != action))
-                    errors.Add($"{slug}: mapping for {action} is missing.");
+                errors.Add($"{slug}: SkinVisual mappings are missing.");
+                return;
+            }
+
+            foreach (SkinVisualActionMapping expected in template.Mappings)
+            {
+                if (expected == null)
+                {
+                    errors.Add("Default SkinVisual contains a null mapping.");
+                    continue;
+                }
+
+                List<SkinVisualActionMapping> matches = visual.Mappings
+                    .Where(mapping =>
+                        HasSameSemanticContract(mapping, expected))
+                    .ToList();
+                if (matches.Count != 1)
+                {
+                    errors.Add(
+                        $"{slug}: mapping for {Describe(expected)} is " +
+                        "missing or duplicated.");
+                    continue;
+                }
+
+                ValidateMapping(
+                    errors,
+                    matches[0],
+                    expected,
+                    controller,
+                    slug);
+            }
+
+            if (visual.Mappings.Count != template.Mappings.Count)
+            {
+                errors.Add(
+                    $"{slug}: mapping count differs from default template.");
             }
 
             if (isSkateboard)
-            {
-                ValidateSkateboardJumpVariant(errors, visual, slug, SkinVisualVariant.Normal);
-                ValidateSkateboardJumpVariant(errors, visual, slug, SkinVisualVariant.Super);
-                ValidatePhysicsShapeSprites(errors, visual, slug);
-            }
-
-            foreach (SkinVisualActionMapping mapping in visual.Mappings
-                         .Where(mapping =>
-                             mapping != null &&
-                             requiredActions.Contains(mapping.Action)))
-            {
-                ValidateMapping(errors, mapping, controller, slug, isSkateboard);
-            }
-        }
-
-        private static void ValidateSkateboardJumpVariant(
-            ICollection<string> errors,
-            SkinVisual visual,
-            string slug,
-            SkinVisualVariant variant)
-        {
-            bool exists = visual.Mappings.Any(mapping =>
-                mapping != null &&
-                mapping.Action == SkinVisualAction.SkateboardJump &&
-                !mapping.MatchAnyVariant &&
-                mapping.Variant == variant);
-            if (!exists)
-                errors.Add($"{slug}: SkateboardJump/{variant} mapping is missing.");
+                ValidatePhysicsShapeSprites(
+                    errors,
+                    visual,
+                    template,
+                    slug);
         }
 
         private static void ValidatePhysicsShapeSprites(
             ICollection<string> errors,
             SkinVisual visual,
+            SkinVisual template,
             string slug)
         {
+            if (visual.PhysicsShapeSprites == null ||
+                template.PhysicsShapeSprites == null)
+            {
+                errors.Add($"{slug}: Physics Shape manifest is missing.");
+                return;
+            }
+            if (visual.PhysicsShapeSprites.Count !=
+                template.PhysicsShapeSprites.Count)
+            {
+                errors.Add(
+                    $"{slug}: Physics Shape manifest count differs from " +
+                    "default template.");
+            }
+
             // Проверяем manifest и наличие импортированной формы у каждого sprite.
             var configuredSprites = new HashSet<Sprite>();
             foreach (Sprite sprite in visual.PhysicsShapeSprites)
@@ -257,9 +385,9 @@ namespace LostCyberHamster.Editor
         private static void ValidateMapping(
             ICollection<string> errors,
             SkinVisualActionMapping mapping,
+            SkinVisualActionMapping expected,
             AnimatorController controller,
-            string slug,
-            bool isSkateboard)
+            string slug)
         {
             if (string.IsNullOrWhiteSpace(mapping.StateName) || mapping.Clip == null)
             {
@@ -276,19 +404,66 @@ namespace LostCyberHamster.Editor
             if (state == null || state.motion != mapping.Clip)
                 errors.Add($"{slug}: state '{mapping.StateName}' does not use mapped clip.");
 
-            if (isSkateboard && !Mathf.Approximately(mapping.Clip.frameRate, 12f))
-                errors.Add($"{slug}: clip '{mapping.Clip.name}' must use 12 FPS.");
+            if (expected.Clip != null &&
+                !Mathf.Approximately(
+                    mapping.Clip.frameRate,
+                    expected.Clip.frameRate))
+            {
+                errors.Add(
+                    $"{slug}: clip '{mapping.Clip.name}' frame rate differs " +
+                    "from default template.");
+            }
 
-            bool expectedLoop = mapping.Action is SkinVisualAction.SkateboardRideA
-                or SkinVisualAction.SkateboardRideB
-                or SkinVisualAction.SkateboardPush;
-            if (isSkateboard && mapping.Loop != expectedLoop)
+            if (mapping.Loop != expected.Loop)
                 errors.Add($"{slug}: {mapping.Action} loop flag is invalid.");
+        }
+
+        private static SkinVisual LoadVisual(
+            ICollection<string> errors,
+            string address,
+            string label)
+        {
+            string path = SkinVisualContentLayout.GetVisualPrefabPath(address);
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            SkinVisual visual = prefab != null
+                ? prefab.GetComponent<SkinVisual>()
+                : null;
+            if (visual == null)
+                errors.Add($"Missing {label} SkinVisual prefab: {path}.");
+            return visual;
+        }
+
+        private static bool HasSameSemanticContract(
+            SkinVisualActionMapping candidate,
+            SkinVisualActionMapping expected)
+        {
+            return candidate != null &&
+                   candidate.Action == expected.Action &&
+                   candidate.MatchAnyVariant == expected.MatchAnyVariant &&
+                   candidate.Variant == expected.Variant &&
+                   candidate.MatchAnyOutcome == expected.MatchAnyOutcome &&
+                   candidate.Outcome == expected.Outcome &&
+                   string.Equals(
+                       candidate.StateName,
+                       expected.StateName,
+                       StringComparison.Ordinal);
+        }
+
+        private static string Describe(SkinVisualActionMapping mapping)
+        {
+            string variant = mapping.MatchAnyVariant
+                ? "AnyVariant"
+                : mapping.Variant.ToString();
+            string outcome = mapping.MatchAnyOutcome
+                ? "AnyOutcome"
+                : mapping.Outcome.ToString();
+            return $"{mapping.Action}/{variant}/{outcome}";
         }
 
         private static void ValidateHamster(ICollection<string> errors)
         {
-            GameObject hamster = AssetDatabase.LoadAssetAtPath<GameObject>(HamsterPrefabPath);
+            GameObject hamster = AssetDatabase.LoadAssetAtPath<GameObject>(
+                SkinVisualContentLayout.HamsterPrefabPath);
             Transform collisionBody = FindChild(hamster, "collision_body");
             Transform normalActor = FindChild(hamster, "normal_actor");
             Transform skateboardActor = FindChild(hamster, "skateboard_actor");
@@ -310,8 +485,10 @@ namespace LostCyberHamster.Editor
             ICollection<string> errors,
             IReadOnlyList<SkinData> skins)
         {
-            AddressableAssetGroup group = AddressableAssetSettingsDefaultObject.Settings?
-                .FindGroup(VisualAddressablesGroup);
+            AddressableAssetSettings settings =
+                AddressableAssetSettingsDefaultObject.Settings;
+            AddressableAssetGroup group = settings?.FindGroup(
+                SkinVisualContentLayout.VisualAddressablesGroup);
             BundledAssetGroupSchema schema = group?.GetSchema<BundledAssetGroupSchema>();
             if (schema == null || schema.BundleMode != BundledAssetGroupSchema.BundlePackingMode.PackSeparately)
             {
@@ -319,38 +496,69 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
-            foreach (SkinData skin in skins)
+            AddressableAssetGroup skinSpritesGroup =
+                settings?.FindGroup(
+                    SkinVisualContentLayout.SkinSpritesAddressablesGroup);
+            if (skinSpritesGroup == null)
             {
-                ValidateAddress(errors, group, skin.SkinVisualAddress);
-                if (!string.IsNullOrWhiteSpace(skin.SkateboardSkinVisualAddress))
-                    ValidateAddress(errors, group, skin.SkateboardSkinVisualAddress);
+                errors.Add("Addressables group 'skins' is missing.");
+                return;
             }
 
-            SkinData defaultSkin = skins.FirstOrDefault(skin => skin.Id == 0);
-            if (defaultSkin == null ||
-                string.IsNullOrWhiteSpace(defaultSkin.SkateboardSkinVisualAddress))
+            foreach (SkinData skin in skins)
             {
-                errors.Add("Default skin must define SkateboardSkinVisualAddress.");
+                if (skin == null)
+                    continue;
+
+                ValidateAddress(
+                    errors,
+                    settings,
+                    group,
+                    skin.SkinVisualAddress);
+                if (!string.IsNullOrWhiteSpace(skin.SkateboardSkinVisualAddress))
+                {
+                    ValidateAddress(
+                        errors,
+                        settings,
+                        group,
+                        skin.SkateboardSkinVisualAddress);
+                }
+                ValidateSkinSpriteAddress(
+                    errors,
+                    settings,
+                    skinSpritesGroup,
+                    skin.SkinSprite);
             }
+
         }
 
         private static void ValidateAddress(
             ICollection<string> errors,
+            AddressableAssetSettings settings,
             AddressableAssetGroup group,
             string address)
         {
             if (string.IsNullOrWhiteSpace(address))
             {
-                errors.Add("Normal SkinVisualAddress must not be empty.");
+                errors.Add("SkinVisual address must not be empty.");
                 return;
             }
 
-            List<AddressableAssetEntry> entries = group.entries
+            List<AddressableAssetEntry> entries = settings.groups
+                .Where(candidateGroup => candidateGroup != null)
+                .SelectMany(candidateGroup => candidateGroup.entries)
+                .Where(entry => entry != null)
                 .Where(entry => entry.address == address)
                 .ToList();
             if (entries.Count == 0)
             {
                 errors.Add($"Addressable entry '{address}' is missing.");
+                return;
+            }
+            if (entries[0].parentGroup != group)
+            {
+                errors.Add(
+                    $"Addressable entry '{address}' is in wrong group.");
                 return;
             }
             if (entries.Count > 1)
@@ -359,32 +567,71 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
-            string expectedPath = GetExpectedPrefabPath(address);
+            string expectedPath =
+                SkinVisualContentLayout.GetVisualPrefabPath(address);
             string expectedGuid = AssetDatabase.AssetPathToGUID(expectedPath);
             string actualGuid = entries[0].guid;
             if (string.IsNullOrEmpty(expectedGuid) || actualGuid != expectedGuid)
                 errors.Add($"Addressable entry '{address}' points to wrong prefab.");
         }
 
-        private static string GetExpectedPrefabPath(string address)
-        {
-            bool isSkateboard = address.StartsWith(
-                "skin-visual/skateboard/",
-                StringComparison.Ordinal);
-            string root = isSkateboard
-                ? SkateboardVisualPrefabRoot
-                : NormalVisualPrefabRoot;
-            string slug = GetSlug(address);
-            return $"{root}/{slug}/{slug}-skin-visual.prefab";
-        }
-
-        private static string GetSlug(string address)
+        private static void ValidateSkinSpriteAddress(
+            ICollection<string> errors,
+            AddressableAssetSettings settings,
+            AddressableAssetGroup group,
+            string address)
         {
             if (string.IsNullOrWhiteSpace(address))
-                return string.Empty;
+            {
+                errors.Add("SkinSprite address must not be empty.");
+                return;
+            }
 
-            int separatorIndex = address.LastIndexOf('/');
-            return separatorIndex >= 0 ? address[(separatorIndex + 1)..] : address;
+            int subObjectStart = address.IndexOf('[');
+            bool hasSubObject = subObjectStart >= 0;
+            if (hasSubObject && !address.EndsWith("]", StringComparison.Ordinal))
+            {
+                errors.Add($"SkinSprite address '{address}' is malformed.");
+                return;
+            }
+
+            string mainAddress = hasSubObject
+                ? address[..subObjectStart]
+                : address;
+            string subObjectName = hasSubObject
+                ? address[(subObjectStart + 1)..^1]
+                : string.Empty;
+            List<AddressableAssetEntry> entries = settings.groups
+                .Where(candidateGroup => candidateGroup != null)
+                .SelectMany(candidateGroup => candidateGroup.entries)
+                .Where(entry => entry != null)
+                .Where(entry => entry.address == mainAddress)
+                .ToList();
+            if (entries.Count != 1)
+            {
+                errors.Add(
+                    $"SkinSprite address '{mainAddress}' must have one entry.");
+                return;
+            }
+            if (entries[0].parentGroup != group)
+            {
+                errors.Add(
+                    $"SkinSprite address '{mainAddress}' is in wrong group.");
+                return;
+            }
+
+            string assetPath = AssetDatabase.GUIDToAssetPath(entries[0].guid);
+            List<Sprite> sprites = AssetDatabase.LoadAllAssetsAtPath(assetPath)
+                .OfType<Sprite>()
+                .ToList();
+            bool spriteExists = hasSubObject
+                ? sprites.Any(sprite => sprite.name == subObjectName)
+                : sprites.Count > 0;
+            if (!spriteExists)
+            {
+                errors.Add(
+                    $"SkinSprite '{address}' does not resolve to a Sprite.");
+            }
         }
 
         private static Transform FindChild(GameObject root, string childName)
