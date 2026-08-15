@@ -18,6 +18,9 @@ namespace Assets.Scripts.GameEngine.Controllers
         Listeners.IGameIntroListener,
         Listeners.IGameStartListener
     {
+        private static readonly int _roofRunStateHash =
+            Animator.StringToHash("Base Layer.transform_roof_run");
+
         public Animator Animator => _animator;
 
         private Animator _animator;
@@ -500,6 +503,19 @@ namespace Assets.Scripts.GameEngine.Controllers
             ClearActiveRoofHeightTransition();
             SwapRoofClips(isMedium: false);
             _animator.Rebind();
+        }
+
+        /// <summary>
+        /// Восстанавливает normal actor непосредственно в устойчивую позу текущей крыши.
+        /// </summary>
+        public void RestoreRoofRunSurface(bool isMediumRoof)
+        {
+            _roofHeightTransitionCompensator.Reset();
+            ClearActiveRoofHeightTransition();
+            SwapRoofClips(isMediumRoof);
+            _animator.Rebind();
+            _animator.Play(_roofRunStateHash, layer: 0, normalizedTime: 0f);
+            _animator.Update(0f);
         }
 
         public void OnFinish()

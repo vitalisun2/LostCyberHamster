@@ -128,20 +128,11 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
                 EditorStyles.boldLabel);
             using (new EditorGUI.DisabledScope(!_runner.CanRunScenario))
             {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    bool useSuperJump = EditorGUILayout.ToggleLeft(
-                        "Super Jump",
-                        _runner.UseSuperJump);
-                    if (useSuperJump != _runner.UseSuperJump)
-                        _runner.SetUseSuperJump(useSuperJump);
-
-                    bool onRoof = EditorGUILayout.ToggleLeft(
-                        "On Roof",
-                        _runner.OnRoof);
-                    if (onRoof != _runner.OnRoof)
-                        _runner.SetOnRoof(onRoof);
-                }
+                bool useSuperJump = EditorGUILayout.ToggleLeft(
+                    "Super Jump",
+                    _runner.UseSuperJump);
+                if (useSuperJump != _runner.UseSuperJump)
+                    _runner.SetUseSuperJump(useSuperJump);
             }
 
             using (new EditorGUI.DisabledScope(!_runner.CanRunScenario))
@@ -171,7 +162,7 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
                 {
                     if (GUILayout.Button("Timeout (automatic)"))
                         _runner.RunTimeoutCheck();
-                    if (GUILayout.Button("Ride Damage"))
+                    if (GUILayout.Button("Ride Collision"))
                         _runner.StartRideDamageCheck();
                 }
 

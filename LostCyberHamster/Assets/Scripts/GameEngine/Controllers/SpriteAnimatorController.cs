@@ -51,7 +51,6 @@ namespace Assets.Scripts.GameEngine.Controllers
                 descriptor.Variant,
                 descriptor.Outcome,
                 duration,
-                contactTime: null,
                 actionId);
 
             _visualHost.Play(context);

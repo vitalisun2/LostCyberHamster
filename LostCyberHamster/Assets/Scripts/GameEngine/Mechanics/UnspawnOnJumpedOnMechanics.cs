@@ -1,3 +1,4 @@
+using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
@@ -32,8 +33,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (_isEnabled)
                 return;
 
-            _hamster.DestroyObstacleEvent.Subscribe(OnObstacleDestroyed);
-            _destroyObstacleBySuperAttackEvent.Subscribe(OnObstacleDestroyed);
+            _hamster.DestroyObstacleEvent.Subscribe(OnObstacleDestroyedByNormalJump);
+            _destroyObstacleBySuperAttackEvent.Subscribe(OnObstacleDestroyedBySuperAttack);
             _isEnabled = true;
         }
 
@@ -42,16 +43,29 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (!_isEnabled)
                 return;
 
-            _hamster.DestroyObstacleEvent.Unsubscribe(OnObstacleDestroyed);
-            _destroyObstacleBySuperAttackEvent.Unsubscribe(OnObstacleDestroyed);
+            _hamster.DestroyObstacleEvent.Unsubscribe(OnObstacleDestroyedByNormalJump);
+            _destroyObstacleBySuperAttackEvent.Unsubscribe(OnObstacleDestroyedBySuperAttack);
             _isEnabled = false;
         }
 
-        private void OnObstacleDestroyed(Obstacle destroyedObstacle)
+        private void OnObstacleDestroyedByNormalJump(Obstacle destroyedObstacle)
+        {
+            OnObstacleDestroyed(destroyedObstacle, "DestroyObstacleEvent");
+        }
+
+        private void OnObstacleDestroyedBySuperAttack(Obstacle destroyedObstacle)
+        {
+            OnObstacleDestroyed(
+                destroyedObstacle,
+                "DestroyObstacleBySuperAttackEvent");
+        }
+
+        private void OnObstacleDestroyed(Obstacle destroyedObstacle, string path)
         {
             if(destroyedObstacle != _obstacleScript)
                 return;
 
+            SkateboardDiagnostics.DestroyRequestFromChannel(destroyedObstacle, path);
             _onObstacleUnspawn.Invoke(_obstacleScript.gameObject);
             _boomEffectAction.Invoke(_obstacleScript.transform.position, _gameManager);
         }

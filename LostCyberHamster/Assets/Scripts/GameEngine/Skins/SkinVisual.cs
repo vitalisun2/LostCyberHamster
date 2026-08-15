@@ -146,8 +146,9 @@ namespace Assets.Scripts.GameEngine.Skins
             in SkinActionContext context,
             bool continuesSameAction)
         {
+            float playbackSpeed = Mathf.Max(0.01f, context.PlaybackSpeed);
             if (mapping.Loop || context.IsLoop || mapping.Clip == null || context.Duration <= 0f)
-                return 1f;
+                return playbackSpeed;
 
             float remainingNormalized = 1f;
             if (continuesSameAction)
@@ -156,7 +157,8 @@ namespace Assets.Scripts.GameEngine.Skins
                 remainingNormalized = Mathf.Clamp01(1f - stateInfo.normalizedTime);
             }
 
-            return Mathf.Max(0.01f, mapping.Clip.length * remainingNormalized / context.Duration);
+            float fitToAction = mapping.Clip.length * remainingNormalized / context.Duration;
+            return Mathf.Max(0.01f, fitToAction * playbackSpeed);
         }
     }
 }

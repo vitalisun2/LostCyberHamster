@@ -18,11 +18,6 @@ namespace Assets.Scripts.GameEngine.Actors
         public bool IsSkateboardActive =>
             _skateboardActor != null && _skateboardActor.activeSelf;
 
-        private void Awake()
-        {
-            Initialize();
-        }
-
         /// <summary>
         /// Проверяет prefab refs и устанавливает безопасный начальный normal mode.
         /// </summary>

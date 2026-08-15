@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.GameEngine.Controllers;
+using Assets.Scripts.System;
 using Assets.Scripts.System.Resources;
 using UnityEngine;
 
@@ -25,6 +27,7 @@ namespace Vues.GameCore
             Hamster hamster,
             GameManager gameManager,
             Camera gameCamera,
+            ObstacleSpawner obstacleSpawner,
             CancellationToken cancellationToken = default)
         {
             // Проверяем регистрацию runtime до загрузки ресурсов.
@@ -38,12 +41,42 @@ namespace Vues.GameCore
             // Skateboard использует actor Hamster и не требует отдельного effect prefab.
             if (data.Id == SkateboardId)
             {
-                return new SkateboardAttack(
+                if (hamster == null)
+                    throw new ArgumentNullException(nameof(hamster));
+                if (obstacleSpawner == null)
+                    throw new ArgumentNullException(nameof(obstacleSpawner));
+
+                var actorSwitcher = hamster.ActorSwitcher ??
+                    throw new MissingReferenceException("HamsterActorSwitcher is missing.");
+                var surfaceController = hamster.SkateboardSurfaceController ??
+                    throw new MissingReferenceException("SkateboardSurfaceController is missing.");
+                var visualHost = hamster.SkateboardSkinVisualHost ??
+                    throw new MissingReferenceException("Skateboard SkinVisualHost is missing.");
+
+                surfaceController.Configure(obstacleSpawner);
+                var landingImpact = new SkateboardLandingImpactMechanics(
                     hamster,
+                    obstacleSpawner,
                     gameManager,
                     gameCamera,
-                    data.UltaDuration,
-                    data.UltaCharge);
+                    new CameraShakeController(gameCamera));
+                try
+                {
+                    return new SkateboardAttack(
+                        hamster,
+                        actorSwitcher,
+                        surfaceController,
+                        visualHost,
+                        gameManager,
+                        landingImpact,
+                        data.UltaDuration,
+                        data.UltaCharge);
+                }
+                catch
+                {
+                    landingImpact.Dispose();
+                    throw;
+                }
             }
 
             if (string.IsNullOrWhiteSpace(data.UltaPrefab))

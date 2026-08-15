@@ -67,7 +67,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         private bool _waitingForCompletion;
         private bool _landingHandled;
         private bool _useSuperJump;
-        private bool _onRoof;
+        private ScriptedSurface _scriptedSurface;
         private bool _pausedByTool;
         private bool _lastObservedLane;
         private bool _laneStart;
@@ -107,7 +107,6 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
         public bool IsBusy => _mode != RunnerMode.None;
         public bool UseSuperJump => _useSuperJump;
-        public bool OnRoof => _onRoof;
         public string Status => _status;
         public string Instruction => _instruction;
         public IReadOnlyList<ChecklistItem> Checklist => _checklist;
@@ -123,8 +122,14 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             GameDataManager.PlayerData != null &&
             SuperAttackService.TryGet(_skateboardId, out _);
         public bool CanRunScenario =>
+            !IsBusy &&
+            TryResolvePlayingGameplay(
+                out Hamster hamster,
+                out _,
+                out _) &&
+            TryDetectScriptedSurface(hamster, out _);
+        public bool CanStartGuidedCheck =>
             !IsBusy && TryResolvePlayingGameplay(out _, out _, out _);
-        public bool CanStartGuidedCheck => CanRunScenario;
         public bool CanTogglePause =>
             TryGetGameManager(out GameManager manager) &&
             (manager.State == GameState.PLAYING ||
@@ -231,7 +236,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
         public void StartRideDamageCheck() => StartCollisionCheck(
             RunnerMode.RideDamage,
-            "Ride Damage",
+            "Ride Collision",
             "Столкнитесь боком с pending obstacle.");
 
         public void StartJumpCollisionCheck() => StartCollisionCheck(
@@ -278,15 +283,6 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             SetStatus(value
                 ? "Scripted cycles используют Super Jump."
                 : "Scripted cycles используют normal Jump.");
-        }
-
-        public void SetOnRoof(bool value)
-        {
-            if (IsBusy) return;
-            _onRoof = value;
-            SetStatus(value
-                ? "Scripted surface gate: stable Roof/RoofRun."
-                : "Scripted surface gate: stable road Ride/Run.");
         }
 
         /// <summary>
@@ -405,15 +401,29 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 return;
             }
 
-            if (!ValidateScriptedSurface(hamster, out string instruction))
+            if (!TryDetectScriptedSurface(
+                    hamster,
+                    out ScriptedSurface scriptedSurface))
             {
-                SetStatus(instruction);
+                SetStatus(
+                    "Scripted combo требует stable Run или " +
+                    "stable RoofRun с живой support.");
                 return;
             }
 
             if (!TryEnterMode(hamster, attack, out string error))
             {
                 SetStatus($"FAIL: {error}", isError: true);
+                return;
+            }
+
+            if (!DidEnterScriptedSurface(hamster, scriptedSurface))
+            {
+                attack.Complete();
+                SetStatus(
+                    $"FAIL: Enter Mode не сохранил " +
+                    $"surface={GetScriptedSurfaceLabel(scriptedSurface)}.",
+                    isError: true);
                 return;
             }
 
@@ -432,13 +442,26 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             _waitingForRide = false;
             _waitingForCompletion = false;
             _landingHandled = false;
-            _scenarioTitle = title;
+            _scriptedSurface = scriptedSurface;
+            string surfaceLabel = GetScriptedSurfaceLabel(_scriptedSurface);
+            _scenarioTitle = $"{title}; surface={surfaceLabel}";
             _instruction = "Runner отправляет реальные jump requests и ждёт FSM.";
+            SetChecklist(new[]
+            {
+                $"Start surface={surfaceLabel}",
+                $"Impact depths [{string.Join(",", expectedImpactDepths)}]",
+                "Jump budget and natural completion",
+            });
+            SetChecklistResult(
+                0,
+                true,
+                scriptedSurface == ScriptedSurface.Road
+                    ? "stable Run"
+                    : "stable RoofRun; live support");
             attack.LandingImpact += OnLandingImpact;
             SetStatus(
-                $"PASS: Enter Mode. RUNNING: {title}; " +
-                $"jump={(_useSuperJump ? "Super" : "Normal")}, " +
-                $"surface={(_onRoof ? "Roof" : "Road")}.");
+                $"PASS: Enter Mode. RUNNING: {_scenarioTitle}; " +
+                $"jump={(_useSuperJump ? "Super" : "Normal")}.");
         }
 
         private void TickComboScenario()
@@ -740,8 +763,16 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 (_mode != RunnerMode.RideDamage &&
                  _mode != RunnerMode.JumpCollision)) return;
 
+            bool expectsStartedOnRoofPreserve =
+                _mode == RunnerMode.JumpCollision &&
+                diagnostic.WasJumpCollisionActive &&
+                SkateboardInteractionPolicy.IsRoof(diagnostic.ObstacleType) &&
+                _attack.TryGetCurrentJumpSnapshot(
+                    out SkateboardAttack.JumpCycleSnapshot snapshot) &&
+                snapshot.StartedOnRoof;
             if (diagnostic.Outcome ==
-                CollisionController.SkateboardCollisionOutcome.Support)
+                    CollisionController.SkateboardCollisionOutcome.Support &&
+                !expectsStartedOnRoofPreserve)
             {
                 SetStatus(
                     $"RUNNING: {_scenarioTitle}. Roof top/support пропущен; " +
@@ -784,19 +815,34 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             else
             {
                 bool lifeUnchanged = diagnostic.LivesAfter == diagnostic.LivesBefore;
-                passed =
-                    diagnostic.Outcome ==
-                    CollisionController.SkateboardCollisionOutcome.Destroy &&
-                    diagnostic.WasJumpCollisionActive && lifeUnchanged &&
-                    !diagnostic.ObstacleActiveAfter &&
-                    diagnostic.RoofSupportActiveAfter;
-                details = passed
-                    ? "jump phase, no damage, obstacle destroyed, support сохранён"
-                    : $"outcome={diagnostic.Outcome}, " +
-                      $"jumpPhase={diagnostic.WasJumpCollisionActive}, " +
-                      $"lives={diagnostic.LivesBefore}->{diagnostic.LivesAfter}, " +
-                      $"obstacleAlive={diagnostic.ObstacleActiveAfter}, " +
-                      $"supportAlive={diagnostic.RoofSupportActiveAfter}";
+                if (expectsStartedOnRoofPreserve)
+                {
+                    passed =
+                        diagnostic.Outcome ==
+                        CollisionController.SkateboardCollisionOutcome.Support &&
+                        lifeUnchanged && diagnostic.ObstacleActiveAfter;
+                    details = passed
+                        ? "StartedOnRoof jump, roof contact сохранён"
+                        : $"expected=Support, outcome={diagnostic.Outcome}, " +
+                          $"lives={diagnostic.LivesBefore}->{diagnostic.LivesAfter}, " +
+                          $"obstacleAlive={diagnostic.ObstacleActiveAfter}";
+                }
+                else
+                {
+                    passed =
+                        diagnostic.Outcome ==
+                        CollisionController.SkateboardCollisionOutcome.Destroy &&
+                        diagnostic.WasJumpCollisionActive && lifeUnchanged &&
+                        !diagnostic.ObstacleActiveAfter &&
+                        diagnostic.RoofSupportActiveAfter;
+                    details = passed
+                        ? "jump phase, no damage, obstacle destroyed, support сохранён"
+                        : $"outcome={diagnostic.Outcome}, " +
+                          $"jumpPhase={diagnostic.WasJumpCollisionActive}, " +
+                          $"lives={diagnostic.LivesBefore}->{diagnostic.LivesAfter}, " +
+                          $"obstacleAlive={diagnostic.ObstacleActiveAfter}, " +
+                          $"supportAlive={diagnostic.RoofSupportActiveAfter}";
+                }
             }
 
             SetChecklistResult(index, passed, details);
@@ -815,7 +861,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             }
 
             _instruction = _mode == RunnerMode.RideDamage
-                ? "После damage recovery runner сам вернёт Skateboard."
+                ? "После collision recovery runner сам вернёт Skateboard."
                 : "Продолжайте: active jump должен попасть в pending side/road type.";
             SetStatus($"PASS: {_physicalLabels[index]}. {_instruction}");
         }
@@ -904,12 +950,20 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 _hamster.ActorSwitcher.NormalActor.activeSelf;
             if (!normalActorRestored)
             {
+                SetChecklistResult(
+                    2,
+                    false,
+                    "normal actor not restored");
                 FailActiveCheck("Natural completion не восстановил normal actor.");
                 return;
             }
 
             if (_observedImpactDepths.Count != _expectedImpactDepths.Length)
             {
+                SetChecklistResult(
+                    1,
+                    false,
+                    $"count={_observedImpactDepths.Count}");
                 FailActiveCheck(
                     $"Impact count {_observedImpactDepths.Count}, " +
                     $"expected {_expectedImpactDepths.Length}.");
@@ -919,42 +973,81 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             for (int index = 0; index < _expectedImpactDepths.Length; index++)
             {
                 if (_observedImpactDepths[index] == _expectedImpactDepths[index]) continue;
+                SetChecklistResult(
+                    1,
+                    false,
+                    $"#{index + 1}={_observedImpactDepths[index]}");
                 FailActiveCheck(
                     $"Impact #{index + 1}: {_observedImpactDepths[index]}, " +
                     $"expected {_expectedImpactDepths[index]}.");
                 return;
             }
 
+            SetChecklistResult(
+                1,
+                true,
+                $"[{string.Join(",", _observedImpactDepths)}]");
+            SetChecklistResult(
+                2,
+                true,
+                "budget exhausted; normal actor restored");
             PassActiveCheck(
                 $"Impacts [{string.Join(",", _observedImpactDepths)}], " +
                 "budget exhausted, normal actor restored.");
         }
 
-        private bool ValidateScriptedSurface(Hamster hamster, out string instruction)
+        private static bool TryDetectScriptedSurface(
+            Hamster hamster,
+            out ScriptedSurface surface)
         {
+            surface = default;
             bool commonStable =
                 !hamster.IsShifting.Value && !hamster.IsDamaged.Value &&
                 !hamster.ActorSwitcher.IsSkateboardActive;
-            if (!_onRoof)
+
+            if (commonStable && hamster.HamsterState.Value == HamsterStateEnum.Run)
             {
-                bool stableRoad =
-                    commonStable && hamster.HamsterState.Value == HamsterStateEnum.Run;
-                instruction = stableRoad
-                    ? string.Empty
-                    : "Перейдите на дорогу, дождитесь stable Run и нажмите снова.";
-                return stableRoad;
+                surface = ScriptedSurface.Road;
+                return true;
             }
 
             Obstacle roof = hamster.LastObstacle.Value;
-            bool stableRoof =
-                commonStable && hamster.HamsterState.Value == HamsterStateEnum.RoofRun &&
-                roof != null && roof.isActiveAndEnabled && roof.ObstacleType != null &&
-                (roof.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.bigNotAlive ||
-                 roof.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.mediumNotAlive);
-            instruction = stableRoof
-                ? string.Empty
-                : "Перейдите на крышу, дождитесь stable RoofRun и нажмите снова.";
-            return stableRoof;
+            if (commonStable &&
+                hamster.HamsterState.Value == HamsterStateEnum.RoofRun &&
+                IsLiveRoofSupport(roof))
+            {
+                surface = ScriptedSurface.Roof;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool DidEnterScriptedSurface(
+            Hamster hamster,
+            ScriptedSurface surface)
+        {
+            Obstacle currentRoof =
+                hamster.SkateboardSurfaceController.CurrentRoof;
+            return surface == ScriptedSurface.Road
+                ? currentRoof == null
+                : IsLiveRoofSupport(currentRoof);
+        }
+
+        private static bool IsLiveRoofSupport(Obstacle roof)
+        {
+            return roof != null &&
+                   roof.isActiveAndEnabled &&
+                   roof.ObstacleType != null &&
+                   (roof.ObstacleType.ObstacleTypeEnum ==
+                    ObstacleTypeEnum.bigNotAlive ||
+                    roof.ObstacleType.ObstacleTypeEnum ==
+                    ObstacleTypeEnum.mediumNotAlive);
+        }
+
+        private static string GetScriptedSurfaceLabel(ScriptedSurface surface)
+        {
+            return surface == ScriptedSurface.Roof ? "Roof" : "Road";
         }
 
         private bool TryStartCheckWithMode(
@@ -1072,6 +1165,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             _waitingForRide = false;
             _waitingForCompletion = false;
             _landingHandled = false;
+            _scriptedSurface = default;
             _scenarioTitle = string.Empty;
             _instruction = string.Empty;
             if (clearChecklist) _checklist.Clear();
@@ -1217,6 +1311,12 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             RideDamage,
             JumpCollision,
             LaneShift,
+        }
+
+        private enum ScriptedSurface
+        {
+            Road,
+            Roof,
         }
 
         private enum LaneCheckStage

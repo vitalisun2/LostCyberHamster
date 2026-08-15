@@ -7,7 +7,6 @@ using Assets.Scripts.GameEngine.Skins;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
-using Assets.Scripts.Installers.Roots;
 using Atomic.Elements;
 using Atomic.Objects;
 using Sirenix.OdinInspector;
@@ -131,8 +130,6 @@ namespace Assets.Scripts.Gameplay
             _transformAnimatorController = GetComponentInChildren<TransformAnimatorController>();
             _spriteAnimatorController = GetComponentInChildren<SpriteAnimatorController>();
             _transformAnimatorEventsDispatcher = GetComponentInChildren<TransformAnimatorEventsDispatcher>();
-
-            var environmentRoot = GameObject.FindWithTag("EnvironmentRoot").GetComponent<EnvironmentRoot>();
 
             _tapMechanics = new TapMechanics(
                 TapRequest,
@@ -294,7 +291,6 @@ namespace Assets.Scripts.Gameplay
         public HamsterActorSwitcher ActorSwitcher => _actorSwitcher;
         public SkateboardSurfaceController SkateboardSurfaceController =>
             _skateboardSurfaceController;
-        public SkinVisualHost SkinVisualHost => _normalSkinVisualHost;
         public SkinVisualHost NormalSkinVisualHost => _normalSkinVisualHost;
         public SkinVisualHost SkateboardSkinVisualHost => _skateboardSkinVisualHost;
 
@@ -306,15 +302,16 @@ namespace Assets.Scripts.Gameplay
             skateboardAttack.IsActive;
 
         /// <summary>
-        /// Возвращает признак разрушительного collision-состояния skateboard jump.
+        /// Возвращает active Skateboard owner для production collision execution.
         /// </summary>
-        public bool IsSkateboardJumpCollisionActive =>
-            _superAttackRuntime is SkateboardAttack skateboardAttack &&
-            skateboardAttack.IsActive &&
-            (skateboardAttack.IsJumping || skateboardAttack.IsLanding);
+        public bool TryGetActiveSkateboardAttack(out SkateboardAttack attack)
+        {
+            attack = _superAttackRuntime as SkateboardAttack;
+            return attack != null && attack.IsActive;
+        }
 
         /// <summary>
-        /// Подготавливает normal actor к возврату на дорогу или текущую roof support.
+        /// Восстанавливает normal actor на дороге или текущей roof support.
         /// </summary>
         public void RestoreNormalSurface(Obstacle roof)
         {
@@ -323,6 +320,7 @@ namespace Assets.Scripts.Gameplay
                 // Road exit очищает stale roof state и возвращает transform Animator в default pose.
                 LastObstacle.Value = null;
                 HamsterState.Value = HamsterStateEnum.Run;
+                _actorSwitcher.ActivateNormal();
                 _transformAnimatorController.ResetToRunSurface();
                 _spriteAnimatorController.PlayForState(HamsterStateEnum.Run);
                 return;
@@ -333,7 +331,8 @@ namespace Assets.Scripts.Gameplay
             HamsterState.Value = HamsterStateEnum.RoofRun;
             bool isMediumRoof =
                 roof.ObstacleType.ObstacleTypeEnum == ObstacleTypeEnum.mediumNotAlive;
-            _transformAnimatorController.SwapRoofClips(isMediumRoof);
+            _actorSwitcher.ActivateNormal();
+            _transformAnimatorController.RestoreRoofRunSurface(isMediumRoof);
             _spriteAnimatorController.PlayForState(HamsterStateEnum.RoofRun);
         }
 

@@ -34,18 +34,19 @@ Skateboard actor не меняет Transform по Y. Прыжок нарисов
 - Ride: hamster уязвим; collision обрабатывается как обычный run damage.
 - Shift между двумя линиями работает всегда.
 - Обычный vertical Transform jump отключён.
-- Skateboard jump и landing: hamster неуязвим; physical contact уничтожает obstacle через super-attack channel.
+- Skateboard jump и landing: hamster неуязвим. Outcome зависит от immutable `StartedOnRoof` текущего cycle.
 - До первого jump действует timeout `10 s` gameplay time.
 - Первый jump отменяет timeout навсегда.
 - Всего ровно `3` jumps: `1+1+1`, `2+1`, `1+2`, `3`.
 - Mode заканчивается после landing tail третьего израсходованного jump; impact срабатывает в contact frame.
 - Активация разрешена из stable `Run` и `RoofRun`.
-- Roof top — опора: ride/jump landing её не уничтожают.
-- Roof side — obstacle: ride получает damage, jump уничтожает.
-- Roof-chain продолжается на крыше текущей линии. Без опоры `surface_transform` плавно опускает visual и collider на дорогу вместе.
-- Road остаётся road: skateboard jump не создаёт новое приземление на крышу.
+- Ride: current/проходимая roof-chain — support. Roof side после gap — damage. Roof box — damage.
+- StartedOnRoad jump: любой physical obstacle уничтожается, roof тоже.
+- StartedOnRoof jump: любой contact с `bigNotAlive/mediumNotAlive` сохраняется как potential support; прочий physical уничтожается.
+- StartedOnRoof landing: top contact принимает roof. Side/inside miss конкретной roof уничтожает её. Без support общий root плавно опускается на road.
+- Collectable всегда pickup при contact. Decor игнорируется.
 
-Один jump-cycle тратит один из трёх jumps. Double input до contact усиливает текущий cycle до super-jump и второй jump не списывает. Contact: `0.833 s`; полный clip: `1.25 s`. Следующий cycle ставится в очередь в landing tail. Без очереди mode возвращается в Ride и combo сбрасывается.
+Один jump-cycle тратит один из трёх jumps. В старте создаётся immutable `StartedOnRoof`. Double input до contact усиливает cycle без второго списания. Все 5 animations идут `1.5x`; contact `0.556 s`, полный cycle `0.833 s`. Visual и FSM используют один multiplier. Следующий cycle буферизуется только в landing tail.
 
 ## Combo и landing impact
 
@@ -59,7 +60,7 @@ Combo растёт только у последовательных jumps без
 
 Obstacle делает короткую дугу за `5 frames @ 60 FPS`; через ещё `3 frames` — destroy. Высота: combo 1 `13%..9.1%`, combo 2 `19.5%..10.725%`, combo 3 `27.3%..12.285%` от высоты obstacle. Combo 3 сильнее combo 2 на любой равной normalized distance. Ближние targets стартуют раньше и прыгают выше. Три wave-группы: combo 1 `0 / 0.04 / 0.08 s`, combo 2 `0 / 0.08 / 0.16 s`, combo 3 `0 / 0.13 / 0.26 s`; каждый target получает jitter `0..12 ms` внутри своей группы. Camera shake: `0.18 s`, базовая амплитуда `0.08 units`, множитель combo `1x/2x/3x`.
 
-Destroy physical obstacle идёт через существующий super-attack channel/pool unspawn. Collectable участвует в wave/bump, восстанавливает позицию и остаётся доступным для pickup. Decor и текущая roof support исключены. Combo 3 захватывает справа scroll-запас `~1.54 units + target width`; естественный выход после третьего landing не отменяет pending wave. Damage/finish/manual abort отменяют её. Delayed target инвалидируется через `OnObstacleUnspawned`, повторно проверяется по live-list и CurrentRoof. Pool subscription симметрична enable/disable.
+Destroy идёт через существующий super-attack channel/pool unspawn. Wave StartedOnRoad уничтожает все physical, roof тоже. Wave StartedOnRoof: roof bump-only/live, roof box и прочий physical destroy. Current support preserve без bump. Collectable bump-only, восстанавливает позицию, остаётся pickup. Decor ignore. Combo 3 сохраняет правый scroll buffer; natural exit не отменяет pending wave. Pool identity фиксируется в target snapshot.
 
 ## State flow
 
@@ -129,29 +130,29 @@ Assets/Content/skins/
 
 `SpritePhysicsShapeColliderSync` живёт на `collision_body`. Текущий `SpriteRenderer` приходит из visual prefab/host при runtime bind. До появления sprites collider может иметь только placeholder shape.
 
-`visual_collision_root` масштабирует только skateboard visual и collider до `0.7`. `skateboard_actor.localY = 0.39225` совмещает низ ride-collider с normal baseline `-0.425`. Sprite pivot остаётся общим `(0.5, 0.225)`, `surface_transform.localY = 0` остаётся базой roof/road alignment.
+`visual_collision_root` масштабирует visual и animated polygon до `0.7`. `gameplay_collision_sensor` задаёт canonical board baseline `-0.425`. Surface alignment двигает общий `surface_transform`; sprite отдельно не двигается.
 
-`gameplay_collision_sensor` — отдельный trigger `1.64 x 0.85` на normal baseline. Он гарантирует стабильный контакт со всеми шестью physical obstacle types и collectibles, когда точный sprite PolygonCollider имеет прозрачные gaps. Все результаты проходят общий collision policy: ride damage, jump destroy, collectible pickup, roof support.
+`gameplay_collision_sensor` — trigger `1.64 x 0.85`: canonical baseline и stable X-footprint для roof-chain. Animated PolygonCollider нужен для точного collision и top-vs-side landing. Оба routes идут через одну policy.
 
 ## Ownership
 
 `Hamster`
 
 - общие state/events/lives/energy/mechanics;
-- serialized refs: switcher, normal host, skateboard host;
-- compatibility property normal `SkinVisualHost` на время миграции.
+- serialized refs: switcher, surface, normal host, skateboard host;
+- ownership super attack и visual leases.
 
 `HamsterActorSwitcher`
 
 - refs на два actor;
 - active/inactive switch;
-- current mode;
+- только active actor/collider branch, не gameplay authority;
 - без timer/jump/combo/damage/loading.
 
 `SkateboardAttack : ISuperAttackRuntime`
 
 - mode lease/lifecycle;
-- timeout, 3 jumps, combo FSM, Road/Roof surface flow;
+- timeout, 3 jumps, combo FSM, immutable jump snapshot;
 - немедленный exit после принятого ride damage;
 - gates normal jump/roof mechanics;
 - cleanup на exit/finish/dispose.
@@ -159,9 +160,15 @@ Assets/Content/skins/
 `SkateboardSurfaceController`
 
 - хранит `Road / Roof / DroppingToRoad`;
-- ведёт текущую roof support текущей линии;
-- выравнивает общий `surface_transform` по реальному roof bounds;
-- возвращает normal actor на фактическую поверхность.
+- ведёт current support и top/side/miss geometry;
+- выравнивает общий root по canonical board baseline;
+- не решает damage/destroy/bump.
+
+`SkateboardInteractionPolicy`
+
+- один pure decision point: `Collect / Damage / Destroy / PreserveSupport / BumpOnly / Ignore`;
+- одинаков для collision, landing miss и landing wave;
+- владеет type/mode rules, но ничего не исполняет.
 
 `SkateboardLandingImpactMechanics`
 
@@ -171,14 +178,7 @@ Assets/Content/skins/
 - gameplay-time pause/finish/pool guards;
 - явный `ICameraShake`, полученный через composition root.
 
-`CollisionController` применяет skateboard collision policy:
-
-- ride -> current damage;
-- jump/landing -> ignore damage + destroy regular obstacle;
-- roof top -> support, остаётся жив;
-- roof side -> ride damage или jump/landing destroy.
-
-Destroy проходит отдельной ранней веткой до обычного damage path.
+`CollisionController` получает decision и только исполняет collect/damage/destroy/preserve/ignore. `LandingImpact` выбирает targets/timing и исполняет ту же policy. Camera и `ObstacleSpawner` приходят явно через Zenject/runtime composition.
 
 ## Что переиспользовать
 
@@ -222,15 +222,10 @@ Destroy проходит отдельной ранней веткой до об�
 - Canonical prefab уже имеет active `normal_actor`, inactive `skateboard_actor`, switcher, два hosts и заполненные root refs.
 - Skateboard actor уже имеет placeholder polygon collider, collision controller, collider-sync stub и `skin_slot`; лишнего `effects_slot` нет.
 - Existing normal assets перенесены в `normal_mode` вместе с `.meta`; content hash `108/108` совпал.
-- Для трёх skin slugs созданы empty skateboard controllers, visual prefabs, sprite folders и Addressables entries. Sprites/clips/mappings/gameplay logic появятся следующим шагом.
+- Для трёх skin slugs созданы skateboard controllers, visual prefabs, sprite folders и Addressables entries. Default содержит пять clips и mappings.
 - Prebuilt Windows AssetBundle catalog пока содержит старый Hamster path; пересобрать после завершения prefab migration, не редактировать JSON вручную.
 
 Подробный файловый аудит: [Analysis.md](Analysis.md).
-
-## TBD
-
-- exact visual catalog/address schema;
-- collider update event from visual Animator/SpriteRenderer;
 
 ## Минимальный план
 

@@ -1,7 +1,8 @@
 using System;
-using Assets.Scripts.Common;
+using Assets.Scripts;
+using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameEngine.Actors;
-using Assets.Scripts.GameEngine.Controllers;
+using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameEngine.Skins;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
@@ -11,25 +12,45 @@ using UnityEngine;
 namespace Vues.GameCore
 {
     /// <summary>
-    /// Управляет lifecycle, прыжками, combo и visual-состоянием skateboard mode.
+    /// Владеет lifecycle, jump budget, combo, FSM и snapshot каждого Skateboard jump-cycle.
     /// </summary>
     public sealed class SkateboardAttack : ISuperAttackRuntime
     {
         public const float DefaultFirstJumpTimeout = 10f;
-        public const float DefaultJumpDuration = 1.25f;
-        public const float DefaultLandingContactTime = 10f / 12f;
+        public const float SkateboardPlaybackSpeed = 1.5f;
+        public const float DefaultJumpDuration = 1.25f / SkateboardPlaybackSpeed;
+        public const float DefaultLandingContactTime = (10f / 12f) / SkateboardPlaybackSpeed;
         public const int DefaultJumpBudget = 3;
         public const int DefaultChargePerObstacle = 20;
 
-        private const float _rideVisualDuration = 8f / 12f;
-        private const float _pushVisualDuration = 11f / 12f;
+        private const float _rideVisualDuration = (8f / 12f) / SkateboardPlaybackSpeed;
+        private const float _pushVisualDuration = (11f / 12f) / SkateboardPlaybackSpeed;
+
+        /// <summary>
+        /// Неизменяемый origin и landing intent одного jump-cycle.
+        /// </summary>
+        public readonly struct JumpCycleSnapshot
+        {
+            public JumpCycleSnapshot(
+                long actionId,
+                bool startedOnRoof,
+                SkateboardSurfaceController.LandingSurfacePlan landingPlan)
+            {
+                ActionId = actionId;
+                StartedOnRoof = startedOnRoof;
+                LandingPlan = landingPlan;
+            }
+
+            public long ActionId { get; }
+            public bool StartedOnRoof { get; }
+            public SkateboardSurfaceController.LandingSurfacePlan LandingPlan { get; }
+        }
 
         private readonly Hamster _hamster;
         private readonly HamsterActorSwitcher _actorSwitcher;
         private readonly SkateboardSurfaceController _surfaceController;
         private readonly SkinVisualHost _visualHost;
         private readonly GameManager _gameManager;
-        private readonly ICameraShake _cameraShake;
         private readonly SkateboardLandingImpactMechanics _landingImpactMechanics;
         private readonly float _firstJumpTimeout;
         private readonly float _jumpDuration;
@@ -40,7 +61,6 @@ namespace Vues.GameCore
         private float _stateTimeLeft;
         private float _rideVisualTimeLeft;
         private long _nextActionId;
-        private long _currentJumpActionId;
         private int _rideVisualIndex;
         private int _jumpsRemaining;
         private int _comboDepth;
@@ -51,66 +71,35 @@ namespace Vues.GameCore
         private bool _isVisualPlaybackEnabled;
         private bool _isActive;
         private bool _isDisposed;
+        private JumpCycleSnapshot _currentJumpSnapshot;
         private SkateboardState _state;
 
         /// <summary>
-        /// Сообщает уровень combo и тип jump-cycle в момент контакта с землёй.
+        /// Сообщает DEV consumers уровень combo и тип cycle в landing contact frame.
         /// </summary>
         public event Action<int, bool> LandingImpact;
 
-        /// <summary>
-        /// Возвращает заряд за одно уничтоженное препятствие.
-        /// </summary>
         public int ChargePerObstacle { get; }
-
-        /// <summary>
-        /// Возвращает признак активного skateboard mode.
-        /// </summary>
         public bool IsActive => _isActive;
-
-        /// <summary>
-        /// Возвращает признак работающего таймера до первого прыжка.
-        /// </summary>
         public bool IsWaitingForFirstJump => _isWaitingForFirstJump;
-
-        /// <summary>
-        /// Возвращает число ещё доступных отдельных прыжков.
-        /// </summary>
         public int JumpsRemaining => _jumpsRemaining;
-
-        /// <summary>
-        /// Возвращает глубину текущей непрерывной серии прыжков.
-        /// </summary>
         public int ComboDepth => _comboDepth;
-
-        /// <summary>
-        /// Возвращает признак ride-состояния skateboard mode.
-        /// </summary>
         public bool IsRiding => _state == SkateboardState.Ride;
-
-        /// <summary>
-        /// Возвращает признак обычного или усиленного skateboard jump.
-        /// </summary>
         public bool IsJumping =>
             _state is SkateboardState.Jump or SkateboardState.SuperJump;
-
-        /// <summary>
-        /// Возвращает признак усиленного skateboard jump.
-        /// </summary>
         public bool IsSuperJumping => _state == SkateboardState.SuperJump;
-
-        /// <summary>
-        /// Возвращает признак landing tail после контакта с землёй.
-        /// </summary>
         public bool IsLanding => _state == SkateboardState.Landing;
 
         /// <summary>
-        /// Создаёт runtime с явными gameplay, visual и surface-зависимостями.
+        /// Создаёт mode runtime из явно собранных gameplay, visual, surface и impact частей.
         /// </summary>
         public SkateboardAttack(
             Hamster hamster,
+            HamsterActorSwitcher actorSwitcher,
+            SkateboardSurfaceController surfaceController,
+            SkinVisualHost visualHost,
             GameManager gameManager,
-            Camera camera,
+            SkateboardLandingImpactMechanics landingImpactMechanics,
             float firstJumpTimeout = DefaultFirstJumpTimeout,
             int chargePerObstacle = DefaultChargePerObstacle,
             float jumpDuration = DefaultJumpDuration,
@@ -118,15 +107,13 @@ namespace Vues.GameCore
             int jumpBudget = DefaultJumpBudget)
         {
             _hamster = hamster ?? throw new ArgumentNullException(nameof(hamster));
-            _actorSwitcher = hamster.ActorSwitcher ??
-                throw new MissingReferenceException("HamsterActorSwitcher is missing.");
-            _surfaceController = hamster.SkateboardSurfaceController ??
-                throw new MissingReferenceException("SkateboardSurfaceController is missing.");
-            _visualHost = hamster.SkateboardSkinVisualHost ??
-                throw new MissingReferenceException("Skateboard SkinVisualHost is missing.");
+            _actorSwitcher = actorSwitcher ?? throw new ArgumentNullException(nameof(actorSwitcher));
+            _surfaceController = surfaceController ??
+                throw new ArgumentNullException(nameof(surfaceController));
+            _visualHost = visualHost ?? throw new ArgumentNullException(nameof(visualHost));
             _gameManager = gameManager ?? throw new ArgumentNullException(nameof(gameManager));
-            _cameraShake = new CameraShakeController(
-                camera ?? throw new ArgumentNullException(nameof(camera)));
+            _landingImpactMechanics = landingImpactMechanics ??
+                throw new ArgumentNullException(nameof(landingImpactMechanics));
 
             if (firstJumpTimeout <= 0f)
             {
@@ -173,12 +160,7 @@ namespace Vues.GameCore
             _landingContactTime = landingContactTime;
             _jumpBudget = jumpBudget;
             ChargePerObstacle = chargePerObstacle;
-            _landingImpactMechanics = new SkateboardLandingImpactMechanics(
-                _hamster,
-                this,
-                _gameManager,
-                camera,
-                _cameraShake);
+
             _gameManager.OnFinish += OnGameFinished;
             _hamster.JumpRequest.Subscribe(OnJumpRequested);
             _hamster.RoofJumpRequest.Subscribe(OnJumpRequested);
@@ -188,7 +170,7 @@ namespace Vues.GameCore
         }
 
         /// <summary>
-        /// Включает skateboard mode с разрешённой стабильной поверхности во время gameplay.
+        /// Включает mode со стабильной road или roof surface только во время gameplay.
         /// </summary>
         public bool TryActivate()
         {
@@ -202,7 +184,11 @@ namespace Vues.GameCore
                 return false;
             }
 
-            // Инициализируем новый mode lease и включаем отдельный actor целиком.
+            // Source surface фиксируется до actor switch и первого physics callback.
+            bool startsOnRoof = _hamster.HamsterState.Value == HamsterStateEnum.RoofRun;
+            Obstacle initialRoof = startsOnRoof ? _hamster.LastObstacle.Value : null;
+            SkateboardDiagnostics.BeginSession();
+
             _firstJumpTimeLeft = _firstJumpTimeout;
             _isWaitingForFirstJump = true;
             _jumpsRemaining = _jumpBudget;
@@ -211,49 +197,48 @@ namespace Vues.GameCore
             _isJumpQueued = false;
             _isQueuedJumpSuper = false;
             _isCurrentJumpSuper = false;
+            _currentJumpSnapshot = default;
+
+            if (startsOnRoof)
+                _surfaceController.PrepareRoof(initialRoof);
+            else
+                _surfaceController.EnterRoad();
+
+            // Gameplay authority включается раньше colliders; callbacks уже видят mode policy.
+            _isActive = true;
+            _state = SkateboardState.Ride;
             _actorSwitcher.ActivateSkateboard();
             _visualHost.Rebind();
             SetVisualPlaybackEnabled(isEnabled: true);
-            if (_hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
-                _surfaceController.EnterRoof(_hamster.LastObstacle.Value);
-            else
-                _surfaceController.EnterRoad();
-            _isActive = true;
             EnterRide();
+            if (startsOnRoof)
+                _surfaceController.AlignToPreparedRoof();
+            SkateboardDiagnostics.Activate(
+                _hamster,
+                _actorSwitcher,
+                _surfaceController);
             return true;
         }
 
         /// <summary>
-        /// Останавливает начальный timeout после первого принятого skateboard jump.
-        /// </summary>
-        public bool NotifyFirstJumpStarted()
-        {
-            if (!_isActive || !_isWaitingForFirstJump)
-                return false;
-
-            _isWaitingForFirstJump = false;
-            _firstJumpTimeLeft = 0f;
-            return true;
-        }
-
-        /// <summary>
-        /// Запускает первый или ставит в landing-buffer следующий отдельный прыжок.
+        /// Запускает первый или буферизует следующий normal jump-cycle.
         /// </summary>
         public bool TryStartJump()
         {
             if (!_isActive ||
+                _gameManager.State != GameState.PLAYING ||
                 _hamster.IsDamaged.Value ||
                 _jumpsRemaining <= 0)
+            {
                 return false;
+            }
 
-            // Из ride начинаем новую серию без ожидания следующего Update.
             if (_state == SkateboardState.Ride)
             {
                 StartJump(isSuper: false, continuesCombo: false);
                 return true;
             }
 
-            // После контакта принимаем один следующий jump в combo-buffer.
             if (_state == SkateboardState.Landing && !_isJumpQueued)
             {
                 _isJumpQueued = true;
@@ -265,21 +250,41 @@ namespace Vues.GameCore
         }
 
         /// <summary>
-        /// Усиливает текущий или поставленный в очередь прыжок без второго списания budget.
+        /// Стартует super cycle из Ride либо усиливает текущий/queued cycle без второго budget.
         /// </summary>
         public bool TryUpgradeToSuperJump()
         {
-            if (!_isActive || _hamster.IsDamaged.Value)
+            if (!_isActive ||
+                _gameManager.State != GameState.PLAYING ||
+                _hamster.IsDamaged.Value)
+            {
                 return false;
+            }
 
-            // Upgrade перезапускает authoritative timing усиленного sprite jump.
+            // Первый double-tap после actor switch не теряется из-за stale external detector.
+            if (_state == SkateboardState.Ride && _jumpsRemaining > 0)
+            {
+                StartJump(isSuper: true, continuesCombo: false);
+                return true;
+            }
+
             if (_state == SkateboardState.Jump)
             {
                 _isCurrentJumpSuper = true;
                 _state = SkateboardState.SuperJump;
                 _stateTimeLeft = _landingContactTime;
+                // Contact timer перезапущен: новый intent считается из текущих world positions.
+                _currentJumpSnapshot = CreateJumpSnapshot(
+                    _currentJumpSnapshot.ActionId,
+                    _currentJumpSnapshot.StartedOnRoof);
                 SetHamsterJumpState(isSuper: true);
-                PlayJump(SkinVisualVariant.Super, _currentJumpActionId);
+                SkateboardDiagnostics.JumpStart(
+                    _hamster,
+                    _currentJumpSnapshot,
+                    isSuper: true,
+                    _surfaceController.CurrentRoof,
+                    _state.ToString());
+                PlayJump(SkinVisualVariant.Super, _currentJumpSnapshot.ActionId);
                 return true;
             }
 
@@ -293,25 +298,36 @@ namespace Vues.GameCore
         }
 
         /// <summary>
-        /// Завершает skateboard mode и возвращает normal actor.
+        /// Возвращает immutable snapshot только для active Jump/SuperJump/Landing cycle.
         /// </summary>
-        public void Complete()
+        public bool TryGetCurrentJumpSnapshot(out JumpCycleSnapshot snapshot)
         {
-            if (_isDisposed)
-                return;
-
-            Deactivate();
+            bool hasCycle = _isActive &&
+                            (_state is SkateboardState.Jump
+                                or SkateboardState.SuperJump
+                                or SkateboardState.Landing) &&
+                            _currentJumpSnapshot.ActionId > 0;
+            snapshot = hasCycle ? _currentJumpSnapshot : default;
+            return hasCycle;
         }
 
         /// <summary>
-        /// Обновляет gameplay-time timeout, visual ride-cycle и skateboard FSM.
+        /// Завершает mode и возвращает normal actor.
+        /// </summary>
+        public void Complete()
+        {
+            if (!_isDisposed)
+                Deactivate();
+        }
+
+        /// <summary>
+        /// Обновляет gameplay-time timeout, visual cycle и FSM.
         /// </summary>
         public void Update()
         {
             if (_isDisposed || !_isActive)
                 return;
 
-            // Finish завершает режим сразу; pause оставляет все timers без изменений.
             if (_gameManager.State == GameState.FINISHED)
             {
                 Deactivate();
@@ -323,7 +339,6 @@ namespace Vues.GameCore
             if (!isPlaying)
                 return;
 
-            // До первого прыжка режим живёт не больше заданного gameplay-time.
             if (_isWaitingForFirstJump)
             {
                 _firstJumpTimeLeft -= Time.deltaTime;
@@ -334,7 +349,6 @@ namespace Vues.GameCore
                 }
             }
 
-            // Каждый state использует собственный authoritative gameplay timer.
             switch (_state)
             {
                 case SkateboardState.Ride:
@@ -366,8 +380,8 @@ namespace Vues.GameCore
             _hamster.SuperJumpRequest.Unsubscribe(OnSuperJumpRequested);
             _hamster.SuperRoofJumpRequest.Unsubscribe(OnSuperJumpRequested);
             _hamster.DamageEvent.Unsubscribe(OnDamageReceived);
-            _landingImpactMechanics.Dispose();
             Deactivate();
+            _landingImpactMechanics.Dispose();
             LandingImpact = null;
             _isDisposed = true;
         }
@@ -389,7 +403,6 @@ namespace Vues.GameCore
 
         private void OnDamageReceived()
         {
-            // Ride использует обычный damage path, затем сразу освобождает mode lease.
             if (_isActive && _state == SkateboardState.Ride)
                 Deactivate();
         }
@@ -399,10 +412,8 @@ namespace Vues.GameCore
             if (_hamster.HamsterState.Value == HamsterStateEnum.Run)
                 return true;
 
-            if (_hamster.HamsterState.Value != HamsterStateEnum.RoofRun)
-                return false;
-
-            return IsValidRoofSupport(_hamster.LastObstacle.Value);
+            return _hamster.HamsterState.Value == HamsterStateEnum.RoofRun &&
+                   IsValidRoofSupport(_hamster.LastObstacle.Value);
         }
 
         private static bool IsValidRoofSupport(Obstacle roof)
@@ -410,28 +421,46 @@ namespace Vues.GameCore
             return roof != null &&
                    roof.isActiveAndEnabled &&
                    roof.ObstacleType != null &&
-                   CollisionUtils.IsRoofObstacle(
+                   SkateboardInteractionPolicy.IsRoof(
                        roof.ObstacleType.ObstacleTypeEnum);
         }
 
         private void StartJump(bool isSuper, bool continuesCombo)
         {
-            // Списываем budget только при старте отдельного jump-cycle.
             _jumpsRemaining--;
-            _comboDepth = continuesCombo ? Mathf.Min(_comboDepth + 1, _jumpBudget) : 1;
+            _comboDepth = continuesCombo
+                ? Mathf.Min(_comboDepth + 1, _jumpBudget)
+                : 1;
             _isJumpQueued = false;
             _isQueuedJumpSuper = false;
             _isCurrentJumpSuper = isSuper;
-            NotifyFirstJumpStarted();
+            _isWaitingForFirstJump = false;
+            _firstJumpTimeLeft = 0f;
 
-            // Новый cycle получает ActionId; normal-to-super upgrade сохраняет его.
-            _currentJumpActionId = ++_nextActionId;
+            // Origin берётся один раз до transient surface changes и остаётся immutable.
+            long actionId = ++_nextActionId;
+            bool startedOnRoof =
+                _surfaceController.State == SkateboardSurfaceController.SurfaceState.Roof &&
+                IsValidRoofSupport(_surfaceController.CurrentRoof);
+            _currentJumpSnapshot = CreateJumpSnapshot(actionId, startedOnRoof);
+            if (!startedOnRoof &&
+                _surfaceController.State != SkateboardSurfaceController.SurfaceState.Road)
+            {
+                _surfaceController.EnterRoad();
+            }
+
             _state = isSuper ? SkateboardState.SuperJump : SkateboardState.Jump;
             _stateTimeLeft = _landingContactTime;
             SetHamsterJumpState(isSuper);
+            SkateboardDiagnostics.JumpStart(
+                _hamster,
+                _currentJumpSnapshot,
+                isSuper,
+                _surfaceController.CurrentRoof,
+                _state.ToString());
             PlayJump(
                 isSuper ? SkinVisualVariant.Super : SkinVisualVariant.Normal,
-                _currentJumpActionId);
+                actionId);
         }
 
         private void UpdateJump(float deltaTime)
@@ -440,12 +469,58 @@ namespace Vues.GameCore
             if (_stateTimeLeft > 0f)
                 return;
 
-            // Contact запускает impact один раз; visual landing tail продолжает играть.
+            float landingElapsed = _landingContactTime - _stateTimeLeft;
+            SkateboardDiagnostics.LandingContact(
+                _currentJumpSnapshot,
+                landingElapsed,
+                _surfaceController.CurrentRoof,
+                _surfaceController);
             _state = SkateboardState.Landing;
             _stateTimeLeft = _jumpDuration - _landingContactTime;
-            _surfaceController.ResolveLandingSupport(
-                _hamster.IsOnBottomLine.Value);
+
+            SkateboardSurfaceController.LandingSurfaceResult surfaceResult = default;
+            if (_currentJumpSnapshot.StartedOnRoof)
+            {
+                surfaceResult = _surfaceController.ApplyRoofLandingPlan(
+                    _currentJumpSnapshot.LandingPlan);
+            }
+            else
+            {
+                _surfaceController.ResolveRoadLanding();
+            }
+            SkateboardDiagnostics.LandingResolve(
+                _currentJumpSnapshot,
+                landingElapsed,
+                surfaceResult,
+                _surfaceController);
+
+            // Miss и wave используют тот же immutable cycle origin; поздний surface state не читается.
+            var impactRequest = new SkateboardLandingImpactMechanics.ImpactRequest(
+                _currentJumpSnapshot.ActionId,
+                _comboDepth,
+                _isCurrentJumpSuper,
+                _currentJumpSnapshot.StartedOnRoof,
+                surfaceResult.Support,
+                surfaceResult.MissedRoof);
+            _landingImpactMechanics.StartImpact(impactRequest);
             LandingImpact?.Invoke(_comboDepth, _isCurrentJumpSuper);
+        }
+
+        private JumpCycleSnapshot CreateJumpSnapshot(long actionId, bool startedOnRoof)
+        {
+            SkateboardSurfaceController.LandingSurfacePlan landingPlan = default;
+            if (startedOnRoof)
+            {
+                float worldTravel =
+                    _landingContactTime *
+                    Consts.RoadScrollSpeed *
+                    ScrollLeftMechanics.SpeedMultiplier;
+                landingPlan = _surfaceController.PredictRoofLanding(
+                    _hamster.IsOnBottomLine.Value,
+                    worldTravel);
+            }
+
+            return new JumpCycleSnapshot(actionId, startedOnRoof, landingPlan);
         }
 
         private void UpdateLanding(float deltaTime)
@@ -454,10 +529,9 @@ namespace Vues.GameCore
             if (_stateTimeLeft > 0f)
                 return;
 
-            // Третий landing завершается только после visual tail.
             if (_jumpsRemaining <= 0)
             {
-                // Natural mode exit не обрывает уже запущенную дальнюю landing-wave.
+                // Natural exit не обрывает дальнюю wave, живущую отдельным listener.
                 Deactivate(cancelLandingImpact: false);
                 return;
             }
@@ -479,6 +553,7 @@ namespace Vues.GameCore
             _isJumpQueued = false;
             _isQueuedJumpSuper = false;
             _isCurrentJumpSuper = false;
+            _currentJumpSnapshot = default;
             SyncHamsterSurfaceState();
             PlayNextRideVisual();
         }
@@ -514,9 +589,9 @@ namespace Vues.GameCore
                 action,
                 SkinVisualVariant.Normal,
                 SkinVisualOutcome.Normal,
-                _rideVisualTimeLeft,
-                contactTime: null,
-                ++_nextActionId));
+                _rideVisualTimeLeft * SkateboardPlaybackSpeed,
+                ++_nextActionId,
+                SkateboardPlaybackSpeed));
         }
 
         private void PlayJump(SkinVisualVariant variant, long actionId)
@@ -525,28 +600,28 @@ namespace Vues.GameCore
                 SkinVisualAction.SkateboardJump,
                 variant,
                 SkinVisualOutcome.Normal,
-                _jumpDuration,
-                _landingContactTime,
-                actionId));
+                _jumpDuration * SkateboardPlaybackSpeed,
+                actionId,
+                SkateboardPlaybackSpeed));
         }
 
-        private void UpdateSurface(
-            float deltaTime,
-            bool syncHamsterState = true)
+        private void UpdateSurface(float deltaTime, bool syncHamsterState = true)
         {
-            _surfaceController.Tick(
-                deltaTime,
-                _hamster.IsOnBottomLine.Value);
+            // Shared lane shift движется независимо; roof ownership меняется после shift.
+            if (_hamster.IsShifting.Value &&
+                _surfaceController.State == SkateboardSurfaceController.SurfaceState.Roof)
+            {
+                return;
+            }
+
+            _surfaceController.Tick(deltaTime, _hamster.IsOnBottomLine.Value);
             if (syncHamsterState)
                 SyncHamsterSurfaceState();
         }
 
         private void SetHamsterJumpState(bool isSuper)
         {
-            bool isOnRoof =
-                _surfaceController.State ==
-                SkateboardSurfaceController.SurfaceState.Roof;
-            _hamster.HamsterState.Value = isOnRoof
+            _hamster.HamsterState.Value = _currentJumpSnapshot.StartedOnRoof
                 ? isSuper
                     ? HamsterStateEnum.SuperRoofJump
                     : HamsterStateEnum.RoofJump
@@ -557,8 +632,7 @@ namespace Vues.GameCore
 
         private void SyncHamsterSurfaceState()
         {
-            if (_surfaceController.State ==
-                SkateboardSurfaceController.SurfaceState.Roof)
+            if (_surfaceController.State == SkateboardSurfaceController.SurfaceState.Roof)
             {
                 _hamster.LastObstacle.Value = _surfaceController.CurrentRoof;
                 _hamster.HamsterState.Value = HamsterStateEnum.RoofRun;
@@ -582,8 +656,8 @@ namespace Vues.GameCore
         {
             if (cancelLandingImpact)
                 _landingImpactMechanics.Cancel();
-            bool shouldRestoreSurface =
-                _isActive || _actorSwitcher.IsSkateboardActive;
+
+            bool shouldRestoreSurface = _isActive || _actorSwitcher.IsSkateboardActive;
             Obstacle roof = shouldRestoreSurface &&
                             _surfaceController.State ==
                             SkateboardSurfaceController.SurfaceState.Roof
@@ -602,15 +676,17 @@ namespace Vues.GameCore
             _isJumpQueued = false;
             _isQueuedJumpSuper = false;
             _isCurrentJumpSuper = false;
+            _currentJumpSnapshot = default;
             _state = SkateboardState.Inactive;
             SetVisualPlaybackEnabled(isEnabled: false);
 
             if (shouldRestoreSurface)
                 _hamster.RestoreNormalSurface(roof);
-
-            _actorSwitcher.ActivateNormal();
+            else
+                _actorSwitcher.ActivateNormal();
             if (shouldRestoreSurface)
                 _surfaceController.Reset();
+            SkateboardDiagnostics.EndMode();
         }
 
         private enum SkateboardState
@@ -619,7 +695,7 @@ namespace Vues.GameCore
             Ride,
             Jump,
             SuperJump,
-            Landing,
+            Landing
         }
     }
 }

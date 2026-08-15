@@ -25,12 +25,16 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         private EnvironmentRoot _environmentRoot;
         private Hamster _characterPrefab;
         private Camera _gameCamera;
+        private GameManager _gameManager;
+        private ObstacleSpawner _obstacleSpawner;
 
         public async Task LoadAsync(Dictionary<string, object> bundle)
         {
             _characterPrefab = (Hamster)bundle["characterPrefab"];
             _environmentRoot = (EnvironmentRoot)bundle["environmentRoot"];
             _gameCamera = (Camera)bundle["gameCamera"];
+            _gameManager = (GameManager)bundle["gameManager"];
+            _obstacleSpawner = (ObstacleSpawner)bundle["obstacleSpawner"];
 
             await CreateHamsterAsync();
         }
@@ -44,7 +48,11 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
             try
             {
                 // Собираем runtime-зависимости персонажа до регистрации gameplay listeners.
-                await ConfigureSuperAttackAsync(hamster, _gameCamera);
+                await ConfigureSuperAttackAsync(
+                    hamster,
+                    _gameManager,
+                    _gameCamera,
+                    _obstacleSpawner);
                 (SkinVisualRuntime normalVisual, SkinVisualRuntime skateboardVisual) =
                     await SkinVisualRuntimeFactory.CreateSelectedAsync(hamster);
                 hamster.ConfigureSkinVisuals(normalVisual, skateboardVisual);
@@ -63,7 +71,9 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 
         private static async Task ConfigureSuperAttackAsync(
             Hamster hamster,
-            Camera gameCamera)
+            GameManager gameManager,
+            Camera gameCamera,
+            ObstacleSpawner obstacleSpawner)
         {
             int? activeSuperAttackId =
                 SuperAttackService.ActiveSuperAttackId;
@@ -76,28 +86,27 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                 return;
             }
 
-            var gameManager = LevelController.Instance.LevelData.GameManager;
             ISuperAttackRuntime runtime =
                 await SuperAttackFactory.CreateAsync(
                     data,
                     hamster,
                     gameManager,
-                    gameCamera);
+                    gameCamera,
+                    obstacleSpawner);
             hamster.ConfigureSuperAttack(runtime);
         }
 
         private void AddGameListeners(Hamster hamster)
         {
-            var gameManager = LevelController.Instance.LevelData.GameManager;
             var listeners = hamster.gameObject.GetComponentsInChildren<Listeners.IGameListener>();
 
             foreach (var listener in listeners)
             {
-                gameManager.AddListener(listener);
+                _gameManager.AddListener(listener);
             }
 
             // If game already started (e.g. test level without intro), fire OnStart for late listeners
-            if (gameManager.State == GameState.PLAYING)
+            if (_gameManager.State == GameState.PLAYING)
             {
                 foreach (var listener in listeners)
                 {
@@ -105,7 +114,7 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
                         startListener.OnStart();
                 }
             }
-            else if (gameManager.State == GameState.INTRO)
+            else if (_gameManager.State == GameState.INTRO)
             {
                 foreach (var listener in listeners)
                 {

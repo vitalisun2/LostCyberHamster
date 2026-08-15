@@ -9,7 +9,7 @@ namespace Assets.Scripts.GameEngine.Skins
         public SkinVisualVariant Variant { get; }
         public SkinVisualOutcome Outcome { get; }
         public float Duration { get; }
-        public float? ContactTime { get; }
+        public float PlaybackSpeed { get; }
         public long ActionId { get; }
 
         public SkinActionContext(
@@ -17,14 +17,14 @@ namespace Assets.Scripts.GameEngine.Skins
             SkinVisualVariant variant,
             SkinVisualOutcome outcome,
             float duration,
-            float? contactTime,
-            long actionId)
+            long actionId,
+            float playbackSpeed = 1f)
         {
             Action = action;
             Variant = variant;
             Outcome = outcome;
             Duration = duration;
-            ContactTime = contactTime;
+            PlaybackSpeed = playbackSpeed;
             ActionId = actionId;
         }
 

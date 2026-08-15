@@ -256,7 +256,18 @@ namespace LostCyberHamster.Editor
                 ? $"{locationName}/{levelKey}"
                 : $"{locationName}/{relativeDirectory}";
 
-            testLevel = new TestLevelEntry(address, address);
+            var menuLabel = levelKey switch
+            {
+                "test_skateboard_ride_and_jump_collision" =>
+                    "Test Skateboard Ride and Jump Collision",
+                "test_skateboard_scripted_combo_scenarios_on_road" =>
+                    "Test Skateboard Scripted Combo Scenarios on Road",
+                "test_skateboard_scripted_combo_scenarios_on_roof" =>
+                    "Test Skateboard Scripted Combo Scenarios on Roof",
+                _ => address,
+            };
+
+            testLevel = new TestLevelEntry(address, menuLabel);
             return true;
         }
 

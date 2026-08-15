@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.GameManagerLogic;
@@ -27,6 +28,35 @@ namespace Vues.GameCore
         public const float DefaultDestroyDelay = 3f / 60f;
         public const float DefaultComboThreeWaveDuration = 0.26f;
 
+        /// <summary>
+        /// Неизменяемый вход одной landing wave из authoritative jump-cycle.
+        /// </summary>
+        public readonly struct ImpactRequest
+        {
+            public ImpactRequest(
+                long actionId,
+                int comboDepth,
+                bool isSuperCycle,
+                bool startedOnRoof,
+                Obstacle currentSupport,
+                Obstacle missedRoof)
+            {
+                ActionId = actionId;
+                ComboDepth = comboDepth;
+                IsSuperCycle = isSuperCycle;
+                StartedOnRoof = startedOnRoof;
+                CurrentSupport = currentSupport;
+                MissedRoof = missedRoof;
+            }
+
+            public long ActionId { get; }
+            public int ComboDepth { get; }
+            public bool IsSuperCycle { get; }
+            public bool StartedOnRoof { get; }
+            public Obstacle CurrentSupport { get; }
+            public Obstacle MissedRoof { get; }
+        }
+
         private const float _bumpHeightFeedbackMultiplier = 1.3f;
         private const float _comboOneWaveDuration = 0.08f;
         private const float _comboOneMinimumFalloff = 0.7f;
@@ -42,7 +72,7 @@ namespace Vues.GameCore
         private const int _maximumComboDepth = 3;
 
         private readonly Hamster _hamster;
-        private readonly SkateboardAttack _attack;
+        private readonly ObstacleSpawner _obstacleSpawner;
         private readonly GameManager _gameManager;
         private readonly Camera _camera;
         private readonly ICameraShake _cameraShake;
@@ -55,14 +85,12 @@ namespace Vues.GameCore
 
         private bool _isDisposed;
 
-        public int PendingTargetCount => _targets.Count;
-
         /// <summary>
-        /// Подключает mechanics к landing event и gameplay update loop.
+        /// Подключает mechanics к gameplay update loop с явными runtime dependencies.
         /// </summary>
         public SkateboardLandingImpactMechanics(
             Hamster hamster,
-            SkateboardAttack attack,
+            ObstacleSpawner obstacleSpawner,
             GameManager gameManager,
             Camera camera,
             ICameraShake cameraShake,
@@ -72,7 +100,8 @@ namespace Vues.GameCore
             float comboThreeWaveDuration = DefaultComboThreeWaveDuration)
         {
             _hamster = hamster ?? throw new ArgumentNullException(nameof(hamster));
-            _attack = attack ?? throw new ArgumentNullException(nameof(attack));
+            _obstacleSpawner = obstacleSpawner ??
+                throw new ArgumentNullException(nameof(obstacleSpawner));
             _gameManager = gameManager ?? throw new ArgumentNullException(nameof(gameManager));
             _camera = camera ?? throw new ArgumentNullException(nameof(camera));
             _cameraShake = cameraShake ??
@@ -115,7 +144,6 @@ namespace Vues.GameCore
             _destroyDelay = destroyDelay;
             _comboThreeWaveDuration = comboThreeWaveDuration;
 
-            _attack.LandingImpact += OnLandingImpact;
             _gameManager.AddListener(this);
         }
 
@@ -143,9 +171,16 @@ namespace Vues.GameCore
 
                 if (result == ImpactTarget.TickResult.ReadyToComplete &&
                     target.IsCurrentLiveSpawn() &&
-                    target.CompletionOutcome == ImpactTarget.Outcome.Destroy &&
-                    !IsCurrentRoof(target.Obstacle))
+                    target.CompletionOutcome ==
+                    SkateboardInteractionPolicy.Outcome.Destroy)
                 {
+                    SkateboardDiagnostics.DestroyRequest(
+                        target.Obstacle,
+                        target.ActionId,
+                        "Landing",
+                        target.StartedOnRoof,
+                        "LandingImpact/Wave",
+                        "landing_wave_destroy");
                     target.RestorePosition();
                     _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(target.Obstacle);
                 }
@@ -187,22 +222,22 @@ namespace Vues.GameCore
                 return;
 
             _isDisposed = true;
-            _attack.LandingImpact -= OnLandingImpact;
             _gameManager.RemoveListener(this);
             Cancel();
         }
 
-        private void OnLandingImpact(int comboDepth, bool isSuperCycle)
+        /// <summary>
+        /// Исполняет landing miss и создаёт target snapshot для одной wave.
+        /// </summary>
+        public void StartImpact(in ImpactRequest request)
         {
             if (_isDisposed || _gameManager.State != GameState.PLAYING)
                 return;
 
-            ObstacleSpawner spawner = ObstacleSpawner.Instance;
-            if (spawner == null)
-                return;
+            ExecuteLandingMiss(request);
 
             int clampedComboDepth = Mathf.Clamp(
-                comboDepth,
+                request.ComboDepth,
                 1,
                 _maximumComboDepth);
             float halfScreenHeight = _camera.orthographicSize;
@@ -215,7 +250,7 @@ namespace Vues.GameCore
             float hamsterWidth = Mathf.Abs(_hamster.RightX - _hamster.LeftX);
             float radius = hamsterWidth * ResolveRadiusInHamsterWidths(
                 clampedComboDepth,
-                isSuperCycle);
+                request.IsSuperCycle);
             float rightCaptureTravel = clampedComboDepth == _maximumComboDepth
                 ? ResolveMaximumPendingLifecycle() *
                   Consts.RoadScrollSpeed *
@@ -225,14 +260,16 @@ namespace Vues.GameCore
             float maximumWaveDistance = Mathf.Max(
                 Mathf.Abs(hamsterX - screenLeft),
                 Mathf.Abs(impactRight - hamsterX));
-            Obstacle currentRoof = _hamster.SkateboardSurfaceController.CurrentRoof;
-
-            List<InstantiatedObstacle> spawnedObstacles = spawner.SpawnedObstacles;
+            List<InstantiatedObstacle> spawnedObstacles = _obstacleSpawner.SpawnedObstacles;
             for (int index = 0; index < spawnedObstacles.Count; index++)
             {
                 InstantiatedObstacle spawnEntry = spawnedObstacles[index];
                 Obstacle obstacle = spawnEntry?.ObstacleScript;
-                if (!IsImpactTarget(obstacle, currentRoof) || HasPendingTarget(obstacle))
+                if (!TryResolveWaveOutcome(
+                        obstacle,
+                        request,
+                        out SkateboardInteractionPolicy.Outcome outcome) ||
+                    HasPendingTarget(obstacle))
                     continue;
 
                 BoxCollider2D collider = obstacle.GetComponentInChildren<BoxCollider2D>();
@@ -283,8 +320,11 @@ namespace Vues.GameCore
                                    strength;
 
                 _targets.Add(new ImpactTarget(
+                    _obstacleSpawner,
                     spawnEntry,
-                    ResolveOutcome(obstacle),
+                    request.ActionId,
+                    request.StartedOnRoof,
+                    outcome,
                     bumpHeight,
                     waveDelay,
                     _bumpDuration,
@@ -292,6 +332,56 @@ namespace Vues.GameCore
             }
 
             _cameraShake.Play(clampedComboDepth);
+        }
+
+        private void ExecuteLandingMiss(in ImpactRequest request)
+        {
+            Obstacle missedRoof = request.MissedRoof;
+            if (missedRoof == null ||
+                !missedRoof.isActiveAndEnabled ||
+                missedRoof.ObstacleType == null)
+            {
+                return;
+            }
+
+            SkateboardInteractionPolicy.Outcome outcome =
+                SkateboardInteractionPolicy.Decide(
+                    missedRoof.ObstacleType.ObstacleTypeEnum,
+                    SkateboardInteractionPolicy.Phase.LandingMiss,
+                    request.StartedOnRoof);
+            if (outcome == SkateboardInteractionPolicy.Outcome.Destroy)
+            {
+                SkateboardDiagnostics.DestroyRequest(
+                    missedRoof,
+                    request.ActionId,
+                    "Landing",
+                    request.StartedOnRoof,
+                    "LandingImpact/Miss",
+                    "concrete_roof_miss");
+                _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(missedRoof);
+            }
+        }
+
+        private static bool TryResolveWaveOutcome(
+            Obstacle obstacle,
+            in ImpactRequest request,
+            out SkateboardInteractionPolicy.Outcome outcome)
+        {
+            outcome = SkateboardInteractionPolicy.Outcome.Ignore;
+            if (obstacle == null ||
+                !obstacle.isActiveAndEnabled ||
+                obstacle.ObstacleType == null)
+            {
+                return false;
+            }
+
+            outcome = SkateboardInteractionPolicy.Decide(
+                obstacle.ObstacleType.ObstacleTypeEnum,
+                SkateboardInteractionPolicy.Phase.LandingWave,
+                request.StartedOnRoof,
+                isCurrentSupport: ReferenceEquals(obstacle, request.CurrentSupport));
+            return outcome is SkateboardInteractionPolicy.Outcome.Destroy
+                or SkateboardInteractionPolicy.Outcome.BumpOnly;
         }
 
         private bool HasPendingTarget(Obstacle obstacle)
@@ -318,59 +408,6 @@ namespace Vues.GameCore
                 _targets[index].Dispose(restorePosition);
 
             _targets.Clear();
-        }
-
-        private bool IsCurrentRoof(Obstacle obstacle)
-        {
-            return ReferenceEquals(
-                obstacle,
-                _hamster.SkateboardSurfaceController.CurrentRoof);
-        }
-
-        private static ImpactTarget.Outcome ResolveOutcome(Obstacle obstacle)
-        {
-            switch (obstacle.ObstacleType.ObstacleTypeEnum)
-            {
-                case ObstacleTypeEnum.collectableEnergetic:
-                case ObstacleTypeEnum.collectablePizza:
-                case ObstacleTypeEnum.collectableCrystal:
-                case ObstacleTypeEnum.collectableLife:
-                case ObstacleTypeEnum.collectableCoin:
-                    return ImpactTarget.Outcome.RestoreOnly;
-                default:
-                    return ImpactTarget.Outcome.Destroy;
-            }
-        }
-
-        private static bool IsImpactTarget(Obstacle obstacle, Obstacle currentRoof)
-        {
-            if (obstacle == null ||
-                !obstacle.isActiveAndEnabled ||
-                obstacle.ObstacleType == null ||
-                ReferenceEquals(obstacle, currentRoof))
-            {
-                return false;
-            }
-
-            switch (obstacle.ObstacleType.ObstacleTypeEnum)
-            {
-                // Gameplay obstacles и collectables получают общий bump/destroy без pickup reward.
-                case ObstacleTypeEnum.smallAlive:
-                case ObstacleTypeEnum.bigAlive:
-                case ObstacleTypeEnum.smallNotAliveRoad:
-                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
-                case ObstacleTypeEnum.bigNotAlive:
-                case ObstacleTypeEnum.collectableEnergetic:
-                case ObstacleTypeEnum.collectablePizza:
-                case ObstacleTypeEnum.collectableCrystal:
-                case ObstacleTypeEnum.collectableLife:
-                case ObstacleTypeEnum.collectableCoin:
-                case ObstacleTypeEnum.mediumNotAlive:
-                    return true;
-                case ObstacleTypeEnum.decor:
-                default:
-                    return false;
-            }
         }
 
         private static bool IsVisible(
@@ -430,7 +467,7 @@ namespace Vues.GameCore
                 if (support == null ||
                     !support.isActiveAndEnabled ||
                     support.ObstacleType == null ||
-                    !CollisionUtils.IsRoofObstacle(
+                    !SkateboardInteractionPolicy.IsRoof(
                         support.ObstacleType.ObstacleTypeEnum) ||
                     support.ObstacleType.IsTop != obstacle.ObstacleType.IsTop)
                 {
@@ -544,15 +581,12 @@ namespace Vues.GameCore
                 ReadyToComplete
             }
 
-            public enum Outcome
-            {
-                Destroy,
-                RestoreOnly
-            }
-
+            private readonly ObstacleSpawner _obstacleSpawner;
             private readonly InstantiatedObstacle _spawnEntry;
             private readonly GameObject _identity;
             private readonly int _instanceId;
+            private readonly long _actionId;
+            private readonly bool _startedOnRoof;
             private readonly float _baseY;
             private readonly float _bumpHeight;
             private readonly float _waveDelay;
@@ -564,16 +598,23 @@ namespace Vues.GameCore
             private bool _disposed;
 
             public Obstacle Obstacle { get; }
-            public Outcome CompletionOutcome { get; }
+            public long ActionId => _actionId;
+            public bool StartedOnRoof => _startedOnRoof;
+            public SkateboardInteractionPolicy.Outcome CompletionOutcome { get; }
 
             public ImpactTarget(
+                ObstacleSpawner obstacleSpawner,
                 InstantiatedObstacle spawnEntry,
-                Outcome completionOutcome,
+                long actionId,
+                bool startedOnRoof,
+                SkateboardInteractionPolicy.Outcome completionOutcome,
                 float bumpHeight,
                 float waveDelay,
                 float bumpDuration,
                 float destroyDelay)
             {
+                _obstacleSpawner = obstacleSpawner ??
+                    throw new ArgumentNullException(nameof(obstacleSpawner));
                 _spawnEntry = spawnEntry ??
                     throw new ArgumentNullException(nameof(spawnEntry));
                 Obstacle = spawnEntry.ObstacleScript ??
@@ -581,6 +622,8 @@ namespace Vues.GameCore
                         "Spawn entry must contain an obstacle.",
                         nameof(spawnEntry));
                 CompletionOutcome = completionOutcome;
+                _actionId = actionId;
+                _startedOnRoof = startedOnRoof;
                 _identity = Obstacle.gameObject;
                 _instanceId = Obstacle.GetInstanceID();
                 _baseY = Obstacle.transform.position.y;
@@ -630,11 +673,7 @@ namespace Vues.GameCore
                 if (!IsIdentityAlive())
                     return false;
 
-                ObstacleSpawner spawner = ObstacleSpawner.Instance;
-                if (spawner == null)
-                    return false;
-
-                List<InstantiatedObstacle> liveObstacles = spawner.SpawnedObstacles;
+                List<InstantiatedObstacle> liveObstacles = _obstacleSpawner.SpawnedObstacles;
                 for (int index = 0; index < liveObstacles.Count; index++)
                 {
                     if (ReferenceEquals(liveObstacles[index], _spawnEntry) &&

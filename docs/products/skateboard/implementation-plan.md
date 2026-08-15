@@ -26,11 +26,21 @@
 
 - [x] ✅ При ride damage выполнить обычную потерю life и немедленно завершить mode с восстановлением normal actor/surface. Landing timing и shake параметры зафиксированы.
 
-- [x] ✅ Доработать `Tools/Testing > Skateboard Mode Testing`: self-activating checks, четыре scripted combos, `Super Jump`, `On Roof` gate, automatic timeout, passive Ride Damage / Jump Collision / Lane Shift watchers, общий checklist/status, один `Pause / Resume` toggle и глобальный `Stop Check`.
+- [x] ✅ Доработать `Tools/Testing > Skateboard Mode Testing`: self-activating checks, четыре scripted combos, `Super Jump`, automatic Road/Roof snapshot из stable surface, automatic timeout, passive Ride Collision / Jump Collision / Lane Shift watchers, общий checklist/status, один `Pause / Resume` toggle и глобальный `Stop Check`.
 
 - [x] ✅ Добавить узкий Skateboard collision diagnostic event. Проверять post-outcome physical type, damage/destroy/support/collect, lives, obstacle и current roof support.
 
+- [x] ✅ Добавить три ручных test levels: sparse Ride/Jump Collision, три dense road combo screens, safe roof entry и три alternating roof/road combo screens.
+
 - [x] ✅ Выровнять lane input contract: jump принимается во время shift; tap блокируется на всём jump/landing tail до Ride.
+
+- [x] ✅ Заменить mutable roof-session на immutable `StartedOnRoof` каждого jump-cycle.
+
+- [x] ✅ Свести collision/miss/wave rules в одну pure policy; Surface оставить только geometry.
+
+- [x] ✅ Перевести roof alignment/chain на canonical sensor baseline. Polygon оставить top/side detector.
+
+- [x] ✅ Ускорить RideA/RideB/Push/Jump/SuperJump и authoritative FSM timing до `1.5x` одним multiplier.
 
 - [ ] Пройти Unity Live проверки: timeout с Pause/Resume, road/roof combos, Ride Damage checklist, Jump Collision checklist, Lane Shift guide, finish, pooled reuse, cleanup и visual fallback.
 

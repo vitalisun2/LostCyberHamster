@@ -28,7 +28,8 @@ namespace Assets.Scripts.Entry_Points
             EnvironmentRoot environmentRoot,
             Hamster characterPrefab,
             UiRoot uiRoot,
-            Camera gameCamera
+            Camera gameCamera,
+            ObstacleSpawner obstacleSpawner
             )
         {
             _bundle.Add("gameManager", gameManager);
@@ -37,6 +38,7 @@ namespace Assets.Scripts.Entry_Points
             _bundle.Add("characterPrefab", characterPrefab);
             _bundle.Add("uiRoot", uiRoot);
             _bundle.Add("gameCamera", gameCamera);
+            _bundle.Add("obstacleSpawner", obstacleSpawner);
 
         }
 

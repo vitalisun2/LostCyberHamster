@@ -11,15 +11,17 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
     {
         public string Name => "Инициализация камеры";
 
-        // Use SerializeField to allow setting this in the Unity Editor
+        // Дочерние задачи настраиваются в Unity Editor.
         [SerializeReference]
         private List<ILoadingTask> _children = new();
         public List<ILoadingTask> Children => _children;
 
-        public async Task LoadAsync(Dictionary<string, object> bundle)
+        public Task LoadAsync(Dictionary<string, object> bundle)
         {
-            Camera.main.orthographicSize = Consts.CameraSize;
-            Camera.main.transform.position = Consts.CameraPosition;
+            var gameCamera = (Camera)bundle["gameCamera"];
+            gameCamera.orthographicSize = Consts.CameraSize;
+            gameCamera.transform.position = Consts.CameraPosition;
+            return Task.CompletedTask;
         }
     }
 }

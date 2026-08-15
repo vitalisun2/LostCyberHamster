@@ -26,6 +26,7 @@ namespace Assets.Scripts.Installers
             Container.Bind<EnvironmentRoot>().FromInstance(_environmentRoot).AsSingle();
             Container.Bind<UiRoot>().FromInstance(_uiRoot).AsSingle();
             Container.Bind<Camera>().FromComponentInHierarchy().AsSingle();
+            Container.Bind<ObstacleSpawner>().FromComponentInHierarchy().AsSingle();
         }
 
     }

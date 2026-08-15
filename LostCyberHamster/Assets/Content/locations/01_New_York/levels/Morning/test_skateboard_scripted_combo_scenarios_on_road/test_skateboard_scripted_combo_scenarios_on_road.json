@@ -1,0 +1,14 @@
+{
+    "skyTexture": "",
+    "roadTexture": "",
+    "location": "01_New_York",
+    "patternSequence": [
+        { "ref": "test_relief", "spriteSeed": 0, "overrides": [] },
+        { "ref": "test_skateboard_combo_road_01_dense_a", "spriteSeed": 0, "overrides": [] },
+        { "ref": "test_skateboard_combo_road_02_dense_b", "spriteSeed": 0, "overrides": [] },
+        { "ref": "test_skateboard_combo_road_03_dense_c", "spriteSeed": 0, "overrides": [] }
+    ],
+    "decorationPatterns": [
+        { "decorationTiles": [] }
+    ]
+}

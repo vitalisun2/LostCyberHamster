@@ -1,16 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using Assets.Scripts.Common.Models;
-using Assets.Scripts.GameManagerLogic;
-using Assets.Scripts.Gameplay;
 using Assets.Scripts.Installers.Roots;
 using Assets.Scripts.System;
 using LoadingTasks;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Assets.Scripts.Entry_Points.GameLoadingTasks
 {
@@ -24,15 +18,15 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         public List<ILoadingTask> Children => _children;
 
         private EnvironmentRoot _environmentRoot;
+        private ObstacleSpawner _obstacleSpawner;
 
-        public async Task LoadAsync(Dictionary<string, object> bundle)
+        public Task LoadAsync(Dictionary<string, object> bundle)
         {
             _environmentRoot = (EnvironmentRoot)bundle["environmentRoot"];
+            _obstacleSpawner = (ObstacleSpawner)bundle["obstacleSpawner"];
 
-           ObstacleSpawner.Instance.Init(_environmentRoot);
+            _obstacleSpawner.Init(_environmentRoot);
+            return Task.CompletedTask;
         }
-
-       
     }
-
 }
