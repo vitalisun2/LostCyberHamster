@@ -69,8 +69,8 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
         {
             EditorApplication.update -= OnEditorUpdate;
             _runner.Changed -= _repaint;
-            if (_runner.IsBusy)
-                _runner.Cancel();
+            if (_runner.CanStopCheck)
+                _runner.StopCheck();
         }
 
         private void DrawHeader(Action navigateBack)
@@ -103,32 +103,20 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
                         _runner.PrepareUnlockAndSelectSkateboard();
                     }
                 }
-
-                using (new EditorGUI.DisabledScope(!_runner.CanEnterMode))
-                {
-                    if (GUILayout.Button("Enter Mode"))
-                        _runner.EnterMode();
-                }
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                using (new EditorGUI.DisabledScope(!_runner.CanPause))
+                using (new EditorGUI.DisabledScope(!_runner.CanTogglePause))
                 {
-                    if (GUILayout.Button("Pause"))
-                        _runner.Pause();
+                    if (GUILayout.Button(_runner.PauseButtonLabel))
+                        _runner.TogglePause();
                 }
 
-                using (new EditorGUI.DisabledScope(!_runner.CanResume))
+                using (new EditorGUI.DisabledScope(!_runner.CanStopCheck))
                 {
-                    if (GUILayout.Button("Resume"))
-                        _runner.Resume();
-                }
-
-                using (new EditorGUI.DisabledScope(!_runner.CanCancel))
-                {
-                    if (GUILayout.Button("Cancel"))
-                        _runner.Cancel();
+                    if (GUILayout.Button("Stop Check"))
+                        _runner.StopCheck();
                 }
             }
         }
@@ -193,21 +181,6 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
                         _runner.StartJumpCollisionCheck();
                     if (GUILayout.Button("Lane Shift"))
                         _runner.StartLaneShiftCheck();
-                }
-            }
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                using (new EditorGUI.DisabledScope(!_runner.CanStopCheck))
-                {
-                    if (GUILayout.Button("Stop Check"))
-                        _runner.StopCheck();
-                }
-
-                using (new EditorGUI.DisabledScope(!_runner.CanCancel))
-                {
-                    if (GUILayout.Button("Cancel"))
-                        _runner.Cancel();
                 }
             }
 

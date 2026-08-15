@@ -4,6 +4,8 @@ using Assets.Scripts.DevTools.Account;
 using Assets.Scripts.DevTools.GameProgressTesting;
 using Assets.Scripts.DevTools.Gameplay;
 using Assets.Scripts.DevTools.Root;
+using Assets.Scripts.GameManagerLogic;
+using Assets.Scripts.System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -52,6 +54,7 @@ namespace Assets.Scripts.DevTools.Core
         private readonly GameplayDevToolsScreen _gameplayScreen;
 
         private GameObject _ownedEventSystemObject;
+        private GameManager _pausedGameManager;
         private IDevToolsScreen _activeScreen;
         private bool _isPanelOpen;
         private bool _isFeatureScreenOpen;
@@ -265,9 +268,28 @@ namespace Assets.Scripts.DevTools.Core
 
         private void SetPanelOpen(bool isOpen)
         {
+            bool wasOpen = _isPanelOpen;
             _isPanelOpen = isOpen;
             _openButtonObject.SetActive(!isOpen);
             _panelObject.SetActive(isOpen);
+
+            if (isOpen && !wasOpen)
+            {
+                GameManager gameManager =
+                    LevelController.Instance?.LevelData?.GameManager;
+                if (gameManager?.State == GameState.PLAYING)
+                {
+                    gameManager.Pause();
+                    _pausedGameManager = gameManager;
+                }
+            }
+            else if (!isOpen && wasOpen)
+            {
+                GameManager gameManager = _pausedGameManager;
+                _pausedGameManager = null;
+                if (gameManager?.State == GameState.PAUSED)
+                    gameManager.Resume();
+            }
         }
 
         private void ApplyLayout()

@@ -26,7 +26,7 @@
 
 - [x] ✅ При ride damage выполнить обычную потерю life и немедленно завершить mode с восстановлением normal actor/surface. Landing timing и shake параметры зафиксированы.
 
-- [x] ✅ Доработать `Tools/Testing > Skateboard Mode Testing`: preparation, четыре scripted combos, `Super Jump`, `On Roof` gate, automatic timeout, passive Ride Damage / Jump Collision / Lane Shift watchers, общий checklist/status, pause-safe lifecycle.
+- [x] ✅ Доработать `Tools/Testing > Skateboard Mode Testing`: self-activating checks, четыре scripted combos, `Super Jump`, `On Roof` gate, automatic timeout, passive Ride Damage / Jump Collision / Lane Shift watchers, общий checklist/status, один `Pause / Resume` toggle и глобальный `Stop Check`.
 
 - [x] ✅ Добавить узкий Skateboard collision diagnostic event. Проверять post-outcome physical type, damage/destroy/support/collect, lives, obstacle и current roof support.
 

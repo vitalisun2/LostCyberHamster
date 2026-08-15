@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Assets.Scripts;
+using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Controllers;
 using Assets.Scripts.GameEngine.Mechanics;
@@ -251,8 +252,16 @@ namespace Vues.GameCore
                 }
 
                 float distance = GetHorizontalDistance(hamsterX, bounds);
-                if (clampedComboDepth < _maximumComboDepth && distance > radius)
+                if (clampedComboDepth < _maximumComboDepth &&
+                    distance > radius &&
+                    !IsRoofHazardSupportedInsideRadius(
+                        obstacle,
+                        spawnedObstacles,
+                        hamsterX,
+                        radius))
+                {
                     continue;
+                }
 
                 float attenuationDistance =
                     clampedComboDepth == _maximumComboDepth
@@ -395,6 +404,57 @@ namespace Vues.GameCore
             if (originX > bounds.max.x)
                 return originX - bounds.max.x;
             return 0f;
+        }
+
+        private static bool IsRoofHazardSupportedInsideRadius(
+            Obstacle obstacle,
+            List<InstantiatedObstacle> spawnedObstacles,
+            float originX,
+            float radius)
+        {
+            if (obstacle.ObstacleType.ObstacleTypeEnum !=
+                ObstacleTypeEnum.smallNotAliveRoadAndRoof)
+            {
+                return false;
+            }
+
+            BoxCollider2D hazardCollider =
+                obstacle.GetComponentInChildren<BoxCollider2D>();
+            if (hazardCollider == null || !hazardCollider.enabled)
+                return false;
+
+            Bounds hazardBounds = hazardCollider.bounds;
+            for (int index = 0; index < spawnedObstacles.Count; index++)
+            {
+                Obstacle support = spawnedObstacles[index]?.ObstacleScript;
+                if (support == null ||
+                    !support.isActiveAndEnabled ||
+                    support.ObstacleType == null ||
+                    !CollisionUtils.IsRoofObstacle(
+                        support.ObstacleType.ObstacleTypeEnum) ||
+                    support.ObstacleType.IsTop != obstacle.ObstacleType.IsTop)
+                {
+                    continue;
+                }
+
+                BoxCollider2D supportCollider =
+                    support.GetComponentInChildren<BoxCollider2D>();
+                if (supportCollider == null || !supportCollider.enabled)
+                    continue;
+
+                Bounds supportBounds = supportCollider.bounds;
+                if (CollisionUtils.IsOverlap(
+                        hazardBounds.min.x,
+                        hazardBounds.max.x,
+                        supportBounds.min.x,
+                        supportBounds.max.x) &&
+                    GetHorizontalDistance(originX, supportBounds) <= radius)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static float ResolveStrength(

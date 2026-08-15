@@ -201,7 +201,7 @@ namespace Assets.Scripts.Bot
         /// <summary>
         /// Признак включенного bot controller.
         /// </summary>
-        public bool IsEnabled { get; private set; } = true;
+        public bool IsEnabled { get; private set; }
 
         /// <summary>
         /// Признак найденных runtime-зависимостей.

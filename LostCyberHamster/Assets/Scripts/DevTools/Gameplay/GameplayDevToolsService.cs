@@ -55,7 +55,8 @@ namespace Assets.Scripts.DevTools.Gameplay
         public GameplayDevToolsActionResult CompleteLevelWithThreeStars()
         {
             LevelController levelController = LevelController.Instance;
-            if (levelController?.LevelData?.GameManager?.State != GameState.PLAYING)
+            GameState? state = levelController?.LevelData?.GameManager?.State;
+            if (state != GameState.PLAYING && state != GameState.PAUSED)
                 return GameplayDevToolsActionResult.Unavailable("Завершение доступно только во время уровня");
 
             Hamster hamster = Object.FindAnyObjectByType<Hamster>(FindObjectsInactive.Include);
