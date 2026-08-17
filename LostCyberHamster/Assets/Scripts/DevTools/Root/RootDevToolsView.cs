@@ -34,11 +34,19 @@ namespace Assets.Scripts.DevTools.Root
                 DevToolsTheme.Navigation,
                 () => GameplayRequested?.Invoke(),
                 DevToolsTheme.PrimaryButtonHeight);
+            ui.CreateButton(
+                "ResourcesButton",
+                content,
+                "Resources",
+                DevToolsTheme.Navigation,
+                () => ResourcesRequested?.Invoke(),
+                DevToolsTheme.PrimaryButtonHeight);
             page.SetActive(true);
         }
 
         public event Action AccountRequested;
         public event Action GameplayRequested;
+        public event Action ResourcesRequested;
 
         public GameObject RootObject => _rootObject;
 

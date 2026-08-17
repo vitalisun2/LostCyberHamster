@@ -7,6 +7,8 @@ namespace Vues.GameCore
     /// </summary>
     public static class ResourceManager
     {
+        public static bool IsReady => GameDataManager.PlayerData != null;
+
         public static bool CanSpendResource(ResourceType resourceType, int amount)
         {
             if (amount <= 0)
@@ -108,6 +110,28 @@ namespace Vues.GameCore
                     return false;
             }
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Начисляет Money через production resource, checkpoint и economy event flow.
+        /// </summary>
+        public static bool TryAddMoneyForDevelopment(
+            int amount,
+            out int newBalance)
+        {
+            newBalance = IsReady
+                ? GetCurrentBalance(ResourceType.Coins)
+                : 0;
+            if (!IsReady || !AddResource(ResourceType.Coins, amount))
+                return false;
+
+            PlayerProgressCommitter.Commit(
+                CheckpointReason.DeveloperResourceGranted);
+            GameEventsManager.EarnCoins(amount);
+            newBalance = GetCurrentBalance(ResourceType.Coins);
+            return true;
+        }
+#endif
 
         public static void OnEnable()
         {

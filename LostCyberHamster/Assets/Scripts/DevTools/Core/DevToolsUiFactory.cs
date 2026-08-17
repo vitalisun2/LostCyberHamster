@@ -142,6 +142,46 @@ namespace Assets.Scripts.DevTools.Core
             return button;
         }
 
+        public InputField CreateInputField(
+            string name,
+            Transform parent,
+            string initialValue)
+        {
+            GameObject fieldObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(InputField),
+                typeof(LayoutElement));
+            fieldObject.transform.SetParent(parent, false);
+            fieldObject.GetComponent<Image>().color = Color.white;
+            LayoutElement layout = fieldObject.GetComponent<LayoutElement>();
+            layout.preferredHeight = DevToolsTheme.ButtonHeight;
+            layout.flexibleWidth = 1f;
+
+            Text placeholder = CreateText(
+                "Placeholder",
+                fieldObject.transform,
+                "Amount",
+                TextAnchor.MiddleLeft);
+            placeholder.color = new Color(0f, 0f, 0f, 0.45f);
+            Text value = CreateText(
+                "Text",
+                fieldObject.transform,
+                initialValue,
+                TextAnchor.MiddleLeft);
+            ConfigureInputTextRect(placeholder.GetComponent<RectTransform>());
+            ConfigureInputTextRect(value.GetComponent<RectTransform>());
+
+            InputField input = fieldObject.GetComponent<InputField>();
+            input.textComponent = value;
+            input.placeholder = placeholder;
+            input.contentType = InputField.ContentType.IntegerNumber;
+            input.text = initialValue;
+            return input;
+        }
+
         public Text CreateBodyText(string name, Transform parent, string text, FontStyle style = FontStyle.Normal)
         {
             Text body = CreateText(name, parent, text, TextAnchor.UpperLeft, style);
@@ -205,6 +245,13 @@ namespace Assets.Scripts.DevTools.Core
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = new Vector2(x, -y);
             rect.sizeDelta = new Vector2(Mathf.Max(width, 1f), Mathf.Max(height, 1f));
+        }
+
+        private static void ConfigureInputTextRect(RectTransform rect)
+        {
+            SetStretch(rect);
+            rect.offsetMin = new Vector2(10f, 4f);
+            rect.offsetMax = new Vector2(-10f, -4f);
         }
     }
 }

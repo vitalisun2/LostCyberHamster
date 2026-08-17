@@ -20,6 +20,7 @@ namespace Assets.Scripts.DevTools.Root
             Action closePanel,
             Action showAccount,
             Action showGameplay,
+            Action showResources,
             Action<string> setTitle)
         {
             _closePanel = closePanel;
@@ -27,6 +28,7 @@ namespace Assets.Scripts.DevTools.Root
             _view = new RootDevToolsView(parent, font);
             _view.AccountRequested += showAccount;
             _view.GameplayRequested += showGameplay;
+            _view.ResourcesRequested += showResources;
         }
 
         public GameObject RootObject => _view.RootObject;

@@ -18,6 +18,7 @@ namespace GameManagement
         AccountLinked,
         AppBackgrounded,
         StoryQuestSetChanged,
-        DailyQuestCommonRewardClaimed
+        DailyQuestCommonRewardClaimed,
+        DeveloperResourceGranted
     }
 }

@@ -15,7 +15,8 @@ namespace LostCyberHamster.Editor.Testing
             ExperienceProgress,
             Quests,
             Skateboard,
-            Skin
+            Skin,
+            Resources
         }
 
         /// <summary>Минимальная ширина окна.</summary>
@@ -63,6 +64,9 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Рисует и обслуживает страницу Skin Testing.</summary>
         private SkinTesting.SkinTestingPage _skinTestingPage;
 
+        /// <summary>Рисует и обслуживает страницу Resources.</summary>
+        private Resources.ResourcesTestingPage _resourcesTestingPage;
+
         /// <summary>Текущая страница общего окна Testing.</summary>
         private TestingPage _currentPage;
 
@@ -93,6 +97,7 @@ namespace LostCyberHamster.Editor.Testing
             _skateboardTestingPage =
                 new SkateboardTesting.SkateboardTestingPage(Repaint);
             _skinTestingPage = new SkinTesting.SkinTestingPage(Repaint);
+            _resourcesTestingPage = new Resources.ResourcesTestingPage(Repaint);
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
@@ -113,6 +118,7 @@ namespace LostCyberHamster.Editor.Testing
             _questTestingPage?.Dispose();
             _skateboardTestingPage?.Dispose();
             _skinTestingPage?.Dispose();
+            _resourcesTestingPage?.Dispose();
         }
 
         /// <summary>Рисует текущую страницу окна.</summary>
@@ -139,6 +145,9 @@ namespace LostCyberHamster.Editor.Testing
                     break;
                 case TestingPage.Skin:
                     _skinTestingPage.Draw(() => _currentPage = TestingPage.Start);
+                    break;
+                case TestingPage.Resources:
+                    _resourcesTestingPage.Draw(() => _currentPage = TestingPage.Start);
                     break;
                 default:
                     DrawStartPage();
@@ -205,6 +214,15 @@ namespace LostCyberHamster.Editor.Testing
                     GUILayout.Height(ProductButtonHeight)))
             {
                 _currentPage = TestingPage.Skin;
+            }
+
+            EditorGUILayout.Space(6f);
+            if (GUILayout.Button(
+                    "Resources",
+                    GUILayout.Width(ProductButtonWidth),
+                    GUILayout.Height(ProductButtonHeight)))
+            {
+                _currentPage = TestingPage.Resources;
             }
         }
 

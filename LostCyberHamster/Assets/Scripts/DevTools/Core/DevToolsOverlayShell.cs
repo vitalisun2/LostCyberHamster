@@ -9,6 +9,8 @@ using Assets.Scripts.System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using ResourcesDevToolsScreen =
+    Assets.Scripts.DevTools.Resources.ResourcesDevToolsScreen;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem.UI;
 #endif
@@ -25,7 +27,7 @@ namespace Assets.Scripts.DevTools.Core
         private const float _baseOpenButtonWidth = 64f;
         private const float _baseHeaderHeight = 40f;
         private const float _baseRootPanelWidth = 300f;
-        private const float _baseRootPanelHeight = 220f;
+        private const float _baseRootPanelHeight = 270f;
         private const float _baseFeaturePanelWidth = 540f;
         private const float _baseFeaturePanelHeight = 569f;
         private const float _baseMinimumPanelWidth = 300f;
@@ -52,6 +54,7 @@ namespace Assets.Scripts.DevTools.Core
         private readonly RootDevToolsScreen _rootScreen;
         private readonly AccountDevToolsScreen _accountScreen;
         private readonly GameplayDevToolsScreen _gameplayScreen;
+        private readonly ResourcesDevToolsScreen _resourcesScreen;
 
         private GameObject _ownedEventSystemObject;
         private GameManager _pausedGameManager;
@@ -145,6 +148,7 @@ namespace Assets.Scripts.DevTools.Core
                 ClosePanel,
                 ShowAccountScreen,
                 ShowGameplayScreen,
+                ShowResourcesScreen,
                 SetTitle);
             _accountScreen = new AccountDevToolsScreen(
                 _panelObject.transform,
@@ -153,6 +157,11 @@ namespace Assets.Scripts.DevTools.Core
                 ShowRootScreen,
                 SetTitle);
             _gameplayScreen = new GameplayDevToolsScreen(
+                _panelObject.transform,
+                font,
+                ShowRootScreen,
+                SetTitle);
+            _resourcesScreen = new ResourcesDevToolsScreen(
                 _panelObject.transform,
                 font,
                 ShowRootScreen,
@@ -244,11 +253,17 @@ namespace Assets.Scripts.DevTools.Core
             ActivateScreen(_gameplayScreen, true);
         }
 
+        private void ShowResourcesScreen()
+        {
+            ActivateScreen(_resourcesScreen, true);
+        }
+
         private void ActivateScreen(IDevToolsScreen screen, bool isFeature)
         {
             _rootScreen?.Hide();
             _accountScreen?.Hide();
             _gameplayScreen?.Hide();
+            _resourcesScreen?.Hide();
             _activeScreen = screen;
             _isFeatureScreenOpen = isFeature;
             _backButtonObject?.SetActive(isFeature);
@@ -446,8 +461,8 @@ namespace Assets.Scripts.DevTools.Core
 
         private static Font LoadDefaultFont()
         {
-            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ??
-                   Resources.GetBuiltinResource<Font>("Arial.ttf");
+            return UnityEngine.Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ??
+                   UnityEngine.Resources.GetBuiltinResource<Font>("Arial.ttf");
         }
 
         private static float GetScale()
