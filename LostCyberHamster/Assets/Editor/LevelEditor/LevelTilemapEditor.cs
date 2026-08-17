@@ -1,4 +1,4 @@
-using Assets.Editor.LevelEditor;
+﻿using Assets.Editor.LevelEditor;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts;
@@ -161,11 +161,6 @@ public class LevelTilemapEditor : EditorWindow
         SubscribeEvents();
         InitializePatternButtons();
         InitializeLevelDesignTemplateDirectory();
-    }
-
-    private void OnEnable()
-    {
-        ActivateSceneIsolation();
     }
 
     /// <summary>
