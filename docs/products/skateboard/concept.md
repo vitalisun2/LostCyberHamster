@@ -160,22 +160,23 @@ Assets/Content/skins/
 `SkateboardSurfaceController`
 
 - хранит `Road / Roof / DroppingToRoad`;
-- ведёт current support и top/side/miss geometry;
+- ведёт current support и прогноз roof landing;
 - выравнивает общий root по canonical board baseline;
+- переводит stale landing support на безопасное падение к дороге;
 - не решает damage/destroy/bump.
 
 `SkateboardInteractionPolicy`
 
-- один pure decision point: `Collect / Damage / Destroy / PreserveSupport / BumpOnly / Ignore`;
-- одинаков для collision, landing miss и landing wave;
+- pure decision points: `Collect / Destroy / PreserveSupport / BumpOnly / Ignore`;
+- одинаковая классификация для ride, jump и landing wave;
 - владеет type/mode rules, но ничего не исполняет.
 
-`SkateboardLandingImpactMechanics`
+`SkateboardLandingImpactRuntime`
 
-- snapshot visible obstacles обеих линий;
-- radius/wave/bump/delay/falloff;
+- snapshot viewport obstacles обеих линий;
+- distance wave, bump, delay и falloff;
 - super-attack destroy event;
-- gameplay-time pause/finish/pool guards;
+- gameplay-time pause и pool guards;
 - явный `ICameraShake`, полученный через composition root.
 
 `CollisionController` получает decision и только исполняет collect/damage/destroy/preserve/ignore. `LandingImpact` выбирает targets/timing и исполняет ту же policy. Camera и `ObstacleSpawner` приходят явно через Zenject/runtime composition.

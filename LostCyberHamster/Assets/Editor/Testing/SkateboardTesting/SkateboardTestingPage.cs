@@ -44,7 +44,7 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
 
             DrawPreparation();
             EditorGUILayout.Space(8f);
-            DrawScriptedComboScenarios();
+            DrawScriptedScenarios();
             EditorGUILayout.Space(8f);
             DrawGuidedBehaviorChecks();
             EditorGUILayout.Space(8f);
@@ -121,32 +121,19 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
             }
         }
 
-        private void DrawScriptedComboScenarios()
+        private void DrawScriptedScenarios()
         {
             EditorGUILayout.LabelField(
-                "Scripted Combo Scenarios",
+                "Scripted Scenarios",
                 EditorStyles.boldLabel);
-            using (new EditorGUI.DisabledScope(!_runner.CanRunScenario))
-            {
-                bool useSuperJump = EditorGUILayout.ToggleLeft(
-                    "Super Jump",
-                    _runner.UseSuperJump);
-                if (useSuperJump != _runner.UseSuperJump)
-                    _runner.SetUseSuperJump(useSuperJump);
-            }
-
             using (new EditorGUI.DisabledScope(!_runner.CanRunScenario))
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("1+1+1"))
-                        _runner.RunOnePlusOnePlusOneScenario();
-                    if (GUILayout.Button("2+1"))
-                        _runner.RunTwoPlusOneScenario();
-                    if (GUILayout.Button("1+2"))
-                        _runner.RunOnePlusTwoScenario();
-                    if (GUILayout.Button("3 Combo"))
-                        _runner.RunThreeComboScenario();
+                    if (GUILayout.Button("Jump"))
+                        _runner.RunJumpScenario();
+                    if (GUILayout.Button("Super Jump"))
+                        _runner.RunSuperJumpScenario();
                 }
             }
         }
@@ -163,7 +150,7 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
                     if (GUILayout.Button("Timeout (automatic)"))
                         _runner.RunTimeoutCheck();
                     if (GUILayout.Button("Ride Collision"))
-                        _runner.StartRideDamageCheck();
+                        _runner.StartRideCollisionCheck();
                 }
 
                 using (new EditorGUILayout.HorizontalScope())

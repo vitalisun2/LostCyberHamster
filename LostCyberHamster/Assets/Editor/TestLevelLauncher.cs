@@ -261,9 +261,9 @@ namespace LostCyberHamster.Editor
                 "test_skateboard_ride_and_jump_collision" =>
                     "Test Skateboard Ride and Jump Collision",
                 "test_skateboard_scripted_combo_scenarios_on_road" =>
-                    "Test Skateboard Scripted Combo Scenarios on Road",
+                    "Test Skateboard Landing Waves on Road",
                 "test_skateboard_scripted_combo_scenarios_on_roof" =>
-                    "Test Skateboard Scripted Combo Scenarios on Roof",
+                    "Test Skateboard Landing Waves on Roof",
                 _ => address,
             };
 

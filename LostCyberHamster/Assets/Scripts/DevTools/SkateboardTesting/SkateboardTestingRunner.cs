@@ -20,7 +20,6 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
     public sealed class SkateboardTestingRunner
     {
         private const int _skateboardId = 3;
-        private const float _betweenGroupsDelay = 0.5f;
         private const float _timeoutTolerance = 0.1f;
 
         private static readonly ObstacleTypeEnum[] _physicalTypes =
@@ -44,7 +43,6 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         };
 
         private readonly PlayerExperienceService _experienceService = new();
-        private readonly List<int> _observedImpactDepths = new(3);
         private readonly List<ChecklistItem> _checklist = new(6);
 
         private Hamster _hamster;
@@ -52,21 +50,14 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         private GameManager _gameManager;
         private RunnerMode _mode;
         private LaneCheckStage _laneStage;
-        private int[] _comboGroups = Array.Empty<int>();
-        private int[] _expectedImpactDepths = Array.Empty<int>();
-        private int _groupIndex;
-        private int _cycleInGroup;
-        private int _cyclesScheduled;
-        private float _nextGroupAt;
+        private int _scriptedInitialBudget;
         private float _timeoutStartedAt;
         private int _timeoutInitialBudget;
         private bool _timeoutWaitingStayedTrue;
         private bool _timeoutBudgetStayedUntouched;
-        private bool _waitingForQueuedCycle;
-        private bool _waitingForRide;
-        private bool _waitingForCompletion;
-        private bool _landingHandled;
-        private bool _useSuperJump;
+        private bool _scriptedUsesSuperJump;
+        private bool _scriptedImpactObserved;
+        private bool _scriptedImpactWasSuper;
         private ScriptedSurface _scriptedSurface;
         private bool _pausedByTool;
         private bool _lastObservedLane;
@@ -106,7 +97,6 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         }
 
         public bool IsBusy => _mode != RunnerMode.None;
-        public bool UseSuperJump => _useSuperJump;
         public string Status => _status;
         public string Instruction => _instruction;
         public IReadOnlyList<ChecklistItem> Checklist => _checklist;
@@ -223,21 +213,14 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 "Timeout",
             });
             SetChecklistResult(0, true, "Skateboard active");
-            attack.LandingImpact += OnLandingImpact;
             SetStatus($"PASS: Enter Mode. RUNNING: {_scenarioTitle}. {_instruction}");
         }
 
-        public void RunOnePlusOnePlusOneScenario() =>
-            StartComboScenario("1+1+1", new[] { 1, 1, 1 }, new[] { 1, 1, 1 });
-        public void RunTwoPlusOneScenario() =>
-            StartComboScenario("2+1", new[] { 2, 1 }, new[] { 1, 2, 1 });
-        public void RunOnePlusTwoScenario() =>
-            StartComboScenario("1+2", new[] { 1, 2 }, new[] { 1, 1, 2 });
-        public void RunThreeComboScenario() =>
-            StartComboScenario("3 Combo", new[] { 3 }, new[] { 1, 2, 3 });
+        public void RunJumpScenario() => StartScriptedScenario(useSuperJump: false);
+        public void RunSuperJumpScenario() => StartScriptedScenario(useSuperJump: true);
 
-        public void StartRideDamageCheck() => StartCollisionCheck(
-            RunnerMode.RideDamage,
+        public void StartRideCollisionCheck() => StartCollisionCheck(
+            RunnerMode.RideCollision,
             "Ride Collision",
             "Столкнитесь боком с pending obstacle.");
 
@@ -276,15 +259,6 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             hamster.JumpRequest.Subscribe(OnGuidedJumpRequested);
             _instruction = "В Ride смените линию и дождитесь конца shift.";
             SetStatus($"PASS: Enter Mode. RUNNING: {_scenarioTitle}. {_instruction}");
-        }
-
-        public void SetUseSuperJump(bool value)
-        {
-            if (IsBusy) return;
-            _useSuperJump = value;
-            SetStatus(value
-                ? "Scripted cycles используют Super Jump."
-                : "Scripted cycles используют normal Jump.");
         }
 
         /// <summary>
@@ -350,9 +324,9 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
             switch (_mode)
             {
-                case RunnerMode.Combo: TickComboScenario(); break;
+                case RunnerMode.Scripted: TickScriptedScenario(); break;
                 case RunnerMode.Timeout: TickTimeoutCheck(); break;
-                case RunnerMode.RideDamage:
+                case RunnerMode.RideCollision:
                 case RunnerMode.JumpCollision:
                     TickGuidedModeLease();
                     break;
@@ -377,10 +351,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             SetStatus("Play Mode остановлен.");
         }
 
-        private void StartComboScenario(
-            string title,
-            int[] comboGroups,
-            int[] expectedImpactDepths)
+        private void StartScriptedScenario(bool useSuperJump)
         {
             if (!TryResolvePlayingGameplay(
                     out Hamster hamster,
@@ -391,15 +362,9 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 return;
             }
 
-            if (IsBusy)
+            if (IsBusy || attack.IsActive)
             {
-                SetStatus("Сначала завершите active check.");
-                return;
-            }
-
-            if (attack.IsActive)
-            {
-                ProbeRejectedActivation(hamster, attack);
+                SetStatus("Сначала завершите active check и Skateboard mode.");
                 return;
             }
 
@@ -408,7 +373,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                     out ScriptedSurface scriptedSurface))
             {
                 SetStatus(
-                    "Scripted combo требует stable Run или " +
+                    "Scripted scenario требует stable Run или " +
                     "stable RoofRun с живой support.");
                 return;
             }
@@ -432,27 +397,23 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             _hamster = hamster;
             _attack = attack;
             _gameManager = gameManager;
-            _mode = RunnerMode.Combo;
-            _comboGroups = comboGroups;
-            _expectedImpactDepths = expectedImpactDepths;
-            _observedImpactDepths.Clear();
-            _groupIndex = 0;
-            _cycleInGroup = 0;
-            _cyclesScheduled = 0;
-            _nextGroupAt = Time.time;
-            _waitingForQueuedCycle = false;
-            _waitingForRide = false;
-            _waitingForCompletion = false;
-            _landingHandled = false;
+            _mode = RunnerMode.Scripted;
+            _scriptedUsesSuperJump = useSuperJump;
+            _scriptedInitialBudget = attack.JumpsRemaining;
+            _scriptedImpactObserved = false;
+            _scriptedImpactWasSuper = false;
             _scriptedSurface = scriptedSurface;
             string surfaceLabel = GetScriptedSurfaceLabel(_scriptedSurface);
-            _scenarioTitle = $"{title}; surface={surfaceLabel}";
-            _instruction = "Runner отправляет реальные jump requests и ждёт FSM.";
+            string actionLabel = useSuperJump ? "Super Jump" : "Jump";
+            _scenarioTitle = $"{actionLabel}; surface={surfaceLabel}";
+            _instruction = "Runner отправляет action request и ждёт landing/ride.";
             SetChecklist(new[]
             {
                 $"Start surface={surfaceLabel}",
-                $"Impact depths [{string.Join(",", expectedImpactDepths)}]",
-                "Jump budget and natural completion",
+                $"{actionLabel} request accepted",
+                $"Landing impact: {actionLabel}",
+                "Jump budget decreased by 1",
+                "Returned to Ride",
             });
             SetChecklistResult(
                 0,
@@ -461,105 +422,60 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                     ? "stable Run"
                     : "stable RoofRun; live support");
             attack.LandingImpact += OnLandingImpact;
-            SetStatus(
-                $"PASS: Enter Mode. RUNNING: {_scenarioTitle}; " +
-                $"jump={(_useSuperJump ? "Super" : "Normal")}.");
+            bool accepted = RequestScriptedAction();
+            SetChecklistResult(
+                1,
+                accepted,
+                accepted ? "runtime accepted" : "runtime rejected");
+            if (!accepted)
+            {
+                FailActiveCheck($"{actionLabel} request отклонён runtime.");
+                return;
+            }
+
+            SetStatus($"RUNNING: {_scenarioTitle}. Ждём landing impact.");
         }
 
-        private void TickComboScenario()
+        private void TickScriptedScenario()
         {
             if (!_attack.IsActive)
             {
-                if (_waitingForCompletion &&
-                    _cyclesScheduled == SkateboardAttack.DefaultJumpBudget)
-                {
-                    ValidateAndPassComboScenario();
-                }
-                else
-                {
-                    FailActiveCheck(
-                        $"Mode завершился раньше: cycles={_cyclesScheduled}/" +
-                        $"{SkateboardAttack.DefaultJumpBudget}.");
-                }
-
+                FailActiveCheck("Skateboard mode завершился до Ride.");
                 return;
             }
 
-            if (_waitingForCompletion) return;
-            if (_waitingForQueuedCycle)
+            if (!_scriptedImpactObserved)
+                return;
+
+            bool expectedImpact =
+                _scriptedImpactWasSuper == _scriptedUsesSuperJump;
+            SetChecklistResult(
+                2,
+                expectedImpact,
+                $"action={(_scriptedImpactWasSuper ? "Super Jump" : "Jump")}");
+            if (!expectedImpact)
             {
-                if (_attack.IsJumping)
-                {
-                    _waitingForQueuedCycle = false;
-                    _landingHandled = false;
-                    SetStatus(
-                        $"RUNNING: {_scenarioTitle}; cycle {_cyclesScheduled}/3, " +
-                        $"combo {_attack.ComboDepth}.");
-                }
+                FailActiveCheck("Landing impact не совпал с выбранным action.");
                 return;
             }
 
-            if (_waitingForRide)
+            if (!_attack.IsRiding)
+                return;
+
+            bool budgetPassed =
+                _attack.JumpsRemaining == _scriptedInitialBudget - 1;
+            SetChecklistResult(
+                3,
+                budgetPassed,
+                $"{_scriptedInitialBudget}->{_attack.JumpsRemaining}");
+            SetChecklistResult(4, true, "Ride");
+            if (!budgetPassed)
             {
-                if (!_attack.IsRiding) return;
-                _waitingForRide = false;
-                _groupIndex++;
-                _cycleInGroup = 0;
-                _landingHandled = false;
-                _nextGroupAt = Time.time + _betweenGroupsDelay;
+                FailActiveCheck("Jump budget изменился не на 1.");
                 return;
             }
 
-            if (_cycleInGroup == 0)
-            {
-                if (!_attack.IsRiding || Time.time < _nextGroupAt) return;
-                if (!RequestJumpCycle())
-                {
-                    FailActiveCheck("Первый jump группы отклонён runtime.");
-                    return;
-                }
-
-                _cycleInGroup = 1;
-                _cyclesScheduled++;
-                _landingHandled = false;
-                SetStatus($"RUNNING: {_scenarioTitle}; cycle {_cyclesScheduled}/3.");
-                return;
-            }
-
-            if (!_attack.IsLanding || _landingHandled) return;
-            _landingHandled = true;
-            int groupSize = _comboGroups[_groupIndex];
-            if (_cycleInGroup < groupSize)
-            {
-                if (!RequestJumpCycle())
-                {
-                    FailActiveCheck("Queued jump группы отклонён runtime.");
-                    return;
-                }
-
-                _cycleInGroup++;
-                _cyclesScheduled++;
-                _waitingForQueuedCycle = true;
-                SetStatus($"RUNNING: {_scenarioTitle}; queued cycle {_cyclesScheduled}/3.");
-                return;
-            }
-
-            if (_groupIndex == _comboGroups.Length - 1)
-            {
-                if (_attack.JumpsRemaining != 0)
-                {
-                    FailActiveCheck(
-                        $"Final impact оставил budget={_attack.JumpsRemaining}.");
-                    return;
-                }
-                _waitingForCompletion = true;
-                SetStatus($"RUNNING: {_scenarioTitle}; ждём final landing tail.");
-            }
-            else
-            {
-                _waitingForRide = true;
-                SetStatus($"RUNNING: {_scenarioTitle}; ждём Ride.");
-            }
+            PassActiveCheck("Один action cycle прошёл; Skateboard остановлен.");
         }
 
         private void TickTimeoutCheck()
@@ -750,10 +666,10 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         }
 
         private void OnSkateboardCollisionProcessed(
-            CollisionController.SkateboardCollisionDiagnostic diagnostic)
+            SkateboardCollisionDiagnostic diagnostic)
         {
             if (diagnostic.Hamster != _hamster ||
-                (_mode != RunnerMode.RideDamage &&
+                (_mode != RunnerMode.RideCollision &&
                  _mode != RunnerMode.JumpCollision)) return;
 
             bool expectsStartedOnRoofPreserve =
@@ -761,10 +677,10 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 diagnostic.WasJumpCollisionActive &&
                 SkateboardInteractionPolicy.IsRoof(diagnostic.ObstacleType) &&
                 _attack.TryGetCurrentJumpSnapshot(
-                    out SkateboardAttack.JumpCycleSnapshot snapshot) &&
+                    out SkateboardJumpCycleSnapshot snapshot) &&
                 snapshot.StartedOnRoof;
             if (diagnostic.Outcome ==
-                    CollisionController.SkateboardCollisionOutcome.Support &&
+                    SkateboardCollisionOutcome.Support &&
                 !expectsStartedOnRoofPreserve)
             {
                 SetStatus(
@@ -774,7 +690,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             }
 
             if (diagnostic.Outcome ==
-                CollisionController.SkateboardCollisionOutcome.Collect)
+                SkateboardCollisionOutcome.Collect)
             {
                 SetStatus($"RUNNING: {_scenarioTitle}. Collectible не входит в checklist.");
                 return;
@@ -785,24 +701,29 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
             bool passed;
             string details;
-            if (_mode == RunnerMode.RideDamage)
+            if (_mode == RunnerMode.RideCollision)
             {
-                bool lifeLostExactlyOnce =
-                    diagnostic.LivesAfter == diagnostic.LivesBefore - 1;
-                bool modeCompleted = !_attack.IsActive;
-                bool normalActorActive =
-                    !_hamster.ActorSwitcher.IsSkateboardActive &&
-                    _hamster.ActorSwitcher.NormalActor.activeSelf;
-                passed =
-                    diagnostic.Outcome ==
-                    CollisionController.SkateboardCollisionOutcome.Damage &&
-                    lifeLostExactlyOnce && modeCompleted && normalActorActive &&
-                    diagnostic.ObstacleActiveAfter;
+                bool lifeUnchanged =
+                    diagnostic.LivesAfter == diagnostic.LivesBefore;
+                bool modeStayedActive =
+                    _attack.IsActive && _hamster.ActorSwitcher.IsSkateboardActive;
+                bool expectsDestroy =
+                    SkateboardInteractionPolicy.IsRoof(diagnostic.ObstacleType);
+                bool obstacleOutcomeMatches = expectsDestroy
+                    ? diagnostic.Outcome ==
+                      SkateboardCollisionOutcome.Destroy &&
+                      !diagnostic.ObstacleActiveAfter
+                    : diagnostic.Outcome ==
+                      SkateboardCollisionOutcome.Ignored &&
+                      diagnostic.ObstacleActiveAfter;
+                passed = lifeUnchanged && modeStayedActive && obstacleOutcomeMatches;
                 details = passed
-                    ? "life -1, mode завершён, normal actor, obstacle сохранён"
+                    ? expectsDestroy
+                        ? "no damage, mode active, medium/big destroyed"
+                        : "no damage, mode active, obstacle preserved"
                     : $"outcome={diagnostic.Outcome}, lives=" +
                       $"{diagnostic.LivesBefore}->{diagnostic.LivesAfter}, " +
-                      $"modeOff={modeCompleted}, normal={normalActorActive}, " +
+                      $"modeActive={modeStayedActive}, expectedDestroy={expectsDestroy}, " +
                       $"obstacleAlive={diagnostic.ObstacleActiveAfter}";
             }
             else
@@ -812,7 +733,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 {
                     passed =
                         diagnostic.Outcome ==
-                        CollisionController.SkateboardCollisionOutcome.Support &&
+                        SkateboardCollisionOutcome.Support &&
                         lifeUnchanged && diagnostic.ObstacleActiveAfter;
                     details = passed
                         ? "StartedOnRoof jump, roof contact сохранён"
@@ -824,7 +745,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 {
                     passed =
                         diagnostic.Outcome ==
-                        CollisionController.SkateboardCollisionOutcome.Destroy &&
+                        SkateboardCollisionOutcome.Destroy &&
                         diagnostic.WasJumpCollisionActive && lifeUnchanged &&
                         !diagnostic.ObstacleActiveAfter &&
                         diagnostic.RoofSupportActiveAfter;
@@ -853,137 +774,34 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 return;
             }
 
-            _instruction = _mode == RunnerMode.RideDamage
-                ? "После collision recovery runner сам вернёт Skateboard."
+            _instruction = _mode == RunnerMode.RideCollision
+                ? "Продолжайте collision checks: Skateboard остаётся активен."
                 : "Продолжайте: active jump должен попасть в pending side/road type.";
             SetStatus($"PASS: {_physicalLabels[index]}. {_instruction}");
         }
 
-        private bool RequestJumpCycle()
+        private bool RequestScriptedAction()
         {
-            int beforeBudget = _attack.JumpsRemaining;
+            if (_scriptedUsesSuperJump)
+            {
+                _hamster.SuperJumpRequest.Invoke();
+                return _attack.IsSuperJumping;
+            }
+
             _hamster.JumpRequest.Invoke();
-            bool accepted = _attack.IsJumping ||
-                            (_attack.IsLanding &&
-                             _attack.JumpsRemaining == beforeBudget);
-            if (!accepted) return false;
-            if (_useSuperJump) _hamster.SuperJumpRequest.Invoke();
-            return true;
+            return _attack.IsJumping && !_attack.IsSuperJumping;
         }
 
-        private void ProbeRejectedActivation(Hamster hamster, SkateboardAttack attack)
+        private void OnLandingImpact(bool isSuperCycle)
         {
-            int previousCharge = hamster.UltaChargeAmount.Value;
-            int jumpsBefore = attack.JumpsRemaining;
-            int comboBefore = attack.ComboDepth;
-            bool wasRiding = attack.IsRiding;
-            bool wasJumping = attack.IsJumping;
-            bool wasLanding = attack.IsLanding;
-            hamster.UltaChargeAmount.Value = 100;
-            hamster.UltaEvent.Invoke();
-            hamster.UltaChargeAmount.Value = previousCharge;
-
-            bool unchanged = attack.IsActive &&
-                             attack.JumpsRemaining == jumpsBefore &&
-                             attack.ComboDepth == comboBefore &&
-                             attack.IsRiding == wasRiding &&
-                             attack.IsJumping == wasJumping &&
-                             attack.IsLanding == wasLanding;
-            SetStatus(unchanged
-                    ? "PASS: repeated activation отклонена; active mode не сброшен."
-                    : "FAIL: repeated activation изменила active Skateboard state.",
-                isError: !unchanged);
-        }
-
-        private static bool TryEnterMode(
-            Hamster hamster,
-            SkateboardAttack attack,
-            out string error)
-        {
-            if (attack.IsActive)
-            {
-                error = "Skateboard уже активен.";
-                return false;
-            }
-
-            hamster.UltaChargeAmount.Value = 100;
-            hamster.UltaEvent.Invoke();
-            if (!attack.IsActive)
-            {
-                error = "UltaEvent не активировал Skateboard. Нужен stable Run/RoofRun.";
-                return false;
-            }
-
-            error = string.Empty;
-            return true;
-        }
-
-        private void OnLandingImpact(int comboDepth, bool isSuperCycle)
-        {
-            if (_mode == RunnerMode.Timeout)
-            {
-                ReleaseTimeoutCheckForManualJump();
+            if (_mode != RunnerMode.Scripted)
                 return;
-            }
-            if (_mode != RunnerMode.Combo) return;
 
-            _observedImpactDepths.Add(comboDepth);
+            _scriptedImpactWasSuper = isSuperCycle;
+            _scriptedImpactObserved = true;
             SetStatus(
-                $"RUNNING: {_scenarioTitle}; impact combo={comboDepth}, " +
-                $"cycle={(isSuperCycle ? "Super" : "Normal")}.");
-        }
-
-        private void ValidateAndPassComboScenario()
-        {
-            bool normalActorRestored =
-                !_hamster.ActorSwitcher.IsSkateboardActive &&
-                _hamster.ActorSwitcher.NormalActor.activeSelf;
-            if (!normalActorRestored)
-            {
-                SetChecklistResult(
-                    2,
-                    false,
-                    "normal actor not restored");
-                FailActiveCheck("Natural completion не восстановил normal actor.");
-                return;
-            }
-
-            if (_observedImpactDepths.Count != _expectedImpactDepths.Length)
-            {
-                SetChecklistResult(
-                    1,
-                    false,
-                    $"count={_observedImpactDepths.Count}");
-                FailActiveCheck(
-                    $"Impact count {_observedImpactDepths.Count}, " +
-                    $"expected {_expectedImpactDepths.Length}.");
-                return;
-            }
-
-            for (int index = 0; index < _expectedImpactDepths.Length; index++)
-            {
-                if (_observedImpactDepths[index] == _expectedImpactDepths[index]) continue;
-                SetChecklistResult(
-                    1,
-                    false,
-                    $"#{index + 1}={_observedImpactDepths[index]}");
-                FailActiveCheck(
-                    $"Impact #{index + 1}: {_observedImpactDepths[index]}, " +
-                    $"expected {_expectedImpactDepths[index]}.");
-                return;
-            }
-
-            SetChecklistResult(
-                1,
-                true,
-                $"[{string.Join(",", _observedImpactDepths)}]");
-            SetChecklistResult(
-                2,
-                true,
-                "budget exhausted; normal actor restored");
-            PassActiveCheck(
-                $"Impacts [{string.Join(",", _observedImpactDepths)}], " +
-                "budget exhausted, normal actor restored.");
+                $"RUNNING: {_scenarioTitle}; landing=" +
+                $"{(isSuperCycle ? "Super Jump" : "Jump")}.");
         }
 
         private static bool TryDetectScriptedSurface(
@@ -1029,15 +847,36 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             return roof != null &&
                    roof.isActiveAndEnabled &&
                    roof.ObstacleType != null &&
-                   (roof.ObstacleType.ObstacleTypeEnum ==
-                    ObstacleTypeEnum.bigNotAlive ||
-                    roof.ObstacleType.ObstacleTypeEnum ==
-                    ObstacleTypeEnum.mediumNotAlive);
+                   SkateboardInteractionPolicy.IsRoof(
+                       roof.ObstacleType.ObstacleTypeEnum);
         }
 
         private static string GetScriptedSurfaceLabel(ScriptedSurface surface)
         {
             return surface == ScriptedSurface.Roof ? "Roof" : "Road";
+        }
+
+        private static bool TryEnterMode(
+            Hamster hamster,
+            SkateboardAttack attack,
+            out string error)
+        {
+            if (attack.IsActive)
+            {
+                error = "Skateboard уже активен.";
+                return false;
+            }
+
+            hamster.UltaChargeAmount.Value = 100;
+            hamster.UltaEvent.Invoke();
+            if (!attack.IsActive)
+            {
+                error = "UltaEvent не активировал Skateboard. Нужен stable Run/RoofRun.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
 
         private bool TryStartCheckWithMode(
@@ -1142,7 +981,8 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
         private void StopActiveCheck(bool clearChecklist)
         {
-            if (_attack != null) _attack.LandingImpact -= OnLandingImpact;
+            if (_attack != null)
+                _attack.LandingImpact -= OnLandingImpact;
             if (_hamster != null)
             {
                 _hamster.TapRequest.Unsubscribe(OnGuidedTapRequested);
@@ -1156,16 +996,10 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             _gameManager = null;
             _mode = RunnerMode.None;
             _laneStage = LaneCheckStage.None;
-            _comboGroups = Array.Empty<int>();
-            _expectedImpactDepths = Array.Empty<int>();
-            _observedImpactDepths.Clear();
-            _groupIndex = 0;
-            _cycleInGroup = 0;
-            _cyclesScheduled = 0;
-            _waitingForQueuedCycle = false;
-            _waitingForRide = false;
-            _waitingForCompletion = false;
-            _landingHandled = false;
+            _scriptedInitialBudget = 0;
+            _scriptedUsesSuperJump = false;
+            _scriptedImpactObserved = false;
+            _scriptedImpactWasSuper = false;
             _scriptedSurface = default;
             _scenarioTitle = string.Empty;
             _instruction = string.Empty;
@@ -1248,7 +1082,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                    $"Mode={phase}, actor=" +
                    $"{(hamster.ActorSwitcher.IsSkateboardActive ? "Skateboard" : "Normal")}, " +
                    $"surface={hamster.SkateboardSurfaceController.State}\n" +
-                   $"jumps={attack.JumpsRemaining}, combo={attack.ComboDepth}, " +
+                   $"jumps={attack.JumpsRemaining}, " +
                    $"firstJumpWaiting={attack.IsWaitingForFirstJump}, " +
                    $"charge={hamster.UltaChargeAmount.Value}, lives={hamster.Lives.Value}";
         }
@@ -1307,9 +1141,9 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
         private enum RunnerMode
         {
             None,
-            Combo,
+            Scripted,
             Timeout,
-            RideDamage,
+            RideCollision,
             JumpCollision,
             LaneShift,
         }

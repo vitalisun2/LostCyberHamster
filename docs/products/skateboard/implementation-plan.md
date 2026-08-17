@@ -26,11 +26,11 @@
 
 - [x] ✅ При ride damage выполнить обычную потерю life и немедленно завершить mode с восстановлением normal actor/surface. Landing timing и shake параметры зафиксированы.
 
-- [x] ✅ Доработать `Tools/Testing > Skateboard Mode Testing`: self-activating checks, четыре scripted combos, `Super Jump`, automatic Road/Roof snapshot из stable surface, automatic timeout, passive Ride Collision / Jump Collision / Lane Shift watchers, общий checklist/status, один `Pause / Resume` toggle и глобальный `Stop Check`.
+- [x] ✅ Доработать `Tools/Testing > Skateboard Mode Testing`: self-activating `Jump` / `Super Jump` scripted actions, automatic Road/Roof snapshot из stable surface, automatic timeout, passive Ride Collision / Jump Collision / Lane Shift watchers, общий checklist/status, один `Pause / Resume` toggle и глобальный `Stop Check`.
 
 - [x] ✅ Добавить узкий Skateboard collision diagnostic event. Проверять post-outcome physical type, damage/destroy/support/collect, lives, obstacle и current roof support.
 
-- [x] ✅ Добавить три ручных test levels: sparse Ride/Jump Collision, три dense road combo screens, safe roof entry и три alternating roof/road combo screens.
+- [x] ✅ Добавить три ручных test levels: sparse Ride/Jump Collision, три dense road scenario screens, safe roof entry и три alternating roof/road scenario screens.
 
 - [x] ✅ Выровнять lane input contract: jump принимается во время shift; tap блокируется на всём jump/landing tail до Ride.
 
@@ -42,6 +42,6 @@
 
 - [x] ✅ Ускорить RideA/RideB/Push/Jump/SuperJump и authoritative FSM timing до `1.5x` одним multiplier.
 
-- [ ] Пройти Unity Live проверки: timeout с Pause/Resume, road/roof combos, Ride Damage checklist, Jump Collision checklist, Lane Shift guide, finish, pooled reuse, cleanup и visual fallback.
+- [ ] Пройти Unity Live проверки: timeout с Pause/Resume, scripted Jump/Super Jump на road/roof, Ride Collision checklist, Jump Collision checklist, Lane Shift guide, finish, pooled reuse, cleanup и visual fallback.
 
 - [ ] Пересобрать Addressables/Windows AssetBundles после prefab migration. Проверить новый canonical Hamster path в catalog.
