@@ -1,7 +1,6 @@
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Common;
-using Assets.Scripts.GameEngine.Actors;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
@@ -16,53 +15,6 @@ using Vues.GameCore;
 /// </summary>
 public class CollisionController : MonoBehaviour
 {
-    /// <summary>
-    /// Результат контакта active Skateboard с gameplay-объектом.
-    /// </summary>
-    public enum SkateboardCollisionOutcome
-    {
-        Damage,
-        Destroy,
-        Support,
-        Collect,
-        Ignored,
-    }
-
-    /// <summary>
-    /// Снимок результата Skateboard-контакта для DEV-наблюдателей.
-    /// </summary>
-    public readonly struct SkateboardCollisionDiagnostic
-    {
-        public SkateboardCollisionDiagnostic(
-            Hamster hamster,
-            ObstacleTypeEnum obstacleType,
-            SkateboardCollisionOutcome outcome,
-            int livesBefore,
-            int livesAfter,
-            bool obstacleActiveAfter,
-            bool wasJumpCollisionActive,
-            bool roofSupportActiveAfter)
-        {
-            Hamster = hamster;
-            ObstacleType = obstacleType;
-            Outcome = outcome;
-            LivesBefore = livesBefore;
-            LivesAfter = livesAfter;
-            ObstacleActiveAfter = obstacleActiveAfter;
-            WasJumpCollisionActive = wasJumpCollisionActive;
-            RoofSupportActiveAfter = roofSupportActiveAfter;
-        }
-
-        public Hamster Hamster { get; }
-        public ObstacleTypeEnum ObstacleType { get; }
-        public SkateboardCollisionOutcome Outcome { get; }
-        public int LivesBefore { get; }
-        public int LivesAfter { get; }
-        public bool ObstacleActiveAfter { get; }
-        public bool WasJumpCollisionActive { get; }
-        public bool RoofSupportActiveAfter { get; }
-    }
-
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     /// <summary>
     /// Сообщает точный итог обработанного Skateboard-контакта DEV-инструментам.
@@ -89,7 +41,7 @@ public class CollisionController : MonoBehaviour
         if (!TryResolveSameLaneObstacle(other, out Obstacle obstacle))
             return;
 
-        ProcessTriggerEnter(obstacle, "MainPolygon/Enter");
+        ProcessTriggerEnter(obstacle);
     }
 
     /// <summary>
@@ -105,7 +57,7 @@ public class CollisionController : MonoBehaviour
         if (!TryResolveSameLaneObstacle(other, out Obstacle obstacle))
             return;
 
-        ProcessTriggerStay(obstacle, "MainPolygon/Stay");
+        ProcessTriggerStay(obstacle);
 
         if (checkRunFromRoofAfterShift)
             _hamster.NeedCheckCollisionInRunFromRoofAfterShift.Value = false;
@@ -126,9 +78,9 @@ public class CollisionController : MonoBehaviour
     /// <summary>
     /// Определяет результат первого входа хомяка в триггер препятствия.
     /// </summary>
-    private void ProcessTriggerEnter(Obstacle obstacle, string skateboardSource)
+    private void ProcessTriggerEnter(Obstacle obstacle)
     {
-        if (TryHandleSkateboardCollision(obstacle, skateboardSource))
+        if (TryHandleSkateboardCollision(obstacle))
             return;
 
         if (TryHandleCollectable(obstacle))
@@ -141,19 +93,7 @@ public class CollisionController : MonoBehaviour
         // Применяем урон, если текущее состояние допускает столкновение на входе в триггер.
         if (HasCollisionInRunState(obstacle))
         {
-            bool wasSkateboardModeActive = _hamster.IsSkateboardModeActive;
-            int livesBefore = _hamster.Lives.Value;
             HandleDamage(obstacle, "Enter", "RunState");
-            if (wasSkateboardModeActive)
-            {
-                PublishSkateboardCollision(
-                    obstacle,
-                    _hamster.Lives.Value == livesBefore - 1
-                        ? SkateboardCollisionOutcome.Damage
-                        : SkateboardCollisionOutcome.Ignored,
-                    livesBefore,
-                    wasJumpCollisionActive: false);
-            }
             return;
         }
 
@@ -172,9 +112,9 @@ public class CollisionController : MonoBehaviour
     /// <summary>
     /// Определяет результат удерживаемого пересечения с препятствием.
     /// </summary>
-    private void ProcessTriggerStay(Obstacle obstacle, string skateboardSource)
+    private void ProcessTriggerStay(Obstacle obstacle)
     {
-        if (TryHandleSkateboardCollision(obstacle, skateboardSource))
+        if (TryHandleSkateboardCollision(obstacle))
             return;
 
         if (TryHandleCollectable(obstacle))
@@ -185,98 +125,69 @@ public class CollisionController : MonoBehaviour
 
         if (HasCollisionInRunState(obstacle))
         {
-            bool wasSkateboardModeActive = _hamster.IsSkateboardModeActive;
-            int livesBefore = _hamster.Lives.Value;
             HandleDamage(obstacle, "Stay", "RunState");
-            if (wasSkateboardModeActive)
-            {
-                PublishSkateboardCollision(
-                    obstacle,
-                    _hamster.Lives.Value == livesBefore - 1
-                        ? SkateboardCollisionOutcome.Damage
-                        : SkateboardCollisionOutcome.Ignored,
-                    livesBefore,
-                    wasJumpCollisionActive: false);
-            }
         }
     }
 
     /// <summary>
     /// Исполняет единое policy-решение active Skateboard без локальных mode rules.
     /// </summary>
-    private bool TryHandleSkateboardCollision(
-        Obstacle obstacle,
-        string triggerSource)
+    private bool TryHandleSkateboardCollision(Obstacle obstacle)
     {
-        if (!_hamster.TryGetActiveSkateboardAttack(out SkateboardAttack attack))
-            return false;
-
-        ObstacleTypeEnum obstacleType = obstacle.ObstacleType.ObstacleTypeEnum;
-        bool isRide = attack.IsRiding;
-        bool hasJumpSnapshot =
-            attack.TryGetCurrentJumpSnapshot(
-                out SkateboardAttack.JumpCycleSnapshot jumpSnapshot);
-        bool isRideSupport =
-            isRide &&
-            SkateboardInteractionPolicy.IsRoof(obstacleType) &&
-            _hamster.SkateboardSurfaceController.IsRideSupport(
+        if (!_hamster.TryResolveSkateboardCollision(
                 obstacle,
-                _hamster.IsOnBottomLine.Value);
+                out SkateboardCollisionResult result))
+        {
+            return false;
+        }
 
-        SkateboardInteractionPolicy.Phase phase = isRide
-            ? SkateboardInteractionPolicy.Phase.Ride
-            : SkateboardInteractionPolicy.Phase.Jump;
-        SkateboardInteractionPolicy.Outcome outcome =
-            SkateboardInteractionPolicy.Decide(
-                obstacleType,
-                phase,
-                hasJumpSnapshot && jumpSnapshot.StartedOnRoof,
-                isRideSupport: isRideSupport);
+        if (obstacle == null || obstacle.ObstacleType == null)
+            return true;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        ObstacleTypeEnum obstacleType = obstacle.ObstacleType.ObstacleTypeEnum;
         int livesBefore = _hamster.Lives.Value;
-        switch (outcome)
+#endif
+        switch (result.Outcome)
         {
             case SkateboardInteractionPolicy.Outcome.Collect:
-                TryHandleCollectable(obstacle);
-                return true;
-            case SkateboardInteractionPolicy.Outcome.Damage:
-                bool damageApplied = !_hamster.IsDamaged.Value;
-                if (damageApplied)
-                    HandleDamage(obstacle, triggerSource, "SkateboardRide");
-                PublishSkateboardCollision(
+                TryHandleCollectable(
                     obstacle,
-                    damageApplied && _hamster.Lives.Value == livesBefore - 1
-                        ? SkateboardCollisionOutcome.Damage
-                        : SkateboardCollisionOutcome.Ignored,
-                    livesBefore,
-                    wasJumpCollisionActive: false,
-                    obstacleTypeOverride: obstacleType);
+                    publishSkateboardCollision: true,
+                    wasJumpCollisionActive: result.WasJumpCollisionActive);
                 return true;
             case SkateboardInteractionPolicy.Outcome.Destroy:
                 _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 PublishSkateboardCollision(
                     obstacle,
                     SkateboardCollisionOutcome.Destroy,
                     livesBefore,
-                    wasJumpCollisionActive: hasJumpSnapshot,
+                    result.WasJumpCollisionActive,
                     obstacleTypeOverride: obstacleType);
+#endif
                 return true;
             case SkateboardInteractionPolicy.Outcome.PreserveSupport:
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 PublishSkateboardCollision(
                     obstacle,
                     SkateboardCollisionOutcome.Support,
                     livesBefore,
-                    wasJumpCollisionActive: hasJumpSnapshot,
+                    result.WasJumpCollisionActive,
                     obstacleTypeOverride: obstacleType);
+#endif
                 return true;
             case SkateboardInteractionPolicy.Outcome.BumpOnly:
             case SkateboardInteractionPolicy.Outcome.Ignore:
             default:
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 PublishSkateboardCollision(
                     obstacle,
                     SkateboardCollisionOutcome.Ignored,
                     livesBefore,
-                    wasJumpCollisionActive: hasJumpSnapshot,
+                    result.WasJumpCollisionActive,
                     obstacleTypeOverride: obstacleType);
+#endif
                 return true;
         }
     }
@@ -344,14 +255,17 @@ public class CollisionController : MonoBehaviour
         }
 
         if (isStay)
-            ProcessTriggerStay(obstacle, "Sensor/Stay");
+            ProcessTriggerStay(obstacle);
         else
-            ProcessTriggerEnter(obstacle, "Sensor/Enter");
+            ProcessTriggerEnter(obstacle);
 
         return true;
     }
 
-    private bool TryHandleCollectable(Obstacle obstacle)
+    private bool TryHandleCollectable(
+        Obstacle obstacle,
+        bool publishSkateboardCollision = false,
+        bool wasJumpCollisionActive = false)
     {
         if (obstacle == null ||
             obstacle.ObstacleType == null ||
@@ -363,14 +277,13 @@ public class CollisionController : MonoBehaviour
         if (!obstacle.isActiveAndEnabled || !IsCollectableState())
             return true;
 
-        bool wasSkateboardModeActive = _hamster.IsSkateboardModeActive;
-        bool wasJumpCollisionActive =
-            _hamster.TryGetActiveSkateboardAttack(out SkateboardAttack attack) &&
-            attack.TryGetCurrentJumpSnapshot(out _);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         int livesBefore = _hamster.Lives.Value;
         ObstacleTypeEnum obstacleType = obstacle.ObstacleType.ObstacleTypeEnum;
+#endif
         HandleCollectable(obstacle);
-        if (wasSkateboardModeActive)
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (publishSkateboardCollision)
         {
             PublishSkateboardCollision(
                 obstacle,
@@ -379,9 +292,11 @@ public class CollisionController : MonoBehaviour
                 wasJumpCollisionActive,
                 obstacleType);
         }
+#endif
         return true;
     }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
     /// <summary>
     /// Публикует один post-outcome снимок без изменения collision policy.
     /// </summary>
@@ -394,7 +309,6 @@ public class CollisionController : MonoBehaviour
         bool wasJumpCollisionActive,
         ObstacleTypeEnum? obstacleTypeOverride = null)
     {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         Obstacle roofSupport = _hamster.SkateboardSurfaceController.CurrentRoof;
         bool roofSupportActiveAfter =
             roofSupport == null || roofSupport.isActiveAndEnabled;
@@ -408,8 +322,8 @@ public class CollisionController : MonoBehaviour
                 obstacle.isActiveAndEnabled,
                 wasJumpCollisionActive,
                 roofSupportActiveAfter));
-#endif
     }
+#endif
 
     /// <summary>
     /// Проверяет, должен ли хомяк получать урон от препятствия во время бега.

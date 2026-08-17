@@ -11,6 +11,7 @@ using Atomic.Elements;
 using Atomic.Objects;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Vues.GameCore;
 
 namespace Assets.Scripts.Gameplay
@@ -86,6 +87,38 @@ namespace Assets.Scripts.Gameplay
         [SerializeField] private SkateboardSurfaceController _skateboardSurfaceController;
         [SerializeField] private SkinVisualHost _normalSkinVisualHost;
         [SerializeField] private SkinVisualHost _skateboardSkinVisualHost;
+
+        [Header("Skateboard Ride Visuals")]
+        [SerializeField]
+        private SkateboardRideAnimation[] _skateboardRideCycle =
+        {
+            SkateboardRideAnimation.Run2,
+            SkateboardRideAnimation.Run2,
+            SkateboardRideAnimation.Run2,
+            SkateboardRideAnimation.Run3,
+            SkateboardRideAnimation.Run2,
+            SkateboardRideAnimation.Run2,
+            SkateboardRideAnimation.Run2,
+            SkateboardRideAnimation.Run3,
+            SkateboardRideAnimation.Run3,
+        };
+
+        [SerializeField, Min(0.01f)] private float _skateboardRun2Speed = 1f;
+        [SerializeField, Min(0.01f)] private float _skateboardRun3Speed = 1.5f;
+
+        [Header("Skateboard Landing Impact Timing (Frames at 60 FPS)")]
+        [Tooltip("Количество кадров от момента приземления до начала Camera Shake. 0 = сразу.")]
+        [FormerlySerializedAs("_skateboardCameraShakeDelayAfterLandingImpact")]
+        [SerializeField, Min(0)]
+        private int _skateboardCameraShakeDelayAfterLandingImpactFrames =
+            CameraShakeController.DefaultDelayAfterLandingImpactFrames;
+
+        [Tooltip("Количество кадров от момента приземления до старта волны у ближайшего препятствия. 0 = сразу. Задержка по расстоянию добавляется отдельно.")]
+        [FormerlySerializedAs("_skateboardWaveDelayAfterLandingImpact")]
+        [SerializeField, Min(0)]
+        private int _skateboardWaveDelayAfterLandingImpactFrames =
+            SkateboardLandingImpactRuntime.DefaultWaveDelayAfterLandingImpactFrames;
+
         private TransformAnimatorEventsDispatcher _transformAnimatorEventsDispatcher;
 
         private JumpMechanics _jumpMechanics;
@@ -113,7 +146,7 @@ namespace Assets.Scripts.Gameplay
         /// <summary>
         /// Возвращает настроенный skateboard runtime только DEV testing tools.
         /// </summary>
-        public SkateboardAttack SkateboardAttackRuntimeForTesting =>
+        internal SkateboardAttack SkateboardAttackRuntimeForTesting =>
             _superAttackRuntime as SkateboardAttack;
 #endif
 
@@ -293,21 +326,36 @@ namespace Assets.Scripts.Gameplay
             _skateboardSurfaceController;
         public SkinVisualHost NormalSkinVisualHost => _normalSkinVisualHost;
         public SkinVisualHost SkateboardSkinVisualHost => _skateboardSkinVisualHost;
+        internal SkateboardRideAnimation[] SkateboardRideCycle => _skateboardRideCycle;
+        internal float SkateboardRun2Speed => _skateboardRun2Speed;
+        internal float SkateboardRun3Speed => _skateboardRun3Speed;
+        internal int SkateboardCameraShakeDelayAfterLandingImpactFrames =>
+            _skateboardCameraShakeDelayAfterLandingImpactFrames;
+        internal int SkateboardWaveDelayAfterLandingImpactFrames =>
+            _skateboardWaveDelayAfterLandingImpactFrames;
 
         /// <summary>
         /// Возвращает признак активного skateboard gameplay mode.
         /// </summary>
         public bool IsSkateboardModeActive =>
-            _superAttackRuntime is SkateboardAttack skateboardAttack &&
-            skateboardAttack.IsActive;
+            _superAttackRuntime is ISkateboardCollisionHandler { IsActive: true };
 
         /// <summary>
-        /// Возвращает active Skateboard owner для production collision execution.
+        /// Делегирует контакт узкому active Skateboard collision contract.
         /// </summary>
-        public bool TryGetActiveSkateboardAttack(out SkateboardAttack attack)
+        internal bool TryResolveSkateboardCollision(
+            Obstacle obstacle,
+            out SkateboardCollisionResult result)
         {
-            attack = _superAttackRuntime as SkateboardAttack;
-            return attack != null && attack.IsActive;
+            if (_superAttackRuntime is not ISkateboardCollisionHandler handler ||
+                !handler.IsActive)
+            {
+                result = default;
+                return false;
+            }
+
+            result = handler.ResolveCollision(obstacle, IsOnBottomLine.Value);
+            return true;
         }
 
         /// <summary>

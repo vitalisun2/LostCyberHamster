@@ -61,15 +61,18 @@ namespace Assets.Scripts.GameEngine.Skins
                 return;
             }
 
-            // Вычисляем FitToAction и не перезапускаем тот же state при normal-to-super upgrade.
+            // Вычисляем FitToAction и сохраняем фазу при normal-to-super upgrade.
             string statePath = $"{_animator.GetLayerName(0)}.{mapping.StateName}";
             int stateHash = Animator.StringToHash(statePath);
-            bool continuesSameAction = stateHash == _activeStateHash && context.ActionId == _activeActionId;
+            bool continuesSameAction = context.ActionId == _activeActionId;
+            float normalizedTime = continuesSameAction
+                ? Mathf.Clamp01(_animator.GetCurrentAnimatorStateInfo(0).normalizedTime)
+                : 0f;
             float speed = CalculateSpeed(mapping, context, continuesSameAction);
             _animator.SetFloat(SpeedParameterName, speed);
 
-            if (!continuesSameAction)
-                _animator.Play(stateHash, 0, 0f);
+            if (!continuesSameAction || stateHash != _activeStateHash)
+                _animator.Play(stateHash, 0, normalizedTime);
 
             _activeStateHash = stateHash;
             _activeActionId = context.ActionId;

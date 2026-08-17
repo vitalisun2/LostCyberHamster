@@ -22,74 +22,7 @@ namespace Assets.Scripts.GameEngine.Actors
             DroppingToRoad
         }
 
-        /// <summary>
-        /// Неизменяемый план roof landing, рассчитанный в начале jump-cycle.
-        /// </summary>
-        public readonly struct LandingSurfacePlan
-        {
-            public LandingSurfacePlan(Obstacle support, float worldTravel)
-            {
-                Support = support;
-                WorldTravel = worldTravel;
-            }
-
-            public Obstacle Support { get; }
-            public float WorldTravel { get; }
-            public bool LandsOnRoof => Support != null;
-        }
-
-        /// <summary>
-        /// Результат применения заранее рассчитанного roof landing plan.
-        /// </summary>
-        public readonly struct LandingSurfaceResult
-        {
-            public LandingSurfaceResult(Obstacle support, Obstacle missedRoof)
-            {
-                Support = support;
-                MissedRoof = missedRoof;
-            }
-
-            public Obstacle Support { get; }
-            public Obstacle MissedRoof { get; }
-        }
-
-        /// <summary>
-        /// Read-only geometry snapshot для Skateboard diagnostic events.
-        /// </summary>
-        internal readonly struct RoofGeometryDiagnostic
-        {
-            public RoofGeometryDiagnostic(
-                Bounds sensorBounds,
-                Bounds polygonBounds,
-                Bounds roofBounds,
-                bool horizontalOverlap,
-                bool verticalOverlap,
-                bool topContact,
-                bool sideContact,
-                bool insideRoof)
-            {
-                SensorBounds = sensorBounds;
-                PolygonBounds = polygonBounds;
-                RoofBounds = roofBounds;
-                HorizontalOverlap = horizontalOverlap;
-                VerticalOverlap = verticalOverlap;
-                TopContact = topContact;
-                SideContact = sideContact;
-                InsideRoof = insideRoof;
-            }
-
-            public Bounds SensorBounds { get; }
-            public Bounds PolygonBounds { get; }
-            public Bounds RoofBounds { get; }
-            public bool HorizontalOverlap { get; }
-            public bool VerticalOverlap { get; }
-            public bool TopContact { get; }
-            public bool SideContact { get; }
-            public bool InsideRoof { get; }
-        }
-
         [SerializeField] private Transform _surfaceTransform;
-        [SerializeField] private Collider2D _skateboardCollider;
         [SerializeField, Min(0f)] private float _supportTolerance = 0.05f;
         [SerializeField, Min(0.01f)] private float _dropSpeed = 6f;
 
@@ -102,17 +35,6 @@ namespace Assets.Scripts.GameEngine.Actors
 
         public SurfaceState State { get; private set; } = SurfaceState.Road;
         public Obstacle CurrentRoof => _currentRoof;
-        internal float SurfaceWorldY => _surfaceTransform.position.y;
-        internal float RoadTargetWorldY => ResolveRoadTargetWorldY();
-        internal float CurrentRoofTop => _currentRoofTop;
-        internal Bounds BoardContactBounds
-        {
-            get
-            {
-                EnsureInitialized();
-                return _boardContactCollider.bounds;
-            }
-        }
 
         private void Awake()
         {
@@ -216,7 +138,7 @@ namespace Assets.Scripts.GameEngine.Actors
         /// <summary>
         /// Прогнозирует roof support по будущему X-интервалу в момент landing contact.
         /// </summary>
-        public LandingSurfacePlan PredictRoofLanding(
+        internal SkateboardLandingSurfacePlan PredictRoofLanding(
             bool isOnBottomLine,
             float worldTravel)
         {
@@ -261,23 +183,25 @@ namespace Assets.Scripts.GameEngine.Actors
                 }
             }
 
-            return new LandingSurfacePlan(bestSupport, safeWorldTravel);
+            return new SkateboardLandingSurfacePlan(bestSupport);
         }
 
         /// <summary>
-        /// Применяет immutable roof plan без повторного geometry scan в contact frame.
+        /// Применяет актуальную support сохранённого roof plan или начинает падение на дорогу.
         /// </summary>
-        public LandingSurfaceResult ApplyRoofLandingPlan(in LandingSurfacePlan plan)
+        internal Obstacle ApplyRoofLandingPlan(
+            in SkateboardLandingSurfacePlan plan)
         {
             EnsureInitialized();
-            if (plan.Support != null)
+            Obstacle support = plan.Support;
+            if (IsValidRoof(support))
             {
-                EnterRoof(plan.Support);
-                return new LandingSurfaceResult(plan.Support, missedRoof: null);
+                EnterRoof(support);
+                return support;
             }
 
             BeginDropToRoad();
-            return new LandingSurfaceResult(support: null, missedRoof: null);
+            return null;
         }
 
         /// <summary>
@@ -293,10 +217,10 @@ namespace Assets.Scripts.GameEngine.Actors
         /// <summary>
         /// Полностью очищает runtime-состояние и восстанавливает дорожную высоту.
         /// </summary>
-        public void Reset()
+        public void ResetSurface()
         {
-            // Unity вызывает Reset после добавления component, когда refs ещё могут быть пустыми.
-            if (_surfaceTransform == null || _skateboardCollider == null)
+            // Неполная actor-конфигурация очищается без доступа к geometry.
+            if (_surfaceTransform == null)
             {
                 _boardContactCollider = null;
                 _currentRoof = null;
@@ -377,54 +301,6 @@ namespace Assets.Scripts.GameEngine.Actors
             State = SurfaceState.DroppingToRoad;
         }
 
-        /// <summary>
-        /// Снимает текущую geometry без mutation collider или surface state.
-        /// </summary>
-        internal bool TryCaptureRoofGeometry(
-            Obstacle roof,
-            out RoofGeometryDiagnostic diagnostic)
-        {
-            EnsureInitialized();
-            diagnostic = default;
-            if (!IsValidRoof(roof))
-                return false;
-
-            Bounds sensorBounds = _boardContactCollider.bounds;
-            Bounds polygonBounds = _skateboardCollider.bounds;
-            BoxCollider2D roofCollider = roof.GetComponentInChildren<BoxCollider2D>();
-            if (roofCollider == null)
-                return false;
-
-            Bounds roofBounds = roofCollider.bounds;
-            bool horizontalOverlap = CollisionUtils.IsOverlap(
-                sensorBounds.min.x,
-                sensorBounds.max.x,
-                roofBounds.min.x,
-                roofBounds.max.x);
-            bool verticalOverlap = CollisionUtils.IsOverlap(
-                polygonBounds.min.y,
-                polygonBounds.max.y,
-                roofBounds.min.y,
-                roofBounds.max.y);
-            bool topContact = horizontalOverlap &&
-                              polygonBounds.min.y <= roofBounds.max.y + _supportTolerance &&
-                              polygonBounds.center.y >= roofBounds.max.y;
-            bool insideRoof = horizontalOverlap &&
-                              polygonBounds.center.y > roofBounds.min.y &&
-                              polygonBounds.center.y < roofBounds.max.y;
-            bool sideContact = horizontalOverlap && verticalOverlap && !topContact;
-            diagnostic = new RoofGeometryDiagnostic(
-                sensorBounds,
-                polygonBounds,
-                roofBounds,
-                horizontalOverlap,
-                verticalOverlap,
-                topContact,
-                sideContact,
-                insideRoof);
-            return true;
-        }
-
         private bool HasBoardHorizontalOverlap(Obstacle roof)
         {
             if (!IsValidRoof(roof))
@@ -457,16 +333,6 @@ namespace Assets.Scripts.GameEngine.Actors
             Vector3 localPosition = _surfaceTransform.localPosition;
             localPosition.y = localY;
             _surfaceTransform.localPosition = localPosition;
-        }
-
-        private float ResolveRoadTargetWorldY()
-        {
-            EnsureInitialized();
-            Vector3 localTarget = _surfaceTransform.localPosition;
-            localTarget.y = _roadLocalY;
-            return _surfaceTransform.parent != null
-                ? _surfaceTransform.parent.TransformPoint(localTarget).y
-                : localTarget.y;
         }
 
         private void EnsureInitialized()
@@ -522,12 +388,6 @@ namespace Assets.Scripts.GameEngine.Actors
             {
                 throw new MissingReferenceException(
                     "SkateboardSurfaceController requires surface Transform.");
-            }
-
-            if (_skateboardCollider == null)
-            {
-                throw new MissingReferenceException(
-                    "SkateboardSurfaceController requires landing Collider2D.");
             }
 
             if (GetComponentInChildren<SkateboardCollisionSensor>(includeInactive: true) == null)
