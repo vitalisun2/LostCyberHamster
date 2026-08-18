@@ -1,4 +1,5 @@
 using System;
+using Vues.GameCore;
 using Vues.GameCore.Quests;
 
 namespace GameManagement.Progress
@@ -139,6 +140,9 @@ namespace GameManagement.Progress
             playerData.ExperiencePoints =
                 updatedExperiencePoints % PlayerLevelThreshold;
             playerData.PlayerLevel = updatedPlayerLevel;
+            CharacterDevelopmentService.GrantForLevelUps(
+                playerData,
+                playerLevelsGained);
 
             if (playerLevelsGained > 0)
             {

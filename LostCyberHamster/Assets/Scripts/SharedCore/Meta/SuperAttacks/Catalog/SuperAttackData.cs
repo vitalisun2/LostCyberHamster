@@ -19,6 +19,11 @@ namespace Vues.GameCore
         public string NameLocalizationKey;
 
         /// <summary>
+        /// Ключ локализации описания.
+        /// </summary>
+        public string DescriptionLocalizationKey;
+
+        /// <summary>
         /// Адрес ресурса иконки.
         /// </summary>
         public string IconAddress;
@@ -38,9 +43,5 @@ namespace Vues.GameCore
         /// </summary>
         public int UltaCharge;
 
-        /// <summary>
-        /// Минимальный уровень игрока для открытия суперудара.
-        /// </summary>
-        public int RequiredPlayerLevel;
     }
 }

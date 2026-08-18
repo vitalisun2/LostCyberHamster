@@ -3,29 +3,29 @@
     {
       "Id": 1,
       "NameLocalizationKey": "energy shield",
+      "DescriptionLocalizationKey": "super_attack_description_energy_shield",
       "IconAddress": "skin_quantum-scout",
       "UltaPrefab": "EnergyShieldPrefab",
       "UltaDuration": 5,
-      "UltaCharge": 20,
-      "RequiredPlayerLevel": 2
+      "UltaCharge": 20
     },
     {
       "Id": 2,
       "NameLocalizationKey": "electric strike",
+      "DescriptionLocalizationKey": "super_attack_description_electric_strike",
       "IconAddress": "skin_neon-runner",
       "UltaPrefab": "ElectricStrikePrefab",
       "UltaDuration": 0,
-      "UltaCharge": 35,
-      "RequiredPlayerLevel": 3
+      "UltaCharge": 35
     },
     {
       "Id": 3,
       "NameLocalizationKey": "skateboard",
+      "DescriptionLocalizationKey": "super_attack_description_skateboard",
       "IconAddress": "skin_default",
       "UltaPrefab": "",
       "UltaDuration": 10,
-      "UltaCharge": 20,
-      "RequiredPlayerLevel": 4
+      "UltaCharge": 20
     }
   ]
 }

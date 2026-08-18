@@ -9,7 +9,7 @@ using UnityEngine;
 namespace Vues.GameCore
 {
     /// <summary>
-    /// Загружает данные суперударов и определяет их доступность по уровню игрока.
+    /// Загружает данные суперспособностей и управляет active selection.
     /// </summary>
     public static class SuperAttackService
     {
@@ -92,43 +92,12 @@ namespace Vues.GameCore
         }
 
         /// <summary>
-        /// Проверяет, открыт ли суперудар на указанном уровне игрока.
+        /// Проверяет persisted-открытие суперспособности.
         /// </summary>
-        public static bool IsUnlocked(int id, int playerLevel)
+        public static bool IsUnlocked(int id)
         {
-            if (playerLevel < 1)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(playerLevel),
-                    playerLevel,
-                    "Уровень игрока должен быть не ниже 1.");
-            }
-
-            return TryGet(id, out SuperAttackData data) &&
-                   playerLevel >= data.RequiredPlayerLevel;
-        }
-
-        /// <summary>
-        /// Находит первый суперудар, открывшийся между двумя уровнями игрока.
-        /// </summary>
-        public static bool TryGetFirstUnlockedBetweenLevels(
-            int previousPlayerLevel,
-            int currentPlayerLevel,
-            out SuperAttackData data)
-        {
-            // Сохраняем порядок суперударов из JSON-каталога.
-            foreach (SuperAttackData item in _items)
-            {
-                if (item.RequiredPlayerLevel > previousPlayerLevel &&
-                    item.RequiredPlayerLevel <= currentPlayerLevel)
-                {
-                    data = item;
-                    return true;
-                }
-            }
-
-            data = null;
-            return false;
+            return TryGet(id, out _) &&
+                   CharacterDevelopmentService.IsSuperAttackUnlocked(id);
         }
 
         /// <summary>
@@ -138,7 +107,7 @@ namespace Vues.GameCore
         {
             // Проверяем доступность до изменения данных игрока.
             var playerData = GameDataManager.PlayerData;
-            if (!IsUnlocked(id, playerData.PlayerLevel))
+            if (!IsUnlocked(id))
             {
                 return false;
             }
@@ -169,6 +138,7 @@ namespace Vues.GameCore
             }
 
             if (string.IsNullOrWhiteSpace(data.NameLocalizationKey) ||
+                string.IsNullOrWhiteSpace(data.DescriptionLocalizationKey) ||
                 string.IsNullOrWhiteSpace(data.IconAddress))
             {
                 throw new InvalidOperationException(
@@ -179,13 +149,6 @@ namespace Vues.GameCore
             {
                 throw new InvalidOperationException(
                     $"Суперудар {data.Id} содержит неверные runtime-параметры.");
-            }
-
-            // Проверяем новое правило открытия по Level.
-            if (data.RequiredPlayerLevel < 2)
-            {
-                throw new InvalidOperationException(
-                    $"Суперудар {data.Id} содержит неверный уровень открытия.");
             }
         }
     }

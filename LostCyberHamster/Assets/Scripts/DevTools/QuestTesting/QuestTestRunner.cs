@@ -601,9 +601,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     return TryGetPlayerStateEntityId(
                                definition,
                                out int superAttackId) &&
-                           SuperAttackService.IsUnlocked(
-                               superAttackId,
-                               GameDataManager.PlayerData.PlayerLevel) &&
+                           SuperAttackService.IsUnlocked(superAttackId) &&
                            GameDataManager.PlayerData.ActiveSuperAttackId !=
                            superAttackId;
                 case PlayerStateIds.PlayerLevel:
@@ -724,7 +722,8 @@ namespace Assets.Scripts.DevTools.QuestTesting
                     $"Скин {definition.EntityId} не найден.");
             }
 
-            // Готовим минимальный баланс и выполняем реальную покупку.
+            // Готовим unlock, минимальный баланс и выполняем реальную покупку.
+            CharacterDevelopmentService.UnlockSkinForTesting(skin.Id);
             int missingResource = Math.Max(
                 0,
                 skin.Price - ResourceManager.GetCurrentBalance(
@@ -790,9 +789,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
             SuperAttackData superAttack = SuperAttackService.Items
                 .FirstOrDefault(item =>
                     item.Id != excludedSuperAttackId &&
-                    SuperAttackService.IsUnlocked(
-                        item.Id,
-                        GameDataManager.PlayerData.PlayerLevel));
+                    SuperAttackService.IsUnlocked(item.Id));
             superAttackId = superAttack?.Id ?? 0;
             return superAttack != null;
         }

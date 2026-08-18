@@ -1,10 +1,12 @@
 using System.Threading.Tasks;
 using Assets.Scripts.Account;
 using Assets.Scripts.System;
+using Assets.Scripts.Tutorial;
 using GameManagement;
 using GameManagement.CloudSave;
 using GameManagement.CloudSave.Models;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using Vues.GameCore;
 
@@ -34,6 +36,7 @@ namespace LostCyberHamster.UI
         private TextField _textFieldPlayerName => _contentRoot.Q<TextField>("settings__txt-player-name");
         private Button _buttonSavePlayerName => _contentRoot.Q<Button>("settings__btn-save-player-name");
         private Button _buttonCancelPlayerName => _contentRoot.Q<Button>("settings__btn-cancel-player-name");
+        private Button _buttonStartTraining => _contentRoot.Q<Button>("settings__btn-start-training");
         private Label _labelPlayerNameError => _contentRoot.Q<Label>("settings__lbl-player-name-error");
         private Button _buttonHome => _contentRoot.Q<Button>("btn_home");
         private Button _buttonBack => _contentRoot.Q<Button>("btn_back");
@@ -406,6 +409,7 @@ namespace LostCyberHamster.UI
             _buttonChangePlayerName?.RegisterCallback<ClickEvent>(OnClickChangePlayerName);
             _buttonSavePlayerName?.RegisterCallback<ClickEvent>(OnClickSavePlayerName);
             _buttonCancelPlayerName?.RegisterCallback<ClickEvent>(OnClickCancelPlayerName);
+            _buttonStartTraining?.RegisterCallback<ClickEvent>(OnClickStartTraining);
             _dropdownLanguages?.RegisterValueChangedCallback(OnChangeLanguageAsync);
             _toggleMusic?.RegisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.RegisterValueChangedCallback(OnChangeSoundAsync);
@@ -432,6 +436,13 @@ namespace LostCyberHamster.UI
             _settingsData.EnableVibration = evt.newValue;
             VibrationManager.EnableVibration = evt.newValue;
             SaveSettings();
+        }
+
+        private void OnClickStartTraining(ClickEvent evt)
+        {
+            EndSession();
+            TutorialLaunchService.StartReplayFromMenu();
+            SceneManager.LoadScene("Game");
         }
 
         private void RefreshLocalizedText()
@@ -497,6 +508,7 @@ namespace LostCyberHamster.UI
             _buttonChangePlayerName?.UnregisterCallback<ClickEvent>(OnClickChangePlayerName);
             _buttonSavePlayerName?.UnregisterCallback<ClickEvent>(OnClickSavePlayerName);
             _buttonCancelPlayerName?.UnregisterCallback<ClickEvent>(OnClickCancelPlayerName);
+            _buttonStartTraining?.UnregisterCallback<ClickEvent>(OnClickStartTraining);
             _dropdownLanguages?.UnregisterValueChangedCallback(OnChangeLanguageAsync);
             _toggleMusic?.UnregisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.UnregisterValueChangedCallback(OnChangeSoundAsync);

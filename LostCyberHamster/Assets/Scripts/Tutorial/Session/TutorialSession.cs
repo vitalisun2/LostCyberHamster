@@ -181,6 +181,11 @@ namespace Assets.Scripts.Tutorial
         {
             GameDataManager.PlayerData.AppliedSkinId = DefaultSkinId;
             GameDataManager.PlayerData.PurchasedSkinIds = new List<int> { DefaultSkinId };
+            GameDataManager.PlayerData.UnlockedSkinIds = new List<int>
+            {
+                DefaultSkinId,
+                TutorialSkinLessonController.TargetSkinId
+            };
             GameDataManager.PlayerData.IsAccountPromptPending = false;
             ResourceManager.SetResourceBalance(ResourceType.Coins, 0);
             ResourceManager.SetResourceBalance(ResourceType.Crystals, 0);

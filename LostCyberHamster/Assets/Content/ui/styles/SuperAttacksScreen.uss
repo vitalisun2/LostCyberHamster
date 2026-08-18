@@ -1,2 +1,0 @@
-/* Compatibility entrypoint. New references use screens/SuperAttacksScreen.uss. */
-@import url("/Assets/Content/ui/styles/screens/SuperAttacksScreen.uss");

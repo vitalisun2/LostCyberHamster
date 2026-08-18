@@ -58,6 +58,10 @@
                         <engine:Label name="settings__lbl-cloud-sync-status" class="lcs-text ui-text-plain" style="width: 100%; max-width: 760px; min-width: 0; flex-grow: 1; flex-shrink: 1; white-space: normal; font-size: 24px; -unity-text-outline-width: 0px;" />
                     </engine:VisualElement>
                     <engine:VisualElement class="mb-12" style="width: 100%; min-width: 0; flex-grow: 0; flex-direction: row; align-items: center;">
+                        <Vues.GameCore.LocalizedLabel key="settings_training" class="lcs-text" style="width: 300px; flex-grow: 0; flex-shrink: 0; white-space: normal;" />
+                        <Vues.GameCore.LocalizedButton key="settings_start_training" name="settings__btn-start-training" class="lcs_btn bg-primary ui-text-compact" style="width: 300px; height: 52px; flex-grow: 0; flex-shrink: 0; margin: 0; font-size: 22px;" />
+                    </engine:VisualElement>
+                    <engine:VisualElement class="mb-12" style="width: 100%; min-width: 0; flex-grow: 0; flex-direction: row; align-items: center;">
                         <Vues.GameCore.LocalizedLabel key="lbl_version" class="lcs-text" style="width: 300px; flex-grow: 0; flex-shrink: 0; white-space: normal;" />
                         <engine:Label name="settings__lbl-version" class="lcs-text" style="width: 100%; max-width: 760px; min-width: 0; flex-grow: 1; flex-shrink: 1; white-space: normal;" />
                     </engine:VisualElement>

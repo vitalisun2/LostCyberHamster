@@ -4,11 +4,7 @@
     <engine:VisualElement class="level-up-modal">
         <engine:Label name="level-up-title" class="lcs-text level-up-modal__title" />
         <engine:Label name="level-up-transition" class="lcs-text level-up-modal__transition" />
-        <engine:VisualElement class="level-up-modal__attack-card">
-            <engine:VisualElement name="level-up-attack-icon" class="level-up-modal__attack-icon" />
-            <engine:Label name="level-up-attack-name" class="lcs-text level-up-modal__attack-name" />
-            <engine:Label name="level-up-attack-status" class="lcs-text level-up-modal__attack-status" />
-        </engine:VisualElement>
+        <engine:Label name="level-up-development-reward" class="lcs-text level-up-modal__development-reward" />
         <engine:Button name="btn_level_up_ok" class="lcs_btn bg-primary level-up-modal__ok" />
     </engine:VisualElement>
 </engine:UXML>

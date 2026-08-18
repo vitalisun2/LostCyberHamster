@@ -11,6 +11,7 @@
     --ui-backdrop: rgba(0, 0, 0, 0.5);
     --ui-overlay: var(--ui-backdrop);
     --ui-overlay-panel: rgba(53, 95, 145, 0.95);
+    --ui-equipment-preview-surface: rgb(154, 191, 196);
 
     /* Content-card interiors intentionally preserve the original art direction. */
     --ui-content-card-surface: rgba(242, 233, 196, 0.96);

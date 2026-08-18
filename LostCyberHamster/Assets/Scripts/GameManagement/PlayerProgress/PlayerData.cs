@@ -14,6 +14,10 @@ namespace GameManagement
         public int Crystals;
         public int ExperiencePoints;
         public int PlayerLevel = 1;
+        public int DevelopmentProgressVersion = 1;
+        public int DevelopmentPoints;
+        public List<int> UnlockedSkinIds = new() { 0 };
+        public List<int> UnlockedSuperAttackIds = new();
         public int AppliedSkinId = 0;
         public int ActiveSuperAttackId = 0;
         public List<int> PurchasedSkinIds = new() { 0 };

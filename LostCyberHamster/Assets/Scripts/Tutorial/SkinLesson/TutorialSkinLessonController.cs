@@ -21,15 +21,15 @@ namespace Assets.Scripts.Tutorial
                 new TutorialSkinPrompt(
                     ScreenEnum.HomeScreen,
                     TutorialSkinTarget.HomeCharacterButton,
-                    "Откройте раздел скинов",
+                    "Откройте экипировку",
                     TutorialFocusShape.Circle),
                 ScreenEnum.CharacterScreen),
             new TutorialSkinStep(
-                TutorialSkinAction.SelectNextSkin,
+                TutorialSkinAction.SelectSkin,
                 new TutorialSkinPrompt(
                     ScreenEnum.CharacterScreen,
-                    TutorialSkinTarget.SkinNextButton,
-                    "Листайте до скина с молнией",
+                    TutorialSkinTarget.SkinCard,
+                    "Выберите скин с молнией",
                     TutorialFocusShape.Circle)),
             new TutorialSkinStep(
                 TutorialSkinAction.BuySkin,
@@ -164,7 +164,8 @@ namespace Assets.Scripts.Tutorial
         {
             return CurrentStep.Action switch
             {
-                TutorialSkinAction.SelectNextSkin => _view.IsSkinDisplayed(TargetSkinId),
+                TutorialSkinAction.SelectSkin =>
+                    _view.IsSkinDisplayed(TargetSkinId),
                 TutorialSkinAction.BuySkin =>
                     _view.IsSkinDisplayed(TargetSkinId) && IsTargetSkinPurchased(),
                 TutorialSkinAction.EquipSkin =>

@@ -1,18 +1,50 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
-    <engine:VisualElement name="characterscreen" style="flex-grow: 1;">
-        <engine:Instance template="Toolbar" name="toolbar" />
-        <engine:VisualElement style="flex-grow: 1; justify-content: center; align-items: center; min-width: 10%; flex-direction: row;">
-            <engine:VisualElement class="carousel-navigation-overlay" picking-mode="Ignore">
-                <engine:Button text="◀" name="btn-skin-prev" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--previous" />
-                <engine:Button text="▶" name="btn-skin-next" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--next" />
-            </engine:VisualElement>
-            <engine:VisualElement style="flex-grow: 0; align-items: center; width: 1200px;">
-                <engine:Label text="Label" name="skin-name" class="lcs-text" />
-                <engine:VisualElement name="skin-image" style="flex-grow: 0; width: 600px; height: 300px; background-image: none; margin-bottom: 60px; margin-right: 120px; margin-left: 120px; margin-top: 60px;" />
-                <engine:Label text="Label" name="skin--put-on" class="lcs-text" style="display: none; height: 120px; margin-top: 24px; margin-bottom: 24px; margin-right: 24px; margin-left: 24px;" />
-                <engine:Button text="Button" name="skin-btn-change" class="lcs_btn" style="width: 450px; height: 120px; margin-bottom: 24px;" />
+    <Style src="../styles/screens/CharacterScreen.uss" />
+    <engine:VisualElement name="equipment-screen" class="equipment-screen">
+        <Vues.GameCore.LocalizedButton key="development_back" name="btn_home" class="lcs_btn equipment__back-button" />
+        <Vues.GameCore.LocalizedLabel key="equipment_title" class="lcs-text equipment__title" />
+        <engine:VisualElement name="equipment-tabs" class="equipment__tabs equipment__tabs--skins">
+            <Vues.GameCore.LocalizedButton key="equipment_skins" name="equipment-tab-skins" class="lcs_btn equipment-tab equipment-tab--skins" />
+            <Vues.GameCore.LocalizedButton key="equipment_abilities" name="equipment-tab-abilities" class="lcs_btn equipment-tab equipment-tab--abilities" />
+        </engine:VisualElement>
+        <engine:VisualElement class="equipment__pages-viewport">
+            <engine:VisualElement name="equipment-pages-track" class="equipment__pages-track">
+                <engine:VisualElement name="equipment-skins-page" class="equipment__body equipment-page--skins">
+                    <engine:VisualElement class="equipment__preview">
+                        <engine:VisualElement class="equipment__preview-gap" />
+                        <engine:Label name="equipment-skin-name" class="lcs-text equipment__preview-name" />
+                        <engine:VisualElement class="equipment__preview-gap" />
+                        <engine:VisualElement class="equipment__preview-content">
+                            <engine:VisualElement name="equipment-skin-image" class="equipment__preview-image" />
+                        </engine:VisualElement>
+                        <engine:VisualElement class="equipment__preview-gap" />
+                        <engine:VisualElement class="equipment__preview-footer">
+                            <engine:Label name="equipment-skin-status" class="lcs-text equipment__preview-status" />
+                            <engine:Button name="skin-btn-change" class="lcs_btn equipment__action" />
+                        </engine:VisualElement>
+                        <engine:VisualElement class="equipment__preview-gap" />
+                    </engine:VisualElement>
+                    <engine:ScrollView mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="equipment__cards-scroll">
+                        <engine:VisualElement name="equipment-skin-cards" class="equipment__cards" />
+                    </engine:ScrollView>
+                </engine:VisualElement>
+                <engine:VisualElement name="equipment-abilities-page" class="equipment__body equipment-page--abilities">
+                    <engine:VisualElement class="equipment__preview">
+                        <engine:VisualElement class="equipment__preview-gap" />
+                        <engine:Label name="equipment-ability-name" class="lcs-text equipment__preview-name" />
+                        <engine:VisualElement class="equipment__preview-gap" />
+                        <engine:VisualElement class="equipment__preview-content">
+                            <engine:VisualElement name="equipment-ability-image" class="equipment__preview-image" />
+                            <engine:Label name="equipment-ability-description" class="lcs-text equipment__preview-description" />
+                        </engine:VisualElement>
+                        <engine:VisualElement class="equipment__preview-gap" />
+                        <engine:Label name="equipment-ability-status" class="lcs-text equipment__preview-status" />
+                    </engine:VisualElement>
+                    <engine:ScrollView mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="equipment__cards-scroll">
+                        <engine:VisualElement name="equipment-ability-cards" class="equipment__cards" />
+                    </engine:ScrollView>
+                </engine:VisualElement>
             </engine:VisualElement>
         </engine:VisualElement>
     </engine:VisualElement>

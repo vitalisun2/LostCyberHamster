@@ -45,6 +45,7 @@ public static class SkinManager
     {
         var skin = _availableSkins.FirstOrDefault(x => x.Id == skinId);
         return skin != null &&
+               CharacterDevelopmentService.IsSkinUnlocked(skinId) &&
                !GameDataManager.PlayerData.PurchasedSkinIds.Contains(skinId) &&
                ResourceManager.CanSpendResource(skin.PriceType, skin.Price);
     }
@@ -56,7 +57,9 @@ public static class SkinManager
     {
         var skin = _availableSkins.FirstOrDefault(x => x.Id == skinId);
 
-        if (skin == null || GameDataManager.PlayerData.PurchasedSkinIds.Contains(skinId))
+        if (skin == null ||
+            !CharacterDevelopmentService.IsSkinUnlocked(skinId) ||
+            GameDataManager.PlayerData.PurchasedSkinIds.Contains(skinId))
         {
             return;
         }

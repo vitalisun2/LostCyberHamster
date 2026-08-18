@@ -26,45 +26,16 @@
     -unity-text-align: middle-center;
 }
 
-.level-up-modal__attack-card {
-    width: 440px;
-    min-height: 270px;
-    margin-top: 10px;
-    padding: 16px 24px;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--ui-surface);
-    border-color: var(--ui-border);
-    border-width: 6px;
-    border-radius: 20px;
-}
-
-.level-up-modal__attack-icon {
-    width: 124px;
-    height: 124px;
-    flex-shrink: 0;
-    -unity-background-scale-mode: scale-to-fit;
-}
-
-.level-up-modal__attack-name {
-    min-height: 48px;
-    margin-top: 4px;
+.level-up-modal__development-reward {
+    width: 620px;
+    min-height: 150px;
+    margin-top: 18px;
     color: var(--ui-text-fill);
     -unity-text-outline-color: var(--ui-text-outline);
-    font-size: 32px;
+    font-size: 38px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     white-space: normal;
-}
-
-.level-up-modal__attack-status {
-    min-height: 40px;
-    margin-top: 2px;
-    color: var(--ui-compact-text);
-    -unity-text-outline-width: 0;
-    font-size: 25px;
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
 }
 
 .level-up-modal__ok {

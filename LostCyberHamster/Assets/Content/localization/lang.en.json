@@ -21,6 +21,14 @@
             "value": "Settings"
         },
         {
+            "key": "settings_training",
+            "value": "Training"
+        },
+        {
+            "key": "settings_start_training",
+            "value": "START TRAINING"
+        },
+        {
             "key": "btn_leaderboard",
             "value": "LEADERBOARDS"
         },
@@ -461,6 +469,118 @@
             "value": "Electric Strike"
         },
         {
+            "key": "super_attack_description_energy_shield",
+            "value": "Protects the hamster from obstacles for a short time."
+        },
+        {
+            "key": "super_attack_description_electric_strike",
+            "value": "An electric discharge destroys the nearest obstacle."
+        },
+        {
+            "key": "super_attack_description_skateboard",
+            "value": "The hamster rides a skateboard and uses its special moves."
+        },
+        {
+            "key": "development_back",
+            "value": "‹ Back"
+        },
+        {
+            "key": "development_title",
+            "value": "Character Development"
+        },
+        {
+            "key": "development_current_xp",
+            "value": "CURRENT XP"
+        },
+        {
+            "key": "development_level",
+            "value": "LEVEL {0}"
+        },
+        {
+            "key": "development_current_level",
+            "value": "CURRENT LEVEL"
+        },
+        {
+            "key": "development_points",
+            "value": "DEVELOPMENT STARS"
+        },
+        {
+            "key": "development_points_value",
+            "value": "★ {0}"
+        },
+        {
+            "key": "development_xp_hint",
+            "value": "Earn XP in competitions and complete quests to receive development stars."
+        },
+        {
+            "key": "development_points_hint",
+            "value": "Use development stars to unlock skins or super abilities."
+        },
+        {
+            "key": "development_open_equipment",
+            "value": "Open equipment"
+        },
+        {
+            "key": "development_unlocked",
+            "value": "Unlocked"
+        },
+        {
+            "key": "development_unlock_cost",
+            "value": "★ 1"
+        },
+        {
+            "key": "development_icon_load_error",
+            "value": "Could not load development icon '{0}': {1}"
+        },
+        {
+            "key": "development_refresh_error",
+            "value": "Could not refresh character development: {0}"
+        },
+        {
+            "key": "equipment_title",
+            "value": "Equipment"
+        },
+        {
+            "key": "equipment_skins",
+            "value": "SKINS"
+        },
+        {
+            "key": "equipment_abilities",
+            "value": "SUPER ABILITIES"
+        },
+        {
+            "key": "equipment_equipped",
+            "value": "EQUIPPED"
+        },
+        {
+            "key": "equipment_owned",
+            "value": "OWNED"
+        },
+        {
+            "key": "equipment_equip",
+            "value": "EQUIP"
+        },
+        {
+            "key": "equipment_purchase_required",
+            "value": "AVAILABLE FOR PURCHASE"
+        },
+        {
+            "key": "equipment_buy",
+            "value": "BUY"
+        },
+        {
+            "key": "equipment_active",
+            "value": "ACTIVE"
+        },
+        {
+            "key": "equipment_no_skins",
+            "value": "No unlocked skins"
+        },
+        {
+            "key": "equipment_no_abilities",
+            "value": "No unlocked super abilities"
+        },
+        {
             "key": "super_attacks_back",
             "value": "< BACK"
         },
@@ -531,6 +651,10 @@
         {
             "key": "level_up_transition",
             "value": "LEVEL {0} → {1}"
+        },
+        {
+            "key": "level_up_development_reward",
+            "value": "+{0} DEVELOPMENT POINTS"
         },
         {
             "key": "level_up_attack_available",

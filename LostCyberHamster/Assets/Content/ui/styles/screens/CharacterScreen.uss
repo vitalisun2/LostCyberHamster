@@ -1,0 +1,352 @@
+/* Геометрия нормализована по каждому кадру референса 2160 x 1110. */
+.equipment-screen {
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.equipment__back-button {
+    position: absolute;
+    left: 1%;
+    top: 22px;
+    width: 144px;
+    height: 70px;
+    margin: 0;
+    padding: 8px;
+    font-size: 26px;
+}
+
+.equipment__title {
+    position: absolute;
+    left: 25%;
+    top: 1.5%;
+    width: 50%;
+    height: 100px;
+    font-size: 72px;
+    -unity-text-align: middle-center;
+}
+
+.equipment__tabs {
+    position: absolute;
+    left: 0;
+    top: 15.5%;
+    width: 100%;
+    height: 112px;
+}
+
+.equipment-tab {
+    position: absolute;
+    height: 64px;
+    margin: 0;
+    padding-right: 20px;
+    padding-left: 20px;
+    border-width: 0;
+    border-radius: var(--ui-radius-secondary);
+    background-color: var(--ui-tab-inactive);
+    color: var(--ui-quest-control-text);
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
+    font-size: 32px;
+    white-space: normal;
+    transition-property: left, top, width, height, font-size, background-color;
+    transition-duration: 350ms;
+    transition-timing-function: ease-in-out;
+}
+
+.equipment-tab,
+.equipment-tab:hover,
+.equipment-tab:focus,
+.equipment-tab:active {
+    color: var(--ui-quest-control-text);
+    -unity-text-outline-width: 0;
+}
+
+.equipment-tab:hover,
+.equipment-tab:focus {
+    background-color: var(--ui-tab-inactive-hover);
+}
+
+.equipment-tab:active {
+    background-color: var(--ui-content-card-accent);
+}
+
+.equipment-tab--active {
+    height: 96px;
+    background-color: var(--ui-tab-active);
+    font-size: 52px;
+}
+
+.equipment-tab--active:hover,
+.equipment-tab--active:focus {
+    background-color: var(--ui-tab-active-hover);
+}
+
+.equipment-tab--active:active {
+    background-color: var(--ui-surface-active);
+}
+
+.equipment-tab--abilities {
+    font-size: 32px;
+}
+
+.equipment-tab--abilities.equipment-tab--active {
+    font-size: 52px;
+}
+
+.equipment__tabs--skins .equipment-tab--skins {
+    left: 39.8%;
+    top: 0;
+    width: 15.8%;
+}
+
+.equipment__tabs--skins .equipment-tab--abilities {
+    left: 58.1%;
+    top: 22px;
+    width: 20%;
+}
+
+.equipment__tabs--abilities .equipment-tab--skins {
+    left: 21.5%;
+    top: 22px;
+    width: 10.6%;
+}
+
+.equipment__tabs--abilities .equipment-tab--abilities {
+    left: 35%;
+    top: 0;
+    width: 30%;
+}
+
+.equipment__pages-viewport {
+    position: absolute;
+    left: 0;
+    top: 30%;
+    width: 100%;
+    height: 70%;
+    overflow: hidden;
+}
+
+.equipment__pages-track {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 200%;
+    height: 100%;
+    flex-direction: row;
+    translate: 0 0;
+    transition-property: translate;
+    transition-duration: 350ms;
+    transition-timing-function: ease-in-out;
+}
+
+.equipment__pages-track--abilities {
+    translate: -50% 0;
+}
+
+.equipment__body {
+    position: relative;
+    flex-shrink: 0;
+    width: 50%;
+    height: 100%;
+}
+
+.equipment__preview {
+    position: absolute;
+    left: 10%;
+    top: 7%;
+    width: 41.5%;
+    height: 86%;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--ui-equipment-preview-surface);
+    border-width: 4px;
+    border-color: var(--ui-tab-inactive);
+    border-radius: var(--ui-radius-main);
+}
+
+.equipment__preview-name {
+    position: static;
+    flex: 0 0 auto;
+    width: 80%;
+    height: 16%;
+    margin: 0 10% 0 10%;
+    color: var(--ui-text-fill);
+    font-size: 46px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.equipment__preview-gap {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    width: 100%;
+    min-height: 0;
+}
+
+.equipment__preview-content {
+    position: static;
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 0;
+    flex-direction: row;
+    align-items: center;
+    padding: 0;
+}
+
+.equipment__preview-image {
+    flex-shrink: 0;
+    width: 50%;
+    height: 100%;
+    min-height: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.equipment-page--skins .equipment__preview-content {
+    width: 100%;
+    height: 48%;
+    justify-content: center;
+}
+
+.equipment-page--skins .equipment__preview-image {
+    margin-left: 0;
+}
+
+.equipment__preview-description {
+    display: none;
+    color: var(--ui-text-fill);
+    font-size: 29px;
+    white-space: normal;
+    -unity-text-align: middle-left;
+}
+
+.equipment__preview-footer {
+    flex: 0 0 auto;
+    width: 100%;
+    height: 16%;
+    align-items: center;
+    justify-content: center;
+}
+
+.equipment__preview-status {
+    display: none;
+    position: static;
+    width: 56%;
+    height: 100%;
+    margin: 0;
+    color: var(--ui-text-fill);
+    font-size: 32px;
+    -unity-text-align: middle-center;
+}
+
+.equipment__action {
+    width: 56%;
+    height: 100%;
+    margin: 0;
+    padding: 8px;
+    align-self: center;
+    font-size: 32px;
+    white-space: nowrap;
+}
+
+.equipment__cards-scroll {
+    position: absolute;
+    left: 54%;
+    top: 11.4%;
+    width: 43%;
+    height: 80%;
+}
+
+.equipment__cards-scroll .unity-scroll-view__content-viewport,
+.equipment__cards-scroll .unity-scroll-view__content-container,
+.equipment__cards {
+    min-width: 100%;
+    height: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    justify-content: center;
+}
+
+.equipment-card {
+    flex-shrink: 0;
+    width: 144px;
+    height: 189px;
+    margin: 10px 23px 15px 23px;
+    padding: 7px;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--ui-content-card-surface);
+    border-width: 4px;
+    border-color: var(--ui-border);
+    border-radius: var(--ui-radius-main);
+}
+
+.equipment-card--selected {
+    border-width: 5px;
+    background-color: var(--ui-status-warning-muted);
+}
+
+.equipment-card__icon {
+    flex-shrink: 0;
+    width: 90px;
+    height: 62%;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.equipment-card__name {
+    width: 100%;
+    height: 28%;
+    color: var(--ui-content-card-text);
+    font-size: 16px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.equipment-card--locked {
+    opacity: 0.78;
+}
+
+.equipment-card__lock {
+    flex-shrink: 0;
+    width: 45px;
+    height: 67px;
+    background-image: url("project://database/Assets/Content/ui/textures/newyork_atlas.psd?fileID=7789055545610967947&guid=26096890a016443af92b075577c107c9&type=3#lock");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.equipment-page--abilities .equipment__preview-content {
+    width: 100%;
+    height: 64%;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
+}
+
+.equipment-page--abilities .equipment__preview-image {
+    width: 28%;
+    height: 100%;
+    flex-shrink: 0;
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+.equipment-page--abilities .equipment__preview-description {
+    display: flex;
+    flex-shrink: 0;
+    width: 42%;
+    height: 100%;
+    margin: 0 10% 0 0;
+    -unity-text-align: middle-left;
+    font-size: 24px;
+    white-space: normal;
+}
+
+.equipment-page--abilities .equipment__preview-status {
+    display: none;
+}

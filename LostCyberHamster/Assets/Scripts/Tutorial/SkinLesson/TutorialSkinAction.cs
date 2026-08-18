@@ -3,7 +3,7 @@ namespace Assets.Scripts.Tutorial
     public enum TutorialSkinAction
     {
         OpenCharacterScreen,
-        SelectNextSkin,
+        SelectSkin,
         BuySkin,
         EquipSkin
     }

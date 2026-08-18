@@ -341,6 +341,7 @@ namespace Vues.GameCore.Quests
             {
                 if (skin == null ||
                     skin.Id <= 0 ||
+                    !CharacterDevelopmentService.IsSkinUnlocked(skin.Id) ||
                     purchasedSkinIds.Contains(skin.Id))
                 {
                     continue;
@@ -375,7 +376,7 @@ namespace Vues.GameCore.Quests
                 if (superAttack == null ||
                     superAttack.Id <= 0 ||
                     superAttack.Id == playerData.ActiveSuperAttackId ||
-                    superAttack.RequiredPlayerLevel > playerData.PlayerLevel)
+                    !SuperAttackService.IsUnlocked(superAttack.Id))
                 {
                     continue;
                 }

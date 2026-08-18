@@ -78,6 +78,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoof\SuperJumpFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UnspawnOutOfBoundsMechanics.cs" />
     <Compile Include="Assets\Scripts\Diagnostics\RuntimePerformanceDiagnostics.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\CharacterDevelopment\CharacterDevelopmentService.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Runtime\TutorialLevelRoutingLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Installers\ProjectInstaller.cs" />
     <Compile Include="Assets\Scripts\System\DecorationSpawner.cs" />
@@ -461,6 +462,7 @@
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\ProgressService.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinFactory.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneWindowFinder.cs" />
+    <Compile Include="Assets\Scripts\UI\Screens\CharacterDevelopmentScreenController.cs" />
     <Compile Include="Assets\Scripts\CloudSave\CloudSyncService.cs" />
     <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinAction.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\IActionExecutionHandler.cs" />
@@ -497,7 +499,6 @@
     <Compile Include="Assets\Scripts\Diagnostics\DeviceLogReporter.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Session\TutorialStorage.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofPolicy.cs" />
-    <Compile Include="Assets\Scripts\UI\Screens\SuperAttacksScreenController.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\Listeners.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\LoadMainMenuLoadingTask.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardVisualSequence.cs" />
@@ -716,7 +717,7 @@
     <None Include="Assets\Content\ui\styles\screens\HomeScreen.uss" />
     <None Include="Assets\Content\ui\uxml\LevelUpModal.uxml" />
     <None Include="Assets\Content\ui\styles\utilities\debug.uss" />
-    <None Include="Assets\Content\ui\styles\SuperAttacksScreen.uss" />
+    <None Include="Assets\Content\ui\styles\CharacterDevelopmentScreen.uss" />
     <None Include="Assets\Content\ui\styles\LevelUpModal.uss" />
     <None Include="Assets\Content\ui\uxml\LevelUI.uxml" />
     <None Include="Assets\Content\ui\styles\components\progress.uss" />
@@ -726,7 +727,7 @@
     <None Include="Assets\Content\ui\uxml\SelectLevelScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\Toolbar.uxml" />
     <None Include="Assets\Content\ui\styles\components\toolbar.uss" />
-    <None Include="Assets\Content\ui\styles\screens\SuperAttacksScreen.uss" />
+    <None Include="Assets\Content\ui\styles\screens\CharacterDevelopmentScreen.uss" />
     <None Include="Assets\Content\ui\uxml\SettingsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\EnergyBar.uxml" />
     <None Include="Assets\Content\ui\styles\components\storage.uss" />
@@ -748,6 +749,7 @@
     <None Include="Assets\Content\ui\uxml\test.uxml" />
     <None Include="Assets\Content\ui\styles\components\gameplay-bars.uss" />
     <None Include="Assets\Content\ui\uxml\Bootstrap.uxml" />
+    <None Include="Assets\Content\ui\styles\screens\CharacterScreen.uss" />
     <None Include="Assets\Content\ui\uxml\MainButtonGroup.uxml" />
     <None Include="Assets\Content\ui\uxml\Screen.uxml" />
     <None Include="Assets\Content\ui\styles\components\theme-roles.uss" />
@@ -756,7 +758,7 @@
     <None Include="Assets\Content\ui\styles\DailyQuestRewardModal.uss" />
     <None Include="Assets\Content\ui\styles\screens\LeaderboardScreen.uss" />
     <None Include="Assets\Content\ui\uxml\LeaderboardScreen.uxml" />
-    <None Include="Assets\Content\ui\uxml\SuperAttacksScreen.uxml" />
+    <None Include="Assets\Content\ui\uxml\CharacterDevelopmentScreen.uxml" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

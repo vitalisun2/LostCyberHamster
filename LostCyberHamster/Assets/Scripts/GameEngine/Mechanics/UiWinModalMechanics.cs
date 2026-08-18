@@ -4,7 +4,6 @@ using Assets.Scripts.System;
 using GameManagement;
 using LostCyberHamster.UI;
 using UnityEngine;
-using Vues.GameCore;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -77,16 +76,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 int previousPlayerLevel = _previousPlayerLevel;
                 int currentPlayerLevel =
                     GameDataManager.PlayerData.PlayerLevel;
-                SuperAttackService.TryGetFirstUnlockedBetweenLevels(
-                    previousPlayerLevel,
-                    currentPlayerLevel,
-                    out SuperAttackData unlockedSuperAttack);
+                int levelsGained =
+                    currentPlayerLevel - previousPlayerLevel;
 
                 // Фиксируем обработанный уровень до асинхронного показа следующей модалки.
                 _previousPlayerLevel = currentPlayerLevel;
                 _uiManager.CloseModal(ScreenEnum.WinModal);
 
-                if (unlockedSuperAttack == null)
+                if (levelsGained <= 0)
                 {
                     InvokeActionOnce();
                     return;
@@ -98,7 +95,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 levelUpModalController.SetLevelUpData(
                     previousPlayerLevel,
                     currentPlayerLevel,
-                    unlockedSuperAttack);
+                    levelsGained);
                 levelUpModalController.SetOkAction(
                     InvokeActionOnce);
                 await _uiManager.ShowModalAsync(

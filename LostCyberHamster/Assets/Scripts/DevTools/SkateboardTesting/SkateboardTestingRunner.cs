@@ -42,7 +42,6 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             "mediumNotAlive side",
         };
 
-        private readonly PlayerExperienceService _experienceService = new();
         private readonly List<ChecklistItem> _checklist = new(6);
 
         private Hamster _hamster;
@@ -130,7 +129,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
              attack.IsActive);
 
         /// <summary>
-        /// Выдаёт ровно недостающий XP, проверяет unlock и выбирает Skateboard.
+        /// Открывает Skateboard через development owner и выбирает его.
         /// </summary>
         public void PrepareUnlockAndSelectSkateboard()
         {
@@ -143,18 +142,13 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
             try
             {
                 PlayerData playerData = GameDataManager.PlayerData;
-                if (!SuperAttackService.TryGet(_skateboardId, out SuperAttackData skateboard))
+                if (!SuperAttackService.TryGet(_skateboardId, out _))
                     throw new InvalidOperationException("Skateboard ID 3 отсутствует в каталоге.");
 
-                int beforeLevel = playerData.PlayerLevel;
-                int beforeExperience = playerData.ExperiencePoints;
-                int missingExperience = CalculateMissingExperience(
-                    playerData, skateboard.RequiredPlayerLevel);
-                if (missingExperience > 0)
-                    _experienceService.GrantExperienceForTesting(playerData, missingExperience);
-
-                if (!SuperAttackService.IsUnlocked(_skateboardId, playerData.PlayerLevel))
-                    throw new InvalidOperationException("Skateboard не открылся после начисления XP.");
+                CharacterDevelopmentService.UnlockSuperAttackForTesting(
+                    _skateboardId);
+                if (!SuperAttackService.IsUnlocked(_skateboardId))
+                    throw new InvalidOperationException("Skateboard не открылся через development owner.");
                 if (!SuperAttackService.TrySelect(_skateboardId) ||
                     SuperAttackService.ActiveSuperAttackId != _skateboardId)
                 {
@@ -166,9 +160,8 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                     ? " Текущий Hamster не заменяется: войдите в следующий уровень."
                     : string.Empty;
                 SetStatus(
-                    $"PASS: Skateboard открыт и выбран. Level {beforeLevel}, " +
-                    $"XP {beforeExperience} -> Level {playerData.PlayerLevel}, " +
-                    $"XP {playerData.ExperiencePoints}; добавлено {missingExperience} XP." +
+                    $"PASS: Skateboard открыт и выбран. " +
+                    $"Development Points: {playerData.DevelopmentPoints}." +
                     runtimeNote);
             }
             catch (Exception exception)
@@ -1039,15 +1032,6 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
                 if (_physicalTypes[index] == type) return index;
             }
             return -1;
-        }
-
-        private static int CalculateMissingExperience(PlayerData playerData, int requiredLevel)
-        {
-            if (playerData.PlayerLevel >= requiredLevel) return 0;
-            int levelsMissing = checked(requiredLevel - playerData.PlayerLevel);
-            return checked(
-                levelsMissing * PlayerExperienceService.PlayerLevelThreshold -
-                playerData.ExperiencePoints);
         }
 
         private string BuildLiveStatus()

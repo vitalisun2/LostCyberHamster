@@ -1,0 +1,350 @@
+/* Геометрия нормализована по референсу 1166 x 625. */
+.development-screen {
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.development__header {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 10%;
+}
+
+.development__back-button {
+    position: absolute;
+    left: 1%;
+    top: 22px;
+    width: 144px;
+    height: 70px;
+    margin: 0;
+    padding: 8px;
+    font-size: 26px;
+}
+
+.development__title {
+    position: absolute;
+    left: 25%;
+    top: 10px;
+    width: 50%;
+    height: 82px;
+    font-size: 50px;
+    -unity-text-align: middle-center;
+}
+
+.development__metrics {
+    position: absolute;
+    left: 0;
+    top: 15.5%;
+    width: 100%;
+    height: 20%;
+}
+
+.development__xp-block {
+    position: absolute;
+    left: 2.8%;
+    top: 0;
+    width: 28.9%;
+    height: 86px;
+}
+
+.development__xp-heading {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 48px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.development__metric-label {
+    font-size: 32px;
+    -unity-text-align: middle-left;
+}
+
+.development__xp-value {
+    width: 42%;
+    height: 48px;
+    font-size: 40px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
+.development__xp-progress {
+    position: absolute;
+    left: 0;
+    top: 52px;
+    width: 100%;
+    height: 32px;
+}
+
+.development__xp-progress .unity-progress-bar__title {
+    display: none;
+}
+
+.development__level-block {
+    position: absolute;
+    left: 40.3%;
+    top: 0;
+    width: 19%;
+    height: 122px;
+    align-items: center;
+}
+
+.development__level-label {
+    width: 100%;
+    height: 48px;
+    -unity-text-align: middle-center;
+}
+
+.development__level-value {
+    width: 100%;
+    height: 92px;
+    margin-top: 2px;
+    font-size: 62px;
+    -unity-text-align: middle-center;
+}
+
+.development__xp-hint {
+    position: absolute;
+    left: 66%;
+    top: -8px;
+    width: 29.5%;
+    height: 104px;
+    font-size: 24px;
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
+.development__lower {
+    position: absolute;
+    left: 0;
+    top: 43.7%;
+    width: 100%;
+    height: 52.3%;
+}
+
+.development__points-block {
+    position: absolute;
+    left: 2.8%;
+    top: 0;
+    width: 28.9%;
+    height: 100%;
+}
+
+.development__points-label {
+    position: absolute;
+    left: 9%;
+    top: 0;
+    width: 82%;
+    height: 56px;
+    font-size: 32px;
+    -unity-text-align: middle-center;
+}
+
+.development__points-value {
+    position: absolute;
+    left: 18%;
+    top: 68px;
+    width: 48%;
+    height: 92px;
+    color: var(--ui-content-card-accent);
+    font-size: 58px;
+    -unity-text-align: middle-center;
+}
+
+.development__points-hint {
+    position: absolute;
+    left: 0;
+    top: 48%;
+    width: 90%;
+    height: 86px;
+    font-size: 24px;
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
+.development__equipment-button {
+    position: absolute;
+    left: 8%;
+    bottom: 2%;
+    width: 84%;
+    height: 94px;
+    margin: 0;
+    padding-right: 20px;
+    padding-left: 20px;
+    border-width: 0;
+    border-radius: var(--ui-radius-secondary);
+    background-color: var(--ui-tab-active);
+    color: var(--ui-quest-control-text);
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
+    font-size: 32px;
+}
+
+.development__equipment-button,
+.development__equipment-button:hover,
+.development__equipment-button:focus,
+.development__equipment-button:active {
+    color: var(--ui-quest-control-text);
+    -unity-text-outline-width: 0;
+}
+
+.development__equipment-button:hover,
+.development__equipment-button:focus {
+    background-color: var(--ui-tab-active-hover);
+}
+
+.development__equipment-button:active {
+    background-color: var(--ui-surface-active);
+}
+
+.development__catalogs {
+    position: absolute;
+    left: 40.3%;
+    top: 0;
+    width: 54.2%;
+    height: 100%;
+    scale: 1.14 1.14;
+    transform-origin: 100% 100%;
+}
+
+.development__line-title {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 52px;
+    font-size: 36px;
+    -unity-text-align: middle-center;
+}
+
+.development__skins-title {
+    top: 0;
+}
+
+.development__abilities-title {
+    top: 54%;
+}
+
+.development__carousel {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 148px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.development__skins-carousel {
+    top: 12.5%;
+}
+
+.development__abilities-carousel {
+    top: 65%;
+}
+
+.development__carousel-line {
+    position: absolute;
+    left: 17px;
+    right: 17px;
+    top: 50%;
+    height: 1px;
+    background-color: var(--ui-border);
+}
+
+.development__line-scroll {
+    flex-grow: 1;
+    min-width: 0;
+    height: 100%;
+}
+
+.development__line-scroll .unity-scroll-view__content-viewport,
+.development__line-scroll .unity-scroll-view__content-container {
+    height: 100%;
+}
+
+.development__line-scroll .unity-scroll-view__content-container {
+    min-width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.development__cards-track {
+    flex-shrink: 0;
+    height: 100%;
+    position: relative;
+    flex-direction: row;
+    align-items: center;
+}
+
+.development__cards {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.development-card {
+    flex-shrink: 0;
+    width: 116px;
+    height: 143px;
+    margin: 0 17px;
+    padding: 7px;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--ui-content-card-surface);
+    border-width: 2px;
+    border-color: var(--ui-border);
+    border-radius: 4px;
+}
+
+.development-card--locked {
+    opacity: 0.78;
+}
+
+.development-card__icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.development-card__name {
+    width: 100%;
+    height: 44px;
+    color: var(--ui-content-card-text);
+    font-size: 17px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.development-card__status {
+    width: 100%;
+    height: 34px;
+    color: var(--ui-content-card-accent);
+    font-size: 17px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.development-card__lock {
+    flex-shrink: 0;
+    width: 54px;
+    height: 82px;
+    background-image: url("project://database/Assets/Content/ui/textures/newyork_atlas.psd?fileID=7789055545610967947&guid=26096890a016443af92b075577c107c9&type=3#lock");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.development-card--placeholder .development-card__lock {
+    width: 68px;
+    height: 102px;
+}

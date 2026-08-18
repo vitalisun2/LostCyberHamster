@@ -1,0 +1,2 @@
+/* Compatibility entrypoint. New references use screens/CharacterDevelopmentScreen.uss. */
+@import url("/Assets/Content/ui/styles/screens/CharacterDevelopmentScreen.uss");

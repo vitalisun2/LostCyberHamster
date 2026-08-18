@@ -1,0 +1,60 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <Style src="../styles/screens/CharacterDevelopmentScreen.uss" />
+    <engine:VisualElement name="character-development-screen" class="development-screen">
+        <engine:VisualElement class="development__header">
+            <Vues.GameCore.LocalizedButton key="development_back" name="development__btn-back" class="lcs_btn development__back-button" />
+            <Vues.GameCore.LocalizedLabel key="development_title" class="lcs-text development__title" />
+        </engine:VisualElement>
+
+        <engine:VisualElement class="development__metrics">
+            <engine:VisualElement class="development__xp-block">
+                <engine:VisualElement class="development__xp-heading">
+                    <Vues.GameCore.LocalizedLabel key="development_current_xp" class="lcs-text development__metric-label" />
+                    <engine:Label name="development__xp-label" class="lcs-text development__xp-value" />
+                </engine:VisualElement>
+                <engine:ProgressBar name="development__xp-progress" value="0" high-value="240" title="" class="development__xp-progress" />
+            </engine:VisualElement>
+            <engine:VisualElement class="development__level-block">
+                <Vues.GameCore.LocalizedLabel key="development_current_level" class="lcs-text development__metric-label development__level-label" />
+                <engine:Label name="development__player-level" class="lcs-text development__level-value" />
+            </engine:VisualElement>
+            <Vues.GameCore.LocalizedLabel key="development_xp_hint" class="lcs-text development__xp-hint" />
+        </engine:VisualElement>
+
+        <engine:VisualElement class="development__lower">
+            <engine:VisualElement class="development__points-block">
+                <Vues.GameCore.LocalizedLabel key="development_points" class="lcs-text development__points-label" />
+                <engine:Label name="development__points-value" class="lcs-text development__points-value" />
+                <Vues.GameCore.LocalizedLabel key="development_points_hint" class="lcs-text development__points-hint" />
+                <Vues.GameCore.LocalizedButton key="development_open_equipment" name="development__btn-equipment" class="lcs_btn development__equipment-button" />
+            </engine:VisualElement>
+
+            <engine:VisualElement class="development__catalogs">
+                <Vues.GameCore.LocalizedLabel key="equipment_skins" class="lcs-text development__line-title development__skins-title" />
+                <engine:VisualElement class="development__carousel development__skins-carousel">
+                    <engine:Button text="◀" name="development__skin-prev" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--previous" />
+                    <engine:ScrollView name="development__skin-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="development__line-scroll">
+                        <engine:VisualElement class="development__cards-track">
+                            <engine:VisualElement picking-mode="Ignore" class="development__carousel-line" />
+                            <engine:VisualElement name="development__skin-cards" class="development__cards" />
+                        </engine:VisualElement>
+                    </engine:ScrollView>
+                    <engine:Button text="▶" name="development__skin-next" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--next" />
+                </engine:VisualElement>
+
+                <Vues.GameCore.LocalizedLabel key="equipment_abilities" class="lcs-text development__line-title development__abilities-title" />
+                <engine:VisualElement class="development__carousel development__abilities-carousel">
+                    <engine:Button text="◀" name="development__ability-prev" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--previous" />
+                    <engine:ScrollView name="development__ability-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="development__line-scroll">
+                        <engine:VisualElement class="development__cards-track">
+                            <engine:VisualElement picking-mode="Ignore" class="development__carousel-line" />
+                            <engine:VisualElement name="development__ability-cards" class="development__cards" />
+                        </engine:VisualElement>
+                    </engine:ScrollView>
+                    <engine:Button text="▶" name="development__ability-next" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--next" />
+                </engine:VisualElement>
+            </engine:VisualElement>
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

@@ -7,6 +7,7 @@
 @import url("/Assets/Content/ui/styles/utilities/borders.uss");
 @import url("/Assets/Content/ui/styles/components/toolbar.uss");
 @import url("/Assets/Content/ui/styles/screens/HomeScreen.uss");
+@import url("/Assets/Content/ui/styles/screens/CharacterScreen.uss");
 @import url("/Assets/Content/ui/styles/base/typography.uss");
 @import url("/Assets/Content/ui/styles/components/modals.uss");
 @import url("/Assets/Content/ui/styles/components/account-prompt.uss");
@@ -21,6 +22,6 @@
 @import url("/Assets/Content/ui/styles/components/carousel.uss");
 @import url("/Assets/Content/ui/styles/screens/QuestsScreen.uss");
 @import url("/Assets/Content/ui/styles/screens/LeaderboardScreen.uss");
-@import url("/Assets/Content/ui/styles/screens/SuperAttacksScreen.uss");
+@import url("/Assets/Content/ui/styles/screens/CharacterDevelopmentScreen.uss");
 @import url("/Assets/Content/ui/styles/components/theme-roles.uss");
 @import url("/Assets/Content/ui/styles/components/runtime-states.uss");

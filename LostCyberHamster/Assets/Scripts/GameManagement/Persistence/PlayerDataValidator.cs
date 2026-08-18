@@ -71,16 +71,19 @@ namespace GameManagement
 
             if (data.ActiveSuperAttackId > 0 && SuperAttackService.Items.Count > 0)
             {
-                if (!SuperAttackService.TryGet(data.ActiveSuperAttackId, out SuperAttackData superAttack))
+                if (!SuperAttackService.TryGet(
+                        data.ActiveSuperAttackId,
+                        out _))
                 {
                     return PlayerDataValidationResult.Rejected("unknown_active_super_attack");
                 }
+            }
 
-                if (data.PlayerLevel >= 1 &&
-                    data.PlayerLevel < superAttack.RequiredPlayerLevel)
-                {
-                    return PlayerDataValidationResult.Rejected("locked_active_super_attack");
-                }
+            var developmentResult = ValidateDevelopmentState(data);
+            if (developmentResult?.Status ==
+                PlayerDataValidationStatus.Rejected)
+            {
+                return developmentResult;
             }
 
             var serializedProgressResult = ValidateSerializedProgress(data, out bool hasExactProgressDuplicates);
@@ -109,6 +112,8 @@ namespace GameManagement
 
             bool needsRepair = data.ExperiencePoints < 0 ||
                                data.PlayerLevel < 1 ||
+                               developmentResult?.Status ==
+                               PlayerDataValidationStatus.Repairable ||
                                data.PurchasedSkinIds == null ||
                                data.QuestStates == null ||
                                data.DailyQuestSet == null ||
@@ -178,6 +183,7 @@ namespace GameManagement
             data.EnsureSerializedProgressCollection();
 
             data.PurchasedSkinIds = data.PurchasedSkinIds.Distinct().ToList();
+            RepairDevelopmentState(data);
             data.QuestStates = data.QuestStates
                 .GroupBy(entry => entry.QuestId, StringComparer.Ordinal)
                 .Select(group => group.First())
@@ -299,6 +305,135 @@ namespace GameManagement
         private static bool HasExactDuplicates(IEnumerable<int> values)
         {
             return values.GroupBy(value => value).Any(group => group.Count() > 1);
+        }
+
+        private static PlayerDataValidationResult ValidateDevelopmentState(
+            PlayerData data)
+        {
+            if (data.DevelopmentProgressVersion < 0 ||
+                data.DevelopmentProgressVersion >
+                CharacterDevelopmentService.CurrentProgressVersion)
+            {
+                return PlayerDataValidationResult.Rejected(
+                    "unsupported_development_progress_version");
+            }
+
+            if (data.DevelopmentProgressVersion <
+                CharacterDevelopmentService.CurrentProgressVersion)
+            {
+                return PlayerDataValidationResult.Repairable(
+                    "development_progress_migration_required");
+            }
+
+            if (data.DevelopmentPoints < 0)
+            {
+                return PlayerDataValidationResult.Rejected(
+                    "negative_development_points");
+            }
+
+            if (HasInvalidIds(data.UnlockedSkinIds) ||
+                HasInvalidIds(data.UnlockedSuperAttackIds))
+            {
+                return PlayerDataValidationResult.Rejected(
+                    "invalid_development_unlock");
+            }
+
+            if (HasUnknownSkinIds(data.UnlockedSkinIds) ||
+                HasUnknownSuperAttackIds(data.UnlockedSuperAttackIds))
+            {
+                return PlayerDataValidationResult.Rejected(
+                    "unknown_development_unlock");
+            }
+
+            bool needsRepair = data.UnlockedSkinIds == null ||
+                               data.UnlockedSuperAttackIds == null ||
+                               !data.UnlockedSkinIds.Contains(
+                                   CharacterDevelopmentService.DefaultSkinId) ||
+                               HasExactDuplicates(data.UnlockedSkinIds) ||
+                               HasExactDuplicates(data.UnlockedSuperAttackIds) ||
+                               data.PurchasedSkinIds?.Any(
+                                   skinId =>
+                                       !data.UnlockedSkinIds.Contains(skinId)) == true ||
+                               data.ActiveSuperAttackId > 0 &&
+                               !data.UnlockedSuperAttackIds.Contains(
+                                   data.ActiveSuperAttackId);
+
+            return needsRepair
+                ? PlayerDataValidationResult.Repairable(
+                    "development_progress_normalization_required")
+                : null;
+        }
+
+        private static void RepairDevelopmentState(PlayerData data)
+        {
+            bool isLegacy = data.DevelopmentProgressVersion <
+                            CharacterDevelopmentService.CurrentProgressVersion;
+
+            data.UnlockedSkinIds ??= new List<int>();
+            data.UnlockedSuperAttackIds ??= new List<int>();
+
+            // Ownership и active selection сохраняют доступ при migration/repair.
+            data.UnlockedSkinIds.AddRange(data.PurchasedSkinIds);
+            if (!data.UnlockedSkinIds.Contains(
+                    CharacterDevelopmentService.DefaultSkinId))
+            {
+                data.UnlockedSkinIds.Add(
+                    CharacterDevelopmentService.DefaultSkinId);
+            }
+
+            if (data.ActiveSuperAttackId > 0 &&
+                !data.UnlockedSuperAttackIds.Contains(
+                    data.ActiveSuperAttackId))
+            {
+                data.UnlockedSuperAttackIds.Add(
+                    data.ActiveSuperAttackId);
+            }
+
+            if (isLegacy)
+            {
+                int earnedPoints = Math.Max(0, data.PlayerLevel - 1);
+                int spentOnActiveAbility = data.ActiveSuperAttackId > 0
+                    ? 1
+                    : 0;
+                data.DevelopmentPoints = Math.Max(
+                    0,
+                    earnedPoints - spentOnActiveAbility);
+            }
+
+            data.UnlockedSkinIds = data.UnlockedSkinIds
+                .Distinct()
+                .ToList();
+            data.UnlockedSuperAttackIds = data.UnlockedSuperAttackIds
+                .Distinct()
+                .ToList();
+            data.DevelopmentProgressVersion =
+                CharacterDevelopmentService.CurrentProgressVersion;
+        }
+
+        private static bool HasInvalidIds(IReadOnlyCollection<int> values)
+        {
+            return values?.Any(value => value < 0) == true;
+        }
+
+        private static bool HasUnknownSkinIds(
+            IReadOnlyCollection<int> values)
+        {
+            if (values == null || SkinManager.AvailableSkins.Count == 0)
+            {
+                return false;
+            }
+
+            var knownIds = new HashSet<int>(
+                SkinManager.AvailableSkins.Select(skin => skin.Id));
+            return values.Any(value => !knownIds.Contains(value));
+        }
+
+        private static bool HasUnknownSuperAttackIds(
+            IReadOnlyCollection<int> values)
+        {
+            return values?.Any(
+                value => !SuperAttackService.TryGet(value, out _)) == true &&
+                   SuperAttackService.Items.Count > 0;
         }
 
         private static bool NeedsCatalogProgress(LevelProgressSnapshot progress)

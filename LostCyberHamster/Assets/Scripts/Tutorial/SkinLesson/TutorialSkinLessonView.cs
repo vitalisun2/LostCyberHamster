@@ -352,7 +352,8 @@ namespace Assets.Scripts.Tutorial
             return surface switch
             {
                 ScreenEnum.HomeScreen => root.Q<VisualElement>("btn_character") != null,
-                ScreenEnum.CharacterScreen => root.Q<VisualElement>("btn-skin-next") != null,
+                ScreenEnum.CharacterScreen =>
+                    root.Q<VisualElement>("equipment-screen") != null,
                 _ => false
             };
         }
@@ -402,7 +403,9 @@ namespace Assets.Scripts.Tutorial
             return target switch
             {
                 TutorialSkinTarget.HomeCharacterButton => root.Q<VisualElement>("btn_character"),
-                TutorialSkinTarget.SkinNextButton => root.Q<VisualElement>("btn-skin-next"),
+                TutorialSkinTarget.SkinCard =>
+                    root.Q<VisualElement>(
+                        $"skin-card-{TutorialSkinLessonController.TargetSkinId}"),
                 TutorialSkinTarget.SkinChangeButton => root.Q<VisualElement>("skin-btn-change"),
                 _ => null
             };

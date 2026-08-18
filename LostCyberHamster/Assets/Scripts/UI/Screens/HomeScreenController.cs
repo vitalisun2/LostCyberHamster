@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Assets.Scripts.Tutorial;
 using GameManagement;
 using GameManagement.Progress;
 using UnityEngine.SceneManagement;
@@ -18,11 +17,10 @@ namespace LostCyberHamster.UI
         private Button _buttonSettings => _contentRoot.Q<Button>("btn_settings");
 
         private Button _buttonCharacter => _contentRoot.Q<Button>("btn_character");
-        private Button _buttonTutorial => _contentRoot.Q<Button>("btn_tutorial");
 
         private Button _buttonQuests => _contentRoot.Q<Button>("btn_quests");
-        private Button _buttonSuperAttacks =>
-            _contentRoot.Q<Button>("btn_super-attacks");
+        private Button _buttonDevelopment =>
+            _contentRoot.Q<Button>("btn_development");
         private Button _buttonShop => _contentRoot.Q<Button>("btn_shop");
 
         private Button _buttonHome => _contentRoot.Q<Button>("btn_home");
@@ -69,15 +67,14 @@ namespace LostCyberHamster.UI
             _buttonLeaderboard?.RegisterCallback<ClickEvent>(OnClickBtnLeaderboard);
             _buttonSettings?.RegisterCallback<ClickEvent>(OnClickBtnSettings);
             _buttonCharacter?.RegisterCallback<ClickEvent>(OnClickBtnCharacter);
-            _buttonTutorial?.RegisterCallback<ClickEvent>(OnClickBtnTutorial);
             _buttonQuests?.RegisterCallback<ClickEvent>(OnClickBtnQuests);
-            _buttonSuperAttacks?.RegisterCallback<ClickEvent>(OnClickBtnSuperAttacks);
+            _buttonDevelopment?.RegisterCallback<ClickEvent>(OnClickBtnDevelopment);
             _buttonShop?.RegisterCallback<ClickEvent>(OnClickBtnShop);
         }
 
-        private void OnClickBtnSuperAttacks(ClickEvent evt)
+        private void OnClickBtnDevelopment(ClickEvent evt)
         {
-            UIManager.OnScreenShow(ScreenEnum.SuperAttacksScreen);
+            UIManager.OnScreenShow(ScreenEnum.CharacterDevelopmentScreen);
         }
 
         private void OnClickBtnShop(ClickEvent evt)
@@ -97,13 +94,6 @@ namespace LostCyberHamster.UI
             UIManager.OnScreenShow(ScreenEnum.CharacterScreen);
         }
 
-        private void OnClickBtnTutorial(ClickEvent evt)
-        {
-            TutorialLaunchService.StartReplayFromMenu();
-            SceneManager.LoadScene("Game");
-        }
-
-
         protected override void OnUnsubscribeFromEvents()
         {
             _buttonStart?.UnregisterCallback<ClickEvent>(OnClickBtnStart);
@@ -111,9 +101,8 @@ namespace LostCyberHamster.UI
             _buttonLeaderboard?.UnregisterCallback<ClickEvent>(OnClickBtnLeaderboard);
             _buttonSettings?.UnregisterCallback<ClickEvent>(OnClickBtnSettings);
             _buttonCharacter?.UnregisterCallback<ClickEvent>(OnClickBtnCharacter);
-            _buttonTutorial?.UnregisterCallback<ClickEvent>(OnClickBtnTutorial);
             _buttonQuests?.UnregisterCallback<ClickEvent>(OnClickBtnQuests);
-            _buttonSuperAttacks?.UnregisterCallback<ClickEvent>(OnClickBtnSuperAttacks);
+            _buttonDevelopment?.UnregisterCallback<ClickEvent>(OnClickBtnDevelopment);
             _buttonShop?.UnregisterCallback<ClickEvent>(OnClickBtnShop);
         }
 

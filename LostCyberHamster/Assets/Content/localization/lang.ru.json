@@ -21,6 +21,14 @@
             "value": "Настройки"
         },
         {
+            "key": "settings_training",
+            "value": "Обучение"
+        },
+        {
+            "key": "settings_start_training",
+            "value": "ПРОЙТИ ОБУЧЕНИЕ"
+        },
+        {
             "key": "btn_leaderboard",
             "value": "РЕЙТИНГИ"
         },
@@ -461,6 +469,118 @@
             "value": "Электрический удар"
         },
         {
+            "key": "super_attack_description_energy_shield",
+            "value": "На короткое время защищает хомяка от препятствий."
+        },
+        {
+            "key": "super_attack_description_electric_strike",
+            "value": "Электрический разряд уничтожает ближайшее препятствие."
+        },
+        {
+            "key": "super_attack_description_skateboard",
+            "value": "Хомяк едет на скейтборде и использует его особые движения."
+        },
+        {
+            "key": "development_back",
+            "value": "‹ Назад"
+        },
+        {
+            "key": "development_title",
+            "value": "Развитие персонажа"
+        },
+        {
+            "key": "development_current_xp",
+            "value": "ТЕКУЩИЙ ОПЫТ"
+        },
+        {
+            "key": "development_level",
+            "value": "УРОВЕНЬ {0}"
+        },
+        {
+            "key": "development_current_level",
+            "value": "ТЕКУЩИЙ УРОВЕНЬ"
+        },
+        {
+            "key": "development_points",
+            "value": "ЗВЁЗДЫ РАЗВИТИЯ"
+        },
+        {
+            "key": "development_points_value",
+            "value": "★ {0}"
+        },
+        {
+            "key": "development_xp_hint",
+            "value": "Получай опыт в соревнованиях и выполняй квесты, чтобы получать звёзды развития."
+        },
+        {
+            "key": "development_points_hint",
+            "value": "Используй звёзды развития для открытия скинов или суперспособностей."
+        },
+        {
+            "key": "development_open_equipment",
+            "value": "Открыть экипировку"
+        },
+        {
+            "key": "development_unlocked",
+            "value": "Открыто"
+        },
+        {
+            "key": "development_unlock_cost",
+            "value": "★ 1"
+        },
+        {
+            "key": "development_icon_load_error",
+            "value": "Не удалось загрузить development icon '{0}': {1}"
+        },
+        {
+            "key": "development_refresh_error",
+            "value": "Не удалось обновить экран развития: {0}"
+        },
+        {
+            "key": "equipment_title",
+            "value": "Экипировка"
+        },
+        {
+            "key": "equipment_skins",
+            "value": "СКИНЫ"
+        },
+        {
+            "key": "equipment_abilities",
+            "value": "СПОСОБНОСТИ"
+        },
+        {
+            "key": "equipment_equipped",
+            "value": "НАДЕТО"
+        },
+        {
+            "key": "equipment_owned",
+            "value": "КУПЛЕНО"
+        },
+        {
+            "key": "equipment_equip",
+            "value": "НАДЕТЬ"
+        },
+        {
+            "key": "equipment_purchase_required",
+            "value": "ДОСТУПНО ДЛЯ ПОКУПКИ"
+        },
+        {
+            "key": "equipment_buy",
+            "value": "КУПИТЬ"
+        },
+        {
+            "key": "equipment_active",
+            "value": "АКТИВНА"
+        },
+        {
+            "key": "equipment_no_skins",
+            "value": "Нет открытых skins"
+        },
+        {
+            "key": "equipment_no_abilities",
+            "value": "Нет открытых super abilities"
+        },
+        {
             "key": "super_attacks_back",
             "value": "< НАЗАД"
         },
@@ -531,6 +651,10 @@
         {
             "key": "level_up_transition",
             "value": "УРОВЕНЬ {0} → {1}"
+        },
+        {
+            "key": "level_up_development_reward",
+            "value": "+{0} DEVELOPMENT POINTS"
         },
         {
             "key": "level_up_attack_available",

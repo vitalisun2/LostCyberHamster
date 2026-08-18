@@ -25,6 +25,7 @@ namespace Assets.Scripts.DevTools.Core
         private const int _sortingOrder = 32767;
         private const float _baseMargin = 10f;
         private const float _baseOpenButtonWidth = 64f;
+        private const float _baseOpenButtonTopOffset = 80f;
         private const float _baseHeaderHeight = 40f;
         private const float _baseRootPanelWidth = 300f;
         private const float _baseRootPanelHeight = 270f;
@@ -313,13 +314,15 @@ namespace Assets.Scripts.DevTools.Core
             float margin = _baseMargin * scale;
             Rect safeArea = GetSafeArea();
 
-            // DEV launcher остаётся в штатной позиции независимо от пользовательского layout окна.
+            // DEV launcher остаётся ниже системных кнопок независимо от layout окна.
             float defaultLeft = safeArea.xMin + margin;
             float defaultTop = Mathf.Max(margin, Screen.height - safeArea.yMax + margin);
+            float openButtonTop =
+                defaultTop + _baseOpenButtonTopOffset * scale;
             DevToolsUiFactory.SetTopLeft(
                 _openButtonRect,
                 defaultLeft,
-                defaultTop,
+                openButtonTop,
                 _baseOpenButtonWidth * scale,
                 _baseHeaderHeight * scale);
 

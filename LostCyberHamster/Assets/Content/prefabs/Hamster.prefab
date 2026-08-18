@@ -406,8 +406,8 @@ MonoBehaviour:
   _skateboardRideCycle: 000000000000000000000000010000000000000000000000000000000100000001000000
   _skateboardRun2Speed: 1
   _skateboardRun3Speed: 1.5
-  _skateboardCameraShakeDelayAfterLandingImpactFrames: 3
-  _skateboardWaveDelayAfterLandingImpactFrames: 3
+  _skateboardCameraShakeDelayAfterLandingImpactFrames: 1
+  _skateboardWaveDelayAfterLandingImpactFrames: 0
 --- !u!114 &7841255797837575060
 MonoBehaviour:
   m_ObjectHideFlags: 0
