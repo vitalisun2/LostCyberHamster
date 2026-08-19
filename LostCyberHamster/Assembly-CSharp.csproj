@@ -390,8 +390,8 @@
     <Compile Include="Assets\Scripts\GameEngine\Skins\SkinActionDescriptor.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneTargetResolver.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\RoofJumpResolveContext.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Simulation\InProgressProjectionOptions.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardAttack.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Simulation\InProgressProjectionOptions.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitSuperAttacksLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Gameplay\EnergeticBonus.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\IJumpFromRoofOnRoofPolicy.cs" />
@@ -473,8 +473,8 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\ActionCounter\GameplayActionIds.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnTravel.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\LeaderboardService.cs" />
-    <Compile Include="Assets\Scripts\Gameplay\LifeBonus.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardLandingImpactRequest.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\LifeBonus.cs" />
     <Compile Include="Assets\Scripts\DevTools\GameProgressTesting\GameProgressTestRunner.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\PlayerState\PlayerStateEntityIds.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningGraphNode.cs" />
@@ -705,6 +705,7 @@
     <None Include="Assets\Content\ui\styles\GameUI.uss" />
     <None Include="Assets\Content\ui\styles\theme\tokens.uss" />
     <None Include="Assets\Content\ui\styles\base\typography.uss" />
+    <None Include="Assets\Content\ui\fonts\OFL-Nunito.txt" />
     <None Include="Assets\Content\ui\uxml\Modal.uxml" />
     <None Include="Assets\Content\ui\uxml\QuestsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\WinModal.uxml" />
@@ -757,6 +758,7 @@
     <None Include="Assets\Content\ui\styles\components\buttons.uss" />
     <None Include="Assets\Content\ui\styles\DailyQuestRewardModal.uss" />
     <None Include="Assets\Content\ui\styles\screens\LeaderboardScreen.uss" />
+    <None Include="Assets\Content\ui\styles\base\project-typography.uss" />
     <None Include="Assets\Content\ui\uxml\LeaderboardScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\CharacterDevelopmentScreen.uxml" />
   </ItemGroup>

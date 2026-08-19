@@ -25,3 +25,4 @@
 @import url("/Assets/Content/ui/styles/screens/CharacterDevelopmentScreen.uss");
 @import url("/Assets/Content/ui/styles/components/theme-roles.uss");
 @import url("/Assets/Content/ui/styles/components/runtime-states.uss");
+@import url("/Assets/Content/ui/styles/base/project-typography.uss");
