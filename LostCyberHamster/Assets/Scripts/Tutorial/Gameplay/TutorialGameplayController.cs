@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Assets.Scripts;
+using Assets.Scripts.Common;
 using Assets.Scripts.Gameplay;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Assets.Scripts.Tutorial
@@ -25,6 +27,7 @@ namespace Assets.Scripts.Tutorial
         private readonly IReadOnlyList<TutorialGameplayStep> _steps;
         private readonly List<Obstacle> _superHitTargets = new();
         private readonly TutorialTransitionGuard _transitionGuard = new();
+        private readonly DoubleJumpDetector _doubleJumpDetector = new();
 
         private TutorialGameplayView _view;
         private VisualElement _attachedRoot;
@@ -121,6 +124,11 @@ namespace Assets.Scripts.Tutorial
             if (_state != TutorialGameplayState.WaitingForInput || action != CurrentExpectedAction)
             {
                 return false;
+            }
+
+            if (IsDoubleJumpPairStep())
+            {
+                return TryHandleDoubleJumpInput(action);
             }
 
             ResumeGameIfPausedByTutorial();
@@ -285,10 +293,51 @@ namespace Assets.Scripts.Tutorial
                 CaptureSuperHitTargets();
             }
 
-            _currentActionIndex = 0;
+            ResetActionInputProgress();
             _state = TutorialGameplayState.WaitingForInput;
             PauseGameForTutorial();
             _view?.ShowPrompt(CurrentStep.Instruction, CurrentExpectedAction);
+        }
+
+        private bool TryHandleDoubleJumpInput(TutorialAction action)
+        {
+            // Первый tap открывает окно пары без gameplay request.
+            if (action == TutorialAction.Jump)
+            {
+                ResetActionInputProgress();
+                _doubleJumpDetector.RegisterJump(Time.unscaledTime);
+                _currentActionIndex = 1;
+                _view?.ShowPrompt(CurrentStep.Instruction, CurrentExpectedAction);
+                return false;
+            }
+
+            // Поздний второй tap сжигает пару и возвращает шаг к первому tap.
+            if (!_doubleJumpDetector.RegisterJump(Time.unscaledTime))
+            {
+                ResetActionInputProgress();
+                _view?.ShowPrompt(CurrentStep.Instruction, CurrentExpectedAction);
+                return false;
+            }
+
+            // Валидная пара выпускает накопленный jump после снятия паузы.
+            _doubleJumpDetector.Reset();
+            ResumeGameIfPausedByTutorial();
+            _view?.HidePrompt();
+            _state = TutorialGameplayState.ResolvingAction;
+            return true;
+        }
+
+        private bool IsDoubleJumpPairStep()
+        {
+            return CurrentStep.ExpectedActions.Count == 2
+                   && CurrentStep.ExpectedActions[0] == TutorialAction.Jump
+                   && CurrentStep.ExpectedActions[1] == TutorialAction.SuperJump;
+        }
+
+        private void ResetActionInputProgress()
+        {
+            _currentActionIndex = 0;
+            _doubleJumpDetector.Reset();
         }
 
         private void TryResolveCurrentStep()
@@ -323,7 +372,7 @@ namespace Assets.Scripts.Tutorial
         private void CompleteCurrentStep()
         {
             _trackedObstacle = null;
-            _currentActionIndex = 0;
+            ResetActionInputProgress();
             if (_currentStepIndex + 1 >= _steps.Count)
             {
                 CompleteScenario();
@@ -386,6 +435,11 @@ namespace Assets.Scripts.Tutorial
         {
             if (TryHandleInput(action))
             {
+                if (IsDoubleJumpPairStep() && action == TutorialAction.SuperJump)
+                {
+                    _world.PerformAction(TutorialAction.Jump);
+                }
+
                 _world.PerformAction(action);
             }
         }

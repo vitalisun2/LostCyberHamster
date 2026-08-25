@@ -15,8 +15,11 @@ namespace Assets.Scripts.Common
         /// </summary>
         public bool RegisterJump()
         {
-            var currentTime = Time.time;
+            return RegisterJump(Time.time);
+        }
 
+        internal bool RegisterJump(float currentTime)
+        {
             if (currentTime - _lastJumpTime <= DoubleJumpThreshold)
             {
                 _jumpCount++;
