@@ -1,9 +1,6 @@
 using System;
-using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
-using GameManagement;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
@@ -15,7 +12,6 @@ namespace Assets.Scripts.Tutorial
     public sealed class TutorialFlowController : IDisposable
     {
         private readonly TutorialSession _session;
-        private readonly TutorialSkinLessonController _skinLesson;
 
         private TutorialGameplayController _gameplay;
         private TutorialPhase _phase;
@@ -25,8 +21,6 @@ namespace Assets.Scripts.Tutorial
         public TutorialFlowController(TutorialSession session)
         {
             _session = session ?? throw new ArgumentNullException(nameof(session));
-            _skinLesson = new TutorialSkinLessonController(new TutorialSkinLessonView());
-            _skinLesson.Completed += HandleSkinLessonCompleted;
         }
 
         public TutorialPhase Phase => _phase;
@@ -47,7 +41,6 @@ namespace Assets.Scripts.Tutorial
             }
 
             DisposeGameplay();
-            _skinLesson.OnSceneLoaded();
             if (TutorialConstants.IsCoreLessonLevel(levelAddress))
             {
                 StartGameplayScenario(
@@ -74,10 +67,6 @@ namespace Assets.Scripts.Tutorial
         {
             ThrowIfDisposed();
             _gameplay?.Tick();
-            if (_phase == TutorialPhase.SkinLesson)
-            {
-                _skinLesson.Tick();
-            }
         }
 
         /// <summary>
@@ -101,8 +90,6 @@ namespace Assets.Scripts.Tutorial
             }
 
             DisposeGameplay();
-            _skinLesson.Completed -= HandleSkinLessonCompleted;
-            _skinLesson.Dispose();
             _disposed = true;
         }
 
@@ -111,7 +98,6 @@ namespace Assets.Scripts.Tutorial
             GameManager gameManager,
             Hamster hamster)
         {
-            _skinLesson.Reset();
             _session.PrepareCoreLesson();
             _phase = TutorialPhase.CoreControls;
 
@@ -130,28 +116,6 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
 
-            StartSkinLessonTransition();
-        }
-
-        private void StartSkinLessonTransition()
-        {
-            _session.PrepareSkinLesson(_skinLesson.RequiredCrystals);
-            _skinLesson.Activate();
-            _phase = TutorialPhase.SkinLesson;
-
-            _gameplay.ShowCompletion(
-                "Вы освоили управление",
-                $"Попробуйте купить скин с молнией за {_skinLesson.RequiredCrystals} учебных кристаллов.",
-                "В меню",
-                "В меню",
-                showPrimaryButton: false,
-                OpenMenuForSkinLesson,
-                OpenMenuForSkinLesson);
-        }
-
-        private void HandleSkinLessonCompleted()
-        {
-            DeviceLogUploader.UploadDiagnosticLog("tutorial_completed");
             StartFirstGameplayLevel();
         }
 
@@ -159,14 +123,6 @@ namespace Assets.Scripts.Tutorial
         {
             _phase = TutorialPhase.Completed;
             StartFirstGameplayLevel();
-        }
-
-        private void OpenMenuForSkinLesson()
-        {
-            Time.timeScale = 1f;
-            GameDataManager.IsGameJustStarted = false;
-            GameDataManager.PlayerData.CurrentLevel = TutorialConstants.FirstGameplayLevelAddress;
-            SceneManager.LoadScene(TutorialConstants.MenuSceneName);
         }
 
         private void StartFirstGameplayLevel()

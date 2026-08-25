@@ -63,24 +63,6 @@ namespace Assets.Scripts.Tutorial
         }
 
         /// <summary>
-        /// Готовит состояние для покупки учебного скина.
-        /// </summary>
-        public void PrepareSkinLesson(int trainingCrystals)
-        {
-            if (trainingCrystals < 0)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(trainingCrystals),
-                    trainingCrystals,
-                    "Tutorial training crystals cannot be negative.");
-            }
-
-            Begin();
-            ApplyDefaultTrainingState();
-            ResourceManager.SetResourceBalance(ResourceType.Crystals, trainingCrystals);
-        }
-
-        /// <summary>
         /// Восстанавливает исходные данные и фиксирует завершение tutorial.
         /// </summary>
         public void Complete(string nextLevelAddress)
@@ -181,11 +163,7 @@ namespace Assets.Scripts.Tutorial
         {
             GameDataManager.PlayerData.AppliedSkinId = DefaultSkinId;
             GameDataManager.PlayerData.PurchasedSkinIds = new List<int> { DefaultSkinId };
-            GameDataManager.PlayerData.UnlockedSkinIds = new List<int>
-            {
-                DefaultSkinId,
-                TutorialSkinLessonController.TargetSkinId
-            };
+            GameDataManager.PlayerData.UnlockedSkinIds = new List<int> { DefaultSkinId };
             GameDataManager.PlayerData.IsAccountPromptPending = false;
             ResourceManager.SetResourceBalance(ResourceType.Coins, 0);
             ResourceManager.SetResourceBalance(ResourceType.Crystals, 0);

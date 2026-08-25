@@ -91,7 +91,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneStrategy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimatorEventsDispatcher.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Settings\SettingsData.cs" />
-    <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinLessonView.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\PlanningStrategyApplicability.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofSimulator.cs" />
@@ -197,7 +196,6 @@
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitGameRepositoryLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofActionResolver.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\BotActionKind.cs" />
-    <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinPrompt.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\AddOneCoinMechanics.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\ListenersInstaller.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\HamsterActionLogger.cs" />
@@ -464,7 +462,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneWindowFinder.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\CharacterDevelopmentScreenController.cs" />
     <Compile Include="Assets\Scripts\CloudSave\CloudSyncService.cs" />
-    <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinAction.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\IActionExecutionHandler.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Execution\LiveObstacleResolver.cs" />
     <Compile Include="Assets\Scripts\Installers\GameSceneInstaller.cs" />
@@ -562,10 +559,8 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\UltaChargeMechanics.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningBranchMetrics.cs" />
-    <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinTarget.cs" />
     <Compile Include="Assets\Scripts\DevTools\Root\RootDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\LevelProgressKey.cs" />
-    <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinStep.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitDecorationsLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpFromRoof\SuperJumpFromRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\RoofJumpOverFireWindowFinder.cs" />
@@ -639,7 +634,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitStrategy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Core\Quest.cs" />
     <Compile Include="Assets\Scripts\SharedCore\UI\SaveArea.cs" />
-    <Compile Include="Assets\Scripts\Tutorial\SkinLesson\TutorialSkinLessonController.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleRoleClassifier.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\BotPlan.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitCharacterLoadingTask.cs" />
