@@ -9,6 +9,13 @@ namespace Assets.Scripts.Tutorial
     /// </summary>
     public sealed class TutorialGameplayView : IDisposable
     {
+        private enum TutorialFocusTarget
+        {
+            Tap,
+            Jump,
+            Ultra
+        }
+
         private const string _fingerResourcePath = "Tutorial/tutorial_finger_placeholder";
         private const string _rootName = "tutorial-root";
         private const string _completeRootName = "tutorial-complete-root";
@@ -101,11 +108,17 @@ namespace Assets.Scripts.Tutorial
         public void ShowPrompt(string instruction, TutorialAction focusAction)
         {
             _instructionLabel.text = instruction ?? string.Empty;
+            bool keepFocusRect = _hasCurrentFocusRect
+                                 && HasSameFocusTarget(_currentPromptAction, focusAction);
             _currentPromptAction = focusAction;
             _root.style.display = DisplayStyle.Flex;
             _idleInputBlocker.style.display = DisplayStyle.None;
             _promptRoot.style.display = DisplayStyle.Flex;
-            _hasCurrentFocusRect = false;
+            if (!keepFocusRect)
+            {
+                _hasCurrentFocusRect = false;
+            }
+
             int focusVersion = ++_focusVersion;
             _promptRoot.schedule.Execute(() => ApplyFocusStyle(focusAction, focusVersion)).ExecuteLater(0);
         }
@@ -206,6 +219,25 @@ namespace Assets.Scripts.Tutorial
             }
 
             evt.StopImmediatePropagation();
+        }
+
+        private static bool HasSameFocusTarget(TutorialAction currentAction, TutorialAction nextAction)
+        {
+            return GetFocusTarget(currentAction) == GetFocusTarget(nextAction);
+        }
+
+        private static TutorialFocusTarget GetFocusTarget(TutorialAction action)
+        {
+            switch (action)
+            {
+                case TutorialAction.Jump:
+                case TutorialAction.SuperJump:
+                    return TutorialFocusTarget.Jump;
+                case TutorialAction.Ultra:
+                    return TutorialFocusTarget.Ultra;
+                default:
+                    return TutorialFocusTarget.Tap;
+            }
         }
 
         private void ApplyFocusStyle(TutorialAction focusAction, int focusVersion)
