@@ -39,6 +39,8 @@ namespace Assets.Scripts.Tutorial
         private bool _isSubscribedToUltraUsed;
         private bool _superHitUsed;
         private bool _superHitEffectObserved;
+        private bool _isDoubleJumpUpgradeScheduled;
+        private float _doubleJumpUpgradeReadyTime;
         private Action _primaryCompletionAction;
         private Action _secondaryCompletionAction;
         private bool _hasCompletionPresentation;
@@ -109,6 +111,11 @@ namespace Assets.Scripts.Tutorial
                 case TutorialGameplayState.WaitingForInput:
                     break;
                 case TutorialGameplayState.ResolvingAction:
+                    if (TryProcessDoubleJumpUpgrade())
+                    {
+                        break;
+                    }
+
                     TryResolveCurrentStep();
                     break;
                 case TutorialGameplayState.Completed:
@@ -319,7 +326,7 @@ namespace Assets.Scripts.Tutorial
                 return false;
             }
 
-            // Валидная пара выпускает накопленный jump после снятия паузы.
+            // Валидная пара выпускает gameplay и передаёт handler-у двухфазный input.
             _doubleJumpDetector.Reset();
             ResumeGameIfPausedByTutorial();
             _view?.HidePrompt();
@@ -338,6 +345,39 @@ namespace Assets.Scripts.Tutorial
         {
             _currentActionIndex = 0;
             _doubleJumpDetector.Reset();
+            ResetDoubleJumpUpgradeSchedule();
+        }
+
+        private bool TryProcessDoubleJumpUpgrade()
+        {
+            // Без schedule обычный resolve идёт сразу.
+            if (!_isDoubleJumpUpgradeScheduled)
+            {
+                return false;
+            }
+
+            // До края игрового окна tutorial удерживает завершение шага.
+            if (Time.time < _doubleJumpUpgradeReadyTime)
+            {
+                return true;
+            }
+
+            // На краю окна отправляет второй request и даёт gameplay обработать кадр.
+            _world.PerformAction(TutorialAction.SuperJump);
+            ResetDoubleJumpUpgradeSchedule();
+            return true;
+        }
+
+        private void ScheduleDoubleJumpUpgrade()
+        {
+            _isDoubleJumpUpgradeScheduled = true;
+            _doubleJumpUpgradeReadyTime = Time.time + DoubleJumpDetector.DoubleJumpThreshold;
+        }
+
+        private void ResetDoubleJumpUpgradeSchedule()
+        {
+            _isDoubleJumpUpgradeScheduled = false;
+            _doubleJumpUpgradeReadyTime = 0f;
         }
 
         private void TryResolveCurrentStep()
@@ -438,6 +478,8 @@ namespace Assets.Scripts.Tutorial
                 if (IsDoubleJumpPairStep() && action == TutorialAction.SuperJump)
                 {
                     _world.PerformAction(TutorialAction.Jump);
+                    ScheduleDoubleJumpUpgrade();
+                    return;
                 }
 
                 _world.PerformAction(action);
