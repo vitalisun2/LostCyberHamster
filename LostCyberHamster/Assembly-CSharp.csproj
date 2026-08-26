@@ -551,6 +551,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\TakeDamageMechanics.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Catalog\QuestCatalog.cs" />
     <Compile Include="Assets\Scripts\System\ObstacleFactory.cs" />
+    <Compile Include="Assets\Scripts\Common\ObstacleTypePolicy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\UI\UIElements\LocalizedLabel.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardAttackComposer.cs" />
     <Compile Include="Assets\Scripts\Common\Models\PatternTemplate.cs" />

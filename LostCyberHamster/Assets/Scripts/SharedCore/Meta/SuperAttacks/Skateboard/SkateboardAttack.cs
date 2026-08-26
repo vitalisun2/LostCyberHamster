@@ -1,5 +1,6 @@
 using System;
 using Assets.Scripts;
+using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameEngine.Actors;
 using Assets.Scripts.GameEngine.Mechanics;
@@ -428,7 +429,7 @@ namespace Vues.GameCore
             // Presentation получает только подтверждённый physical Ride contact.
             if (isRide &&
                 !isRideSupport &&
-                SkateboardInteractionPolicy.IsPhysical(obstacleType))
+                ObstacleTypePolicy.IsPhysical(obstacleType))
             {
                 _visualSequence.ReactToCollision(obstacle);
             }

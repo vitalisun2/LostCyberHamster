@@ -34,17 +34,17 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnEnable()
         {
-            _destroyObstacleEvent.Subscribe(OnJumpOnEvent);
-            _obstacleBonusDropEvent.Subscribe(OnJumpOnEvent);
+            _destroyObstacleEvent.Subscribe(OnObstacleDestroyed);
+            _obstacleBonusDropEvent.Subscribe(OnObstacleDestroyed);
         }
 
         public void OnDisable()
         {
-            _destroyObstacleEvent.Unsubscribe(OnJumpOnEvent);
-            _obstacleBonusDropEvent.Unsubscribe(OnJumpOnEvent);
+            _destroyObstacleEvent.Unsubscribe(OnObstacleDestroyed);
+            _obstacleBonusDropEvent.Unsubscribe(OnObstacleDestroyed);
         }
 
-        private void OnJumpOnEvent(Obstacle destroyedObstacle)
+        private void OnObstacleDestroyed(Obstacle destroyedObstacle)
         {
             CalculateAndApplyBonus();
         }

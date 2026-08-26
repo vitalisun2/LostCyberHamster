@@ -7,9 +7,6 @@ namespace Assets.Scripts.Tutorial
     {
         Tap,
         Jump,
-        SuperJump,
-        BuyEnergy,
-        BuyUltra,
-        Pause
+        SuperJump
     }
 }

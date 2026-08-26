@@ -14,11 +14,17 @@ public class ElectricStrikeUlta : MonoBehaviour
     [SerializeField] private float delayBetweenEffects = 0.1f; // Задержка между эффектами - по умолчанию 0.1 сек
     [SerializeField] private float effectSpeedMultiplier = 1.0f; // Общая скорость эффекта
 
+    /// <summary>
+    /// Возвращает признак полностью настроенного визуального эффекта.
+    /// </summary>
     public bool IsConfigured =>
-        effectRenderer1 != null &&
-        effectRenderer2 != null &&
-        effectRenderer3 != null;
+        HasSprite(effectRenderer1) &&
+        HasSprite(effectRenderer2) &&
+        HasSprite(effectRenderer3);
 
+    /// <summary>
+    /// Возвращает правую мировую границу всех спрайтов удара.
+    /// </summary>
     public float WorldRightEdge => Mathf.Max(
         effectRenderer1.bounds.max.x,
         effectRenderer2.bounds.max.x,
@@ -28,7 +34,7 @@ public class ElectricStrikeUlta : MonoBehaviour
     {
         if (!IsConfigured)
         {
-            Debug.LogError("ElectricStrikeUlta: One or more SpriteRenderers are not assigned.");
+            Debug.LogError("ElectricStrikeUlta: One or more SpriteRenderers or sprites are not assigned.");
             Destroy(gameObject);
             return;
         }
@@ -93,5 +99,10 @@ public class ElectricStrikeUlta : MonoBehaviour
         }
         color.a = endAlpha;
         spriteRenderer.color = color;
+    }
+
+    private static bool HasSprite(SpriteRenderer renderer)
+    {
+        return renderer != null && renderer.sprite != null;
     }
 }

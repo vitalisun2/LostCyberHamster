@@ -61,7 +61,12 @@ namespace Assets.Scripts.Gameplay
         public AtomicEvent<ObstacleTypeEnum> CollectableCollectedEvent = new();
         public AtomicEvent<Obstacle> DestroyObstacleEvent = new();
         public AtomicEvent<Obstacle> DestroyObstacleBySuperAttackEvent = new();
+
+        /// <summary>
+        /// Запрашивает случайный бонус от указанного разрушаемого препятствия.
+        /// </summary>
         public AtomicEvent<Obstacle> ObstacleBonusDropEvent = new();
+
         public AtomicEvent DamageEvent = new();
         public AtomicEvent UltaEvent = new();
         public AtomicEvent TapRequest = new();

@@ -2,8 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts.Common;
-using Assets.Scripts.Common.Models;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using Assets.Scripts.System.Resources;
 using UnityEngine;
@@ -75,12 +75,10 @@ namespace Vues.GameCore
                 effect.WorldRightEdge);
             if (obstacles.Count > 0)
             {
-                HashSet<InstantiatedObstacle> dropTargets = SelectDropTargets(obstacles);
                 hamster.StartCoroutine(DestroyObstaclesWithDelay(
                     hamster,
                     obstacleSpawner,
                     obstacles,
-                    dropTargets,
                     _delayBetweenDestroyedObstacles));
             }
 
@@ -106,21 +104,23 @@ namespace Vues.GameCore
             Hamster hamster,
             ObstacleSpawner obstacleSpawner,
             List<InstantiatedObstacle> obstacles,
-            HashSet<InstantiatedObstacle> dropTargets,
             float delay)
         {
-            foreach (InstantiatedObstacle target in obstacles)
+            var destructionDelay = new WaitForSeconds(delay);
+            var destroyedObstacles = new List<Obstacle>(obstacles.Count);
+            for (int index = 0; index < obstacles.Count; index++)
             {
-                if (!IsCurrentLiveTarget(obstacleSpawner, target))
+                InstantiatedObstacle target = obstacles[index];
+                if (!IsCurrentLiveTarget(hamster, obstacleSpawner, target))
                     continue;
 
                 Obstacle obstacle = target.ObstacleScript;
-                if (dropTargets.Contains(target))
-                    hamster.ObstacleBonusDropEvent?.Invoke(obstacle);
-
                 hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);
-                yield return new WaitForSeconds(delay);
+                destroyedObstacles.Add(obstacle);
+                yield return destructionDelay;
             }
+
+            ApplyRandomDrops(hamster, destroyedObstacles);
         }
 
         private static List<InstantiatedObstacle> FindObstaclesWithinEffect(
@@ -150,9 +150,9 @@ namespace Vues.GameCore
             if (obstacle == null ||
                 !obstacle.isActiveAndEnabled ||
                 obstacle.ObstacleType == null ||
-                !IsRegularObstacle(obstacle) ||
+                !ObstacleTypePolicy.IsPhysical(obstacle.ObstacleType.ObstacleTypeEnum) ||
                 !HelpMethods.IsOnSameLine(hamster.IsOnBottomLine.Value, obstacle) ||
-                ReferenceEquals(obstacle, hamster.LastObstacle.Value))
+                IsReservedMovementTarget(hamster, obstacle))
             {
                 return false;
             }
@@ -166,6 +166,25 @@ namespace Vues.GameCore
                    bounds.min.x <= effectRightEdge;
         }
 
+        private static bool IsReservedMovementTarget(Hamster hamster, Obstacle obstacle)
+        {
+            if (ReferenceEquals(obstacle, hamster.PendingJumpedOnObstacle.Value))
+                return true;
+
+            if (!ReferenceEquals(obstacle, hamster.LastObstacle.Value))
+                return false;
+
+            return hamster.HamsterState.Value is HamsterStateEnum.JumpOnRoof
+                or HamsterStateEnum.JumpOnRoofDamage
+                or HamsterStateEnum.RoofRun
+                or HamsterStateEnum.RoofJump
+                or HamsterStateEnum.RoofJumpDamage
+                or HamsterStateEnum.SuperJumpOnRoof
+                or HamsterStateEnum.SuperJumpOnRoofDamage
+                or HamsterStateEnum.SuperRoofJump
+                or HamsterStateEnum.SuperRoofJumpDamage;
+        }
+
         private static int CompareByLeftEdge(
             InstantiatedObstacle left,
             InstantiatedObstacle right)
@@ -177,48 +196,35 @@ namespace Vues.GameCore
             return leftEdge.CompareTo(rightEdge);
         }
 
-        private static HashSet<InstantiatedObstacle> SelectDropTargets(
-            List<InstantiatedObstacle> obstacles)
+        private static void ApplyRandomDrops(
+            Hamster hamster,
+            List<Obstacle> destroyedObstacles)
         {
-            int dropCount = obstacles.Count >= _twoDropsMinimumDestroyedCount ? 2 : 1;
-            var candidates = new List<InstantiatedObstacle>(obstacles);
-            var dropTargets = new HashSet<InstantiatedObstacle>();
+            int dropCount = destroyedObstacles.Count >= _twoDropsMinimumDestroyedCount
+                ? 2
+                : destroyedObstacles.Count > 0
+                    ? 1
+                    : 0;
 
             for (int index = 0; index < dropCount; index++)
             {
-                int randomIndex = UnityEngine.Random.Range(index, candidates.Count);
-                (candidates[index], candidates[randomIndex]) =
-                    (candidates[randomIndex], candidates[index]);
-                dropTargets.Add(candidates[index]);
+                int randomIndex = UnityEngine.Random.Range(index, destroyedObstacles.Count);
+                (destroyedObstacles[index], destroyedObstacles[randomIndex]) =
+                    (destroyedObstacles[randomIndex], destroyedObstacles[index]);
+                hamster.ObstacleBonusDropEvent?.Invoke(destroyedObstacles[index]);
             }
-
-            return dropTargets;
         }
 
         private static bool IsCurrentLiveTarget(
+            Hamster hamster,
             ObstacleSpawner obstacleSpawner,
             InstantiatedObstacle target)
         {
             Obstacle obstacle = target?.ObstacleScript;
             return obstacle != null &&
                    obstacle.isActiveAndEnabled &&
+                   !IsReservedMovementTarget(hamster, obstacle) &&
                    obstacleSpawner.SpawnedObstacles.Contains(target);
-        }
-
-        private static bool IsRegularObstacle(Obstacle obstacle)
-        {
-            switch (obstacle.ObstacleType.ObstacleTypeEnum)
-            {
-                case ObstacleTypeEnum.smallAlive:
-                case ObstacleTypeEnum.bigAlive:
-                case ObstacleTypeEnum.smallNotAliveRoad:
-                case ObstacleTypeEnum.smallNotAliveRoadAndRoof:
-                case ObstacleTypeEnum.bigNotAlive:
-                case ObstacleTypeEnum.mediumNotAlive:
-                    return true;
-                default:
-                    return false;
-            }
         }
     }
 }

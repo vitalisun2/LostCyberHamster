@@ -30,7 +30,7 @@ namespace Vues.GameCore
             if (IsCollectable(obstacleType))
                 return Outcome.Collect;
 
-            if (!IsPhysical(obstacleType))
+            if (!ObstacleTypePolicy.IsPhysical(obstacleType))
                 return Outcome.Ignore;
 
             if (!IsRoof(obstacleType))
@@ -51,7 +51,7 @@ namespace Vues.GameCore
             if (IsCollectable(obstacleType))
                 return Outcome.Collect;
 
-            if (!IsPhysical(obstacleType))
+            if (!ObstacleTypePolicy.IsPhysical(obstacleType))
                 return Outcome.Ignore;
 
             return startedOnRoof && IsRoof(obstacleType)
@@ -71,7 +71,7 @@ namespace Vues.GameCore
             if (IsCollectable(obstacleType))
                 return Outcome.BumpOnly;
 
-            if (!IsPhysical(obstacleType))
+            if (!ObstacleTypePolicy.IsPhysical(obstacleType))
                 return Outcome.Ignore;
 
             bool isRoof = IsRoof(obstacleType);
@@ -95,19 +95,6 @@ namespace Vues.GameCore
                 or ObstacleTypeEnum.collectableCrystal
                 or ObstacleTypeEnum.collectableLife
                 or ObstacleTypeEnum.collectableCoin;
-        }
-
-        /// <summary>
-        /// Возвращает true для физических gameplay obstacles.
-        /// </summary>
-        public static bool IsPhysical(ObstacleTypeEnum obstacleType)
-        {
-            return obstacleType is ObstacleTypeEnum.smallAlive
-                or ObstacleTypeEnum.bigAlive
-                or ObstacleTypeEnum.smallNotAliveRoad
-                or ObstacleTypeEnum.smallNotAliveRoadAndRoof
-                or ObstacleTypeEnum.bigNotAlive
-                or ObstacleTypeEnum.mediumNotAlive;
         }
 
         /// <summary>

@@ -11,6 +11,10 @@ namespace GameManagement
     public static class PlayerDataValidator
     {
         private const int RemovedSkateboardSkinId = 3;
+        private const string RemovedSuperHitTutorialLevelAddress =
+            "01_New_York/Morning/Tutorial Level 2";
+        private const string FirstGameplayLevelAddress =
+            "01_New_York/Morning/level_01";
 
         public static PlayerDataValidationResult Validate(PlayerData data)
         {
@@ -92,7 +96,10 @@ namespace GameManagement
                 return serializedProgressResult;
             }
 
+            bool hasRemovedSuperHitTutorialLevel =
+                IsRemovedSuperHitTutorialLevel(data.CurrentLevel);
             if (LevelCatalogService.HasCatalog &&
+                !hasRemovedSuperHitTutorialLevel &&
                 !LevelCatalogService.TryFindLevel(data.CurrentLevel, out _))
             {
                 return PlayerDataValidationResult.Rejected("unknown_current_level");
@@ -130,6 +137,7 @@ namespace GameManagement
                                HasExactDuplicates(data.PurchasedSkinIds) ||
                                hasExactQuestStateDuplicates ||
                                hasExactProgressDuplicates ||
+                               hasRemovedSuperHitTutorialLevel ||
                                NeedsCatalogProgress(progress);
 
             return needsRepair
@@ -161,6 +169,12 @@ namespace GameManagement
 
             data.ExperiencePoints = Math.Max(0, data.ExperiencePoints);
             data.PlayerLevel = Math.Max(1, data.PlayerLevel);
+            if (IsRemovedSuperHitTutorialLevel(data.CurrentLevel))
+            {
+                data.CurrentLevel = FirstGameplayLevelAddress;
+                data.IsTutorialCompleted = true;
+            }
+
             data.PurchasedSkinIds ??= new List<int>();
             data.PurchasedSkinIds.RemoveAll(skinId => skinId == RemovedSkateboardSkinId);
             if (data.AppliedSkinId == RemovedSkateboardSkinId)
@@ -305,6 +319,14 @@ namespace GameManagement
         private static bool HasExactDuplicates(IEnumerable<int> values)
         {
             return values.GroupBy(value => value).Any(group => group.Count() > 1);
+        }
+
+        private static bool IsRemovedSuperHitTutorialLevel(string levelAddress)
+        {
+            return string.Equals(
+                levelAddress?.Replace('\\', '/').Trim(),
+                RemovedSuperHitTutorialLevelAddress,
+                StringComparison.OrdinalIgnoreCase);
         }
 
         private static PlayerDataValidationResult ValidateDevelopmentState(
