@@ -10,9 +10,8 @@ using UnityEngine;
 namespace LostCyberHamster.Editor
 {
     /// <summary>
-    /// File-based bridge for controlling TestLevelLauncher from an already-open Unity Editor.
-    /// A terminal script writes a request JSON file, the editor picks it up, runs the launch,
-    /// watches diagnostic_log.txt for [TEST RESULT], and writes a response JSON file back.
+    /// Управляет очередью test-level automation для файлового bridge и Unity CLI.
+    /// Запускает сценарий, отслеживает [TEST RESULT] и сохраняет единый ответ.
     /// </summary>
     [InitializeOnLoad]
     internal static class TestLevelAutomationBridge
@@ -41,6 +40,8 @@ namespace LostCyberHamster.Editor
 
         private static readonly string RequestFilePath = Path.Combine(AutomationDirectoryPath, "test_level_request.json");
         private static readonly string ResponseFilePath = Path.Combine(AutomationDirectoryPath, "test_level_response.json");
+        private static readonly string LastTestLevelResponseFilePath =
+            Path.Combine(AutomationDirectoryPath, "test_level_last_response.json");
 
         private static double _nextPollAt;
 
@@ -60,7 +61,7 @@ namespace LostCyberHamster.Editor
         }
 
         [Serializable]
-        private sealed class BridgeResponse
+        internal sealed class BridgeResponse
         {
             public string requestId;
             public string command;
@@ -80,6 +81,130 @@ namespace LostCyberHamster.Editor
 
             EditorApplication.playModeStateChanged -= OnPlayModeChanged;
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
+        }
+
+        /// <summary>
+        /// Ставит запуск test level в общую очередь automation.
+        /// </summary>
+        internal static BridgeResponse QueueTestLevelLaunch(string levelAddress, float timeScale)
+        {
+            var requestId = Guid.NewGuid().ToString("N");
+
+            // Проверяем входные данные и состояние общей очереди.
+            if (string.IsNullOrWhiteSpace(levelAddress))
+            {
+                return CreateResponse(
+                    requestId,
+                    LaunchCommand,
+                    "failed",
+                    "Level address is required.");
+            }
+
+            if (HasActiveRequest() || EditorApplication.isPlayingOrWillChangePlaymode || File.Exists(RequestFilePath))
+            {
+                return CreateResponse(
+                    requestId,
+                    LaunchCommand,
+                    "busy",
+                    "Unity Editor is already processing another test-level automation request.");
+            }
+
+            var request = new BridgeRequest
+            {
+                requestId = requestId,
+                command = LaunchCommand,
+                createdAtUtc = DateTime.UtcNow.ToString("O"),
+                levelAddress = levelAddress.Trim(),
+                timeScale = timeScale
+            };
+
+            var queuedResponse = CreateResponse(
+                requestId,
+                LaunchCommand,
+                "queued",
+                "Request queued. Poll lch_test_level_status for completion.");
+
+            // Публикуем новый ответ и запрос атомарной заменой файлов.
+            try
+            {
+                SafeDelete(ResponseFilePath);
+                WriteResponse(queuedResponse);
+                WriteRequest(request);
+                return queuedResponse;
+            }
+            catch (Exception exception)
+            {
+                var failedResponse = CreateResponse(
+                    requestId,
+                    LaunchCommand,
+                    "failed",
+                    $"Failed to queue test level: {exception.Message}");
+                WriteResponse(failedResponse);
+                return failedResponse;
+            }
+        }
+
+        /// <summary>
+        /// Возвращает последний ответ общей очереди automation.
+        /// </summary>
+        internal static BridgeResponse GetAutomationStatus()
+        {
+            if (File.Exists(ResponseFilePath))
+            {
+                if (TryReadResponse(ResponseFilePath, out var response, out var responseError))
+                {
+                    return response;
+                }
+
+                return CreateResponse(
+                    GetActiveRequestId(),
+                    GetActiveCommand(),
+                    "failed",
+                    responseError);
+            }
+
+            if (File.Exists(RequestFilePath))
+            {
+                if (TryReadRequest(out var pendingRequest, out var requestError))
+                {
+                    return CreateResponse(
+                        pendingRequest.requestId,
+                        pendingRequest.command,
+                        "queued",
+                        "Request is waiting for Unity Editor processing.");
+                }
+
+                return CreateResponse(string.Empty, string.Empty, "failed", requestError);
+            }
+
+            if (HasActiveRequest())
+            {
+                return CreateResponse(
+                    GetActiveRequestId(),
+                    GetActiveCommand(),
+                    "running",
+                    "Unity Editor is processing the automation request.");
+            }
+
+            return CreateResponse(string.Empty, string.Empty, "idle", "No automation request is active.");
+        }
+
+        /// <summary>
+        /// Возвращает последний сохранённый статус test-level запуска.
+        /// </summary>
+        internal static BridgeResponse GetTestLevelStatus()
+        {
+            if (File.Exists(LastTestLevelResponseFilePath))
+            {
+                if (TryReadResponse(LastTestLevelResponseFilePath, out var response, out var responseError))
+                {
+                    return response;
+                }
+
+                return CreateResponse(string.Empty, LaunchCommand, "failed", responseError);
+            }
+
+            return CreateResponse(string.Empty, LaunchCommand, "idle", "No test-level request has been recorded.");
         }
 
         private static void OnEditorUpdate()
@@ -547,7 +672,7 @@ namespace LostCyberHamster.Editor
             }
         }
 
-        private static bool TryRegenerateProjectFiles(out string message)
+        internal static bool TryRegenerateProjectFiles(out string message)
         {
             message = null;
 
@@ -642,6 +767,61 @@ namespace LostCyberHamster.Editor
             return false;
         }
 
+        private static BridgeResponse CreateResponse(
+            string requestId,
+            string command,
+            string state,
+            string message,
+            string testResult = "")
+        {
+            return new BridgeResponse
+            {
+                requestId = requestId ?? string.Empty,
+                command = command ?? string.Empty,
+                state = state,
+                testResult = testResult ?? string.Empty,
+                message = message ?? string.Empty,
+                updatedAtUtc = DateTime.UtcNow.ToString("O"),
+                diagnosticLogPath = DebugManager.GetDiagLogPath()
+            };
+        }
+
+        private static void WriteRequest(BridgeRequest request)
+        {
+            Directory.CreateDirectory(AutomationDirectoryPath);
+
+            var tempPath = RequestFilePath + ".tmp";
+            var json = JsonUtility.ToJson(request, true);
+
+            File.WriteAllText(tempPath, json);
+            File.Copy(tempPath, RequestFilePath, overwrite: true);
+            SafeDelete(tempPath);
+        }
+
+        private static bool TryReadResponse(string path, out BridgeResponse response, out string errorMessage)
+        {
+            response = null;
+            errorMessage = null;
+
+            try
+            {
+                var json = File.ReadAllText(path);
+                response = JsonUtility.FromJson<BridgeResponse>(json);
+                if (response == null)
+                {
+                    errorMessage = "Automation response JSON is empty or invalid.";
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception exception)
+            {
+                errorMessage = $"Failed to read automation response: {exception.Message}";
+                return false;
+            }
+        }
+
         private static bool TryReadDiagnosticLine(Predicate<string> predicate, out string resultLine)
         {
             resultLine = null;
@@ -684,11 +864,20 @@ namespace LostCyberHamster.Editor
         {
             Directory.CreateDirectory(AutomationDirectoryPath);
 
-            var tempPath = ResponseFilePath + ".tmp";
+            WriteResponseFile(ResponseFilePath, response);
+            if (string.Equals(response.command, LaunchCommand, StringComparison.Ordinal))
+            {
+                WriteResponseFile(LastTestLevelResponseFilePath, response);
+            }
+        }
+
+        private static void WriteResponseFile(string path, BridgeResponse response)
+        {
+            var tempPath = path + ".tmp";
             var json = JsonUtility.ToJson(response, true);
 
             File.WriteAllText(tempPath, json);
-            File.Copy(tempPath, ResponseFilePath, overwrite: true);
+            File.Copy(tempPath, path, overwrite: true);
             SafeDelete(tempPath);
         }
 

@@ -34,7 +34,8 @@ Unity CLI состоит из двух слоёв:
 - Unity CLI: `1.0.0-beta.6`, установлен в `PATH`; авторизация активна.
 - `com.unity.pipeline`: `0.5.0-exp.1`, зафиксирован в `Packages/manifest.json`.
 - Pipeline server запускается автоматически; `status`, `editor_status` и read-only `eval` проверены.
-- Для Codex установлены Unity CLI skill и проектная MCP-конфигурация.
+- Для Codex установлены Unity CLI skill и проектная MCP-конфигурация. MCP активируется после перезапуска Codex.
+- Проектные команды `lch_*` доступны через терминал; test-level команды используют текущую очередь bridge.
 - Unity CLI и Pipeline имеют experimental/beta-статус. Команды и API могут меняться.
 
 Обновление Editor для CLI не требуется. Отдельно нужно запланировать проверяемый переход на Unity 6.3 LTS: ветка 6.2 больше не поддерживается. Этот переход не блокирует пилот CLI.
@@ -61,6 +62,18 @@ unity mcp configure codex --project-path (Get-Location)
 
 `unity --help` и `unity <command> --help` — источник правды для установленной версии CLI.
 
+## Рабочий порядок агента
+
+Перед изменением сцен, prefab или assets:
+
+1. Выполнить `unity status --format json` из `LostCyberHamster/`.
+2. При состоянии `ready` найти команду через `unity command --query <term> --format json`.
+3. Изменить объект через CLI и сохранить через `save_scene` или `save_all`.
+4. Если Editor недоступен, выполнить `unity pipeline list --format json` и проверить Safe Mode.
+
+При доступном Editor `.unity`, `.prefab` и `.asset` YAML менять через Unity CLI, не вручную.
+При нескольких Editor-процессах всегда передавать `--project-path`.
+
 ## Где применять в проекте
 
 ### 1. Диагностика живого Editor
@@ -76,15 +89,26 @@ unity mcp configure codex --project-path (Get-Location)
 
 ### 2. Проектные команды
 
-Статический метод с `[CliCommand]` должен быть тонким адаптером над существующей проектной логикой. Команда принимает явные параметры и возвращает простой сериализуемый результат.
+Статический метод с `[CliCommand]` — тонкий адаптер над существующей проектной логикой. Команда принимает явные параметры и возвращает простой сериализуемый результат.
 
-Первые кандидаты:
+Доступные команды:
 
 - `lch_editor_status` — версия Editor, compile/play state, project path;
 - `lch_project_regenerate_files` — текущая логика `regenerate_project_files`;
 - `lch_test_level_launch` — запуск одного test level;
 - `lch_test_level_status` — состояние и итог текущего прогона;
-- `lch_diagnostics_summary` — краткий итог каналов `STAB`, `BOT`, `ECO`;
+- `lch_diagnostics_summary` — краткий итог каналов `STAB`, `BOT`, `ECO`.
+
+```powershell
+unity command --query lch --detail compact --format json
+unity command lch_editor_status --format json
+unity command lch_diagnostics_summary --format json
+unity command lch_test_level_launch --level_address '01_New_York/Morning/test_switch_lane' --format json
+unity command lch_test_level_status --format json
+```
+
+Следующие кандидаты:
+
 - `lch_level_assets_sync` — вызов существующей Addressables-синхронизации;
 - `lch_skins_validate` — вызов существующего валидатора skin assets.
 
@@ -131,11 +155,10 @@ unity mcp configure codex --project-path (Get-Location)
 
 ## Следующие шаги
 
-1. Добавить `lch_editor_status` как первую `[CliCommand]`.
-2. Проверить её вызов из терминала и MCP.
-3. Добавить test-level команды без удаления файлового bridge.
-4. Сравнить результаты обоих путей на тех же test levels.
-5. Удалять старый bridge только отдельным решением после стабильного периода.
+1. После перезапуска Codex проверить `lch_editor_status` через MCP.
+2. Сравнить CLI и файловый запуск на тех же test levels.
+3. Добавить `lch_level_assets_sync` и `lch_skins_validate` по реальной потребности.
+4. Удалять старый bridge только отдельным решением после стабильного периода.
 
 ## Официальные источники
 

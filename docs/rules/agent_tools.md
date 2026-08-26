@@ -4,6 +4,7 @@
 
 ## Карта разделов
 
+- [Unity CLI](#unity-cli)
 - [Automation Bridge](#automation-bridge)
 - [Diagnostic Log](#diagnostic-log)
 - [Android Device Logs через ngrok + Dropbox](#android-device-logs-через-ngrok--dropbox)
@@ -12,6 +13,28 @@
 - [Skin Candidate Pipeline](#skin-candidate-pipeline)
 - [Build / Telegram Publishing](#build--telegram-publishing)
 - [PowerShell Scripts](#powershell-scripts)
+
+## Unity CLI
+
+Основной warm-интерфейс к открытому Unity Editor.
+
+```powershell
+Set-Location .\LostCyberHamster
+unity status --format json
+unity command --query lch --detail compact --format json
+unity command lch_editor_status --format json
+unity command lch_diagnostics_summary --format json
+```
+
+Проектные команды:
+
+- `lch_editor_status` — Editor, сцена и automation;
+- `lch_project_regenerate_files` — generated `.csproj`/`.sln`;
+- `lch_test_level_launch` — поставить test level в очередь;
+- `lch_test_level_status` — получить состояние и `[TEST RESULT]`;
+- `lch_diagnostics_summary` — счётчики и последние строки `STAB`, `BOT`, `ECO`.
+
+Test-level CLI использует ту же очередь и семантику, что файловый bridge. Файловые PowerShell-скрипты остаются рабочими.
 
 ## Automation Bridge
 
