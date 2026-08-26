@@ -10,11 +10,7 @@ using UnityEngine;
 namespace LostCyberHamster.Editor
 {
     /// <summary>
-    /// Editor tool for launching test levels directly from the menu.
-    /// Writes the target level address into PlayerPrefs, opens the Bootstrap
-    /// scene and enters Play mode. LoadMainMenuLoadingTask detects the
-    /// override, sets CurrentLevel, and loads Game instead of Menu.
-    /// Override auto-clears when Play Mode exits.
+    /// Запускает test levels через Bootstrap и хранит test-level marker до выхода из Play Mode.
     /// </summary>
     [InitializeOnLoad]
     public static class TestLevelLauncher

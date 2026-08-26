@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using Assets.EditorTools;
 using Unity.Pipeline.Commands;
 using UnityEditor;
 using UnityEngine;
@@ -151,6 +152,63 @@ namespace LostCyberHamster.Editor
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Синхронизирует Addressables-записи level assets через текущий Editor tool.
+        /// </summary>
+        [CliCommand(
+            "lch_level_assets_sync",
+            "Синхронизировать Addressables-записи level assets.",
+            Tags = new[] { "lch", "lch/assets" })]
+        public static OperationResult SyncLevelAssets()
+        {
+            EnsureAssetOperationAvailable();
+            LevelAssetsAddressableSync.SyncFromMenu();
+            return new OperationResult
+            {
+                Success = true,
+                Message = "Level assets sync completed."
+            };
+        }
+
+        /// <summary>
+        /// Проверяет skin catalog, prefab contract и Addressables-настройки.
+        /// </summary>
+        [CliCommand(
+            "lch_skins_validate",
+            "Проверить skin catalog, prefab contract и Addressables-настройки.",
+            Tags = new[] { "lch", "lch/assets", "lch/skins" })]
+        public static OperationResult ValidateSkins()
+        {
+            EnsureAssetOperationAvailable();
+            var errors = SkinVisualContentValidator.Validate();
+            if (errors.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Skin validation failed:\n- " + string.Join("\n- ", errors));
+            }
+
+            return new OperationResult
+            {
+                Success = true,
+                Message = "Skin validation passed."
+            };
+        }
+
+        private static void EnsureAssetOperationAvailable()
+        {
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                throw new InvalidOperationException(
+                    "Asset operation is unavailable while Editor compiles or updates assets.");
+            }
+
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                throw new InvalidOperationException(
+                    "Asset operation is available only outside Play Mode.");
+            }
         }
 
         private static string GetEditorState()

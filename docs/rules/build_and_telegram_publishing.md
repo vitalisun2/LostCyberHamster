@@ -27,7 +27,7 @@ source worktree
 
 - `SourceWorktree` - рабочая копия, состояние которой нужно собрать: task-worktree, `integration/unity-live` или текущий dirty worktree по явному намерению пользователя.
 - `BuildSandbox` - прогретая сборочная копия проекта, например `C:\BuildWorkspaces\LostCyberHamster_Android`.
-- `tools/build/build_android_telegram.ps1` - целевой repo entrypoint для подготовки sandbox, manifest и APK.
+- `tools/build/build_android_telegram.ps1` - целевой repo entrypoint для подготовки sandbox, manifest и APK. По умолчанию запускает Unity через CLI.
 - `publish-build-to-telegram-buffer` - локальный skill, который вызывает repo entrypoint и публикует APK в Telegram.
 
 ## Где выполнять
@@ -152,7 +152,15 @@ Manifest должен попасть в билд как runtime-readable resourc
 tools/build/build_android_telegram.ps1
 ```
 
-Текущая реализация этого entrypoint создает/актуализирует warm sandbox, генерирует build manifest, обновляет sandbox-only `Resources/Diagnostics/device_log_settings.json`, запускает Android build и возвращает JSON с APK/metadata. Фактический Unity player build внутри entrypoint пока делегируется проверенному helper-скрипту локального skill-а `publish-build-to-telegram-buffer`; Telegram-публикация остается ответственностью skill-а.
+Entry point создаёт/актуализирует warm sandbox, генерирует build manifest, обновляет sandbox-only `Resources/Diagnostics/device_log_settings.json`, запускает repo-owned `LostCyberHamsterBuildAutomation` и возвращает JSON с APK/metadata. Telegram-публикация остаётся ответственностью skill-а.
+
+Параметр `-UnityLauncher`:
+
+- `Auto` — Unity CLI, direct Editor fallback;
+- `Cli` — только Unity CLI;
+- `Editor` — прямой запуск Unity Editor.
+
+`-PreflightOnly` проверяет Unity, Android modules, signing config и выбранный launcher без сборки.
 
 Не дробить pipeline на много скриптов заранее. Helper-скрипты рядом в `tools/build/` добавлять только когда один entrypoint станет реально перегруженным.
 
@@ -163,6 +171,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\build\build_andr
   -SourceWorktree "<path-to-source-worktree>" `
   -SandboxRoot "C:\BuildWorkspaces\LostCyberHamster_Android" `
   -BuildLabel "<short-human-label>" `
+  -UnityLauncher Auto `
   -Development `
   -Json
 ```
@@ -173,8 +182,8 @@ Entry point отвечает за:
 2. Создать sandbox, если его нет.
 3. Синхронизировать source/config из `SourceWorktree` в sandbox, сохранив `Library/` и кэши.
 4. Сгенерировать build manifest.
-5. Запустить Unity Android development build из sandbox.
-6. Вернуть JSON с путем к APK и build metadata для Telegram skill.
+5. Запустить Unity Android development build из sandbox через выбранный launcher.
+6. Вернуть JSON с путём к APK, launcher и build metadata для Telegram skill.
 
 ## 6. Публикация в Telegram
 
@@ -202,17 +211,6 @@ Telegram skill отвечает за публикацию:
 - создавать постоянную build-ветку как source of truth;
 - удалять `Library/` в warm sandbox без явной причины;
 - коммитить sandbox, `Library`, APK artifacts, local secrets или Telegram config.
-
-## Минимальный запуск
-
-Текущий legacy fast path skill-а, пока repo entrypoint `tools/build/build_android_telegram.ps1` не внедрен:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\skills\publish-build-to-telegram-buffer\scripts\build_unity_player.ps1" -RepositoryRoot "<task-worktree>" -Platform Android -Development
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\skills\publish-build-to-telegram-buffer\scripts\publish_latest_apk_to_telegram_buffer.ps1" -RepositoryRoot "<task-worktree>"
-```
-
-После внедрения warm sandbox pipeline skill должен предпочитать repo entrypoint `tools/build/build_android_telegram.ps1`, а legacy scripts использовать только как fallback или как внутреннюю реализацию, если это явно описано в skill.
 
 ## Инфраструктура публикации
 

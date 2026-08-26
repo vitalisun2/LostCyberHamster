@@ -14,11 +14,12 @@ namespace Assets.Scripts.System
         }
 
         /// <summary>
-        /// Возвращает true, если текущий Play Mode запущен automation-мостом для test-level validation.
+        /// Возвращает true, если текущий Play Mode запущен через test-level launcher.
         /// </summary>
         public static bool IsTestLevelAutomationRun()
         {
-            return PlayerPrefs.HasKey(TestLevelAddressOverrideKey) || ShouldSkipIntro();
+            return PlayerPrefs.HasKey(TestLevelAddressOverrideKey) ||
+                   PlayerPrefs.HasKey(SkipIntroKey);
         }
 
         /// <summary>

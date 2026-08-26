@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Assets.Scripts.System;
 using GameManagement;
 using LoadingTasks;
 using UnityEngine;
@@ -14,15 +15,14 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
 
         private const string MenuScene = "Menu";
         private const string GameScene = "Game";
-        private const string TestLevelPrefsKey = "TestLevel_Address";
-
         public async Task LoadAsync(Dictionary<string, object> bundle)
         {
-            // Check for test level override written by TestLevelLauncher
-            if (PlayerPrefs.HasKey(TestLevelPrefsKey))
+            // Потребляем адрес один раз; отдельный test-level marker живёт до выхода из Play Mode.
+            if (PlayerPrefs.HasKey(AutomationRuntimePrefs.TestLevelAddressOverrideKey))
             {
-                var levelAddress = PlayerPrefs.GetString(TestLevelPrefsKey);
-                PlayerPrefs.DeleteKey(TestLevelPrefsKey);
+                var levelAddress = PlayerPrefs.GetString(
+                    AutomationRuntimePrefs.TestLevelAddressOverrideKey);
+                PlayerPrefs.DeleteKey(AutomationRuntimePrefs.TestLevelAddressOverrideKey);
                 PlayerPrefs.Save();
 
                 if (!string.IsNullOrEmpty(levelAddress))

@@ -4,11 +4,14 @@ param(
     [string]$BuildLabel = '',
     [string]$UnityExe = 'C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Unity.exe',
     [string]$AndroidSigningConfigPath = '',
+    [ValidateSet('Auto', 'Cli', 'Editor')]
+    [string]$UnityLauncher = 'Auto',
     [ValidateRange(60, 6600)]
     [int]$UnityBuildTimeoutSeconds = 4800,
     [switch]$Development,
     [switch]$ShowDevelopmentConsole,
     [switch]$SkipUnityEditorReferenceCheck,
+    [switch]$PreflightOnly,
     [switch]$Json
 )
 
@@ -366,6 +369,116 @@ function Convert-ToProcessArgumentLine {
     return ($escapedArguments -join ' ')
 }
 
+function Get-UnityCliBuildSupport {
+    $unityCommand = Get-Command unity -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -eq $unityCommand) {
+        return [pscustomobject]@{
+            available = $false
+            path = ''
+            version = ''
+            reason = 'Unity CLI was not found in PATH.'
+        }
+    }
+
+    $unityCliPath = if (-not [string]::IsNullOrWhiteSpace($unityCommand.Path)) {
+        $unityCommand.Path
+    }
+    else {
+        $unityCommand.Source
+    }
+
+    try {
+        $versionOutput = @(& $unityCliPath --version 2>&1)
+        $versionExitCode = $LASTEXITCODE
+        if ($versionExitCode -ne 0) {
+            return [pscustomobject]@{
+                available = $false
+                path = $unityCliPath
+                version = ''
+                reason = "Unity CLI --version failed with exit code $versionExitCode."
+            }
+        }
+
+        $helpOutput = @(& $unityCliPath run --help 2>&1)
+        $helpExitCode = $LASTEXITCODE
+        $helpText = $helpOutput -join "`n"
+        if ($helpExitCode -ne 0) {
+            return [pscustomobject]@{
+                available = $false
+                path = $unityCliPath
+                version = ($versionOutput -join ' ').Trim()
+                reason = "Unity CLI run --help failed with exit code $helpExitCode."
+            }
+        }
+
+        $missingOptions = @(
+            foreach ($requiredOption in @('--editor-path', '--timeout', '--non-interactive')) {
+                if (-not $helpText.Contains($requiredOption)) {
+                    $requiredOption
+                }
+            }
+        )
+        if ($missingOptions.Count -gt 0) {
+            return [pscustomobject]@{
+                available = $false
+                path = $unityCliPath
+                version = ($versionOutput -join ' ').Trim()
+                reason = "Unity CLI run lacks required options: $($missingOptions -join ', ')."
+            }
+        }
+
+        return [pscustomobject]@{
+            available = $true
+            path = $unityCliPath
+            version = ($versionOutput -join ' ').Trim()
+            reason = 'Unity CLI run contract is available.'
+        }
+    }
+    catch {
+        return [pscustomobject]@{
+            available = $false
+            path = $unityCliPath
+            version = ''
+            reason = "Unity CLI preflight failed: $($_.Exception.Message)"
+        }
+    }
+}
+
+function Resolve-UnityBuildLauncher {
+    param([string]$RequestedLauncher)
+
+    if ($RequestedLauncher -eq 'Editor') {
+        return [pscustomobject]@{
+            name = 'Editor'
+            path = $UnityExe
+            version = ''
+            reason = 'Direct Unity Editor launcher was requested.'
+        }
+    }
+
+    $cliSupport = Get-UnityCliBuildSupport
+    if ($cliSupport.available) {
+        return [pscustomobject]@{
+            name = 'Cli'
+            path = $cliSupport.path
+            version = $cliSupport.version
+            reason = $cliSupport.reason
+        }
+    }
+
+    if ($RequestedLauncher -eq 'Cli') {
+        throw "Unity CLI launcher was requested but is unavailable. $($cliSupport.reason)"
+    }
+
+    Write-Step "[warn] $($cliSupport.reason) Falling back to direct Unity Editor launcher."
+    return [pscustomobject]@{
+        name = 'Editor'
+        path = $UnityExe
+        version = $cliSupport.version
+        reason = "Unity CLI unavailable; direct Unity Editor fallback selected. $($cliSupport.reason)"
+    }
+}
+
 function Get-DefaultAndroidSigningConfigPath {
     $userProfile = $env:USERPROFILE
     if ([string]::IsNullOrWhiteSpace($userProfile)) {
@@ -411,7 +524,7 @@ function Get-AndroidSigningMetadata {
     }
 }
 
-function Invoke-UnityAndroidBuild {
+function Invoke-UnityEditorAndroidBuild {
     param(
         [string]$ProjectPath,
         [string]$OutputDir,
@@ -464,6 +577,83 @@ function Invoke-UnityAndroidBuild {
     if ($exitCode -ne 0) {
         throw "Unity Android build failed with exit code $exitCode. See log: $LogPath"
     }
+
+    return [pscustomobject]@{
+        launcher = 'Editor'
+        cliStdoutPath = ''
+        cliStderrPath = ''
+    }
+}
+
+function Invoke-UnityCliAndroidBuild {
+    param(
+        [string]$UnityCliPath,
+        [string]$ProjectPath,
+        [string]$OutputDir,
+        [string]$LogPath,
+        [string]$SigningConfigPath
+    )
+
+    Assert-PathExists -Path (Join-Path $ProjectPath $buildAutomationRelativePath) -Description 'Repo-owned Unity build automation'
+
+    $developmentValue = if ($Development.IsPresent) { 'true' } else { 'false' }
+    $showDevelopmentConsoleValue = if ($ShowDevelopmentConsole.IsPresent) { 'true' } else { 'false' }
+    $cliStdoutPath = Join-Path $OutputDir 'unity-cli.stdout.log'
+    $cliStderrPath = Join-Path $OutputDir 'unity-cli.stderr.log'
+    $unityCliArgs = @(
+        'run', $ProjectPath,
+        '--editor-path', $UnityExe,
+        '--timeout', $UnityBuildTimeoutSeconds.ToString([System.Globalization.CultureInfo]::InvariantCulture),
+        '--non-interactive',
+        '--no-banner',
+        '--',
+        '-nographics',
+        '-buildTarget', 'Android',
+        '-executeMethod', 'LostCyberHamster.Editor.LostCyberHamsterBuildAutomation.BuildAndroidApk',
+        '-codexBuildOutput', $OutputDir,
+        '-codexBuildDevelopment', $developmentValue,
+        '-codexShowDevelopmentConsole', $showDevelopmentConsoleValue,
+        '-lostCyberHamsterAndroidSigningConfig', $SigningConfigPath,
+        '-logFile', $LogPath
+    )
+
+    Write-Step "Starting Unity Android build through Unity CLI. Unity log: $LogPath"
+    & $UnityCliPath @unityCliArgs 1> $cliStdoutPath 2> $cliStderrPath
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        throw "Unity CLI Android build failed with exit code $exitCode. See logs: $LogPath, $cliStdoutPath, $cliStderrPath"
+    }
+
+    return [pscustomobject]@{
+        launcher = 'Cli'
+        cliStdoutPath = $cliStdoutPath
+        cliStderrPath = $cliStderrPath
+    }
+}
+
+function Invoke-UnityAndroidBuild {
+    param(
+        [object]$Launcher,
+        [string]$ProjectPath,
+        [string]$OutputDir,
+        [string]$LogPath,
+        [string]$SigningConfigPath
+    )
+
+    if ($Launcher.name -eq 'Cli') {
+        return Invoke-UnityCliAndroidBuild `
+            -UnityCliPath $Launcher.path `
+            -ProjectPath $ProjectPath `
+            -OutputDir $OutputDir `
+            -LogPath $LogPath `
+            -SigningConfigPath $SigningConfigPath
+    }
+
+    return Invoke-UnityEditorAndroidBuild `
+        -ProjectPath $ProjectPath `
+        -OutputDir $OutputDir `
+        -LogPath $LogPath `
+        -SigningConfigPath $SigningConfigPath
 }
 
 $SourceWorktree = Get-FullPath -Path $SourceWorktree
@@ -483,15 +673,50 @@ Assert-PathExists -Path $SourceWorktree -Description 'Source worktree'
 Assert-PathExists -Path $sourceProjectPath -Description 'Source Unity project'
 Assert-PathExists -Path $UnityExe -Description 'Unity executable'
 Assert-PathExists -Path (Join-Path $sourceProjectPath 'ProjectSettings\EditorBuildSettings.asset') -Description 'Editor build settings'
+Assert-PathExists -Path (Join-Path $sourceProjectPath $buildAutomationRelativePath) -Description 'Repo-owned Unity build automation'
 $unityRoot = Split-Path -Parent (Split-Path -Parent $UnityExe)
 Assert-PathExists -Path (Join-Path $unityRoot 'Editor\Data\PlaybackEngines\AndroidPlayer') -Description 'Unity Android module'
 Assert-PathExists -Path (Join-Path $unityRoot 'Editor\Data\PlaybackEngines\AndroidPlayer\SDK') -Description 'Unity Android SDK'
 Assert-PathExists -Path (Join-Path $unityRoot 'Editor\Data\PlaybackEngines\AndroidPlayer\NDK') -Description 'Unity Android NDK'
 Assert-PathExists -Path (Join-Path $unityRoot 'Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK') -Description 'Unity Android OpenJDK'
 $androidSigning = Get-AndroidSigningMetadata -ConfigPath $AndroidSigningConfigPath
+$resolvedUnityLauncher = Resolve-UnityBuildLauncher -RequestedLauncher $UnityLauncher
 
 if ($SourceWorktree.TrimEnd('\', '/') -ieq $SandboxRoot.TrimEnd('\', '/')) {
     throw 'SourceWorktree and SandboxRoot must be different directories.'
+}
+
+if ($PreflightOnly.IsPresent) {
+    if (-not $SkipUnityEditorReferenceCheck.IsPresent) {
+        Test-UnityEditorReferences -UnityProjectPath $sourceProjectPath
+    }
+
+    $preflightResult = [ordered]@{
+        preflight = $true
+        sourceWorktree = $SourceWorktree
+        unityProjectPath = $sourceProjectPath
+        sandboxRoot = $SandboxRoot
+        unityEditorPath = $UnityExe
+        unityLauncherRequested = $UnityLauncher
+        unityLauncher = $resolvedUnityLauncher.name
+        unityLauncherPath = $resolvedUnityLauncher.path
+        unityCliVersion = $resolvedUnityLauncher.version
+        unityLauncherReason = $resolvedUnityLauncher.reason
+        androidSigningConfigPath = $AndroidSigningConfigPath
+        androidSigningKeyAlias = $androidSigning.keyAliasName
+        androidSigningCertificateSha256 = $androidSigning.certificateSha256
+        development = $Development.IsPresent
+        developmentConsoleVisible = $ShowDevelopmentConsole.IsPresent
+    }
+
+    if ($Json.IsPresent) {
+        [pscustomobject]$preflightResult | ConvertTo-Json -Depth 8
+    }
+    else {
+        [pscustomobject]$preflightResult | Format-List
+    }
+
+    return
 }
 
 New-Item -ItemType Directory -Force -Path $SandboxRoot | Out-Null
@@ -576,6 +801,8 @@ $manifest = [ordered]@{
     platform = 'Android'
     development = $Development.IsPresent
     developmentConsoleVisible = $ShowDevelopmentConsole.IsPresent
+    unityLauncher = $resolvedUnityLauncher.name
+    unityCliVersion = $resolvedUnityLauncher.version
     androidSigningKeyAlias = $androidSigning.keyAliasName
     androidSigningCertificateSha256 = $androidSigning.certificateSha256
 }
@@ -584,7 +811,8 @@ $manifestPath = Write-BuildManifest -SandboxProjectPath $sandboxProjectPath -Man
 Write-Step "Build manifest written: $manifestPath"
 
 Close-OpenUnityProjectEditors -UnityProjectPath $sandboxProjectPath
-Invoke-UnityAndroidBuild `
+$buildLaunchResult = Invoke-UnityAndroidBuild `
+    -Launcher $resolvedUnityLauncher `
     -ProjectPath $sandboxProjectPath `
     -OutputDir $outputDir `
     -LogPath $unityLogPath `
@@ -621,10 +849,16 @@ $result = [ordered]@{
     development = $Development.IsPresent
     developmentConsoleVisible = $ShowDevelopmentConsole.IsPresent
     builtAtUtc = $builtAtUtc
+    unityLauncherRequested = $UnityLauncher
+    unityLauncher = $resolvedUnityLauncher.name
+    unityLauncherPath = $resolvedUnityLauncher.path
+    unityCliVersion = $resolvedUnityLauncher.version
     androidSigningConfigPath = $AndroidSigningConfigPath
     androidSigningKeyAlias = $androidSigning.keyAliasName
     androidSigningCertificateSha256 = $androidSigning.certificateSha256
     unityLogPath = $unityLogPath
+    unityCliStdoutPath = $buildLaunchResult.cliStdoutPath
+    unityCliStderrPath = $buildLaunchResult.cliStderrPath
     buildHelperLog = $unityLogPath
     skillSummaryPath = $summaryPath
 }

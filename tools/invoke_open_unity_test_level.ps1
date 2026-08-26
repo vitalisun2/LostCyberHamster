@@ -4,7 +4,9 @@ param(
     [string]$LevelAddress = '01_New_York/Morning/test_switch_lane',
     [float]$TimeScale = 1,
     [string]$UnityExePath = 'C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Unity.exe',
-    [int]$UnityStartupTimeoutSeconds = 600
+    [int]$UnityStartupTimeoutSeconds = 600,
+    [ValidateSet('Auto', 'Cli', 'Bridge')]
+    [string]$Transport = 'Auto'
 )
 
 Set-StrictMode -Version Latest
@@ -18,6 +20,7 @@ $responsePath = Join-Path $automationPath 'test_level_response.json'
 New-Item -ItemType Directory -Path $automationPath -Force | Out-Null
 
 . (Join-Path $PSScriptRoot 'unity_editor_autostart.ps1')
+. (Join-Path $PSScriptRoot 'unity_cli_test_level.ps1')
 
 function Initialize-WindowActivationHelper {
     if ('WindowActivationHelper' -as [type]) {
@@ -190,7 +193,7 @@ function Reload-RunningVisualStudioSolution {
     Write-Host '[info] No running Visual Studio instance was found for this solution.'
 }
 
-function Invoke-UnityAutomationCommand {
+function Invoke-UnityBridgeCommand {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Command,
@@ -283,44 +286,66 @@ Ensure-UnityEditorForProject `
     -UnityExePath $UnityExePath `
     -TimeoutSeconds $UnityStartupTimeoutSeconds
 
-# Request recompilation through the bridge. If Unity does not pick up the request
-# while unfocused, the launcher wakes the editor window once as a fallback.
-$recompileCompleted = $false
-for ($attempt = 1; $attempt -le 5 -and -not $recompileCompleted; $attempt++) {
-    Start-Sleep -Seconds 2
+$selectedTransport = Resolve-UnityTestLevelTransport -Transport $Transport -ProjectPath $projectPath
+
+if ($selectedTransport -eq 'Cli') {
+    [void](Invoke-UnityCliRecompile `
+        -ProjectPath $projectPath `
+        -TimeoutSeconds $TimeoutSeconds `
+        -PollMilliseconds $PollMilliseconds)
 
     try {
-        [void](Invoke-UnityAutomationCommand -Command 'recompile_scripts' -RunningMessage 'script recompilation')
-        $recompileCompleted = $true
+        [void](Invoke-UnityCliRegenerateProjectFiles -ProjectPath $projectPath)
+        Reload-RunningVisualStudioSolution -SolutionPath (Join-Path $projectPath 'LostCyberHamster.sln')
     }
     catch {
-        if ($_.Exception.Message -notlike 'failed: Unsupported command: recompile_scripts') {
-            throw
-        }
-
-        Write-Host "[retry] Unity editor still uses old bridge assembly; AssetDatabase.Refresh may need more time (attempt $attempt/5)."
+        Write-Host "[warn] lch_project_regenerate_files failed: $($_.Exception.Message)"
     }
-}
 
-if (-not $recompileCompleted) {
-    Write-Host '[warn] Explicit recompilation command is still unavailable after fallback wake-up attempts.'
+    $launchResponse = Invoke-UnityCliTestLevel `
+        -ProjectPath $projectPath `
+        -LevelAddress $LevelAddress `
+        -TimeScale $TimeScale `
+        -TimeoutSeconds $TimeoutSeconds `
+        -PollMilliseconds $PollMilliseconds
 }
+else {
+    # Bridge remains fallback for older/unreachable Pipeline sessions.
+    $recompileCompleted = $false
+    for ($attempt = 1; $attempt -le 5 -and -not $recompileCompleted; $attempt++) {
+        Start-Sleep -Seconds 2
 
-# Regenerate .csproj/.sln so that Visual Studio Solution Explorer stays in sync
-# with the actual file structure (handles added/deleted .cs files).
-try {
-    [void](Invoke-UnityAutomationCommand -Command 'regenerate_project_files' -RunningMessage 'project files regeneration')
-    Reload-RunningVisualStudioSolution -SolutionPath (Join-Path $projectPath 'LostCyberHamster.sln')
-}
-catch {
-    Write-Host "[warn] regenerate_project_files failed: $($_.Exception.Message)"
-}
+        try {
+            [void](Invoke-UnityBridgeCommand -Command 'recompile_scripts' -RunningMessage 'script recompilation')
+            $recompileCompleted = $true
+        }
+        catch {
+            if ($_.Exception.Message -notlike 'failed: Unsupported command: recompile_scripts') {
+                throw
+            }
 
-$launchResponse = Invoke-UnityAutomationCommand `
-    -Command 'launch_test_level' `
-    -RunningMessage 'test level launch' `
-    -LevelAddress $LevelAddress `
-    -TimeScale $TimeScale
+            Write-Host "[retry] Unity editor still uses old bridge assembly; AssetDatabase.Refresh may need more time (attempt $attempt/5)."
+        }
+    }
+
+    if (-not $recompileCompleted) {
+        Write-Host '[warn] Explicit recompilation command is still unavailable after fallback wake-up attempts.'
+    }
+
+    try {
+        [void](Invoke-UnityBridgeCommand -Command 'regenerate_project_files' -RunningMessage 'project files regeneration')
+        Reload-RunningVisualStudioSolution -SolutionPath (Join-Path $projectPath 'LostCyberHamster.sln')
+    }
+    catch {
+        Write-Host "[warn] regenerate_project_files failed: $($_.Exception.Message)"
+    }
+
+    $launchResponse = Invoke-UnityBridgeCommand `
+        -Command 'launch_test_level' `
+        -RunningMessage 'test level launch' `
+        -LevelAddress $LevelAddress `
+        -TimeScale $TimeScale
+}
 
 Write-Host "Result: $($launchResponse.testResult)"
 Write-Host "Diagnostic log: $($launchResponse.diagnosticLogPath)"

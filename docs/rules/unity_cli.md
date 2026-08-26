@@ -4,12 +4,12 @@
 
 ## Решение
 
-Unity CLI и `com.unity.pipeline` внедряем поэтапно.
+Unity CLI — основной интерфейс агента к открытому Editor.
 
-- Текущий файловый `TestLevelAutomationBridge` и build pipeline остаются рабочими.
-- CLI сначала используем для диагностики, коротких Editor-команд и AI/MCP-интеграции.
-- Стабильные повторяемые операции оформляем как `[CliCommand]`.
-- Миграцию существующей automation делаем только после проверки равного поведения.
+- Test-level PowerShell использует CLI первым, файловый bridge — fallback.
+- Android build entrypoint использует CLI первым, прямой Editor — fallback.
+- Повторяемые проектные операции оформляем как `[CliCommand]`.
+- CI-настройка отложена отдельным решением.
 
 ## Состав инструмента
 
@@ -34,8 +34,8 @@ Unity CLI состоит из двух слоёв:
 - Unity CLI: `1.0.0-beta.6`, установлен в `PATH`; авторизация активна.
 - `com.unity.pipeline`: `0.5.0-exp.1`, зафиксирован в `Packages/manifest.json`.
 - Pipeline server запускается автоматически; `status`, `editor_status` и read-only `eval` проверены.
-- Для Codex установлены Unity CLI skill и проектная MCP-конфигурация. MCP активируется после перезапуска Codex.
-- Проектные команды `lch_*` доступны через терминал; test-level команды используют текущую очередь bridge.
+- Для Codex установлены Unity CLI skill и проектная MCP-конфигурация. MCP-подключение проверено на живом Editor.
+- Семь проектных команд `lch_*` доступны через терминал. Пять базовых команд доступны агенту как MCP tools; после добавления новых tools нужен перезапуск Codex.
 - Unity CLI и Pipeline имеют experimental/beta-статус. Команды и API могут меняться.
 
 Обновление Editor для CLI не требуется. Отдельно нужно запланировать проверяемый переход на Unity 6.3 LTS: ветка 6.2 больше не поддерживается. Этот переход не блокирует пилот CLI.
@@ -97,22 +97,23 @@ unity mcp configure codex --project-path (Get-Location)
 - `lch_project_regenerate_files` — текущая логика `regenerate_project_files`;
 - `lch_test_level_launch` — запуск одного test level;
 - `lch_test_level_status` — состояние и итог текущего прогона;
-- `lch_diagnostics_summary` — краткий итог каналов `STAB`, `BOT`, `ECO`.
+- `lch_diagnostics_summary` — краткий итог каналов `STAB`, `BOT`, `ECO`;
+- `lch_level_assets_sync` — синхронизация Addressables-записей level assets;
+- `lch_skins_validate` — проверка skin catalog, prefab contract и Addressables.
 
 ```powershell
 unity command --query lch --detail compact --format json
 unity command lch_editor_status --format json
 unity command lch_diagnostics_summary --format json
+unity command lch_level_assets_sync --format json
+unity command lch_skins_validate --format json
 unity command lch_test_level_launch --level_address '01_New_York/Morning/test_switch_lane' --format json
 unity command lch_test_level_status --format json
 ```
 
-Следующие кандидаты:
+`tools/invoke_open_unity_test_level.ps1` и `tools/invoke_run_all_test_levels.ps1` принимают `-Transport Auto|Cli|Bridge`. `Auto` выбирает CLI при готовом Pipeline. CLI и bridge используют одну очередь, одинаковые timeout и `[TEST RESULT]` semantics.
 
-- `lch_level_assets_sync` — вызов существующей Addressables-синхронизации;
-- `lch_skins_validate` — вызов существующего валидатора skin assets.
-
-Долгий test-level прогон сначала оставить на `TestLevelAutomationBridge`. Переносить после проверки Play Mode transitions, domain reload, timeout и сохранения `[TEST RESULT]` semantics.
+Test-level run не сохраняет временный test address в Player Data и не создаёт cloud checkpoint. Маркер automation очищается после выхода из Play Mode.
 
 ### 3. AI-агенты
 
@@ -120,11 +121,10 @@ unity command lch_test_level_status --format json
 
 Рекомендуемый порядок:
 
-1. Подключить Pipeline к открытому Editor.
-2. Проверить команды через `unity command --format json`.
-3. Подключить `unity mcp` к поддерживаемому AI-клиенту.
-4. Открывать агенту узкие проектные команды.
-5. Оставить `eval` диагностическим fallback.
+1. Проверить Pipeline через `unity status --format json`.
+2. Найти команду через `unity command --query <term> --format json`.
+3. Использовать узкую проектную или встроенную MCP-команду.
+4. Использовать `eval` только для разовой диагностики.
 
 Команду настройки клиента брать из `unity mcp configure --help`: список поддерживаемых клиентов зависит от версии CLI.
 
@@ -134,14 +134,14 @@ unity command lch_test_level_status --format json
 
 - `unity run --command <name>` для одной проектной операции;
 - `unity test` для явно запрошенного Edit/Play Mode запуска;
-- `unity build` как возможный нижний слой repo build entrypoint;
+- `unity run` как launcher repo-owned Android build helper;
 - JSON/NDJSON output и exit codes для PowerShell-скриптов.
 
 Проектные правила сохраняются:
 
 - финальный C# gate остаётся `regenerate_project_files` и `dotnet build --no-restore`;
 - Unity recompile, Test Runner и дополнительные проверки запускаются только по явному запросу;
-- Android build идёт через `tools/build/build_android_telegram.ps1` и warm sandbox;
+- Android build идёт через `tools/build/build_android_telegram.ps1`; `-UnityLauncher Auto` предпочитает CLI;
 - CLI не заменяет build manifest, source snapshot, signing и Telegram delivery.
 
 ## Правила безопасности
@@ -153,12 +153,10 @@ unity command lch_test_level_status --format json
 - В automation использовать `--format json` или `--format ndjson`, проверять exit code и `stderr`.
 - Версию CLI и Pipeline фиксировать в diagnostic output. Перед обновлением читать release notes.
 
-## Следующие шаги
+## Позже
 
-1. После перезапуска Codex проверить `lch_editor_status` через MCP.
-2. Сравнить CLI и файловый запуск на тех же test levels.
-3. Добавить `lch_level_assets_sync` и `lch_skins_validate` по реальной потребности.
-4. Удалять старый bridge только отдельным решением после стабильного периода.
+- Добавить CI/headless workflow отдельной задачей.
+- Удалять файловый bridge только отдельным решением после стабильного периода.
 
 ## Официальные источники
 

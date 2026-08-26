@@ -105,6 +105,20 @@ namespace Assets.Scripts.Bot.Diagnostics
                 DebugManager.DiagChannel.Stability);
         }
 
+        public static void LogTestLevelPassed()
+        {
+            if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.TestResult))
+                return;
+
+            const string message = "[TEST RESULT] WIN test-level finished";
+            BotDiagnostics.Log(BotDiagnosticCategory.TestResult, BotDiagnosticLevel.Essential, message);
+            BotDiagnostics.Log(
+                BotDiagnosticCategory.TestResult,
+                BotDiagnosticLevel.Essential,
+                message,
+                DebugManager.DiagChannel.Stability);
+        }
+
         public static void LogLevelFailed()
         {
             if (!BotDiagnostics.IsEnabled(BotDiagnosticCategory.TestResult))

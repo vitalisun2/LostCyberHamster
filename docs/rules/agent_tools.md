@@ -24,6 +24,8 @@ unity status --format json
 unity command --query lch --detail compact --format json
 unity command lch_editor_status --format json
 unity command lch_diagnostics_summary --format json
+unity command lch_level_assets_sync --format json
+unity command lch_skins_validate --format json
 ```
 
 Проектные команды:
@@ -32,11 +34,13 @@ unity command lch_diagnostics_summary --format json
 - `lch_project_regenerate_files` — generated `.csproj`/`.sln`;
 - `lch_test_level_launch` — поставить test level в очередь;
 - `lch_test_level_status` — получить состояние и `[TEST RESULT]`;
-- `lch_diagnostics_summary` — счётчики и последние строки `STAB`, `BOT`, `ECO`.
+- `lch_diagnostics_summary` — счётчики и последние строки `STAB`, `BOT`, `ECO`;
+- `lch_level_assets_sync` — синхронизировать level assets в Addressables;
+- `lch_skins_validate` — проверить skin assets и Addressables.
 
-Test-level CLI использует ту же очередь и семантику, что файловый bridge. Файловые PowerShell-скрипты остаются рабочими.
+Test-level скрипты принимают `-Transport Auto|Cli|Bridge`. `Auto` использует CLI первым. Bridge остаётся fallback. Оба пути используют одну очередь и одинаковый `[TEST RESULT]`.
 
-## Automation Bridge
+## Automation Bridge fallback
 
 Файловый IPC для управления Unity Editor извне.
 
@@ -50,6 +54,7 @@ Test-level CLI использует ту же очередь и семантик
 ```powershell
 .\tools\invoke_run_all_test_levels.ps1 -TimeoutSeconds 120
 .\tools\invoke_open_unity_test_level.ps1 -LevelAddress '01_New_York/Morning/test_switch_lane' -TimeoutSeconds 120
+.\tools\invoke_open_unity_test_level.ps1 -Transport Bridge -LevelAddress '01_New_York/Morning/test_switch_lane'
 ```
 
 Bridge-команды:
@@ -184,6 +189,8 @@ Production/default assets остаются неизменными. Candidate `.m
 |---|---|
 | `tools/invoke_open_unity_test_level.ps1` | Runtime-прогон одного test level; включает Unity recompile |
 | `tools/invoke_run_all_test_levels.ps1` | Runtime-прогон всех `test*.json`; включает Unity recompile |
+| `tools/unity_cli_test_level.ps1` | Общий CLI transport для test-level скриптов |
+| `tools/build/build_android_telegram.ps1` | Warm Android build; `-UnityLauncher Auto|Cli|Editor`, `-PreflightOnly` |
 | `tools/read_log_channel.ps1` | Чтение `STAB`/`BOT`/`ECO` каналов |
 | `tools/migrate_levels.ps1` | Миграция уровней в reference-based формат |
 | `tools/rename_to_snake_case.ps1` | Переименование анимационных файлов перед импортом |

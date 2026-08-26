@@ -27,7 +27,7 @@ namespace LostCyberHamster.Editor
         public const string SkateboardSpriteRoot =
             "Assets/Content/skins/skateboard_mode";
         public const string VisualAddressablesGroup = "Skin Visuals";
-        public const string SkinSpritesAddressablesGroup = "skins";
+        public const string SkinSpritesAddressablesGroup = "Skins";
         public const string LocalizationAddressablesGroup = "Localization";
 
         private const string NormalAddressPrefix = "skin-visual/";

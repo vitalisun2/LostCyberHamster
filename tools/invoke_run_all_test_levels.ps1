@@ -3,7 +3,7 @@
     Runs ALL bot test levels in sequence and prints a pass/fail summary.
 .DESCRIPTION
     Discovers all test levels under Assets/Content/locations, recompiles scripts once,
-    then launches each level via the automation bridge. Use this instead of
+    then launches each level through Unity CLI with file-bridge fallback. Use this instead of
     invoke_open_unity_test_level.ps1 for the standard workflow validation step.
 .PARAMETER TimeoutSeconds
     Timeout per level in seconds. Default: 120.
@@ -14,14 +14,18 @@
 .PARAMETER UnityExePath
     Unity Editor executable path used when the project editor is not already running.
 .PARAMETER UnityStartupTimeoutSeconds
-    Timeout for opening the Unity project before bridge commands are sent. Default: 600.
+    Timeout for opening the Unity project before commands are sent. Default: 600.
+.PARAMETER Transport
+    Unity transport: Auto, Cli, or Bridge. Default: Auto.
 #>
 param(
     [int]$TimeoutSeconds = 120,
     [int]$PollMilliseconds = 250,
     [float]$TimeScale = 1,
     [string]$UnityExePath = 'C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Unity.exe',
-    [int]$UnityStartupTimeoutSeconds = 600
+    [int]$UnityStartupTimeoutSeconds = 600,
+    [ValidateSet('Auto', 'Cli', 'Bridge')]
+    [string]$Transport = 'Auto'
 )
 
 Set-StrictMode -Version Latest
@@ -38,6 +42,7 @@ New-Item -ItemType Directory -Path $automationPath -Force | Out-Null
 New-Item -ItemType Directory -Path $runLogDirectory -Force | Out-Null
 
 . (Join-Path $PSScriptRoot 'unity_editor_autostart.ps1')
+. (Join-Path $PSScriptRoot 'unity_cli_test_level.ps1')
 
 # ── Test levels — Locations folder is the source of truth ───────────────────
 function Get-TestLevelAddresses {
@@ -679,7 +684,7 @@ function Get-LevelSemanticSummary {
 }
 
 # ── Automation bridge helper ─────────────────────────────────────────────────
-function Invoke-UnityCommand {
+function Invoke-UnityBridgeCommand {
     param(
         [Parameter(Mandatory)] [string]$Command,
         [Parameter(Mandatory)] [string]$RunningMessage,
@@ -747,29 +752,45 @@ Ensure-UnityEditorForProject `
     -UnityExePath $UnityExePath `
     -TimeoutSeconds $UnityStartupTimeoutSeconds
 
+$selectedTransport = Resolve-UnityTestLevelTransport -Transport $Transport -ProjectPath $projectPath
+
 Write-Host ''
 Write-Host '=== Recompiling scripts ==='
-$recompileCompleted = $false
-for ($attempt = 1; $attempt -le 5 -and -not $recompileCompleted; $attempt++) {
-    Start-Sleep -Seconds 2
-    try {
-        [void](Invoke-UnityCommand -Command 'recompile_scripts' -RunningMessage 'script recompilation')
-        $recompileCompleted = $true
-    }
-    catch {
-        if ($_.Exception.Message -notlike 'failed: Unsupported command: recompile_scripts') { throw }
-        Write-Host "[retry] Bridge assembly not yet updated (attempt $attempt/5)."
-    }
+if ($selectedTransport -eq 'Cli') {
+    [void](Invoke-UnityCliRecompile `
+        -ProjectPath $projectPath `
+        -TimeoutSeconds $TimeoutSeconds `
+        -PollMilliseconds $PollMilliseconds)
 }
-if (-not $recompileCompleted) {
-    Write-Host '[warn] Recompilation unavailable; continuing anyway.'
+else {
+    $recompileCompleted = $false
+    for ($attempt = 1; $attempt -le 5 -and -not $recompileCompleted; $attempt++) {
+        Start-Sleep -Seconds 2
+        try {
+            [void](Invoke-UnityBridgeCommand -Command 'recompile_scripts' -RunningMessage 'script recompilation')
+            $recompileCompleted = $true
+        }
+        catch {
+            if ($_.Exception.Message -notlike 'failed: Unsupported command: recompile_scripts') { throw }
+            Write-Host "[retry] Bridge assembly not yet updated (attempt $attempt/5)."
+        }
+    }
+
+    if (-not $recompileCompleted) {
+        Write-Host '[warn] Recompilation unavailable; continuing anyway.'
+    }
 }
 
 # ── Regenerate project files for IDE/MSBuild after .cs add/delete ────────────
 Write-Host ''
 Write-Host '=== Regenerating project files ==='
 try {
-    [void](Invoke-UnityCommand -Command 'regenerate_project_files' -RunningMessage 'project files regeneration')
+    if ($selectedTransport -eq 'Cli') {
+        [void](Invoke-UnityCliRegenerateProjectFiles -ProjectPath $projectPath)
+    }
+    else {
+        [void](Invoke-UnityBridgeCommand -Command 'regenerate_project_files' -RunningMessage 'project files regeneration')
+    }
 }
 catch {
     Write-Host "[warn] regenerate_project_files failed: $($_.Exception.Message)"
@@ -782,11 +803,21 @@ foreach ($levelAddress in $TestLevels) {
     Write-Host ''
     Write-Host "=== Level: $levelAddress ==="
     try {
-        $response = Invoke-UnityCommand `
-            -Command       'launch_test_level' `
-            -RunningMessage 'test level launch' `
-            -LevelAddress  $levelAddress `
-            -CmdTimeScale  $TimeScale
+        if ($selectedTransport -eq 'Cli') {
+            $response = Invoke-UnityCliTestLevel `
+                -ProjectPath $projectPath `
+                -LevelAddress $levelAddress `
+                -TimeScale $TimeScale `
+                -TimeoutSeconds $TimeoutSeconds `
+                -PollMilliseconds $PollMilliseconds
+        }
+        else {
+            $response = Invoke-UnityBridgeCommand `
+                -Command 'launch_test_level' `
+                -RunningMessage 'test level launch' `
+                -LevelAddress $levelAddress `
+                -CmdTimeScale $TimeScale
+        }
 
         $testResult = $response.testResult
         $semanticSummary = Get-LevelSemanticSummary -LevelAddress $levelAddress -DiagnosticLogPath $response.diagnosticLogPath

@@ -1,6 +1,7 @@
 using System;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.System;
 
 namespace Assets.Scripts.Bot.Diagnostics
 {
@@ -11,6 +12,7 @@ namespace Assets.Scripts.Bot.Diagnostics
     {
         private readonly Hamster _hamster;
         private readonly GameManager _gameManager;
+        private readonly bool _isTestLevelRun;
         private int _lastEnergy;
 
         /// <summary>
@@ -20,6 +22,7 @@ namespace Assets.Scripts.Bot.Diagnostics
         {
             _hamster = hamster;
             _gameManager = gameManager;
+            _isTestLevelRun = AutomationRuntimePrefs.IsTestLevelAutomationRun();
             _lastEnergy = _hamster.Energy.Value;
 
             _gameManager.OnFinish += OnGameFinished;
@@ -48,6 +51,9 @@ namespace Assets.Scripts.Bot.Diagnostics
         private void OnGameFinished()
         {
             BotRuntimeEventDiagnostics.LogTestFinish(_gameManager, _hamster);
+
+            if (_isTestLevelRun && _hamster.Lives.Value > 0)
+                BotRuntimeEventDiagnostics.LogTestLevelPassed();
         }
 
         private static void OnLevelCompleted(int levelId, int stars)

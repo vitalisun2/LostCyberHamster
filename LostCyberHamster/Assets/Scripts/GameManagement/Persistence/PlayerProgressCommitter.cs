@@ -1,4 +1,5 @@
 using System;
+using Assets.Scripts.System;
 using UnityEngine;
 
 namespace GameManagement
@@ -11,6 +12,15 @@ namespace GameManagement
         /// <summary>Сохраняет текущий прогресс локально и уведомляет потребителей checkpoint.</summary>
         public static void Commit(CheckpointReason reason)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Test level использует временный CurrentLevel и не создаёт локальные или облачные checkpoints.
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
+            {
+                Debug.Log($"[GameData] Commit skipped during test-level run: {reason}.");
+                return;
+            }
+#endif
+
             // Сначала завершаем обязательное локальное сохранение.
             GameDataManager.SaveData();
             Debug.Log($"[GameData] Commit: {reason}.");

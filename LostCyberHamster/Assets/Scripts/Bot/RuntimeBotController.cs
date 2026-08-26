@@ -286,6 +286,10 @@ namespace Assets.Scripts.Bot
                 ClearPendingDeadEndReport);
 
             GameEventsManager.OnLivesLost += OnLivesLost;
+
+            // Test-level launcher обещает bot auto-start для ручных и automation-прогонов.
+            if (_isAutomationValidationRun)
+                Enable();
         }
 
         /// <summary>

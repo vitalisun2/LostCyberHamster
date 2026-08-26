@@ -124,6 +124,15 @@ namespace GameManagement
 
         public static void SaveData()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Test level временно подменяет CurrentLevel адресом вне gameplay-каталога.
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
+            {
+                Debug.Log("[GameData] Save skipped during test-level run.");
+                return;
+            }
+#endif
+
             EnsureValidated(PlayerData);
             WritePrimary(PlayerData, rotateValidPrimary: true);
         }
