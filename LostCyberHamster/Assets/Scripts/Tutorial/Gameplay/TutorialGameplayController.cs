@@ -23,9 +23,7 @@ namespace Assets.Scripts.Tutorial
         }
 
         private readonly ITutorialGameplayWorldAdapter _world;
-        private readonly TutorialGameplayScenario _scenario;
         private readonly IReadOnlyList<TutorialGameplayStep> _steps;
-        private readonly List<Obstacle> _superHitTargets = new();
         private readonly TutorialTransitionGuard _transitionGuard = new();
         private readonly DoubleJumpDetector _doubleJumpDetector = new();
 
@@ -36,9 +34,6 @@ namespace Assets.Scripts.Tutorial
         private int _currentActionIndex;
         private Obstacle _trackedObstacle;
         private bool _isGamePausedByTutorial;
-        private bool _isSubscribedToUltraUsed;
-        private bool _superHitUsed;
-        private bool _superHitEffectObserved;
         private bool _isDoubleJumpUpgradeScheduled;
         private float _doubleJumpUpgradeReadyTime;
         private Action _primaryCompletionAction;
@@ -53,25 +48,14 @@ namespace Assets.Scripts.Tutorial
         private TutorialGameplayStep CurrentStep => _steps[_currentStepIndex];
         private TutorialAction CurrentExpectedAction => CurrentStep.ExpectedActions[_currentActionIndex];
 
-        public TutorialGameplayController(
-            ITutorialGameplayWorldAdapter world,
-            TutorialGameplayScenario scenario)
+        public TutorialGameplayController(ITutorialGameplayWorldAdapter world)
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
-            _scenario = scenario;
-            _steps = TutorialGameplayStepCatalog.GetSteps(scenario);
-            _world.Prepare(scenario);
-
-            if (_scenario == TutorialGameplayScenario.SuperHit)
-            {
-                PrepareSuperHitScenario();
-            }
+            _steps = TutorialGameplayStepCatalog.Steps;
         }
 
         public event Action ScenarioCompleted;
         public event Action SkipRequested;
-
-        public TutorialGameplayScenario Scenario => _scenario;
 
         /// <summary>
         /// Подключает tutorial UI к корню игрового экрана.
@@ -234,19 +218,11 @@ namespace Assets.Scripts.Tutorial
             }
 
             ResumeGameIfPausedByTutorial();
-            UnsubscribeFromUltraUsed();
             DetachView();
             ClearCompletionActions();
-            _superHitTargets.Clear();
             _state = TutorialGameplayState.Disposed;
             ScenarioCompleted = null;
             SkipRequested = null;
-        }
-
-        private void PrepareSuperHitScenario()
-        {
-            _world.UltraUsed += HandleUltraUsed;
-            _isSubscribedToUltraUsed = true;
         }
 
         private void RestoreViewState()
@@ -295,11 +271,6 @@ namespace Assets.Scripts.Tutorial
             }
 
             _trackedObstacle = obstacle;
-            if (_scenario == TutorialGameplayScenario.SuperHit)
-            {
-                CaptureSuperHitTargets();
-            }
-
             ResetActionInputProgress();
             _state = TutorialGameplayState.WaitingForInput;
             PauseGameForTutorial();
@@ -382,16 +353,6 @@ namespace Assets.Scripts.Tutorial
 
         private void TryResolveCurrentStep()
         {
-            if (_scenario == TutorialGameplayScenario.SuperHit)
-            {
-                if (IsSuperHitResolutionComplete())
-                {
-                    CompleteCurrentStep();
-                }
-
-                return;
-            }
-
             if (HasReachedRequiredHamsterState() || HasTrackedObstacleLeftPlay())
             {
                 CompleteCurrentStep();
@@ -433,42 +394,8 @@ namespace Assets.Scripts.Tutorial
 
             _state = TutorialGameplayState.Completed;
             PauseGameForTutorial();
-            UnsubscribeFromUltraUsed();
             _view?.Hide();
             ScenarioCompleted?.Invoke();
-        }
-
-        private void CaptureSuperHitTargets()
-        {
-            _superHitTargets.Clear();
-            _world.CaptureSuperHitTargets(_superHitTargets);
-            _superHitUsed = false;
-            _superHitEffectObserved = false;
-        }
-
-        private bool IsSuperHitResolutionComplete()
-        {
-            if (!_superHitUsed)
-            {
-                return false;
-            }
-
-            if (_world.IsElectricStrikeEffectPlaying())
-            {
-                _superHitEffectObserved = true;
-                return false;
-            }
-
-            return _superHitEffectObserved && !_world.HasCapturedSuperHitTargetInPlay(_superHitTargets);
-        }
-
-        private void HandleUltraUsed()
-        {
-            if (_scenario == TutorialGameplayScenario.SuperHit
-                && _state == TutorialGameplayState.ResolvingAction)
-            {
-                _superHitUsed = true;
-            }
         }
 
         private void HandleViewGameplayAction(TutorialAction action)
@@ -545,17 +472,6 @@ namespace Assets.Scripts.Tutorial
         {
             _primaryCompletionAction = null;
             _secondaryCompletionAction = null;
-        }
-
-        private void UnsubscribeFromUltraUsed()
-        {
-            if (!_isSubscribedToUltraUsed)
-            {
-                return;
-            }
-
-            _world.UltraUsed -= HandleUltraUsed;
-            _isSubscribedToUltraUsed = false;
         }
 
         private void DetachView()

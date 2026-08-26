@@ -13828,43 +13828,6 @@
             ]
         },
         {
-            "name": "tutorial_9",
-            "description": "tutorial 9 - use electric strike super hit",
-            "nextObstacleId": 5,
-            "obstacles": [
-                {
-                    "id": 0,
-                    "type": 2,
-                    "x": 0.0,
-                    "y": -1.8000000715255738
-                },
-                {
-                    "id": 1,
-                    "type": 1,
-                    "x": 1.899999976158142,
-                    "y": -1.8000000715255738
-                },
-                {
-                    "id": 2,
-                    "type": 0,
-                    "x": 3.799999952316284,
-                    "y": -1.8000000715255738
-                },
-                {
-                    "id": 3,
-                    "type": 2,
-                    "x": 1.2000000476837159,
-                    "y": -2.799999952316284
-                },
-                {
-                    "id": 4,
-                    "type": 4,
-                    "x": 5.599999904632568,
-                    "y": -2.799999952316284
-                }
-            ]
-        },
-        {
             "name": "test_skateboard_collision_01_small_alive_bottom",
             "description": "manual skateboard low density: smallAlive bottom",
             "nextObstacleId": 1,

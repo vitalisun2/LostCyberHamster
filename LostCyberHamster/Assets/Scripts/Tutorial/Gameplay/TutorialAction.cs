@@ -8,7 +8,6 @@ namespace Assets.Scripts.Tutorial
         Tap,
         Jump,
         SuperJump,
-        Ultra,
         BuyEnergy,
         BuyUltra,
         Pause

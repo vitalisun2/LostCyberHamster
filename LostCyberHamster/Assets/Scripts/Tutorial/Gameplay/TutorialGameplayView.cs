@@ -12,8 +12,7 @@ namespace Assets.Scripts.Tutorial
         private enum TutorialFocusTarget
         {
             Tap,
-            Jump,
-            Ultra
+            Jump
         }
 
         private const string _fingerResourcePath = "Tutorial/tutorial_finger_placeholder";
@@ -28,7 +27,6 @@ namespace Assets.Scripts.Tutorial
         private readonly VisualElement _root;
         private readonly VisualElement _tapTarget;
         private readonly VisualElement _jumpTarget;
-        private readonly VisualElement _ultraTarget;
         private readonly VisualElement _idleInputBlocker;
         private readonly VisualElement _promptRoot;
         private readonly VisualElement _completeRoot;
@@ -60,7 +58,6 @@ namespace Assets.Scripts.Tutorial
 
             _tapTarget = contentRoot.Q<VisualElement>("tap");
             _jumpTarget = contentRoot.Q<VisualElement>("btn_jump");
-            _ultraTarget = contentRoot.Q<VisualElement>("btn_ultra");
             RemoveExistingTutorialLayers(contentRoot);
 
             _root = CreateRoot();
@@ -233,8 +230,6 @@ namespace Assets.Scripts.Tutorial
                 case TutorialAction.Jump:
                 case TutorialAction.SuperJump:
                     return TutorialFocusTarget.Jump;
-                case TutorialAction.Ultra:
-                    return TutorialFocusTarget.Ultra;
                 default:
                     return TutorialFocusTarget.Tap;
             }
@@ -253,12 +248,6 @@ namespace Assets.Scripts.Tutorial
                 case TutorialAction.SuperJump:
                     ApplyFocusRect(
                         GetTargetRect(_jumpTarget, new Rect(0.78f, 0.58f, 0.2f, 0.35f), true),
-                        TutorialFocusShape.Circle,
-                        showFinger: false);
-                    break;
-                case TutorialAction.Ultra:
-                    ApplyFocusRect(
-                        GetTargetRect(_ultraTarget, new Rect(0.78f, 0.2f, 0.16f, 0.28f), true),
                         TutorialFocusShape.Circle,
                         showFinger: false);
                     break;

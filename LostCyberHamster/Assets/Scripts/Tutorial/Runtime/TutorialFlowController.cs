@@ -30,7 +30,7 @@ namespace Assets.Scripts.Tutorial
         public bool CanShutdown => _phase == TutorialPhase.Completed && !_session.IsActive;
 
         /// <summary>
-        /// Запускает основной gameplay-урок или завершает устаревший SuperHit-переход.
+        /// Запускает основной gameplay-урок для tutorial level.
         /// </summary>
         public void EnsureGameplay(string levelAddress, GameManager gameManager, Hamster hamster)
         {
@@ -47,13 +47,6 @@ namespace Assets.Scripts.Tutorial
                     levelAddress,
                     gameManager,
                     hamster);
-                return;
-            }
-
-            if (TutorialConstants.IsSuperHitLessonLevel(levelAddress))
-            {
-                _session.Begin();
-                StartFirstGameplayLevel();
             }
         }
 
@@ -102,8 +95,7 @@ namespace Assets.Scripts.Tutorial
             _phase = TutorialPhase.CoreControls;
 
             _gameplay = new TutorialGameplayController(
-                new TutorialGameplayWorldAdapter(gameManager, hamster),
-                TutorialGameplayScenario.CoreControls);
+                new TutorialGameplayWorldAdapter(gameManager, hamster));
             _gameplay.ScenarioCompleted += HandleGameplayScenarioCompleted;
             _gameplay.SkipRequested += HandleSkipRequested;
             _activeGameplayLevel = levelAddress;

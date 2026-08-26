@@ -6,7 +6,7 @@ using Assets.Scripts.Gameplay.Enums;
 namespace Assets.Scripts.Tutorial
 {
     /// <summary>
-    /// Единственный владелец состава gameplay-сценариев tutorial.
+    /// Единственный владелец состава gameplay-шагов tutorial.
     /// </summary>
     public static class TutorialGameplayStepCatalog
     {
@@ -72,33 +72,6 @@ namespace Assets.Scripts.Tutorial
                 targetTypes: ObstacleTypeEnum.smallAlive)
         });
 
-        private static readonly IReadOnlyList<TutorialGameplayStep> _superHit = Array.AsReadOnly(new[]
-        {
-            new TutorialGameplayStep(
-                number: 10,
-                title: "Обучение 10 - суперудар",
-                instruction: "Используйте суперудар",
-                expectedAction: TutorialAction.Ultra,
-                pauseDistance: 7.2f,
-                targetTypes: new[]
-                {
-                    ObstacleTypeEnum.smallNotAliveRoad,
-                    ObstacleTypeEnum.bigAlive,
-                    ObstacleTypeEnum.smallAlive
-                })
-        });
-
-        public static IReadOnlyList<TutorialGameplayStep> GetSteps(TutorialGameplayScenario scenario)
-        {
-            switch (scenario)
-            {
-                case TutorialGameplayScenario.CoreControls:
-                    return _coreControls;
-                case TutorialGameplayScenario.SuperHit:
-                    return _superHit;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(scenario), scenario, null);
-            }
-        }
+        public static IReadOnlyList<TutorialGameplayStep> Steps => _coreControls;
     }
 }

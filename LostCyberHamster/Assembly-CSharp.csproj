@@ -637,7 +637,6 @@
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\ObstacleRoleClassifier.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\BotPlan.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitCharacterLoadingTask.cs" />
-    <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialGameplayScenario.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\CollectibleDecisionPointDetector.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\IInstaller.cs" />

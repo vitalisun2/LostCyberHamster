@@ -13,6 +13,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
     public class AddCoinsOrBonusMechanics
     {
         private readonly AtomicEvent<Obstacle> _destroyObstacleEvent;
+        private readonly AtomicEvent<Obstacle> _obstacleBonusDropEvent;
         private readonly MonoBehaviour _monoBehaviour;
 
         private const float _coinSpacing = 0.2f;
@@ -21,20 +22,26 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private const int _energyBonusValue = 20;
         private const int _crystallBonusValue = 1;
 
-        public AddCoinsOrBonusMechanics(AtomicEvent<Obstacle> destroyObstacleEvent, MonoBehaviour monoBehaviour)
+        public AddCoinsOrBonusMechanics(
+            AtomicEvent<Obstacle> destroyObstacleEvent,
+            AtomicEvent<Obstacle> obstacleBonusDropEvent,
+            MonoBehaviour monoBehaviour)
         {
             _destroyObstacleEvent = destroyObstacleEvent;
+            _obstacleBonusDropEvent = obstacleBonusDropEvent;
             _monoBehaviour = monoBehaviour;
         }
 
         public void OnEnable()
         {
             _destroyObstacleEvent.Subscribe(OnJumpOnEvent);
+            _obstacleBonusDropEvent.Subscribe(OnJumpOnEvent);
         }
 
         public void OnDisable()
         {
             _destroyObstacleEvent.Unsubscribe(OnJumpOnEvent);
+            _obstacleBonusDropEvent.Unsubscribe(OnJumpOnEvent);
         }
 
         private void OnJumpOnEvent(Obstacle destroyedObstacle)

@@ -443,8 +443,8 @@ public class CollisionController : MonoBehaviour
                 $"pending={FormatObstacle(_hamster.PendingJumpedOnObstacle.Value)}");
         }
 
-        // Отправляем событие урона, если защита не активна.
-        if (!_hamster.IsProtected.Value)
+        // Один spawned obstacle может списать жизнь только один раз.
+        if (!_hamster.IsProtected.Value && obstacle.TryMarkContactDamageDealt())
         {
             _hamster.DamageEvent.Invoke();
         }

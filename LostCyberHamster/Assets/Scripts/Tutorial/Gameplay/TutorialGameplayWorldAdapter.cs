@@ -33,20 +33,6 @@ namespace Assets.Scripts.Tutorial
 
         public HamsterStateEnum HamsterState => _hamster.HamsterState.Value;
 
-        public event Action UltraUsed
-        {
-            add => GameEventsManager.OnUltaUsed += value;
-            remove => GameEventsManager.OnUltaUsed -= value;
-        }
-
-        public void Prepare(TutorialGameplayScenario scenario)
-        {
-            if (scenario == TutorialGameplayScenario.SuperHit)
-            {
-                _hamster.AddUltaCharge(100);
-            }
-        }
-
         public Obstacle FindNearestSameLineObstacle(IReadOnlyList<ObstacleTypeEnum> targetTypes)
         {
             ObstacleSpawner spawner = ObstacleSpawner.Instance;
@@ -122,70 +108,6 @@ namespace Assets.Scripts.Tutorial
             return obstacleRightX < screenLeftEdge;
         }
 
-        public void CaptureSuperHitTargets(List<Obstacle> targets)
-        {
-            if (targets == null)
-            {
-                throw new ArgumentNullException(nameof(targets));
-            }
-
-            targets.Clear();
-            ObstacleSpawner spawner = ObstacleSpawner.Instance;
-            if (spawner == null)
-            {
-                return;
-            }
-
-            float hamsterX = _hamster.transform.position.x;
-            foreach (var spawned in spawner.SpawnedObstacles)
-            {
-                Obstacle obstacle = spawned?.ObstacleScript;
-                if (obstacle == null
-                    || !HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle))
-                {
-                    continue;
-                }
-
-                float obstacleX = obstacle.transform.position.x;
-                if (obstacleX >= hamsterX && Mathf.Abs(hamsterX - obstacleX) <= Consts.StrikeRangeMax)
-                {
-                    targets.Add(obstacle);
-                }
-            }
-        }
-
-        public bool IsElectricStrikeEffectPlaying()
-        {
-            return UnityEngine.Object.FindAnyObjectByType<ElectricStrikeUlta>(FindObjectsInactive.Include) != null;
-        }
-
-        public bool HasCapturedSuperHitTargetInPlay(IReadOnlyList<Obstacle> targets)
-        {
-            if (targets == null || targets.Count == 0 || ObstacleSpawner.Instance == null)
-            {
-                return false;
-            }
-
-            foreach (var spawned in ObstacleSpawner.Instance.SpawnedObstacles)
-            {
-                Obstacle obstacle = spawned?.ObstacleScript;
-                if (obstacle == null)
-                {
-                    continue;
-                }
-
-                for (int index = 0; index < targets.Count; index++)
-                {
-                    if (targets[index] == obstacle)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         public void PerformAction(TutorialAction action)
         {
             switch (action)
@@ -198,9 +120,6 @@ namespace Assets.Scripts.Tutorial
                     break;
                 case TutorialAction.SuperJump:
                     PerformSuperJump();
-                    break;
-                case TutorialAction.Ultra:
-                    _hamster.UltaEvent?.Invoke();
                     break;
             }
         }

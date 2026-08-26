@@ -61,6 +61,7 @@ namespace Assets.Scripts.Gameplay
         public AtomicEvent<ObstacleTypeEnum> CollectableCollectedEvent = new();
         public AtomicEvent<Obstacle> DestroyObstacleEvent = new();
         public AtomicEvent<Obstacle> DestroyObstacleBySuperAttackEvent = new();
+        public AtomicEvent<Obstacle> ObstacleBonusDropEvent = new();
         public AtomicEvent DamageEvent = new();
         public AtomicEvent UltaEvent = new();
         public AtomicEvent TapRequest = new();
@@ -255,7 +256,10 @@ namespace Assets.Scripts.Gameplay
                 Lives,
                 LevelController.Instance.LevelData.GameManager);
             _addOneCoinMechanics = new AddOneCoinMechanics(JumpOverEvent);
-            _addCoinsOrBonusMechanics = new AddCoinsOrBonusMechanics(DestroyObstacleEvent, this);
+            _addCoinsOrBonusMechanics = new AddCoinsOrBonusMechanics(
+                DestroyObstacleEvent,
+                ObstacleBonusDropEvent,
+                this);
             _runScoreMechanics = new RunScoreMechanics(
                 CollectableCollectedEvent,
                 DestroyObstacleEvent,

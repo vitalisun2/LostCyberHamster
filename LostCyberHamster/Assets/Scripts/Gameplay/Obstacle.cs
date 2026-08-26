@@ -34,6 +34,8 @@ namespace Assets.Scripts.Gameplay
 
         public AtomicEvent<GameObject> OnObstacleUnspawned = new();
 
+        private bool _hasDealtContactDamage;
+
         private AtomicVariable<BoomEffect> _boomEffect;
 
         private ScrollLeftMechanics _scrollLeftMechanics;
@@ -62,6 +64,8 @@ namespace Assets.Scripts.Gameplay
 
         public void InitializeMechanics()
         {
+            _hasDealtContactDamage = false;
+
             _scrollLeftMechanics = new ScrollLeftMechanics(transform, Consts.RoadScrollSpeed);
             _unspawnOutOfBoundsMechanics = new UnspawnOutOfBoundsMechanics(this, OnObstacleUnspawned);
 
@@ -80,6 +84,15 @@ namespace Assets.Scripts.Gameplay
             _unspawnOnJumpedOnMechanics.OnEnable();
 
             enabled = true;
+        }
+
+        public bool TryMarkContactDamageDealt()
+        {
+            if (_hasDealtContactDamage)
+                return false;
+
+            _hasDealtContactDamage = true;
+            return true;
         }
 
         private void OnEnable()

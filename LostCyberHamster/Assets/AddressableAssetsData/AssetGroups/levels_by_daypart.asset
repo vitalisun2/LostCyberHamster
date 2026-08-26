@@ -97,11 +97,6 @@ MonoBehaviour:
     - levels_daypart_Afternoon
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 23a5c04aff626bc4596513535cff37a2
-    m_Address: 01_New_York/Morning/Tutorial Level 2
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 25f82be8c1554879b1bd2f805089e7d1
     m_Address: 02_Paris/Morning/level_01
     m_ReadOnly: 0

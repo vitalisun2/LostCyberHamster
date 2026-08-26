@@ -9,7 +9,6 @@ namespace Assets.Scripts.Tutorial
     public static class TutorialConstants
     {
         public const string CoreLessonLevelAddress = "01_New_York/Morning/Tutorial Level";
-        public const string SuperHitLessonLevelAddress = "01_New_York/Morning/Tutorial Level 2";
         public const string FirstGameplayLevelAddress = "01_New_York/Morning/level_01";
         public const string FirstGameplayLevelKey = "level_01";
         public const string MenuSceneName = "Menu";
@@ -17,17 +16,12 @@ namespace Assets.Scripts.Tutorial
 
         public static bool IsTutorialLevel(string levelAddress)
         {
-            return IsCoreLessonLevel(levelAddress) || IsSuperHitLessonLevel(levelAddress);
+            return IsCoreLessonLevel(levelAddress);
         }
 
         public static bool IsCoreLessonLevel(string levelAddress)
         {
             return AddressesMatch(levelAddress, CoreLessonLevelAddress);
-        }
-
-        public static bool IsSuperHitLessonLevel(string levelAddress)
-        {
-            return AddressesMatch(levelAddress, SuperHitLessonLevelAddress);
         }
 
         /// <summary>

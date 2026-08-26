@@ -14,9 +14,19 @@ public class ElectricStrikeUlta : MonoBehaviour
     [SerializeField] private float delayBetweenEffects = 0.1f; // Задержка между эффектами - по умолчанию 0.1 сек
     [SerializeField] private float effectSpeedMultiplier = 1.0f; // Общая скорость эффекта
 
+    public bool IsConfigured =>
+        effectRenderer1 != null &&
+        effectRenderer2 != null &&
+        effectRenderer3 != null;
+
+    public float WorldRightEdge => Mathf.Max(
+        effectRenderer1.bounds.max.x,
+        effectRenderer2.bounds.max.x,
+        effectRenderer3.bounds.max.x);
+
     private void Start()
     {
-        if (effectRenderer1 == null || effectRenderer2 == null || effectRenderer3 == null)
+        if (!IsConfigured)
         {
             Debug.LogError("ElectricStrikeUlta: One or more SpriteRenderers are not assigned.");
             Destroy(gameObject);

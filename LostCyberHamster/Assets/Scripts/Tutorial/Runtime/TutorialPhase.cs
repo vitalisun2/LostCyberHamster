@@ -7,7 +7,6 @@ namespace Assets.Scripts.Tutorial
     {
         None,
         CoreControls,
-        SuperHit,
         Completed
     }
 }
