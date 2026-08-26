@@ -172,8 +172,6 @@ namespace Assets.Scripts
         /// </summary>
         public const float PIXELS_TO_UNITS_RATIO = 1f / PixelsPerUnit;   // 0.01
 
-        public const double StrikeRangeMax = 12;
-
         /// <summary>
         /// Имя префаба для прокручиваемых слоёв окружения (фон, дорога и т.д.)
         /// </summary>
