@@ -31,8 +31,10 @@ Unity CLI состоит из двух слоёв:
 
 - Editor: `6000.2.6f2`.
 - Pipeline требует Unity 6.0 или новее: текущая версия совместима.
-- `com.unity.pipeline` пока отсутствует в `Packages/manifest.json`.
-- Unity CLI пока отсутствует в `PATH`.
+- Unity CLI: `1.0.0-beta.6`, установлен в `PATH`; авторизация активна.
+- `com.unity.pipeline`: `0.5.0-exp.1`, зафиксирован в `Packages/manifest.json`.
+- Pipeline server запускается автоматически; `status`, `editor_status` и read-only `eval` проверены.
+- Для Codex установлены Unity CLI skill и проектная MCP-конфигурация.
 - Unity CLI и Pipeline имеют experimental/beta-статус. Команды и API могут меняться.
 
 Обновление Editor для CLI не требуется. Отдельно нужно запланировать проверяемый переход на Unity 6.3 LTS: ветка 6.2 больше не поддерживается. Этот переход не блокирует пилот CLI.
@@ -49,9 +51,13 @@ unity pipeline install
 unity pipeline list
 unity status
 unity command --format json
+unity skill install codex
+unity mcp configure codex --project-path (Get-Location)
 ```
 
 После `unity pipeline install` дождаться Unity recompile. Изменения `Packages/manifest.json`, `Packages/packages-lock.json` и Unity-generated файлов проверить и коммитить вместе.
+
+После изменения MCP-конфигурации перезапустить Codex.
 
 `unity --help` и `unity <command> --help` — источник правды для установленной версии CLI.
 
@@ -123,16 +129,13 @@ unity command --format json
 - В automation использовать `--format json` или `--format ndjson`, проверять exit code и `stderr`.
 - Версию CLI и Pipeline фиксировать в diagnostic output. Перед обновлением читать release notes.
 
-## План внедрения
+## Следующие шаги
 
-1. Установить Unity CLI без обновления Editor.
-2. В отдельном изменении установить `com.unity.pipeline`.
-3. Проверить `status`, список команд и read-only `eval`.
-4. Добавить `lch_editor_status` как первую `[CliCommand]`.
-5. Проверить вызов из терминала и MCP.
-6. Добавить test-level команды без удаления файлового bridge.
-7. Сравнить результаты обоих путей на тех же test levels.
-8. Удалять старый bridge только отдельным решением после стабильного периода.
+1. Добавить `lch_editor_status` как первую `[CliCommand]`.
+2. Проверить её вызов из терминала и MCP.
+3. Добавить test-level команды без удаления файлового bridge.
+4. Сравнить результаты обоих путей на тех же test levels.
+5. Удалять старый bridge только отдельным решением после стабильного периода.
 
 ## Официальные источники
 
