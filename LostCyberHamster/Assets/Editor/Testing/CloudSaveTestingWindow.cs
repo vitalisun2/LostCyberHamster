@@ -40,6 +40,9 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Размер текста шага и результата.</summary>
         private const int OutputFontSize = 22;
 
+        /// <summary>Отступ между выводом шага и результата.</summary>
+        private const float OutputBlockSpacing = 6f;
+
         /// <summary>Ширина кнопок выбора продукта.</summary>
         private const float ProductButtonWidth = 190f;
 
@@ -340,19 +343,26 @@ namespace LostCyberHamster.Editor.Testing
 
             EditorGUILayout.Space(8f);
             var outputStyle = GetOutputStyle();
-            if (!string.IsNullOrWhiteSpace(_runner.CurrentStep))
-            {
-                EditorGUILayout.LabelField(
-                    $"Шаг:\n{_runner.CurrentStep}",
-                    outputStyle);
-            }
+            var hasStep = !string.IsNullOrWhiteSpace(_runner.CurrentStep);
+            if (hasStep)
+                DrawOutputBlock("Шаг", _runner.CurrentStep, outputStyle);
 
             if (!string.IsNullOrWhiteSpace(_runner.CurrentResult))
             {
-                EditorGUILayout.LabelField(
-                    $"Результат:\n{_runner.CurrentResult}",
-                    outputStyle);
+                if (hasStep)
+                    EditorGUILayout.Space(OutputBlockSpacing);
+
+                DrawOutputBlock("Результат", _runner.CurrentResult, outputStyle);
             }
+        }
+
+        /// <summary>Рисует многострочный блок вывода с высотой по содержимому.</summary>
+        private void DrawOutputBlock(string title, string value, GUIStyle style)
+        {
+            var content = new GUIContent($"{title}:\n{value}");
+            var availableWidth = Mathf.Max(1f, position.width - style.margin.horizontal);
+            var height = style.CalcHeight(content, availableWidth);
+            EditorGUILayout.LabelField(content, style, GUILayout.Height(height));
         }
 
         /// <summary>Возвращает стиль крупного вывода теста.</summary>
@@ -367,6 +377,7 @@ namespace LostCyberHamster.Editor.Testing
                 wordWrap = true,
                 padding = new RectOffset(12, 12, 10, 10)
             };
+            _outputStyle.normal.textColor = Color.white;
             return _outputStyle;
         }
 
