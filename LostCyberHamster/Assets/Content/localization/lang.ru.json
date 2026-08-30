@@ -525,8 +525,12 @@
             "value": "Открыто"
         },
         {
+            "key": "development_unlock_action",
+            "value": "Открыть"
+        },
+        {
             "key": "development_unlock_cost",
-            "value": "★ 1"
+            "value": "за 1"
         },
         {
             "key": "development_icon_load_error",

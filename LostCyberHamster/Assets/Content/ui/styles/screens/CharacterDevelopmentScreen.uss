@@ -1,350 +1,623 @@
-/* Геометрия нормализована по референсу 1166 x 625. */
 .development-screen {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: visible;
+}
+
+.development-full-background {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("/Assets/Content/ui/sprites/skills/background_skills.png");
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.development-hud {
+    padding-right: 24px;
+    padding-left: 24px;
+}
+
+.development-hud__left {
+    flex-direction: row;
+    gap: 12px;
+}
+
+.development-viewport {
     flex-grow: 1;
     min-width: 0;
     min-height: 0;
-    position: relative;
+    justify-content: center;
+    align-items: center;
     overflow: hidden;
 }
 
-.development__header {
+.development-scale-frame {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 1672px;
+    height: 941px;
+}
+
+.development-design {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
-    height: 10%;
+    width: 1672px;
+    height: 941px;
+    transform-origin: 0 0;
 }
 
-.development__back-button {
+.development-central {
     position: absolute;
-    left: 1%;
-    top: 22px;
-    width: 144px;
-    height: 70px;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 941px;
+    transform-origin: 836px 498px;
+    scale: 1.2 1.2;
+}
+
+.development-runtime-text {
+    color: rgb(22, 24, 24);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.development-image-button {
     margin: 0;
-    padding: 8px;
-    font-size: 26px;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    overflow: visible;
+    transition-property: scale, opacity;
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
 }
 
-.development__title {
+.development-image-button:hover,
+.development-image-button:focus {
+    opacity: 0.96;
+    scale: 1.02 1.02;
+}
+
+.development-image-button:active {
+    opacity: 0.9;
+    scale: 0.97 0.97;
+}
+
+.development-image-button:disabled {
+    opacity: 0.62;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.development-title {
     position: absolute;
-    left: 25%;
-    top: 10px;
-    width: 50%;
-    height: 82px;
-    font-size: 50px;
+    left: 677px;
+    top: 120px;
+    width: 318px;
+    height: 92px;
+    background-image: url("/Assets/Content/ui/sprites/skills/title_skills.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.development-cards-background {
+    position: absolute;
+    left: 125px;
+    top: 244px;
+    width: 1422px;
+    height: 532px;
+}
+
+.development-panel {
+    position: absolute;
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 30px;
+    -unity-slice-right: 30px;
+    -unity-slice-top: 30px;
+    -unity-slice-bottom: 30px;
+}
+
+.development-level-panel {
+    left: 0;
+    top: 0;
+    width: 308px;
+    height: 520px;
+    background-image: url("/Assets/Content/ui/sprites/skills/panel_level_background.png");
+}
+
+.development-skins-panel,
+.development-abilities-panel {
+    left: 316px;
+    width: 1106px;
+    height: 258px;
+}
+
+.development-skins-panel {
+    top: 0;
+    background-image: url("/Assets/Content/ui/sprites/skills/panel_skins.png");
+}
+
+.development-abilities-panel {
+    top: 274px;
+    background-image: url("/Assets/Content/ui/sprites/skills/panel_abilities.png");
+}
+
+.development-line-track {
+    position: absolute;
+    left: 430px;
+    width: 872px;
+    height: 23px;
+    background-image: url("/Assets/Content/ui/sprites/skills/track_progression.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 12px;
+    -unity-slice-right: 12px;
+    -unity-slice-top: 10px;
+    -unity-slice-bottom: 10px;
+}
+
+.development-skins-track {
+    top: 81px;
+}
+
+.development-abilities-track {
+    top: 355px;
+}
+
+.development-level-heading-frame {
+    position: absolute;
+    left: 135px;
+    top: 268px;
+    width: 289px;
+    height: 48px;
+    padding-right: 8px;
+    padding-left: 8px;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.development-level-heading {
+    width: 100%;
+    height: 100%;
+    font-size: 23px;
+    white-space: nowrap;
     -unity-text-align: middle-center;
 }
 
-.development__metrics {
+.development-level-value {
     position: absolute;
-    left: 0;
-    top: 15.5%;
-    width: 100%;
-    height: 20%;
+    left: 215px;
+    top: 320px;
+    width: 128px;
+    height: 118px;
+    color: rgb(250, 250, 247);
+    font-size: 84px;
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(20, 23, 24);
 }
 
-.development__xp-block {
+.development-xp-heading {
     position: absolute;
-    left: 2.8%;
-    top: 0;
-    width: 28.9%;
-    height: 86px;
+    left: 159px;
+    top: 438px;
+    width: 243px;
+    height: 44px;
+    font-size: 24px;
 }
 
-.development__xp-heading {
+.development-xp-progress {
     position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 48px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    left: 159px;
+    top: 488px;
+    width: 243px;
+    height: 45px;
+    margin: 0;
+    padding: 0;
+    background-image: url("/Assets/Content/ui/sprites/skills/progress_bar_empty.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
-.development__metric-label {
-    font-size: 32px;
-    -unity-text-align: middle-left;
+.development-xp-progress .unity-progress-bar__background {
+    height: 45px;
+    padding-top: 3px;
+    padding-right: 3px;
+    padding-bottom: 3px;
+    padding-left: 3px;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
 }
 
-.development__xp-value {
-    width: 42%;
-    height: 48px;
-    font-size: 40px;
-    -unity-font-style: bold;
-    -unity-text-align: middle-right;
+.development-xp-progress .unity-progress-bar__progress {
+    height: 39px;
+    margin: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/skills/progress_bar_fill.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 14px;
+    -unity-slice-right: 14px;
+    -unity-slice-top: 12px;
+    -unity-slice-bottom: 12px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
 }
 
-.development__xp-progress {
-    position: absolute;
-    left: 0;
-    top: 52px;
-    width: 100%;
-    height: 32px;
-}
-
-.development__xp-progress .unity-progress-bar__title {
+.development-xp-progress .unity-progress-bar__title {
     display: none;
 }
 
-.development__level-block {
+.development-xp-value {
     position: absolute;
-    left: 40.3%;
-    top: 0;
-    width: 19%;
-    height: 122px;
-    align-items: center;
+    left: 159px;
+    top: 488px;
+    width: 243px;
+    height: 45px;
+    color: rgb(245, 245, 239);
+    font-size: 22px;
+    -unity-text-outline-width: 2px;
+    -unity-text-outline-color: rgb(20, 23, 24);
 }
 
-.development__level-label {
-    width: 100%;
+.development-points-heading {
+    position: absolute;
+    left: 148px;
+    top: 558px;
+    width: 262px;
     height: 48px;
-    -unity-text-align: middle-center;
+    font-size: 22px;
 }
 
-.development__level-value {
-    width: 100%;
-    height: 92px;
-    margin-top: 2px;
+.development-star {
+    position: absolute;
+    left: 204px;
+    top: 615px;
+    width: 62px;
+    height: 61px;
+    background-image: url("/Assets/Content/ui/sprites/skills/icon_star.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.development-points-value {
+    position: absolute;
+    left: 270px;
+    top: 604px;
+    width: 88px;
+    height: 82px;
+    color: rgb(250, 250, 247);
     font-size: 62px;
-    -unity-text-align: middle-center;
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(20, 23, 24);
 }
 
-.development__xp-hint {
+.development-line-tab {
     position: absolute;
-    left: 66%;
-    top: -8px;
-    width: 29.5%;
-    height: 104px;
-    font-size: 24px;
-    white-space: normal;
-    -unity-text-align: upper-left;
-}
-
-.development__lower {
-    position: absolute;
-    left: 0;
-    top: 43.7%;
-    width: 100%;
-    height: 52.3%;
-}
-
-.development__points-block {
-    position: absolute;
-    left: 2.8%;
-    top: 0;
-    width: 28.9%;
-    height: 100%;
-}
-
-.development__points-label {
-    position: absolute;
-    left: 9%;
-    top: 0;
-    width: 82%;
-    height: 56px;
-    font-size: 32px;
-    -unity-text-align: middle-center;
-}
-
-.development__points-value {
-    position: absolute;
-    left: 18%;
-    top: 68px;
-    width: 48%;
-    height: 92px;
-    color: var(--ui-content-card-accent);
-    font-size: 58px;
-    -unity-text-align: middle-center;
-}
-
-.development__points-hint {
-    position: absolute;
-    left: 0;
-    top: 48%;
-    width: 90%;
-    height: 86px;
-    font-size: 24px;
-    white-space: normal;
-    -unity-text-align: upper-left;
-}
-
-.development__equipment-button {
-    position: absolute;
-    left: 8%;
-    bottom: 2%;
-    width: 84%;
-    height: 94px;
-    margin: 0;
-    padding-right: 20px;
-    padding-left: 20px;
-    border-width: 0;
-    border-radius: var(--ui-radius-secondary);
-    background-color: var(--ui-tab-active);
-    color: var(--ui-quest-control-text);
-    -unity-font-style: bold;
-    -unity-text-outline-width: 0;
-    font-size: 32px;
-}
-
-.development__equipment-button,
-.development__equipment-button:hover,
-.development__equipment-button:focus,
-.development__equipment-button:active {
-    color: var(--ui-quest-control-text);
-    -unity-text-outline-width: 0;
-}
-
-.development__equipment-button:hover,
-.development__equipment-button:focus {
-    background-color: var(--ui-tab-active-hover);
-}
-
-.development__equipment-button:active {
-    background-color: var(--ui-surface-active);
-}
-
-.development__catalogs {
-    position: absolute;
-    left: 40.3%;
-    top: 0;
-    width: 54.2%;
-    height: 100%;
-    scale: 1.14 1.14;
-    transform-origin: 100% 100%;
-}
-
-.development__line-title {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 52px;
-    font-size: 36px;
-    -unity-text-align: middle-center;
-}
-
-.development__skins-title {
-    top: 0;
-}
-
-.development__abilities-title {
-    top: 54%;
-}
-
-.development__carousel {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 148px;
-    flex-direction: row;
+    height: 64px;
+    padding-right: 13px;
+    padding-left: 13px;
+    justify-content: center;
     align-items: center;
+    -unity-background-image-tint-color: rgb(218, 229, 233);
+    -unity-background-scale-mode: stretch-to-fill;
+    overflow: hidden;
 }
 
-.development__skins-carousel {
-    top: 12.5%;
+.development-skins-tab {
+    left: 445px;
+    top: 214px;
+    width: 216px;
+    background-image: url("/Assets/Content/ui/sprites/skills/tab_background_skins.png");
 }
 
-.development__abilities-carousel {
-    top: 65%;
+.development-abilities-tab {
+    left: 445px;
+    top: 488px;
+    width: 338px;
+    background-image: url("/Assets/Content/ui/sprites/skills/tab_background_abilities.png");
 }
 
-.development__carousel-line {
+.development-line-title {
+    width: 100%;
+    height: 100%;
+    font-size: 33px;
+    -unity-text-align: middle-center;
+}
+
+.development-arrow {
     position: absolute;
-    left: 17px;
-    right: 17px;
-    top: 50%;
-    height: 1px;
-    background-color: var(--ui-border);
+    width: 72px;
+    height: 98px;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
-.development__line-scroll {
-    flex-grow: 1;
-    min-width: 0;
-    height: 100%;
+.development-arrow--left {
+    background-image: url("/Assets/Content/ui/sprites/skills/arrow_left.png");
 }
 
-.development__line-scroll .unity-scroll-view__content-viewport,
-.development__line-scroll .unity-scroll-view__content-container {
-    height: 100%;
+.development-arrow--right {
+    background-image: url("/Assets/Content/ui/sprites/skills/arrow_right.png");
 }
 
-.development__line-scroll .unity-scroll-view__content-container {
+.development-skin-arrow--left {
+    left: 451px;
+    top: 288px;
+}
+
+.development-skin-arrow--right {
+    left: 1465px;
+    top: 288px;
+}
+
+.development-ability-arrow--left {
+    left: 451px;
+    top: 562px;
+}
+
+.development-ability-arrow--right {
+    left: 1465px;
+    top: 562px;
+}
+
+.development-line-scroll {
+    position: absolute;
+    left: 535px;
+    width: 918px;
+    height: 242px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.development-skin-scroll {
+    top: 268px;
+}
+
+.development-ability-scroll {
+    top: 542px;
+}
+
+.development-line-scroll .unity-scroll-view__content-viewport,
+.development-line-scroll .unity-scroll-view__content-container {
+    height: 242px;
+}
+
+.development-line-scroll .unity-scroll-view__content-container {
     min-width: 100%;
     flex-direction: row;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
 }
 
-.development__cards-track {
+.development-cards {
     flex-shrink: 0;
-    height: 100%;
-    position: relative;
+    min-width: 918px;
+    height: 242px;
     flex-direction: row;
-    align-items: center;
-}
-
-.development__cards {
-    flex-shrink: 0;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
 }
 
 .development-card {
+    position: relative;
+    flex-grow: 0;
     flex-shrink: 0;
-    width: 116px;
-    height: 143px;
-    margin: 0 17px;
-    padding: 7px;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--ui-content-card-surface);
-    border-width: 2px;
-    border-color: var(--ui-border);
-    border-radius: 4px;
+    width: 306px;
+    height: 242px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
 }
 
-.development-card--locked {
-    opacity: 0.78;
+.development-card__node {
+    position: absolute;
+    left: 86px;
+    top: 0;
+    width: 135px;
+    height: 137px;
+    justify-content: center;
+    align-items: center;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.development-card__node--beige,
+.development-card__node--gray-blue {
+    background-color: rgb(255, 255, 255);
+    border-top-width: 4px;
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    border-left-width: 4px;
+    border-top-color: rgb(22, 24, 24);
+    border-right-color: rgb(22, 24, 24);
+    border-bottom-color: rgb(22, 24, 24);
+    border-left-color: rgb(22, 24, 24);
+    border-top-left-radius: 69px;
+    border-top-right-radius: 69px;
+    border-bottom-right-radius: 69px;
+    border-bottom-left-radius: 69px;
 }
 
 .development-card__icon {
-    flex-shrink: 0;
-    width: 48px;
-    height: 48px;
+    width: 117px;
+    height: 117px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.development-card--preview .development-card__icon {
+    opacity: 1;
+}
+
+.development-card__lock {
+    position: absolute;
+    left: 18px;
+    top: 4px;
+    width: 100px;
+    height: 130px;
+    background-image: url("/Assets/Content/ui/sprites/skills/icon_lock.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.development-card__check {
+    position: absolute;
+    right: -11px;
+    bottom: -9px;
+    width: 57px;
+    height: 59px;
+    background-image: url("/Assets/Content/ui/sprites/skills/icon_check.png");
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .development-card__name {
-    width: 100%;
-    height: 44px;
-    color: var(--ui-content-card-text);
+    position: absolute;
+    left: 0;
+    top: 137px;
+    width: 306px;
+    height: 31px;
+    color: rgb(22, 24, 24);
+    font-size: 24px;
+    white-space: nowrap;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    overflow: hidden;
+}
+
+.development-card__unlock {
+    position: absolute;
+    left: 81px;
+    top: 168px;
+    width: 145px;
+    height: 74px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/skills/button_unlock_base.png");
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 18px;
+    -unity-slice-right: 18px;
+    -unity-slice-top: 17px;
+    -unity-slice-bottom: 17px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    overflow: hidden;
+}
+
+.development-card__unlock-action {
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 145px;
+    height: 30px;
+    margin: 0;
+    padding: 0;
+    color: rgb(22, 24, 24);
     font-size: 17px;
-    white-space: normal;
+    -unity-font-style: bold;
     -unity-text-align: middle-center;
     -unity-text-outline-width: 0;
 }
 
-.development-card__status {
-    width: 100%;
-    height: 34px;
-    color: var(--ui-content-card-accent);
-    font-size: 17px;
-    white-space: normal;
+.development-card__unlock-cost-row {
+    position: absolute;
+    left: 0;
+    top: 35px;
+    width: 145px;
+    height: 30px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.development-card__unlock-cost {
+    height: 30px;
+    margin: 0;
+    padding: 0;
+    color: rgb(22, 24, 24);
+    font-size: 16px;
+    -unity-font-style: bold;
     -unity-text-align: middle-center;
     -unity-text-outline-width: 0;
 }
 
-.development-card__lock {
-    flex-shrink: 0;
-    width: 54px;
-    height: 82px;
-    background-image: url("project://database/Assets/Content/ui/textures/newyork_atlas.psd?fileID=7789055545610967947&guid=26096890a016443af92b075577c107c9&type=3#lock");
+.development-card__unlock-star {
+    width: 18px;
+    height: 18px;
+    margin-left: 3px;
+    padding: 0;
+    color: rgba(0, 0, 0, 0);
+    font-size: 18px;
+    background-image: url("/Assets/Content/ui/sprites/skills/icon_star.png");
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.development-equipment-button {
+    position: absolute;
+    left: 557px;
+    top: 790px;
+    width: 344px;
+    height: 76px;
+    background-image: url("/Assets/Content/ui/sprites/skills/button_open_equipment_base.png");
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.development-card--placeholder .development-card__lock {
-    width: 68px;
-    height: 102px;
+.development-equipment-button__icon {
+    position: absolute;
+    left: 16px;
+    top: 12px;
+    width: 54px;
+    height: 53px;
+    background-image: url("/Assets/Content/ui/sprites/skills/icon_equipment.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.development-equipment-button__label {
+    position: absolute;
+    left: 79px;
+    top: 0;
+    width: 256px;
+    height: 72px;
+    font-size: 21px;
+}
+
+.development-info-icon {
+    position: absolute;
+    left: 949px;
+    top: 807px;
+    width: 56px;
+    height: 51px;
+    background-image: url("/Assets/Content/ui/sprites/skills/icon_info.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.development-info-text {
+    position: absolute;
+    left: 1015px;
+    top: 786px;
+    width: 560px;
+    height: 106px;
+    color: rgb(250, 250, 247);
+    font-size: 24px;
+    white-space: normal;
+    -unity-text-align: middle-left;
+    -unity-text-outline-width: 2px;
+    -unity-text-outline-color: rgb(20, 23, 24);
 }

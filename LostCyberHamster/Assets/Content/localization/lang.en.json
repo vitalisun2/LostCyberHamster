@@ -525,8 +525,12 @@
             "value": "Unlocked"
         },
         {
+            "key": "development_unlock_action",
+            "value": "Unlock"
+        },
+        {
             "key": "development_unlock_cost",
-            "value": "★ 1"
+            "value": "for 1"
         },
         {
             "key": "development_icon_load_error",

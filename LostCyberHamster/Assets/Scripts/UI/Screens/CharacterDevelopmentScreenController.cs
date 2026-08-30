@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Assets.Scripts.System.Resources;
@@ -17,13 +18,23 @@ namespace LostCyberHamster.UI
     public sealed class CharacterDevelopmentScreenController :
         ScreenController
     {
-        private const int MinimumCardsPerLine = 5;
+        private const int MinimumCardsPerLine = 3;
+        private const float DesignWidth = 1672f;
+        private const float DesignHeight = 941f;
 
-        private readonly List<AddressableLease<Sprite>> _iconLeases = new();
-        private CancellationTokenSource _iconLoadCancellation;
+        private enum DevelopmentCardState
+        {
+            Unlocked,
+            Preview,
+            Hidden
+        }
 
-        private Button BackButton =>
-            _contentRoot.Q<Button>("development__btn-back");
+        private readonly List<AddressableLease<Sprite>> _abilityIconLeases =
+            new();
+        private readonly List<Sprite> _generatedPreviewSprites = new();
+        private readonly List<Texture2D> _generatedPreviewTextures = new();
+        private CancellationTokenSource _abilityIconCancellation;
+
         private Button EquipmentButton =>
             _contentRoot.Q<Button>("development__btn-equipment");
         private Label PlayerLevelLabel =>
@@ -50,6 +61,17 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<VisualElement>("development__skin-cards");
         private VisualElement AbilityCards =>
             _contentRoot.Q<VisualElement>("development__ability-cards");
+        private VisualElement Viewport =>
+            _contentRoot.Q<VisualElement>("development__viewport");
+        private VisualElement ScaleFrame =>
+            _contentRoot.Q<VisualElement>("development__scale-frame");
+        private VisualElement Design =>
+            _contentRoot.Q<VisualElement>("development__design");
+        private VisualElement ScreenRoot =>
+            _contentRoot.Q<VisualElement>("character-development-screen");
+        private VisualElement FullBackground =>
+            _contentRoot.Q<VisualElement>("development__full-background");
+
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.CharacterDevelopmentScreen;
 
@@ -60,14 +82,109 @@ namespace LostCyberHamster.UI
 
         protected override async Task OnLoadAsync()
         {
-            await ChangeBackgroundAsync("BackgroundScreenSprite");
+            EnsureRuntimeStructure();
             UpdatePlayerProgress();
-            _ = ObserveRefreshCardsAsync(RefreshCardsAsync());
+            await RefreshCardsAsync();
+        }
+
+        private void EnsureRuntimeStructure()
+        {
+            if (ScreenRoot == null || Design == null)
+            {
+                return;
+            }
+
+            if (_contentRoot.Q<SharedHudLane>() == null)
+            {
+                var lane = new SharedHudLane();
+                lane.AddToClassList("development-hud");
+
+                var leftGroup = new VisualElement();
+                leftGroup.AddToClassList("development-hud__left");
+                leftGroup.Add(new SharedHomeButton());
+                leftGroup.Add(new SharedCoinsButton());
+                leftGroup.Add(new SharedGemsButton());
+                lane.Add(leftGroup);
+
+                ScreenRoot.Insert(1, lane);
+            }
+
+            string[] legacyHudNames =
+            {
+                "development__btn-home",
+                "development__btn-coins",
+                "development__btn-gems"
+            };
+            foreach (string legacyHudName in legacyHudNames)
+            {
+                Design.Q<VisualElement>(legacyHudName)?.RemoveFromHierarchy();
+            }
+
+            // Поддерживаем старый cached Addressables tree до следующей content build.
+            if (FullBackground == null)
+            {
+                var background = new VisualElement
+                {
+                    name = "development__full-background",
+                    pickingMode = PickingMode.Ignore
+                };
+                background.AddToClassList("development-full-background");
+                background.style.position = Position.Absolute;
+                background.style.left = 0f;
+                background.style.top = 0f;
+                background.style.width = Length.Percent(100f);
+                background.style.height = Length.Percent(100f);
+                Sprite backgroundSprite =
+                    ScreenRoot.resolvedStyle.backgroundImage.sprite;
+                if (backgroundSprite != null)
+                {
+                    background.style.backgroundImage =
+                        new StyleBackground(backgroundSprite);
+                }
+                background.style.backgroundSize =
+                    new BackgroundSize(BackgroundSizeType.Cover);
+                ScreenRoot.Insert(0, background);
+                ScreenRoot.style.backgroundImage = StyleKeyword.None;
+                ScreenRoot.style.overflow = Overflow.Visible;
+            }
+
+            if (_contentRoot.Q<VisualElement>("development__central") == null)
+            {
+                var central = new VisualElement
+                {
+                    name = "development__central",
+                    pickingMode = PickingMode.Ignore
+                };
+                central.AddToClassList("development-central");
+                central.style.position = Position.Absolute;
+                central.style.left = 0f;
+                central.style.top = 0f;
+                central.style.width = DesignWidth;
+                central.style.height = DesignHeight;
+                central.style.scale = new Scale(
+                    new Vector3(1.2f, 1.2f, 1f));
+
+                VisualElement[] centralChildren = Design.Children()
+                    .ToArray();
+                foreach (VisualElement child in centralChildren)
+                {
+                    central.Add(child);
+                }
+                Design.Add(central);
+            }
+
+            VisualElement cardsBackground = _contentRoot.Q<VisualElement>(
+                className: "development-cards-background");
+            if (cardsBackground != null &&
+                string.IsNullOrWhiteSpace(cardsBackground.name))
+            {
+                cardsBackground.name = "development__cards-background";
+            }
         }
 
         protected override void OnSubscribeToEvents()
         {
-            BackButton?.RegisterCallback<ClickEvent>(OnBackClicked);
+            // Подключаем навигацию, карусели и адаптивный design frame.
             EquipmentButton?.RegisterCallback<ClickEvent>(
                 OnEquipmentClicked);
             SkinPreviousButton?.RegisterCallback<ClickEvent>(
@@ -77,11 +194,19 @@ namespace LostCyberHamster.UI
                 OnAbilityPreviousClicked);
             AbilityNextButton?.RegisterCallback<ClickEvent>(
                 OnAbilityNextClicked);
+            Viewport?.RegisterCallback<GeometryChangedEvent>(
+                OnViewportGeometryChanged);
+            _contentRoot.panel?.visualTree.RegisterCallback<
+                GeometryChangedEvent>(OnPanelGeometryChanged);
+            Viewport?.schedule.Execute(
+                () => ApplyResponsiveLayout(Viewport.contentRect.size));
+            ScreenRoot?.schedule.Execute(ApplyFullViewportBackground);
+
         }
 
         protected override void OnUnsubscribeFromEvents()
         {
-            BackButton?.UnregisterCallback<ClickEvent>(OnBackClicked);
+            // Отключаем screen-local callbacks.
             EquipmentButton?.UnregisterCallback<ClickEvent>(
                 OnEquipmentClicked);
             SkinPreviousButton?.UnregisterCallback<ClickEvent>(
@@ -91,54 +216,103 @@ namespace LostCyberHamster.UI
                 OnAbilityPreviousClicked);
             AbilityNextButton?.UnregisterCallback<ClickEvent>(
                 OnAbilityNextClicked);
-            ReleaseIconResources();
+            Viewport?.UnregisterCallback<GeometryChangedEvent>(
+                OnViewportGeometryChanged);
+            _contentRoot.panel?.visualTree.UnregisterCallback<
+                GeometryChangedEvent>(OnPanelGeometryChanged);
+            ReleaseAbilityIcons();
+            ReleaseGeneratedPreviewIcons();
         }
 
         private void UpdatePlayerProgress()
         {
             PlayerData playerData = GameDataManager.PlayerData;
-            int threshold = PlayerExperienceService.PlayerLevelThreshold;
+            if (playerData == null)
+            {
+                return;
+            }
 
+            int threshold = Math.Max(
+                1,
+                PlayerExperienceService.PlayerLevelThreshold);
+            int experience = Math.Max(0, playerData.ExperiencePoints);
+
+            // Заполняем runtime-данные и ограничиваем прогресс рамками трека.
             PlayerLevelLabel.text = playerData.PlayerLevel.ToString();
-            ExperienceLabel.text =
-                $"{playerData.ExperiencePoints} / {threshold}";
+            ExperienceLabel.text = $"{experience} / {threshold}";
             ExperienceProgress.lowValue = 0;
             ExperienceProgress.highValue = threshold;
-            ExperienceProgress.value = playerData.ExperiencePoints;
-            PointsLabel.text = FormatLocalized(
-                "development_points_value",
-                playerData.DevelopmentPoints.ToString());
+            ExperienceProgress.value = Math.Min(experience, threshold);
+            ExperienceProgress.title = string.Empty;
+            PointsLabel.text = playerData.DevelopmentPoints.ToString();
         }
 
         private async Task RefreshCardsAsync()
         {
-            CancellationToken cancellationToken = BeginIconLoading();
+            ReleaseAbilityIcons();
+            ReleaseGeneratedPreviewIcons();
             SkinCards.Clear();
             AbilityCards.Clear();
 
-            // Строим skin line из production catalog.
-            foreach (Skin skin in SkinManager.AvailableSkins)
+            // Группируем skins по состоянию.
+            // Внутри группы сохраняем catalog order.
+            int? nextSkinId = SkinManager.AvailableSkins
+                .FirstOrDefault(
+                    skin => !CharacterDevelopmentService.IsSkinUnlocked(
+                        skin.Id))
+                ?.Id;
+            var orderedSkins = SkinManager.AvailableSkins
+                .Select(skin => new
+                {
+                    Data = skin,
+                    State = ResolveCardState(
+                        CharacterDevelopmentService.IsSkinUnlocked(skin.Id),
+                        skin.Id == nextSkinId)
+                })
+                .OrderBy(item => item.State);
+            foreach (var item in orderedSkins)
             {
-                SkinCards.Add(CreateSkinCard(skin));
+                SkinCards.Add(CreateSkinCard(item.Data, item.State));
             }
             UpdateCarouselNavigation(
                 SkinPreviousButton,
                 SkinNextButton,
                 SkinCards.childCount);
 
-            // Строим ability line и параллельно загружаем production icons.
-            var iconTasks = new List<Task>();
-            foreach (SuperAttackData ability in SuperAttackService.Items)
+            // Группируем abilities по состоянию.
+            // Внутри группы сохраняем catalog order.
+            CancellationToken cancellationToken = BeginAbilityIconLoading();
+            var iconLoadTasks = new List<Task>();
+            int? nextAbilityId = SuperAttackService.Items
+                .FirstOrDefault(
+                    ability => !CharacterDevelopmentService
+                        .IsSuperAttackUnlocked(ability.Id))
+                ?.Id;
+            var orderedAbilities = SuperAttackService.Items
+                .Select(ability => new
+                {
+                    Data = ability,
+                    State = ResolveCardState(
+                        CharacterDevelopmentService.IsSuperAttackUnlocked(
+                            ability.Id),
+                        ability.Id == nextAbilityId)
+                })
+                .OrderBy(item => item.State);
+            foreach (var item in orderedAbilities)
             {
-                Button card = CreateAbilityCard(
-                    ability,
-                    out VisualElement icon);
+                VisualElement card = CreateAbilityCard(
+                    item.Data,
+                    item.State);
                 AbilityCards.Add(card);
+
+                VisualElement icon = card.Q<VisualElement>(
+                    className: "development-card__icon");
                 if (icon != null)
                 {
-                    iconTasks.Add(LoadIconAsync(
+                    iconLoadTasks.Add(LoadAbilityIconAsync(
+                        item.Data.IconAddress,
                         icon,
-                        ability.IconAddress,
+                        item.State == DevelopmentCardState.Preview,
                         cancellationToken));
                 }
             }
@@ -147,7 +321,7 @@ namespace LostCyberHamster.UI
                 AbilityNextButton,
                 AbilityCards.childCount);
 
-            await Task.WhenAll(iconTasks);
+            await Task.WhenAll(iconLoadTasks);
         }
 
         private static void UpdateCarouselNavigation(
@@ -155,139 +329,335 @@ namespace LostCyberHamster.UI
             Button nextButton,
             int cardCount)
         {
-            DisplayStyle display = cardCount > MinimumCardsPerLine
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
-            previousButton.style.display = display;
-            nextButton.style.display = display;
+            bool canScroll = cardCount > MinimumCardsPerLine;
+            previousButton?.SetEnabled(canScroll);
+            nextButton?.SetEnabled(canScroll);
         }
 
-        private Button CreateSkinCard(Skin skin)
-        {
-            bool isUnlocked =
-                CharacterDevelopmentService.IsSkinUnlocked(skin.Id);
-            bool canUnlock =
-                CharacterDevelopmentService.CanUnlockSkin(skin.Id);
-            var card = CreateCard(
-                $"development-skin-card-{skin.Id}",
-                skin.Name,
-                isUnlocked,
-                canUnlock,
-                out VisualElement icon);
-            if (icon != null)
-            {
-                icon.style.backgroundImage = new StyleBackground(
-                    skin.HamsterSprite);
-            }
-
-            if (canUnlock)
-            {
-                card.RegisterCallback<ClickEvent>(
-                    _ => OnUnlockSkinClicked(skin.Id));
-            }
-
-            return card;
-        }
-
-        private Button CreateAbilityCard(
-            SuperAttackData ability,
-            out VisualElement icon)
-        {
-            bool isUnlocked =
-                CharacterDevelopmentService.IsSuperAttackUnlocked(
-                    ability.Id);
-            bool canUnlock = CharacterDevelopmentService
-                .CanUnlockSuperAttack(ability.Id);
-            var card = CreateCard(
-                $"development-ability-card-{ability.Id}",
-                Localize(ability.NameLocalizationKey),
-                isUnlocked,
-                canUnlock,
-                out icon);
-
-            if (canUnlock)
-            {
-                card.RegisterCallback<ClickEvent>(
-                    _ => OnUnlockAbilityClicked(ability.Id));
-            }
-
-            return card;
-        }
-
-        private static Button CreateCard(
-            string name,
-            string title,
+        private static DevelopmentCardState ResolveCardState(
             bool isUnlocked,
-            bool canUnlock,
-            out VisualElement icon)
+            bool isNextToUnlock)
         {
-            var card = new Button { name = name };
-            card.AddToClassList("development-card");
-            card.EnableInClassList(
-                "development-card--locked",
-                !isUnlocked);
-
             if (isUnlocked)
             {
-                icon = new VisualElement();
-                icon.AddToClassList("development-card__icon");
-                card.Add(icon);
+                return DevelopmentCardState.Unlocked;
+            }
 
-                var nameLabel = new Label(title);
+            return isNextToUnlock
+                ? DevelopmentCardState.Preview
+                : DevelopmentCardState.Hidden;
+        }
+
+        private VisualElement CreateSkinCard(
+            Skin skin,
+            DevelopmentCardState state)
+        {
+            Sprite iconSprite = state == DevelopmentCardState.Preview
+                ? CreateGrayscaleSprite(skin.HamsterSprite)
+                : skin.HamsterSprite;
+            return CreateCard(
+                $"development-skin-card-{skin.Id}",
+                skin.Name,
+                state,
+                true,
+                iconSprite,
+                CharacterDevelopmentService.CanUnlockSkin(skin.Id),
+                () => OnUnlockSkinClicked(skin.Id));
+        }
+
+        private VisualElement CreateAbilityCard(
+            SuperAttackData ability,
+            DevelopmentCardState state)
+        {
+            return CreateCard(
+                $"development-ability-card-{ability.Id}",
+                Localize(ability.NameLocalizationKey),
+                state,
+                false,
+                null,
+                CharacterDevelopmentService.CanUnlockSuperAttack(ability.Id),
+                () => OnUnlockAbilityClicked(ability.Id));
+        }
+
+        private static VisualElement CreateCard(
+            string name,
+            string title,
+            DevelopmentCardState state,
+            bool usesBeigeNode,
+            Sprite iconSprite,
+            bool canUnlock,
+            Action unlockAction)
+        {
+            var card = new VisualElement { name = name };
+            card.AddToClassList("development-card");
+            card.EnableInClassList(
+                "development-card--unlocked",
+                state == DevelopmentCardState.Unlocked);
+            card.EnableInClassList(
+                "development-card--preview",
+                state == DevelopmentCardState.Preview);
+            card.EnableInClassList(
+                "development-card--hidden",
+                state == DevelopmentCardState.Hidden);
+
+            // Собираем круглый slot из подложки и независимых state-слоёв.
+            var node = CreateNode(usesBeigeNode);
+            if (state != DevelopmentCardState.Hidden)
+            {
+                var icon = new VisualElement
+                {
+                    pickingMode = PickingMode.Ignore
+                };
+                icon.AddToClassList("development-card__icon");
+                if (iconSprite != null)
+                {
+                    icon.style.backgroundImage =
+                        new StyleBackground(iconSprite);
+                }
+                node.Add(icon);
+            }
+            if (state == DevelopmentCardState.Hidden)
+            {
+                var lockIcon = new VisualElement
+                {
+                    pickingMode = PickingMode.Ignore
+                };
+                lockIcon.AddToClassList("development-card__lock");
+                node.Add(lockIcon);
+            }
+            if (state == DevelopmentCardState.Unlocked)
+            {
+                var check = new VisualElement
+                {
+                    pickingMode = PickingMode.Ignore
+                };
+                check.AddToClassList("development-card__check");
+                node.Add(check);
+            }
+            card.Add(node);
+
+            // Название и unlock-действие остаются runtime UI.
+            if (state != DevelopmentCardState.Hidden)
+            {
+                var nameLabel = new Label(title)
+                {
+                    pickingMode = PickingMode.Ignore
+                };
                 nameLabel.AddToClassList("development-card__name");
                 card.Add(nameLabel);
             }
-            else
+            if (state == DevelopmentCardState.Preview && canUnlock)
             {
-                icon = null;
-                card.Add(CreateLock("development-card__lock"));
-            }
+                var unlockButton = new Button(unlockAction);
+                unlockButton.AddToClassList("development-card__unlock");
 
-            var status = new Label(Localize(
-                isUnlocked
-                    ? "development_unlocked"
-                    : "development_unlock_cost"));
-            status.AddToClassList("development-card__status");
-            card.Add(status);
+                var actionLabel = new Label(
+                    Localize("development_unlock_action"))
+                {
+                    pickingMode = PickingMode.Ignore
+                };
+                actionLabel.AddToClassList(
+                    "development-card__unlock-action");
+                unlockButton.Add(actionLabel);
 
-            if (!isUnlocked)
-            {
-                card.SetEnabled(canUnlock);
+                var costRow = new VisualElement
+                {
+                    pickingMode = PickingMode.Ignore
+                };
+                costRow.AddToClassList("development-card__unlock-cost-row");
+
+                var costLabel = new Label(
+                    Localize("development_unlock_cost"))
+                {
+                    pickingMode = PickingMode.Ignore
+                };
+                costLabel.AddToClassList("development-card__unlock-cost");
+                costRow.Add(costLabel);
+
+                var star = new Label("★")
+                {
+                    pickingMode = PickingMode.Ignore
+                };
+                star.AddToClassList("development-card__unlock-star");
+                costRow.Add(star);
+                unlockButton.Add(costRow);
+
+                card.Add(unlockButton);
             }
 
             return card;
         }
 
-        private static void AddLockedPlaceholders(
-            VisualElement container,
-            string catalogName,
-            int existingCount)
+        private static VisualElement CreateNode(bool usesBeigeNode)
         {
-            for (int index = existingCount;
-                 index < MinimumCardsPerLine;
-                 index++)
+            var node = new VisualElement { pickingMode = PickingMode.Ignore };
+            node.AddToClassList("development-card__node");
+            node.AddToClassList(
+                usesBeigeNode
+                    ? "development-card__node--beige"
+                    : "development-card__node--gray-blue");
+            return node;
+        }
+
+        private CancellationToken BeginAbilityIconLoading()
+        {
+            _abilityIconCancellation = new CancellationTokenSource();
+            return _abilityIconCancellation.Token;
+        }
+
+        private async Task LoadAbilityIconAsync(
+            string iconAddress,
+            VisualElement icon,
+            bool useGrayscale,
+            CancellationToken cancellationToken)
+        {
+            AddressableLease<Sprite> lease = null;
+            try
             {
-                var card = new Button
+                lease = await AddressableLoader.LoadAssetAsync<Sprite>(
+                    iconAddress,
+                    cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                if (lease.Value == null)
                 {
-                    name = $"development-{catalogName}-placeholder-{index}"
-                };
-                card.AddToClassList("development-card");
-                card.AddToClassList("development-card--locked");
-                card.AddToClassList("development-card--placeholder");
-                card.Add(CreateLock("development-card__lock"));
-                card.SetEnabled(false);
-                container.Add(card);
+                    lease.Dispose();
+                    return;
+                }
+
+                _abilityIconLeases.Add(lease);
+                Sprite iconSprite = useGrayscale
+                    ? CreateGrayscaleSprite(lease.Value)
+                    : lease.Value;
+                icon.style.backgroundImage = new StyleBackground(iconSprite);
+            }
+            catch (OperationCanceledException)
+            {
+                lease?.Dispose();
+            }
+            catch (Exception exception)
+            {
+                lease?.Dispose();
+                Debug.LogError(
+                    $"Could not load development ability icon " +
+                    $"'{iconAddress}': {exception.Message}");
             }
         }
 
-        private static VisualElement CreateLock(string className)
+        private Sprite CreateGrayscaleSprite(Sprite source)
         {
-            var lockIcon = new VisualElement
+            if (source == null)
             {
-                pickingMode = PickingMode.Ignore
-            };
-            lockIcon.AddToClassList(className);
-            return lockIcon;
+                return null;
+            }
+
+            // Копируем GPU-текстуру в читаемый runtime-фрагмент спрайта.
+            RenderTexture renderTexture = RenderTexture.GetTemporary(
+                source.texture.width,
+                source.texture.height,
+                0,
+                RenderTextureFormat.ARGB32,
+                RenderTextureReadWrite.sRGB);
+            RenderTexture previousRenderTexture = RenderTexture.active;
+            Texture2D grayscaleTexture = null;
+            try
+            {
+                Graphics.Blit(source.texture, renderTexture);
+                RenderTexture.active = renderTexture;
+
+                int width = Mathf.Max(1, Mathf.RoundToInt(source.rect.width));
+                int height = Mathf.Max(
+                    1,
+                    Mathf.RoundToInt(source.rect.height));
+                grayscaleTexture = new Texture2D(
+                    width,
+                    height,
+                    TextureFormat.RGBA32,
+                    false)
+                {
+                    name = $"{source.name}_grayscale_runtime",
+                    filterMode = source.texture.filterMode,
+                    wrapMode = TextureWrapMode.Clamp,
+                    hideFlags = HideFlags.DontSave
+                };
+                grayscaleTexture.ReadPixels(source.rect, 0, 0, false);
+
+                // Убираем цвет, сохраняя исходную яркость и alpha.
+                Color32[] pixels = grayscaleTexture.GetPixels32();
+                for (int index = 0; index < pixels.Length; index++)
+                {
+                    Color32 pixel = pixels[index];
+                    byte luminance = (byte)(
+                        (77 * pixel.r + 150 * pixel.g + 29 * pixel.b) >> 8);
+                    pixels[index] = new Color32(
+                        luminance,
+                        luminance,
+                        luminance,
+                        pixel.a);
+                }
+                grayscaleTexture.SetPixels32(pixels);
+                grayscaleTexture.Apply(false, true);
+
+                Vector2 pivot = new(
+                    source.pivot.x / source.rect.width,
+                    source.pivot.y / source.rect.height);
+                Sprite grayscaleSprite = Sprite.Create(
+                    grayscaleTexture,
+                    new Rect(0f, 0f, width, height),
+                    pivot,
+                    source.pixelsPerUnit);
+                grayscaleSprite.name = grayscaleTexture.name;
+                grayscaleSprite.hideFlags = HideFlags.DontSave;
+
+                _generatedPreviewTextures.Add(grayscaleTexture);
+                _generatedPreviewSprites.Add(grayscaleSprite);
+                return grayscaleSprite;
+            }
+            catch (Exception exception)
+            {
+                if (grayscaleTexture != null)
+                {
+                    UnityEngine.Object.Destroy(grayscaleTexture);
+                }
+
+                Debug.LogWarning(
+                    $"Could not create grayscale development icon " +
+                    $"'{source.name}': {exception.Message}");
+                return source;
+            }
+            finally
+            {
+                RenderTexture.active = previousRenderTexture;
+                RenderTexture.ReleaseTemporary(renderTexture);
+            }
+        }
+
+        private void ReleaseAbilityIcons()
+        {
+            _abilityIconCancellation?.Cancel();
+            _abilityIconCancellation?.Dispose();
+            _abilityIconCancellation = null;
+
+            foreach (AddressableLease<Sprite> lease in _abilityIconLeases)
+            {
+                lease.Dispose();
+            }
+
+            _abilityIconLeases.Clear();
+        }
+
+        private void ReleaseGeneratedPreviewIcons()
+        {
+            foreach (Sprite sprite in _generatedPreviewSprites)
+            {
+                UnityEngine.Object.Destroy(sprite);
+            }
+            _generatedPreviewSprites.Clear();
+
+            foreach (Texture2D texture in _generatedPreviewTextures)
+            {
+                UnityEngine.Object.Destroy(texture);
+            }
+            _generatedPreviewTextures.Clear();
         }
 
         private void OnUnlockSkinClicked(int skinId)
@@ -306,86 +676,52 @@ namespace LostCyberHamster.UI
             }
         }
 
-        private void RefreshAfterUnlock()
+        private async void RefreshAfterUnlock()
         {
             UpdatePlayerProgress();
-            _ = ObserveRefreshCardsAsync(RefreshCardsAsync());
+            await RefreshCardsAsync();
         }
 
-        private async Task LoadIconAsync(
-            VisualElement icon,
-            string iconAddress,
-            CancellationToken cancellationToken)
+        private void OnViewportGeometryChanged(GeometryChangedEvent evt)
         {
-            AddressableLease<Sprite> lease = null;
-            try
-            {
-                lease = await AddressableLoader.LoadAssetAsync<Sprite>(
-                    iconAddress,
-                    cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-                if (lease.Value == null)
-                {
-                    lease.Dispose();
-                    return;
-                }
-
-                _iconLeases.Add(lease);
-                icon.style.backgroundImage =
-                    new StyleBackground(lease.Value);
-            }
-            catch (OperationCanceledException)
-            {
-                lease?.Dispose();
-            }
-            catch (Exception exception)
-            {
-                lease?.Dispose();
-                Debug.LogError(FormatLocalized(
-                    "development_icon_load_error",
-                    iconAddress,
-                    exception.Message));
-            }
+            ApplyResponsiveLayout(evt.newRect.size);
+            ApplyFullViewportBackground();
         }
 
-        private static async Task ObserveRefreshCardsAsync(Task refreshTask)
+        private void OnPanelGeometryChanged(GeometryChangedEvent evt)
         {
-            try
-            {
-                await refreshTask;
-            }
-            catch (Exception exception)
-            {
-                Debug.LogError(FormatLocalized(
-                    "development_refresh_error",
-                    exception.Message));
-            }
+            ApplyFullViewportBackground();
         }
 
-        private CancellationToken BeginIconLoading()
+        private void ApplyFullViewportBackground()
         {
-            ReleaseIconResources();
-            _iconLoadCancellation = new CancellationTokenSource();
-            return _iconLoadCancellation.Token;
-        }
-
-        private void ReleaseIconResources()
-        {
-            _iconLoadCancellation?.Cancel();
-            _iconLoadCancellation?.Dispose();
-            _iconLoadCancellation = null;
-
-            foreach (AddressableLease<Sprite> lease in _iconLeases)
+            VisualElement panelRoot = _contentRoot.panel?.visualTree;
+            if (panelRoot == null ||
+                ScreenRoot == null ||
+                FullBackground == null)
             {
-                lease.Dispose();
+                return;
             }
 
-            _iconLeases.Clear();
+            Rect panelBounds = panelRoot.worldBound;
+            Rect screenBounds = ScreenRoot.worldBound;
+            FullBackground.style.left = panelBounds.xMin - screenBounds.xMin;
+            FullBackground.style.top = panelBounds.yMin - screenBounds.yMin;
+            FullBackground.style.width = panelBounds.width;
+            FullBackground.style.height = panelBounds.height;
         }
 
-        private void OnBackClicked(ClickEvent clickEvent)
+        private void ApplyResponsiveLayout(Vector2 viewportSize)
         {
-            UIManager.OnScreenShow(ScreenEnum.HomeScreen);
+            float width = Mathf.Max(1f, viewportSize.x);
+            float height = Mathf.Max(1f, viewportSize.y);
+            float scale = Mathf.Min(
+                width / DesignWidth,
+                height / DesignHeight);
+
+            ScaleFrame.style.width = DesignWidth * scale;
+            ScaleFrame.style.height = DesignHeight * scale;
+            Design.style.scale = new Scale(new Vector3(scale, scale, 1f));
         }
 
         private void OnEquipmentClicked(ClickEvent clickEvent)
@@ -451,13 +787,6 @@ namespace LostCyberHamster.UI
         {
             string value = LocalizationManager.GetLocalizedString(key);
             return string.IsNullOrWhiteSpace(value) ? key : value;
-        }
-
-        private static string FormatLocalized(
-            string key,
-            params string[] values)
-        {
-            return string.Format(Localize(key), values);
         }
     }
 }
