@@ -113,5 +113,66 @@ namespace Assets.Tests.EditMode
             Assert.AreEqual(3, GameDataManager.PlayerData.Money);
             Assert.AreEqual(2, GameDataManager.PlayerData.Crystals);
         }
+
+        [TestCase(ResourceType.Coins)]
+        [TestCase(ResourceType.Crystals)]
+        public void SuccessfulOperations_RaiseBalanceChangedOnce(
+            ResourceType resourceType)
+        {
+            var eventCount = 0;
+            var reportedType = ResourceType.Advertisement;
+            var reportedBalance = -1;
+            void OnBalanceChanged(ResourceType type, int balance)
+            {
+                eventCount++;
+                reportedType = type;
+                reportedBalance = balance;
+            }
+
+            ResourceManager.BalanceChanged += OnBalanceChanged;
+            try
+            {
+                Assert.IsTrue(ResourceManager.AddResource(resourceType, 5));
+                Assert.AreEqual(1, eventCount);
+                Assert.AreEqual(resourceType, reportedType);
+                Assert.AreEqual(5, reportedBalance);
+
+                Assert.IsTrue(ResourceManager.SetResourceBalance(resourceType, 8));
+                Assert.AreEqual(2, eventCount);
+                Assert.AreEqual(8, reportedBalance);
+
+                Assert.IsTrue(ResourceManager.SpendResource(resourceType, 3));
+                Assert.AreEqual(3, eventCount);
+                Assert.AreEqual(5, reportedBalance);
+            }
+            finally
+            {
+                ResourceManager.BalanceChanged -= OnBalanceChanged;
+            }
+        }
+
+        [Test]
+        public void RejectedOperations_DoNotRaiseBalanceChanged()
+        {
+            var eventCount = 0;
+            void OnBalanceChanged(ResourceType resourceType, int balance)
+            {
+                eventCount++;
+            }
+
+            ResourceManager.BalanceChanged += OnBalanceChanged;
+            try
+            {
+                Assert.IsFalse(ResourceManager.AddResource(ResourceType.Coins, 0));
+                Assert.IsFalse(ResourceManager.SetResourceBalance(ResourceType.Coins, -1));
+                Assert.IsFalse(ResourceManager.SpendResource(ResourceType.Coins, 1));
+                Assert.IsFalse(ResourceManager.AddResource(ResourceType.Advertisement, 1));
+                Assert.AreEqual(0, eventCount);
+            }
+            finally
+            {
+                ResourceManager.BalanceChanged -= OnBalanceChanged;
+            }
+        }
     }
 }

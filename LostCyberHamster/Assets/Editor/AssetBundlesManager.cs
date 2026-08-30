@@ -67,6 +67,8 @@ public class AssetBundlesManager
             { $"{contentDirectory}/ui/uxml", "ui" },
             { $"{contentDirectory}/ui/styles", "ui" },
             { $"{contentDirectory}/ui/sprites", "ui" },
+            { $"{contentDirectory}/ui/sprites/home", "ui" },
+            { $"{contentDirectory}/ui/sprites/shared", "ui" },
             { $"{contentDirectory}/ui/audio", "ui-audio" },
             { $"{contentDirectory}/locations/previews", "location-previews" },
             { $"{contentDirectory}/prefabs", "prefabs" },

@@ -30,6 +30,12 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 22a5eaccc45f64f47b55bc3b5b1a04ed
+    m_Address: HomeScreenSprite
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - textures
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 29047d9fdf8ef4acdbb6f67516476d96
     m_Address: ui_atlas
     m_ReadOnly: 0
@@ -179,12 +185,6 @@ MonoBehaviour:
     m_Address: barcelona_preview
     m_ReadOnly: 0
     m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ef1cd1ccf849b4bf69426b63be69aea5
-    m_Address: HomeScreenSprite
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - textures
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f1f21ae0b1dcb4903abafd4ad99ac9d8
     m_Address: morning_preview

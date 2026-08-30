@@ -1,3 +1,4 @@
+using System;
 using GameManagement;
 
 namespace Vues.GameCore
@@ -7,6 +8,11 @@ namespace Vues.GameCore
     /// </summary>
     public static class ResourceManager
     {
+        /// <summary>
+        /// Возникает после успешного изменения баланса ресурса.
+        /// </summary>
+        public static event Action<ResourceType, int> BalanceChanged;
+
         public static bool IsReady => GameDataManager.PlayerData != null;
 
         public static bool CanSpendResource(ResourceType resourceType, int amount)
@@ -43,6 +49,7 @@ namespace Vues.GameCore
                     }
 
                     GameDataManager.PlayerData.Crystals += amount;
+                    NotifyBalanceChanged(resourceType);
                     return true;
                 case ResourceType.Coins:
                     if (GameDataManager.PlayerData.Money > int.MaxValue - amount)
@@ -51,6 +58,7 @@ namespace Vues.GameCore
                     }
 
                     GameDataManager.PlayerData.Money += amount;
+                    NotifyBalanceChanged(resourceType);
                     return true;
                 default:
                     return false;
@@ -82,9 +90,11 @@ namespace Vues.GameCore
             {
                 case ResourceType.Crystals:
                     GameDataManager.PlayerData.Crystals = balance;
+                    NotifyBalanceChanged(resourceType);
                     return true;
                 case ResourceType.Coins:
                     GameDataManager.PlayerData.Money = balance;
+                    NotifyBalanceChanged(resourceType);
                     return true;
                 default:
                     return false;
@@ -102,9 +112,11 @@ namespace Vues.GameCore
             {
                 case ResourceType.Crystals:
                     GameDataManager.PlayerData.Crystals -= amount;
+                    NotifyBalanceChanged(resourceType);
                     return true;
                 case ResourceType.Coins:
                     GameDataManager.PlayerData.Money -= amount;
+                    NotifyBalanceChanged(resourceType);
                     return true;
                 default:
                     return false;
@@ -154,6 +166,13 @@ namespace Vues.GameCore
         private static void AddCrystals(int amount)
         {
             AddResource(ResourceType.Crystals, amount);
+        }
+
+        private static void NotifyBalanceChanged(ResourceType resourceType)
+        {
+            BalanceChanged?.Invoke(
+                resourceType,
+                GetCurrentBalance(resourceType));
         }
     }
 }

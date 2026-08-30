@@ -1,28 +1,47 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <engine:Template name="MainButtonGroup" src="project://database/Assets/Content/ui/uxml/MainButtonGroup.uxml?fileID=9197481963319205126&amp;guid=bda278450cb444e77baf19c884d0a62a&amp;type=3#MainButtonGroup" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
     <Style src="../styles/screens/HomeScreen.uss" />
-    <engine:VisualElement name="homescreen" style="flex-grow: 1;">
+    <engine:VisualElement name="homescreen" class="home-screen">
         <engine:VisualElement name="home__hud" class="home-hud">
-            <engine:VisualElement class="home-hud__side home-hud__left">
-                <LostCyberHamster.UI.MoneyStorageUI />
-                <LostCyberHamster.UI.CrystalStorageUI />
-            </engine:VisualElement>
-            <engine:VisualElement name="home__xp-panel" class="home-super-attacks-xp-panel" picking-mode="Ignore">
-                <engine:Label name="home__player-level" class="lcs-text home-super-attacks-xp-panel__level" picking-mode="Ignore" />
-                <engine:ProgressBar name="home__xp-progress" value="0" high-value="240" title="" class="home-super-attacks-xp-panel__progress" picking-mode="Ignore" />
-                <engine:Label name="home__xp-label" class="lcs-text home-super-attacks-xp-panel__xp" picking-mode="Ignore" />
-            </engine:VisualElement>
-            <engine:VisualElement class="home-hud__side home-hud__right">
-                <engine:Button icon-image="project://database/Assets/Content/ui/textures/ui_atlas.psd?fileID=9013006513900664874&amp;guid=29047d9fdf8ef4acdbb6f67516476d96&amp;type=3#settings_icon" name="btn_settings" class="lcs_btn home-hud__settings-button" />
+            <LostCyberHamster.UI.SharedHudLane class="home-hud__lane">
+                <engine:VisualElement class="home-hud__side home-hud__left">
+                    <LostCyberHamster.UI.SharedCoinsButton />
+                    <LostCyberHamster.UI.SharedGemsButton />
+                </engine:VisualElement>
+                <engine:VisualElement class="home-hud__side home-hud__right">
+                    <LostCyberHamster.UI.SharedSettingsButton />
+                </engine:VisualElement>
+            </LostCyberHamster.UI.SharedHudLane>
+            <engine:VisualElement name="home__xp-panel" class="home-xp-panel" picking-mode="Ignore">
+                <engine:VisualElement class="home-xp-panel__track" picking-mode="Ignore" />
+                <engine:VisualElement class="home-xp-panel__fill-clip" picking-mode="Ignore">
+                    <engine:VisualElement name="home__xp-fill" class="home-xp-panel__fill" picking-mode="Ignore" />
+                </engine:VisualElement>
+                <engine:Label name="home__xp-label" class="home-runtime-text home-xp-panel__label" picking-mode="Ignore" />
+                <engine:VisualElement class="home-xp-panel__badge" picking-mode="Ignore">
+                    <engine:Label name="home__player-level" class="home-runtime-text home-xp-panel__level" picking-mode="Ignore" />
+                </engine:VisualElement>
             </engine:VisualElement>
         </engine:VisualElement>
-        <engine:Button name="btn_home" style="display: none;" />
-        <engine:VisualElement style="flex-grow: 1; justify-content: center; align-items: center; min-width: 10%;">
-            <Vues.GameCore.LocalizedButton key="btn_play" name="btn_play" class="lcs_btn" />
-            <Vues.GameCore.LocalizedLabel key="lbl_or" class="lcs-text" />
-            <Vues.GameCore.LocalizedButton key="btn_select-level" name="btn_select-level" parse-escape-sequences="true" class="lcs_btn" />
+
+        <engine:VisualElement class="home-main">
+            <engine:VisualElement class="home-main__logo-column" picking-mode="Ignore">
+                <engine:VisualElement name="home__logo" class="home-logo" picking-mode="Ignore" />
+            </engine:VisualElement>
+            <engine:VisualElement class="home-main__actions">
+                <engine:Button name="btn_play" tooltip="Play" class="home-image-button home-play-button" />
+                <engine:Button name="btn_select-level" tooltip="Select Level" class="home-image-button home-select-level-button" />
+            </engine:VisualElement>
         </engine:VisualElement>
-        <engine:Instance template="MainButtonGroup" name="main_btn_group" />
+
+        <engine:VisualElement class="home-navigation">
+            <engine:VisualElement class="home-navigation__buttons">
+                <engine:Button name="btn_shop" tooltip="Shop" class="home-image-button home-navigation__button home-navigation__shop" />
+                <engine:Button name="btn_character" tooltip="Hero" class="home-image-button home-navigation__button home-navigation__hero" />
+                <engine:Button name="btn_development" tooltip="Skills" class="home-image-button home-navigation__button home-navigation__skills" />
+                <engine:Button name="btn_quests" tooltip="Quests" class="home-image-button home-navigation__button home-navigation__quests" />
+                <engine:Button name="btn_leaderboard" tooltip="League" class="home-image-button home-navigation__button home-navigation__league" />
+            </engine:VisualElement>
+        </engine:VisualElement>
     </engine:VisualElement>
 </engine:UXML>

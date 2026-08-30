@@ -86,7 +86,12 @@ namespace LostCyberHamster.UI
             ReleaseBackgroundSprite();
         }
 
-        protected async Task ChangeBackgroundAsync(string backgroundAssetName)
+        /// <summary>
+        /// Загружает фон экрана и применяет заданный режим масштабирования.
+        /// </summary>
+        protected async Task ChangeBackgroundAsync(
+            string backgroundAssetName,
+            ScaleMode scaleMode = ScaleMode.StretchToFill)
         {
             AddressableLease<Sprite> lease = null;
             var previousLease = _backgroundSpriteLease;
@@ -111,6 +116,23 @@ namespace LostCyberHamster.UI
 
             _backgroundSpriteLease = lease;
             _background.style.backgroundImage = new StyleBackground(sprite);
+            _background.style.backgroundSize = scaleMode switch
+            {
+                ScaleMode.ScaleAndCrop =>
+                    new BackgroundSize(BackgroundSizeType.Cover),
+                ScaleMode.ScaleToFit =>
+                    new BackgroundSize(BackgroundSizeType.Contain),
+                _ => new BackgroundSize(
+                    Length.Percent(100),
+                    Length.Percent(100))
+            };
+            _background.style.backgroundPositionX =
+                new BackgroundPosition(BackgroundPositionKeyword.Center);
+            _background.style.backgroundPositionY =
+                new BackgroundPosition(BackgroundPositionKeyword.Center);
+            _background.style.backgroundRepeat = new BackgroundRepeat(
+                Repeat.NoRepeat,
+                Repeat.NoRepeat);
             previousLease?.Dispose();
         }
 

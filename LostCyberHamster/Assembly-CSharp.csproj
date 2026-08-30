@@ -363,6 +363,7 @@
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningStateKey.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Story\StoryQuestGenerator.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitBackground2LoadingTask.cs" />
+    <Compile Include="Assets\Scripts\UI\Components\SharedHudControls.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\JumpFromRoofTravel.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitLocalizationLoadingTask.cs" />
     <Compile Include="Assets\Scripts\DevTools\SkinTesting\SkinTestingRunner.cs" />
@@ -755,6 +756,7 @@
     <None Include="Assets\Content\ui\styles\base\project-typography.uss" />
     <None Include="Assets\Content\ui\uxml\LeaderboardScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\CharacterDevelopmentScreen.uxml" />
+    <None Include="Assets\Content\ui\styles\components\shared-hud-controls.uss" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

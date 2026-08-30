@@ -2,9 +2,9 @@ using System;
 using System.Threading.Tasks;
 using GameManagement;
 using GameManagement.Progress;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
-using Vues.GameCore;
 
 namespace LostCyberHamster.UI
 {
@@ -14,26 +14,20 @@ namespace LostCyberHamster.UI
         private Button _buttonSelectLevel => _contentRoot.Q<Button>("btn_select-level");
         private Button _buttonLeaderboard => _contentRoot.Q<Button>("btn_leaderboard");
 
-        private Button _buttonSettings => _contentRoot.Q<Button>("btn_settings");
-
         private Button _buttonCharacter => _contentRoot.Q<Button>("btn_character");
 
         private Button _buttonQuests => _contentRoot.Q<Button>("btn_quests");
         private Button _buttonDevelopment =>
             _contentRoot.Q<Button>("btn_development");
         private Button _buttonShop => _contentRoot.Q<Button>("btn_shop");
-
-        private Button _buttonHome => _contentRoot.Q<Button>("btn_home");
         private Label _playerLevel =>
             _contentRoot.Q<Label>("home__player-level");
-        private ProgressBar _experienceProgress =>
-            _contentRoot.Q<ProgressBar>("home__xp-progress");
+        private VisualElement _experienceFill =>
+            _contentRoot.Q<VisualElement>("home__xp-fill");
         private Label _experienceLabel =>
             _contentRoot.Q<Label>("home__xp-label");
 
-
         protected override ScreenEnum _screenAssetName => ScreenEnum.HomeScreen;
-
 
         public HomeScreenController(UIDocument uiDocument): base(uiDocument)
         {
@@ -50,11 +44,6 @@ namespace LostCyberHamster.UI
             UIManager.OnScreenShow(ScreenEnum.SelectLevelScreen);
         }
 
-        private void OnClickBtnSettings(ClickEvent evt)
-        {
-            SettingsScreenController.OpenFrom(ScreenEnum.HomeScreen);
-        }
-
         private void OnClickBtnLeaderboard(ClickEvent evt)
         {
             UIManager.OnScreenShow(ScreenEnum.LeaderboardScreen);
@@ -62,10 +51,10 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
+            // Подключаем действия всех кнопок Home.
             _buttonStart?.RegisterCallback<ClickEvent>(OnClickBtnStart);
             _buttonSelectLevel?.RegisterCallback<ClickEvent>(OnClickBtnSelectLevel);
             _buttonLeaderboard?.RegisterCallback<ClickEvent>(OnClickBtnLeaderboard);
-            _buttonSettings?.RegisterCallback<ClickEvent>(OnClickBtnSettings);
             _buttonCharacter?.RegisterCallback<ClickEvent>(OnClickBtnCharacter);
             _buttonQuests?.RegisterCallback<ClickEvent>(OnClickBtnQuests);
             _buttonDevelopment?.RegisterCallback<ClickEvent>(OnClickBtnDevelopment);
@@ -82,12 +71,10 @@ namespace LostCyberHamster.UI
             UIManager.OnModalShow(ScreenEnum.ShopModal);
         }
 
-
         private void OnClickBtnQuests(ClickEvent evt)
         {
             UIManager.OnScreenShow(ScreenEnum.QuestsScreen);
         }
-
 
         private void OnClickBtnCharacter(ClickEvent evt)
         {
@@ -96,10 +83,10 @@ namespace LostCyberHamster.UI
 
         protected override void OnUnsubscribeFromEvents()
         {
+            // Отключаем действия всех кнопок Home.
             _buttonStart?.UnregisterCallback<ClickEvent>(OnClickBtnStart);
             _buttonSelectLevel?.UnregisterCallback<ClickEvent>(OnClickBtnSelectLevel);
             _buttonLeaderboard?.UnregisterCallback<ClickEvent>(OnClickBtnLeaderboard);
-            _buttonSettings?.UnregisterCallback<ClickEvent>(OnClickBtnSettings);
             _buttonCharacter?.UnregisterCallback<ClickEvent>(OnClickBtnCharacter);
             _buttonQuests?.UnregisterCallback<ClickEvent>(OnClickBtnQuests);
             _buttonDevelopment?.UnregisterCallback<ClickEvent>(OnClickBtnDevelopment);
@@ -108,13 +95,10 @@ namespace LostCyberHamster.UI
 
         protected override async Task OnLoadAsync()
         {
-            if (_buttonHome != null)
-            {
-                _buttonHome.style.display = DisplayStyle.None;
-            }
-
             RefreshExperiencePanel();
-            await ChangeBackgroundAsync("HomeScreenSprite");
+            await ChangeBackgroundAsync(
+                "HomeScreenSprite",
+                ScaleMode.ScaleAndCrop);
         }
 
         private void RefreshExperiencePanel()
@@ -125,21 +109,30 @@ namespace LostCyberHamster.UI
                 return;
             }
 
-            var experienceThreshold =
-                PlayerExperienceService.PlayerLevelThreshold;
-            _playerLevel.text =
-                $"{LocalizationManager.GetLocalizedString("super_attacks_level_short")} " +
-                $"{playerData.PlayerLevel}";
+            var experienceThreshold = Math.Max(
+                1,
+                PlayerExperienceService.PlayerLevelThreshold);
+            var experiencePoints = Math.Max(
+                0,
+                playerData.ExperiencePoints);
+
+            // Заполняем runtime-текст и ограничиваем прогресс границами шкалы.
+            var levelText = playerData.PlayerLevel.ToString();
+            _playerLevel.text = levelText;
+            _playerLevel.EnableInClassList(
+                "home-xp-panel__level--compact",
+                levelText.Length >= 3);
             _experienceLabel.text =
-                $"{playerData.ExperiencePoints} / {experienceThreshold}";
-            _experienceProgress.lowValue = 0;
-            _experienceProgress.highValue = experienceThreshold;
-            _experienceProgress.value = playerData.ExperiencePoints;
-            _experienceProgress.title =
-                LocalizationManager.GetLocalizedString(
-                    "super_attacks_xp_marker");
+                $"{experiencePoints} / {experienceThreshold}";
+
+            // Меняем только ширину fill внутри фиксированного clip-контейнера.
+            var fillRatio = Mathf.Clamp01(
+                (float)experiencePoints / experienceThreshold);
+            _experienceFill.style.width = new StyleLength(
+                Length.Percent(fillRatio * 100f));
+            _experienceFill.style.display = fillRatio > 0f
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
         }
-
     }
-
 }
