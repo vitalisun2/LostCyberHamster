@@ -29,6 +29,7 @@ namespace LostCyberHamster.UI
         }
 
         private VisualElement _foreground;
+        private Label _valueLabel;
 
         private void ApplyValueToView()
         {
@@ -37,9 +38,16 @@ namespace LostCyberHamster.UI
                 return;
             }
 
+            // Обновляем видимую долю шкалы.
             float fillPercentage = _value / MaxValue * 100f;
             _foreground.style.flexGrow = new StyleFloat(0f);
             _foreground.style.width = new StyleLength(Length.Percent(fillPercentage));
+
+            // Показываем текущее значение поверх шкалы.
+            if (_valueLabel != null)
+            {
+                _valueLabel.text = $"{Mathf.RoundToInt(_value)} / {Mathf.RoundToInt(MaxValue)}";
+            }
         }
 
         public Energybar()
@@ -50,6 +58,7 @@ namespace LostCyberHamster.UI
             Addressables.Release(op);
             this.Add(_visualTree.CloneTree());
             _foreground = this.Q("foreground");
+            _valueLabel = this.Q<Label>("energy-value");
             ApplyValueToView();
         }
     }

@@ -1,42 +1,190 @@
-.top-block {
+.game-screen {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.game-screen__safe-area {
     position: absolute;
     top: 0;
+    right: 0;
+    bottom: 0;
     left: 0;
-    width: 100%;
+}
+
+.game-screen__top-row {
+    position: absolute;
+    top: 12px;
+    right: 0;
+    left: 0;
     flex-direction: row;
     flex-grow: 0;
     flex-shrink: 0;
     align-items: center;
     justify-content: space-between;
-    padding: 8px;
 }
 
-.bottom-block {
+.game-screen__tap-area {
     position: absolute;
     bottom: 0;
     left: 0;
-    width: 100%;
-    flex-direction: row;
-    flex-grow: 0;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px;
-}
-
-#btn-jump {
-    width: 80px;
-    height: 80px;
-    border-radius: 40px;
-    background-color: var(--ui-status-warning);
-}
-
-#tap {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 60%;
+    width: 64%;
     height: 70%;
-    border-width: 1px;
-    border-color: var(--game-input-border);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+.game-control {
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    overflow: visible;
+    transition-property: scale, opacity;
+    transition-duration: 80ms;
+    transition-timing-function: ease-out;
+}
+
+.game-control:hover,
+.game-control:focus {
+    scale: 1.02 1.02;
+}
+
+.game-control:active {
+    scale: 0.96 0.96;
+}
+
+.game-control.game-control--ultimate:disabled {
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+.game-control--purchase {
+    position: absolute;
+    left: 0;
+    width: 133px;
+    height: 133px;
+    background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_button_purchase_base.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.game-control--buy-energy {
+    top: 20%;
+}
+
+.game-control--buy-mana {
+    top: 37%;
+}
+
+.game-control__purchase-icon,
+.game-control__coins,
+.game-control__ultimate-icon,
+.game-control__jump-icon {
+    position: absolute;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.game-control__purchase-icon {
+    left: 28px;
+    top: 14px;
+    width: 78px;
+    height: 106px;
+}
+
+.game-control__purchase-icon--energy {
+    background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_icon_energy_battery.png");
+}
+
+.game-control__purchase-icon--mana {
+    background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_icon_mana_bottle.png");
+}
+
+.game-control__coins {
+    right: -19px;
+    bottom: -20px;
+    width: 64px;
+    height: 62px;
+    background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_icon_purchase_coins.png");
+}
+
+.game-control--ultimate {
+    position: absolute;
+    right: 0;
+    top: 42%;
+    width: 189px;
+    height: 189px;
+    opacity: 0.5;
+    background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_button_ultimate_base_charging.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.game-control--ultimate.game-control--ready {
+    opacity: 1;
+    background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_button_ultimate_base_ready.png");
+}
+
+.game-control__ultimate-value {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    color: rgb(245, 251, 255);
+    font-size: 52px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(11, 25, 33);
+}
+
+.game-control__ultimate-icon {
+    display: none;
+    left: 36px;
+    top: 36px;
+    width: 116px;
+    height: 116px;
+    background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_icon_ultimate_vortex.png");
+}
+
+.game-control--ready .game-control__ultimate-value {
+    display: none;
+}
+
+.game-control--ready .game-control__ultimate-icon {
+    display: flex;
+}
+
+.game-control--jump {
+    position: absolute;
+    right: 0;
+    bottom: 5.5%;
+    width: 219px;
+    height: 219px;
+    background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_button_jump_base.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.game-control__jump-icon {
+    left: 36px;
+    top: 36px;
+    width: 146px;
+    height: 146px;
+    background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_icon_jump_arrow.png");
+}
+
+.game-screen__debug-state {
+    position: absolute;
+    bottom: 0;
+    font-size: 30px;
+    -unity-text-align: upper-center;
+    -unity-text-outline-width: 0;
 }

@@ -19,6 +19,7 @@ namespace LostCyberHamster.UI
         private Button _buyEnergyButton;
         private Button _buyUltraButton;
         private Button _ultraButton;
+        private Label _ultraChargeValue;
 
         private Action _jumpAction;
         private Action _superJumpAction;
@@ -133,6 +134,7 @@ namespace LostCyberHamster.UI
             _buyEnergyButton = _contentRoot.Q<Button>("btn_buy_energy");
             _buyUltraButton = _contentRoot.Q<Button>("btn_buy_ulta");
             _ultraButton = _contentRoot.Q<Button>("btn_ultra");
+            _ultraChargeValue = _contentRoot.Q<Label>("ulta-charge-value");
             _tapArea = _contentRoot.Q<VisualElement>("tap");
 
             ClearBackground();
@@ -214,15 +216,16 @@ namespace LostCyberHamster.UI
                 return;
             }
 
-            if (value < 100)
+            // Определяем состояние ульты по реальному заряду.
+            int clampedValue = Mathf.Clamp(value, 0, 100);
+            bool isReady = clampedValue >= 100;
+
+            // Переключаем утверждённый вид и сохраняем блокировку до полного заряда.
+            _ultraButton.EnableInClassList("game-control--ready", isReady);
+            _ultraButton.SetEnabled(isReady);
+            if (_ultraChargeValue != null)
             {
-                _ultraButton.text = $"{value}";
-                _ultraButton.SetEnabled(false);
-            }
-            else
-            {
-                _ultraButton.text = "S";
-                _ultraButton.SetEnabled(true);
+                _ultraChargeValue.text = clampedValue.ToString();
             }
         }
 
