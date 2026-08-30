@@ -10,8 +10,8 @@ namespace Vues.GameCore
     /// </summary>
     public static class CharacterDevelopmentService
     {
-        public const int CurrentProgressVersion = 1;
-        public const int DefaultSkinId = 0;
+        public const int CurrentProgressVersion = 2;
+        public const int DefaultSkinId = SkinIdentity.DefaultId;
 
         public static int DevelopmentPoints =>
             GameDataManager.PlayerData?.DevelopmentPoints ?? 0;
@@ -38,13 +38,41 @@ namespace Vues.GameCore
         }
 
         /// <summary>
+        /// Проверяет, является ли скин следующим закрытым элементом каталога.
+        /// </summary>
+        public static bool CanUnlockSkin(int skinId)
+        {
+            var playerData = GameDataManager.PlayerData;
+            return playerData?.UnlockedSkinIds != null &&
+                   playerData.DevelopmentPoints > 0 &&
+                   !IsSkinUnlocked(skinId) &&
+                   SkinManager.AvailableSkins
+                       .FirstOrDefault(skin => !IsSkinUnlocked(skin.Id))
+                       ?.Id == skinId;
+        }
+
+        /// <summary>
+        /// Проверяет, является ли способность следующим закрытым элементом каталога.
+        /// </summary>
+        public static bool CanUnlockSuperAttack(int superAttackId)
+        {
+            var playerData = GameDataManager.PlayerData;
+            return playerData?.UnlockedSuperAttackIds != null &&
+                   playerData.DevelopmentPoints > 0 &&
+                   !IsSuperAttackUnlocked(superAttackId) &&
+                   SuperAttackService.Items
+                       .FirstOrDefault(
+                           ability => !IsSuperAttackUnlocked(ability.Id))
+                       ?.Id == superAttackId;
+        }
+
+        /// <summary>
         /// Тратит один Development Point и открывает скин из production catalog.
         /// </summary>
         public static bool TryUnlockSkin(int skinId)
         {
             var playerData = GameDataManager.PlayerData;
-            if (playerData?.UnlockedSkinIds == null ||
-                SkinManager.AvailableSkins.All(skin => skin.Id != skinId))
+            if (!CanUnlockSkin(skinId))
             {
                 return false;
             }
@@ -60,8 +88,7 @@ namespace Vues.GameCore
         public static bool TryUnlockSuperAttack(int superAttackId)
         {
             var playerData = GameDataManager.PlayerData;
-            if (playerData?.UnlockedSuperAttackIds == null ||
-                !SuperAttackService.TryGet(superAttackId, out _))
+            if (!CanUnlockSuperAttack(superAttackId))
             {
                 return false;
             }

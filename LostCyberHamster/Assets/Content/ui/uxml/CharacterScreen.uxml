@@ -1,51 +1,54 @@
-<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
     <Style src="../styles/screens/CharacterScreen.uss" />
-    <engine:VisualElement name="equipment-screen" class="equipment-screen">
-        <Vues.GameCore.LocalizedButton key="development_back" name="btn_home" class="lcs_btn equipment__back-button" />
-        <Vues.GameCore.LocalizedLabel key="equipment_title" class="lcs-text equipment__title" />
-        <engine:VisualElement name="equipment-tabs" class="equipment__tabs equipment__tabs--skins">
-            <Vues.GameCore.LocalizedButton key="equipment_skins" name="equipment-tab-skins" class="lcs_btn equipment-tab equipment-tab--skins" />
-            <Vues.GameCore.LocalizedButton key="equipment_abilities" name="equipment-tab-abilities" class="lcs_btn equipment-tab equipment-tab--abilities" />
-        </engine:VisualElement>
-        <engine:VisualElement class="equipment__pages-viewport">
-            <engine:VisualElement name="equipment-pages-track" class="equipment__pages-track">
-                <engine:VisualElement name="equipment-skins-page" class="equipment__body equipment-page--skins">
-                    <engine:VisualElement class="equipment__preview">
-                        <engine:VisualElement class="equipment__preview-gap" />
-                        <engine:Label name="equipment-skin-name" class="lcs-text equipment__preview-name" />
-                        <engine:VisualElement class="equipment__preview-gap" />
-                        <engine:VisualElement class="equipment__preview-content">
-                            <engine:VisualElement name="equipment-skin-image" class="equipment__preview-image" />
-                        </engine:VisualElement>
-                        <engine:VisualElement class="equipment__preview-gap" />
-                        <engine:VisualElement class="equipment__preview-footer">
-                            <engine:Label name="equipment-skin-status" class="lcs-text equipment__preview-status" />
-                            <engine:Button name="skin-btn-change" class="lcs_btn equipment__action" />
-                        </engine:VisualElement>
-                        <engine:VisualElement class="equipment__preview-gap" />
-                    </engine:VisualElement>
-                    <engine:ScrollView mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="equipment__cards-scroll">
-                        <engine:VisualElement name="equipment-skin-cards" class="equipment__cards" />
-                    </engine:ScrollView>
-                </engine:VisualElement>
-                <engine:VisualElement name="equipment-abilities-page" class="equipment__body equipment-page--abilities">
-                    <engine:VisualElement class="equipment__preview">
-                        <engine:VisualElement class="equipment__preview-gap" />
-                        <engine:Label name="equipment-ability-name" class="lcs-text equipment__preview-name" />
-                        <engine:VisualElement class="equipment__preview-gap" />
-                        <engine:VisualElement class="equipment__preview-content">
-                            <engine:VisualElement name="equipment-ability-image" class="equipment__preview-image" />
-                            <engine:Label name="equipment-ability-description" class="lcs-text equipment__preview-description" />
-                        </engine:VisualElement>
-                        <engine:VisualElement class="equipment__preview-gap" />
-                        <engine:Label name="equipment-ability-status" class="lcs-text equipment__preview-status" />
-                    </engine:VisualElement>
-                    <engine:ScrollView mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="equipment__cards-scroll">
-                        <engine:VisualElement name="equipment-ability-cards" class="equipment__cards" />
-                    </engine:ScrollView>
-                </engine:VisualElement>
-            </engine:VisualElement>
-        </engine:VisualElement>
-    </engine:VisualElement>
-</engine:UXML>
+    <ui:VisualElement name="hero-screen" class="hero-screen">
+        <ui:VisualElement name="hero-viewport" class="hero-viewport">
+            <ui:VisualElement name="hero-scale-frame" class="hero-scale-frame">
+                <ui:VisualElement name="hero-design" class="hero-design">
+                    <ui:VisualElement class="hero-background" picking-mode="Ignore" />
+                    <ui:VisualElement class="hero-title" picking-mode="Ignore" />
+                    <ui:VisualElement class="hero-tabs">
+                        <ui:Button name="hero-tab-skins" class="hero-tab hero-tab--skins hero-tab--active">
+                            <ui:VisualElement class="hero-tab__icon hero-tab__icon--skins" picking-mode="Ignore" />
+                            <Vues.GameCore.LocalizedLabel key="equipment_skins" class="hero-tab__label" picking-mode="Ignore" />
+                        </ui:Button>
+                        <ui:Button name="hero-tab-abilities" class="hero-tab hero-tab--abilities">
+                            <ui:VisualElement class="hero-tab__icon hero-tab__icon--abilities" picking-mode="Ignore" />
+                            <Vues.GameCore.LocalizedLabel key="equipment_abilities" class="hero-tab__label" picking-mode="Ignore" />
+                        </ui:Button>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="hero-skins-page" class="hero-page hero-page--skins">
+                        <ui:VisualElement class="hero-preview-panel">
+                            <ui:VisualElement name="hero-skin-preview-image" class="hero-skin-preview-image" picking-mode="Ignore" />
+                            <ui:Label name="hero-skin-preview-name" class="hero-preview-name" picking-mode="Ignore" />
+                        </ui:VisualElement>
+                        <ui:ScrollView name="hero-skin-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="hero-slots-scroll">
+                            <ui:VisualElement name="hero-skin-slots" class="hero-slots" />
+                        </ui:ScrollView>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="hero-abilities-page" class="hero-page hero-page--abilities">
+                        <ui:VisualElement class="hero-preview-panel">
+                            <ui:VisualElement name="hero-ability-preview-image" class="hero-ability-preview-image" picking-mode="Ignore" />
+                            <ui:Label name="hero-ability-preview-description" class="hero-ability-description" picking-mode="Ignore" />
+                            <ui:Button name="hero-ability-select" class="hero-select-button" />
+                        </ui:VisualElement>
+                        <ui:ScrollView name="hero-ability-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="hero-slots-scroll">
+                            <ui:VisualElement name="hero-ability-slots" class="hero-slots" />
+                        </ui:ScrollView>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <LostCyberHamster.UI.SharedHudLane class="hero-hud">
+            <ui:VisualElement class="hero-hud__left">
+                <LostCyberHamster.UI.SharedHomeButton />
+                <LostCyberHamster.UI.SharedCoinsButton />
+                <LostCyberHamster.UI.SharedGemsButton />
+            </ui:VisualElement>
+            <ui:VisualElement class="hero-hud__spacer" />
+            <ui:VisualElement class="hero-hud__right">
+                <LostCyberHamster.UI.SharedSettingsButton />
+            </ui:VisualElement>
+        </LostCyberHamster.UI.SharedHudLane>
+    </ui:VisualElement>
+</ui:UXML>

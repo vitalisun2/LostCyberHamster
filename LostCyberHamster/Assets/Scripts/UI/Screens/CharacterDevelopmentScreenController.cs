@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Assets.Scripts.System.Resources;
@@ -118,20 +117,10 @@ namespace LostCyberHamster.UI
             AbilityCards.Clear();
 
             // Строим skin line из production catalog.
-            int skinCount = 0;
-            foreach (Skin skin in SkinManager.AvailableSkins
-                         .Where(
-                             skin => skin.Id != CharacterDevelopmentService
-                                 .DefaultSkinId)
-                         .OrderBy(
-                             skin =>
-                                 !CharacterDevelopmentService.IsSkinUnlocked(
-                                     skin.Id)))
+            foreach (Skin skin in SkinManager.AvailableSkins)
             {
                 SkinCards.Add(CreateSkinCard(skin));
-                skinCount++;
             }
-            AddLockedPlaceholders(SkinCards, "skin", skinCount);
             UpdateCarouselNavigation(
                 SkinPreviousButton,
                 SkinNextButton,
@@ -139,12 +128,7 @@ namespace LostCyberHamster.UI
 
             // Строим ability line и параллельно загружаем production icons.
             var iconTasks = new List<Task>();
-            int abilityCount = 0;
-            foreach (SuperAttackData ability in
-                     SuperAttackService.Items.OrderBy(
-                         ability =>
-                             !CharacterDevelopmentService
-                                 .IsSuperAttackUnlocked(ability.Id)))
+            foreach (SuperAttackData ability in SuperAttackService.Items)
             {
                 Button card = CreateAbilityCard(
                     ability,
@@ -157,10 +141,7 @@ namespace LostCyberHamster.UI
                         ability.IconAddress,
                         cancellationToken));
                 }
-
-                abilityCount++;
             }
-            AddLockedPlaceholders(AbilityCards, "ability", abilityCount);
             UpdateCarouselNavigation(
                 AbilityPreviousButton,
                 AbilityNextButton,
@@ -185,10 +166,13 @@ namespace LostCyberHamster.UI
         {
             bool isUnlocked =
                 CharacterDevelopmentService.IsSkinUnlocked(skin.Id);
+            bool canUnlock =
+                CharacterDevelopmentService.CanUnlockSkin(skin.Id);
             var card = CreateCard(
                 $"development-skin-card-{skin.Id}",
                 skin.Name,
                 isUnlocked,
+                canUnlock,
                 out VisualElement icon);
             if (icon != null)
             {
@@ -196,7 +180,7 @@ namespace LostCyberHamster.UI
                     skin.HamsterSprite);
             }
 
-            if (!isUnlocked)
+            if (canUnlock)
             {
                 card.RegisterCallback<ClickEvent>(
                     _ => OnUnlockSkinClicked(skin.Id));
@@ -212,13 +196,16 @@ namespace LostCyberHamster.UI
             bool isUnlocked =
                 CharacterDevelopmentService.IsSuperAttackUnlocked(
                     ability.Id);
+            bool canUnlock = CharacterDevelopmentService
+                .CanUnlockSuperAttack(ability.Id);
             var card = CreateCard(
                 $"development-ability-card-{ability.Id}",
                 Localize(ability.NameLocalizationKey),
                 isUnlocked,
+                canUnlock,
                 out icon);
 
-            if (!isUnlocked)
+            if (canUnlock)
             {
                 card.RegisterCallback<ClickEvent>(
                     _ => OnUnlockAbilityClicked(ability.Id));
@@ -231,6 +218,7 @@ namespace LostCyberHamster.UI
             string name,
             string title,
             bool isUnlocked,
+            bool canUnlock,
             out VisualElement icon)
         {
             var card = new Button { name = name };
@@ -264,8 +252,7 @@ namespace LostCyberHamster.UI
 
             if (!isUnlocked)
             {
-                card.SetEnabled(
-                    CharacterDevelopmentService.DevelopmentPoints > 0);
+                card.SetEnabled(canUnlock);
             }
 
             return card;

@@ -1,352 +1,365 @@
-/* Геометрия нормализована по каждому кадру референса 2160 x 1110. */
-.equipment-screen {
+.hero-screen {
     flex-grow: 1;
+    width: 100%;
+    height: 100%;
     min-width: 0;
     min-height: 0;
-    position: relative;
     overflow: hidden;
+    background-color: rgb(34, 48, 55);
 }
 
-.equipment__back-button {
-    position: absolute;
-    left: 1%;
-    top: 22px;
-    width: 144px;
-    height: 70px;
-    margin: 0;
-    padding: 8px;
-    font-size: 26px;
-}
-
-.equipment__title {
-    position: absolute;
-    left: 25%;
-    top: 1.5%;
-    width: 50%;
-    height: 100px;
-    font-size: 72px;
-    -unity-text-align: middle-center;
-}
-
-.equipment__tabs {
+.hero-viewport {
     position: absolute;
     left: 0;
-    top: 15.5%;
+    top: 0;
     width: 100%;
-    height: 112px;
-}
-
-.equipment-tab {
-    position: absolute;
-    height: 64px;
-    margin: 0;
-    padding-right: 20px;
-    padding-left: 20px;
-    border-width: 0;
-    border-radius: var(--ui-radius-secondary);
-    background-color: var(--ui-tab-inactive);
-    color: var(--ui-quest-control-text);
-    -unity-font-style: bold;
-    -unity-text-outline-width: 0;
-    font-size: 32px;
-    white-space: normal;
-    transition-property: left, top, width, height, font-size, background-color;
-    transition-duration: 350ms;
-    transition-timing-function: ease-in-out;
-}
-
-.equipment-tab,
-.equipment-tab:hover,
-.equipment-tab:focus,
-.equipment-tab:active {
-    color: var(--ui-quest-control-text);
-    -unity-text-outline-width: 0;
-}
-
-.equipment-tab:hover,
-.equipment-tab:focus {
-    background-color: var(--ui-tab-inactive-hover);
-}
-
-.equipment-tab:active {
-    background-color: var(--ui-content-card-accent);
-}
-
-.equipment-tab--active {
-    height: 96px;
-    background-color: var(--ui-tab-active);
-    font-size: 52px;
-}
-
-.equipment-tab--active:hover,
-.equipment-tab--active:focus {
-    background-color: var(--ui-tab-active-hover);
-}
-
-.equipment-tab--active:active {
-    background-color: var(--ui-surface-active);
-}
-
-.equipment-tab--abilities {
-    font-size: 32px;
-}
-
-.equipment-tab--abilities.equipment-tab--active {
-    font-size: 52px;
-}
-
-.equipment__tabs--skins .equipment-tab--skins {
-    left: 39.8%;
-    top: 0;
-    width: 15.8%;
-}
-
-.equipment__tabs--skins .equipment-tab--abilities {
-    left: 58.1%;
-    top: 22px;
-    width: 20%;
-}
-
-.equipment__tabs--abilities .equipment-tab--skins {
-    left: 21.5%;
-    top: 22px;
-    width: 10.6%;
-}
-
-.equipment__tabs--abilities .equipment-tab--abilities {
-    left: 35%;
-    top: 0;
-    width: 30%;
-}
-
-.equipment__pages-viewport {
-    position: absolute;
-    left: 0;
-    top: 30%;
-    width: 100%;
-    height: 70%;
-    overflow: hidden;
-}
-
-.equipment__pages-track {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 200%;
     height: 100%;
-    flex-direction: row;
-    translate: 0 0;
-    transition-property: translate;
-    transition-duration: 350ms;
-    transition-timing-function: ease-in-out;
-}
-
-.equipment__pages-track--abilities {
-    translate: -50% 0;
-}
-
-.equipment__body {
-    position: relative;
-    flex-shrink: 0;
-    width: 50%;
-    height: 100%;
-}
-
-.equipment__preview {
-    position: absolute;
-    left: 10%;
-    top: 7%;
-    width: 41.5%;
-    height: 86%;
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    overflow: hidden;
-    background-color: var(--ui-equipment-preview-surface);
-    border-width: 4px;
-    border-color: var(--ui-tab-inactive);
-    border-radius: var(--ui-radius-main);
-}
-
-.equipment__preview-name {
-    position: static;
-    flex: 0 0 auto;
-    width: 80%;
-    height: 16%;
-    margin: 0 10% 0 10%;
-    color: var(--ui-text-fill);
-    font-size: 46px;
-    white-space: normal;
-    -unity-text-align: middle-center;
-}
-
-.equipment__preview-gap {
-    flex-grow: 1;
-    flex-shrink: 1;
-    flex-basis: 0;
-    width: 100%;
-    min-height: 0;
-}
-
-.equipment__preview-content {
-    position: static;
-    flex: 0 0 auto;
-    width: 100%;
-    min-height: 0;
-    flex-direction: row;
+    justify-content: center;
     align-items: center;
-    padding: 0;
+    overflow: hidden;
 }
 
-.equipment__preview-image {
+.hero-scale-frame {
+    flex-grow: 0;
     flex-shrink: 0;
-    width: 50%;
-    height: 100%;
-    min-height: 0;
+    width: 1672px;
+    height: 941px;
+}
+
+.hero-design {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 941px;
+    transform-origin: 0 0;
+}
+
+.hero-background {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 941px;
+    background-image: url("/Assets/Content/ui/sprites/hero/background_hero.png");
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.equipment-page--skins .equipment__preview-content {
-    width: 100%;
-    height: 48%;
-    justify-content: center;
+.hero-hud {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    top: 0;
+    width: auto;
 }
 
-.equipment-page--skins .equipment__preview-image {
-    margin-left: 0;
+.hero-hud__left,
+.hero-hud__right {
+    flex-direction: row;
+    gap: 12px;
 }
 
-.equipment__preview-description {
+.hero-hud__spacer {
+    flex-grow: 1;
+}
+
+.hero-title {
+    position: absolute;
+    left: 704px;
+    top: 176px;
+    width: 264px;
+    height: 88px;
+    background-image: url("/Assets/Content/ui/sprites/hero/title_hero.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.hero-tabs {
+    position: absolute;
+    left: 529px;
+    top: 318px;
+    width: 615px;
+    height: 69px;
+    flex-direction: row;
+    gap: 42px;
+}
+
+.hero-tab {
+    position: relative;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 286px;
+    height: 69px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/hero/tab_base_inactive.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 32px;
+    -unity-slice-right: 32px;
+    -unity-slice-top: 24px;
+    -unity-slice-bottom: 24px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+.hero-tab--active {
+    background-image: url("/Assets/Content/ui/sprites/hero/tab_base_active.png");
+}
+
+.hero-tab__icon {
+    position: absolute;
+    left: 43px;
+    top: 10px;
+    width: 52px;
+    height: 49px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.hero-tab__icon--skins {
+    background-image: url("/Assets/Content/ui/sprites/hero/tab_icon_skins.png");
+}
+
+.hero-tab__icon--abilities {
+    background-image: url("/Assets/Content/ui/sprites/hero/tab_icon_abilities.png");
+}
+
+.hero-tab__label {
+    position: absolute;
+    left: 96px;
+    top: 5px;
+    width: 180px;
+    height: 57px;
+    color: rgb(18, 21, 23);
+    font-size: 28px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.hero-page {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 941px;
+}
+
+.hero-page--abilities {
     display: none;
-    color: var(--ui-text-fill);
+}
+
+.hero-preview-panel {
+    position: absolute;
+    left: 328px;
+    top: 400px;
+    width: 476px;
+    height: 473px;
+    background-image: url("/Assets/Content/ui/sprites/hero/panel_preview_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 48px;
+    -unity-slice-right: 48px;
+    -unity-slice-top: 48px;
+    -unity-slice-bottom: 48px;
+}
+
+.hero-skin-preview-image {
+    position: absolute;
+    left: 47px;
+    top: 82px;
+    width: 382px;
+    height: 284px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.hero-preview-name {
+    position: absolute;
+    left: 35px;
+    bottom: 34px;
+    width: 406px;
+    height: 55px;
+    color: rgb(19, 23, 25);
+    font-size: 35px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.hero-ability-preview-image {
+    position: absolute;
+    left: 48px;
+    top: 66px;
+    width: 380px;
+    height: 214px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.hero-ability-description {
+    position: absolute;
+    left: 56px;
+    top: 278px;
+    width: 364px;
+    height: 112px;
+    color: rgb(19, 23, 25);
+    font-size: 27px;
+    white-space: normal;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.hero-select-button,
+.hero-slot__action {
+    margin: 0;
+    padding: 0 12px 0 12px;
+    color: rgb(255, 255, 255);
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 30px;
+    -unity-slice-right: 30px;
+    -unity-slice-top: 24px;
+    -unity-slice-bottom: 24px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    font-size: 25px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-color: rgb(15, 25, 31);
+    -unity-text-outline-width: 2px;
+}
+
+.hero-select-button {
+    position: absolute;
+    left: 128px;
+    bottom: 28px;
+    width: 220px;
+    height: 68px;
+}
+
+.hero-select-button:disabled {
+    opacity: 0.6;
+}
+
+.hero-slots-scroll {
+    position: absolute;
+    left: 823px;
+    top: 407px;
+    width: 580px;
+    height: 466px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.hero-slots-scroll .unity-scroll-view__content-viewport,
+.hero-slots-scroll .unity-scroll-view__content-container {
+    width: 580px;
+}
+
+.hero-slots {
+    flex-shrink: 0;
+    width: 574px;
+}
+
+.hero-slot {
+    position: relative;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 574px;
+    height: 140px;
+    margin: 0 0 14px 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/hero/slot_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 40px;
+    -unity-slice-right: 40px;
+    -unity-slice-top: 32px;
+    -unity-slice-bottom: 32px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+.hero-slot--selected {
+    -unity-background-image-tint-color: rgb(235, 250, 255);
+}
+
+.hero-slot__icon {
+    position: absolute;
+    left: 24px;
+    top: 16px;
+    width: 148px;
+    height: 106px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.hero-slot__name {
+    position: absolute;
+    left: 177px;
+    top: 18px;
+    width: 254px;
+    height: 104px;
+    color: rgb(18, 22, 24);
     font-size: 29px;
     white-space: normal;
+    -unity-font-style: bold;
     -unity-text-align: middle-left;
-}
-
-.equipment__preview-footer {
-    flex: 0 0 auto;
-    width: 100%;
-    height: 16%;
-    align-items: center;
-    justify-content: center;
-}
-
-.equipment__preview-status {
-    display: none;
-    position: static;
-    width: 56%;
-    height: 100%;
-    margin: 0;
-    color: var(--ui-text-fill);
-    font-size: 32px;
-    -unity-text-align: middle-center;
-}
-
-.equipment__action {
-    width: 56%;
-    height: 100%;
-    margin: 0;
-    padding: 8px;
-    align-self: center;
-    font-size: 32px;
-    white-space: nowrap;
-}
-
-.equipment__cards-scroll {
-    position: absolute;
-    left: 54%;
-    top: 11.4%;
-    width: 43%;
-    height: 80%;
-}
-
-.equipment__cards-scroll .unity-scroll-view__content-viewport,
-.equipment__cards-scroll .unity-scroll-view__content-container,
-.equipment__cards {
-    min-width: 100%;
-    height: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    justify-content: center;
-}
-
-.equipment-card {
-    flex-shrink: 0;
-    width: 144px;
-    height: 189px;
-    margin: 10px 23px 15px 23px;
-    padding: 7px;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--ui-content-card-surface);
-    border-width: 4px;
-    border-color: var(--ui-border);
-    border-radius: var(--ui-radius-main);
-}
-
-.equipment-card--selected {
-    border-width: 5px;
-    background-color: var(--ui-status-warning-muted);
-}
-
-.equipment-card__icon {
-    flex-shrink: 0;
-    width: 90px;
-    height: 62%;
-    -unity-background-scale-mode: scale-to-fit;
-}
-
-.equipment-card__name {
-    width: 100%;
-    height: 28%;
-    color: var(--ui-content-card-text);
-    font-size: 16px;
-    white-space: normal;
-    -unity-text-align: middle-center;
     -unity-text-outline-width: 0;
 }
 
-.equipment-card--locked {
-    opacity: 0.78;
-}
-
-.equipment-card__lock {
-    flex-shrink: 0;
-    width: 45px;
-    height: 67px;
-    background-image: url("project://database/Assets/Content/ui/textures/newyork_atlas.psd?fileID=7789055545610967947&guid=26096890a016443af92b075577c107c9&type=3#lock");
+.hero-slot__lock {
+    position: absolute;
+    left: 249px;
+    top: 30px;
+    width: 76px;
+    height: 81px;
+    background-image: url("/Assets/Content/ui/sprites/hero/state_locked.png");
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.equipment-page--abilities .equipment__preview-content {
-    width: 100%;
-    height: 64%;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 0;
+.hero-slot__check {
+    position: absolute;
+    right: 23px;
+    top: 31px;
+    width: 78px;
+    height: 79px;
+    background-image: url("/Assets/Content/ui/sprites/hero/state_selected_check.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
-.equipment-page--abilities .equipment__preview-image {
-    width: 28%;
-    height: 100%;
-    flex-shrink: 0;
-    margin-left: 10%;
-    margin-right: 10%;
+.hero-slot__action {
+    position: absolute;
+    right: 20px;
+    top: 41px;
+    width: 185px;
+    height: 64px;
 }
 
-.equipment-page--abilities .equipment__preview-description {
-    display: flex;
-    flex-shrink: 0;
-    width: 42%;
-    height: 100%;
-    margin: 0 10% 0 0;
-    -unity-text-align: middle-left;
-    font-size: 24px;
-    white-space: normal;
+.hero-slot__action--price {
+    padding-left: 44px;
+    color: rgb(255, 255, 255);
+    background-image: url("/Assets/Content/ui/sprites/hero/button_price_base.png");
+    -unity-slice-left: 32px;
+    -unity-slice-right: 32px;
+    -unity-slice-top: 26px;
+    -unity-slice-bottom: 26px;
+    font-size: 29px;
 }
 
-.equipment-page--abilities .equipment__preview-status {
-    display: none;
+.hero-slot__price-icon {
+    position: absolute;
+    left: 11px;
+    top: 8px;
+    width: 48px;
+    height: 48px;
+    -unity-background-scale-mode: scale-to-fit;
 }

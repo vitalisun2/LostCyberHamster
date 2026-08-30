@@ -352,7 +352,7 @@ namespace LostCyberHamster.Editor
                 AssetDatabase.LoadAssetAtPath<GameObject>(path) != null;
             GameObject root = existed
                 ? PrefabUtility.LoadPrefabContents(path)
-                : new GameObject(Path.GetFileNameWithoutExtension(path));
+                : Object.Instantiate(template.gameObject);
             if (root == null)
             {
                 throw new InvalidOperationException(
@@ -361,6 +361,7 @@ namespace LostCyberHamster.Editor
 
             try
             {
+                root.name = Path.GetFileNameWithoutExtension(path);
                 SkinVisual visual = root.GetComponent<SkinVisual>() ??
                                     root.AddComponent<SkinVisual>();
                 Animator animator = root.GetComponent<Animator>() ??
@@ -368,9 +369,12 @@ namespace LostCyberHamster.Editor
                 SpriteRenderer renderer =
                     root.GetComponent<SpriteRenderer>() ??
                     root.AddComponent<SpriteRenderer>();
-                Animator templateAnimator = template.GetComponent<Animator>() ??
+                if (template.GetComponent<Animator>() == null)
+                {
                     throw new MissingComponentException(
                         "Default SkinVisual Animator is missing.");
+                }
+
                 SpriteRenderer templateRenderer = template.SpriteRenderer ??
                     throw new MissingComponentException(
                         "Default SkinVisual SpriteRenderer is missing.");
@@ -395,9 +399,7 @@ namespace LostCyberHamster.Editor
                         $"Initial sprite '{initialSpriteKey}' is missing.");
                 }
 
-                EditorUtility.CopySerialized(templateRenderer, renderer);
                 renderer.sprite = initialSprite;
-                EditorUtility.CopySerialized(templateAnimator, animator);
                 animator.runtimeAnimatorController = controller;
                 visual.ConfigureEditor(
                     animator,

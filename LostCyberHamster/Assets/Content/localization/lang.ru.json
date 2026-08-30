@@ -699,6 +699,18 @@
         {
             "key": "skateboard",
             "value": "Скейтборд"
+        },
+        {
+              "key": "skin_name_forest",
+              "value": "Лесной"
+        },
+        {
+              "key": "skin_name_cowboy",
+              "value": "Ковбой"
+        },
+        {
+              "key": "skin_name_summer",
+              "value": "Летний"
         }
     ]
 }

@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: UI
   m_GUID: 8b60fa516636c4257a46110822c557e1
   m_SerializeEntries:
+  - m_GUID: 0c75baed6b0e1d042a79fb6a0d1ac183
+    m_Address: ability-icon/skateboard
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 12e874e61536a4fdb9acbd5defb13cf5
     m_Address: not_opened_preview
     m_ReadOnly: 0
@@ -61,6 +66,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4eb22be4f6a1205489faa8aeb1a7dad8
+    m_Address: ability-icon/energy-shield
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 53ef3fc4478f849abaaa97cb8052a325
     m_Address: evening_preview
     m_ReadOnly: 0
@@ -95,6 +105,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 820a7e84c695c4988acffd606a5adb6d
     m_Address: PauseModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 871e6810b7b1ae345a6beea3f24cb472
+    m_Address: hero-ability/electric-strike
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -181,6 +196,16 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - screens
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c972d53b9f235ef42acb52b0f807d93c
+    m_Address: ability-icon/electric-strike
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d3a3cb43cb211764f8e82506bfd46ed0
+    m_Address: hero-ability/energy-shield
+    m_ReadOnly: 0
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: de0d824a896bdfe489c56ca72cfb2f2f
     m_Address: CharacterDevelopmentScreen

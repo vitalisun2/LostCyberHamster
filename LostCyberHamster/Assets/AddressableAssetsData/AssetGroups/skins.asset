@@ -13,27 +13,40 @@ MonoBehaviour:
   m_Name: Skins
   m_EditorClassIdentifier: 
   m_GroupName: Skins
-  m_Data:
-    m_SerializedData: []
   m_GUID: 245d49e72fcde804ab62b1433a3d8a86
   m_SerializeEntries:
-  - m_GUID: 3d9968e7d40fbe546b168e30032fc015
-    m_Address: skins
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 90403d40a53bb4c38888e87bee258c9c
-    m_Address: skin_default
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1bd14aa037e924e6bb59d24f1b2a4d40
     m_Address: skin_quantum-scout
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 302c05341d4fad048b3663e46f370134
+    m_Address: skin_default
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3d9968e7d40fbe546b168e30032fc015
+    m_Address: skins
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 57081efe9760ade489c3cd8e5efba759
+    m_Address: skin_summer
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6f939148836434acc83a6d2ad15934e9
     m_Address: skin_neon-runner
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 979b3ccd672d5154eb3ffd3fafae1c6b
+    m_Address: skin_forest
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 98e92440a80b95e4893d4527b68771be
+    m_Address: skin_cowboy
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

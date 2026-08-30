@@ -4,7 +4,8 @@
       "Id": 1,
       "NameLocalizationKey": "energy shield",
       "DescriptionLocalizationKey": "super_attack_description_energy_shield",
-      "IconAddress": "skin_quantum-scout",
+      "IconAddress": "ability-icon/energy-shield",
+      "EquipmentPreviewAddress": "hero-ability/energy-shield",
       "UltaPrefab": "EnergyShieldPrefab",
       "UltaDuration": 5,
       "UltaCharge": 20
@@ -13,7 +14,8 @@
       "Id": 2,
       "NameLocalizationKey": "electric strike",
       "DescriptionLocalizationKey": "super_attack_description_electric_strike",
-      "IconAddress": "skin_neon-runner",
+      "IconAddress": "ability-icon/electric-strike",
+      "EquipmentPreviewAddress": "hero-ability/electric-strike",
       "UltaPrefab": "ElectricStrikePrefab",
       "UltaDuration": 0,
       "UltaCharge": 35
@@ -22,7 +24,8 @@
       "Id": 3,
       "NameLocalizationKey": "skateboard",
       "DescriptionLocalizationKey": "super_attack_description_skateboard",
-      "IconAddress": "skin_default",
+      "IconAddress": "ability-icon/skateboard",
+      "EquipmentPreviewAddress": "ability-icon/skateboard",
       "UltaPrefab": "",
       "UltaDuration": 10,
       "UltaCharge": 20

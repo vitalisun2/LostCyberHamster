@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using Vues.GameCore;
 
 namespace LostCyberHamster.Editor
 {
@@ -150,7 +151,21 @@ namespace LostCyberHamster.Editor
                     "Skin catalog has no available integer ID.");
             }
 
-            return maximumId + 1;
+            int candidateId = Math.Max(
+                SkinIdentity.FirstActiveSkinId,
+                maximumId + 1);
+            while (SkinIdentity.IsRetired(candidateId))
+            {
+                if (candidateId == int.MaxValue)
+                {
+                    throw new InvalidOperationException(
+                        "Skin catalog has no available integer ID.");
+                }
+
+                candidateId++;
+            }
+
+            return candidateId;
         }
 
         /// <summary>

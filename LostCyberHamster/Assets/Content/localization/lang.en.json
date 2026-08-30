@@ -699,6 +699,18 @@
         {
             "key": "skateboard",
             "value": "Skateboard"
+        },
+        {
+              "key": "skin_name_forest",
+              "value": "Forest"
+        },
+        {
+              "key": "skin_name_cowboy",
+              "value": "Cowboy"
+        },
+        {
+              "key": "skin_name_summer",
+              "value": "Summer"
         }
     ]
 }

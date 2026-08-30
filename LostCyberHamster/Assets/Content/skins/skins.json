@@ -1,31 +1,40 @@
 ﻿{
-  "skins": [
-    {
-      "Id": 0,
-      "NameLocalizationKey": "skin_name_classic",
-      "Price": 0,
-      "PriceType": 2,
-      "SkinSprite": "skin_default",
-      "SkinVisualAddress": "skin-visual/default",
-      "SkateboardSkinVisualAddress": "skin-visual/skateboard/default"
-    },
-    {
-      "Id": 2,
-      "NameLocalizationKey": "skin_name_neon_runner",
-      "Price": 20,
-      "PriceType": 2,
-      "SkinSprite": "skin_neon-runner",
-      "SkinVisualAddress": "skin-visual/neon-runner",
-      "SkateboardSkinVisualAddress": "skin-visual/skateboard/neon-runner"
-    },
-    {
-      "Id": 1,
-      "NameLocalizationKey": "skin_name_quantum_scout",
-      "Price": 10,
-      "PriceType": 2,
-      "SkinSprite": "skin_quantum-scout",
-      "SkinVisualAddress": "skin-visual/quantum-scout",
-      "SkateboardSkinVisualAddress": "skin-visual/skateboard/quantum-scout"
-    }
-  ]
+    "skins": [
+        {
+            "Id": 0,
+            "NameLocalizationKey": "skin_name_classic",
+            "Price": 0,
+            "PriceType": 2,
+            "SkinSprite": "skin_default",
+            "SkinVisualAddress": "skin-visual/default",
+            "SkateboardSkinVisualAddress": "skin-visual/skateboard/default"
+        },
+        {
+            "Id": 4,
+            "NameLocalizationKey": "skin_name_forest",
+            "Price": 20,
+            "PriceType": 2,
+            "SkinSprite": "skin_forest",
+            "SkinVisualAddress": "skin-visual/forest",
+            "SkateboardSkinVisualAddress": "skin-visual/skateboard/forest"
+        },
+        {
+            "Id": 5,
+            "NameLocalizationKey": "skin_name_cowboy",
+            "Price": 25,
+            "PriceType": 2,
+            "SkinSprite": "skin_cowboy",
+            "SkinVisualAddress": "skin-visual/cowboy",
+            "SkateboardSkinVisualAddress": "skin-visual/skateboard/cowboy"
+        },
+        {
+            "Id": 6,
+            "NameLocalizationKey": "skin_name_summer",
+            "Price": 20,
+            "PriceType": 2,
+            "SkinSprite": "skin_summer",
+            "SkinVisualAddress": "skin-visual/summer",
+            "SkateboardSkinVisualAddress": "skin-visual/skateboard/summer"
+        }
+    ]
 }

@@ -10,7 +10,6 @@ namespace GameManagement
 {
     public static class PlayerDataValidator
     {
-        private const int RemovedSkateboardSkinId = 3;
         private const string RemovedSuperHitTutorialLevelAddress =
             "01_New_York/Morning/Tutorial Level 2";
         private const string FirstGameplayLevelAddress =
@@ -43,16 +42,16 @@ namespace GameManagement
             }
 
             if (data.PurchasedSkinIds == null &&
-                data.AppliedSkinId != 0 &&
-                data.AppliedSkinId != RemovedSkateboardSkinId)
+                data.AppliedSkinId != SkinIdentity.DefaultId &&
+                !SkinIdentity.IsRetired(data.AppliedSkinId))
             {
                 return PlayerDataValidationResult.Rejected("applied_skin_not_purchased");
             }
 
             if (data.PurchasedSkinIds != null &&
                 !data.PurchasedSkinIds.Contains(data.AppliedSkinId) &&
-                data.AppliedSkinId != 0 &&
-                data.AppliedSkinId != RemovedSkateboardSkinId)
+                data.AppliedSkinId != SkinIdentity.DefaultId &&
+                !SkinIdentity.IsRetired(data.AppliedSkinId))
             {
                 return PlayerDataValidationResult.Rejected("applied_skin_not_purchased");
             }
@@ -61,7 +60,7 @@ namespace GameManagement
             {
                 var knownSkinIds = new HashSet<int>(SkinManager.AvailableSkins.Select(skin => skin.Id));
                 if (data.PurchasedSkinIds.Any(skinId =>
-                        skinId != RemovedSkateboardSkinId &&
+                        !SkinIdentity.IsRetired(skinId) &&
                         !knownSkinIds.Contains(skinId)))
                 {
                     return PlayerDataValidationResult.Rejected("unknown_purchased_skin");
@@ -131,9 +130,11 @@ namespace GameManagement
                                data.StoryQuestSet?.ActivePrimaryQuestId == null ||
                                data.StoryQuestSet?.ActiveSecondaryQuestId == null ||
                                !data.HasSerializedProgressCollection ||
-                               data.AppliedSkinId == RemovedSkateboardSkinId ||
-                               data.PurchasedSkinIds?.Contains(RemovedSkateboardSkinId) == true ||
-                               !data.PurchasedSkinIds.Contains(0) ||
+                               SkinIdentity.IsRetired(data.AppliedSkinId) ||
+                               data.PurchasedSkinIds?.Any(
+                                   SkinIdentity.IsRetired) == true ||
+                               !data.PurchasedSkinIds.Contains(
+                                   SkinIdentity.DefaultId) ||
                                HasExactDuplicates(data.PurchasedSkinIds) ||
                                hasExactQuestStateDuplicates ||
                                hasExactProgressDuplicates ||
@@ -176,15 +177,15 @@ namespace GameManagement
             }
 
             data.PurchasedSkinIds ??= new List<int>();
-            data.PurchasedSkinIds.RemoveAll(skinId => skinId == RemovedSkateboardSkinId);
-            if (data.AppliedSkinId == RemovedSkateboardSkinId)
+            data.PurchasedSkinIds.RemoveAll(SkinIdentity.IsRetired);
+            if (SkinIdentity.IsRetired(data.AppliedSkinId))
             {
-                data.AppliedSkinId = 0;
+                data.AppliedSkinId = SkinIdentity.DefaultId;
             }
 
-            if (!data.PurchasedSkinIds.Contains(0))
+            if (!data.PurchasedSkinIds.Contains(SkinIdentity.DefaultId))
             {
-                data.PurchasedSkinIds.Add(0);
+                data.PurchasedSkinIds.Add(SkinIdentity.DefaultId);
             }
             data.QuestStates ??= new List<Quest>();
             data.DailyQuestSet ??= new DailyQuestSetState();
@@ -373,6 +374,8 @@ namespace GameManagement
                                    CharacterDevelopmentService.DefaultSkinId) ||
                                HasExactDuplicates(data.UnlockedSkinIds) ||
                                HasExactDuplicates(data.UnlockedSuperAttackIds) ||
+                               data.UnlockedSkinIds?.Any(
+                                   SkinIdentity.IsRetired) == true ||
                                data.PurchasedSkinIds?.Any(
                                    skinId =>
                                        !data.UnlockedSkinIds.Contains(skinId)) == true ||
@@ -388,11 +391,14 @@ namespace GameManagement
 
         private static void RepairDevelopmentState(PlayerData data)
         {
-            bool isLegacy = data.DevelopmentProgressVersion <
-                            CharacterDevelopmentService.CurrentProgressVersion;
+            bool requiresInitialPointBackfill =
+                data.DevelopmentProgressVersion < 1;
 
             data.UnlockedSkinIds ??= new List<int>();
             data.UnlockedSuperAttackIds ??= new List<int>();
+
+            // Удаляем legacy-владение до восстановления unlock-состояния.
+            data.UnlockedSkinIds.RemoveAll(SkinIdentity.IsRetired);
 
             // Ownership и active selection сохраняют доступ при migration/repair.
             data.UnlockedSkinIds.AddRange(data.PurchasedSkinIds);
@@ -411,7 +417,7 @@ namespace GameManagement
                     data.ActiveSuperAttackId);
             }
 
-            if (isLegacy)
+            if (requiresInitialPointBackfill)
             {
                 int earnedPoints = Math.Max(0, data.PlayerLevel - 1);
                 int spentOnActiveAbility = data.ActiveSuperAttackId > 0
@@ -447,7 +453,9 @@ namespace GameManagement
 
             var knownIds = new HashSet<int>(
                 SkinManager.AvailableSkins.Select(skin => skin.Id));
-            return values.Any(value => !knownIds.Contains(value));
+            return values.Any(value =>
+                !SkinIdentity.IsRetired(value) &&
+                !knownIds.Contains(value));
         }
 
         private static bool HasUnknownSuperAttackIds(

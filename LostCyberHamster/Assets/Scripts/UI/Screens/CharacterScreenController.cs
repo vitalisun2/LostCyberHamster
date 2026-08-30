@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Assets.Scripts.System.Resources;
-using GameManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
@@ -12,65 +11,61 @@ using Vues.GameCore;
 namespace LostCyberHamster.UI
 {
     /// <summary>
-    /// Управляет единым экраном экипировки skins и super abilities.
+    /// Управляет единым Hero-экраном скинов и суперспособностей.
     /// </summary>
     public sealed class CharacterScreenController : ScreenController
     {
-        private const int MinimumCardsPerTab = 8;
+        private const float DesignWidth = 1672f;
+        private const float DesignHeight = 941f;
 
-        private enum EquipmentTab
+        private enum HeroTab
         {
             Skins,
             Abilities
         }
 
-        private readonly List<AddressableLease<Sprite>> _abilityIconLeases =
+        private readonly List<AddressableLease<Sprite>> _abilityLeases =
             new();
         private readonly Dictionary<int, Sprite> _abilityIcons = new();
-        private CancellationTokenSource _abilityIconCancellation;
-        private AddressableLease<Texture2D> _priceIconLease;
+        private readonly Dictionary<int, Sprite> _abilityPreviews = new();
 
-        private EquipmentTab _activeTab;
+        private CancellationTokenSource _visualCancellation;
+        private AddressableLease<Texture2D> _priceIconLease;
+        private Texture2D _priceIcon;
+        private HeroTab _activeTab;
         private int _selectedSkinId;
         private int _selectedAbilityId;
-        private int _tabRefreshVersion;
+        private int _visualVersion;
         private bool _screenLoaded;
-        private Button SettingsButton =>
-            _contentRoot.Q<Button>("btn_settings");
-        private Button HomeButton =>
-            _contentRoot.Q<Button>("btn_home");
+
+        private VisualElement Viewport =>
+            _contentRoot.Q<VisualElement>("hero-viewport");
+        private VisualElement ScaleFrame =>
+            _contentRoot.Q<VisualElement>("hero-scale-frame");
+        private VisualElement Design =>
+            _contentRoot.Q<VisualElement>("hero-design");
         private Button SkinTabButton =>
-            _contentRoot.Q<Button>("equipment-tab-skins");
+            _contentRoot.Q<Button>("hero-tab-skins");
         private Button AbilityTabButton =>
-            _contentRoot.Q<Button>("equipment-tab-abilities");
-        private Button SkinActionButton =>
-            _contentRoot.Q<Button>("skin-btn-change");
-        private VisualElement Tabs =>
-            _contentRoot.Q<VisualElement>("equipment-tabs");
-        private VisualElement PagesTrack =>
-            _contentRoot.Q<VisualElement>("equipment-pages-track");
+            _contentRoot.Q<Button>("hero-tab-abilities");
         private VisualElement SkinsPage =>
-            _contentRoot.Q<VisualElement>("equipment-skins-page");
+            _contentRoot.Q<VisualElement>("hero-skins-page");
         private VisualElement AbilitiesPage =>
-            _contentRoot.Q<VisualElement>("equipment-abilities-page");
-        private Label SkinPreviewName =>
-            _contentRoot.Q<Label>("equipment-skin-name");
-        private Label SkinPreviewStatus =>
-            _contentRoot.Q<Label>("equipment-skin-status");
+            _contentRoot.Q<VisualElement>("hero-abilities-page");
         private VisualElement SkinPreviewImage =>
-            _contentRoot.Q<VisualElement>("equipment-skin-image");
-        private VisualElement SkinCards =>
-            _contentRoot.Q<VisualElement>("equipment-skin-cards");
-        private Label AbilityPreviewName =>
-            _contentRoot.Q<Label>("equipment-ability-name");
-        private Label AbilityPreviewDescription =>
-            _contentRoot.Q<Label>("equipment-ability-description");
-        private Label AbilityPreviewStatus =>
-            _contentRoot.Q<Label>("equipment-ability-status");
+            _contentRoot.Q<VisualElement>("hero-skin-preview-image");
+        private Label SkinPreviewName =>
+            _contentRoot.Q<Label>("hero-skin-preview-name");
+        private VisualElement SkinSlots =>
+            _contentRoot.Q<VisualElement>("hero-skin-slots");
         private VisualElement AbilityPreviewImage =>
-            _contentRoot.Q<VisualElement>("equipment-ability-image");
-        private VisualElement AbilityCards =>
-            _contentRoot.Q<VisualElement>("equipment-ability-cards");
+            _contentRoot.Q<VisualElement>("hero-ability-preview-image");
+        private Label AbilityPreviewDescription =>
+            _contentRoot.Q<Label>("hero-ability-preview-description");
+        private Button AbilitySelectButton =>
+            _contentRoot.Q<Button>("hero-ability-select");
+        private VisualElement AbilitySlots =>
+            _contentRoot.Q<VisualElement>("hero-ability-slots");
 
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.CharacterScreen;
@@ -82,452 +77,163 @@ namespace LostCyberHamster.UI
 
         protected override async Task OnLoadAsync()
         {
-            await ChangeBackgroundAsync("BackgroundScreenSprite");
             _screenLoaded = true;
-            _activeTab = EquipmentTab.Skins;
+            _activeTab = HeroTab.Skins;
             _selectedSkinId = SkinManager.CurrentSkin?.Id ??
                               CharacterDevelopmentService.DefaultSkinId;
-            _selectedAbilityId =
-                SuperAttackService.ActiveSuperAttackId ??
-                GetFirstUnlockedAbilityId();
-            await LoadPagesAsync();
+            _selectedAbilityId = SuperAttackService.ActiveSuperAttackId ??
+                                 GetFirstUnlockedAbilityId();
+
+            ApplyActiveTab();
+            BuildSkinSlots();
+            ShowSelectedSkin();
+            BuildAbilitySlots();
+            ShowSelectedAbility();
+            await LoadVisualsAsync();
         }
 
         protected override void OnSubscribeToEvents()
         {
-            _screenLoaded = true;
-            SettingsButton?.RegisterCallback<ClickEvent>(OnSettingsClicked);
-            HomeButton?.RegisterCallback<ClickEvent>(OnHomeClicked);
             SkinTabButton?.RegisterCallback<ClickEvent>(OnSkinTabClicked);
             AbilityTabButton?.RegisterCallback<ClickEvent>(
                 OnAbilityTabClicked);
-            SkinActionButton?.RegisterCallback<ClickEvent>(OnActionClicked);
+            AbilitySelectButton?.RegisterCallback<ClickEvent>(
+                OnAbilitySelectClicked);
+            Viewport?.RegisterCallback<GeometryChangedEvent>(
+                OnViewportGeometryChanged);
+            Viewport?.schedule.Execute(
+                () => ApplyResponsiveLayout(Viewport.contentRect.size));
         }
 
         protected override void OnUnsubscribeFromEvents()
         {
             _screenLoaded = false;
-            _tabRefreshVersion++;
-            SettingsButton?.UnregisterCallback<ClickEvent>(OnSettingsClicked);
-            HomeButton?.UnregisterCallback<ClickEvent>(OnHomeClicked);
+            _visualVersion++;
             SkinTabButton?.UnregisterCallback<ClickEvent>(OnSkinTabClicked);
             AbilityTabButton?.UnregisterCallback<ClickEvent>(
                 OnAbilityTabClicked);
-            SkinActionButton?.UnregisterCallback<ClickEvent>(OnActionClicked);
-            ReleaseAbilityIcons();
-            ReleasePriceIcon();
+            AbilitySelectButton?.UnregisterCallback<ClickEvent>(
+                OnAbilitySelectClicked);
+            Viewport?.UnregisterCallback<GeometryChangedEvent>(
+                OnViewportGeometryChanged);
+            ReleaseVisuals();
         }
 
-        private async Task LoadPagesAsync()
+        private async Task LoadVisualsAsync()
         {
-            int refreshVersion = ++_tabRefreshVersion;
+            ReleaseVisuals();
+            int visualVersion = ++_visualVersion;
+            _visualCancellation = new CancellationTokenSource();
+            CancellationToken cancellationToken = _visualCancellation.Token;
 
-            // Выставляем начальное положение вкладок и ленты.
-            ApplyActiveTabState();
-
-            // Заполняем обе страницы до первого переключения.
-            BuildSkinCards();
-            Task skinPreviewTask = ShowSelectedSkinAsync(refreshVersion);
-            Task abilityCardsTask = BuildAbilityCardsAsync();
-            await Task.WhenAll(skinPreviewTask, abilityCardsTask);
-            if (IsCurrentRefresh(refreshVersion))
+            var tasks = new List<Task>();
+            foreach (SuperAttackData ability in SuperAttackService.Items)
             {
-                ShowSelectedAbility();
-            }
-        }
-
-        private void ApplyActiveTabState()
-        {
-            bool showSkins = _activeTab == EquipmentTab.Skins;
-
-            // Синхронно анимируем вкладки и горизонтальную ленту страниц.
-            SkinTabButton.EnableInClassList("equipment-tab--active", showSkins);
-            AbilityTabButton.EnableInClassList(
-                "equipment-tab--active",
-                !showSkins);
-            Tabs.EnableInClassList("equipment__tabs--skins", showSkins);
-            Tabs.EnableInClassList("equipment__tabs--abilities", !showSkins);
-            PagesTrack.EnableInClassList(
-                "equipment__pages-track--abilities",
-                !showSkins);
-            SkinsPage.pickingMode = showSkins
-                ? PickingMode.Position
-                : PickingMode.Ignore;
-            AbilitiesPage.pickingMode = showSkins
-                ? PickingMode.Ignore
-                : PickingMode.Position;
-        }
-
-        private void BuildSkinCards()
-        {
-            SkinCards.Clear();
-            int skinCount = 0;
-            foreach (Skin skin in SkinManager.AvailableSkins.OrderBy(
-                         skin => !CharacterDevelopmentService.IsSkinUnlocked(
-                             skin.Id)))
-            {
-                bool isLocked =
-                    !CharacterDevelopmentService.IsSkinUnlocked(skin.Id);
-                var card = CreateCard(
-                    $"skin-card-{skin.Id}",
-                    skin.Name,
-                    skin.HamsterSprite,
-                    skin.Id == _selectedSkinId,
-                    isLocked);
-                if (!isLocked)
-                {
-                    card.RegisterCallback<ClickEvent>(
-                        _ => OnSkinSelected(skin.Id));
-                }
-
-                SkinCards.Add(card);
-                skinCount++;
+                tasks.Add(LoadAbilityVisualsAsync(
+                    ability,
+                    cancellationToken));
             }
 
-            AddLockedPlaceholders(SkinCards, "skin", skinCount);
+            if (SkinManager.AvailableSkins.Any(
+                    skin =>
+                        CharacterDevelopmentService.IsSkinUnlocked(skin.Id) &&
+                        !skin.IsPurchased))
+            {
+                tasks.Add(LoadPriceIconAsync(cancellationToken));
+            }
+
+            await Task.WhenAll(tasks);
+            if (!IsCurrentVisual(visualVersion))
+            {
+                return;
+            }
+
+            BuildSkinSlots();
+            BuildAbilitySlots();
+            ShowSelectedAbility();
         }
 
-        private async Task BuildAbilityCardsAsync()
+        private async Task LoadAbilityVisualsAsync(
+            SuperAttackData ability,
+            CancellationToken cancellationToken)
         {
-            ReleaseAbilityIcons();
-            AbilityCards.Clear();
-            CancellationToken cancellationToken = BeginAbilityIconLoading();
-            var loadTasks = new List<Task>();
-
-            int abilityCount = 0;
-            foreach (SuperAttackData ability in
-                     SuperAttackService.Items.OrderBy(
-                         ability => !SuperAttackService.IsUnlocked(
-                             ability.Id)))
+            Sprite icon = await LoadAbilitySpriteAsync(
+                ability.IconAddress,
+                cancellationToken);
+            if (icon != null)
             {
-                bool isLocked = !SuperAttackService.IsUnlocked(ability.Id);
-                var card = CreateCard(
-                    $"ability-card-{ability.Id}",
-                    Localize(ability.NameLocalizationKey),
-                    null,
-                    ability.Id == _selectedAbilityId,
-                    isLocked,
-                    out VisualElement icon);
-                if (!isLocked)
-                {
-                    card.RegisterCallback<ClickEvent>(
-                        _ => OnAbilitySelected(ability.Id));
-                }
+                _abilityIcons[ability.Id] = icon;
+            }
 
-                AbilityCards.Add(card);
+            string previewAddress = string.IsNullOrWhiteSpace(
+                ability.EquipmentPreviewAddress)
+                ? ability.IconAddress
+                : ability.EquipmentPreviewAddress;
+            if (string.Equals(
+                    previewAddress,
+                    ability.IconAddress,
+                    StringComparison.Ordinal))
+            {
                 if (icon != null)
                 {
-                    loadTasks.Add(LoadAbilityIconAsync(
-                        ability.Id,
-                        ability.IconAddress,
-                        icon,
-                        cancellationToken));
+                    _abilityPreviews[ability.Id] = icon;
                 }
 
-                abilityCount++;
-            }
-            AddLockedPlaceholders(AbilityCards, "ability", abilityCount);
-
-            await Task.WhenAll(loadTasks);
-        }
-
-        private async Task ShowSelectedSkinAsync(int refreshVersion)
-        {
-            Skin skin = SkinManager.AvailableSkins.FirstOrDefault(
-                candidate => candidate.Id == _selectedSkinId &&
-                             CharacterDevelopmentService.IsSkinUnlocked(
-                                 candidate.Id));
-            skin ??= SkinManager.DefaultSkin;
-            if (skin == null)
-            {
-                ShowEmptyPreview(
-                    SkinPreviewName,
-                    null,
-                    SkinPreviewStatus,
-                    SkinPreviewImage,
-                    SkinActionButton,
-                    "equipment_no_skins");
                 return;
             }
 
-            _selectedSkinId = skin.Id;
-            ReleasePriceIcon();
-            SkinPreviewName.text = skin.Name;
-            SkinPreviewImage.style.backgroundImage =
-                new StyleBackground(skin.HamsterSprite);
-            SkinPreviewStatus.style.display = DisplayStyle.None;
-            SkinActionButton.style.display = DisplayStyle.Flex;
-
-            // Показываем одну action для текущей стадии skin flow.
-            if (SkinManager.CurrentSkin?.Id == skin.Id)
+            Sprite preview = await LoadAbilitySpriteAsync(
+                previewAddress,
+                cancellationToken);
+            if (preview != null)
             {
-                SkinPreviewStatus.text = Localize("equipment_equipped");
-                SkinPreviewStatus.style.display = DisplayStyle.Flex;
-                SkinActionButton.style.display = DisplayStyle.None;
-                return;
-            }
-
-            if (skin.IsPurchased)
-            {
-                SkinPreviewStatus.text = string.Empty;
-                SkinActionButton.text = Localize("equipment_equip");
-                SkinActionButton.SetEnabled(true);
-                return;
-            }
-
-            SkinPreviewStatus.text = string.Empty;
-            SkinActionButton.text =
-                $"{Localize("equipment_buy")} {skin.Price}";
-            SkinActionButton.SetEnabled(SkinManager.CanPurchaseSkin(skin.Id));
-            await LoadPriceIconAsync(
-                skin.PriceType,
-                skin.Id,
-                refreshVersion);
-        }
-
-        private void ShowSelectedAbility()
-        {
-            SuperAttackData ability = SuperAttackService.Items.FirstOrDefault(
-                candidate => candidate.Id == _selectedAbilityId &&
-                             SuperAttackService.IsUnlocked(candidate.Id));
-            if (ability == null)
-            {
-                ShowEmptyPreview(
-                    AbilityPreviewName,
-                    AbilityPreviewDescription,
-                    AbilityPreviewStatus,
-                    AbilityPreviewImage,
-                    null,
-                    "equipment_no_abilities");
-                return;
-            }
-
-            AbilityPreviewName.text = Localize(ability.NameLocalizationKey);
-            AbilityPreviewDescription.text = Localize(
-                ability.DescriptionLocalizationKey);
-            AbilityPreviewStatus.text = string.Empty;
-            AbilityPreviewStatus.style.display = DisplayStyle.None;
-            if (_abilityIcons.TryGetValue(ability.Id, out Sprite icon))
-            {
-                AbilityPreviewImage.style.backgroundImage =
-                    new StyleBackground(icon);
-            }
-            else
-            {
-                AbilityPreviewImage.style.backgroundImage = null;
+                _abilityPreviews[ability.Id] = preview;
             }
         }
 
-        private static void ShowEmptyPreview(
-            Label name,
-            Label description,
-            Label status,
-            VisualElement image,
-            Button action,
-            string localizationKey)
-        {
-            name.text = Localize(localizationKey);
-            if (description != null)
-            {
-                description.text = string.Empty;
-            }
-
-            status.text = string.Empty;
-            status.style.display = DisplayStyle.None;
-            image.style.backgroundImage = null;
-            if (action != null)
-            {
-                action.style.display = DisplayStyle.None;
-            }
-        }
-
-        private static Button CreateCard(
-            string name,
-            string title,
-            Sprite sprite,
-            bool isSelected,
-            bool isLocked)
-        {
-            return CreateCard(
-                name,
-                title,
-                sprite,
-                isSelected,
-                isLocked,
-                out _);
-        }
-
-        private static Button CreateCard(
-            string name,
-            string title,
-            Sprite sprite,
-            bool isSelected,
-            bool isLocked,
-            out VisualElement icon)
-        {
-            var card = new Button { name = name };
-            card.AddToClassList("equipment-card");
-            card.EnableInClassList(
-                "equipment-card--selected",
-                isSelected && !isLocked);
-            card.EnableInClassList("equipment-card--locked", isLocked);
-
-            if (isLocked)
-            {
-                icon = null;
-                card.Add(CreateLock("equipment-card__lock"));
-                card.SetEnabled(false);
-                return card;
-            }
-
-            icon = new VisualElement();
-            icon.AddToClassList("equipment-card__icon");
-            if (sprite != null)
-            {
-                icon.style.backgroundImage = new StyleBackground(sprite);
-            }
-            card.Add(icon);
-
-            var label = new Label(title);
-            label.AddToClassList("equipment-card__name");
-            card.Add(label);
-            return card;
-        }
-
-        private void AddLockedPlaceholders(
-            VisualElement container,
-            string catalogName,
-            int existingCount)
-        {
-            for (int index = existingCount;
-                 index < MinimumCardsPerTab;
-                 index++)
-            {
-                var card = new Button
-                {
-                    name = $"equipment-{catalogName}-placeholder-{index}"
-                };
-                card.AddToClassList("equipment-card");
-                card.AddToClassList("equipment-card--locked");
-                card.AddToClassList("equipment-card--placeholder");
-                card.Add(CreateLock("equipment-card__lock"));
-                card.SetEnabled(false);
-                container.Add(card);
-            }
-        }
-
-        private static VisualElement CreateLock(string className)
-        {
-            var lockIcon = new VisualElement
-            {
-                pickingMode = PickingMode.Ignore
-            };
-            lockIcon.AddToClassList(className);
-            return lockIcon;
-        }
-
-        private async void OnSkinSelected(int skinId)
-        {
-            _selectedSkinId = skinId;
-            int refreshVersion = ++_tabRefreshVersion;
-            BuildSkinCards();
-            await ShowSelectedSkinAsync(refreshVersion);
-        }
-
-        private void OnAbilitySelected(int abilityId)
-        {
-            _selectedAbilityId = abilityId;
-            if (SuperAttackService.ActiveSuperAttackId == abilityId)
-            {
-                ShowSelectedAbility();
-                UpdateSelectedCardClasses(
-                    AbilityCards,
-                    $"ability-card-{abilityId}");
-                return;
-            }
-
-            if (SuperAttackService.TrySelect(abilityId))
-            {
-                ShowSelectedAbility();
-                UpdateSelectedCardClasses(
-                    AbilityCards,
-                    $"ability-card-{abilityId}");
-            }
-        }
-
-        private async void OnActionClicked(ClickEvent clickEvent)
-        {
-            if (_activeTab != EquipmentTab.Skins)
-            {
-                return;
-            }
-
-            Skin skin = SkinManager.AvailableSkins.FirstOrDefault(
-                candidate => candidate.Id == _selectedSkinId);
-            if (skin == null)
-            {
-                return;
-            }
-
-            if (skin.IsPurchased)
-            {
-                SkinManager.PutOnSkin(skin.Id);
-            }
-            else
-            {
-                SkinManager.PurchaseSkin(skin.Id);
-            }
-
-            int refreshVersion = ++_tabRefreshVersion;
-            BuildSkinCards();
-            await ShowSelectedSkinAsync(refreshVersion);
-        }
-
-        private void OnSkinTabClicked(ClickEvent clickEvent)
-        {
-            if (_activeTab == EquipmentTab.Skins)
-            {
-                return;
-            }
-
-            _activeTab = EquipmentTab.Skins;
-            ApplyActiveTabState();
-        }
-
-        private void OnAbilityTabClicked(ClickEvent clickEvent)
-        {
-            if (_activeTab == EquipmentTab.Abilities)
-            {
-                return;
-            }
-
-            _activeTab = EquipmentTab.Abilities;
-            ApplyActiveTabState();
-        }
-
-        private static void UpdateSelectedCardClasses(
-            VisualElement container,
-            string selectedName)
-        {
-            foreach (VisualElement child in container.Children())
-            {
-                child.EnableInClassList(
-                    "equipment-card--selected",
-                    child.name == selectedName);
-            }
-        }
-
-        private async Task LoadAbilityIconAsync(
-            int abilityId,
-            string iconAddress,
-            VisualElement cardIcon,
+        private async Task<Sprite> LoadAbilitySpriteAsync(
+            string address,
             CancellationToken cancellationToken)
         {
             AddressableLease<Sprite> lease = null;
             try
             {
                 lease = await AddressableLoader.LoadAssetAsync<Sprite>(
-                    iconAddress,
+                    address,
+                    cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                if (lease.Value == null)
+                {
+                    lease.Dispose();
+                    return null;
+                }
+
+                _abilityLeases.Add(lease);
+                return lease.Value;
+            }
+            catch (OperationCanceledException)
+            {
+                lease?.Dispose();
+                return null;
+            }
+            catch (Exception exception)
+            {
+                lease?.Dispose();
+                Debug.LogError(
+                    $"Could not load Hero sprite '{address}': " +
+                    exception.Message);
+                return null;
+            }
+        }
+
+        private async Task LoadPriceIconAsync(
+            CancellationToken cancellationToken)
+        {
+            AddressableLease<Texture2D> lease = null;
+            try
+            {
+                lease = await AddressableLoader.LoadAssetAsync<Texture2D>(
+                    "crystal",
                     cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 if (lease.Value == null)
@@ -536,10 +242,8 @@ namespace LostCyberHamster.UI
                     return;
                 }
 
-                _abilityIconLeases.Add(lease);
-                _abilityIcons[abilityId] = lease.Value;
-                cardIcon.style.backgroundImage =
-                    new StyleBackground(lease.Value);
+                _priceIconLease = lease;
+                _priceIcon = lease.Value;
             }
             catch (OperationCanceledException)
             {
@@ -549,107 +253,360 @@ namespace LostCyberHamster.UI
             {
                 lease?.Dispose();
                 Debug.LogError(
-                    $"Could not load equipment ability icon " +
-                    $"'{iconAddress}': {exception.Message}");
+                    "Could not load Hero price icon 'crystal': " +
+                    exception.Message);
             }
         }
 
-        private async Task LoadPriceIconAsync(
-            ResourceType priceType,
-            int skinId,
-            int refreshVersion)
+        private void BuildSkinSlots()
         {
-            ReleasePriceIcon();
-            string address = priceType switch
+            SkinSlots.Clear();
+            foreach (Skin skin in SkinManager.AvailableSkins)
             {
-                ResourceType.Crystals => "crystal",
-                ResourceType.Coins => "coin",
-                _ => string.Empty
+                SkinSlots.Add(CreateSkinSlot(skin));
+            }
+        }
+
+        private VisualElement CreateSkinSlot(Skin skin)
+        {
+            bool isUnlocked =
+                CharacterDevelopmentService.IsSkinUnlocked(skin.Id);
+            var slot = CreateSlot(
+                $"hero-skin-slot-{skin.Id}",
+                skin.Id == _selectedSkinId);
+            if (!isUnlocked)
+            {
+                slot.Add(CreateStateElement("hero-slot__lock"));
+                return slot;
+            }
+
+            slot.Add(CreateIcon(skin.HamsterSprite));
+            slot.Add(CreateNameLabel(skin.Name));
+            slot.RegisterCallback<ClickEvent>(_ => SelectSkin(skin.Id));
+
+            if (SkinManager.CurrentSkin?.Id == skin.Id)
+            {
+                slot.Add(CreateStateElement("hero-slot__check"));
+                return slot;
+            }
+
+            Button action;
+            if (skin.IsPurchased)
+            {
+                action = CreateSlotAction(
+                    Localize("equipment_equip"),
+                    false,
+                    clickEvent =>
+                    {
+                        clickEvent.StopPropagation();
+                        EquipSkin(skin.Id);
+                    });
+            }
+            else
+            {
+                action = CreateSlotAction(
+                    skin.Price.ToString(),
+                    true,
+                    clickEvent =>
+                    {
+                        clickEvent.StopPropagation();
+                        PurchaseSkin(skin.Id);
+                    });
+                action.SetEnabled(SkinManager.CanPurchaseSkin(skin.Id));
+            }
+
+            slot.Add(action);
+            return slot;
+        }
+
+        private void BuildAbilitySlots()
+        {
+            AbilitySlots.Clear();
+            foreach (SuperAttackData ability in SuperAttackService.Items)
+            {
+                AbilitySlots.Add(CreateAbilitySlot(ability));
+            }
+        }
+
+        private VisualElement CreateAbilitySlot(SuperAttackData ability)
+        {
+            bool isUnlocked = SuperAttackService.IsUnlocked(ability.Id);
+            var slot = CreateSlot(
+                $"hero-ability-slot-{ability.Id}",
+                ability.Id == _selectedAbilityId);
+            if (!isUnlocked)
+            {
+                slot.Add(CreateStateElement("hero-slot__lock"));
+                return slot;
+            }
+
+            _abilityIcons.TryGetValue(ability.Id, out Sprite icon);
+            slot.Add(CreateIcon(icon));
+            slot.Add(CreateNameLabel(Localize(ability.NameLocalizationKey)));
+            slot.RegisterCallback<ClickEvent>(
+                _ => SelectAbility(ability.Id));
+
+            if (SuperAttackService.ActiveSuperAttackId == ability.Id)
+            {
+                slot.Add(CreateStateElement("hero-slot__check"));
+            }
+
+            return slot;
+        }
+
+        private static VisualElement CreateSlot(string name, bool isSelected)
+        {
+            var slot = new VisualElement { name = name };
+            slot.AddToClassList("hero-slot");
+            slot.EnableInClassList("hero-slot--selected", isSelected);
+            return slot;
+        }
+
+        private static VisualElement CreateIcon(Sprite sprite)
+        {
+            var icon = new VisualElement
+            {
+                pickingMode = PickingMode.Ignore
             };
-            if (string.IsNullOrEmpty(address))
+            icon.AddToClassList("hero-slot__icon");
+            if (sprite != null)
+            {
+                icon.style.backgroundImage = new StyleBackground(sprite);
+            }
+
+            return icon;
+        }
+
+        private static Label CreateNameLabel(string text)
+        {
+            var label = new Label(text)
+            {
+                pickingMode = PickingMode.Ignore
+            };
+            label.AddToClassList("hero-slot__name");
+            return label;
+        }
+
+        private static VisualElement CreateStateElement(string className)
+        {
+            var element = new VisualElement
+            {
+                pickingMode = PickingMode.Ignore
+            };
+            element.AddToClassList(className);
+            return element;
+        }
+
+        private Button CreateSlotAction(
+            string text,
+            bool isPrice,
+            EventCallback<ClickEvent> action)
+        {
+            var button = new Button { text = text };
+            button.AddToClassList("hero-slot__action");
+            button.RegisterCallback<ClickEvent>(action);
+            if (!isPrice)
+            {
+                return button;
+            }
+
+            button.AddToClassList("hero-slot__action--price");
+            var icon = new VisualElement
+            {
+                pickingMode = PickingMode.Ignore
+            };
+            icon.AddToClassList("hero-slot__price-icon");
+            if (_priceIcon != null)
+            {
+                icon.style.backgroundImage = new StyleBackground(_priceIcon);
+            }
+
+            button.Add(icon);
+            return button;
+        }
+
+        private void SelectSkin(int skinId)
+        {
+            _selectedSkinId = skinId;
+            BuildSkinSlots();
+            ShowSelectedSkin();
+        }
+
+        private void PurchaseSkin(int skinId)
+        {
+            _selectedSkinId = skinId;
+            SkinManager.PurchaseSkin(skinId);
+            BuildSkinSlots();
+            ShowSelectedSkin();
+        }
+
+        private void EquipSkin(int skinId)
+        {
+            _selectedSkinId = skinId;
+            SkinManager.PutOnSkin(skinId);
+            BuildSkinSlots();
+            ShowSelectedSkin();
+        }
+
+        private void ShowSelectedSkin()
+        {
+            Skin skin = SkinManager.AvailableSkins.FirstOrDefault(
+                candidate =>
+                    candidate.Id == _selectedSkinId &&
+                    CharacterDevelopmentService.IsSkinUnlocked(candidate.Id));
+            skin ??= SkinManager.DefaultSkin;
+            if (skin == null)
+            {
+                SkinPreviewImage.style.backgroundImage = null;
+                SkinPreviewName.text = Localize("equipment_no_skins");
+                return;
+            }
+
+            _selectedSkinId = skin.Id;
+            SkinPreviewImage.style.backgroundImage =
+                new StyleBackground(skin.HamsterSprite);
+            SkinPreviewName.text = skin.Name;
+        }
+
+        private void SelectAbility(int abilityId)
+        {
+            _selectedAbilityId = abilityId;
+            BuildAbilitySlots();
+            ShowSelectedAbility();
+        }
+
+        private void ShowSelectedAbility()
+        {
+            SuperAttackData ability = SuperAttackService.Items.FirstOrDefault(
+                candidate =>
+                    candidate.Id == _selectedAbilityId &&
+                    SuperAttackService.IsUnlocked(candidate.Id));
+            if (ability == null)
+            {
+                AbilityPreviewImage.style.backgroundImage = null;
+                AbilityPreviewDescription.text = Localize(
+                    "equipment_no_abilities");
+                AbilitySelectButton.style.display = DisplayStyle.None;
+                return;
+            }
+
+            _selectedAbilityId = ability.Id;
+            AbilityPreviewDescription.text = Localize(
+                ability.DescriptionLocalizationKey);
+            if (_abilityPreviews.TryGetValue(ability.Id, out Sprite preview))
+            {
+                AbilityPreviewImage.style.backgroundImage =
+                    new StyleBackground(preview);
+            }
+            else
+            {
+                AbilityPreviewImage.style.backgroundImage = null;
+            }
+
+            bool isActive =
+                SuperAttackService.ActiveSuperAttackId == ability.Id;
+            AbilitySelectButton.text = Localize("equipment_equip");
+            AbilitySelectButton.style.display = isActive
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
+        }
+
+        private void OnAbilitySelectClicked(ClickEvent clickEvent)
+        {
+            if (_activeTab != HeroTab.Abilities || _selectedAbilityId <= 0)
             {
                 return;
             }
 
-            AddressableLease<Texture2D> lease = null;
-            try
+            if (SuperAttackService.TrySelect(_selectedAbilityId))
             {
-                lease = await AddressableLoader.LoadAssetAsync<Texture2D>(
-                    address);
-                if (!IsCurrentRefresh(refreshVersion) ||
-                    _selectedSkinId != skinId)
-                {
-                    lease.Dispose();
-                    return;
-                }
-
-                _priceIconLease = lease;
-                if (lease.Value != null)
-                {
-                    SkinActionButton.iconImage = Background.FromTexture2D(
-                        lease.Value);
-                }
-            }
-            catch (Exception exception)
-            {
-                lease?.Dispose();
-                Debug.LogError(
-                    $"Could not load equipment price icon " +
-                    $"'{address}': {exception.Message}");
+                BuildAbilitySlots();
+                ShowSelectedAbility();
             }
         }
 
-        private bool IsCurrentRefresh(int refreshVersion)
+        private void OnSkinTabClicked(ClickEvent clickEvent)
         {
-            return _screenLoaded &&
-                   refreshVersion == _tabRefreshVersion;
+            SetActiveTab(HeroTab.Skins);
         }
 
-        private CancellationToken BeginAbilityIconLoading()
+        private void OnAbilityTabClicked(ClickEvent clickEvent)
         {
-            _abilityIconCancellation = new CancellationTokenSource();
-            return _abilityIconCancellation.Token;
+            SetActiveTab(HeroTab.Abilities);
         }
 
-        private void ReleaseAbilityIcons()
+        private void SetActiveTab(HeroTab tab)
         {
-            _abilityIconCancellation?.Cancel();
-            _abilityIconCancellation?.Dispose();
-            _abilityIconCancellation = null;
+            if (_activeTab == tab)
+            {
+                return;
+            }
 
-            foreach (AddressableLease<Sprite> lease in _abilityIconLeases)
+            _activeTab = tab;
+            ApplyActiveTab();
+        }
+
+        private void ApplyActiveTab()
+        {
+            bool showSkins = _activeTab == HeroTab.Skins;
+            SkinTabButton.EnableInClassList("hero-tab--active", showSkins);
+            AbilityTabButton.EnableInClassList(
+                "hero-tab--active",
+                !showSkins);
+            SkinsPage.style.display = showSkins
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+            AbilitiesPage.style.display = showSkins
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
+        }
+
+        private void OnViewportGeometryChanged(GeometryChangedEvent evt)
+        {
+            ApplyResponsiveLayout(evt.newRect.size);
+        }
+
+        private void ApplyResponsiveLayout(Vector2 viewportSize)
+        {
+            float width = Mathf.Max(1f, viewportSize.x);
+            float height = Mathf.Max(1f, viewportSize.y);
+            float scale = Mathf.Min(
+                width / DesignWidth,
+                height / DesignHeight);
+
+            ScaleFrame.style.width = DesignWidth * scale;
+            ScaleFrame.style.height = DesignHeight * scale;
+            Design.style.scale = new Scale(new Vector3(scale, scale, 1f));
+        }
+
+        private bool IsCurrentVisual(int visualVersion)
+        {
+            return _screenLoaded && visualVersion == _visualVersion;
+        }
+
+        private void ReleaseVisuals()
+        {
+            _visualCancellation?.Cancel();
+            _visualCancellation?.Dispose();
+            _visualCancellation = null;
+
+            foreach (AddressableLease<Sprite> lease in _abilityLeases)
             {
                 lease.Dispose();
             }
 
-            _abilityIconLeases.Clear();
+            _abilityLeases.Clear();
             _abilityIcons.Clear();
-        }
-
-        private void ReleasePriceIcon()
-        {
+            _abilityPreviews.Clear();
             _priceIconLease?.Dispose();
             _priceIconLease = null;
-            if (SkinActionButton != null)
-            {
-                SkinActionButton.iconImage = null;
-            }
+            _priceIcon = null;
         }
 
         private static int GetFirstUnlockedAbilityId()
         {
             return SuperAttackService.Items.FirstOrDefault(
                 ability => SuperAttackService.IsUnlocked(ability.Id))?.Id ?? 0;
-        }
-
-        private void OnHomeClicked(ClickEvent clickEvent)
-        {
-            UIManager.OnScreenShow(ScreenEnum.HomeScreen);
-        }
-
-        private void OnSettingsClicked(ClickEvent clickEvent)
-        {
-            SettingsScreenController.OpenFrom(ScreenEnum.CharacterScreen);
         }
 
         private static string Localize(string key)

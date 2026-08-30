@@ -3,6 +3,7 @@ using Assets.Scripts.System;
 using GameManagement;
 using NUnit.Framework;
 using UnityEngine;
+using Vues.GameCore;
 using Vues.GameCore.Quests;
 
 namespace Assets.Tests.EditMode
@@ -10,18 +11,28 @@ namespace Assets.Tests.EditMode
     public sealed class PlayerDataValidatorTests
     {
         private HierarchicalLevelCatalog _previousCatalog;
+        private List<Skin> _previousSkins;
 
         [SetUp]
         public void SetUp()
         {
             _previousCatalog = LevelCatalogService.Catalog;
             LevelCatalogService.Reset();
+
+            _previousSkins = new List<Skin>(SkinManager.AvailableSkins);
+            SkinManager.AvailableSkins.Clear();
+            foreach (int skinId in new[] { 0, 4, 5, 6 })
+            {
+                SkinManager.AvailableSkins.Add(new Skin { Id = skinId });
+            }
         }
 
         [TearDown]
         public void TearDown()
         {
             LevelCatalogService.Configure(_previousCatalog);
+            SkinManager.AvailableSkins.Clear();
+            SkinManager.AvailableSkins.AddRange(_previousSkins);
         }
 
         [Test]
@@ -79,6 +90,57 @@ namespace Assets.Tests.EditMode
 
             Assert.AreEqual(PlayerDataValidationStatus.Rejected, result.Status);
             Assert.AreEqual("negative_resource_balance", result.Reason);
+        }
+
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        public void RepairSafe_RetiredSkins_RemovesThemAndResetsAppliedSkin(
+            int appliedRetiredSkinId)
+        {
+            var data = CreateValidData();
+            data.DevelopmentProgressVersion = 1;
+            data.PlayerLevel = 10;
+            data.DevelopmentPoints = 3;
+            data.PurchasedSkinIds = new List<int> { 0, 1, 2, 3 };
+            data.UnlockedSkinIds = new List<int> { 0, 1, 2, 3 };
+            data.AppliedSkinId = appliedRetiredSkinId;
+
+            var initialResult = PlayerDataValidator.Validate(data);
+            Assert.AreEqual(
+                PlayerDataValidationStatus.Repairable,
+                initialResult.Status);
+
+            PlayerDataValidator.RepairSafe(data, initialResult);
+
+            CollectionAssert.AreEqual(new[] { 0 }, data.PurchasedSkinIds);
+            CollectionAssert.AreEqual(new[] { 0 }, data.UnlockedSkinIds);
+            Assert.AreEqual(0, data.AppliedSkinId);
+            Assert.AreEqual(3, data.DevelopmentPoints);
+            Assert.AreEqual(
+                CharacterDevelopmentService.CurrentProgressVersion,
+                data.DevelopmentProgressVersion);
+            Assert.AreEqual(
+                PlayerDataValidationStatus.Valid,
+                PlayerDataValidator.Validate(data).Status);
+
+            string jsonAfterRepair = data.ToJson();
+            PlayerDataValidator.RepairSafe(
+                data,
+                PlayerDataValidator.Validate(data));
+            Assert.AreEqual(jsonAfterRepair, data.ToJson());
+        }
+
+        [Test]
+        public void Validate_UnknownNonRetiredSkin_IsRejected()
+        {
+            var data = CreateValidData();
+            data.PurchasedSkinIds.Add(999);
+
+            var result = PlayerDataValidator.Validate(data);
+
+            Assert.AreEqual(PlayerDataValidationStatus.Rejected, result.Status);
+            Assert.AreEqual("unknown_purchased_skin", result.Reason);
         }
 
         [Test]

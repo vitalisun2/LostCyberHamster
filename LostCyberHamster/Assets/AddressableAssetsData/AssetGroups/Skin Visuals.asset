@@ -15,6 +15,16 @@ MonoBehaviour:
   m_GroupName: Skin Visuals
   m_GUID: 5f508a0ef88855c49b604f6820efb103
   m_SerializeEntries:
+  - m_GUID: 0fe8ee10139dfd540aa5013abe0f56d2
+    m_Address: skin-visual/skateboard/summer
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 30f7d1fad733b0040888a9172d2c171b
+    m_Address: skin-visual/summer
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 547a2074922ceec4990442c212cf7119
     m_Address: skin-visual/skateboard/quantum-scout
     m_ReadOnly: 0
@@ -30,8 +40,28 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9f67768739a16194e80b77d28a741e9c
+    m_Address: skin-visual/skateboard/forest
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a28896cbb1279b74a8f6bbe436c51cb7
     m_Address: skin-visual/default
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a5fe6a53fa34fec4191d10aa5de57e16
+    m_Address: skin-visual/skateboard/cowboy
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ac0bc8be8ce86ec439a0286e21089f4e
+    m_Address: skin-visual/forest
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c416fd867f9215546bf84e62b889ad76
+    m_Address: skin-visual/cowboy
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

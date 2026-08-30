@@ -29,6 +29,11 @@ namespace Vues.GameCore
         public string IconAddress;
 
         /// <summary>
+        /// Адрес крупного preview для экрана экипировки.
+        /// </summary>
+        public string EquipmentPreviewAddress;
+
+        /// <summary>
         /// Адрес prefab эффекта для суперудара с отдельным visual effect.
         /// </summary>
         public string UltaPrefab;

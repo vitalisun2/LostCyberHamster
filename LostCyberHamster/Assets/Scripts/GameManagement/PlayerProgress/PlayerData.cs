@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GameManagement.Progress;
 using UnityEngine;
+using Vues.GameCore;
 using Vues.GameCore.Quests;
 
 namespace GameManagement
@@ -14,7 +15,8 @@ namespace GameManagement
         public int Crystals;
         public int ExperiencePoints;
         public int PlayerLevel = 1;
-        public int DevelopmentProgressVersion = 1;
+        public int DevelopmentProgressVersion =
+            CharacterDevelopmentService.CurrentProgressVersion;
         public int DevelopmentPoints;
         public List<int> UnlockedSkinIds = new() { 0 };
         public List<int> UnlockedSuperAttackIds = new();
