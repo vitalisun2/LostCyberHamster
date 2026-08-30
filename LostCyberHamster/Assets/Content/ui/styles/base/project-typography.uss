@@ -14,3 +14,10 @@
     -unity-font-style: bold;
     -unity-text-outline-width: 0;
 }
+
+#character-development-screen .development-xp-value,
+#character-development-screen .development-info-text {
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: rgba(0, 0, 0, 0);
+}

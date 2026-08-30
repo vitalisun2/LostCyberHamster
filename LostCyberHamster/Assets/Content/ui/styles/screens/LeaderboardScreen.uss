@@ -171,8 +171,7 @@
     font-size: 24px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    -unity-text-outline-width: 2px;
-    -unity-text-outline-color: rgb(0, 0, 0);
+    -unity-text-outline-width: 0;
     white-space: nowrap;
 }
 
@@ -238,8 +237,8 @@
 .leaderboard-table__header .leaderboard-runtime-text {
     color: rgb(255, 255, 255);
     font-size: 25px;
-    -unity-text-outline-width: 2px;
-    -unity-text-outline-color: rgb(0, 0, 0);
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
 }
 
 .leaderboard-table__rank {

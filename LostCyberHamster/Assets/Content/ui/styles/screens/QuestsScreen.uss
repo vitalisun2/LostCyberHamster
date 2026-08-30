@@ -192,7 +192,7 @@
     -unity-background-scale-mode: stretch-to-fill;
 }
 
-.quest-item__progress {
+.quest-item .lcs-text.quest-item__progress {
     position: absolute;
     left: 0;
     top: 0;
@@ -202,6 +202,8 @@
     font-size: 22px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: rgba(0, 0, 0, 0);
 }
 
 .quest-item__spacer {
@@ -219,7 +221,7 @@
     margin-bottom: 6px;
 }
 
-.quest-item__reward-button {
+.quest-item .lcs_btn.quest-item__reward-button {
     position: absolute;
     left: 0;
     top: 0;
@@ -242,6 +244,8 @@
     white-space: nowrap;
     -unity-font-style: bold;
     -unity-text-align: middle-left;
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: rgba(0, 0, 0, 0);
 }
 
 .quest-item__reward-button:hover,
@@ -263,13 +267,15 @@
     justify-content: flex-end;
 }
 
-.quest-item__reward-amount {
+.quest-item .quest-item__reward-amount {
     margin-right: 4px;
     color: rgb(250, 250, 242);
     font-size: 20px;
     white-space: nowrap;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: rgba(0, 0, 0, 0);
 }
 
 .quest-item__reward-image {
