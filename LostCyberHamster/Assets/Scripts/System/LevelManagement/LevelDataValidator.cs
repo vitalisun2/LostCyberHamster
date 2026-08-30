@@ -127,7 +127,7 @@ public static class LevelDataValidator
         if (sprite == null)
         {
             HelpMethods.LogAndStopGame(
-                $"[BaseStorageUI] Не удалось загрузить Sprite '{spriteName}'. Возможные причины:\n" +
+                $"[LevelDataValidator] Не удалось загрузить Sprite '{spriteName}'. Возможные причины:\n" +
                 $"1) Текстура была перезаписана или изменена вне Unity, и Import Settings теперь не совпадают:\n" +
                 $"   - Возможные симптомы:\n" +
                 $"     • Размер текстуры не соответствует Sprite Rect (\"... is outside the bounds...\").\n" +
