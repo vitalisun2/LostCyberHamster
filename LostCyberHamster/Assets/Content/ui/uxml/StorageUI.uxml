@@ -1,8 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
-    <ui:VisualElement class="storage-container" style="flex-grow: 0;">
-        <ui:VisualElement name="storage__image" class="storage-image" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/shared/sprites/Coin.png?fileID=-3338749442709606003&amp;guid=4811c37297afc4040b2bed170c20de62&amp;type=3#Coin_0&quot;); justify-content: center; align-self: center; margin-left: 10px;" />
-        <ui:Label text="99999" name="storage__label" class="storage-label" style="-unity-text-align: middle-left;" />
-        <ui:Button name="storage__btn-add" class="storage-button" style="position: absolute; right: 10px; top: -16px; background-image: url(&quot;project://database/Assets/Content/ui/textures/ui_atlas.psd?fileID=6447242934809051898&amp;guid=29047d9fdf8ef4acdbb6f67516476d96&amp;type=3#plus_icon&quot;); -unity-background-scale-mode: stretch-to-fill;" />
-    </ui:VisualElement>
-</ui:UXML>

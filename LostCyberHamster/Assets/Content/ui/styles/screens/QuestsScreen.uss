@@ -1,159 +1,417 @@
+.quests-screen {
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.quests-content {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    min-height: 0;
+    align-items: center;
+}
+
+.quests-title {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 369px;
+    height: 101px;
+    margin-top: 10px;
+    background-image: url("/Assets/Content/ui/sprites/quests/title_quests.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.quests-tabs {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 662px;
+    height: 111px;
+    margin-top: 32px;
+    background-image: url("/Assets/Content/ui/sprites/quests/quests_tabs_daily_active.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.quests-tabs--story {
+    background-image: url("/Assets/Content/ui/sprites/quests/quests_tabs_story_active.png");
+}
+
+.quests-tab-hitbox {
+    position: absolute;
+    top: 15px;
+    width: 300px;
+    height: 86px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-radius: 24px;
+    background-color: rgba(0, 0, 0, 0);
+    color: rgba(0, 0, 0, 0);
+}
+
+.quests-tab-hitbox--daily {
+    left: 13px;
+}
+
+.quests-tab-hitbox--story {
+    right: 18px;
+}
+
+.quests-tab-hitbox:hover,
+.quests-tab-hitbox:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.quests-tab-hitbox:active {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
 .quests-page {
     flex-grow: 1;
     flex-shrink: 1;
     min-width: 0;
     min-height: 0;
     width: 100%;
-    padding-top: 8px;
-    padding-right: 24px;
-    padding-bottom: 8px;
-    padding-left: 24px;
+    padding-right: 22px;
+    padding-bottom: 12px;
+    padding-left: 22px;
     flex-direction: row;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .quests-container {
-    flex-grow: 1;
+    flex-grow: 0;
     flex-shrink: 1;
     min-width: 0;
     min-height: 0;
-    width: 1280px;
-    max-width: 1280px;
-    height: 100%;
+    width: 1032px;
+    max-width: 76%;
+    height: 410px;
     flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 .quest-card {
     flex-grow: 0;
     flex-shrink: 1;
     min-width: 0;
-    min-height: 0;
-    width: 380px;
-    height: 100%;
-    max-height: 540px;
+    width: 328px;
+    max-width: 32%;
+    height: 410px;
+    margin-right: 8px;
+    margin-left: 8px;
 }
 
-.quest-reward--disabled {
-    opacity: 0.45;
-}
-
-.quests-tabs {
-    flex-grow: 0;
-    flex-shrink: 0;
-    height: 88px;
-    margin-top: 16px;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-}
-
-.quests-tab {
-    width: 340px;
-    height: 88px;
-    margin-top: 0;
-    margin-right: 12px;
-    margin-bottom: 0;
-    margin-left: 12px;
-    padding-right: 20px;
-    padding-left: 20px;
-    border-width: 0;
-    border-radius: var(--ui-radius-secondary);
-    background-color: var(--ui-tab-inactive);
-    color: var(--ui-quest-control-text);
-    -unity-font-style: bold;
-    -unity-text-outline-width: 0;
-    font-size: 32px;
-    white-space: normal;
-}
-
-.quests-tab,
-.quests-tab:hover,
-.quests-tab:focus,
-.quests-tab:active {
-    color: var(--ui-quest-control-text);
-    -unity-text-outline-width: 0;
-}
-
-.quests-tab:hover,
-.quests-tab:focus {
-    background-color: var(--ui-tab-inactive-hover);
-}
-
-.quests-tab:active {
-    background-color: var(--ui-content-card-accent);
-}
-
-.quests-tab--active {
-    background-color: var(--ui-tab-active);
-}
-
-.quests-tab--active:hover,
-.quests-tab--active:focus {
-    background-color: var(--ui-tab-active-hover);
-}
-
-.quests-tab--active:active {
-    background-color: var(--ui-surface-active);
+.quests-container--story .quest-card {
+    max-width: 328px;
+    margin-right: 32px;
+    margin-left: 32px;
 }
 
 .quest-item {
-    background-color: var(--ui-quest-card-surface);
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
 }
 
 .quest-item__frame {
-    background-color: var(--ui-quest-card-surface);
-    border-color: var(--ui-border);
+    width: 100%;
+    height: 100%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-items: center;
+    padding-top: 20px;
+    padding-right: 26px;
+    padding-bottom: 24px;
+    padding-left: 26px;
+    background-image: url("/Assets/Content/ui/sprites/quests/quest_card_frame.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 42;
+    -unity-slice-right: 42;
+    -unity-slice-top: 42;
+    -unity-slice-bottom: 42;
 }
 
-.quest-item__image-circle {
-    background-color: var(--ui-quest-image-daily);
+.quest-item__image {
+    width: 120px;
+    height: 126px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
-.quest-item__title,
-.quest-item__claimed-text {
-    color: var(--ui-quest-title);
+.quest-icon--daily {
+    background-image: url("/Assets/Content/ui/sprites/quests/quest_icon_daily.png");
+}
+
+.quest-icon--story {
+    background-image: url("/Assets/Content/ui/sprites/quests/quest_icon_story.png");
+}
+
+.quest-item__title {
+    width: 100%;
+    height: 82px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-top: 4px;
+    color: rgb(42, 29, 15);
+    font-size: 24px;
+    white-space: normal;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
     -unity-text-outline-width: 0;
+}
+
+.quest-item__progress-track {
+    width: 251px;
+    max-width: 100%;
+    height: 35px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    overflow: hidden;
+    background-image: url("/Assets/Content/ui/sprites/quests/quest_progress_track.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 18;
+    -unity-slice-right: 18;
+    -unity-slice-top: 10;
+    -unity-slice-bottom: 10;
+}
+
+.quest-item__progress-fill {
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    height: 23px;
+    width: 0;
+    background-image: url("/Assets/Content/ui/sprites/shared/progress_fill_blue.png");
+    -unity-background-scale-mode: stretch-to-fill;
 }
 
 .quest-item__progress {
-    color: var(--ui-quest-progress);
-    -unity-text-outline-width: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    color: rgb(248, 248, 244);
+    font-size: 22px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.quest-item__spacer {
+    flex-grow: 1;
+    min-height: 8px;
+}
+
+.quest-item__reward-action,
+.quest-item__reward-claimed {
+    width: 250px;
+    max-width: 100%;
+    height: 61px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-bottom: 6px;
 }
 
 .quest-item__reward-button {
-    background-color: var(--ui-quest-daily);
-    border-color: var(--ui-quest-card-control-border);
-    color: var(--ui-quest-control-text);
-    -unity-text-outline-width: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding-left: 18px;
+    padding-right: 110px;
+    border-width: 0;
+    border-radius: 17px;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/quests/quest_reward_button.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 18;
+    -unity-slice-right: 18;
+    -unity-slice-top: 18;
+    -unity-slice-bottom: 18;
+    color: rgb(250, 250, 242);
+    font-size: 20px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+}
+
+.quest-item__reward-button:hover,
+.quest-item__reward-button:focus {
+    opacity: 0.92;
+}
+
+.quest-item__reward-button:active {
+    opacity: 0.82;
+}
+
+.quest-item__reward-value {
+    position: absolute;
+    right: 14px;
+    top: 0;
+    height: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 .quest-item__reward-amount {
-    color: var(--ui-quest-control-text);
-    -unity-text-outline-width: 0;
+    margin-right: 4px;
+    color: rgb(250, 250, 242);
+    font-size: 20px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.quest-item__reward-image {
+    width: 38px;
+    height: 38px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.quest-reward-icon--coins {
+    background-image: url("/Assets/Content/ui/sprites/quests/quest_reward_coin.png");
+}
+
+.quest-reward--disabled {
+    opacity: 0.72;
+}
+
+.quest-reward--disabled .quest-item__reward-button {
+    background-color: rgb(112, 116, 118);
+    background-image: none;
+}
+
+.quest-item__reward-claimed {
+    display: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
 }
 
 .quest-item__claimed-check {
-    color: var(--ui-quest-claimed-check);
+    margin-right: 8px;
+    color: rgb(67, 173, 91);
+    font-size: 34px;
+    -unity-font-style: bold;
+}
+
+.quest-item__claimed-text {
+    color: rgb(42, 29, 15);
+    font-size: 18px;
+    white-space: normal;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
     -unity-text-outline-width: 0;
 }
 
-.quest-item__reward-button.quest-action--daily:hover,
-.quest-item__reward-button.quest-action--daily:focus {
-    background-color: var(--ui-quest-daily-hover);
+.quests-screen--compact .quests-title {
+    width: 295px;
+    height: 81px;
+    margin-top: 4px;
 }
 
-.quest-item__reward-button.quest-action--daily:active {
-    background-color: var(--ui-quest-daily-active);
+.quests-screen--compact .quests-tabs {
+    width: 530px;
+    height: 89px;
+    margin-top: 10px;
 }
 
-.quest-item__reward-button.quest-action--story:hover,
-.quest-item__reward-button.quest-action--story:focus {
-    background-color: var(--ui-quest-story-hover);
+.quests-screen--compact .quests-tab-hitbox {
+    top: 12px;
+    width: 240px;
+    height: 69px;
 }
 
-.quest-item__reward-button.quest-action--story:active {
-    background-color: var(--ui-quest-story-active);
+.quests-screen--compact .quests-tab-hitbox--daily {
+    left: 10px;
+}
+
+.quests-screen--compact .quests-tab-hitbox--story {
+    right: 14px;
+}
+
+.quests-screen--compact .quests-container {
+    height: 328px;
+}
+
+.quests-screen--compact .quest-card {
+    width: 262px;
+    height: 328px;
+}
+
+.quests-screen--compact .quests-container--story .quest-card {
+    max-width: 262px;
+    margin-right: 26px;
+    margin-left: 26px;
+}
+
+.quests-screen--compact .quest-item__frame {
+    padding-top: 14px;
+    padding-right: 20px;
+    padding-bottom: 17px;
+    padding-left: 20px;
+}
+
+.quests-screen--compact .quest-item__image {
+    width: 94px;
+    height: 99px;
+}
+
+.quests-screen--compact .quest-item__title {
+    height: 64px;
+    margin-top: 2px;
+    font-size: 19px;
+}
+
+.quests-screen--compact .quest-item__progress-track {
+    width: 201px;
+    height: 28px;
+}
+
+.quests-screen--compact .quest-item__progress-fill {
+    left: 5px;
+    top: 5px;
+    height: 18px;
+}
+
+.quests-screen--compact .quest-item__progress {
+    font-size: 18px;
+}
+
+.quests-screen--compact .quest-item__reward-action,
+.quests-screen--compact .quest-item__reward-claimed {
+    width: 200px;
+    height: 49px;
+    margin-bottom: 4px;
+}
+
+.quests-screen--compact .quest-item__reward-button {
+    padding-left: 14px;
+    padding-right: 86px;
+    font-size: 16px;
+}
+
+.quests-screen--compact .quest-item__reward-value {
+    right: 11px;
+}
+
+.quests-screen--compact .quest-item__reward-amount {
+    font-size: 16px;
+}
+
+.quests-screen--compact .quest-item__reward-image {
+    width: 30px;
+    height: 30px;
 }

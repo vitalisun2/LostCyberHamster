@@ -71,7 +71,6 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOn\JumpOnExecutor.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitRoadLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Account\AccountService.cs" />
-    <Compile Include="Assets\Scripts\UI\Components\CrystalStorageUI.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Catalog\SuperAttackData.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvanceStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectPlanner.cs" />
@@ -481,7 +480,6 @@
     <Compile Include="Assets\Scripts\Gameplay\CollectCoinsOrBonusAction.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Gateway\UnityCloudSaveGateway.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Skins\SkinActionContext.cs" />
-    <Compile Include="Assets\Scripts\UI\Components\BaseStorageUI.cs" />
     <Compile Include="Assets\Scripts\Account\UnityPlayerAccountGateway.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelInfo.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitIntroAssetsLoadingTask.cs" />
@@ -513,7 +511,6 @@
     <Compile Include="Assets\Scripts\Account\UnityAccountAuthenticationGateway.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\HierarchicalLevelCatalog.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneStrategy.cs" />
-    <Compile Include="Assets\Scripts\UI\Components\MoneyStorageUI.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectStrategy.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelInfoRef.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Configuration\Config.cs" />
@@ -691,7 +688,6 @@
     <None Include="Assets\Content\ui\styles\components\runtime-states.uss" />
     <None Include="Assets\Content\ui\styles\screens\Bootstrap.uss" />
     <None Include="Assets\Content\ui\uxml\RepeatButton.uxml" />
-    <None Include="Assets\Content\ui\uxml\StorageUI.uxml" />
     <None Include="Assets\Content\ui\uxml\ShopItem.uxml" />
     <None Include="Assets\Content\ui\uxml\DailyQuestRewardModal.uxml" />
     <None Include="Assets\Content\ui\uxml\LevelItem.uxml" />
@@ -726,7 +722,6 @@
     <None Include="Assets\Content\ui\styles\screens\CharacterDevelopmentScreen.uss" />
     <None Include="Assets\Content\ui\uxml\SettingsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\EnergyBar.uxml" />
-    <None Include="Assets\Content\ui\styles\components\storage.uss" />
     <None Include="Assets\Content\ui\styles\utilities\sizing.uss" />
     <None Include="Assets\Content\ui\uxml\HealthItem.uxml" />
     <None Include="Assets\Content\ui\styles\global.uss" />

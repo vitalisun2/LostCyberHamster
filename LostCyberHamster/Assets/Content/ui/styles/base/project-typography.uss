@@ -5,6 +5,12 @@
 :root .unity-text-element {
     -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf");
     color: rgb(255, 255, 255);
-    -unity-text-outline-width: 1px;
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
     -unity-text-outline-color: rgb(0, 0, 0);
+}
+
+#energybar > .energy-bar__value {
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
 }

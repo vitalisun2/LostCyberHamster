@@ -22,8 +22,6 @@ namespace LostCyberHamster.UI
 
         private const int _levelsPerPage = 4;
 
-        private Button _buttonSettings => _contentRoot.Q<Button>("btn_settings");
-        private Button _buttonHome => _contentRoot.Q<Button>("btn_home");
         private Button _buttonBack => _contentRoot.Q<Button>("btn_back");
 
         private VisualElement _levelsContainer => _contentRoot.Q<VisualElement>("levels_container");
@@ -38,9 +36,6 @@ namespace LostCyberHamster.UI
 
         private bool _isNotOpenedLocationShown;
         private int _currentLocationIndex = LevelManager.GetLocationIndex();
-
-        private Button _buttonAddMoney => _contentRoot.Q<MoneyStorageUI>()?.ButtonAdd;
-        private Button _buttonAddCrystals => _contentRoot.Q<CrystalStorageUI>()?.ButtonAdd;
 
         private LevelSelectionModel _selectionModel;
         private LocationView _selectedLocationView;
@@ -328,11 +323,6 @@ namespace LostCyberHamster.UI
             SceneManager.LoadScene("Game");
         }
 
-        private void OnClickBtnAddMoney(ClickEvent evt)
-        {
-            UIManager.OnModalShow(ScreenEnum.ShopModal);
-        }
-
         private async void OnClickPrevLocation(ClickEvent evt)
         {
             if (_state == SelectionState.Levels && TryChangeLevelPage(-1))
@@ -439,11 +429,6 @@ namespace LostCyberHamster.UI
             }
         }
 
-        private void OnClickBtnHome(ClickEvent evt)
-        {
-            UIManager.OnScreenShow(ScreenEnum.HomeScreen);
-        }
-
         private void OnClickBtnBack(ClickEvent evt)
         {
             _state = SelectionState.DayPart;
@@ -452,20 +437,11 @@ namespace LostCyberHamster.UI
             _ = Init();
         }
 
-        private void OnClickBtnSettings(ClickEvent evt)
-        {
-            SettingsScreenController.OpenFrom(ScreenEnum.SelectLevelScreen);
-        }
-
         protected override void OnSubscribeToEvents()
         {
-            _buttonSettings?.RegisterCallback<ClickEvent>(OnClickBtnSettings);
-            _buttonHome?.RegisterCallback<ClickEvent>(OnClickBtnHome);
             _buttonBack?.RegisterCallback<ClickEvent>(OnClickBtnBack);
             _buttonNextLocation?.RegisterCallback<ClickEvent>(OnClickNextLocation);
             _buttonPrevLocation?.RegisterCallback<ClickEvent>(OnClickPrevLocation);
-            _buttonAddMoney?.RegisterCallback<ClickEvent>(OnClickBtnAddMoney);
-            _buttonAddCrystals?.RegisterCallback<ClickEvent>(OnClickBtnAddMoney);
 
             foreach (var subscribeAction in _onClickedLevelSubscribe)
             {
@@ -475,13 +451,9 @@ namespace LostCyberHamster.UI
 
         protected override void OnUnsubscribeFromEvents()
         {
-            _buttonSettings?.UnregisterCallback<ClickEvent>(OnClickBtnSettings);
-            _buttonHome?.UnregisterCallback<ClickEvent>(OnClickBtnHome);
             _buttonBack?.UnregisterCallback<ClickEvent>(OnClickBtnBack);
             _buttonNextLocation?.UnregisterCallback<ClickEvent>(OnClickNextLocation);
             _buttonPrevLocation?.UnregisterCallback<ClickEvent>(OnClickPrevLocation);
-            _buttonAddMoney?.UnregisterCallback<ClickEvent>(OnClickBtnAddMoney);
-            _buttonAddCrystals?.UnregisterCallback<ClickEvent>(OnClickBtnAddMoney);
 
             foreach (var unsubscribeAction in _onClickedLevelUnsubscribe)
             {

@@ -71,6 +71,8 @@ namespace LostCyberHamster.UI
                 throw;
             }
 
+            _contentRoot.Query<SharedSettingsButton>().ForEach(
+                button => button.SetOriginScreen(_screenAssetName));
             await OnLoadAsync();
             SubscribeToEvents();
         }

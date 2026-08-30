@@ -9,16 +9,12 @@ namespace LostCyberHamster.UI
 {
     public class QuestsScreenController : ScreenController
     {
-        private Button _buttonSettings =>
-            _contentRoot.Q<Button>("btn_settings");
-        private Button _buttonHome =>
-            _contentRoot.Q<Button>("btn_home");
         private VisualElement _questsContainer =>
             _contentRoot.Q<VisualElement>("quests_container");
-        private Button _buttonAddMoney =>
-            _contentRoot.Q<MoneyStorageUI>()?.ButtonAdd;
-        private Button _buttonAddCrystals =>
-            _contentRoot.Q<CrystalStorageUI>()?.ButtonAdd;
+        private VisualElement _questsScreen =>
+            _contentRoot.Q<VisualElement>("questsscreen");
+        private VisualElement _questsTabs =>
+            _contentRoot.Q<VisualElement>("quests-tabs");
         private Button _buttonQuestsPrev =>
             _contentRoot.Q<Button>("btn__quests-prev");
         private Button _buttonQuestsNext =>
@@ -46,7 +42,9 @@ namespace LostCyberHamster.UI
 
         protected override async Task OnLoadAsync()
         {
-            await ChangeBackgroundAsync("BackgroundScreenSprite");
+            await ChangeBackgroundAsync(
+                "QuestsBackgroundSprite",
+                UnityEngine.ScaleMode.ScaleAndCrop);
             _showDailyTasks = true;
             _currentQuestIndex = 0;
             RenderActivePage();
@@ -81,12 +79,15 @@ namespace LostCyberHamster.UI
             _buttonQuestsNext.style.display = navigationDisplay;
             _buttonQuestsPrev.style.display = navigationDisplay;
 
-            // Обновляем активную вкладку.
-            _buttonDailyTab.EnableInClassList(
-                "quests-tab--active",
+            // Переключаем цельный арт вкладок и раскладку набора.
+            _questsTabs.EnableInClassList(
+                "quests-tabs--daily",
                 _showDailyTasks);
-            _buttonStoryTab.EnableInClassList(
-                "quests-tab--active",
+            _questsTabs.EnableInClassList(
+                "quests-tabs--story",
+                !_showDailyTasks);
+            _questsContainer.EnableInClassList(
+                "quests-container--story",
                 !_showDailyTasks);
         }
 
@@ -100,34 +101,17 @@ namespace LostCyberHamster.UI
                 HandleDailyQuestSetChanged;
             GameEventsManager.OnStoryQuestSetChanged +=
                 HandleStoryQuestSetChanged;
-            _buttonSettings?.RegisterCallback<ClickEvent>(
-                OnClickBtnSettings);
-            _buttonHome?.RegisterCallback<ClickEvent>(OnClickBtnHome);
-            _buttonAddMoney?.RegisterCallback<ClickEvent>(
-                OnClickBtnAddMoney);
-            _buttonAddCrystals?.RegisterCallback<ClickEvent>(
-                OnClickBtnAddMoney);
             _buttonQuestsNext?.RegisterCallback<ClickEvent>(
                 OnClickNextQuestPage);
             _buttonQuestsPrev?.RegisterCallback<ClickEvent>(
                 OnClickPreviousQuestPage);
             _buttonDailyTab?.RegisterCallback<ClickEvent>(OnClickDailyTab);
             _buttonStoryTab?.RegisterCallback<ClickEvent>(OnClickStoryTab);
-        }
-
-        private void OnClickBtnHome(ClickEvent evt)
-        {
-            UIManager.OnScreenShow(ScreenEnum.HomeScreen);
-        }
-
-        private void OnClickBtnSettings(ClickEvent evt)
-        {
-            SettingsScreenController.OpenFrom(ScreenEnum.QuestsScreen);
-        }
-
-        private void OnClickBtnAddMoney(ClickEvent evt)
-        {
-            UIManager.OnModalShow(ScreenEnum.ShopModal);
+            VisualElement questsScreen = _questsScreen;
+            questsScreen?.RegisterCallback<GeometryChangedEvent>(
+                OnQuestsGeometryChanged);
+            questsScreen?.schedule.Execute(() =>
+                ApplyResponsiveLayout(questsScreen.resolvedStyle.height));
         }
 
         private void OnClickDailyTab(ClickEvent evt)
@@ -138,6 +122,27 @@ namespace LostCyberHamster.UI
         private void OnClickStoryTab(ClickEvent evt)
         {
             ShowTab(showDailyTasks: false);
+        }
+
+        private void OnQuestsGeometryChanged(GeometryChangedEvent evt)
+        {
+            ApplyResponsiveLayout(evt.newRect.height);
+        }
+
+        private void ApplyResponsiveLayout(float height)
+        {
+            // Пропускаем layout до первой валидной геометрии panel.
+            if (_questsScreen == null ||
+                float.IsNaN(height) ||
+                height <= 0f)
+            {
+                return;
+            }
+
+            // Для низкого landscape panel включаем компактные размеры.
+            _questsScreen.EnableInClassList(
+                "quests-screen--compact",
+                height < 760f);
         }
 
         private void ShowTab(bool showDailyTasks)
@@ -268,13 +273,6 @@ namespace LostCyberHamster.UI
                 HandleDailyQuestSetChanged;
             GameEventsManager.OnStoryQuestSetChanged -=
                 HandleStoryQuestSetChanged;
-            _buttonSettings?.UnregisterCallback<ClickEvent>(
-                OnClickBtnSettings);
-            _buttonHome?.UnregisterCallback<ClickEvent>(OnClickBtnHome);
-            _buttonAddMoney?.UnregisterCallback<ClickEvent>(
-                OnClickBtnAddMoney);
-            _buttonAddCrystals?.UnregisterCallback<ClickEvent>(
-                OnClickBtnAddMoney);
             _buttonQuestsNext?.UnregisterCallback<ClickEvent>(
                 OnClickNextQuestPage);
             _buttonQuestsPrev?.UnregisterCallback<ClickEvent>(
@@ -283,6 +281,8 @@ namespace LostCyberHamster.UI
                 OnClickDailyTab);
             _buttonStoryTab?.UnregisterCallback<ClickEvent>(
                 OnClickStoryTab);
+            _questsScreen?.UnregisterCallback<GeometryChangedEvent>(
+                OnQuestsGeometryChanged);
         }
     }
 }

@@ -53,10 +53,6 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<VisualElement>("equipment-skins-page");
         private VisualElement AbilitiesPage =>
             _contentRoot.Q<VisualElement>("equipment-abilities-page");
-        private Button AddMoneyButton =>
-            _contentRoot.Q<MoneyStorageUI>()?.ButtonAdd;
-        private Button AddCrystalsButton =>
-            _contentRoot.Q<CrystalStorageUI>()?.ButtonAdd;
         private Label SkinPreviewName =>
             _contentRoot.Q<Label>("equipment-skin-name");
         private Label SkinPreviewStatus =>
@@ -106,9 +102,6 @@ namespace LostCyberHamster.UI
             AbilityTabButton?.RegisterCallback<ClickEvent>(
                 OnAbilityTabClicked);
             SkinActionButton?.RegisterCallback<ClickEvent>(OnActionClicked);
-            AddMoneyButton?.RegisterCallback<ClickEvent>(OnAddResourceClicked);
-            AddCrystalsButton?.RegisterCallback<ClickEvent>(
-                OnAddResourceClicked);
         }
 
         protected override void OnUnsubscribeFromEvents()
@@ -121,10 +114,6 @@ namespace LostCyberHamster.UI
             AbilityTabButton?.UnregisterCallback<ClickEvent>(
                 OnAbilityTabClicked);
             SkinActionButton?.UnregisterCallback<ClickEvent>(OnActionClicked);
-            AddMoneyButton?.UnregisterCallback<ClickEvent>(
-                OnAddResourceClicked);
-            AddCrystalsButton?.UnregisterCallback<ClickEvent>(
-                OnAddResourceClicked);
             ReleaseAbilityIcons();
             ReleasePriceIcon();
         }
@@ -661,11 +650,6 @@ namespace LostCyberHamster.UI
         private void OnSettingsClicked(ClickEvent clickEvent)
         {
             SettingsScreenController.OpenFrom(ScreenEnum.CharacterScreen);
-        }
-
-        private void OnAddResourceClicked(ClickEvent clickEvent)
-        {
-            UIManager.OnModalShow(ScreenEnum.ShopModal);
         }
 
         private static string Localize(string key)

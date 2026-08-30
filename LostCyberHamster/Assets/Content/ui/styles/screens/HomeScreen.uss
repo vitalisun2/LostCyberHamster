@@ -33,9 +33,7 @@
     flex-shrink: 1;
     width: 0;
     min-width: 0;
-    height: 76px;
     flex-direction: row;
-    align-items: center;
 }
 
 .home-hud__left {

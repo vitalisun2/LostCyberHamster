@@ -2,7 +2,7 @@
     <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
     <engine:VisualElement name="settingsscreen" style="flex-grow: 1; min-width: 0; min-height: 0;">
-        <engine:Instance template="Toolbar" name="toolbar" style="flex-grow: 0; flex-shrink: 0; height: 120px;" />
+        <engine:Instance template="Toolbar" name="toolbar" />
         <engine:VisualElement name="settings__body" style="flex-grow: 1; flex-shrink: 1; min-width: 0; min-height: 0; padding-top: 16px; padding-right: 32px; padding-bottom: 16px; padding-left: 32px;">
             <Vues.GameCore.LocalizedLabel key="settings_title" class="lcs-text" style="flex-grow: 0; flex-shrink: 0; width: 100%; height: 64px; margin-bottom: 8px; font-size: 52px; -unity-text-align: middle-center;" />
             <engine:ScrollView name="settings__scroll-view" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" style="flex-grow: 1; flex-shrink: 1; min-width: 0; min-height: 0; width: 100%;">

@@ -12,8 +12,6 @@ namespace LostCyberHamster.UI
     public partial class QuestItem : VisualElement
     {
         private VisualElement _image => this.Q<VisualElement>("quest-item__image");
-        private VisualElement _imageCircle =>
-            this.Q<VisualElement>("quest-item__image-circle");
 
         private Label _rewardAmount => this.Q<Label>("quest-item__reward-amount");
         private VisualElement _rewardTypeImage => this.Q<VisualElement>("quest-item__reward-image");
@@ -23,6 +21,8 @@ namespace LostCyberHamster.UI
         private Label _title => this.Q<Label>("quest-item__title");
 
         private Label _progressLabel => this.Q<Label>("quest-item__progress");
+        private VisualElement _progressFill =>
+            this.Q<VisualElement>("quest-item__progress-fill");
 
         private LocalizedButton _buttonGet => this.Q<LocalizedButton>("quest-item__reward-get");
         private VisualElement _rewardClaimed =>
@@ -38,28 +38,36 @@ namespace LostCyberHamster.UI
         /// </summary>
         public QuestItem(Quest quest) : this()
         {
-            // Загружаем шаблон и визуал выбранной категории.
+            // Загружаем шаблон и выбираем подготовленный визуал категории.
             AddressableExtentions
                 .LoadAssetSync<VisualTreeAsset>("QuestItem.uxml")
                 .CloneTree(this);
-            string imageAddress = quest.Category == QuestCategory.Daily
-                ? "daily-001"
-                : "story-001";
-            var image =
-                AddressableExtentions.LoadAssetSync<Sprite>(imageAddress);
-            _image.style.backgroundImage = new StyleBackground(image.texture);
             ApplyCategoryStyle(quest.Category);
 
             // Заполняем название, прогресс и награду квеста.
             _title.text = QuestTitleFormatter.Format(quest);
             _progressLabel.text =
-                $"{quest.CurrentProgress} / {quest.TargetAmount}";
+                $"{quest.CurrentProgress}/{quest.TargetAmount}";
+            float progress = quest.TargetAmount > 0
+                ? Mathf.Clamp01(
+                    (float)quest.CurrentProgress / quest.TargetAmount)
+                : 0f;
+            _progressFill.style.width =
+                Length.Percent(progress * 95f);
             _rewardAmount.text = quest.RewardAmount.ToString();
 
-            var rewardImage =
-                ResourceUIHelper.GetResourceImage(quest.RewardType);
-            _rewardTypeImage.style.backgroundImage =
-                new StyleBackground(rewardImage);
+            bool usesPreparedCoin =
+                quest.RewardType == ResourceType.Coins;
+            _rewardTypeImage.EnableInClassList(
+                "quest-reward-icon--coins",
+                usesPreparedCoin);
+            if (!usesPreparedCoin)
+            {
+                var rewardImage =
+                    ResourceUIHelper.GetResourceImage(quest.RewardType);
+                _rewardTypeImage.style.backgroundImage =
+                    new StyleBackground(rewardImage);
+            }
 
             // Настраиваем текущее состояние и получение награды.
             UpdateRewardState(quest);
@@ -93,10 +101,8 @@ namespace LostCyberHamster.UI
         private void ApplyCategoryStyle(QuestCategory category)
         {
             bool isDaily = category == QuestCategory.Daily;
-            _buttonGet.EnableInClassList("quest-action--daily", isDaily);
-            _buttonGet.EnableInClassList("quest-action--story", !isDaily);
-            _imageCircle.EnableInClassList("quest-image--daily", isDaily);
-            _imageCircle.EnableInClassList("quest-image--story", !isDaily);
+            _image.EnableInClassList("quest-icon--daily", isDaily);
+            _image.EnableInClassList("quest-icon--story", !isDaily);
         }
     }
 }

@@ -1,3 +1,35 @@
 #toolbar {
-    margin: 12px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+.shared-toolbar {
+    padding-right: 20px;
+    padding-left: 20px;
+}
+
+.shared-toolbar__left,
+.shared-toolbar__right {
+    height: 76px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.shared-toolbar__left {
+    gap: 12px;
+}
+
+.shared-toolbar__spacer {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.shared-toolbar__back {
+    display: none;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 200px;
+    height: 76px;
+    margin: 0;
 }

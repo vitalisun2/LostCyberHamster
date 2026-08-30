@@ -103,8 +103,8 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 91c360975cca4413f8cff6a25dfed940
-    m_Address: StorageUI
+  - m_GUID: 8de5c635ed308d0408df7c9940dfc14c
+    m_Address: QuestsBackgroundSprite
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
