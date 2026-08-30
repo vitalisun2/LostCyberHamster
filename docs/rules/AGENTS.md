@@ -23,6 +23,7 @@
 1. `docs/rules/code_conventions.md` — если надо уточнить разрешённую автоматизированную проверку, Unity/C# compile или формат проекта.
 2. `docs/rules/agent_tools.md` — если задача требует разрешённую project automation, логи, editor tools или подготовку пользовательского test-level сценария.
 3. `docs/rules/build_and_telegram_publishing.md` — если задача требует сборку игры или публикацию билда в Telegram.
+4. `docs/products/approaches/unity_ui_asset_integration.md` — перед подготовкой или Unity-интеграцией UI-ассетов.
 
 ## Обязательный стиль общения
 
