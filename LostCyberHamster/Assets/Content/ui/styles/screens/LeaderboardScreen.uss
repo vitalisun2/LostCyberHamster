@@ -1,39 +1,351 @@
-.leaderboard-card {
-    background-color: var(--ui-content-card-surface);
-    border-color: var(--ui-border);
+.leaderboard-screen {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
-.leaderboard-table__header {
-    background-color: var(--ui-content-card-header);
+.leaderboard-viewport {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    min-height: 0;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
 }
 
-.leaderboard-card__text,
-#leaderboard-screen .leaderboard-result-label {
-    color: var(--ui-content-card-text);
+.leaderboard-scale-frame {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 1672px;
+    height: 821px;
+}
+
+.leaderboard-design {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 821px;
+    transform-origin: 0 0;
+}
+
+.leaderboard-title {
+    position: absolute;
+    left: 647px;
+    top: 34px;
+    width: 378px;
+    height: 100px;
+    background-image: url("/Assets/Content/ui/sprites/league/title_league.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.leaderboard-center {
+    position: absolute;
+    left: 420px;
+    top: 140px;
+    width: 830px;
+    height: 610px;
+}
+
+.leaderboard-center__art {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 830px;
+    height: 610px;
+    background-image: url("/Assets/Content/ui/sprites/league/panel_league_center.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.leaderboard-image-button {
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    transition-property: scale, opacity;
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+}
+
+.leaderboard-image-button:hover,
+.leaderboard-image-button:focus {
+    opacity: 0.96;
+    scale: 1.02 1.02;
+}
+
+.leaderboard-image-button:active {
+    opacity: 0.9;
+    scale: 0.97 0.97;
+}
+
+.leaderboard-location-button:disabled,
+.leaderboard-location-button.leaderboard-location-arrow--disabled {
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.leaderboard-location-button {
+    position: absolute;
+    top: 34px;
+    width: 92px;
+    height: 90px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.leaderboard-location-button--previous {
+    left: 123px;
+    background-image: url("/Assets/Content/ui/sprites/league/button_city_previous.png");
+}
+
+.leaderboard-location-button--next {
+    left: 615px;
+    background-image: url("/Assets/Content/ui/sprites/league/button_city_next.png");
+}
+
+.leaderboard-runtime-text {
+    color: rgb(20, 18, 15);
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
     -unity-text-outline-width: 0;
 }
 
-#leaderboard-screen .leaderboard-part--selected {
-    background-color: var(--ui-status-selected);
+.leaderboard-location-title {
+    position: absolute;
+    left: 220px;
+    top: 40px;
+    width: 390px;
+    height: 76px;
+    padding-right: 20px;
+    padding-left: 20px;
+    background-color: rgb(248, 230, 193);
+    border-color: rgb(19, 19, 17);
+    border-top-width: 4px;
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    border-left-width: 4px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-bottom-left-radius: 20px;
+    font-size: 42px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -unity-text-align: middle-center;
 }
 
-#leaderboard-screen .leaderboard-part--available {
-    background-color: var(--ui-leaderboard-tab-available);
+.leaderboard-time-row {
+    position: absolute;
+    left: 45px;
+    top: 122px;
+    width: 740px;
+    height: 83px;
+    flex-direction: row;
 }
 
-#leaderboard-screen .leaderboard-part--disabled {
-    background-color: var(--ui-content-card-surface-solid);
+.leaderboard-time-slot {
+    position: relative;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 185px;
+    height: 83px;
+}
+
+.leaderboard-time-button {
+    width: 186px;
+    height: 83px;
+    padding-right: 8px;
+    padding-left: 57px;
+    background-image: url("/Assets/Content/ui/sprites/league/button_time_base_blue.png");
+    -unity-background-scale-mode: scale-to-fit;
+    color: rgb(255, 255, 255);
+    font-size: 24px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 2px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+    white-space: nowrap;
+}
+
+.leaderboard-time-button.leaderboard-part--selected {
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/league/button_time_base_green.png");
+}
+
+.leaderboard-time-button.leaderboard-part--available,
+.leaderboard-time-button.leaderboard-part--disabled {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.leaderboard-time-button.leaderboard-part--disabled {
+    opacity: 0.55;
+}
+
+.leaderboard-time-button__icon {
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    width: 52px;
+    height: 52px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.leaderboard-time-button__icon--morning {
+    background-image: url("/Assets/Content/ui/sprites/league/icon_time_morning_sun.png");
+}
+
+.leaderboard-time-button__icon--day {
+    background-image: url("/Assets/Content/ui/sprites/league/icon_time_day_sun.png");
+}
+
+.leaderboard-time-button__icon--evening {
+    background-image: url("/Assets/Content/ui/sprites/league/icon_time_evening_sun.png");
+}
+
+.leaderboard-time-button__icon--night {
+    background-image: url("/Assets/Content/ui/sprites/league/icon_time_night_moon.png");
+}
+
+.leaderboard-table {
+    position: absolute;
+    left: 30px;
+    top: 214px;
+    width: 766px;
+    height: 354px;
+}
+
+.leaderboard-table__header,
+.leaderboard-current-player {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 100%;
+    height: 56px;
+    padding-right: 20px;
+    padding-left: 20px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.leaderboard-table__header .leaderboard-runtime-text {
+    color: rgb(255, 255, 255);
+    font-size: 25px;
+    -unity-text-outline-width: 2px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
+
+.leaderboard-table__rank {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 120px;
+    font-size: 25px;
+    -unity-text-align: middle-center;
+}
+
+.leaderboard-table__player {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    padding-left: 18px;
+    font-size: 25px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.leaderboard-table__score {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 140px;
+    font-size: 25px;
+    -unity-text-align: middle-right;
+}
+
+.leaderboard-table__body {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    width: 100%;
+}
+
+.leaderboard-table__message {
+    display: none;
+    flex-grow: 1;
+    font-size: 27px;
+    -unity-text-align: middle-center;
+}
+
+#leaderboard__loading {
+    display: flex;
+}
+
+.leaderboard-table__error {
+    display: none;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    padding-right: 24px;
+    padding-left: 24px;
+}
+
+.leaderboard-table__error-text {
+    font-size: 24px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.leaderboard-retry-button {
+    width: 240px;
+    height: 58px;
+    margin-top: 10px;
+    font-size: 22px;
+}
+
+.leaderboard-table__rows {
+    display: none;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.leaderboard-table__rows .unity-scroll-view__content-container {
+    padding: 0;
+}
+
+#leaderboard-screen .leaderboard-result-label,
+.leaderboard-current-player .leaderboard-runtime-text {
+    color: rgb(20, 18, 15);
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
 }
 
 #leaderboard-screen .leaderboard-result-row--default {
-    background-color: var(--ui-content-row-default);
+    background-color: rgb(248, 232, 199);
 }
 
 #leaderboard-screen .leaderboard-result-row--current,
 .leaderboard-current-player {
-    background-color: var(--ui-status-current);
+    background-color: rgb(255, 203, 70);
 }
 
 .leaderboard-current-player {
-    border-color: var(--ui-border);
+    display: none;
+    border-top-color: rgb(198, 162, 104);
+    border-top-width: 2px;
+}
+
+#leaderboard-screen .leaderboard-location-arrow--disabled {
+    opacity: 0.55;
 }

@@ -16,6 +16,9 @@ namespace LostCyberHamster.UI
     /// </summary>
     public sealed class LeaderboardScreenController : ScreenController
     {
+        private const float DesignWidth = 1672f;
+        private const float DesignHeight = 821f;
+
         // Временный режим визуальной проверки. Включать только для оценки вёрстки.
         private static readonly bool _useVisualQaMockData = false;
         private const int _mockTopCount = 50;
@@ -56,14 +59,6 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<Button>("leaderboard__part-evening");
         private Button _buttonNight =>
             _contentRoot.Q<Button>("leaderboard__part-night");
-        private VisualElement _morningLock =>
-            _contentRoot.Q<VisualElement>("leaderboard__part-morning-lock");
-        private VisualElement _afternoonLock =>
-            _contentRoot.Q<VisualElement>("leaderboard__part-afternoon-lock");
-        private VisualElement _eveningLock =>
-            _contentRoot.Q<VisualElement>("leaderboard__part-evening-lock");
-        private VisualElement _nightLock =>
-            _contentRoot.Q<VisualElement>("leaderboard__part-night-lock");
         private Label _loading =>
             _contentRoot.Q<Label>("leaderboard__loading");
         private VisualElement _error =>
@@ -82,13 +77,12 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<Label>("leaderboard__current-name");
         private Label _currentScore =>
             _contentRoot.Q<Label>("leaderboard__current-score");
-        private Button _buttonHome => _contentRoot.Q<Button>("btn_home");
-        private Button _buttonSettings => _contentRoot.Q<Button>("btn_settings");
-        private Button _buttonAddMoney =>
-            _contentRoot.Q<MoneyStorageUI>()?.ButtonAdd;
-        private Button _buttonAddCrystals =>
-            _contentRoot.Q<CrystalStorageUI>()?.ButtonAdd;
-
+        private VisualElement _viewport =>
+            _contentRoot.Q<VisualElement>("leaderboard__viewport");
+        private VisualElement _scaleFrame =>
+            _contentRoot.Q<VisualElement>("leaderboard__scale-frame");
+        private VisualElement _design =>
+            _contentRoot.Q<VisualElement>("leaderboard__design");
         private readonly LeaderboardService _leaderboardService;
         private IReadOnlyList<LocationView> _visibleLocations =
             Array.Empty<LocationView>();
@@ -128,10 +122,11 @@ namespace LostCyberHamster.UI
         {
             // Получаем каталог с единым доменным состоянием доступности.
             _requestVersion++;
+            await ChangeBackgroundAsync(
+                "LeagueBackgroundSprite",
+                ScaleMode.ScaleAndCrop);
             var selectionModel = LevelSelectionModel.Create();
             _visibleLocations = selectionModel.Locations.ToList();
-
-            await ChangeBackgroundAsync("BackgroundScreenSprite");
 
             // Ищем запрошенную открытую локацию, затем используем первую доступную.
             var requestedLocationIndex = _visibleLocations
@@ -294,29 +289,24 @@ namespace LostCyberHamster.UI
         {
             UpdatePartButton(
                 _buttonMorning,
-                _morningLock,
                 "morning",
                 selectedPart);
             UpdatePartButton(
                 _buttonAfternoon,
-                _afternoonLock,
                 "afternoon",
                 selectedPart);
             UpdatePartButton(
                 _buttonEvening,
-                _eveningLock,
                 "evening",
                 selectedPart);
             UpdatePartButton(
                 _buttonNight,
-                _nightLock,
                 "night",
                 selectedPart);
         }
 
         private void UpdatePartButton(
             Button button,
-            VisualElement lockElement,
             string partKey,
             PartView selectedPart)
         {
@@ -328,24 +318,34 @@ namespace LostCyberHamster.UI
                 : DisplayStyle.Flex;
             var isOpen = configuredPart != null && IsPartOpen(configuredPart);
             button.SetEnabled(isOpen);
-            button.style.opacity = 1;
-            lockElement.style.display = configuredPart != null && !isOpen
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
+            button.style.opacity = isOpen ? 1 : 0.55f;
 
-            // Активный tab соединяем с таблицей, остальные получают класс состояния.
+            // Геометрия вкладок фиксирована внутри общего арт-блока.
             var isSelected = isOpen && configuredPart == selectedPart;
             button.EnableInClassList("leaderboard-part--selected", isSelected);
             button.EnableInClassList(
                 "leaderboard-part--available",
                 isOpen && !isSelected);
             button.EnableInClassList("leaderboard-part--disabled", !isOpen);
-            button.style.width = isSelected ? 244 : 220;
-            button.style.marginRight = isSelected ? 0 : 12;
-            button.style.paddingRight = isOpen ? 12 : 64;
-            button.style.borderRightWidth = isSelected ? 0 : 6;
-            button.style.borderTopRightRadius = isSelected ? 0 : 24;
-            button.style.borderBottomRightRadius = isSelected ? 0 : 24;
+        }
+
+        /// <summary>
+        /// Масштабирует утверждённую композицию целиком внутри доступной landscape-области.
+        /// </summary>
+        private void OnViewportGeometryChanged(GeometryChangedEvent evt)
+        {
+            ApplyResponsiveLayout(evt.newRect.size);
+        }
+
+        private void ApplyResponsiveLayout(Vector2 viewportSize)
+        {
+            var width = Mathf.Max(1f, viewportSize.x);
+            var height = Mathf.Max(1f, viewportSize.y);
+            var scale = Mathf.Min(width / DesignWidth, height / DesignHeight);
+
+            _scaleFrame.style.width = DesignWidth * scale;
+            _scaleFrame.style.height = DesignHeight * scale;
+            _design.style.scale = new Scale(new Vector3(scale, scale, 1f));
         }
 
         private bool IsLocationOpen(LocationView location)
@@ -557,15 +557,17 @@ namespace LostCyberHamster.UI
             LeaderboardEntry entry,
             bool isCurrentPlayer)
         {
-            // Создаём компактную строку, чтобы в панели помещалось около десяти мест.
+            // Строка использует колонки и ширину общего центрального блока.
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
             row.style.alignItems = Align.Center;
             row.style.flexShrink = 0;
-            row.style.height = 54;
+            row.style.height = 56;
             row.style.paddingRight = 20;
             row.style.paddingLeft = 20;
-            row.style.marginBottom = 4;
+            row.style.borderBottomWidth = 1;
+            row.style.borderBottomColor = new StyleColor(
+                new Color32(198, 162, 104, 255));
             row.AddToClassList(
                 isCurrentPlayer
                     ? "leaderboard-result-row--current"
@@ -602,39 +604,18 @@ namespace LostCyberHamster.UI
             return label;
         }
 
-        private void OnClickHome(ClickEvent evt)
-        {
-            OpenHome();
-        }
-
-        private void OnClickSettings(ClickEvent evt)
-        {
-            SettingsScreenController.OpenFrom(ScreenEnum.LeaderboardScreen);
-        }
-
-        private void OnClickShop(ClickEvent evt)
-        {
-            UIManager.OnModalShow(ScreenEnum.ShopModal);
-        }
-
         private async void OnClickRetry(ClickEvent evt)
         {
             if (_selectedPart != null)
                 await LoadResultsAsync(_selectedPart);
         }
 
-        private void OpenHome()
-        {
-            _requestVersion++;
-            UIManager.OnScreenShow(ScreenEnum.HomeScreen);
-        }
-
         protected override void OnSubscribeToEvents()
         {
-            _buttonHome?.RegisterCallback<ClickEvent>(OnClickHome);
-            _buttonSettings?.RegisterCallback<ClickEvent>(OnClickSettings);
-            _buttonAddMoney?.RegisterCallback<ClickEvent>(OnClickShop);
-            _buttonAddCrystals?.RegisterCallback<ClickEvent>(OnClickShop);
+            _viewport?.RegisterCallback<GeometryChangedEvent>(
+                OnViewportGeometryChanged);
+            _viewport?.schedule.Execute(
+                () => ApplyResponsiveLayout(_viewport.contentRect.size));
             _buttonPreviousLocation?.RegisterCallback<ClickEvent>(
                 OnClickPreviousLocation);
             _buttonNextLocation?.RegisterCallback<ClickEvent>(
@@ -649,10 +630,8 @@ namespace LostCyberHamster.UI
         protected override void OnUnsubscribeFromEvents()
         {
             _requestVersion++;
-            _buttonHome?.UnregisterCallback<ClickEvent>(OnClickHome);
-            _buttonSettings?.UnregisterCallback<ClickEvent>(OnClickSettings);
-            _buttonAddMoney?.UnregisterCallback<ClickEvent>(OnClickShop);
-            _buttonAddCrystals?.UnregisterCallback<ClickEvent>(OnClickShop);
+            _viewport?.UnregisterCallback<GeometryChangedEvent>(
+                OnViewportGeometryChanged);
             _buttonPreviousLocation?.UnregisterCallback<ClickEvent>(
                 OnClickPreviousLocation);
             _buttonNextLocation?.UnregisterCallback<ClickEvent>(
