@@ -25,6 +25,15 @@
 3. `docs/rules/build_and_telegram_publishing.md` — если задача требует сборку игры или публикацию билда в Telegram.
 4. `docs/products/approaches/unity_ui_asset_integration.md` — перед подготовкой или Unity-интеграцией UI-ассетов.
 
+## Задачи Unity-интеграции UI
+
+На текущем этапе каждая новая задача Unity-интеграции UI:
+
+- создаётся с высокой глубиной анализа;
+- работает прямо в Unity Lead на `integration/unity-live`, без отдельной ветки или worktree;
+- закрепляется в боковой панели Codex;
+- до анализа и любых изменений читает этот `AGENTS.md` и `docs/products/approaches/unity_ui_asset_integration.md`.
+
 ## Обязательный стиль общения
 
 Это обязательное правило для каждого агента.
