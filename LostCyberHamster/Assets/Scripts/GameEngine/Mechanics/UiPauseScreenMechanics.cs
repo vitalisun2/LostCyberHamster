@@ -26,7 +26,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnResume()
         {
-            _pauseModalController.Close();
+            _uiManager.CloseModal(ScreenEnum.PauseModal);
             _gameManager.Resume();
         }
 
@@ -37,7 +37,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnRestart()
         {
-            _pauseModalController.Close();
+            _uiManager.CloseModal(ScreenEnum.PauseModal);
             LevelController.Instance.Replay();
         }
     }

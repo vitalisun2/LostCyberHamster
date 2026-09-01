@@ -34,7 +34,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnRestart()
         {
-            _loseModalController.Close();
+            _uiManager.CloseModal(ScreenEnum.LoseModal);
             LevelController.Instance.Replay();
         }
 
@@ -48,7 +48,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             GameEventsManager.OnAdCompleted -= HandleAdCompleted;
             _character.Lives.Value = 1;
-            _loseModalController.Close();
+            _uiManager.CloseModal(ScreenEnum.LoseModal);
             _gameManager.Resume();
         }
     }
