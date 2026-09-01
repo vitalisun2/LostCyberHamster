@@ -36,6 +36,13 @@
     -unity-text-outline-color: var(--ui-text-outline);
 }
 
+.ui-text-small-white {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: rgba(0, 0, 0, 0);
+}
+
 .ui-text-outlined {
     color: var(--ui-text-fill);
     -unity-text-outline-width: 3px;

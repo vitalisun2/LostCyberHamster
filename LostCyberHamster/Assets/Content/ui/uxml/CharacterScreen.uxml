@@ -10,11 +10,11 @@
                     <ui:VisualElement name="hero-tabs" class="hero-tabs dual-tabs dual-tabs--left-active">
                         <ui:Button name="hero-tab-skins" class="hero-tab dual-tab dual-tab--left">
                             <ui:VisualElement class="hero-tab__icon hero-tab__icon--skins" picking-mode="Ignore" />
-                            <Vues.GameCore.LocalizedLabel key="equipment_skins" class="dual-tab__label hero-tab__label" picking-mode="Ignore" />
+                            <Vues.GameCore.LocalizedLabel key="equipment_skins" class="dual-tab__label ui-text-small-white hero-tab__label" picking-mode="Ignore" />
                         </ui:Button>
                         <ui:Button name="hero-tab-abilities" class="hero-tab dual-tab dual-tab--right">
                             <ui:VisualElement class="hero-tab__icon hero-tab__icon--abilities" picking-mode="Ignore" />
-                            <Vues.GameCore.LocalizedLabel key="equipment_abilities" class="dual-tab__label hero-tab__label" picking-mode="Ignore" />
+                            <Vues.GameCore.LocalizedLabel key="equipment_abilities" class="dual-tab__label ui-text-small-white hero-tab__label" picking-mode="Ignore" />
                         </ui:Button>
                     </ui:VisualElement>
                     <ui:VisualElement class="hero-content">

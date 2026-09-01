@@ -8,10 +8,10 @@
             <engine:VisualElement name="quests-title" class="quests-title" picking-mode="Ignore" />
             <engine:VisualElement name="quests-tabs" class="quests-tabs dual-tabs dual-tabs--left-active">
                 <engine:Button name="btn__quests-tab-daily" class="dual-tab dual-tab--left">
-                    <Vues.GameCore.LocalizedLabel key="quests_tab_daily" class="dual-tab__label quests-tab__label" picking-mode="Ignore" />
+                    <Vues.GameCore.LocalizedLabel key="quests_tab_daily" class="dual-tab__label ui-text-small-white quests-tab__label" picking-mode="Ignore" />
                 </engine:Button>
                 <engine:Button name="btn__quests-tab-story" class="dual-tab dual-tab--right">
-                    <Vues.GameCore.LocalizedLabel key="quests_tab_story" class="dual-tab__label quests-tab__label" picking-mode="Ignore" />
+                    <Vues.GameCore.LocalizedLabel key="quests_tab_story" class="dual-tab__label ui-text-small-white quests-tab__label" picking-mode="Ignore" />
                 </engine:Button>
             </engine:VisualElement>
             <engine:VisualElement name="quests-page" class="quests-page" picking-mode="Ignore">
