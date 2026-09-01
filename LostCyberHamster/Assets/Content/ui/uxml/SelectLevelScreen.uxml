@@ -1,16 +1,72 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
-    <engine:VisualElement name="selectlevelscreen" class="select-level-screen" style="flex-grow: 1;">
-        <engine:Instance template="Toolbar" name="toolbar" />
-        <engine:VisualElement name="selection__content" class="select-level__content">
-            <engine:Label name="location__title" class="lcs-text select-level__title" />
-            <engine:VisualElement name="selection__preview-row" class="select-level__preview-row">
-                <engine:Button text="◀" name="btn__location-prev" class="lcs_btn bg-primary select-level__arrow select-level__arrow--previous" />
-                <engine:VisualElement name="location__image" class="select-level__location-image" />
-                <engine:Button text="▶" name="btn__location-next" class="lcs_btn bg-primary select-level__arrow select-level__arrow--next" />
+    <engine:VisualElement name="select-level-screen" class="select-level-screen">
+        <engine:VisualElement class="select-level-background" picking-mode="Ignore" />
+        <engine:VisualElement name="select-level-viewport" class="select-level-viewport">
+            <engine:VisualElement name="select-level-scale-frame" class="select-level-scale-frame">
+                <engine:VisualElement name="select-level-design" class="select-level-design">
+                    <LostCyberHamster.UI.SharedHudLane class="select-level-hud">
+                        <LostCyberHamster.UI.SharedHomeButton class="select-level-hud__home" />
+                        <LostCyberHamster.UI.SharedCoinsButton class="select-level-hud__coins" />
+                        <LostCyberHamster.UI.SharedGemsButton class="select-level-hud__gems" />
+                        <LostCyberHamster.UI.SharedSettingsButton class="select-level-hud__settings" />
+                    </LostCyberHamster.UI.SharedHudLane>
+
+                    <engine:VisualElement name="select-time-state" class="select-level-state select-time-state">
+                        <engine:VisualElement class="select-time-title" picking-mode="Ignore" />
+                        <engine:VisualElement class="select-time-panel">
+                            <engine:VisualElement class="select-time-location-track select-time-location-track--outer" picking-mode="Ignore" />
+                            <engine:VisualElement class="select-time-location-track select-time-location-track--inner" picking-mode="Ignore" />
+                            <engine:Button name="btn__location-prev" class="select-level-image-button select-time-location-arrow select-time-location-arrow--previous" />
+                            <engine:VisualElement name="select-time-location-previous" class="select-time-location select-time-location--side select-time-location--previous">
+                                <engine:VisualElement class="select-time-location__icon" picking-mode="Ignore" />
+                                <engine:Label class="select-time-location__label" picking-mode="Ignore" />
+                                <engine:VisualElement class="select-time-location__lock" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement name="select-time-location-current" class="select-time-location select-time-location--current">
+                                <engine:VisualElement class="select-time-location__icon" picking-mode="Ignore" />
+                                <engine:Label class="select-time-location__label" picking-mode="Ignore" />
+                                <engine:VisualElement class="select-time-location__lock" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement name="select-time-location-next" class="select-time-location select-time-location--side select-time-location--next">
+                                <engine:VisualElement class="select-time-location__icon" picking-mode="Ignore" />
+                                <engine:Label class="select-time-location__label" picking-mode="Ignore" />
+                                <engine:VisualElement class="select-time-location__lock" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:Button name="btn__location-next" class="select-level-image-button select-time-location-arrow select-time-location-arrow--next" />
+                            <engine:VisualElement name="day-parts-container" class="select-time-cards" />
+                        </engine:VisualElement>
+                    </engine:VisualElement>
+
+                    <engine:VisualElement name="select-level-state" class="select-level-state select-level-state--levels">
+                        <engine:VisualElement class="select-level-title" picking-mode="Ignore" />
+                        <engine:VisualElement class="select-level-panel">
+                            <engine:VisualElement class="select-level-header">
+                                <engine:Label name="select-level-header-label" class="select-level-header__label" picking-mode="Ignore" />
+                            </engine:VisualElement>
+
+                            <engine:VisualElement class="select-level-route select-level-route--row-1" picking-mode="Ignore">
+                                <engine:VisualElement class="select-level-route__inner" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="select-level-route select-level-route--row-2" picking-mode="Ignore">
+                                <engine:VisualElement class="select-level-route__inner" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="select-level-route select-level-route--row-3" picking-mode="Ignore">
+                                <engine:VisualElement class="select-level-route__inner" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="select-level-route-turn select-level-route-turn--right" picking-mode="Ignore">
+                                <engine:VisualElement class="select-level-route-turn__inner" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="select-level-route-turn select-level-route-turn--left" picking-mode="Ignore">
+                                <engine:VisualElement class="select-level-route-turn__inner" picking-mode="Ignore" />
+                            </engine:VisualElement>
+
+                            <engine:VisualElement name="level-cards-container" class="select-level-cards" />
+                        </engine:VisualElement>
+                        <engine:Button name="btn_select-level-back" class="select-level-image-button select-level-back" />
+                    </engine:VisualElement>
+                </engine:VisualElement>
             </engine:VisualElement>
-            <engine:VisualElement name="levels_container" class="select-level__cards" />
         </engine:VisualElement>
     </engine:VisualElement>
 </engine:UXML>

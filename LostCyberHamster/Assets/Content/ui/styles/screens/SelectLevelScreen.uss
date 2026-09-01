@@ -1,114 +1,633 @@
-.level-card {
-    background-color: var(--ui-level-card-shell);
-    border-color: var(--ui-border);
-}
-
-.level-card > .level-card__content {
-    background-color: var(--ui-content-card-surface-solid);
-    border-color: var(--ui-border);
-}
-
-.level-card__title {
-    color: var(--ui-content-card-accent);
-    -unity-text-outline-width: 0;
-}
-
 .select-level-screen {
-    min-width: 0;
-    min-height: 0;
-}
-
-.select-level__content {
     flex-grow: 1;
-    flex-shrink: 1;
+    width: 100%;
+    height: 100%;
     min-width: 0;
     min-height: 0;
-    width: 100%;
-    padding-top: 4px;
-    padding-right: 24px;
-    padding-bottom: 12px;
-    padding-left: 24px;
-    align-items: center;
+    overflow: hidden;
+    background-color: rgb(76, 102, 115);
 }
 
-.select-level__title {
-    flex-grow: 0;
-    flex-shrink: 0;
+.select-level-background {
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 100%;
-    min-height: 60px;
-    max-height: 80px;
-    margin-top: 0;
-    margin-right: 0;
-    margin-bottom: 4px;
-    margin-left: 0;
-    font-size: 52px;
-    -unity-text-align: middle-center;
+    height: 100%;
+    background-image: url("/Assets/Content/ui/sprites/select_level/background_brooklyn_bridge.png");
+    -unity-background-scale-mode: scale-and-crop;
 }
 
-.select-level__preview-row {
-    flex-grow: 4;
-    flex-shrink: 1;
-    min-width: 0;
-    min-height: 180px;
+.select-level-viewport {
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 100%;
-    height: 42%;
-    max-height: 420px;
-    flex-direction: row;
+    height: 100%;
     justify-content: center;
     align-items: center;
+    overflow: hidden;
 }
 
-.select-level__location-image {
-    flex-grow: 1;
-    flex-shrink: 1;
-    min-width: 300px;
-    width: 60%;
-    max-width: 960px;
-    height: 100%;
-    max-height: 420px;
-    margin-right: 8px;
-    margin-left: 8px;
+.select-level-scale-frame {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 1672px;
+    height: 941px;
+}
+
+.select-level-design,
+.select-level-state {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 941px;
+}
+
+.select-level-design {
+    transform-origin: 0 0;
+}
+
+.select-level-state--levels {
+    display: none;
+}
+
+.select-level-image-button {
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    overflow: visible;
+    transition-property: scale, opacity;
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+}
+
+.select-level-image-button:hover,
+.select-level-image-button:focus {
+    opacity: 0.96;
+    scale: 1.03 1.03;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.select-level-image-button:active {
+    opacity: 0.88;
+    scale: 0.97 0.97;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.select-level-image-button:disabled {
+    opacity: 0.42;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.select-level-hud {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 130px;
+    min-height: 130px;
+    max-height: 130px;
+    margin: 0;
+    overflow: visible;
+}
+
+.select-level-hud__home {
+    position: absolute;
+    left: 22px;
+    top: 27px;
+    width: 99px;
+    min-width: 99px;
+    max-width: 99px;
+    height: 90px;
+    min-height: 90px;
+    max-height: 90px;
+}
+
+.select-level-hud__coins {
+    position: absolute;
+    left: 151px;
+    top: 27px;
+}
+
+.select-level-hud__gems {
+    position: absolute;
+    left: 389px;
+    top: 27px;
+}
+
+.select-level-hud__settings {
+    position: absolute;
+    left: 1547px;
+    top: 27px;
+    width: 105px;
+    min-width: 105px;
+    max-width: 105px;
+    height: 102px;
+    min-height: 102px;
+    max-height: 102px;
+}
+
+.select-time-title {
+    position: absolute;
+    left: 500px;
+    top: 183px;
+    width: 735px;
+    height: 94px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_of_day_title.png");
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.select-level__arrow {
-    flex-grow: 0;
-    flex-shrink: 1;
-    min-width: 150px;
-    width: 220px;
-    max-width: 220px;
-    min-height: 130px;
-    height: 180px;
-    max-height: 180px;
-    margin-top: 0;
-    margin-bottom: 0;
-    padding: 0;
-    font-size: 76px;
+.select-time-panel {
+    position: absolute;
+    left: 424px;
+    top: 285px;
+    width: 839px;
+    height: 543px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_panel_base.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
-.select-level__arrow--previous {
-    margin-right: 12px;
-    margin-left: 0;
+.select-time-location-track {
+    position: absolute;
+    left: 82px;
+    width: 675px;
 }
 
-.select-level__arrow--next {
-    margin-right: 0;
-    margin-left: 12px;
+.select-time-location-track--outer {
+    top: 101px;
+    height: 8px;
+    background-color: rgb(20, 20, 19);
 }
 
-.select-level__cards {
-    flex-grow: 5;
-    flex-shrink: 1;
-    min-width: 0;
-    min-height: 320px;
-    width: 75%;
-    max-width: 1120px;
-    padding-top: 12px;
-    padding-right: 8px;
-    padding-bottom: 8px;
-    padding-left: 8px;
-    flex-direction: row;
-    justify-content: space-around;
-    align-self: center;
+.select-time-location-track--inner {
+    top: 104px;
+    height: 3px;
+    background-color: rgb(221, 217, 202);
+}
+
+.select-time-location-arrow {
+    position: absolute;
+    top: 75px;
+    width: 60px;
+    height: 42px;
+    -unity-background-scale-mode: scale-to-fit;
+    transform-origin: 30px 21px;
+    rotate: -90deg;
+}
+
+.select-time-location-arrow--previous {
+    left: 38px;
+    background-image: url("/Assets/Content/ui/sprites/shared/button_scroll_up.png");
+}
+
+.select-time-location-arrow--next {
+    right: 38px;
+    background-image: url("/Assets/Content/ui/sprites/shared/button_scroll_down.png");
+}
+
+.select-time-location {
+    position: absolute;
+    justify-content: center;
     align-items: center;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_medallion_base.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.select-time-location--side {
+    top: 50px;
+    width: 111px;
+    height: 114px;
+}
+
+.select-time-location--previous {
+    left: 155px;
+}
+
+.select-time-location--current {
+    left: 348px;
+    top: 31px;
+    width: 143px;
+    height: 147px;
+}
+
+.select-time-location--next {
+    left: 573px;
+}
+
+.select-time-location__icon {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    -unity-background-scale-mode: scale-to-fit;
+    transform-origin: 50% 50%;
+    translate: -50% -55%;
+}
+
+.select-time-location--current .select-time-location__icon {
+    scale: 1.18 1.18;
+}
+
+.select-time-location--new-york .select-time-location__icon {
+    width: 68px;
+    height: 123px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_city_icon_new_york.png");
+}
+
+.select-time-location--paris .select-time-location__icon {
+    width: 52px;
+    height: 83px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_city_icon_paris.png");
+}
+
+.select-time-location--barcelona .select-time-location__icon {
+    width: 52px;
+    height: 82px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_city_icon_barcelona.png");
+}
+
+.select-time-location__label {
+    position: absolute;
+    left: -30px;
+    top: 108px;
+    width: 171px;
+    height: 39px;
+    margin: 0;
+    padding: 0;
+    color: rgb(20, 20, 19);
+    font-size: 24px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.select-time-location--current .select-time-location__label {
+    left: -48px;
+    top: 137px;
+    width: 239px;
+    height: 43px;
+    font-size: 30px;
+}
+
+.select-time-location__lock {
+    display: none;
+    position: absolute;
+    right: -3px;
+    bottom: -1px;
+    width: 47px;
+    height: 52px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_lock.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.select-time-location--locked .select-time-location__icon {
+    opacity: 0.58;
+}
+
+.select-time-location--locked .select-time-location__lock {
+    display: flex;
+}
+
+.select-time-cards {
+    position: absolute;
+    left: 31px;
+    top: 220px;
+    width: 777px;
+    height: 288px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.select-time-card-host {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 175px;
+    height: 288px;
+}
+
+.select-level-title {
+    position: absolute;
+    left: 585px;
+    top: 148px;
+    width: 505px;
+    height: 89px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_title.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.select-level-panel {
+    position: absolute;
+    left: 462px;
+    top: 239px;
+    width: 748px;
+    height: 603px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_panel_base.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.select-level-header {
+    position: absolute;
+    left: 128px;
+    top: 27px;
+    width: 493px;
+    height: 81px;
+    justify-content: center;
+    align-items: center;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_header_base.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.select-level-header__label {
+    width: 465px;
+    height: 71px;
+    margin: 0;
+    padding: 0 8px;
+    color: rgb(247, 246, 239);
+    font-size: 34px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-color: rgb(20, 20, 19);
+    -unity-text-outline-width: 2px;
+}
+
+.select-level-route {
+    position: absolute;
+    left: 150px;
+    width: 438px;
+    height: 26px;
+    background-color: rgb(23, 22, 20);
+}
+
+.select-level-route__inner {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 100%;
+    height: 16px;
+    background-color: rgb(239, 206, 145);
+}
+
+.select-level-route--row-1 {
+    top: 166px;
+}
+
+.select-level-route--row-2 {
+    top: 328px;
+}
+
+.select-level-route--row-3 {
+    top: 490px;
+}
+
+.select-level-route-turn {
+    position: absolute;
+    width: 119px;
+    height: 188px;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-color: rgb(23, 22, 20);
+    border-right-color: rgb(23, 22, 20);
+    border-bottom-color: rgb(23, 22, 20);
+    border-left-color: rgb(23, 22, 20);
+    border-top-width: 26px;
+    border-right-width: 26px;
+    border-bottom-width: 26px;
+    border-left-width: 0;
+    border-top-right-radius: 94px;
+    border-bottom-right-radius: 94px;
+}
+
+.select-level-route-turn__inner {
+    position: absolute;
+    left: 0;
+    top: -21px;
+    width: 109px;
+    height: 178px;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-color: rgb(239, 206, 145);
+    border-right-color: rgb(239, 206, 145);
+    border-bottom-color: rgb(239, 206, 145);
+    border-left-color: rgb(239, 206, 145);
+    border-top-width: 16px;
+    border-right-width: 16px;
+    border-bottom-width: 16px;
+    border-left-width: 0;
+    border-top-right-radius: 89px;
+    border-bottom-right-radius: 89px;
+}
+
+.select-level-route-turn--right {
+    left: 562px;
+    top: 166px;
+}
+
+.select-level-route-turn--left {
+    left: 67px;
+    top: 328px;
+    scale: -1 1;
+}
+
+.select-level-cards {
+    position: absolute;
+    left: 87px;
+    top: 116px;
+    width: 563px;
+    height: 456px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: space-between;
+}
+
+.select-level-card-host {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 124px;
+    height: 132px;
+}
+
+.select-level-back {
+    position: absolute;
+    left: 24px;
+    top: 770px;
+    width: 159px;
+    height: 151px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_button_back.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.level-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    -unity-background-scale-mode: scale-to-fit;
+    transition-property: scale, opacity;
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+}
+
+.level-card:hover,
+.level-card:focus {
+    scale: 1.025 1.025;
+}
+
+.level-card:active {
+    scale: 0.975 0.975;
+}
+
+.level-card--locked:hover,
+.level-card--locked:focus,
+.level-card--locked:active {
+    scale: 1 1;
+}
+
+.level-card__title {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    color: rgb(21, 20, 18);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.level-card__image,
+.level-card__lock,
+.level-card__star {
+    position: absolute;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.level-card__stars {
+    display: none;
+    position: absolute;
+    left: 7px;
+    top: 87px;
+    width: 110px;
+    height: 38px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.level-card__star {
+    position: relative;
+    width: 35px;
+    height: 35px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_star_unearned.png");
+}
+
+.level-card__star--earned {
+    width: 34px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_star_earned.png");
+}
+
+.level-card--day-part {
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_card_base.png");
+}
+
+.level-card--day-part .level-card__title {
+    left: 8px;
+    top: 21px;
+    width: 159px;
+    height: 38px;
+    font-size: 25px;
+}
+
+.level-card--day-part .level-card__lock {
+    left: 64px;
+    top: 207px;
+    width: 47px;
+    height: 52px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_lock.png");
+}
+
+.level-card--day-part.level-card--unlocked .level-card__lock {
+    display: none;
+}
+
+.level-card--morning .level-card__image {
+    left: 28px;
+    top: 88px;
+    width: 118px;
+    height: 78px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_icon_morning.png");
+}
+
+.level-card--day .level-card__image {
+    left: 30px;
+    top: 70px;
+    width: 114px;
+    height: 115px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_icon_day.png");
+}
+
+.level-card--evening .level-card__image {
+    left: 15px;
+    top: 63px;
+    width: 145px;
+    height: 135px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_icon_evening.png");
+}
+
+.level-card--night .level-card__image {
+    left: 26px;
+    top: 66px;
+    width: 124px;
+    height: 129px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_icon_night.png");
+}
+
+.level-card--level-open {
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_card_open.png");
+}
+
+.level-card--level-open .level-card__title {
+    left: 8px;
+    top: 7px;
+    width: 108px;
+    height: 78px;
+    font-size: 55px;
+}
+
+.level-card--level-open .level-card__image,
+.level-card--level-open .level-card__lock {
+    display: none;
+}
+
+.level-card--level-open .level-card__stars {
+    display: flex;
+}
+
+.level-card--level-locked {
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_card_locked.png");
+}
+
+.level-card--level-locked .level-card__title,
+.level-card--level-locked .level-card__image,
+.level-card--level-locked .level-card__stars {
+    display: none;
+}
+
+.level-card--level-locked .level-card__lock {
+    left: 37px;
+    top: 24px;
+    width: 49px;
+    height: 63px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_lock.png");
 }

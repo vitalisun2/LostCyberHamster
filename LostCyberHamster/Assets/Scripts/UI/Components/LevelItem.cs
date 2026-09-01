@@ -1,27 +1,35 @@
-using System;
 using System.Collections.Generic;
-using Assets.Scripts.System;
-using GameManagement.Progress;
 using Extensions;
-using UnityEngine;
-using UnityEngine.AddressableAssets;
+using GameManagement.Progress;
 using UnityEngine.UIElements;
-using Vues.GameCore;
 
 namespace LostCyberHamster.UI
 {
     [UxmlElement]
     public partial class LevelItem : VisualElement
     {
-        private Label _name => this.Q<Label>("level-item__name");
-        private VisualElement _image => this.Q<VisualElement>("level-item__image");
+        private static readonly string[] CardStateClasses =
+        {
+            "level-card--day-part",
+            "level-card--level-open",
+            "level-card--level-locked",
+            "level-card--locked",
+            "level-card--unlocked",
+            "level-card--morning",
+            "level-card--day",
+            "level-card--evening",
+            "level-card--night"
+        };
 
-        private VisualElement _starsContainer => this.Q<VisualElement>("level-item__stars-container");
-        private VisualElement _lock => this.Q<VisualElement>("level-item__lock");
+        private VisualElement CardRoot =>
+            this.Q<VisualElement>("level-item");
+        private Label NameLabel =>
+            this.Q<Label>("level-item__name");
+        private VisualElement StarsContainer =>
+            this.Q<VisualElement>("level-item__stars-container");
 
         private readonly List<VisualElement> _starElements = new();
         private bool _templateLoaded;
-        private Sprite _fullStarSprite;
 
         public string LevelName { get; private set; }
 
@@ -33,54 +41,85 @@ namespace LostCyberHamster.UI
         }
 
         /// <summary>
-        /// Настраивает карточку части суток по готовому состоянию прогресса.
+        /// Настраивает карточку части суток и её состояние открытия.
         /// </summary>
         public void ConfigureForPart(
             string partKey,
             string displayName,
-            string previewAddress,
-            string levelKey,
-            bool isUnlocked,
-            int stars)
+            bool isUnlocked)
         {
             EnsureTemplateLoaded();
-            var resolvedDisplay = TryLocalize(partKey, displayName);
-            var resolvedPreview = string.IsNullOrWhiteSpace(previewAddress)
-                ? GetDefaultPreviewAddress(partKey)
-                : previewAddress;
-            SetupCard(
-                resolvedDisplay,
-                resolvedPreview,
-                string.IsNullOrWhiteSpace(levelKey) ? levelKey : levelKey.Trim(),
-                isUnlocked,
-                stars);
+            ResetVisualState();
+
+            AddToClassList("select-time-card-host");
+            CardRoot.AddToClassList("level-card--day-part");
+            CardRoot.AddToClassList(
+                isUnlocked
+                    ? "level-card--unlocked"
+                    : "level-card--locked");
+
+            string iconClass = ResolvePartIconClass(partKey);
+            if (!string.IsNullOrEmpty(iconClass))
+            {
+                CardRoot.AddToClassList(iconClass);
+            }
+
+            NameLabel.text = displayName ?? string.Empty;
+            LevelName = partKey ?? string.Empty;
+            IsLocked = !isUnlocked;
         }
 
         /// <summary>
-        /// Настраивает карточку уровня по готовому состоянию прогресса.
+        /// Настраивает карточку существующего уровня по текущему прогрессу.
         /// </summary>
-        public void ConfigureForLevel(
-            LevelProgress level,
-            int displayIndex,
-            string partKey,
-            string previewAddress)
+        public void ConfigureForLevel(LevelProgress level, int displayIndex)
         {
             EnsureTemplateLoaded();
-            var label = displayIndex > 0 ? displayIndex.ToString() : level.LevelKey;
-            var resolvedPreview = string.IsNullOrWhiteSpace(previewAddress)
-                ? GetDefaultPreviewAddress(partKey)
-                : previewAddress;
-            var canonicalLevelKey = string.IsNullOrWhiteSpace(level.Address)
+
+            if (level == null)
+            {
+                ConfigureLockedPlaceholder();
+                return;
+            }
+
+            ResetVisualState();
+            AddToClassList("select-level-card-host");
+
+            string canonicalLevelKey = string.IsNullOrWhiteSpace(level.Address)
                 ? level.LevelKey
                 : level.Address.Trim();
-            SetupCard(
-                label,
-                resolvedPreview,
-                canonicalLevelKey,
-                level.IsUnlocked,
-                level.Stars);
+            LevelName = canonicalLevelKey ?? string.Empty;
+            IsLocked = !level.IsUnlocked;
+
+            if (IsLocked)
+            {
+                CardRoot.AddToClassList("level-card--level-locked");
+                CardRoot.AddToClassList("level-card--locked");
+                return;
+            }
+
+            CardRoot.AddToClassList("level-card--level-open");
+            CardRoot.AddToClassList("level-card--unlocked");
+            NameLabel.text = displayIndex > 0
+                ? displayIndex.ToString()
+                : level.LevelKey;
+            ApplyStars(level.Stars);
         }
 
+        /// <summary>
+        /// Настраивает пустую позицию сетки как закрытый уровень.
+        /// </summary>
+        public void ConfigureLockedPlaceholder()
+        {
+            EnsureTemplateLoaded();
+            ResetVisualState();
+
+            AddToClassList("select-level-card-host");
+            CardRoot.AddToClassList("level-card--level-locked");
+            CardRoot.AddToClassList("level-card--locked");
+            LevelName = string.Empty;
+            IsLocked = true;
+        }
 
         private void EnsureTemplateLoaded()
         {
@@ -89,15 +128,17 @@ namespace LostCyberHamster.UI
                 return;
             }
 
-            AddressableExtentions.LoadAssetSync<VisualTreeAsset>("LevelItem.uxml").CloneTree(this);
-            _fullStarSprite = AddressableExtentions.LoadAssetSync<Sprite>("star");
+            AddressableExtentions
+                .LoadAssetSync<VisualTreeAsset>("LevelItem.uxml")
+                .CloneTree(this);
 
             _starElements.Clear();
-            if (_starsContainer != null)
+            if (StarsContainer != null)
             {
                 for (int i = 1; i <= 3; i++)
                 {
-                    var star = _starsContainer.Q<VisualElement>($"star{i}");
+                    VisualElement star = StarsContainer.Q<VisualElement>(
+                        $"star{i}");
                     if (star != null)
                     {
                         _starElements.Add(star);
@@ -108,111 +149,43 @@ namespace LostCyberHamster.UI
             _templateLoaded = true;
         }
 
-        private void SetupCard(
-            string displayName,
-            string previewAddress,
-            string levelKey,
-            bool isUnlocked,
-            int stars)
+        private void ResetVisualState()
         {
-            if (_name != null)
+            RemoveFromClassList("select-time-card-host");
+            RemoveFromClassList("select-level-card-host");
+
+            foreach (string className in CardStateClasses)
             {
-                _name.text = string.IsNullOrWhiteSpace(displayName) ? levelKey : displayName;
+                CardRoot.RemoveFromClassList(className);
             }
 
-            if (_image != null && !string.IsNullOrWhiteSpace(previewAddress))
+            NameLabel.text = string.Empty;
+            foreach (VisualElement star in _starElements)
             {
-                try
-                {
-                    var sprite = AddressableExtentions.LoadAssetSync<Sprite>(previewAddress);
-                    if (sprite != null)
-                    {
-                        _image.style.backgroundImage = new StyleBackground(sprite.texture);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"[LevelItem] Failed to load preview '{previewAddress}': {ex.Message}");
-                }
-            }
-
-            ApplyProgressState(levelKey, isUnlocked, stars);
-        }
-
-        private void ApplyProgressState(
-            string levelKey,
-            bool isUnlocked,
-            int stars)
-        {
-            LevelName = levelKey;
-
-            if (!string.IsNullOrEmpty(levelKey) && isUnlocked)
-            {
-                for (int i = 0; i < _starElements.Count; i++)
-                {
-                    if (i < stars && _fullStarSprite != null)
-                    {
-                        _starElements[i].style.backgroundImage = new StyleBackground(_fullStarSprite.texture);
-                    }
-                }
-
-                if (_lock != null)
-                {
-                    _lock.style.display = DisplayStyle.None;
-                }
-
-                if (_starsContainer != null)
-                {
-                    _starsContainer.style.display = DisplayStyle.Flex;
-                }
-
-                IsLocked = false;
-            }
-            else
-            {
-                if (_lock != null)
-                {
-                    _lock.style.display = DisplayStyle.Flex;
-                }
-
-                if (_starsContainer != null)
-                {
-                    _starsContainer.style.display = DisplayStyle.None;
-                }
-
-                IsLocked = true;
+                star.RemoveFromClassList("level-card__star--earned");
             }
         }
 
-        private static string TryLocalize(string key, string fallback)
+        private void ApplyStars(int stars)
         {
-            if (!string.IsNullOrWhiteSpace(key))
+            for (int i = 0; i < _starElements.Count; i++)
             {
-                try
-                {
-                    var localized = LocalizationManager.GetLocalizedString(key);
-                    if (!string.IsNullOrWhiteSpace(localized) && !string.Equals(localized, key, StringComparison.Ordinal))
-                    {
-                        return localized;
-                    }
-                }
-                catch
-                {
-                }
+                _starElements[i].EnableInClassList(
+                    "level-card__star--earned",
+                    i < stars);
             }
-
-            return string.IsNullOrWhiteSpace(fallback) ? key : fallback;
         }
 
-        private static string GetDefaultPreviewAddress(string partKey)
+        private static string ResolvePartIconClass(string partKey)
         {
-            if (string.IsNullOrWhiteSpace(partKey))
+            return partKey?.ToLowerInvariant() switch
             {
-                return string.Empty;
-            }
-
-            return partKey.ToLowerInvariant() + "_preview";
+                "morning" => "level-card--morning",
+                "afternoon" => "level-card--day",
+                "evening" => "level-card--evening",
+                "night" => "level-card--night",
+                _ => string.Empty
+            };
         }
     }
 }
-
