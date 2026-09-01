@@ -31,6 +31,8 @@ namespace LostCyberHamster.UI
 
         private VisualElement Viewport =>
             _contentRoot.Q<VisualElement>("select-level-viewport");
+        private VisualElement ScreenBackgroundSource =>
+            _contentRoot.Q<VisualElement>("select-level-background-source");
         private VisualElement ScaleFrame =>
             _contentRoot.Q<VisualElement>("select-level-scale-frame");
         private VisualElement Design =>
@@ -74,6 +76,11 @@ namespace LostCyberHamster.UI
 
         protected override Task OnLoadAsync()
         {
+            // Переносим экранный фон на корень, включая зоны safe area.
+            ApplyScreenBackground();
+            ScreenBackgroundSource?.schedule.Execute(ApplyScreenBackground);
+
+            // Восстанавливаем состояние выбора из текущего прогресса.
             InitializeSelectionModel();
             RenderCurrentState();
             return Task.CompletedTask;
@@ -180,13 +187,19 @@ namespace LostCyberHamster.UI
             IReadOnlyList<LevelProgress> levels =
                 _selectedPartView.Levels ?? Array.Empty<LevelProgress>();
 
-            for (int i = 0; i < LevelSlotCount; i++)
+            // Раскладываем catalog order вдоль готового маршрута-змейки.
+            for (int catalogIndex = 0;
+                 catalogIndex < LevelSlotCount;
+                 catalogIndex++)
             {
                 var levelItem = new LevelItem();
-                if (i < levels.Count)
+                levelItem.AddToClassList(
+                    $"select-level-card-slot--{catalogIndex + 1}");
+
+                if (catalogIndex < levels.Count)
                 {
-                    LevelProgress level = levels[i];
-                    levelItem.ConfigureForLevel(level, i + 1);
+                    LevelProgress level = levels[catalogIndex];
+                    levelItem.ConfigureForLevel(level, catalogIndex + 1);
                     if (!levelItem.IsLocked &&
                         !string.IsNullOrWhiteSpace(levelItem.LevelName))
                     {
@@ -203,6 +216,7 @@ namespace LostCyberHamster.UI
                 LevelCardsContainer.Add(levelItem);
             }
 
+            // Локализуем заголовок и ужимаем только длинные варианты.
             string locationTitle = ResolveLocalizedTitle(
                 _selectedLocationView.Key,
                 _selectedLocationView.DisplayName);
@@ -211,6 +225,43 @@ namespace LostCyberHamster.UI
                 _selectedPartView.DisplayName);
             LevelHeaderLabel.text =
                 $"{locationTitle} — {partTitle}".ToUpperInvariant();
+            LevelHeaderLabel.EnableInClassList(
+                "select-level-header__label--compact",
+                LevelHeaderLabel.text.Length > 22);
+        }
+
+        /// <summary>
+        /// Применяет Brooklyn Bridge к корневому фону экрана и safe area.
+        /// </summary>
+        private void ApplyScreenBackground()
+        {
+            if (_background == null || ScreenBackgroundSource == null)
+            {
+                return;
+            }
+
+            // Берём sprite из screen-local USS dependency.
+            Sprite sprite = ScreenBackgroundSource
+                .resolvedStyle
+                .backgroundImage
+                .sprite;
+            if (sprite == null)
+            {
+                return;
+            }
+
+            // Один cover-фон заполняет viewport и safe area без швов.
+            _background.style.backgroundImage = new StyleBackground(sprite);
+            _background.style.backgroundSize =
+                new BackgroundSize(BackgroundSizeType.Cover);
+            _background.style.backgroundPositionX =
+                new BackgroundPosition(BackgroundPositionKeyword.Center);
+            _background.style.backgroundPositionY =
+                new BackgroundPosition(BackgroundPositionKeyword.Center);
+            _background.style.backgroundRepeat = new BackgroundRepeat(
+                Repeat.NoRepeat,
+                Repeat.NoRepeat);
+            ScreenBackgroundSource.style.display = DisplayStyle.None;
         }
 
         private void UpdateLocationSelector()

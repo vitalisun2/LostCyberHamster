@@ -279,11 +279,11 @@
 .select-time-location__lock {
     display: none;
     position: absolute;
-    right: -3px;
-    bottom: -1px;
-    width: 47px;
-    height: 52px;
-    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_lock.png");
+    right: 0;
+    bottom: 0;
+    width: 32px;
+    height: 41px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_lock.png");
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -329,15 +329,15 @@
     top: 239px;
     width: 748px;
     height: 603px;
-    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_panel_base.png");
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_panel_route.png");
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .select-level-header {
     position: absolute;
-    left: 128px;
+    left: 104px;
     top: 27px;
-    width: 493px;
+    width: 540px;
     height: 81px;
     justify-content: center;
     align-items: center;
@@ -346,7 +346,7 @@
 }
 
 .select-level-header__label {
-    width: 465px;
+    width: 512px;
     height: 71px;
     margin: 0;
     padding: 0 8px;
@@ -359,99 +359,60 @@
     -unity-text-outline-width: 2px;
 }
 
-.select-level-route {
-    position: absolute;
-    left: 150px;
-    width: 438px;
-    height: 26px;
-    background-color: rgb(23, 22, 20);
-}
-
-.select-level-route__inner {
-    position: absolute;
-    left: 0;
-    top: 5px;
-    width: 100%;
-    height: 16px;
-    background-color: rgb(239, 206, 145);
-}
-
-.select-level-route--row-1 {
-    top: 166px;
-}
-
-.select-level-route--row-2 {
-    top: 328px;
-}
-
-.select-level-route--row-3 {
-    top: 490px;
-}
-
-.select-level-route-turn {
-    position: absolute;
-    width: 119px;
-    height: 188px;
-    background-color: rgba(0, 0, 0, 0);
-    border-top-color: rgb(23, 22, 20);
-    border-right-color: rgb(23, 22, 20);
-    border-bottom-color: rgb(23, 22, 20);
-    border-left-color: rgb(23, 22, 20);
-    border-top-width: 26px;
-    border-right-width: 26px;
-    border-bottom-width: 26px;
-    border-left-width: 0;
-    border-top-right-radius: 94px;
-    border-bottom-right-radius: 94px;
-}
-
-.select-level-route-turn__inner {
-    position: absolute;
-    left: 0;
-    top: -21px;
-    width: 109px;
-    height: 178px;
-    background-color: rgba(0, 0, 0, 0);
-    border-top-color: rgb(239, 206, 145);
-    border-right-color: rgb(239, 206, 145);
-    border-bottom-color: rgb(239, 206, 145);
-    border-left-color: rgb(239, 206, 145);
-    border-top-width: 16px;
-    border-right-width: 16px;
-    border-bottom-width: 16px;
-    border-left-width: 0;
-    border-top-right-radius: 89px;
-    border-bottom-right-radius: 89px;
-}
-
-.select-level-route-turn--right {
-    left: 562px;
-    top: 166px;
-}
-
-.select-level-route-turn--left {
-    left: 67px;
-    top: 328px;
-    scale: -1 1;
+.select-level-header__label--compact {
+    font-size: 29px;
 }
 
 .select-level-cards {
     position: absolute;
-    left: 87px;
-    top: 116px;
-    width: 563px;
-    height: 456px;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-content: space-between;
+    left: 0;
+    top: 0;
+    width: 748px;
+    height: 603px;
 }
 
 .select-level-card-host {
+    position: absolute;
     flex-grow: 0;
     flex-shrink: 0;
     width: 124px;
     height: 132px;
+}
+
+.select-level-card-slot--1,
+.select-level-card-slot--6,
+.select-level-card-slot--7 {
+    left: 87px;
+}
+
+.select-level-card-slot--2,
+.select-level-card-slot--5,
+.select-level-card-slot--8 {
+    left: 306px;
+}
+
+.select-level-card-slot--3,
+.select-level-card-slot--4,
+.select-level-card-slot--9 {
+    left: 525px;
+}
+
+.select-level-card-slot--1,
+.select-level-card-slot--2,
+.select-level-card-slot--3 {
+    top: 116px;
+}
+
+.select-level-card-slot--4,
+.select-level-card-slot--5,
+.select-level-card-slot--6 {
+    top: 278px;
+}
+
+.select-level-card-slot--7,
+.select-level-card-slot--8,
+.select-level-card-slot--9 {
+    top: 440px;
 }
 
 .select-level-back {
@@ -533,7 +494,7 @@
 }
 
 .level-card__star--earned {
-    width: 34px;
+    width: 35px;
     background-image: url("/Assets/Content/ui/sprites/select_level/select_level_star_earned.png");
 }
 
@@ -550,11 +511,11 @@
 }
 
 .level-card--day-part .level-card__lock {
-    left: 64px;
-    top: 207px;
-    width: 47px;
-    height: 52px;
-    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_lock.png");
+    left: 68px;
+    top: 204px;
+    width: 39px;
+    height: 50px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_lock.png");
 }
 
 .level-card--day-part.level-card--unlocked .level-card__lock {
@@ -615,6 +576,10 @@
 }
 
 .level-card--level-locked {
+    left: 4px;
+    top: 6px;
+    width: 116px;
+    height: 112px;
     background-image: url("/Assets/Content/ui/sprites/select_level/select_level_card_locked.png");
 }
 
@@ -625,8 +590,8 @@
 }
 
 .level-card--level-locked .level-card__lock {
-    left: 37px;
-    top: 24px;
+    left: 34px;
+    top: 20px;
     width: 49px;
     height: 63px;
     background-image: url("/Assets/Content/ui/sprites/select_level/select_level_lock.png");
