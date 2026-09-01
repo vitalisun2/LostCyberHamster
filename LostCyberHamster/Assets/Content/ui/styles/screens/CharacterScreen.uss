@@ -46,7 +46,10 @@
 .hero-hud__left,
 .hero-hud__right {
     flex-direction: row;
-    gap: 12px;
+}
+
+.hero-hud__item--spaced {
+    margin-left: 12px;
 }
 
 .hero-hud__spacer {
@@ -70,7 +73,6 @@
     width: 786px;
     height: 69px;
     flex-direction: row;
-    gap: 42px;
 }
 
 .hero-tab {
@@ -84,14 +86,18 @@
     background-color: rgba(0, 0, 0, 0);
     background-image: url("/Assets/Content/ui/sprites/hero/tab_base_inactive.png");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 32px;
-    -unity-slice-right: 32px;
-    -unity-slice-top: 24px;
-    -unity-slice-bottom: 24px;
+    -unity-slice-left: 32;
+    -unity-slice-right: 32;
+    -unity-slice-top: 24;
+    -unity-slice-bottom: 24;
     border-top-width: 0;
     border-right-width: 0;
     border-bottom-width: 0;
     border-left-width: 0;
+}
+
+.hero-tab--abilities {
+    margin-left: 42px;
 }
 
 .hero-tab--active {
@@ -157,10 +163,10 @@
     height: 473px;
     background-image: url("/Assets/Content/ui/sprites/hero/panel_preview_base.png");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 48px;
-    -unity-slice-right: 48px;
-    -unity-slice-top: 48px;
-    -unity-slice-bottom: 48px;
+    -unity-slice-left: 48;
+    -unity-slice-right: 48;
+    -unity-slice-top: 48;
+    -unity-slice-bottom: 48;
 }
 
 .hero-skin-preview-image {
@@ -217,10 +223,10 @@
     background-color: rgba(0, 0, 0, 0);
     background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 30px;
-    -unity-slice-right: 30px;
-    -unity-slice-top: 24px;
-    -unity-slice-bottom: 24px;
+    -unity-slice-left: 30;
+    -unity-slice-right: 30;
+    -unity-slice-top: 24;
+    -unity-slice-bottom: 24;
     border-top-width: 0;
     border-right-width: 0;
     border-bottom-width: 0;
@@ -252,10 +258,15 @@
     height: 473px;
     margin: 0;
     padding: 0;
+    overflow: hidden;
     background-color: rgba(0, 0, 0, 0);
 }
 
-.hero-slots-scroll .unity-scroll-view__content-viewport,
+.hero-slots-scroll .unity-scroll-view__content-viewport {
+    width: 580px;
+    overflow: hidden;
+}
+
 .hero-slots-scroll .unity-scroll-view__content-container {
     width: 580px;
 }
@@ -263,7 +274,6 @@
 .hero-slots {
     flex-shrink: 0;
     width: 574px;
-    gap: 13px;
 }
 
 .hero-slot {
@@ -277,14 +287,18 @@
     background-color: rgba(0, 0, 0, 0);
     background-image: url("/Assets/Content/ui/sprites/hero/slot_base.png");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 40px;
-    -unity-slice-right: 40px;
-    -unity-slice-top: 32px;
-    -unity-slice-bottom: 32px;
+    -unity-slice-left: 40;
+    -unity-slice-right: 40;
+    -unity-slice-top: 32;
+    -unity-slice-bottom: 32;
     border-top-width: 0;
     border-right-width: 0;
     border-bottom-width: 0;
     border-left-width: 0;
+}
+
+.hero-slot--spaced {
+    margin-top: 13px;
 }
 
 .hero-slot--selected {
@@ -346,10 +360,10 @@
     padding-left: 44px;
     color: rgb(255, 255, 255);
     background-image: url("/Assets/Content/ui/sprites/hero/button_price_base.png");
-    -unity-slice-left: 32px;
-    -unity-slice-right: 32px;
-    -unity-slice-top: 26px;
-    -unity-slice-bottom: 26px;
+    -unity-slice-left: 32;
+    -unity-slice-right: 32;
+    -unity-slice-top: 26;
+    -unity-slice-bottom: 26;
     font-size: 29px;
 }
 

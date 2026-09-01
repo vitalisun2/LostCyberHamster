@@ -310,7 +310,7 @@ namespace LostCyberHamster.UI
                     : 1);
             foreach (Skin skin in orderedSkins)
             {
-                SkinSlots.Add(CreateSkinSlot(skin));
+                AppendSlot(SkinSlots, CreateSkinSlot(skin));
             }
 
             SkinScroll?.schedule.Execute(UpdateScrollNavigation);
@@ -378,10 +378,22 @@ namespace LostCyberHamster.UI
                         : 1);
             foreach (SuperAttackData ability in orderedAbilities)
             {
-                AbilitySlots.Add(CreateAbilitySlot(ability));
+                AppendSlot(AbilitySlots, CreateAbilitySlot(ability));
             }
 
             AbilityScroll?.schedule.Execute(UpdateScrollNavigation);
+        }
+
+        private static void AppendSlot(
+            VisualElement container,
+            VisualElement slot)
+        {
+            if (container.childCount > 0)
+            {
+                slot.AddToClassList("hero-slot--spaced");
+            }
+
+            container.Add(slot);
         }
 
         private VisualElement CreateAbilitySlot(SuperAttackData ability)

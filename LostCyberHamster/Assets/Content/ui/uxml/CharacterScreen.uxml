@@ -47,8 +47,8 @@
         <LostCyberHamster.UI.SharedHudLane class="hero-hud">
             <ui:VisualElement class="hero-hud__left">
                 <LostCyberHamster.UI.SharedHomeButton />
-                <LostCyberHamster.UI.SharedCoinsButton />
-                <LostCyberHamster.UI.SharedGemsButton />
+                <LostCyberHamster.UI.SharedCoinsButton class="hero-hud__item--spaced" />
+                <LostCyberHamster.UI.SharedGemsButton class="hero-hud__item--spaced" />
             </ui:VisualElement>
             <ui:VisualElement class="hero-hud__spacer" />
             <ui:VisualElement class="hero-hud__right">
