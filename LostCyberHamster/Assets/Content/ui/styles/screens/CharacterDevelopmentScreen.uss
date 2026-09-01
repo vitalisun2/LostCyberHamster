@@ -323,11 +323,11 @@
 }
 
 .development-arrow--left {
-    background-image: url("/Assets/Content/ui/sprites/skills/arrow_left.png");
+    background-image: url("/Assets/Content/ui/sprites/shared/button_scroll_left.png");
 }
 
 .development-arrow--right {
-    background-image: url("/Assets/Content/ui/sprites/skills/arrow_right.png");
+    background-image: url("/Assets/Content/ui/sprites/shared/button_scroll_right.png");
 }
 
 .development-skin-arrow--left {

@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 21121fdeb582c854091f6a8232da2dce
+guid: f0d8f6a1d0599ae4f90b18905dd2580f
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3312798837105470071
-    second: arrow_right_0
+      213: 2934586472674685596
+    second: button_scroll_left_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -53,7 +53,7 @@ TextureImporter:
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
-  spriteGenerateFallbackPhysicsShape: 0
+  spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
   spriteTessellationDetail: -1
@@ -139,23 +139,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: arrow_right_0
+      name: button_scroll_left_0
       rect:
         serializedVersion: 2
-        x: 1
-        y: 1
-        width: 34
-        height: 47
+        x: 0
+        y: 0
+        width: 42
+        height: 60
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 77aaff98dfc69fd20800000000000000
-      internalID: 3312798837105470071
+      spriteID: 
+      internalID: 0
       vertices: []
       indices: 
       edges: []
@@ -174,7 +174,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      arrow_right_0: 3312798837105470071
+      button_scroll_left_0: 2934586472674685596
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
