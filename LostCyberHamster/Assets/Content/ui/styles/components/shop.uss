@@ -34,14 +34,9 @@
     transform-origin: 0 0;
 }
 
-.shop-title {
-    position: absolute;
-    left: 750px;
-    top: 176px;
-    width: 260px;
-    height: 113px;
+.main-screen-title--shop {
+    width: 213.592px;
     background-image: url("/Assets/Content/ui/sprites/shop/title_shop.png");
-    -unity-background-scale-mode: scale-to-fit;
 }
 
 .shop-offer {
@@ -111,52 +106,4 @@
     -unity-text-outline-width: 0;
     -unity-text-outline-color: rgba(0, 0, 0, 0);
     white-space: nowrap;
-}
-
-.shop-hud {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 1725px;
-    height: 130px;
-    min-height: 130px;
-    max-height: 130px;
-    margin: 0;
-    overflow: visible;
-}
-
-.shop-hud__home {
-    position: absolute;
-    left: 32px;
-    top: 26px;
-    width: 99px;
-    min-width: 99px;
-    max-width: 99px;
-    height: 90px;
-    min-height: 90px;
-    max-height: 90px;
-}
-
-.shop-hud__coins {
-    position: absolute;
-    left: 198px;
-    top: 40px;
-}
-
-.shop-hud__gems {
-    position: absolute;
-    left: 454px;
-    top: 40px;
-}
-
-.shop-hud__settings {
-    position: absolute;
-    left: 1592px;
-    top: 20px;
-    width: 105px;
-    min-width: 105px;
-    max-width: 105px;
-    height: 102px;
-    min-height: 102px;
-    max-height: 102px;
 }

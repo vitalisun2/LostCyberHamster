@@ -5,6 +5,11 @@
     overflow: hidden;
 }
 
+.main-screen-title--league {
+    width: 348.255px;
+    background-image: url("/Assets/Content/ui/sprites/league/title_league.png");
+}
+
 .leaderboard-viewport {
     flex-grow: 1;
     flex-shrink: 1;
@@ -29,16 +34,6 @@
     width: 1672px;
     height: 821px;
     transform-origin: 0 0;
-}
-
-.leaderboard-title {
-    position: absolute;
-    left: 647px;
-    top: 34px;
-    width: 378px;
-    height: 100px;
-    background-image: url("/Assets/Content/ui/sprites/league/title_league.png");
-    -unity-background-scale-mode: scale-to-fit;
 }
 
 .leaderboard-center {

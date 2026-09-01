@@ -7,26 +7,6 @@
     overflow: visible;
 }
 
-.development-full-background {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("/Assets/Content/ui/sprites/skills/background_skills.png");
-    -unity-background-scale-mode: scale-and-crop;
-}
-
-.development-hud {
-    padding-right: 24px;
-    padding-left: 24px;
-}
-
-.development-hud__left {
-    flex-direction: row;
-    gap: 12px;
-}
-
 .development-viewport {
     flex-grow: 1;
     min-width: 0;
@@ -50,6 +30,11 @@
     width: 1672px;
     height: 941px;
     transform-origin: 0 0;
+}
+
+.main-screen-title--skills {
+    width: 304.174px;
+    background-image: url("/Assets/Content/ui/sprites/skills/title_skills.png");
 }
 
 .development-central {
@@ -102,16 +87,6 @@
     border-bottom-width: 0;
     border-left-width: 0;
     -unity-background-image-tint-color: rgb(255, 255, 255);
-}
-
-.development-title {
-    position: absolute;
-    left: 677px;
-    top: 120px;
-    width: 318px;
-    height: 92px;
-    background-image: url("/Assets/Content/ui/sprites/skills/title_skills.png");
-    -unity-background-scale-mode: scale-to-fit;
 }
 
 .development-cards-background {

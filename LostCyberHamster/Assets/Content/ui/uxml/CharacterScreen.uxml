@@ -1,12 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
     <Style src="../styles/components/dual-tabs.uss" />
     <Style src="../styles/screens/CharacterScreen.uss" />
-    <ui:VisualElement name="hero-screen" class="hero-screen">
-        <ui:VisualElement name="hero-viewport" class="hero-viewport">
+    <ui:VisualElement name="hero-screen" class="hero-screen main-screen">
+        <ui:VisualElement name="hero-viewport" class="hero-viewport main-screen-body">
             <ui:VisualElement name="hero-scale-frame" class="hero-scale-frame">
                 <ui:VisualElement name="hero-design" class="hero-design">
-                    <ui:VisualElement class="hero-title" picking-mode="Ignore" />
                     <ui:VisualElement name="hero-tabs" class="hero-tabs dual-tabs dual-tabs--left-active">
                         <ui:Button name="hero-tab-skins" class="hero-tab dual-tab dual-tab--left">
                             <ui:VisualElement class="hero-tab__icon hero-tab__icon--skins" picking-mode="Ignore" />
@@ -45,16 +45,7 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <LostCyberHamster.UI.SharedHudLane class="hero-hud">
-            <ui:VisualElement class="hero-hud__left">
-                <LostCyberHamster.UI.SharedHomeButton />
-                <LostCyberHamster.UI.SharedCoinsButton class="hero-hud__item--spaced" />
-                <LostCyberHamster.UI.SharedGemsButton class="hero-hud__item--spaced" />
-            </ui:VisualElement>
-            <ui:VisualElement class="hero-hud__spacer" />
-            <ui:VisualElement class="hero-hud__right">
-                <LostCyberHamster.UI.SharedSettingsButton />
-            </ui:VisualElement>
-        </LostCyberHamster.UI.SharedHudLane>
+        <ui:VisualElement class="main-screen-title main-screen-title--hero" picking-mode="Ignore" />
+        <ui:Instance template="Toolbar" name="toolbar" class="main-screen-hud" />
     </ui:VisualElement>
 </ui:UXML>

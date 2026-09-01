@@ -8,6 +8,11 @@
     background-color: rgba(0, 0, 0, 0);
 }
 
+.main-screen-title--settings {
+    width: 408.17px;
+    background-image: url("/Assets/Content/ui/sprites/settings/title_settings.png");
+}
+
 .settings-viewport {
     position: absolute;
     left: 0;
@@ -33,52 +38,6 @@
     width: 1672px;
     height: 940px;
     transform-origin: 0 0;
-}
-
-.settings-hud {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 1672px;
-    height: 130px;
-    min-height: 130px;
-    max-height: 130px;
-    margin: 0;
-    overflow: visible;
-}
-
-.settings-hud__home {
-    position: absolute;
-    left: 20px;
-    top: 21px;
-    width: 99px;
-    min-width: 99px;
-    max-width: 99px;
-    height: 90px;
-    min-height: 90px;
-    max-height: 90px;
-}
-
-.settings-hud__coins {
-    position: absolute;
-    left: 302px;
-    top: 28px;
-}
-
-.settings-hud__gems {
-    position: absolute;
-    left: 523px;
-    top: 28px;
-}
-
-.settings-title {
-    position: absolute;
-    left: 614px;
-    top: 145px;
-    width: 445px;
-    height: 103px;
-    background-image: url("/Assets/Content/ui/sprites/settings/title_settings.png");
-    -unity-background-scale-mode: scale-to-fit;
 }
 
 .settings-panel {

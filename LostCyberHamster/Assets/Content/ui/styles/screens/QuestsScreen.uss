@@ -4,26 +4,20 @@
     min-height: 0;
 }
 
+.main-screen-title--quests {
+    width: 331.134px;
+    background-image: url("/Assets/Content/ui/sprites/quests/title_quests.png");
+}
+
 .quests-content {
-    flex-grow: 1;
-    flex-shrink: 1;
+    padding-top: 208px;
     min-width: 0;
     min-height: 0;
     align-items: center;
 }
 
-.quests-title {
-    flex-grow: 0;
-    flex-shrink: 0;
-    width: 322px;
-    height: 88px;
-    margin-top: 2px;
-    background-image: url("/Assets/Content/ui/sprites/quests/title_quests.png");
-    -unity-background-scale-mode: scale-to-fit;
-}
-
 .quests-tabs {
-    margin-top: 32px;
+    margin-top: 0;
 }
 
 .quests-page {
@@ -285,7 +279,10 @@
 .quests-screen--compact .quests-tabs {
     width: 610px;
     height: 102px;
-    margin-top: 10px;
+}
+
+.quests-screen--compact .quests-content {
+    padding-top: 186px;
 }
 
 .quests-screen--compact .quests-container {

@@ -35,35 +35,9 @@
     transform-origin: 0 0;
 }
 
-.hero-hud {
-    position: absolute;
-    left: 24px;
-    right: 24px;
-    top: 0;
-    width: auto;
-}
-
-.hero-hud__left,
-.hero-hud__right {
-    flex-direction: row;
-}
-
-.hero-hud__item--spaced {
-    margin-left: 12px;
-}
-
-.hero-hud__spacer {
-    flex-grow: 1;
-}
-
-.hero-title {
-    position: absolute;
-    left: 704px;
-    top: 88px;
-    width: 264px;
-    height: 88px;
+.main-screen-title--hero {
+    width: 256.348px;
     background-image: url("/Assets/Content/ui/sprites/hero/title_hero.png");
-    -unity-background-scale-mode: scale-to-fit;
 }
 
 .hero-tabs {

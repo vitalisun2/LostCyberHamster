@@ -21,6 +21,7 @@ namespace LostCyberHamster.UI
         private const int MinimumCardsPerLine = 3;
         private const float DesignWidth = 1672f;
         private const float DesignHeight = 941f;
+        private const string BackgroundAddress = "SkillsBackgroundSprite";
 
         private enum DevelopmentCardState
         {
@@ -67,11 +68,6 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<VisualElement>("development__scale-frame");
         private VisualElement Design =>
             _contentRoot.Q<VisualElement>("development__design");
-        private VisualElement ScreenRoot =>
-            _contentRoot.Q<VisualElement>("character-development-screen");
-        private VisualElement FullBackground =>
-            _contentRoot.Q<VisualElement>("development__full-background");
-
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.CharacterDevelopmentScreen;
 
@@ -82,104 +78,11 @@ namespace LostCyberHamster.UI
 
         protected override async Task OnLoadAsync()
         {
-            EnsureRuntimeStructure();
+            await ChangeBackgroundAsync(
+                BackgroundAddress,
+                ScaleMode.ScaleAndCrop);
             UpdatePlayerProgress();
             await RefreshCardsAsync();
-        }
-
-        private void EnsureRuntimeStructure()
-        {
-            if (ScreenRoot == null || Design == null)
-            {
-                return;
-            }
-
-            if (_contentRoot.Q<SharedHudLane>() == null)
-            {
-                var lane = new SharedHudLane();
-                lane.AddToClassList("development-hud");
-
-                var leftGroup = new VisualElement();
-                leftGroup.AddToClassList("development-hud__left");
-                leftGroup.Add(new SharedHomeButton());
-                leftGroup.Add(new SharedCoinsButton());
-                leftGroup.Add(new SharedGemsButton());
-                lane.Add(leftGroup);
-
-                ScreenRoot.Insert(1, lane);
-            }
-
-            string[] legacyHudNames =
-            {
-                "development__btn-home",
-                "development__btn-coins",
-                "development__btn-gems"
-            };
-            foreach (string legacyHudName in legacyHudNames)
-            {
-                Design.Q<VisualElement>(legacyHudName)?.RemoveFromHierarchy();
-            }
-
-            // Поддерживаем старый cached Addressables tree до следующей content build.
-            if (FullBackground == null)
-            {
-                var background = new VisualElement
-                {
-                    name = "development__full-background",
-                    pickingMode = PickingMode.Ignore
-                };
-                background.AddToClassList("development-full-background");
-                background.style.position = Position.Absolute;
-                background.style.left = 0f;
-                background.style.top = 0f;
-                background.style.width = Length.Percent(100f);
-                background.style.height = Length.Percent(100f);
-                Sprite backgroundSprite =
-                    ScreenRoot.resolvedStyle.backgroundImage.sprite;
-                if (backgroundSprite != null)
-                {
-                    background.style.backgroundImage =
-                        new StyleBackground(backgroundSprite);
-                }
-                background.style.backgroundSize =
-                    new BackgroundSize(BackgroundSizeType.Cover);
-                ScreenRoot.Insert(0, background);
-                ScreenRoot.style.backgroundImage = StyleKeyword.None;
-                ScreenRoot.style.overflow = Overflow.Visible;
-            }
-
-            if (_contentRoot.Q<VisualElement>("development__central") == null)
-            {
-                var central = new VisualElement
-                {
-                    name = "development__central",
-                    pickingMode = PickingMode.Ignore
-                };
-                central.AddToClassList("development-central");
-                central.style.position = Position.Absolute;
-                central.style.left = 0f;
-                central.style.top = 0f;
-                central.style.width = DesignWidth;
-                central.style.height = DesignHeight;
-                central.style.scale = new Scale(
-                    new Vector3(1.2f, 1.2f, 1f));
-
-                VisualElement[] centralChildren = Design.Children()
-                    .ToArray();
-                foreach (VisualElement child in centralChildren)
-                {
-                    central.Add(child);
-                }
-                Design.Add(central);
-            }
-
-            VisualElement cardsBackground = _contentRoot.Q<VisualElement>(
-                className: "development-cards-background");
-            if (cardsBackground != null &&
-                string.IsNullOrWhiteSpace(cardsBackground.name))
-            {
-                cardsBackground.name = "development__cards-background";
-            }
         }
 
         protected override void OnSubscribeToEvents()
@@ -196,12 +99,8 @@ namespace LostCyberHamster.UI
                 OnAbilityNextClicked);
             Viewport?.RegisterCallback<GeometryChangedEvent>(
                 OnViewportGeometryChanged);
-            _contentRoot.panel?.visualTree.RegisterCallback<
-                GeometryChangedEvent>(OnPanelGeometryChanged);
             Viewport?.schedule.Execute(
                 () => ApplyResponsiveLayout(Viewport.contentRect.size));
-            ScreenRoot?.schedule.Execute(ApplyFullViewportBackground);
-
         }
 
         protected override void OnUnsubscribeFromEvents()
@@ -218,8 +117,6 @@ namespace LostCyberHamster.UI
                 OnAbilityNextClicked);
             Viewport?.UnregisterCallback<GeometryChangedEvent>(
                 OnViewportGeometryChanged);
-            _contentRoot.panel?.visualTree.UnregisterCallback<
-                GeometryChangedEvent>(OnPanelGeometryChanged);
             ReleaseAbilityIcons();
             ReleaseGeneratedPreviewIcons();
         }
@@ -685,30 +582,6 @@ namespace LostCyberHamster.UI
         private void OnViewportGeometryChanged(GeometryChangedEvent evt)
         {
             ApplyResponsiveLayout(evt.newRect.size);
-            ApplyFullViewportBackground();
-        }
-
-        private void OnPanelGeometryChanged(GeometryChangedEvent evt)
-        {
-            ApplyFullViewportBackground();
-        }
-
-        private void ApplyFullViewportBackground()
-        {
-            VisualElement panelRoot = _contentRoot.panel?.visualTree;
-            if (panelRoot == null ||
-                ScreenRoot == null ||
-                FullBackground == null)
-            {
-                return;
-            }
-
-            Rect panelBounds = panelRoot.worldBound;
-            Rect screenBounds = ScreenRoot.worldBound;
-            FullBackground.style.left = panelBounds.xMin - screenBounds.xMin;
-            FullBackground.style.top = panelBounds.yMin - screenBounds.yMin;
-            FullBackground.style.width = panelBounds.width;
-            FullBackground.style.height = panelBounds.height;
         }
 
         private void ApplyResponsiveLayout(Vector2 viewportSize)

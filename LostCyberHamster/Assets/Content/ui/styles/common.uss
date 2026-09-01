@@ -5,7 +5,7 @@
 @import url("/Assets/Content/ui/styles/components/shared-hud-controls.uss");
 @import url("/Assets/Content/ui/styles/utilities/backgrounds.uss");
 @import url("/Assets/Content/ui/styles/utilities/borders.uss");
-@import url("/Assets/Content/ui/styles/components/toolbar.uss");
+@import url("/Assets/Content/ui/styles/components/screen-chrome.uss");
 @import url("/Assets/Content/ui/styles/screens/HomeScreen.uss");
 @import url("/Assets/Content/ui/styles/screens/CharacterScreen.uss");
 @import url("/Assets/Content/ui/styles/base/typography.uss");

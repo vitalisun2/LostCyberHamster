@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: UI
   m_GUID: 8b60fa516636c4257a46110822c557e1
   m_SerializeEntries:
+  - m_GUID: 022a4bbf3b113464a8357d3465d4cf1b
+    m_Address: SkillsBackgroundSprite
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - textures
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0c75baed6b0e1d042a79fb6a0d1ac183
     m_Address: ability-icon/skateboard
     m_ReadOnly: 0

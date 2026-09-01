@@ -344,38 +344,10 @@ namespace LostCyberHamster.UI
 
         private void SetPlayerNameEditMode(bool isEditing)
         {
-            if (isEditing)
-                AttachPlayerNameOverlayToBackground();
-
             _playerNameView.style.display = DisplayStyle.Flex;
             _playerNameEdit.style.display = isEditing
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
-        }
-
-        /// <summary>Выносит overlay над safe area на полноэкранный слой текущего экрана.</summary>
-        private void AttachPlayerNameOverlayToBackground()
-        {
-            var overlay = _playerNameEdit;
-            if (overlay?.parent == _background)
-                return;
-
-            overlay?.RemoveFromHierarchy();
-            if (overlay != null)
-                _background.Add(overlay);
-        }
-
-        /// <summary>Возвращает скрытый overlay в дерево экрана перед его выгрузкой.</summary>
-        private void RestorePlayerNameOverlay()
-        {
-            var overlay = _playerNameEdit;
-            var design = _design;
-            if (overlay == null || design == null || overlay.parent == design)
-                return;
-
-            overlay.style.display = DisplayStyle.None;
-            overlay.RemoveFromHierarchy();
-            design.Add(overlay);
         }
 
         private void FocusPlayerNameField()
@@ -598,7 +570,6 @@ namespace LostCyberHamster.UI
 
         private void EndSession()
         {
-            RestorePlayerNameOverlay();
             if (!_isActive)
                 return;
 

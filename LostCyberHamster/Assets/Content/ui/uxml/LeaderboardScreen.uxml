@@ -2,14 +2,10 @@
     <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
     <Style src="../styles/screens/LeaderboardScreen.uss" />
-    <engine:VisualElement name="leaderboard-screen" class="leaderboard-screen">
-        <engine:Instance template="Toolbar" name="toolbar" />
-
-        <engine:VisualElement name="leaderboard__viewport" class="leaderboard-viewport">
+    <engine:VisualElement name="leaderboard-screen" class="leaderboard-screen main-screen">
+        <engine:VisualElement name="leaderboard__viewport" class="leaderboard-viewport main-screen-body main-screen-body--below-hud">
             <engine:VisualElement name="leaderboard__scale-frame" class="leaderboard-scale-frame">
                 <engine:VisualElement name="leaderboard__design" class="leaderboard-design">
-                    <engine:VisualElement class="leaderboard-title" picking-mode="Ignore" />
-
                     <engine:VisualElement class="leaderboard-center">
                         <engine:VisualElement class="leaderboard-center__art" picking-mode="Ignore" />
 
@@ -65,5 +61,7 @@
                 </engine:VisualElement>
             </engine:VisualElement>
         </engine:VisualElement>
+        <engine:VisualElement class="main-screen-title main-screen-title--league" picking-mode="Ignore" />
+        <engine:Instance template="Toolbar" name="toolbar" class="main-screen-hud" />
     </engine:VisualElement>
 </engine:UXML>
