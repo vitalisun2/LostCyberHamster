@@ -15,6 +15,8 @@ namespace LostCyberHamster.UI
         private const float DesignWidth = 1672f;
         private const float DesignHeight = 941f;
         private const int LevelSlotCount = 9;
+        private const string BackgroundAssetName =
+            "SelectLevelScreenBackgroundSprite";
 
         private static readonly string[] LocationVisualClasses =
         {
@@ -31,8 +33,6 @@ namespace LostCyberHamster.UI
 
         private VisualElement Viewport =>
             _contentRoot.Q<VisualElement>("select-level-viewport");
-        private VisualElement ScreenBackgroundSource =>
-            _contentRoot.Q<VisualElement>("select-level-background-source");
         private VisualElement ScaleFrame =>
             _contentRoot.Q<VisualElement>("select-level-scale-frame");
         private VisualElement Design =>
@@ -74,16 +74,15 @@ namespace LostCyberHamster.UI
         {
         }
 
-        protected override Task OnLoadAsync()
+        protected override async Task OnLoadAsync()
         {
-            // Переносим экранный фон на корень, включая зоны safe area.
-            ApplyScreenBackground();
-            ScreenBackgroundSource?.schedule.Execute(ApplyScreenBackground);
+            await ChangeBackgroundAsync(
+                BackgroundAssetName,
+                ScaleMode.ScaleAndCrop);
 
             // Восстанавливаем состояние выбора из текущего прогресса.
             InitializeSelectionModel();
             RenderCurrentState();
-            return Task.CompletedTask;
         }
 
         protected override void OnSubscribeToEvents()
@@ -228,48 +227,6 @@ namespace LostCyberHamster.UI
             LevelHeaderLabel.EnableInClassList(
                 "select-level-header__label--compact",
                 LevelHeaderLabel.text.Length > 22);
-        }
-
-        /// <summary>
-        /// Применяет Brooklyn Bridge к корневому фону экрана и safe area.
-        /// </summary>
-        private void ApplyScreenBackground()
-        {
-            if (_background == null || ScreenBackgroundSource == null)
-            {
-                return;
-            }
-
-            // USS может разрешить PNG как Texture2D или Sprite.
-            Background backgroundImage = ScreenBackgroundSource
-                .resolvedStyle
-                .backgroundImage;
-            if (backgroundImage.sprite != null)
-            {
-                _background.style.backgroundImage =
-                    new StyleBackground(backgroundImage.sprite);
-            }
-            else if (backgroundImage.texture != null)
-            {
-                _background.style.backgroundImage =
-                    new StyleBackground(backgroundImage.texture);
-            }
-            else
-            {
-                return;
-            }
-
-            // Один cover-фон заполняет viewport и safe area без швов.
-            _background.style.backgroundSize =
-                new BackgroundSize(BackgroundSizeType.Cover);
-            _background.style.backgroundPositionX =
-                new BackgroundPosition(BackgroundPositionKeyword.Center);
-            _background.style.backgroundPositionY =
-                new BackgroundPosition(BackgroundPositionKeyword.Center);
-            _background.style.backgroundRepeat = new BackgroundRepeat(
-                Repeat.NoRepeat,
-                Repeat.NoRepeat);
-            ScreenBackgroundSource.style.display = DisplayStyle.None;
         }
 
         private void UpdateLocationSelector()
