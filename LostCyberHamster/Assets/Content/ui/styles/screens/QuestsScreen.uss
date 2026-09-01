@@ -26,10 +26,6 @@
     margin-top: 32px;
 }
 
-.quests-tab__label {
-    font-size: 36px;
-}
-
 .quests-page {
     flex-grow: 1;
     flex-shrink: 1;
@@ -258,7 +254,7 @@
     opacity: 0.72;
 }
 
-.quest-reward--disabled .quest-item__reward-button {
+.quest-item .lcs_btn.quest-item__reward-button:disabled {
     background-color: rgb(112, 116, 118);
     background-image: none;
 }
@@ -296,11 +292,6 @@
     width: 530px;
     height: 89px;
     margin-top: 10px;
-}
-
-.quests-screen--compact .quests-tab__label {
-    font-size: 29px;
-    -unity-text-outline-width: 2px;
 }
 
 .quests-screen--compact .quests-container {

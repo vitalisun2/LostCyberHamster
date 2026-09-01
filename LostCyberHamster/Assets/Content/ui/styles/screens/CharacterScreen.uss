@@ -90,12 +90,8 @@
 }
 
 .hero-tab__label {
-    left: 62px;
-    width: 232px;
-    color: rgb(255, 255, 255);
-    font-size: 26px;
-    -unity-text-outline-color: rgb(21, 21, 21);
-    -unity-text-outline-width: 2px;
+    left: 68px;
+    width: 220px;
 }
 
 .hero-content {
