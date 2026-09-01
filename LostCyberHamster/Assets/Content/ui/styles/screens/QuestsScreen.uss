@@ -23,47 +23,11 @@
 }
 
 .quests-tabs {
-    flex-grow: 0;
-    flex-shrink: 0;
-    width: 662px;
-    height: 111px;
     margin-top: 32px;
-    background-image: url("/Assets/Content/ui/sprites/quests/quests_tabs_daily_active.png");
-    -unity-background-scale-mode: scale-to-fit;
 }
 
-.quests-tabs--story {
-    background-image: url("/Assets/Content/ui/sprites/quests/quests_tabs_story_active.png");
-}
-
-.quests-tab-hitbox {
-    position: absolute;
-    top: 15px;
-    width: 300px;
-    height: 86px;
-    margin: 0;
-    padding: 0;
-    border-width: 0;
-    border-radius: 24px;
-    background-color: rgba(0, 0, 0, 0);
-    color: rgba(0, 0, 0, 0);
-}
-
-.quests-tab-hitbox--daily {
-    left: 13px;
-}
-
-.quests-tab-hitbox--story {
-    right: 18px;
-}
-
-.quests-tab-hitbox:hover,
-.quests-tab-hitbox:focus {
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-.quests-tab-hitbox:active {
-    background-color: rgba(0, 0, 0, 0.08);
+.quests-tab__label {
+    font-size: 36px;
 }
 
 .quests-page {
@@ -334,18 +298,9 @@
     margin-top: 10px;
 }
 
-.quests-screen--compact .quests-tab-hitbox {
-    top: 12px;
-    width: 240px;
-    height: 69px;
-}
-
-.quests-screen--compact .quests-tab-hitbox--daily {
-    left: 10px;
-}
-
-.quests-screen--compact .quests-tab-hitbox--story {
-    right: 14px;
+.quests-screen--compact .quests-tab__label {
+    font-size: 29px;
+    -unity-text-outline-width: 2px;
 }
 
 .quests-screen--compact .quests-container {

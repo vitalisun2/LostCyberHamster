@@ -46,6 +46,8 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<VisualElement>("hero-scale-frame");
         private VisualElement Design =>
             _contentRoot.Q<VisualElement>("hero-design");
+        private VisualElement Tabs =>
+            _contentRoot.Q<VisualElement>("hero-tabs");
         private Button SkinTabButton =>
             _contentRoot.Q<Button>("hero-tab-skins");
         private Button AbilityTabButton =>
@@ -617,10 +619,8 @@ namespace LostCyberHamster.UI
         private void ApplyActiveTab()
         {
             bool showSkins = _activeTab == HeroTab.Skins;
-            SkinTabButton.EnableInClassList("hero-tab--active", showSkins);
-            AbilityTabButton.EnableInClassList(
-                "hero-tab--active",
-                !showSkins);
+            Tabs.EnableInClassList("dual-tabs--left-active", showSkins);
+            Tabs.EnableInClassList("dual-tabs--right-active", !showSkins);
             SkinsPage.style.display = showSkins
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;

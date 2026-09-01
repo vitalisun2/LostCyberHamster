@@ -1,13 +1,18 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <Style src="../styles/components/dual-tabs.uss" />
     <engine:VisualElement name="questsscreen" class="quests-screen">
         <engine:Instance template="Toolbar" name="toolbar" />
         <engine:VisualElement name="quests-content" class="quests-content" picking-mode="Ignore">
             <engine:VisualElement name="quests-title" class="quests-title" picking-mode="Ignore" />
-            <engine:VisualElement name="quests-tabs" class="quests-tabs quests-tabs--daily">
-                <engine:Button name="btn__quests-tab-daily" class="lcs_btn quests-tab-hitbox quests-tab-hitbox--daily" />
-                <engine:Button name="btn__quests-tab-story" class="lcs_btn quests-tab-hitbox quests-tab-hitbox--story" />
+            <engine:VisualElement name="quests-tabs" class="quests-tabs dual-tabs dual-tabs--left-active">
+                <engine:Button name="btn__quests-tab-daily" class="dual-tab dual-tab--left">
+                    <Vues.GameCore.LocalizedLabel key="quests_tab_daily" class="dual-tab__label quests-tab__label" picking-mode="Ignore" />
+                </engine:Button>
+                <engine:Button name="btn__quests-tab-story" class="dual-tab dual-tab--right">
+                    <Vues.GameCore.LocalizedLabel key="quests_tab_story" class="dual-tab__label quests-tab__label" picking-mode="Ignore" />
+                </engine:Button>
             </engine:VisualElement>
             <engine:VisualElement name="quests-page" class="quests-page" picking-mode="Ignore">
                 <engine:Button text="◀" name="btn__quests-prev" class="lcs_btn bg-primary carousel-nav-button carousel-nav-button--previous" />

@@ -81,10 +81,10 @@ namespace LostCyberHamster.UI
 
             // Переключаем цельный арт вкладок и раскладку набора.
             _questsTabs.EnableInClassList(
-                "quests-tabs--daily",
+                "dual-tabs--left-active",
                 _showDailyTasks);
             _questsTabs.EnableInClassList(
-                "quests-tabs--story",
+                "dual-tabs--right-active",
                 !_showDailyTasks);
             _questsContainer.EnableInClassList(
                 "quests-container--story",

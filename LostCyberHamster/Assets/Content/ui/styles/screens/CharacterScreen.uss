@@ -68,46 +68,14 @@
 
 .hero-tabs {
     position: absolute;
-    left: 443px;
-    top: 318px;
-    width: 786px;
-    height: 69px;
-    flex-direction: row;
-}
-
-.hero-tab {
-    position: relative;
-    flex-grow: 0;
-    flex-shrink: 0;
-    width: 372px;
-    height: 69px;
-    margin: 0;
-    padding: 0;
-    background-color: rgba(0, 0, 0, 0);
-    background-image: url("/Assets/Content/ui/sprites/hero/tab_base_inactive.png");
-    -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 32;
-    -unity-slice-right: 32;
-    -unity-slice-top: 24;
-    -unity-slice-bottom: 24;
-    border-top-width: 0;
-    border-right-width: 0;
-    border-bottom-width: 0;
-    border-left-width: 0;
-}
-
-.hero-tab--abilities {
-    margin-left: 42px;
-}
-
-.hero-tab--active {
-    background-image: url("/Assets/Content/ui/sprites/hero/tab_base_active.png");
+    left: 505px;
+    top: 286px;
 }
 
 .hero-tab__icon {
     position: absolute;
-    left: 28px;
-    top: 11px;
+    left: 16px;
+    top: 19px;
     width: 48px;
     height: 47px;
     -unity-background-scale-mode: scale-to-fit;
@@ -122,17 +90,12 @@
 }
 
 .hero-tab__label {
-    position: absolute;
-    left: 76px;
-    top: 5px;
-    width: 286px;
-    height: 57px;
-    color: rgb(18, 21, 23);
-    font-size: 24px;
-    white-space: nowrap;
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-    -unity-text-outline-width: 0;
+    left: 62px;
+    width: 232px;
+    color: rgb(255, 255, 255);
+    font-size: 26px;
+    -unity-text-outline-color: rgb(21, 21, 21);
+    -unity-text-outline-width: 2px;
 }
 
 .hero-content {
@@ -402,17 +365,21 @@
     background-image: url("/Assets/Content/ui/sprites/shared/button_scroll_down.png");
 }
 
-.hero-scroll-button:disabled {
-    opacity: 0.45;
-}
-
+.hero-scroll-button:disabled,
 .hero-scroll-button:hover,
 .hero-scroll-button:active,
-.hero-scroll-button:focus {
+.hero-scroll-button:focus,
+.hero-scroll-button:disabled:hover,
+.hero-scroll-button:disabled:active,
+.hero-scroll-button:disabled:focus {
     background-color: rgba(0, 0, 0, 0);
     -unity-background-image-tint-color: rgb(255, 255, 255);
     border-top-width: 0;
     border-right-width: 0;
     border-bottom-width: 0;
     border-left-width: 0;
+}
+
+.hero-scroll-button:disabled {
+    opacity: 0.45;
 }

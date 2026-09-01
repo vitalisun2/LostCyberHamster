@@ -1,19 +1,20 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <Style src="../styles/components/dual-tabs.uss" />
     <Style src="../styles/screens/CharacterScreen.uss" />
     <ui:VisualElement name="hero-screen" class="hero-screen">
         <ui:VisualElement name="hero-viewport" class="hero-viewport">
             <ui:VisualElement name="hero-scale-frame" class="hero-scale-frame">
                 <ui:VisualElement name="hero-design" class="hero-design">
                     <ui:VisualElement class="hero-title" picking-mode="Ignore" />
-                    <ui:VisualElement class="hero-tabs">
-                        <ui:Button name="hero-tab-skins" class="hero-tab hero-tab--skins hero-tab--active">
+                    <ui:VisualElement name="hero-tabs" class="hero-tabs dual-tabs dual-tabs--left-active">
+                        <ui:Button name="hero-tab-skins" class="hero-tab dual-tab dual-tab--left">
                             <ui:VisualElement class="hero-tab__icon hero-tab__icon--skins" picking-mode="Ignore" />
-                            <Vues.GameCore.LocalizedLabel key="equipment_skins" class="hero-tab__label" picking-mode="Ignore" />
+                            <Vues.GameCore.LocalizedLabel key="equipment_skins" class="dual-tab__label hero-tab__label" picking-mode="Ignore" />
                         </ui:Button>
-                        <ui:Button name="hero-tab-abilities" class="hero-tab hero-tab--abilities">
+                        <ui:Button name="hero-tab-abilities" class="hero-tab dual-tab dual-tab--right">
                             <ui:VisualElement class="hero-tab__icon hero-tab__icon--abilities" picking-mode="Ignore" />
-                            <Vues.GameCore.LocalizedLabel key="equipment_abilities" class="hero-tab__label" picking-mode="Ignore" />
+                            <Vues.GameCore.LocalizedLabel key="equipment_abilities" class="dual-tab__label hero-tab__label" picking-mode="Ignore" />
                         </ui:Button>
                     </ui:VisualElement>
                     <ui:VisualElement class="hero-content">

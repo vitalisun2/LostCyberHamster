@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: e102b77cbf8a220438570f026c369b36
+guid: 18eb215b0e1dcc848acca7605a04933d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 983490764287340494
-    second: quests_tabs_story_active_0
+      213: 4068277885796880224
+    second: tabs_left_active_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -139,7 +139,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: quests_tabs_story_active_0
+      name: tabs_left_active_0
       rect:
         serializedVersion: 2
         x: 0
@@ -154,8 +154,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ecf693da3af06ad00800000000000000
-      internalID: 983490764287340494
+      spriteID: 06f0086be2d657830800000000000000
+      internalID: 4068277885796880224
       vertices: []
       indices: 
       edges: []
@@ -174,7 +174,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      quests_tabs_story_active_0: 983490764287340494
+      tabs_left_active_0: 4068277885796880224
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

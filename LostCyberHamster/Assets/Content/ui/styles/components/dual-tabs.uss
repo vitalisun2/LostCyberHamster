@@ -1,0 +1,80 @@
+.dual-tabs {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 662px;
+    height: 111px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.dual-tabs--left-active {
+    background-image: url("/Assets/Content/ui/sprites/shared/tabs_left_active.png");
+}
+
+.dual-tabs--right-active {
+    background-image: url("/Assets/Content/ui/sprites/shared/tabs_right_active.png");
+}
+
+.dual-tab {
+    position: absolute;
+    top: 13.5%;
+    width: 45.3%;
+    height: 77.5%;
+    margin: 0;
+    padding: 0;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    border-bottom-right-radius: 24px;
+    border-bottom-left-radius: 24px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dual-tab--left {
+    left: 2%;
+}
+
+.dual-tab--right {
+    right: 2.7%;
+}
+
+.dual-tab:hover,
+.dual-tab:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dual-tab:active {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.dual-tab:hover,
+.dual-tab:focus,
+.dual-tab:active,
+.dual-tab:disabled {
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+.dual-tab:disabled {
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0.5;
+}
+
+.dual-tab__label {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    color: rgb(255, 255, 255);
+    font-size: 36px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-color: rgb(21, 21, 21);
+    -unity-text-outline-width: 3px;
+}
