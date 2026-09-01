@@ -256,8 +256,10 @@ namespace LostCyberHamster.UI
                     ? GetLocationView(_currentLocationIndex + 1)
                     : null);
 
-            PreviousLocationButton?.SetEnabled(locationCount > 1);
-            NextLocationButton?.SetEnabled(locationCount > 1);
+            PreviousLocationButton?.SetEnabled(
+                CanNavigateToLocation(_currentLocationIndex - 1));
+            NextLocationButton?.SetEnabled(
+                CanNavigateToLocation(_currentLocationIndex + 1));
         }
 
         private static void SetLocationBadge(
@@ -313,6 +315,13 @@ namespace LostCyberHamster.UI
             return GetLocationView(_currentLocationIndex);
         }
 
+        private bool CanNavigateToLocation(int index)
+        {
+            int locationCount = _selectionModel?.Locations.Count ?? 0;
+            return locationCount > 1 &&
+                   GetLocationView(index)?.IsUnlocked == true;
+        }
+
         private LocationView GetLocationView(int index)
         {
             int locationCount = _selectionModel?.Locations.Count ?? 0;
@@ -362,7 +371,8 @@ namespace LostCyberHamster.UI
         private void ChangeLocation(int delta)
         {
             int locationCount = _selectionModel?.Locations.Count ?? 0;
-            if (locationCount <= 1)
+            if (locationCount <= 1 ||
+                !CanNavigateToLocation(_currentLocationIndex + delta))
             {
                 return;
             }
