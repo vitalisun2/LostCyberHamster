@@ -11,7 +11,7 @@ namespace LostCyberHamster.UI
         SettingsScreen,
         AccountPromptModal,
         CloudSaveConflictModal,
-        ShopModal,
+        ShopScreen,
         GameScreen,
         PauseModal,
         WinModal,

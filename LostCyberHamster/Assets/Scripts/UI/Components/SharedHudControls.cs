@@ -161,7 +161,7 @@ namespace LostCyberHamster.UI
 
         private static void OpenShop()
         {
-            UIManager.OnModalShow?.Invoke(ScreenEnum.ShopModal);
+            UIManager.OnScreenShow?.Invoke(ScreenEnum.ShopScreen);
         }
     }
 

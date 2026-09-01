@@ -75,7 +75,7 @@ namespace Assets.Scripts.Entry_Points
                 new QuestsScreenController(_uiDocument),
                 new SelectLevelScreenController(_uiDocument),
                 leaderboardScreenController,
-                new ShopModalController(_uiDocument),
+                new ShopScreenController(_uiDocument),
                 new DailyQuestRewardModalController(
                     _uiDocument,
                     CloseDailyQuestRewardModal),

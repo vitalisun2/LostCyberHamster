@@ -715,6 +715,10 @@
         {
               "key": "skin_name_summer",
               "value": "Летний"
+        },
+        {
+            "key": "shop_insufficient_coins_for_crystals",
+            "value": "Недостаточно монет для покупки кристаллов"
         }
     ]
 }

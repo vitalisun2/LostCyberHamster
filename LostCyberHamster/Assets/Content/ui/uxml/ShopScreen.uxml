@@ -1,0 +1,21 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
+    <engine:VisualElement name="shop-screen" class="shop-screen">
+        <engine:VisualElement name="shop-viewport" class="shop-viewport">
+            <engine:VisualElement name="shop-scale-frame" class="shop-scale-frame">
+                <engine:VisualElement name="shop-design" class="shop-design">
+                    <engine:VisualElement class="shop-title" picking-mode="Ignore" />
+                    <engine:Button name="shop-free-coins" class="shop-offer shop-offer--free-coins" />
+                    <engine:Button name="shop-crystal-pack" class="shop-offer shop-offer--crystal-pack" />
+                    <Vues.GameCore.LocalizedLabel name="shop-purchase-message" key="shop_insufficient_coins_for_crystals" class="shop-purchase-message" />
+                    <LostCyberHamster.UI.SharedHudLane class="shop-hud">
+                        <LostCyberHamster.UI.SharedHomeButton class="shop-hud__home" />
+                        <LostCyberHamster.UI.SharedCoinsButton class="shop-hud__coins" />
+                        <LostCyberHamster.UI.SharedGemsButton class="shop-hud__gems" />
+                        <LostCyberHamster.UI.SharedSettingsButton class="shop-hud__settings" />
+                    </LostCyberHamster.UI.SharedHudLane>
+                </engine:VisualElement>
+            </engine:VisualElement>
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

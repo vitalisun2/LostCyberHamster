@@ -41,6 +41,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - textures
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 27f2d7399f939154dac8acbeed0bedab
+    m_Address: ShopScreenBackgroundSprite
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 29047d9fdf8ef4acdbb6f67516476d96
     m_Address: ui_atlas
     m_ReadOnly: 0
@@ -152,9 +157,10 @@ MonoBehaviour:
     - textures
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a0ed9eba09b3644f4a085fc31c6541c7
-    m_Address: ShopModal
+    m_Address: ShopScreen
     m_ReadOnly: 0
-    m_SerializedLabels: []
+    m_SerializedLabels:
+    - screens
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a16e77b5f631c47dab9aaa44fca17fc5
     m_Address: ShopItem

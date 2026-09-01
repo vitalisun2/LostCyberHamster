@@ -28,9 +28,11 @@ namespace GameAds
             {
                 if (showCompletionState == UnityAdsShowCompletionState.COMPLETED)
                 {
-
                     AdCompleted();
+                    return;
                 }
+
+                AdCancelled();
             }
         }
     }

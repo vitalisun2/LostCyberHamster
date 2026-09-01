@@ -1,24 +1,162 @@
-#shop-item {
-    margin: 24px;
-    background-color: var(--ui-surface);
-    border-radius: 12px;
-    border-width: 6px;
-    border-color: var(--ui-border);
-    height: 360px;
-    width: 300px;
-    margin-bottom: 24px;
+.shop-screen {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
 }
 
-.shop-item__btn-get {
-    background-color: var(--ui-status-danger);
-    border-radius: 12px;
-    border-width: 6px;
-    border-color: var(--ui-border);
-    height: 64px;
-    font-size: var(--ui-font-size-small);
-    margin-bottom: 24px;
-    color: var(--ui-text-fill);
-    -unity-text-outline-width: 3px;
-    -unity-text-outline-color: var(--ui-text-outline);
+.shop-viewport {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.shop-scale-frame {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 1725px;
+    height: 912px;
+}
+
+.shop-design {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1725px;
+    height: 912px;
+    transform-origin: 0 0;
+}
+
+.shop-title {
+    position: absolute;
+    left: 750px;
+    top: 176px;
+    width: 260px;
+    height: 113px;
+    background-image: url("/Assets/Content/ui/sprites/shop/title_shop.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.shop-offer {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    overflow: visible;
+    -unity-background-scale-mode: scale-to-fit;
+    transition-property: scale, opacity;
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+}
+
+.shop-offer:hover,
+.shop-offer:focus {
+    opacity: 0.97;
+    scale: 1.015 1.015;
+}
+
+.shop-offer:active {
+    opacity: 0.9;
+    scale: 0.98 0.98;
+}
+
+.shop-offer:disabled {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.shop-offer--free-coins {
+    left: 391px;
+    top: 301px;
+    width: 647px;
+    height: 500px;
+    background-image: url("/Assets/Content/ui/sprites/shop/offer_free_coins.png");
+}
+
+.shop-offer--crystal-pack {
+    left: 1063px;
+    top: 344px;
+    width: 308px;
+    height: 448px;
+    background-image: url("/Assets/Content/ui/sprites/shop/offer_crystal_pack.png");
+}
+
+.shop-purchase-message {
+    position: absolute;
+    left: 62px;
+    top: 802px;
+    width: 1600px;
+    height: 105px;
+    display: none;
+    color: rgb(255, 255, 255);
+    font-size: 39px;
     -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: rgba(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.shop-hud {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1725px;
+    height: 130px;
+    min-height: 130px;
+    max-height: 130px;
+    margin: 0;
+    overflow: visible;
+}
+
+.shop-hud__home {
+    position: absolute;
+    left: 32px;
+    top: 26px;
+    width: 99px;
+    min-width: 99px;
+    max-width: 99px;
+    height: 90px;
+    min-height: 90px;
+    max-height: 90px;
+}
+
+.shop-hud__coins {
+    position: absolute;
+    left: 198px;
+    top: 40px;
+}
+
+.shop-hud__gems {
+    position: absolute;
+    left: 454px;
+    top: 40px;
+}
+
+.shop-hud__settings {
+    position: absolute;
+    left: 1592px;
+    top: 20px;
+    width: 105px;
+    min-width: 105px;
+    max-width: 105px;
+    height: 102px;
+    min-height: 102px;
+    max-height: 102px;
 }

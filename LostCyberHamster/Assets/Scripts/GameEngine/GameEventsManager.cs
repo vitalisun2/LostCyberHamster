@@ -19,6 +19,10 @@ public static class GameEventsManager
     public static event Action OnAdCompleted;
     public static void AdCompleted() => OnAdCompleted?.Invoke();
 
+    public static event Action<bool> OnAdFinished;
+    public static void AdFinished(bool completed) =>
+        OnAdFinished?.Invoke(completed);
+
     public static void ShowShopScreen() => OnShowShopScreen?.Invoke();
     public static void ShowLevelsScreen() => OnShowLevelsScreen?.Invoke();
     public static void StartGame() => OnStartGame?.Invoke();

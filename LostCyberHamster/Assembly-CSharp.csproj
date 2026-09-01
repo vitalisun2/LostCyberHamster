@@ -205,7 +205,6 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Core\QuestEvent.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\PartView.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\LoseModalController.cs" />
-    <Compile Include="Assets\Scripts\UI\Modals\ShopModalController.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\AddressableExtentions.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverExecutor.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UnspawnOnJumpedOnMechanics.cs" />
@@ -254,6 +253,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneTiming.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\AddCoinsOrBonusMechanics.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LocationTheme.cs" />
+    <Compile Include="Assets\Scripts\UI\Screens\ShopScreenController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\LevelUpModalController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneSimulator.cs" />
@@ -685,7 +685,7 @@
   <ItemGroup>
     <None Include="Assets\Content\ui\styles\components\forms.uss" />
     <None Include="Assets\Content\ui\styles\screens\SelectLevelScreen.uss" />
-    <None Include="Assets\Content\ui\uxml\ShopModal.uxml" />
+    <None Include="Assets\Content\ui\uxml\ShopScreen.uxml" />
     <None Include="Assets\Content\ui\styles\components\runtime-states.uss" />
     <None Include="Assets\Content\ui\styles\screens\Bootstrap.uss" />
     <None Include="Assets\Content\ui\uxml\RepeatButton.uxml" />

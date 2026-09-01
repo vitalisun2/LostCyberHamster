@@ -29,10 +29,7 @@ namespace GameAds
 
         public static void Initialize()
         {
-#if UNITY_EDITOR
-            _isInitialized = false;
-            return;
-#endif
+            // Выбираем идентификатор игры для текущей платформы.
 #if UNITY_IOS
             _gameId = Consts.IOS_GAME_ID;
 #elif UNITY_ANDROID
@@ -40,7 +37,15 @@ namespace GameAds
 #elif UNITY_EDITOR
             _gameId = Consts.ANDROID_GAME_ID; //Only for testing the functionality in the Editor
 #endif
-            if (!Advertisement.isInitialized && Advertisement.isSupported)
+
+            // Используем готовый SDK либо запускаем его асинхронную инициализацию.
+            if (Advertisement.isInitialized)
+            {
+                _isInitialized = true;
+                return;
+            }
+
+            if (Advertisement.isSupported)
             {
                 Advertisement.Initialize(_gameId, testMode: true, new AdsInitializationListener());
             }
@@ -50,7 +55,7 @@ namespace GameAds
         {
             if (!_isInitialized)
             {
-                OnError?.Invoke("Unity Ads is not initialized yet!");
+                AdError("Unity Ads is not initialized yet!");
                 return;
             }
 
@@ -61,7 +66,7 @@ namespace GameAds
         {
             if (!_isInitialized)
             {
-                Debug.LogWarning("Unity Ads is not initialized yet!");
+                AdError("Unity Ads is not initialized yet!");
                 return;
             }
 
@@ -79,11 +84,18 @@ namespace GameAds
         private static void AdCompleted()
         {
             GameEventsManager.AdCompleted();
+            GameEventsManager.AdFinished(true);
+        }
+
+        private static void AdCancelled()
+        {
+            GameEventsManager.AdFinished(false);
         }
 
         private static void AdError(string errorMessage)
         {
             OnError?.Invoke(errorMessage);
+            GameEventsManager.AdFinished(false);
         }
 
         public static void OnEnable()

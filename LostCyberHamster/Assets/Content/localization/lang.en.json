@@ -715,6 +715,10 @@
         {
               "key": "skin_name_summer",
               "value": "Summer"
+        },
+        {
+            "key": "shop_insufficient_coins_for_crystals",
+            "value": "Not enough coins to buy crystals"
         }
     ]
 }

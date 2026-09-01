@@ -68,7 +68,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnShop(ClickEvent evt)
         {
-            UIManager.OnModalShow(ScreenEnum.ShopModal);
+            UIManager.OnScreenShow(ScreenEnum.ShopScreen);
         }
 
         private void OnClickBtnQuests(ClickEvent evt)
