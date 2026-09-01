@@ -37,10 +37,10 @@
                             </ui:ScrollView>
                         </ui:VisualElement>
                     </ui:VisualElement>
-                    <ui:Button name="hero-skin-scroll-up" class="hero-scroll-button hero-scroll-button--up" />
-                    <ui:Button name="hero-skin-scroll-down" class="hero-scroll-button hero-scroll-button--down" />
-                    <ui:Button name="hero-ability-scroll-up" class="hero-scroll-button hero-scroll-button--up" />
-                    <ui:Button name="hero-ability-scroll-down" class="hero-scroll-button hero-scroll-button--down" />
+                    <ui:Button name="hero-skin-scroll-up" class="hero-scroll-button hero-scroll-button--up" focusable="false" />
+                    <ui:Button name="hero-skin-scroll-down" class="hero-scroll-button hero-scroll-button--down" focusable="false" />
+                    <ui:Button name="hero-ability-scroll-up" class="hero-scroll-button hero-scroll-button--up" focusable="false" />
+                    <ui:Button name="hero-ability-scroll-down" class="hero-scroll-button hero-scroll-button--down" focusable="false" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

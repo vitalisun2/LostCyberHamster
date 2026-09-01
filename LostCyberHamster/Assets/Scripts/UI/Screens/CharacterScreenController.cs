@@ -303,7 +303,12 @@ namespace LostCyberHamster.UI
         private void BuildSkinSlots()
         {
             SkinSlots.Clear();
-            foreach (Skin skin in SkinManager.AvailableSkins)
+            IEnumerable<Skin> orderedSkins = SkinManager.AvailableSkins
+                .OrderBy(skin => CharacterDevelopmentService
+                    .IsSkinUnlocked(skin.Id)
+                    ? 0
+                    : 1);
+            foreach (Skin skin in orderedSkins)
             {
                 SkinSlots.Add(CreateSkinSlot(skin));
             }
@@ -366,7 +371,12 @@ namespace LostCyberHamster.UI
         private void BuildAbilitySlots()
         {
             AbilitySlots.Clear();
-            foreach (SuperAttackData ability in SuperAttackService.Items)
+            IEnumerable<SuperAttackData> orderedAbilities =
+                SuperAttackService.Items.OrderBy(
+                    ability => SuperAttackService.IsUnlocked(ability.Id)
+                        ? 0
+                        : 1);
+            foreach (SuperAttackData ability in orderedAbilities)
             {
                 AbilitySlots.Add(CreateAbilitySlot(ability));
             }
