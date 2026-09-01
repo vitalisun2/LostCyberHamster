@@ -59,7 +59,7 @@
 .hero-title {
     position: absolute;
     left: 704px;
-    top: 176px;
+    top: 88px;
     width: 264px;
     height: 88px;
     background-image: url("/Assets/Content/ui/sprites/hero/title_hero.png");
@@ -68,16 +68,16 @@
 
 .hero-tabs {
     position: absolute;
-    left: 505px;
-    top: 286px;
+    left: 456px;
+    top: 269px;
 }
 
 .hero-tab__icon {
     position: absolute;
-    left: 16px;
-    top: 19px;
-    width: 48px;
-    height: 47px;
+    left: 18px;
+    top: 22px;
+    width: 55px;
+    height: 54px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -90,8 +90,8 @@
 }
 
 .hero-tab__label {
-    left: 68px;
-    width: 220px;
+    left: 78px;
+    width: 253px;
 }
 
 .hero-content {

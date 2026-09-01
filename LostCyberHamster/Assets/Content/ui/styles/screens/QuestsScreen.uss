@@ -15,9 +15,9 @@
 .quests-title {
     flex-grow: 0;
     flex-shrink: 0;
-    width: 369px;
-    height: 101px;
-    margin-top: 10px;
+    width: 322px;
+    height: 88px;
+    margin-top: 2px;
     background-image: url("/Assets/Content/ui/sprites/quests/title_quests.png");
     -unity-background-scale-mode: scale-to-fit;
 }
@@ -282,15 +282,9 @@
     -unity-text-outline-width: 0;
 }
 
-.quests-screen--compact .quests-title {
-    width: 295px;
-    height: 81px;
-    margin-top: 4px;
-}
-
 .quests-screen--compact .quests-tabs {
-    width: 530px;
-    height: 89px;
+    width: 610px;
+    height: 102px;
     margin-top: 10px;
 }
 
