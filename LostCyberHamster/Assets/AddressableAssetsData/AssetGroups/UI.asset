@@ -136,6 +136,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 89b98dfdf4404aa4fa3ad3e8aa54cf49
+    m_Address: JourneyCompleteModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8a2c8921584e242f384dbd4ae5efad38
     m_Address: HealthItem
     m_ReadOnly: 0

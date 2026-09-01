@@ -161,6 +161,29 @@ namespace Assets.Scripts.System
             return true;
         }
 
+        /// <summary>
+        /// Проверяет, является ли уровень последним gameplay-уровнем текущего каталога.
+        /// </summary>
+        public static bool IsLastAvailableLevel(string levelKey)
+        {
+            if (!TryFindDescriptor(levelKey, out var descriptor))
+            {
+                return false;
+            }
+
+            var descriptors = EnumerateDescriptors();
+            if (descriptors.Count == 0)
+            {
+                return false;
+            }
+
+            var lastDescriptor = descriptors[descriptors.Count - 1];
+            return string.Equals(
+                descriptor.Address?.Trim(),
+                lastDescriptor.Address?.Trim(),
+                StringComparison.OrdinalIgnoreCase);
+        }
+
         public static int GetTotalLevelsCount()
         {
             return HasCatalog ? Catalog.EnumerateLevels().Count() : 0;

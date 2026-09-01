@@ -52,6 +52,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 GameEventsManager.LevelCompleted(completedLevelNumber, _hamster.Lives.Value);
 
+                if (LevelManager.IsLastAvailableLevel(
+                        playerData?.CurrentLevel))
+                {
+                    _uiManager.ShowModalAsync(
+                        ScreenEnum.JourneyCompleteModal);
+                    return;
+                }
+
                 var winScreenController = _uiManager.GetController<WinModalController>();
                 winScreenController.SetParamsForInit(LevelManager.GetLocationName(), LevelManager.GetCurrentPartOfDay(), _hamster.Lives.Value);
                 winScreenController.SetRunResult(_hamster.LatestRunResult);

@@ -46,9 +46,15 @@ namespace Assets.Scripts.Entry_Points
             PlayerProgressLifecycleCheckpoint.EnsureCreated();
 
             // Потребляем одноразовую цель до создания контроллеров меню.
-            var openLeaderboard = MenuNavigationRequest.TryConsumeLeaderboard(
+            var hasNavigationRequest = MenuNavigationRequest.TryConsume(
+                out var requestedScreen,
                 out var leaderboardLocationId,
                 out var leaderboardPartId);
+            var openLeaderboard =
+                hasNavigationRequest &&
+                requestedScreen == ScreenEnum.LeaderboardScreen &&
+                !string.IsNullOrWhiteSpace(leaderboardLocationId) &&
+                !string.IsNullOrWhiteSpace(leaderboardPartId);
             var leaderboardScreenController = new LeaderboardScreenController(
                 _uiDocument,
                 new LeaderboardService());
@@ -83,8 +89,8 @@ namespace Assets.Scripts.Entry_Points
 
             await QuestManager.Init();
             await _uiManager.LoadScreenAsync(
-                openLeaderboard
-                    ? ScreenEnum.LeaderboardScreen
+                hasNavigationRequest
+                    ? requestedScreen
                     : ScreenEnum.HomeScreen);
             _accountPromptCoordinator = new AccountPromptCoordinator(_uiManager, _accountService);
             _cloudSaveConflictCoordinator = new CloudSaveConflictCoordinator(

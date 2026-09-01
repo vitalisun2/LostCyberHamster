@@ -1,0 +1,148 @@
+.journey-complete-modal {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.journey-complete-modal__viewport {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.journey-complete-modal__scale-frame {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 1724px;
+    height: 912px;
+}
+
+.journey-complete-modal__design {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1724px;
+    height: 912px;
+    transform-origin: 0 0;
+}
+
+.journey-complete-modal__art {
+    position: absolute;
+    left: 164px;
+    top: 21px;
+    width: 1418px;
+    height: 863px;
+    background-image: url("/Assets/Content/ui/sprites/journey_complete/modal_journey_complete.png");
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.journey-complete-modal__text {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    color: rgb(69, 43, 28);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    white-space: normal;
+}
+
+.journey-complete-modal__message-primary {
+    left: 405px;
+    top: 148px;
+    width: 915px;
+    height: 42px;
+    font-size: 30px;
+}
+
+.journey-complete-modal__message-secondary {
+    left: 435px;
+    top: 190px;
+    width: 855px;
+    height: 32px;
+    font-size: 20px;
+    -unity-font-style: normal;
+}
+
+.journey-complete-modal__goal {
+    height: 72px;
+    font-size: 27px;
+}
+
+.journey-complete-modal__goal--level-up {
+    left: 220px;
+    top: 451px;
+    width: 395px;
+}
+
+.journey-complete-modal__goal--unlock {
+    left: 1104px;
+    top: 524px;
+    width: 418px;
+}
+
+.journey-complete-modal__goal--rankings {
+    left: 220px;
+    top: 653px;
+    width: 420px;
+}
+
+.journey-complete-modal__button {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    color: rgba(0, 0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    overflow: visible;
+    -unity-background-scale-mode: scale-to-fit;
+    transition-property: scale, opacity;
+    transition-duration: 80ms;
+    transition-timing-function: ease-out;
+}
+
+.journey-complete-modal__button:hover,
+.journey-complete-modal__button:focus {
+    opacity: 0.96;
+    scale: 1.04 1.04;
+}
+
+.journey-complete-modal__button:active {
+    opacity: 0.9;
+    scale: 0.96 0.96;
+}
+
+.journey-complete-modal__button--home {
+    left: 1070px;
+    top: 784px;
+    width: 79px;
+    height: 72px;
+    background-image: url("/Assets/Content/ui/sprites/shared/button_home.png");
+}
+
+.journey-complete-modal__button--skills {
+    left: 1178px;
+    top: 791px;
+    width: 81px;
+    height: 63px;
+    background-image: url("/Assets/Content/ui/sprites/journey_complete/button_skills.png");
+}
+
+.journey-complete-modal__button--rankings {
+    left: 1292px;
+    top: 794px;
+    width: 74px;
+    height: 64px;
+    background-image: url("/Assets/Content/ui/sprites/journey_complete/button_rankings.png");
+}

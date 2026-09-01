@@ -15,6 +15,7 @@ namespace LostCyberHamster.UI
         GameScreen,
         PauseModal,
         WinModal,
+        JourneyCompleteModal,
         LoseModal,
         CharacterDevelopmentScreen,
         LevelUpModal,

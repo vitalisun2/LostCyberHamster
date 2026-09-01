@@ -488,6 +488,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\JumpOnRoofSpecification.cs" />
     <Compile Include="Assets\Scripts\Ads\AdLoadListener.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Runtime\TutorialLaunchService.cs" />
+    <Compile Include="Assets\Scripts\UI\Modals\JourneyCompleteModalController.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Catalog\QuestCatalogData.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Persistence\PlayerDataValidationResult.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictCardDto.cs" />
@@ -512,6 +513,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoof\JumpFromRoofSimulator.cs" />
     <Compile Include="Assets\Scripts\Account\UnityAccountAuthenticationGateway.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\HierarchicalLevelCatalog.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiJourneyCompleteModalMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectStrategy.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelInfoRef.cs" />
@@ -532,6 +534,7 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Story\StoryQuestGenerationSettings.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\RoofRunProjection.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Models\CloudSyncStatusEnum.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\LevelResultNavigationCoordinator.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\StartAccountLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Common\Models\ObstacleModel.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\DevToolsRuntimeState.cs" />
@@ -690,6 +693,7 @@
     <None Include="Assets\Content\ui\styles\components\runtime-states.uss" />
     <None Include="Assets\Content\ui\styles\screens\Bootstrap.uss" />
     <None Include="Assets\Content\ui\uxml\RepeatButton.uxml" />
+    <None Include="Assets\Content\ui\styles\components\journey-complete-modal.uss" />
     <None Include="Assets\Content\ui\uxml\ShopItem.uxml" />
     <None Include="Assets\Content\ui\uxml\DailyQuestRewardModal.uxml" />
     <None Include="Assets\Content\ui\uxml\LevelItem.uxml" />
@@ -722,6 +726,7 @@
     <None Include="Assets\Content\ui\uxml\Toolbar.uxml" />
     <None Include="Assets\Content\ui\styles\components\toolbar.uss" />
     <None Include="Assets\Content\ui\styles\screens\CharacterDevelopmentScreen.uss" />
+    <None Include="Assets\Content\ui\uxml\JourneyCompleteModal.uxml" />
     <None Include="Assets\Content\ui\uxml\SettingsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\EnergyBar.uxml" />
     <None Include="Assets\Content\ui\styles\utilities\sizing.uss" />

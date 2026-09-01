@@ -1,111 +1,55 @@
-using System;
-using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.System;
-using GameManagement;
 using LostCyberHamster.UI;
-using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
-    public class UiWinModalMechanics
+    internal sealed class UiWinModalMechanics
     {
-        private readonly UIManager _uiManager;
-        private readonly GameManager _gameManager;
-        private WinModalController _winModalController;
+        private readonly LevelResultNavigationCoordinator _navigation;
 
-        private string _sceneName = "Menu";
-        private int _previousPlayerLevel;
+        private const string SceneName = "Menu";
 
-        public UiWinModalMechanics(UIManager uiManager, GameManager gameManager)
+        public UiWinModalMechanics(
+            UIManager uiManager,
+            LevelResultNavigationCoordinator navigation)
         {
-            _uiManager = uiManager;
-            _gameManager = gameManager;
-            _previousPlayerLevel =
-                GameDataManager.PlayerData.PlayerLevel;
+            _navigation = navigation;
 
-            _winModalController = _uiManager.GetController<WinModalController>();
+            var winModalController =
+                uiManager.GetController<WinModalController>();
 
-            _winModalController.SetExitAction(OnExit);
-            _winModalController.SetRestartAction(OnRestart);
-            _winModalController.SetResumeAction(OnNextLevel);
-            _winModalController.SetLeaderboardAction(OnLeaderboard);
+            winModalController.SetExitAction(OnExit);
+            winModalController.SetRestartAction(OnRestart);
+            winModalController.SetResumeAction(OnNextLevel);
+            winModalController.SetLeaderboardAction(OnLeaderboard);
         }
 
         private void OnExit()
         {
-            ContinueAfterLevelUp(
-                () => UnityEngine.SceneManagement.SceneManager.LoadScene(
-                    _sceneName));
+            _navigation.Continue(
+                ScreenEnum.WinModal,
+                () => SceneManager.LoadScene(SceneName));
         }
 
         private void OnRestart()
         {
-            ContinueAfterLevelUp(
+            _navigation.Continue(
+                ScreenEnum.WinModal,
                 () => LevelController.Instance.Replay());
         }
 
         private void OnNextLevel()
         {
-            ContinueAfterLevelUp(
+            _navigation.Continue(
+                ScreenEnum.WinModal,
                 () => LevelController.Instance.PlayNextLevel());
         }
 
         private void OnLeaderboard(string locationId, string partId)
         {
             MenuNavigationRequest.OpenLeaderboard(locationId, partId);
-            UnityEngine.SceneManagement.SceneManager.LoadScene(_sceneName);
-        }
-
-        private async void ContinueAfterLevelUp(Action action)
-        {
-            bool actionInvoked = false;
-
-            void InvokeActionOnce()
-            {
-                if (actionInvoked)
-                {
-                    return;
-                }
-
-                actionInvoked = true;
-                action.Invoke();
-            }
-
-            try
-            {
-                int previousPlayerLevel = _previousPlayerLevel;
-                int currentPlayerLevel =
-                    GameDataManager.PlayerData.PlayerLevel;
-                int levelsGained =
-                    currentPlayerLevel - previousPlayerLevel;
-
-                // Фиксируем обработанный уровень до асинхронного показа следующей модалки.
-                _previousPlayerLevel = currentPlayerLevel;
-                _uiManager.CloseModal(ScreenEnum.WinModal);
-
-                if (levelsGained <= 0)
-                {
-                    InvokeActionOnce();
-                    return;
-                }
-
-                // Показываем открытие суперудара перед исходным действием пользователя.
-                var levelUpModalController =
-                    _uiManager.GetController<LevelUpModalController>();
-                levelUpModalController.SetLevelUpData(
-                    previousPlayerLevel,
-                    currentPlayerLevel,
-                    levelsGained);
-                levelUpModalController.SetOkAction(
-                    InvokeActionOnce);
-                await _uiManager.ShowModalAsync(
-                    ScreenEnum.LevelUpModal);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogException(exception);
-                InvokeActionOnce();
-            }
+            SceneManager.LoadScene(SceneName);
         }
     }
 }

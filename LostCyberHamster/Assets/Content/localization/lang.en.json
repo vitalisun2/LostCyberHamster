@@ -121,6 +121,26 @@
             "value": "WATCH AN AD TO CONTINUE"
         },
         {
+            "key": "journey_complete_message_primary",
+            "value": "YOU DID IT! ALL AVAILABLE LOCATIONS ARE COMPLETE."
+        },
+        {
+            "key": "journey_complete_message_secondary",
+            "value": "THE MAIN JOURNEY IS BEHIND YOU — NEW ROUTES ARE STILL AHEAD."
+        },
+        {
+            "key": "journey_complete_goal_level_up",
+            "value": "LEVEL UP\nYOUR HAMSTER"
+        },
+        {
+            "key": "journey_complete_goal_unlock",
+            "value": "UNLOCK REMAINING SKINS\nAND SUPERPOWERS"
+        },
+        {
+            "key": "journey_complete_goal_rankings",
+            "value": "CLIMB TO THE TOP\nOF THE RANKINGS"
+        },
+        {
             "key": "btn_resume",
             "value": "Resume"
         },

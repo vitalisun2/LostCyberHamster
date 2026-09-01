@@ -7,6 +7,7 @@ namespace LostCyberHamster.UI
     /// </summary>
     public static class MenuNavigationRequest
     {
+        private static ScreenEnum? _targetScreen;
         private static string _leaderboardLocationId;
         private static string _leaderboardPartId;
 
@@ -27,27 +28,42 @@ namespace LostCyberHamster.UI
                     nameof(partId));
 
             // Перезаписываем только один ожидающий запрос.
+            _targetScreen = ScreenEnum.LeaderboardScreen;
             _leaderboardLocationId = locationId.Trim();
             _leaderboardPartId = partId.Trim();
         }
 
         /// <summary>
-        /// Возвращает и сразу очищает ожидающую цель рейтинга.
+        /// Сохраняет переход к развитию персонажа до загрузки Menu.
         /// </summary>
-        public static bool TryConsumeLeaderboard(
+        public static void OpenCharacterDevelopment()
+        {
+            _targetScreen = ScreenEnum.CharacterDevelopmentScreen;
+            _leaderboardLocationId = null;
+            _leaderboardPartId = null;
+        }
+
+        /// <summary>
+        /// Возвращает и сразу очищает ожидающий переход в Menu.
+        /// </summary>
+        public static bool TryConsume(
+            out ScreenEnum targetScreen,
             out string locationId,
             out string partId)
         {
-            // Сначала копируем значения для вызывающего кода.
+            // Сначала копируем единый запрос для вызывающего кода.
+            bool hasRequest = _targetScreen.HasValue;
+            targetScreen =
+                _targetScreen ?? ScreenEnum.HomeScreen;
             locationId = _leaderboardLocationId;
             partId = _leaderboardPartId;
 
             // Очищаем запрос независимо от его валидности.
+            _targetScreen = null;
             _leaderboardLocationId = null;
             _leaderboardPartId = null;
 
-            return !string.IsNullOrWhiteSpace(locationId) &&
-                   !string.IsNullOrWhiteSpace(partId);
+            return hasRequest;
         }
     }
 }

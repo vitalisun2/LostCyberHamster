@@ -121,6 +121,26 @@
             "value": "СМОТРИ РЕКЛАМУ И ПРОДОЛЖАЙ"
         },
         {
+            "key": "journey_complete_message_primary",
+            "value": "ТЫ СПРАВИЛСЯ! ВСЕ ДОСТУПНЫЕ ЛОКАЦИИ ПРОЙДЕНЫ."
+        },
+        {
+            "key": "journey_complete_message_secondary",
+            "value": "ГЛАВНОЕ ПУТЕШЕСТВИЕ ПОЗАДИ — НОВЫЕ МАРШРУТЫ ЕЩЁ ВПЕРЕДИ."
+        },
+        {
+            "key": "journey_complete_goal_level_up",
+            "value": "ПОВЫШАЙ УРОВЕНЬ\nСВОЕГО ХОМЯКА"
+        },
+        {
+            "key": "journey_complete_goal_unlock",
+            "value": "ОТКРОЙ ОСТАВШИЕСЯ СКИНЫ\nИ СУПЕРСПОСОБНОСТИ"
+        },
+        {
+            "key": "journey_complete_goal_rankings",
+            "value": "ПОДНИМИСЬ НА ВЕРШИНУ\nРЕЙТИНГА"
+        },
+        {
             "key": "btn_resume",
             "value": "Продолжить"
         },

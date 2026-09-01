@@ -27,6 +27,10 @@ namespace Assets.Scripts.Gameplay
         private UiGameOverMechanics _uiGameOverMechanics;
         private UiLoseModalMechanics _uiLoseModalMechanics;
         private UiWinModalMechanics _uiWinModalMechanics;
+        private UiJourneyCompleteModalMechanics
+            _uiJourneyCompleteModalMechanics;
+        private LevelResultNavigationCoordinator
+            _levelResultNavigationCoordinator;
         private KeyboardMechanics _keyboardMechanics;
 
         [Inject]
@@ -48,6 +52,7 @@ namespace Assets.Scripts.Gameplay
                 new PauseModalController(_uiDocument),
                 new LoseModalController(_uiDocument),
                 new WinModalController(_uiDocument),
+                new JourneyCompleteModalController(_uiDocument),
                 new LevelUpModalController(
                     _uiDocument,
                     CloseLevelUpModal),
@@ -64,7 +69,15 @@ namespace Assets.Scripts.Gameplay
                 _character.ActorSwitcher);
             _uiGameOverMechanics = new UiGameOverMechanics(_uiManager, _gameManager, _character);
             _uiLoseModalMechanics = new UiLoseModalMechanics(_uiManager, _gameManager, _character);
-            _uiWinModalMechanics = new UiWinModalMechanics(_uiManager, _gameManager);
+            _levelResultNavigationCoordinator =
+                new LevelResultNavigationCoordinator(_uiManager);
+            _uiWinModalMechanics = new UiWinModalMechanics(
+                _uiManager,
+                _levelResultNavigationCoordinator);
+            _uiJourneyCompleteModalMechanics =
+                new UiJourneyCompleteModalMechanics(
+                    _uiManager,
+                    _levelResultNavigationCoordinator);
             _keyboardMechanics = new KeyboardMechanics(_character, _uiManager, _gameManager);
 
             _uiManager.SubscribeToEvents();
