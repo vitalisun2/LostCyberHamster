@@ -240,18 +240,26 @@ namespace LostCyberHamster.UI
                 return;
             }
 
-            // Берём sprite из screen-local USS dependency.
-            Sprite sprite = ScreenBackgroundSource
+            // USS может разрешить PNG как Texture2D или Sprite.
+            Background backgroundImage = ScreenBackgroundSource
                 .resolvedStyle
-                .backgroundImage
-                .sprite;
-            if (sprite == null)
+                .backgroundImage;
+            if (backgroundImage.sprite != null)
+            {
+                _background.style.backgroundImage =
+                    new StyleBackground(backgroundImage.sprite);
+            }
+            else if (backgroundImage.texture != null)
+            {
+                _background.style.backgroundImage =
+                    new StyleBackground(backgroundImage.texture);
+            }
+            else
             {
                 return;
             }
 
             // Один cover-фон заполняет viewport и safe area без швов.
-            _background.style.backgroundImage = new StyleBackground(sprite);
             _background.style.backgroundSize =
                 new BackgroundSize(BackgroundSizeType.Cover);
             _background.style.backgroundPositionX =

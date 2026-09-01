@@ -478,9 +478,9 @@
     display: none;
     position: absolute;
     left: 7px;
-    top: 87px;
+    top: 93px;
     width: 110px;
-    height: 38px;
+    height: 35px;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
