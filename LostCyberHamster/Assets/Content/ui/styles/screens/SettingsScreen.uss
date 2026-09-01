@@ -1,3 +1,700 @@
-#settings__dd-languages {
-    margin-left: 0;
+.settings-screen {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.settings-viewport {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.settings-scale-frame {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 1672px;
+    height: 940px;
+}
+
+.settings-design {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 940px;
+    transform-origin: 0 0;
+}
+
+.settings-hud {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 130px;
+    min-height: 130px;
+    max-height: 130px;
+    margin: 0;
+    overflow: visible;
+}
+
+.settings-hud__home {
+    position: absolute;
+    left: 20px;
+    top: 21px;
+    width: 99px;
+    min-width: 99px;
+    max-width: 99px;
+    height: 90px;
+    min-height: 90px;
+    max-height: 90px;
+}
+
+.settings-hud__coins {
+    position: absolute;
+    left: 302px;
+    top: 28px;
+}
+
+.settings-hud__gems {
+    position: absolute;
+    left: 523px;
+    top: 28px;
+}
+
+.settings-title {
+    position: absolute;
+    left: 614px;
+    top: 145px;
+    width: 445px;
+    height: 103px;
+    background-image: url("/Assets/Content/ui/sprites/settings/title_settings.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.settings-panel {
+    position: absolute;
+    left: 435px;
+    top: 260px;
+    width: 801px;
+    height: 610px;
+    padding-top: 42px;
+    padding-right: 60px;
+    padding-bottom: 38px;
+    padding-left: 78px;
+    background-image: url("/Assets/Content/ui/sprites/settings/panel_settings_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 64;
+    -unity-slice-right: 64;
+    -unity-slice-top: 64;
+    -unity-slice-bottom: 64;
+}
+
+.settings-scroll {
+    width: 663px;
+    height: 530px;
+    margin: 0;
+    padding: 0;
+}
+
+.settings-scroll .unity-scroll-view__content-container {
+    width: 100%;
+    padding-top: 2px;
+    padding-bottom: 6px;
+}
+
+.settings-content {
+    width: 100%;
+    min-width: 0;
+}
+
+.settings-row {
+    width: 100%;
+    min-width: 0;
+    min-height: 55px;
+    margin-bottom: 8px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+}
+
+.settings-row--account {
+    min-height: 55px;
+    align-items: flex-start;
+}
+
+.settings-row--cloud {
+    display: none;
+    min-height: 58px;
+}
+
+.settings-row--training {
+    min-height: 60px;
+}
+
+.settings-row--version {
+    min-height: 45px;
+    margin-bottom: 0;
+}
+
+.settings-row__label {
+    width: 295px;
+    min-width: 295px;
+    height: 55px;
+    margin: 0;
+    padding: 0;
+    color: rgb(18, 22, 25);
+    font-size: 26px;
+    white-space: normal;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: rgba(0, 0, 0, 0);
+}
+
+.settings-row__label--top {
+    -unity-text-align: upper-left;
+    padding-top: 10px;
+}
+
+.settings-row__label--compact {
+    font-size: 24px;
+}
+
+.settings-value {
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 45px;
+    margin: 0;
+    padding: 0;
+    color: rgb(18, 22, 25);
+    font-size: 23px;
+    white-space: normal;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: rgba(0, 0, 0, 0);
+}
+
+.settings-language {
+    width: 330px;
+    height: 49px;
+    margin: 0;
+    padding: 0;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.settings-language .unity-base-popup-field__input,
+#settings__dd-languages > .unity-base-field__input {
+    width: 330px;
+    height: 49px;
+    min-width: 330px;
+    margin: 0;
+    padding-top: 0;
+    padding-right: 36px;
+    padding-bottom: 0;
+    padding-left: 18px;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/settings/control_dropdown_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 10;
+    -unity-slice-right: 10;
+    -unity-slice-top: 10;
+    -unity-slice-bottom: 10;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-radius: 0;
+}
+
+.settings-language .unity-base-popup-field__text {
+    color: rgb(18, 22, 25);
+    font-size: 24px;
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
+}
+
+.settings-language .unity-base-popup-field__arrow,
+.settings-language #unity-arrow {
+    width: 22px;
+    height: 16px;
+    background-image: url("/Assets/Content/ui/sprites/settings/icon_dropdown_arrow.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.settings-dropdown-popup-scope .unity-base-dropdown {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.settings-dropdown-popup-scope .unity-base-dropdown__container-outer {
+    width: 337px;
+    min-width: 337px;
+    min-height: 143px;
+    padding: 4px 7px 5px 7px;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/settings/panel_dropdown_menu_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 12;
+    -unity-slice-right: 12;
+    -unity-slice-top: 12;
+    -unity-slice-bottom: 12;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-radius: 0;
+}
+
+.settings-dropdown-popup-scope .unity-base-dropdown__container-inner,
+.settings-dropdown-popup-scope .unity-base-dropdown__container-inner .unity-scroll-view__content-container {
+    width: 323px;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+.settings-dropdown-popup-scope .unity-base-dropdown__container-inner .unity-scroller {
+    display: none;
+}
+
+.settings-dropdown-popup-scope .unity-base-dropdown__item {
+    width: 323px;
+    height: 64px;
+    min-height: 64px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.settings-dropdown-popup-scope .unity-base-dropdown__item-content {
+    width: 100%;
+    height: 64px;
+    padding-left: 18px;
+    align-items: center;
+}
+
+.settings-dropdown-popup-scope .unity-base-dropdown__label {
+    color: rgb(18, 22, 25);
+    font-size: 22px;
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
+}
+
+.settings-dropdown-popup-scope .unity-base-dropdown__item:checked {
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/settings/highlight_dropdown_option_selected.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 8;
+    -unity-slice-right: 8;
+    -unity-slice-top: 8;
+    -unity-slice-bottom: 8;
+}
+
+.settings-dropdown-popup-scope .unity-base-dropdown__item:hover {
+    background-color: rgba(255, 255, 255, 0.16);
+}
+
+.settings-checkbox {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.settings-checkbox__native {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    padding: 0;
+    opacity: 0.01;
+}
+
+.settings-checkbox__native .unity-toggle__input,
+.settings-checkbox__native .unity-toggle__checkmark {
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    padding: 0;
+}
+
+.settings-checkbox__base,
+.settings-checkbox__fill,
+.settings-checkbox__check {
+    position: absolute;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.settings-checkbox__base {
+    left: 0;
+    top: 0;
+    width: 48px;
+    height: 48px;
+    background-image: url("/Assets/Content/ui/sprites/settings/checkbox_base.png");
+}
+
+.settings-checkbox__fill {
+    display: none;
+    left: 7px;
+    top: 7px;
+    width: 34px;
+    height: 34px;
+    background-image: url("/Assets/Content/ui/sprites/settings/checkbox_fill_on.png");
+}
+
+.settings-checkbox__check {
+    display: none;
+    left: 10px;
+    top: 10px;
+    width: 28px;
+    height: 28px;
+}
+
+.settings-checkbox__check-stroke {
+    position: absolute;
+    width: 4px;
+    background-color: rgb(255, 255, 255);
+    border-radius: 2px;
+}
+
+.settings-checkbox__check-stroke--short {
+    left: 8px;
+    top: 13px;
+    height: 12px;
+    rotate: -42deg;
+}
+
+.settings-checkbox__check-stroke--long {
+    left: 16px;
+    top: 3px;
+    height: 25px;
+    rotate: 42deg;
+}
+
+.settings-checkbox--checked .settings-checkbox__fill,
+.settings-checkbox--checked .settings-checkbox__check {
+    display: flex;
+}
+
+.settings-account {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.settings-account__state {
+    width: 100%;
+}
+
+.settings-account__button {
+    display: none;
+    width: 330px;
+    height: 52px;
+    margin-top: 4px;
+    font-size: 19px;
+}
+
+.settings-player-name {
+    width: 368px;
+    min-width: 0;
+    height: 55px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.settings-player-name__value {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 21px;
+}
+
+.settings-player-name__button {
+    width: 132px;
+    height: 48px;
+    margin-left: 8px;
+    font-size: 17px;
+}
+
+.settings-training-button {
+    width: 264px;
+    height: 54px;
+    font-size: 21px;
+}
+
+.settings-art-button {
+    margin: 0;
+    padding-top: 0;
+    padding-right: 10px;
+    padding-bottom: 0;
+    padding-left: 10px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-radius: 0;
+    color: rgb(15, 22, 27);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 18;
+    -unity-slice-right: 18;
+    -unity-slice-top: 18;
+    -unity-slice-bottom: 18;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    -unity-text-outline-color: rgba(0, 0, 0, 0);
+    transition-property: scale, opacity;
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+}
+
+.settings-art-button--primary {
+    background-image: url("/Assets/Content/ui/sprites/settings/button_primary_base.png");
+}
+
+.settings-art-button--secondary {
+    background-image: url("/Assets/Content/ui/sprites/settings/button_secondary_base.png");
+    color: rgb(255, 255, 255);
+}
+
+.settings-art-button:hover,
+.settings-art-button:focus {
+    opacity: 0.96;
+    scale: 1.015 1.015;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+.settings-art-button:active {
+    opacity: 0.86;
+    scale: 0.985 0.985;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.settings-art-button:disabled {
+    opacity: 0.48;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.settings-image-button {
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    overflow: visible;
+    transition-property: scale, opacity;
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+}
+
+.settings-image-button:hover,
+.settings-image-button:focus {
+    opacity: 0.96;
+    scale: 1.03 1.03;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.settings-image-button:active {
+    opacity: 0.88;
+    scale: 0.97 0.97;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.settings-back {
+    position: absolute;
+    left: 24px;
+    top: 770px;
+    width: 159px;
+    height: 151px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_button_back.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.settings-name-overlay {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.settings-name-overlay__dim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(8, 18, 24, 0.58);
+}
+
+.settings-name-scale-frame {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 1672px;
+    height: 940px;
+}
+
+.settings-name-design {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 940px;
+    transform-origin: 0 0;
+}
+
+.settings-name-dialog {
+    position: absolute;
+    left: 456px;
+    top: 137px;
+    width: 760px;
+    height: 320px;
+    padding-top: 67px;
+    padding-right: 80px;
+    padding-bottom: 30px;
+    padding-left: 80px;
+    background-image: url("/Assets/Content/ui/sprites/settings/panel_name_edit_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 44;
+    -unity-slice-right: 44;
+    -unity-slice-top: 44;
+    -unity-slice-bottom: 44;
+}
+
+.settings-name-dialog__title {
+    position: absolute;
+    left: 106px;
+    top: -20px;
+    width: 548px;
+    height: 74px;
+    margin: 0;
+    padding: 0 20px;
+    color: rgb(255, 255, 255);
+    font-size: 34px;
+    background-image: url("/Assets/Content/ui/sprites/settings/button_primary_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 18;
+    -unity-slice-right: 18;
+    -unity-slice-top: 18;
+    -unity-slice-bottom: 18;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.settings-name-dialog__label {
+    width: 100%;
+    height: 38px;
+    margin: 0;
+    padding: 0 8px;
+    color: rgb(18, 22, 25);
+    font-size: 25px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    -unity-text-outline-width: 0;
+}
+
+.settings-name-dialog__input {
+    width: 600px;
+    height: 66px;
+    margin: 0;
+    padding: 0;
+}
+
+.settings-name-dialog__input .unity-text-field__input,
+.settings-name-dialog__input .unity-base-text-field__input {
+    width: 600px;
+    height: 66px;
+    margin: 0;
+    padding-top: 0;
+    padding-right: 22px;
+    padding-bottom: 0;
+    padding-left: 22px;
+    color: rgb(18, 22, 25);
+    font-size: 24px;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/settings/control_text_input_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 14;
+    -unity-slice-right: 14;
+    -unity-slice-top: 14;
+    -unity-slice-bottom: 14;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-radius: 0;
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
+}
+
+.settings-name-dialog__error {
+    display: none;
+    width: 600px;
+    height: 33px;
+    margin: 0;
+    padding: 0 8px;
+    color: rgb(157, 38, 38);
+    font-size: 17px;
+    white-space: normal;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    -unity-text-outline-width: 0;
+}
+
+.settings-name-dialog__actions {
+    width: 600px;
+    height: 61px;
+    margin-top: 9px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.settings-name-dialog__button {
+    width: 278px;
+    height: 61px;
+    font-size: 23px;
+}
+
+.settings-name-dialog__button--cancel {
+    margin-left: 28px;
+}
+
+.settings-hidden-legacy {
+    display: none;
 }

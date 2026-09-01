@@ -14,6 +14,12 @@ namespace LostCyberHamster.UI
 {
     public class SettingsScreenController : ScreenController
     {
+        private const string BackgroundAddress =
+            "SettingsScreenBackgroundSprite";
+        private const string DropdownPopupScopeClass =
+            "settings-dropdown-popup-scope";
+        private const float DesignWidth = 1672f;
+        private const float DesignHeight = 940f;
         private const int MinPlayerNameLength = 3;
         private const int MaxPlayerNameLength = 16;
 
@@ -32,15 +38,32 @@ namespace LostCyberHamster.UI
         private VisualElement _playerNameView => _contentRoot.Q<VisualElement>("settings__player-name-view");
         private Label _labelPlayerName => _contentRoot.Q<Label>("settings__lbl-player-name");
         private Button _buttonChangePlayerName => _contentRoot.Q<Button>("settings__btn-change-player-name");
-        private VisualElement _playerNameEdit => _contentRoot.Q<VisualElement>("settings__player-name-edit");
-        private TextField _textFieldPlayerName => _contentRoot.Q<TextField>("settings__txt-player-name");
-        private Button _buttonSavePlayerName => _contentRoot.Q<Button>("settings__btn-save-player-name");
-        private Button _buttonCancelPlayerName => _contentRoot.Q<Button>("settings__btn-cancel-player-name");
+        private VisualElement _playerNameEdit =>
+            _background.Q<VisualElement>("settings__player-name-edit");
+        private TextField _textFieldPlayerName =>
+            _background.Q<TextField>("settings__txt-player-name");
+        private Button _buttonSavePlayerName =>
+            _background.Q<Button>("settings__btn-save-player-name");
+        private Button _buttonCancelPlayerName =>
+            _background.Q<Button>("settings__btn-cancel-player-name");
         private Button _buttonStartTraining => _contentRoot.Q<Button>("settings__btn-start-training");
-        private Label _labelPlayerNameError => _contentRoot.Q<Label>("settings__lbl-player-name-error");
-        private Button _buttonHome => _contentRoot.Q<Button>("btn_home");
+        private Label _labelPlayerNameError =>
+            _background.Q<Label>("settings__lbl-player-name-error");
         private Button _buttonBack => _contentRoot.Q<Button>("btn_back");
-        private Button _buttonSettings => _contentRoot.Q<Button>("btn_settings");
+        private VisualElement _viewport =>
+            _contentRoot.Q<VisualElement>("settings-viewport");
+        private VisualElement _scaleFrame =>
+            _contentRoot.Q<VisualElement>("settings-scale-frame");
+        private VisualElement _design =>
+            _contentRoot.Q<VisualElement>("settings-design");
+        private VisualElement _nameScaleFrame =>
+            _background.Q<VisualElement>("settings-name-scale-frame");
+        private VisualElement _nameDesign =>
+            _background.Q<VisualElement>("settings-name-design");
+        private VisualElement _musicCheckbox =>
+            _contentRoot.Q<VisualElement>("settings__music-checkbox");
+        private VisualElement _soundCheckbox =>
+            _contentRoot.Q<VisualElement>("settings__sound-checkbox");
 
         private readonly AccountService _accountService;
         private readonly ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
@@ -95,13 +118,11 @@ namespace LostCyberHamster.UI
             _toggleMusic.value = AudioManager.MusicVolume > 0;
             _toggleSound.value = AudioManager.SfxVolume > 0;
             _toggleVibration.value = VibrationManager.EnableVibration;
+            RenderCheckbox(_musicCheckbox, _toggleMusic.value);
+            RenderCheckbox(_soundCheckbox, _toggleSound.value);
 
             _labelVersion.text = $"{Application.version}";
             _labelId.text = $"{SystemInfo.deviceUniqueIdentifier}";
-            _buttonHome.style.display = DisplayStyle.None;
-            _buttonBack.text = LocalizationManager.GetLocalizedString("btn_back");
-            _buttonBack.style.display = DisplayStyle.Flex;
-            _buttonSettings.style.display = DisplayStyle.None;
 
             SubscribeToAccountState();
             SubscribeToCloudSyncStatus();
@@ -109,7 +130,9 @@ namespace LostCyberHamster.UI
             ShowPlayerName(_accountService.PlayerName);
             SetPlayerNameEditMode(false);
             SetPlayerNameBusy(false);
-            await ChangeBackgroundAsync("BackgroundScreenSprite");
+            await ChangeBackgroundAsync(
+                BackgroundAddress,
+                ScaleMode.ScaleAndCrop);
         }
 
         private void SubscribeToAccountState()
@@ -256,6 +279,7 @@ namespace LostCyberHamster.UI
             _playerNameErrorLocalizationKey = null;
             _labelPlayerNameError.style.display = DisplayStyle.None;
             SetPlayerNameEditMode(true);
+            _playerNameEdit.schedule.Execute(FocusPlayerNameField);
         }
 
         /// <summary>
@@ -320,12 +344,47 @@ namespace LostCyberHamster.UI
 
         private void SetPlayerNameEditMode(bool isEditing)
         {
-            _playerNameView.style.display = isEditing
-                ? DisplayStyle.None
-                : DisplayStyle.Flex;
+            if (isEditing)
+                AttachPlayerNameOverlayToBackground();
+
+            _playerNameView.style.display = DisplayStyle.Flex;
             _playerNameEdit.style.display = isEditing
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
+        }
+
+        /// <summary>Выносит overlay над safe area на полноэкранный слой текущего экрана.</summary>
+        private void AttachPlayerNameOverlayToBackground()
+        {
+            var overlay = _playerNameEdit;
+            if (overlay?.parent == _background)
+                return;
+
+            overlay?.RemoveFromHierarchy();
+            if (overlay != null)
+                _background.Add(overlay);
+        }
+
+        /// <summary>Возвращает скрытый overlay в дерево экрана перед его выгрузкой.</summary>
+        private void RestorePlayerNameOverlay()
+        {
+            var overlay = _playerNameEdit;
+            var design = _design;
+            if (overlay == null || design == null || overlay.parent == design)
+                return;
+
+            overlay.style.display = DisplayStyle.None;
+            overlay.RemoveFromHierarchy();
+            design.Add(overlay);
+        }
+
+        private void FocusPlayerNameField()
+        {
+            if (_isActive &&
+                _playerNameEdit.resolvedStyle.display == DisplayStyle.Flex)
+            {
+                _textFieldPlayerName.Focus();
+            }
         }
 
         private void SetPlayerNameBusy(bool isBusy)
@@ -404,6 +463,7 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
+            SetDropdownPopupStyleScope(true);
             _buttonBack?.RegisterCallback<ClickEvent>(OnClickButtonBack);
             _buttonLinkAccount?.RegisterCallback<ClickEvent>(OnClickButtonLinkAccount);
             _buttonChangePlayerName?.RegisterCallback<ClickEvent>(OnClickChangePlayerName);
@@ -414,12 +474,17 @@ namespace LostCyberHamster.UI
             _toggleMusic?.RegisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.RegisterValueChangedCallback(OnChangeSoundAsync);
             _toggleVibration?.RegisterValueChangedCallback(OnChangeVibrationAsync);
+            _viewport?.RegisterCallback<GeometryChangedEvent>(
+                OnViewportGeometryChanged);
+            _viewport?.schedule.Execute(
+                () => ApplyResponsiveLayout(_viewport.contentRect.size));
         }
 
         private void OnChangeSoundAsync(ChangeEvent<bool> evt)
         {
             _settingsData.SfxVolume = evt.newValue ? 1 : 0;
             AudioManager.SetSfxVolume(_settingsData.SfxVolume);
+            RenderCheckbox(_soundCheckbox, evt.newValue);
             SaveSettings();
         }
 
@@ -428,7 +493,55 @@ namespace LostCyberHamster.UI
         {
             _settingsData.MusicVolume = evt.newValue ? 1 : 0;
             AudioManager.SetMusicVolume(_settingsData.MusicVolume);
+            RenderCheckbox(_musicCheckbox, evt.newValue);
             SaveSettings();
+        }
+
+        private static void RenderCheckbox(
+            VisualElement checkbox,
+            bool isChecked)
+        {
+            checkbox?.EnableInClassList(
+                "settings-checkbox--checked",
+                isChecked);
+        }
+
+        private void OnViewportGeometryChanged(GeometryChangedEvent evt)
+        {
+            ApplyResponsiveLayout(evt.newRect.size);
+        }
+
+        /// <summary>Масштабирует экран и полноэкранный name overlay единым коэффициентом.</summary>
+        private void ApplyResponsiveLayout(Vector2 viewportSize)
+        {
+            float width = Mathf.Max(1f, viewportSize.x);
+            float height = Mathf.Max(1f, viewportSize.y);
+            float scale = Mathf.Min(
+                width / DesignWidth,
+                height / DesignHeight);
+
+            // Основная композиция остаётся внутри safe area.
+            ApplyScale(_scaleFrame, _design, scale);
+
+            // Диалог сохраняет тот же размер, но центрируется на полном экране.
+            ApplyScale(_nameScaleFrame, _nameDesign, scale);
+        }
+
+        private static void ApplyScale(
+            VisualElement scaleFrame,
+            VisualElement design,
+            float scale)
+        {
+            scaleFrame.style.width = DesignWidth * scale;
+            scaleFrame.style.height = DesignHeight * scale;
+            design.style.scale = new Scale(new Vector3(scale, scale, 1f));
+        }
+
+        private void SetDropdownPopupStyleScope(bool isEnabled)
+        {
+            _contentRoot.panel?.visualTree.EnableInClassList(
+                DropdownPopupScopeClass,
+                isEnabled);
         }
 
         private void OnChangeVibrationAsync(ChangeEvent<bool> evt)
@@ -448,19 +561,18 @@ namespace LostCyberHamster.UI
         private void RefreshLocalizedText()
         {
             // Обновляем локализованные элементы без перезагрузки экрана и потери введённого имени.
-            _contentRoot.Query<LocalizedLabel>().ForEach(label =>
+            _background.Query<LocalizedLabel>().ForEach(label =>
             {
                 if (!string.IsNullOrEmpty(label.key))
                     label.text = LocalizationManager.GetLocalizedString(label.key);
             });
-            _contentRoot.Query<LocalizedButton>().ForEach(button =>
+            _background.Query<LocalizedButton>().ForEach(button =>
             {
                 if (!string.IsNullOrEmpty(button.key))
                     button.text = LocalizationManager.GetLocalizedString(button.key);
             });
 
             // Обновляем динамические подписи, которые не управляются ключом UXML напрямую.
-            _buttonBack.text = LocalizationManager.GetLocalizedString("btn_back");
             UpdateAccountState(_accountService.State);
             if (!string.IsNullOrEmpty(_playerNameErrorLocalizationKey))
             {
@@ -486,6 +598,7 @@ namespace LostCyberHamster.UI
 
         private void EndSession()
         {
+            RestorePlayerNameOverlay();
             if (!_isActive)
                 return;
 
@@ -503,6 +616,7 @@ namespace LostCyberHamster.UI
 
         protected override void OnUnsubscribeFromEvents()
         {
+            SetDropdownPopupStyleScope(false);
             _buttonBack?.UnregisterCallback<ClickEvent>(OnClickButtonBack);
             _buttonLinkAccount?.UnregisterCallback<ClickEvent>(OnClickButtonLinkAccount);
             _buttonChangePlayerName?.UnregisterCallback<ClickEvent>(OnClickChangePlayerName);
@@ -513,6 +627,8 @@ namespace LostCyberHamster.UI
             _toggleMusic?.UnregisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.UnregisterValueChangedCallback(OnChangeSoundAsync);
             _toggleVibration?.UnregisterValueChangedCallback(OnChangeVibrationAsync);
+            _viewport?.UnregisterCallback<GeometryChangedEvent>(
+                OnViewportGeometryChanged);
             EndSession();
         }
 

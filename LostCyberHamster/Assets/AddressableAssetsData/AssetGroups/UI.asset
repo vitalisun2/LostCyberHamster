@@ -66,6 +66,12 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4adf4e491f5d24642b124919e6cdc999
+    m_Address: SettingsScreenBackgroundSprite
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - textures
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4c434d3f49aa041ddb2583b16acd5c01
     m_Address: QuestItem.uxml
     m_ReadOnly: 0

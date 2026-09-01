@@ -153,8 +153,12 @@
             "value": "ИЗМЕНИТЬ"
         },
         {
+            "key": "player_name_edit_title",
+            "value": "ИЗМЕНИТЬ ИМЯ"
+        },
+        {
             "key": "btn_save_player_name",
-            "value": "СОХРАНИТЬ ИМЯ"
+            "value": "СОХРАНИТЬ"
         },
         {
             "key": "btn_cancel_player_name",

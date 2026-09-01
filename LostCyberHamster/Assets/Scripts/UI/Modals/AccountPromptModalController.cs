@@ -1,12 +1,12 @@
 using System.Threading.Tasks;
 using UnityEngine.UIElements;
-using Vues.GameCore;
 
 namespace LostCyberHamster.UI
 {
     public sealed class AccountPromptModalController : ModalController
     {
-        private const long _laterMessageDurationMs = 3000;
+        private const long LaterMessageDurationMs = 3000;
+        private const string ModalStyleClass = "modal--account-prompt";
 
         protected override ScreenEnum _modalAssetName => ScreenEnum.AccountPromptModal;
 
@@ -18,6 +18,7 @@ namespace LostCyberHamster.UI
 
         private Label _transientMessage;
         private IVisualElementScheduledItem _messageRemoval;
+        private bool _preserveTransientMessageOnClose;
 
         public AccountPromptModalController(UIDocument uiDocument) : base(uiDocument)
         {
@@ -26,14 +27,12 @@ namespace LostCyberHamster.UI
         protected override Task OnShowAsync()
         {
             RemoveTransientMessage();
+            _modal.EnableInClassList(ModalStyleClass, true);
             _buttonCloseModal.style.display = DisplayStyle.None;
 
             var laterMessage = _modalContent.Q<Label>("account-prompt-modal__later-message");
             if (laterMessage != null)
-            {
-                laterMessage.text = LocalizationManager.GetLocalizedString("account_prompt_later_message");
                 laterMessage.style.display = DisplayStyle.None;
-            }
 
             return Task.CompletedTask;
         }
@@ -50,7 +49,12 @@ namespace LostCyberHamster.UI
         {
             _buttonLinkAccount?.UnregisterCallback<ClickEvent>(OnClickLinkAccount);
             _buttonLater?.UnregisterCallback<ClickEvent>(OnClickLater);
-            RemoveTransientMessage();
+            _modal.EnableInClassList(ModalStyleClass, false);
+
+            if (!_preserveTransientMessageOnClose)
+                RemoveTransientMessage();
+
+            _preserveTransientMessageOnClose = false;
         }
 
         private void OnClickLinkAccount(ClickEvent evt)
@@ -63,7 +67,8 @@ namespace LostCyberHamster.UI
             var laterMessage = _modalContent.Q<Label>("account-prompt-modal__later-message");
             if (laterMessage == null)
             {
-                Close();
+                Hide();
+                UIManager.OnScreenShow?.Invoke(ScreenEnum.HomeScreen);
                 return;
             }
 
@@ -74,10 +79,13 @@ namespace LostCyberHamster.UI
             _root.Add(laterMessage);
             _transientMessage = laterMessage;
 
-            Close();
+            // Прячем окно сразу, сохраняя дерево до штатного закрытия UIManager.
+            _preserveTransientMessageOnClose = true;
+            Hide();
             _messageRemoval = laterMessage.schedule
                 .Execute(RemoveTransientMessage)
-                .StartingIn(_laterMessageDurationMs);
+                .StartingIn(LaterMessageDurationMs);
+            UIManager.OnScreenShow?.Invoke(ScreenEnum.HomeScreen);
         }
 
         private void RemoveTransientMessage()
@@ -86,6 +94,7 @@ namespace LostCyberHamster.UI
             _messageRemoval = null;
             _transientMessage?.RemoveFromHierarchy();
             _transientMessage = null;
+            _preserveTransientMessageOnClose = false;
         }
     }
 }
