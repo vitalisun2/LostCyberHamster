@@ -724,7 +724,7 @@
     <None Include="Assets\Content\ui\uxml\GameScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\SelectLevelScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\Toolbar.uxml" />
-    <None Include="Assets\Content\ui\styles\components\toolbar.uss" />
+    <None Include="Assets\Content\ui\styles\components\screen-chrome.uss" />
     <None Include="Assets\Content\ui\styles\screens\CharacterDevelopmentScreen.uss" />
     <None Include="Assets\Content\ui\uxml\JourneyCompleteModal.uxml" />
     <None Include="Assets\Content\ui\uxml\SettingsScreen.uxml" />
@@ -746,6 +746,7 @@
     <None Include="Assets\Content\ui\styles\components\carousel.uss" />
     <None Include="Assets\Content\ui\styles\common.uss" />
     <None Include="Assets\Content\ui\uxml\test.uxml" />
+    <None Include="Assets\Content\ui\styles\components\dual-tabs.uss" />
     <None Include="Assets\Content\ui\styles\components\gameplay-bars.uss" />
     <None Include="Assets\Content\ui\uxml\Bootstrap.uxml" />
     <None Include="Assets\Content\ui\styles\screens\CharacterScreen.uss" />
