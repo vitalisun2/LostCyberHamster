@@ -17,6 +17,8 @@ namespace LostCyberHamster.UI
     {
         private const float DesignWidth = 1672f;
         private const float DesignHeight = 941f;
+        private const float ScrollEpsilon = 0.5f;
+        private const string BackgroundAddress = "HeroBackgroundSprite";
 
         private enum HeroTab
         {
@@ -58,6 +60,12 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<Label>("hero-skin-preview-name");
         private VisualElement SkinSlots =>
             _contentRoot.Q<VisualElement>("hero-skin-slots");
+        private ScrollView SkinScroll =>
+            _contentRoot.Q<ScrollView>("hero-skin-scroll");
+        private Button SkinScrollUpButton =>
+            _contentRoot.Q<Button>("hero-skin-scroll-up");
+        private Button SkinScrollDownButton =>
+            _contentRoot.Q<Button>("hero-skin-scroll-down");
         private VisualElement AbilityPreviewImage =>
             _contentRoot.Q<VisualElement>("hero-ability-preview-image");
         private Label AbilityPreviewDescription =>
@@ -66,6 +74,12 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<Button>("hero-ability-select");
         private VisualElement AbilitySlots =>
             _contentRoot.Q<VisualElement>("hero-ability-slots");
+        private ScrollView AbilityScroll =>
+            _contentRoot.Q<ScrollView>("hero-ability-scroll");
+        private Button AbilityScrollUpButton =>
+            _contentRoot.Q<Button>("hero-ability-scroll-up");
+        private Button AbilityScrollDownButton =>
+            _contentRoot.Q<Button>("hero-ability-scroll-down");
 
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.CharacterScreen;
@@ -78,6 +92,9 @@ namespace LostCyberHamster.UI
         protected override async Task OnLoadAsync()
         {
             _screenLoaded = true;
+            await ChangeBackgroundAsync(
+                BackgroundAddress,
+                ScaleMode.ScaleAndCrop);
             _activeTab = HeroTab.Skins;
             _selectedSkinId = SkinManager.CurrentSkin?.Id ??
                               CharacterDevelopmentService.DefaultSkinId;
@@ -99,10 +116,23 @@ namespace LostCyberHamster.UI
                 OnAbilityTabClicked);
             AbilitySelectButton?.RegisterCallback<ClickEvent>(
                 OnAbilitySelectClicked);
+            SkinScrollUpButton?.RegisterCallback<ClickEvent>(
+                OnSkinScrollUpClicked);
+            SkinScrollDownButton?.RegisterCallback<ClickEvent>(
+                OnSkinScrollDownClicked);
+            AbilityScrollUpButton?.RegisterCallback<ClickEvent>(
+                OnAbilityScrollUpClicked);
+            AbilityScrollDownButton?.RegisterCallback<ClickEvent>(
+                OnAbilityScrollDownClicked);
             Viewport?.RegisterCallback<GeometryChangedEvent>(
                 OnViewportGeometryChanged);
+            RegisterScrollCallbacks(SkinScroll, OnSkinScrollValueChanged);
+            RegisterScrollCallbacks(
+                AbilityScroll,
+                OnAbilityScrollValueChanged);
             Viewport?.schedule.Execute(
                 () => ApplyResponsiveLayout(Viewport.contentRect.size));
+            Viewport?.schedule.Execute(UpdateScrollNavigation);
         }
 
         protected override void OnUnsubscribeFromEvents()
@@ -114,8 +144,20 @@ namespace LostCyberHamster.UI
                 OnAbilityTabClicked);
             AbilitySelectButton?.UnregisterCallback<ClickEvent>(
                 OnAbilitySelectClicked);
+            SkinScrollUpButton?.UnregisterCallback<ClickEvent>(
+                OnSkinScrollUpClicked);
+            SkinScrollDownButton?.UnregisterCallback<ClickEvent>(
+                OnSkinScrollDownClicked);
+            AbilityScrollUpButton?.UnregisterCallback<ClickEvent>(
+                OnAbilityScrollUpClicked);
+            AbilityScrollDownButton?.UnregisterCallback<ClickEvent>(
+                OnAbilityScrollDownClicked);
             Viewport?.UnregisterCallback<GeometryChangedEvent>(
                 OnViewportGeometryChanged);
+            UnregisterScrollCallbacks(SkinScroll, OnSkinScrollValueChanged);
+            UnregisterScrollCallbacks(
+                AbilityScroll,
+                OnAbilityScrollValueChanged);
             ReleaseVisuals();
         }
 
@@ -265,6 +307,8 @@ namespace LostCyberHamster.UI
             {
                 SkinSlots.Add(CreateSkinSlot(skin));
             }
+
+            SkinScroll?.schedule.Execute(UpdateScrollNavigation);
         }
 
         private VisualElement CreateSkinSlot(Skin skin)
@@ -326,6 +370,8 @@ namespace LostCyberHamster.UI
             {
                 AbilitySlots.Add(CreateAbilitySlot(ability));
             }
+
+            AbilityScroll?.schedule.Execute(UpdateScrollNavigation);
         }
 
         private VisualElement CreateAbilitySlot(SuperAttackData ability)
@@ -559,6 +605,164 @@ namespace LostCyberHamster.UI
             AbilitiesPage.style.display = showSkins
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
+            UpdateScrollNavigation();
+            ScrollView activeScroll = showSkins ? SkinScroll : AbilityScroll;
+            activeScroll?.schedule.Execute(UpdateScrollNavigation);
+        }
+
+        private void RegisterScrollCallbacks(
+            ScrollView scrollView,
+            Action<float> valueChanged)
+        {
+            if (scrollView == null)
+            {
+                return;
+            }
+
+            scrollView.RegisterCallback<GeometryChangedEvent>(
+                OnScrollGeometryChanged);
+            scrollView.verticalScroller.valueChanged += valueChanged;
+        }
+
+        private void UnregisterScrollCallbacks(
+            ScrollView scrollView,
+            Action<float> valueChanged)
+        {
+            if (scrollView == null)
+            {
+                return;
+            }
+
+            scrollView.UnregisterCallback<GeometryChangedEvent>(
+                OnScrollGeometryChanged);
+            scrollView.verticalScroller.valueChanged -= valueChanged;
+        }
+
+        private void OnScrollGeometryChanged(
+            GeometryChangedEvent _)
+        {
+            UpdateScrollNavigation();
+        }
+
+        private void OnSkinScrollValueChanged(float _)
+        {
+            UpdateScrollNavigation();
+        }
+
+        private void OnAbilityScrollValueChanged(float _)
+        {
+            UpdateScrollNavigation();
+        }
+
+        private void OnSkinScrollUpClicked(ClickEvent _)
+        {
+            ScrollSlots(SkinScroll, -1f);
+        }
+
+        private void OnSkinScrollDownClicked(ClickEvent _)
+        {
+            ScrollSlots(SkinScroll, 1f);
+        }
+
+        private void OnAbilityScrollUpClicked(ClickEvent _)
+        {
+            ScrollSlots(AbilityScroll, -1f);
+        }
+
+        private void OnAbilityScrollDownClicked(ClickEvent _)
+        {
+            ScrollSlots(AbilityScroll, 1f);
+        }
+
+        private void ScrollSlots(ScrollView scrollView, float direction)
+        {
+            if (scrollView == null)
+            {
+                return;
+            }
+
+            float maximum = Mathf.Max(
+                0f,
+                scrollView.verticalScroller.highValue);
+            float scrollStep = ResolveSlotScrollStep(scrollView);
+            if (scrollStep <= 0f)
+            {
+                return;
+            }
+
+            float nextOffset = Mathf.Clamp(
+                scrollView.scrollOffset.y + direction * scrollStep,
+                0f,
+                maximum);
+            scrollView.scrollOffset = new Vector2(
+                scrollView.scrollOffset.x,
+                nextOffset);
+            UpdateScrollNavigation();
+        }
+
+        private static float ResolveSlotScrollStep(ScrollView scrollView)
+        {
+            VisualElement slots = scrollView.Q<VisualElement>(
+                className: "hero-slots");
+            if (slots == null || slots.childCount == 0)
+            {
+                return 0f;
+            }
+
+            VisualElement firstSlot = slots[0];
+            float step = slots.childCount > 1
+                ? slots[1].layout.y - firstSlot.layout.y
+                : firstSlot.layout.height;
+            return step > 0f && !float.IsNaN(step) && !float.IsInfinity(step)
+                ? step
+                : 0f;
+        }
+
+        private void UpdateScrollNavigation()
+        {
+            UpdateScrollNavigation(
+                SkinScroll,
+                SkinScrollUpButton,
+                SkinScrollDownButton,
+                _activeTab == HeroTab.Skins);
+            UpdateScrollNavigation(
+                AbilityScroll,
+                AbilityScrollUpButton,
+                AbilityScrollDownButton,
+                _activeTab == HeroTab.Abilities);
+        }
+
+        private static void UpdateScrollNavigation(
+            ScrollView scrollView,
+            Button upButton,
+            Button downButton,
+            bool isActive)
+        {
+            if (scrollView == null || upButton == null || downButton == null)
+            {
+                return;
+            }
+
+            float maximum = Mathf.Max(
+                0f,
+                scrollView.verticalScroller.highValue);
+            bool isVisible = isActive && maximum > ScrollEpsilon;
+            DisplayStyle display = isVisible
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+            upButton.style.display = display;
+            downButton.style.display = display;
+            if (!isVisible)
+            {
+                return;
+            }
+
+            float offset = Mathf.Clamp(
+                scrollView.scrollOffset.y,
+                0f,
+                maximum);
+            upButton.SetEnabled(offset > ScrollEpsilon);
+            downButton.SetEnabled(offset < maximum - ScrollEpsilon);
         }
 
         private void OnViewportGeometryChanged(GeometryChangedEvent evt)

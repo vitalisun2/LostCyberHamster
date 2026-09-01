@@ -5,7 +5,7 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    background-color: rgb(34, 48, 55);
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .hero-viewport {
@@ -33,16 +33,6 @@
     width: 1672px;
     height: 941px;
     transform-origin: 0 0;
-}
-
-.hero-background {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 1672px;
-    height: 941px;
-    background-image: url("/Assets/Content/ui/sprites/hero/background_hero.png");
-    -unity-background-scale-mode: scale-to-fit;
 }
 
 .hero-hud {
@@ -110,10 +100,10 @@
 
 .hero-tab__icon {
     position: absolute;
-    left: 43px;
-    top: 10px;
-    width: 52px;
-    height: 49px;
+    left: 28px;
+    top: 11px;
+    width: 48px;
+    height: 47px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -127,24 +117,32 @@
 
 .hero-tab__label {
     position: absolute;
-    left: 96px;
+    left: 76px;
     top: 5px;
-    width: 180px;
+    width: 200px;
     height: 57px;
     color: rgb(18, 21, 23);
-    font-size: 28px;
+    font-size: 24px;
     white-space: nowrap;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     -unity-text-outline-width: 0;
 }
 
+.hero-content {
+    position: absolute;
+    left: 328px;
+    top: 400px;
+    width: 1075px;
+    height: 473px;
+}
+
 .hero-page {
     position: absolute;
     left: 0;
     top: 0;
-    width: 1672px;
-    height: 941px;
+    width: 1075px;
+    height: 473px;
 }
 
 .hero-page--abilities {
@@ -153,8 +151,8 @@
 
 .hero-preview-panel {
     position: absolute;
-    left: 328px;
-    top: 400px;
+    left: 0;
+    top: 0;
     width: 476px;
     height: 473px;
     background-image: url("/Assets/Content/ui/sprites/hero/panel_preview_base.png");
@@ -231,8 +229,7 @@
     white-space: nowrap;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    -unity-text-outline-color: rgb(15, 25, 31);
-    -unity-text-outline-width: 2px;
+    -unity-text-outline-width: 0;
 }
 
 .hero-select-button {
@@ -249,8 +246,8 @@
 
 .hero-slots-scroll {
     position: absolute;
-    left: 823px;
-    top: 407px;
+    left: 495px;
+    top: 7px;
     width: 580px;
     height: 466px;
     margin: 0;
@@ -266,6 +263,7 @@
 .hero-slots {
     flex-shrink: 0;
     width: 574px;
+    gap: 14px;
 }
 
 .hero-slot {
@@ -274,7 +272,7 @@
     flex-shrink: 0;
     width: 574px;
     height: 140px;
-    margin: 0 0 14px 0;
+    margin: 0;
     padding: 0;
     background-color: rgba(0, 0, 0, 0);
     background-image: url("/Assets/Content/ui/sprites/hero/slot_base.png");
@@ -362,4 +360,34 @@
     width: 48px;
     height: 48px;
     -unity-background-scale-mode: scale-to-fit;
+}
+
+.hero-scroll-button {
+    position: absolute;
+    left: 1269px;
+    width: 64px;
+    height: 48px;
+    margin: 0;
+    padding: 0;
+    display: none;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: scale-to-fit;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+}
+
+.hero-scroll-button--up {
+    top: 351px;
+    background-image: url("/Assets/Content/ui/sprites/shared/button_scroll_up.png");
+}
+
+.hero-scroll-button--down {
+    top: 881px;
+    background-image: url("/Assets/Content/ui/sprites/shared/button_scroll_down.png");
+}
+
+.hero-scroll-button:disabled {
+    opacity: 0.45;
 }

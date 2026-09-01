@@ -145,6 +145,12 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0d301f6a3953c944b4f1f92c09d02c7
+    m_Address: HeroBackgroundSprite
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - textures
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a0ed9eba09b3644f4a085fc31c6541c7
     m_Address: ShopModal
     m_ReadOnly: 0

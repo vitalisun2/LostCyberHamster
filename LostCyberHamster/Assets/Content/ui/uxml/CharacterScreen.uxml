@@ -5,7 +5,6 @@
         <ui:VisualElement name="hero-viewport" class="hero-viewport">
             <ui:VisualElement name="hero-scale-frame" class="hero-scale-frame">
                 <ui:VisualElement name="hero-design" class="hero-design">
-                    <ui:VisualElement class="hero-background" picking-mode="Ignore" />
                     <ui:VisualElement class="hero-title" picking-mode="Ignore" />
                     <ui:VisualElement class="hero-tabs">
                         <ui:Button name="hero-tab-skins" class="hero-tab hero-tab--skins hero-tab--active">
@@ -17,25 +16,31 @@
                             <Vues.GameCore.LocalizedLabel key="equipment_abilities" class="hero-tab__label" picking-mode="Ignore" />
                         </ui:Button>
                     </ui:VisualElement>
-                    <ui:VisualElement name="hero-skins-page" class="hero-page hero-page--skins">
-                        <ui:VisualElement class="hero-preview-panel">
-                            <ui:VisualElement name="hero-skin-preview-image" class="hero-skin-preview-image" picking-mode="Ignore" />
-                            <ui:Label name="hero-skin-preview-name" class="hero-preview-name" picking-mode="Ignore" />
+                    <ui:VisualElement class="hero-content">
+                        <ui:VisualElement name="hero-skins-page" class="hero-page hero-page--skins">
+                            <ui:VisualElement class="hero-preview-panel">
+                                <ui:VisualElement name="hero-skin-preview-image" class="hero-skin-preview-image" picking-mode="Ignore" />
+                                <ui:Label name="hero-skin-preview-name" class="hero-preview-name" picking-mode="Ignore" />
+                            </ui:VisualElement>
+                            <ui:ScrollView name="hero-skin-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="hero-slots-scroll">
+                                <ui:VisualElement name="hero-skin-slots" class="hero-slots" />
+                            </ui:ScrollView>
                         </ui:VisualElement>
-                        <ui:ScrollView name="hero-skin-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="hero-slots-scroll">
-                            <ui:VisualElement name="hero-skin-slots" class="hero-slots" />
-                        </ui:ScrollView>
-                    </ui:VisualElement>
-                    <ui:VisualElement name="hero-abilities-page" class="hero-page hero-page--abilities">
-                        <ui:VisualElement class="hero-preview-panel">
-                            <ui:VisualElement name="hero-ability-preview-image" class="hero-ability-preview-image" picking-mode="Ignore" />
-                            <ui:Label name="hero-ability-preview-description" class="hero-ability-description" picking-mode="Ignore" />
-                            <ui:Button name="hero-ability-select" class="hero-select-button" />
+                        <ui:VisualElement name="hero-abilities-page" class="hero-page hero-page--abilities">
+                            <ui:VisualElement class="hero-preview-panel">
+                                <ui:VisualElement name="hero-ability-preview-image" class="hero-ability-preview-image" picking-mode="Ignore" />
+                                <ui:Label name="hero-ability-preview-description" class="hero-ability-description" picking-mode="Ignore" />
+                                <ui:Button name="hero-ability-select" class="hero-select-button" />
+                            </ui:VisualElement>
+                            <ui:ScrollView name="hero-ability-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="hero-slots-scroll">
+                                <ui:VisualElement name="hero-ability-slots" class="hero-slots" />
+                            </ui:ScrollView>
                         </ui:VisualElement>
-                        <ui:ScrollView name="hero-ability-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="hero-slots-scroll">
-                            <ui:VisualElement name="hero-ability-slots" class="hero-slots" />
-                        </ui:ScrollView>
                     </ui:VisualElement>
+                    <ui:Button name="hero-skin-scroll-up" class="hero-scroll-button hero-scroll-button--up" />
+                    <ui:Button name="hero-skin-scroll-down" class="hero-scroll-button hero-scroll-button--down" />
+                    <ui:Button name="hero-ability-scroll-up" class="hero-scroll-button hero-scroll-button--up" />
+                    <ui:Button name="hero-ability-scroll-down" class="hero-scroll-button hero-scroll-button--down" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
