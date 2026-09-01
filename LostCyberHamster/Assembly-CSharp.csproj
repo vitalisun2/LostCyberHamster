@@ -282,6 +282,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnSimulator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofTiming.cs" />
+    <Compile Include="Assets\Scripts\UI\Modals\GameResultModalPresentation.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Runtime\TutorialRuntimeHost.cs" />
     <Compile Include="Assets\Scripts\DevTools\Core\DevelopmentConsolePolicy.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Skins\SkinVisualHost.cs" />
@@ -729,6 +730,7 @@
     <None Include="Assets\Content\ui\uxml\AccountPromptModal.uxml" />
     <None Include="Assets\Content\ui\styles\screens\SettingsScreen.uss" />
     <None Include="Assets\Content\ui\uxml\CharacterScreen.uxml" />
+    <None Include="Assets\Content\ui\styles\components\game-result-modals.uss" />
     <None Include="Assets\Content\ui\uxml\GameUI.uxml" />
     <None Include="Assets\Content\ui\styles\utilities\backgrounds.uss" />
     <None Include="Assets\Content\ui\styles\components\modals.uss" />

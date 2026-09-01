@@ -90,11 +90,11 @@
         },
         {
             "key": "win_new_record",
-            "value": "{0} · NEW WEEKLY BEST RUN: {1}"
+            "value": "NEW WEEKLY BEST RUN: {1}"
         },
         {
             "key": "win_existing_record",
-            "value": "{0} · WEEKLY BEST RUN: {1}"
+            "value": "WEEKLY BEST RUN: {1}"
         },
         {
             "key": "win_submit_pending",
@@ -111,6 +111,14 @@
         {
             "key": "win_open_leaderboard",
             "value": "{0} LEADERBOARD"
+        },
+        {
+            "key": "fail_no_lives_left",
+            "value": "NO LIVES LEFT"
+        },
+        {
+            "key": "fail_watch_ad_to_continue",
+            "value": "WATCH AN AD TO CONTINUE"
         },
         {
             "key": "btn_resume",

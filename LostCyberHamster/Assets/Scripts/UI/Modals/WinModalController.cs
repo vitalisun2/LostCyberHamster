@@ -1,8 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Assets.Scripts.GameEngine.Mechanics;
-using Extensions;
-using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
 
@@ -33,9 +31,8 @@ namespace LostCyberHamster.UI
         private Button _leaderboardButton =>
             _modalContent.Q<Button>("btn_leaderboard");
 
-        private Label _levelLocationLabel => _modalContent.Q<Label>("level_location");
-
-        private Label _levelNameLabel => _modalContent.Q<Label>("level_name");
+        private Label _levelContextLabel =>
+            _modalContent.Q<Label>("level_context");
 
         private Action _actionResume;
 
@@ -44,6 +41,8 @@ namespace LostCyberHamster.UI
         private Action _actionExit;
 
         private Action<string, string> _actionLeaderboard;
+
+        private GameResultModalPresentation _presentation;
 
         protected override ScreenEnum _modalAssetName => ScreenEnum.WinModal;
 
@@ -56,22 +55,31 @@ namespace LostCyberHamster.UI
         {
         }
 
-        protected override async Task OnShowAsync()
+        protected override Task OnShowAsync()
         {
-            // Заполняем заголовок существующей модалки победы.
+            // Разворачиваем общий modal host под полноэкранный эталон.
+            _presentation?.Restore();
+            _presentation = GameResultModalPresentation.Apply(_root);
             _buttonCloseModal.style.display = DisplayStyle.None;
-            _levelNameLabel.text = _levelName;
-            _levelLocationLabel.text = _locationName;
 
-            // Показываем заработанные звёзды.
-            var fullstar = AddressableExtentions.LoadAssetSync<Sprite>("star");
-            for (int i = 1; i <= _stars; i++)
+            // Локализуем контекст уровня до показа дерева.
+            _levelContextLabel.text = FormatLevelContext();
+
+            // Показываем только заработанные звёзды из подготовленного набора.
+            int visibleStars = Math.Max(0, Math.Min(_stars, 3));
+            for (int i = 1; i <= 3; i++)
             {
                 var star = _starsContainer.Q($"star{i}");
-                star.style.backgroundImage = new StyleBackground(fullstar.texture);
+                if (star != null)
+                {
+                    star.style.display = i <= visibleStars
+                        ? DisplayStyle.Flex
+                        : DisplayStyle.None;
+                }
             }
 
             RenderRunResult();
+            return Task.CompletedTask;
         }
 
         protected override void OnSubscribeToEvents()
@@ -117,6 +125,8 @@ namespace LostCyberHamster.UI
             _restartButton?.UnregisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.UnregisterCallback<ClickEvent>(OnClickExit);
             _leaderboardButton?.UnregisterCallback<ClickEvent>(OnClickLeaderboard);
+            _presentation?.Restore();
+            _presentation = null;
         }
 
         public void SetResumeAction(Action value)
@@ -159,7 +169,10 @@ namespace LostCyberHamster.UI
 
             // Обновляем только уже клонированный WinModal.
             if (_resultContainer != null)
+            {
+                _levelContextLabel.text = FormatLevelContext();
                 RenderRunResult();
+            }
         }
 
         private void RenderRunResult()
@@ -171,26 +184,19 @@ namespace LostCyberHamster.UI
                 return;
             }
 
-            // Всегда показываем завершённый забег и доступность перехода.
+            // Всегда показываем завершённый забег.
             _resultContainer.style.display = DisplayStyle.Flex;
             _runScoreLabel.text = FormatLocalized(
                 "win_run_score",
                 _runResult.RunScore.ToString("0"));
-            _leaderboardButton.style.display = _runResult.IsLastLevelOfPart
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
-            _leaderboardButton.SetEnabled(
-                _runResult.IsLastLevelOfPart &&
-                _runResult.SubmissionState != RunResultSubmissionState.Pending);
-            _leaderboardButton.text = FormatLocalized(
-                "win_open_leaderboard",
-                GetLocalizedPartName(_runResult.LevelKey.PartOfDayId));
 
-            // Лучший забег недели появляется после авторитетного ответа сервера.
+            // Вторая строка показывает один статус без наложения соседних текстов.
             var isResolved =
                 _runResult.SubmissionState == RunResultSubmissionState.Submitted ||
                 _runResult.SubmissionState == RunResultSubmissionState.NotRequired;
-            _recordLabel.style.display = isResolved
+            var showLeaderboard =
+                isResolved && _runResult.IsLastLevelOfPart;
+            _recordLabel.style.display = isResolved && !showLeaderboard
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
             if (isResolved)
@@ -203,11 +209,17 @@ namespace LostCyberHamster.UI
                     _runResult.WeeklyBestRunScore.ToString("0"));
             }
 
-            // Статус отличает отправку, реальный успех, no-op и ошибку.
-            _submissionStatusLabel.style.display =
-                _runResult.SubmissionState == RunResultSubmissionState.NotRequired
-                    ? DisplayStyle.None
-                    : DisplayStyle.Flex;
+            _leaderboardButton.style.display = showLeaderboard
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+            _leaderboardButton.SetEnabled(showLeaderboard);
+            _leaderboardButton.text = FormatLocalized(
+                "win_open_leaderboard",
+                GetLocalizedPartName(_runResult.LevelKey.PartOfDayId));
+
+            _submissionStatusLabel.style.display = isResolved
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
             _submissionStatusLabel.text = _runResult.SubmissionState switch
             {
                 RunResultSubmissionState.Pending =>
@@ -218,6 +230,32 @@ namespace LostCyberHamster.UI
                     LocalizationManager.GetLocalizedString("win_submit_error"),
                 _ => string.Empty
             };
+        }
+
+        private string FormatLevelContext()
+        {
+            // RunResult содержит стабильные localization keys.
+            string locationKey = _runResult?.LevelKey.LocationId;
+            string partKey = _runResult?.LevelKey.PartOfDayId;
+            string location = GetLocalizedOrFallback(
+                locationKey,
+                _locationName);
+            string part = GetLocalizedOrFallback(
+                partKey,
+                _levelName);
+
+            // Собираем одну строку, чтобы части не конкурировали за ширину.
+            if (string.IsNullOrWhiteSpace(location))
+            {
+                return (part ?? string.Empty).ToUpperInvariant();
+            }
+
+            if (string.IsNullOrWhiteSpace(part))
+            {
+                return location.ToUpperInvariant();
+            }
+
+            return $"{location} — {part}".ToUpperInvariant();
         }
 
         private static string FormatLocalized(string key, params string[] values)
@@ -241,6 +279,23 @@ namespace LostCyberHamster.UI
         {
             return LocalizationManager.GetLocalizedString(
                 $"leaderboard_{partId?.Trim().ToLowerInvariant()}");
+        }
+
+        private static string GetLocalizedOrFallback(
+            string key,
+            string fallback)
+        {
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                string localized =
+                    LocalizationManager.GetLocalizedString(key);
+                if (!string.IsNullOrWhiteSpace(localized))
+                {
+                    return localized;
+                }
+            }
+
+            return fallback ?? string.Empty;
         }
     }
 }

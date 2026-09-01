@@ -90,11 +90,11 @@
         },
         {
             "key": "win_new_record",
-            "value": "{0} · НОВЫЙ ЛУЧШИЙ ЗАБЕГ НЕДЕЛИ: {1}"
+            "value": "НОВЫЙ ЛУЧШИЙ ЗАБЕГ НЕДЕЛИ: {1}"
         },
         {
             "key": "win_existing_record",
-            "value": "{0} · ЛУЧШИЙ ЗАБЕГ НЕДЕЛИ: {1}"
+            "value": "ЛУЧШИЙ ЗАБЕГ НЕДЕЛИ: {1}"
         },
         {
             "key": "win_submit_pending",
@@ -111,6 +111,14 @@
         {
             "key": "win_open_leaderboard",
             "value": "РЕЙТИНГ: {0}"
+        },
+        {
+            "key": "fail_no_lives_left",
+            "value": "НЕТ ЖИЗНЕЙ"
+        },
+        {
+            "key": "fail_watch_ad_to_continue",
+            "value": "СМОТРИ РЕКЛАМУ И ПРОДОЛЖАЙ"
         },
         {
             "key": "btn_resume",

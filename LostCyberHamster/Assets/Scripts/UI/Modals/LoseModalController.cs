@@ -16,15 +16,20 @@ namespace LostCyberHamster.UI
         private Action _actionRestart;
         private Action _actionExit;
 
+        private GameResultModalPresentation _presentation;
+
         protected override ScreenEnum _modalAssetName => ScreenEnum.LoseModal;
 
         public LoseModalController(UIDocument uiDocument) : base(uiDocument)
         {
         }
 
-        protected override async Task OnShowAsync()
+        protected override Task OnShowAsync()
         {
+            _presentation?.Restore();
+            _presentation = GameResultModalPresentation.Apply(_root);
             _buttonCloseModal.style.display = DisplayStyle.None;
+            return Task.CompletedTask;
         }
 
         protected override void OnSubscribeToEvents()
@@ -58,6 +63,8 @@ namespace LostCyberHamster.UI
             _watchAdsButton?.UnregisterCallback<ClickEvent>(OnClickWatchAds);
             _restartButton?.UnregisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.UnregisterCallback<ClickEvent>(OnClickExit);
+            _presentation?.Restore();
+            _presentation = null;
         }
 
         public void SetRestartAction(Action value)

@@ -1,27 +1,31 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <engine:Template name="HomeButton" src="project://database/Assets/Content/ui/uxml/HomeButton.uxml?fileID=9197481963319205126&amp;guid=d4d56334d80034ccbb95cdc946dbab88&amp;type=3#HomeButton" />
-    <engine:Template name="GameButton" src="project://database/Assets/Content/ui/uxml/RepeatButton.uxml?fileID=9197481963319205126&amp;guid=7119eba4dfc834ba9abc19bc78f556d1&amp;type=3#RepeatButton" />
-    <engine:Template name="PlayButton" src="project://database/Assets/Content/ui/uxml/PlayButton.uxml?fileID=9197481963319205126&amp;guid=b414e9450f40241cc87c69905fea2dfb&amp;type=3#PlayButton" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
-    <engine:VisualElement style="flex-grow: 1; flex-direction: column; align-items: center; justify-content: space-between;">
-        <engine:VisualElement style="flex-grow: 1;" />
-        <engine:Label text="Label" name="level_location" class="lcs-text" style="flex-shrink: 0; font-size: 56px;" />
-        <engine:Label text="Label" name="level_name" class="lcs-text" style="flex-shrink: 0; font-size: 42px;" />
-        <engine:VisualElement name="stars_container" style="flex-grow: 0; flex-shrink: 0; flex-direction: row; height: 88px; align-items: center; width: 280px; justify-content: space-around;">
-            <engine:VisualElement name="star1" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 72px; height: 72px;" />
-            <engine:VisualElement name="star2" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 72px; height: 72px;" />
-            <engine:VisualElement name="star3" style="flex-grow: 0; background-image: url(&quot;project://database/Assets/Content/ui/textures/star_empty.png?fileID=4815476061570213978&amp;guid=b7a10e98e3c1e4c46a04eca067fe4227&amp;type=3#star_0&quot;); width: 72px; height: 72px;" />
-        </engine:VisualElement>
-        <engine:VisualElement name="win_result" style="display: none; flex-grow: 0; flex-shrink: 0; width: 700px; min-height: 104px; align-items: center; justify-content: center;">
-            <engine:Label text="" name="win_run_score" class="lcs-text ui-text-compact" style="flex-shrink: 0; font-size: 28px; -unity-text-align: middle-center; white-space: normal;" />
-            <engine:Label text="" name="win_record" class="lcs-text ui-text-compact" style="flex-shrink: 0; font-size: 22px; -unity-text-align: middle-center; white-space: normal;" />
-            <engine:Label text="" name="win_submission_status" class="lcs-text ui-text-compact" style="display: none; flex-shrink: 0; font-size: 20px; -unity-text-align: middle-center; white-space: normal;" />
-        </engine:VisualElement>
-        <engine:Button text="" name="btn_leaderboard" class="lcs_btn bg-primary ui-text-compact" style="display: none; flex-grow: 0; flex-shrink: 0; width: 520px; height: 60px; margin-top: 4px; margin-right: 0; margin-bottom: 4px; margin-left: 0; padding-right: 16px; padding-left: 16px; font-size: 22px; white-space: normal;" />
-        <engine:VisualElement style="flex-grow: 0; flex-shrink: 0; flex-direction: row; align-items: flex-end;">
-            <engine:Instance template="HomeButton" />
-            <engine:Instance template="GameButton" />
-            <engine:Instance template="PlayButton" />
+    <Style src="../styles/components/game-result-modals.uss" />
+    <engine:VisualElement name="win-modal" class="game-result-modal game-result-modal--win">
+        <engine:VisualElement class="game-result-modal__viewport">
+            <engine:VisualElement class="game-result-modal__scale-frame">
+                <engine:VisualElement class="game-result-modal__design">
+                    <engine:VisualElement class="game-result-modal__panel game-result-modal__panel--win">
+                        <engine:VisualElement class="game-result-modal__title game-result-modal__title--win" picking-mode="Ignore" />
+                        <engine:Label name="level_context" class="game-result-modal__location-text" picking-mode="Ignore" />
+                        <engine:VisualElement name="stars_container" class="game-result-modal__stars" picking-mode="Ignore">
+                            <engine:VisualElement name="star1" class="game-result-modal__star game-result-modal__star--one" />
+                            <engine:VisualElement name="star2" class="game-result-modal__star game-result-modal__star--two" />
+                            <engine:VisualElement name="star3" class="game-result-modal__star game-result-modal__star--three" />
+                        </engine:VisualElement>
+                        <engine:VisualElement name="win_result" class="game-result-modal__result" picking-mode="Ignore">
+                            <engine:Label name="win_run_score" class="game-result-modal__runtime-text game-result-modal__run-score" />
+                            <engine:VisualElement class="game-result-modal__divider game-result-modal__divider--win" />
+                            <engine:Label name="win_record" class="game-result-modal__runtime-text game-result-modal__record" />
+                            <engine:Label name="win_submission_status" class="game-result-modal__runtime-text game-result-modal__submission" />
+                        </engine:VisualElement>
+                        <engine:Button name="btn_leaderboard" class="game-result-modal__leaderboard" />
+                        <engine:Button name="btn__home" tooltip="Home" class="game-result-modal__image-button game-result-modal__home-button game-result-modal__home-button--win" />
+                        <engine:Button name="btn__repeat" tooltip="Retry" class="game-result-modal__image-button game-result-modal__retry-button game-result-modal__retry-button--win" />
+                        <engine:Button name="btn__play" tooltip="Next Level" class="game-result-modal__image-button game-result-modal__primary-button game-result-modal__primary-button--win" />
+                    </engine:VisualElement>
+                </engine:VisualElement>
+            </engine:VisualElement>
         </engine:VisualElement>
     </engine:VisualElement>
 </engine:UXML>

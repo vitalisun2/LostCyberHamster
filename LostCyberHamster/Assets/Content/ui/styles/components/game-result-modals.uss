@@ -1,0 +1,329 @@
+.game-result-modal {
+    position: relative;
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background-image: url("/Assets/Content/ui/sprites/modals/background_modal_new_york_full.png");
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.game-result-modal__viewport {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.game-result-modal__scale-frame {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 1672px;
+    height: 941px;
+}
+
+.game-result-modal__design {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 941px;
+    transform-origin: 0 0;
+}
+
+.game-result-modal__panel {
+    position: absolute;
+    left: 447px;
+    top: 219px;
+    width: 782px;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: stretch-to-fill;
+    overflow: visible;
+}
+
+.game-result-modal__panel--win {
+    height: 550px;
+    background-image: url("/Assets/Content/ui/sprites/modals/win/panel_win_exact.png");
+}
+
+.game-result-modal__panel--fail {
+    height: 479px;
+    background-image: url("/Assets/Content/ui/sprites/modals/fail/panel_fail_exact.png");
+}
+
+.game-result-modal__panel--pause {
+    height: 339px;
+    background-image: url("/Assets/Content/ui/sprites/modals/pause/panel_pause_exact.png");
+}
+
+.game-result-modal__title,
+.game-result-modal__divider,
+.game-result-modal__star {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.game-result-modal__title--win {
+    left: 79px;
+    top: -25px;
+    width: 624px;
+    height: 93px;
+    background-image: url("/Assets/Content/ui/sprites/modals/win/title_level_complete.png");
+}
+
+.game-result-modal__title--fail {
+    left: 129px;
+    top: -22px;
+    width: 524px;
+    height: 93px;
+    background-image: url("/Assets/Content/ui/sprites/modals/fail/title_level_failed.png");
+}
+
+.game-result-modal__title--pause {
+    left: 230px;
+    top: 36px;
+    width: 319px;
+    height: 94px;
+    background-image: url("/Assets/Content/ui/sprites/modals/pause/title_paused.png");
+}
+
+.game-result-modal__location-text,
+.game-result-modal__runtime-text,
+.game-result-modal__message {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    color: rgb(15, 42, 80);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.game-result-modal__location-text {
+    left: 100px;
+    top: 82px;
+    width: 582px;
+    height: 44px;
+    font-size: 28px;
+}
+
+.game-result-modal__stars {
+    position: absolute;
+    left: 207px;
+    top: 136px;
+    width: 358px;
+    height: 87px;
+}
+
+.game-result-modal__star--one {
+    left: 0;
+    top: 0;
+    width: 84px;
+    height: 87px;
+    background-image: url("/Assets/Content/ui/sprites/modals/win/star_01.png");
+}
+
+.game-result-modal__star--two {
+    left: 138px;
+    top: 1px;
+    width: 84px;
+    height: 86px;
+    background-image: url("/Assets/Content/ui/sprites/modals/win/star_02.png");
+}
+
+.game-result-modal__star--three {
+    left: 275px;
+    top: 1px;
+    width: 83px;
+    height: 85px;
+    background-image: url("/Assets/Content/ui/sprites/modals/win/star_03.png");
+}
+
+.game-result-modal__result {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 782px;
+    height: 550px;
+    display: none;
+}
+
+.game-result-modal__run-score {
+    left: 70px;
+    top: 240px;
+    width: 642px;
+    height: 46px;
+    font-size: 30px;
+}
+
+.game-result-modal__divider--win {
+    left: 110px;
+    top: 297px;
+    width: 562px;
+    height: 3px;
+    background-color: rgb(15, 42, 80);
+}
+
+.game-result-modal__record,
+.game-result-modal__submission {
+    left: 70px;
+    top: 315px;
+    width: 642px;
+    height: 32px;
+    font-size: 18px;
+}
+
+.game-result-modal__leaderboard {
+    position: absolute;
+    left: 70px;
+    top: 315px;
+    width: 642px;
+    height: 32px;
+    display: none;
+    margin: 0;
+    padding: 0;
+    color: rgb(15, 42, 80);
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    font-size: 18px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.game-result-modal__message--no-lives {
+    left: 90px;
+    top: 104px;
+    width: 602px;
+    height: 50px;
+    font-size: 34px;
+}
+
+.game-result-modal__divider--fail {
+    left: 110px;
+    top: 178px;
+    width: 562px;
+    height: 3px;
+    background-color: rgb(15, 42, 80);
+}
+
+.game-result-modal__message--watch-ad {
+    left: 90px;
+    top: 205px;
+    width: 602px;
+    height: 36px;
+    font-size: 22px;
+}
+
+.game-result-modal__image-button {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    color: rgba(0, 0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    overflow: visible;
+    -unity-background-scale-mode: scale-to-fit;
+    transition-property: scale, opacity;
+    transition-duration: 80ms;
+    transition-timing-function: ease-out;
+}
+
+.game-result-modal__image-button:hover,
+.game-result-modal__image-button:focus {
+    opacity: 0.96;
+    scale: 1.02 1.02;
+}
+
+.game-result-modal__image-button:active {
+    opacity: 0.9;
+    scale: 0.97 0.97;
+}
+
+.game-result-modal__home-button--win {
+    left: 104px;
+    top: 385px;
+    width: 100px;
+    height: 101px;
+    background-image: url("/Assets/Content/ui/sprites/modals/win/button_home.png");
+}
+
+.game-result-modal__retry-button--win {
+    left: 224px;
+    top: 385px;
+    width: 98px;
+    height: 101px;
+    background-image: url("/Assets/Content/ui/sprites/modals/win/button_retry.png");
+}
+
+.game-result-modal__primary-button--win {
+    left: 344px;
+    top: 385px;
+    width: 334px;
+    height: 101px;
+    background-image: url("/Assets/Content/ui/sprites/modals/win/button_next_level.png");
+}
+
+.game-result-modal__home-button--fail {
+    left: 104px;
+    top: 310px;
+    width: 100px;
+    height: 101px;
+    background-image: url("/Assets/Content/ui/sprites/modals/fail/button_home.png");
+}
+
+.game-result-modal__retry-button--fail {
+    left: 224px;
+    top: 310px;
+    width: 98px;
+    height: 101px;
+    background-image: url("/Assets/Content/ui/sprites/modals/fail/button_retry.png");
+}
+
+.game-result-modal__primary-button--fail {
+    left: 344px;
+    top: 310px;
+    width: 334px;
+    height: 101px;
+    background-image: url("/Assets/Content/ui/sprites/modals/fail/button_watch_ad.png");
+}
+
+.game-result-modal__home-button--pause {
+    left: 63px;
+    top: 169px;
+    width: 114px;
+    height: 108px;
+    background-image: url("/Assets/Content/ui/sprites/modals/pause/button_home.png");
+}
+
+.game-result-modal__retry-button--pause {
+    left: 193px;
+    top: 169px;
+    width: 114px;
+    height: 108px;
+    background-image: url("/Assets/Content/ui/sprites/modals/pause/button_retry.png");
+}
+
+.game-result-modal__primary-button--pause {
+    left: 327px;
+    top: 169px;
+    width: 389px;
+    height: 108px;
+    background-image: url("/Assets/Content/ui/sprites/modals/pause/button_resume.png");
+}
