@@ -319,14 +319,21 @@
     position: absolute;
     width: 72px;
     height: 98px;
+    justify-content: center;
+    align-items: center;
+}
+
+.development-arrow__icon {
+    width: 42px;
+    height: 60px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.development-arrow--left {
+.development-arrow__icon--left {
     background-image: url("/Assets/Content/ui/sprites/shared/button_scroll_left.png");
 }
 
-.development-arrow--right {
+.development-arrow__icon--right {
     background-image: url("/Assets/Content/ui/sprites/shared/button_scroll_right.png");
 }
 
@@ -391,7 +398,7 @@
     position: relative;
     flex-grow: 0;
     flex-shrink: 0;
-    width: 306px;
+    width: 229.5px;
     height: 242px;
     margin: 0;
     padding: 0;
@@ -400,10 +407,10 @@
 
 .development-card__node {
     position: absolute;
-    left: 86px;
+    left: 63.75px;
     top: 0;
-    width: 135px;
-    height: 137px;
+    width: 102px;
+    height: 102px;
     justify-content: center;
     align-items: center;
     -unity-background-scale-mode: scale-to-fit;
@@ -420,15 +427,15 @@
     border-right-color: rgb(22, 24, 24);
     border-bottom-color: rgb(22, 24, 24);
     border-left-color: rgb(22, 24, 24);
-    border-top-left-radius: 69px;
-    border-top-right-radius: 69px;
-    border-bottom-right-radius: 69px;
-    border-bottom-left-radius: 69px;
+    border-top-left-radius: 51px;
+    border-top-right-radius: 51px;
+    border-bottom-right-radius: 51px;
+    border-bottom-left-radius: 51px;
 }
 
 .development-card__icon {
-    width: 117px;
-    height: 117px;
+    width: 86px;
+    height: 86px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -437,21 +444,18 @@
 }
 
 .development-card__lock {
-    position: absolute;
-    left: 18px;
-    top: 4px;
-    width: 100px;
-    height: 130px;
-    background-image: url("/Assets/Content/ui/sprites/skills/icon_lock.png");
+    width: 49px;
+    height: 63px;
+    background-image: url("/Assets/Content/ui/sprites/shared/icon_lock.png");
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .development-card__check {
     position: absolute;
-    right: -11px;
-    bottom: -9px;
-    width: 57px;
-    height: 59px;
+    right: -8px;
+    bottom: -7px;
+    width: 42px;
+    height: 43px;
     background-image: url("/Assets/Content/ui/sprites/skills/icon_check.png");
     -unity-background-scale-mode: scale-to-fit;
 }
@@ -459,12 +463,12 @@
 .development-card__name {
     position: absolute;
     left: 0;
-    top: 137px;
-    width: 306px;
-    height: 31px;
+    top: 105px;
+    width: 229.5px;
+    height: 56px;
     color: rgb(22, 24, 24);
     font-size: 24px;
-    white-space: nowrap;
+    white-space: normal;
     -unity-text-align: middle-center;
     -unity-text-outline-width: 0;
     overflow: hidden;
@@ -472,7 +476,7 @@
 
 .development-card__unlock {
     position: absolute;
-    left: 81px;
+    left: 42.25px;
     top: 168px;
     width: 145px;
     height: 74px;

@@ -18,7 +18,7 @@ namespace LostCyberHamster.UI
     public sealed class CharacterDevelopmentScreenController :
         ScreenController
     {
-        private const int MinimumCardsPerLine = 3;
+        private const int VisibleCardsPerLine = 4;
         private const float DesignWidth = 1672f;
         private const float DesignHeight = 941f;
         private const string BackgroundAddress = "SkillsBackgroundSprite";
@@ -226,7 +226,7 @@ namespace LostCyberHamster.UI
             Button nextButton,
             int cardCount)
         {
-            bool canScroll = cardCount > MinimumCardsPerLine;
+            bool canScroll = cardCount > VisibleCardsPerLine;
             previousButton?.SetEnabled(canScroll);
             nextButton?.SetEnabled(canScroll);
         }

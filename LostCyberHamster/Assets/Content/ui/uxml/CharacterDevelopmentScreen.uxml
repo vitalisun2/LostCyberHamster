@@ -28,20 +28,28 @@
                     <engine:VisualElement class="development-line-tab development-skins-tab">
                         <Vues.GameCore.LocalizedLabel key="equipment_skins" class="development-runtime-text development-line-title" />
                     </engine:VisualElement>
-                    <engine:Button name="development__skin-prev" class="development-image-button development-arrow development-arrow--left development-skin-arrow--left" />
+                    <engine:Button name="development__skin-prev" class="development-image-button development-arrow development-skin-arrow--left">
+                        <engine:VisualElement class="development-arrow__icon development-arrow__icon--left" picking-mode="Ignore" />
+                    </engine:Button>
                     <engine:ScrollView name="development__skin-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="development-line-scroll development-skin-scroll">
                         <engine:VisualElement name="development__skin-cards" class="development-cards" />
                     </engine:ScrollView>
-                    <engine:Button name="development__skin-next" class="development-image-button development-arrow development-arrow--right development-skin-arrow--right" />
+                    <engine:Button name="development__skin-next" class="development-image-button development-arrow development-skin-arrow--right">
+                        <engine:VisualElement class="development-arrow__icon development-arrow__icon--right" picking-mode="Ignore" />
+                    </engine:Button>
 
                     <engine:VisualElement class="development-line-tab development-abilities-tab">
                         <Vues.GameCore.LocalizedLabel key="equipment_abilities" class="development-runtime-text development-line-title" />
                     </engine:VisualElement>
-                    <engine:Button name="development__ability-prev" class="development-image-button development-arrow development-arrow--left development-ability-arrow--left" />
+                    <engine:Button name="development__ability-prev" class="development-image-button development-arrow development-ability-arrow--left">
+                        <engine:VisualElement class="development-arrow__icon development-arrow__icon--left" picking-mode="Ignore" />
+                    </engine:Button>
                     <engine:ScrollView name="development__ability-scroll" mode="Horizontal" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="development-line-scroll development-ability-scroll">
                         <engine:VisualElement name="development__ability-cards" class="development-cards" />
                     </engine:ScrollView>
-                    <engine:Button name="development__ability-next" class="development-image-button development-arrow development-arrow--right development-ability-arrow--right" />
+                    <engine:Button name="development__ability-next" class="development-image-button development-arrow development-ability-arrow--right">
+                        <engine:VisualElement class="development-arrow__icon development-arrow__icon--right" picking-mode="Ignore" />
+                    </engine:Button>
 
                     <engine:Button name="development__btn-equipment" class="development-image-button development-equipment-button">
                         <engine:VisualElement class="development-equipment-button__icon" picking-mode="Ignore" />
