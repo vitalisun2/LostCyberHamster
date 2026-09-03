@@ -12,6 +12,7 @@ namespace LostCyberHamster.UI
     public sealed class CloudSaveConflictCoordinator
     {
         private readonly UIManager _uiManager;
+        private readonly CloudSyncService _cloudSyncService;
         private readonly ConflictService _conflictService;
         private readonly CloudSaveConflictModalController _modalController;
 
@@ -19,12 +20,15 @@ namespace LostCyberHamster.UI
         private bool _isVisible;
         private bool _isShowInProgress;
         private bool _isResolutionInProgress;
+        private int _lifecycleVersion;
 
         public CloudSaveConflictCoordinator(
             UIManager uiManager,
+            CloudSyncService cloudSyncService,
             ConflictService conflictService)
         {
             _uiManager = uiManager ?? throw new ArgumentNullException(nameof(uiManager));
+            _cloudSyncService = cloudSyncService ?? throw new ArgumentNullException(nameof(cloudSyncService));
             _conflictService = conflictService ?? throw new ArgumentNullException(nameof(conflictService));
             _modalController = uiManager.GetController<CloudSaveConflictModalController>();
         }
@@ -36,7 +40,9 @@ namespace LostCyberHamster.UI
                 return;
 
             _isEnabled = true;
+            _lifecycleVersion++;
             _conflictService.ConflictDetected += OnConflictDetected;
+            _conflictService.ConflictResolved += OnConflictResolved;
             _modalController.CloudSelected += OnCloudSelected;
             _modalController.ThisDeviceSelected += OnThisDeviceSelected;
             PresentCurrentConflict();
@@ -49,9 +55,13 @@ namespace LostCyberHamster.UI
                 return;
 
             _isEnabled = false;
+            _lifecycleVersion++;
             _conflictService.ConflictDetected -= OnConflictDetected;
+            _conflictService.ConflictResolved -= OnConflictResolved;
             _modalController.CloudSelected -= OnCloudSelected;
             _modalController.ThisDeviceSelected -= OnThisDeviceSelected;
+            _isVisible = false;
+            _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
         }
 
         private void OnConflictDetected(CloudSaveConflict _)
@@ -60,14 +70,20 @@ namespace LostCyberHamster.UI
                 PresentCurrentConflict();
         }
 
+        private void OnConflictResolved()
+        {
+            _isVisible = false;
+            _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
+        }
+
         private void OnCloudSelected()
         {
-            _ = ResolveAsync(_conflictService.ResolveWithCloudAsync);
+            _ = ResolveAsync(_cloudSyncService.ResolveConflictWithCloudAsync);
         }
 
         private void OnThisDeviceSelected()
         {
-            _ = ResolveAsync(_conflictService.ResolveWithLocalAsync);
+            _ = ResolveAsync(_cloudSyncService.ResolveConflictWithLocalAsync);
         }
 
         private void PresentCurrentConflict()
@@ -85,11 +101,13 @@ namespace LostCyberHamster.UI
 
         private async Task ShowAsync()
         {
+            var lifecycleVersion = _lifecycleVersion;
             _isShowInProgress = true;
             try
             {
                 await _uiManager.ShowModalAsync(ScreenEnum.CloudSaveConflictModal);
-                if (!_isEnabled || _conflictService.CurrentConflict == null)
+                if (!IsLifecycleCurrent(lifecycleVersion) ||
+                    _conflictService.CurrentConflict == null)
                 {
                     _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
                     return;
@@ -100,40 +118,71 @@ namespace LostCyberHamster.UI
             }
             catch (Exception exception)
             {
-                Debug.LogError($"[CloudSave] Conflict modal show failed ({exception.GetType().Name}).");
+                if (IsLifecycleCurrent(lifecycleVersion))
+                {
+                    Debug.LogError(
+                        $"[CloudSave] Conflict modal show failed ({exception.GetType().Name}).");
+                }
             }
             finally
             {
                 _isShowInProgress = false;
+                if (_isEnabled &&
+                    !_isVisible &&
+                    _conflictService.CurrentConflict != null)
+                {
+                    PresentCurrentConflict();
+                }
             }
         }
 
-        private async Task ResolveAsync(Func<Task> resolve)
+        private async Task ResolveAsync(Func<Task<bool>> resolve)
         {
             if (!_isEnabled || !_isVisible || _isResolutionInProgress)
                 return;
 
+            var lifecycleVersion = _lifecycleVersion;
             _isResolutionInProgress = true;
             _modalController.SetBusy(isBusy: true);
 
             try
             {
-                await resolve();
-                _isVisible = false;
-                _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
-                UIManager.OnRepaintScreen?.Invoke();
+                var resolved = await resolve();
+                if (!IsLifecycleCurrent(lifecycleVersion))
+                    return;
+
+                if (resolved)
+                {
+                    _isVisible = false;
+                    _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
+                    UIManager.OnRepaintScreen?.Invoke();
+                    return;
+                }
+
+                PresentCurrentConflict();
             }
             catch (Exception exception)
             {
-                Debug.LogError($"[CloudSave] Conflict resolution failed ({exception.GetType().Name}).");
-                PresentCurrentConflict();
+                if (IsLifecycleCurrent(lifecycleVersion))
+                {
+                    Debug.LogError(
+                        $"[CloudSave] Conflict resolution failed ({exception.GetType().Name}).");
+                    PresentCurrentConflict();
+                }
             }
             finally
             {
                 _isResolutionInProgress = false;
-                if (_isVisible)
+                if (IsLifecycleCurrent(lifecycleVersion) && _isVisible)
                     _modalController.SetBusy(isBusy: false);
+                else if (_isEnabled && _conflictService.CurrentConflict != null)
+                    PresentCurrentConflict();
             }
+        }
+
+        private bool IsLifecycleCurrent(int lifecycleVersion)
+        {
+            return _isEnabled && lifecycleVersion == _lifecycleVersion;
         }
 
         private static CloudSaveConflictModalDto CreateModalData(CloudSaveConflict conflict)

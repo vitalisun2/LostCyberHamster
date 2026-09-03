@@ -95,6 +95,7 @@ namespace Assets.Scripts.Entry_Points
             _accountPromptCoordinator = new AccountPromptCoordinator(_uiManager, _accountService);
             _cloudSaveConflictCoordinator = new CloudSaveConflictCoordinator(
                 _uiManager,
+                _cloudSyncService,
                 _conflictService);
             if (isActiveAndEnabled)
             {

@@ -65,11 +65,23 @@ namespace Assets.Scripts.Account
                 return false;
 
             var resolvedPlayerId = _authenticationGateway.PlayerId;
-            if (string.IsNullOrWhiteSpace(resolvedPlayerId))
+            if (!IsLinkedPlayerSession(resolvedPlayerId))
                 return false;
 
             playerId = resolvedPlayerId;
             return true;
+        }
+
+        /// <summary>
+        /// Проверяет владельца связанной или принимаемой account-сессии.
+        /// </summary>
+        internal bool IsCurrentPlayer(
+            string playerId,
+            bool allowSigningIn)
+        {
+            var stateMatches = State == AccountState.Linked ||
+                               allowSigningIn && State == AccountState.SigningIn;
+            return stateMatches && IsLinkedPlayerSession(playerId);
         }
 
         /// <summary>
@@ -183,22 +195,29 @@ namespace Assets.Scripts.Account
                 await _authenticationGateway.SignInWithUnityAsync(accessToken);
                 EnsureCurrentOperation(resolutionVersion);
 
-                if (!_authenticationGateway.IsSignedIn ||
-                    !_authenticationGateway.IsUnityPlayerAccountLinked ||
-                    string.IsNullOrWhiteSpace(_authenticationGateway.PlayerId) ||
-                    _authenticationGateway.PlayerId == originalPlayerId)
+                var signedInPlayerId = _authenticationGateway.PlayerId;
+                if (!IsLinkedPlayerSession(signedInPlayerId) ||
+                    signedInPlayerId == originalPlayerId)
                 {
                     throw new InvalidOperationException("Existing linked account verification failed.");
                 }
 
                 // Перед commit передаём найденный аккаунт вызывающему сценарию.
-                if (!await acceptSignedInAccountAsync(_authenticationGateway.PlayerId))
+                if (!await acceptSignedInAccountAsync(signedInPlayerId))
                     throw new InvalidOperationException("Existing linked account was not accepted.");
+                EnsureCurrentOperation(resolutionVersion);
+                if (!IsLinkedPlayerSession(signedInPlayerId))
+                    throw new InvalidOperationException("Existing linked account changed during restore.");
             }
             catch (Exception exception)
             {
                 // При любой ошибке пытаемся вернуть исходную гостевую сессию.
-                var restored = await TryRestoreOriginalGuestAsync(originalPlayerId);
+                var restored = await TryRestoreOriginalGuestAsync(
+                    originalPlayerId,
+                    resolutionVersion);
+                if (resolutionVersion != _resolutionVersion)
+                    return false;
+
                 SetState(restored ? AccountState.Guest : AccountState.Error);
                 Debug.LogError($"[Account] Existing account sign-in failed. Original guest restored: {restored}. Error type: {exception.GetType().Name}.");
                 return false;
@@ -407,10 +426,15 @@ namespace Assets.Scripts.Account
         /// <summary>
         /// Пытается восстановить исходную гостевую сессию после неудачного переключения аккаунта.
         /// </summary>
-        private async Task<bool> TryRestoreOriginalGuestAsync(string originalPlayerId)
+        private async Task<bool> TryRestoreOriginalGuestAsync(
+            string originalPlayerId,
+            int resolutionVersion)
         {
             try
             {
+                if (resolutionVersion != _resolutionVersion)
+                    return false;
+
                 // Уже восстановленная сессия не требует повторного входа.
                 if (IsOriginalGuestSession(originalPlayerId))
                     return true;
@@ -421,6 +445,9 @@ namespace Assets.Scripts.Account
 
                 // Восстанавливаем существующего гостя без создания нового аккаунта.
                 await _authenticationGateway.SignInAnonymouslyAsync(createAccount: false);
+                if (resolutionVersion != _resolutionVersion)
+                    return false;
+
                 return IsOriginalGuestSession(originalPlayerId);
             }
             catch (Exception exception)
@@ -439,6 +466,20 @@ namespace Assets.Scripts.Account
                    _authenticationGateway.IsSignedIn &&
                    !_authenticationGateway.IsUnityPlayerAccountLinked &&
                    _authenticationGateway.PlayerId == originalPlayerId;
+        }
+
+        /// <summary>
+        /// Проверяет, что активна связанная UGS-сессия указанного игрока.
+        /// </summary>
+        private bool IsLinkedPlayerSession(string playerId)
+        {
+            return !string.IsNullOrWhiteSpace(playerId) &&
+                   _authenticationGateway.IsSignedIn &&
+                   _authenticationGateway.IsUnityPlayerAccountLinked &&
+                   string.Equals(
+                       _authenticationGateway.PlayerId,
+                       playerId,
+                       StringComparison.Ordinal);
         }
 
         /// <summary>

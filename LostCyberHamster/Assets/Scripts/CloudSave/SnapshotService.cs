@@ -40,6 +40,18 @@ namespace GameManagement.CloudSave
             PlayerPrefs.Save();
         }
 
+        /// <summary>Удаляет pending, только если подтверждён тот же runtime-снимок.</summary>
+        public bool ClearIfCurrent(CloudSaveSnapshot snapshot)
+        {
+            if (snapshot == null)
+                throw new ArgumentNullException(nameof(snapshot));
+            if (!ReferenceEquals(Snapshot, snapshot))
+                return false;
+
+            Clear();
+            return true;
+        }
+
         /// <summary>Сохраняет текущий снимок.</summary>
         private void Save()
         {
