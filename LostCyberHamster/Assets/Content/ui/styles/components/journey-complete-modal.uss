@@ -36,10 +36,10 @@
 
 .journey-complete-modal__art {
     position: absolute;
-    left: 164px;
-    top: 21px;
-    width: 1418px;
-    height: 863px;
+    left: 112px;
+    top: 46px;
+    width: 1521px;
+    height: 838px;
     background-image: url("/Assets/Content/ui/sprites/journey_complete/modal_journey_complete.png");
     -unity-background-scale-mode: stretch-to-fill;
 }
@@ -56,43 +56,43 @@
 }
 
 .journey-complete-modal__message-primary {
-    left: 405px;
-    top: 148px;
-    width: 915px;
-    height: 42px;
+    left: 365px;
+    top: 184px;
+    width: 995px;
+    height: 78px;
     font-size: 30px;
 }
 
 .journey-complete-modal__message-secondary {
-    left: 435px;
-    top: 190px;
-    width: 855px;
-    height: 32px;
+    left: 395px;
+    top: 269px;
+    width: 935px;
+    height: 35px;
     font-size: 20px;
     -unity-font-style: normal;
 }
 
 .journey-complete-modal__goal {
-    height: 72px;
+    height: 86px;
     font-size: 27px;
 }
 
 .journey-complete-modal__goal--level-up {
-    left: 220px;
-    top: 451px;
-    width: 395px;
+    left: 181px;
+    top: 444px;
+    width: 474px;
 }
 
 .journey-complete-modal__goal--unlock {
-    left: 1104px;
-    top: 524px;
-    width: 418px;
+    left: 1062px;
+    top: 516px;
+    width: 502px;
 }
 
 .journey-complete-modal__goal--rankings {
-    left: 220px;
-    top: 653px;
-    width: 420px;
+    left: 178px;
+    top: 645px;
+    width: 504px;
 }
 
 .journey-complete-modal__button {
