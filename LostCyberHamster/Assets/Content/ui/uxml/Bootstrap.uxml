@@ -2,7 +2,10 @@
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
     <engine:VisualElement name="background" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/Content/ui/sprites/loading/background_loading.png?fileID=2800000&amp;guid=1b4f5283e87429b41b14a3cf4568c060&amp;type=3#background_loading&quot;); -unity-background-scale-mode: scale-and-crop; background-position-x: center; background-position-y: top; background-repeat: no-repeat; -unity-slice-left: 0; -unity-slice-top: 0; -unity-slice-right: 0; -unity-slice-bottom: 0; min-height: auto; -unity-slice-scale: 1px;">
         <engine:VisualElement name="content" style="flex-grow: 1; margin-top: 4px; margin-right: 4px; margin-bottom: 4px; margin-left: 4px;">
-            <engine:ProgressBar name="loading_task__progress" value="10" title="10 %" style="min-height: auto; margin-bottom: 4px; position: absolute; bottom: 0; min-width: auto; max-width: none; width: 1340px; height: 72px;" />
+            <engine:VisualElement name="loading_task__progress-container" class="loading-progress">
+                <engine:ProgressBar name="loading_task__progress" value="10" title="" class="shared-progress-bar" />
+                <engine:Label name="loading_task__progress-label" text="10 %" picking-mode="Ignore" class="loading-progress__label ui-text-small-white" />
+            </engine:VisualElement>
         </engine:VisualElement>
     </engine:VisualElement>
 </engine:UXML>

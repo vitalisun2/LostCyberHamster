@@ -1,4 +1,47 @@
-#loading_task__progress {
+.loading-progress {
+    position: absolute;
+    bottom: 48px;
+    width: 50%;
+    min-width: 640px;
+    max-width: 1100px;
+    height: 72px;
+    margin: 0;
     align-self: center;
+    align-items: center;
+    justify-content: center;
+}
+
+#loading_task__progress {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    margin: 0;
     border-radius: var(--ui-radius-main);
+}
+
+#loading_task__progress .unity-progress-bar__background {
+    height: 72px;
+}
+
+#loading_task__progress .unity-progress-bar__progress {
+    height: 66px;
+}
+
+#loading_task__progress .unity-progress-bar__title-container {
+    display: none;
+}
+
+#loading_task__progress-container > .loading-progress__label {
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    font-size: var(--ui-font-size-small);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
 }
