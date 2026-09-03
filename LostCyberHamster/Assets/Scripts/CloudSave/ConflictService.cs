@@ -227,7 +227,7 @@ namespace GameManagement.CloudSave
             string playerId,
             CloudSaveConflict fallbackConflict)
         {
-            var pending = _snapshotService.Snapshot;
+            var pending = _snapshotService.GetPending(playerId);
             return pending != null &&
                    string.Equals(pending.PlayerId, playerId, StringComparison.Ordinal)
                 ? pending

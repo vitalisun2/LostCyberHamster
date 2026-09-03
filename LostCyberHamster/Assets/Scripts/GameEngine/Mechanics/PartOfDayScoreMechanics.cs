@@ -7,6 +7,7 @@ using Atomic.Elements;
 using GameManagement;
 using GameManagement.Leaderboard;
 using GameManagement.Progress;
+using Unity.Services.Authentication;
 using UnityEngine;
 
 namespace Assets.Scripts.GameEngine.Mechanics
@@ -92,6 +93,18 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 if (submission.IsNewRecord)
                 {
+                    // Отбрасываем reward старой identity после смены account lifecycle.
+                    if (!AuthenticationService.Instance.IsSignedIn ||
+                        !string.Equals(
+                            AuthenticationService.Instance.PlayerId,
+                            submission.PlayerId,
+                            StringComparison.Ordinal))
+                    {
+                        throw new OperationCanceledException(
+                            "Leaderboard reward player changed before the checkpoint.");
+                    }
+
+                    // Начисляем XP и сразу создаём локальный/cloud checkpoint.
                     _playerExperienceService
                         .GrantExperienceForWeeklyLeaderboardRecord(
                             GameDataManager.PlayerData);

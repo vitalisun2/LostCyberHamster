@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Assets.Scripts;
 using GameManagement.Progress;
+using Unity.Services.Authentication;
 using Unity.Services.Leaderboards;
 using Unity.Services.Leaderboards.Exceptions;
 using LeaderboardEntry = Unity.Services.Leaderboards.Models.LeaderboardEntry;
@@ -15,9 +17,10 @@ namespace GameManagement.Leaderboard
     public sealed class LeaderboardService
     {
         private const int _topCount = 50;
+        private static readonly SemaphoreSlim _submissionGate = new(1, 1);
 
         /// <summary>
-        /// Проверяет недельный рекорд и публикует успешный забег только при улучшении.
+        /// Последовательно проверяет weekly record и публикует забег только при улучшении.
         /// </summary>
         public async Task<LeaderboardSubmissionResult> SubmitSuccessfulRunAsync(
             LevelProgressKey levelKey,
@@ -30,15 +33,43 @@ namespace GameManagement.Leaderboard
             var leaderboardId = ResolveLeaderboardId(
                 levelKey.LocationId,
                 levelKey.PartOfDayId);
+            var playerId = GetCurrentPlayerId();
 
+            // Сериализуем read/compare/write между всеми gameplay lifecycle и экземплярами сервиса.
+            await _submissionGate.WaitAsync();
+            try
+            {
+                EnsureCurrentPlayer(playerId);
+                return await SubmitSuccessfulRunCoreAsync(
+                    leaderboardId,
+                    runScore,
+                    playerId);
+            }
+            finally
+            {
+                _submissionGate.Release();
+            }
+        }
+
+        /// <summary>
+        /// Проверяет и сохраняет один забег внутри общей последовательной submission-секции.
+        /// </summary>
+        private static async Task<LeaderboardSubmissionResult>
+            SubmitSuccessfulRunCoreAsync(
+                string leaderboardId,
+                int runScore,
+                string playerId)
+        {
             // Загружаем лучший score одного забега текущей weekly location+part таблицы.
             var weeklyBest = await GetPlayerWeeklyBestRunScoreAsync(
                 leaderboardId);
+            EnsureCurrentPlayer(playerId);
 
             // Сравниваем один забег с прежним weekly best всей location+part таблицы.
             if (weeklyBest.HasEntry && runScore <= weeklyBest.Score)
             {
                 return new LeaderboardSubmissionResult(
+                    playerId,
                     weeklyBest.Score,
                     weeklyBest.Score,
                     false);
@@ -48,8 +79,10 @@ namespace GameManagement.Leaderboard
             await LeaderboardsService.Instance.AddPlayerScoreAsync(
                 leaderboardId,
                 runScore);
+            EnsureCurrentPlayer(playerId);
 
             return new LeaderboardSubmissionResult(
+                playerId,
                 weeklyBest.Score,
                 runScore,
                 true);
@@ -125,6 +158,40 @@ namespace GameManagement.Leaderboard
             {
                 return (false, 0);
             }
+        }
+
+        /// <summary>
+        /// Возвращает идентификатор текущей аутентифицированной identity.
+        /// </summary>
+        private static string GetCurrentPlayerId()
+        {
+            if (!AuthenticationService.Instance.IsSignedIn ||
+                string.IsNullOrWhiteSpace(
+                    AuthenticationService.Instance.PlayerId))
+            {
+                throw new InvalidOperationException(
+                    "Leaderboard submission requires an authenticated player.");
+            }
+
+            return AuthenticationService.Instance.PlayerId;
+        }
+
+        /// <summary>
+        /// Прерывает устаревший submission после смены account lifecycle.
+        /// </summary>
+        private static void EnsureCurrentPlayer(string playerId)
+        {
+            if (AuthenticationService.Instance.IsSignedIn &&
+                string.Equals(
+                    AuthenticationService.Instance.PlayerId,
+                    playerId,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            throw new OperationCanceledException(
+                "Leaderboard submission player changed during the operation.");
         }
 
         /// <summary>

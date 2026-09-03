@@ -66,11 +66,11 @@ namespace GameManagement.CloudSave
         {
             get
             {
-                if (_conflictService.CurrentConflict != null)
+                if (HasConflictForCurrentAccount())
                     return CloudSyncStatusEnum.Conflict;
                 if (_isSynchronizationActive || _isUploadActive)
                     return CloudSyncStatusEnum.Synchronizing;
-                if (_snapshotService.Snapshot != null)
+                if (GetPendingForCurrentAccount() != null)
                     return CloudSyncStatusEnum.Pending;
 
                 return CloudSyncStatusEnum.Saved;
@@ -147,7 +147,7 @@ namespace GameManagement.CloudSave
                 return;
 
             // Готовим первый снимок, если очередь владельца пуста.
-            if (_snapshotService.Snapshot == null)
+            if (_snapshotService.GetPending(playerId) == null)
             {
                 PlayerProgressCommitter.Commit(CheckpointReason.AccountLinked);
                 if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn))
@@ -159,20 +159,11 @@ namespace GameManagement.CloudSave
                 NotifyStatusChanged();
             }
 
-            // Не отправляем pending другого владельца через текущую identity.
-            if (!IsPendingOwnedBy(playerId))
-            {
-                Debug.LogError("[CloudSave] First snapshot upload rejected: pending owner mismatch.");
-                return;
-            }
-
             await UploadPendingSnapshotAsync(
                 null,
                 playerId,
                 lifecycleVersion,
                 allowSigningIn);
-            if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn))
-                return;
         }
 
         /// <summary>Фиксирует последний локальный прогресс как pending.</summary>
@@ -180,13 +171,6 @@ namespace GameManagement.CloudSave
         {
             if (!_accountService.TryGetLinkedPlayerId(out var playerId))
                 return;
-
-            // Не теряем pending предыдущего владельца и не отправляем его через новый аккаунт.
-            if (_snapshotService.Snapshot != null && !IsPendingOwnedBy(playerId))
-            {
-                Debug.LogError("[CloudSave] Checkpoint retained locally: pending belongs to another player.");
-                return;
-            }
 
             var snapshot = new CloudSaveSnapshot(
                 playerId,
@@ -215,7 +199,7 @@ namespace GameManagement.CloudSave
             if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn: true))
                 throw new InvalidOperationException("Existing account restore is not current.");
 
-            var pendingBeforeRestore = _snapshotService.Snapshot;
+            var pendingBeforeRestore = _snapshotService.GetPending(playerId);
 
             // Загружаем снимок и отбрасываем ответ прошлого account lifecycle.
             var cloudSave = await _gateway.LoadSnapshotAsync();
@@ -230,14 +214,8 @@ namespace GameManagement.CloudSave
             EnsureOperationCurrent(playerId, lifecycleVersion, allowSigningIn: true);
             ApplyCloudProgress(playerId, cloudSave);
             EnsureOperationCurrent(playerId, lifecycleVersion, allowSigningIn: true);
-            if (pendingBeforeRestore != null &&
-                string.Equals(
-                    pendingBeforeRestore.PlayerId,
-                    playerId,
-                    StringComparison.Ordinal))
-            {
+            if (pendingBeforeRestore != null)
                 _snapshotService.ClearIfCurrent(pendingBeforeRestore);
-            }
             NotifyStatusChanged();
         }
 
@@ -302,8 +280,8 @@ namespace GameManagement.CloudSave
                 while (!_isDisposed && _isSynchronizationRequested)
                 {
                     _isSynchronizationRequested = false;
-                    if (_conflictService.CurrentConflict != null ||
-                        !_accountService.TryGetLinkedPlayerId(out var playerId))
+                    if (!_accountService.TryGetLinkedPlayerId(out var playerId) ||
+                        HasConflictFor(playerId))
                     {
                         break;
                     }
@@ -367,12 +345,7 @@ namespace GameManagement.CloudSave
             if (cloudSave != null)
                 EnsureCloudOwner(playerId, cloudSave);
 
-            var pendingSnapshot = _snapshotService.Snapshot;
-            if (pendingSnapshot != null && !IsPendingOwnedBy(playerId))
-            {
-                Debug.LogError("[CloudSave] Synchronization stopped: pending owner mismatch.");
-                return;
-            }
+            var pendingSnapshot = _snapshotService.GetPending(playerId);
 
             // Потерянный ответ upload не должен создавать ложный конфликт.
             if (cloudSave != null &&
@@ -438,7 +411,7 @@ namespace GameManagement.CloudSave
             int lifecycleVersion,
             bool allowSigningIn)
         {
-            if (_isUploadActive || _snapshotService.Snapshot == null)
+            if (_isUploadActive || _snapshotService.GetPending(playerId) == null)
                 return;
 
             _isUploadActive = true;
@@ -446,17 +419,14 @@ namespace GameManagement.CloudSave
 
             try
             {
-                while (_snapshotService.Snapshot != null)
+                while (true)
                 {
                     if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn))
                         return;
 
-                    var snapshot = _snapshotService.Snapshot;
-                    if (!string.Equals(snapshot.PlayerId, playerId, StringComparison.Ordinal))
-                    {
-                        Debug.LogError("[CloudSave] Snapshot upload stopped: pending owner mismatch.");
+                    var snapshot = _snapshotService.GetPending(playerId);
+                    if (snapshot == null)
                         return;
-                    }
 
                     var version = await _gateway.SaveSnapshotAsync(snapshot, expectedRevision);
                     if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn))
@@ -531,20 +501,36 @@ namespace GameManagement.CloudSave
             string startingConfirmedRevision)
         {
             return IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn: false) &&
-                   _conflictService.CurrentConflict == null &&
-                   _snapshotService.Snapshot == null &&
+                   !HasConflictFor(playerId) &&
+                   _snapshotService.GetPending(playerId) == null &&
                    string.Equals(
                        startingConfirmedRevision,
                        _versionStore.GetConfirmedRevision(playerId),
                        StringComparison.Ordinal);
         }
 
-        /// <summary>Проверяет владельца текущего pending.</summary>
-        private bool IsPendingOwnedBy(string playerId)
+        /// <summary>Возвращает pending текущего связанного аккаунта.</summary>
+        private CloudSaveSnapshot GetPendingForCurrentAccount()
         {
-            return _snapshotService.Snapshot != null &&
+            return _accountService.TryGetLinkedPlayerId(out var playerId)
+                ? _snapshotService.GetPending(playerId)
+                : null;
+        }
+
+        /// <summary>Проверяет конфликт текущего связанного аккаунта.</summary>
+        private bool HasConflictForCurrentAccount()
+        {
+            return _accountService.TryGetLinkedPlayerId(out var playerId) &&
+                   HasConflictFor(playerId);
+        }
+
+        /// <summary>Проверяет владельца текущего конфликта.</summary>
+        private bool HasConflictFor(string playerId)
+        {
+            var conflict = _conflictService.CurrentConflict;
+            return conflict != null &&
                    string.Equals(
-                       _snapshotService.Snapshot.PlayerId,
+                       conflict.LocalSnapshot.PlayerId,
                        playerId,
                        StringComparison.Ordinal);
         }
