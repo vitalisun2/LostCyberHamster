@@ -40,7 +40,7 @@
 .development-central {
     position: absolute;
     left: 0;
-    top: 0;
+    top: -28px;
     width: 1672px;
     height: 941px;
     transform-origin: 836px 498px;
