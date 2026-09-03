@@ -9,6 +9,7 @@ using Assets.Scripts.DevTools.Gameplay;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
+using Assets.Scripts.Tutorial;
 using GameManagement;
 using GameManagement.Progress;
 using LostCyberHamster.UI;
@@ -145,8 +146,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         {
             get
             {
-                var currentLevel =
-                    GameDataManager.PlayerData?.CurrentLevel?.Trim();
+                var currentLevel = ResolveWinStartLevelAddress(
+                    LevelManager.SavedProgressOverview.Levels);
                 return string.IsNullOrWhiteSpace(currentLevel)
                     ? "Текущий уровень не определён"
                     : FormatTarget(currentLevel);
@@ -519,14 +520,45 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             CancellationToken token)
         {
             var currentLevel = GameDataManager.PlayerData?.CurrentLevel?.Trim();
+            var tutorialWasSkipped = false;
+            // В gameplay сохраняем активный уровень; из остальных окон выбираем frontier прогресса.
             if (!string.Equals(
                     currentLevel,
                     levelAddress,
                     StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException(
-                    $"Ожидался {FormatTarget(levelAddress)}, но CurrentLevel содержит " +
-                    $"{FormatTarget(currentLevel)}.");
+                if (TutorialConstants.IsTutorialLevel(currentLevel))
+                {
+                    await SkipTutorialIfShownAsync(
+                        levelAddress,
+                        scopeTitle,
+                        token);
+                    tutorialWasSkipped = true;
+                    currentLevel =
+                        GameDataManager.PlayerData?.CurrentLevel?.Trim();
+                }
+                else if (TryGetActiveRuntimeLevel(out var activeLevel, out _))
+                {
+                    throw new InvalidOperationException(
+                        $"Открыт {FormatTarget(activeLevel)}, но выбран " +
+                        $"{FormatTarget(levelAddress)}.");
+                }
+
+                if (!tutorialWasSkipped)
+                {
+                    RequireLevelController().SetCurrentLevel(levelAddress);
+                    currentLevel =
+                        GameDataManager.PlayerData?.CurrentLevel?.Trim();
+                }
+
+                if (!string.Equals(
+                        currentLevel,
+                        levelAddress,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        $"Не удалось выбрать {FormatTarget(levelAddress)}.");
+                }
             }
 
             // Запускаем тот же CurrentLevel, который использует Play на Home.
@@ -562,6 +594,14 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                             "GameManager текущего уровня недоступен.");
                     gameManager.Resume();
                 }
+            }
+
+            if (!tutorialWasSkipped)
+            {
+                await SkipTutorialIfShownAsync(
+                    currentLevel,
+                    scopeTitle,
+                    token);
             }
 
             await WaitUntilAsync(
@@ -605,8 +645,10 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             levelController.Finish();
 
             await WaitUntilAsync(
-                () => IsRealWinShown() || IsJourneyCompleteShown(),
-                "Штатное окно результата уровня не появилось.",
+                () => IsGameSceneForLevel(currentLevel) &&
+                      (IsRealWinShown() || IsJourneyCompleteShown()) &&
+                      GetRealLevelStars(currentLevel) == 3,
+                "Штатный результат с тремя звёздами не подтверждён.",
                 token);
 
             SetStatus(
@@ -631,15 +673,31 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 $"{scopeTitle}: waiting before Next Level.");
             await Task.Delay(transitionDelayMilliseconds, token);
 
+            // Локальный LevelCompleted checkpoint обязан открыть следующий уровень до Next.
+            RequireCompletionReadyForNext(completedLevel, nextLevel);
+
+            var completedGameManager = RequireLevelController()
+                .LevelData?.GameManager ??
+                throw new InvalidOperationException(
+                    "GameManager завершённого уровня недоступен.");
+            var completedGameManagerInstanceId =
+                completedGameManager.GetInstanceID();
             var nextButton = FindVisibleElement<Button>("btn__play") ??
                              throw new InvalidOperationException(
                                  "Кнопка Next Level в Win modal не найдена.");
+            if (!nextButton.enabledInHierarchy)
+            {
+                throw new InvalidOperationException(
+                    "Кнопка Next Level в Win modal недоступна.");
+            }
+
             SendClick(nextButton);
 
             await WaitUntilAsync(
                 () => IsLevelUpShown() ||
-                      IsCurrentLevelInState(
+                      IsNewRuntimeLevelInState(
                           nextLevel,
+                          completedGameManagerInstanceId,
                           GameState.INTRO,
                           GameState.PLAYING),
                 $"Переход к {FormatTarget(nextLevel)} не начался.",
@@ -656,30 +714,55 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 var okButton = FindVisibleElement<Button>("btn_level_up_ok") ??
                                throw new InvalidOperationException(
                                    "Кнопка OK в Level Up modal не найдена.");
+                if (!okButton.enabledInHierarchy)
+                {
+                    throw new InvalidOperationException(
+                        "Кнопка OK в Level Up modal недоступна.");
+                }
+
                 SendClick(okButton);
             }
 
             await WaitUntilAsync(
-                () => IsCurrentLevelInState(
+                () => IsNewRuntimeLevelInState(
                     nextLevel,
+                    completedGameManagerInstanceId,
                     GameState.INTRO,
                     GameState.PLAYING),
                 $"{FormatTarget(nextLevel)} не загрузился.",
                 token);
         }
 
+        private static void RequireCompletionReadyForNext(
+            string completedLevel,
+            string nextLevel)
+        {
+            if (GetRealLevelStars(completedLevel) != 3)
+            {
+                throw new InvalidOperationException(
+                    $"Progress для {FormatTarget(completedLevel)} изменился до Next Level.");
+            }
+
+            if (!IsRealLevelOpen(nextLevel))
+            {
+                throw new InvalidOperationException(
+                    $"Следующий уровень не открыт: {FormatTarget(nextLevel)}.");
+            }
+        }
+
         private static IReadOnlyList<LevelProgress> GetWinTargets(
             WinScope scope)
         {
+            var orderedLevels =
+                LevelManager.SavedProgressOverview.Levels.ToList();
             var currentLevelAddress =
-                GameDataManager.PlayerData?.CurrentLevel?.Trim();
+                ResolveWinStartLevelAddress(orderedLevels);
             if (string.IsNullOrWhiteSpace(currentLevelAddress))
             {
                 throw new InvalidOperationException(
                     "Текущий gameplay-уровень не определён.");
             }
 
-            var orderedLevels = GetOrderedLevels().ToList();
             var currentIndex = orderedLevels.FindIndex(level =>
                 string.Equals(
                     level?.Address?.Trim(),
@@ -699,6 +782,67 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                     currentLevel,
                     scope))
                 .ToList();
+        }
+
+        private static string ResolveWinStartLevelAddress(
+            IReadOnlyList<LevelProgress> orderedLevels)
+        {
+            if (TryGetActiveRuntimeLevel(out var activeLevel, out _) &&
+                FindLevel(orderedLevels, activeLevel) != null)
+            {
+                return activeLevel;
+            }
+
+            return orderedLevels?
+                .TakeWhile(level => level?.IsUnlocked == true)
+                .LastOrDefault()?
+                .Address?
+                .Trim();
+        }
+
+        private async Task SkipTutorialIfShownAsync(
+            string expectedLevel,
+            string scopeTitle,
+            CancellationToken token)
+        {
+            // Отличаем обычный запуск target от tutorial redirect.
+            await WaitUntilAsync(
+                () => IsCurrentLevelInState(
+                          expectedLevel,
+                          GameState.INTRO,
+                          GameState.PLAYING) ||
+                      FindVisibleElement<Button>("tutorial-skip") != null,
+                $"{FormatTarget(expectedLevel)} или tutorial не запустились.",
+                token);
+
+            var tutorialSkipButton =
+                FindVisibleElement<Button>("tutorial-skip");
+            if (tutorialSkipButton == null)
+                return;
+
+            var tutorialGameManagerInstanceId =
+                LevelController.Instance?.LevelData?.GameManager?.GetInstanceID() ?? 0;
+            SetStatus(
+                "Tutorial пропускается штатной кнопкой.",
+                $"{scopeTitle}: tutorial skip requested.");
+            SendClick(tutorialSkipButton);
+
+            // Tutorial меняет CurrentLevel до reload, поэтому ждём новый scene-bound GameManager.
+            await WaitUntilAsync(
+                () =>
+                {
+                    var gameManager =
+                        LevelController.Instance?.LevelData?.GameManager;
+                    return gameManager != null &&
+                           gameManager.GetInstanceID() !=
+                           tutorialGameManagerInstanceId &&
+                           IsCurrentLevelInState(
+                               expectedLevel,
+                               GameState.INTRO,
+                               GameState.PLAYING);
+                },
+                $"После tutorial не загрузился {FormatTarget(expectedLevel)}.",
+                token);
         }
 
         private static bool IsLevelInWinScope(
@@ -1453,6 +1597,18 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                    expectedStates.Contains(GetGameState());
         }
 
+        private static bool IsNewRuntimeLevelInState(
+            string levelAddress,
+            int previousGameManagerInstanceId,
+            params GameState[] expectedStates)
+        {
+            var gameManager =
+                LevelController.Instance?.LevelData?.GameManager;
+            return gameManager != null &&
+                   gameManager.GetInstanceID() != previousGameManagerInstanceId &&
+                   IsCurrentLevelInState(levelAddress, expectedStates);
+        }
+
         private static bool IsGameSceneForLevel(string levelAddress)
         {
             return string.Equals(
@@ -1467,10 +1623,11 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
 
         private static bool IsGameplayReady(string levelAddress)
         {
+            var hamster = LevelController.Instance?.LevelData?.Hamster;
             return IsCurrentLevelInState(levelAddress, GameState.PLAYING) &&
                    FindVisibleElement<VisualElement>("gamescreen") != null &&
-                   UnityEngine.Object.FindAnyObjectByType<Hamster>(
-                       FindObjectsInactive.Include) != null;
+                   hamster != null &&
+                   hamster.isActiveAndEnabled;
         }
 
         private static LevelController RequireLevelController()
@@ -1484,9 +1641,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
 
         private static Hamster RequireHamster()
         {
-            var hamster = UnityEngine.Object.FindAnyObjectByType<Hamster>(
-                FindObjectsInactive.Include);
-            if (hamster == null)
+            var hamster = LevelController.Instance?.LevelData?.Hamster;
+            if (hamster == null || !hamster.isActiveAndEnabled)
                 throw new InvalidOperationException("Хомяк не найден на игровой сцене.");
 
             return hamster;
