@@ -20,7 +20,7 @@
                     </engine:VisualElement>
                     <engine:Label name="development__player-level" class="development-runtime-text development-level-value" />
                     <Vues.GameCore.LocalizedLabel key="development_current_xp" class="development-runtime-text development-xp-heading" />
-                    <engine:ProgressBar name="development__xp-progress" value="0" high-value="240" title="" class="development-xp-progress" />
+                    <engine:ProgressBar name="development__xp-progress" value="0" high-value="240" title="" class="shared-progress-bar development-xp-progress" />
                     <engine:Label name="development__xp-label" class="development-runtime-text development-xp-value" />
                     <Vues.GameCore.LocalizedLabel key="development_points" class="development-runtime-text development-points-heading" />
                     <engine:VisualElement class="development-star" picking-mode="Ignore" />

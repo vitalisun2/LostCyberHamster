@@ -200,39 +200,14 @@
     top: 488px;
     width: 243px;
     height: 45px;
-    margin: 0;
-    padding: 0;
-    background-image: url("/Assets/Content/ui/sprites/skills/progress_bar_empty.png");
-    -unity-background-scale-mode: scale-to-fit;
 }
 
 .development-xp-progress .unity-progress-bar__background {
     height: 45px;
-    padding-top: 3px;
-    padding-right: 3px;
-    padding-bottom: 3px;
-    padding-left: 3px;
-    background-color: rgba(0, 0, 0, 0);
-    border-top-width: 0;
-    border-right-width: 0;
-    border-bottom-width: 0;
-    border-left-width: 0;
 }
 
 .development-xp-progress .unity-progress-bar__progress {
     height: 39px;
-    margin: 0;
-    background-color: rgba(0, 0, 0, 0);
-    background-image: url("/Assets/Content/ui/sprites/skills/progress_bar_fill.png");
-    -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 14px;
-    -unity-slice-right: 14px;
-    -unity-slice-top: 12px;
-    -unity-slice-bottom: 12px;
-    border-top-width: 0;
-    border-right-width: 0;
-    border-bottom-width: 0;
-    border-left-width: 0;
 }
 
 .development-xp-progress .unity-progress-bar__title {

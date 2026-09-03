@@ -15,12 +15,15 @@ namespace Assets.Scripts.Entry_Points
         private UIDocument _uiDocument;
 
         private ProgressBar _progressBar;
+        private Label _progressLabel;
 
         Dictionary<string, object> bundle = new();
 
         private void Awake()
         {
-            _progressBar = _uiDocument.rootVisualElement.Q<ProgressBar>("loading_task__progress");
+            VisualElement root = _uiDocument.rootVisualElement;
+            _progressBar = root.Q<ProgressBar>("loading_task__progress");
+            _progressLabel = root.Q<Label>("loading_task__progress-label");
         }
 
         [Inject]
@@ -34,13 +37,18 @@ namespace Assets.Scripts.Entry_Points
             int i = 1;
             foreach (var loadingTask in _loadingTasks)
             {
-               var loadingPercentage = (int)(i++ / (float)_loadingTasks.Count * 100);
+                var loadingPercentage = (int)(i++ / (float)_loadingTasks.Count * 100);
                 await loadingTask.LoadAsync(bundle);
-                _progressBar.value = loadingPercentage;
-                _progressBar.title = $"({loadingPercentage} %)";
+                SetLoadingProgress(loadingPercentage);
 
                // await Task.Delay(1000);
             }
+        }
+
+        private void SetLoadingProgress(int loadingPercentage)
+        {
+            _progressBar.value = loadingPercentage;
+            _progressLabel.text = $"({loadingPercentage} %)";
         }
     }
 }
