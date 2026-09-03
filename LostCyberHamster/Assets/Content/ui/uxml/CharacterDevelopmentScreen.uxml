@@ -1,4 +1,5 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
     <Style src="../styles/screens/CharacterDevelopmentScreen.uss" />
     <engine:VisualElement name="character-development-screen" class="development-screen main-screen">
@@ -62,13 +63,6 @@
             </engine:VisualElement>
         </engine:VisualElement>
         <engine:VisualElement class="main-screen-title main-screen-title--skills" picking-mode="Ignore" />
-        <LostCyberHamster.UI.SharedHudLane class="shared-toolbar main-screen-hud">
-            <engine:VisualElement class="shared-toolbar__left">
-                <LostCyberHamster.UI.SharedHomeButton />
-                <LostCyberHamster.UI.SharedCoinsButton />
-                <LostCyberHamster.UI.SharedGemsButton />
-            </engine:VisualElement>
-            <engine:VisualElement class="shared-toolbar__spacer" />
-        </LostCyberHamster.UI.SharedHudLane>
+        <engine:Instance template="Toolbar" name="toolbar" class="main-screen-hud" />
     </engine:VisualElement>
 </engine:UXML>

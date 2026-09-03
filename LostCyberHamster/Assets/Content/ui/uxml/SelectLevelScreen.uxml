@@ -1,7 +1,8 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:Template name="Toolbar" src="project://database/Assets/Content/ui/uxml/Toolbar.uxml?fileID=9197481963319205126&amp;guid=38c97778b054b40eea03359bced8b048&amp;type=3#Toolbar" />
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
-    <engine:VisualElement name="select-level-screen" class="select-level-screen">
-        <engine:VisualElement name="select-level-viewport" class="select-level-viewport">
+    <engine:VisualElement name="select-level-screen" class="select-level-screen main-screen">
+        <engine:VisualElement name="select-level-viewport" class="select-level-viewport main-screen-body">
             <engine:VisualElement name="select-level-scale-frame" class="select-level-scale-frame">
                 <engine:VisualElement name="select-level-design" class="select-level-design">
                     <engine:VisualElement name="select-time-state" class="select-level-state select-time-state">
@@ -42,14 +43,9 @@
                         <engine:Button name="btn_select-level-back" class="select-level-image-button select-level-back" />
                     </engine:VisualElement>
 
-                    <LostCyberHamster.UI.SharedHudLane class="select-level-hud">
-                        <LostCyberHamster.UI.SharedHomeButton class="select-level-hud__home" />
-                        <LostCyberHamster.UI.SharedCoinsButton class="select-level-hud__coins" />
-                        <LostCyberHamster.UI.SharedGemsButton class="select-level-hud__gems" />
-                        <LostCyberHamster.UI.SharedSettingsButton class="select-level-hud__settings" />
-                    </LostCyberHamster.UI.SharedHudLane>
                 </engine:VisualElement>
             </engine:VisualElement>
         </engine:VisualElement>
+        <engine:Instance template="Toolbar" name="toolbar" class="main-screen-hud" />
     </engine:VisualElement>
 </engine:UXML>

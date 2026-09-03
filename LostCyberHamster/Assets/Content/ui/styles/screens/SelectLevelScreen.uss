@@ -76,54 +76,6 @@
     -unity-background-image-tint-color: rgb(255, 255, 255);
 }
 
-.select-level-hud {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 1672px;
-    height: 130px;
-    min-height: 130px;
-    max-height: 130px;
-    margin: 0;
-    overflow: visible;
-}
-
-.select-level-hud__home {
-    position: absolute;
-    left: 22px;
-    top: 27px;
-    width: 99px;
-    min-width: 99px;
-    max-width: 99px;
-    height: 90px;
-    min-height: 90px;
-    max-height: 90px;
-}
-
-.select-level-hud__coins {
-    position: absolute;
-    left: 151px;
-    top: 27px;
-}
-
-.select-level-hud__gems {
-    position: absolute;
-    left: 389px;
-    top: 27px;
-}
-
-.select-level-hud__settings {
-    position: absolute;
-    left: 1547px;
-    top: 27px;
-    width: 105px;
-    min-width: 105px;
-    max-width: 105px;
-    height: 102px;
-    min-height: 102px;
-    max-height: 102px;
-}
-
 .select-time-title {
     position: absolute;
     left: 500px;
