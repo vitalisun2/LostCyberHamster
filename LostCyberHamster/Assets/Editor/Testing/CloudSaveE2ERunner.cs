@@ -365,7 +365,7 @@ namespace LostCyberHamster.Editor.Testing
                 await RunStepAsync("Проверяем, что прогресс ждёт отправки.", async () =>
                 {
                     await WaitUntilAsync(
-                        () => _snapshotService.Snapshot != null &&
+                        () => GetTrackedPendingSnapshot() != null &&
                               _cloudSyncService.Status == CloudSyncStatusEnum.Pending,
                         "Прогресс не остался на устройстве для последующей отправки.",
                         token);
@@ -422,8 +422,8 @@ namespace LostCyberHamster.Editor.Testing
             await RunStepAsync("Ждём восстановления прогресса аккаунта.", async () =>
             {
                 await WaitUntilAsync(
-                    () => _accountService.TryGetLinkedPlayerId(out _) &&
-                          _snapshotService.Snapshot == null &&
+                    () => _accountService.TryGetLinkedPlayerId(out _playerId) &&
+                          GetTrackedPendingSnapshot() == null &&
                           _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
                     "Восстановление аккаунта не завершилось.",
                     token);
@@ -610,7 +610,7 @@ namespace LostCyberHamster.Editor.Testing
                 {
                     await WaitUntilAsync(
                         () => _conflictService.CurrentConflict == null &&
-                              _snapshotService.Snapshot == null &&
+                              GetTrackedPendingSnapshot() == null &&
                               _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
                         "Конфликт не был завершён.",
                         token);
@@ -739,7 +739,7 @@ namespace LostCyberHamster.Editor.Testing
                 async () =>
                 {
                     await WaitUntilAsync(
-                        () => _snapshotService.Snapshot == null &&
+                        () => GetTrackedPendingSnapshot() == null &&
                               _cloudSyncService.Status == CloudSyncStatusEnum.Saved &&
                               !string.Equals(
                                   _versionStore.GetConfirmedRevision(_playerId),
@@ -907,7 +907,7 @@ namespace LostCyberHamster.Editor.Testing
         {
             await EnsureAccountReadyAsync(token);
 
-            _snapshotService.Clear();
+            ClearTrackedPendingSnapshot();
 
             var fullReset =
                 unlinkServerAccount &&
@@ -1001,7 +1001,7 @@ namespace LostCyberHamster.Editor.Testing
 
                 var cloudSave = await LoadCloudAsync(token);
                 if (cloudSave != null &&
-                    _snapshotService.Snapshot == null &&
+                    GetTrackedPendingSnapshot() == null &&
                     _cloudSyncService.Status == CloudSyncStatusEnum.Saved &&
                     string.Equals(
                         _versionStore.GetConfirmedRevision(_playerId),
@@ -1030,11 +1030,33 @@ namespace LostCyberHamster.Editor.Testing
         private void RequireSavedState()
         {
             Require(
-                _snapshotService.Snapshot == null,
+                GetTrackedPendingSnapshot() == null,
                 "После синхронизации прогресс всё ещё ждёт отправки.");
             Require(
                 _cloudSyncService.Status == CloudSyncStatusEnum.Saved,
                 "Облачное сохранение не завершилось.");
+        }
+
+        /// <summary>Возвращает pending текущего тестового игрока.</summary>
+        private CloudSaveSnapshot GetTrackedPendingSnapshot()
+        {
+            return string.IsNullOrWhiteSpace(_playerId)
+                ? null
+                : _snapshotService.GetPending(_playerId);
+        }
+
+        /// <summary>Удаляет pending текущего или последнего тестового игрока.</summary>
+        private void ClearTrackedPendingSnapshot()
+        {
+            if (_accountService.TryGetLinkedPlayerId(out var linkedPlayerId))
+            {
+                _playerId = linkedPlayerId;
+                _snapshotService.Clear(linkedPlayerId);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_playerId))
+                _snapshotService.Clear(_playerId);
         }
 
         /// <summary>Проверяет подтверждённую версию облака.</summary>

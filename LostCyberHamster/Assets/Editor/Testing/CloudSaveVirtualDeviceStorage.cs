@@ -91,7 +91,7 @@ namespace LostCyberHamster.Editor.Testing
 
             return new CloudSaveVirtualDeviceState(
                 GameDataManager.PlayerData.ToJson(),
-                _snapshotService.Snapshot?.ToJson(),
+                _snapshotService.GetPending(_playerId)?.ToJson(),
                 confirmedRevision);
         }
 
@@ -101,7 +101,7 @@ namespace LostCyberHamster.Editor.Testing
             // Восстанавливаем прогресс и ожидающую отправку.
             GameDataManager.ReplacePlayerData(PlayerData.FromJson(state.PlayerDataJson));
             if (state.PendingSnapshotJson == null)
-                _snapshotService.Clear();
+                _snapshotService.Clear(_playerId);
             else
                 _snapshotService.SetPending(CloudSaveSnapshot.FromJson(state.PendingSnapshotJson));
 
