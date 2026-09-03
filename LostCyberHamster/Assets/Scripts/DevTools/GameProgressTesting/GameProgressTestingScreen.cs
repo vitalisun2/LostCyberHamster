@@ -28,8 +28,9 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             _view = new GameProgressTestingView(parent, uiFactory);
             _view.PrepareLevelUpRequested += _runner.PrepareLevelUp;
             _view.ResetProgressRequested += _runner.ResetProgress;
-            _view.WinCurrentLevelWithRandomValuesRequested +=
-                WinCurrentLevelWithRandomValues;
+            _view.WinCurrentLevelRequested += WinCurrentLevel;
+            _view.WinCurrentPartOfDayRequested += WinCurrentPartOfDay;
+            _view.WinCurrentLocationRequested += WinCurrentLocation;
             _runner.Changed += RefreshPresentation;
 
             RootObject = _view.RootObject;
@@ -65,10 +66,22 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             _view.Render(_runner);
         }
 
-        private void WinCurrentLevelWithRandomValues()
+        private void WinCurrentLevel()
         {
             _closePanel?.Invoke();
-            _runner.WinCurrentLevelWithRandomValues();
+            _runner.WinCurrentLevel();
+        }
+
+        private void WinCurrentPartOfDay()
+        {
+            _closePanel?.Invoke();
+            _runner.WinCurrentPartOfDay();
+        }
+
+        private void WinCurrentLocation()
+        {
+            _closePanel?.Invoke();
+            _runner.WinCurrentLocation();
         }
     }
 }

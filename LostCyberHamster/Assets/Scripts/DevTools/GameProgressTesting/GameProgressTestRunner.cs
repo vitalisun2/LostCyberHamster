@@ -28,6 +28,13 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             LevelCompletion
         }
 
+        private enum WinScope
+        {
+            CurrentLevel,
+            CurrentPartOfDay,
+            CurrentLocation
+        }
+
         private const string PlayerPrefsStateKey = "DevTools.GameProgressTesting.RunState";
         private const string ConsoleLogTag = "[Game Progress Testing]";
         private const int MaxRandomScore = 50;
@@ -35,6 +42,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             PlayerExperienceService.PlayerLevelThreshold - 1;
         private const int PollDelayMilliseconds = 100;
         private const int VisibleActionDelayMilliseconds = 250;
+        private const int PartOfDayTransitionDelayMilliseconds = 300;
+        private const int LocationTransitionDelayMilliseconds = 100;
         private const double DefaultTimeoutSeconds = 20d;
         private const double RuntimeObservationIntervalSeconds = 0.1d;
 
@@ -90,7 +99,13 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             IsGameDataReady() &&
             !_state.IsBusy;
 
-        public bool CanWinCurrentLevelWithRandomValues =>
+        public bool CanWinCurrentLevel => CanRunWinCommand;
+
+        public bool CanWinCurrentPartOfDay => CanRunWinCommand;
+
+        public bool CanWinCurrentLocation => CanRunWinCommand;
+
+        private bool CanRunWinCommand =>
             Application.isPlaying &&
             IsGameDataReady() &&
             !_state.IsBusy;
@@ -138,16 +153,49 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             }
         }
 
-        /// <summary>Открывает текущий уровень, задаёт случайный score и завершает его с тремя звёздами.</summary>
-        public void WinCurrentLevelWithRandomValues()
+        /// <summary>Открывает и завершает текущий уровень через штатный игровой поток.</summary>
+        public void WinCurrentLevel()
         {
-            if (!CanWinCurrentLevelWithRandomValues)
+            if (!CanWinCurrentLevel)
                 return;
 
             RunOperationAsync(
-                WinSavedCurrentLevelWithRandomValuesAsync,
+                token => WinCurrentScopeAsync(
+                    WinScope.CurrentLevel,
+                    transitionDelayMilliseconds: 0,
+                    token: token),
                 ActiveOperationKind.LevelCompletion,
                 "Opening current level");
+        }
+
+        /// <summary>Последовательно завершает оставшиеся уровни текущей части суток.</summary>
+        public void WinCurrentPartOfDay()
+        {
+            if (!CanWinCurrentPartOfDay)
+                return;
+
+            RunOperationAsync(
+                token => WinCurrentScopeAsync(
+                    WinScope.CurrentPartOfDay,
+                    PartOfDayTransitionDelayMilliseconds,
+                    token),
+                ActiveOperationKind.LevelCompletion,
+                "Winning current part of day");
+        }
+
+        /// <summary>Последовательно завершает оставшиеся уровни текущей локации.</summary>
+        public void WinCurrentLocation()
+        {
+            if (!CanWinCurrentLocation)
+                return;
+
+            RunOperationAsync(
+                token => WinCurrentScopeAsync(
+                    WinScope.CurrentLocation,
+                    LocationTransitionDelayMilliseconds,
+                    token),
+                ActiveOperationKind.LevelCompletion,
+                "Winning current location");
         }
 
         /// <summary>Запускает Start, завершение текущего target или возврат в Select Level.</summary>
@@ -415,15 +463,70 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             CommitCompletedTarget(currentLevel, finalScore);
         }
 
-        private async Task WinSavedCurrentLevelWithRandomValuesAsync(
+        private async Task WinCurrentScopeAsync(
+            WinScope scope,
+            int transitionDelayMilliseconds,
             CancellationToken token)
         {
-            var currentLevel =
-                GameDataManager.PlayerData?.CurrentLevel?.Trim();
-            if (string.IsNullOrWhiteSpace(currentLevel))
+            var targets = GetWinTargets(scope);
+            var scopeTitle = GetWinScopeTitle(scope);
+
+            // Завершаем выбранную последовательность через реальный gameplay и result modal.
+            for (var index = 0; index < targets.Count; index++)
+            {
+                var targetLevel = targets[index].Address.Trim();
+                var finalScore = await WinLevelWithRandomValuesAsync(
+                    targetLevel,
+                    scopeTitle,
+                    token);
+
+                var isLastTarget = index == targets.Count - 1;
+                if (isLastTarget)
+                {
+                    // Финальную модалку оставляем открытой для ручной проверки.
+                    var resultName = IsRealWinShown()
+                        ? "Win modal"
+                        : "Journey Complete modal";
+                    SetStatus(
+                        $"{scopeTitle} завершён: уровней {targets.Count}. " +
+                        $"{resultName}: {FormatTarget(targetLevel)}, " +
+                        $"3 stars, score={finalScore}.",
+                        $"{scopeTitle} completed: levels={targets.Count}; " +
+                        $"{resultName} shown for {FormatTarget(targetLevel)}.");
+                    return;
+                }
+
+                if (IsJourneyCompleteShown())
+                {
+                    throw new InvalidOperationException(
+                        "Journey Complete появился до последнего уровня выбранной цепочки.");
+                }
+
+                var nextLevel = targets[index + 1].Address.Trim();
+                // Между уровнями воспроизводим штатное действие Next Level.
+                await ContinueToNextLevelAsync(
+                    targetLevel,
+                    nextLevel,
+                    transitionDelayMilliseconds,
+                    scopeTitle,
+                    token);
+            }
+        }
+
+        private async Task<int> WinLevelWithRandomValuesAsync(
+            string levelAddress,
+            string scopeTitle,
+            CancellationToken token)
+        {
+            var currentLevel = GameDataManager.PlayerData?.CurrentLevel?.Trim();
+            if (!string.Equals(
+                    currentLevel,
+                    levelAddress,
+                    StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
-                    "Текущий gameplay-уровень не определён.");
+                    $"Ожидался {FormatTarget(levelAddress)}, но CurrentLevel содержит " +
+                    $"{FormatTarget(currentLevel)}.");
             }
 
             // Запускаем тот же CurrentLevel, который использует Play на Home.
@@ -433,14 +536,14 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             {
                 SetStatus(
                     $"Открывается {FormatTarget(currentLevel)}.",
-                    $"Win Current Level: открывается {FormatTarget(currentLevel)}.");
+                    $"{scopeTitle}: открывается {FormatTarget(currentLevel)}.");
                 await LoadSceneAndWaitAsync("Game", token);
             }
             else
             {
                 SetStatus(
                     $"{FormatTarget(currentLevel)} уже открыт.",
-                    $"Win Current Level: текущий уровень уже открыт; reload пропущен.");
+                    $"{scopeTitle}: текущий уровень уже открыт; reload пропущен.");
             }
 
             // Возобновляем штатную Pause modal либо прямую runtime-паузу.
@@ -474,7 +577,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             {
                 SetStatus(
                     $"Пропускается Intro: {FormatTarget(currentLevel)}.",
-                    $"Win Current Level: пропускается Intro для {FormatTarget(currentLevel)}.");
+                    $"{scopeTitle}: пропускается Intro для {FormatTarget(currentLevel)}.");
                 RequireLevelController().SkipIntro();
             }
 
@@ -495,7 +598,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             hamster.Lives.Value = 3;
             SetStatus(
                 $"Завершается {FormatTarget(currentLevel)}: 3 stars, score={finalScore}.",
-                $"Win Current Level: {FormatTarget(currentLevel)}, 3 stars, score={finalScore}.");
+                $"{scopeTitle}: {FormatTarget(currentLevel)}, 3 stars, score={finalScore}.");
             if (GetGameState() != GameState.PLAYING)
                 throw new InvalidOperationException("Gameplay завершился до команды Win.");
 
@@ -506,12 +609,130 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 "Штатное окно результата уровня не появилось.",
                 token);
 
-            var resultName = IsRealWinShown()
-                ? "Win modal"
-                : "Journey Complete modal";
             SetStatus(
-                $"{resultName}: {FormatTarget(currentLevel)}, 3 stars, score={finalScore}.",
-                $"Completed: {FormatTarget(currentLevel)}, 3 stars, score={finalScore}; {resultName} shown.");
+                $"Результат открыт: {FormatTarget(currentLevel)}, " +
+                $"3 stars, score={finalScore}.",
+                $"{scopeTitle}: result modal shown for {FormatTarget(currentLevel)}.");
+            return finalScore;
+        }
+
+        private async Task ContinueToNextLevelAsync(
+            string completedLevel,
+            string nextLevel,
+            int transitionDelayMilliseconds,
+            string scopeTitle,
+            CancellationToken token)
+        {
+            // Оставляем Win modal видимой на заданное время и нажимаем штатную Next Level.
+            SetStatus(
+                $"{FormatTarget(completedLevel)} завершён. Далее: " +
+                $"{FormatTarget(nextLevel)} через " +
+                $"{transitionDelayMilliseconds / 1000f:0.0} s.",
+                $"{scopeTitle}: waiting before Next Level.");
+            await Task.Delay(transitionDelayMilliseconds, token);
+
+            var nextButton = FindVisibleElement<Button>("btn__play") ??
+                             throw new InvalidOperationException(
+                                 "Кнопка Next Level в Win modal не найдена.");
+            SendClick(nextButton);
+
+            await WaitUntilAsync(
+                () => IsLevelUpShown() ||
+                      IsCurrentLevelInState(
+                          nextLevel,
+                          GameState.INTRO,
+                          GameState.PLAYING),
+                $"Переход к {FormatTarget(nextLevel)} не начался.",
+                token);
+
+            // Level Up является штатной частью перехода и требует подтверждения.
+            if (IsLevelUpShown())
+            {
+                SetStatus(
+                    "Level Up открыт. Подтверждение перед следующим уровнем.",
+                    $"{scopeTitle}: Level Up modal shown.");
+                await Task.Delay(transitionDelayMilliseconds, token);
+
+                var okButton = FindVisibleElement<Button>("btn_level_up_ok") ??
+                               throw new InvalidOperationException(
+                                   "Кнопка OK в Level Up modal не найдена.");
+                SendClick(okButton);
+            }
+
+            await WaitUntilAsync(
+                () => IsCurrentLevelInState(
+                    nextLevel,
+                    GameState.INTRO,
+                    GameState.PLAYING),
+                $"{FormatTarget(nextLevel)} не загрузился.",
+                token);
+        }
+
+        private static IReadOnlyList<LevelProgress> GetWinTargets(
+            WinScope scope)
+        {
+            var currentLevelAddress =
+                GameDataManager.PlayerData?.CurrentLevel?.Trim();
+            if (string.IsNullOrWhiteSpace(currentLevelAddress))
+            {
+                throw new InvalidOperationException(
+                    "Текущий gameplay-уровень не определён.");
+            }
+
+            var orderedLevels = GetOrderedLevels().ToList();
+            var currentIndex = orderedLevels.FindIndex(level =>
+                string.Equals(
+                    level?.Address?.Trim(),
+                    currentLevelAddress,
+                    StringComparison.OrdinalIgnoreCase));
+            if (currentIndex < 0)
+            {
+                throw new InvalidOperationException(
+                    $"CurrentLevel не найден в каталоге: {currentLevelAddress}.");
+            }
+
+            var currentLevel = orderedLevels[currentIndex];
+            return orderedLevels
+                .Skip(currentIndex)
+                .TakeWhile(level => IsLevelInWinScope(
+                    level,
+                    currentLevel,
+                    scope))
+                .ToList();
+        }
+
+        private static bool IsLevelInWinScope(
+            LevelProgress level,
+            LevelProgress currentLevel,
+            WinScope scope)
+        {
+            if (level == null || currentLevel == null)
+                return false;
+
+            return scope switch
+            {
+                WinScope.CurrentLevel => string.Equals(
+                    level.Address?.Trim(),
+                    currentLevel.Address?.Trim(),
+                    StringComparison.OrdinalIgnoreCase),
+                WinScope.CurrentPartOfDay =>
+                    level.LocationIndex == currentLevel.LocationIndex &&
+                    level.PartIndex == currentLevel.PartIndex,
+                WinScope.CurrentLocation =>
+                    level.LocationIndex == currentLevel.LocationIndex,
+                _ => false
+            };
+        }
+
+        private static string GetWinScopeTitle(WinScope scope)
+        {
+            return scope switch
+            {
+                WinScope.CurrentLevel => "Win Current Level",
+                WinScope.CurrentPartOfDay => "Win Current Part of Day",
+                WinScope.CurrentLocation => "Win Current Location",
+                _ => "Win"
+            };
         }
 
         private async Task ContinueToSelectionAsync(CancellationToken token)
@@ -1190,6 +1411,11 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             return GetGameState() == GameState.FINISHED &&
                    FindVisibleElement<VisualElement>(
                        "journey-complete-modal") != null;
+        }
+
+        private static bool IsLevelUpShown()
+        {
+            return FindVisibleElement<Button>("btn_level_up_ok") != null;
         }
 
         private static bool HasBlockingModal()

@@ -93,10 +93,20 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
                 _runner.CanResetProgress,
                 _runner.ResetProgress);
             DrawCommandRow(
-                "Win with Random",
+                "Win Current Level",
                 "Uses the running level, or opens PlayerData.CurrentLevel. Finishes with 3 stars and a random score.",
-                _runner.CanWinCurrentLevelWithRandomValues,
-                _runner.WinCurrentLevelWithRandomValues);
+                _runner.CanWinCurrentLevel,
+                _runner.WinCurrentLevel);
+            DrawCommandRow(
+                "Win Current Part of Day",
+                "Wins every remaining level in the current part of day through the real result flow. Uses a 0.3 s modal delay.",
+                _runner.CanWinCurrentPartOfDay,
+                _runner.WinCurrentPartOfDay);
+            DrawCommandRow(
+                "Win Current Location",
+                "Wins every remaining level in the current location through the real result flow. Uses a 0.1 s modal delay.",
+                _runner.CanWinCurrentLocation,
+                _runner.WinCurrentLocation);
         }
 
         /// <summary>Рисует одну команду с фиксированной кнопкой и кратким описанием.</summary>

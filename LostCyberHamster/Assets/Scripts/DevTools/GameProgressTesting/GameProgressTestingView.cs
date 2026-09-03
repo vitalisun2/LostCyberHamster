@@ -14,7 +14,9 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
 
         private readonly Button _prepareLevelUpButton;
         private readonly Button _resetProgressButton;
-        private readonly Button _winCurrentLevelWithRandomValuesButton;
+        private readonly Button _winCurrentLevelButton;
+        private readonly Button _winCurrentPartOfDayButton;
+        private readonly Button _winCurrentLocationButton;
         private readonly Text _currentTargetText;
         private readonly Text _statusText;
         private readonly Text _currentActionText;
@@ -47,14 +49,30 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 "Resets all local player progress.",
                 DevToolsTheme.Danger,
                 () => ResetProgressRequested?.Invoke());
-            _winCurrentLevelWithRandomValuesButton = CreateCommandRow(
+            _winCurrentLevelButton = CreateCommandRow(
                 uiFactory,
                 content,
-                "WinCurrentLevelWithRandomValues",
-                "Win with Random",
+                "WinCurrentLevel",
+                "Win Current Level",
                 "Uses the running level, or opens PlayerData.CurrentLevel. Finishes with 3 stars and a random score.",
                 DevToolsTheme.Primary,
-                () => WinCurrentLevelWithRandomValuesRequested?.Invoke());
+                () => WinCurrentLevelRequested?.Invoke());
+            _winCurrentPartOfDayButton = CreateCommandRow(
+                uiFactory,
+                content,
+                "WinCurrentPartOfDay",
+                "Win Current Part of Day",
+                "Wins every remaining level in the current part of day through the real result flow. Uses a 0.3 s modal delay.",
+                DevToolsTheme.Primary,
+                () => WinCurrentPartOfDayRequested?.Invoke());
+            _winCurrentLocationButton = CreateCommandRow(
+                uiFactory,
+                content,
+                "WinCurrentLocation",
+                "Win Current Location",
+                "Wins every remaining level in the current location through the real result flow. Uses a 0.1 s modal delay.",
+                DevToolsTheme.Primary,
+                () => WinCurrentLocationRequested?.Invoke());
 
             _currentTargetText = CreateOutput(
                 uiFactory,
@@ -75,7 +93,9 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
 
         public event Action PrepareLevelUpRequested;
         public event Action ResetProgressRequested;
-        public event Action WinCurrentLevelWithRandomValuesRequested;
+        public event Action WinCurrentLevelRequested;
+        public event Action WinCurrentPartOfDayRequested;
+        public event Action WinCurrentLocationRequested;
 
         public GameObject RootObject { get; }
 
@@ -83,8 +103,11 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         {
             _prepareLevelUpButton.interactable = runner.CanPrepareLevelUp;
             _resetProgressButton.interactable = runner.CanResetProgress;
-            _winCurrentLevelWithRandomValuesButton.interactable =
-                runner.CanWinCurrentLevelWithRandomValues;
+            _winCurrentLevelButton.interactable = runner.CanWinCurrentLevel;
+            _winCurrentPartOfDayButton.interactable =
+                runner.CanWinCurrentPartOfDay;
+            _winCurrentLocationButton.interactable =
+                runner.CanWinCurrentLocation;
             _currentTargetText.text = runner.CurrentPoint;
             _statusText.text = runner.Status;
             _currentActionText.text = runner.CurrentAction;
@@ -130,6 +153,10 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             buttonLayout.minWidth = CommandButtonWidth;
             buttonLayout.preferredWidth = CommandButtonWidth;
             buttonLayout.flexibleWidth = 0f;
+            Text buttonText = button.GetComponentInChildren<Text>();
+            buttonText.resizeTextForBestFit = true;
+            buttonText.resizeTextMinSize = 11;
+            buttonText.resizeTextMaxSize = DevToolsTheme.ButtonFontSize;
 
             Text descriptionText = uiFactory.CreateBodyText(
                 $"{name}Description",
