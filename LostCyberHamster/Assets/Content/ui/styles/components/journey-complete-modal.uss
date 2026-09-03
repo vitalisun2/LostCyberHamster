@@ -124,25 +124,25 @@
 }
 
 .journey-complete-modal__button--home {
-    left: 1070px;
-    top: 784px;
-    width: 79px;
-    height: 72px;
+    left: 950px;
+    top: 738px;
+    width: 119px;
+    height: 108px;
     background-image: url("/Assets/Content/ui/sprites/shared/button_home.png");
 }
 
 .journey-complete-modal__button--skills {
-    left: 1178px;
-    top: 791px;
-    width: 81px;
-    height: 63px;
+    left: 1093px;
+    top: 751px;
+    width: 122px;
+    height: 95px;
     background-image: url("/Assets/Content/ui/sprites/journey_complete/button_skills.png");
 }
 
 .journey-complete-modal__button--rankings {
-    left: 1292px;
-    top: 794px;
-    width: 74px;
-    height: 64px;
+    left: 1239px;
+    top: 750px;
+    width: 111px;
+    height: 96px;
     background-image: url("/Assets/Content/ui/sprites/journey_complete/button_rankings.png");
 }
