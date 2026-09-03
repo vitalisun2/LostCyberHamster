@@ -7,7 +7,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
     [Serializable]
     internal sealed class GameProgressTestRunState
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         public int Version = CurrentVersion;
         public bool IsActive;
@@ -16,7 +16,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         public string LastCompletedLevelAddress = string.Empty;
         public string PendingCompletionLevelAddress = string.Empty;
         public int LastWinScore;
-        public string Status = "Запустите игру через Bootstrap и откройте Main Menu.";
+        public string Status = "Запустите игру через Bootstrap.";
         public string CurrentAction = "Действия ещё не выполнялись.";
     }
 }

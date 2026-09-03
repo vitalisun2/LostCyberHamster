@@ -11,22 +11,25 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         private readonly GameProgressTestRunner _runner;
         private readonly GameProgressTestingView _view;
         private readonly Action<string> _setTitle;
+        private readonly Action _closePanel;
         private readonly RectTransform _rootRect;
 
         public GameProgressTestingScreen(
             Transform parent,
             Font font,
-            Action<string> setTitle)
+            Action<string> setTitle,
+            Action closePanel)
         {
             _setTitle = setTitle;
+            _closePanel = closePanel;
             _runner = GameProgressTestRunner.Shared;
 
             var uiFactory = new DevToolsUiFactory(font);
             _view = new GameProgressTestingView(parent, uiFactory);
             _view.PrepareLevelUpRequested += _runner.PrepareLevelUp;
-            _view.PrimaryRequested += _runner.RunPrimaryAction;
-            _view.CancelRequested += _runner.Cancel;
             _view.ResetProgressRequested += _runner.ResetProgress;
+            _view.WinCurrentLevelWithRandomValuesRequested +=
+                WinCurrentLevelWithRandomValues;
             _runner.Changed += RefreshPresentation;
 
             RootObject = _view.RootObject;
@@ -60,6 +63,12 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         {
             _runner.Tick();
             _view.Render(_runner);
+        }
+
+        private void WinCurrentLevelWithRandomValues()
+        {
+            _closePanel?.Invoke();
+            _runner.WinCurrentLevelWithRandomValues();
         }
     }
 }

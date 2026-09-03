@@ -161,7 +161,8 @@ namespace Assets.Scripts.DevTools.Core
                 _panelObject.transform,
                 font,
                 ShowRootScreen,
-                SetTitle);
+                SetTitle,
+                ClosePanel);
             _resourcesScreen = new ResourcesDevToolsScreen(
                 _panelObject.transform,
                 font,

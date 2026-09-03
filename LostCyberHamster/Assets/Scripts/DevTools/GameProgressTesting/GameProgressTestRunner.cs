@@ -90,11 +90,15 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             IsGameDataReady() &&
             !_state.IsBusy;
 
+        public bool CanWinCurrentLevelWithRandomValues =>
+            Application.isPlaying &&
+            IsGameDataReady() &&
+            !_state.IsBusy;
+
         public bool CanPrepareLevelUp =>
             Application.isPlaying &&
             IsGameDataReady() &&
             !_state.IsBusy &&
-            IsTargetGameplayActive() &&
             !IsLevelUpPrepared();
 
         public string PrimaryActionTitle
@@ -126,14 +130,24 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         {
             get
             {
-                if (!_state.IsActive)
-                    return "Тест не запущен";
-
-                if (string.IsNullOrWhiteSpace(_state.TargetLevelAddress))
-                    return "Все gameplay-уровни завершены";
-
-                return FormatTarget(_state.TargetLevelAddress);
+                var currentLevel =
+                    GameDataManager.PlayerData?.CurrentLevel?.Trim();
+                return string.IsNullOrWhiteSpace(currentLevel)
+                    ? "Текущий уровень не определён"
+                    : FormatTarget(currentLevel);
             }
+        }
+
+        /// <summary>Открывает текущий уровень, задаёт случайный score и завершает его с тремя звёздами.</summary>
+        public void WinCurrentLevelWithRandomValues()
+        {
+            if (!CanWinCurrentLevelWithRandomValues)
+                return;
+
+            RunOperationAsync(
+                WinSavedCurrentLevelWithRandomValuesAsync,
+                ActiveOperationKind.LevelCompletion,
+                "Opening current level");
         }
 
         /// <summary>Запускает Start, завершение текущего target или возврат в Select Level.</summary>
@@ -150,7 +164,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
 
             if (!_state.IsActive)
             {
-                var firstLevel = GetOrderedLevels().FirstOrDefault().Address;
+                var firstLevel = GetOrderedLevels().FirstOrDefault()?.Address;
                 RunOperationAsync(
                     StartAsync,
                     ActiveOperationKind.SelectionNavigation,
@@ -199,7 +213,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             var resetResult = new GameplayDevToolsService().ResetProgress();
 
             ClearNavigationContext(
-                $"{resetResult.Message}. Нажмите Start.",
+                resetResult.Message,
                 $"Reset Progress: {resetResult.Message}; navigation context очищен.");
             SaveState();
             Changed?.Invoke();
@@ -227,15 +241,15 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             Changed?.Invoke();
         }
 
-        /// <summary>Останавливает transient-операцию и сохраняет навигационный контекст при выходе из Play Mode.</summary>
+        /// <summary>Останавливает текущую операцию при выходе из Play Mode.</summary>
         public void HandlePlayModeStopped()
         {
             CancelTransientOperation();
             _reconcilePending = _state.IsActive;
             _waitingForGameData = false;
             SetStatus(
-                "Play Mode остановлен. Navigation context сохранён.",
-                "Play Mode остановлен; navigation context сохранён.");
+                "Play Mode остановлен.",
+                "Play Mode stopped.");
             SaveState();
             Changed?.Invoke();
         }
@@ -250,8 +264,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             else
             {
                 SetStatus(
-                    "Play Mode готов. Нажмите Start.",
-                    "Play Mode entered: runner готов к Start.");
+                    "Play Mode готов. Команды доступны.",
+                    "Play Mode entered: команды доступны.");
             }
 
             _nextRuntimeObservationAt = 0d;
@@ -325,7 +339,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
         private async Task StartAsync(CancellationToken token)
         {
             var firstLevel = GetOrderedLevels().FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(firstLevel.Address))
+            if (firstLevel == null || string.IsNullOrWhiteSpace(firstLevel.Address))
             {
                 RequestReconcile();
                 return;
@@ -399,6 +413,105 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 token);
 
             CommitCompletedTarget(currentLevel, finalScore);
+        }
+
+        private async Task WinSavedCurrentLevelWithRandomValuesAsync(
+            CancellationToken token)
+        {
+            var currentLevel =
+                GameDataManager.PlayerData?.CurrentLevel?.Trim();
+            if (string.IsNullOrWhiteSpace(currentLevel))
+            {
+                throw new InvalidOperationException(
+                    "Текущий gameplay-уровень не определён.");
+            }
+
+            // Запускаем тот же CurrentLevel, который использует Play на Home.
+            DevToolsRuntimeState.UnlockAllLevels = false;
+            if (!IsGameSceneForLevel(currentLevel) ||
+                GetGameState() == GameState.FINISHED)
+            {
+                SetStatus(
+                    $"Открывается {FormatTarget(currentLevel)}.",
+                    $"Win Current Level: открывается {FormatTarget(currentLevel)}.");
+                await LoadSceneAndWaitAsync("Game", token);
+            }
+            else
+            {
+                SetStatus(
+                    $"{FormatTarget(currentLevel)} уже открыт.",
+                    $"Win Current Level: текущий уровень уже открыт; reload пропущен.");
+            }
+
+            // Возобновляем штатную Pause modal либо прямую runtime-паузу.
+            if (GetGameState() == GameState.PAUSED)
+            {
+                var resumeButton = FindVisibleElement<Button>("btn__play");
+                if (resumeButton != null)
+                {
+                    SendClick(resumeButton);
+                }
+                else
+                {
+                    var gameManager = RequireLevelController()
+                        .LevelData?.GameManager ??
+                        throw new InvalidOperationException(
+                            "GameManager текущего уровня недоступен.");
+                    gameManager.Resume();
+                }
+            }
+
+            await WaitUntilAsync(
+                () => IsCurrentLevelInState(
+                    currentLevel,
+                    GameState.INTRO,
+                    GameState.PLAYING),
+                $"{FormatTarget(currentLevel)} не перешёл в Intro или Gameplay.",
+                token);
+
+            // Автоматически пропускаем intro и ждём полностью готовый gameplay UI.
+            if (GetGameState() == GameState.INTRO)
+            {
+                SetStatus(
+                    $"Пропускается Intro: {FormatTarget(currentLevel)}.",
+                    $"Win Current Level: пропускается Intro для {FormatTarget(currentLevel)}.");
+                RequireLevelController().SkipIntro();
+            }
+
+            await WaitUntilAsync(
+                () => IsGameplayReady(currentLevel),
+                $"Gameplay для {FormatTarget(currentLevel)} не готов.",
+                token);
+
+            // Доводим score штатными coin events и сохраняем гарантированные три звезды.
+            var levelController = RequireLevelController();
+            var hamster = RequireHamster();
+            var finalScore = hamster.RunScore >= MaxRandomScore
+                ? hamster.RunScore
+                : UnityEngine.Random.Range(hamster.RunScore, MaxRandomScore + 1);
+            for (var score = hamster.RunScore; score < finalScore; score++)
+                hamster.CollectableCollectedEvent.Invoke(ObstacleTypeEnum.collectableCoin);
+
+            hamster.Lives.Value = 3;
+            SetStatus(
+                $"Завершается {FormatTarget(currentLevel)}: 3 stars, score={finalScore}.",
+                $"Win Current Level: {FormatTarget(currentLevel)}, 3 stars, score={finalScore}.");
+            if (GetGameState() != GameState.PLAYING)
+                throw new InvalidOperationException("Gameplay завершился до команды Win.");
+
+            levelController.Finish();
+
+            await WaitUntilAsync(
+                () => IsRealWinShown() || IsJourneyCompleteShown(),
+                "Штатное окно результата уровня не появилось.",
+                token);
+
+            var resultName = IsRealWinShown()
+                ? "Win modal"
+                : "Journey Complete modal";
+            SetStatus(
+                $"{resultName}: {FormatTarget(currentLevel)}, 3 stars, score={finalScore}.",
+                $"Completed: {FormatTarget(currentLevel)}, 3 stars, score={finalScore}; {resultName} shown.");
         }
 
         private async Task ContinueToSelectionAsync(CancellationToken token)
@@ -499,7 +612,14 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                     $"Day part для {FormatTarget(targetLevelAddress)} не найден.");
             }
 
-            var firstLevelAddress = part.Levels.FirstOrDefault().Address;
+            var firstLevel = part.Levels.FirstOrDefault();
+            if (firstLevel == null || string.IsNullOrWhiteSpace(firstLevel.Address))
+            {
+                throw new InvalidOperationException(
+                    $"Day part {part.DisplayName} не содержит gameplay-уровней.");
+            }
+
+            var firstLevelAddress = firstLevel.Address;
             LevelItem dayPartCard = null;
             await WaitUntilAsync(
                 () =>
@@ -538,8 +658,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
 
             _waitingForGameData = true;
             SetStatus(
-                "Waiting for Bootstrap game data and level catalog. Navigation context сохранён.",
-                "Waiting for game data; navigation context сохранён.");
+                "Waiting for Bootstrap game data and level catalog.",
+                "Waiting for game data.");
             SaveState();
             Changed?.Invoke();
         }
@@ -599,12 +719,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             }
 
             // Session target не меняется от ручных menu/settings/leaderboard detours.
-            var target = orderedLevels.FirstOrDefault(level =>
-                string.Equals(
-                    level.Address?.Trim(),
-                    _state.TargetLevelAddress?.Trim(),
-                    StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(target.Address) &&
+            var target = FindLevel(orderedLevels, _state.TargetLevelAddress);
+            if (target != null &&
                 (string.IsNullOrWhiteSpace(_state.LastCompletedLevelAddress) ||
                  GetRealLevelStars(_state.LastCompletedLevelAddress) == 3))
             {
@@ -620,7 +736,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             // Stale/absent context восстанавливаем из raw сохранённого progress.
             var nextLevel = orderedLevels.FirstOrDefault(level =>
                 GetRealLevelStars(level.Address) < 3);
-            _state.TargetLevelAddress = nextLevel.Address?.Trim() ?? string.Empty;
+            _state.TargetLevelAddress = nextLevel?.Address?.Trim() ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(_state.TargetLevelAddress))
             {
@@ -653,7 +769,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             if (!string.IsNullOrWhiteSpace(currentLevel))
                 return currentLevel.Trim();
 
-            return GetOrderedLevels().FirstOrDefault().Address?.Trim() ?? string.Empty;
+            return GetOrderedLevels().FirstOrDefault()?.Address?.Trim() ?? string.Empty;
         }
 
         private bool IsTargetGameplayActive()
@@ -882,8 +998,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 else
                 {
                     SetStatus(
-                        "Play Mode готов. Нажмите Start.",
-                        "Game data ready: runner готов к Start.");
+                        "Play Mode готов. Команды доступны.",
+                        "Game data ready: команды доступны.");
                 }
 
                 SaveState();
@@ -1069,6 +1185,13 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                    FindVisibleElement<VisualElement>("win_result") != null;
         }
 
+        private static bool IsJourneyCompleteShown()
+        {
+            return GetGameState() == GameState.FINISHED &&
+                   FindVisibleElement<VisualElement>(
+                       "journey-complete-modal") != null;
+        }
+
         private static bool HasBlockingModal()
         {
             return FindVisibleElement<VisualElement>("modal__container") != null;
@@ -1094,6 +1217,34 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                    gameState is GameState.INTRO or
                        GameState.PLAYING or
                        GameState.PAUSED;
+        }
+
+        private static bool IsCurrentLevelInState(
+            string levelAddress,
+            params GameState[] expectedStates)
+        {
+            return IsGameSceneForLevel(levelAddress) &&
+                   expectedStates.Contains(GetGameState());
+        }
+
+        private static bool IsGameSceneForLevel(string levelAddress)
+        {
+            return string.Equals(
+                       SceneManager.GetActiveScene().name,
+                       "Game",
+                       StringComparison.Ordinal) &&
+                   string.Equals(
+                       GameDataManager.PlayerData?.CurrentLevel?.Trim(),
+                       levelAddress,
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsGameplayReady(string levelAddress)
+        {
+            return IsCurrentLevelInState(levelAddress, GameState.PLAYING) &&
+                   FindVisibleElement<VisualElement>("gamescreen") != null &&
+                   UnityEngine.Object.FindAnyObjectByType<Hamster>(
+                       FindObjectsInactive.Include) != null;
         }
 
         private static LevelController RequireLevelController()
@@ -1228,7 +1379,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                     return new GameProgressTestRunState();
                 }
 
-                state.Status ??= "Запустите игру через Bootstrap и откройте Main Menu.";
+                state.Status ??= "Запустите игру через Bootstrap.";
                 state.CurrentAction = string.IsNullOrWhiteSpace(state.CurrentAction)
                     ? "Контекст теста восстановлен. Следующее действие ещё не выполнялось."
                     : state.CurrentAction;

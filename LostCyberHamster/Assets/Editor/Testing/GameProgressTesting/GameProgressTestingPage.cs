@@ -8,12 +8,14 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
     /// <summary>Рисует Game Progress Testing внутри общего окна Tools/Testing.</summary>
     internal sealed class GameProgressTestingPage : IDisposable
     {
-        private const float CommandButtonWidth = 190f;
+        private const float CommandButtonWidth = 180f;
+        private const float CommandRowHeight = 42f;
         private const int OutputFontSize = 16;
         private const int OutputHeadingFontSize = 20;
 
         private readonly Action _repaint;
         private readonly GameProgressTestRunner _runner;
+        private GUIStyle _commandDescriptionStyle;
         private GUIStyle _outputTextStyle;
         private GUIStyle _outputHeadingStyle;
 
@@ -25,7 +27,7 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
             EditorApplication.update += TickRunner;
         }
 
-        /// <summary>Рисует страницу, команды, текущую цель, статус и последнее действие.</summary>
+        /// <summary>Рисует страницу, команды, текущий уровень, статус и последнее действие.</summary>
         public void Draw(Action navigateBack)
         {
             DrawHeader(navigateBack);
@@ -36,11 +38,6 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
                     "Тест доступен только в Play Mode. Запустите игру через Bootstrap.",
                     MessageType.Info);
             }
-
-            EditorGUILayout.HelpBox(
-                "Start и Reset Progress сбрасывают реальный локальный прогресс. " +
-                "Результаты уровней сохраняются штатным игровым путём.",
-                MessageType.Warning);
 
             DrawCommands();
             DrawStatus();
@@ -85,53 +82,60 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
 
         private void DrawCommands()
         {
-            using (new EditorGUI.DisabledScope(!_runner.CanPrepareLevelUp))
-            {
-                if (GUILayout.Button(
-                        "Prepare Level Up",
-                        GUILayout.Width(CommandButtonWidth),
-                        GUILayout.Height(34f)))
-                {
-                    _runner.PrepareLevelUp();
-                }
-            }
+            DrawCommandRow(
+                "Prepare Level Up",
+                "Sets XP to 239/240. The next XP reward shows the Level Up modal.",
+                _runner.CanPrepareLevelUp,
+                _runner.PrepareLevelUp);
+            DrawCommandRow(
+                "Reset Progress",
+                "Resets all local player progress.",
+                _runner.CanResetProgress,
+                _runner.ResetProgress);
+            DrawCommandRow(
+                "Win with Random",
+                "Uses the running level, or opens PlayerData.CurrentLevel. Finishes with 3 stars and a random score.",
+                _runner.CanWinCurrentLevelWithRandomValues,
+                _runner.WinCurrentLevelWithRandomValues);
+        }
 
-            EditorGUILayout.Space(4f);
+        /// <summary>Рисует одну команду с фиксированной кнопкой и кратким описанием.</summary>
+        private void DrawCommandRow(
+            string buttonTitle,
+            string description,
+            bool isEnabled,
+            Action action)
+        {
             using (new EditorGUILayout.HorizontalScope())
             {
-                using (new EditorGUI.DisabledScope(!_runner.CanUsePrimaryAction))
+                using (new EditorGUI.DisabledScope(!isEnabled))
                 {
                     if (GUILayout.Button(
-                            _runner.PrimaryActionTitle,
+                            buttonTitle,
                             GUILayout.Width(CommandButtonWidth),
-                            GUILayout.Height(34f)))
+                            GUILayout.Height(CommandRowHeight)))
                     {
-                        _runner.RunPrimaryAction();
+                        action?.Invoke();
                     }
                 }
 
-                using (new EditorGUI.DisabledScope(!_runner.CanCancel))
-                {
-                    if (GUILayout.Button("Cancel", GUILayout.Width(80f), GUILayout.Height(34f)))
-                        _runner.Cancel();
-                }
-
-                using (new EditorGUI.DisabledScope(!_runner.CanResetProgress))
-                {
-                    if (GUILayout.Button("Reset Progress", GUILayout.Width(120f), GUILayout.Height(34f)))
-                        _runner.ResetProgress();
-                }
+                EditorGUILayout.LabelField(
+                    description,
+                    CommandDescriptionStyle,
+                    GUILayout.Height(CommandRowHeight));
             }
+
+            EditorGUILayout.Space(4f);
         }
 
         private void DrawStatus()
         {
             EditorGUILayout.Space(8f);
             DrawOutputSection(
-                "Current Target",
+                "Current Level",
                 FormatCurrentTarget(_runner.CurrentPoint));
             DrawOutputSection("Status", _runner.Status);
-            DrawOutputSection("Action Log", _runner.CurrentAction);
+            DrawOutputSection("Last Action", _runner.CurrentAction);
         }
 
         private static string FormatCurrentTarget(string target)
@@ -207,6 +211,13 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
             {
                 fontSize = OutputHeadingFontSize,
                 fontStyle = FontStyle.Bold
+            };
+
+        private GUIStyle CommandDescriptionStyle =>
+            _commandDescriptionStyle ??= new GUIStyle(EditorStyles.wordWrappedLabel)
+            {
+                alignment = TextAnchor.MiddleLeft,
+                wordWrap = true
             };
     }
 }

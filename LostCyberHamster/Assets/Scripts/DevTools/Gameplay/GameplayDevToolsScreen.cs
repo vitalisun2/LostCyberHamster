@@ -27,14 +27,19 @@ namespace Assets.Scripts.DevTools.Gameplay
             Transform parent,
             Font font,
             Action returnToRoot,
-            Action<string> setTitle)
+            Action<string> setTitle,
+            Action closePanel)
         {
             _returnToRoot = returnToRoot;
             _setTitle = setTitle;
 
             var uiFactory = new DevToolsUiFactory(font);
             _view = new GameplayDevToolsView(parent, uiFactory);
-            _gameProgressTestingScreen = new GameProgressTestingScreen(parent, font, setTitle);
+            _gameProgressTestingScreen = new GameProgressTestingScreen(
+                parent,
+                font,
+                setTitle,
+                closePanel);
             _experienceProgressTestingScreen =
                 new ExperienceProgressTestingScreen(parent, font, setTitle);
             _controller = new GameplayDevToolsController(
