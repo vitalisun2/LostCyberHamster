@@ -1,0 +1,112 @@
+.reward-modal {
+    position: relative;
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background-image: url("/Assets/Content/ui/sprites/modals/background_modal_new_york_full.png");
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.reward-modal__viewport {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.reward-modal__frame {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 1672px;
+    height: 941px;
+}
+
+.reward-modal__design {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 941px;
+    transform-origin: 0 0;
+}
+
+#reward-modal-design .reward-modal__panel {
+    position: absolute;
+    left: 445px;
+    top: 195px;
+    width: 782px;
+    height: 550px;
+    background-image: url("/Assets/Content/ui/sprites/shared/panel_reward_base.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+#reward-modal-design .reward-modal__text {
+    margin: 0;
+    padding: 0;
+    color: rgb(16, 48, 83);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    white-space: normal;
+}
+
+#reward-modal-design .reward-modal__title {
+    position: absolute;
+    left: 500px;
+    top: 219px;
+    width: 672px;
+    height: 84px;
+    font-size: 64px;
+    color: rgb(255, 255, 255);
+    -unity-text-outline-color: rgb(14, 27, 35);
+    -unity-text-outline-width: 4px;
+}
+
+#reward-modal-design .reward-modal__primary,
+#reward-modal-design .reward-modal__primary:hover,
+#reward-modal-design .reward-modal__primary:focus,
+#reward-modal-design .reward-modal__primary:active {
+    position: absolute;
+    left: 640px;
+    top: 568px;
+    width: 392px;
+    height: 118px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 20px 30px 22px;
+    background-image: url("/Assets/Content/ui/sprites/shared/button_reward_primary_base.png");
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: scale-to-fit;
+    border-width: 0;
+    border-radius: 0;
+    color: rgb(16, 48, 83);
+    font-size: 48px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    transition-property: opacity;
+    transition-duration: 90ms;
+}
+
+#reward-modal-design .reward-modal__primary:hover,
+#reward-modal-design .reward-modal__primary:focus {
+    opacity: 0.88;
+}
+
+#reward-modal-design .reward-modal__primary:active {
+    opacity: 0.72;
+}
+
+#reward-modal-design .reward-modal__primary:disabled {
+    opacity: 0.45;
+}

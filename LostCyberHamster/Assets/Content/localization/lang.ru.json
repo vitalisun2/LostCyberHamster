@@ -682,7 +682,7 @@
         },
         {
             "key": "level_up_title",
-            "value": "LEVEL UP!"
+            "value": "НОВЫЙ УРОВЕНЬ!"
         },
         {
             "key": "level_up_transition",
@@ -690,7 +690,7 @@
         },
         {
             "key": "level_up_development_reward",
-            "value": "+{0} DEVELOPMENT POINTS"
+            "value": "ОЧКИ РАЗВИТИЯ: +{0}"
         },
         {
             "key": "level_up_attack_available",
@@ -718,7 +718,7 @@
         },
         {
             "key": "quests_daily_all_completed",
-            "value": "Выполнены все три дневных квеста"
+            "value": "ВЫПОЛНЕНЫ ВСЕ ТРИ\nДНЕВНЫХ КВЕСТА"
         },
         {
             "key": "skin_name_classic",
@@ -924,9 +924,29 @@
             "key": "local_loading_failed",
             "value": "Не удалось загрузить данные. Перезапустите игру, чтобы повторить."
         },
-    {
-      "key": "cloud_save_conflict_player_level",
-      "value": "Уровень героя"
-    }
+        {
+            "key": "cloud_save_conflict_player_level",
+            "value": "Уровень героя"
+        },
+        {
+            "key": "tutorial_complete_title",
+            "value": "ПОЗДРАВЛЯЕМ!"
+        },
+        {
+            "key": "tutorial_complete_message",
+            "value": "Вы успешно закончили обучение\nи можете начать путешествие."
+        },
+        {
+            "key": "tutorial_complete_save_error",
+            "value": "Не удалось сохранить завершение обучения.\nПовторите попытку."
+        },
+        {
+            "key": "btn_retry",
+            "value": "ПОВТОРИТЬ"
+        },
+        {
+            "key": "quests_daily_reward_caption",
+            "value": "НАГРАДА"
+        }
     ]
 }

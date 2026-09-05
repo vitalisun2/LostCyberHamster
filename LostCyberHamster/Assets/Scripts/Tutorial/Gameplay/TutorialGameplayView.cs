@@ -27,6 +27,7 @@ namespace Assets.Scripts.Tutorial
         private readonly VisualElement _headerRoot;
         private readonly VisualElement _promptRoot;
         private readonly VisualElement _completeRoot;
+        private readonly VisualElement _completeDesign;
         private readonly VisualElement _focusMask;
         private readonly VisualElement _focusHighlight;
         private readonly VisualElement _promptInputCapture;
@@ -39,10 +40,11 @@ namespace Assets.Scripts.Tutorial
         private readonly Label _completeTitleLabel;
         private readonly Label _completeMessageLabel;
         private readonly Button _skipButton;
-        private readonly Button _primaryCompletionButton;
-        private readonly Button _secondaryCompletionButton;
+        private readonly Button _completionButton;
+        private readonly Label _completionButtonLabel;
         private readonly TutorialFocusOverlay _focusOverlay = new();
         private readonly IVisualElementScheduledItem _layoutTask;
+        private readonly IVisualElementScheduledItem _completionLayoutTask;
 
         private IVisualElementScheduledItem _focusRefreshTask;
         private TutorialAction _currentPromptAction;
@@ -53,6 +55,7 @@ namespace Assets.Scripts.Tutorial
         private Rect _lastTapBounds;
         private Rect _lastJumpBounds;
         private Rect _safeRect;
+        private Rect _completionSafeRect;
         private float _artScale = 1f;
         private bool _hasLayoutSnapshot;
         private bool _hasCurrentFocusRect;
@@ -85,10 +88,11 @@ namespace Assets.Scripts.Tutorial
             _instructionLabel = CreateLabel("tutorial-instruction");
             _instructionBubble.Add(_instructionLabel);
             _completeRoot = CreateCompletionRoot(
+                out _completeDesign,
                 out _completeTitleLabel,
                 out _completeMessageLabel,
-                out _primaryCompletionButton,
-                out _secondaryCompletionButton);
+                out _completionButton,
+                out _completionButtonLabel);
 
             // Capture закрывает gameplay, художественные элементы пропускают picking.
             _promptRoot.Add(_focusMask);
@@ -106,13 +110,22 @@ namespace Assets.Scripts.Tutorial
             // Geometry callbacks дополняются проверкой safe area и сдвигов предков.
             RegisterCallbacks();
             _layoutTask = _root.schedule.Execute(RefreshGeometry).Every(100);
+            _completionLayoutTask = _completeRoot.schedule.Execute(RefreshCompletionGeometry).Every(100);
             Hide();
         }
 
         public event Action<TutorialAction> GameplayActionRequested;
         public event Action SkipRequested;
-        public event Action PrimaryCompletionRequested;
-        public event Action SecondaryCompletionRequested;
+        public event Action CompletionRequested;
+
+        /// <summary>Проверяет сохранность слоёв и gameplay-targets после пересборки UIDocument.</summary>
+        public bool IsAttachedTo(VisualElement contentRoot)
+        {
+            return !_isDisposed && contentRoot != null
+                   && _root.parent == contentRoot && _completeRoot.parent == contentRoot
+                   && _tapTarget == contentRoot.Q<VisualElement>("tap")
+                   && _jumpTarget == contentRoot.Q<VisualElement>("btn_jump");
+        }
 
         /// <summary>Показывает локализованный урок и его номер во время подхода к препятствию.</summary>
         public void ShowHeader(string titleKey, int number)
@@ -124,6 +137,7 @@ namespace Assets.Scripts.Tutorial
             _skipButton.text = Localize("btn_skip");
 
             // Между препятствиями tutorial удерживает игровой ввод.
+            _completionLayoutTask.Pause();
             _completeRoot.style.display = DisplayStyle.None;
             _root.style.display = DisplayStyle.Flex;
             _idleInputBlocker.style.display = DisplayStyle.Flex;
@@ -165,26 +179,22 @@ namespace Assets.Scripts.Tutorial
             _focusOverlay.Clear();
         }
 
-        /// <summary>Показывает существующее окно завершения с заданными двумя действиями.</summary>
-        public void ShowCompletion(
-            string title,
-            string message,
-            string primaryButtonText,
-            string secondaryButtonText,
-            bool showPrimaryButton)
+        /// <summary>Показывает рисованное завершение или ошибку сохранения с одним нативным действием.</summary>
+        public void ShowCompletion(string title, string message, string buttonText, bool isError)
         {
-            // Завершение использует прежний контракт orchestrator.
+            // Flow передаёт уже локализованные тексты и состояние сохранения.
             Hide();
             _completeTitleLabel.text = title ?? string.Empty;
             _completeMessageLabel.text = message ?? string.Empty;
-            _primaryCompletionButton.text = primaryButtonText ?? string.Empty;
-            _secondaryCompletionButton.text = secondaryButtonText ?? string.Empty;
+            _completionButtonLabel.text = buttonText ?? string.Empty;
+            _completeRoot.EnableInClassList("tutorial-complete--error", isError);
 
-            // Внешний сценарий определяет доступность основного действия.
-            _primaryCompletionButton.style.display = showPrimaryButton
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
+            // Сначала рассчитывает безопасную композицию, затем раскрывает графику.
+            _completionSafeRect = default;
+            _completeDesign.style.visibility = Visibility.Hidden;
             _completeRoot.style.display = DisplayStyle.Flex;
+            _completionLayoutTask.Resume();
+            RefreshCompletionGeometry();
         }
 
         /// <summary>Скрывает оба слоя и останавливает обновление скрытого HUD.</summary>
@@ -195,6 +205,7 @@ namespace Assets.Scripts.Tutorial
             _idleInputBlocker.style.display = DisplayStyle.None;
             HidePrompt();
             _layoutTask.Pause();
+            _completionLayoutTask.Pause();
         }
 
         /// <summary>Отменяет callbacks, schedule и принадлежащую представлению маску.</summary>
@@ -208,6 +219,7 @@ namespace Assets.Scripts.Tutorial
             // Останавливает отложенные операции до удаления элементов.
             _isDisposed = true;
             _layoutTask.Pause();
+            _completionLayoutTask.Pause();
             CancelFocusRefresh();
             UnregisterCallbacks();
             _focusOverlay.Dispose();
@@ -217,16 +229,15 @@ namespace Assets.Scripts.Tutorial
             _completeRoot.RemoveFromHierarchy();
             GameplayActionRequested = null;
             SkipRequested = null;
-            PrimaryCompletionRequested = null;
-            SecondaryCompletionRequested = null;
+            CompletionRequested = null;
         }
 
         /// <summary>Подписывает действия и изменения геометрии обоих targets.</summary>
         private void RegisterCallbacks()
         {
             _skipButton.RegisterCallback<ClickEvent>(HandleSkipClicked);
-            _primaryCompletionButton.RegisterCallback<ClickEvent>(HandlePrimaryCompletionClicked);
-            _secondaryCompletionButton.RegisterCallback<ClickEvent>(HandleSecondaryCompletionClicked);
+            _completionButton.RegisterCallback<ClickEvent>(HandleCompletionClicked);
+            _completeRoot.RegisterCallback<GeometryChangedEvent>(HandleCompletionGeometryChanged);
             _promptInputCapture.RegisterCallback<PointerDownEvent>(HandlePromptPointerDown);
             _root.RegisterCallback<GeometryChangedEvent>(HandleGeometryChanged);
             _tapTarget?.RegisterCallback<GeometryChangedEvent>(HandleGeometryChanged);
@@ -237,8 +248,8 @@ namespace Assets.Scripts.Tutorial
         private void UnregisterCallbacks()
         {
             _skipButton.UnregisterCallback<ClickEvent>(HandleSkipClicked);
-            _primaryCompletionButton.UnregisterCallback<ClickEvent>(HandlePrimaryCompletionClicked);
-            _secondaryCompletionButton.UnregisterCallback<ClickEvent>(HandleSecondaryCompletionClicked);
+            _completionButton.UnregisterCallback<ClickEvent>(HandleCompletionClicked);
+            _completeRoot.UnregisterCallback<GeometryChangedEvent>(HandleCompletionGeometryChanged);
             _promptInputCapture.UnregisterCallback<PointerDownEvent>(HandlePromptPointerDown);
             _root.UnregisterCallback<GeometryChangedEvent>(HandleGeometryChanged);
             _tapTarget?.UnregisterCallback<GeometryChangedEvent>(HandleGeometryChanged);
@@ -251,16 +262,40 @@ namespace Assets.Scripts.Tutorial
             evt.StopImmediatePropagation();
         }
 
-        private void HandlePrimaryCompletionClicked(ClickEvent evt)
+        private void HandleCompletionClicked(ClickEvent evt)
         {
-            PrimaryCompletionRequested?.Invoke();
+            CompletionRequested?.Invoke();
             evt.StopImmediatePropagation();
         }
 
-        private void HandleSecondaryCompletionClicked(ClickEvent evt)
+        private void HandleCompletionGeometryChanged(GeometryChangedEvent evt)
         {
-            SecondaryCompletionRequested?.Invoke();
-            evt.StopImmediatePropagation();
+            RefreshCompletionGeometry();
+        }
+
+        /// <summary>Вписывает композицию завершения в safe area без масштабирования входного слоя.</summary>
+        private void RefreshCompletionGeometry()
+        {
+            if (_isDisposed || _completeRoot.panel == null
+                || _completeRoot.resolvedStyle.display == DisplayStyle.None)
+            {
+                return;
+            }
+
+            // Safe area сохраняет асимметричные отступы экранных вырезов.
+            Rect safe = UiSafeArea.GetLocalRect(_completeRoot);
+            if (safe.width <= 0f || safe.height <= 0f || safe == _completionSafeRect)
+            {
+                return;
+            }
+
+            // Декорации используют координаты принятого эталона 1672 x 941.
+            _completionSafeRect = safe;
+            float scale = Mathf.Min(safe.width / 1672f, safe.height / 941f);
+            _completeDesign.style.left = safe.center.x - 836f * scale;
+            _completeDesign.style.top = safe.center.y - 470.5f * scale;
+            _completeDesign.style.scale = new Scale(new Vector3(scale, scale, 1f));
+            _completeDesign.style.visibility = Visibility.Visible;
         }
 
         /// <summary>Проверяет ту же форму, из которой построена видимая маска.</summary>
@@ -441,35 +476,37 @@ namespace Assets.Scripts.Tutorial
             return header;
         }
 
-        /// <summary>Создаёт прежнее представление завершения с двумя кнопками.</summary>
+        /// <summary>Собирает принятую композицию завершения из отдельных PNG и нативного текста.</summary>
         private static VisualElement CreateCompletionRoot(
+            out VisualElement design,
             out Label titleLabel,
             out Label messageLabel,
-            out Button primaryButton,
-            out Button secondaryButton)
+            out Button button,
+            out Label buttonLabel)
         {
+            // Полноэкранный слой удерживает ввод, графика остаётся декорацией.
             var root = CreateInputLayer(_completeRootName);
-            root.AddToClassList("tutorial-overlay");
-            var container = CreateDecoration("tutorial-complete-container", "tutorial-surface");
-            titleLabel = CreateLabel("tutorial-complete-title", "tutorial-text");
-            messageLabel = CreateLabel("tutorial-complete-message", "tutorial-text");
-            var buttons = CreateDecoration("tutorial-complete-buttons");
-            primaryButton = CreateCompletionButton("tutorial-complete-play", "Играть");
-            secondaryButton = CreateCompletionButton("tutorial-complete-menu", "Меню");
-            buttons.Add(primaryButton);
-            buttons.Add(secondaryButton);
-            container.Add(titleLabel);
-            container.Add(messageLabel);
-            container.Add(buttons);
-            root.Add(container);
-            return root;
-        }
+            design = CreateDecoration("tutorial-complete-design");
+            var panel = CreateDecoration("tutorial-complete-panel");
+            var emblem = CreateDecoration("tutorial-complete-emblem");
+            var divider = CreateDecoration("tutorial-complete-divider");
+            titleLabel = CreateLabel("tutorial-complete-title");
+            messageLabel = CreateLabel("tutorial-complete-message");
 
-        private static Button CreateCompletionButton(string name, string text)
-        {
-            var button = new Button { name = name, text = text, pickingMode = PickingMode.Position };
-            button.AddToClassList("tutorial-button");
-            return button;
+            // Единственное действие переключается между Retry и Play.
+            button = new Button { name = "tutorial-complete-action", pickingMode = PickingMode.Position };
+            buttonLabel = CreateLabel("tutorial-complete-action-label");
+            var playIcon = CreateDecoration("tutorial-complete-play-icon");
+            button.Add(buttonLabel);
+            button.Add(playIcon);
+            design.Add(panel);
+            design.Add(titleLabel);
+            design.Add(emblem);
+            design.Add(messageLabel);
+            design.Add(divider);
+            design.Add(button);
+            root.Add(design);
+            return root;
         }
 
         private static VisualElement CreateInputLayer(string name)

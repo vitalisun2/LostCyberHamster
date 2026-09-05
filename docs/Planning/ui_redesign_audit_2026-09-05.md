@@ -1,23 +1,29 @@
-**Аудит редизайна UI — 05.09.2026**
+# Аудит редизайна UI — 05.09.2026
 
-Основные меню уже переведены на рисованный дизайн. Осталось **шесть действующих зон со старым оформлением**: выбор сохранения, обучение, повышение уровня, общая ежедневная награда, оболочка сюжетного интро и сообщение «Нет сети». Отдельный мелкий хвост — кнопка повторной загрузки рейтинга.
+**Cloud Save Conflict, Tutorial, LevelUp и DailyQuestReward реализованы.** Финальные code/visual review и runtime-проверки — PASS. Открыт последний gate: regeneration и C# build.
 
-**Предложение привязать аккаунт уже обновлено** вместе с Settings. Для Cloud Save Conflict и Tutorial художественные наборы подготовлены в WorkOnScreens, но их основные элементы ещё не подключены в игре.
+За пределами четырёх зон остаются найденные аудитом оболочка сюжетного интро, сообщение «Нет сети» и Retry рейтинга. Account Prompt уже обновлён вместе с Settings.
 
-Проверены: история `integration/unity-live` за 29.08–05.09.2026, текущие UXML/USS/C#, регистрации и места вызова, сцены, `Content/ui/sprites`, папка WorkOnScreens. Срез: HEAD `a096e204`, рабочее дерево на 05.09.2026 около 14:10 МСК. Это статический аудит с просмотром исходных макетов; фактическая отрисовка всех состояний в Play Mode здесь не проверялась.
+Первичный аудит: история `integration/unity-live` за 29.08–05.09.2026, UXML/USS/C#, маршруты, сцены, `Content/ui/sprites`, WorkOnScreens; срез `a096e204`, около 14:10 МСК. Дополнение учитывает последующую реализацию и проверки интегратора. Точный scope — [отчёт реализации][implementation].
 
-**Что осталось**
+## Четыре реализованные зоны
 
-| Очередь | Экран / состояние | Почему это действующий хвост | Готовность дизайна и следующий шаг |
-|---|---|---|---|
-| 1 | **Выбор облачного или локального сохранения — CloudSaveConflictModal** | Координатор показывает окно при текущем конфликте. Карточки — цветные контейнеры с рамками; кнопки — прежние `lcs_btn`. Сохранена старая оболочка `Modal.uxml`. [Показ][cloud-call], [стили][cloud-style]. | Есть [макет][cloud-preview] и [пакет][cloud-pack]: 6 отдельных слоёв + экран-образец. Подключить панели, заголовок, карточки и две кнопки. Перед сборкой сверить manifest: он ещё описывает составную карточку, уже разделённую на panel/divider. |
-| 2 | **Обучение — заголовок, Skip, подсказки и указатель** | UI создаёт `TutorialGameplayView`: плоские панели с radius, программные кнопки, прежний ресурс пальца. Активные шаги используют этот view. [Создание UI][tutorial-view], [стили][runtime-style]. | Есть [пакет Tutorial][tutorial-pack]: 13 игровых слоёв + 2 экранных образца, включая завершение. Подключить элементы активного обучения. [QA][tutorial-qa] содержит актуальный состав. Фон завершения уже переиспользован в игровых модалках; это не означает миграцию Tutorial. |
-| 3 | **Повышение уровня — LevelUpModal** | После результата игры при росте PlayerLevel показывается отдельное окно перед выбранным переходом. Заголовок, переход уровней, Development Points и OK остаются в старой оболочке. [Триггер][levelup-call], [шаблон][levelup-ui], [стили][levelup-style]. | Отдельного готового набора в WorkOnScreens не найдено. Подготовить компактную композицию в общем стиле наград, используя существующие рисованные панели и кнопки. |
-| 4 | **Общая награда за ежедневные задания — DailyQuestRewardModal** | На вкладке Daily при `CanClaimDailyCommonReward` окно планируется через 1 секунду. Сам Quests обновлён, но это отдельная модалка со старой цветной кнопкой. [Триггер][daily-call], [шаблон][daily-ui], [стили][daily-style]. | Отдельного набора не найдено. Собрать рисованное окно с заголовком, суммой, иконкой валюты и действием получения. |
-| 5 | **Оболочка сюжетного интро уровня** | Живой `Intro.cs` показывает сюжетные картинки, но вокруг них остаётся `intro-surface`; Skip использует обычный `lcs_btn`. [Создание оболочки][intro-view], [Skip][intro-skip]. | Отдельного UI-набора не найдено. Доработать фон/оболочку и Skip. Сюжетные иллюстрации — самостоятельный контент. |
-| 6 | **«Нет сети» — No Network** | Активный `LicenseManager` в Menu при отсутствии сети добавляет полноэкранную подложку и два обычных Label. Текст английский, задан прямо в коде. [Триггер][network-call], [вид][network-view], [объект сцены][network-scene]. | Отдельного макета не найдено. Оформить служебное сообщение общими рисованными компонентами и локализовать текст. |
+| Зона | Подтверждено | Остаток приёмки |
+|---|---|---|
+| CloudSaveConflictModal | Рисованные панели/карточки/кнопки; 8 кадров RU/EN ×4 размера. Выбор, busy/rebind, nullable Cloud, resize и safe area PASS. [RU][cloud-final-ru], [EN][cloud-final-en]. | Общий финальный gate. |
+| Tutorial HUD и Complete | [HUD: 64 комбинации][hud-matrix], [Completion: 16 preview][complete-matrix], overflow 0. Независимые source/visual review PASS. [Runtime][completion-runtime]: сохранение до Play, rebind, одна загрузка первого уровня. | Финальный C# gate. |
+| LevelUpModal | Рисованная панель, новая эмблема, общая CTA. 8 кадров RU/EN ×4 размера; [RU][levelup-final-ru], [EN][levelup-final-en]. 3 вызова обработчика: close 1, callback 1. | Общий финальный gate. |
+| DailyQuestRewardModal | 8 финальных кадров RU/EN ×4 размера; [RU][daily-preview], [EN][daily-final-en]. Заголовок: top 207, height/measuredHeight 128. [Runtime][daily-runtime]: две FIFO-награды, повторный вызов и отказ без лишних начислений. | Финальный C# gate. |
 
-**Мелкий хвост внутри обновлённого экрана:** в League у ошибки загрузки есть обычная кнопка Retry. Для неё заданы размеры и шрифт, но отсутствует художественная основа. Обновить кнопку при сохранении существующего сценария повтора. [Шаблон][league-retry-ui], [стили][league-retry-style]. Остальной League уже переведён.
+Пользователь прошёл все 8 шагов Tutorial и остановил Play Mode. Интегратор подтвердил `IsTutorialCompleted=true` и восстановление баланса 731. [Runtime-запись][completion-runtime] дополнительно подтверждает сохранение до Play, одну кнопку, удержание ввода до перехода, rebind и единственную загрузку сцены. Завершение сохраняется до success UI; Play запускает первый уровень без повторной записи. Ошибка сохранения показывает отдельное сообщение и Retry.
+
+## Осталось за пределами выбранных зон
+
+| Экран / состояние | Основание первичного аудита | Следующий шаг |
+|---|---|---|
+| Оболочка сюжетного интро уровня | Живой `Intro.cs` использует `intro-surface` и обычный Skip. [Оболочка][intro-view], [Skip][intro-skip]. | Оформить оболочку и Skip; сюжетные картинки остаются отдельным контентом. |
+| «Нет сети» — No Network | `LicenseManager` добавляет подложку и два английских Label. [Триггер][network-call], [вид][network-view]. | Рисованные общие компоненты и локализация. |
+| Retry рейтинга | В League у ошибки загрузки есть обычная кнопка Retry. [Шаблон][league-retry-ui], [стили][league-retry-style]. | Рисованная основа при сохранении сценария повтора. |
 
 **Полная сверка экранов**
 
@@ -28,25 +34,25 @@
 | HomeScreen | Обновлён | `home` + shared HUD, `7c48c321` |
 | CharacterScreen — Hero, skins/abilities | Обновлён | `hero`, `54cde579` + интеграция `8422ac7e` |
 | CharacterDevelopmentScreen — Skills | Обновлён | `skills`, `716a059a`; дальнейшая полировка карусели и прогресса |
-| QuestsScreen — daily/story | Обновлён | `quests`, `82e45287`; отдельная общая награда остаётся выше |
+| QuestsScreen — daily/story | Обновлён | `quests`, `82e45287`; общая награда также реализована и проверена |
 | SelectLevelScreen — выбор времени суток и уровня | Обновлён | Обе композиции используют `select_level`, `f063371c` |
 | LeaderboardScreen — League | Обновлён, остался Retry | `league`, `4f50f491` |
 | ShopScreen | Обновлён | Полноэкранный магазин, `73a86c33`; прежний ShopModal удалён |
 | SettingsScreen | Обновлён | `settings`, `3588ddc9`; включая язык, гостевой аккаунт и редактирование имени |
 | AccountPromptModal | Обновлён | Тот же `3588ddc9`; рисованные панели и кнопки Settings, [актуальные стили][account-style] |
-| CloudSaveConflictModal | Старый | Действующий хвост № 1 |
-| GameScreen — HUD | Обновлён; Pause в текущей работе | `in_game_hud`, `c59e9164`; новая кнопка Pause пока в незакоммиченном diff |
+| CloudSaveConflictModal | Обновлён | Рисованный пакет подключён, этап 2 PASS |
+| GameScreen — HUD | Обновлён | `in_game_hud`, `c59e9164`; Pause использует shared PNG |
 | PauseModal | Обновлён | `modals/pause`, `77988aa9` |
 | WinModal | Обновлён | `modals/win`, `77988aa9` |
 | LoseModal | Обновлён | `modals/fail`, `77988aa9` |
 | JourneyCompleteModal | Обновлён | `journey_complete`, `fd245814`; полировка до `a096e204` |
-| LevelUpModal | Старый | Действующий хвост № 3 |
-| DailyQuestRewardModal | Старый | Действующий хвост № 4 |
+| LevelUpModal | Обновлён | 8 captures и защита callback подтверждены; общий gate идёт |
+| DailyQuestRewardModal | Обновлён | Visual/runtime PASS; финальный C# gate идёт |
 | IntroScreen из ScreenEnum | Старый шаблон; активный маршрут не подтверждён | В текущем игровом маршруте сюжетное интро строит `Intro.cs`. В очередь входит именно живая оболочка |
 | Bootstrap / Loading, вне ScreenEnum | Обновлён | `background_loading.png`, `ea619af7`; рисованный shared progress, `b9ea151f` |
-| Tutorial, вне ScreenEnum | Старый | Действующий хвост № 2 |
-| Живое сюжетное Intro, вне ScreenEnum | Старый UI вокруг иллюстраций | Действующий хвост № 5 |
-| No Network, вне ScreenEnum | Старый | Действующий хвост № 6 |
+| Tutorial, вне ScreenEnum | Обновлён | HUD/Complete, сохранение до Play и перезапуск Editor PASS; C# gate PASS |
+| Живое сюжетное Intro, вне ScreenEnum | Старый UI вокруг иллюстраций | За рамками четырёх зон |
+| No Network, вне ScreenEnum | Старый | За рамками четырёх зон |
 
 **Что меняли за неделю**
 
@@ -58,58 +64,66 @@
 
 Коммит `0ade9e86` от 03.09 укреплял разрешение конфликта сохранений: менялся C# аккаунта и cloud sync. UXML, USS и художественные ассеты окна он не обновлял.
 
-Представление CloudSaveConflict последний раз менялось 07.08; LevelUp — 18.08; DailyQuestReward — 06–07.08. Эти окна остались за пределами основной волны редизайна.
+До текущей реализации представление CloudSaveConflict менялось 07.08, LevelUp — 18.08, DailyQuestReward — 06–07.08. Поэтому первичный аудит выделил их отдельно от основной волны.
 
-**Что показал WorkOnScreens**
+## WorkOnScreens и редкие состояния
 
-- Эталон: [Settings v07][settings-preview], правила стиля — [Visual_UI_Style.md][visual-style]. Приглушённая живописная фактура, чёрный контур, рисованные панели и контролы, выразительные заголовки.
-- Prepared содержит 14 папок: Cloud Save Conflict, Hero, Home, In-game HUD, Journey Complete, League, Quests, Select Levels, Settings, Shared, Shop, Skills, Tutorial, Win Fail Pause Modals.
-- Cloud Save Conflict: все 7 PNG отсутствуют среди Unity PNG по SHA256; действующие стили также не используют этот набор. [Manifest][cloud-manifest] полезен для native-текста и геометрии, но требует сверки с текущими файлами.
-- Tutorial: из 15 PNG совпал только фон, уже лежащий в `sprites/modals/background_modal_new_york_full.png`. UI обучения продолжает строиться прежним кодом.
-- Account Prompt переиспользует Settings. Loading имеет отдельный макет и уже подключённый фон. Отсутствие их отдельных папок в Prepared не является пробелом.
+- Эталон: [Settings v07][settings-preview], [правила стиля][visual-style]. Приглушённая живописная фактура, чёрный контур, рисованные панели и контролы.
+- Cloud: импортированы 6 игровых слоёв; состав сверён с актуальными panel/divider и native-текстом.
+- Tutorial: импортированы 10 игровых слоёв. Фон завершения переиспользуется из `sprites/modals/background_modal_new_york_full.png`; текст нативный.
+- LevelUp/Daily: созданы 2 эмблемы 256×256 и общая CTA 392×118. [Manifest и alpha/9-slice QA][reward-manifest]; [LevelUp ref][levelup-ref], [Daily ref][daily-ref].
+- Tutorial Complete возвращён в активный маршрут по решению пользователя. [Flow][tutorial-flow] сохраняет завершение до одной Play; Skip сохраняет его и сразу запускает уровень.
+- Account Prompt переиспользует Settings. Loading имеет подключённый фон; отсутствие отдельной папки Prepared не означает пробел.
+- `License Expired` в исходном аудите ограничен условием `DateTime.Now < 2025-09-01`; активным хвостом считался No Network.
+- Общий `Modal.uxml` переопределяется рисованными модалками. Базовые/тестовые UXML учитываются только при подтверждённом маршруте.
 
-**Редкие состояния, требующие отдельной трактовки**
+## Остаток проверки
 
-- У Tutorial есть код и рисунок завершения, но текущий flow после сценария или Skip сразу запускает первый игровой уровень. Внешних вызовов `TutorialGameplayController.ShowCompletion` не найдено. Это подготовленный резервный экран, его возврат в сценарий — отдельное продуктовое решение. [Текущий flow][tutorial-flow].
-- `License Expired` существует в коде, но запрос времени закрыт условием `DateTime.Now < 2025-09-01`. При нормальной дате аудита этот путь не выполняется. Активным визуальным хвостом считается No Network.
-- Старый общий `Modal.uxml` — оболочка для модалок. Новые игровые модалки и Account Prompt переопределяют её представление. Сам файл не означает, что все модалки остались старыми.
-- Отдельные базовые/тестовые UXML не считались самостоятельными экранами без подтверждённого маршрута. Проверка явных asset-ссылок нашла отсутствующую картинку только в `test.uxml`.
+Regeneration + build Assembly-CSharp `--no-restore`: PASS, 0 ошибок, 21 предупреждение. Финальные code/visual review и перечисленные проверки четырёх зон подтверждены. Исправления чтения сохранения и teardown Tutorial повторно проверены; подробности и границы QA — в отчёте реализации.
 
-**Проверка после будущей интеграции**
+Следующая самостоятельная очередь редизайна: живая оболочка интро, сообщение сети и Retry рейтинга. Для неё нужны проверки русского/английского текста и целевого телефона.
 
-Сначала Cloud Save Conflict и активное обучение: ассеты уже есть. Затем два окна наград. После них — интро, сообщение сети и Retry рейтинга.
+Первичный аудит был read-only. Последующая реализация меняет согласованный scope игры и ассетов; владение записано в [отчёте реализации][implementation]. Это обновление документации затрагивает только два отчёта.
 
-При приёмке проверить обе версии сохранения и состояние выбора; все шаги Tutorial и Skip; рост уровня после результата; доступную общую Daily-награду; сюжетное интро; потерю сети в меню; ошибку рейтинга с Retry. Сверить русский/английский текст и раскладку на целевом телефоне.
-
-**Состояние рабочего дерева**
-
-Исходники игры и WorkOnScreens этим аудитом не изменены. Создан этот отчёт; в базе опыта добавлен порядок проверки покрытия UI. Unity, Play Mode, сборки и тесты не запускались.
-
-До аудита уже существовали изменения `GameScreen.uxml`, `shared-hud-controls.uss`, новые `shared/button_pause.png` / `.meta`, а также изменения `docs/experience/error_diagnosis.md` и `docs/experience/tool_usage.md`. Они сохранены. Кнопка Pause в рабочем дереве уже подключена к новой картинке; в HEAD ещё стоит прежняя кнопка.
-
-[cloud-call]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/UI/Modals/CloudSaveConflict/CloudSaveConflictCoordinator.cs:90
-[cloud-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/CloudSaveConflictModal.uss:38
+[cloud-call]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/UI/Modals/CloudSaveConflict/CloudSaveConflictCoordinator.cs
+[cloud-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/CloudSaveConflictModal.uss
 [cloud-preview]: C:/Personal/ChatGpt/WorkOnScreens/Cloud_Save_Conflict/v01_cloud_save_conflict.png
 [cloud-pack]: <C:/Personal/ChatGpt/WorkOnScreens/Prepared for Unity Integration/Cloud Save Conflict>
-[cloud-manifest]: C:/Personal/ChatGpt/WorkOnScreens/Cloud_Save_Conflict/archive/v01_cloud_save_conflict_work/unity_preparation_technical_archive/cloud_save_conflict_assets_manifest.json:165
-[tutorial-view]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/Tutorial/Gameplay/TutorialGameplayView.cs:322
-[runtime-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/components/runtime-states.uss:59
+[cloud-manifest]: C:/Personal/ChatGpt/WorkOnScreens/Cloud_Save_Conflict/archive/v01_cloud_save_conflict_work/unity_preparation_technical_archive/cloud_save_conflict_assets_manifest.json
+[tutorial-view]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/Tutorial/Gameplay/TutorialGameplayView.cs
+[runtime-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/components/runtime-states.uss
 [tutorial-pack]: <C:/Personal/ChatGpt/WorkOnScreens/Prepared for Unity Integration/Tutorial>
-[tutorial-qa]: C:/Personal/ChatGpt/WorkOnScreens/_tutorial_unity_work/final_qa/automated_report.json:238
-[tutorial-flow]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/Tutorial/Runtime/TutorialFlowController.cs:104
-[levelup-call]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/GameEngine/Mechanics/LevelResultNavigationCoordinator.cs:51
-[levelup-ui]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/uxml/LevelUpModal.uxml:4
-[levelup-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/LevelUpModal.uss:41
-[daily-call]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/UI/Screens/QuestsScreenController.cs:232
-[daily-ui]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/uxml/DailyQuestRewardModal.uxml:4
-[daily-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/DailyQuestRewardModal.uss:31
-[intro-view]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/System/LevelManagement/Intro.cs:63
-[intro-skip]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/System/LevelManagement/Intro.cs:147
-[network-call]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/SharedCore/LicenseManager.cs:33
-[network-view]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/SharedCore/LicenseManager.cs:76
-[network-scene]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scenes/Menu.unity:435
-[league-retry-ui]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/uxml/LeaderboardScreen.uxml:47
-[league-retry-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/screens/LeaderboardScreen.uss:299
-[account-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/components/account-prompt.uss:35
+[tutorial-qa]: C:/Personal/ChatGpt/WorkOnScreens/_tutorial_unity_work/final_qa/automated_report.json
+[tutorial-flow]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/Tutorial/Runtime/TutorialFlowController.cs
+[levelup-call]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/GameEngine/Mechanics/LevelResultNavigationCoordinator.cs
+[levelup-ui]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/uxml/LevelUpModal.uxml
+[levelup-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/LevelUpModal.uss
+[daily-call]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/UI/Screens/QuestsScreenController.cs
+[daily-ui]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/uxml/DailyQuestRewardModal.uxml
+[daily-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/DailyQuestRewardModal.uss
+[intro-view]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/System/LevelManagement/Intro.cs
+[intro-skip]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/System/LevelManagement/Intro.cs
+[network-call]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/SharedCore/LicenseManager.cs
+[network-view]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scripts/SharedCore/LicenseManager.cs
+[network-scene]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Scenes/Menu.unity
+[league-retry-ui]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/uxml/LeaderboardScreen.uxml
+[league-retry-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/screens/LeaderboardScreen.uss
+[account-style]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets/Content/ui/styles/components/account-prompt.uss
 [settings-preview]: C:/Personal/ChatGpt/WorkOnScreens/Settings/v07_settings_default.png
 [visual-style]: C:/Personal/ChatGpt/WorkOnScreens/Visual_UI_Style.md
+
+[implementation]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/docs/Planning/ui_four_zones_implementation_2026-09-05.md
+[cloud-final-ru]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/.worktrees/ui-four-zones-qa/cloud-ru-1920-final.png
+[cloud-final-en]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/.worktrees/ui-four-zones-qa/cloud-en-1440-final.png
+[hud-matrix]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/.worktrees/ui-four-zones-qa/tutorial-hud-matrix.json
+[complete-matrix]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/.worktrees/ui-four-zones-qa/tutorial-complete-matrix.json
+[levelup-final-ru]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/.worktrees/ui-four-zones-qa/levelup-ru-1920.png
+[levelup-final-en]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/.worktrees/ui-four-zones-qa/levelup-en-1440.png
+[daily-preview]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/.worktrees/ui-four-zones-qa/daily-ru-1920.png
+[reward-manifest]: C:/Personal/ChatGpt/WorkOnScreens/Level_Up/archive/v03_level_up_work/reward_assets_manifest.json
+[levelup-ref]: C:/Personal/ChatGpt/WorkOnScreens/Level_Up/v03_level_up.png
+[daily-ref]: C:/Personal/ChatGpt/WorkOnScreens/Daily_Quest_Reward/v02_daily_quest_reward.png
+
+[completion-runtime]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/.worktrees/ui-four-zones-qa/tutorial-completion-runtime.json
+[daily-runtime]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/.worktrees/ui-four-zones-qa/daily-claim-results.json
+[daily-final-en]: C:/Personal/crystal-wave/repos/LostCyberHamster_2025/.worktrees/ui-four-zones-qa/daily-en-1440.png

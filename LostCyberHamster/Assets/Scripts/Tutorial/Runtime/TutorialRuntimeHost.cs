@@ -71,8 +71,7 @@ namespace Assets.Scripts.Tutorial
         private void OnDestroy()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
-            _flow?.Dispose();
-            ReleaseRuntimeGuards();
+            var flow = _flow;
             _flow = null;
             _attachedGameplayRoot = null;
 
@@ -80,27 +79,49 @@ namespace Assets.Scripts.Tutorial
             {
                 _instance = null;
             }
+
+            try
+            {
+                flow?.Dispose();
+            }
+            finally
+            {
+                ReleaseRuntimeGuards();
+            }
         }
 
+        /// <summary>Поддерживает привязку HUD и completion после восстановления CurrentLevel.</summary>
         private void AttachGameplayContextIfAvailable()
         {
+            // Новый gameplay создаётся по tutorial address; completion живёт в существующем controller.
             string currentLevel = GameDataManager.PlayerData?.CurrentLevel;
-            if (!TutorialConstants.IsTutorialLevel(currentLevel)
-                || !TryGetGameplayContext(out var gameManager, out var hamster))
+            if (TutorialConstants.IsTutorialLevel(currentLevel)
+                && TryGetGameplayContext(out var gameManager, out var hamster))
+            {
+                _flow.EnsureGameplay(currentLevel, gameManager, hamster);
+            }
+
+            if (!_flow.RequiresGameplayRoot)
             {
                 return;
             }
 
-            _flow.EnsureGameplay(currentLevel, gameManager, hamster);
-            if (_attachedGameplayRoot?.panel == null)
+            // UIDocument может пересобрать дочерние элементы при прежней ссылке на root.
+            if (_attachedGameplayRoot?.panel == null
+                || _attachedGameplayRoot.Q<VisualElement>("tap") == null
+                || _attachedGameplayRoot.Q<VisualElement>("btn_jump") == null)
             {
                 _attachedGameplayRoot = null;
             }
 
             if (_attachedGameplayRoot == null && TryFindGameplayRoot(out var root))
             {
-                _flow.AttachGameplayRoot(root);
                 _attachedGameplayRoot = root;
+            }
+
+            if (_attachedGameplayRoot != null)
+            {
+                _flow.AttachGameplayRoot(_attachedGameplayRoot);
             }
         }
 

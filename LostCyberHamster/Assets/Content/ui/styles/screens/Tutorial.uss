@@ -146,54 +146,138 @@
     -unity-background-image-tint-color: rgb(209, 237, 232);
 }
 
-/* Завершение сохраняет прежнюю композицию до отдельного этапа интеграции. */
+/* Завершение: отдельные PNG и нативные подписи в координатах эталона. */
 #tutorial-complete-root {
-    justify-content: center;
-    align-items: center;
+    overflow: hidden;
+    background-color: rgb(31, 61, 78);
+    background-image: url("/Assets/Content/ui/sprites/modals/background_modal_new_york_full.png");
+    -unity-background-scale-mode: scale-and-crop;
 }
 
-#tutorial-complete-root #tutorial-complete-container {
-    width: 620px;
-    padding: 32px 36px 36px 36px;
-    border-radius: 28px;
-    align-items: center;
+#tutorial-complete-root #tutorial-complete-design {
+    position: absolute;
+    width: 1672px;
+    height: 941px;
+    flex-shrink: 0;
+    transform-origin: 0 0;
 }
 
-#tutorial-complete-root .tutorial-text {
+#tutorial-complete-root .unity-label {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    white-space: normal;
+    color: rgb(25, 53, 70);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    -unity-text-outline-width: 3px;
+    -unity-text-outline-width: 0;
+}
+
+#tutorial-complete-root #tutorial-complete-panel {
+    position: absolute;
+    left: 392px;
+    top: 146px;
+    width: 905px;
+    height: 666px;
+    background-image: url("/Assets/Content/ui/sprites/tutorial/tutorial_complete_panel.png");
+    -unity-background-scale-mode: stretch-to-fill;
 }
 
 #tutorial-complete-root #tutorial-complete-title {
-    font-size: 48px;
-    margin-bottom: 12px;
+    left: 466px;
+    top: 210px;
+    width: 740px;
+    height: 96px;
+    font-size: 62px;
+    color: rgb(255, 250, 231);
+    -unity-text-outline-color: rgb(23, 32, 38);
+    -unity-text-outline-width: 4px;
+}
+
+#tutorial-complete-root #tutorial-complete-emblem {
+    position: absolute;
+    left: 778px;
+    top: 305px;
+    width: 116px;
+    height: 107px;
+    background-image: url("/Assets/Content/ui/sprites/tutorial/tutorial_complete_emblem.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 #tutorial-complete-root #tutorial-complete-message {
-    font-size: 38px;
-    margin-bottom: 28px;
+    left: 476px;
+    top: 440px;
+    width: 720px;
+    height: 104px;
+    font-size: 30px;
 }
 
-#tutorial-complete-root #tutorial-complete-buttons {
-    flex-direction: row;
-    justify-content: center;
+#tutorial-complete-root #tutorial-complete-divider {
+    position: absolute;
+    left: 514px;
+    top: 548px;
+    width: 645px;
+    height: 17px;
+    background-image: url("/Assets/Content/ui/sprites/tutorial/tutorial_complete_divider.png");
+    -unity-background-scale-mode: stretch-to-fill;
 }
 
-#tutorial-complete-root .tutorial-button {
-    width: 220px;
-    height: 84px;
-    border-width: 6px;
-    border-radius: 20px;
-    font-size: 38px;
-    -unity-font-style: bold;
-    -unity-text-outline-width: 2px;
+#tutorial-complete-root #tutorial-complete-action,
+#tutorial-complete-root #tutorial-complete-action:hover,
+#tutorial-complete-root #tutorial-complete-action:focus,
+#tutorial-complete-root #tutorial-complete-action:active {
+    position: absolute;
+    left: 634px;
+    top: 604px;
+    width: 405px;
+    height: 125px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: transparent;
+    background-image: url("/Assets/Content/ui/sprites/tutorial/tutorial_complete_button_play_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
 }
 
-#tutorial-complete-root #tutorial-complete-play {
-    margin-right: 20px;
+#tutorial-complete-root #tutorial-complete-action:hover,
+#tutorial-complete-root #tutorial-complete-action:focus {
+    -unity-background-image-tint-color: rgb(255, 240, 234);
 }
 
-#tutorial-complete-root #tutorial-complete-menu {
-    margin-left: 20px;
+#tutorial-complete-root #tutorial-complete-action:active {
+    -unity-background-image-tint-color: rgb(229, 215, 210);
+}
+
+#tutorial-complete-root #tutorial-complete-action-label {
+    left: 23px;
+    top: 14px;
+    width: 288px;
+    height: 88px;
+    font-size: 43px;
+}
+
+#tutorial-complete-root #tutorial-complete-play-icon {
+    position: absolute;
+    left: 318px;
+    top: 32px;
+    width: 43px;
+    height: 52px;
+    background-image: url("/Assets/Content/ui/sprites/tutorial/tutorial_complete_icon_play.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+#tutorial-complete-root.tutorial-complete--error #tutorial-complete-emblem,
+#tutorial-complete-root.tutorial-complete--error #tutorial-complete-play-icon {
+    display: none;
+}
+
+#tutorial-complete-root.tutorial-complete--error #tutorial-complete-message {
+    top: 348px;
+    height: 168px;
+}
+
+#tutorial-complete-root.tutorial-complete--error #tutorial-complete-action-label {
+    left: 26px;
+    width: 353px;
 }

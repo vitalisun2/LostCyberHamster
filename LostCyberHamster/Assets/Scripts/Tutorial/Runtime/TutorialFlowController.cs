@@ -1,6 +1,7 @@
 using System;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
@@ -27,7 +28,10 @@ namespace Assets.Scripts.Tutorial
 
         public bool RequiresExclusiveInput => _session.IsActive || _phase != TutorialPhase.None;
 
-        public bool CanShutdown => _phase == TutorialPhase.Completed && !_session.IsActive;
+        public bool RequiresGameplayRoot => _gameplay != null && _phase != TutorialPhase.Completed;
+
+        public bool CanShutdown =>
+            _phase == TutorialPhase.Completed && !_session.IsActive && _gameplay == null;
 
         /// <summary>
         /// Запускает основной gameplay-урок для tutorial level.
@@ -35,7 +39,8 @@ namespace Assets.Scripts.Tutorial
         public void EnsureGameplay(string levelAddress, GameManager gameManager, Hamster hamster)
         {
             ThrowIfDisposed();
-            if (_gameplay != null && string.Equals(_activeGameplayLevel, levelAddress, StringComparison.Ordinal))
+            if (_phase == TutorialPhase.Completion || _phase == TutorialPhase.Completed
+                || (_gameplay != null && string.Equals(_activeGameplayLevel, levelAddress, StringComparison.Ordinal)))
             {
                 return;
             }
@@ -43,10 +48,7 @@ namespace Assets.Scripts.Tutorial
             DisposeGameplay();
             if (TutorialConstants.IsCoreLessonLevel(levelAddress))
             {
-                StartGameplayScenario(
-                    levelAddress,
-                    gameManager,
-                    hamster);
+                StartGameplayScenario(levelAddress, gameManager, hamster);
             }
         }
 
@@ -62,9 +64,7 @@ namespace Assets.Scripts.Tutorial
             _gameplay?.Tick();
         }
 
-        /// <summary>
-        /// Сбрасывает только scene-bound gameplay-controller; session и общий workflow сохраняются.
-        /// </summary>
+        /// <summary>Освобождает scene-bound UI после фактической загрузки новой сцены.</summary>
         public void OnSceneLoaded()
         {
             if (_disposed)
@@ -72,7 +72,7 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
 
-            DisposeGameplay();
+            DisposeGameplay(resumeGame: false);
         }
 
         public void Dispose()
@@ -82,7 +82,8 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
 
-            DisposeGameplay();
+            // Teardown может идти после уничтожения объектов мира, без sceneLoaded.
+            DisposeGameplay(resumeGame: false);
             _disposed = true;
         }
 
@@ -101,45 +102,124 @@ namespace Assets.Scripts.Tutorial
             _activeGameplayLevel = levelAddress;
         }
 
+        /// <summary>Сохраняет завершение восьми шагов перед показом успешного результата.</summary>
         private void HandleGameplayScenarioCompleted()
         {
-            if (_gameplay == null)
+            if (_gameplay == null || _phase != TutorialPhase.CoreControls)
             {
                 return;
             }
 
-            StartFirstGameplayLevel();
+            _phase = TutorialPhase.Completion;
+            CompleteTutorial(continueToGame: false);
         }
 
+        /// <summary>Сохраняет завершение и продолжает прямой маршрут Skip в первый уровень.</summary>
         private void HandleSkipRequested()
         {
-            _phase = TutorialPhase.Completed;
-            StartFirstGameplayLevel();
+            if (_gameplay == null || _phase != TutorialPhase.CoreControls)
+            {
+                return;
+            }
+
+            _phase = TutorialPhase.Completion;
+            CompleteTutorial(continueToGame: true);
         }
 
+        /// <summary>Повторяет обязательную запись при ошибке и продолжает исходное действие после успеха.</summary>
+        private void CompleteTutorial(bool continueToGame)
+        {
+            if (_disposed || _gameplay == null || _phase != TutorialPhase.Completion)
+            {
+                return;
+            }
+
+            // Success UI доступен только после восстановленного и сохранённого snapshot.
+            try
+            {
+                _session.Complete(TutorialConstants.FirstGameplayLevelAddress);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"Tutorial completion save failed ({exception.GetType().Name}).");
+                _gameplay.ShowCompletion(
+                    Localize("tutorial_title"),
+                    Localize("tutorial_complete_save_error"),
+                    Localize("btn_retry"),
+                    () => CompleteTutorial(continueToGame),
+                    isError: true);
+                return;
+            }
+
+            // Retry сохраняет исходный маршрут: успешное окно или прямой Skip.
+            if (continueToGame)
+            {
+                StartFirstGameplayLevel();
+            }
+            else
+            {
+                ShowSuccessfulCompletion();
+            }
+        }
+
+        /// <summary>Показывает единственную Play для уже сохранённого завершения.</summary>
+        private void ShowSuccessfulCompletion()
+        {
+            _gameplay?.ShowCompletion(
+                Localize("tutorial_complete_title"),
+                Localize("tutorial_complete_message"),
+                Localize("btn_play"),
+                StartFirstGameplayLevel);
+        }
+
+        /// <summary>Запускает первый уровень с уже сохранёнными данными; освобождение UI завершает sceneLoaded.</summary>
         private void StartFirstGameplayLevel()
         {
-            CompleteSessionAtFirstGameplayLevel();
-            SceneManager.LoadScene(TutorialConstants.GameSceneName);
-        }
+            if (_disposed || _phase != TutorialPhase.Completion || _session.IsActive)
+            {
+                return;
+            }
 
-        private void CompleteSessionAtFirstGameplayLevel()
-        {
-            _session.Complete(TutorialConstants.FirstGameplayLevelAddress);
+            // Flow владеет навигацией; Play повторно не сохраняет tutorial.
             _phase = TutorialPhase.Completed;
+            try
+            {
+                SceneManager.LoadScene(TutorialConstants.GameSceneName);
+            }
+            catch
+            {
+                // Неудачный запрос навигации оставляет сохранённый результат и доступную Play.
+                _phase = TutorialPhase.Completion;
+                ShowSuccessfulCompletion();
+                throw;
+            }
         }
 
-        private void DisposeGameplay()
+        /// <summary>Отсоединяет gameplay и выбирает освобождение до либо после уничтожения сцены.</summary>
+        private void DisposeGameplay(bool resumeGame = true)
         {
             if (_gameplay != null)
             {
                 _gameplay.ScenarioCompleted -= HandleGameplayScenarioCompleted;
                 _gameplay.SkipRequested -= HandleSkipRequested;
-                _gameplay.Dispose();
+                if (resumeGame)
+                {
+                    _gameplay.Dispose();
+                }
+                else
+                {
+                    _gameplay.DisposeAfterSceneChange();
+                }
             }
 
             _gameplay = null;
             _activeGameplayLevel = null;
+        }
+
+        private static string Localize(string key)
+        {
+            string text = LocalizationManager.GetLocalizedString(key);
+            return string.IsNullOrWhiteSpace(text) ? key : text;
         }
 
         private void ThrowIfDisposed()

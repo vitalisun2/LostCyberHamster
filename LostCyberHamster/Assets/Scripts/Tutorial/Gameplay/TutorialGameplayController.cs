@@ -36,14 +36,12 @@ namespace Assets.Scripts.Tutorial
         private bool _isGamePausedByTutorial;
         private bool _isDoubleJumpUpgradeScheduled;
         private float _doubleJumpUpgradeReadyTime;
-        private Action _primaryCompletionAction;
-        private Action _secondaryCompletionAction;
+        private Action _completionAction;
         private bool _hasCompletionPresentation;
         private string _completionTitle;
         private string _completionMessage;
-        private string _primaryButtonText;
-        private string _secondaryButtonText;
-        private bool _showPrimaryButton;
+        private string _completionButtonText;
+        private bool _completionIsError;
 
         private TutorialGameplayStep CurrentStep => _steps[_currentStepIndex];
         private TutorialAction CurrentExpectedAction => CurrentStep.ExpectedActions[_currentActionIndex];
@@ -67,7 +65,7 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
 
-            if (ReferenceEquals(root, _attachedRoot) && _view != null)
+            if (ReferenceEquals(root, _attachedRoot) && _view?.IsAttachedTo(root) == true)
             {
                 return;
             }
@@ -77,8 +75,7 @@ namespace Assets.Scripts.Tutorial
             _view = new TutorialGameplayView(root);
             _view.GameplayActionRequested += HandleViewGameplayAction;
             _view.SkipRequested += HandleViewSkipRequested;
-            _view.PrimaryCompletionRequested += HandlePrimaryCompletionRequested;
-            _view.SecondaryCompletionRequested += HandleSecondaryCompletionRequested;
+            _view.CompletionRequested += HandleCompletionRequested;
             RestoreViewState();
         }
 
@@ -136,78 +133,41 @@ namespace Assets.Scripts.Tutorial
             return true;
         }
 
-        /// <summary>
-        /// Показывает стандартное окно завершения с кнопками «Играть» и «Меню».
-        /// </summary>
+        /// <summary>Показывает сохранённое завершение или ошибку с одним действием владельца flow.</summary>
         public void ShowCompletion(
             string title,
             string message,
-            Action primaryAction,
-            Action secondaryAction)
-        {
-            ShowCompletionCore(
-                title,
-                message,
-                "Играть",
-                "Меню",
-                showPrimaryButton: true,
-                primaryAction,
-                secondaryAction);
-        }
-
-        /// <summary>
-        /// Показывает окно завершения, заданное внешним orchestrator.
-        /// </summary>
-        public void ShowCompletion(
-            string title,
-            string message,
-            string primaryButtonText,
-            string secondaryButtonText,
-            bool showPrimaryButton,
-            Action primaryAction,
-            Action secondaryAction)
-        {
-            ShowCompletionCore(
-                title,
-                message,
-                primaryButtonText,
-                secondaryButtonText,
-                showPrimaryButton,
-                primaryAction,
-                secondaryAction);
-        }
-
-        private void ShowCompletionCore(
-            string title,
-            string message,
-            string primaryButtonText,
-            string secondaryButtonText,
-            bool showPrimaryButton,
-            Action primaryAction,
-            Action secondaryAction)
+            string buttonText,
+            Action completionAction,
+            bool isError = false)
         {
             if (_state == TutorialGameplayState.Disposed)
             {
                 return;
             }
 
+            // Completion удерживает мир даже после Skip с ошибкой сохранения.
+            _state = TutorialGameplayState.Completed;
+            ResetActionInputProgress();
+            PauseGameForTutorial();
+
+            // Новая presentation заменяет Retry на Play и открывает её собственный переход.
             _completionTitle = title ?? string.Empty;
             _completionMessage = message ?? string.Empty;
-            _primaryButtonText = primaryButtonText ?? string.Empty;
-            _secondaryButtonText = secondaryButtonText ?? string.Empty;
-            _showPrimaryButton = showPrimaryButton;
-            _primaryCompletionAction = primaryAction;
-            _secondaryCompletionAction = secondaryAction;
+            _completionButtonText = buttonText ?? string.Empty;
+            _completionAction = completionAction ?? throw new ArgumentNullException(nameof(completionAction));
+            _completionIsError = isError;
             _hasCompletionPresentation = true;
             _transitionGuard.Reset();
-
             _view?.ShowCompletion(
-                _completionTitle,
-                _completionMessage,
-                _primaryButtonText,
-                _secondaryButtonText,
-                _showPrimaryButton);
+                _completionTitle, _completionMessage, _completionButtonText, _completionIsError);
+        }
 
+        /// <summary>Освобождает controller после смены сцены без обращения к прежнему миру.</summary>
+        public void DisposeAfterSceneChange()
+        {
+            _isGamePausedByTutorial = false;
+            Dispose();
         }
 
         public void Dispose()
@@ -230,11 +190,7 @@ namespace Assets.Scripts.Tutorial
             if (_hasCompletionPresentation)
             {
                 _view.ShowCompletion(
-                    _completionTitle,
-                    _completionMessage,
-                    _primaryButtonText,
-                    _secondaryButtonText,
-                    _showPrimaryButton);
+                    _completionTitle, _completionMessage, _completionButtonText, _completionIsError);
                 return;
             }
 
@@ -437,41 +393,45 @@ namespace Assets.Scripts.Tutorial
 
         private void HandleViewSkipRequested()
         {
-            ExecuteTransition(SkipRequested);
-        }
-
-        private void HandlePrimaryCompletionRequested()
-        {
-            ExecuteCompletionAction(_primaryCompletionAction);
-        }
-
-        private void HandleSecondaryCompletionRequested()
-        {
-            ExecuteCompletionAction(_secondaryCompletionAction);
-        }
-
-        private void ExecuteCompletionAction(Action action)
-        {
-            ExecuteTransition(action);
-        }
-
-        private void ExecuteTransition(Action action)
-        {
-            if (action == null || !_transitionGuard.TryBegin())
+            if (_state == TutorialGameplayState.Completed || _state == TutorialGameplayState.Disposed)
             {
                 return;
             }
 
-            ClearCompletionActions();
-            _view?.Hide();
-            ResumeGameIfPausedByTutorial();
-            action.Invoke();
+            ExecuteTransition(SkipRequested);
+        }
+
+        private void HandleCompletionRequested()
+        {
+            ExecuteTransition(_completionAction);
+        }
+
+        /// <summary>Передаёт переход flow при удерживаемой паузе и защите от повторного клика.</summary>
+        private void ExecuteTransition(Action action)
+        {
+            if (_state == TutorialGameplayState.Disposed || action == null || !_transitionGuard.TryBegin())
+            {
+                return;
+            }
+
+            // Вызов может заменить Retry на Play; его новая presentation остаётся владельцем UI.
+            PauseGameForTutorial();
+            try
+            {
+                action.Invoke();
+            }
+            catch
+            {
+                // Исключение оставляет текущее действие доступным для повторной попытки.
+                _transitionGuard.Reset();
+                throw;
+            }
         }
 
         private void ClearCompletionActions()
         {
-            _primaryCompletionAction = null;
-            _secondaryCompletionAction = null;
+            _completionAction = null;
+            _hasCompletionPresentation = false;
         }
 
         private void DetachView()
@@ -483,8 +443,7 @@ namespace Assets.Scripts.Tutorial
 
             _view.GameplayActionRequested -= HandleViewGameplayAction;
             _view.SkipRequested -= HandleViewSkipRequested;
-            _view.PrimaryCompletionRequested -= HandlePrimaryCompletionRequested;
-            _view.SecondaryCompletionRequested -= HandleSecondaryCompletionRequested;
+            _view.CompletionRequested -= HandleCompletionRequested;
             _view.Dispose();
             _view = null;
             _attachedRoot = null;

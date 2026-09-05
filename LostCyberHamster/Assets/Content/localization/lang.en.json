@@ -718,7 +718,7 @@
         },
         {
             "key": "quests_daily_all_completed",
-            "value": "All three daily quests completed"
+            "value": "ALL THREE DAILY\nQUESTS COMPLETED"
         },
         {
             "key": "skin_name_classic",
@@ -924,9 +924,29 @@
             "key": "local_loading_failed",
             "value": "Couldn't load game data. Restart the game to try again."
         },
-    {
-      "key": "cloud_save_conflict_player_level",
-      "value": "Player level"
-    }
+        {
+            "key": "cloud_save_conflict_player_level",
+            "value": "Player level"
+        },
+        {
+            "key": "tutorial_complete_title",
+            "value": "CONGRATULATIONS!"
+        },
+        {
+            "key": "tutorial_complete_message",
+            "value": "You have completed the tutorial.\nYour journey is ready to begin."
+        },
+        {
+            "key": "tutorial_complete_save_error",
+            "value": "Could not save tutorial completion.\nPlease try again."
+        },
+        {
+            "key": "btn_retry",
+            "value": "RETRY"
+        },
+        {
+            "key": "quests_daily_reward_caption",
+            "value": "REWARD"
+        }
     ]
 }

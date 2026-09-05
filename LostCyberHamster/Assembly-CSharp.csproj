@@ -767,6 +767,7 @@
     <None Include="Assets\Content\ui\uxml\Toolbar.uxml" />
     <None Include="Assets\Content\ui\styles\components\screen-chrome.uss" />
     <None Include="Assets\Content\ui\styles\screens\CharacterDevelopmentScreen.uss" />
+    <None Include="Assets\Content\ui\styles\components\reward-modals.uss" />
     <None Include="Assets\Content\ui\uxml\JourneyCompleteModal.uxml" />
     <None Include="Assets\Content\ui\uxml\SettingsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\EnergyBar.uxml" />

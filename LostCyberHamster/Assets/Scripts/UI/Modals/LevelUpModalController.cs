@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
 
@@ -16,6 +17,8 @@ namespace LostCyberHamster.UI
         private int _currentLevel;
         private int _pointsAwarded;
         private Action _okAction;
+        private GameResultModalPresentation _presentation;
+        private bool _hasAccepted;
 
         private Label Title =>
             _modalContent.Q<Label>("level-up-title");
@@ -58,7 +61,12 @@ namespace LostCyberHamster.UI
 
         protected override Task OnShowAsync()
         {
+            // Новый показ принимает одно подтверждение.
             _buttonCloseModal.style.display = DisplayStyle.None;
+            _hasAccepted = false;
+            OkButton.SetEnabled(true);
+
+            // Подставляем текущие данные в локализованный текст.
             Title.text = Localize("level_up_title");
             Transition.text = FormatLocalized(
                 "level_up_transition",
@@ -73,16 +81,41 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
+            // Восстанавливаем композицию после повторного включения UI.
+            _presentation ??= GameResultModalPresentation.Apply(
+                _root,
+                _modalContent.Q<VisualElement>("reward-modal-viewport"),
+                _modalContent.Q<VisualElement>("reward-modal-frame"),
+                _modalContent.Q<VisualElement>("reward-modal-design"),
+                new Vector2(1672f, 941f),
+                ModalScaleMode.Contain,
+                useSafeArea: true);
+
+            // Сохраняем состояние подтверждения без повторных callbacks.
+            OkButton?.SetEnabled(!_hasAccepted);
+            OkButton?.UnregisterCallback<ClickEvent>(OnOkClicked);
             OkButton?.RegisterCallback<ClickEvent>(OnOkClicked);
         }
 
         protected override void OnUnsubscribeFromEvents()
         {
+            // Освобождаем действие текущего дерева.
             OkButton?.UnregisterCallback<ClickEvent>(OnOkClicked);
+
+            // Возвращаем общий host следующему окну.
+            _presentation?.Restore();
+            _presentation = null;
         }
 
         private void OnOkClicked(ClickEvent clickEvent)
         {
+            // Закрытие и отложенный маршрут выполняются один раз за показ.
+            if (_hasAccepted)
+                return;
+            _hasAccepted = true;
+            OkButton?.SetEnabled(false);
+
+            // Освобождаем окно до запуска следующего маршрута.
             Action queuedAction = _okAction;
             _okAction = null;
             _closeAction.Invoke();

@@ -118,6 +118,15 @@ namespace GameManagement
                     if (envelope.Journals.Any(entry => entry == null || string.IsNullOrWhiteSpace(entry.Feature) ||
                         string.IsNullOrWhiteSpace(entry.Owner)))
                         throw new InvalidOperationException("Local save journal metadata is invalid.");
+                    // JsonUtility записывает null вложенного класса как объект с пустыми полями.
+                    // Только полностью пустая запись означает отсутствие попытки загрузки.
+                    var attempt = envelope.UploadAttempt;
+                    if (attempt != null && attempt.LocalRevision == 0 &&
+                        string.IsNullOrEmpty(attempt.ProfileId) &&
+                        string.IsNullOrEmpty(attempt.OwnerPlayerId) &&
+                        string.IsNullOrEmpty(attempt.PayloadHash) &&
+                        string.IsNullOrEmpty(attempt.ExpectedCloudRevision))
+                        envelope.UploadAttempt = null;
                     if (envelope.UploadAttempt != null && (envelope.UploadAttempt.ProfileId != envelope.ProfileId ||
                         envelope.UploadAttempt.OwnerPlayerId != envelope.OwnerPlayerId ||
                         envelope.UploadAttempt.LocalRevision < 1 || envelope.UploadAttempt.LocalRevision > envelope.LocalRevision ||

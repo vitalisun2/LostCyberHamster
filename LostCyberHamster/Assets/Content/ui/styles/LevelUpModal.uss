@@ -1,48 +1,27 @@
-.level-up-modal {
-    flex-grow: 1;
-    min-width: 0;
-    min-height: 0;
-    align-items: center;
-    justify-content: center;
-    padding: 20px 48px;
+#reward-modal-design .level-up-modal__emblem {
+    position: absolute;
+    left: 748px;
+    top: 304px;
+    width: 176px;
+    height: 176px;
+    background-image: url("/Assets/Content/ui/sprites/modals/level_up/emblem_level_up.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
-.level-up-modal__title {
-    min-height: 58px;
-    color: var(--ui-text-fill);
-    -unity-text-outline-color: var(--ui-text-outline);
-    font-size: 48px;
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-}
-
-.level-up-modal__transition {
-    min-height: 52px;
-    margin-top: 2px;
-    color: var(--ui-text-fill);
-    -unity-text-outline-color: var(--ui-text-outline);
-    font-size: 36px;
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-}
-
-.level-up-modal__development-reward {
-    width: 620px;
-    min-height: 150px;
-    margin-top: 18px;
-    color: var(--ui-text-fill);
-    -unity-text-outline-color: var(--ui-text-outline);
+#reward-modal-design .level-up-modal__transition {
+    position: absolute;
+    left: 500px;
+    top: 459px;
+    width: 672px;
+    height: 55px;
     font-size: 38px;
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-    white-space: normal;
 }
 
-.level-up-modal__ok {
-    width: 220px;
-    height: 72px;
-    margin-top: 14px;
-    font-size: 30px;
-    color: var(--ui-compact-text);
-    -unity-text-outline-width: 0;
+#reward-modal-design .level-up-modal__development-reward {
+    position: absolute;
+    left: 500px;
+    top: 516px;
+    width: 672px;
+    height: 48px;
+    font-size: 34px;
 }
