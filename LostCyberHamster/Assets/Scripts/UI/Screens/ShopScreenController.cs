@@ -16,13 +16,7 @@ namespace LostCyberHamster.UI
 
         private ShopItem _freeCoinsItem;
         private ShopItem _crystalPackItem;
-
-        private VisualElement Viewport =>
-            _contentRoot.Q<VisualElement>("shop-viewport");
-        private VisualElement ScaleFrame =>
-            _contentRoot.Q<VisualElement>("shop-scale-frame");
-        private VisualElement Design =>
-            _contentRoot.Q<VisualElement>("shop-design");
+        private int _loadVersion;
         private Button FreeCoinsButton =>
             _contentRoot.Q<Button>("shop-free-coins");
         private Button CrystalPackButton =>
@@ -38,14 +32,32 @@ namespace LostCyberHamster.UI
         {
         }
 
-        protected override async Task OnLoadAsync()
-        {
-            // Фон магазина заполняет внешний полноэкранный контейнер.
-            await ChangeBackgroundAsync(
-                "ShopScreenBackgroundSprite",
-                ScaleMode.ScaleAndCrop);
+        protected override string ScreenBackgroundAddress => "ShopScreenBackgroundSprite";
 
+        protected override ScreenLayout CreateLayout(VisualElement content)
+        {
+            return ScreenLayout.Fit(
+                content.Q<VisualElement>("shop-viewport"),
+                content.Q<VisualElement>("shop-scale-frame"),
+                content.Q<VisualElement>("shop-design"),
+                new Vector2(DesignWidth, DesignHeight));
+        }
+
+        protected override void BindView()
+        {
+            // Карточки сохраняют размеры, пока загружается каталог предложений.
+            _loadVersion++;
+            _freeCoinsItem = null;
+            _crystalPackItem = null;
+            ApplyOfferState();
+        }
+
+        protected override async Task LoadDataAsync()
+        {
+            int loadVersion = _loadVersion;
             var shopItems = await ShopManager.GetShopItems();
+            if (loadVersion != _loadVersion)
+                return;
 
             // Связываем утверждённые карточки с каталогом по смыслу сделки.
             _freeCoinsItem = shopItems?.FirstOrDefault(
@@ -62,27 +74,22 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
-            // Подключаем предложения, баланс и адаптивный design frame.
+            // Подключаем предложения и обновления баланса.
             FreeCoinsButton?.RegisterCallback<ClickEvent>(
                 OnFreeCoinsClicked);
             CrystalPackButton?.RegisterCallback<ClickEvent>(
                 OnCrystalPackClicked);
             ResourceManager.BalanceChanged += OnBalanceChanged;
-            Viewport?.RegisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
-            Viewport?.schedule.Execute(
-                () => ApplyResponsiveLayout(Viewport.contentRect.size));
         }
 
         protected override void OnUnsubscribeFromEvents()
         {
+            _loadVersion++;
             FreeCoinsButton?.UnregisterCallback<ClickEvent>(
                 OnFreeCoinsClicked);
             CrystalPackButton?.UnregisterCallback<ClickEvent>(
                 OnCrystalPackClicked);
             ResourceManager.BalanceChanged -= OnBalanceChanged;
-            Viewport?.UnregisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
         }
 
         private void OnFreeCoinsClicked(ClickEvent _)
@@ -157,24 +164,6 @@ namespace LostCyberHamster.UI
             {
                 PurchaseMessage.style.display = DisplayStyle.None;
             }
-        }
-
-        private void OnViewportGeometryChanged(GeometryChangedEvent evt)
-        {
-            ApplyResponsiveLayout(evt.newRect.size);
-        }
-
-        private void ApplyResponsiveLayout(Vector2 viewportSize)
-        {
-            float width = Mathf.Max(1f, viewportSize.x);
-            float height = Mathf.Max(1f, viewportSize.y);
-            float scale = Mathf.Min(
-                width / DesignWidth,
-                height / DesignHeight);
-
-            ScaleFrame.style.width = DesignWidth * scale;
-            ScaleFrame.style.height = DesignHeight * scale;
-            Design.style.scale = new Scale(new Vector3(scale, scale, 1f));
         }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using GameManagement;
 using GameManagement.Progress;
 using UnityEngine;
@@ -93,12 +92,16 @@ namespace LostCyberHamster.UI
             _buttonShop?.UnregisterCallback<ClickEvent>(OnClickBtnShop);
         }
 
-        protected override async Task OnLoadAsync()
+        protected override string ScreenBackgroundAddress => "HomeScreenSprite";
+
+        protected override ScreenLayout CreateLayout(VisualElement content)
+        {
+            return new ScreenLayout(content.Q<VisualElement>("homescreen"));
+        }
+
+        protected override void BindView()
         {
             RefreshExperiencePanel();
-            await ChangeBackgroundAsync(
-                "HomeScreenSprite",
-                ScaleMode.ScaleAndCrop);
         }
 
         private void RefreshExperiencePanel()

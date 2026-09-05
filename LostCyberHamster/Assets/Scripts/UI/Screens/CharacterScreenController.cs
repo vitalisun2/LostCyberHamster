@@ -42,10 +42,6 @@ namespace LostCyberHamster.UI
 
         private VisualElement Viewport =>
             _contentRoot.Q<VisualElement>("hero-viewport");
-        private VisualElement ScaleFrame =>
-            _contentRoot.Q<VisualElement>("hero-scale-frame");
-        private VisualElement Design =>
-            _contentRoot.Q<VisualElement>("hero-design");
         private VisualElement Tabs =>
             _contentRoot.Q<VisualElement>("hero-tabs");
         private Button SkinTabButton =>
@@ -91,12 +87,20 @@ namespace LostCyberHamster.UI
         {
         }
 
-        protected override async Task OnLoadAsync()
+        protected override string ScreenBackgroundAddress => BackgroundAddress;
+
+        protected override ScreenLayout CreateLayout(VisualElement content)
+        {
+            return ScreenLayout.Fit(
+                content.Q<VisualElement>("hero-viewport"),
+                content.Q<VisualElement>("hero-scale-frame"),
+                content.Q<VisualElement>("hero-design"),
+                new Vector2(DesignWidth, DesignHeight));
+        }
+
+        protected override void BindView()
         {
             _screenLoaded = true;
-            await ChangeBackgroundAsync(
-                BackgroundAddress,
-                ScaleMode.ScaleAndCrop);
             _activeTab = HeroTab.Skins;
             _selectedSkinId = SkinManager.CurrentSkin?.Id ??
                               CharacterDevelopmentService.DefaultSkinId;
@@ -108,7 +112,11 @@ namespace LostCyberHamster.UI
             ShowSelectedSkin();
             BuildAbilitySlots();
             ShowSelectedAbility();
-            await LoadVisualsAsync();
+        }
+
+        protected override Task LoadDataAsync()
+        {
+            return LoadVisualsAsync();
         }
 
         protected override void OnSubscribeToEvents()
@@ -126,14 +134,10 @@ namespace LostCyberHamster.UI
                 OnAbilityScrollUpClicked);
             AbilityScrollDownButton?.RegisterCallback<ClickEvent>(
                 OnAbilityScrollDownClicked);
-            Viewport?.RegisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
             RegisterScrollCallbacks(SkinScroll, OnSkinScrollValueChanged);
             RegisterScrollCallbacks(
                 AbilityScroll,
                 OnAbilityScrollValueChanged);
-            Viewport?.schedule.Execute(
-                () => ApplyResponsiveLayout(Viewport.contentRect.size));
             Viewport?.schedule.Execute(UpdateScrollNavigation);
         }
 
@@ -154,8 +158,6 @@ namespace LostCyberHamster.UI
                 OnAbilityScrollUpClicked);
             AbilityScrollDownButton?.UnregisterCallback<ClickEvent>(
                 OnAbilityScrollDownClicked);
-            Viewport?.UnregisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
             UnregisterScrollCallbacks(SkinScroll, OnSkinScrollValueChanged);
             UnregisterScrollCallbacks(
                 AbilityScroll,
@@ -785,24 +787,6 @@ namespace LostCyberHamster.UI
                 maximum);
             upButton.SetEnabled(offset > ScrollEpsilon);
             downButton.SetEnabled(offset < maximum - ScrollEpsilon);
-        }
-
-        private void OnViewportGeometryChanged(GeometryChangedEvent evt)
-        {
-            ApplyResponsiveLayout(evt.newRect.size);
-        }
-
-        private void ApplyResponsiveLayout(Vector2 viewportSize)
-        {
-            float width = Mathf.Max(1f, viewportSize.x);
-            float height = Mathf.Max(1f, viewportSize.y);
-            float scale = Mathf.Min(
-                width / DesignWidth,
-                height / DesignHeight);
-
-            ScaleFrame.style.width = DesignWidth * scale;
-            ScaleFrame.style.height = DesignHeight * scale;
-            Design.style.scale = new Scale(new Vector3(scale, scale, 1f));
         }
 
         private bool IsCurrentVisual(int visualVersion)

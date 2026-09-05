@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Assets.Scripts.Common;
 using Assets.Scripts.GameEngine.Mechanics;
 using UnityEngine;
@@ -122,7 +121,7 @@ namespace LostCyberHamster.UI
             _tapArea?.UnregisterCallback<PointerDownEvent>(OnClickTap, TrickleDown.TrickleDown);
         }
 
-        protected override async Task OnLoadAsync()
+        protected override void BindView()
         {
             _buttonPause = _contentRoot.Q<Button>("btn_pause");
             _energyBar = _contentRoot.Q<Energybar>();

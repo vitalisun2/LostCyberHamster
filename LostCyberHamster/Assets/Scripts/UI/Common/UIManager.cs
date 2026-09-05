@@ -24,6 +24,7 @@ namespace LostCyberHamster.UI
         private bool _activeScreenEventsSubscribed;
         private bool _activeModalEventsSubscribed;
         private readonly SemaphoreSlim _transitionGate = new(1, 1);
+        private CancellationTokenSource _screenTransitions = new();
         private readonly Dictionary<ScreenEnum, int>
             _modalTransitionVersions = new();
 
@@ -64,54 +65,72 @@ namespace LostCyberHamster.UI
             bool forceReload,
             bool closeActiveModal)
         {
-            await _transitionGate.WaitAsync();
+            CancellationToken cancellationToken = _screenTransitions.Token;
+            bool gateEntered = false;
+            ScreenController previous = null;
+            PreparedScreen prepared = null;
             try
             {
-                if (closeActiveModal && _currentModal.HasValue)
-                {
-                    CloseModal(_currentModal.Value);
-                }
-
-                if (!forceReload &&
-                    _hasCurrentScreen &&
-                    _activeScreenEventsSubscribed &&
-                    _currentScreen == screen)
-                {
+                // Запрос из завершённого lifecycle не должен оживлять старую panel.
+                await _transitionGate.WaitAsync(cancellationToken);
+                gateEntered = true;
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!forceReload && _hasCurrentScreen &&
+                    _activeScreenEventsSubscribed && _currentScreen == screen)
                     return;
-                }
-
-                if (!_screenControllers.TryGetValue(
-                        screen,
-                        out var screenController))
-                {
+                if (!_screenControllers.TryGetValue(screen, out var controller) ||
+                    controller is not ScreenController next)
                     return;
-                }
 
-                // Освобождаем callbacks и ресурсы прежнего активного экрана.
+                // Старое дерево и его ресурсы остаются видимыми во время подготовки.
                 if (_hasCurrentScreen &&
-                    _activeScreenEventsSubscribed &&
-                    _screenControllers.TryGetValue(
-                        _currentScreen,
-                        out var currentScreenController))
-                {
-                    currentScreenController.UnsubscribeFromEvents();
-                    _activeScreenEventsSubscribed = false;
-                }
+                    _screenControllers.TryGetValue(_currentScreen, out var current))
+                    previous = current as ScreenController;
+                previous?.SetTransitionInputBlocked(true);
+                prepared = await next.PrepareScreenAsync(cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
 
-                // Новый экран сам подпишет свои элементы после загрузки visual tree.
-                await (screenController as ScreenController).LoadScreenAsync();
+                // Переключение выполняется целиком в одном синхронном участке.
+                if (closeActiveModal && _currentModal.HasValue)
+                    CloseModal(_currentModal.Value);
+                if (_activeScreenEventsSubscribed)
+                    previous?.UnsubscribeFromEvents();
+                _activeScreenEventsSubscribed = false;
+                PreparedScreen previousView = previous?.CurrentScreen;
+                try
+                {
+                    next.ShowScreen(prepared);
+                }
+                catch
+                {
+                    // Восстанавливаем bindings прежнего дерева, включая Repaint того же controller.
+                    next.UnsubscribeFromEvents();
+                    prepared.Dispose();
+                    if (previousView != null && !previousView.IsDisposed)
+                    {
+                        previous.ShowScreen(previousView);
+                        _activeScreenEventsSubscribed = true;
+                    }
+                    throw;
+                }
+                prepared = null;
                 _currentScreen = screen;
                 _hasCurrentScreen = true;
                 _activeScreenEventsSubscribed =
                     !_lifecycleStarted || _eventsSubscribed;
                 if (!_activeScreenEventsSubscribed)
-                {
-                    screenController.UnsubscribeFromEvents();
-                }
+                    next.UnsubscribeFromEvents();
+            }
+            catch (OperationCanceledException)
+            {
+                // Отмена подготовки сохраняет прежний экран до закрытия его panel.
             }
             finally
             {
-                _transitionGate.Release();
+                prepared?.Dispose();
+                previous?.SetTransitionInputBlocked(false);
+                if (gateEntered)
+                    _transitionGate.Release();
             }
         }
 
@@ -128,6 +147,12 @@ namespace LostCyberHamster.UI
             if (_eventsSubscribed)
             {
                 return;
+            }
+
+            if (_screenTransitions.IsCancellationRequested)
+            {
+                _screenTransitions.Dispose();
+                _screenTransitions = new CancellationTokenSource();
             }
 
             OnScreenShow += OnScreenShowHandlerAsync;
@@ -161,6 +186,7 @@ namespace LostCyberHamster.UI
 
         public void UnsubscribeFromEvents()
         {
+            _screenTransitions.Cancel();
             if (!_eventsSubscribed)
             {
                 return;

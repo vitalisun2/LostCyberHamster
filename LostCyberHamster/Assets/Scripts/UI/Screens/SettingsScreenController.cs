@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Assets.Scripts.Account;
 using Assets.Scripts.System;
 using Assets.Scripts.Tutorial;
@@ -39,27 +38,17 @@ namespace LostCyberHamster.UI
         private Label _labelPlayerName => _contentRoot.Q<Label>("settings__lbl-player-name");
         private Button _buttonChangePlayerName => _contentRoot.Q<Button>("settings__btn-change-player-name");
         private VisualElement _playerNameEdit =>
-            _background.Q<VisualElement>("settings__player-name-edit");
+            _contentRoot.Q<VisualElement>("settings__player-name-edit");
         private TextField _textFieldPlayerName =>
-            _background.Q<TextField>("settings__txt-player-name");
+            _contentRoot.Q<TextField>("settings__txt-player-name");
         private Button _buttonSavePlayerName =>
-            _background.Q<Button>("settings__btn-save-player-name");
+            _contentRoot.Q<Button>("settings__btn-save-player-name");
         private Button _buttonCancelPlayerName =>
-            _background.Q<Button>("settings__btn-cancel-player-name");
+            _contentRoot.Q<Button>("settings__btn-cancel-player-name");
         private Button _buttonStartTraining => _contentRoot.Q<Button>("settings__btn-start-training");
         private Label _labelPlayerNameError =>
-            _background.Q<Label>("settings__lbl-player-name-error");
+            _contentRoot.Q<Label>("settings__lbl-player-name-error");
         private Button _buttonBack => _contentRoot.Q<Button>("btn_back");
-        private VisualElement _viewport =>
-            _contentRoot.Q<VisualElement>("settings-viewport");
-        private VisualElement _scaleFrame =>
-            _contentRoot.Q<VisualElement>("settings-scale-frame");
-        private VisualElement _design =>
-            _contentRoot.Q<VisualElement>("settings-design");
-        private VisualElement _nameScaleFrame =>
-            _background.Q<VisualElement>("settings-name-scale-frame");
-        private VisualElement _nameDesign =>
-            _background.Q<VisualElement>("settings-name-design");
         private VisualElement _musicCheckbox =>
             _contentRoot.Q<VisualElement>("settings__music-checkbox");
         private VisualElement _soundCheckbox =>
@@ -98,7 +87,20 @@ namespace LostCyberHamster.UI
             UIManager.OnScreenShow?.Invoke(ScreenEnum.SettingsScreen);
         }
 
-        protected override async Task OnLoadAsync()
+        protected override string ScreenBackgroundAddress => BackgroundAddress;
+
+        protected override ScreenLayout CreateLayout(VisualElement content)
+        {
+            return ScreenLayout.Fit(
+                content.Q<VisualElement>("settings-viewport"),
+                content.Q<VisualElement>("settings-scale-frame"),
+                content.Q<VisualElement>("settings-design"),
+                new Vector2(DesignWidth, DesignHeight),
+                content.Q<VisualElement>("settings-name-scale-frame"),
+                content.Q<VisualElement>("settings-name-design"));
+        }
+
+        protected override void BindView()
         {
             _isActive = true;
             _hasAccountLinkConflict = false;
@@ -130,9 +132,6 @@ namespace LostCyberHamster.UI
             ShowPlayerName(_accountService.PlayerName);
             SetPlayerNameEditMode(false);
             SetPlayerNameBusy(false);
-            await ChangeBackgroundAsync(
-                BackgroundAddress,
-                ScaleMode.ScaleAndCrop);
         }
 
         private void SubscribeToAccountState()
@@ -446,10 +445,6 @@ namespace LostCyberHamster.UI
             _toggleMusic?.RegisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.RegisterValueChangedCallback(OnChangeSoundAsync);
             _toggleVibration?.RegisterValueChangedCallback(OnChangeVibrationAsync);
-            _viewport?.RegisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
-            _viewport?.schedule.Execute(
-                () => ApplyResponsiveLayout(_viewport.contentRect.size));
         }
 
         private void OnChangeSoundAsync(ChangeEvent<bool> evt)
@@ -478,37 +473,6 @@ namespace LostCyberHamster.UI
                 isChecked);
         }
 
-        private void OnViewportGeometryChanged(GeometryChangedEvent evt)
-        {
-            ApplyResponsiveLayout(evt.newRect.size);
-        }
-
-        /// <summary>Масштабирует экран и полноэкранный name overlay единым коэффициентом.</summary>
-        private void ApplyResponsiveLayout(Vector2 viewportSize)
-        {
-            float width = Mathf.Max(1f, viewportSize.x);
-            float height = Mathf.Max(1f, viewportSize.y);
-            float scale = Mathf.Min(
-                width / DesignWidth,
-                height / DesignHeight);
-
-            // Основная композиция остаётся внутри safe area.
-            ApplyScale(_scaleFrame, _design, scale);
-
-            // Диалог сохраняет тот же размер, но центрируется на полном экране.
-            ApplyScale(_nameScaleFrame, _nameDesign, scale);
-        }
-
-        private static void ApplyScale(
-            VisualElement scaleFrame,
-            VisualElement design,
-            float scale)
-        {
-            scaleFrame.style.width = DesignWidth * scale;
-            scaleFrame.style.height = DesignHeight * scale;
-            design.style.scale = new Scale(new Vector3(scale, scale, 1f));
-        }
-
         private void SetDropdownPopupStyleScope(bool isEnabled)
         {
             _contentRoot.panel?.visualTree.EnableInClassList(
@@ -533,12 +497,12 @@ namespace LostCyberHamster.UI
         private void RefreshLocalizedText()
         {
             // Обновляем локализованные элементы без перезагрузки экрана и потери введённого имени.
-            _background.Query<LocalizedLabel>().ForEach(label =>
+            _contentRoot.Query<LocalizedLabel>().ForEach(label =>
             {
                 if (!string.IsNullOrEmpty(label.key))
                     label.text = LocalizationManager.GetLocalizedString(label.key);
             });
-            _background.Query<LocalizedButton>().ForEach(button =>
+            _contentRoot.Query<LocalizedButton>().ForEach(button =>
             {
                 if (!string.IsNullOrEmpty(button.key))
                     button.text = LocalizationManager.GetLocalizedString(button.key);
@@ -598,8 +562,6 @@ namespace LostCyberHamster.UI
             _toggleMusic?.UnregisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.UnregisterValueChangedCallback(OnChangeSoundAsync);
             _toggleVibration?.UnregisterValueChangedCallback(OnChangeVibrationAsync);
-            _viewport?.UnregisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
             EndSession();
         }
 

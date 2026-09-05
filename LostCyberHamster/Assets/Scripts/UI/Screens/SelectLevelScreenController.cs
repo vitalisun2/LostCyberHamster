@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Assets.Scripts.System;
 using GameManagement.Progress;
 using UnityEngine;
@@ -31,12 +30,6 @@ namespace LostCyberHamster.UI
             Levels
         }
 
-        private VisualElement Viewport =>
-            _contentRoot.Q<VisualElement>("select-level-viewport");
-        private VisualElement ScaleFrame =>
-            _contentRoot.Q<VisualElement>("select-level-scale-frame");
-        private VisualElement Design =>
-            _contentRoot.Q<VisualElement>("select-level-design");
         private VisualElement DayPartState =>
             _contentRoot.Q<VisualElement>("select-time-state");
         private VisualElement LevelsState =>
@@ -74,12 +67,19 @@ namespace LostCyberHamster.UI
         {
         }
 
-        protected override async Task OnLoadAsync()
-        {
-            await ChangeBackgroundAsync(
-                BackgroundAssetName,
-                ScaleMode.ScaleAndCrop);
+        protected override string ScreenBackgroundAddress => BackgroundAssetName;
 
+        protected override ScreenLayout CreateLayout(VisualElement content)
+        {
+            return ScreenLayout.Fit(
+                content.Q<VisualElement>("select-level-viewport"),
+                content.Q<VisualElement>("select-level-scale-frame"),
+                content.Q<VisualElement>("select-level-design"),
+                new Vector2(DesignWidth, DesignHeight));
+        }
+
+        protected override void BindView()
+        {
             // Восстанавливаем состояние выбора из текущего прогресса.
             InitializeSelectionModel();
             RenderCurrentState();
@@ -92,10 +92,6 @@ namespace LostCyberHamster.UI
                 OnNextLocationClicked);
             PreviousLocationButton?.RegisterCallback<ClickEvent>(
                 OnPreviousLocationClicked);
-            Viewport?.RegisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
-            Viewport?.schedule.Execute(
-                () => ApplyResponsiveLayout(Viewport.contentRect.size));
         }
 
         protected override void OnUnsubscribeFromEvents()
@@ -105,8 +101,6 @@ namespace LostCyberHamster.UI
                 OnNextLocationClicked);
             PreviousLocationButton?.UnregisterCallback<ClickEvent>(
                 OnPreviousLocationClicked);
-            Viewport?.UnregisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
         }
 
         private void InitializeSelectionModel()
@@ -390,24 +384,6 @@ namespace LostCyberHamster.UI
             _state = SelectionState.DayPart;
             _selectedPartView = null;
             RenderCurrentState();
-        }
-
-        private void OnViewportGeometryChanged(GeometryChangedEvent evt)
-        {
-            ApplyResponsiveLayout(evt.newRect.size);
-        }
-
-        private void ApplyResponsiveLayout(Vector2 viewportSize)
-        {
-            float width = Mathf.Max(1f, viewportSize.x);
-            float height = Mathf.Max(1f, viewportSize.y);
-            float scale = Mathf.Min(
-                width / DesignWidth,
-                height / DesignHeight);
-
-            ScaleFrame.style.width = DesignWidth * scale;
-            ScaleFrame.style.height = DesignHeight * scale;
-            Design.style.scale = new Scale(new Vector3(scale, scale, 1f));
         }
 
         private static string ResolveDayPartTitle(

@@ -35,6 +35,8 @@ namespace LostCyberHamster.UI
         private readonly List<Sprite> _generatedPreviewSprites = new();
         private readonly List<Texture2D> _generatedPreviewTextures = new();
         private CancellationTokenSource _abilityIconCancellation;
+        private readonly List<(string Address, VisualElement Icon, bool Grayscale)>
+            _pendingAbilityIcons = new();
 
         private Button EquipmentButton =>
             _contentRoot.Q<Button>("development__btn-equipment");
@@ -62,12 +64,6 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<VisualElement>("development__skin-cards");
         private VisualElement AbilityCards =>
             _contentRoot.Q<VisualElement>("development__ability-cards");
-        private VisualElement Viewport =>
-            _contentRoot.Q<VisualElement>("development__viewport");
-        private VisualElement ScaleFrame =>
-            _contentRoot.Q<VisualElement>("development__scale-frame");
-        private VisualElement Design =>
-            _contentRoot.Q<VisualElement>("development__design");
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.CharacterDevelopmentScreen;
 
@@ -76,18 +72,33 @@ namespace LostCyberHamster.UI
         {
         }
 
-        protected override async Task OnLoadAsync()
+        protected override string ScreenBackgroundAddress => BackgroundAddress;
+
+        protected override ScreenLayout CreateLayout(VisualElement content)
         {
-            await ChangeBackgroundAsync(
-                BackgroundAddress,
-                ScaleMode.ScaleAndCrop);
+            return ScreenLayout.Fit(
+                content.Q<VisualElement>("development__viewport"),
+                content.Q<VisualElement>("development__scale-frame"),
+                content.Q<VisualElement>("development__design"),
+                new Vector2(DesignWidth, DesignHeight));
+        }
+
+        protected override void BindView()
+        {
             UpdatePlayerProgress();
-            await RefreshCardsAsync();
+            BuildCards();
+        }
+
+        protected override Task LoadDataAsync()
+        {
+            CancellationToken cancellationToken = BeginAbilityIconLoading();
+            return Task.WhenAll(_pendingAbilityIcons.Select(icon =>
+                LoadAbilityIconAsync(icon.Address, icon.Icon, icon.Grayscale, cancellationToken)));
         }
 
         protected override void OnSubscribeToEvents()
         {
-            // Подключаем навигацию, карусели и адаптивный design frame.
+            // Подключаем навигацию и карусели.
             EquipmentButton?.RegisterCallback<ClickEvent>(
                 OnEquipmentClicked);
             SkinPreviousButton?.RegisterCallback<ClickEvent>(
@@ -97,10 +108,6 @@ namespace LostCyberHamster.UI
                 OnAbilityPreviousClicked);
             AbilityNextButton?.RegisterCallback<ClickEvent>(
                 OnAbilityNextClicked);
-            Viewport?.RegisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
-            Viewport?.schedule.Execute(
-                () => ApplyResponsiveLayout(Viewport.contentRect.size));
         }
 
         protected override void OnUnsubscribeFromEvents()
@@ -115,10 +122,9 @@ namespace LostCyberHamster.UI
                 OnAbilityPreviousClicked);
             AbilityNextButton?.UnregisterCallback<ClickEvent>(
                 OnAbilityNextClicked);
-            Viewport?.UnregisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
             ReleaseAbilityIcons();
             ReleaseGeneratedPreviewIcons();
+            _pendingAbilityIcons.Clear();
         }
 
         private void UpdatePlayerProgress()
@@ -146,10 +152,17 @@ namespace LostCyberHamster.UI
 
         private async Task RefreshCardsAsync()
         {
+            BuildCards();
+            await LoadDataAsync();
+        }
+
+        private void BuildCards()
+        {
             ReleaseAbilityIcons();
             ReleaseGeneratedPreviewIcons();
             SkinCards.Clear();
             AbilityCards.Clear();
+            _pendingAbilityIcons.Clear();
 
             // Группируем skins по состоянию.
             // Внутри группы сохраняем catalog order.
@@ -178,8 +191,6 @@ namespace LostCyberHamster.UI
 
             // Группируем abilities по состоянию.
             // Внутри группы сохраняем catalog order.
-            CancellationToken cancellationToken = BeginAbilityIconLoading();
-            var iconLoadTasks = new List<Task>();
             int? nextAbilityId = SuperAttackService.Items
                 .FirstOrDefault(
                     ability => !CharacterDevelopmentService
@@ -206,19 +217,16 @@ namespace LostCyberHamster.UI
                     className: "development-card__icon");
                 if (icon != null)
                 {
-                    iconLoadTasks.Add(LoadAbilityIconAsync(
+                    _pendingAbilityIcons.Add((
                         item.Data.IconAddress,
                         icon,
-                        item.State == DevelopmentCardState.Preview,
-                        cancellationToken));
+                        item.State == DevelopmentCardState.Preview));
                 }
             }
             UpdateCarouselNavigation(
                 AbilityPreviousButton,
                 AbilityNextButton,
                 AbilityCards.childCount);
-
-            await Task.WhenAll(iconLoadTasks);
         }
 
         private static void UpdateCarouselNavigation(
@@ -577,24 +585,6 @@ namespace LostCyberHamster.UI
         {
             UpdatePlayerProgress();
             await RefreshCardsAsync();
-        }
-
-        private void OnViewportGeometryChanged(GeometryChangedEvent evt)
-        {
-            ApplyResponsiveLayout(evt.newRect.size);
-        }
-
-        private void ApplyResponsiveLayout(Vector2 viewportSize)
-        {
-            float width = Mathf.Max(1f, viewportSize.x);
-            float height = Mathf.Max(1f, viewportSize.y);
-            float scale = Mathf.Min(
-                width / DesignWidth,
-                height / DesignHeight);
-
-            ScaleFrame.style.width = DesignWidth * scale;
-            ScaleFrame.style.height = DesignHeight * scale;
-            Design.style.scale = new Scale(new Vector3(scale, scale, 1f));
         }
 
         private void OnEquipmentClicked(ClickEvent clickEvent)

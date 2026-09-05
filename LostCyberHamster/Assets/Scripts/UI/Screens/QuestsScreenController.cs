@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine.UIElements;
 using Vues.GameCore;
 using Vues.GameCore.Quests;
@@ -11,8 +10,6 @@ namespace LostCyberHamster.UI
     {
         private VisualElement _questsContainer =>
             _contentRoot.Q<VisualElement>("quests_container");
-        private VisualElement _questsScreen =>
-            _contentRoot.Q<VisualElement>("questsscreen");
         private VisualElement _questsTabs =>
             _contentRoot.Q<VisualElement>("quests-tabs");
         private Button _buttonQuestsPrev =>
@@ -40,11 +37,17 @@ namespace LostCyberHamster.UI
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.QuestsScreen;
 
-        protected override async Task OnLoadAsync()
+        protected override string ScreenBackgroundAddress => "QuestsBackgroundSprite";
+
+        protected override ScreenLayout CreateLayout(VisualElement content)
         {
-            await ChangeBackgroundAsync(
-                "QuestsBackgroundSprite",
-                UnityEngine.ScaleMode.ScaleAndCrop);
+            var screen = content.Q<VisualElement>("questsscreen");
+            return new ScreenLayout(screen, size =>
+                screen.EnableInClassList("quests-screen--compact", size.y < 760f));
+        }
+
+        protected override void BindView()
+        {
             _showDailyTasks = true;
             _currentQuestIndex = 0;
             RenderActivePage();
@@ -107,11 +110,6 @@ namespace LostCyberHamster.UI
                 OnClickPreviousQuestPage);
             _buttonDailyTab?.RegisterCallback<ClickEvent>(OnClickDailyTab);
             _buttonStoryTab?.RegisterCallback<ClickEvent>(OnClickStoryTab);
-            VisualElement questsScreen = _questsScreen;
-            questsScreen?.RegisterCallback<GeometryChangedEvent>(
-                OnQuestsGeometryChanged);
-            questsScreen?.schedule.Execute(() =>
-                ApplyResponsiveLayout(questsScreen.resolvedStyle.height));
         }
 
         private void OnClickDailyTab(ClickEvent evt)
@@ -122,27 +120,6 @@ namespace LostCyberHamster.UI
         private void OnClickStoryTab(ClickEvent evt)
         {
             ShowTab(showDailyTasks: false);
-        }
-
-        private void OnQuestsGeometryChanged(GeometryChangedEvent evt)
-        {
-            ApplyResponsiveLayout(evt.newRect.height);
-        }
-
-        private void ApplyResponsiveLayout(float height)
-        {
-            // Пропускаем layout до первой валидной геометрии panel.
-            if (_questsScreen == null ||
-                float.IsNaN(height) ||
-                height <= 0f)
-            {
-                return;
-            }
-
-            // Для низкого landscape panel включаем компактные размеры.
-            _questsScreen.EnableInClassList(
-                "quests-screen--compact",
-                height < 760f);
         }
 
         private void ShowTab(bool showDailyTasks)
@@ -281,8 +258,6 @@ namespace LostCyberHamster.UI
                 OnClickDailyTab);
             _buttonStoryTab?.UnregisterCallback<ClickEvent>(
                 OnClickStoryTab);
-            _questsScreen?.UnregisterCallback<GeometryChangedEvent>(
-                OnQuestsGeometryChanged);
         }
     }
 }

@@ -77,12 +77,6 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<Label>("leaderboard__current-name");
         private Label _currentScore =>
             _contentRoot.Q<Label>("leaderboard__current-score");
-        private VisualElement _viewport =>
-            _contentRoot.Q<VisualElement>("leaderboard__viewport");
-        private VisualElement _scaleFrame =>
-            _contentRoot.Q<VisualElement>("leaderboard__scale-frame");
-        private VisualElement _design =>
-            _contentRoot.Q<VisualElement>("leaderboard__design");
         private readonly LeaderboardService _leaderboardService;
         private IReadOnlyList<LocationView> _visibleLocations =
             Array.Empty<LocationView>();
@@ -115,16 +109,24 @@ namespace LostCyberHamster.UI
             _initialPartId = partId?.Trim();
         }
 
+        protected override string ScreenBackgroundAddress => "LeagueBackgroundSprite";
+
+        protected override ScreenLayout CreateLayout(VisualElement content)
+        {
+            return ScreenLayout.Fit(
+                content.Q<VisualElement>("leaderboard__viewport"),
+                content.Q<VisualElement>("leaderboard__scale-frame"),
+                content.Q<VisualElement>("leaderboard__design"),
+                new Vector2(DesignWidth, DesignHeight));
+        }
+
         /// <summary>
-        /// Загружает фон и открывает запрошенный либо первый доступный рейтинг.
+        /// Размечает выбранный рейтинг и его состояние загрузки.
         /// </summary>
-        protected override async Task OnLoadAsync()
+        protected override void BindView()
         {
             // Получаем каталог с единым доменным состоянием доступности.
             _requestVersion++;
-            await ChangeBackgroundAsync(
-                "LeagueBackgroundSprite",
-                ScaleMode.ScaleAndCrop);
             var selectionModel = LevelSelectionModel.Create();
             _visibleLocations = selectionModel.Locations.ToList();
 
@@ -150,16 +152,16 @@ namespace LostCyberHamster.UI
                 return;
             }
 
-            await OpenLocationAsync(_visibleLocations[_currentLocationIndex]);
+            PrepareLocation(_visibleLocations[_currentLocationIndex]);
         }
 
         /// <summary>
         /// Открывает локацию и выбирает первую видимую часть дня.
         /// </summary>
-        private async Task OpenLocationAsync(LocationView location)
+        private PartView PrepareLocation(LocationView location)
         {
             if (!IsLocationOpen(location))
-                return;
+                return null;
 
             _requestVersion++;
 
@@ -189,10 +191,26 @@ namespace LostCyberHamster.UI
             {
                 _selectedPart = null;
                 ShowUnavailable();
-                return;
+                return null;
             }
 
-            await LoadResultsAsync(defaultPart);
+            _selectedPart = defaultPart;
+            ShowLoading();
+            return defaultPart;
+        }
+
+        protected override Task LoadDataAsync()
+        {
+            return _selectedPart != null
+                ? LoadResultsAsync(_selectedPart)
+                : Task.CompletedTask;
+        }
+
+        private async Task OpenLocationAsync(LocationView location)
+        {
+            PartView part = PrepareLocation(location);
+            if (part != null)
+                await LoadResultsAsync(part);
         }
 
         private async void OnClickPreviousLocation(ClickEvent evt)
@@ -327,25 +345,6 @@ namespace LostCyberHamster.UI
                 "leaderboard-part--available",
                 isOpen && !isSelected);
             button.EnableInClassList("leaderboard-part--disabled", !isOpen);
-        }
-
-        /// <summary>
-        /// Масштабирует утверждённую композицию целиком внутри доступной landscape-области.
-        /// </summary>
-        private void OnViewportGeometryChanged(GeometryChangedEvent evt)
-        {
-            ApplyResponsiveLayout(evt.newRect.size);
-        }
-
-        private void ApplyResponsiveLayout(Vector2 viewportSize)
-        {
-            var width = Mathf.Max(1f, viewportSize.x);
-            var height = Mathf.Max(1f, viewportSize.y);
-            var scale = Mathf.Min(width / DesignWidth, height / DesignHeight);
-
-            _scaleFrame.style.width = DesignWidth * scale;
-            _scaleFrame.style.height = DesignHeight * scale;
-            _design.style.scale = new Scale(new Vector3(scale, scale, 1f));
         }
 
         private bool IsLocationOpen(LocationView location)
@@ -612,10 +611,6 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
-            _viewport?.RegisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
-            _viewport?.schedule.Execute(
-                () => ApplyResponsiveLayout(_viewport.contentRect.size));
             _buttonPreviousLocation?.RegisterCallback<ClickEvent>(
                 OnClickPreviousLocation);
             _buttonNextLocation?.RegisterCallback<ClickEvent>(
@@ -630,8 +625,6 @@ namespace LostCyberHamster.UI
         protected override void OnUnsubscribeFromEvents()
         {
             _requestVersion++;
-            _viewport?.UnregisterCallback<GeometryChangedEvent>(
-                OnViewportGeometryChanged);
             _buttonPreviousLocation?.UnregisterCallback<ClickEvent>(
                 OnClickPreviousLocation);
             _buttonNextLocation?.UnregisterCallback<ClickEvent>(

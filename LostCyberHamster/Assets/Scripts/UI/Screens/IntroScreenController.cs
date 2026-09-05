@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;
@@ -22,7 +21,7 @@ namespace LostCyberHamster.UI
 
         protected override ScreenEnum _screenAssetName => ScreenEnum.IntroScreen;
 
-        protected override async Task OnLoadAsync()
+        protected override void BindView()
         {
             
         }

@@ -206,6 +206,7 @@
     <Compile Include="Assets\Scripts\System\LevelManagement\PartView.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\LoseModalController.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Extensions\AddressableExtentions.cs" />
+    <Compile Include="Assets\Scripts\UI\Common\ScreenLayout.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverExecutor.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UnspawnOnJumpedOnMechanics.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Story\StoryQuestSetState.cs" />
@@ -493,6 +494,7 @@
     <Compile Include="Assets\Scripts\GameManagement\Persistence\PlayerDataValidationResult.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictCardDto.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\MovingBoundaryDecisionPointDetector.cs" />
+    <Compile Include="Assets\Scripts\UI\Common\PreparedScreen.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\SpriteAnimatorController.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\GameplayInputGate.cs" />
     <Compile Include="Assets\Scripts\Diagnostics\DeviceLogReporter.cs" />
