@@ -1,5 +1,7 @@
 using System;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using UnityEngine;
 
 namespace GameManagement.CloudSave.Models
@@ -48,6 +50,13 @@ namespace GameManagement.CloudSave.Models
 
         /// <summary>Прогресс в момент создания снимка.</summary>
         public string PlayerDataJson => _playerDataJson;
+
+        /// <summary>Сравнивает exact игровой payload независимо от времени транспорта.</summary>
+        public static string ComputePayloadHash(string playerDataJson)
+        {
+            using var sha = SHA256.Create();
+            return Convert.ToBase64String(sha.ComputeHash(Encoding.UTF8.GetBytes(playerDataJson)));
+        }
 
         /// <summary>Время создания снимка.</summary>
         public DateTime SavedAtUtc => DateTime.Parse(

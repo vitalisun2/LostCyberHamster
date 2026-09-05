@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -64,18 +65,25 @@ public static class SkinManager
             return;
         }
 
-        if (!ResourceManager.SpendResource(skin.PriceType, skin.Price))
+        if (!ResourceManager.CanSpendResource(skin.PriceType, skin.Price))
         {
             Debug.LogWarning("Not enough resources to purchase skin.");
             return;
         }
 
-        GameDataManager.PlayerData.PurchasedSkinIds.Add(skinId);
-        GameEventsManager.SkinPurchased(skinId, skin.PriceType, skin.Price);
-        GameEventsManager.PlayerStateChanged(
-            PlayerStateIds.SkinOwned,
-            skinId.ToString(CultureInfo.InvariantCulture));
-        PlayerProgressCommitter.Commit(CheckpointReason.SkinPurchased);
+        // Списание и владение сохраняются до аналитики и обновления заданий.
+        GameDataManager.ExecuteTransaction(CheckpointReason.SkinPurchased, () =>
+        {
+            if (!ResourceManager.SpendResource(skin.PriceType, skin.Price, notify: false))
+                throw new InvalidOperationException("Skin payment is unavailable.");
+            GameDataManager.PlayerData.PurchasedSkinIds.Add(skinId);
+        }, () =>
+        {
+            ResourceManager.NotifyBalancesChangedAfterCommit();
+            GameEventsManager.SkinPurchased(skinId, skin.PriceType, skin.Price);
+            GameEventsManager.PlayerStateChanged(PlayerStateIds.SkinOwned,
+                skinId.ToString(CultureInfo.InvariantCulture));
+        });
     }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -116,12 +124,10 @@ public static class SkinManager
             return;
         }
 
-        GameDataManager.PlayerData.AppliedSkinId = skinId;
-
-        GameEventsManager.PlayerStateChanged(
-            PlayerStateIds.SkinApplied,
-            skinId.ToString(CultureInfo.InvariantCulture));
-        PlayerProgressCommitter.Commit(CheckpointReason.SkinApplied);
+        GameDataManager.ExecuteTransaction(CheckpointReason.SkinApplied,
+            () => GameDataManager.PlayerData.AppliedSkinId = skinId,
+            () => GameEventsManager.PlayerStateChanged(PlayerStateIds.SkinApplied,
+                skinId.ToString(CultureInfo.InvariantCulture)));
     }
 
 

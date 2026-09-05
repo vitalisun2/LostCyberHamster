@@ -1,6 +1,5 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using LoadingTasks;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -38,10 +37,24 @@ namespace Assets.Scripts.Entry_Points
             foreach (var loadingTask in _loadingTasks)
             {
                 var loadingPercentage = (int)(i++ / (float)_loadingTasks.Count * 100);
-                await loadingTask.LoadAsync(bundle);
+                try
+                {
+                    await loadingTask.LoadAsync(bundle);
+                }
+                catch (Exception exception)
+                {
+                    // Локальная ошибка оставляет исходное сохранение для восстановления или обновления игры.
+                    string key = exception is NotSupportedException ? "save_requires_newer_game" : "local_loading_failed";
+                    string message = LocalizationManager.GetLocalizedString(key);
+                    if (string.IsNullOrWhiteSpace(message) || message == key)
+                        message = exception is NotSupportedException
+                            ? "Сохранение создано новой версией игры. Обновите игру."
+                            : "Не удалось загрузить данные. Перезапустите игру, чтобы повторить.";
+                    _progressLabel.text = message;
+                    Debug.LogError($"[Bootstrap] Local task '{loadingTask.Name}' failed ({exception.GetType().Name}).");
+                    return;
+                }
                 SetLoadingProgress(loadingPercentage);
-
-               // await Task.Delay(1000);
             }
         }
 

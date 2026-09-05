@@ -5,7 +5,7 @@ namespace Unity.Services.Authentication.PlayerAccounts
 {
     internal static class BrowserUtils
     {
-        internal static IBrowserUtils CreateBrowserUtils(ICloudProjectId cloudProjectId, UnityPlayerAccountSettings settings, Action<string> onAuthCodeReceived)
+        internal static IBrowserUtils CreateBrowserUtils(ICloudProjectId cloudProjectId, UnityPlayerAccountSettings settings, Action<string, string> onAuthCodeReceived)
         {
 #if UNITY_EDITOR || UNITY_STANDALONE
             var standaloneBrowserUtils = new StandaloneBrowserUtils();

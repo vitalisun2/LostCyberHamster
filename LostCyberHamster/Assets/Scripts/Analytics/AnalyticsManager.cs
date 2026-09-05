@@ -3,12 +3,15 @@ using System.Threading.Tasks;
 using Assets.Scripts.System;
 using Unity.Services.Analytics;
 using UnityEngine;
+using UnityEngine.UnityConsent;
 using Vues.GameCore;
 
 public static class AnalyticsManager
 {
     private static bool _initialized = false;
     private static int _trackingSuppressionCount;
+    private static bool _subscribed;
+    public static bool IsInitialized => _initialized;
 
     public static IDisposable SuppressTracking()
     {
@@ -19,29 +22,37 @@ public static class AnalyticsManager
     /// <summary>
     /// Инициализирует сервис аналитики после готовности Unity Gaming Services.
     /// </summary>
-    public static async Task InitializeAsync()
+    public static Task InitializeAsync()
     {
         if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
-            return;
+            return Task.CompletedTask;
 
         if (_initialized)
         {
 
-            return;
+            return Task.CompletedTask;
         }
 
         try
         {
-            AnalyticsService.Instance.StartDataCollection();
+            // Сохраняем действующий выбор; прежний автоматический старт применяется при первом запуске.
+            var consent = EndUserConsent.GetConsentState();
+            if (consent.AnalyticsIntent == ConsentStatus.Unspecified)
+            {
+                consent.AnalyticsIntent = ConsentStatus.Granted;
+                EndUserConsent.SetConsentState(consent);
+            }
             _initialized = true;
 
 
             SubscribeToEvents();
         }
-        catch (System.Exception e)
+        catch
         {
-            Debug.LogError($"Error initializing Analytics: {e.Message}");
+            _initialized = false;
+            throw;
         }
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -49,6 +60,8 @@ public static class AnalyticsManager
     /// </summary>
     private static void SubscribeToEvents()
     {
+        if (_subscribed) return;
+        _subscribed = true;
         GameEventsManager.OnLevelStarted += TrackLevelStart;
         GameEventsManager.OnLevelCompleted += TrackLevelComplete;
         GameEventsManager.OnSkinPurchased += TrackSkinPurchased;
@@ -59,6 +72,7 @@ public static class AnalyticsManager
     /// </summary>
     private static void UnsubscribeFromEvents()
     {
+        _subscribed = false;
         GameEventsManager.OnLevelStarted -= TrackLevelStart;
         GameEventsManager.OnLevelCompleted -= TrackLevelComplete;
         GameEventsManager.OnSkinPurchased -= TrackSkinPurchased;

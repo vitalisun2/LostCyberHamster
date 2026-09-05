@@ -1,22 +1,18 @@
-using UnityEngine;
+using System;
+using System.Threading.Tasks;
 using UnityEngine.Advertisements;
 
 namespace GameAds
 {
-    public static partial class AdsManager
+    public sealed partial class UnityRewardedAdProvider
     {
-        private class AdsInitializationListener : IUnityAdsInitializationListener
+        private sealed class AdsInitializationListener : IUnityAdsInitializationListener
         {
-            public void OnInitializationComplete()
-            {
-                _isInitialized = true;
-            }
-
-            public void OnInitializationFailed(UnityAdsInitializationError error, string message)
-            {
-                Debug.LogError($"Unity Ads Initialization Failed: {error} - {message}");
-                _isInitialized = false;
-            }
+            private readonly TaskCompletionSource<bool> _completion;
+            public AdsInitializationListener(TaskCompletionSource<bool> completion) => _completion = completion;
+            public void OnInitializationComplete() => _completion.TrySetResult(true);
+            public void OnInitializationFailed(UnityAdsInitializationError error, string message) =>
+                _completion.TrySetException(new InvalidOperationException($"{error}: {message}"));
         }
     }
 }

@@ -6,6 +6,7 @@ using Assets.Scripts.System;
 using GameManagement;
 using GameManagement.Progress;
 using Vues.GameCore.Quests;
+using Assets.Scripts.Online;
 
 namespace Vues.GameCore
 {
@@ -80,6 +81,7 @@ namespace Vues.GameCore
         /// </summary>
         private static IReadOnlyList<Quest> _storyQuests =
             Array.Empty<Quest>();
+        private static double _nextDayCheck;
 
         /// <summary>
         /// Определения квестов в текущих Story-слотах.
@@ -100,29 +102,42 @@ namespace Vues.GameCore
         /// </summary>
         public static void Update()
         {
-            if (!_dailyQuestService.IsInitialized)
+            var now = UnityGameClock.Instance.LocalNow;
+            if (UnityGameClock.Instance.RealtimeSeconds < _nextDayCheck)
+                return;
+            _nextDayCheck = UnityGameClock.Instance.RealtimeSeconds + 1;
+            if (!_dailyQuestService.NeedsUpdate(now))
             {
                 return;
             }
 
-            // Обновляем сохранённый набор после наступления нового дня.
-            List<string> previousIds =
-                _dailyQuestService.State.ActiveQuestIds.ToList();
-            if (!_dailyQuestService.Update(
-                    DateTime.Now,
-                    GameDataManager.PlayerData.QuestStates))
+            // Ротация, сохранённые награды и сюжетные слоты фиксируются вместе.
+            try
             {
-                return;
+                GameDataManager.ExecuteTransaction(CheckpointReason.DailyQuestSetRotated, () =>
+                {
+                    var previousIds = _dailyQuestService.State.ActiveQuestIds.ToList();
+                    _dailyQuestService.Update(now, GameDataManager.PlayerData.QuestStates);
+                    CompleteQuestDayChange(previousIds, publish: false);
+                }, () =>
+                {
+                    GameEventsManager.DailyQuestSetChanged();
+                    GameEventsManager.StoryQuestSetChanged();
+                });
             }
-
-            CompleteQuestDayChange(previousIds);
+            catch (Exception exception)
+            {
+                DebugManager.DiagStability($"[QUEST] Day save failed: {exception.GetType().Name}.");
+                _nextDayCheck = UnityGameClock.Instance.RealtimeSeconds + 15;
+            }
         }
 
         /// <summary>
         /// Применяет и публикует суточную смену активных квестов.
         /// </summary>
         private static void CompleteQuestDayChange(
-            IReadOnlyCollection<string> previousIds)
+            IReadOnlyCollection<string> previousIds,
+            bool publish = true)
         {
             // Обновляем полученные Story-квесты вместе с Daily-набором.
             StoryQuestSetState previousStoryState =
@@ -147,6 +162,7 @@ namespace Vues.GameCore
             // Переподключаем активные квесты и сохраняем оба набора.
             ApplyDailySetChange(previousIds, hadGeneratedSet: true);
             BindActiveQuests(discardAttempt: false);
+            if (!publish) return;
             PlayerProgressCommitter.Commit(
                 CheckpointReason.DailyQuestSetRotated);
 
@@ -176,7 +192,8 @@ namespace Vues.GameCore
                 QuestCatalog.DailyDefinitions,
                 savedState,
                 GameDataManager.PlayerData.QuestStates,
-                localNow);
+                localNow,
+                QuestCatalog.DailyCommonRewardDefinition);
             GameDataManager.PlayerData.DailyQuestSet =
                 _dailyQuestService.State;
 
@@ -475,7 +492,7 @@ namespace Vues.GameCore
             // Восстанавливаем оба набора и связываем их runtime-состояния.
             _storyQuestGenerator = new StoryQuestGenerator(
                 QuestCatalog.StoryGenerationSettings);
-            bool dailySetChanged = InitDailyQuestSet(DateTime.Now);
+            bool dailySetChanged = InitDailyQuestSet(UnityGameClock.Instance.LocalNow);
             bool storySetChanged = InitStoryQuestSet();
             bool questStatesChanged = BindActiveQuests();
 
@@ -545,6 +562,7 @@ namespace Vues.GameCore
                     definition.Id,
                     out bool stateCreated);
                 int previousProgress = quest.CurrentProgress;
+                bool hadInstanceId = !string.IsNullOrWhiteSpace(quest.InstanceId);
                 bool wasCompleted = quest.IsCompleted;
                 bool wasRewardClaimed = quest.IsRewardClaimed;
                 bool hadCountedLevelKeys =
@@ -554,7 +572,7 @@ namespace Vues.GameCore
                 quest.Bind(definition, strategy);
                 bool restoredProgress = RestoreUniqueLevelProgress(quest);
                 restoredProgress |= RestorePlayerStateProgress(quest);
-                stateChanged |= stateCreated ||
+                stateChanged |= stateCreated || !hadInstanceId ||
                                 restoredProgress ||
                                 previousProgress != quest.CurrentProgress ||
                                 wasCompleted != quest.IsCompleted ||
@@ -717,8 +735,23 @@ namespace Vues.GameCore
                 return;
             }
 
+            // Откат записи только переподключает сохранённые объекты, без повторной записи.
+            if (GameDataManager.IsRestoringAfterFailure)
+            {
+                var state = GameDataManager.PlayerData.DailyQuestSet;
+                var savedDate = DateTime.TryParse(state?.GenerationDate, out var date)
+                    ? date : UnityGameClock.Instance.LocalNow;
+                _dailyQuestService.Init(QuestCatalog.DailyDefinitions, state,
+                    GameDataManager.PlayerData.QuestStates, savedDate, QuestCatalog.DailyCommonRewardDefinition);
+                InitStoryQuestSet();
+                BindActiveQuests(discardAttempt: false);
+                GameEventsManager.DailyQuestSetChanged();
+                GameEventsManager.StoryQuestSetChanged();
+                return;
+            }
+
             // Пересобираем оба набора поверх нового состояния игрока.
-            bool dailySetChanged = InitDailyQuestSet(DateTime.Now);
+            bool dailySetChanged = InitDailyQuestSet(UnityGameClock.Instance.LocalNow);
             bool storySetChanged = InitStoryQuestSet();
             bool questStatesChanged = BindActiveQuests();
 
@@ -990,18 +1023,21 @@ namespace Vues.GameCore
         /// Тип общей награды активного Daily-набора.
         /// </summary>
         public static ResourceType DailyCommonRewardType =>
+            _dailyQuestService.State?.PendingCommonRewards?.FirstOrDefault()?.RewardType ??
             QuestCatalog.DailyCommonRewardDefinition?.RewardType ?? default;
 
         /// <summary>
         /// Размер общей награды активного Daily-набора.
         /// </summary>
         public static int DailyCommonRewardAmount =>
+            _dailyQuestService.State?.PendingCommonRewards?.FirstOrDefault()?.RewardAmount ??
             QuestCatalog.DailyCommonRewardDefinition?.RewardAmount ?? 0;
 
         /// <summary>
         /// Признак готовности общей награды Daily-набора к получению.
         /// </summary>
         public static bool CanClaimDailyCommonReward =>
+            (_dailyQuestService.State?.PendingCommonRewards?.Count ?? 0) > 0 ||
             _dailyQuestService.CanClaimCommonReward(_dailyQuests);
 
         /// <summary>
@@ -1009,36 +1045,29 @@ namespace Vues.GameCore
         /// </summary>
         public static bool ClaimDailyCommonReward()
         {
-            // Проверяем конфигурацию и готовность активного набора.
-            DailyCommonRewardDefinition definition =
-                QuestCatalog.DailyCommonRewardDefinition;
-            if (definition == null)
+            if (!CanClaimDailyCommonReward) return false;
+            var resourceType = DailyCommonRewardType;
+            int amount = DailyCommonRewardAmount;
+            try
             {
+                GameDataManager.ExecuteTransaction(CheckpointReason.DailyQuestCommonRewardClaimed, () =>
+                {
+                    if (!ResourceManager.AddResource(resourceType, amount, notify: false))
+                        throw new InvalidOperationException("Daily reward cannot be applied.");
+                    _dailyQuestService.MarkCommonRewardClaimed();
+                }, () =>
+                {
+                    ResourceManager.NotifyBalancesChangedAfterCommit();
+                    NotifyEarnedResource(resourceType, amount);
+                    GameEventsManager.DailyQuestSetChanged();
+                });
+                return true;
+            }
+            catch (Exception exception)
+            {
+                DebugManager.DiagStability($"[QUEST] Common reward save failed: {exception.GetType().Name}.");
                 return false;
             }
-
-            if (!_dailyQuestService.CanClaimCommonReward(_dailyQuests))
-            {
-                return false;
-            }
-
-            // Добавляем ресурс и фиксируем одноразовость награды.
-            if (!ResourceManager.AddResource(
-                    definition.RewardType,
-                    definition.RewardAmount))
-            {
-                return false;
-            }
-
-            _dailyQuestService.MarkCommonRewardClaimed();
-
-            // Сохраняем состояние перед уведомлением UI и экономики.
-            PlayerProgressCommitter.Commit(
-                CheckpointReason.DailyQuestCommonRewardClaimed);
-            NotifyEarnedResource(
-                definition.RewardType,
-                definition.RewardAmount);
-            return true;
         }
 
         /// <summary>
@@ -1054,39 +1083,36 @@ namespace Vues.GameCore
                 return false;
             }
 
-            bool rewardAdded = ResourceManager.AddResource(
-                quest.RewardType,
-                quest.RewardAmount);
-            if (!rewardAdded)
+            bool levelChanged = false;
+            try
             {
+                // Награда, XP и отметка экземпляра сохраняются до UI-событий.
+                GameDataManager.ExecuteTransaction(CheckpointReason.QuestRewardClaimed, () =>
+                {
+                    if (!ResourceManager.AddResource(quest.RewardType, quest.RewardAmount, notify: false))
+                        throw new InvalidOperationException("Quest reward cannot be applied.");
+                    quest.MarkRewardClaimed();
+                    if (quest.Category == QuestCategory.Daily)
+                        levelChanged = _playerExperienceService.GrantExperienceForClaimedDailyQuest(
+                            GameDataManager.PlayerData, notify: false);
+                    else if (quest.Category == QuestCategory.Story)
+                        levelChanged = _playerExperienceService.GrantExperienceForClaimedStorylineQuest(
+                            GameDataManager.PlayerData, notify: false);
+                }, () =>
+                {
+                    ResourceManager.NotifyBalancesChangedAfterCommit();
+                    PlayerExperienceService.PublishCommittedLevelChange(levelChanged);
+                    NotifyEarnedResource(quest.RewardType, quest.RewardAmount);
+                    GameEventsManager.QuestRewardReceived(questId);
+                    GameEventsManager.QuestStateChanged(questId);
+                });
+                return true;
+            }
+            catch (Exception exception)
+            {
+                DebugManager.DiagStability($"[QUEST] Reward save failed: {exception.GetType().Name}.");
                 return false;
             }
-
-            // Фиксируем награду и опыт выбранной категории.
-            quest.MarkRewardClaimed();
-            if (quest.Category == QuestCategory.Daily)
-            {
-                _playerExperienceService.GrantExperienceForClaimedDailyQuest(
-                    GameDataManager.PlayerData);
-            }
-            else if (quest.Category == QuestCategory.Story)
-            {
-                _playerExperienceService
-                    .GrantExperienceForClaimedStorylineQuest(
-                        GameDataManager.PlayerData);
-            }
-
-            // Сохраняем результат перед уведомлением UI и экономики.
-            PlayerProgressCommitter.Commit(
-                CheckpointReason.QuestRewardClaimed);
-
-            NotifyEarnedResource(
-                quest.RewardType,
-                quest.RewardAmount);
-            GameEventsManager.QuestRewardReceived(questId);
-            GameEventsManager.QuestStateChanged(questId);
-
-            return true;
         }
 
         /// <summary>

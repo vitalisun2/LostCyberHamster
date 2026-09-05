@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using LoadingTasks;
-using Unity.Services.Core;
-using Unity.Services.Core.Environments;
-using UnityEngine;
+using Assets.Scripts.Online;
 
 namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
 {
@@ -14,19 +12,12 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
         public List<ILoadingTask> Children { get; } = new();
 
         /// <summary>
-        /// Инициализирует Unity Gaming Services в development для Editor и Development Build,
-        /// в production — для release build.
+        /// Регистрирует фоновую инициализацию UGS с восстановлением после ошибки.
         /// </summary>
-        public async Task LoadAsync(Dictionary<string, object> bundle)
+        public Task LoadAsync(Dictionary<string, object> bundle)
         {
-            // Выбирает окружение по типу запуска приложения.
-            string environmentName = Application.isEditor || Debug.isDebugBuild
-                ? "development"
-                : "production";
-
-            // Инициализирует UGS в выбранном окружении.
-            var options = new InitializationOptions().SetEnvironmentName(environmentName);
-            await UnityServices.InitializeAsync(options);
+            OnlineServicesCoordinator.StartUnityServices();
+            return Task.CompletedTask;
         }
     }
 }

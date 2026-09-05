@@ -5,6 +5,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
         Pending,
         Submitted,
         NotRequired,
-        Failed
+        Failed,
+        LocalOnly,
+        Expired,
+        Unconfirmed
     }
 }

@@ -1,23 +1,30 @@
-using UnityEngine;
+using System;
 using UnityEngine.Advertisements;
 
 namespace GameAds
 {
-    public static partial class AdsManager
+    public sealed partial class UnityRewardedAdProvider
     {
-        // Listener classes for handling ad events
-        private class AdLoadListener : IUnityAdsLoadListener
+        private sealed class AdLoadListener : IUnityAdsLoadListener
         {
+            private readonly string _placement;
+            private readonly Action _loaded;
+            private readonly Action<string> _failed;
+            public AdLoadListener(string placement, Action loaded, Action<string> failed)
+            {
+                _placement = placement;
+                _loaded = loaded;
+                _failed = failed;
+            }
             public void OnUnityAdsAdLoaded(string adUnitId)
             {
-                AdLoaded();
+                if (adUnitId == _placement)
+                    _loaded();
             }
-
             public void OnUnityAdsFailedToLoad(string adUnitId, UnityAdsLoadError error, string message)
             {
-                string errorMessage = $"Error loading Ad Unit {adUnitId}: {error} - {message}";
-                Debug.LogError(errorMessage);
-                AdError(errorMessage);
+                if (adUnitId == _placement)
+                    _failed($"{error}: {message}");
             }
         }
     }

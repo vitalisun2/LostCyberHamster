@@ -18,6 +18,7 @@ namespace Vues.GameCore.Quests
             Array.Empty<QuestDefinition>();
         private bool _hasValidActiveSet;
         private DateTime _nextGenerationTime;
+        private DailyCommonRewardDefinition _commonReward;
         private HashSet<string> _retainedQuestIds =
             new(StringComparer.Ordinal);
 
@@ -30,6 +31,10 @@ namespace Vues.GameCore.Quests
         /// Признак готовности сервиса к проверке нового дня.
         /// </summary>
         public bool IsInitialized { get; private set; }
+
+        /// <summary>Проверяет смену дня до начала транзакции сохранения.</summary>
+        public bool NeedsUpdate(DateTime localNow) => IsInitialized &&
+            (!_hasValidActiveSet || _scheduler.ShouldGenerate(State, localNow));
 
         /// <summary>
         /// Проверяет, должен ли квест сохранить прогресс после обновления набора.
@@ -76,6 +81,11 @@ namespace Vues.GameCore.Quests
         /// </summary>
         internal void MarkCommonRewardClaimed()
         {
+            if (State.PendingCommonRewards.Count > 0)
+            {
+                State.PendingCommonRewards.RemoveAt(0);
+                return;
+            }
             State.CommonRewardClaimed = true;
         }
 
@@ -96,11 +106,13 @@ namespace Vues.GameCore.Quests
             IReadOnlyList<QuestDefinition> dailyPool,
             DailyQuestSetState savedState,
             IReadOnlyCollection<Quest> questStates,
-            DateTime localNow)
+            DateTime localNow,
+            DailyCommonRewardDefinition commonReward = null)
         {
             // Подключаем каталог и нормализуем сохранённые данные.
             _dailyPool = dailyPool ??
                 throw new ArgumentNullException(nameof(dailyPool));
+            _commonReward = commonReward;
             State = savedState ?? new DailyQuestSetState();
             NormalizeState();
             _hasValidActiveSet = HasValidActiveSet();
@@ -125,7 +137,7 @@ namespace Vues.GameCore.Quests
             }
 
             // До ближайшей полуночи набор остаётся неизменным.
-            if (localNow < _nextGenerationTime &&
+            if (!_scheduler.ShouldGenerate(State, localNow) &&
                 _hasValidActiveSet)
             {
                 return false;
@@ -164,6 +176,20 @@ namespace Vues.GameCore.Quests
                 return false;
             }
 
+            // Доступная награда прежнего набора переживает ротацию и сохраняет прежний размер.
+            var previousQuests = (questStates ?? Array.Empty<Quest>())
+                .Where(quest => quest != null && State.ActiveQuestIds.Contains(quest.QuestId)).ToList();
+            if (_hasValidActiveSet && _commonReward != null && CanClaimCommonReward(previousQuests) &&
+                !State.PendingCommonRewards.Any(reward => reward.SetId == State.SetId))
+            {
+                State.PendingCommonRewards.Add(new PendingDailyCommonReward
+                {
+                    SetId = State.SetId,
+                    RewardType = _commonReward.RewardType,
+                    RewardAmount = _commonReward.RewardAmount
+                });
+            }
+
             // Защищаем завершённые квесты с незабранной наградой.
             var activeIds = new HashSet<string>(
                 State.ActiveQuestIds,
@@ -192,9 +218,12 @@ namespace Vues.GameCore.Quests
             State.LastGeneratedQuestIds = generatedSet.ToList();
             State.GenerationDate =
                 _scheduler.GetGenerationDate(localNow);
+            if (!State.UsedGenerationDates.Contains(State.GenerationDate))
+                State.UsedGenerationDates.Add(State.GenerationDate);
             if (newQuestIds.Count > 0)
             {
                 State.CommonRewardClaimed = false;
+                State.SetId = Guid.NewGuid().ToString("N");
             }
 
             _hasValidActiveSet = true;
@@ -223,6 +252,14 @@ namespace Vues.GameCore.Quests
             State.GenerationDate ??= string.Empty;
             State.ActiveQuestIds ??= new List<string>();
             State.LastGeneratedQuestIds ??= new List<string>();
+            State.UsedGenerationDates ??= new List<string>();
+            State.PendingCommonRewards ??= new List<PendingDailyCommonReward>();
+            if (string.IsNullOrWhiteSpace(State.SetId)) State.SetId = Guid.NewGuid().ToString("N");
+            if (!string.IsNullOrWhiteSpace(State.GenerationDate) &&
+                !State.UsedGenerationDates.Contains(State.GenerationDate))
+                State.UsedGenerationDates.Add(State.GenerationDate);
+            State.PendingCommonRewards.RemoveAll(reward => reward == null ||
+                string.IsNullOrWhiteSpace(reward.SetId) || reward.RewardAmount <= 0);
         }
     }
 }

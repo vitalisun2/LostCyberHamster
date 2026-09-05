@@ -12,8 +12,9 @@ namespace GameManagement.CloudSave.Models
         {
             LocalSnapshot = localSnapshot
                 ?? throw new ArgumentNullException(nameof(localSnapshot));
-            CloudSave = cloudSave
-                ?? throw new ArgumentNullException(nameof(cloudSave));
+            CloudSave = cloudSave;
+            LocalRevision = GameDataManager.LocalRevision;
+            ProfileGeneration = GameDataManager.Generation;
         }
 
         /// <summary>Локальный прогресс.</summary>
@@ -21,5 +22,8 @@ namespace GameManagement.CloudSave.Models
 
         /// <summary>Облачный прогресс.</summary>
         public CloudSaveReadResult CloudSave { get; }
+        public long LocalRevision { get; }
+        public long ProfileGeneration { get; }
+        public string CloudRevision => CloudSave?.Version.ServerRevision ?? "missing";
     }
 }

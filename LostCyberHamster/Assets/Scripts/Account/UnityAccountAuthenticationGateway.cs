@@ -2,26 +2,46 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using Unity.Services.Authentication;
+using Unity.Services.Core;
 
 namespace Assets.Scripts.Account
 {
     /// <summary>
     /// Делегирует авторизацию и управление связью аккаунта в Unity Authentication SDK.
     /// </summary>
-    public sealed class UnityAccountAuthenticationGateway : IAccountAuthenticationGateway
+    public sealed class UnityAccountAuthenticationGateway : IAccountAuthenticationGateway, IAccountSessionStatus, IAccountProfileGateway
     {
         public bool SessionTokenExists => AuthenticationService.Instance.SessionTokenExists;
 
         public bool IsUnityPlayerAccountLinked => AuthenticationService.Instance.PlayerInfo?.GetUnityId() != null;
 
-        public bool IsSignedIn => AuthenticationService.Instance.IsSignedIn;
+        public bool IsSignedIn => UnityServices.State == ServicesInitializationState.Initialized && AuthenticationService.Instance.IsSignedIn;
+
+        public bool IsAuthorized => UnityServices.State == ServicesInitializationState.Initialized && AuthenticationService.Instance.IsAuthorized;
+
+        public event Action SessionExpired
+        {
+            add => AuthenticationService.Instance.Expired += value;
+            remove => AuthenticationService.Instance.Expired -= value;
+        }
 
         public string PlayerId => AuthenticationService.Instance.PlayerId;
+        public string Profile => AuthenticationService.Instance.Profile;
+
+        /// <summary>Выбирает изолированные credentials через публичный API Unity Authentication.</summary>
+        public void SwitchProfile(string profile)
+        {
+            var service = AuthenticationService.Instance;
+            if (service.Profile == profile) return;
+            service.SignOut(clearCredentials: false);
+            service.SwitchProfile(profile);
+        }
 
         /// <summary>
         /// Возвращает полное публичное имя текущего игрока.
         /// </summary>
-        public string PlayerName => AuthenticationService.Instance.PlayerName;
+        public string PlayerName => UnityServices.State == ServicesInitializationState.Initialized
+            ? AuthenticationService.Instance.PlayerName : null;
 
         public async Task SignInAnonymouslyAsync(bool createAccount)
         {

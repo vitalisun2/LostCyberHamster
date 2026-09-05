@@ -2,6 +2,8 @@ using Assets.Scripts.Account;
 using GameManagement.CloudSave;
 using GameManagement.CloudSave.Gateway;
 using GameManagement.CloudSave.Version;
+using GameManagement.Leaderboard;
+using LostCyberHamster.UI;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Assets.Scripts.DevTools;
 #endif
@@ -26,7 +28,7 @@ namespace Assets.Scripts.Installers
             Container.Bind<IUnityPlayerAccountGateway>()
                 .To<UnityPlayerAccountGateway>()
                 .AsSingle();
-            Container.Bind<AccountService>().AsSingle();
+            Container.BindInterfacesAndSelfTo<AccountService>().AsSingle();
             Container.Bind<ExistingAccountRestoreCoordinator>().AsSingle();
 
             // Подключаем облачную синхронизацию.
@@ -38,7 +40,10 @@ namespace Assets.Scripts.Installers
                 .AsSingle();
             Container.Bind<SnapshotService>().AsSingle();
             Container.Bind<ConflictService>().AsSingle();
-            Container.Bind<CloudSyncService>().AsSingle().NonLazy();
+            Container.BindInterfacesAndSelfTo<CloudSyncService>().AsSingle().NonLazy();
+            Container.BindInterfacesAndSelfTo<WeeklyLeaderboardCoordinator>().AsSingle().NonLazy();
+            Container.Bind<LocalSaveFeedback>().FromNewComponentOnNewGameObject()
+                .WithGameObjectName("[LocalSaveFeedback]").AsSingle().NonLazy();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             // Добавляем меню тестовых инструментов только в редакторе и development-сборках.
             Container.Bind<DevToolsMenuOverlay>()

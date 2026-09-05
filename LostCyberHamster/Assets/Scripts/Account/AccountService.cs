@@ -1,6 +1,8 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using UnityEngine;
+using Assets.Scripts.Online;
+using GameManagement;
 
 namespace Assets.Scripts.Account
 {
@@ -8,7 +10,7 @@ namespace Assets.Scripts.Account
     /// <summary>
     /// Управляет определением, привязкой, переключением и тестовым сбросом аккаунта игрока.
     /// </summary>
-    public sealed class AccountService
+    public sealed class AccountService : IDisposable
     {
         /// <summary>
         /// Шлюз аутентификации игрока в Unity Gaming Services.
@@ -24,6 +26,20 @@ namespace Assets.Scripts.Account
         /// Версия текущей операции определения или изменения аккаунта.
         /// </summary>
         private int _resolutionVersion;
+        private IDisposable _retryRegistration;
+        private Task _resolutionTask;
+        private bool _watchingExpiration;
+        private string _knownPlayerId;
+        private AccountTransitionScope _transition;
+
+        private bool IsAuthorized => (_authenticationGateway as IAccountSessionStatus)?.IsAuthorized
+            ?? _authenticationGateway.IsSignedIn;
+
+        /// <summary>Сохраняет известную связь владельца локального прогресса после expiry и перезапуска.</summary>
+        public bool HasKnownLinkedIdentity => GameDataManager.IsLoaded &&
+            !string.IsNullOrWhiteSpace(GameDataManager.OwnerPlayerId) &&
+            (!string.IsNullOrWhiteSpace(GameDataManager.BaseCloudRevision) ||
+                AccountProfileStore.IsKnownLinkedPlayer(GameDataManager.OwnerPlayerId));
 
         /// <summary>
         /// Текущее состояние аккаунта игрока.
@@ -72,6 +88,18 @@ namespace Assets.Scripts.Account
             return true;
         }
 
+        /// <summary>Возвращает владельца действующей гостевой или связанной сессии.</summary>
+        public bool TryGetAuthenticatedPlayerId(out string playerId)
+        {
+            playerId = null;
+            if ((State != AccountState.Guest && State != AccountState.Linked) || !IsAuthorized)
+                return false;
+            var current = _authenticationGateway.PlayerId;
+            if (string.IsNullOrWhiteSpace(current)) return false;
+            playerId = current;
+            return true;
+        }
+
         /// <summary>
         /// Проверяет владельца связанной или принимаемой account-сессии.
         /// </summary>
@@ -79,9 +107,10 @@ namespace Assets.Scripts.Account
             string playerId,
             bool allowSigningIn)
         {
-            var stateMatches = State == AccountState.Linked ||
+            var stateMatches = State == AccountState.Linked || State == AccountState.Guest ||
                                allowSigningIn && State == AccountState.SigningIn;
-            return stateMatches && IsLinkedPlayerSession(playerId);
+            return stateMatches && IsAuthorized && !string.IsNullOrWhiteSpace(playerId) &&
+                   string.Equals(_authenticationGateway.PlayerId, playerId, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -98,8 +127,9 @@ namespace Assets.Scripts.Account
         public async Task<AccountLinkResult> LinkCurrentGuestAsync()
         {
             // Привязка доступна только для подтверждённой гостевой сессии.
-            if (State != AccountState.Guest)
+            if (State != AccountState.Guest || GameDataManager.IsProfileReplacementBlocked)
                 return AccountLinkResult.Failed;
+            using var transition = _transition = new AccountTransitionScope();
 
             // Фиксируем гостя и помечаем операцию как текущую.
             var playerId = _authenticationGateway.PlayerId;
@@ -112,6 +142,11 @@ namespace Assets.Scripts.Account
                 var accessToken = await _playerAccountGateway.SignInAsync();
                 if (resolutionVersion != _resolutionVersion)
                     return AccountLinkResult.Failed;
+                if (GameDataManager.IsProfileReplacementBlocked)
+                {
+                    SetState(AccountState.Guest);
+                    return AccountLinkResult.Failed;
+                }
 
                 var result = await _authenticationGateway.LinkWithUnityAsync(accessToken);
                 if (resolutionVersion != _resolutionVersion)
@@ -142,6 +177,11 @@ namespace Assets.Scripts.Account
 
                 // Публикуем подтверждённую привязку гостя.
                 SetState(AccountState.Linked);
+                try { ConfirmCurrentProfile(playerId); }
+                catch (Exception exception)
+                {
+                    DebugManager.DiagStability($"[ACCOUNT] Linked profile persistence deferred: {exception.GetType().Name}.");
+                }
                 NotifyCurrentGuestLinked(playerId);
                 return AccountLinkResult.Linked;
             }
@@ -162,8 +202,9 @@ namespace Assets.Scripts.Account
             Func<string, Task<bool>> acceptSignedInAccountAsync)
         {
             // Переключение доступно только из подтверждённой гостевой сессии.
-            if (State != AccountState.Guest)
+            if (State != AccountState.Guest || GameDataManager.IsProfileReplacementBlocked)
                 return false;
+            using var transition = _transition = new AccountTransitionScope();
 
             if (acceptSignedInAccountAsync == null)
                 throw new ArgumentNullException(nameof(acceptSignedInAccountAsync));
@@ -178,6 +219,9 @@ namespace Assets.Scripts.Account
 
             var resolutionVersion = ++_resolutionVersion;
             SetState(AccountState.SigningIn);
+            var profiles = _authenticationGateway as IAccountProfileGateway;
+            AccountProfileSwitch profileSwitch = null;
+            bool accepted = false;
 
             try
             {
@@ -187,8 +231,18 @@ namespace Assets.Scripts.Account
                 if (string.IsNullOrWhiteSpace(accessToken))
                     throw new InvalidOperationException("Unity Player Account access token is unavailable.");
 
-                // Сохраняем анонимный токен, чтобы при ошибке восстановить исходного гостя.
+                if (GameDataManager.IsProfileReplacementBlocked)
+                {
+                    SetState(AccountState.Guest);
+                    return false;
+                }
+
+                // Отдельный SDK profile сохраняет credentials исходного гостя при входе кандидата.
+                if (profiles != null)
+                    profileSwitch = AccountProfileStore.BeginSwitch(originalPlayerId, profiles.Profile);
                 _authenticationGateway.SignOutPreservingCredentials();
+                if (profileSwitch != null)
+                    profiles.SwitchProfile(profileSwitch.CandidateProfile);
                 EnsureCurrentOperation(resolutionVersion);
 
                 // Входим в связанный аккаунт и проверяем смену identity.
@@ -202,8 +256,11 @@ namespace Assets.Scripts.Account
                     throw new InvalidOperationException("Existing linked account verification failed.");
                 }
 
-                // Перед commit передаём найденный аккаунт вызывающему сценарию.
-                if (!await acceptSignedInAccountAsync(signedInPlayerId))
+                // Mapping кандидата должен попасть в envelope до принятия его облачного прогресса.
+                if (profileSwitch != null)
+                    AccountProfileStore.RecordCandidate(profileSwitch, signedInPlayerId);
+                accepted = await acceptSignedInAccountAsync(signedInPlayerId);
+                if (!accepted)
                     throw new InvalidOperationException("Existing linked account was not accepted.");
                 EnsureCurrentOperation(resolutionVersion);
                 if (!IsLinkedPlayerSession(signedInPlayerId))
@@ -211,19 +268,40 @@ namespace Assets.Scripts.Account
             }
             catch (Exception exception)
             {
+                // Durable cloud apply уже выбрал нового владельца: сбой финального ACK не откатывает его.
+                if (profileSwitch != null &&
+                    !string.IsNullOrWhiteSpace(profileSwitch.CandidatePlayerId) &&
+                    GameDataManager.OwnerPlayerId == profileSwitch.CandidatePlayerId)
+                {
+                    bool sessionMatches = IsLinkedPlayerSession(profileSwitch.CandidatePlayerId);
+                    if (resolutionVersion == _resolutionVersion)
+                        SetState(sessionMatches ? AccountState.Linked : AccountState.Error);
+                    return sessionMatches;
+                }
+                if (accepted)
+                {
+                    if (resolutionVersion == _resolutionVersion)
+                        SetState(AccountState.Error);
+                    return false;
+                }
                 // При любой ошибке пытаемся вернуть исходную гостевую сессию.
                 var restored = await TryRestoreOriginalGuestAsync(
                     originalPlayerId,
-                    resolutionVersion);
+                    resolutionVersion,
+                    profileSwitch?.OriginalProfile);
                 if (resolutionVersion != _resolutionVersion)
                     return false;
 
                 SetState(restored ? AccountState.Guest : AccountState.Error);
+                if (restored && profileSwitch != null)
+                    TryCompleteProfileSwitch(originalPlayerId);
                 Debug.LogError($"[Account] Existing account sign-in failed. Original guest restored: {restored}. Error type: {exception.GetType().Name}.");
                 return false;
             }
 
             // Успешный restore — финальная commit-точка: state notification не откатывает identity.
+            if (profileSwitch != null)
+                TryCompleteProfileSwitch(profileSwitch.CandidatePlayerId);
             SetState(AccountState.Linked);
             Debug.Log("[Account] Existing linked account signed in.");
             return true;
@@ -234,17 +312,98 @@ namespace Assets.Scripts.Account
         /// </summary>
         public void Start()
         {
-            // Не запускаем определение аккаунта повторно.
-            if (State != AccountState.NotStarted)
-                return;
+            // Подключаем восстановление после локальной загрузки и готовности SDK.
+            _retryRegistration ??= OnlineServicesCoordinator.Register("account", EnsureSessionAsync,
+                () => OnlineServicesCoordinator.UnityServicesReady && GameDataManager.IsLoaded);
+            OnlineServicesCoordinator.RequestRetry("account");
+        }
 
-            // Публикуем начало определения аккаунта.
+        /// <summary>Восстанавливает ту же сетевую сессию, объединяя одновременные попытки.</summary>
+        public Task EnsureSessionAsync()
+        {
+            if (_resolutionTask != null && !_resolutionTask.IsCompleted) return _resolutionTask;
+            if (State == AccountState.Linking || State == AccountState.SigningIn) return Task.CompletedTask;
+            PrepareDurableProfile();
+            _knownPlayerId ??= GameDataManager.OwnerPlayerId;
+
+            // Expired требует нового входа с сохранёнными credentials, а не нового гостя.
+            if (!_watchingExpiration && _authenticationGateway is IAccountSessionStatus session)
+            {
+                session.SessionExpired += OnSessionExpired;
+                _watchingExpiration = true;
+            }
+            if (TryGetAuthenticatedPlayerId(out var playerId))
+            {
+                if (!string.IsNullOrWhiteSpace(_knownPlayerId) && _knownPlayerId != playerId)
+                    throw new InvalidOperationException("Authorized session belongs to another player.");
+                GameDataManager.TryBindAuthenticatedOwner(playerId);
+                ConfirmCurrentProfile(playerId);
+                return Task.CompletedTask;
+            }
             SetState(AccountState.Resolving);
-            Debug.Log("[Account] State: Resolving");
+            _resolutionTask = ResolveGuestAsync(++_resolutionVersion);
+            return _resolutionTask;
+        }
 
-            // Запускаем незавершённую пока логику гостя без ожидания.
-            var resolutionVersion = ++_resolutionVersion;
-            _ = ResolveGuestAsync(resolutionVersion);
+        private void OnSessionExpired()
+        {
+            if (State == AccountState.Linking || State == AccountState.SigningIn) return;
+            SetState(AccountState.Error);
+            OnlineServicesCoordinator.RequestRetry("account");
+        }
+
+        /// <summary>Выбирает credentials durable владельца до первого auth-запроса после запуска.</summary>
+        private void PrepareDurableProfile()
+        {
+            if (!GameDataManager.IsLoaded || !(_authenticationGateway is IAccountProfileGateway profiles))
+                return;
+            var journal = AccountProfileStore.Read();
+            string expectedPlayer = GameDataManager.OwnerPlayerId ??
+                journal.Pending?.OriginalPlayerId ?? journal.LastConfirmedPlayerId;
+            string profile = AccountProfileStore.ProfileFor(journal, expectedPlayer);
+
+            // Старый default допускается только до проверки identity; неподтверждённый mapping не создаём.
+            if (!string.IsNullOrWhiteSpace(expectedPlayer))
+                _knownPlayerId = expectedPlayer;
+            if (string.IsNullOrWhiteSpace(profile) || profiles.Profile == profile)
+                return;
+            if (GameDataManager.IsProfileReplacementBlocked || AccountTransitionScope.IsActive)
+                throw new InvalidOperationException("Authentication profile change is temporarily blocked.");
+            profiles.SwitchProfile(profile);
+        }
+
+        private void ConfirmCurrentProfile(string playerId)
+        {
+            if (!GameDataManager.IsLoaded || !(_authenticationGateway is IAccountProfileGateway profiles))
+                return;
+            AccountProfileStore.RecordVerifiedPlayer(playerId, profiles.Profile, confirm: true,
+                isLinked: _authenticationGateway.IsUnityPlayerAccountLinked);
+            if (AccountProfileStore.Read().Pending != null)
+                AccountProfileStore.CompleteSwitch(playerId);
+        }
+
+        private static void TryCompleteProfileSwitch(string playerId)
+        {
+            try { AccountProfileStore.CompleteSwitch(playerId); }
+            catch (Exception exception)
+            {
+                // Mapping уже durable; после перезапуска победит владелец принятого PlayerData.
+                DebugManager.DiagStability(
+                    $"[ACCOUNT] Profile acknowledgement deferred: {exception.GetType().Name}.");
+            }
+        }
+
+        /// <summary>Отсоединяет фоновые повторы при завершении проектного контекста.</summary>
+        public void Dispose()
+        {
+            _resolutionVersion++;
+            if (State == AccountState.Linking || State == AccountState.SigningIn)
+                _playerAccountGateway.SignOut();
+            _transition?.Dispose();
+            _retryRegistration?.Dispose();
+            if (_watchingExpiration && _authenticationGateway is IAccountSessionStatus session)
+                session.SessionExpired -= OnSessionExpired;
+            _watchingExpiration = false;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -254,6 +413,7 @@ namespace Assets.Scripts.Account
         public void ResetLocalAccountStateForTesting()
         {
             _resolutionVersion++;
+            _knownPlayerId = null;
             ClearLocalAccountState();
             Debug.Log("[Account] Local reset completed. Local account credentials cleared.");
         }
@@ -388,8 +548,7 @@ namespace Assets.Scripts.Account
             // Независимо завершаем активную сессию Player Account.
             try
             {
-                if (_playerAccountGateway.IsSignedIn)
-                    _playerAccountGateway.SignOut();
+                _playerAccountGateway.SignOut();
             }
             catch (Exception exception)
             {
@@ -428,7 +587,8 @@ namespace Assets.Scripts.Account
         /// </summary>
         private async Task<bool> TryRestoreOriginalGuestAsync(
             string originalPlayerId,
-            int resolutionVersion)
+            int resolutionVersion,
+            string originalProfile = null)
         {
             try
             {
@@ -442,6 +602,9 @@ namespace Assets.Scripts.Account
                 // Освобождаем текущую identity, сохраняя локальные гостевые credentials.
                 if (_authenticationGateway.IsSignedIn)
                     _authenticationGateway.SignOutPreservingCredentials();
+                if (!string.IsNullOrWhiteSpace(originalProfile) &&
+                    _authenticationGateway is IAccountProfileGateway profiles)
+                    profiles.SwitchProfile(originalProfile);
 
                 // Восстанавливаем существующего гостя без создания нового аккаунта.
                 await _authenticationGateway.SignInAnonymouslyAsync(createAccount: false);
@@ -463,7 +626,7 @@ namespace Assets.Scripts.Account
         private bool IsOriginalGuestSession(string originalPlayerId)
         {
             return !string.IsNullOrWhiteSpace(originalPlayerId) &&
-                   _authenticationGateway.IsSignedIn &&
+                   IsAuthorized &&
                    !_authenticationGateway.IsUnityPlayerAccountLinked &&
                    _authenticationGateway.PlayerId == originalPlayerId;
         }
@@ -474,7 +637,7 @@ namespace Assets.Scripts.Account
         private bool IsLinkedPlayerSession(string playerId)
         {
             return !string.IsNullOrWhiteSpace(playerId) &&
-                   _authenticationGateway.IsSignedIn &&
+                   IsAuthorized &&
                    _authenticationGateway.IsUnityPlayerAccountLinked &&
                    string.Equals(
                        _authenticationGateway.PlayerId,
@@ -515,6 +678,8 @@ namespace Assets.Scripts.Account
             {
                 // Выбираем ровно один сценарий по наличию локальной сессии.
                 var restoreGuest = _authenticationGateway.SessionTokenExists;
+                if (!IsAuthorized && !restoreGuest && !string.IsNullOrWhiteSpace(_knownPlayerId))
+                    throw new InvalidOperationException("Existing session credentials are unavailable.");
 
                 if (restoreGuest)
                     Debug.Log("[Account] Scenario selected: RestoreGuest.");
@@ -522,13 +687,22 @@ namespace Assets.Scripts.Account
                     Debug.Log("[Account] Scenario selected: CreateGuest.");
 
                 // Выполняем только выбранный сценарий без fallback на создание.
-                await _authenticationGateway.SignInAnonymouslyAsync(createAccount: !restoreGuest);
+                if (!IsAuthorized)
+                    await _authenticationGateway.SignInAnonymouslyAsync(createAccount: !restoreGuest);
 
                 if (resolutionVersion != _resolutionVersion)
                 {
-                    _authenticationGateway.SignOutAndClearLocalCredentials();
                     return;
                 }
+
+                // Смена identity во время восстановления не принимает чужой локальный прогресс.
+                var resolvedId = _authenticationGateway.PlayerId;
+                if (!IsAuthorized || string.IsNullOrWhiteSpace(resolvedId) ||
+                    !string.IsNullOrWhiteSpace(_knownPlayerId) && _knownPlayerId != resolvedId)
+                    throw new InvalidOperationException("Restored session identity does not match.");
+                _knownPlayerId = resolvedId;
+                if (GameDataManager.IsLoaded) GameDataManager.TryBindAuthenticatedOwner(resolvedId);
+                ConfirmCurrentProfile(resolvedId);
 
                 SetState(_authenticationGateway.IsUnityPlayerAccountLinked
                     ? AccountState.Linked
@@ -543,7 +717,8 @@ namespace Assets.Scripts.Account
                     return;
 
                 SetState(AccountState.Error);
-                Debug.LogError($"[Account] Guest resolution failed. Error type: {exception.GetType().Name}.");
+                DebugManager.DiagStability($"[ACCOUNT] Session unavailable: {exception.GetType().Name}.");
+                throw;
             }
         }
 
@@ -558,6 +733,8 @@ namespace Assets.Scripts.Account
 
             // Фиксируем состояние и текущий список подписчиков.
             State = state;
+            if ((state == AccountState.Guest || state == AccountState.Linked) && IsAuthorized)
+                _knownPlayerId = _authenticationGateway.PlayerId;
             var handlers = StateChanged;
             if (handlers == null)
                 return;

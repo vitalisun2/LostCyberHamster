@@ -35,6 +35,8 @@ namespace Unity.Services.Authentication.PlayerAccounts
         readonly IJwtDecoder m_JwtDecoder;
         readonly INetworkHandler m_NetworkingClient;
         readonly UnityPlayerAccountSettings m_Settings;
+        int m_SignInGeneration;
+        string m_OAuthState;
 
         internal PlayerAccountServiceInternal(
             UnityPlayerAccountSettings settings,
@@ -65,6 +67,7 @@ namespace Unity.Services.Authentication.PlayerAccounts
                 throw PlayerAccountsException.Create(PlayerAccountsErrorCodes.MissingClientId, "The Client Id is not configured.");
             }
 
+            var generation = ++m_SignInGeneration;
             SignInState = PlayerAccountState.SigningIn;
 
             try
@@ -78,11 +81,13 @@ namespace Unity.Services.Authentication.PlayerAccounts
             }
             catch (PlayerAccountsException exception)
             {
+                if (generation != m_SignInGeneration) return;
                 SendSignInFailedEvent(exception, true);
                 throw;
             }
             catch (RequestFailedException exception)
             {
+                if (generation != m_SignInGeneration) return;
                 SendSignInFailedEvent(new RequestFailedException(exception.ErrorCode,
                     "Error opening system browser for OAuth 2.0 authorization request."
                     ), true);
@@ -119,6 +124,10 @@ namespace Unity.Services.Authentication.PlayerAccounts
 
         public void SignOut()
         {
+            // Отмена инвалидирует и browser callback, и уже отправленный обмен OAuth code.
+            m_SignInGeneration++;
+            m_OAuthState = null;
+            m_BrowserUtils?.Dismiss();
             AccessToken = null;
             var oldState = SignInState;
             SignInState = PlayerAccountState.SignedOut;
@@ -135,6 +144,7 @@ namespace Unity.Services.Authentication.PlayerAccounts
             var challengeGenerator = new CodeChallengeGenerator();
             CodeVerifier = challengeGenerator.GenerateCode();
             var state = challengeGenerator.GenerateStateString();
+            m_OAuthState = state;
             var codeChallenge = CodeChallengeGenerator.S256EncodeChallenge(CodeVerifier);
 
             RedirectUri = m_BrowserUtils?.GetRedirectUri();
@@ -178,6 +188,12 @@ namespace Unity.Services.Authentication.PlayerAccounts
 
             queryParameters.TryGetValue("code", out var code);
             queryParameters.TryGetValue("error", out var error);
+            queryParameters.TryGetValue("state", out var state);
+            if (string.IsNullOrEmpty(state)) fragmentParameters.TryGetValue("state", out state);
+
+            // Старый deep link не влияет на новый вход и не меняет текущую сессию.
+            if (string.IsNullOrEmpty(m_OAuthState) || state != m_OAuthState ||
+                SignInState != PlayerAccountState.SigningIn) return;
 
             if (string.IsNullOrEmpty(code))
             {
@@ -191,18 +207,29 @@ namespace Unity.Services.Authentication.PlayerAccounts
 
             if (!string.IsNullOrEmpty(error))
             {
-                throw PlayerAccountsExceptionHandler.HandleError(error);
+                SendSignInFailedEvent(PlayerAccountsExceptionHandler.HandleError(error), true);
+                return;
             }
 
 #if UNITY_IOS
             m_BrowserUtils.Dismiss();
 #endif
-            OnAuthCodeReceived(code);
+            OnAuthCodeReceived(code, state);
         }
 
-        void OnAuthCodeReceived(string code)
+        async void OnAuthCodeReceived(string code, string state)
         {
-            SignInRequestAsync(code, CodeVerifier, RedirectUri);
+            if (string.IsNullOrEmpty(m_OAuthState) || state != m_OAuthState ||
+                SignInState != PlayerAccountState.SigningIn) return;
+            m_OAuthState = null;
+            var generation = m_SignInGeneration;
+            try { await SignInRequestAsync(code, CodeVerifier, RedirectUri); }
+            catch (Exception)
+            {
+                if (generation == m_SignInGeneration)
+                    SendSignInFailedEvent(new RequestFailedException(PlayerAccountsErrorCodes.UnknownError,
+                        "Player Account sign-in failed."), true);
+            }
         }
 
         Task SignInRequestAsync(string code, string codeVerifier, string redirectUri)
@@ -219,23 +246,27 @@ namespace Unity.Services.Authentication.PlayerAccounts
 
         async Task HandleSignInRequestAsync(Func<Task<SignInResponse>> signInRequest)
         {
+            var generation = m_SignInGeneration;
             try
             {
                 SignInState = PlayerAccountState.SigningIn;
                 var response = await signInRequest();
+                if (generation != m_SignInGeneration) return;
                 CompleteSignIn(response);
             }
             catch (RequestFailedException exception)
             {
+                if (generation != m_SignInGeneration) return;
                 SendSignInFailedEvent(exception, true);
                 throw;
             }
             catch (WebRequestException exception)
             {
+                if (generation != m_SignInGeneration) return;
                 var errorResponse = JsonConvert.DeserializeObject<PlayerAccountsErrorResponse>(exception.Message);
                 var playerAccountsException = PlayerAccountsExceptionHandler.HandleError(errorResponse?.Error, errorResponse?.Description, exception);
 
-                Logger.LogException(playerAccountsException);
+                SendSignInFailedEvent(playerAccountsException, true);
                 throw playerAccountsException;
             }
         }

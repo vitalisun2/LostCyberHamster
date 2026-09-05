@@ -13,6 +13,8 @@ namespace GameManagement.CloudSave.Models
         Pending,
 
         /// <summary>Прогресс требует выбора версии.</summary>
-        Conflict
+        Conflict,
+        LocalOnly,
+        Unavailable
     }
 }

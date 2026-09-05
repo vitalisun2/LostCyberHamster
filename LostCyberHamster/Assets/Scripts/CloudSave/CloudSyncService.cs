@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Assets.Scripts.Account;
+using Assets.Scripts.Online;
 using GameManagement.CloudSave.Gateway;
 using GameManagement.CloudSave.Models;
 using GameManagement.CloudSave.Version;
@@ -8,620 +9,316 @@ using UnityEngine;
 
 namespace GameManagement.CloudSave
 {
-    /// <summary>Последовательно синхронизирует локальный и облачный прогресс.</summary>
+    /// <summary>Сверяет durable локальную revision с облаком через общий foreground retry.</summary>
     public sealed class CloudSyncService : IDisposable
     {
-        /// <summary>Предоставляет текущий аккаунт.</summary>
+        private const string RetryJob = "cloud-save";
         private readonly AccountService _accountService;
-
-        /// <summary>Хранит подтверждённые облачные версии.</summary>
-        private readonly ICloudSaveVersionStore _versionStore;
-
-        /// <summary>Читает и записывает облачный снимок.</summary>
         private readonly ICloudSaveGateway _gateway;
-
-        /// <summary>Управляет локальным снимком.</summary>
-        private readonly SnapshotService _snapshotService;
-
-        /// <summary>Управляет конфликтом прогресса.</summary>
         private readonly ConflictService _conflictService;
-
-        /// <summary>Не допускает параллельные отправки.</summary>
-        private bool _isUploadActive;
-
-        /// <summary>Не допускает параллельные циклы синхронизации.</summary>
+        private readonly IDisposable _retryRegistration;
         private bool _isSynchronizationActive;
-
-        /// <summary>Запоминает повторный запрос, полученный во время синхронизации.</summary>
-        private bool _isSynchronizationRequested;
-
-        /// <summary>Инвалидирует ответы, начатые до смены состояния аккаунта.</summary>
-        private int _accountLifecycleVersion;
-
-        /// <summary>Запрещает обработку новых событий.</summary>
         private bool _isDisposed;
+        private bool _lastAttemptFailed;
+        private int _accountLifecycleVersion;
+        private string _reconciledPlayerId;
+        private long _reconciledGeneration = -1;
+        private bool _cloudRefreshPending;
+        private int _choiceVersion;
 
-        public CloudSyncService(
-            AccountService accountService,
-            ICloudSaveVersionStore versionStore,
-            ICloudSaveGateway gateway,
-            SnapshotService snapshotService,
-            ConflictService conflictService)
+        public CloudSyncService(AccountService accountService, ICloudSaveVersionStore versionStore,
+            ICloudSaveGateway gateway, SnapshotService snapshotService, ConflictService conflictService)
         {
             _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
-            _versionStore = versionStore ?? throw new ArgumentNullException(nameof(versionStore));
             _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
-            _snapshotService = snapshotService ?? throw new ArgumentNullException(nameof(snapshotService));
             _conflictService = conflictService ?? throw new ArgumentNullException(nameof(conflictService));
-
-            _accountService.CurrentGuestLinked += OnAccountLinked;
+            _retryRegistration = OnlineServicesCoordinator.Register(RetryJob, SynchronizeAsync, CanSynchronize);
             _accountService.StateChanged += OnAccountStateChanged;
             PlayerProgressCommitter.CommitCompleted += OnCheckpointCommitted;
             PlayerProgressLifecycleCheckpoint.ApplicationResumed += OnApplicationResumed;
+            GameDataManager.ProfileChanged += OnProfileChanged;
             _conflictService.ConflictResolved += OnConflictResolved;
         }
 
-        /// <summary>Текущее состояние облачной синхронизации.</summary>
+        public event Action<CloudSyncStatusEnum> StatusChanged;
+        public event Action ConflictPresentationRequested;
+        public bool HasUnresolvedConflict => _conflictService.CurrentConflict != null;
+        public bool IsInitialReconciliationComplete => GameDataManager.OwnerPlayerId == _reconciledPlayerId &&
+            GameDataManager.Generation == _reconciledGeneration;
+        public bool IsConflictDeferred => _conflictService.CurrentConflict != null &&
+            GameDataManager.IsConflictDeferred(_conflictService.CurrentConflict.LocalSnapshot.PlayerId,
+                _conflictService.CurrentConflict.CloudRevision);
+        public string LastError { get; private set; }
+
         public CloudSyncStatusEnum Status
         {
             get
             {
-                if (HasConflictForCurrentAccount())
-                    return CloudSyncStatusEnum.Conflict;
-                if (_isSynchronizationActive || _isUploadActive)
-                    return CloudSyncStatusEnum.Synchronizing;
-                if (GetPendingForCurrentAccount() != null)
-                    return CloudSyncStatusEnum.Pending;
-
-                return CloudSyncStatusEnum.Saved;
+                if (HasUnresolvedConflict) return CloudSyncStatusEnum.Conflict;
+                if (_isSynchronizationActive) return CloudSyncStatusEnum.Synchronizing;
+                if (!_accountService.TryGetLinkedPlayerId(out _))
+                    return _accountService.HasKnownLinkedIdentity ? CloudSyncStatusEnum.Pending : CloudSyncStatusEnum.LocalOnly;
+                if (GameDataManager.HasUnsyncedProgress || _cloudRefreshPending) return CloudSyncStatusEnum.Pending;
+                return _lastAttemptFailed ? CloudSyncStatusEnum.Unavailable : CloudSyncStatusEnum.Saved;
             }
         }
 
-        /// <summary>Возникает при изменении состояния синхронизации.</summary>
-        public event Action<CloudSyncStatusEnum> StatusChanged;
+        private bool CanSynchronize() => !_isDisposed && GameDataManager.IsLoaded &&
+            OnlineServicesCoordinator.UnityServicesReady && _accountService.TryGetLinkedPlayerId(out _) &&
+            !_conflictService.IsResolutionActive && !GameDataManager.IsProfileReplacementBlocked;
 
-        #region Обработка событий
-
-        /// <summary>Запрашивает синхронизацию после привязки гостя.</summary>
-        private void OnAccountLinked(string _)
-        {
-            RequestSynchronization();
-        }
-
-        /// <summary>Инвалидирует старые ответы и запускает синхронизацию связанного аккаунта.</summary>
         private void OnAccountStateChanged(AccountState state)
         {
-            if (_isDisposed)
-                return;
-
             _accountLifecycleVersion++;
-
-            if (state == AccountState.Linked)
-                RequestSynchronization();
-            else
-            {
-                _conflictService.ClearConflict();
-                NotifyStatusChanged();
-            }
+            _reconciledGeneration = -1;
+            RestoreConflictForCurrentProfile();
+            _lastAttemptFailed = false;
+            RequestRetry();
         }
 
-        /// <summary>Ставит новый локальный checkpoint в очередь синхронизации.</summary>
+        private void OnProfileChanged()
+        {
+            _reconciledGeneration = -1;
+            RestoreConflictForCurrentProfile();
+            RequestRetry();
+        }
+
+        private void RestoreConflictForCurrentProfile()
+        {
+            if (!GameDataManager.IsLoaded) return;
+            var owner = _accountService.TryGetAuthenticatedPlayerId(out var authenticatedOwner)
+                ? authenticatedOwner : GameDataManager.OwnerPlayerId ?? GameDataManager.ActiveConflictOwner;
+            _conflictService.RestoreForOwner(owner);
+        }
         private void OnCheckpointCommitted(CheckpointReason reason)
         {
-            if (_isDisposed || reason == CheckpointReason.AccountLinked)
-                return;
-
-            if (reason == CheckpointReason.MenuEntered)
-            {
-                RequestSynchronization();
-                return;
-            }
-
-            CreateCloudSave();
+            if (_isDisposed) return;
+            if (HasUnresolvedConflict)
+                _conflictService.TryUpdateLocalSnapshot(new CloudSaveSnapshot(
+                    _conflictService.CurrentConflict.LocalSnapshot.PlayerId, GameDataManager.GetSavedPlayerDataJson()));
+            RequestRetry();
         }
+        private void OnApplicationResumed() => RequestRetry();
+        private void OnConflictResolved() => RequestRetry();
 
-        /// <summary>Повторяет синхронизацию после возврата в игру.</summary>
-        private void OnApplicationResumed()
+        /// <summary>Запрашивает повтор без прямого сетевого вызова из gameplay.</summary>
+        public void RequestRetry()
         {
-            RequestSynchronization();
-        }
-
-        /// <summary>Продолжает синхронизацию после разрешения конфликта.</summary>
-        private void OnConflictResolved()
-        {
-            NotifyStatusChanged();
-            RequestSynchronization();
-        }
-
-        #endregion
-
-        #region Основные методы
-
-        /// <summary>Создаёт первое облачное сохранение внутри текущего account lifecycle.</summary>
-        private async Task CreateFirstCloudSaveAsync(
-            string playerId,
-            int lifecycleVersion,
-            bool allowSigningIn)
-        {
-            if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn))
-                return;
-
-            // Готовим первый снимок, если очередь владельца пуста.
-            if (_snapshotService.GetPending(playerId) == null)
-            {
-                PlayerProgressCommitter.Commit(CheckpointReason.AccountLinked);
-                if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn))
-                    return;
-
-                _snapshotService.SetPending(new CloudSaveSnapshot(
-                    playerId,
-                    GameDataManager.PlayerData.ToJson()));
-                NotifyStatusChanged();
-            }
-
-            await UploadPendingSnapshotAsync(
-                null,
-                playerId,
-                lifecycleVersion,
-                allowSigningIn);
-        }
-
-        /// <summary>Фиксирует последний локальный прогресс как pending.</summary>
-        private void CreateCloudSave()
-        {
-            if (!_accountService.TryGetLinkedPlayerId(out var playerId))
-                return;
-
-            var snapshot = new CloudSaveSnapshot(
-                playerId,
-                GameDataManager.PlayerData.ToJson());
-            _snapshotService.SetPending(snapshot);
-
-            // Открытый конфликт всегда показывает последний durable checkpoint.
-            if (_conflictService.TryUpdateLocalSnapshot(snapshot))
-            {
-                NotifyStatusChanged();
-                return;
-            }
-
-            NotifyStatusChanged();
-
-            RequestSynchronization();
-        }
-
-        /// <summary>Восстанавливает прогресс существующего аккаунта.</summary>
-        public async Task RestoreProgressAsync(string playerId)
-        {
-            if (string.IsNullOrWhiteSpace(playerId))
-                throw new ArgumentException("Player ID must be provided.", nameof(playerId));
-
-            var lifecycleVersion = _accountLifecycleVersion;
-            if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn: true))
-                throw new InvalidOperationException("Existing account restore is not current.");
-
-            var pendingBeforeRestore = _snapshotService.GetPending(playerId);
-
-            // Загружаем снимок и отбрасываем ответ прошлого account lifecycle.
-            var cloudSave = await _gateway.LoadSnapshotAsync();
-            EnsureOperationCurrent(playerId, lifecycleVersion, allowSigningIn: true);
-
-            if (cloudSave == null)
-                throw new InvalidOperationException("Existing account cloud snapshot is missing.");
-
-            EnsureCloudOwner(playerId, cloudSave);
-
-            // Применяем только актуальный снимок выбранного владельца.
-            EnsureOperationCurrent(playerId, lifecycleVersion, allowSigningIn: true);
-            ApplyCloudProgress(playerId, cloudSave);
-            EnsureOperationCurrent(playerId, lifecycleVersion, allowSigningIn: true);
-            if (pendingBeforeRestore != null)
-                _snapshotService.ClearIfCurrent(pendingBeforeRestore);
+            if (_isDisposed) return;
+            OnlineServicesCoordinator.RequestRetry(RetryJob);
             NotifyStatusChanged();
         }
 
-        /// <summary>Разрешает текущий конфликт актуальной облачной веткой.</summary>
-        public Task<bool> ResolveConflictWithCloudAsync()
+        /// <summary>Оставляет обе ветки и продолжает локальную игру.</summary>
+        public void DeferConflict()
         {
-            if (_isDisposed ||
-                !_accountService.TryGetLinkedPlayerId(out var playerId))
-            {
-                return Task.FromResult(false);
-            }
-
-            var lifecycleVersion = _accountLifecycleVersion;
-            return _conflictService.ResolveWithCloudAsync(
-                playerId,
-                () => IsOperationCurrent(
-                    playerId,
-                    lifecycleVersion,
-                    allowSigningIn: false));
+            var conflict = _conflictService.CurrentConflict;
+            if (conflict == null) return;
+            CancelConflictChoice();
+            GameDataManager.SetConflictDeferred(conflict.LocalSnapshot.PlayerId, conflict.CloudRevision);
+            NotifyStatusChanged();
         }
 
-        /// <summary>Разрешает текущий конфликт актуальной локальной веткой.</summary>
-        public Task<bool> ResolveConflictWithLocalAsync()
-        {
-            if (_isDisposed ||
-                !_accountService.TryGetLinkedPlayerId(out var playerId))
-            {
-                return Task.FromResult(false);
-            }
+        /// <summary>Инвалидирует результат чтения выбора; уже отправленный upload восстановится по durable attempt.</summary>
+        public void CancelConflictChoice() => _choiceVersion++;
 
-            var lifecycleVersion = _accountLifecycleVersion;
-            return _conflictService.ResolveWithLocalAsync(
-                playerId,
-                () => IsOperationCurrent(
-                    playerId,
-                    lifecycleVersion,
-                    allowSigningIn: false));
+        /// <summary>Открывает отложенный выбор по явному действию игрока.</summary>
+        public void ShowConflict()
+        {
+            if (!HasUnresolvedConflict) { RequestRetry(); return; }
+            GameDataManager.SetConflictDeferred(null, null);
+            ConflictPresentationRequested?.Invoke();
         }
 
-        /// <summary>Запоминает запрос и запускает единственный последовательный sync pump.</summary>
-        private void RequestSynchronization()
+        private async Task SynchronizeAsync()
         {
-            if (_isDisposed)
-                return;
-
-            _isSynchronizationRequested = true;
-            if (!_isSynchronizationActive)
-                _ = RunSynchronizationPumpAsync();
-        }
-
-        /// <summary>Последовательно обрабатывает текущий и все повторные запросы.</summary>
-        private async Task RunSynchronizationPumpAsync()
-        {
-            if (_isSynchronizationActive || _isDisposed)
-                return;
-
+            if (!CanSynchronize() || _isSynchronizationActive) return;
             _isSynchronizationActive = true;
             NotifyStatusChanged();
-
             try
             {
-                while (!_isDisposed && _isSynchronizationRequested)
+                while (CanSynchronize())
                 {
-                    _isSynchronizationRequested = false;
-                    if (!_accountService.TryGetLinkedPlayerId(out var playerId) ||
-                        HasConflictFor(playerId))
+                    if (!_accountService.TryGetLinkedPlayerId(out var playerId)) return;
+                    GameDataManager.TryBindAuthenticatedOwner(playerId);
+                    if (GameDataManager.OwnerPlayerId != null && GameDataManager.OwnerPlayerId != playerId)
+                        throw new InvalidOperationException("Local progress belongs to another account.");
+                    var lifecycle = _accountLifecycleVersion;
+                    var generation = GameDataManager.Generation;
+                    var startingRevision = GameDataManager.LocalRevision;
+                    var cloud = await _gateway.LoadSnapshotAsync();
+                    if (!IsCurrent(playerId, lifecycle) || GameDataManager.Generation != generation) return;
+                    if (_conflictService.IsResolutionActive) return;
+                    EnsureOwner(playerId, cloud);
+                    _lastAttemptFailed = false;
+                    LastError = null;
+
+                    // Legacy не получает owner из случайно восстановленных credentials.
+                    if (GameDataManager.OwnerPlayerId == null)
                     {
-                        break;
+                        _conflictService.SetConflict(Capture(playerId), cloud);
+                        return;
                     }
 
-                    var lifecycleVersion = _accountLifecycleVersion;
-                    try
+                    // Подтверждаем старую отправку, даже если после неё уже появились новые edits.
+                    var attempt = GameDataManager.LastUploadAttempt;
+                    var recoveredUpload = cloud != null && attempt != null && attempt.OwnerPlayerId == playerId &&
+                        attempt.ProfileId == GameDataManager.ProfileId &&
+                        attempt.PayloadHash == CloudSaveSnapshot.ComputePayloadHash(cloud.Snapshot.PlayerDataJson);
+                    if (recoveredUpload)
                     {
-                        await SynchronizeProgressOnceAsync(playerId, lifecycleVersion);
-                        if (!IsOperationCurrent(
-                                playerId,
-                                lifecycleVersion,
-                                allowSigningIn: false))
-                        {
-                            continue;
-                        }
+                        GameDataManager.AcknowledgeCloudUpload(attempt, cloud.Version.ServerRevision);
+                        _conflictService.ClearConflict();
                     }
-                    catch (Exception exception)
+                    else if (HasUnresolvedConflict)
                     {
-                        if (IsOperationCurrent(
-                                playerId,
-                                lifecycleVersion,
-                                allowSigningIn: false))
-                        {
-                            Debug.LogError(
-                                $"[CloudSave] Synchronization failed ({exception.GetType().Name}).");
-                        }
+                        // Обновляем только показанные ветки; Later не разрешает overwrite.
+                        _conflictService.SetConflict(Capture(playerId), cloud);
+                        return;
                     }
+
+                    var cloudRevision = cloud?.Version.ServerRevision;
+                    var changedInCloud = !string.Equals(cloudRevision, GameDataManager.BaseCloudRevision, StringComparison.Ordinal);
+                    if (cloud == null)
+                    {
+                        if (GameDataManager.BaseCloudRevision != null)
+                        {
+                            _conflictService.SetConflict(Capture(playerId), null);
+                            return;
+                        }
+                        await UploadAsync(playerId, null, lifecycle, generation);
+                    }
+                    else if (changedInCloud)
+                    {
+                        if (GameDataManager.HasUnsyncedProgress || startingRevision != GameDataManager.LocalRevision)
+                        {
+                            _conflictService.SetConflict(Capture(playerId), cloud);
+                            return;
+                        }
+                        if (!GameDataManager.CanApplyCloudProgress)
+                        {
+                            _cloudRefreshPending = true;
+                            return;
+                        }
+                        GameDataManager.ApplyCloudPlayerData(PlayerData.FromJson(cloud.Snapshot.PlayerDataJson),
+                            playerId, cloudRevision);
+                        MarkReconciled(playerId);
+                        return;
+                    }
+                    else if (GameDataManager.HasUnsyncedProgress)
+                        await UploadAsync(playerId, cloudRevision, lifecycle, generation);
+                    else { MarkReconciled(playerId); return; }
+
+                    if (!IsCurrent(playerId, lifecycle)) return;
+                    if (!GameDataManager.HasUnsyncedProgress) { MarkReconciled(playerId); return; }
                 }
+            }
+            catch (Exception exception)
+            {
+                _lastAttemptFailed = true;
+                LastError = exception.GetType().Name;
+                throw;
             }
             finally
             {
                 _isSynchronizationActive = false;
                 NotifyStatusChanged();
-
-                // Событие на границе завершения не должно потерять повторный запуск.
-                if (_isSynchronizationRequested && !_isDisposed)
-                    RequestSynchronization();
             }
         }
 
-        /// <summary>Выполняет одну согласованную проверку cloud state.</summary>
-        private async Task SynchronizeProgressOnceAsync(
-            string playerId,
-            int lifecycleVersion)
+        private async Task UploadAsync(string playerId, string expectedRevision, int lifecycle, long generation)
         {
-            var confirmedRevision = _versionStore.GetConfirmedRevision(playerId);
-            var cloudSave = await _gateway.LoadSnapshotAsync();
-
-            // Не классифицируем cloud ответ после смены аккаунта или локальной base revision.
-            if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn: false))
-                return;
-            if (!string.Equals(
-                    confirmedRevision,
-                    _versionStore.GetConfirmedRevision(playerId),
-                    StringComparison.Ordinal))
+            var snapshot = Capture(playerId);
+            var attempt = new CloudUploadAttempt
             {
-                _isSynchronizationRequested = true;
-                return;
-            }
-
-            if (cloudSave != null)
-                EnsureCloudOwner(playerId, cloudSave);
-
-            var pendingSnapshot = _snapshotService.GetPending(playerId);
-
-            // Потерянный ответ upload не должен создавать ложный конфликт.
-            if (cloudSave != null &&
-                pendingSnapshot != null &&
-                AreSnapshotsEquivalent(pendingSnapshot, cloudSave.Snapshot))
-            {
-                _versionStore.SaveConfirmedVersion(
-                    playerId,
-                    cloudSave.Version.ServerRevision);
-                _snapshotService.ClearIfCurrent(pendingSnapshot);
-                return;
-            }
-
-            var syncState = GetSyncState(
-                cloudSave,
-                pendingSnapshot,
-                confirmedRevision);
-            switch (syncState)
-            {
-                case CloudSyncStateEnum.CloudMissing:
-                    await CreateFirstCloudSaveAsync(
-                        playerId,
-                        lifecycleVersion,
-                        allowSigningIn: false);
-                    if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn: false))
-                        return;
-                    break;
-
-                case CloudSyncStateEnum.LocalChanged:
-                    await UploadPendingSnapshotAsync(
-                        cloudSave.Version.ServerRevision,
-                        playerId,
-                        lifecycleVersion,
-                        allowSigningIn: false);
-                    if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn: false))
-                        return;
-                    break;
-
-                case CloudSyncStateEnum.CloudChanged:
-                    if (!CanApplyCloudProgress(playerId, lifecycleVersion, confirmedRevision))
-                    {
-                        _isSynchronizationRequested = true;
-                        return;
-                    }
-
-                    ApplyCloudProgress(playerId, cloudSave);
-                    break;
-
-                case CloudSyncStateEnum.Conflict:
-                    _conflictService.SetConflict(pendingSnapshot, cloudSave);
-                    NotifyStatusChanged();
-                    break;
-
-                case CloudSyncStateEnum.Synchronized:
-                    break;
-            }
-        }
-
-        /// <summary>Последовательно отправляет active и самый новый pending.</summary>
-        private async Task UploadPendingSnapshotAsync(
-            string expectedRevision,
-            string playerId,
-            int lifecycleVersion,
-            bool allowSigningIn)
-        {
-            if (_isUploadActive || _snapshotService.GetPending(playerId) == null)
-                return;
-
-            _isUploadActive = true;
-            NotifyStatusChanged();
-
-            try
-            {
-                while (true)
-                {
-                    if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn))
-                        return;
-
-                    var snapshot = _snapshotService.GetPending(playerId);
-                    if (snapshot == null)
-                        return;
-
-                    var version = await _gateway.SaveSnapshotAsync(snapshot, expectedRevision);
-                    if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn))
-                    {
-                        Debug.LogWarning(
-                            "[CloudSave] Snapshot acknowledgement ignored: account lifecycle changed.");
-                        return;
-                    }
-
-                    // Подтверждаем и очищаем только фактически отправленный объект.
-                    _versionStore.SaveConfirmedVersion(snapshot.PlayerId, version.ServerRevision);
-                    _snapshotService.ClearIfCurrent(snapshot);
-                    expectedRevision = version.ServerRevision;
-                }
-            }
-            catch (Exception exception)
-            {
-                Debug.LogError($"[CloudSave] Snapshot upload failed ({exception.GetType().Name}).");
-                throw;
-            }
-            finally
-            {
-                _isUploadActive = false;
-                NotifyStatusChanged();
-            }
-        }
-
-        #endregion
-
-        #region Вспомогательные методы
-
-        /// <summary>Определяет текущую ситуацию синхронизации.</summary>
-        private static CloudSyncStateEnum GetSyncState(
-            CloudSaveReadResult cloudSave,
-            CloudSaveSnapshot pendingSnapshot,
-            string confirmedRevision)
-        {
-            var hasCloudSave = cloudSave != null;
-            var hasPending = pendingSnapshot != null;
-            var cloudChanged = hasCloudSave &&
-                !string.Equals(
-                    confirmedRevision,
-                    cloudSave.Version.ServerRevision,
-                    StringComparison.Ordinal);
-
-            return (hasCloudSave, hasPending, cloudChanged) switch
-            {
-                (false, _, _) => CloudSyncStateEnum.CloudMissing,
-                (true, false, false) => CloudSyncStateEnum.Synchronized,
-                (true, true, false) => CloudSyncStateEnum.LocalChanged,
-                (true, false, true) => CloudSyncStateEnum.CloudChanged,
-                (true, true, true) => CloudSyncStateEnum.Conflict
+                ProfileId = GameDataManager.ProfileId,
+                OwnerPlayerId = playerId,
+                LocalRevision = GameDataManager.LocalRevision,
+                PayloadHash = CloudSaveSnapshot.ComputePayloadHash(snapshot.PlayerDataJson),
+                ExpectedCloudRevision = expectedRevision
             };
+            GameDataManager.RecordCloudUploadAttempt(attempt);
+            var acknowledgement = await _gateway.SaveSnapshotAsync(snapshot, expectedRevision);
+            if (!IsCurrent(playerId, lifecycle) || GameDataManager.Generation != generation) return;
+            if (acknowledgement == null) throw new InvalidOperationException("Cloud upload has no acknowledgement.");
+            GameDataManager.AcknowledgeCloudUpload(attempt, acknowledgement.ServerRevision);
         }
 
-        /// <summary>Применяет облачный прогресс и подтверждает его версию.</summary>
-        private void ApplyCloudProgress(
-            string playerId,
-            CloudSaveReadResult cloudSave)
+        /// <summary>Применяет выбранный существующий аккаунт только после полной сетевой проверки.</summary>
+        public async Task RestoreProgressAsync(string playerId)
         {
-            var restoredData = PlayerData.FromJson(cloudSave.Snapshot.PlayerDataJson);
-            GameDataManager.ReplacePlayerData(restoredData);
-            _versionStore.SaveConfirmedVersion(
-                playerId,
-                cloudSave.Version.ServerRevision);
+            var lifecycle = _accountLifecycleVersion;
+            var generation = GameDataManager.Generation;
+            var revision = GameDataManager.LocalRevision;
+            if (!_accountService.IsCurrentPlayer(playerId, allowSigningIn: true))
+                throw new InvalidOperationException("Account restore is stale.");
+            var cloud = await _gateway.LoadSnapshotAsync();
+            if (cloud == null) throw new InvalidOperationException("Existing account cloud snapshot is missing.");
+            EnsureOwner(playerId, cloud);
+            if (lifecycle != _accountLifecycleVersion || generation != GameDataManager.Generation ||
+                revision != GameDataManager.LocalRevision || !_accountService.IsCurrentPlayer(playerId, allowSigningIn: true))
+                throw new InvalidOperationException("Local progress changed during account restore.");
+            GameDataManager.ApplyCloudPlayerData(PlayerData.FromJson(cloud.Snapshot.PlayerDataJson), playerId,
+                cloud.Version.ServerRevision);
+            _conflictService.ClearConflict();
+            MarkReconciled(playerId);
+            NotifyStatusChanged();
         }
 
-        /// <summary>Проверяет, можно ли применить результат cloud-only чтения.</summary>
-        private bool CanApplyCloudProgress(
-            string playerId,
-            int lifecycleVersion,
-            string startingConfirmedRevision)
+        public Task<bool> ResolveConflictWithCloudAsync() => ResolveConflictAsync(useCloud: true);
+        public Task<bool> ResolveConflictWithLocalAsync() => ResolveConflictAsync(useCloud: false);
+
+        private async Task<bool> ResolveConflictAsync(bool useCloud)
         {
-            return IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn: false) &&
-                   !HasConflictFor(playerId) &&
-                   _snapshotService.GetPending(playerId) == null &&
-                   string.Equals(
-                       startingConfirmedRevision,
-                       _versionStore.GetConfirmedRevision(playerId),
-                       StringComparison.Ordinal);
+            if (_isDisposed || !_accountService.TryGetLinkedPlayerId(out var playerId)) return false;
+            var lifecycle = _accountLifecycleVersion;
+            var choiceVersion = ++_choiceVersion;
+            var result = useCloud
+                ? await _conflictService.ResolveWithCloudAsync(playerId, () => IsCurrent(playerId, lifecycle) && choiceVersion == _choiceVersion)
+                : await _conflictService.ResolveWithLocalAsync(playerId, () => IsCurrent(playerId, lifecycle) && choiceVersion == _choiceVersion);
+            LastError = result ? null : _conflictService.LastResolutionError;
+            if (result) MarkReconciled(playerId);
+            NotifyStatusChanged();
+            return result;
         }
 
-        /// <summary>Возвращает pending текущего связанного аккаунта.</summary>
-        private CloudSaveSnapshot GetPendingForCurrentAccount()
+        private bool IsCurrent(string playerId, int lifecycle) => !_isDisposed &&
+            lifecycle == _accountLifecycleVersion && _accountService.IsCurrentPlayer(playerId, allowSigningIn: false);
+        private static CloudSaveSnapshot Capture(string playerId) => new CloudSaveSnapshot(playerId, GameDataManager.GetSavedPlayerDataJson());
+
+        private void MarkReconciled(string playerId)
         {
-            return _accountService.TryGetLinkedPlayerId(out var playerId)
-                ? _snapshotService.GetPending(playerId)
-                : null;
+            _reconciledPlayerId = playerId;
+            _reconciledGeneration = GameDataManager.Generation;
+            _cloudRefreshPending = false;
         }
-
-        /// <summary>Проверяет конфликт текущего связанного аккаунта.</summary>
-        private bool HasConflictForCurrentAccount()
+        private static void EnsureOwner(string playerId, CloudSaveReadResult cloud)
         {
-            return _accountService.TryGetLinkedPlayerId(out var playerId) &&
-                   HasConflictFor(playerId);
-        }
-
-        /// <summary>Проверяет владельца текущего конфликта.</summary>
-        private bool HasConflictFor(string playerId)
-        {
-            var conflict = _conflictService.CurrentConflict;
-            return conflict != null &&
-                   string.Equals(
-                       conflict.LocalSnapshot.PlayerId,
-                       playerId,
-                       StringComparison.Ordinal);
-        }
-
-        /// <summary>Сравнивает точные снимки для восстановления потерянного acknowledgement.</summary>
-        private static bool AreSnapshotsEquivalent(
-            CloudSaveSnapshot first,
-            CloudSaveSnapshot second)
-        {
-            return first != null &&
-                   second != null &&
-                   string.Equals(first.PlayerId, second.PlayerId, StringComparison.Ordinal) &&
-                   string.Equals(
-                       first.PlayerDataJson,
-                       second.PlayerDataJson,
-                       StringComparison.Ordinal) &&
-                   first.SavedAtUtc == second.SavedAtUtc;
-        }
-
-        /// <summary>Проверяет lifecycle и владельца normal/restore операции.</summary>
-        private bool IsOperationCurrent(
-            string playerId,
-            int lifecycleVersion,
-            bool allowSigningIn)
-        {
-            if (_isDisposed || lifecycleVersion != _accountLifecycleVersion)
-                return false;
-
-            return _accountService.IsCurrentPlayer(playerId, allowSigningIn);
-        }
-
-        /// <summary>Прерывает restore после смены account lifecycle.</summary>
-        private void EnsureOperationCurrent(
-            string playerId,
-            int lifecycleVersion,
-            bool allowSigningIn)
-        {
-            if (!IsOperationCurrent(playerId, lifecycleVersion, allowSigningIn))
-                throw new InvalidOperationException("Cloud operation belongs to a stale account lifecycle.");
-        }
-
-        /// <summary>Проверяет владельца загруженного облачного снимка.</summary>
-        private static void EnsureCloudOwner(
-            string playerId,
-            CloudSaveReadResult cloudSave)
-        {
-            if (!string.Equals(
-                    cloudSave.Snapshot.PlayerId,
-                    playerId,
-                    StringComparison.Ordinal))
-            {
+            if (cloud != null && cloud.Snapshot.PlayerId != playerId)
                 throw new InvalidOperationException("Cloud snapshot owner mismatch.");
-            }
         }
 
-        /// <summary>Безопасно сообщает подписчикам актуальный статус.</summary>
         private void NotifyStatusChanged()
         {
             var handlers = StatusChanged;
-            if (handlers == null)
-                return;
-
+            if (handlers == null) return;
             foreach (Action<CloudSyncStatusEnum> handler in handlers.GetInvocationList())
             {
-                try
-                {
-                    handler(Status);
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogError(
-                        $"[CloudSave] Status subscriber failed ({exception.GetType().Name}).");
-                }
+                try { handler(Status); }
+                catch (Exception exception) { Debug.LogError($"[CloudSave] Status subscriber failed ({exception.GetType().Name})."); }
             }
         }
 
-        #endregion
-
-        /// <summary>Останавливает сервис и убирает подписки.</summary>
         public void Dispose()
         {
-            if (_isDisposed)
-                return;
-
+            if (_isDisposed) return;
             _isDisposed = true;
             _accountLifecycleVersion++;
-            _isSynchronizationRequested = false;
-            _accountService.CurrentGuestLinked -= OnAccountLinked;
+            _retryRegistration.Dispose();
             _accountService.StateChanged -= OnAccountStateChanged;
             PlayerProgressCommitter.CommitCompleted -= OnCheckpointCommitted;
             PlayerProgressLifecycleCheckpoint.ApplicationResumed -= OnApplicationResumed;
+            GameDataManager.ProfileChanged -= OnProfileChanged;
             _conflictService.ConflictResolved -= OnConflictResolved;
         }
     }

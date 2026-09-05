@@ -1,0 +1,75 @@
+{
+  "auditDate": "2026-09-05",
+  "sourceCommitAtStart": "a096e204db21ca6918ec216cdfd18f29271c05b4",
+  "project": "C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster",
+  "method": "Isolated synchronous calls to current compiled production code through Unity Pipeline MCP eval; existing account fake injects failure. No physical offline Android run; no Test Runner.",
+  "pure": {
+    "executedAt": "2026-09-05T11:13:43.8557089Z",
+    "executionTimeMs": 1566,
+    "success": true,
+    "result": {
+      "project": "C:/Personal/crystal-wave/repos/LostCyberHamster_2025/LostCyberHamster/Assets",
+      "playMode": false,
+      "scene": "Assets/Scenes/Bootstrap.unity",
+      "sceneDirty": false,
+      "account": {
+        "firstFailure": "Error",
+        "afterNetworkRecoveredAndStartCalled": "Error",
+        "signInCalls": 1,
+        "linkedIdentityAvailable": false
+      },
+      "syncClassification": {
+        "missingPendingSameRevision": "Synchronized",
+        "missingPendingNewRevision": "CloudChanged",
+        "pendingNewRevision": "Conflict"
+      },
+      "daily": {
+        "sameDay": false,
+        "previousDay": true,
+        "nextDay": true
+      }
+    }
+  },
+  "uiAndAdConsumers": {
+    "executedAt": "2026-09-05T11:14:57.1184021Z",
+    "executionTimeMs": 1371,
+    "success": true,
+    "result": {
+      "licenseView": {
+        "overlayCount": 1,
+        "childCount": 2,
+        "classNamePresent": true,
+        "width": "100%",
+        "height": "100%",
+        "position": "Absolute",
+        "pickingMode": "Position",
+        "title": "No Network",
+        "explanation": "Production view method called directly with the offline message; no physical network change."
+      },
+      "reviveFailedRequests": {
+        "terminalResult": false,
+        "requests": 3,
+        "retainedSuccessListenersAfterEach": [
+          1,
+          2,
+          3
+        ],
+        "actualSdkCalled": false
+      },
+      "shopFailure": {
+        "pendingAfterFailure": false,
+        "itemClearedAfterFailure": true,
+        "finishedListenersAfterFailure": 0
+      },
+      "cleanup": {
+        "activeScene": "Assets/Scenes/Bootstrap.unity",
+        "originalSceneDirty": false,
+        "sceneCountRestored": true,
+        "eventsRestored": true,
+        "shopStateRestored": true,
+        "playMode": false
+      }
+    }
+  },
+  "sourceCommitAtDiagnosticsEnd": "54cabd92d2c07c458d0128acc4b72667a8fc6648"
+}

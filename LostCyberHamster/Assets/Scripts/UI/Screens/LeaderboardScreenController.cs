@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.System;
+using Assets.Scripts.Online;
+using GameManagement;
 using GameManagement.Leaderboard;
 using Unity.Services.Leaderboards.Models;
 using UnityEngine;
@@ -77,7 +80,9 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<Label>("leaderboard__current-name");
         private Label _currentScore =>
             _contentRoot.Q<Label>("leaderboard__current-score");
-        private readonly LeaderboardService _leaderboardService;
+        private VisualElement _cacheBanner;
+        private Label _cacheStatus;
+        private Button _cacheRetry;
         private IReadOnlyList<LocationView> _visibleLocations =
             Array.Empty<LocationView>();
         private IReadOnlyList<PartView> _visibleParts =
@@ -96,8 +101,7 @@ namespace LostCyberHamster.UI
             LeaderboardService leaderboardService)
             : base(uiDocument)
         {
-            _leaderboardService = leaderboardService
-                ?? throw new ArgumentNullException(nameof(leaderboardService));
+            if (leaderboardService == null) throw new ArgumentNullException(nameof(leaderboardService));
         }
 
         /// <summary>
@@ -127,6 +131,7 @@ namespace LostCyberHamster.UI
         {
             // Получаем каталог с единым доменным состоянием доступности.
             _requestVersion++;
+            PrepareCacheBanner();
             var selectionModel = LevelSelectionModel.Create();
             _visibleLocations = selectionModel.Locations.ToList();
 
@@ -282,25 +287,84 @@ namespace LostCyberHamster.UI
 
             ShowLoading();
             var requestVersion = ++_requestVersion;
+            var owner = GameDataManager.OwnerPlayerId;
+            var generation = GameDataManager.Generation;
+            var locationId = _selectedLocation.Id;
+            var coordinator = WeeklyLeaderboardCoordinator.Instance;
+            if (coordinator != null && coordinator.TryGetCachedResults(locationId, part.Id, out var cached))
+                RenderCachedResults(cached);
 
             try
             {
-                // Получаем топ и отдельную позицию текущего игрока.
-                var leaderboardResults = await _leaderboardService.GetResultsAsync(
-                    _selectedLocation.Id,
-                    part.Id);
-                if (requestVersion != _requestVersion)
+                // Обновляем кеш в фоне, сохраняя доступность уже загруженного рейтинга.
+                if (coordinator == null) throw new InvalidOperationException("Leaderboard service is unavailable.");
+                var leaderboardResults = await coordinator.GetResultsAsync(locationId, part.Id);
+                if (!IsCurrentRequest(requestVersion, owner, generation))
                     return;
 
+                HideCacheBanner();
                 RenderResults(
                     leaderboardResults.Top,
                     leaderboardResults.CurrentPlayer);
             }
             catch
             {
-                if (requestVersion == _requestVersion)
+                if (!IsCurrentRequest(requestVersion, owner, generation)) return;
+                if (coordinator != null && coordinator.TryGetCachedResults(locationId, part.Id, out var fallback))
+                    RenderCachedResults(fallback);
+                else
                     ShowError();
             }
+        }
+
+        private bool IsCurrentRequest(int requestVersion, string owner, long generation) =>
+            requestVersion == _requestVersion && owner == GameDataManager.OwnerPlayerId &&
+            generation == GameDataManager.Generation;
+
+        /// <summary>Выделяет кеш отдельной строкой с датой загрузки и доступным повтором.</summary>
+        private void PrepareCacheBanner()
+        {
+            _cacheRetry?.UnregisterCallback<ClickEvent>(OnClickRetry);
+            _cacheBanner?.RemoveFromHierarchy();
+            _cacheBanner = new VisualElement();
+            _cacheBanner.style.flexDirection = FlexDirection.Row;
+            _cacheBanner.style.alignItems = Align.Center;
+            _cacheBanner.style.flexShrink = 0;
+            _cacheBanner.style.height = 40;
+            _cacheStatus = new Label();
+            _cacheStatus.AddToClassList("lcs-text");
+            _cacheStatus.style.flexGrow = 1;
+            _cacheStatus.style.fontSize = 20;
+            _cacheStatus.style.color = (Color)new Color32(20, 18, 15, 255);
+            _cacheStatus.style.unityTextOutlineWidth = 0;
+            _cacheStatus.style.whiteSpace = WhiteSpace.NoWrap;
+            _cacheStatus.style.overflow = Overflow.Hidden;
+            _cacheStatus.style.textOverflow = TextOverflow.Ellipsis;
+            _cacheRetry = new Button { text = LocalizationManager.GetLocalizedString("leaderboard_retry") };
+            _cacheRetry.style.width = 170;
+            _cacheRetry.style.fontSize = 20;
+            _cacheRetry.RegisterCallback<ClickEvent>(OnClickRetry);
+            _cacheBanner.Add(_cacheStatus);
+            _cacheBanner.Add(_cacheRetry);
+            _rows.parent.Insert(0, _cacheBanner);
+            HideCacheBanner();
+        }
+
+        private void RenderCachedResults(LeaderboardResultsSnapshot snapshot)
+        {
+            RenderResults(snapshot.Top, snapshot.CurrentPlayer);
+            var timestamp = DateTime.TryParse(snapshot.FetchedAtUtc, CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind, out var fetchedAt)
+                ? fetchedAt.ToLocalTime().ToString("g") : "—";
+            var labelKey = snapshot.IsPreviousWeek ? "leaderboard_cached_previous_week_at" : "leaderboard_cached_at";
+            _cacheStatus.text = (LocalizationManager.GetLocalizedString(labelKey) ?? labelKey)
+                .Replace("{0}", timestamp);
+            _cacheBanner.style.display = DisplayStyle.Flex;
+        }
+
+        private void HideCacheBanner()
+        {
+            if (_cacheBanner != null) _cacheBanner.style.display = DisplayStyle.None;
         }
 
         private void UpdatePartButtons(PartView selectedPart)
@@ -469,6 +533,7 @@ namespace LostCyberHamster.UI
 
         private void ShowLoading()
         {
+            HideCacheBanner();
             _loading.style.display = DisplayStyle.Flex;
             _error.style.display = DisplayStyle.None;
             _empty.style.display = DisplayStyle.None;
@@ -478,6 +543,7 @@ namespace LostCyberHamster.UI
 
         private void ShowError()
         {
+            HideCacheBanner();
             _loading.style.display = DisplayStyle.None;
             _error.style.display = DisplayStyle.Flex;
             _empty.style.display = DisplayStyle.None;
@@ -487,6 +553,7 @@ namespace LostCyberHamster.UI
 
         private void ShowEmpty()
         {
+            HideCacheBanner();
             _loading.style.display = DisplayStyle.None;
             _error.style.display = DisplayStyle.None;
             _empty.style.display = DisplayStyle.Flex;
@@ -496,6 +563,7 @@ namespace LostCyberHamster.UI
 
         private void ShowUnavailable()
         {
+            HideCacheBanner();
             _loading.style.display = DisplayStyle.None;
             _error.style.display = DisplayStyle.None;
             _empty.style.display = DisplayStyle.None;
@@ -605,12 +673,14 @@ namespace LostCyberHamster.UI
 
         private async void OnClickRetry(ClickEvent evt)
         {
+            OnlineServicesCoordinator.RequestRetry(WeeklyLeaderboardCoordinator.RetryKey);
             if (_selectedPart != null)
                 await LoadResultsAsync(_selectedPart);
         }
 
         protected override void OnSubscribeToEvents()
         {
+            GameDataManager.ProfileChanged += OnProfileChanged;
             _buttonPreviousLocation?.RegisterCallback<ClickEvent>(
                 OnClickPreviousLocation);
             _buttonNextLocation?.RegisterCallback<ClickEvent>(
@@ -625,6 +695,8 @@ namespace LostCyberHamster.UI
         protected override void OnUnsubscribeFromEvents()
         {
             _requestVersion++;
+            GameDataManager.ProfileChanged -= OnProfileChanged;
+            _cacheRetry?.UnregisterCallback<ClickEvent>(OnClickRetry);
             _buttonPreviousLocation?.UnregisterCallback<ClickEvent>(
                 OnClickPreviousLocation);
             _buttonNextLocation?.UnregisterCallback<ClickEvent>(
@@ -634,6 +706,14 @@ namespace LostCyberHamster.UI
             _buttonEvening?.UnregisterCallback<ClickEvent>(OnClickEvening);
             _buttonNight?.UnregisterCallback<ClickEvent>(OnClickNight);
             _buttonRetry?.UnregisterCallback<ClickEvent>(OnClickRetry);
+        }
+
+        private async void OnProfileChanged()
+        {
+            // Пересобираем доступные локации и исключаем строки прежнего владельца.
+            _requestVersion++;
+            BindView();
+            await LoadDataAsync();
         }
     }
 }

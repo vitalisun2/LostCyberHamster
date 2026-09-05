@@ -34,6 +34,7 @@ namespace GameManagement
         {
             if (isPaused)
             {
+                if (!GameDataManager.IsLoaded) return;
                 PlayerProgressCommitter.Commit(CheckpointReason.AppBackgrounded);
                 return;
             }

@@ -172,10 +172,11 @@ namespace Vues.GameCore
             }
 
             // Списываем point и открываем элемент одним persisted checkpoint.
-            playerData.DevelopmentPoints--;
-            unlockedIds.Add(id);
-            PlayerProgressCommitter.Commit(
-                CheckpointReason.CharacterDevelopmentUnlocked);
+            GameDataManager.ExecuteTransaction(CheckpointReason.CharacterDevelopmentUnlocked, () =>
+            {
+                playerData.DevelopmentPoints--;
+                unlockedIds.Add(id);
+            });
             return true;
         }
 

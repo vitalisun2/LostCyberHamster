@@ -23,7 +23,12 @@ namespace GameManagement
 
             // Сначала завершаем обязательное локальное сохранение.
             GameDataManager.SaveData();
-            Debug.Log($"[GameData] Commit: {reason}.");
+            NotifyCommitCompleted(reason);
+        }
+
+        /// <summary>Уведомляет фоновые службы только после успешной записи общего envelope.</summary>
+        public static void NotifyCommitCompleted(CheckpointReason reason)
+        {
 
             // Затем независимо уведомляем каждого фонового потребителя.
             var handlers = CommitCompleted;

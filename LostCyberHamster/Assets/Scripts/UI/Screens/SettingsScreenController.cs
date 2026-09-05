@@ -57,6 +57,7 @@ namespace LostCyberHamster.UI
         private readonly AccountService _accountService;
         private readonly ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
         private readonly CloudSyncService _cloudSyncService;
+        private Button _buttonCloudAction;
         private static ScreenEnum _returnScreen = ScreenEnum.HomeScreen;
         private SettingsData _settingsData = new();
         private bool _hasAccountLinkConflict;
@@ -125,6 +126,7 @@ namespace LostCyberHamster.UI
 
             _labelVersion.text = $"{Application.version}";
             _labelId.text = $"{SystemInfo.deviceUniqueIdentifier}";
+            EnsureCloudActionButton();
 
             SubscribeToAccountState();
             SubscribeToCloudSyncStatus();
@@ -188,13 +190,15 @@ namespace LostCyberHamster.UI
 
             _labelAccountState.text = LocalizationManager.GetLocalizedString(stateLocalizationKey);
             _buttonLinkAccount.text = LocalizationManager.GetLocalizedString(
-                _hasAccountLinkConflict || state == AccountState.SigningIn
+                state == AccountState.Error || state == AccountState.NotStarted
+                    ? "cloud_sync_action_retry"
+                    : _hasAccountLinkConflict || state == AccountState.SigningIn
                     ? "btn_sign_in"
                     : "btn_link_account");
             _buttonLinkAccount.style.display = state == AccountState.Linked
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
-            _buttonLinkAccount.SetEnabled(state == AccountState.Guest);
+            _buttonLinkAccount.SetEnabled(state == AccountState.Guest || state == AccountState.Error || state == AccountState.NotStarted);
             _buttonChangePlayerName.SetEnabled(
                 state == AccountState.Guest || state == AccountState.Linked);
             if (state == AccountState.Guest || state == AccountState.Linked)
@@ -206,13 +210,8 @@ namespace LostCyberHamster.UI
         /// <summary>Показывает актуальное состояние облачного сохранения.</summary>
         private void UpdateCloudSyncStatus(CloudSyncStatusEnum status)
         {
-            // Показываем статус только связанному аккаунту.
-            var isLinked = _accountService.State == AccountState.Linked;
-            _cloudSyncStatusRow.style.display = isLinked
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
-            if (!isLinked)
-                return;
+            // Локальное сохранение остаётся видимым при недоступной авторизации.
+            _cloudSyncStatusRow.style.display = DisplayStyle.Flex;
 
             // Выводим понятное состояние синхронизации.
             var localizationKey = status switch
@@ -221,14 +220,55 @@ namespace LostCyberHamster.UI
                 CloudSyncStatusEnum.Synchronizing => "cloud_sync_status_synchronizing",
                 CloudSyncStatusEnum.Pending => "cloud_sync_status_pending",
                 CloudSyncStatusEnum.Conflict => "cloud_sync_status_conflict",
+                CloudSyncStatusEnum.LocalOnly => "cloud_sync_status_local",
+                CloudSyncStatusEnum.Unavailable => "cloud_sync_status_unavailable",
                 _ => "cloud_sync_status_pending"
             };
 
             _labelCloudSyncStatus.text = LocalizationManager.GetLocalizedString(localizationKey);
+            if (System.DateTime.TryParse(GameDataManager.LastCloudSyncUtc, out var confirmedAt))
+                _labelCloudSyncStatus.text += "\n" + LocalizationManager.GetLocalizedString("cloud_sync_last_confirmed") +
+                    " " + confirmedAt.ToLocalTime().ToString("g");
+            if (_buttonCloudAction != null)
+            {
+                _buttonCloudAction.text = LocalizationManager.GetLocalizedString(
+                    _cloudSyncService.HasUnresolvedConflict ? "cloud_sync_action_choose" : "cloud_sync_action_retry");
+                _buttonCloudAction.SetEnabled(status != CloudSyncStatusEnum.Synchronizing);
+            }
+        }
+
+        /// <summary>Добавляет действие к существующей строке статуса без перестройки экрана.</summary>
+        private void EnsureCloudActionButton()
+        {
+            _buttonCloudAction = _cloudSyncStatusRow.Q<Button>("settings__btn-cloud-sync-action");
+            if (_buttonCloudAction != null) return;
+            _buttonCloudAction = new Button { name = "settings__btn-cloud-sync-action" };
+            _buttonCloudAction.AddToClassList("lcs_btn");
+            _buttonCloudAction.AddToClassList("bg-primary");
+            _buttonCloudAction.style.minWidth = 200;
+            _buttonCloudAction.style.height = 56;
+            _buttonCloudAction.style.marginLeft = 12;
+            _buttonCloudAction.style.fontSize = 24;
+            _cloudSyncStatusRow.Add(_buttonCloudAction);
+        }
+
+        private void OnClickCloudAction(ClickEvent _)
+        {
+            if (_cloudSyncService.HasUnresolvedConflict) _cloudSyncService.ShowConflict();
+            else
+            {
+                _accountService.Start();
+                _cloudSyncService.RequestRetry();
+            }
         }
 
         private async void OnClickButtonLinkAccount(ClickEvent evt)
         {
+            if (_accountService.State == AccountState.Error || _accountService.State == AccountState.NotStarted)
+            {
+                _accountService.Start();
+                return;
+            }
             if (_accountService.State != AccountState.Guest)
                 return;
 
@@ -437,6 +477,7 @@ namespace LostCyberHamster.UI
             SetDropdownPopupStyleScope(true);
             _buttonBack?.RegisterCallback<ClickEvent>(OnClickButtonBack);
             _buttonLinkAccount?.RegisterCallback<ClickEvent>(OnClickButtonLinkAccount);
+            _buttonCloudAction?.RegisterCallback<ClickEvent>(OnClickCloudAction);
             _buttonChangePlayerName?.RegisterCallback<ClickEvent>(OnClickChangePlayerName);
             _buttonSavePlayerName?.RegisterCallback<ClickEvent>(OnClickSavePlayerName);
             _buttonCancelPlayerName?.RegisterCallback<ClickEvent>(OnClickCancelPlayerName);
@@ -554,6 +595,7 @@ namespace LostCyberHamster.UI
             SetDropdownPopupStyleScope(false);
             _buttonBack?.UnregisterCallback<ClickEvent>(OnClickButtonBack);
             _buttonLinkAccount?.UnregisterCallback<ClickEvent>(OnClickButtonLinkAccount);
+            _buttonCloudAction?.UnregisterCallback<ClickEvent>(OnClickCloudAction);
             _buttonChangePlayerName?.UnregisterCallback<ClickEvent>(OnClickChangePlayerName);
             _buttonSavePlayerName?.UnregisterCallback<ClickEvent>(OnClickSavePlayerName);
             _buttonCancelPlayerName?.UnregisterCallback<ClickEvent>(OnClickCancelPlayerName);

@@ -1,39 +1,39 @@
-using UnityEngine;
+using System;
 using UnityEngine.Advertisements;
 
 namespace GameAds
 {
-    public static partial class AdsManager
+    public sealed partial class UnityRewardedAdProvider
     {
-        private class AdShowListener : IUnityAdsShowListener
+        private sealed class AdShowListener : IUnityAdsShowListener
         {
-            public void OnUnityAdsShowFailure(string adUnitId, UnityAdsShowError error, string message)
+            private readonly string _placement;
+            private readonly Action _started;
+            private readonly Action<bool> _completed;
+            private readonly Action<string> _failed;
+            public AdShowListener(string placement, Action started, Action<bool> completed, Action<string> failed)
             {
-                string errorMessage = $"Error showing Ad Unit {adUnitId}: {error} - {message}";
-                Debug.LogError(errorMessage);
-                AdError(errorMessage);
+                _placement = placement;
+                _started = started;
+                _completed = completed;
+                _failed = failed;
             }
-
             public void OnUnityAdsShowStart(string adUnitId)
             {
-
+                if (adUnitId == _placement)
+                    _started();
             }
-
-            public void OnUnityAdsShowClick(string adUnitId)
+            public void OnUnityAdsShowComplete(string adUnitId, UnityAdsShowCompletionState state)
             {
-
+                if (adUnitId == _placement)
+                    _completed(state == UnityAdsShowCompletionState.COMPLETED);
             }
-
-            public void OnUnityAdsShowComplete(string adUnitId, UnityAdsShowCompletionState showCompletionState)
+            public void OnUnityAdsShowFailure(string adUnitId, UnityAdsShowError error, string message)
             {
-                if (showCompletionState == UnityAdsShowCompletionState.COMPLETED)
-                {
-                    AdCompleted();
-                    return;
-                }
-
-                AdCancelled();
+                if (adUnitId == _placement)
+                    _failed($"{error}: {message}");
             }
+            public void OnUnityAdsShowClick(string adUnitId) { }
         }
     }
 }

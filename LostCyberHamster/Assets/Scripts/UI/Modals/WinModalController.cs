@@ -229,6 +229,12 @@ namespace LostCyberHamster.UI
                     LocalizationManager.GetLocalizedString("win_submit_success"),
                 RunResultSubmissionState.Failed =>
                     LocalizationManager.GetLocalizedString("win_submit_error"),
+                RunResultSubmissionState.LocalOnly =>
+                    LocalizationManager.GetLocalizedString("win_submit_local_only"),
+                RunResultSubmissionState.Expired =>
+                    LocalizationManager.GetLocalizedString("win_submit_expired"),
+                RunResultSubmissionState.Unconfirmed =>
+                    LocalizationManager.GetLocalizedString("win_submit_unconfirmed"),
                 _ => string.Empty
             };
         }

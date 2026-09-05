@@ -7,6 +7,7 @@ using GameManagement.Progress;
 using Unity.Services.Authentication;
 using Unity.Services.Leaderboards;
 using Unity.Services.Leaderboards.Exceptions;
+using Unity.Services.Leaderboards.Models;
 using LeaderboardEntry = Unity.Services.Leaderboards.Models.LeaderboardEntry;
 
 namespace GameManagement.Leaderboard
@@ -18,6 +19,42 @@ namespace GameManagement.Leaderboard
     {
         private const int _topCount = 50;
         private static readonly SemaphoreSlim _submissionGate = new(1, 1);
+
+        public static IReadOnlyList<string> ConfiguredLeaderboardIds { get; } = new[]
+        {
+            Consts.NewYorkMorningLeaderboardId, Consts.NewYorkAfternoonLeaderboardId,
+            Consts.NewYorkEveningLeaderboardId, Consts.NewYorkNightLeaderboardId,
+            Consts.ParisMorningLeaderboardId, Consts.ParisAfternoonLeaderboardId,
+            Consts.ParisEveningLeaderboardId, Consts.ParisNightLeaderboardId,
+            Consts.BarcelonaMorningLeaderboardId, Consts.BarcelonaAfternoonLeaderboardId,
+            Consts.BarcelonaEveningLeaderboardId, Consts.BarcelonaNightLeaderboardId
+        };
+
+        /// <summary>Получает текущую серверную версию таблицы.</summary>
+        public Task<LeaderboardVersions> GetSeasonAsync(string leaderboardId) =>
+            LeaderboardsService.Instance.GetVersionsAsync(leaderboardId);
+
+        /// <summary>Читает собственный результат вместе с подтверждающими метаданными.</summary>
+        public async Task<LeaderboardEntry> GetPlayerEntryAsync(string leaderboardId)
+        {
+            try
+            {
+                return await LeaderboardsService.Instance.GetPlayerScoreAsync(
+                    leaderboardId, new GetPlayerScoreOptions { IncludeMetadata = true });
+            }
+            catch (LeaderboardsException exception) when (
+                exception.Reason == LeaderboardsExceptionReason.EntryNotFound ||
+                exception.Reason == LeaderboardsExceptionReason.ScoreSubmissionRequired)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>Отправляет результат с серверным запретом записи в другую неделю.</summary>
+        public Task<LeaderboardEntry> SubmitVersionedScoreAsync(
+            string leaderboardId, int score, string versionId, WeeklyScoreMetadata metadata) =>
+            LeaderboardsService.Instance.AddPlayerScoreAsync(leaderboardId, score,
+                new AddPlayerScoreOptions { VersionId = versionId, Metadata = metadata });
 
         /// <summary>
         /// Последовательно проверяет weekly record и публикует забег только при улучшении.
@@ -60,6 +97,10 @@ namespace GameManagement.Leaderboard
                 int runScore,
                 string playerId)
         {
+            // Фиксируем серверную неделю до read/compare/write совместимого DEV-пути.
+            var season = await LeaderboardsService.Instance.GetVersionsAsync(leaderboardId);
+            EnsureCurrentPlayer(playerId);
+
             // Загружаем лучший score одного забега текущей weekly location+part таблицы.
             var weeklyBest = await GetPlayerWeeklyBestRunScoreAsync(
                 leaderboardId);
@@ -76,16 +117,16 @@ namespace GameManagement.Leaderboard
             }
 
             // Публикуем новый weekly best одного успешного забега без накопления score.
-            await LeaderboardsService.Instance.AddPlayerScoreAsync(
+            var accepted = await LeaderboardsService.Instance.AddPlayerScoreAsync(
                 leaderboardId,
-                runScore);
+                runScore, new AddPlayerScoreOptions { VersionId = season.VersionId });
             EnsureCurrentPlayer(playerId);
 
             return new LeaderboardSubmissionResult(
                 playerId,
                 weeklyBest.Score,
-                runScore,
-                true);
+                checked((int)accepted.Score),
+                accepted.Score == runScore);
         }
 
         /// <summary>
@@ -197,7 +238,7 @@ namespace GameManagement.Leaderboard
         /// <summary>
         /// Возвращает серверный идентификатор таблицы локации и части дня.
         /// </summary>
-        private static string ResolveLeaderboardId(
+        public static string ResolveLeaderboardId(
             string locationId,
             string partOfDayId)
         {

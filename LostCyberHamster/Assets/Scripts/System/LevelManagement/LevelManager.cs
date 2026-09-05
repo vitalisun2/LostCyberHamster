@@ -378,15 +378,14 @@ namespace Assets.Scripts.System
                 progressKey,
                 stars);
 
-            // Передаём сервису обновлённый snapshot до замены сохранённого состояния.
-            _playerExperienceService.GrantExperienceForImprovedStars(
-                playerData,
-                progressKey,
-                updatedSnapshot);
-
-            // Сохраняем stars и XP одним существующим checkpoint.
-            playerData.Progress = updatedSnapshot;
-            PlayerProgressCommitter.Commit(CheckpointReason.LevelCompleted);
+            // Сохраняем stars и XP до публикации level-up и обновления заданий.
+            bool levelChanged = false;
+            GameDataManager.ExecuteTransaction(CheckpointReason.LevelCompleted, () =>
+            {
+                levelChanged = _playerExperienceService.GrantExperienceForImprovedStars(
+                    playerData, progressKey, updatedSnapshot, notify: false);
+                playerData.Progress = updatedSnapshot;
+            }, () => PlayerExperienceService.PublishCommittedLevelChange(levelChanged));
             return true;
         }
 

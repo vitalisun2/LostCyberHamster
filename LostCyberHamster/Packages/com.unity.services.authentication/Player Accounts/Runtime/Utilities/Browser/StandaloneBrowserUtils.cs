@@ -9,7 +9,7 @@ namespace Unity.Services.Authentication.PlayerAccounts
 {
     class StandaloneBrowserUtils : IBrowserUtils
     {
-        public event Action<string> AuthCodeReceivedEvent;
+        public event Action<string, string> AuthCodeReceivedEvent;
 
         HttpListener m_HttpListener;
         int? m_BoundPort = null;
@@ -43,19 +43,21 @@ namespace Unity.Services.Authentication.PlayerAccounts
 
         public async Task LaunchUrlAsync(string url)
         {
+            // Локальная ссылка не позволяет старому callback остановить listener нового flow.
+            var listener = m_HttpListener;
             Application.OpenURL(url);
 
-            if (m_HttpListener.IsListening)
+            if (listener.IsListening)
             {
-                m_HttpListener.Stop();
+                listener.Stop();
             }
 
-            m_HttpListener.Start();
+            listener.Start();
             HttpListenerContext context;
 
             try
             {
-                context = await m_HttpListener.GetContextAsync();
+                context = await listener.GetContextAsync();
             }
             catch (ObjectDisposedException ex)
             {
@@ -68,8 +70,8 @@ namespace Unity.Services.Authentication.PlayerAccounts
                 return;
             }
 
-            SendBrowserResponse(context.Response, m_HttpListener);
-            m_HttpListener.Stop();
+            SendBrowserResponse(context.Response, listener);
+            listener.Stop();
 
             var uri = new Uri(url);
             var queryParameters = UriHelper.ParseQueryString(uri.Query);
@@ -80,11 +82,17 @@ namespace Unity.Services.Authentication.PlayerAccounts
             }
 
             var code = GetAuthCode(context, state);
-            AuthCodeReceivedEvent?.Invoke(code);
+            AuthCodeReceivedEvent?.Invoke(code, state);
         }
 
         public void Dismiss()
         {
+            // Освобождаем ожидание callback и порт при отмене браузерного входа.
+            var listener = m_HttpListener;
+            m_HttpListener = null;
+            m_BoundPort = null;
+            if (listener == null) return;
+            listener.Close();
         }
 
         static void SendBrowserResponse(HttpListenerResponse response, HttpListener http)
@@ -96,7 +104,8 @@ namespace Unity.Services.Authentication.PlayerAccounts
             var responseTask = responseOutput.WriteAsync(buffer, 0, buffer.Length).ContinueWith(_ =>
             {
                 responseOutput.Close();
-                http.Stop();
+                try { http.Stop(); }
+                catch (ObjectDisposedException) { }
             });
         }
 

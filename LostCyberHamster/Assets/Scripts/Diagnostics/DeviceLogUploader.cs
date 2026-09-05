@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
+using Assets.Scripts.Online;
 using GameManagement;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -45,7 +47,12 @@ namespace Assets.Scripts.Diagnostics
             yield return SendPayloadCoroutine(settings, json, reason);
         }
 
-        private static bool TryPrepareUpload(string reason, out DeviceLogUploadSettings settings, out string json)
+        internal static bool IsCurrentEndpoint(string endpoint)
+        {
+            return string.Equals(LoadSettings()?.endpointUrl, endpoint, StringComparison.Ordinal);
+        }
+
+        internal static bool TryPrepareUpload(string reason, out DeviceLogUploadSettings settings, out string json)
         {
             settings = null;
             json = null;
@@ -115,7 +122,9 @@ namespace Assets.Scripts.Diagnostics
 
         private static DeviceLogUploadPayload BuildPayload(DeviceLogUploadSettings settings, string reason)
         {
-            var logBytes = ReadDiagnosticLogBytes(settings.MaxLogBytes, out bool truncated);
+            // Base64 и metadata также входят в лимит сохранённого снимка 1 МиБ.
+            int maxBytes = Math.Min(settings.MaxLogBytes, (1024 * 1024 - 16 * 1024) * 3 / 4);
+            var logBytes = ReadDiagnosticLogBytes(maxBytes, out bool truncated);
             return new DeviceLogUploadPayload
             {
                 metadata = new DeviceLogUploadMetadata
@@ -154,16 +163,50 @@ namespace Assets.Scripts.Diagnostics
                 return Array.Empty<byte>();
             }
 
-            var bytes = File.ReadAllBytes(path);
-            if (bytes.Length <= maxBytes)
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            int count = (int)Math.Min(stream.Length, maxBytes);
+            truncated = stream.Length > count;
+            stream.Seek(-count, SeekOrigin.End);
+            var tail = new byte[count];
+            int offset = 0;
+            while (offset < tail.Length)
             {
-                return bytes;
+                int read = stream.Read(tail, offset, tail.Length - offset);
+                if (read == 0) break;
+                offset += read;
             }
-
-            truncated = true;
-            var tail = new byte[maxBytes];
-            Buffer.BlockCopy(bytes, bytes.Length - maxBytes, tail, 0, maxBytes);
+            if (offset != tail.Length) Array.Resize(ref tail, offset);
             return tail;
+        }
+
+        /// <summary>Отправляет сохранённый снимок; очередь удаляет его только после подтверждённого ответа.</summary>
+        internal static async Task UploadPreparedAsync(string json, string endpoint)
+        {
+            var settings = LoadSettings();
+            if (!ShouldUpload(settings, false)) throw new InvalidOperationException("Log upload is disabled.");
+            if (!string.Equals(endpoint, settings.endpointUrl, StringComparison.Ordinal))
+                throw new InvalidOperationException("Log destination changed.");
+
+            // Один HTTP-запрос с общим realtime deadline не задерживает интерфейс.
+            using var request = new UnityWebRequest(settings.endpointUrl, UnityWebRequest.kHttpVerbPOST);
+            request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+            ApplyCommonHeaders(settings, request);
+            request.timeout = settings.UploadTimeoutSeconds;
+            var operation = request.SendWebRequest();
+            double deadline = UnityGameClock.Instance.RealtimeSeconds + settings.UploadTimeoutSeconds;
+            while (!operation.isDone)
+            {
+                if (UnityGameClock.Instance.RealtimeSeconds >= deadline)
+                {
+                    request.Abort();
+                    throw new TimeoutException("Log upload timed out.");
+                }
+                await Task.Yield();
+            }
+            if (request.result != UnityWebRequest.Result.Success)
+                throw new IOException($"Log upload response: {request.responseCode}.");
         }
 
         private static IEnumerator SendHealthProbeCoroutine(DeviceLogUploadSettings settings, string reason)

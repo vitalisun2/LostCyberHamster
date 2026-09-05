@@ -1,5 +1,8 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
+using GameAds;
+using GameManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
@@ -17,6 +20,11 @@ namespace LostCyberHamster.UI
         private ShopItem _freeCoinsItem;
         private ShopItem _crystalPackItem;
         private int _loadVersion;
+        private RewardedAdRequest _adRequest;
+        private RewardedAdService _ads;
+        private ShopPurchaseReceipt _pendingPurchase;
+        private string _purchaseProfileId;
+        private string _purchaseOwnerPlayerId;
         private Button FreeCoinsButton =>
             _contentRoot.Q<Button>("shop-free-coins");
         private Button CrystalPackButton =>
@@ -80,6 +88,9 @@ namespace LostCyberHamster.UI
             CrystalPackButton?.RegisterCallback<ClickEvent>(
                 OnCrystalPackClicked);
             ResourceManager.BalanceChanged += OnBalanceChanged;
+            _ads = RewardedAdService.Instance;
+            _ads.Changed += OnAdvertisementChanged;
+            OnAdvertisementChanged();
         }
 
         protected override void OnUnsubscribeFromEvents()
@@ -90,6 +101,12 @@ namespace LostCyberHamster.UI
             CrystalPackButton?.UnregisterCallback<ClickEvent>(
                 OnCrystalPackClicked);
             ResourceManager.BalanceChanged -= OnBalanceChanged;
+            if (_ads != null)
+            {
+                _ads.Changed -= OnAdvertisementChanged;
+                _ads.CancelContext(_adRequest);
+                _adRequest = null;
+            }
         }
 
         private void OnFreeCoinsClicked(ClickEvent _)
@@ -108,7 +125,7 @@ namespace LostCyberHamster.UI
 
             if (!ShopManager.CanBuyItem(_crystalPackItem))
             {
-                ShowPurchaseMessage();
+                ShowPurchaseMessage("shop_insufficient_coins_for_crystals");
                 return;
             }
 
@@ -124,8 +141,30 @@ namespace LostCyberHamster.UI
                 return;
             }
 
-            ShopManager.BuyItem(item);
+            string requestId = item.resource == ResourceType.Advertisement ? null : GetPurchaseRequestId(item);
+            if (!ShopManager.BuyItem(item, requestId))
+                ShowPurchaseMessage("shop_save_failed");
+            else if (item.resource == ResourceType.Advertisement)
+            {
+                _adRequest = RewardedAdService.Instance.ActiveRequest;
+                OnAdvertisementChanged();
+            }
+            else
+                _pendingPurchase = null;
             ApplyOfferState();
+        }
+
+        /// <summary>Повторяет отказ записи с тем же ID только для того же профиля и предложения.</summary>
+        private string GetPurchaseRequestId(ShopItem item)
+        {
+            if (_pendingPurchase == null || _purchaseProfileId != GameDataManager.ProfileId ||
+                _purchaseOwnerPlayerId != GameDataManager.OwnerPlayerId || !_pendingPurchase.Matches(item))
+            {
+                _pendingPurchase = ShopPurchaseReceipt.Capture(Guid.NewGuid().ToString("N"), item);
+                _purchaseProfileId = GameDataManager.ProfileId;
+                _purchaseOwnerPlayerId = GameDataManager.OwnerPlayerId;
+            }
+            return _pendingPurchase.RequestId;
         }
 
         private void OnBalanceChanged(ResourceType resourceType, int _)
@@ -146,14 +185,27 @@ namespace LostCyberHamster.UI
 
         private void ApplyOfferState()
         {
-            FreeCoinsButton?.SetEnabled(_freeCoinsItem != null);
+            FreeCoinsButton?.SetEnabled(_freeCoinsItem != null && ShopManager.CanBuyItem(_freeCoinsItem));
             CrystalPackButton?.SetEnabled(_crystalPackItem != null);
         }
 
-        private void ShowPurchaseMessage()
+        private void OnAdvertisementChanged()
+        {
+            ApplyOfferState();
+            string key = _ads?.StatusKey;
+            if (string.IsNullOrEmpty(key))
+                HidePurchaseMessage();
+            else
+                ShowPurchaseMessage(key);
+        }
+
+        private void ShowPurchaseMessage(string key)
         {
             if (PurchaseMessage != null)
             {
+                if (PurchaseMessage is LocalizedLabel localized)
+                    localized.key = key;
+                PurchaseMessage.text = LocalizationManager.GetLocalizedString(key);
                 PurchaseMessage.style.display = DisplayStyle.Flex;
             }
         }

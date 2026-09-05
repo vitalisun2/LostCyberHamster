@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Assets.Scripts.System;
 using Vues.GameCore;
 using LoadingTasks;
+using Assets.Scripts.Online;
 
 namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
 {
@@ -16,15 +17,17 @@ namespace Assets.Scripts.Entry_Points.BootstrapLoadingTasks
         {
         }
 
-        public async Task LoadAsync(Dictionary<string, object> bundle)
+        public Task LoadAsync(Dictionary<string, object> bundle)
         {
             if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
             {
                 DebugManager.DiagStability("[AUTOMATION] Unity Analytics skipped for test-level run.");
-                return;
+                return Task.CompletedTask;
             }
 
-            await AnalyticsManager.InitializeAsync();
+            OnlineServicesCoordinator.Register("analytics", AnalyticsManager.InitializeAsync,
+                () => OnlineServicesCoordinator.UnityServicesReady && !AnalyticsManager.IsInitialized);
+            return Task.CompletedTask;
         }
     }
 }

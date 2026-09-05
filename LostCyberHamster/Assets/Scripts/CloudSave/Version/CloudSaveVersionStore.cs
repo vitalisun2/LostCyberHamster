@@ -3,48 +3,29 @@ using UnityEngine;
 
 namespace GameManagement.CloudSave.Version
 {
-    /// <summary>Хранит подтверждённую версию каждого игрока.</summary>
+    /// <summary>Читает новую серверную базу и сохраняет доступ к legacy версиям владельцев.</summary>
     public sealed class CloudSaveVersionStore : ICloudSaveVersionStore
     {
-        /// <summary>Разделяет версии игроков.</summary>
-        private const string StorageKeyPrefix = "CloudSave_.Version.";
+        public bool HasConfirmedVersion(string playerId) => !string.IsNullOrWhiteSpace(GetConfirmedRevision(playerId));
 
-        /// <summary>Проверяет, подтверждён ли снимок игрока.</summary>
-        public bool HasConfirmedVersion(string playerId)
-        {
-            var storageKey = GetStorageKey(playerId);
-            return PlayerPrefs.HasKey(storageKey) &&
-                   !string.IsNullOrWhiteSpace(PlayerPrefs.GetString(storageKey));
-        }
-
-        /// <summary>Возвращает подтверждённую версию снимка.</summary>
         public string GetConfirmedRevision(string playerId)
         {
-            var storageKey = GetStorageKey(playerId);
-            if (!PlayerPrefs.HasKey(storageKey))
-                return null;
-
-            var serverRevision = PlayerPrefs.GetString(storageKey);
-            return string.IsNullOrWhiteSpace(serverRevision) ? null : serverRevision;
+            if (string.IsNullOrWhiteSpace(playerId)) throw new ArgumentException("Player ID is required.", nameof(playerId));
+            if (GameDataManager.OwnerPlayerId == playerId) return GameDataManager.BaseCloudRevision;
+            var value = GameDataManager.GetJournalJson("cloud-base", playerId);
+            if (!string.IsNullOrWhiteSpace(value)) return value;
+            value = PlayerPrefs.GetString("CloudSave_.Version." + playerId, string.Empty);
+            return string.IsNullOrWhiteSpace(value) ? null : value;
         }
 
-        /// <summary>Запоминает подтверждённую версию снимка.</summary>
         public void SaveConfirmedVersion(string playerId, string serverRevision)
         {
-            if (string.IsNullOrWhiteSpace(serverRevision))
-                throw new ArgumentException("Server revision must be provided.", nameof(serverRevision));
-
-            PlayerPrefs.SetString(GetStorageKey(playerId), serverRevision);
-            PlayerPrefs.Save();
-        }
-
-        /// <summary>Возвращает отдельный ключ игрока.</summary>
-        private static string GetStorageKey(string playerId)
-        {
-            if (string.IsNullOrWhiteSpace(playerId))
-                throw new ArgumentException("Player ID must be provided.", nameof(playerId));
-
-            return StorageKeyPrefix + playerId;
+            if (string.IsNullOrWhiteSpace(serverRevision)) throw new ArgumentException("Revision is required.", nameof(serverRevision));
+            if (GameDataManager.OwnerPlayerId == playerId)
+                GameDataManager.SetCloudBaseRevision(serverRevision);
+            else
+                GameDataManager.ExecuteTechnicalTransaction(() =>
+                    GameDataManager.SetJournalJson("cloud-base", serverRevision, playerId));
         }
     }
 }

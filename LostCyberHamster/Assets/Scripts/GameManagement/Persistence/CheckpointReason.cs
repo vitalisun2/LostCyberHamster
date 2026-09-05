@@ -20,6 +20,10 @@ namespace GameManagement
         StoryQuestSetChanged,
         DailyQuestCommonRewardClaimed,
         DeveloperResourceGranted,
-        CharacterDevelopmentUnlocked
+        CharacterDevelopmentUnlocked,
+        RewardedAdIntentRecorded,
+        RewardedAdRewardGranted,
+        ShopItemPurchased,
+        WeeklyLeaderboardRunQueued
     }
 }

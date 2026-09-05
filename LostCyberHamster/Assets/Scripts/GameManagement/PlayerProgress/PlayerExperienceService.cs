@@ -25,7 +25,8 @@ namespace GameManagement.Progress
         public bool GrantExperienceForImprovedStars(
             PlayerData playerData,
             LevelProgressKey progressKey,
-            LevelProgressSnapshot updatedSnapshot)
+            LevelProgressSnapshot updatedSnapshot,
+            bool notify = true)
         {
             // Проверяем контекст до чтения сохранённого и обновлённого progress.
             if (playerData == null)
@@ -53,39 +54,39 @@ namespace GameManagement.Progress
 
             return GrantExperience(
                 playerData,
-                checked(improvedStars * ExperiencePerImprovedStar));
+                checked(improvedStars * ExperiencePerImprovedStar), notify);
         }
 
         /// <summary>
         /// Начисляет XP за подтверждённый сервером новый weekly leaderboard record.
         /// </summary>
         public bool GrantExperienceForWeeklyLeaderboardRecord(
-            PlayerData playerData)
+            PlayerData playerData, bool notify = true)
         {
             return GrantExperience(
                 playerData,
-                WeeklyLeaderboardRecordExperienceReward);
+                WeeklyLeaderboardRecordExperienceReward, notify);
         }
 
         /// <summary>
         /// Начисляет XP за одноразово полученную награду дневного квеста.
         /// </summary>
-        public bool GrantExperienceForClaimedDailyQuest(PlayerData playerData)
+        public bool GrantExperienceForClaimedDailyQuest(PlayerData playerData, bool notify = true)
         {
             return GrantExperience(
                 playerData,
-                DailyQuestExperienceReward);
+                DailyQuestExperienceReward, notify);
         }
 
         /// <summary>
         /// Начисляет XP за одноразово полученную награду сюжетного квеста.
         /// </summary>
         public bool GrantExperienceForClaimedStorylineQuest(
-            PlayerData playerData)
+            PlayerData playerData, bool notify = true)
         {
             return GrantExperience(
                 playerData,
-                StorylineQuestExperienceReward);
+                StorylineQuestExperienceReward, notify);
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -94,18 +95,26 @@ namespace GameManagement.Progress
         /// </summary>
         public bool GrantExperienceForTesting(
             PlayerData playerData,
-            int experienceReward)
+            int experienceReward, bool notify = true)
         {
-            return GrantExperience(playerData, experienceReward);
+            return GrantExperience(playerData, experienceReward, notify);
         }
 #endif
+
+        /// <summary>Публикует повышение уровня после успешного сохранения транзакции.</summary>
+        public static void PublishCommittedLevelChange(bool playerLevelChanged)
+        {
+            if (playerLevelChanged)
+                GameEventsManager.PlayerStateChanged(
+                    PlayerStateIds.PlayerLevel, PlayerStateEntityIds.Player);
+        }
 
         /// <summary>
         /// Начисляет XP, переносит остаток и возвращает признак хотя бы одного повышения Player Level.
         /// </summary>
         private bool GrantExperience(
             PlayerData playerData,
-            int experienceReward)
+            int experienceReward, bool notify)
         {
             // Проверяем награду и нормализованное состояние игрока.
             if (playerData == null)
@@ -144,15 +153,11 @@ namespace GameManagement.Progress
                 playerData,
                 playerLevelsGained);
 
-            if (playerLevelsGained > 0)
-            {
-                GameEventsManager.PlayerStateChanged(
-                    PlayerStateIds.PlayerLevel,
-                    PlayerStateEntityIds.Player);
-            }
+            if (notify)
+                PublishCommittedLevelChange(playerLevelsGained > 0);
 
             // Фиксируем каждое фактическое начисление в economy diagnostics.
-            DebugManager.DiagEconomy(
+            if (notify) DebugManager.DiagEconomy(
                 $"[PlayerExperience] grant amount={experienceReward} " +
                 $"xp={previousExperiencePoints}->{playerData.ExperiencePoints} " +
                 $"level={previousPlayerLevel}->{playerData.PlayerLevel}");

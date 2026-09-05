@@ -1,27 +1,28 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.System;
 using Atomic.Elements;
-using GameManagement;
 using GameManagement.Leaderboard;
 using GameManagement.Progress;
-using Unity.Services.Authentication;
 using UnityEngine;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
     /// <summary>
-    /// Сравнивает успешный забег с недельным рекордом Unity Leaderboards.
+    /// Фиксирует неделю до забега и показывает состояние durable-отправки успешного результата.
     /// </summary>
     public sealed class PartOfDayScoreMechanics
     {
         private readonly RunScoreMechanics _runScoreMechanics;
         private readonly AtomicVariable<int> _lives;
         private readonly GameManager _gameManager;
-        private readonly LeaderboardService _leaderboardService = new();
-        private readonly PlayerExperienceService _playerExperienceService = new();
+        private WeeklyLeaderboardCoordinator _coordinator;
+        private WeeklyRunContext _runContext;
+        private LevelProgressKey _runLevelKey;
+        private string _runId;
+        private bool _contextCaptured;
+        private bool _hasRunLevelKey;
         private bool _isScoreSubmissionStarted;
 
         public RunResultData LatestResult { get; private set; }
@@ -40,12 +41,23 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnEnable()
         {
+            // Серверная версия фиксируется один раз, до начала gameplay.
+            if (!_contextCaptured)
+            {
+                _contextCaptured = true;
+                _coordinator = WeeklyLeaderboardCoordinator.Instance;
+                _hasRunLevelKey = LevelManager.TryGetCurrentProgressKey(out _runLevelKey);
+                if (_hasRunLevelKey)
+                    _runContext = _coordinator?.CaptureRunContext(_runLevelKey);
+            }
+            if (_coordinator != null) _coordinator.RunChanged += OnRunChanged;
             _gameManager.OnFinish += OnFinish;
         }
 
         public void OnDisable()
         {
             _gameManager.OnFinish -= OnFinish;
+            if (_coordinator != null) _coordinator.RunChanged -= OnRunChanged;
         }
 
         private void OnFinish()
@@ -55,7 +67,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return;
             }
 
-            if (!LevelManager.TryGetCurrentProgressKey(out var progressKey))
+            if (!_hasRunLevelKey)
             {
                 Debug.LogWarning("[PartOfDayScore] Current level key could not be resolved; run ignored.");
                 return;
@@ -68,8 +80,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             _isScoreSubmissionStarted = true;
             var runScore = _runScoreMechanics.CurrentScore;
+            var progressKey = _runLevelKey;
 
-            // Сразу открываем состояние загрузки серверного weekly best.
+            // Победа и локальный score доступны сразу, независимо от соединения.
             var pendingResult = new RunResultData(
                 progressKey,
                 runScore,
@@ -77,63 +90,51 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 false,
                 IsLastLevelOfPart(progressKey),
                 RunResultSubmissionState.Pending);
-            PublishResult(pendingResult);
+            LatestResult = pendingResult;
 
-            // Получаем авторитетный недельный рекорд из Unity Leaderboards.
-            _ = SubmitScoreAsync(pendingResult);
+            QueueScore(pendingResult);
         }
 
-        private async Task SubmitScoreAsync(RunResultData pendingResult)
+        private void QueueScore(RunResultData pendingResult)
         {
             try
             {
-                var submission = await _leaderboardService.SubmitSuccessfulRunAsync(
-                    pendingResult.LevelKey,
-                    pendingResult.RunScore);
-
-                if (submission.IsNewRecord)
-                {
-                    // Отбрасываем reward старой identity после смены account lifecycle.
-                    if (!AuthenticationService.Instance.IsSignedIn ||
-                        !string.Equals(
-                            AuthenticationService.Instance.PlayerId,
-                            submission.PlayerId,
-                            StringComparison.Ordinal))
-                    {
-                        throw new OperationCanceledException(
-                            "Leaderboard reward player changed before the checkpoint.");
-                    }
-
-                    // Начисляем XP и сразу создаём локальный/cloud checkpoint.
-                    _playerExperienceService
-                        .GrantExperienceForWeeklyLeaderboardRecord(
-                            GameDataManager.PlayerData);
-                    PlayerProgressCommitter.Commit(
-                        CheckpointReason.WeeklyLeaderboardRecordRewarded);
-                }
-
-                PublishResult(new RunResultData(
-                    pendingResult.LevelKey,
-                    pendingResult.RunScore,
-                    submission.WeeklyBestRunScore,
-                    submission.IsNewRecord,
-                    pendingResult.IsLastLevelOfPart,
-                    submission.IsNewRecord
-                        ? RunResultSubmissionState.Submitted
-                        : RunResultSubmissionState.NotRequired));
+                var run = _coordinator?.QueueSuccessfulRun(_runContext, pendingResult.RunScore);
+                _runId = run?.RunId;
+                if (run == null)
+                    PublishSubmissionState(RunResultSubmissionState.Failed);
+                else
+                    OnRunChanged(run);
             }
             catch (Exception exception)
             {
                 Debug.LogWarning(
-                    $"[Leaderboard] Score submission failed: {exception.Message}");
-                PublishResult(new RunResultData(
-                    pendingResult.LevelKey,
-                    pendingResult.RunScore,
-                    0,
-                    false,
-                    pendingResult.IsLastLevelOfPart,
-                    RunResultSubmissionState.Failed));
+                    $"[Leaderboard] Local queue could not be saved ({exception.GetType().Name}).");
+                PublishSubmissionState(RunResultSubmissionState.Failed);
             }
+        }
+
+        private void OnRunChanged(WeeklyLeaderboardRun run)
+        {
+            if (run.RunId != _runId || LatestResult == null) return;
+            var state = run.Status switch
+            {
+                WeeklyRunStatus.ConfirmedImprovement => RunResultSubmissionState.Submitted,
+                WeeklyRunStatus.NotImproved => RunResultSubmissionState.NotRequired,
+                WeeklyRunStatus.Expired => RunResultSubmissionState.Expired,
+                WeeklyRunStatus.Unconfirmed => RunResultSubmissionState.Unconfirmed,
+                WeeklyRunStatus.AwaitingLocalSave => RunResultSubmissionState.Failed,
+                WeeklyRunStatus.LocalOnly => RunResultSubmissionState.LocalOnly,
+                _ => RunResultSubmissionState.Pending
+            };
+            PublishSubmissionState(state, run.WeeklyBest,
+                run.Status == WeeklyRunStatus.ConfirmedImprovement);
+        }
+
+        private void PublishSubmissionState(RunResultSubmissionState state, int weeklyBest = 0, bool isRecord = false)
+        {
+            PublishResult(new RunResultData(LatestResult.LevelKey, LatestResult.RunScore,
+                weeklyBest, isRecord, LatestResult.IsLastLevelOfPart, state));
         }
 
         private static bool IsLastLevelOfPart(LevelProgressKey progressKey)

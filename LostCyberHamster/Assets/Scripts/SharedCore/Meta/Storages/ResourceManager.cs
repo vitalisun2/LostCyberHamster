@@ -1,5 +1,6 @@
 using System;
 using GameManagement;
+using UnityEngine;
 
 namespace Vues.GameCore
 {
@@ -33,7 +34,7 @@ namespace Vues.GameCore
             }
         }
 
-        public static bool AddResource(ResourceType resourceType, int amount)
+        public static bool AddResource(ResourceType resourceType, int amount, bool notify = true)
         {
             if (amount <= 0)
             {
@@ -49,7 +50,7 @@ namespace Vues.GameCore
                     }
 
                     GameDataManager.PlayerData.Crystals += amount;
-                    NotifyBalanceChanged(resourceType);
+                    if (notify) NotifyBalanceChanged(resourceType);
                     return true;
                 case ResourceType.Coins:
                     if (GameDataManager.PlayerData.Money > int.MaxValue - amount)
@@ -58,7 +59,7 @@ namespace Vues.GameCore
                     }
 
                     GameDataManager.PlayerData.Money += amount;
-                    NotifyBalanceChanged(resourceType);
+                    if (notify) NotifyBalanceChanged(resourceType);
                     return true;
                 default:
                     return false;
@@ -79,7 +80,7 @@ namespace Vues.GameCore
             }
         }
 
-        public static bool SetResourceBalance(ResourceType resourceType, int balance)
+        public static bool SetResourceBalance(ResourceType resourceType, int balance, bool notify = true)
         {
             if (balance < 0)
             {
@@ -90,18 +91,18 @@ namespace Vues.GameCore
             {
                 case ResourceType.Crystals:
                     GameDataManager.PlayerData.Crystals = balance;
-                    NotifyBalanceChanged(resourceType);
+                    if (notify) NotifyBalanceChanged(resourceType);
                     return true;
                 case ResourceType.Coins:
                     GameDataManager.PlayerData.Money = balance;
-                    NotifyBalanceChanged(resourceType);
+                    if (notify) NotifyBalanceChanged(resourceType);
                     return true;
                 default:
                     return false;
             }
         }
 
-        public static bool SpendResource(ResourceType resourceType, int amount)
+        public static bool SpendResource(ResourceType resourceType, int amount, bool notify = true)
         {
             if (!CanSpendResource(resourceType, amount))
             {
@@ -112,11 +113,11 @@ namespace Vues.GameCore
             {
                 case ResourceType.Crystals:
                     GameDataManager.PlayerData.Crystals -= amount;
-                    NotifyBalanceChanged(resourceType);
+                    if (notify) NotifyBalanceChanged(resourceType);
                     return true;
                 case ResourceType.Coins:
                     GameDataManager.PlayerData.Money -= amount;
-                    NotifyBalanceChanged(resourceType);
+                    if (notify) NotifyBalanceChanged(resourceType);
                     return true;
                 default:
                     return false;
@@ -173,6 +174,23 @@ namespace Vues.GameCore
             BalanceChanged?.Invoke(
                 resourceType,
                 GetCurrentBalance(resourceType));
+        }
+
+        /// <summary>Обновляет UI после атомарной записи нескольких балансов.</summary>
+        public static void NotifyBalancesChangedAfterCommit()
+        {
+            var handlers = BalanceChanged;
+            if (handlers == null)
+                return;
+            foreach (Action<ResourceType, int> handler in handlers.GetInvocationList())
+            {
+                // Ошибка одного виджета не мешает остальным увидеть сохранённый баланс.
+                foreach (var resource in new[] { ResourceType.Coins, ResourceType.Crystals })
+                {
+                    try { handler(resource, GetCurrentBalance(resource)); }
+                    catch (Exception exception) { Debug.LogException(exception); }
+                }
+            }
         }
     }
 }

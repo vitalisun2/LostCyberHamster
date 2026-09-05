@@ -19,6 +19,8 @@ namespace Vues.GameCore.Quests
         /// Идентификатор определения квеста.
         /// </summary>
         public string QuestId;
+        /// <summary>Идентификатор конкретного экземпляра, сохраняемый при переносе незабранной награды.</summary>
+        public string InstanceId;
 
         /// <summary>
         /// Текущий прогресс.
@@ -81,6 +83,7 @@ namespace Vues.GameCore.Quests
             // Подключаем runtime-данные и восстанавливаем состояние.
             _definition = definition;
             _strategy = strategy;
+            if (string.IsNullOrWhiteSpace(InstanceId)) InstanceId = Guid.NewGuid().ToString("N");
             BindState();
         }
 
@@ -155,6 +158,7 @@ namespace Vues.GameCore.Quests
             }
 
             QuestId = _definition.Id;
+            InstanceId = Guid.NewGuid().ToString("N");
             CurrentProgress = 0;
             IsCompleted = false;
             IsRewardClaimed = false;

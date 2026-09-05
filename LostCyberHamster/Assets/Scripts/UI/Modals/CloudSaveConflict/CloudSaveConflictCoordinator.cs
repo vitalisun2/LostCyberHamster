@@ -21,6 +21,7 @@ namespace LostCyberHamster.UI
         private bool _isShowInProgress;
         private bool _isResolutionInProgress;
         private int _lifecycleVersion;
+        private int _resolutionVersion;
 
         public CloudSaveConflictCoordinator(
             UIManager uiManager,
@@ -45,6 +46,8 @@ namespace LostCyberHamster.UI
             _conflictService.ConflictResolved += OnConflictResolved;
             _modalController.CloudSelected += OnCloudSelected;
             _modalController.ThisDeviceSelected += OnThisDeviceSelected;
+            _modalController.LaterSelected += OnLaterSelected;
+            _cloudSyncService.ConflictPresentationRequested += PresentCurrentConflict;
             PresentCurrentConflict();
         }
 
@@ -56,10 +59,13 @@ namespace LostCyberHamster.UI
 
             _isEnabled = false;
             _lifecycleVersion++;
+            _cloudSyncService.CancelConflictChoice();
             _conflictService.ConflictDetected -= OnConflictDetected;
             _conflictService.ConflictResolved -= OnConflictResolved;
             _modalController.CloudSelected -= OnCloudSelected;
             _modalController.ThisDeviceSelected -= OnThisDeviceSelected;
+            _modalController.LaterSelected -= OnLaterSelected;
+            _cloudSyncService.ConflictPresentationRequested -= PresentCurrentConflict;
             _isVisible = false;
             _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
         }
@@ -86,10 +92,25 @@ namespace LostCyberHamster.UI
             _ = ResolveAsync(_cloudSyncService.ResolveConflictWithLocalAsync);
         }
 
+        /// <summary>Сохраняет отложенный выбор и возвращает игрока к локальной игре.</summary>
+        private void OnLaterSelected()
+        {
+            try
+            {
+                _cloudSyncService.DeferConflict();
+                _isVisible = false;
+                _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
+            }
+            catch (Exception)
+            {
+                _modalController.SetError("cloud_save_conflict_retry");
+            }
+        }
+
         private void PresentCurrentConflict()
         {
             var conflict = _conflictService.CurrentConflict;
-            if (!_isEnabled || conflict == null)
+            if (!_isEnabled || conflict == null || _cloudSyncService.IsConflictDeferred)
                 return;
 
             var data = CreateModalData(conflict);
@@ -107,7 +128,7 @@ namespace LostCyberHamster.UI
             {
                 await _uiManager.ShowModalAsync(ScreenEnum.CloudSaveConflictModal);
                 if (!IsLifecycleCurrent(lifecycleVersion) ||
-                    _conflictService.CurrentConflict == null)
+                    _conflictService.CurrentConflict == null || _cloudSyncService.IsConflictDeferred)
                 {
                     _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
                     return;
@@ -127,12 +148,7 @@ namespace LostCyberHamster.UI
             finally
             {
                 _isShowInProgress = false;
-                if (_isEnabled &&
-                    !_isVisible &&
-                    _conflictService.CurrentConflict != null)
-                {
-                    PresentCurrentConflict();
-                }
+                // Следующий явный запрос/событие повторит показ после ошибки загрузки.
             }
         }
 
@@ -142,7 +158,9 @@ namespace LostCyberHamster.UI
                 return;
 
             var lifecycleVersion = _lifecycleVersion;
+            var resolutionVersion = ++_resolutionVersion;
             _isResolutionInProgress = true;
+            _modalController.SetError(null);
             _modalController.SetBusy(isBusy: true);
 
             try
@@ -159,6 +177,7 @@ namespace LostCyberHamster.UI
                     return;
                 }
 
+                _modalController.SetError(_cloudSyncService.LastError ?? "cloud_save_conflict_retry");
                 PresentCurrentConflict();
             }
             catch (Exception exception)
@@ -167,15 +186,18 @@ namespace LostCyberHamster.UI
                 {
                     Debug.LogError(
                         $"[CloudSave] Conflict resolution failed ({exception.GetType().Name}).");
+                    _modalController.SetError("cloud_save_conflict_retry");
                     PresentCurrentConflict();
                 }
             }
             finally
             {
-                _isResolutionInProgress = false;
-                if (IsLifecycleCurrent(lifecycleVersion) && _isVisible)
+                if (resolutionVersion == _resolutionVersion)
+                {
+                    _isResolutionInProgress = false;
                     _modalController.SetBusy(isBusy: false);
-                else if (_isEnabled && _conflictService.CurrentConflict != null)
+                }
+                if (_isEnabled && !_isVisible && _conflictService.CurrentConflict != null)
                     PresentCurrentConflict();
             }
         }
@@ -188,7 +210,7 @@ namespace LostCyberHamster.UI
         private static CloudSaveConflictModalDto CreateModalData(CloudSaveConflict conflict)
         {
             return new CloudSaveConflictModalDto(
-                CreateCard(conflict.CloudSave.Snapshot),
+                conflict.CloudSave == null ? null : CreateCard(conflict.CloudSave.Snapshot),
                 CreateCard(conflict.LocalSnapshot));
         }
 
@@ -196,11 +218,14 @@ namespace LostCyberHamster.UI
         {
             var playerData = PlayerData.FromJson(snapshot.PlayerDataJson);
             var completedLevels = playerData.Progress.Entries.Count(entry => entry.IsCompleted);
+            var savedAt = DateTime.TryParse(playerData.LastSaveDate, out var gameplayDate) && gameplayDate > DateTime.MinValue
+                ? gameplayDate : snapshot.SavedAtUtc;
             return new CloudSaveConflictCardDto(
                 completedLevels,
                 playerData.Money,
                 playerData.Crystals,
-                snapshot.SavedAtUtc);
+                savedAt,
+                playerData.PlayerLevel);
         }
     }
 }

@@ -1,167 +1,77 @@
 using System;
-using System.Collections.Generic;
 using GameManagement.CloudSave.Models;
 using UnityEngine;
 
 namespace GameManagement.CloudSave
 {
-    /// <summary>Хранит durable pending отдельно для каждого игрока.</summary>
+    /// <summary>Предоставляет актуальный pending и совместимость со старыми сохранениями.</summary>
     public sealed class SnapshotService
     {
-        /// <summary>Старый общий ключ снимка.</summary>
         private const string LegacySnapshotKey = "CloudSave_.PendingSnapshot";
-
-        /// <summary>Разделяет снимки игроков.</summary>
         private const string SnapshotKeyPrefix = "CloudSave_.PendingSnapshot.";
+        private const string JournalFeature = "cloud-legacy-pending";
 
-        /// <summary>Кэширует независимые pending по владельцам.</summary>
-        private readonly Dictionary<string, CloudSaveSnapshot> _snapshotsByPlayerId =
-            new Dictionary<string, CloudSaveSnapshot>(StringComparer.Ordinal);
-
-        public SnapshotService()
-        {
-            MigrateLegacySnapshot();
-        }
-
-        /// <summary>Возвращает pending указанного игрока.</summary>
         public CloudSaveSnapshot GetPending(string playerId)
         {
-            var storageKey = GetStorageKey(playerId);
-            if (_snapshotsByPlayerId.TryGetValue(playerId, out var cached))
-                return cached;
-
-            if (!PlayerPrefs.HasKey(storageKey))
+            if (string.IsNullOrWhiteSpace(playerId)) throw new ArgumentException("Player ID is required.", nameof(playerId));
+            if (GameDataManager.OwnerPlayerId == playerId && GameDataManager.HasUnsyncedProgress)
+                return new CloudSaveSnapshot(playerId, GameDataManager.GetSavedPlayerDataJson());
+            if (GameDataManager.OwnerPlayerId == playerId && GameDataManager.LastSyncedRevision > 0)
                 return null;
-
-            try
-            {
-                // Проверяем содержимое и владельца выбранного слота.
-                var snapshot = CloudSaveSnapshot.FromJson(
-                    PlayerPrefs.GetString(storageKey));
-                if (!string.Equals(
-                        snapshot.PlayerId,
-                        playerId,
-                        StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        "Pending snapshot owner mismatch.");
-                }
-
-                _snapshotsByPlayerId[playerId] = snapshot;
-                return snapshot;
-            }
-            catch (Exception exception)
-            {
-                // Повреждённый слот не должен блокировать новые checkpoint.
-                PlayerPrefs.DeleteKey(storageKey);
-                PlayerPrefs.Save();
-                _snapshotsByPlayerId.Remove(playerId);
-                Debug.LogWarning(
-                    $"[CloudSave] Invalid pending snapshot removed ({exception.GetType().Name}).");
-                return null;
-            }
+            var journal = GameDataManager.GetJournalJson(JournalFeature, playerId);
+            if (!string.IsNullOrWhiteSpace(journal)) return ReadOwned(journal, playerId);
+            var key = GetStorageKey(playerId);
+            if (PlayerPrefs.HasKey(key)) return ReadOwned(PlayerPrefs.GetString(key), playerId);
+            return PlayerPrefs.HasKey(LegacySnapshotKey)
+                ? ReadOwned(PlayerPrefs.GetString(LegacySnapshotKey), playerId) : null;
         }
 
-        /// <summary>Ставит снимок в очередь его владельца.</summary>
         public void SetPending(CloudSaveSnapshot snapshot)
         {
-            if (snapshot == null)
-                throw new ArgumentNullException(nameof(snapshot));
-
-            var playerId = snapshot.PlayerId;
-            PlayerPrefs.SetString(GetStorageKey(playerId), snapshot.ToJson());
-            PlayerPrefs.Save();
-            _snapshotsByPlayerId[playerId] = snapshot;
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            GameDataManager.ExecuteTechnicalTransaction(() =>
+                GameDataManager.SetJournalJson(JournalFeature, snapshot.ToJson(), snapshot.PlayerId));
         }
 
-        /// <summary>Удаляет pending указанного игрока.</summary>
         public void Clear(string playerId)
         {
+            GameDataManager.ExecuteTechnicalTransaction(() =>
+                GameDataManager.SetJournalJson(JournalFeature, null, playerId));
+            // Удаляем старый слот только после принятия его владельца в новом durable хранилище.
+            if (GameDataManager.OwnerPlayerId != playerId) return;
             PlayerPrefs.DeleteKey(GetStorageKey(playerId));
+            if (PlayerPrefs.HasKey(LegacySnapshotKey) && ReadOwned(PlayerPrefs.GetString(LegacySnapshotKey), playerId) != null)
+                PlayerPrefs.DeleteKey(LegacySnapshotKey);
             PlayerPrefs.Save();
-            _snapshotsByPlayerId.Remove(playerId);
         }
 
-        /// <summary>Удаляет pending, только если подтверждён тот же снимок.</summary>
         public bool ClearIfCurrent(CloudSaveSnapshot snapshot)
         {
-            if (snapshot == null)
-                throw new ArgumentNullException(nameof(snapshot));
-
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
             var current = GetPending(snapshot.PlayerId);
-            if (!AreSameSnapshot(current, snapshot))
-                return false;
-
+            if (current == null || current.PlayerDataJson != snapshot.PlayerDataJson) return false;
             Clear(snapshot.PlayerId);
             return true;
         }
 
-        /// <summary>Возвращает отдельный ключ игрока.</summary>
         public static string GetStorageKey(string playerId)
         {
-            if (string.IsNullOrWhiteSpace(playerId))
-                throw new ArgumentException(
-                    "Player ID must be provided.",
-                    nameof(playerId));
-
+            if (string.IsNullOrWhiteSpace(playerId)) throw new ArgumentException("Player ID is required.", nameof(playerId));
             return SnapshotKeyPrefix + playerId;
         }
 
-        /// <summary>Переносит старый общий pending в слот его владельца.</summary>
-        private void MigrateLegacySnapshot()
+        private static CloudSaveSnapshot ReadOwned(string json, string playerId)
         {
-            if (!PlayerPrefs.HasKey(LegacySnapshotKey))
-                return;
-
-            CloudSaveSnapshot legacySnapshot;
-            string legacyJson;
             try
             {
-                // Определяем владельца до изменения durable данных.
-                legacyJson = PlayerPrefs.GetString(LegacySnapshotKey);
-                legacySnapshot = CloudSaveSnapshot.FromJson(legacyJson);
+                var snapshot = CloudSaveSnapshot.FromJson(json);
+                return snapshot.PlayerId == playerId ? snapshot : null;
             }
             catch (Exception exception)
             {
-                // Невалидный legacy payload нельзя безопасно привязать к игроку.
-                PlayerPrefs.DeleteKey(LegacySnapshotKey);
-                PlayerPrefs.Save();
-                Debug.LogWarning(
-                    $"[CloudSave] Invalid legacy pending snapshot removed ({exception.GetType().Name}).");
-                return;
+                Debug.LogWarning($"[CloudSave] Legacy pending preserved but unavailable ({exception.GetType().Name}).");
+                return null;
             }
-
-            try
-            {
-                // Выбираем самый новый валидный снимок владельца.
-                var current = GetPending(legacySnapshot.PlayerId);
-                if (current == null || legacySnapshot.SavedAtUtc > current.SavedAtUtc)
-                    SetPending(legacySnapshot);
-
-                // Удаляем общий ключ только после durable записи владельца.
-                PlayerPrefs.DeleteKey(LegacySnapshotKey);
-                PlayerPrefs.Save();
-            }
-            catch (Exception exception)
-            {
-                Debug.LogError(
-                    $"[CloudSave] Legacy pending migration failed ({exception.GetType().Name}).");
-            }
-        }
-
-        /// <summary>Сравнивает полное содержимое и владельца двух снимков.</summary>
-        private static bool AreSameSnapshot(
-            CloudSaveSnapshot first,
-            CloudSaveSnapshot second)
-        {
-            return first != null &&
-                   second != null &&
-                   string.Equals(first.PlayerId, second.PlayerId, StringComparison.Ordinal) &&
-                   string.Equals(
-                       first.PlayerDataJson,
-                       second.PlayerDataJson,
-                       StringComparison.Ordinal) &&
-                   first.SavedAtUtc == second.SavedAtUtc;
         }
     }
 }

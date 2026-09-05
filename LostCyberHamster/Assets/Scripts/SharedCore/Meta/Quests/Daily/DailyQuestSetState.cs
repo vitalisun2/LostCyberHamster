@@ -13,6 +13,9 @@ namespace Vues.GameCore.Quests
         /// Локальная дата последней генерации.
         /// </summary>
         public string GenerationDate = string.Empty;
+        public string SetId = string.Empty;
+        public List<string> UsedGenerationDates = new();
+        public List<PendingDailyCommonReward> PendingCommonRewards = new();
 
         /// <summary>
         /// Идентификаторы текущих дневных квестов.
