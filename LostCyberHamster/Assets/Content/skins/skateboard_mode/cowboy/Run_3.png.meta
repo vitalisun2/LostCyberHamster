@@ -192,7 +192,6 @@ TextureImporter:
         - {x: -5.5, y: 116.25}
         - {x: -71.5, y: 25.25}
         - {x: -86.5, y: -2.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 0ca7d42838fcc2c4fa4d0cbb78c829e4
@@ -225,7 +224,6 @@ TextureImporter:
         - {x: 34.5, y: 121.25}
         - {x: 4.5, y: 122.25}
         - {x: -79.5, y: -94.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 16e194b1fc9dd564c86f246741bf8646
@@ -256,7 +254,6 @@ TextureImporter:
         - {x: 23.5, y: 143.25}
         - {x: 0.5, y: 143.25}
         - {x: -93.5, y: -97.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 5d22896bbb971ad4eb6b34cb27025c42
@@ -287,7 +284,6 @@ TextureImporter:
         - {x: 23.5, y: 143.25}
         - {x: 0.5, y: 143.25}
         - {x: -93.5, y: -97.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 04038395e9e931f4f9bc64befe0ae318
@@ -319,7 +315,6 @@ TextureImporter:
         - {x: 19.5, y: 127.25}
         - {x: 16.5, y: 124.25}
         - {x: -89.5, y: -97.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 1a2629a0bb721e542b2145d8043885bd
@@ -351,7 +346,6 @@ TextureImporter:
         - {x: 19.5, y: 127.25}
         - {x: 16.5, y: 124.25}
         - {x: -89.5, y: -97.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: fb19cfd228e4cfd4b9fecc6a8e90b36d
@@ -384,7 +378,6 @@ TextureImporter:
         - {x: 29.5, y: 120.25}
         - {x: -51.5, y: 5.25}
         - {x: -71.5, y: -89.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: c7242584d2840fd43864cc6dd74e9906
@@ -417,7 +410,6 @@ TextureImporter:
         - {x: 29.5, y: 120.25}
         - {x: -51.5, y: 5.25}
         - {x: -71.5, y: -89.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: fca0e88dffcf97249a52f03afb13defb
@@ -451,7 +443,6 @@ TextureImporter:
         - {x: -44.5, y: 45.25}
         - {x: -58.5, y: 22.25}
         - {x: -91.5, y: -58.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: de51611c219039543bd2ce4ee22cb31a
@@ -485,7 +476,6 @@ TextureImporter:
         - {x: -44.5, y: 45.25}
         - {x: -58.5, y: 22.25}
         - {x: -91.5, y: -58.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 5763d6bc720584d45b2b203a3f5e6d37
@@ -518,7 +508,6 @@ TextureImporter:
         - {x: -5.5, y: 116.25}
         - {x: -71.5, y: 25.25}
         - {x: -86.5, y: -2.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 2d49abcfa8823084dbd8a8df58401fb9

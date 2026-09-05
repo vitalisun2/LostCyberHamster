@@ -184,7 +184,6 @@ TextureImporter:
         - {x: -39.5, y: 113.25}
         - {x: -78.5, y: -1.75}
         - {x: -88.5, y: -40.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: c50f6162096dfd344b347033e95ffa5b
@@ -218,7 +217,6 @@ TextureImporter:
         - {x: -39.5, y: 113.25}
         - {x: -78.5, y: -1.75}
         - {x: -88.5, y: -40.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 026382b56252b9a489b2f41e985e4b92
@@ -252,7 +250,6 @@ TextureImporter:
         - {x: -39.5, y: 113.25}
         - {x: -78.5, y: -1.75}
         - {x: -88.5, y: -40.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 5899e1d653891de42ac92ae705e6bf6f
@@ -286,7 +283,6 @@ TextureImporter:
         - {x: -39.5, y: 113.25}
         - {x: -78.5, y: -1.75}
         - {x: -88.5, y: -40.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 593a5fe20d25cb5438a1e7c99dccd7b7
@@ -319,7 +315,6 @@ TextureImporter:
         - {x: 0.5, y: 118.25}
         - {x: -46.5, y: 114.25}
         - {x: -93.5, y: -29.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 6347d758b170cd54ebe838d50c01c591
@@ -352,7 +347,6 @@ TextureImporter:
         - {x: 0.5, y: 118.25}
         - {x: -46.5, y: 114.25}
         - {x: -93.5, y: -29.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: 83070f7215399f0458dac932c17316a7
@@ -385,7 +379,6 @@ TextureImporter:
         - {x: 0.5, y: 118.25}
         - {x: -46.5, y: 114.25}
         - {x: -93.5, y: -29.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: b89734e9cc3c5414ca0a245aadcc4337
@@ -418,7 +411,6 @@ TextureImporter:
         - {x: 0.5, y: 118.25}
         - {x: -46.5, y: 114.25}
         - {x: -93.5, y: -29.75}
-        -
       tessellationDetail: 0
       bones: []
       spriteID: cfad43b35d7b55b489e7ee047d27ffde
