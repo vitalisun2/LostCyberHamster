@@ -21,13 +21,19 @@
                 <engine:VisualElement class="game-control__purchase-icon game-control__purchase-icon--mana" />
                 <engine:VisualElement class="game-control__coins" />
             </engine:Button>
-            <engine:Button name="btn_ultra" class="game-control game-control--ultimate">
-                <engine:Label text="0" name="ulta-charge-value" class="game-control__ultimate-value" />
-                <engine:VisualElement class="game-control__ultimate-icon" />
-            </engine:Button>
-            <engine:Button name="btn_jump" class="game-control game-control--jump">
-                <engine:VisualElement class="game-control__jump-icon" />
-            </engine:Button>
+            <engine:VisualElement class="game-screen__actions" picking-mode="Ignore">
+                <engine:Button name="btn_ultra" class="game-control game-control--action game-control--ultimate">
+                    <engine:VisualElement class="game-control__visual game-control__visual--ultimate" picking-mode="Ignore">
+                        <engine:Label text="0" name="ulta-charge-value" class="game-control__ultimate-value" picking-mode="Ignore" />
+                        <engine:VisualElement class="game-control__ultimate-icon" picking-mode="Ignore" />
+                    </engine:VisualElement>
+                </engine:Button>
+                <engine:Button name="btn_jump" class="game-control game-control--action game-control--jump">
+                    <engine:VisualElement class="game-control__visual game-control__visual--jump" picking-mode="Ignore">
+                        <engine:VisualElement class="game-control__jump-icon" picking-mode="Ignore" />
+                    </engine:VisualElement>
+                </engine:Button>
+            </engine:VisualElement>
             <engine:Label text="Label" name="hamster-state-debug-label" class="lcs-text ui-text-plain game-screen__debug-state" />
         </engine:VisualElement>
     </engine:VisualElement>

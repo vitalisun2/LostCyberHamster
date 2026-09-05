@@ -46,17 +46,14 @@
     border-bottom-width: 0;
     border-left-width: 0;
     overflow: visible;
-    transition-property: scale, opacity;
-    transition-duration: 80ms;
-    transition-timing-function: ease-out;
 }
 
-.game-control:hover,
-.game-control:focus {
+.game-control--purchase:hover,
+.game-control--purchase:focus {
     scale: 1.02 1.02;
 }
 
-.game-control:active {
+.game-control--purchase:active {
     scale: 0.96 0.96;
 }
 
@@ -75,6 +72,9 @@
     height: 133px;
     background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_button_purchase_base.png");
     -unity-background-scale-mode: scale-to-fit;
+    transition-property: scale, opacity;
+    transition-duration: 80ms;
+    transition-timing-function: ease-out;
 }
 
 .game-control--buy-energy {
@@ -116,18 +116,54 @@
     background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_icon_purchase_coins.png");
 }
 
-.game-control--ultimate {
+.game-screen__actions {
     position: absolute;
-    right: 0;
-    top: 42%;
+    right: 32px;
+    bottom: 5.5%;
+    width: 267px;
+    height: 56.5%;
+    min-height: 528px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* The Button owns a fixed hit area; only its ignored artwork scales. */
+.game-control--action {
+    width: 267px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-control__visual {
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+    transition-property: scale, opacity;
+    transition-duration: 80ms;
+    transition-timing-function: ease-out;
+}
+
+.game-control--action:hover > .game-control__visual,
+.game-control--action:focus > .game-control__visual {
+    scale: 1.02 1.02;
+}
+
+.game-control--action:active > .game-control__visual {
+    scale: 0.96 0.96;
+}
+
+.game-control--ultimate {
+    height: 237px;
+}
+
+.game-control__visual--ultimate {
     width: 189px;
     height: 189px;
     opacity: 0.5;
     background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_button_ultimate_base_charging.png");
-    -unity-background-scale-mode: scale-to-fit;
 }
 
-.game-control--ultimate.game-control--ready {
+.game-control--ready > .game-control__visual--ultimate {
     opacity: 1;
     background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_button_ultimate_base_ready.png");
 }
@@ -164,9 +200,11 @@
 }
 
 .game-control--jump {
-    position: absolute;
-    right: 0;
-    bottom: 5.5%;
+    height: 267px;
+    margin-top: auto;
+}
+
+.game-control__visual--jump {
     width: 219px;
     height: 219px;
     background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_button_jump_base.png");
