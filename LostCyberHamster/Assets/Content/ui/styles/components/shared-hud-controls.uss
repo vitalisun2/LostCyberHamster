@@ -69,6 +69,21 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
+.shared-pause-button {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+    height: 100px;
+    min-height: 100px;
+    max-height: 100px;
+    margin-top: 12px;
+    margin-right: 0;
+    margin-bottom: 12px;
+    margin-left: 0;
+    background-image: url("/Assets/Content/ui/sprites/shared/button_pause.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
 .shared-currency-button {
     width: 205px;
     min-width: 205px;

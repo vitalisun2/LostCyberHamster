@@ -10,7 +10,7 @@
                     <engine:VisualElement style="flex-grow: 0; flex-shrink: 0; width: 20px;" />
                     <LostCyberHamster.UI.Healthbar style="flex-grow: 0; flex-shrink: 0; flex-direction: row; width: 210px; min-width: 210px; height: 70px;" />
                     <engine:VisualElement style="flex-grow: 0; flex-shrink: 0; width: 20px;" />
-                    <Vues.GameCore.LocalizedButton key="btn_pause" name="btn_pause" class="lcs_btn ui-surface ui-bordered" style="margin-top: 12px; margin-right: 0; margin-bottom: 12px; margin-left: 0; width: 200px; height: 100px;" />
+                    <engine:Button name="btn_pause" tooltip="Пауза" class="shared-hud-control shared-pause-button" />
                 </engine:VisualElement>
             </engine:VisualElement>
             <engine:Button name="btn_buy_energy" class="game-control game-control--purchase game-control--buy-energy">
