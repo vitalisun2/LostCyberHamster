@@ -1,0 +1,41 @@
+{
+  "implementationCommit": "c49a6ccc7a429cee86001ecd830bbd65eea2ebcd",
+  "uiDependencyCommit": "0c889efef60141f8037b91c3d8bc798c8f6e95e0",
+  "buildId": "2026-09-05_161512103_android_offline-qa_7cc6b56b_dirty_8a90f42b",
+  "sourceBranch": "integration/unity-live",
+  "sourceCommit": "7cc6b56b",
+  "sourceDirty": true,
+  "sourceDiffHash": "99d5dfee1572540746681e1c92ffce6e74e6c4a679ac9576d861fae083febafa",
+  "apkSha256": "d2675ed99071d0121721f4a44015d4f3a55807d84954192b3da424c53fa41f6e",
+  "apkBytes": 165654453,
+  "assemblyCSharpGate": {
+    "regenerated": true,
+    "warnings": 21,
+    "errors": 0
+  },
+  "playerAccountsGate": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "androidBuild": "passed",
+  "apkSignature": {
+    "verified": true,
+    "v2": true,
+    "certificateSha256": "00b05bd8214f2ed2ba67a8583f375016d144d7c5e8c04de33666b98b009eb152",
+    "v1": true
+  },
+  "packagedAddressables": {
+    "catalogLocation": "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/catalog.bin",
+    "remoteCatalogDependencies": 0,
+    "bundleCount": 36
+  },
+  "leaderboardRepositoryConfigs": {
+    "checked": 12,
+    "valid": 12
+  },
+  "liveUgsConfigsChecked": false,
+  "androidDeviceScenariosExecuted": false,
+  "adbConnectedDevices": 0,
+  "runtimeAcceptance": "Manual device testing delegated to user with checklist, as explicitly requested",
+  "additionalRisk": "Concurrent first cloud create has no atomic create-if-absent in the installed Cloud Save SDK."
+}
