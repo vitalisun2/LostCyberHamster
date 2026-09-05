@@ -1,90 +1,243 @@
 .cloud-save-conflict {
+    position: relative;
     flex-grow: 1;
-    align-items: center;
-    justify-content: center;
-    padding: 28px;
-}
-
-.cloud-save-conflict__title {
-    font-size: 44px;
-    -unity-text-align: middle-center;
-    white-space: normal;
-}
-
-.cloud-save-conflict__body {
-    width: 90%;
-    margin-top: 8px;
-    font-size: 26px;
-    -unity-text-align: middle-center;
-    white-space: normal;
-    color: var(--ui-compact-text);
-    -unity-text-outline-width: 0;
-}
-
-.cloud-save-conflict__cards {
     width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background-image: url("/Assets/Content/ui/sprites/modals/background_modal_new_york_full.png");
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.cloud-save-conflict__viewport {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     justify-content: center;
-    align-items: stretch;
-    margin-top: 16px;
+    align-items: center;
+    overflow: hidden;
+}
+
+.cloud-save-conflict__frame {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 1086px;
+    height: 533px;
+}
+
+.cloud-save-conflict__design {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1086px;
+    height: 533px;
+    transform-origin: 0 0;
+}
+
+.cloud-save-conflict__panel {
+    position: absolute;
+    left: 168px;
+    top: 65px;
+    width: 750px;
+    height: 431px;
+    background-image: url("/Assets/Content/ui/sprites/modals/cloud_save_conflict/panel_modal.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.cloud-save-conflict__header {
+    position: absolute;
+    left: 272px;
+    top: 50px;
+    width: 542px;
+    height: 83px;
+    background-image: url("/Assets/Content/ui/sprites/modals/cloud_save_conflict/header_banner.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__text {
+    margin: 0;
+    padding: 0;
+    color: rgb(8, 22, 31);
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
+    white-space: normal;
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__title {
+    position: absolute;
+    left: 14px;
+    top: 9px;
+    width: 514px;
+    height: 62px;
+    color: rgb(255, 255, 255);
+    font-size: 25px;
+    -unity-text-align: middle-center;
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__body {
+    position: absolute;
+    left: 205px;
+    top: 127px;
+    width: 676px;
+    height: 34px;
+    font-size: 15px;
+    -unity-text-align: middle-center;
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__error {
+    display: none;
+    color: rgb(128, 29, 29);
+    font-size: 14px;
 }
 
 .cloud-save-conflict__card {
-    min-width: 340px;
-    width: 44%;
-    margin: 10px;
-    padding: 18px;
-    background-color: var(--ui-panel-muted);
-    border-width: 5px;
-    border-color: var(--ui-border);
-    border-radius: 18px;
+    position: absolute;
+    top: 162px;
+    width: 323px;
+    height: 238px;
+    background-image: url("/Assets/Content/ui/sprites/modals/cloud_save_conflict/card_save_option_panel.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
-.cloud-save-conflict__card-title {
-    color: var(--ui-compact-text);
-    -unity-text-outline-width: 0;
-    font-size: 30px;
-    -unity-font-style: bold;
+.cloud-save-conflict__card--cloud {
+    left: 211px;
+}
+
+.cloud-save-conflict__card--device {
+    left: 552px;
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__card-title {
+    position: absolute;
+    left: 20px;
+    top: 10px;
+    width: 283px;
+    height: 38px;
+    font-size: 18px;
     -unity-text-align: middle-center;
+}
+
+.cloud-save-conflict__divider {
+    position: absolute;
+    left: 19px;
+    top: 49px;
+    width: 285px;
+    height: 7px;
+    background-image: url("/Assets/Content/ui/sprites/modals/cloud_save_conflict/card_save_option_divider.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.cloud-save-conflict__rows {
+    position: absolute;
+    left: 20px;
+    top: 60px;
+    width: 283px;
+    height: 100px;
 }
 
 .cloud-save-conflict__row {
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 20px;
     flex-direction: row;
-    justify-content: space-between;
-    margin-top: 6px;
+    align-items: center;
 }
 
-.cloud-save-conflict__label,
-.cloud-save-conflict__value {
-    color: var(--ui-compact-text);
-    -unity-text-outline-width: 0;
-    font-size: 22px;
+#cloud-save-conflict-design .cloud-save-conflict__label {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 166px;
+    font-size: 14px;
+    -unity-text-align: middle-left;
 }
 
-.cloud-save-conflict__value {
-    -unity-font-style: bold;
+#cloud-save-conflict-design .cloud-save-conflict__value {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 117px;
+    font-size: 14px;
+    white-space: nowrap;
+    -unity-text-align: middle-right;
 }
 
-.cloud-save-conflict__button {
-    align-self: center;
-    width: 90%;
-    min-width: 260px;
-    height: 72px;
-    margin-top: 14px;
-    font-size: 24px;
-    white-space: normal;
-    color: var(--ui-compact-text);
-    -unity-text-outline-width: 0;
+#cloud-save-conflict-design .cloud-save-conflict__row--saved .cloud-save-conflict__label {
+    width: 83px;
+    font-size: 13px;
 }
 
-.cloud-save-conflict__warning {
-    width: 90%;
-    margin-top: 8px;
-    color: var(--ui-compact-text);
-    -unity-text-outline-width: 0;
-    font-size: 20px;
-    -unity-font-style: bold;
+#cloud-save-conflict-design .cloud-save-conflict__row--saved .cloud-save-conflict__value {
+    width: 200px;
+    font-size: 13px;
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__button,
+#cloud-save-conflict-design .cloud-save-conflict__later {
+    position: absolute;
+    flex-grow: 0;
+    flex-shrink: 0;
+    min-width: 0;
+    min-height: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
     -unity-text-align: middle-center;
-    white-space: normal;
+    transition-property: opacity;
+    transition-duration: 90ms;
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__button {
+    left: 19px;
+    top: 165px;
+    width: 285px;
+    height: 58px;
+    padding: 6px 20px 10px;
+    font-size: 17px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.cloud-save-conflict__button--cloud {
+    background-image: url("/Assets/Content/ui/sprites/modals/cloud_save_conflict/button_choose_cloud.png");
+}
+
+.cloud-save-conflict__button--device {
+    background-image: url("/Assets/Content/ui/sprites/modals/cloud_save_conflict/button_choose_local.png");
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__button:hover,
+#cloud-save-conflict-design .cloud-save-conflict__button:focus,
+#cloud-save-conflict-design .cloud-save-conflict__later:hover,
+#cloud-save-conflict-design .cloud-save-conflict__later:focus {
+    opacity: 0.88;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__button:active,
+#cloud-save-conflict-design .cloud-save-conflict__later:active {
+    opacity: 0.72;
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__button:disabled {
+    opacity: 0.45;
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__warning {
+    position: absolute;
+    left: 215px;
+    top: 406px;
+    width: 656px;
+    height: 32px;
+    font-size: 14px;
+    -unity-text-align: middle-center;
+}
+
+#cloud-save-conflict-design .cloud-save-conflict__later {
+    left: 440px;
+    top: 440px;
+    width: 206px;
+    height: 34px;
+    font-size: 16px;
+    background-image: none;
 }

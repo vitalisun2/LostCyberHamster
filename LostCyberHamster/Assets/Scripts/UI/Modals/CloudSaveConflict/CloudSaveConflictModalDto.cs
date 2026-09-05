@@ -10,11 +10,12 @@ namespace LostCyberHamster.UI
             CloudSaveConflictCardDto cloud,
             CloudSaveConflictCardDto thisDevice)
         {
-            Cloud = cloud ?? throw new ArgumentNullException(nameof(cloud));
+            Cloud = cloud;
             ThisDevice = thisDevice ?? throw new ArgumentNullException(nameof(thisDevice));
         }
 
         public CloudSaveConflictCardDto Cloud { get; }
         public CloudSaveConflictCardDto ThisDevice { get; }
+        public bool CanChooseCloud => Cloud != null;
     }
 }

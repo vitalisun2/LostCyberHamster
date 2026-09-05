@@ -88,6 +88,19 @@ namespace Assets.Scripts.Tutorial
             _isDisposed = true;
         }
 
+        /// <summary>Проверяет принадлежность точки той же форме, из которой строится маска.</summary>
+        public static bool ContainsFocusPoint(
+            Vector2 point,
+            Rect focusRect,
+            Rect rootRect,
+            TutorialFocusShape shape)
+        {
+            return rootRect.Contains(point)
+                   && focusRect.width > 0f
+                   && focusRect.height > 0f
+                   && GetDistanceToFocus(point, focusRect, rootRect, shape) <= 0f;
+        }
+
         private static float GetDistanceToFocus(
             Vector2 point,
             Rect focusRect,

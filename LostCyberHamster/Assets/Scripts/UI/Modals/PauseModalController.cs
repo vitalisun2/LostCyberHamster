@@ -36,6 +36,7 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
+            _presentation ??= GameResultModalPresentation.Apply(_root);
             _resumeButton?.RegisterCallback<ClickEvent>(OnClickResume);
             _restartButton?.RegisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.RegisterCallback<ClickEvent>(OnClickExit);

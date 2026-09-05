@@ -127,7 +127,7 @@ namespace Assets.Scripts.Tutorial
             if (_currentActionIndex + 1 < CurrentStep.ExpectedActions.Count)
             {
                 _currentActionIndex++;
-                _view?.ShowPrompt(CurrentStep.Instruction, CurrentExpectedAction);
+                _view?.ShowPrompt(CurrentStep.InstructionKey, CurrentExpectedAction);
                 return true;
             }
 
@@ -244,10 +244,10 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
 
-            _view.ShowHeader(CurrentStep.Title);
+            _view.ShowHeader(CurrentStep.TitleKey, CurrentStep.Number);
             if (_state == TutorialGameplayState.WaitingForInput)
             {
-                _view.ShowPrompt(CurrentStep.Instruction, CurrentExpectedAction);
+                _view.ShowPrompt(CurrentStep.InstructionKey, CurrentExpectedAction);
             }
         }
 
@@ -274,7 +274,7 @@ namespace Assets.Scripts.Tutorial
             ResetActionInputProgress();
             _state = TutorialGameplayState.WaitingForInput;
             PauseGameForTutorial();
-            _view?.ShowPrompt(CurrentStep.Instruction, CurrentExpectedAction);
+            _view?.ShowPrompt(CurrentStep.InstructionKey, CurrentExpectedAction);
         }
 
         private bool TryHandleDoubleJumpInput(TutorialAction action)
@@ -285,7 +285,7 @@ namespace Assets.Scripts.Tutorial
                 ResetActionInputProgress();
                 _doubleJumpDetector.RegisterJump(Time.unscaledTime);
                 _currentActionIndex = 1;
-                _view?.ShowPrompt(CurrentStep.Instruction, CurrentExpectedAction);
+                _view?.ShowPrompt(CurrentStep.InstructionKey, CurrentExpectedAction);
                 return false;
             }
 
@@ -293,7 +293,7 @@ namespace Assets.Scripts.Tutorial
             if (!_doubleJumpDetector.RegisterJump(Time.unscaledTime))
             {
                 ResetActionInputProgress();
-                _view?.ShowPrompt(CurrentStep.Instruction, CurrentExpectedAction);
+                _view?.ShowPrompt(CurrentStep.InstructionKey, CurrentExpectedAction);
                 return false;
             }
 
@@ -382,7 +382,7 @@ namespace Assets.Scripts.Tutorial
 
             _currentStepIndex++;
             _state = TutorialGameplayState.RunningToTrigger;
-            _view?.ShowHeader(CurrentStep.Title);
+            _view?.ShowHeader(CurrentStep.TitleKey, CurrentStep.Number);
         }
 
         private void CompleteScenario()

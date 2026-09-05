@@ -13,18 +13,19 @@ namespace Assets.Scripts.Tutorial
         private readonly IReadOnlyList<TutorialAction> _expectedActions;
         private readonly IReadOnlyList<ObstacleTypeEnum> _targetTypes;
 
+        /// <summary>Создаёт шаг с одним действием и ключами локализованных подсказок.</summary>
         public TutorialGameplayStep(
             int number,
-            string title,
-            string instruction,
+            string titleKey,
+            string instructionKey,
             TutorialAction expectedAction,
             float pauseDistance,
             HamsterStateEnum? completionState = null,
             params ObstacleTypeEnum[] targetTypes)
             : this(
                 number,
-                title,
-                instruction,
+                titleKey,
+                instructionKey,
                 new[] { expectedAction },
                 pauseDistance,
                 completionState,
@@ -32,28 +33,30 @@ namespace Assets.Scripts.Tutorial
         {
         }
 
+        /// <summary>Создаёт шаг с последовательностью действий и ключами локализованных подсказок.</summary>
         public TutorialGameplayStep(
             int number,
-            string title,
-            string instruction,
+            string titleKey,
+            string instructionKey,
             IReadOnlyList<TutorialAction> expectedActions,
             float pauseDistance,
             HamsterStateEnum? completionState = null,
             params ObstacleTypeEnum[] targetTypes)
         {
+            // Проверяет обязательный контракт шага.
             if (number <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(number));
             }
 
-            if (string.IsNullOrWhiteSpace(title))
+            if (string.IsNullOrWhiteSpace(titleKey))
             {
-                throw new ArgumentException("Tutorial step title is required.", nameof(title));
+                throw new ArgumentException("Tutorial step title key is required.", nameof(titleKey));
             }
 
-            if (string.IsNullOrWhiteSpace(instruction))
+            if (string.IsNullOrWhiteSpace(instructionKey))
             {
-                throw new ArgumentException("Tutorial step instruction is required.", nameof(instruction));
+                throw new ArgumentException("Tutorial step instruction key is required.", nameof(instructionKey));
             }
 
             if (expectedActions == null || expectedActions.Count == 0)
@@ -66,9 +69,10 @@ namespace Assets.Scripts.Tutorial
                 throw new ArgumentOutOfRangeException(nameof(pauseDistance));
             }
 
+            // Сохраняет неизменяемое описание сценария.
             Number = number;
-            Title = title;
-            Instruction = instruction;
+            TitleKey = titleKey;
+            InstructionKey = instructionKey;
             PauseDistance = pauseDistance;
             CompletionState = completionState;
             _expectedActions = CopyActions(expectedActions);
@@ -78,8 +82,8 @@ namespace Assets.Scripts.Tutorial
         }
 
         public int Number { get; }
-        public string Title { get; }
-        public string Instruction { get; }
+        public string TitleKey { get; }
+        public string InstructionKey { get; }
         public IReadOnlyList<TutorialAction> ExpectedActions => _expectedActions;
         public float PauseDistance { get; }
         public HamsterStateEnum? CompletionState { get; }

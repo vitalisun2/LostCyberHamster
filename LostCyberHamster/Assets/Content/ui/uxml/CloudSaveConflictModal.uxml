@@ -2,50 +2,73 @@
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
     <Style src="../styles/CloudSaveConflictModal.uss" />
     <engine:VisualElement class="cloud-save-conflict">
-        <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_title" class="lcs-text cloud-save-conflict__title" />
-        <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_body" class="lcs-text cloud-save-conflict__body" />
-        <engine:VisualElement class="cloud-save-conflict__cards">
-            <engine:VisualElement class="cloud-save-conflict__card">
-                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_cloud" class="cloud-save-conflict__card-title" />
-                <engine:VisualElement class="cloud-save-conflict__row">
-                    <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_completed_levels" class="cloud-save-conflict__label" />
-                    <engine:Label name="cloud-conflict__cloud-levels" class="cloud-save-conflict__value" />
+        <engine:VisualElement name="cloud-save-conflict-viewport" class="cloud-save-conflict__viewport">
+            <engine:VisualElement name="cloud-save-conflict-frame" class="cloud-save-conflict__frame">
+                <engine:VisualElement name="cloud-save-conflict-design" class="cloud-save-conflict__design">
+                    <engine:VisualElement class="cloud-save-conflict__panel" picking-mode="Ignore" />
+                    <engine:VisualElement class="cloud-save-conflict__header" picking-mode="Ignore">
+                        <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_title" class="cloud-save-conflict__text cloud-save-conflict__title" picking-mode="Ignore" />
+                    </engine:VisualElement>
+                    <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_body" name="cloud-conflict__body" class="cloud-save-conflict__text cloud-save-conflict__body" picking-mode="Ignore" />
+                    <engine:Label name="cloud-conflict__error" class="cloud-save-conflict__text cloud-save-conflict__body cloud-save-conflict__error" picking-mode="Ignore" />
+                    <engine:VisualElement class="cloud-save-conflict__card cloud-save-conflict__card--cloud">
+                        <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_cloud" class="cloud-save-conflict__text cloud-save-conflict__card-title" picking-mode="Ignore" />
+                        <engine:VisualElement class="cloud-save-conflict__divider" picking-mode="Ignore" />
+                        <engine:VisualElement class="cloud-save-conflict__rows" picking-mode="Ignore">
+                            <engine:VisualElement class="cloud-save-conflict__row" picking-mode="Ignore">
+                                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_player_level" class="cloud-save-conflict__text cloud-save-conflict__label" picking-mode="Ignore" />
+                                <engine:Label name="cloud-conflict__cloud-player-level" class="cloud-save-conflict__text cloud-save-conflict__value" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="cloud-save-conflict__row" picking-mode="Ignore">
+                                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_completed_levels" class="cloud-save-conflict__text cloud-save-conflict__label" picking-mode="Ignore" />
+                                <engine:Label name="cloud-conflict__cloud-levels" class="cloud-save-conflict__text cloud-save-conflict__value" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="cloud-save-conflict__row" picking-mode="Ignore">
+                                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_money" class="cloud-save-conflict__text cloud-save-conflict__label" picking-mode="Ignore" />
+                                <engine:Label name="cloud-conflict__cloud-money" class="cloud-save-conflict__text cloud-save-conflict__value" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="cloud-save-conflict__row" picking-mode="Ignore">
+                                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_crystals" class="cloud-save-conflict__text cloud-save-conflict__label" picking-mode="Ignore" />
+                                <engine:Label name="cloud-conflict__cloud-crystals" class="cloud-save-conflict__text cloud-save-conflict__value" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="cloud-save-conflict__row cloud-save-conflict__row--saved" picking-mode="Ignore">
+                                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_saved" class="cloud-save-conflict__text cloud-save-conflict__label" picking-mode="Ignore" />
+                                <engine:Label name="cloud-conflict__cloud-saved" class="cloud-save-conflict__text cloud-save-conflict__value" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                        </engine:VisualElement>
+                        <Vues.GameCore.LocalizedButton key="cloud_save_conflict_choose_cloud" name="cloud-conflict__choose-cloud" class="cloud-save-conflict__text cloud-save-conflict__button cloud-save-conflict__button--cloud" />
+                    </engine:VisualElement>
+                    <engine:VisualElement class="cloud-save-conflict__card cloud-save-conflict__card--device">
+                        <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_device" class="cloud-save-conflict__text cloud-save-conflict__card-title" picking-mode="Ignore" />
+                        <engine:VisualElement class="cloud-save-conflict__divider" picking-mode="Ignore" />
+                        <engine:VisualElement class="cloud-save-conflict__rows" picking-mode="Ignore">
+                            <engine:VisualElement class="cloud-save-conflict__row" picking-mode="Ignore">
+                                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_player_level" class="cloud-save-conflict__text cloud-save-conflict__label" picking-mode="Ignore" />
+                                <engine:Label name="cloud-conflict__device-player-level" class="cloud-save-conflict__text cloud-save-conflict__value" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="cloud-save-conflict__row" picking-mode="Ignore">
+                                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_completed_levels" class="cloud-save-conflict__text cloud-save-conflict__label" picking-mode="Ignore" />
+                                <engine:Label name="cloud-conflict__device-levels" class="cloud-save-conflict__text cloud-save-conflict__value" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="cloud-save-conflict__row" picking-mode="Ignore">
+                                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_money" class="cloud-save-conflict__text cloud-save-conflict__label" picking-mode="Ignore" />
+                                <engine:Label name="cloud-conflict__device-money" class="cloud-save-conflict__text cloud-save-conflict__value" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="cloud-save-conflict__row" picking-mode="Ignore">
+                                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_crystals" class="cloud-save-conflict__text cloud-save-conflict__label" picking-mode="Ignore" />
+                                <engine:Label name="cloud-conflict__device-crystals" class="cloud-save-conflict__text cloud-save-conflict__value" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                            <engine:VisualElement class="cloud-save-conflict__row cloud-save-conflict__row--saved" picking-mode="Ignore">
+                                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_saved" class="cloud-save-conflict__text cloud-save-conflict__label" picking-mode="Ignore" />
+                                <engine:Label name="cloud-conflict__device-saved" class="cloud-save-conflict__text cloud-save-conflict__value" picking-mode="Ignore" />
+                            </engine:VisualElement>
+                        </engine:VisualElement>
+                        <Vues.GameCore.LocalizedButton key="cloud_save_conflict_choose_device" name="cloud-conflict__choose-device" class="cloud-save-conflict__text cloud-save-conflict__button cloud-save-conflict__button--device" />
+                    </engine:VisualElement>
+                    <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_warning" class="cloud-save-conflict__text cloud-save-conflict__warning" picking-mode="Ignore" />
+                    <Vues.GameCore.LocalizedButton key="cloud.conflict.later" name="cloud-conflict__later" class="cloud-save-conflict__text cloud-save-conflict__later" />
                 </engine:VisualElement>
-                <engine:VisualElement class="cloud-save-conflict__row">
-                    <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_money" class="cloud-save-conflict__label" />
-                    <engine:Label name="cloud-conflict__cloud-money" class="cloud-save-conflict__value" />
-                </engine:VisualElement>
-                <engine:VisualElement class="cloud-save-conflict__row">
-                    <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_crystals" class="cloud-save-conflict__label" />
-                    <engine:Label name="cloud-conflict__cloud-crystals" class="cloud-save-conflict__value" />
-                </engine:VisualElement>
-                <engine:VisualElement class="cloud-save-conflict__row">
-                    <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_saved" class="cloud-save-conflict__label" />
-                    <engine:Label name="cloud-conflict__cloud-saved" class="cloud-save-conflict__value" />
-                </engine:VisualElement>
-                <Vues.GameCore.LocalizedButton key="cloud_save_conflict_choose_cloud" name="cloud-conflict__choose-cloud" class="lcs_btn bg-primary cloud-save-conflict__button" />
-            </engine:VisualElement>
-            <engine:VisualElement class="cloud-save-conflict__card">
-                <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_device" class="cloud-save-conflict__card-title" />
-                <engine:VisualElement class="cloud-save-conflict__row">
-                    <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_completed_levels" class="cloud-save-conflict__label" />
-                    <engine:Label name="cloud-conflict__device-levels" class="cloud-save-conflict__value" />
-                </engine:VisualElement>
-                <engine:VisualElement class="cloud-save-conflict__row">
-                    <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_money" class="cloud-save-conflict__label" />
-                    <engine:Label name="cloud-conflict__device-money" class="cloud-save-conflict__value" />
-                </engine:VisualElement>
-                <engine:VisualElement class="cloud-save-conflict__row">
-                    <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_crystals" class="cloud-save-conflict__label" />
-                    <engine:Label name="cloud-conflict__device-crystals" class="cloud-save-conflict__value" />
-                </engine:VisualElement>
-                <engine:VisualElement class="cloud-save-conflict__row">
-                    <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_saved" class="cloud-save-conflict__label" />
-                    <engine:Label name="cloud-conflict__device-saved" class="cloud-save-conflict__value" />
-                </engine:VisualElement>
-                <Vues.GameCore.LocalizedButton key="cloud_save_conflict_choose_device" name="cloud-conflict__choose-device" class="lcs_btn bg-warning cloud-save-conflict__button" />
             </engine:VisualElement>
         </engine:VisualElement>
-        <Vues.GameCore.LocalizedLabel key="cloud_save_conflict_warning" class="cloud-save-conflict__warning" />
     </engine:VisualElement>
 </engine:UXML>

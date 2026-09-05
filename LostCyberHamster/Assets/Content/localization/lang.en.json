@@ -98,7 +98,7 @@
         },
         {
             "key": "win_submit_pending",
-            "value": "SUBMITTING RESULT…"
+            "value": "Score queued. XP after confirmation"
         },
         {
             "key": "win_submit_success",
@@ -751,6 +751,182 @@
         {
             "key": "shop_insufficient_coins_for_crystals",
             "value": "Not enough coins to buy crystals"
-        }
+        },
+        {
+            "key": "cloud.conflict.later",
+            "value": "Later"
+        },
+        {
+            "key": "ads_unavailable",
+            "value": "Ads are currently unavailable"
+        },
+        {
+            "key": "ads_offline",
+            "value": "Connect to load an ad"
+        },
+        {
+            "key": "ads_loading",
+            "value": "Loading ad…"
+        },
+        {
+            "key": "ads_waiting_result",
+            "value": "Waiting for ad result…"
+        },
+        {
+            "key": "ads_saving_reward",
+            "value": "Saving reward…"
+        },
+        {
+            "key": "ads_not_completed",
+            "value": "Ad not completed"
+        },
+        {
+            "key": "ads_reward_granted",
+            "value": "Reward received"
+        },
+        {
+            "key": "ads_try_again",
+            "value": "Ad unavailable. Try again"
+        },
+        {
+            "key": "shop_save_failed",
+            "value": "Purchase could not be saved. Try again"
+        },
+        {
+            "key": "win_submit_local_only",
+            "value": "Local result: leaderboard week was not loaded"
+        },
+        {
+            "key": "win_submit_expired",
+            "value": "Week ended. Result kept locally"
+        },
+        {
+            "key": "win_submit_unconfirmed",
+            "value": "Result unconfirmed. No XP awarded"
+        },
+        {
+            "key": "leaderboard_cached_at",
+            "value": "Saved leaderboard · downloaded {0}"
+        },
+        {
+            "key": "cloud_sync_status_local",
+            "value": "Saved on this device"
+        },
+        {
+            "key": "cloud_sync_status_unavailable",
+            "value": "Sync unavailable"
+        },
+        {
+            "key": "cloud_sync_last_confirmed",
+            "value": "Last synced: {0}"
+        },
+        {
+            "key": "cloud_sync_action_retry",
+            "value": "Retry"
+        },
+        {
+            "key": "cloud_sync_action_choose",
+            "value": "Choose a save"
+        },
+        {
+            "key": "cloud_save_conflict_changed",
+            "value": "Data changed. Choose the current version"
+        },
+        {
+            "key": "cloud_save_conflict_cloud_unavailable",
+            "value": "Cloud save unavailable"
+        },
+        {
+            "key": "cloud_save_conflict_retry",
+            "value": "Couldn't connect. Retry or choose Later."
+        },
+        {
+            "key": "leaderboard_cached_previous_week_at",
+            "value": "Previous week · downloaded {0}"
+        },
+        {
+            "key": "local_save_failed",
+            "value": "Changes could not be saved. Try the action again."
+        },
+        {
+            "key": "tutorial_title",
+            "value": "TUTORIAL"
+        },
+        {
+            "key": "tutorial_step_1_title",
+            "value": "Dodge"
+        },
+        {
+            "key": "tutorial_step_1_instruction",
+            "value": "Tap to dodge"
+        },
+        {
+            "key": "tutorial_step_2_title",
+            "value": "Jump over"
+        },
+        {
+            "key": "tutorial_step_2_instruction",
+            "value": "Press jump to clear the obstacle"
+        },
+        {
+            "key": "tutorial_step_3_title",
+            "value": "Jump on"
+        },
+        {
+            "key": "tutorial_step_3_instruction",
+            "value": "Jump onto the obstacle"
+        },
+        {
+            "key": "tutorial_step_4_title",
+            "value": "Super jump"
+        },
+        {
+            "key": "tutorial_step_4_instruction",
+            "value": "Press jump twice to travel farther"
+        },
+        {
+            "key": "tutorial_step_5_title",
+            "value": "Super landing"
+        },
+        {
+            "key": "tutorial_step_5_instruction",
+            "value": "Press jump twice and land on top"
+        },
+        {
+            "key": "tutorial_step_6_title",
+            "value": "Onto the roof"
+        },
+        {
+            "key": "tutorial_step_6_instruction",
+            "value": "Jump onto the roof"
+        },
+        {
+            "key": "tutorial_step_7_title",
+            "value": "Roof to roof"
+        },
+        {
+            "key": "tutorial_step_7_instruction",
+            "value": "Jump to the next roof"
+        },
+        {
+            "key": "tutorial_step_8_title",
+            "value": "Jump from roof"
+        },
+        {
+            "key": "tutorial_step_8_instruction",
+            "value": "Jump from the roof onto the obstacle"
+        },
+        {
+            "key": "save_requires_newer_game",
+            "value": "This save was created by a newer game version. Please update the game."
+        },
+        {
+            "key": "local_loading_failed",
+            "value": "Couldn't load game data. Restart the game to try again."
+        },
+    {
+      "key": "cloud_save_conflict_player_level",
+      "value": "Player level"
+    }
     ]
 }

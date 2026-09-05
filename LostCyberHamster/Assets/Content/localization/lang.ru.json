@@ -98,7 +98,7 @@
         },
         {
             "key": "win_submit_pending",
-            "value": "ОТПРАВКА РЕЗУЛЬТАТА…"
+            "value": "Результат ожидает отправки. XP после подтверждения"
         },
         {
             "key": "win_submit_success",
@@ -751,6 +751,182 @@
         {
             "key": "shop_insufficient_coins_for_crystals",
             "value": "Недостаточно монет для покупки кристаллов"
-        }
+        },
+        {
+            "key": "cloud.conflict.later",
+            "value": "Позже"
+        },
+        {
+            "key": "ads_unavailable",
+            "value": "Реклама сейчас недоступна"
+        },
+        {
+            "key": "ads_offline",
+            "value": "Для загрузки рекламы нужен интернет"
+        },
+        {
+            "key": "ads_loading",
+            "value": "Загружаем рекламу…"
+        },
+        {
+            "key": "ads_waiting_result",
+            "value": "Ожидаем результат просмотра…"
+        },
+        {
+            "key": "ads_saving_reward",
+            "value": "Сохраняем награду…"
+        },
+        {
+            "key": "ads_not_completed",
+            "value": "Просмотр не завершён"
+        },
+        {
+            "key": "ads_reward_granted",
+            "value": "Награда получена"
+        },
+        {
+            "key": "ads_try_again",
+            "value": "Реклама недоступна. Попробуйте ещё раз"
+        },
+        {
+            "key": "shop_save_failed",
+            "value": "Покупка не сохранена. Попробуйте ещё раз"
+        },
+        {
+            "key": "win_submit_local_only",
+            "value": "Только локально: неделя рейтинга ещё не загружена"
+        },
+        {
+            "key": "win_submit_expired",
+            "value": "Неделя завершена. Результат сохранён локально"
+        },
+        {
+            "key": "win_submit_unconfirmed",
+            "value": "Результат не подтверждён. XP не начислен"
+        },
+        {
+            "key": "leaderboard_cached_at",
+            "value": "Сохранённый рейтинг · загружен {0}"
+        },
+        {
+            "key": "cloud_sync_status_local",
+            "value": "Сохранено на устройстве"
+        },
+        {
+            "key": "cloud_sync_status_unavailable",
+            "value": "Синхронизация недоступна"
+        },
+        {
+            "key": "cloud_sync_last_confirmed",
+            "value": "Последняя синхронизация: {0}"
+        },
+        {
+            "key": "cloud_sync_action_retry",
+            "value": "Повторить"
+        },
+        {
+            "key": "cloud_sync_action_choose",
+            "value": "Выбрать сохранение"
+        },
+        {
+            "key": "cloud_save_conflict_changed",
+            "value": "Данные изменились. Выберите актуальную версию"
+        },
+        {
+            "key": "cloud_save_conflict_cloud_unavailable",
+            "value": "Облачная версия недоступна"
+        },
+        {
+            "key": "cloud_save_conflict_retry",
+            "value": "Не удалось подключиться. Повторите или выберите «Позже»."
+        },
+        {
+            "key": "leaderboard_cached_previous_week_at",
+            "value": "Прошлая неделя · загружен {0}"
+        },
+        {
+            "key": "local_save_failed",
+            "value": "Изменения не сохранены. Повторите действие."
+        },
+        {
+            "key": "tutorial_title",
+            "value": "ОБУЧЕНИЕ"
+        },
+        {
+            "key": "tutorial_step_1_title",
+            "value": "Уклонение"
+        },
+        {
+            "key": "tutorial_step_1_instruction",
+            "value": "Тапни, чтобы увернуться"
+        },
+        {
+            "key": "tutorial_step_2_title",
+            "value": "Перепрыгни"
+        },
+        {
+            "key": "tutorial_step_2_instruction",
+            "value": "Нажми прыжок, чтобы перепрыгнуть"
+        },
+        {
+            "key": "tutorial_step_3_title",
+            "value": "На препятствие"
+        },
+        {
+            "key": "tutorial_step_3_instruction",
+            "value": "Прыгни на препятствие"
+        },
+        {
+            "key": "tutorial_step_4_title",
+            "value": "Суперпрыжок"
+        },
+        {
+            "key": "tutorial_step_4_instruction",
+            "value": "Нажми прыжок дважды, чтобы перелететь дальше"
+        },
+        {
+            "key": "tutorial_step_5_title",
+            "value": "Двойной прыжок"
+        },
+        {
+            "key": "tutorial_step_5_instruction",
+            "value": "Нажми прыжок дважды и приземлись сверху"
+        },
+        {
+            "key": "tutorial_step_6_title",
+            "value": "На крышу"
+        },
+        {
+            "key": "tutorial_step_6_instruction",
+            "value": "Прыгни на крышу"
+        },
+        {
+            "key": "tutorial_step_7_title",
+            "value": "Между крышами"
+        },
+        {
+            "key": "tutorial_step_7_instruction",
+            "value": "Прыгни на следующую крышу"
+        },
+        {
+            "key": "tutorial_step_8_title",
+            "value": "С крыши"
+        },
+        {
+            "key": "tutorial_step_8_instruction",
+            "value": "Прыгни с крыши на препятствие"
+        },
+        {
+            "key": "save_requires_newer_game",
+            "value": "Сохранение создано новой версией игры. Обновите игру."
+        },
+        {
+            "key": "local_loading_failed",
+            "value": "Не удалось загрузить данные. Перезапустите игру, чтобы повторить."
+        },
+    {
+      "key": "cloud_save_conflict_player_level",
+      "value": "Уровень героя"
+    }
     ]
 }

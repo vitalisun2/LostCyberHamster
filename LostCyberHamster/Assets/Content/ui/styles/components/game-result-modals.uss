@@ -49,7 +49,7 @@
 
 .game-result-modal__panel--win {
     height: 550px;
-    background-image: url("/Assets/Content/ui/sprites/modals/win/panel_win_exact.png");
+    background-image: url("/Assets/Content/ui/sprites/shared/panel_reward_base.png");
 }
 
 .game-result-modal__panel--fail {

@@ -10,17 +10,20 @@ namespace LostCyberHamster.UI
             int completedLevels,
             int money,
             int crystals,
-            DateTime savedAt)
+            DateTime savedAt,
+            int playerLevel = 1)
         {
             CompletedLevels = completedLevels;
             Money = money;
             Crystals = crystals;
             SavedAt = savedAt;
+            PlayerLevel = playerLevel;
         }
 
         public int CompletedLevels { get; }
         public int Money { get; }
         public int Crystals { get; }
         public DateTime SavedAt { get; }
+        public int PlayerLevel { get; }
     }
 }

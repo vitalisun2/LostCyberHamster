@@ -17,6 +17,7 @@ namespace LostCyberHamster.UI
         private Action _skillsAction;
         private Action _rankingsAction;
         private GameResultModalPresentation _presentation;
+        private IVisualElementScheduledItem _layoutTask;
 
         private VisualElement Viewport =>
             _modalContent.Q<VisualElement>("journey-complete-viewport");
@@ -64,17 +65,24 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
+            _presentation ??= GameResultModalPresentation.Apply(_root);
             HomeButton?.RegisterCallback<ClickEvent>(OnHomeClicked);
             SkillsButton?.RegisterCallback<ClickEvent>(OnSkillsClicked);
             RankingsButton?.RegisterCallback<ClickEvent>(OnRankingsClicked);
             Viewport?.RegisterCallback<GeometryChangedEvent>(
                 OnViewportGeometryChanged);
-            Viewport?.schedule.Execute(
-                () => ApplyResponsiveLayout(Viewport.contentRect.size));
+            _layoutTask?.Pause();
+            _layoutTask = Viewport?.schedule.Execute(() =>
+            {
+                if (_presentation != null && Viewport != null)
+                    ApplyResponsiveLayout(Viewport.contentRect.size);
+            });
         }
 
         protected override void OnUnsubscribeFromEvents()
         {
+            _layoutTask?.Pause();
+            _layoutTask = null;
             HomeButton?.UnregisterCallback<ClickEvent>(OnHomeClicked);
             SkillsButton?.UnregisterCallback<ClickEvent>(OnSkillsClicked);
             RankingsButton?.UnregisterCallback<ClickEvent>(OnRankingsClicked);

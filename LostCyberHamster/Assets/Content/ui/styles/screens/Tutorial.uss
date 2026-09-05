@@ -1,0 +1,199 @@
+/* Tutorial HUD: геометрия ввода остаётся в локальных единицах root. */
+#tutorial-root,
+#tutorial-root .tutorial-fill,
+#tutorial-complete-root {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+#tutorial-root #tutorial-idle-input-blocker,
+#tutorial-root #tutorial-prompt-input-capture,
+#tutorial-root #tutorial-focus-highlight {
+    background-color: transparent;
+}
+
+#tutorial-root #tutorial-focus-highlight {
+    position: absolute;
+}
+
+#tutorial-root #tutorial-header,
+#tutorial-root #tutorial-instruction-bubble,
+#tutorial-root #tutorial-finger,
+#tutorial-root #tutorial-skip {
+    position: absolute;
+    transform-origin: 0 0;
+    flex-shrink: 0;
+}
+
+#tutorial-root .unity-label {
+    margin: 0;
+    padding: 0;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    color: rgb(25, 53, 70);
+    -unity-text-outline-width: 0;
+}
+
+#tutorial-root #tutorial-header {
+    width: 200px;
+    height: 90px;
+}
+
+#tutorial-root #tutorial-title {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 200px;
+    height: 40px;
+    font-size: 28px;
+    color: rgb(255, 243, 212);
+    -unity-text-outline-color: rgb(23, 24, 27);
+    -unity-text-outline-width: 2px;
+}
+
+#tutorial-root #tutorial-lesson-panel {
+    position: absolute;
+    top: 42px;
+    left: 16px;
+    width: 168px;
+    height: 48px;
+    background-image: url("/Assets/Content/ui/sprites/tutorial/tutorial_hud_lesson_panel.png");
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+#tutorial-root #tutorial-lesson-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 32px;
+    height: 32px;
+    background-image: url("/Assets/Content/ui/sprites/tutorial/tutorial_hud_lesson_badge.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+#tutorial-root #tutorial-lesson-number {
+    width: 32px;
+    height: 30px;
+    font-size: 19px;
+    color: rgb(255, 243, 212);
+    -unity-text-outline-color: rgb(35, 34, 35);
+    -unity-text-outline-width: 1px;
+}
+
+#tutorial-root #tutorial-lesson-title {
+    position: absolute;
+    left: 44px;
+    top: 7px;
+    width: 114px;
+    height: 33px;
+    font-size: 12px;
+}
+
+#tutorial-root #tutorial-instruction-bubble {
+    width: 228px;
+    height: 88px;
+    padding: 10px 15px 11px 15px;
+    background-image: url("/Assets/Content/ui/sprites/tutorial/tutorial_hud_instruction_panel.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    justify-content: center;
+    align-items: center;
+}
+
+#tutorial-root #tutorial-instruction {
+    width: 198px;
+    height: 67px;
+    font-size: 16px;
+}
+
+#tutorial-root #tutorial-finger {
+    width: 56px;
+    height: 56px;
+    background-image: url("/Assets/Content/ui/sprites/tutorial/tutorial_pointer.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+#tutorial-root #tutorial-skip,
+#tutorial-root #tutorial-skip:hover,
+#tutorial-root #tutorial-skip:focus,
+#tutorial-root #tutorial-skip:active {
+    width: 136px;
+    height: 34px;
+    margin: 0;
+    padding: 4px 9px 5px 9px;
+    background-color: transparent;
+    background-image: url("/Assets/Content/ui/sprites/tutorial/tutorial_hud_button_skip_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    border-width: 0;
+    border-radius: 0;
+    color: rgb(25, 53, 70);
+    font-size: 13px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    white-space: normal;
+}
+
+#tutorial-root #tutorial-skip:hover,
+#tutorial-root #tutorial-skip:focus {
+    -unity-background-image-tint-color: rgb(239, 252, 249);
+}
+
+#tutorial-root #tutorial-skip:active {
+    -unity-background-image-tint-color: rgb(209, 237, 232);
+}
+
+/* Завершение сохраняет прежнюю композицию до отдельного этапа интеграции. */
+#tutorial-complete-root {
+    justify-content: center;
+    align-items: center;
+}
+
+#tutorial-complete-root #tutorial-complete-container {
+    width: 620px;
+    padding: 32px 36px 36px 36px;
+    border-radius: 28px;
+    align-items: center;
+}
+
+#tutorial-complete-root .tutorial-text {
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 3px;
+}
+
+#tutorial-complete-root #tutorial-complete-title {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+#tutorial-complete-root #tutorial-complete-message {
+    font-size: 38px;
+    margin-bottom: 28px;
+}
+
+#tutorial-complete-root #tutorial-complete-buttons {
+    flex-direction: row;
+    justify-content: center;
+}
+
+#tutorial-complete-root .tutorial-button {
+    width: 220px;
+    height: 84px;
+    border-width: 6px;
+    border-radius: 20px;
+    font-size: 38px;
+    -unity-font-style: bold;
+    -unity-text-outline-width: 2px;
+}
+
+#tutorial-complete-root #tutorial-complete-play {
+    margin-right: 20px;
+}
+
+#tutorial-complete-root #tutorial-complete-menu {
+    margin-left: 20px;
+}
