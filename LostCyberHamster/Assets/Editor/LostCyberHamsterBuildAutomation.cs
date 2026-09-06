@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
+using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
@@ -103,15 +104,22 @@ namespace LostCyberHamster.Editor
             }
         }
 
+        /// <summary>Проверяет скины и собирает Addressables с актуальными зависимостями.</summary>
         private static void BuildAddressables()
         {
+            // Проверяем исходный контент до очистки и сборки пакетов.
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (settings == null)
-            {
-                Debug.LogWarning("Addressables settings were not found. Skipping Addressables build.");
-                return;
-            }
+                throw new InvalidOperationException("Addressables settings were not found.");
 
+            var skinErrors = SkinVisualContentValidator.Validate();
+            if (skinErrors.Count > 0)
+                throw new InvalidOperationException(
+                    "Skin visuals validation failed:\n" + string.Join("\n", skinErrors));
+
+            // CleanPlayerContent очищает output, но сохраняет SBP-кеш старых ссылок.
+            // Пересчитываем зависимости; импортированные assets в Library остаются прогретыми.
+            BuildCache.PurgeCache(false);
             AddressableAssetSettings.CleanPlayerContent(settings.ActivePlayerDataBuilder);
             AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult result);
 

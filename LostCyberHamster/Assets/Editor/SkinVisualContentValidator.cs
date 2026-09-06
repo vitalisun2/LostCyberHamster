@@ -363,18 +363,32 @@ namespace LostCyberHamster.Editor
                     errors.Add($"{slug}: sprite '{sprite.name}' has no custom Physics Shape.");
             }
 
-            // Каждый sprite из animation clips должен заранее попасть в runtime cache manifest.
+            // Каждый кадр должен ссылаться на sprite из runtime cache manifest.
             foreach (SkinVisualActionMapping mapping in visual.Mappings.Where(mapping => mapping?.Clip != null))
             {
-                EditorCurveBinding[] bindings = AnimationUtility.GetObjectReferenceCurveBindings(mapping.Clip);
-                foreach (EditorCurveBinding binding in bindings.Where(binding =>
-                             binding.type == typeof(SpriteRenderer) &&
-                             binding.propertyName == "m_Sprite"))
+                EditorCurveBinding[] bindings = AnimationUtility.GetObjectReferenceCurveBindings(mapping.Clip)
+                    .Where(binding => binding.type == typeof(SpriteRenderer) &&
+                                      binding.propertyName == "m_Sprite")
+                    .ToArray();
+                if (bindings.Length == 0)
+                    errors.Add($"{slug}: clip '{mapping.Clip.name}' has no SpriteRenderer sprite curve.");
+
+                foreach (EditorCurveBinding binding in bindings)
                 {
                     ObjectReferenceKeyframe[] keyframes =
                         AnimationUtility.GetObjectReferenceCurve(mapping.Clip, binding);
-                    foreach (Sprite sprite in keyframes.Select(keyframe => keyframe.value).OfType<Sprite>())
+                    if (keyframes.Length == 0)
+                        errors.Add($"{slug}: clip '{mapping.Clip.name}' has an empty sprite curve.");
+
+                    foreach (ObjectReferenceKeyframe keyframe in keyframes)
                     {
+                        if (keyframe.value is not Sprite sprite)
+                        {
+                            errors.Add(
+                                $"{slug}: clip '{mapping.Clip.name}' has no sprite at {keyframe.time:R}s.");
+                            continue;
+                        }
+
                         if (!configuredSprites.Contains(sprite))
                             errors.Add($"{slug}: animated sprite '{sprite.name}' is missing from Physics Shape manifest.");
                     }

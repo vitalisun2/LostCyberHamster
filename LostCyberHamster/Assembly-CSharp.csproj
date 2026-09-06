@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Generated file, do not modify, your changes will be overwritten (use AssetPostprocessor.OnGeneratedCSProject) -->
   <PropertyGroup>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -54,12 +54,6 @@
     <UnityBuildTarget>Android:13</UnityBuildTarget>
     <UnityVersion>6000.2.6f2</UnityVersion>
   </PropertyGroup>
-  <ItemGroup>
-    <Analyzer Include="C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\Microsoft\Visual Studio Tools for Unity\Analyzers\Microsoft.Unity.Analyzers.dll" />
-    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
-    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
-    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskParallel.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Models\CloudSyncStateEnum.cs" />
@@ -283,8 +277,8 @@
     <Compile Include="Assets\Scripts\Common\Models\PatternRef.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\RoofJumpOverSimulator.cs" />
     <Compile Include="Assets\Scripts\Ads\RewardedAdState.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopPurchaseJournal.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\Common\Models\DecorationTile.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimatorController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\RunReentryPostActionSafety.cs" />
@@ -442,8 +436,8 @@
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelSelectionModel.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\TapMechanics.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RunScoreMechanics.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\UI\Common\LocalSaveFeedback.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\PlannedAction.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\SuperFallbackActionDeduplicator.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameSceneEntryPoint.cs" />
@@ -473,8 +467,8 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\BotAnimationTravelProvider.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvancePlanner.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\LevelProgressSnapshot.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\JumpFromRoofOnRoofSimulator.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Daily\PendingDailyCommonReward.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\JumpFromRoofOnRoofSimulator.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiToMenuMechanics.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\GameScreenController.cs" />
     <Compile Include="Assets\Scripts\SharedCore\LicenseManager.cs" />

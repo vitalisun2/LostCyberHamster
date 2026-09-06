@@ -94,6 +94,11 @@ Entry point должен проверить, существует ли `BuildSan
 - Unity доимпортирует только изменившуюся дельту;
 - APK собирается быстрее, чем из холодного worktree.
 
+Перед сборкой Addressables `LostCyberHamsterBuildAutomation` проверяет Skin Visuals и очищает
+`Library/BuildCache` через `BuildCache.PurgeCache(false)`. Это пересчитывает SBP-зависимости,
+включая ссылки на восстановленные после ошибок импорта спрайты. Импортированные assets в
+`Library`, Gradle и Android-кеши остаются прогретыми. Ошибка проверки скинов останавливает сборку APK.
+
 ## 3. Синхронизация source snapshot
 
 Синхронизировать из `SourceWorktree` в `BuildSandbox` только source/config часть проекта:
