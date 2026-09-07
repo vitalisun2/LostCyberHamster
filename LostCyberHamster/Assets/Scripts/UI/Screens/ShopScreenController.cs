@@ -193,7 +193,11 @@ namespace LostCyberHamster.UI
         {
             ApplyOfferState();
             string key = _ads?.StatusKey;
-            if (string.IsNullOrEmpty(key))
+
+            // Успех относится только к рекламе текущего посещения магазина.
+            bool isPreviousReward = key == "ads_reward_granted" &&
+                _adRequest?.State != RewardedAdState.Completed;
+            if (string.IsNullOrEmpty(key) || isPreviousReward)
                 HidePurchaseMessage();
             else
                 ShowPurchaseMessage(key);
