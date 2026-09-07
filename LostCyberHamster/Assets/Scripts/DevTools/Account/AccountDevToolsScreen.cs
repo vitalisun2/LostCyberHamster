@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace Assets.Scripts.DevTools.Account
 {
     /// <summary>
-    /// Предоставляет локальный и полный сброс тестового состояния аккаунта.
+    /// Предоставляет локальный сброс сессии и чистый старт с новым гостевым прогрессом.
     /// </summary>
     internal sealed class AccountDevToolsScreen : IDevToolsScreen
     {
@@ -18,7 +18,9 @@ namespace Assets.Scripts.DevTools.Account
         private readonly RectTransform _rootRect;
         private readonly Button _localResetButton;
         private readonly Button _fullResetButton;
+        private readonly Button _unlinkButton;
         private readonly Text _resultText;
+        private readonly Text _stateText;
 
         private bool _isResetInProgress;
 
@@ -49,18 +51,24 @@ namespace Assets.Scripts.DevTools.Account
                 new Color(1f, 0.78f, 0.78f),
                 ResetLocalAccountState);
 
-            uiFactory.CreateSectionHeading("FullResetHeading", content, "Full Linked Account Reset");
+            uiFactory.CreateSectionHeading("FullResetHeading", content, "Чистый старт");
             uiFactory.CreateBodyText(
                 "FullResetDescription",
                 content,
-                "Removes the Unity Player Account link from the current verified session, then clears local sessions.");
+                "Создаёт нового гостя с нулевым прогрессом. Локальный прогресс заменяется; настройки сохраняются. Без сети вход завершится позже.");
             _fullResetButton = uiFactory.CreateButton(
-                "FullResetTestAccountButton",
+                "StartFreshGuestButton",
                 content,
-                "FULL RESET LINKED ACCOUNT",
+                "ЧИСТЫЙ СТАРТ — НОВЫЙ ГОСТЬ",
                 new Color(1f, 0.58f, 0.58f),
-                FullResetTestAccount);
+                StartFreshGuest);
+            uiFactory.CreateSectionHeading("UnlinkHeading", content, "Отвязка для тестов");
+            uiFactory.CreateBodyText("UnlinkDescription", content,
+                "Удаляет серверную привязку и локальную сессию прежнего аккаунта. Для новой игры используйте чистый старт.");
+            _unlinkButton = uiFactory.CreateButton("FullResetTestAccountButton", content,
+                "ОТВЯЗАТЬ АККАУНТ И ОЧИСТИТЬ СЕССИЮ", new Color(1f, 0.58f, 0.58f), FullResetTestAccount);
             _resultText = uiFactory.CreateBodyText("ResetResult", content, string.Empty);
+            _stateText = uiFactory.CreateBodyText("AccountState", content, string.Empty);
 
             RootObject.SetActive(false);
         }
@@ -71,6 +79,7 @@ namespace Assets.Scripts.DevTools.Account
         {
             RootObject.SetActive(true);
             _setTitle?.Invoke("Аккаунт");
+            RefreshPresentation();
         }
 
         public void Hide()
@@ -93,6 +102,11 @@ namespace Assets.Scripts.DevTools.Account
 
         public void RefreshPresentation()
         {
+            _localResetButton.interactable = !_isResetInProgress && _accountService.CanStartFreshGuestForTesting;
+            _fullResetButton.interactable = !_isResetInProgress && _accountService.CanStartFreshGuestForTesting;
+            _unlinkButton.interactable = !_isResetInProgress && _accountService.CanStartFreshGuestForTesting &&
+                _accountService.TryGetLinkedPlayerId(out _);
+            _stateText.text = "Состояние аккаунта: " + _accountService.State;
         }
 
         private void ResetLocalAccountState()
@@ -103,7 +117,7 @@ namespace Assets.Scripts.DevTools.Account
             try
             {
                 _accountService.ResetLocalAccountStateForTesting();
-                _resultText.text = "Success. Local account state cleared. The next Account Start will select CreateGuest.";
+                _resultText.text = "Local session cleared. Existing progress still belongs to its previous owner.";
             }
             catch (Exception exception)
             {
@@ -113,30 +127,25 @@ namespace Assets.Scripts.DevTools.Account
             }
         }
 
-        private async void FullResetTestAccount()
+        private void StartFreshGuest()
         {
             if (_isResetInProgress)
                 return;
 
             SetBusy(true);
-            _resultText.text = "Full reset in progress…";
+            _resultText.text = "Создаём чистый профиль…";
 
             try
             {
-                await _accountService.FullResetTestAccountAsync();
+                _accountService.StartFreshGuestForTesting();
                 if (IsAlive())
-                    _resultText.text = "Success. Server link and local account state cleared.";
-            }
-            catch (OperationCanceledException)
-            {
-                if (IsAlive())
-                    _resultText.text = "Full reset was cancelled.";
+                    _resultText.text = "Новый прогресс готов. Гостевой аккаунт подключится при доступной сети.";
             }
             catch (Exception exception)
             {
                 if (IsAlive())
-                    _resultText.text = "Error. Full reset was not completed.";
-                Debug.LogError($"[Account] Full reset UI action failed. Error type: {exception.GetType().Name}.");
+                    _resultText.text = "Чистый старт не завершён. " + exception.Message;
+                Debug.LogError($"[Account] Fresh start failed: {exception}");
             }
             finally
             {
@@ -149,7 +158,32 @@ namespace Assets.Scripts.DevTools.Account
         {
             _isResetInProgress = isBusy;
             _localResetButton.interactable = !isBusy;
-            _fullResetButton.interactable = !isBusy;
+            RefreshPresentation();
+        }
+
+        /// <summary>Сохраняет отдельный сценарий серверной отвязки для существующих E2E-инструментов.</summary>
+        private async void FullResetTestAccount()
+        {
+            if (_isResetInProgress) return;
+            SetBusy(true);
+            try
+            {
+                await _accountService.FullResetTestAccountAsync();
+                if (IsAlive()) _resultText.text = "Server link and local session cleared. Use fresh start for a new game.";
+            }
+            catch (OperationCanceledException)
+            {
+                if (IsAlive()) _resultText.text = "Full reset was cancelled.";
+            }
+            catch (Exception exception)
+            {
+                if (IsAlive()) _resultText.text = "Error. Full reset was not completed.";
+                Debug.LogError($"[Account] Full reset failed: {exception}");
+            }
+            finally
+            {
+                if (IsAlive()) SetBusy(false);
+            }
         }
 
         private bool IsAlive()

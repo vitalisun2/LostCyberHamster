@@ -9,6 +9,7 @@ namespace Assets.Scripts.Account
     {
         public List<AccountProfileBinding> Bindings = new();
         public string LastConfirmedPlayerId;
+        public string GuestProfile;
         public AccountProfileSwitch Pending;
     }
 }

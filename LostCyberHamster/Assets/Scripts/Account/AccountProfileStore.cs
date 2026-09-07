@@ -92,6 +92,13 @@ namespace Assets.Scripts.Account
             return binding;
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>Записывает профиль нового гостя внутри транзакции чистого старта.</summary>
+        public static void InitializeFreshGuestForTesting(string profile) =>
+            GameDataManager.SetJournalJson(Feature,
+                JsonUtility.ToJson(new AccountProfileJournal { GuestProfile = profile }), JournalOwner);
+#endif
+
         private static void Save(AccountProfileJournal journal) =>
             GameDataManager.ExecuteTechnicalTransaction(() =>
                 GameDataManager.SetJournalJson(Feature, JsonUtility.ToJson(journal), JournalOwner));

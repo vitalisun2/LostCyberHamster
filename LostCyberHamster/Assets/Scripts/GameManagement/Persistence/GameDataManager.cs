@@ -620,6 +620,31 @@ namespace GameManagement
             Notify(ProfileChanged);
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>Атомарно создаёт чистый локальный профиль и его начальные технические журналы.</summary>
+        public static void CreateFreshProfileForTesting(Action initializeJournals)
+        {
+            if (!CanApplyCloudProgress || IsAutomationRun())
+                throw new InvalidOperationException("Fresh start requires the menu and settled local progress.");
+            if (initializeJournals == null) throw new ArgumentNullException(nameof(initializeJournals));
+
+            // Прогресс, владелец, cloud metadata и журналы заменяются одним durable снимком.
+            ExecuteMutation(() =>
+            {
+                PlayerData = CreateDefaultPlayerData();
+                _envelope = CreateEnvelope(PlayerData, legacy: false);
+                initializeJournals();
+            }, gameplay: true);
+
+            // Подписчики перестраивают состояние только после успешного сохранения.
+            IsGameJustStarted = true;
+            Generation++;
+            Notify(PlayerDataReplaced);
+            Notify(ProfileChanged);
+            Notify(JournalsChanged);
+        }
+#endif
+
         public static void ResetSettings()
         {
             Settings = new SettingsData();

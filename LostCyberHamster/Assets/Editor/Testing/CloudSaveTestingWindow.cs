@@ -1,4 +1,5 @@
 using System;
+using Assets.Scripts.Account;
 using Assets.Scripts.Online;
 using UnityEditor;
 using UnityEngine;
@@ -18,7 +19,8 @@ namespace LostCyberHamster.Editor.Testing
             Skateboard,
             Skin,
             Resources,
-            Networking
+            Networking,
+            Account
         }
 
         /// <summary>Минимальная ширина окна.</summary>
@@ -75,6 +77,8 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Общий с DEV-меню экземпляр, обновляемый при смене Play Mode.</summary>
         private GameNetworkFacade _networkFacade;
         private string _networkError;
+        private AccountService _testingAccount;
+        private string _accountResult;
 
         /// <summary>Текущая страница общего окна Testing.</summary>
         private TestingPage _currentPage;
@@ -168,6 +172,9 @@ namespace LostCyberHamster.Editor.Testing
                 case TestingPage.Networking:
                     DrawNetworkingPage();
                     break;
+                case TestingPage.Account:
+                    DrawAccountPage();
+                    break;
                 default:
                     DrawStartPage();
                     break;
@@ -179,6 +186,9 @@ namespace LostCyberHamster.Editor.Testing
         {
             EditorGUILayout.LabelField("Testing", EditorStyles.boldLabel);
             EditorGUILayout.Space(8f);
+            if (GUILayout.Button("Аккаунт", GUILayout.Width(ProductButtonWidth),
+                    GUILayout.Height(ProductButtonHeight)))
+                _currentPage = TestingPage.Account;
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -252,6 +262,100 @@ namespace LostCyberHamster.Editor.Testing
             {
                 _currentPage = TestingPage.Networking;
             }
+        }
+
+        /// <summary>Показывает актуальный игровой сервис и общий с DEV чистый старт.</summary>
+        private void DrawAccountPage()
+        {
+            if (GUILayout.Button("Back", GUILayout.Width(70f))) _currentPage = TestingPage.Start;
+            EditorGUILayout.LabelField("Аккаунт", EditorStyles.boldLabel);
+            var account = EditorApplication.isPlaying && Zenject.ProjectContext.HasInstance
+                ? Zenject.ProjectContext.Instance.Container.TryResolve<AccountService>() : null;
+            if (!ReferenceEquals(account, _testingAccount))
+            {
+                _testingAccount = account;
+                _accountResult = null;
+            }
+            EditorGUILayout.HelpBox(
+                "Чистый старт заменяет локальный прогресс новым гостевым профилем. " +
+                "Настройки сохраняются. Без сети гостевой аккаунт подключится позже.", MessageType.Info);
+            EditorGUILayout.LabelField("Состояние", account?.State.ToString() ?? "Запустите Play Mode");
+
+            // Доступность определяется тем же сервисом при каждой перерисовке и смене Play Mode.
+            using (new EditorGUI.DisabledScope(account == null || !account.CanStartFreshGuestForTesting))
+            {
+                if (GUILayout.Button("ЧИСТЫЙ СТАРТ — НОВЫЙ ГОСТЬ"))
+                {
+                    try
+                    {
+                        account.StartFreshGuestForTesting();
+                        _accountResult = "Новый прогресс готов. Гостевой аккаунт подключится при доступной сети.";
+                    }
+                    catch (Exception exception)
+                    {
+                        _accountResult = "Чистый старт не завершён. " + exception.Message;
+                        Debug.LogError($"[Account] Fresh start failed: {exception}");
+                    }
+                    Repaint();
+                }
+            }
+            if (!string.IsNullOrEmpty(_accountResult))
+                EditorGUILayout.HelpBox(_accountResult, MessageType.Info);
+
+            // Технические сбросы используют те же методы, что и отдельные действия DEV.
+            using (new EditorGUI.DisabledScope(account == null || !account.CanStartFreshGuestForTesting))
+            {
+                if (GUILayout.Button("RESET LOCAL ACCOUNT STATE"))
+                {
+                    try
+                    {
+                        account.ResetLocalAccountStateForTesting();
+                        _accountResult = "Локальная сессия очищена. Прогресс сохраняет прежнего владельца.";
+                    }
+                    catch (Exception exception)
+                    {
+                        _accountResult = exception.Message;
+                        Debug.LogError($"[Account] Local reset failed: {exception}");
+                    }
+                }
+            }
+            using (new EditorGUI.DisabledScope(account == null || !account.CanStartFreshGuestForTesting ||
+                       !account.TryGetLinkedPlayerId(out _)))
+            {
+                if (GUILayout.Button("ОТВЯЗАТЬ АККАУНТ И ОЧИСТИТЬ СЕССИЮ"))
+                    UnlinkAccountForTesting(account);
+            }
+        }
+
+        /// <summary>Выполняет серверную отвязку и обновляет результат только для исходного Play Mode.</summary>
+        private async void UnlinkAccountForTesting(AccountService account)
+        {
+            string result;
+            try
+            {
+                await account.FullResetTestAccountAsync();
+                result = "Привязка и локальная сессия очищены. Для новой игры используйте чистый старт.";
+            }
+            catch (OperationCanceledException) { result = "Отвязка отменена."; }
+            catch (Exception exception)
+            {
+                result = exception.Message;
+                Debug.LogError($"[Account] Full reset failed: {exception}");
+            }
+
+            // Завершение старого запроса не обновляет новое окно или новый игровой контекст.
+            if (this != null && EditorApplication.isPlaying && Zenject.ProjectContext.HasInstance &&
+                ReferenceEquals(account, Zenject.ProjectContext.Instance.Container.TryResolve<AccountService>()))
+            {
+                _accountResult = result;
+                Repaint();
+            }
+        }
+
+        /// <summary>Обновляет состояние аккаунта после действий в DEV и фонового входа.</summary>
+        private void OnInspectorUpdate()
+        {
+            if (_currentPage == TestingPage.Account) Repaint();
         }
 
         /// <summary>Подключает актуальный фасад, включая Play Mode с отключённым Domain Reload.</summary>

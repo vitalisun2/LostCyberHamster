@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using UnityEngine;
 using Assets.Scripts.Online;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using Assets.Scripts.DevTools.Gameplay;
+#endif
 using GameManagement;
 
 namespace Assets.Scripts.Account
@@ -451,7 +454,8 @@ namespace Assets.Scripts.Account
             var journal = AccountProfileStore.Read();
             string expectedPlayer = GameDataManager.OwnerPlayerId ??
                 journal.Pending?.OriginalPlayerId ?? journal.LastConfirmedPlayerId;
-            string profile = AccountProfileStore.ProfileFor(journal, expectedPlayer);
+            string profile = string.IsNullOrWhiteSpace(expectedPlayer)
+                ? journal.GuestProfile : AccountProfileStore.ProfileFor(journal, expectedPlayer);
 
             // Старый default допускается только до проверки identity; неподтверждённый mapping не создаём.
             if (!string.IsNullOrWhiteSpace(expectedPlayer))
@@ -498,6 +502,61 @@ namespace Assets.Scripts.Account
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>Разрешает чистый старт в меню между операциями аккаунта и прогресса.</summary>
+        public bool CanStartFreshGuestForTesting => GameDataManager.CanApplyCloudProgress &&
+            _authenticationGateway is IAccountProfileGateway &&
+            !AccountTransitionScope.IsActive &&
+            (_resolutionTask == null || _resolutionTask.IsCompleted) &&
+            State != AccountState.SigningIn && State != AccountState.Linking;
+
+        /// <summary>Создаёт чистый локальный профиль; сетевой гость определяется фоновым восстановлением.</summary>
+        public void StartFreshGuestForTesting()
+        {
+            if (!CanStartFreshGuestForTesting)
+                throw new InvalidOperationException("Fresh start requires the menu and no pending account operation.");
+
+            // Изолируем credentials нового гостя, сохраняя доступ к прежнему аккаунту.
+            var profiles = (IAccountProfileGateway)_authenticationGateway;
+            var sdkReady = OnlineServicesCoordinator.UnityServicesReady;
+            var originalProfile = sdkReady ? profiles.Profile : null;
+            var freshProfile = "guest_" + Guid.NewGuid().ToString("N").Substring(0, 20);
+            using (var transition = _transition = new AccountTransitionScope())
+            {
+                ++_resolutionVersion;
+                SetState(AccountState.SigningIn);
+                try
+                {
+                    if (sdkReady)
+                    {
+                        _playerAccountGateway.SignOut();
+                        profiles.SwitchProfile(freshProfile);
+                    }
+                    GameDataManager.CreateFreshProfileForTesting(
+                        () => AccountProfileStore.InitializeFreshGuestForTesting(freshProfile));
+                }
+                catch
+                {
+                    // Старый durable профиль остаётся источником восстановления при неудачной записи.
+                    try { if (sdkReady) profiles.SwitchProfile(originalProfile); }
+                    finally
+                    {
+                        SetState(AccountState.Error);
+                        OnlineServicesCoordinator.RequestRetry("account");
+                    }
+                    throw;
+                }
+
+                // Новый локальный прогресс доступен сразу, включая офлайн-режим.
+                _knownPlayerId = null;
+                _sessionCredentialsRejected = false;
+                LastRecoveryErrorKey = null;
+                DevToolsRuntimeState.UnlockAllLevels = false;
+                SetState(AccountState.NotStarted);
+            }
+            Start();
+            DebugManager.DiagStability("[ACCOUNT] Fresh local profile committed; guest session queued.");
+        }
+
         /// <summary>
         /// Очищает локальные сессии Unity Authentication и Player Accounts.
         /// </summary>
