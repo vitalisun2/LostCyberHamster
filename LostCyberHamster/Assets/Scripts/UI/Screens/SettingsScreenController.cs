@@ -58,7 +58,11 @@ namespace LostCyberHamster.UI
         private readonly ExistingAccountRestoreCoordinator _existingAccountRestoreCoordinator;
         private readonly CloudSyncService _cloudSyncService;
         private Button _buttonCloudAction;
+        private Button _buttonExistingAccount;
+        private System.IDisposable _ownershipPrompt;
         private static ScreenEnum _returnScreen = ScreenEnum.HomeScreen;
+        private static bool _openExistingAccount;
+        private static bool _openProfileChoice;
         private SettingsData _settingsData = new();
         private bool _hasAccountLinkConflict;
         private bool _isPlayerNameSaving;
@@ -86,6 +90,22 @@ namespace LostCyberHamster.UI
                 ? ScreenEnum.HomeScreen
                 : sourceScreen;
             UIManager.OnScreenShow?.Invoke(ScreenEnum.SettingsScreen);
+        }
+
+        /// <summary>Открывает конкретный сценарий восстановления с предупреждением о замене прогресса.</summary>
+        public static void OpenExistingAccountFrom(ScreenEnum sourceScreen)
+        {
+            _openProfileChoice = false;
+            _openExistingAccount = true;
+            OpenFrom(sourceScreen);
+        }
+
+        /// <summary>Открывает выбор профиля с действием, соответствующим текущему аккаунту и сохранению.</summary>
+        public static void OpenProfileChoiceFrom(ScreenEnum sourceScreen)
+        {
+            _openExistingAccount = false;
+            _openProfileChoice = true;
+            OpenFrom(sourceScreen);
         }
 
         protected override string ScreenBackgroundAddress => BackgroundAddress;
@@ -127,13 +147,26 @@ namespace LostCyberHamster.UI
             _labelVersion.text = $"{Application.version}";
             _labelId.text = $"{SystemInfo.deviceUniqueIdentifier}";
             EnsureCloudActionButton();
+            EnsureExistingAccountButton();
 
             SubscribeToAccountState();
             SubscribeToCloudSyncStatus();
+            GameDataManager.ProfileChanged -= OnProfileChanged;
+            GameDataManager.ProfileChanged += OnProfileChanged;
             UpdateAccountState(_accountService.State);
             ShowPlayerName(_accountService.PlayerName);
             SetPlayerNameEditMode(false);
             SetPlayerNameBusy(false);
+            if (_openExistingAccount)
+            {
+                _openExistingAccount = false;
+                _contentRoot.schedule.Execute(() => { if (_isActive) ShowExistingAccountConfirmation(); });
+            }
+            else if (_openProfileChoice)
+            {
+                _openProfileChoice = false;
+                _contentRoot.schedule.Execute(() => { if (_isActive) ShowProfileChoice(); });
+            }
         }
 
         private void SubscribeToAccountState()
@@ -150,6 +183,11 @@ namespace LostCyberHamster.UI
         private void OnAccountStateChanged(AccountState state)
         {
             UpdateAccountState(state);
+        }
+
+        private void OnProfileChanged()
+        {
+            if (_isActive) UpdateAccountState(_accountService.State);
         }
 
         private void SubscribeToCloudSyncStatus()
@@ -187,9 +225,14 @@ namespace LostCyberHamster.UI
 
             if (state == AccountState.Guest && _hasAccountLinkConflict)
                 stateLocalizationKey = "account_link_conflict";
+            else if (_accountService.IsGuestRecoveryUnavailable)
+                stateLocalizationKey = "account_guest_credentials_missing";
+            else if (state == AccountState.Error && !string.IsNullOrEmpty(_accountService.LastRecoveryErrorKey))
+                stateLocalizationKey = _accountService.LastRecoveryErrorKey;
 
             _labelAccountState.text = LocalizationManager.GetLocalizedString(stateLocalizationKey);
             _buttonLinkAccount.text = LocalizationManager.GetLocalizedString(
+                _accountService.CanReauthenticateLinkedOwner ? "account_reauthenticate" :
                 state == AccountState.Error || state == AccountState.NotStarted
                     ? "cloud_sync_action_retry"
                     : _hasAccountLinkConflict || state == AccountState.SigningIn
@@ -198,7 +241,14 @@ namespace LostCyberHamster.UI
             _buttonLinkAccount.style.display = state == AccountState.Linked
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
-            _buttonLinkAccount.SetEnabled(state == AccountState.Guest || state == AccountState.Error || state == AccountState.NotStarted);
+            _buttonLinkAccount.SetEnabled(!_accountService.IsGuestRecoveryUnavailable &&
+                (state == AccountState.Guest || state == AccountState.Error || state == AccountState.NotStarted));
+            if (_buttonExistingAccount != null)
+            {
+                _buttonExistingAccount.text = LocalizationManager.GetLocalizedString("btn_sign_in").ToUpperInvariant();
+                _buttonExistingAccount.style.display = state == AccountState.Guest && !_hasAccountLinkConflict
+                    ? DisplayStyle.Flex : DisplayStyle.None;
+            }
             _buttonChangePlayerName.SetEnabled(
                 state == AccountState.Guest || state == AccountState.Linked);
             if (state == AccountState.Guest || state == AccountState.Linked)
@@ -232,9 +282,23 @@ namespace LostCyberHamster.UI
             if (_buttonCloudAction != null)
             {
                 _buttonCloudAction.text = LocalizationManager.GetLocalizedString(
-                    _cloudSyncService.HasUnresolvedConflict ? "cloud_sync_action_choose" : "cloud_sync_action_retry").ToUpperInvariant();
+                    _cloudSyncService.HasUnresolvedConflict || ProfileOwnershipService.Instance?.CanAdoptGuestProgress == true
+                        ? "cloud_sync_action_choose" : "cloud_sync_action_retry").ToUpperInvariant();
                 _buttonCloudAction.SetEnabled(status != CloudSyncStatusEnum.Synchronizing);
             }
+        }
+
+        /// <summary>Даёт гостю прямой вход в существующий аккаунт через предварительное предупреждение.</summary>
+        private void EnsureExistingAccountButton()
+        {
+            _buttonExistingAccount = _buttonLinkAccount.parent.Q<Button>("settings__btn-existing-account");
+            if (_buttonExistingAccount != null) return;
+            _buttonExistingAccount = new Button { name = "settings__btn-existing-account" };
+            _buttonExistingAccount.AddToClassList("lcs_btn");
+            _buttonExistingAccount.AddToClassList("settings-art-button");
+            _buttonExistingAccount.AddToClassList("settings-art-button--secondary");
+            _buttonExistingAccount.AddToClassList("settings-account__button");
+            _buttonLinkAccount.parent.Add(_buttonExistingAccount);
         }
 
         /// <summary>Добавляет действие к существующей строке статуса без перестройки экрана.</summary>
@@ -252,7 +316,26 @@ namespace LostCyberHamster.UI
 
         private void OnClickCloudAction(ClickEvent _)
         {
+            ShowProfileChoice();
+        }
+
+        /// <summary>Открывает доступный выбор прогресса либо запрашивает его сетевое согласование.</summary>
+        private void ShowProfileChoice()
+        {
             if (_cloudSyncService.HasUnresolvedConflict) _cloudSyncService.ShowConflict();
+            else if (ProfileOwnershipService.Instance?.CanAdoptGuestProgress == true)
+            {
+                _ownershipPrompt?.Dispose();
+                _ownershipPrompt = ProfileOwnershipPrompt.Show(_contentRoot, ShowExistingAccountConfirmation,
+                    () => UpdateAccountState(_accountService.State));
+            }
+            else if (_accountService.State == AccountState.Guest &&
+                !string.IsNullOrEmpty(GameDataManager.OwnerPlayerId) &&
+                _accountService.TryGetAuthenticatedPlayerId(out var playerId) &&
+                GameDataManager.OwnerPlayerId != playerId)
+                ShowExistingAccountConfirmation();
+            else if (_accountService.RequiresReauthentication || _accountService.IsGuestRecoveryUnavailable)
+                UpdateAccountState(_accountService.State);
             else
             {
                 _accountService.Start();
@@ -260,8 +343,49 @@ namespace LostCyberHamster.UI
             }
         }
 
+        private void OnClickExistingAccount(ClickEvent _) => ShowExistingAccountConfirmation();
+
+        /// <summary>Запрашивает явный выбор до запуска входа с заменой локального прогресса.</summary>
+        private void ShowExistingAccountConfirmation()
+        {
+            if (!_isActive || _accountService.State != AccountState.Guest) return;
+            _ownershipPrompt?.Dispose();
+            _ownershipPrompt = ProfileOwnershipPrompt.ShowExistingAccountConfirmation(_contentRoot,
+                () => _ = RestoreExistingAccountAsync());
+        }
+
+        /// <summary>Восстанавливает выбранный аккаунт и сообщает только фактический результат восстановления гостя.</summary>
+        private async System.Threading.Tasks.Task RestoreExistingAccountAsync()
+        {
+            var version = _accountUiVersion;
+            try
+            {
+                var result = await _existingAccountRestoreCoordinator.RestoreAsync();
+                if (!_isActive || version != _accountUiVersion) return;
+                if (result == ExistingAccountRestoreResult.Restored)
+                {
+                    _hasAccountLinkConflict = false;
+                    UpdateAccountState(_accountService.State);
+                    return;
+                }
+            }
+            catch (System.Exception)
+            {
+                // AccountService сохраняет исходный профиль; UI остаётся доступным для следующего действия.
+            }
+            if (_isActive && version == _accountUiVersion)
+                _labelAccountState.text = LocalizationManager.GetLocalizedString(_accountService.State == AccountState.Guest
+                    ? "account_sign_in_failed_retry" : "account_sign_in_unavailable");
+        }
+
         private async void OnClickButtonLinkAccount(ClickEvent evt)
         {
+            if (_accountService.CanReauthenticateLinkedOwner)
+            {
+                await _accountService.ReauthenticateLinkedOwnerAsync();
+                if (_isActive) UpdateAccountState(_accountService.State);
+                return;
+            }
             if (_accountService.State == AccountState.Error || _accountService.State == AccountState.NotStarted)
             {
                 _accountService.Start();
@@ -276,21 +400,7 @@ namespace LostCyberHamster.UI
             {
                 if (_hasAccountLinkConflict)
                 {
-                    var restoreResult = await _existingAccountRestoreCoordinator.RestoreAsync();
-                    if (accountUiVersion != _accountUiVersion)
-                        return;
-
-                    if (restoreResult == ExistingAccountRestoreResult.Restored)
-                    {
-                        _hasAccountLinkConflict = false;
-                        UpdateAccountState(_accountService.State);
-                    }
-                    else if (_accountService.State == AccountState.Guest)
-                    {
-                        _labelAccountState.text = LocalizationManager.GetLocalizedString(
-                            "account_sign_in_failed_retry");
-                    }
-
+                    ShowExistingAccountConfirmation();
                     return;
                 }
 
@@ -476,6 +586,7 @@ namespace LostCyberHamster.UI
             _buttonBack?.RegisterCallback<ClickEvent>(OnClickButtonBack);
             _buttonLinkAccount?.RegisterCallback<ClickEvent>(OnClickButtonLinkAccount);
             _buttonCloudAction?.RegisterCallback<ClickEvent>(OnClickCloudAction);
+            _buttonExistingAccount?.RegisterCallback<ClickEvent>(OnClickExistingAccount);
             _buttonChangePlayerName?.RegisterCallback<ClickEvent>(OnClickChangePlayerName);
             _buttonSavePlayerName?.RegisterCallback<ClickEvent>(OnClickSavePlayerName);
             _buttonCancelPlayerName?.RegisterCallback<ClickEvent>(OnClickCancelPlayerName);
@@ -577,9 +688,12 @@ namespace LostCyberHamster.UI
                 return;
 
             _isActive = false;
+            _ownershipPrompt?.Dispose();
+            _ownershipPrompt = null;
             ResetAccountConflictUi();
             UnsubscribeFromAccountState();
             UnsubscribeFromCloudSyncStatus();
+            GameDataManager.ProfileChanged -= OnProfileChanged;
         }
 
         private void ResetAccountConflictUi()
@@ -594,6 +708,7 @@ namespace LostCyberHamster.UI
             _buttonBack?.UnregisterCallback<ClickEvent>(OnClickButtonBack);
             _buttonLinkAccount?.UnregisterCallback<ClickEvent>(OnClickButtonLinkAccount);
             _buttonCloudAction?.UnregisterCallback<ClickEvent>(OnClickCloudAction);
+            _buttonExistingAccount?.UnregisterCallback<ClickEvent>(OnClickExistingAccount);
             _buttonChangePlayerName?.UnregisterCallback<ClickEvent>(OnClickChangePlayerName);
             _buttonSavePlayerName?.UnregisterCallback<ClickEvent>(OnClickSavePlayerName);
             _buttonCancelPlayerName?.UnregisterCallback<ClickEvent>(OnClickCancelPlayerName);

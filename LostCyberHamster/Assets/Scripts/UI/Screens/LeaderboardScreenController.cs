@@ -4,8 +4,8 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.System;
-using Assets.Scripts.Online;
 using GameManagement;
+using GameManagement.CloudSave;
 using GameManagement.Leaderboard;
 using Unity.Services.Leaderboards.Models;
 using UnityEngine;
@@ -80,9 +80,24 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<Label>("leaderboard__current-name");
         private Label _currentScore =>
             _contentRoot.Q<Label>("leaderboard__current-score");
-        private VisualElement _cacheBanner;
-        private Label _cacheStatus;
-        private Button _cacheRetry;
+        private Label _errorText => _contentRoot.Q<Label>("leaderboard__error-text");
+        private VisualElement _status => _contentRoot.Q<VisualElement>("leaderboard__status");
+        private Label _period => _contentRoot.Q<Label>("leaderboard__period");
+        private VisualElement _connection => _contentRoot.Q<VisualElement>("leaderboard__connection");
+        private Label _connectionText => _contentRoot.Q<Label>("leaderboard__connection-text");
+        private Button _buttonRefresh => _contentRoot.Q<Button>("leaderboard__btn-refresh");
+        private VisualElement _participation => _contentRoot.Q<VisualElement>("leaderboard__participation");
+        private Label _participationText => _contentRoot.Q<Label>("leaderboard__participation-text");
+        private Button _buttonParticipation => _contentRoot.Q<Button>("leaderboard__btn-participation");
+        private Label _personalStatus => _contentRoot.Q<Label>("leaderboard__personal-status");
+        private readonly CloudSyncService _cloudSyncService;
+        private LeaderboardReadService _readService;
+        private IDisposable _ownershipPrompt;
+        private LeaderboardParticipationStatus _participationStatus;
+        private string _renderedBoard;
+        private int _renderedContentVersion = -1;
+        private bool _viewActive;
+        private VisualElement _boundContentRoot;
         private IReadOnlyList<LocationView> _visibleLocations =
             Array.Empty<LocationView>();
         private IReadOnlyList<PartView> _visibleParts =
@@ -96,9 +111,10 @@ namespace LostCyberHamster.UI
 
         protected override ScreenEnum _screenAssetName => ScreenEnum.LeaderboardScreen;
 
-        public LeaderboardScreenController(UIDocument uiDocument)
+        public LeaderboardScreenController(UIDocument uiDocument, CloudSyncService cloudSyncService)
             : base(uiDocument)
         {
+            _cloudSyncService = cloudSyncService;
         }
 
         /// <summary>
@@ -128,7 +144,13 @@ namespace LostCyberHamster.UI
         {
             // Получаем каталог с единым доменным состоянием доступности.
             _requestVersion++;
-            PrepareCacheBanner();
+            if (_boundContentRoot != _contentRoot)
+            {
+                _renderedBoard = null;
+                _renderedContentVersion = -1;
+                _boundContentRoot = _contentRoot;
+            }
+            _readService = LeaderboardReadService.Instance;
             var selectionModel = LevelSelectionModel.Create();
             _visibleLocations = selectionModel.Locations.ToList();
 
@@ -197,7 +219,7 @@ namespace LostCyberHamster.UI
             }
 
             _selectedPart = defaultPart;
-            ShowLoading();
+            RenderSelectedSnapshot();
             return defaultPart;
         }
 
@@ -265,103 +287,195 @@ namespace LostCyberHamster.UI
                 await LoadResultsAsync(part);
         }
 
-        /// <summary>
-        /// Получает серверные результаты и показывает только актуальный ответ.
-        /// </summary>
+        /// <summary>Показывает готовый снимок сразу; сеть обновляет выбранную таблицу в фоне.</summary>
         private async Task LoadResultsAsync(PartView part)
         {
-            // Фиксируем выбранную таблицу и показываем загрузку.
             _selectedPart = part;
             UpdatePartButtons(part);
-
-            // Mock полностью обходит сеть и не меняет серверный путь.
             if (_useVisualQaMockData)
             {
                 var mockResults = CreateMockResults(part);
                 RenderResults(mockResults.Top, mockResults.CurrentPlayer);
+                _status.style.display = DisplayStyle.None;
                 return;
             }
 
-            ShowLoading();
+            // Строки кеша появляются без промежуточного состояния загрузки.
+            RenderSelectedSnapshot();
             var requestVersion = ++_requestVersion;
-            var owner = GameDataManager.OwnerPlayerId;
-            var generation = GameDataManager.Generation;
             var locationId = _selectedLocation.Id;
-            var coordinator = WeeklyLeaderboardCoordinator.Instance;
-            if (coordinator != null && coordinator.TryGetCachedResults(locationId, part.Id, out var cached))
-                RenderCachedResults(cached);
+            if (_readService == null) return;
+            await _readService.RefreshAsync(locationId, part.Id);
+            if (_viewActive && requestVersion == _requestVersion)
+                RenderSelectedSnapshot();
+        }
 
-            try
+        /// <summary>Перестраивает строки только при смене таблицы или видимых результатов.</summary>
+        private void RenderSelectedSnapshot()
+        {
+            if (_selectedLocation == null || _selectedPart == null) return;
+            var snapshot = _readService?.GetSnapshot(_selectedLocation.Id, _selectedPart.Id);
+            if (snapshot == null)
             {
-                // Обновляем кеш в фоне, сохраняя доступность уже загруженного рейтинга.
-                if (coordinator == null) throw new InvalidOperationException("Leaderboard service is unavailable.");
-                var leaderboardResults = await coordinator.GetResultsAsync(locationId, part.Id);
-                if (!IsCurrentRequest(requestVersion, owner, generation))
-                    return;
-
-                HideCacheBanner();
-                RenderResults(
-                    leaderboardResults.Top,
-                    leaderboardResults.CurrentPlayer);
+                _status.style.display = DisplayStyle.None;
+                _buttonRetry.text = Text("leaderboard_retry");
+                ShowError("leaderboard_connection_unavailable");
+                return;
             }
-            catch
+
+            // Состояния подключения и участия обновляются независимо от прокручиваемого списка.
+            RenderStatus(snapshot);
+            if (!snapshot.HasTable)
             {
-                if (!IsCurrentRequest(requestVersion, owner, generation)) return;
-                if (coordinator != null && coordinator.TryGetCachedResults(locationId, part.Id, out var fallback))
-                    RenderCachedResults(fallback);
+                _renderedBoard = null;
+                _renderedContentVersion = -1;
+                if (snapshot.IsRefreshing || snapshot.Status == LeaderboardReadStatus.Connecting)
+                    ShowLoading();
                 else
-                    ShowError();
+                    ShowError(ConnectionMessageKey(snapshot.Status));
+                return;
             }
+
+            // Повтор той же таблицы сохраняет строки и текущую позицию прокрутки.
+            if (_renderedBoard != snapshot.LeaderboardId || _renderedContentVersion != snapshot.ContentVersion)
+            {
+                var sameBoard = _renderedBoard == snapshot.LeaderboardId;
+                var scrollOffset = sameBoard ? _rows.scrollOffset : Vector2.zero;
+                RenderResults(snapshot.Top, snapshot.CurrentPlayer);
+                _rows.scrollOffset = scrollOffset;
+                _renderedBoard = snapshot.LeaderboardId;
+                _renderedContentVersion = snapshot.ContentVersion;
+            }
+            _empty.text = Text(snapshot.IsStale ? "leaderboard_cached_empty" : "leaderboard_empty");
         }
 
-        private bool IsCurrentRequest(int requestVersion, string owner, long generation) =>
-            requestVersion == _requestVersion && owner == GameDataManager.OwnerPlayerId &&
-            generation == GameDataManager.Generation;
-
-        /// <summary>Выделяет кеш отдельной строкой с датой загрузки и доступным повтором.</summary>
-        private void PrepareCacheBanner()
+        private void RenderStatus(LeaderboardViewSnapshot snapshot)
         {
-            _cacheRetry?.UnregisterCallback<ClickEvent>(OnClickRetry);
-            _cacheBanner?.RemoveFromHierarchy();
-            _cacheBanner = new VisualElement();
-            _cacheBanner.style.flexDirection = FlexDirection.Row;
-            _cacheBanner.style.alignItems = Align.Center;
-            _cacheBanner.style.flexShrink = 0;
-            _cacheBanner.style.height = 40;
-            _cacheStatus = new Label();
-            _cacheStatus.AddToClassList("lcs-text");
-            _cacheStatus.style.flexGrow = 1;
-            _cacheStatus.style.fontSize = 20;
-            _cacheStatus.style.color = (Color)new Color32(20, 18, 15, 255);
-            _cacheStatus.style.unityTextOutlineWidth = 0;
-            _cacheStatus.style.whiteSpace = WhiteSpace.NoWrap;
-            _cacheStatus.style.overflow = Overflow.Hidden;
-            _cacheStatus.style.textOverflow = TextOverflow.Ellipsis;
-            _cacheRetry = new Button { text = LocalizationManager.GetLocalizedString("leaderboard_retry") };
-            _cacheRetry.style.width = 170;
-            _cacheRetry.style.fontSize = 20;
-            _cacheRetry.RegisterCallback<ClickEvent>(OnClickRetry);
-            _cacheBanner.Add(_cacheStatus);
-            _cacheBanner.Add(_cacheRetry);
-            _rows.parent.Insert(0, _cacheBanner);
-            HideCacheBanner();
+            _status.style.display = DisplayStyle.Flex;
+            _period.text = FormatPeriod(snapshot);
+            _participationStatus = snapshot.ParticipationStatus;
+            var connectionMessage = snapshot.HasTable && snapshot.Status != LeaderboardReadStatus.Ready &&
+                snapshot.Status != LeaderboardReadStatus.Connecting
+                ? Text(ConnectionMessageKey(snapshot.Status)) : string.Empty;
+            _connectionText.text = connectionMessage;
+            _connection.style.display = string.IsNullOrEmpty(connectionMessage) ? DisplayStyle.None : DisplayStyle.Flex;
+            _buttonRefresh.style.display = snapshot.HasTable ? DisplayStyle.Flex : DisplayStyle.None;
+            var authenticationRequired = snapshot.Status == LeaderboardReadStatus.AuthenticationRequired;
+            var recoveryUnavailable = snapshot.Status == LeaderboardReadStatus.ProfileRecoveryUnavailable;
+            _buttonRefresh.text = Text(snapshot.IsRefreshing ? "leaderboard_refreshing" :
+                authenticationRequired ? "account_reauthenticate" :
+                recoveryUnavailable ? "leaderboard_open_profile" : "leaderboard_refresh");
+            _buttonRefresh.SetEnabled(!snapshot.IsRefreshing && snapshot.Status != LeaderboardReadStatus.BoardUnavailable);
+            _buttonRetry.text = Text(authenticationRequired ? "account_reauthenticate" :
+                recoveryUnavailable ? "leaderboard_open_profile" : "leaderboard_retry");
+            _buttonRetry.SetEnabled(!snapshot.IsRefreshing);
+            _buttonRetry.style.display = snapshot.Status == LeaderboardReadStatus.BoardUnavailable
+                ? DisplayStyle.None : DisplayStyle.Flex;
+
+            // Выбор профиля и сохранения влияет на участие, сохраняя доступную таблицу.
+            var participationKey = snapshot.ParticipationStatus switch
+            {
+                LeaderboardParticipationStatus.ProfileRequired => "leaderboard_profile_required",
+                LeaderboardParticipationStatus.Synchronizing => "leaderboard_participation_synchronizing",
+                LeaderboardParticipationStatus.Conflict => "leaderboard_participation_conflict",
+                _ => null
+            };
+            _participationText.text = participationKey == null ? string.Empty : Text(participationKey);
+            _participation.style.display = participationKey == null ? DisplayStyle.None : DisplayStyle.Flex;
+            var canChoose = snapshot.ParticipationStatus == LeaderboardParticipationStatus.ProfileRequired ||
+                snapshot.ParticipationStatus == LeaderboardParticipationStatus.Conflict;
+            _buttonParticipation.style.display = canChoose ? DisplayStyle.Flex : DisplayStyle.None;
+            _buttonParticipation.text = Text(snapshot.ParticipationStatus == LeaderboardParticipationStatus.Conflict
+                ? "cloud_sync_action_choose" : "profile_ownership_title").ToUpperInvariant();
+
+            // Личный результат, ещё не отправленный забег и отсутствие записи имеют свой текст.
+            var personalKey = snapshot.HasTable ? snapshot.PersonalStatus switch
+            {
+                LeaderboardPersonalStatus.NoEntry => snapshot.IsStale
+                    ? "leaderboard_personal_cached_none" : "leaderboard_personal_no_entry",
+                LeaderboardPersonalStatus.Unavailable => snapshot.IsRefreshing || snapshot.Status == LeaderboardReadStatus.Connecting
+                    ? null : "leaderboard_personal_unavailable",
+                _ => null
+            } : null;
+            var run = snapshot.LatestRun;
+            if (run != null)
+            {
+                personalKey = run.Status switch
+                {
+                    WeeklyRunStatus.Pending => !snapshot.IsStale && !string.IsNullOrEmpty(snapshot.VersionId) &&
+                        snapshot.VersionId != run.VersionId ? "leaderboard_run_previous_week" : "leaderboard_run_pending",
+                    WeeklyRunStatus.AwaitingLocalSave => "leaderboard_run_saving",
+                    WeeklyRunStatus.Expired => "win_submit_expired",
+                    WeeklyRunStatus.Unconfirmed => "win_submit_unconfirmed",
+                    WeeklyRunStatus.LocalOnly => run.LocalOnlyReason switch
+                    {
+                        WeeklyLocalOnlyReason.OwnerUnassigned => "leaderboard_run_local_only_owner",
+                        WeeklyLocalOnlyReason.SeasonUnknown => "leaderboard_run_local_only_season",
+                        _ => "win_submit_local_only"
+                    },
+                    _ => personalKey
+                };
+            }
+            if (snapshot.PersonalStatus == LeaderboardPersonalStatus.ProfileRequired)
+                personalKey = null;
+            _personalStatus.text = personalKey == null ? string.Empty : Text(personalKey);
+            _personalStatus.style.display = personalKey == null ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
-        private void RenderCachedResults(LeaderboardResultsSnapshot snapshot)
+        private static string ConnectionMessageKey(LeaderboardReadStatus status) => status switch
         {
-            RenderResults(snapshot.Top, snapshot.CurrentPlayer);
-            var timestamp = DateTime.TryParse(snapshot.FetchedAtUtc, CultureInfo.InvariantCulture,
-                DateTimeStyles.RoundtripKind, out var fetchedAt)
-                ? fetchedAt.ToLocalTime().ToString("g") : "—";
-            var labelKey = snapshot.IsPreviousWeek ? "leaderboard_cached_previous_week_at" : "leaderboard_cached_at";
-            _cacheStatus.text = (LocalizationManager.GetLocalizedString(labelKey) ?? labelKey)
-                .Replace("{0}", timestamp);
-            _cacheBanner.style.display = DisplayStyle.Flex;
+            LeaderboardReadStatus.Offline => "leaderboard_offline",
+            LeaderboardReadStatus.AuthenticationRequired => "leaderboard_authentication_required",
+            LeaderboardReadStatus.ProfileRecoveryUnavailable => "leaderboard_profile_recovery_unavailable",
+            LeaderboardReadStatus.BoardUnavailable => "leaderboard_board_unavailable",
+            _ => "leaderboard_connection_unavailable"
+        };
+
+        private static string FormatPeriod(LeaderboardViewSnapshot snapshot)
+        {
+            if (!snapshot.HasTable) return Text("leaderboard_weekly");
+            var culture = CultureInfo.GetCultureInfo(LocalizationManager.CurrentLanguage == SystemLanguage.Russian
+                ? "ru-RU" : "en-US");
+            var period = Text(snapshot.IsStale ? "leaderboard_saved" : "leaderboard_weekly");
+            if (DateTime.TryParse(snapshot.NextResetUtc, CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind, out var nextReset))
+            {
+                var previous = nextReset.ToUniversalTime() <= DateTime.UtcNow;
+                period = Text(previous ? "leaderboard_previous_week_range" : "leaderboard_week_range")
+                    .Replace("{0}", nextReset.AddDays(-7).ToLocalTime().ToString("d MMM", culture))
+                    .Replace("{1}", nextReset.ToLocalTime().ToString("d MMM", culture));
+            }
+            if (snapshot.IsStale && DateTime.TryParse(snapshot.FetchedAtUtc, CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind, out var fetchedAt))
+                period += " · " + Text("leaderboard_saved_at").Replace("{0}", fetchedAt.ToLocalTime().ToString("g", culture));
+            return period;
         }
 
-        private void HideCacheBanner()
+        private static string Text(string key) => LocalizationManager.GetLocalizedString(key) ?? key;
+
+        private void OnResultsChanged(string boardId)
         {
-            if (_cacheBanner != null) _cacheBanner.style.display = DisplayStyle.None;
+            if (!_viewActive || _selectedLocation == null || _selectedPart == null) return;
+            var selectedBoard = LeaderboardService.ResolveLeaderboardId(_selectedLocation.Id, _selectedPart.Id);
+            if (string.IsNullOrEmpty(boardId) || boardId == selectedBoard)
+                RenderSelectedSnapshot();
+        }
+
+        private void OnClickParticipation(ClickEvent evt)
+        {
+            if (_participationStatus == LeaderboardParticipationStatus.Conflict)
+            {
+                _cloudSyncService?.ShowConflict();
+                return;
+            }
+            if (ProfileOwnershipService.Instance?.CanAdoptGuestProgress != true)
+            {
+                SettingsScreenController.OpenProfileChoiceFrom(ScreenEnum.LeaderboardScreen);
+                return;
+            }
+            _ownershipPrompt?.Dispose();
+            _ownershipPrompt = ProfileOwnershipPrompt.Show(_contentRoot,
+                () => SettingsScreenController.OpenExistingAccountFrom(ScreenEnum.LeaderboardScreen));
         }
 
         private void UpdatePartButtons(PartView selectedPart)
@@ -530,7 +644,6 @@ namespace LostCyberHamster.UI
 
         private void ShowLoading()
         {
-            HideCacheBanner();
             _loading.style.display = DisplayStyle.Flex;
             _error.style.display = DisplayStyle.None;
             _empty.style.display = DisplayStyle.None;
@@ -538,11 +651,11 @@ namespace LostCyberHamster.UI
             _currentPlayer.style.display = DisplayStyle.None;
         }
 
-        private void ShowError()
+        private void ShowError(string messageKey)
         {
-            HideCacheBanner();
             _loading.style.display = DisplayStyle.None;
             _error.style.display = DisplayStyle.Flex;
+            _errorText.text = Text(messageKey);
             _empty.style.display = DisplayStyle.None;
             _rows.style.display = DisplayStyle.None;
             _currentPlayer.style.display = DisplayStyle.None;
@@ -550,7 +663,6 @@ namespace LostCyberHamster.UI
 
         private void ShowEmpty()
         {
-            HideCacheBanner();
             _loading.style.display = DisplayStyle.None;
             _error.style.display = DisplayStyle.None;
             _empty.style.display = DisplayStyle.Flex;
@@ -560,7 +672,7 @@ namespace LostCyberHamster.UI
 
         private void ShowUnavailable()
         {
-            HideCacheBanner();
+            _status.style.display = DisplayStyle.None;
             _loading.style.display = DisplayStyle.None;
             _error.style.display = DisplayStyle.None;
             _empty.style.display = DisplayStyle.None;
@@ -670,14 +782,24 @@ namespace LostCyberHamster.UI
 
         private async void OnClickRetry(ClickEvent evt)
         {
-            OnlineServicesCoordinator.RequestRetry(WeeklyLeaderboardCoordinator.RetryKey);
-            if (_selectedPart != null)
-                await LoadResultsAsync(_selectedPart);
+            if (_selectedPart == null || _selectedLocation == null) return;
+            var snapshot = _readService?.GetSnapshot(_selectedLocation.Id, _selectedPart.Id);
+            if (snapshot?.Status == LeaderboardReadStatus.AuthenticationRequired ||
+                snapshot?.Status == LeaderboardReadStatus.ProfileRecoveryUnavailable)
+            {
+                SettingsScreenController.OpenProfileChoiceFrom(ScreenEnum.LeaderboardScreen);
+                return;
+            }
+            await LoadResultsAsync(_selectedPart);
         }
 
         protected override void OnSubscribeToEvents()
         {
+            _viewActive = true;
             GameDataManager.ProfileChanged += OnProfileChanged;
+            if (_readService != null) _readService.ResultsChanged += OnResultsChanged;
+            _buttonRefresh?.RegisterCallback<ClickEvent>(OnClickRetry);
+            _buttonParticipation?.RegisterCallback<ClickEvent>(OnClickParticipation);
             _buttonPreviousLocation?.RegisterCallback<ClickEvent>(
                 OnClickPreviousLocation);
             _buttonNextLocation?.RegisterCallback<ClickEvent>(
@@ -692,8 +814,13 @@ namespace LostCyberHamster.UI
         protected override void OnUnsubscribeFromEvents()
         {
             _requestVersion++;
+            _viewActive = false;
             GameDataManager.ProfileChanged -= OnProfileChanged;
-            _cacheRetry?.UnregisterCallback<ClickEvent>(OnClickRetry);
+            if (_readService != null) _readService.ResultsChanged -= OnResultsChanged;
+            _buttonRefresh?.UnregisterCallback<ClickEvent>(OnClickRetry);
+            _buttonParticipation?.UnregisterCallback<ClickEvent>(OnClickParticipation);
+            _ownershipPrompt?.Dispose();
+            _ownershipPrompt = null;
             _buttonPreviousLocation?.UnregisterCallback<ClickEvent>(
                 OnClickPreviousLocation);
             _buttonNextLocation?.UnregisterCallback<ClickEvent>(
@@ -709,6 +836,8 @@ namespace LostCyberHamster.UI
         {
             // Пересобираем доступные локации и исключаем строки прежнего владельца.
             _requestVersion++;
+            _initialLocationId = _selectedLocation?.Id;
+            _initialPartId = _selectedPart?.Id;
             BindView();
             await LoadDataAsync();
         }

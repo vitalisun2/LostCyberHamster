@@ -128,13 +128,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 _ => RunResultSubmissionState.Pending
             };
             PublishSubmissionState(state, run.WeeklyBest,
-                run.Status == WeeklyRunStatus.ConfirmedImprovement);
+                run.Status == WeeklyRunStatus.ConfirmedImprovement, run.LocalOnlyReason);
         }
 
-        private void PublishSubmissionState(RunResultSubmissionState state, int weeklyBest = 0, bool isRecord = false)
+        private void PublishSubmissionState(RunResultSubmissionState state, int weeklyBest = 0, bool isRecord = false,
+            WeeklyLocalOnlyReason localOnlyReason = WeeklyLocalOnlyReason.None)
         {
             PublishResult(new RunResultData(LatestResult.LevelKey, LatestResult.RunScore,
-                weeklyBest, isRecord, LatestResult.IsLastLevelOfPart, state));
+                weeklyBest, isRecord, LatestResult.IsLastLevelOfPart, state, localOnlyReason));
         }
 
         private static bool IsLastLevelOfPart(LevelProgressKey progressKey)

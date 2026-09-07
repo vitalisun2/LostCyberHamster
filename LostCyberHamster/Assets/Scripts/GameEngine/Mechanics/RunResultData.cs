@@ -1,3 +1,4 @@
+using GameManagement.Leaderboard;
 using GameManagement.Progress;
 
 namespace Assets.Scripts.GameEngine.Mechanics
@@ -13,7 +14,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             int weeklyBestRunScore,
             bool isNewRecord,
             bool isLastLevelOfPart,
-            RunResultSubmissionState submissionState)
+            RunResultSubmissionState submissionState,
+            WeeklyLocalOnlyReason localOnlyReason = WeeklyLocalOnlyReason.None)
         {
             LevelKey = levelKey;
             RunScore = runScore;
@@ -21,6 +23,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             IsNewRecord = isNewRecord;
             IsLastLevelOfPart = isLastLevelOfPart;
             SubmissionState = submissionState;
+            LocalOnlyReason = localOnlyReason;
         }
 
         public LevelProgressKey LevelKey { get; }
@@ -34,5 +37,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         public bool IsLastLevelOfPart { get; }
 
         public RunResultSubmissionState SubmissionState { get; }
+
+        public WeeklyLocalOnlyReason LocalOnlyReason { get; }
     }
 }

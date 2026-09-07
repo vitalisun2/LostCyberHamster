@@ -4,6 +4,7 @@ using Assets.Scripts.Account;
 using GameAds;
 using GameManagement;
 using GameManagement.CloudSave;
+using GameManagement.Leaderboard;
 using LostCyberHamster.UI;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -54,7 +55,7 @@ namespace Assets.Scripts.Entry_Points
                 requestedScreen == ScreenEnum.LeaderboardScreen &&
                 !string.IsNullOrWhiteSpace(leaderboardLocationId) &&
                 !string.IsNullOrWhiteSpace(leaderboardPartId);
-            var leaderboardScreenController = new LeaderboardScreenController(_uiDocument);
+            var leaderboardScreenController = new LeaderboardScreenController(_uiDocument, _cloudSyncService);
             if (openLeaderboard)
             {
                 leaderboardScreenController.SetInitialSelection(
@@ -100,6 +101,7 @@ namespace Assets.Scripts.Entry_Points
                 _accountPromptCoordinator.Enable();
             }
             AdsManager.Initialize();
+            LeaderboardReadService.Instance?.WarmMenuCache();
         }
 
         private void Start()
@@ -113,6 +115,7 @@ namespace Assets.Scripts.Entry_Points
 
         private void OnEnable()
         {
+            if (_uiManager != null) LeaderboardReadService.Instance?.WarmMenuCache();
             _uiManager?.SubscribeToEvents();
             _cloudSaveConflictCoordinator?.Enable();
             _accountPromptCoordinator?.Enable();
@@ -120,6 +123,7 @@ namespace Assets.Scripts.Entry_Points
 
         private void OnDisable()
         {
+            LeaderboardReadService.Instance?.PauseMenuCache();
             _accountPromptCoordinator?.Disable();
             _cloudSaveConflictCoordinator?.Disable();
             _uiManager?.UnsubscribeFromEvents();

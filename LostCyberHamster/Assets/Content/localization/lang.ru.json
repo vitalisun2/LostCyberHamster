@@ -54,7 +54,7 @@
         },
         {
             "key": "leaderboard_loading",
-            "value": "ЗАГРУЗКА…"
+            "value": "Подключаемся к рейтингу…"
         },
         {
             "key": "leaderboard_error",
@@ -66,7 +66,7 @@
         },
         {
             "key": "leaderboard_empty",
-            "value": "Нет результатов"
+            "value": "За эту неделю пока нет результатов"
         },
         {
             "key": "leaderboard_you",
@@ -737,16 +737,16 @@
             "value": "Скейтборд"
         },
         {
-              "key": "skin_name_forest",
-              "value": "Лесной"
+            "key": "skin_name_forest",
+            "value": "Лесной"
         },
         {
-              "key": "skin_name_cowboy",
-              "value": "Ковбой"
+            "key": "skin_name_cowboy",
+            "value": "Ковбой"
         },
         {
-              "key": "skin_name_summer",
-              "value": "Летний"
+            "key": "skin_name_summer",
+            "value": "Летний"
         },
         {
             "key": "shop_insufficient_coins_for_crystals",
@@ -794,7 +794,7 @@
         },
         {
             "key": "win_submit_local_only",
-            "value": "Только локально: неделя рейтинга ещё не загружена"
+            "value": "Результат сохранён только на устройстве"
         },
         {
             "key": "win_submit_expired",
@@ -947,6 +947,186 @@
         {
             "key": "quests_daily_reward_caption",
             "value": "НАГРАДА"
+        },
+        {
+            "key": "leaderboard_cached_empty",
+            "value": "В сохранённом рейтинге нет результатов"
+        },
+        {
+            "key": "leaderboard_weekly",
+            "value": "Недельный рейтинг"
+        },
+        {
+            "key": "leaderboard_week_range",
+            "value": "Неделя {0} — {1}"
+        },
+        {
+            "key": "leaderboard_saved_at",
+            "value": "сохранён {0}"
+        },
+        {
+            "key": "leaderboard_refresh",
+            "value": "ОБНОВИТЬ"
+        },
+        {
+            "key": "leaderboard_refreshing",
+            "value": "ОБНОВЛЯЕМ…"
+        },
+        {
+            "key": "leaderboard_connection_unavailable",
+            "value": "Не удалось подключиться к рейтингу. Попробуйте ещё раз."
+        },
+        {
+            "key": "leaderboard_offline",
+            "value": "Нет подключения. Рейтинг обновится, когда связь восстановится."
+        },
+        {
+            "key": "leaderboard_authentication_required",
+            "value": "Войдите снова в свой аккаунт, чтобы подключиться к рейтингу."
+        },
+        {
+            "key": "leaderboard_board_unavailable",
+            "value": "Этот рейтинг пока недоступен. Выберите другую часть дня."
+        },
+        {
+            "key": "leaderboard_profile_required",
+            "value": "Чтобы отправлять свои результаты, выберите игровой профиль."
+        },
+        {
+            "key": "leaderboard_participation_synchronizing",
+            "value": "Проверяем сохранение. Новые результаты отправятся после проверки."
+        },
+        {
+            "key": "leaderboard_participation_conflict",
+            "value": "Чтобы отправить новые результаты, выберите сохранение."
+        },
+        {
+            "key": "leaderboard_personal_no_entry",
+            "value": "У вас пока нет результата за эту неделю. Пройдите уровень и попадите в рейтинг."
+        },
+        {
+            "key": "leaderboard_personal_cached_none",
+            "value": "В сохранённой таблице вашего результата ещё нет."
+        },
+        {
+            "key": "leaderboard_personal_unavailable",
+            "value": "Ваше место пока не удалось загрузить. Общий рейтинг доступен."
+        },
+        {
+            "key": "leaderboard_run_pending",
+            "value": "Результат ожидает отправки. Место обновится после подтверждения."
+        },
+        {
+            "key": "leaderboard_run_saving",
+            "value": "Сохраняем результат на устройстве перед отправкой."
+        },
+        {
+            "key": "leaderboard_run_local_only_owner",
+            "value": "Этот забег останется на устройстве. В новом забеге результат сможет попасть в рейтинг."
+        },
+        {
+            "key": "leaderboard_run_local_only_season",
+            "value": "Рейтинг не был готов до старта этого забега. Результат сохранён на устройстве; для участия нужен новый забег."
+        },
+        {
+            "key": "win_submit_local_only_owner",
+            "value": "Только на устройстве. Выберите профиль перед новым забегом."
+        },
+        {
+            "key": "win_submit_local_only_season",
+            "value": "Только на устройстве: неделя не загружена до старта."
+        },
+        {
+            "key": "profile_ownership_title",
+            "value": "ВЫБРАТЬ ПРОФИЛЬ"
+        },
+        {
+            "key": "profile_ownership_body",
+            "value": "Использовать прогресс с этого устройства для гостевого профиля {0}? Уровни и накопления сохранятся. Следующие подходящие результаты смогут участвовать в рейтинге."
+        },
+        {
+            "key": "profile_ownership_summary",
+            "value": "Уровень: {0}. Пройдено уровней: {1}. Монеты: {2}. Кристаллы: {3}."
+        },
+        {
+            "key": "profile_ownership_use",
+            "value": "ИСПОЛЬЗОВАТЬ ЭТОТ ПРОГРЕСС"
+        },
+        {
+            "key": "profile_ownership_existing",
+            "value": "ВОЙТИ В СУЩЕСТВУЮЩИЙ АККАУНТ"
+        },
+        {
+            "key": "profile_ownership_retry",
+            "value": "Не удалось принять прогресс. Он сохранён на устройстве. Повторите выбор."
+        },
+        {
+            "key": "profile_ownership_changed",
+            "value": "Профиль изменился. Закройте окно и выберите профиль снова."
+        },
+        {
+            "key": "profile_existing_title",
+            "value": "ВОЙТИ В АККАУНТ"
+        },
+        {
+            "key": "profile_existing_warning",
+            "value": "Будет загружен прогресс выбранного аккаунта. Он заменит текущий прогресс на устройстве. Продолжить?"
+        },
+        {
+            "key": "cloud_save_local_only_title",
+            "value": "ПРОГРЕСС НА УСТРОЙСТВЕ"
+        },
+        {
+            "key": "cloud_save_local_only_body",
+            "value": "Облачного сохранения нет. Использовать этот прогресс для текущего аккаунта?"
+        },
+        {
+            "key": "cloud_save_local_only_warning",
+            "value": "Уровни и накопления сохранятся и будут отправлены в облако."
+        },
+        {
+            "key": "cloud_save_local_only_empty",
+            "value": "ОБЛАЧНОГО СОХРАНЕНИЯ НЕТ"
+        },
+        {
+            "key": "leaderboard_saved",
+            "value": "Сохранённый рейтинг"
+        },
+        {
+            "key": "leaderboard_previous_week_range",
+            "value": "Прошлая неделя {0} — {1}"
+        },
+        {
+            "key": "account_reauthenticate",
+            "value": "ВОЙТИ СНОВА"
+        },
+        {
+            "key": "account_reauthenticate_failed",
+            "value": "Не удалось восстановить профиль. Войдите в привязанный к нему аккаунт. Прогресс на устройстве сохранён."
+        },
+        {
+            "key": "account_guest_credentials_missing",
+            "value": "Данные входа в гостевой профиль отсутствуют. Прогресс на устройстве сохранён."
+        },
+        {
+            "key": "leaderboard_run_previous_week",
+            "value": "Этот забег относится к завершённой неделе. Начните новый забег для участия в текущем рейтинге."
+        },
+        {
+            "key": "leaderboard_profile_recovery_unavailable",
+            "value": "Не удалось восстановить доступ к гостевому профилю. Прогресс сохранён на устройстве."
+        },
+        {
+            "key": "leaderboard_open_profile",
+            "value": "ОТКРЫТЬ ПРОФИЛЬ"
+        },
+        {
+            "key": "account_sign_in_unavailable",
+            "value": "Не удалось войти. Прогресс на устройстве сохранён."
+        },
+        {
+            "key": "profile_ownership_conflict",
+            "value": "Не удалось согласовать данные профиля. Прогресс сохранён. Можно войти в существующий аккаунт или вернуться к игре."
         }
     ]
 }

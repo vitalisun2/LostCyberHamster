@@ -43,12 +43,26 @@
                                 <Vues.GameCore.LocalizedLabel key="leaderboard_score" class="leaderboard-runtime-text leaderboard-table__score" />
                             </engine:VisualElement>
                             <engine:VisualElement class="leaderboard-table__body">
+                                <engine:VisualElement name="leaderboard__status" class="leaderboard-status">
+                                    <engine:VisualElement class="leaderboard-status__row">
+                                        <engine:Label name="leaderboard__period" class="leaderboard-runtime-text leaderboard-status__text leaderboard-status__period" />
+                                        <engine:Button name="leaderboard__btn-refresh" class="leaderboard-image-button leaderboard-status__button" />
+                                    </engine:VisualElement>
+                                    <engine:VisualElement name="leaderboard__connection" class="leaderboard-status__row">
+                                        <engine:Label name="leaderboard__connection-text" class="leaderboard-runtime-text leaderboard-status__text" />
+                                    </engine:VisualElement>
+                                    <engine:VisualElement name="leaderboard__participation" class="leaderboard-status__row">
+                                        <engine:Label name="leaderboard__participation-text" class="leaderboard-runtime-text leaderboard-status__text" />
+                                        <engine:Button name="leaderboard__btn-participation" class="leaderboard-image-button leaderboard-status__button leaderboard-status__button--wide" />
+                                    </engine:VisualElement>
+                                    <engine:Label name="leaderboard__personal-status" class="leaderboard-runtime-text leaderboard-status__text leaderboard-status__personal" />
+                                </engine:VisualElement>
                                 <Vues.GameCore.LocalizedLabel key="leaderboard_loading" name="leaderboard__loading" class="leaderboard-runtime-text leaderboard-table__message" />
                                 <engine:VisualElement name="leaderboard__error" class="leaderboard-table__error">
-                                    <Vues.GameCore.LocalizedLabel key="leaderboard_error" class="leaderboard-runtime-text leaderboard-table__error-text" />
-                                    <Vues.GameCore.LocalizedButton key="leaderboard_retry" name="leaderboard__btn-retry" class="leaderboard-retry-button" />
+                                    <engine:Label name="leaderboard__error-text" class="leaderboard-runtime-text leaderboard-table__error-text" />
+                                    <engine:Button name="leaderboard__btn-retry" class="leaderboard-image-button leaderboard-status__button leaderboard-retry-button" />
                                 </engine:VisualElement>
-                                <Vues.GameCore.LocalizedLabel key="leaderboard_empty" name="leaderboard__empty" class="leaderboard-runtime-text leaderboard-table__message" />
+                                <engine:Label name="leaderboard__empty" class="leaderboard-runtime-text leaderboard-table__message" />
                                 <engine:ScrollView name="leaderboard__rows" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="leaderboard-table__rows" />
                                 <engine:VisualElement name="leaderboard__current-player" class="leaderboard-current-player">
                                     <engine:Label name="leaderboard__current-rank" class="leaderboard-runtime-text leaderboard-table__rank" />

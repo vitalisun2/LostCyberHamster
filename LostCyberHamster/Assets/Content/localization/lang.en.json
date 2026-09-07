@@ -54,7 +54,7 @@
         },
         {
             "key": "leaderboard_loading",
-            "value": "LOADING…"
+            "value": "Connecting to the leaderboard…"
         },
         {
             "key": "leaderboard_error",
@@ -66,7 +66,7 @@
         },
         {
             "key": "leaderboard_empty",
-            "value": "No results"
+            "value": "No results this week yet"
         },
         {
             "key": "leaderboard_you",
@@ -737,16 +737,16 @@
             "value": "Skateboard"
         },
         {
-              "key": "skin_name_forest",
-              "value": "Forest"
+            "key": "skin_name_forest",
+            "value": "Forest"
         },
         {
-              "key": "skin_name_cowboy",
-              "value": "Cowboy"
+            "key": "skin_name_cowboy",
+            "value": "Cowboy"
         },
         {
-              "key": "skin_name_summer",
-              "value": "Summer"
+            "key": "skin_name_summer",
+            "value": "Summer"
         },
         {
             "key": "shop_insufficient_coins_for_crystals",
@@ -794,7 +794,7 @@
         },
         {
             "key": "win_submit_local_only",
-            "value": "Local result: leaderboard week was not loaded"
+            "value": "Result saved only on this device"
         },
         {
             "key": "win_submit_expired",
@@ -947,6 +947,186 @@
         {
             "key": "quests_daily_reward_caption",
             "value": "REWARD"
+        },
+        {
+            "key": "leaderboard_cached_empty",
+            "value": "No results in the saved leaderboard"
+        },
+        {
+            "key": "leaderboard_weekly",
+            "value": "Weekly leaderboard"
+        },
+        {
+            "key": "leaderboard_week_range",
+            "value": "Week {0} — {1}"
+        },
+        {
+            "key": "leaderboard_saved_at",
+            "value": "saved {0}"
+        },
+        {
+            "key": "leaderboard_refresh",
+            "value": "REFRESH"
+        },
+        {
+            "key": "leaderboard_refreshing",
+            "value": "REFRESHING…"
+        },
+        {
+            "key": "leaderboard_connection_unavailable",
+            "value": "Could not connect to the leaderboard. Try again."
+        },
+        {
+            "key": "leaderboard_offline",
+            "value": "No connection. The leaderboard will refresh when you reconnect."
+        },
+        {
+            "key": "leaderboard_authentication_required",
+            "value": "Sign in to your account again to connect to the leaderboard."
+        },
+        {
+            "key": "leaderboard_board_unavailable",
+            "value": "This leaderboard is unavailable. Choose another time of day."
+        },
+        {
+            "key": "leaderboard_profile_required",
+            "value": "Choose a game profile to submit your results."
+        },
+        {
+            "key": "leaderboard_participation_synchronizing",
+            "value": "Checking your save. New results can be sent after the check."
+        },
+        {
+            "key": "leaderboard_participation_conflict",
+            "value": "Choose a save to submit new results."
+        },
+        {
+            "key": "leaderboard_personal_no_entry",
+            "value": "You have no result this week yet. Complete a level to enter the leaderboard."
+        },
+        {
+            "key": "leaderboard_personal_cached_none",
+            "value": "The saved leaderboard has no result for you yet."
+        },
+        {
+            "key": "leaderboard_personal_unavailable",
+            "value": "Your position could not be loaded yet. The leaderboard is available."
+        },
+        {
+            "key": "leaderboard_run_pending",
+            "value": "Your result is waiting to be sent. Your position will update after confirmation."
+        },
+        {
+            "key": "leaderboard_run_saving",
+            "value": "Saving your result on this device before sending it."
+        },
+        {
+            "key": "leaderboard_run_local_only_owner",
+            "value": "This run will stay on your device. A new run can enter the leaderboard."
+        },
+        {
+            "key": "leaderboard_run_local_only_season",
+            "value": "The leaderboard was not ready before this run. The result is saved on your device; start a new run to take part."
+        },
+        {
+            "key": "win_submit_local_only_owner",
+            "value": "Saved on this device. Choose a profile before your next run."
+        },
+        {
+            "key": "win_submit_local_only_season",
+            "value": "Saved on this device: the week was not loaded before the run."
+        },
+        {
+            "key": "profile_ownership_title",
+            "value": "CHOOSE PROFILE"
+        },
+        {
+            "key": "profile_ownership_body",
+            "value": "Use this device’s progress for guest profile {0}? Your levels and balances will stay. Future eligible results can enter the leaderboard."
+        },
+        {
+            "key": "profile_ownership_summary",
+            "value": "Level: {0}. Completed levels: {1}. Coins: {2}. Crystals: {3}."
+        },
+        {
+            "key": "profile_ownership_use",
+            "value": "USE THIS PROGRESS"
+        },
+        {
+            "key": "profile_ownership_existing",
+            "value": "SIGN IN TO EXISTING ACCOUNT"
+        },
+        {
+            "key": "profile_ownership_retry",
+            "value": "Could not accept this progress. It remains on this device. Try choosing again."
+        },
+        {
+            "key": "profile_ownership_changed",
+            "value": "The profile changed. Close this dialog and choose again."
+        },
+        {
+            "key": "profile_existing_title",
+            "value": "SIGN IN TO ACCOUNT"
+        },
+        {
+            "key": "profile_existing_warning",
+            "value": "The selected account’s progress will be loaded and replace the current progress on this device. Continue?"
+        },
+        {
+            "key": "cloud_save_local_only_title",
+            "value": "PROGRESS ON THIS DEVICE"
+        },
+        {
+            "key": "cloud_save_local_only_body",
+            "value": "There is no cloud save. Use this progress for the current account?"
+        },
+        {
+            "key": "cloud_save_local_only_warning",
+            "value": "Your levels and balances will be kept and saved to the cloud."
+        },
+        {
+            "key": "cloud_save_local_only_empty",
+            "value": "NO CLOUD SAVE"
+        },
+        {
+            "key": "leaderboard_saved",
+            "value": "Saved leaderboard"
+        },
+        {
+            "key": "leaderboard_previous_week_range",
+            "value": "Previous week {0} — {1}"
+        },
+        {
+            "key": "account_reauthenticate",
+            "value": "SIGN IN AGAIN"
+        },
+        {
+            "key": "account_reauthenticate_failed",
+            "value": "Could not restore this profile. Sign in to the account linked to it. Progress remains on this device."
+        },
+        {
+            "key": "account_guest_credentials_missing",
+            "value": "Guest profile sign-in data is missing. Progress remains on this device."
+        },
+        {
+            "key": "leaderboard_run_previous_week",
+            "value": "This run belongs to a completed week. Start a new run to enter the current leaderboard."
+        },
+        {
+            "key": "leaderboard_profile_recovery_unavailable",
+            "value": "Could not restore access to the guest profile. Progress is saved on this device."
+        },
+        {
+            "key": "leaderboard_open_profile",
+            "value": "OPEN PROFILE"
+        },
+        {
+            "key": "account_sign_in_unavailable",
+            "value": "Could not sign in. Progress remains on this device."
+        },
+        {
+            "key": "profile_ownership_conflict",
+            "value": "Could not reconcile profile data. Progress is preserved. You can sign in to an existing account or return to the game."
         }
     ]
 }

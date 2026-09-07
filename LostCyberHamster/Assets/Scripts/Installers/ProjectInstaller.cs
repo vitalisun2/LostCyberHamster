@@ -5,6 +5,7 @@ using GameManagement.CloudSave;
 using GameManagement.CloudSave.Gateway;
 using GameManagement.CloudSave.Version;
 using GameManagement.Leaderboard;
+using GameManagement;
 using LostCyberHamster.UI;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Assets.Scripts.DevTools;
@@ -47,6 +48,8 @@ namespace Assets.Scripts.Installers
             Container.Bind<ConflictService>().AsSingle();
             Container.BindInterfacesAndSelfTo<CloudSyncService>().AsSingle().NonLazy();
             Container.BindInterfacesAndSelfTo<WeeklyLeaderboardCoordinator>().AsSingle().NonLazy();
+            Container.BindInterfacesAndSelfTo<LeaderboardReadService>().AsSingle().NonLazy();
+            Container.BindInterfacesAndSelfTo<ProfileOwnershipService>().AsSingle().NonLazy();
             Container.Bind<LocalSaveFeedback>().FromNewComponentOnNewGameObject()
                 .WithGameObjectName("[LocalSaveFeedback]").AsSingle().NonLazy();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

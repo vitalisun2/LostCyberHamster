@@ -300,11 +300,74 @@
     -unity-text-align: middle-center;
 }
 
-.leaderboard-retry-button {
+.leaderboard-status {
+    flex-shrink: 0;
+    padding: 3px 14px;
+    background-color: rgb(248, 232, 199);
+}
+
+.leaderboard-status__row {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 32px;
+}
+
+.leaderboard-status__text {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    margin: 2px 0;
+    font-size: 19px;
+    white-space: normal;
+    -unity-text-align: middle-left;
+}
+
+.leaderboard-status__period {
+    font-size: 18px;
+}
+
+.leaderboard-status__personal {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.leaderboard-image-button.leaderboard-status__button {
+    flex-shrink: 0;
+    width: 176px;
+    height: 42px;
+    margin-left: 10px;
+    padding: 3px 12px;
+    background-image: url("/Assets/Content/ui/sprites/settings/button_primary_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 18;
+    -unity-slice-right: 18;
+    -unity-slice-top: 18;
+    -unity-slice-bottom: 18;
+    color: rgb(15, 22, 27);
+    font-size: 18px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    white-space: normal;
+}
+
+.leaderboard-status__button.leaderboard-status__button--wide {
+    width: 250px;
+    min-height: 48px;
+}
+
+.leaderboard-image-button.leaderboard-status__button.leaderboard-retry-button {
     width: 240px;
     height: 58px;
     margin-top: 10px;
+    margin-left: 0;
     font-size: 22px;
+}
+
+.leaderboard-status__button:disabled {
+    opacity: 0.55;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
 }
 
 .leaderboard-table__rows {

@@ -16,6 +16,7 @@ namespace Assets.Scripts.Online
         private static OnlineServicesRunner _runner;
         private static bool _quitting;
         private static int _generation;
+        public static event Action Resumed;
 
         public static bool UnityServicesReady => UnityServices.State == ServicesInitializationState.Initialized;
         public static string EnvironmentName => Application.isEditor || Debug.isDebugBuild ? "development" : "production";
@@ -77,6 +78,7 @@ namespace Assets.Scripts.Online
                 job.NextAttempt = 0;
                 job.Requested = true;
             }
+            Resumed?.Invoke();
         }
 
         internal static void Quit() => _quitting = true;
@@ -118,6 +120,7 @@ namespace Assets.Scripts.Online
             _generation++;
             foreach (var job in Jobs.Values.ToArray()) job.Dispose();
             Jobs.Clear();
+            Resumed = null;
             _runner = null;
             _quitting = false;
         }

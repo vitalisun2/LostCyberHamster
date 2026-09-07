@@ -45,10 +45,11 @@ namespace Assets.Scripts.Account
             Save(journal);
         }
 
-        public static AccountProfileSwitch BeginSwitch(string originalPlayerId, string originalProfile)
+        public static AccountProfileSwitch BeginSwitch(string originalPlayerId, string originalProfile,
+            bool originalIsLinked = false)
         {
             var journal = Read();
-            Bind(journal, originalPlayerId, originalProfile).IsLinked = false;
+            Bind(journal, originalPlayerId, originalProfile).IsLinked = originalIsLinked;
             journal.LastConfirmedPlayerId = originalPlayerId;
             journal.Pending = new AccountProfileSwitch
             {

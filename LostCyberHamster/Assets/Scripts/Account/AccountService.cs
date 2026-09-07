@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Unity.Services.Authentication;
 using UnityEngine;
 using Assets.Scripts.Online;
 using GameManagement;
@@ -32,6 +33,7 @@ namespace Assets.Scripts.Account
         private bool _watchingExpiration;
         private string _knownPlayerId;
         private AccountTransitionScope _transition;
+        private bool _sessionCredentialsRejected;
 
         private bool IsAuthorized => (_authenticationGateway as IAccountSessionStatus)?.IsAuthorized
             ?? _authenticationGateway.IsSignedIn;
@@ -46,6 +48,14 @@ namespace Assets.Scripts.Account
         /// Текущее состояние аккаунта игрока.
         /// </summary>
         public AccountState State { get; private set; } = AccountState.NotStarted;
+        public bool RequiresReauthentication => State == AccountState.Error && HasKnownLinkedIdentity &&
+            (!_authenticationGateway.SessionTokenExists || _sessionCredentialsRejected || LastRecoveryErrorKey != null);
+        public bool CanReauthenticateLinkedOwner => RequiresReauthentication &&
+            !GameDataManager.IsProfileReplacementBlocked && !AccountTransitionScope.IsActive;
+        public bool IsGuestRecoveryUnavailable => State == AccountState.Error &&
+            !string.IsNullOrWhiteSpace(_knownPlayerId ?? GameDataManager.OwnerPlayerId) &&
+            !HasKnownLinkedIdentity && (!_authenticationGateway.SessionTokenExists || _sessionCredentialsRejected);
+        public string LastRecoveryErrorKey { get; private set; }
 
         /// <summary>
         /// Возвращает полное публичное имя текущего игрока.
@@ -308,9 +318,84 @@ namespace Assets.Scripts.Account
             return true;
         }
 
-        /// <summary>
-        /// Переводит аккаунт в состояние определения гостя и запускает его без блокировки игры.
-        /// </summary>
+        /// <summary>Повторно входит только во внешне привязанный аккаунт владельца, сохраняя локальный прогресс.</summary>
+        public async Task<bool> ReauthenticateLinkedOwnerAsync()
+        {
+            if (!CanReauthenticateLinkedOwner || GameNetworkFacade.Instance.IsForcedOffline ||
+                _authenticationGateway is not IAccountProfileGateway profiles) return false;
+            var owner = GameDataManager.OwnerPlayerId;
+            var profileId = GameDataManager.ProfileId;
+            var generation = GameDataManager.Generation;
+            var originalProfile = profiles.Profile;
+            var version = ++_resolutionVersion;
+            AccountProfileSwitch profileSwitch = null;
+            using var transition = _transition = new AccountTransitionScope();
+            LastRecoveryErrorKey = null;
+            SetState(AccountState.SigningIn);
+            try
+            {
+                // Кандидат получает отдельные credentials; исходное хранилище остаётся доступным.
+                var token = await _playerAccountGateway.SignInAsync();
+                EnsureCurrentOperation(version);
+                if (string.IsNullOrWhiteSpace(token) || GameNetworkFacade.Instance.IsForcedOffline ||
+                    GameDataManager.ProfileId != profileId || GameDataManager.Generation != generation ||
+                    GameDataManager.OwnerPlayerId != owner || GameDataManager.IsProfileReplacementBlocked)
+                    throw new InvalidOperationException("Account recovery is no longer current.");
+                profileSwitch = AccountProfileStore.BeginSwitch(owner, originalProfile, originalIsLinked: true);
+                _authenticationGateway.SignOutPreservingCredentials();
+                profiles.SwitchProfile(profileSwitch.CandidateProfile);
+                await _authenticationGateway.SignInWithUnityAsync(token);
+                EnsureCurrentOperation(version);
+
+                // Принимаем только прежнего владельца; облачные данные здесь не применяются.
+                if (!IsLinkedPlayerSession(owner) || GameDataManager.ProfileId != profileId ||
+                    GameDataManager.Generation != generation || GameDataManager.OwnerPlayerId != owner ||
+                    GameDataManager.IsProfileReplacementBlocked)
+                    throw new InvalidOperationException("Signed-in account is not the local profile owner.");
+                AccountProfileStore.RecordCandidate(profileSwitch, owner);
+                TryCompleteProfileSwitch(owner);
+                _sessionCredentialsRejected = false;
+                SetState(AccountState.Linked);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                if (version != _resolutionVersion) return false;
+                // Ошибка оставляет исходный профиль; credentials непроверенного кандидата очищаются отдельно.
+                if (profileSwitch != null)
+                {
+                    try
+                    {
+                        if (profiles.Profile == profileSwitch.CandidateProfile)
+                            _authenticationGateway.SignOutAndClearLocalCredentials();
+                        profiles.SwitchProfile(originalProfile);
+                        TryCompleteProfileSwitch(owner);
+                    }
+                    catch (Exception rollbackException)
+                    {
+                        DebugManager.DiagStability($"[ACCOUNT] Recovery credentials rollback deferred: {rollbackException.GetType().Name}.");
+                    }
+                }
+                try { _playerAccountGateway.SignOut(); }
+                catch (Exception cleanupException)
+                {
+                    DebugManager.DiagStability($"[ACCOUNT] Recovery player account cleanup failed: {cleanupException.GetType().Name}.");
+                }
+                finally
+                {
+                    // Ошибка очистки завершает актуальную попытку и освобождает повторный вход.
+                    if (version == _resolutionVersion)
+                    {
+                        LastRecoveryErrorKey = "account_reauthenticate_failed";
+                        SetState(AccountState.Error);
+                    }
+                }
+                DebugManager.DiagStability($"[ACCOUNT] Owner recovery unavailable: {exception.GetType().Name}.");
+                return false;
+            }
+        }
+
+        /// <summary>Запрашивает фоновое восстановление аккаунта без блокировки локальной игры.</summary>
         public void Start()
         {
             // Подключаем восстановление после локальной загрузки и готовности SDK.
@@ -337,7 +422,11 @@ namespace Assets.Scripts.Account
             if (TryGetAuthenticatedPlayerId(out var playerId))
             {
                 if (!string.IsNullOrWhiteSpace(_knownPlayerId) && _knownPlayerId != playerId)
+                {
+                    _sessionCredentialsRejected = true;
+                    SetState(AccountState.Error);
                     throw new InvalidOperationException("Authorized session belongs to another player.");
+                }
                 GameDataManager.TryBindAuthenticatedOwner(playerId);
                 ConfirmCurrentProfile(playerId);
                 return Task.CompletedTask;
@@ -416,6 +505,8 @@ namespace Assets.Scripts.Account
         {
             _resolutionVersion++;
             _knownPlayerId = null;
+            _sessionCredentialsRejected = false;
+            LastRecoveryErrorKey = null;
             ClearLocalAccountState();
             Debug.Log("[Account] Local reset completed. Local account credentials cleared.");
         }
@@ -676,10 +767,16 @@ namespace Assets.Scripts.Account
                 var resolvedId = _authenticationGateway.PlayerId;
                 if (!IsAuthorized || string.IsNullOrWhiteSpace(resolvedId) ||
                     !string.IsNullOrWhiteSpace(_knownPlayerId) && _knownPlayerId != resolvedId)
+                {
+                    if (!string.IsNullOrWhiteSpace(_knownPlayerId) && _knownPlayerId != resolvedId)
+                        _sessionCredentialsRejected = true;
                     throw new InvalidOperationException("Restored session identity does not match.");
+                }
                 _knownPlayerId = resolvedId;
                 if (GameDataManager.IsLoaded) GameDataManager.TryBindAuthenticatedOwner(resolvedId);
                 ConfirmCurrentProfile(resolvedId);
+                _sessionCredentialsRejected = false;
+                LastRecoveryErrorKey = null;
 
                 SetState(_authenticationGateway.IsUnityPlayerAccountLinked
                     ? AccountState.Linked
@@ -693,6 +790,10 @@ namespace Assets.Scripts.Account
                 if (resolutionVersion != _resolutionVersion)
                     return;
 
+                if (exception is AuthenticationException authentication &&
+                    (authentication.ErrorCode == AuthenticationErrorCodes.InvalidSessionToken ||
+                     authentication.ErrorCode == AuthenticationErrorCodes.ClientNoActiveSession))
+                    _sessionCredentialsRejected = true;
                 SetState(AccountState.Error);
                 DebugManager.DiagStability($"[ACCOUNT] Session unavailable: {exception.GetType().Name}.");
                 throw;

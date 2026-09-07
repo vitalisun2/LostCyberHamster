@@ -117,10 +117,33 @@ namespace LostCyberHamster.UI
             // Отсутствующий облачный snapshot отображаем без вымышленных значений.
             RenderCard("cloud", _data?.Cloud);
             RenderCard("device", _data?.ThisDevice);
+            RenderChoiceText();
 
             // Обновление данных сохраняет busy и сообщение ошибки.
             RenderActions();
             RenderStatus();
+        }
+
+        /// <summary>Описывает один локальный снимок либо сравнение двух реально найденных сохранений.</summary>
+        private void RenderChoiceText()
+        {
+            bool localOnly = _data != null && !_data.CanChooseCloud;
+            SetLocalizedKey(_modalContent.Q<LocalizedLabel>(className: "cloud-save-conflict__title"),
+                localOnly ? "cloud_save_local_only_title" : "cloud_save_conflict_title");
+            SetLocalizedKey(_modalContent.Q<LocalizedLabel>("cloud-conflict__body"),
+                localOnly ? "cloud_save_local_only_body" : "cloud_save_conflict_body");
+            SetLocalizedKey(_modalContent.Q<LocalizedLabel>(className: "cloud-save-conflict__warning"),
+                localOnly ? "cloud_save_local_only_warning" : "cloud_save_conflict_warning");
+            var cloudCard = _modalContent.Q<VisualElement>(className: "cloud-save-conflict__card--cloud");
+            SetLocalizedKey(cloudCard?.Q<LocalizedLabel>(className: "cloud-save-conflict__card-title"),
+                localOnly ? "cloud_save_local_only_empty" : "cloud_save_conflict_cloud");
+        }
+
+        private static void SetLocalizedKey(LocalizedLabel label, string key)
+        {
+            if (label == null) return;
+            label.key = key;
+            label.text = LocalizationManager.GetLocalizedString(key);
         }
 
         private void RenderCard(string prefix, CloudSaveConflictCardDto data)

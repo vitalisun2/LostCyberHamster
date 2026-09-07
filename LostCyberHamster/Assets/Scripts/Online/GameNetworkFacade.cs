@@ -194,7 +194,14 @@ namespace Assets.Scripts.Online
             return await _leaderboard.SubmitVersionedScoreAsync(leaderboardId, score, versionId, metadata);
         }
 
-        /// <summary>Получает таблицу и позицию игрока, проверяя доступ перед каждым запросом.</summary>
+        /// <summary>Читает общие строки независимо от личной записи.</summary>
+        public async Task<IReadOnlyList<LeaderboardEntry>> GetTopEntriesAsync(string leaderboardId)
+        {
+            EnsureNetworkAllowed(nameof(GetTopEntriesAsync));
+            return await _leaderboard.GetTopEntriesAsync(leaderboardId);
+        }
+
+        /// <summary>Получает строгий полный ответ для существующих потребителей личного рекорда.</summary>
         public async Task<(IReadOnlyList<LeaderboardEntry> Top, LeaderboardEntry CurrentPlayer)> GetResultsAsync(
             string locationId, string partOfDayId)
         {

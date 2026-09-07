@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.System;
 using GameManagement.CloudSave.Models;
+using GameManagement.Leaderboard;
 using GameManagement.Progress;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -114,19 +115,7 @@ namespace GameManagement
                         envelope.LocalRevision < 1 || envelope.LastSyncedRevision < 0 ||
                         envelope.LastSyncedRevision > envelope.LocalRevision)
                         throw new InvalidOperationException("Local save metadata is invalid.");
-                    envelope.Journals ??= new List<LocalFeatureJournal>();
-                    if (envelope.Journals.Any(entry => entry == null || string.IsNullOrWhiteSpace(entry.Feature) ||
-                        string.IsNullOrWhiteSpace(entry.Owner)))
-                        throw new InvalidOperationException("Local save journal metadata is invalid.");
-                    // JsonUtility записывает null вложенного класса как объект с пустыми полями.
-                    // Только полностью пустая запись означает отсутствие попытки загрузки.
-                    var attempt = envelope.UploadAttempt;
-                    if (attempt != null && attempt.LocalRevision == 0 &&
-                        string.IsNullOrEmpty(attempt.ProfileId) &&
-                        string.IsNullOrEmpty(attempt.OwnerPlayerId) &&
-                        string.IsNullOrEmpty(attempt.PayloadHash) &&
-                        string.IsNullOrEmpty(attempt.ExpectedCloudRevision))
-                        envelope.UploadAttempt = null;
+                    NormalizeEnvelopeMetadata(envelope);
                     if (envelope.UploadAttempt != null && (envelope.UploadAttempt.ProfileId != envelope.ProfileId ||
                         envelope.UploadAttempt.OwnerPlayerId != envelope.OwnerPlayerId ||
                         envelope.UploadAttempt.LocalRevision < 1 || envelope.UploadAttempt.LocalRevision > envelope.LocalRevision ||
@@ -159,6 +148,53 @@ namespace GameManagement
                 return false;
             }
         }
+
+        /// <summary>Восстанавливает единое отсутствие metadata после native JSON-чтения и rollback.</summary>
+        private static void NormalizeEnvelopeMetadata(LocalSaveEnvelope envelope)
+        {
+            // Пустой owner означает непринятый профиль; флаг legacy сохраняет правило явного выбора.
+            envelope.OwnerPlayerId = EmptyToNull(envelope.OwnerPlayerId);
+            envelope.BaseCloudRevision = EmptyToNull(envelope.BaseCloudRevision);
+            envelope.ActiveConflictOwner = EmptyToNull(envelope.ActiveConflictOwner);
+            envelope.DeferredConflictOwner = EmptyToNull(envelope.DeferredConflictOwner);
+            envelope.DeferredConflictRevision = EmptyToNull(envelope.DeferredConflictRevision);
+            envelope.Journals ??= new List<LocalFeatureJournal>();
+            if (envelope.Journals.Any(entry => entry == null || string.IsNullOrWhiteSpace(entry.Feature)))
+                throw new InvalidOperationException("Local save journal metadata is invalid.");
+            RestoreProfileOwnedWeeklyJournal(envelope);
+
+            // JsonUtility может восстановить отсутствующую попытку как полностью пустой объект.
+            var attempt = envelope.UploadAttempt;
+            if (attempt != null && attempt.LocalRevision == 0 &&
+                string.IsNullOrEmpty(attempt.ProfileId) && string.IsNullOrEmpty(attempt.OwnerPlayerId) &&
+                string.IsNullOrEmpty(attempt.PayloadHash) && string.IsNullOrEmpty(attempt.ExpectedCloudRevision))
+                envelope.UploadAttempt = null;
+        }
+
+        /// <summary>Возвращает пустой weekly-журнал текущему профилю только по сохранённым адресам забегов.</summary>
+        private static void RestoreProfileOwnedWeeklyJournal(LocalSaveEnvelope envelope)
+        {
+            var ownerless = envelope.Journals.Where(entry => entry.Feature == "weekly" &&
+                string.IsNullOrEmpty(entry.Owner)).ToArray();
+            var profileOwner = "profile:" + envelope.ProfileId;
+            if (envelope.OwnerPlayerId != null || ownerless.Length != 1 ||
+                envelope.Journals.Any(entry => entry.Feature == "weekly" && entry.Owner == profileOwner)) return;
+            try
+            {
+                var journal = JsonUtility.FromJson<WeeklyLeaderboardJournal>(ownerless[0].Json);
+                if (journal?.Runs == null || journal.Runs.Count == 0 ||
+                    journal.Runs.Any(run => run == null || run.ProfileId != envelope.ProfileId ||
+                        !string.IsNullOrEmpty(run.OwnerPlayerId) || run.Status != WeeklyRunStatus.LocalOnly) ||
+                    journal.Seasons?.Count > 0 || journal.CachedResults?.Count > 0) return;
+                ownerless[0].Owner = profileOwner;
+            }
+            catch (ArgumentException)
+            {
+                // Неоднозначный исходный журнал остаётся в envelope без назначения владельца.
+            }
+        }
+
+        private static string EmptyToNull(string value) => string.IsNullOrEmpty(value) ? null : value;
 
         /// <summary>Фиксирует уже изменённый игровой снимок; сеть в этой операции не участвует.</summary>
         public static void SaveData()
@@ -273,7 +309,7 @@ namespace GameManagement
         }
 
         private static string JournalOwner(string owner) => !string.IsNullOrWhiteSpace(owner)
-            ? owner : OwnerPlayerId ?? "profile:" + ProfileId;
+            ? owner : !string.IsNullOrEmpty(OwnerPlayerId) ? OwnerPlayerId : "profile:" + ProfileId;
 
         /// <summary>Привязывает новый локальный профиль после подтверждённой авторизации.</summary>
         public static bool TryBindAuthenticatedOwner(string playerId)
@@ -285,6 +321,15 @@ namespace GameManagement
             return true;
         }
 
+        /// <summary>Проверяет, столкнётся ли перенос журналов текущего профиля с уже сохранёнными данными владельца.</summary>
+        public static bool HasOwnerJournalConflict(string playerId)
+        {
+            if (_envelope == null || string.IsNullOrEmpty(playerId)) return false;
+            var source = _envelope.Journals.Where(entry => entry.Owner == "profile:" + ProfileId).ToArray();
+            return source.GroupBy(entry => entry.Feature).Any(group => group.Count() > 1) ||
+                source.Any(entry => _envelope.Journals.Any(other => other.Owner == playerId && other.Feature == entry.Feature));
+        }
+
         /// <summary>Принимает владельца локальной ветки; legacy допускается только при явном выборе.</summary>
         public static void BindOwner(string playerId, bool allowLegacyAdoption = false)
         {
@@ -293,10 +338,15 @@ namespace GameManagement
             if (IsProfileReplacementBlocked) throw new InvalidOperationException("Profile has an unsettled operation.");
             if (OwnerPlayerId != null || IsLegacyOwnerUnassigned && !allowLegacyAdoption)
                 throw new InvalidOperationException("Local profile owner requires an explicit choice.");
+
+            // Перенос сохраняет каждую исходную запись; конкурирующие журналы требуют отдельного выбора.
+            var oldOwner = "profile:" + ProfileId;
+            var profileJournals = _envelope.Journals.Where(entry => entry.Owner == oldOwner).ToArray();
+            if (HasOwnerJournalConflict(playerId))
+                throw new InvalidOperationException("Local profile journals require reconciliation.");
             ExecuteTechnicalTransaction(() =>
             {
-                var oldOwner = "profile:" + ProfileId;
-                foreach (var journal in _envelope.Journals.Where(entry => entry.Owner == oldOwner))
+                foreach (var journal in profileJournals)
                     journal.Owner = playerId;
                 _envelope.OwnerPlayerId = playerId;
                 _envelope.LegacyOwnerUnassigned = false;
@@ -504,6 +554,7 @@ namespace GameManagement
         {
             if (string.IsNullOrEmpty(json)) return;
             _envelope = JsonUtility.FromJson<LocalSaveEnvelope>(json);
+            NormalizeEnvelopeMetadata(_envelope);
             PlayerData = PlayerData.FromJson(_envelope.PlayerData.ToJson());
             _envelope.PlayerData = PlayerData;
             IsRestoringAfterFailure = true;

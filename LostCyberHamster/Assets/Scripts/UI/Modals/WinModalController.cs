@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Assets.Scripts.GameEngine.Mechanics;
+using GameManagement.Leaderboard;
 using UnityEngine.UIElements;
 using Vues.GameCore;
 
@@ -230,7 +231,12 @@ namespace LostCyberHamster.UI
                 RunResultSubmissionState.Failed =>
                     LocalizationManager.GetLocalizedString("win_submit_error"),
                 RunResultSubmissionState.LocalOnly =>
-                    LocalizationManager.GetLocalizedString("win_submit_local_only"),
+                    LocalizationManager.GetLocalizedString(_runResult.LocalOnlyReason switch
+                    {
+                        WeeklyLocalOnlyReason.OwnerUnassigned => "win_submit_local_only_owner",
+                        WeeklyLocalOnlyReason.SeasonUnknown => "win_submit_local_only_season",
+                        _ => "win_submit_local_only"
+                    }),
                 RunResultSubmissionState.Expired =>
                     LocalizationManager.GetLocalizedString("win_submit_expired"),
                 RunResultSubmissionState.Unconfirmed =>

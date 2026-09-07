@@ -14,6 +14,7 @@ namespace GameManagement.Leaderboard
         public string LeaderboardId;
         public string VersionId;
         public string FetchedAtUtc;
+        public string NextResetUtc;
         public List<LeaderboardCachedEntry> Entries = new();
         public LeaderboardCachedEntry Player;
         [NonSerialized] public bool IsPreviousWeek;

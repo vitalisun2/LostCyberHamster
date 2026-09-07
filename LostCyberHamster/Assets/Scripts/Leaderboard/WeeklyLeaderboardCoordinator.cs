@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.Account;
@@ -72,7 +73,12 @@ namespace GameManagement.Leaderboard
                 RunId = Guid.NewGuid().ToString("N"), OwnerPlayerId = context.OwnerPlayerId,
                 ProfileId = context.ProfileId,
                 Environment = context.Environment, LeaderboardId = context.LeaderboardId,
-                VersionId = context.VersionId, Score = score, Status = WeeklyRunStatus.AwaitingLocalSave
+                VersionId = context.VersionId, Score = score, Status = WeeklyRunStatus.AwaitingLocalSave,
+                LocalOnlyReason = string.IsNullOrWhiteSpace(context.OwnerPlayerId)
+                    ? WeeklyLocalOnlyReason.OwnerUnassigned
+                    : string.IsNullOrWhiteSpace(context.VersionId)
+                        ? WeeklyLocalOnlyReason.SeasonUnknown
+                        : WeeklyLocalOnlyReason.None
             };
             _stagedRuns.Add(run);
             _stagedContexts.Add(run.RunId, context);
@@ -144,6 +150,46 @@ namespace GameManagement.Leaderboard
                 item.Environment == Environment && item.LeaderboardId == board);
             if (snapshot != null) snapshot.IsPreviousWeek = snapshot.VersionId != version;
             return snapshot != null;
+        }
+
+        /// <summary>Возвращает последний забег текущего профиля и таблицы, включая локально сохранённый.</summary>
+        public WeeklyLeaderboardRun GetLatestRun(string locationId, string partId)
+        {
+            if (_disposed || !GameDataManager.IsLoaded) return null;
+            var board = LeaderboardService.ResolveLeaderboardId(locationId, partId);
+            var owner = GameDataManager.OwnerPlayerId;
+            var profile = GameDataManager.ProfileId;
+
+            // Сохраняем видимость LocalOnly исходного профиля после явного принятия владельца.
+            return ReadJournal(owner).Runs
+                .Concat(_stagedRuns.Where(run => CanSaveRunContext(_stagedContexts[run.RunId])))
+                .LastOrDefault(run =>
+                    run.Environment == Environment && run.LeaderboardId == board && run.ProfileId == profile &&
+                    (run.OwnerPlayerId == owner || string.IsNullOrWhiteSpace(run.OwnerPlayerId) &&
+                        (string.IsNullOrWhiteSpace(owner) || run.Status == WeeklyRunStatus.LocalOnly ||
+                         run.Status == WeeklyRunStatus.AwaitingLocalSave)));
+        }
+
+        /// <summary>Сохраняет проверенный период просмотра для будущих забегов подтверждённого владельца.</summary>
+        public bool TryRememberReadSeason(string board, LeaderboardVersions season,
+            string owner, string profile, long generation)
+        {
+            if (season == null || !CanUseCurrentOwner() || !IsCurrentProfile(owner, profile, generation))
+                return false;
+
+            // Поздний ответ просмотра сохраняет уже известную более новую серверную неделю.
+            var existing = ReadJournal(owner).Seasons.FirstOrDefault(item =>
+                item.Environment == Environment && item.LeaderboardId == board);
+            if (existing != null && existing.VersionId != season.VersionId &&
+                DateTime.TryParse(existing.NextResetUtc, CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind, out var knownReset) &&
+                knownReset.ToUniversalTime() > season.NextReset.ToUniversalTime())
+                return false;
+
+            // Подтверждённое чтение также отменяет запись ответов уже начатых фоновых запросов.
+            RememberSeason(owner, board, season);
+            _seasonRequests[owner + ":" + board] = ++_seasonRequestSequence;
+            return true;
         }
 
         /// <summary>Загружает рейтинг и проверяет, что все ответы относятся к одной серверной неделе.</summary>
