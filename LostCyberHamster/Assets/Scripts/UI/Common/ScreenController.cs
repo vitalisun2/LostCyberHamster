@@ -26,6 +26,7 @@ namespace LostCyberHamster.UI
 
         protected ScreenController(UIDocument uiDocument)
         {
+            UiDocumentInputGuard.EnsureAttached(uiDocument);
             _container = uiDocument.rootVisualElement.Q<VisualElement>("content")
                          ?? uiDocument.rootVisualElement;
             _backgroundHost = uiDocument.rootVisualElement.Q<VisualElement>("background");

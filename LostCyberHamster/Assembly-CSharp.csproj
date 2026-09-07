@@ -125,6 +125,7 @@
     <Compile Include="Assets\Scripts\Leaderboard\LeaderboardReadStatus.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\GameplayDevToolsView.cs" />
     <Compile Include="Assets\Scripts\Bot\Perception\HamsterSnapshot.cs" />
+    <Compile Include="Assets\Scripts\Ads\RewardedAdInputGuard.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneFireWindowCalculator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\JumpOnRoofFireWindowFinder.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Skins\SkinActionResolver.cs" />
@@ -283,12 +284,14 @@
     <Compile Include="Assets\Scripts\DevTools\Resources\ResourcesDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\RootTask.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\QuestValidator.cs" />
+    <Compile Include="Assets\Scripts\UI\Common\UiInputBlock.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Persistence\PlayerProgressCommitter.cs" />
     <Compile Include="Assets\Scripts\Common\Models\PatternRef.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\RoofJumpOver\RoofJumpOverSimulator.cs" />
     <Compile Include="Assets\Scripts\Ads\RewardedAdState.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopPurchaseJournal.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOver\JumpOverPolicy.cs" />
+    <Compile Include="Assets\Scripts\UI\Common\UiDocumentInputGuard.cs" />
     <Compile Include="Assets\Scripts\Common\Models\DecorationTile.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\TransformAnimatorController.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\LeaderboardParticipationStatus.cs" />

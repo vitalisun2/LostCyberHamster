@@ -18,6 +18,7 @@ namespace LostCyberHamster.UI
 
         protected ModalController(UIDocument uiDocument)
         {
+            UiDocumentInputGuard.EnsureAttached(uiDocument);
             _root = uiDocument.rootVisualElement;
         }
 
