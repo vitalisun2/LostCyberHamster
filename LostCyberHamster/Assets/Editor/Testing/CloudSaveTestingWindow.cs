@@ -1,4 +1,5 @@
 using System;
+using Assets.Scripts.Online;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,7 +17,8 @@ namespace LostCyberHamster.Editor.Testing
             Quests,
             Skateboard,
             Skin,
-            Resources
+            Resources,
+            Networking
         }
 
         /// <summary>Минимальная ширина окна.</summary>
@@ -70,6 +72,10 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Рисует и обслуживает страницу Resources.</summary>
         private Resources.ResourcesTestingPage _resourcesTestingPage;
 
+        /// <summary>Общий с DEV-меню экземпляр, обновляемый при смене Play Mode.</summary>
+        private GameNetworkFacade _networkFacade;
+        private string _networkError;
+
         /// <summary>Текущая страница общего окна Testing.</summary>
         private TestingPage _currentPage;
 
@@ -85,6 +91,8 @@ namespace LostCyberHamster.Editor.Testing
         {
             var window = GetWindow<CloudSaveTestingWindow>("Testing");
             window.minSize = new Vector2(MinWindowWidth, MinWindowHeight);
+            window.BindNetworkFacade();
+            window.OnNetworkModeChanged();
             window.Focus();
         }
 
@@ -102,12 +110,16 @@ namespace LostCyberHamster.Editor.Testing
             _skinTestingPage = new SkinTesting.SkinTestingPage(Repaint);
             _resourcesTestingPage = new Resources.ResourcesTestingPage(Repaint);
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            BindNetworkFacade();
         }
 
         /// <summary>Освобождает testing-страницы при закрытии окна.</summary>
         private void OnDisable()
         {
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            if (_networkFacade != null)
+                _networkFacade.NetworkModeChanged -= OnNetworkModeChanged;
+            _networkFacade = null;
 
             if (_runner != null)
             {
@@ -127,6 +139,7 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Рисует текущую страницу окна.</summary>
         private void OnGUI()
         {
+            BindNetworkFacade();
             switch (_currentPage)
             {
                 case TestingPage.CloudSave:
@@ -151,6 +164,9 @@ namespace LostCyberHamster.Editor.Testing
                     break;
                 case TestingPage.Resources:
                     _resourcesTestingPage.Draw(() => _currentPage = TestingPage.Start);
+                    break;
+                case TestingPage.Networking:
+                    DrawNetworkingPage();
                     break;
                 default:
                     DrawStartPage();
@@ -227,6 +243,63 @@ namespace LostCyberHamster.Editor.Testing
             {
                 _currentPage = TestingPage.Resources;
             }
+
+            EditorGUILayout.Space(6f);
+            if (GUILayout.Button(
+                    "Networking",
+                    GUILayout.Width(ProductButtonWidth),
+                    GUILayout.Height(ProductButtonHeight)))
+            {
+                _currentPage = TestingPage.Networking;
+            }
+        }
+
+        /// <summary>Подключает актуальный фасад, включая Play Mode с отключённым Domain Reload.</summary>
+        private void BindNetworkFacade()
+        {
+            var network = GameNetworkFacade.Instance;
+            if (ReferenceEquals(_networkFacade, network)) return;
+            if (_networkFacade != null)
+                _networkFacade.NetworkModeChanged -= OnNetworkModeChanged;
+            _networkFacade = network;
+            _networkFacade.NetworkModeChanged += OnNetworkModeChanged;
+            OnNetworkModeChanged();
+        }
+
+        /// <summary>Отражает переключение из любого инструмента и сохраняет видимый индикатор окна.</summary>
+        private void OnNetworkModeChanged()
+        {
+            _networkError = null;
+            titleContent = new GUIContent(_networkFacade.IsForcedOffline ? "Testing OFF" : "Testing");
+            Repaint();
+        }
+
+        /// <summary>Управляет тем же офлайн-режимом, что и runtime DEV, в том числе до запуска игры.</summary>
+        private void DrawNetworkingPage()
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Back", GUILayout.Width(70f)))
+                    _currentPage = TestingPage.Start;
+                EditorGUILayout.LabelField("Networking", EditorStyles.boldLabel);
+            }
+
+            EditorGUILayout.Space(8f);
+            if (GUILayout.Button(_networkFacade.IsForcedOffline ? "Turn on network" : "Turn off network",
+                    GUILayout.Height(ProductButtonHeight)))
+            {
+                try { _networkFacade.SetForcedOffline(!_networkFacade.IsForcedOffline); }
+                catch (Exception exception) { _networkError = $"Не удалось сохранить режим: {exception.Message}"; }
+            }
+
+            EditorGUILayout.HelpBox(_networkFacade.IsForcedOffline
+                ? "Симуляция офлайна включена"
+                : "Сетевые обращения разрешены", MessageType.Info);
+            EditorGUILayout.LabelField("Режим сохраняется после перезапуска", EditorStyles.wordWrappedMiniLabel);
+            if (!EditorApplication.isPlaying)
+                EditorGUILayout.HelpBox("Можно включить офлайн до Play Mode для проверки запуска игры.", MessageType.Info);
+            if (!string.IsNullOrEmpty(_networkError))
+                EditorGUILayout.HelpBox(_networkError, MessageType.Error);
         }
 
         /// <summary>Рисует страницу Cloud Save.</summary>
@@ -384,6 +457,7 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Передаёт смену Play Mode testing-страницам.</summary>
         private void OnPlayModeStateChanged(PlayModeStateChange state)
         {
+            BindNetworkFacade();
             if (state == PlayModeStateChange.ExitingPlayMode &&
                 _runner != null &&
                 _runner.IsActive)

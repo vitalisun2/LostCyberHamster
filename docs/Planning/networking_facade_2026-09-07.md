@@ -30,6 +30,10 @@ DEV Full Reset отвязывает текущую подтверждённую 
 3. Закрыть панель. Кнопка открытия показывает `DEV OFF` и выделена цветом.
 4. Для восстановления открыть Networking и нажать `Turn on network`.
 
+В Unity Editor доступен тот же раздел: `Tools → Testing → Networking`. Он использует тот же фасад и PlayerPrefs-ключ. Изменение из runtime DEV сразу обновляет окно Testing; изменение из Testing обновляет игровой DEV. При включённом офлайне заголовок редакторского окна показывает `Testing OFF`.
+
+Редакторский переключатель доступен до Play Mode: включить его, затем запустить Bootstrap. При входе в Play Mode окно переподключается к актуальному фасаду, в том числе при отключённом Domain Reload.
+
 Режим хранится в `PlayerPrefs`, ключ `DevTools.Networking.ForcedOffline`, и читается до первого сетевого старта. Перезапуск DEV-сборки сохраняет режим. Новая установка разрешает доступ. Релиз игнорирует ключ и не содержит управление симуляцией.
 
 Переключатель управляет обращениями игры. Analytics, доставка диагностических логов и внутренний фоновый трафик SDK сохраняют текущий путь. Разрешение доступа означает возможность попытки запроса; успешную синхронизацию подтверждает сервер.
@@ -41,6 +45,7 @@ DEV Full Reset отвязывает текущую подтверждённую 
 - Новые `.meta` созданы Unity через импорт исходников.
 - Выполнен штатный `regenerate_project_files`: `LegacyStyleProjectGeneration.Sync()`.
 - `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal`: **0 ошибок, 21 предупреждение**. Предупреждения относятся к существующим ссылкам сборок, nullable, старому API, неawait-вызовам, полям каталогов и Unity message signatures.
+- Дополнение Editor Networking: повторный штатный `regenerate_project_files`, затем `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo -v:minimal`: **0 ошибок, 17 предупреждений** в существующих editor-классах и ссылках сборок.
 - Unity CLI 1.0.0.20008 обнаруживает Editor, но выполнение команд несовместимо с Pipeline 0.5.0-exp.1 (`too old to parse command lines`). Та же существующая операция regeneration выполнена через Unity MCP. Версии пакетов сохранены.
 
 Проверка поведения в Play Mode и на Android в этой задаче не запускалась. APK не собирался. Ниже — приёмка для пользовательского прогона.
@@ -66,6 +71,8 @@ DEV Full Reset отвязывает текущую подтверждённую 
 | 13 | Быстро переключить режим несколько раз, закрыть/открыть DEV, вернуть приложение из фона | Один актуальный режим, корректная кнопка; фоновые повторы не дублируют отправку и награды |
 | 14 | В Editor остановить и снова запустить Play Mode с включённой симуляцией | Настройка сохранена, старые подписки и рекламные запросы не переходят в новую сессию |
 | 15 | В релизной сборке с сохранёнными данными DEV-установки | DEV-переключатель отсутствует, его старый ключ не запрещает сетевые попытки |
+| 16 | В `Tools → Testing → Networking` включить офлайн до Play Mode, затем запустить Bootstrap | Игра начинает с запретом сетевых обращений; Testing показывает тот же режим, что и DEV |
+| 17 | В Play Mode переключить режим сначала из Testing, затем из DEV; повторить вход в Play Mode с выключенным Domain Reload | Оба инструмента показывают актуальный режим; окно Testing подписано на текущий фасад |
 
 Сценарии 10–11 засчитывать только при подтверждённом незавершённом запросе. Быстрый ответ до переключения не проверяет эту гонку. Кнопка не моделирует потерю ответа или задержку сервера.
 
@@ -79,6 +86,7 @@ DEV Full Reset отвязывает текущую подтверждённую 
 - Интеграция: `ProjectInstaller`, `OnlineServicesCoordinator`, `AccountService`, `UnityAccountAuthenticationGateway`, `CloudSyncService`, `LeaderboardService`, `WeeklyLeaderboardCoordinator`, `RewardedAdService`.
 - DEV: `DevToolsOverlayShell`, `RootDevToolsScreen`, `RootDevToolsView`, `DevToolsMenuOverlay`, `AccountDevToolsScreen`, `ExperienceProgressTestRunner`.
 - Меню: `MenuEntryPoint`, только удаление лишнего параметра у `LeaderboardScreenController`.
+- Editor: `CloudSaveTestingWindow`, раздел Networking с общим режимом и lifecycle подписки.
 - Generated project: две новые записи `Compile Include` в `Assembly-CSharp.csproj`.
 
 UI-изменения соседней задачи приняты отдельным commit `06e9d595`. Её layout сохранён. Исходная перестановка трёх пар строк generated csproj отделена от Networking и остаётся вне commit этой задачи.
