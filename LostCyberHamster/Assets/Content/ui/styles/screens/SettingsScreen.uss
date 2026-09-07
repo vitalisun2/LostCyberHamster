@@ -108,6 +108,7 @@
 
 .settings-row__label {
     width: 45%;
+    flex-shrink: 0;
     min-width: 295px;
     height: 55px;
     margin: 0;
@@ -368,18 +369,24 @@
 
 .settings-player-name {
     flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
     min-width: 0;
-    height: 55px;
+    min-height: 55px;
     flex-direction: row;
     align-items: center;
 }
 
+.settings-row--cloud .settings-value,
 .settings-player-name__value {
     flex-grow: 1;
     flex-shrink: 1;
+    flex-basis: 0;
     min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
+    white-space: normal;
+}
+
+.settings-player-name__value {
     font-size: 21px;
 }
 
@@ -424,7 +431,12 @@
 
 .settings-art-button.settings-row-action {
     width: 200px;
-    height: 56px;
+    min-width: 200px;
+    max-width: 200px;
+    flex-shrink: 0;
+    height: auto;
+    min-height: 56px;
+    white-space: normal;
     margin-left: 24px;
 }
 
