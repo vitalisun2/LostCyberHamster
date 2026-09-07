@@ -34,6 +34,9 @@ namespace Assets.Scripts.Tutorial
         private int _currentActionIndex;
         private Obstacle _trackedObstacle;
         private bool _isGamePausedByTutorial;
+        private bool _isUserPaused;
+        private bool _resumeAfterUserPause;
+        private float _userPauseStartedAt;
         private bool _isDoubleJumpUpgradeScheduled;
         private float _doubleJumpUpgradeReadyTime;
         private Action _completionAction;
@@ -54,6 +57,45 @@ namespace Assets.Scripts.Tutorial
 
         public event Action ScenarioCompleted;
         public event Action SkipRequested;
+
+        public bool IsUserPaused => _isUserPaused;
+        public bool CanUserPause => !_isUserPaused &&
+            _state != TutorialGameplayState.Completed && _state != TutorialGameplayState.Disposed;
+
+        /// <summary>Приостанавливает урок, сохраняя его собственную остановку перед подсказкой.</summary>
+        public bool PauseByUser()
+        {
+            if (!CanUserPause)
+                return false;
+
+            // Незавершённую пару тапов игрок повторит после продолжения.
+            if (_state == TutorialGameplayState.WaitingForInput && IsDoubleJumpPairStep())
+                ResetActionInputProgress();
+            _resumeAfterUserPause = _world.State == Assets.Scripts.GameManagerLogic.GameState.PLAYING;
+            _userPauseStartedAt = Time.time;
+            _isUserPaused = true;
+            if (_resumeAfterUserPause)
+                _world.Pause();
+            _view?.Hide();
+            return true;
+        }
+
+        /// <summary>Возвращает текущий шаг и оставшееся время отложенного действия.</summary>
+        public void ResumeByUser()
+        {
+            if (!_isUserPaused || _state == TutorialGameplayState.Disposed)
+                return;
+
+            // Time.time продолжает идти при локальной остановке GameManager.
+            if (_isDoubleJumpUpgradeScheduled)
+                _doubleJumpUpgradeReadyTime += Time.time - _userPauseStartedAt;
+            _isUserPaused = false;
+            if (_resumeAfterUserPause)
+                _world.Resume();
+            _resumeAfterUserPause = false;
+            if (_view != null)
+                RestoreViewState();
+        }
 
         /// <summary>
         /// Подключает tutorial UI к корню игрового экрана.
@@ -84,6 +126,8 @@ namespace Assets.Scripts.Tutorial
         /// </summary>
         public void Tick()
         {
+            if (_isUserPaused)
+                return;
             switch (_state)
             {
                 case TutorialGameplayState.RunningToTrigger:
@@ -109,7 +153,7 @@ namespace Assets.Scripts.Tutorial
         /// </summary>
         public bool TryHandleInput(TutorialAction action)
         {
-            if (_state != TutorialGameplayState.WaitingForInput || action != CurrentExpectedAction)
+            if (_isUserPaused || _state != TutorialGameplayState.WaitingForInput || action != CurrentExpectedAction)
             {
                 return false;
             }
@@ -187,6 +231,11 @@ namespace Assets.Scripts.Tutorial
 
         private void RestoreViewState()
         {
+            if (_isUserPaused)
+            {
+                _view.Hide();
+                return;
+            }
             if (_hasCompletionPresentation)
             {
                 _view.ShowCompletion(
@@ -393,7 +442,7 @@ namespace Assets.Scripts.Tutorial
 
         private void HandleViewSkipRequested()
         {
-            if (_state == TutorialGameplayState.Completed || _state == TutorialGameplayState.Disposed)
+            if (_isUserPaused || _state == TutorialGameplayState.Completed || _state == TutorialGameplayState.Disposed)
             {
                 return;
             }

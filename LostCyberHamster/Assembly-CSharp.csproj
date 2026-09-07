@@ -272,6 +272,7 @@
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\LocationProgress.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneTiming.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\AddCoinsOrBonusMechanics.cs" />
+    <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialInputCapture.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LocationTheme.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\ShopScreenController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverStrategy.cs" />

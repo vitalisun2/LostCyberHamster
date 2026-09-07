@@ -21,6 +21,8 @@ namespace Assets.Scripts.Tutorial
         private IDisposable _analyticsSuppression;
         private VisualElement _attachedGameplayRoot;
 
+        internal static TutorialFlowController ActiveFlow => _instance != null ? _instance._flow : null;
+
         public static void Create()
         {
             if (_instance != null)

@@ -18,6 +18,7 @@ namespace Assets.Scripts.Tutorial
         private TutorialPhase _phase;
         private string _activeGameplayLevel;
         private bool _disposed;
+        private bool _exitRequested;
 
         public TutorialFlowController(TutorialSession session)
         {
@@ -25,6 +26,36 @@ namespace Assets.Scripts.Tutorial
         }
 
         public TutorialPhase Phase => _phase;
+
+        public bool IsUserPaused => _gameplay?.IsUserPaused == true;
+        public bool CanResumeByUser => IsUserPaused && _session.IsActive && !_exitRequested;
+
+        public bool PauseByUser() =>
+            !_disposed && _phase == TutorialPhase.CoreControls && _session.IsActive &&
+            _gameplay?.PauseByUser() == true;
+
+        public void ResumeByUser()
+        {
+            if (CanResumeByUser)
+                _gameplay.ResumeByUser();
+        }
+
+        /// <summary>Восстанавливает профиль перед выходом; ошибка оставляет паузу для повторной попытки.</summary>
+        public void ExitToMenu()
+        {
+            ThrowIfDisposed();
+            if (!IsUserPaused)
+                return;
+
+            // Сначала завершаем persistent rollback, сохраняя урок при ошибке записи.
+            _exitRequested = true;
+            _session.Rollback();
+            SceneManager.LoadScene("Menu");
+
+            // SceneLoaded уже отсоединяет старый мир; host освободит свои guards.
+            DisposeGameplay(resumeGame: false);
+            _phase = TutorialPhase.Completed;
+        }
 
         public bool RequiresExclusiveInput => _session.IsActive || _phase != TutorialPhase.None;
 

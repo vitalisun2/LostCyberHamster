@@ -1,6 +1,5 @@
 using Assets.Scripts.Bot;
 using Assets.Scripts.Common;
-using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Atomic.Elements;
@@ -17,8 +16,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent _superRoofJumpRequest;
         private readonly AtomicEvent _jumpEvent;
         private readonly AtomicEvent _superJumpEvent;
-        private readonly UIManager _uiManager;
-        private readonly GameManager _gameManager;
         private readonly Keyboard _keyboard;
         private readonly AtomicEvent _tapRequest;
         private readonly Hamster _character;
@@ -26,7 +23,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private DoubleJumpDetector _doubleJumpDetector;
         private bool _wasSkateboardActive;
 
-        public KeyboardMechanics(Hamster hamster, UIManager uiManager, GameManager gameManager)
+        public KeyboardMechanics(Hamster hamster, UIManager uiManager)
         {
             _characterHamsterState = hamster.HamsterState;
             _character = hamster;
@@ -34,11 +31,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _superRoofJumpRequest = hamster.SuperRoofJumpRequest;
             _jumpEvent = hamster.JumpRequest;
             _superJumpEvent = hamster.SuperJumpRequest;
-            _gameManager = gameManager;
             _keyboard = Keyboard.current;
             _tapRequest = hamster.TapRequest;
 
-            _uiManager = uiManager;
             _gameScreenController =
                 uiManager.GetController<GameScreenController>();
 
@@ -60,6 +55,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
         public void OnUpdate()
         {
             ResetJumpSequenceIfModeChanged();
+
+            // Пауза доступна в обучении через тот же маршрут, что и кнопка HUD.
+            if (_keyboard != null && _keyboard.escapeKey.wasPressedThisFrame)
+            {
+                _gameScreenController.RequestPause();
+                return;
+            }
 
             if (GameplayInputGate.IsBlocked || _keyboard == null)
             {
@@ -83,11 +85,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 {
                     OnJump();
                 }
-            }
-
-            if (_keyboard.escapeKey.wasPressedThisFrame)
-            {
-                TogglePauseResume();
             }
 
             if (_keyboard.bKey.wasPressedThisFrame)
@@ -154,20 +151,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 )
             {
                 _superJumpEvent?.Invoke();
-            }
-        }
-
-        private void TogglePauseResume()
-        {
-            if (_gameManager.State == GameState.PAUSED)
-            {
-                _uiManager.HideModal(ScreenEnum.PauseModal);
-                _gameManager.Resume();
-            }
-            else
-            {
-                _uiManager.ShowModalAsync(ScreenEnum.PauseModal);
-                _gameManager.Pause();
             }
         }
 

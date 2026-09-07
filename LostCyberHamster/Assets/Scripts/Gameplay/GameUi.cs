@@ -78,7 +78,7 @@ namespace Assets.Scripts.Gameplay
                 new UiJourneyCompleteModalMechanics(
                     _uiManager,
                     _levelResultNavigationCoordinator);
-            _keyboardMechanics = new KeyboardMechanics(_character, _uiManager, _gameManager);
+            _keyboardMechanics = new KeyboardMechanics(_character, _uiManager);
 
             _uiManager.SubscribeToEvents();
             _energyMechanics.Subscribe();

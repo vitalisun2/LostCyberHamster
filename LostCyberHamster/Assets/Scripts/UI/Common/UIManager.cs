@@ -18,6 +18,7 @@ namespace LostCyberHamster.UI
 
         private ScreenEnum _currentScreen;
         private ScreenEnum? _currentModal;
+        internal ScreenEnum? CurrentModal => _currentModal;
         private bool _hasCurrentScreen;
         private bool _eventsSubscribed;
         private bool _lifecycleStarted;

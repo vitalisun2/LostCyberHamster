@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using UnityEngine.UIElements;
+using Vues.GameCore;
 
 namespace LostCyberHamster.UI
 {
@@ -19,6 +20,7 @@ namespace LostCyberHamster.UI
         private Action _actionExit;
 
         private GameResultModalPresentation _presentation;
+        private bool _tutorialMode;
 
         protected override ScreenEnum _modalAssetName => ScreenEnum.PauseModal;
 
@@ -31,7 +33,24 @@ namespace LostCyberHamster.UI
             _presentation?.Restore();
             _presentation = GameResultModalPresentation.Apply(_root);
             _buttonCloseModal.style.display = DisplayStyle.None;
+            _modalContent.Q("pause-modal").EnableInClassList("pause-modal--tutorial", _tutorialMode);
             return Task.CompletedTask;
+        }
+
+        internal void SetTutorialMode(bool tutorialMode)
+        {
+            _tutorialMode = tutorialMode;
+        }
+
+        /// <summary>Оставляет выход доступным для повторной попытки восстановления профиля.</summary>
+        internal void ShowExitError(bool canResume)
+        {
+            var error = _modalContent.Q<Label>("pause-exit-error");
+            if (error == null)
+                return;
+            error.text = LocalizationManager.GetLocalizedString("pause_exit_failed");
+            error.style.display = DisplayStyle.Flex;
+            _resumeButton?.SetEnabled(canResume);
         }
 
         protected override void OnSubscribeToEvents()

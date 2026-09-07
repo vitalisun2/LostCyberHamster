@@ -327,3 +327,29 @@
     height: 108px;
     background-image: url("/Assets/Content/ui/sprites/modals/pause/button_resume.png");
 }
+
+.pause-modal--tutorial .game-result-modal__retry-button--pause {
+    display: none;
+}
+
+.pause-modal--tutorial .game-result-modal__home-button--pause {
+    left: 131px;
+}
+
+.pause-modal--tutorial .game-result-modal__primary-button--pause {
+    left: 261px;
+}
+
+.pause-exit-error {
+    display: none;
+    position: absolute;
+    left: 63px;
+    right: 63px;
+    top: 290px;
+    margin: 0;
+    padding: 0;
+    font-size: 22px;
+    white-space: normal;
+    -unity-text-align: upper-center;
+    color: rgb(100, 20, 20);
+}

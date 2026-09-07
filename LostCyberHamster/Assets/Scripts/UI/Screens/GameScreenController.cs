@@ -38,13 +38,15 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnPause(PointerDownEvent evt)
         {
-            if (GameplayInputGate.IsBlocked)
-            {
-                return;
-            }
+            evt.StopImmediatePropagation();
+            RequestPause();
+        }
 
-            UIManager.OnModalShow(ScreenEnum.PauseModal);
-            _pauseAction?.Invoke();
+        /// <summary>Передаёт паузу отдельному обработчику, сохраняя приоритет блокировки рекламы.</summary>
+        internal void RequestPause()
+        {
+            if (!UiInputBlock.IsBlocked)
+                _pauseAction?.Invoke();
         }
 
         protected override void OnSubscribeToEvents()

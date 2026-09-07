@@ -78,11 +78,11 @@ namespace Assets.Scripts.Tutorial
             _root = CreateDecoration(_rootName, "tutorial-fill");
             _headerRoot = CreateHeader(out _titleLabel, out _lessonLabel, out _lessonNumberLabel);
             _skipButton = new Button { name = "tutorial-skip", pickingMode = PickingMode.Position };
-            _idleInputBlocker = CreateInputLayer("tutorial-idle-input-blocker");
+            _idleInputBlocker = CreateInputLayer("tutorial-idle-input-blocker", contentRoot.Q("btn_pause"));
             _promptRoot = CreateDecoration("tutorial-prompt-root", "tutorial-fill");
             _focusMask = CreateDecoration("tutorial-focus-mask", "tutorial-fill");
             _focusHighlight = CreateDecoration("tutorial-focus-highlight");
-            _promptInputCapture = CreateInputLayer("tutorial-prompt-input-capture");
+            _promptInputCapture = CreateInputLayer("tutorial-prompt-input-capture", contentRoot.Q("btn_pause"));
             _finger = CreateDecoration("tutorial-finger");
             _instructionBubble = CreateDecoration("tutorial-instruction-bubble");
             _instructionLabel = CreateLabel("tutorial-instruction");
@@ -509,9 +509,9 @@ namespace Assets.Scripts.Tutorial
             return root;
         }
 
-        private static VisualElement CreateInputLayer(string name)
+        private static VisualElement CreateInputLayer(string name, VisualElement pauseButton = null)
         {
-            var element = new VisualElement { name = name, pickingMode = PickingMode.Position };
+            var element = new TutorialInputCapture(pauseButton) { name = name, pickingMode = PickingMode.Position };
             element.AddToClassList("tutorial-fill");
             return element;
         }

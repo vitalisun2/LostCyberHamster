@@ -10,6 +10,7 @@
                         <engine:Button name="btn__home" tooltip="Home" class="game-result-modal__image-button game-result-modal__home-button game-result-modal__home-button--pause" />
                         <engine:Button name="btn__repeat" tooltip="Retry" class="game-result-modal__image-button game-result-modal__retry-button game-result-modal__retry-button--pause" />
                         <engine:Button name="btn__play" tooltip="Resume" class="game-result-modal__image-button game-result-modal__primary-button game-result-modal__primary-button--pause" />
+                        <engine:Label name="pause-exit-error" class="pause-exit-error" picking-mode="Ignore" />
                     </engine:VisualElement>
                 </engine:VisualElement>
             </engine:VisualElement>

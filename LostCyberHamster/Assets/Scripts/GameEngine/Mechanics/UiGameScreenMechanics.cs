@@ -41,7 +41,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _gameScreenController.SetSuperJumpAction(OnSuperJump);
             _gameScreenController.SetJumpAction(OnJump);
             _gameScreenController.SetTapAction(OnTap);
-            _gameScreenController.SetPauseAction(OnPause);
             _gameScreenController.SetBuyEnergyAction(OnBuyEnergy);
             _gameScreenController.SetUltraAction(OnUlta);
             _gameScreenController.SetBuyUltraAction(OnBuyUltra);
@@ -176,11 +175,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private void OnUlta()
         {
             _character.UltaEvent?.Invoke();
-        }
-
-        private void OnPause()
-        {
-            _gameManager.Pause();
         }
 
         private void OnBuyEnergy()
