@@ -95,7 +95,7 @@ namespace LostCyberHamster.UI
                 content.Q<VisualElement>("hero-viewport"),
                 content.Q<VisualElement>("hero-scale-frame"),
                 content.Q<VisualElement>("hero-design"),
-                new Vector2(DesignWidth, DesignHeight));
+                new Vector2(DesignWidth, DesignHeight), stretchWidth: true);
         }
 
         protected override void BindView()

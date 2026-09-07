@@ -42,9 +42,9 @@
 
 .settings-panel {
     position: absolute;
-    left: 435px;
+    left: 16.666667%;
     top: 260px;
-    width: 801px;
+    width: 66.666667%;
     height: 610px;
     padding-top: 42px;
     padding-right: 60px;
@@ -59,7 +59,7 @@
 }
 
 .settings-scroll {
-    width: 663px;
+    width: 100%;
     height: 530px;
     margin: 0;
     padding: 0;
@@ -107,7 +107,7 @@
 }
 
 .settings-row__label {
-    width: 295px;
+    width: 45%;
     min-width: 295px;
     height: 55px;
     margin: 0;
@@ -364,11 +364,10 @@
     width: 330px;
     height: 52px;
     margin-top: 4px;
-    font-size: 19px;
 }
 
 .settings-player-name {
-    width: 368px;
+    flex-grow: 1;
     min-width: 0;
     height: 55px;
     flex-direction: row;
@@ -384,20 +383,13 @@
     font-size: 21px;
 }
 
-.settings-player-name__button {
-    width: 132px;
-    height: 48px;
-    margin-left: 8px;
-    font-size: 17px;
-}
-
 .settings-training-button {
     width: 264px;
     height: 54px;
-    font-size: 21px;
 }
 
 .settings-art-button {
+    font-size: 21px;
     margin: 0;
     padding-top: 0;
     padding-right: 10px;
@@ -428,6 +420,12 @@
 
 .settings-art-button--primary {
     background-image: url("/Assets/Content/ui/sprites/settings/button_primary_base.png");
+}
+
+.settings-art-button.settings-row-action {
+    width: 200px;
+    height: 56px;
+    margin-left: 24px;
 }
 
 .settings-art-button--secondary {
@@ -647,7 +645,6 @@
 .settings-name-dialog__button {
     width: 278px;
     height: 61px;
-    font-size: 23px;
 }
 
 .settings-name-dialog__button--cancel {

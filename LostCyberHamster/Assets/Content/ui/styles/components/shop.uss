@@ -39,8 +39,20 @@
     background-image: url("/Assets/Content/ui/sprites/shop/title_shop.png");
 }
 
-.shop-offer {
+.shop-offers {
     position: absolute;
+    left: 16.666667%;
+    top: 240px;
+    width: 66.666667%;
+    height: 560px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shop-offer {
+    position: relative;
+    flex-shrink: 0;
     margin: 0;
     padding: 0;
     background-color: rgba(0, 0, 0, 0);
@@ -77,26 +89,24 @@
 }
 
 .shop-offer--free-coins {
-    left: 391px;
-    top: 301px;
-    width: 647px;
-    height: 500px;
+    width: 66%;
+    height: 100%;
+    background-position-x: left;
     background-image: url("/Assets/Content/ui/sprites/shop/offer_free_coins.png");
 }
 
 .shop-offer--crystal-pack {
-    left: 1063px;
-    top: 344px;
-    width: 308px;
-    height: 448px;
+    width: 31.43%;
+    height: 100%;
+    background-position-x: right;
     background-image: url("/Assets/Content/ui/sprites/shop/offer_crystal_pack.png");
 }
 
 .shop-purchase-message {
     position: absolute;
-    left: 62px;
+    left: 16.666667%;
     top: 802px;
-    width: 1600px;
+    width: 66.666667%;
     height: 105px;
     display: none;
     color: rgb(255, 255, 255);

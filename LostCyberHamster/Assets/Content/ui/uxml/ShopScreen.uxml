@@ -5,8 +5,10 @@
         <engine:VisualElement name="shop-viewport" class="shop-viewport main-screen-body">
             <engine:VisualElement name="shop-scale-frame" class="shop-scale-frame">
                 <engine:VisualElement name="shop-design" class="shop-design">
-                    <engine:Button name="shop-free-coins" class="shop-offer shop-offer--free-coins" />
-                    <engine:Button name="shop-crystal-pack" class="shop-offer shop-offer--crystal-pack" />
+                    <engine:VisualElement name="shop-offers" class="shop-offers">
+                        <engine:Button name="shop-free-coins" class="shop-offer shop-offer--free-coins" />
+                        <engine:Button name="shop-crystal-pack" class="shop-offer shop-offer--crystal-pack" />
+                    </engine:VisualElement>
                     <Vues.GameCore.LocalizedLabel name="shop-purchase-message" key="shop_insufficient_coins_for_crystals" class="shop-purchase-message" />
                 </engine:VisualElement>
             </engine:VisualElement>

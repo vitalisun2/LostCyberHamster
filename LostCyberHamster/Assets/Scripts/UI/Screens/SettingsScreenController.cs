@@ -98,7 +98,7 @@ namespace LostCyberHamster.UI
                 content.Q<VisualElement>("settings-design"),
                 new Vector2(DesignWidth, DesignHeight),
                 content.Q<VisualElement>("settings-name-scale-frame"),
-                content.Q<VisualElement>("settings-name-design"));
+                content.Q<VisualElement>("settings-name-design"), stretchWidth: true);
         }
 
         protected override void BindView()
@@ -194,7 +194,7 @@ namespace LostCyberHamster.UI
                     ? "cloud_sync_action_retry"
                     : _hasAccountLinkConflict || state == AccountState.SigningIn
                     ? "btn_sign_in"
-                    : "btn_link_account");
+                    : "btn_link_account").ToUpperInvariant();
             _buttonLinkAccount.style.display = state == AccountState.Linked
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
@@ -232,7 +232,7 @@ namespace LostCyberHamster.UI
             if (_buttonCloudAction != null)
             {
                 _buttonCloudAction.text = LocalizationManager.GetLocalizedString(
-                    _cloudSyncService.HasUnresolvedConflict ? "cloud_sync_action_choose" : "cloud_sync_action_retry");
+                    _cloudSyncService.HasUnresolvedConflict ? "cloud_sync_action_choose" : "cloud_sync_action_retry").ToUpperInvariant();
                 _buttonCloudAction.SetEnabled(status != CloudSyncStatusEnum.Synchronizing);
             }
         }
@@ -244,11 +244,9 @@ namespace LostCyberHamster.UI
             if (_buttonCloudAction != null) return;
             _buttonCloudAction = new Button { name = "settings__btn-cloud-sync-action" };
             _buttonCloudAction.AddToClassList("lcs_btn");
-            _buttonCloudAction.AddToClassList("bg-primary");
-            _buttonCloudAction.style.minWidth = 200;
-            _buttonCloudAction.style.height = 56;
-            _buttonCloudAction.style.marginLeft = 12;
-            _buttonCloudAction.style.fontSize = 24;
+            _buttonCloudAction.AddToClassList("settings-art-button");
+            _buttonCloudAction.AddToClassList("settings-art-button--primary");
+            _buttonCloudAction.AddToClassList("settings-row-action");
             _cloudSyncStatusRow.Add(_buttonCloudAction);
         }
 
@@ -408,7 +406,7 @@ namespace LostCyberHamster.UI
 
             // Показываем состояние серверного сохранения на его кнопке.
             _buttonSavePlayerName.text = LocalizationManager.GetLocalizedString(
-                isBusy ? "player_name_saving" : "btn_save_player_name");
+                isBusy ? "player_name_saving" : "btn_save_player_name").ToUpperInvariant();
         }
 
         private static bool IsPlayerNameValid(string playerName)
@@ -546,7 +544,7 @@ namespace LostCyberHamster.UI
             _contentRoot.Query<LocalizedButton>().ForEach(button =>
             {
                 if (!string.IsNullOrEmpty(button.key))
-                    button.text = LocalizationManager.GetLocalizedString(button.key);
+                    button.text = LocalizationManager.GetLocalizedString(button.key).ToUpperInvariant();
             });
 
             // Обновляем динамические подписи, которые не управляются ключом UXML напрямую.

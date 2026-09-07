@@ -42,7 +42,7 @@
                                     <Vues.GameCore.LocalizedLabel key="lbl_account" class="settings-row__label settings-row__label--top" />
                                     <engine:VisualElement class="settings-account">
                                         <engine:Label name="settings__lbl-account-state" class="settings-value settings-account__state" />
-                                        <Vues.GameCore.LocalizedButton key="btn_link_account" name="settings__btn-link-account" class="lcs_btn settings-art-button settings-art-button--primary settings-account__button" />
+                                        <Vues.GameCore.LocalizedButton uppercase="true" key="btn_link_account" name="settings__btn-link-account" class="lcs_btn settings-art-button settings-art-button--primary settings-account__button" />
                                     </engine:VisualElement>
                                 </engine:VisualElement>
 
@@ -50,7 +50,7 @@
                                     <Vues.GameCore.LocalizedLabel key="lbl_player_name" class="settings-row__label" />
                                     <engine:VisualElement name="settings__player-name-view" class="settings-player-name">
                                         <engine:Label name="settings__lbl-player-name" class="settings-value settings-player-name__value" />
-                                        <Vues.GameCore.LocalizedButton key="btn_change_player_name" name="settings__btn-change-player-name" class="lcs_btn settings-art-button settings-art-button--primary settings-player-name__button" />
+                                        <Vues.GameCore.LocalizedButton uppercase="true" key="btn_change_player_name" name="settings__btn-change-player-name" class="lcs_btn settings-art-button settings-art-button--primary settings-row-action" />
                                     </engine:VisualElement>
                                 </engine:VisualElement>
 
@@ -61,7 +61,7 @@
 
                                 <engine:VisualElement class="settings-row settings-row--training">
                                     <Vues.GameCore.LocalizedLabel key="settings_training" class="settings-row__label" />
-                                    <Vues.GameCore.LocalizedButton key="settings_start_training" name="settings__btn-start-training" class="lcs_btn settings-art-button settings-art-button--primary settings-training-button" />
+                                    <Vues.GameCore.LocalizedButton uppercase="true" key="settings_start_training" name="settings__btn-start-training" class="lcs_btn settings-art-button settings-art-button--primary settings-training-button" />
                                 </engine:VisualElement>
 
                                 <engine:VisualElement class="settings-row settings-row--version">
@@ -100,8 +100,8 @@
                         <engine:TextField name="settings__txt-player-name" class="settings-name-dialog__input" max-length="16" />
                         <Vues.GameCore.LocalizedLabel key="player_name_validation_error" name="settings__lbl-player-name-error" class="settings-name-dialog__error" />
                         <engine:VisualElement class="settings-name-dialog__actions">
-                            <Vues.GameCore.LocalizedButton key="btn_save_player_name" name="settings__btn-save-player-name" class="lcs_btn settings-art-button settings-art-button--primary settings-name-dialog__button" />
-                            <Vues.GameCore.LocalizedButton key="btn_cancel_player_name" name="settings__btn-cancel-player-name" class="lcs_btn settings-art-button settings-art-button--secondary settings-name-dialog__button settings-name-dialog__button--cancel" />
+                            <Vues.GameCore.LocalizedButton uppercase="true" key="btn_save_player_name" name="settings__btn-save-player-name" class="lcs_btn settings-art-button settings-art-button--primary settings-name-dialog__button" />
+                            <Vues.GameCore.LocalizedButton uppercase="true" key="btn_cancel_player_name" name="settings__btn-cancel-player-name" class="lcs_btn settings-art-button settings-art-button--secondary settings-name-dialog__button settings-name-dialog__button--cancel" />
                         </engine:VisualElement>
                     </engine:VisualElement>
                 </engine:VisualElement>

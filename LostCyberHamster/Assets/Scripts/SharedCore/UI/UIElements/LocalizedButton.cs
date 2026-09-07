@@ -9,6 +9,9 @@ namespace Vues.GameCore
 
         [UxmlAttribute]
         public string key;
+
+        [UxmlAttribute]
+        public bool uppercase;
         public LocalizedButton()
         {
             schedule.Execute(() =>
@@ -18,6 +21,8 @@ namespace Vues.GameCore
                     return;
                 }
                 text = LocalizationManager.GetLocalizedString(key);
+                if (uppercase)
+                    text = text.ToUpperInvariant();
             });
         }
     }

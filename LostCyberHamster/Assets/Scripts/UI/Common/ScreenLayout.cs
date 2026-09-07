@@ -27,11 +27,11 @@ namespace LostCyberHamster.UI
             _check = _viewport.schedule.Execute(CheckLayout).Every(1);
         }
 
-        /// <summary>Вписывает композицию в viewport, сохраняя исходные пропорции.</summary>
+        /// <summary>Вписывает композицию в viewport; адаптивный макет получает полную ширину для процентной вёрстки.</summary>
         public static ScreenLayout Fit(
             VisualElement viewport, VisualElement frame, VisualElement design,
             Vector2 designSize, VisualElement overlayFrame = null,
-            VisualElement overlayDesign = null)
+            VisualElement overlayDesign = null, bool stretchWidth = false)
         {
             if (frame == null || design == null)
                 throw new ArgumentException("Экран не содержит frame или design.");
@@ -40,8 +40,17 @@ namespace LostCyberHamster.UI
 
             return new ScreenLayout(viewport, size =>
             {
+                // Сохраняем равномерный масштаб текста и изображений.
                 float scale = Mathf.Min(size.x / designSize.x, size.y / designSize.y);
-                ApplyScale(frame, design, designSize, scale);
+                Vector2 layoutSize = designSize;
+                if (stretchWidth)
+                {
+                    layoutSize.x = size.x / scale;
+                    design.style.width = layoutSize.x;
+                }
+                ApplyScale(frame, design, layoutSize, scale);
+
+                // Модальные оверлеи сохраняют собственную композицию.
                 if (overlayFrame != null && overlayDesign != null)
                     ApplyScale(overlayFrame, overlayDesign, designSize, scale);
             });

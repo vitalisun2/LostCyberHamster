@@ -121,7 +121,7 @@ namespace LostCyberHamster.UI
                 content.Q<VisualElement>("leaderboard__viewport"),
                 content.Q<VisualElement>("leaderboard__scale-frame"),
                 content.Q<VisualElement>("leaderboard__design"),
-                new Vector2(DesignWidth, DesignHeight));
+                new Vector2(DesignWidth, DesignHeight), stretchWidth: true);
         }
 
         /// <summary>

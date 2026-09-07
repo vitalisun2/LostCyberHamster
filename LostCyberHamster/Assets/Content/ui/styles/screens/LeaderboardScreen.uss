@@ -38,9 +38,9 @@
 
 .leaderboard-center {
     position: absolute;
-    left: 420px;
+    left: 16.666667%;
     top: 140px;
-    width: 830px;
+    width: 66.666667%;
     height: 610px;
 }
 
@@ -48,10 +48,12 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 830px;
+    width: 100%;
     height: 610px;
     background-image: url("/Assets/Content/ui/sprites/league/panel_league_center.png");
-    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 64;
+    -unity-slice-right: 64;
 }
 
 .leaderboard-image-button {
@@ -97,12 +99,12 @@
 }
 
 .leaderboard-location-button--previous {
-    left: 123px;
+    left: 14.82%;
     background-image: url("/Assets/Content/ui/sprites/league/button_city_previous.png");
 }
 
 .leaderboard-location-button--next {
-    left: 615px;
+    right: 14.82%;
     background-image: url("/Assets/Content/ui/sprites/league/button_city_next.png");
 }
 
@@ -115,9 +117,9 @@
 
 .leaderboard-location-title {
     position: absolute;
-    left: 220px;
+    left: 26.51%;
     top: 40px;
-    width: 390px;
+    width: 46.98%;
     height: 76px;
     padding-right: 20px;
     padding-left: 20px;
@@ -142,7 +144,7 @@
     position: absolute;
     left: 45px;
     top: 122px;
-    width: 740px;
+    right: 45px;
     height: 83px;
     flex-direction: row;
 }
@@ -151,17 +153,19 @@
     position: relative;
     flex-grow: 0;
     flex-shrink: 0;
-    width: 185px;
+    width: 25%;
     height: 83px;
 }
 
 .leaderboard-time-button {
-    width: 186px;
+    width: 100%;
     height: 83px;
     padding-right: 8px;
     padding-left: 57px;
     background-image: url("/Assets/Content/ui/sprites/league/button_time_base_blue.png");
-    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 28;
+    -unity-slice-right: 28;
     color: rgb(255, 255, 255);
     font-size: 24px;
     -unity-font-style: bold;
@@ -213,7 +217,7 @@
     position: absolute;
     left: 30px;
     top: 214px;
-    width: 766px;
+    right: 34px;
     height: 354px;
 }
 

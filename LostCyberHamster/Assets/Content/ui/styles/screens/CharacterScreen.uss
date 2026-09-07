@@ -42,7 +42,8 @@
 
 .hero-tabs {
     position: absolute;
-    left: 456px;
+    left: 50%;
+    translate: -50% 0;
     top: 269px;
 }
 
@@ -70,9 +71,9 @@
 
 .hero-content {
     position: absolute;
-    left: 328px;
+    left: 16.666667%;
     top: 400px;
-    width: 1075px;
+    width: 66.666667%;
     height: 473px;
 }
 
@@ -80,7 +81,7 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 1075px;
+    width: 100%;
     height: 473px;
 }
 
@@ -92,7 +93,7 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 476px;
+    width: 44.28%;
     height: 473px;
     background-image: url("/Assets/Content/ui/sprites/hero/panel_preview_base.png");
     -unity-background-scale-mode: stretch-to-fill;
@@ -104,18 +105,18 @@
 
 .hero-skin-preview-image {
     position: absolute;
-    left: 47px;
+    left: 10%;
     top: 82px;
-    width: 382px;
+    width: 80%;
     height: 284px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .hero-preview-name {
     position: absolute;
-    left: 35px;
+    left: 7%;
     bottom: 34px;
-    width: 406px;
+    width: 86%;
     height: 55px;
     color: rgb(19, 23, 25);
     font-size: 35px;
@@ -127,18 +128,18 @@
 
 .hero-ability-preview-image {
     position: absolute;
-    left: 48px;
+    left: 10%;
     top: 66px;
-    width: 380px;
+    width: 80%;
     height: 214px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .hero-ability-description {
     position: absolute;
-    left: 56px;
+    left: 12%;
     top: 278px;
-    width: 364px;
+    width: 76%;
     height: 112px;
     color: rgb(19, 23, 25);
     font-size: 27px;
@@ -173,7 +174,8 @@
 
 .hero-select-button {
     position: absolute;
-    left: 128px;
+    left: 50%;
+    translate: -50% 0;
     bottom: 28px;
     width: 220px;
     height: 68px;
@@ -185,9 +187,9 @@
 
 .hero-slots-scroll {
     position: absolute;
-    left: 495px;
+    left: 46.05%;
     top: 0;
-    width: 580px;
+    width: 53.95%;
     height: 473px;
     margin: 0;
     padding: 0;
@@ -196,24 +198,24 @@
 }
 
 .hero-slots-scroll .unity-scroll-view__content-viewport {
-    width: 580px;
+    width: 100%;
     overflow: hidden;
 }
 
 .hero-slots-scroll .unity-scroll-view__content-container {
-    width: 580px;
+    width: 100%;
 }
 
 .hero-slots {
     flex-shrink: 0;
-    width: 574px;
+    width: 100%;
 }
 
 .hero-slot {
     position: relative;
     flex-grow: 0;
     flex-shrink: 0;
-    width: 574px;
+    width: 100%;
     height: 149px;
     margin: 0;
     padding: 0;
@@ -311,7 +313,7 @@
 
 .hero-scroll-button {
     position: absolute;
-    left: 1269px;
+    right: 20.85%;
     width: 64px;
     height: 48px;
     margin: 0;
