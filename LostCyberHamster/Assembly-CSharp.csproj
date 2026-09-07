@@ -329,6 +329,7 @@
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\InitGameUiLoadingTask.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Core\QuestDefinition.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiHamsterStateMechanics.cs" />
+    <Compile Include="Assets\Scripts\Online\GameNetworkFacade.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpPlanning\JumpPlanningConstants.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\PauseModalController.cs" />
     <Compile Include="Assets\Scripts\UI\Common\IScreenController.cs" />
@@ -444,6 +445,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RunScoreMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofStrategy.cs" />
     <Compile Include="Assets\Scripts\UI\Common\LocalSaveFeedback.cs" />
+    <Compile Include="Assets\Scripts\DevTools\Networking\NetworkingDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\PlannedAction.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\SuperFallbackActionDeduplicator.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameSceneEntryPoint.cs" />

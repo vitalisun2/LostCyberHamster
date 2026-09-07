@@ -19,6 +19,7 @@ namespace GameAds
         private const double PreparationSeconds = 15;
         private static RewardedAdService _instance;
         private readonly IRewardedAdProvider _provider;
+        private readonly GameNetworkFacade _network;
         private readonly IDisposable _registration;
         private RewardedAdRequest _active;
         private string _recoveredProfile;
@@ -36,7 +37,7 @@ namespace GameAds
             {
                 if (_instance != null)
                     return _instance;
-                _instance = new RewardedAdService(new UnityRewardedAdProvider());
+                _instance = new RewardedAdService(GameNetworkFacade.Instance);
                 var host = new GameObject(nameof(RewardedAdLifecycle));
                 UnityEngine.Object.DontDestroyOnLoad(host);
                 host.AddComponent<RewardedAdLifecycle>().Service = _instance;
@@ -44,19 +45,23 @@ namespace GameAds
             }
         }
 
-        private RewardedAdService(IRewardedAdProvider provider)
+        private RewardedAdService(GameNetworkFacade network)
         {
-            _provider = provider;
+            _network = network;
+            _provider = network;
+            _network.NetworkModeChanged += OnNetworkModeChanged;
             _lastReachability = Application.internetReachability;
             _registration = OnlineServicesCoordinator.Register(OnlineJob, InitializeAsync,
-                () => _provider.IsSupported && !_provider.IsInitialized);
+                () => !_network.IsForcedOffline && _provider.IsSupported && !_provider.IsInitialized);
         }
 
         public bool IsBusy => _active != null;
         public bool CanRequest => !IsBusy && CanPersistRewards &&
             !GameDataManager.IsProfileReplacementBlocked && !AccountTransitionScope.IsActive &&
             _recoveredProfile == CurrentProfileKey && _provider.IsSupported &&
-            (_provider.HasLoadedAd || Application.internetReachability != NetworkReachability.NotReachable);
+            (_provider.HasLoadedAd || CanLoadFromNetwork);
+        private bool CanLoadFromNetwork => !_network.IsForcedOffline &&
+            Application.internetReachability != NetworkReachability.NotReachable;
         public RewardedAdRequest ActiveRequest => _active;
         private static string CurrentProfileKey => GameDataManager.ProfileId + ":" + GameDataManager.Generation;
         private static bool CanPersistRewards
@@ -88,13 +93,26 @@ namespace GameAds
                     return "ads_unavailable";
                 if (CanPersistRewards && _recoveredProfile != CurrentProfileKey)
                     return "ads_saving_reward";
-                if (!_provider.HasLoadedAd && Application.internetReachability == NetworkReachability.NotReachable)
+                if (!_provider.HasLoadedAd && !CanLoadFromNetwork)
                     return "ads_offline";
                 return _lastStatus;
             }
         }
 
         public void RequestInitialization() => OnlineServicesCoordinator.RequestRetry(OnlineJob);
+
+        /// <summary>Останавливает только подготовку; native-показ и сохранение награды завершаются штатно.</summary>
+        private void OnNetworkModeChanged()
+        {
+            if (_network.IsForcedOffline && _active != null &&
+                (_active.State == RewardedAdState.Preparing || _active.State == RewardedAdState.Loading))
+            {
+                Finish(_active, RewardedAdState.Cancelled, "ads_offline");
+                return;
+            }
+            _lastStatus = string.Empty;
+            Notify();
+        }
 
         private async Task InitializeAsync()
         {
@@ -456,6 +474,7 @@ namespace GameAds
 
         internal void Shutdown()
         {
+            _network.NetworkModeChanged -= OnNetworkModeChanged;
             _registration.Dispose();
             _active?.ProfileBlock?.Dispose();
             _active = null;
@@ -463,5 +482,8 @@ namespace GameAds
             if (_instance == this)
                 _instance = null;
         }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Reset() => _instance?.Shutdown();
     }
 }

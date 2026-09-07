@@ -1,6 +1,7 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Assets.Scripts.Account;
 using Assets.Scripts.DevTools.Core;
+using Assets.Scripts.DevTools.ExperienceProgressTesting;
 using UnityEngine;
 using Zenject;
 
@@ -23,6 +24,8 @@ namespace Assets.Scripts.DevTools
         {
             _shell?.Tick();
         }
+
+        private void OnDestroy() => ExperienceProgressTestRunner.Shared.HandlePlayModeStopped();
     }
 }
 #endif

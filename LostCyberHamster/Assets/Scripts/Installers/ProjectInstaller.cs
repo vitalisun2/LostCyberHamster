@@ -1,4 +1,6 @@
 using Assets.Scripts.Account;
+using Assets.Scripts.Online;
+using GameAds;
 using GameManagement.CloudSave;
 using GameManagement.CloudSave.Gateway;
 using GameManagement.CloudSave.Version;
@@ -21,19 +23,22 @@ namespace Assets.Scripts.Installers
         /// </summary>
         public override void InstallBindings()
         {
+            var network = GameNetworkFacade.Instance;
+            Container.Bind<GameNetworkFacade>().FromInstance(network).AsSingle();
+            Container.Bind<IRewardedAdProvider>().FromInstance(network).AsSingle();
             // Регистрируем шлюзы и сервис управления аккаунтом игрока.
             Container.Bind<IAccountAuthenticationGateway>()
-                .To<UnityAccountAuthenticationGateway>()
+                .FromInstance(network)
                 .AsSingle();
             Container.Bind<IUnityPlayerAccountGateway>()
-                .To<UnityPlayerAccountGateway>()
+                .FromInstance(network)
                 .AsSingle();
             Container.BindInterfacesAndSelfTo<AccountService>().AsSingle();
             Container.Bind<ExistingAccountRestoreCoordinator>().AsSingle();
 
             // Подключаем облачную синхронизацию.
             Container.Bind<ICloudSaveGateway>()
-                .To<UnityCloudSaveGateway>()
+                .FromInstance(network)
                 .AsSingle();
             Container.Bind<ICloudSaveVersionStore>()
                 .To<CloudSaveVersionStore>()

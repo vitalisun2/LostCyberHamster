@@ -67,3 +67,7 @@
 После восстановления проверить `docker ps`, порт и restart policy нужного контейнера, затем `getMe` и `getChat` из настроенного Telegram helper. Сохранившийся контейнер использовать повторно. APK отправлять по точному пути из build summary; сохранять подтверждённый `message_id`, размер и buildId рядом с артефактом.
 
 При диагностике процессов выводить PID, имя и путь executable. Полная command line дочернего Unity CLI может содержать временный access token.
+
+## Совместимость Unity CLI и Pipeline
+
+Если CLI находит Editor, но выполнение возвращает `too old to parse command lines`, проверить версию Pipeline через `unity pipeline list` и точный projectPath через MCP `editor_status`. В установленной паре CLI 1.0.0.20008 / Pipeline 0.5.0-exp.1 существующая операция `RegenerateProjectFiles` успешно вызывается через MCP `eval` и reflection к проектному command-классу. Это тот же `regenerate_project_files`; затем выполняется обычный `dotnet build --no-restore`. Обновление пакетов оформляется отдельной задачей.

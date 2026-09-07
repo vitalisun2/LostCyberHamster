@@ -38,6 +38,7 @@ namespace GameManagement.CloudSave
             PlayerProgressLifecycleCheckpoint.ApplicationResumed += OnApplicationResumed;
             GameDataManager.ProfileChanged += OnProfileChanged;
             _conflictService.ConflictResolved += OnConflictResolved;
+            GameNetworkFacade.Instance.NetworkModeChanged += NotifyStatusChanged;
         }
 
         public event Action<CloudSyncStatusEnum> StatusChanged;
@@ -55,6 +56,9 @@ namespace GameManagement.CloudSave
             get
             {
                 if (HasUnresolvedConflict) return CloudSyncStatusEnum.Conflict;
+                if (GameNetworkFacade.Instance.IsForcedOffline)
+                    return _accountService.HasKnownLinkedIdentity || _accountService.TryGetLinkedPlayerId(out _)
+                        ? CloudSyncStatusEnum.Pending : CloudSyncStatusEnum.LocalOnly;
                 if (_isSynchronizationActive) return CloudSyncStatusEnum.Synchronizing;
                 if (!_accountService.TryGetLinkedPlayerId(out _))
                     return _accountService.HasKnownLinkedIdentity ? CloudSyncStatusEnum.Pending : CloudSyncStatusEnum.LocalOnly;
@@ -63,7 +67,7 @@ namespace GameManagement.CloudSave
             }
         }
 
-        private bool CanSynchronize() => !_isDisposed && GameDataManager.IsLoaded &&
+        private bool CanSynchronize() => !_isDisposed && !GameNetworkFacade.Instance.IsForcedOffline && GameDataManager.IsLoaded &&
             OnlineServicesCoordinator.UnityServicesReady && _accountService.TryGetLinkedPlayerId(out _) &&
             !_conflictService.IsResolutionActive && !GameDataManager.IsProfileReplacementBlocked;
 
@@ -320,6 +324,7 @@ namespace GameManagement.CloudSave
             PlayerProgressLifecycleCheckpoint.ApplicationResumed -= OnApplicationResumed;
             GameDataManager.ProfileChanged -= OnProfileChanged;
             _conflictService.ConflictResolved -= OnConflictResolved;
+            GameNetworkFacade.Instance.NetworkModeChanged -= NotifyStatusChanged;
         }
     }
 }

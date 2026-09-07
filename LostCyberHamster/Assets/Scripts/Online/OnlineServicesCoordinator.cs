@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Services.Core;
-using Unity.Services.Core.Environments;
 using UnityEngine;
 using Vues.GameCore;
 
@@ -45,8 +44,8 @@ namespace Assets.Scripts.Online
         public static void StartUnityServices()
         {
             if (Jobs.ContainsKey("ugs")) return;
-            Register("ugs", () => UnityServices.InitializeAsync(
-                new InitializationOptions().SetEnvironmentName(EnvironmentName)), () => !UnityServicesReady);
+            Register("ugs", () => GameNetworkFacade.Instance.InitializeUnityServicesAsync(),
+                () => !UnityServicesReady && !GameNetworkFacade.Instance.IsForcedOffline);
         }
 
         internal static void Tick()

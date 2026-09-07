@@ -96,12 +96,9 @@ namespace LostCyberHamster.UI
 
         protected override ScreenEnum _screenAssetName => ScreenEnum.LeaderboardScreen;
 
-        public LeaderboardScreenController(
-            UIDocument uiDocument,
-            LeaderboardService leaderboardService)
+        public LeaderboardScreenController(UIDocument uiDocument)
             : base(uiDocument)
         {
-            if (leaderboardService == null) throw new ArgumentNullException(nameof(leaderboardService));
         }
 
         /// <summary>

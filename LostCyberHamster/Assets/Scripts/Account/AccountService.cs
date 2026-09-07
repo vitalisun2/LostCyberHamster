@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 using Assets.Scripts.Online;
@@ -127,7 +128,7 @@ namespace Assets.Scripts.Account
         public async Task<AccountLinkResult> LinkCurrentGuestAsync()
         {
             // Привязка доступна только для подтверждённой гостевой сессии.
-            if (State != AccountState.Guest || GameDataManager.IsProfileReplacementBlocked)
+            if (GameNetworkFacade.Instance.IsForcedOffline || State != AccountState.Guest || GameDataManager.IsProfileReplacementBlocked)
                 return AccountLinkResult.Failed;
             using var transition = _transition = new AccountTransitionScope();
 
@@ -142,7 +143,7 @@ namespace Assets.Scripts.Account
                 var accessToken = await _playerAccountGateway.SignInAsync();
                 if (resolutionVersion != _resolutionVersion)
                     return AccountLinkResult.Failed;
-                if (GameDataManager.IsProfileReplacementBlocked)
+                if (GameNetworkFacade.Instance.IsForcedOffline || GameDataManager.IsProfileReplacementBlocked)
                 {
                     SetState(AccountState.Guest);
                     return AccountLinkResult.Failed;
@@ -202,7 +203,7 @@ namespace Assets.Scripts.Account
             Func<string, Task<bool>> acceptSignedInAccountAsync)
         {
             // Переключение доступно только из подтверждённой гостевой сессии.
-            if (State != AccountState.Guest || GameDataManager.IsProfileReplacementBlocked)
+            if (GameNetworkFacade.Instance.IsForcedOffline || State != AccountState.Guest || GameDataManager.IsProfileReplacementBlocked)
                 return false;
             using var transition = _transition = new AccountTransitionScope();
 
@@ -231,7 +232,7 @@ namespace Assets.Scripts.Account
                 if (string.IsNullOrWhiteSpace(accessToken))
                     throw new InvalidOperationException("Unity Player Account access token is unavailable.");
 
-                if (GameDataManager.IsProfileReplacementBlocked)
+                if (GameNetworkFacade.Instance.IsForcedOffline || GameDataManager.IsProfileReplacementBlocked)
                 {
                     SetState(AccountState.Guest);
                     return false;
@@ -322,6 +323,7 @@ namespace Assets.Scripts.Account
         public Task EnsureSessionAsync()
         {
             if (_resolutionTask != null && !_resolutionTask.IsCompleted) return _resolutionTask;
+            if (GameNetworkFacade.Instance.IsForcedOffline) return Task.CompletedTask;
             if (State == AccountState.Linking || State == AccountState.SigningIn) return Task.CompletedTask;
             PrepareDurableProfile();
             _knownPlayerId ??= GameDataManager.OwnerPlayerId;
@@ -427,101 +429,76 @@ namespace Assets.Scripts.Account
         }
 
         /// <summary>
-        /// Отвязывает Unity Player Account от текущего связанного аккаунта и очищает локальные сессии.
+        /// Отвязывает текущую подтверждённую сессию и очищает credentials только после ответа сервера.
         /// </summary>
         public async Task FullResetTestAccountAsync()
         {
+            if (GameNetworkFacade.Instance.IsForcedOffline)
+                throw new IOException("Game network requests are disabled for testing.");
             if (!TryGetLinkedPlayerId(out var linkedPlayerId))
                 throw new InvalidOperationException("Full reset requires a linked account.");
+            if (AccountTransitionScope.IsActive || GameDataManager.IsProfileReplacementBlocked)
+                throw new InvalidOperationException("Account transition is temporarily blocked.");
 
-            // Фиксируем операцию и этапы частичного сброса.
+            // Сохраняем текущую identity до подтверждения unlink и исключаем параллельную смену аккаунта.
+            using var transition = _transition = new AccountTransitionScope();
             var resolutionVersion = ++_resolutionVersion;
-            var localUgsIdentityCleared = false;
+            var profileGeneration = GameDataManager.Generation;
+            var profileOwner = GameDataManager.OwnerPlayerId;
+            var unlinkRequested = false;
             var serverAccountUnlinked = false;
-            Debug.Log("[Account] Full reset started. Resolving Player Accounts session.");
+            var cleanupStarted = false;
+            SetState(AccountState.SigningIn);
 
             try
             {
-                // Получаем действующий access token до очистки локальной identity гостя.
-                var accessToken = await _playerAccountGateway.SignInAsync();
-                if (resolutionVersion != _resolutionVersion)
-                    throw new OperationCanceledException("Account operation was invalidated.");
-                if (string.IsNullOrWhiteSpace(accessToken))
-                    throw new InvalidOperationException("Unity Player Account access token is unavailable.");
-
-                Debug.Log("[Account] Full reset stage: Player Accounts access token acquired.");
-
-                // Очищаем только UGS identity, сохраняя Player Accounts session для серверного входа.
-                try
-                {
-                    _authenticationGateway.SignOutAndClearLocalCredentials();
-                    localUgsIdentityCleared = true;
-                }
-                catch (Exception exception)
-                {
-                    SetState(AccountState.Error);
-                    Debug.LogError($"[Account] Full reset failed at Unity Authentication sign-out. Error type: {exception.GetType().Name}.");
-                    throw;
-                }
-
-                SetState(AccountState.Resolving);
-                Debug.Log("[Account] Full reset stage: local UGS identity cleared.");
-
-                // Входим именно в серверный аккаунт-владелец и проверяем его связь.
-                await _authenticationGateway.SignInWithUnityAsync(accessToken);
+                // Авторизованный SDK удаляет связь именно текущего владельца; повторный вход не требуется.
+                if (GameNetworkFacade.Instance.IsForcedOffline)
+                    throw new IOException("Game network requests are disabled for testing.");
                 EnsureCurrentOperation(resolutionVersion);
+                if (!IsLinkedPlayerSession(linkedPlayerId))
+                    throw new InvalidOperationException("Linked account changed before reset.");
+                if (GameDataManager.Generation != profileGeneration || GameDataManager.OwnerPlayerId != profileOwner)
+                    throw new OperationCanceledException("Local profile changed before reset.");
 
-                if (!_authenticationGateway.IsSignedIn ||
-                    !_authenticationGateway.IsUnityPlayerAccountLinked ||
-                    !string.Equals(
-                        _authenticationGateway.PlayerId,
-                        linkedPlayerId,
-                        StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException("Signed-in account does not match the current linked account.");
-                }
-
-                Debug.Log("[Account] Full reset stage: linked server account verified.");
-
-                // Удаляем только связь, затем снова очищаем локальную identity.
+                // Ответ уже отправленного запроса принимается и после включения ForceOffline.
+                unlinkRequested = true;
                 await _authenticationGateway.UnlinkUnityAsync();
                 serverAccountUnlinked = true;
                 EnsureCurrentOperation(resolutionVersion);
+                if (_authenticationGateway.PlayerId != linkedPlayerId || GameDataManager.Generation != profileGeneration ||
+                    GameDataManager.OwnerPlayerId != profileOwner)
+                    throw new OperationCanceledException("Account changed during reset.");
 
-                Debug.Log("[Account] Full reset stage: Unity Player Account unlinked.");
+                // Подтверждённый unlink разрешает финальную локальную очистку.
+                cleanupStarted = true;
                 ClearLocalAccountState();
-                Debug.Log("[Account] Full reset completed. Server link and local account state cleared.");
+                DebugManager.DiagStability("[ACCOUNT] Full reset confirmed; local credentials cleared.");
             }
             catch (Exception exception)
             {
-                // После очистки UGS identity завершаем локальную очистку при любой ошибке.
-                if (localUgsIdentityCleared)
+                // Потерянный ответ не доказывает unlink. Сохраняем credentials для проверки той же identity.
+                if (resolutionVersion == _resolutionVersion && !serverAccountUnlinked)
                 {
-                    try
+                    if (unlinkRequested && _authenticationGateway.PlayerId == linkedPlayerId)
                     {
-                        ClearLocalAccountState();
+                        try { _authenticationGateway.SignOutPreservingCredentials(); }
+                        catch (Exception signOutException)
+                        {
+                            DebugManager.DiagStability($"[ACCOUNT] Reset session refresh deferred: {signOutException.GetType().Name}.");
+                        }
                     }
-                    catch (Exception cleanupException)
-                    {
-                        Debug.LogError($"[Account] Full reset failure cleanup failed. Error type: {cleanupException.GetType().Name}.");
-                    }
-
-                    SetState(AccountState.Error);
+                    SetState(!unlinkRequested && IsLinkedPlayerSession(linkedPlayerId)
+                        ? AccountState.Linked : AccountState.Error);
+                    OnlineServicesCoordinator.RequestRetry("account");
                 }
-
-                if (serverAccountUnlinked)
-                    Debug.LogError("[Account] Full reset partially completed: server link removed, but local completion failed.");
-
-                // Разделяем отмену устаревшей операции и фактическую ошибку сброса.
-                if (exception is OperationCanceledException)
+                else if (resolutionVersion == _resolutionVersion && !cleanupStarted)
                 {
-                    Debug.LogWarning($"[Account] Full reset cancelled. Local UGS identity cleared: {localUgsIdentityCleared}.");
-                }
-                else
-                {
-                    Debug.LogError($"[Account] Full reset failed. Local UGS identity cleared: {localUgsIdentityCleared}. Error type: {exception.GetType().Name}.");
+                    // Сервер подтвердил unlink, но профиль уже изменился: его credentials остаются на месте.
+                    SetState(IsOriginalGuestSession(linkedPlayerId) ? AccountState.Guest : AccountState.Error);
                 }
 
+                DebugManager.DiagStability($"[ACCOUNT] Full reset incomplete; serverConfirmed={serverAccountUnlinked}; error={exception.GetType().Name}.");
                 throw;
             }
         }

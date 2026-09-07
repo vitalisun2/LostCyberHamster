@@ -41,12 +41,16 @@ namespace Assets.Scripts.DevTools.Root
                 DevToolsTheme.Navigation,
                 () => ResourcesRequested?.Invoke(),
                 DevToolsTheme.PrimaryButtonHeight);
+            ui.CreateButton(
+                "NetworkingButton", content, "Networking", DevToolsTheme.Navigation,
+                () => NetworkingRequested?.Invoke(), DevToolsTheme.PrimaryButtonHeight);
             page.SetActive(true);
         }
 
         public event Action AccountRequested;
         public event Action GameplayRequested;
         public event Action ResourcesRequested;
+        public event Action NetworkingRequested;
 
         public GameObject RootObject => _rootObject;
 

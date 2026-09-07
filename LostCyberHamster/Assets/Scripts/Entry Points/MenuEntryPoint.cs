@@ -4,7 +4,6 @@ using Assets.Scripts.Account;
 using GameAds;
 using GameManagement;
 using GameManagement.CloudSave;
-using GameManagement.Leaderboard;
 using LostCyberHamster.UI;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -55,9 +54,7 @@ namespace Assets.Scripts.Entry_Points
                 requestedScreen == ScreenEnum.LeaderboardScreen &&
                 !string.IsNullOrWhiteSpace(leaderboardLocationId) &&
                 !string.IsNullOrWhiteSpace(leaderboardPartId);
-            var leaderboardScreenController = new LeaderboardScreenController(
-                _uiDocument,
-                new LeaderboardService());
+            var leaderboardScreenController = new LeaderboardScreenController(_uiDocument);
             if (openLeaderboard)
             {
                 leaderboardScreenController.SetInitialSelection(

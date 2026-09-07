@@ -1,7 +1,7 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Assets.Scripts.System;
 using GameManagement;
 using GameManagement.Leaderboard;
@@ -40,8 +40,10 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
         private const int MaxRandomRunScore = 100;
         private const string ConsoleLogTag = "[XP/Level Progress Testing]";
 
-        private readonly LeaderboardService _leaderboardService = new();
-        private readonly PlayerExperienceService _playerExperienceService = new();
+        private readonly Dictionary<string, (LevelProgress Level, int StarsExperience,
+            PlayerExperienceSnapshot BeforeCompletion, string Owner, string Profile, long Generation)> _trackedRuns = new();
+        private WeeklyLeaderboardCoordinator _coordinator;
+        private int _operationVersion;
 
         private bool _isBusy;
         private int? _preparedRunScore;
@@ -99,6 +101,10 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
 
             // Фиксируем target и блокируем команды на время чтения реального leaderboard.
             _isBusy = true;
+            var operationVersion = ++_operationVersion;
+            var owner = GameDataManager.OwnerPlayerId;
+            var profile = GameDataManager.ProfileId;
+            var generation = GameDataManager.Generation;
             SetStatus(
                 $"Читается weekly best для {FormatLevel(targetLevel)}.");
 
@@ -106,9 +112,10 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
             {
                 // Готовим новый рекорд для location + part of day target-уровня.
                 var progressKey = CreateProgressKey(targetLevel);
-                var weeklyBest =
-                    await _leaderboardService
-                        .GetPlayerWeeklyBestRunScoreAsync(progressKey);
+                var coordinator = EnsureCoordinator();
+                var results = await coordinator.GetResultsAsync(progressKey.LocationId, progressKey.PartOfDayId);
+                if (!IsCurrentOperation(operationVersion, owner, profile, generation)) return;
+                var weeklyBest = results.CurrentPlayer == null ? 0 : checked((int)results.CurrentPlayer.Score);
                 _preparedRunScore = checked(weeklyBest + 10);
                 SetStatus(
                     $"New record prepared: {_preparedRunScore.Value}. " +
@@ -116,17 +123,21 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
             }
             catch (Exception exception)
             {
+                if (!IsCurrentOperation(operationVersion, owner, profile, generation)) return;
                 SetStatus($"Ошибка: {exception.Message}", LogType.Error);
             }
             finally
             {
-                _isBusy = false;
-                Changed?.Invoke();
+                if (operationVersion == _operationVersion)
+                {
+                    _isBusy = false;
+                    Changed?.Invoke();
+                }
             }
         }
 
         /// <summary>Тихо завершает target с тремя звёздами и подготовленным либо случайным score.</summary>
-        public async void CompleteNextLevel()
+        public void CompleteNextLevel()
         {
             if (!CanCompleteNextLevel ||
                 !TryGetTargetLevel(out var level))
@@ -146,6 +157,11 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
 
             try
             {
+                // Контекст серверной недели относится к началу этой попытки, включая офлайн.
+                var coordinator = EnsureCoordinator();
+                var context = coordinator.CaptureRunContext(CreateProgressKey(level));
+                if (context == null)
+                    throw new InvalidOperationException("Контекст недельного результата ещё не готов.");
                 // Запоминаем XP до штатных rewards.
                 var beforeCompletion = CapturePlayerExperience();
 
@@ -164,40 +180,13 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                     afterStars);
                 UIManager.OnRepaintScreen?.Invoke();
 
-                // Штатный leaderboard сервис проверяет record; реальный XP сервис выдаёт reward.
-                var progressKey = CreateProgressKey(level);
-                var submission =
-                    await _leaderboardService.SubmitSuccessfulRunAsync(
-                        progressKey,
-                        runScore);
-                var recordExperienceReward = 0;
-                if (submission.IsNewRecord)
-                {
-                    var currentPlayerData = GameDataManager.PlayerData ??
-                        throw new InvalidOperationException(
-                            "Player data недоступны после проверки record.");
-                    var beforeRecordReward = CapturePlayerExperience();
-                    _playerExperienceService
-                        .GrantExperienceForWeeklyLeaderboardRecord(
-                            currentPlayerData);
-                    PlayerProgressCommitter.Commit(
-                        CheckpointReason.WeeklyLeaderboardRecordRewarded);
-                    var afterRecordReward = CapturePlayerExperience();
-                    recordExperienceReward = CalculateGrantedExperience(
-                        beforeRecordReward,
-                        afterRecordReward);
-                }
-
-                var afterCompletion = CapturePlayerExperience();
-                UIManager.OnRepaintScreen?.Invoke();
-                SetStatus(
-                    BuildCompletedStatus(
-                        level,
-                        submission,
-                        starsExperienceReward,
-                        recordExperienceReward,
-                        beforeCompletion,
-                        afterCompletion));
+                // Production FIFO сохраняет запись локально и сама применяет подтверждённый XP.
+                var run = coordinator.QueueSuccessfulRun(context, runScore);
+                if (run == null)
+                    throw new InvalidOperationException("Уровень сохранён; контекст результата сменился до постановки в очередь.");
+                _trackedRuns[run.RunId] = (level, starsExperienceReward, beforeCompletion,
+                    context.OwnerPlayerId, context.ProfileId, context.Generation);
+                HandleRunChanged(run);
             }
             catch (Exception exception)
             {
@@ -218,6 +207,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
         /// <summary>Сбрасывает transient-статус после остановки Play Mode.</summary>
         public void HandlePlayModeStopped()
         {
+            ClearSubscriptions();
             _isBusy = false;
             ResetTarget();
             SetStatus("Play Mode остановлен.");
@@ -226,8 +216,70 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
         /// <summary>Обновляет transient-статус после запуска Play Mode.</summary>
         public void HandlePlayModeStarted()
         {
+            ClearSubscriptions();
+            _isBusy = false;
             ResetTarget();
             SetStatus("Play Mode готов. Откройте Main Menu.");
+        }
+
+        /// <summary>Подписывает DEV-экран на тот же coordinator, который обрабатывает обычные забеги.</summary>
+        private WeeklyLeaderboardCoordinator EnsureCoordinator()
+        {
+            var coordinator = WeeklyLeaderboardCoordinator.Instance ??
+                throw new InvalidOperationException("Очередь недельных результатов ещё не готова.");
+            if (_coordinator == coordinator) return coordinator;
+
+            // Замена runtime-сессии освобождает старый источник событий.
+            if (_coordinator != null) _coordinator.RunChanged -= HandleRunChanged;
+            _trackedRuns.Clear();
+            _coordinator = coordinator;
+            _coordinator.RunChanged += HandleRunChanged;
+            GameDataManager.ProfileChanged -= HandleProfileChanged;
+            GameDataManager.ProfileChanged += HandleProfileChanged;
+            return coordinator;
+        }
+
+        /// <summary>Отражает статус конкретного runId и только уже сохранённое начисление XP.</summary>
+        private void HandleRunChanged(WeeklyLeaderboardRun run)
+        {
+            if (run == null || !_trackedRuns.TryGetValue(run.RunId, out var tracked)) return;
+            if (!Application.isPlaying || GameDataManager.OwnerPlayerId != tracked.Owner ||
+                GameDataManager.ProfileId != tracked.Profile || GameDataManager.Generation != tracked.Generation)
+            {
+                _trackedRuns.Remove(run.RunId);
+                return;
+            }
+
+            // Receipt принадлежит production checkpoint; DEV tool только читает его.
+            var rewardApplied = GameDataManager.PlayerData.AppliedWeeklyRewardRunIds.Contains(run.RunId);
+            SetStatus(BuildCompletedStatus(tracked.Level, run, tracked.StarsExperience, rewardApplied,
+                tracked.BeforeCompletion, CapturePlayerExperience()));
+            UIManager.OnRepaintScreen?.Invoke();
+            if (run.Status == WeeklyRunStatus.LocalOnly || run.Status == WeeklyRunStatus.NotImproved ||
+                run.Status == WeeklyRunStatus.Expired || run.Status == WeeklyRunStatus.Unconfirmed || rewardApplied)
+                _trackedRuns.Remove(run.RunId);
+        }
+
+        private bool IsCurrentOperation(int version, string owner, string profile, long generation) =>
+            Application.isPlaying && version == _operationVersion && GameDataManager.OwnerPlayerId == owner &&
+            GameDataManager.ProfileId == profile && GameDataManager.Generation == generation;
+
+        private void HandleProfileChanged()
+        {
+            ++_operationVersion;
+            _trackedRuns.Clear();
+            _isBusy = false;
+            ResetTarget();
+            SetStatus("Профиль изменён. Выберите следующую проверку.");
+        }
+
+        private void ClearSubscriptions()
+        {
+            ++_operationVersion;
+            if (_coordinator != null) _coordinator.RunChanged -= HandleRunChanged;
+            _coordinator = null;
+            GameDataManager.ProfileChanged -= HandleProfileChanged;
+            _trackedRuns.Clear();
         }
 
         private bool TryGetTargetLevel(
@@ -331,9 +383,9 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
 
         private static string BuildCompletedStatus(
             LevelProgress level,
-            LeaderboardSubmissionResult submission,
+            WeeklyLeaderboardRun run,
             int starsExperienceReward,
-            int recordExperienceReward,
+            bool recordRewardApplied,
             PlayerExperienceSnapshot beforeCompletion,
             PlayerExperienceSnapshot afterCompletion)
         {
@@ -342,21 +394,24 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                 $"Level Completed: {FormatLevel(level, includeAddress: false)}\n\n" +
                 $"1. 3 Stars Earned — +{starsExperienceReward} XP";
 
-            // Добавляем record только после подтверждения реальным leaderboard.
-            if (submission.IsNewRecord)
+            // Состояние доставки отделено от уже применённого игрового вознаграждения.
+            var weeklyStatus = run.Status switch
             {
-                result +=
-                    "\n2. Weekly Record Updated: " +
-                    $"{submission.PreviousWeeklyBestRunScore} → " +
-                    $"{submission.WeeklyBestRunScore} — " +
-                    $"+{recordExperienceReward} XP";
-            }
+                WeeklyRunStatus.Pending => "Ожидает отправки",
+                WeeklyRunStatus.AwaitingLocalSave => "Ожидает повторной записи на устройство",
+                WeeklyRunStatus.LocalOnly => "Только на устройстве: серверная неделя до попытки неизвестна",
+                WeeklyRunStatus.ConfirmedImprovement => "Рекорд подтверждён",
+                WeeklyRunStatus.NotImproved => "Прежний рекорд не улучшен",
+                WeeklyRunStatus.Expired => "Исходная серверная неделя завершилась",
+                WeeklyRunStatus.Unconfirmed => "Подтверждение отправки не доказано",
+                _ => run.Status.ToString()
+            };
+            result += $"\n2. Weekly: {weeklyStatus}\nRun ID: {run.RunId}" +
+                      $"\nXP за рекорд: {(recordRewardApplied ? "начислен, receipt сохранён" : "не начислен")}";
 
-            // Завершаем ledger суммой причин и реальным состоянием Player Level/XP.
-            var totalExperienceReward = checked(
-                starsExperienceReward + recordExperienceReward);
+            // Между callbacks могли пройти другие действия; показываем текущее состояние без ложной суммы.
             return result +
-                   $"\nTotal: +{totalExperienceReward} XP\n\n" +
+                   "\n\n" +
                    $"Player Level {beforeCompletion.PlayerLevel}, " +
                    $"{beforeCompletion.ExperiencePoints} XP → " +
                    $"Player Level {afterCompletion.PlayerLevel}, " +

@@ -3,9 +3,11 @@ using Assets.Scripts.Account;
 using Assets.Scripts.DevTools.Account;
 using Assets.Scripts.DevTools.GameProgressTesting;
 using Assets.Scripts.DevTools.Gameplay;
+using Assets.Scripts.DevTools.Networking;
 using Assets.Scripts.DevTools.Root;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.System;
+using Assets.Scripts.Online;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -28,7 +30,7 @@ namespace Assets.Scripts.DevTools.Core
         private const float _baseOpenButtonTopOffset = 80f;
         private const float _baseHeaderHeight = 40f;
         private const float _baseRootPanelWidth = 300f;
-        private const float _baseRootPanelHeight = 270f;
+        private const float _baseRootPanelHeight = 270f + DevToolsTheme.PrimaryButtonHeight + DevToolsTheme.ContentSpacing;
         private const float _baseFeaturePanelWidth = 540f;
         private const float _baseFeaturePanelHeight = 569f;
         private const float _baseMinimumPanelWidth = 300f;
@@ -43,6 +45,8 @@ namespace Assets.Scripts.DevTools.Core
         private readonly GameObject _host;
         private readonly GameObject _openButtonObject;
         private readonly RectTransform _openButtonRect;
+        private readonly Text _openButtonText;
+        private readonly Image _openButtonImage;
         private readonly GameObject _panelObject;
         private readonly RectTransform _panelRect;
         private readonly RectTransform _dragHandleRect;
@@ -56,6 +60,7 @@ namespace Assets.Scripts.DevTools.Core
         private readonly AccountDevToolsScreen _accountScreen;
         private readonly GameplayDevToolsScreen _gameplayScreen;
         private readonly ResourcesDevToolsScreen _resourcesScreen;
+        private readonly NetworkingDevToolsScreen _networkingScreen;
 
         private GameObject _ownedEventSystemObject;
         private GameManager _pausedGameManager;
@@ -67,6 +72,7 @@ namespace Assets.Scripts.DevTools.Core
         private bool _layoutWasFeatureScreen;
         private Vector2 _panelTopLeft;
         private Vector2 _panelSize;
+        private bool? _displayedOffline;
 
         public DevToolsOverlayShell(GameObject host, AccountService accountService)
         {
@@ -97,6 +103,8 @@ namespace Assets.Scripts.DevTools.Core
                 _baseHeaderHeight);
             _openButtonObject = openButton.gameObject;
             _openButtonRect = openButton.GetComponent<RectTransform>();
+            _openButtonText = openButton.GetComponentInChildren<Text>();
+            _openButtonImage = openButton.GetComponent<Image>();
 
             _panelObject = new GameObject("Panel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             _panelObject.transform.SetParent(host.transform, false);
@@ -150,6 +158,7 @@ namespace Assets.Scripts.DevTools.Core
                 ShowAccountScreen,
                 ShowGameplayScreen,
                 ShowResourcesScreen,
+                ShowNetworkingScreen,
                 SetTitle);
             _accountScreen = new AccountDevToolsScreen(
                 _panelObject.transform,
@@ -168,6 +177,8 @@ namespace Assets.Scripts.DevTools.Core
                 font,
                 ShowRootScreen,
                 SetTitle);
+            _networkingScreen = new NetworkingDevToolsScreen(
+                _panelObject.transform, font, ShowRootScreen, SetTitle);
 
             Button resizeHandle = ui.CreateButton(
                 "ResizeHandle",
@@ -191,6 +202,7 @@ namespace Assets.Scripts.DevTools.Core
         public void Tick()
         {
             EnsureEventSystem();
+            RefreshNetworkingIndicator();
             ApplyLayout();
             GameProgressTestRunner.Shared.Tick();
             if (_isPanelOpen)
@@ -260,12 +272,24 @@ namespace Assets.Scripts.DevTools.Core
             ActivateScreen(_resourcesScreen, true);
         }
 
+        private void ShowNetworkingScreen() => ActivateScreen(_networkingScreen, true);
+
+        private void RefreshNetworkingIndicator()
+        {
+            bool offline = GameNetworkFacade.Instance.IsForcedOffline;
+            if (_displayedOffline == offline) return;
+            _displayedOffline = offline;
+            _openButtonText.text = offline ? "DEV OFF" : "DEV";
+            _openButtonImage.color = offline ? DevToolsTheme.Danger : _openButtonColor;
+        }
+
         private void ActivateScreen(IDevToolsScreen screen, bool isFeature)
         {
             _rootScreen?.Hide();
             _accountScreen?.Hide();
             _gameplayScreen?.Hide();
             _resourcesScreen?.Hide();
+            _networkingScreen?.Hide();
             _activeScreen = screen;
             _isFeatureScreenOpen = isFeature;
             _backButtonObject?.SetActive(isFeature);
@@ -324,7 +348,7 @@ namespace Assets.Scripts.DevTools.Core
                 _openButtonRect,
                 defaultLeft,
                 openButtonTop,
-                _baseOpenButtonWidth * scale,
+                (_displayedOffline == true ? 96f : _baseOpenButtonWidth) * scale,
                 _baseHeaderHeight * scale);
 
             float availableWidth = Mathf.Max(

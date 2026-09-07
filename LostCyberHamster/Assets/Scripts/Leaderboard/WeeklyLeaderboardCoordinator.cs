@@ -20,7 +20,7 @@ namespace GameManagement.Leaderboard
         private const string LocalRetryKey = "weekly-local-save";
         private readonly AccountService _account;
         private readonly CloudSyncService _cloud;
-        private readonly LeaderboardService _service = new();
+        private readonly GameNetworkFacade _network;
         private readonly PlayerExperienceService _experience = new();
         private readonly Dictionary<string, long> _seasonRequests = new();
         private readonly Dictionary<string, long> _resultsRequests = new();
@@ -34,15 +34,17 @@ namespace GameManagement.Leaderboard
         public static WeeklyLeaderboardCoordinator Instance { get; private set; }
         public event Action<WeeklyLeaderboardRun> RunChanged;
 
-        public WeeklyLeaderboardCoordinator(AccountService account, CloudSyncService cloud)
+        public WeeklyLeaderboardCoordinator(AccountService account, CloudSyncService cloud,
+            GameNetworkFacade network)
         {
             _account = account ?? throw new ArgumentNullException(nameof(account));
             _cloud = cloud ?? throw new ArgumentNullException(nameof(cloud));
+            _network = network ?? throw new ArgumentNullException(nameof(network));
             Instance = this;
             GameDataManager.ProfileChanged += OnProfileChanged;
             _registration = OnlineServicesCoordinator.Register(RetryKey, ProcessAsync, CanRun);
             _localRegistration = OnlineServicesCoordinator.Register(LocalRetryKey, FlushLocalQueueAsync,
-                () => !_disposed && GameDataManager.IsLoaded && _stagedRuns.Count > 0);
+                () => !_disposed && GameDataManager.IsLoaded);
         }
 
         /// <summary>Снимает неизменяемый контекст до старта; неизвестная серверная неделя остаётся локальной.</summary>
@@ -86,6 +88,7 @@ namespace GameManagement.Leaderboard
         private Task FlushLocalQueueAsync()
         {
             FlushLocalQueue();
+            ApplyConfirmedRewards(GameDataManager.OwnerPlayerId);
             return Task.CompletedTask;
         }
 
@@ -157,7 +160,7 @@ namespace GameManagement.Leaderboard
 
             // Читаем версию с обеих сторон сетевой загрузки, чтобы пережить weekly reset.
             var season = await ReadSeasonAsync(owner, profile, generation, board);
-            var results = await _service.GetResultsAsync(locationId, partId);
+            var results = await _network.GetResultsAsync(locationId, partId);
             EnsureCurrentProfile(owner, profile, generation);
             var after = await ReadSeasonAsync(owner, profile, generation, board);
             var currentVersion = ReadJournal(owner).Seasons.FirstOrDefault(item =>
@@ -184,7 +187,10 @@ namespace GameManagement.Leaderboard
 
         private static string Environment => OnlineServicesCoordinator.EnvironmentName;
 
-        private bool CanRun()
+        private bool CanRun() => !_network.IsForcedOffline && CanUseCurrentOwner();
+
+        /// <summary>Проверяет владельца и согласование облака независимо от режима сети.</summary>
+        private bool CanUseCurrentOwner()
         {
             try
             {
@@ -233,7 +239,7 @@ namespace GameManagement.Leaderboard
             }
 
             // Восстанавливаем потерянный ACK по точному runId, score и сохранённой исходной базе.
-            var current = await _service.GetPlayerEntryAsync(run.LeaderboardId);
+            var current = await _network.GetPlayerEntryAsync(run.LeaderboardId);
             EnsureCurrentProfile(run.OwnerPlayerId, profile, generation);
             if (run.SendAttempted && ProvesImprovement(run, current))
             {
@@ -254,7 +260,7 @@ namespace GameManagement.Leaderboard
                 run.SendAttempted = true;
                 UpdateRun(run);
             }
-            var accepted = await _service.SubmitVersionedScoreAsync(run.LeaderboardId, run.Score, run.VersionId,
+            var accepted = await _network.SubmitVersionedScoreAsync(run.LeaderboardId, run.Score, run.VersionId,
                 new WeeklyScoreMetadata
                 {
                     runId = run.RunId, previousBest = run.PreviousBest,
@@ -268,7 +274,7 @@ namespace GameManagement.Leaderboard
                 return;
             }
             EnsureCurrentProfile(run.OwnerPlayerId, profile, generation);
-            current = await _service.GetPlayerEntryAsync(run.LeaderboardId);
+            current = await _network.GetPlayerEntryAsync(run.LeaderboardId);
             EnsureCurrentProfile(run.OwnerPlayerId, profile, generation);
             if (ProvesImprovement(run, current))
                 Complete(run, WeeklyRunStatus.ConfirmedImprovement, run.Score);
@@ -309,6 +315,7 @@ namespace GameManagement.Leaderboard
             run.Status = status;
             run.WeeklyBest = weeklyBest;
             UpdateRun(run);
+            OnlineServicesCoordinator.RequestRetry(LocalRetryKey);
             ApplyConfirmedRewards(run.OwnerPlayerId);
             PublishRun(run);
         }
@@ -316,9 +323,13 @@ namespace GameManagement.Leaderboard
         /// <summary>Начисляет 50 XP и applied runId одной транзакцией, в том числе после выбора старого cloud.</summary>
         private void ApplyConfirmedRewards(string owner)
         {
-            if (GameDataManager.OwnerPlayerId != owner || !CanRun()) return;
+            // Durable-подтверждение принадлежит сохранённому владельцу и не требует действующей сессии.
+            if (_disposed || !GameDataManager.IsLoaded || string.IsNullOrWhiteSpace(owner) ||
+                GameDataManager.OwnerPlayerId != owner || _cloud.HasUnresolvedConflict ||
+                AccountTransitionScope.IsActive || GameDataManager.IsProfileReplacementBlocked) return;
             var pendingRewards = ReadJournal(owner).Runs.Where(run =>
-                run.Environment == Environment && run.Status == WeeklyRunStatus.ConfirmedImprovement &&
+                run.OwnerPlayerId == owner && run.Environment == Environment &&
+                run.Status == WeeklyRunStatus.ConfirmedImprovement &&
                 !GameDataManager.PlayerData.AppliedWeeklyRewardRunIds.Contains(run.RunId)).ToArray();
             if (pendingRewards.Length == 0) return;
 
@@ -364,7 +375,7 @@ namespace GameManagement.Leaderboard
             var key = owner + ":" + board;
             var request = ++_seasonRequestSequence;
             _seasonRequests[key] = request;
-            var season = await _service.GetSeasonAsync(board);
+            var season = await _network.GetSeasonAsync(board);
             EnsureCurrentProfile(owner, profile, generation);
             if (_seasonRequests[key] == request) RememberSeason(owner, board, season);
             return season;
@@ -431,11 +442,15 @@ namespace GameManagement.Leaderboard
 
         private void EnsureCurrentProfile(string owner, string profile, long generation)
         {
-            if (!CanRun() || !IsCurrentProfile(owner, profile, generation))
+            if (!CanUseCurrentOwner() || !IsCurrentProfile(owner, profile, generation))
                 throw new OperationCanceledException("Leaderboard profile changed during the operation.");
         }
 
-        private void OnProfileChanged() => OnlineServicesCoordinator.RequestRetry(RetryKey);
+        private void OnProfileChanged()
+        {
+            OnlineServicesCoordinator.RequestRetry(RetryKey);
+            OnlineServicesCoordinator.RequestRetry(LocalRetryKey);
+        }
 
         public void Dispose()
         {
@@ -443,6 +458,7 @@ namespace GameManagement.Leaderboard
             GameDataManager.ProfileChanged -= OnProfileChanged;
             _registration.Dispose();
             _localRegistration.Dispose();
+            RunChanged = null;
             if (Instance == this) Instance = null;
         }
     }

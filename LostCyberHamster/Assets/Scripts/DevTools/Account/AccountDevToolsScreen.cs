@@ -53,7 +53,7 @@ namespace Assets.Scripts.DevTools.Account
             uiFactory.CreateBodyText(
                 "FullResetDescription",
                 content,
-                "Signs in to the linked server account, removes its Unity Player Account link, then clears local sessions.");
+                "Removes the Unity Player Account link from the current verified session, then clears local sessions.");
             _fullResetButton = uiFactory.CreateButton(
                 "FullResetTestAccountButton",
                 content,
