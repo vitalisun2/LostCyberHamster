@@ -1,6 +1,6 @@
 # Unity CLI в LostCyberHamster
 
-Актуально на 2026-08-26.
+Актуально на 2026-09-07.
 
 ## Решение
 
@@ -31,8 +31,9 @@ Unity CLI состоит из двух слоёв:
 
 - Editor: `6000.2.6f2`.
 - Pipeline требует Unity 6.0 или новее: текущая версия совместима.
-- Unity CLI: `1.0.0-beta.6`, установлен в `PATH`; авторизация активна.
-- `com.unity.pipeline`: `0.5.0-exp.1`, зафиксирован в `Packages/manifest.json`.
+- Unity CLI: `1.0.0-beta.8`, установлен в `PATH`; авторизация активна.
+- `com.unity.pipeline`: `0.6.0-exp.1`, зафиксирован в `Packages/manifest.json`.
+- CLI beta.8 выполняет команды через parser Pipeline 0.6.0+. После обновления проверены `lch_editor_status` и `lch_project_regenerate_files`.
 - Pipeline server запускается автоматически; `status`, `editor_status` и read-only `eval` проверены.
 - Для Codex установлены Unity CLI skill и проектная MCP-конфигурация. MCP-подключение проверено на живом Editor.
 - Семь проектных команд `lch_*` доступны через терминал. Пять базовых команд доступны агенту как MCP tools; после добавления новых tools нужен перезапуск Codex.
