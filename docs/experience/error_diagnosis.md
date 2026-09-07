@@ -13,6 +13,8 @@
 
 **Результат.** Есть code location, фактические значения, причина actual и исключённые альтернативы.
 
+При Zenject `Tried to create multiple instances of ProjectContext` сначала сравнить `HasInstance`, найденные компоненты, их scene и Container. Один осиротевший clone при пустом static instance уже вызывает Assert. Read-only диагностика проверяет Play Mode и HasInstance до обращения к `ProjectContext.Instance`: getter создаёт контекст. Если clone есть только в чистой открытой сцене, восстановить её с диска через Unity и проверить отсутствие clone. Точный источник появления фиксировать только при наличии фактов.
+
 ## Проверить наблюдаемость
 
 **Ситуация.** Тест или automation сообщает об отсутствии события, действия или маркера.
