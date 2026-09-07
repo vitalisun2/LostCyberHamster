@@ -1,6 +1,7 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Assets.Scripts.System;
 using GameManagement;
@@ -125,7 +126,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
             (ActiveQuest.Type != QuestType.PlayerState ||
              CanResetPlayerStateQuest(ActiveQuest));
 
-        public bool CanAdvanceQuestDay =>
+        public bool CanSimulateNextQuestDay =>
             IsReady &&
             !_isBusy;
 
@@ -155,6 +156,23 @@ namespace Assets.Scripts.DevTools.QuestTesting
             IsReady &&
             !_isBusy &&
             ActiveQuest.CanClaimReward;
+
+        public string DeviceLocalTime =>
+            FormatDateTime(QuestManager.DeviceLocalNowForTesting);
+
+        public string QuestLocalTime =>
+            FormatDateTime(QuestManager.QuestLocalNowForTesting);
+
+        public string QuestTimeMode =>
+            QuestManager.HasQuestTimeSimulationForTesting
+                ? $"Смещение: +{QuestManager.SimulatedQuestDayOffsetForTesting} дн."
+                : "Смещение: нет";
+
+        public string DailyGenerationDate =>
+            GameDataManager.PlayerData?.DailyQuestSet?.GenerationDate ?? "—";
+
+        public string StoryGenerationDate =>
+            GameDataManager.PlayerData?.StoryQuestSet?.GenerationDate ?? "—";
 
         private Quest ActiveQuest
         {
@@ -268,21 +286,21 @@ namespace Assets.Scripts.DevTools.QuestTesting
         /// <summary>
         /// Переводит Daily и Story-квесты в следующий суточный период.
         /// </summary>
-        public void AdvanceQuestDay()
+        public void SimulateNextQuestDay()
         {
-            if (!CanAdvanceQuestDay)
+            if (!CanSimulateNextQuestDay)
             {
                 return;
             }
 
             RunAction(
-                "Advance Quest Day",
+                "Simulate Next Quest Day",
                 () =>
                 {
-                    if (!QuestManager.AdvanceQuestDayForTesting())
+                    if (!QuestManager.SimulateNextQuestDayForTesting())
                     {
                         throw new InvalidOperationException(
-                            "Следующий квестовый день не удалось создать.");
+                            "Следующие квестовые сутки не обновили активные наборы.");
                     }
                 });
         }
@@ -376,6 +394,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
         /// </summary>
         public void HandlePlayModeStopped()
         {
+            QuestManager.ResetQuestTimeSimulationForTesting();
             ResetTransientState(
                 "Play Mode остановлен.",
                 "QuestManager недоступен.");
@@ -386,6 +405,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
         /// </summary>
         public void HandlePlayModeStarted()
         {
+            QuestManager.ResetQuestTimeSimulationForTesting();
             ResetTransientState(
                 "Play Mode запущен. Ожидание QuestManager.Init.",
                 "Ожидание QuestManager.Init.");
@@ -1031,6 +1051,13 @@ namespace Assets.Scripts.DevTools.QuestTesting
             return definition.RequiredLevelId == 0
                 ? "любой уровень, "
                 : $"уровень {definition.RequiredLevelId}, ";
+        }
+
+        private static string FormatDateTime(DateTime value)
+        {
+            return value.ToString(
+                "yyyy-MM-dd HH:mm:ss",
+                CultureInfo.InvariantCulture);
         }
 
         private void ResetSelectionState()

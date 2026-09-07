@@ -12,11 +12,19 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
         private static readonly string[] _categoryNames =
             { "Daily", "Story" };
 
-        private const float GenerateButtonWidth = 116f;
-        private const float CommandButtonWidth = 96f;
+        private const float HeaderButtonWidth = 70f;
+        private const float SectionSpacing = 8f;
+        private const float CardSpacing = 4f;
+        private const float SelectorHeight = 24f;
+        private const float ActionButtonHeight = 30f;
+        private const float StateCardMinHeight = 58f;
 
         private readonly Action _repaint;
         private readonly QuestTestRunner _runner;
+        private GUIStyle _sectionTitleStyle;
+        private GUIStyle _captionStyle;
+        private GUIStyle _statusStyle;
+        private GUIStyle _stateStyle;
 
         /// <summary>Подключает страницу к общему runner квестов.</summary>
         public QuestTestingPage(Action repaint)
@@ -35,29 +43,26 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
         {
             DrawHeader(navigateBack);
 
-            // Показываем требования и влияние команд на реальные данные.
             if (!EditorApplication.isPlaying)
             {
                 EditorGUILayout.HelpBox(
                     "Тест доступен только в Play Mode. Запустите игру через Bootstrap.",
                     MessageType.Info);
             }
+
             EditorGUILayout.HelpBox(
-                "Daily: Advance/Complete публикуют действия и победу с одной звездой. " +
-                "Story: Complete публикует требуемые level/stars. " +
-                "Прогресс получает только выбранный квест. " +
-                "Advance Quest Day, Reset Quest и Claim Reward идут через QuestManager.",
-                MessageType.Info);
+                "Only selected quest gets progress. +1 Quest Day shifts only quest time and lets QuestManager react through the normal daily check.",
+                MessageType.None);
 
-            // Выбираем категорию и активный квест из QuestManager.
-            DrawQuestSelector();
-            EditorGUILayout.Space(6f);
-
-            // Рисуем общий статус и карточку выбранного квеста.
-            EditorGUILayout.LabelField("Status", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField(_runner.Status, EditorStyles.wordWrappedLabel);
-            EditorGUILayout.Space(6f);
-            DrawQuestRow();
+            DrawQuestDayCard();
+            EditorGUILayout.Space(SectionSpacing);
+            DrawQuestSelectionCard();
+            EditorGUILayout.Space(SectionSpacing);
+            DrawStatusCard();
+            EditorGUILayout.Space(SectionSpacing);
+            DrawStateCards();
+            EditorGUILayout.Space(SectionSpacing);
+            DrawActionCard();
         }
 
         /// <summary>Передаёт shared runner вход и выход из Play Mode.</summary>
@@ -85,7 +90,7 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
             {
                 using (new EditorGUI.DisabledScope(_runner.IsBusy))
                 {
-                    if (GUILayout.Button("Back", GUILayout.Width(70f)))
+                    if (GUILayout.Button("Back", GUILayout.Width(HeaderButtonWidth)))
                         navigateBack?.Invoke();
                 }
 
@@ -95,134 +100,210 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
             EditorGUILayout.Space(6f);
         }
 
-        private void DrawQuestRow()
+        private void DrawQuestDayCard()
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                EditorGUILayout.LabelField(_runner.Title, EditorStyles.boldLabel);
-                EditorGUILayout.LabelField($"Тип: {_runner.Kind}");
-                EditorGUILayout.LabelField($"Статус: {_runner.Status}");
-                EditorGUILayout.Space(3f);
-
-                DrawState("До", _runner.BeforeState);
-                DrawState("После", _runner.AfterState);
-                EditorGUILayout.Space(4f);
-
-                DrawActions();
-            }
-
-            EditorGUILayout.Space(4f);
-        }
-
-        private void DrawQuestSelector()
-        {
-            int categoryIndex =
-                _runner.SelectedCategory == QuestCategory.Daily ? 0 : 1;
-            using (new EditorGUI.DisabledScope(_runner.IsBusy))
-            {
-                int selectedCategory = GUILayout.Toolbar(
-                    categoryIndex,
-                    _categoryNames);
-                if (selectedCategory != categoryIndex)
-                {
-                    _runner.SelectCategory(
-                        selectedCategory == 0
-                            ? QuestCategory.Daily
-                            : QuestCategory.Story);
-                }
-
-                string[] questOptions = _runner.GetQuestOptions();
-                if (questOptions.Length == 0)
-                {
-                    EditorGUILayout.HelpBox(
-                        "Нет активных квестов в выбранной категории.",
-                        MessageType.Info);
-                    return;
-                }
-
-                int selectedQuest = EditorGUILayout.Popup(
-                    "Quest",
-                    _runner.SelectedQuestIndex,
-                    questOptions);
-                if (selectedQuest != _runner.SelectedQuestIndex)
-                {
-                    _runner.SelectQuest(selectedQuest);
-                }
+                EditorGUILayout.LabelField("Quest Day", SectionTitleStyle);
+                EditorGUILayout.Space(CardSpacing);
+                DrawInfoRow("Device", _runner.DeviceLocalTime);
+                DrawInfoRow("Quest", _runner.QuestLocalTime);
+                DrawInfoRow("Mode", _runner.QuestTimeMode);
+                DrawInfoRow("Daily", _runner.DailyGenerationDate);
+                DrawInfoRow("Story", _runner.StoryGenerationDate);
+                EditorGUILayout.Space(CardSpacing);
 
                 using (new EditorGUI.DisabledScope(
-                           !_runner.CanAdvanceQuestDay))
+                           !_runner.CanSimulateNextQuestDay))
                 {
-                    if (GUILayout.Button("Advance Quest Day"))
+                    if (GUILayout.Button(
+                            "+1 Quest Day",
+                            GUILayout.Height(ActionButtonHeight)))
                     {
-                        _runner.AdvanceQuestDay();
+                        _runner.SimulateNextQuestDay();
                     }
                 }
             }
         }
 
-        private static void DrawState(string title, string state)
+        private void DrawQuestSelectionCard()
+        {
+            int categoryIndex =
+                _runner.SelectedCategory == QuestCategory.Daily ? 0 : 1;
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("Quest", SectionTitleStyle);
+                EditorGUILayout.Space(CardSpacing);
+                EditorGUILayout.LabelField("Category", CaptionStyle);
+
+                using (new EditorGUI.DisabledScope(_runner.IsBusy))
+                {
+                    int selectedCategory = GUILayout.Toolbar(
+                        categoryIndex,
+                        _categoryNames,
+                        GUILayout.Height(SelectorHeight));
+                    if (selectedCategory != categoryIndex)
+                    {
+                        _runner.SelectCategory(
+                            selectedCategory == 0
+                                ? QuestCategory.Daily
+                                : QuestCategory.Story);
+                    }
+
+                    EditorGUILayout.Space(CardSpacing);
+                    string[] questOptions = _runner.GetQuestOptions();
+                    if (questOptions.Length == 0)
+                    {
+                        EditorGUILayout.HelpBox(
+                            "Нет активных квестов в выбранной категории.",
+                            MessageType.Info);
+                        return;
+                    }
+
+                    EditorGUILayout.LabelField("Active Quest", CaptionStyle);
+                    int selectedQuest = EditorGUILayout.Popup(
+                        _runner.SelectedQuestIndex,
+                        questOptions,
+                        GUILayout.Height(SelectorHeight));
+                    if (selectedQuest != _runner.SelectedQuestIndex)
+                    {
+                        _runner.SelectQuest(selectedQuest);
+                    }
+                }
+
+                EditorGUILayout.Space(CardSpacing);
+                EditorGUILayout.LabelField(_runner.Title, EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(_runner.Kind, EditorStyles.wordWrappedMiniLabel);
+            }
+        }
+
+        private void DrawStatusCard()
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("Status", SectionTitleStyle);
+                EditorGUILayout.Space(CardSpacing);
+                EditorGUILayout.LabelField(_runner.Status, StatusStyle);
+            }
+        }
+
+        private void DrawStateCards()
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                DrawStateCard("Before", _runner.BeforeState);
+                DrawStateCard("After", _runner.AfterState);
+            }
+        }
+
+        private void DrawStateCard(string title, string value)
+        {
+            using (new EditorGUILayout.VerticalScope(
+                       EditorStyles.helpBox,
+                       GUILayout.MinHeight(StateCardMinHeight),
+                       GUILayout.ExpandWidth(true)))
+            {
+                EditorGUILayout.LabelField(title, SectionTitleStyle);
+                EditorGUILayout.Space(CardSpacing);
+                EditorGUILayout.LabelField(value, StateStyle);
+            }
+        }
+
+        private void DrawActionCard()
+        {
+            bool runnerUnavailable =
+                !EditorApplication.isPlaying || !_runner.IsReady || _runner.IsBusy;
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("Actions", SectionTitleStyle);
+                EditorGUILayout.Space(CardSpacing);
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    using (new EditorGUI.DisabledScope(
+                               runnerUnavailable || !_runner.CanResetQuest))
+                    {
+                        if (GUILayout.Button(
+                                "Reset Quest",
+                                GUILayout.Height(ActionButtonHeight)))
+                        {
+                            _runner.ResetQuest();
+                        }
+                    }
+
+                    using (new EditorGUI.DisabledScope(
+                               runnerUnavailable || !_runner.CanAdvance))
+                    {
+                        if (GUILayout.Button(
+                                "Advance",
+                                GUILayout.Height(ActionButtonHeight)))
+                        {
+                            _runner.Advance();
+                        }
+                    }
+
+                    using (new EditorGUI.DisabledScope(
+                               runnerUnavailable || !_runner.CanComplete))
+                    {
+                        if (GUILayout.Button(
+                                "Complete",
+                                GUILayout.Height(ActionButtonHeight)))
+                        {
+                            _runner.Complete();
+                        }
+                    }
+
+                    using (new EditorGUI.DisabledScope(
+                               runnerUnavailable || !_runner.CanClaimReward))
+                    {
+                        if (GUILayout.Button(
+                                "Claim Reward",
+                                GUILayout.Height(ActionButtonHeight)))
+                        {
+                            _runner.ClaimReward();
+                        }
+                    }
+                }
+            }
+        }
+
+        private void DrawInfoRow(string label, string value)
         {
             using (new EditorGUILayout.HorizontalScope())
             {
                 EditorGUILayout.LabelField(
-                    title,
-                    EditorStyles.boldLabel,
-                    GUILayout.Width(48f));
-                EditorGUILayout.LabelField(state, EditorStyles.wordWrappedLabel);
+                    label,
+                    CaptionStyle,
+                    GUILayout.Width(52f));
+                EditorGUILayout.LabelField(
+                    value,
+                    EditorStyles.wordWrappedLabel);
             }
+
+            EditorGUILayout.Space(2f);
         }
 
-        private void DrawActions()
-        {
-            var runnerUnavailable =
-                !EditorApplication.isPlaying || !_runner.IsReady || _runner.IsBusy;
+        private GUIStyle SectionTitleStyle =>
+            _sectionTitleStyle ??= new GUIStyle(EditorStyles.boldLabel);
 
-            using (new EditorGUILayout.HorizontalScope())
+        private GUIStyle CaptionStyle =>
+            _captionStyle ??= new GUIStyle(EditorStyles.miniLabel)
             {
-                using (new EditorGUI.DisabledScope(
-                           runnerUnavailable || !_runner.CanResetQuest))
-                {
-                    if (GUILayout.Button(
-                            "Reset Quest",
-                            GUILayout.Width(GenerateButtonWidth)))
-                    {
-                        _runner.ResetQuest();
-                    }
-                }
+                alignment = TextAnchor.MiddleLeft
+            };
 
-                using (new EditorGUI.DisabledScope(
-                           runnerUnavailable || !_runner.CanAdvance))
-                {
-                    if (GUILayout.Button(
-                            "Advance",
-                            GUILayout.Width(CommandButtonWidth)))
-                    {
-                        _runner.Advance();
-                    }
-                }
+        private GUIStyle StatusStyle =>
+            _statusStyle ??= new GUIStyle(EditorStyles.wordWrappedLabel)
+            {
+                wordWrap = true
+            };
 
-                using (new EditorGUI.DisabledScope(
-                           runnerUnavailable || !_runner.CanComplete))
-                {
-                    if (GUILayout.Button(
-                            "Complete",
-                            GUILayout.Width(CommandButtonWidth)))
-                    {
-                        _runner.Complete();
-                    }
-                }
-
-                using (new EditorGUI.DisabledScope(
-                           runnerUnavailable || !_runner.CanClaimReward))
-                {
-                    if (GUILayout.Button(
-                            "Claim Reward",
-                            GUILayout.Width(GenerateButtonWidth)))
-                    {
-                        _runner.ClaimReward();
-                    }
-                }
-            }
-        }
+        private GUIStyle StateStyle =>
+            _stateStyle ??= new GUIStyle(EditorStyles.wordWrappedLabel)
+            {
+                wordWrap = true
+            };
     }
 }

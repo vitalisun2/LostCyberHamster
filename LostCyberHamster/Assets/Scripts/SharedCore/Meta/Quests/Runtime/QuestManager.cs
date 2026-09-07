@@ -53,6 +53,12 @@ namespace Vues.GameCore
             _playerExperienceService = new();
 
         /// <summary>
+        /// Изолирует квестовую симуляцию локального дня от остальных игровых систем.
+        /// </summary>
+        private static readonly QuestTimeFacade _questTime =
+            new(UnityGameClock.Instance);
+
+        /// <summary>
         /// Создаёт и восстанавливает определения Story-квестов.
         /// </summary>
         private static StoryQuestGenerator _storyQuestGenerator;
@@ -102,13 +108,21 @@ namespace Vues.GameCore
         /// </summary>
         public static void Update()
         {
-            var now = UnityGameClock.Instance.LocalNow;
-            if (UnityGameClock.Instance.RealtimeSeconds < _nextDayCheck)
+            if (_questTime.RealtimeSeconds < _nextDayCheck)
                 return;
-            _nextDayCheck = UnityGameClock.Instance.RealtimeSeconds + 1;
+            _nextDayCheck = _questTime.RealtimeSeconds + 1;
+            TryUpdateActiveQuestSetsForCurrentTime();
+        }
+
+        /// <summary>
+        /// Проверяет текущий квестовый день и применяет штатную ротацию наборов.
+        /// </summary>
+        private static bool TryUpdateActiveQuestSetsForCurrentTime()
+        {
+            var now = _questTime.LocalNow;
             if (!_dailyQuestService.NeedsUpdate(now))
             {
-                return;
+                return false;
             }
 
             // Ротация, сохранённые награды и сюжетные слоты фиксируются вместе.
@@ -124,11 +138,13 @@ namespace Vues.GameCore
                     GameEventsManager.DailyQuestSetChanged();
                     GameEventsManager.StoryQuestSetChanged();
                 });
+                return true;
             }
             catch (Exception exception)
             {
                 DebugManager.DiagStability($"[QUEST] Day save failed: {exception.GetType().Name}.");
-                _nextDayCheck = UnityGameClock.Instance.RealtimeSeconds + 15;
+                _nextDayCheck = _questTime.RealtimeSeconds + 15;
+                return false;
             }
         }
 
@@ -492,7 +508,7 @@ namespace Vues.GameCore
             // Восстанавливаем оба набора и связываем их runtime-состояния.
             _storyQuestGenerator = new StoryQuestGenerator(
                 QuestCatalog.StoryGenerationSettings);
-            bool dailySetChanged = InitDailyQuestSet(UnityGameClock.Instance.LocalNow);
+            bool dailySetChanged = InitDailyQuestSet(_questTime.LocalNow);
             bool storySetChanged = InitStoryQuestSet();
             bool questStatesChanged = BindActiveQuests();
 
@@ -740,7 +756,7 @@ namespace Vues.GameCore
             {
                 var state = GameDataManager.PlayerData.DailyQuestSet;
                 var savedDate = DateTime.TryParse(state?.GenerationDate, out var date)
-                    ? date : UnityGameClock.Instance.LocalNow;
+                    ? date : _questTime.LocalNow;
                 _dailyQuestService.Init(QuestCatalog.DailyDefinitions, state,
                     GameDataManager.PlayerData.QuestStates, savedDate, QuestCatalog.DailyCommonRewardDefinition);
                 InitStoryQuestSet();
@@ -751,7 +767,7 @@ namespace Vues.GameCore
             }
 
             // Пересобираем оба набора поверх нового состояния игрока.
-            bool dailySetChanged = InitDailyQuestSet(UnityGameClock.Instance.LocalNow);
+            bool dailySetChanged = InitDailyQuestSet(_questTime.LocalNow);
             bool storySetChanged = InitStoryQuestSet();
             bool questStatesChanged = BindActiveQuests();
 
@@ -931,24 +947,56 @@ namespace Vues.GameCore
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
-        /// Переводит Daily и Story-квесты в следующий суточный период.
+        /// Текущее локальное время устройства без квестовой симуляции.
         /// </summary>
-        public static bool AdvanceQuestDayForTesting()
+        public static DateTime DeviceLocalNowForTesting =>
+            _questTime.DeviceLocalNow;
+
+        /// <summary>
+        /// Текущее локальное время, видимое квестовой системе.
+        /// </summary>
+        public static DateTime QuestLocalNowForTesting =>
+            _questTime.LocalNow;
+
+        /// <summary>
+        /// Показывает активное смещение суток в квестовой симуляции.
+        /// </summary>
+        public static int SimulatedQuestDayOffsetForTesting =>
+            _questTime.SimulatedDayOffset;
+
+        /// <summary>
+        /// Проверяет, включена ли симуляция квестовых суток.
+        /// </summary>
+        public static bool HasQuestTimeSimulationForTesting =>
+            _questTime.HasSimulation;
+
+        /// <summary>
+        /// Сдвигает видимые квестам сутки на один день и запускает штатную проверку ротации.
+        /// </summary>
+        public static bool SimulateNextQuestDayForTesting()
         {
             if (!_dailyQuestService.IsInitialized)
             {
                 return false;
             }
 
-            List<string> previousIds =
-                _dailyQuestService.State.ActiveQuestIds.ToList();
-            if (!_dailyQuestService.GenerateNextSetForTesting(
-                    GameDataManager.PlayerData.QuestStates))
+            _questTime.AdvanceDay();
+            _nextDayCheck = 0;
+            return TryUpdateActiveQuestSetsForCurrentTime();
+        }
+
+        /// <summary>
+        /// Отключает симуляцию квестовых суток и возвращает чтение реального времени устройства.
+        /// </summary>
+        public static bool ResetQuestTimeSimulationForTesting()
+        {
+            if (!_questTime.HasSimulation)
             {
                 return false;
             }
 
-            CompleteQuestDayChange(previousIds);
+            _questTime.ResetSimulation();
+            _nextDayCheck = 0;
             return true;
         }
 
@@ -1131,6 +1179,43 @@ namespace Vues.GameCore
                     GameEventsManager.EarnCrystals(amount);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Даёт QuestManager локальный источник времени с dev-смещением только для квестов.
+        /// </summary>
+        private sealed class QuestTimeFacade
+        {
+            private readonly IGameClock _clock;
+            private int _simulatedDayOffset;
+
+            public QuestTimeFacade(IGameClock clock)
+            {
+                _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+            }
+
+            public DateTime DeviceLocalNow => _clock.LocalNow;
+
+            public DateTime LocalNow =>
+                DeviceLocalNow.AddDays(_simulatedDayOffset);
+
+            public double RealtimeSeconds => _clock.RealtimeSeconds;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            public bool HasSimulation => _simulatedDayOffset != 0;
+
+            public int SimulatedDayOffset => _simulatedDayOffset;
+
+            public void AdvanceDay()
+            {
+                _simulatedDayOffset++;
+            }
+
+            public void ResetSimulation()
+            {
+                _simulatedDayOffset = 0;
+            }
+#endif
         }
 
         #endregion

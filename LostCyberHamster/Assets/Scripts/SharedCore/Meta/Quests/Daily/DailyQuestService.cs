@@ -150,22 +150,6 @@ namespace Vues.GameCore.Quests
             return changed;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        /// <summary>
-        /// Запускает штатную генерацию для следующего дневного периода.
-        /// </summary>
-        public bool GenerateNextSetForTesting(
-            IReadOnlyCollection<Quest> questStates)
-        {
-            if (!IsInitialized)
-            {
-                return false;
-            }
-
-            return Update(_nextGenerationTime, questStates);
-        }
-#endif
-
         private bool GenerateIfNeeded(
             IReadOnlyCollection<Quest> questStates,
             DateTime localNow)
