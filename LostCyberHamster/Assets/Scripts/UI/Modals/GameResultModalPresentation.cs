@@ -46,8 +46,6 @@ namespace LostCyberHamster.UI
         private readonly StyleLength _borderTopRightRadius;
         private readonly StyleLength _borderBottomRightRadius;
         private readonly StyleLength _borderBottomLeftRadius;
-        private readonly StyleEnum<Overflow> _containerOverflow;
-
         private readonly StyleLength _contentWidth;
         private readonly StyleLength _contentHeight;
         private readonly StyleLength _contentMarginTop;
@@ -102,8 +100,6 @@ namespace LostCyberHamster.UI
             _borderTopRightRadius = container.style.borderTopRightRadius;
             _borderBottomRightRadius = container.style.borderBottomRightRadius;
             _borderBottomLeftRadius = container.style.borderBottomLeftRadius;
-            _containerOverflow = container.style.overflow;
-
             _contentWidth = content.style.width;
             _contentHeight = content.style.height;
             _contentMarginTop = content.style.marginTop;
@@ -223,8 +219,6 @@ namespace LostCyberHamster.UI
             _container.style.borderTopRightRadius = _borderTopRightRadius;
             _container.style.borderBottomRightRadius = _borderBottomRightRadius;
             _container.style.borderBottomLeftRadius = _borderBottomLeftRadius;
-            _container.style.overflow = _containerOverflow;
-
             _content.style.width = _contentWidth;
             _content.style.height = _contentHeight;
             _content.style.marginTop = _contentMarginTop;
@@ -240,6 +234,8 @@ namespace LostCyberHamster.UI
         private void ApplyFullscreenLayout()
         {
             _isApplied = true;
+
+            // Общий host задаёт размеры; clipping принадлежит корню и viewport конкретной модалки.
             _container.style.width = Length.Percent(100f);
             _container.style.height = Length.Percent(100f);
             _container.style.minWidth = 0f;
@@ -254,8 +250,6 @@ namespace LostCyberHamster.UI
             _container.style.borderTopRightRadius = 0f;
             _container.style.borderBottomRightRadius = 0f;
             _container.style.borderBottomLeftRadius = 0f;
-            _container.style.overflow = Overflow.Hidden;
-
             _content.style.width = Length.Percent(100f);
             _content.style.height = Length.Percent(100f);
             _content.style.marginTop = 0f;
