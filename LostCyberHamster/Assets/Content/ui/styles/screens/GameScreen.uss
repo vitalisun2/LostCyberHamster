@@ -68,6 +68,7 @@
     width: 168px;
     padding-left: 44px;
     padding-right: 12px;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.5);
 }
 
 .game-run-counter .shared-currency-button__label {
