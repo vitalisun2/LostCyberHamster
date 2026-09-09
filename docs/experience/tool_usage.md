@@ -77,3 +77,7 @@
 Для асинхронного read-only probe через Pipeline 0.5.0-exp.1 создать async-лямбду, сохранить её Task в AppDomain и прочитать результат следующим eval после IsCompleted. Верхнеуровневый await этот eval не поддерживает. Перед выводом о текущей игре проверить Application.isPlaying: после остановки Editor некоторые статические SDK-статусы сохраняются.
 
 При параллельной файловой подготовке дождаться завершения правок всех владельцев перед runtime-проверкой. Импорт очередного C# файла может остановить Play Mode посреди наблюдения. Снимок камеры Unity может содержать фон без UI Toolkit; пригодность кадра проверить сразу. Если управление окном остановлено пользователем, завершить его и передать короткий ручной сценарий.
+
+## Предпросмотр UI Toolkit в RenderTexture
+
+Для визуальной проверки HUD создать временный UIDocument в preview scene и клонировать рабочие PanelSettings. Размер PNG и логический размер panel связать её scale mode. После обновления layout вызвать `Repaint(Event)`, затем отдельный `RuntimePanel.Render()`: Repaint подготавливает UI, Render рисует в targetTexture. Сохранить PNG через ReadPixels, проверить содержимое и измерить текст через MeasureTextSize. После просмотра освободить UIDocument, PanelSettings, RenderTexture и preview scene.

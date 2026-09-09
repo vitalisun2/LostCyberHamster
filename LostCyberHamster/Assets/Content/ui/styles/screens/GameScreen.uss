@@ -37,6 +37,65 @@
     border-left-width: 0;
 }
 
+.game-screen__run-counters {
+    position: absolute;
+    top: 36px;
+    left: 420px;
+    right: 350px;
+    height: 76px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    scale: 0.8;
+}
+
+.game-screen__safe-area--compact .game-screen__run-counters {
+    top: 136px;
+    left: 0;
+    right: 0;
+}
+
+.game-run-counter {
+    width: 212px;
+    height: 76px;
+    margin-left: 7px;
+    margin-right: 7px;
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.game-run-counter > .game-run-counter__plate {
+    width: 168px;
+    padding-left: 44px;
+    padding-right: 12px;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.5);
+}
+
+.game-run-counter .shared-currency-button__label {
+    margin: 0;
+    padding: 0;
+}
+
+.game-run-counter__icon {
+    top: 1px;
+    width: 76px;
+    height: 74px;
+}
+
+.game-run-counter__icon--coins {
+    background-image: url("/Assets/Content/ui/sprites/shared/hud_coins_icon.png");
+}
+
+.game-run-counter__icon--crystals {
+    width: 80px;
+    background-image: url("/Assets/Content/ui/sprites/shared/hud_gems_icon.png");
+}
+
+.game-run-counter__icon--experience {
+    width: 88px;
+    background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_icon_experience.png");
+}
+
 .game-control {
     margin: 0;
     padding: 0;

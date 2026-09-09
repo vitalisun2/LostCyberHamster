@@ -58,3 +58,5 @@ L сохраняет локальную однократность; смена �
 ## Git-передача
 
 Собственныйmanifest:86Assets/code/meta +7документов =93пути. Включает README после последовательной передачи от2. Совместный commit включает готовые manifests1/2/3 и whitelist документов основного чата. `docs/game_economy.md`, `docs/rules/AGENTS.md`, generated `.csproj` с подтверждённым локальным шумом остаются внеstaging. Финальный SHA/remote сообщаются после push; отчёты1/2 сохраняют фактические результаты своих этапов.
+
+Интеграционный commit `a6a6e44a`:259 согласованных файлов. Первый push обнаружил четыре новых HUD-коммита в remote до `3c83d8b6`; merge сохранил обе стороны без конфликтов. Совместные HUD C#/UXML/USS просмотрены. После merge Unity import+regeneration завершились с кодом0; Runtime0ошибок/42warnings за5,11с, Editor0/17 за3,64с. Логи: `return_merge_unity.log`, `return_merge_runtime.log`, `return_merge_editor.log` в `LostCyberHamster/EditorLogs`. Игровой прогон остаётся пользователю. Проверка Git whitespace чистая для авторских файлов; пробелы пустых полей в Unity-generated `.meta` сохранены.

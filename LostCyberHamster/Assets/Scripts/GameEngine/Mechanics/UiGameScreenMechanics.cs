@@ -22,6 +22,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent _superJumpEvent;
         private readonly GameScreenStatusFormatter _statusFormatter = new GameScreenStatusFormatter();
         private int _lastRunScore = -1;
+        private int _runCoins;
+        private int _runCrystals;
         private bool _wasSkateboardActive;
 
         public UiGameScreenMechanics(UIManager uiManager, GameManager gameManager, Hamster character)
@@ -48,10 +50,15 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void Subscribe()
         {
+            // Подключаем показатели персонажа.
             _character?.Lives.Subscribe(OnLifesChanged);
             _character?.Energy.Subscribe(OnEnergyChanged);
             _character?.UltaChargeAmount.Subscribe(
                 OnUltaChargeAmountChanged);
+
+            // Слушаем добычу уровня в течение жизни игровой сцены, включая паузу HUD.
+            GameEventsManager.OnCoinCollected += OnCoinCollected;
+            GameEventsManager.OnCrystalsCollected += OnCrystalsCollected;
         }
 
         public void SyncState()
@@ -61,19 +68,43 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return;
             }
 
+            // Восстанавливаем показатели после загрузки дерева HUD.
             OnLifesChanged(_character.Lives.Value);
             _gameScreenController.SetAbilityActivity(_character.SuperAttackSnapshot);
             SyncUltraControls();
             OnEnergyChanged(_character.Energy.Value);
             SyncRunScore();
+            _gameScreenController?.SetRunResources(_runCoins, _runCrystals);
         }
 
         public void Unsubscribe()
         {
+            // Освобождаем подписки персонажа.
             _character?.Lives.Unsubscribe(OnLifesChanged);
             _character?.Energy.Unsubscribe(OnEnergyChanged);
             _character?.UltaChargeAmount.Unsubscribe(
                 OnUltaChargeAmountChanged);
+            // Завершаем отслеживание добычи уходящего уровня.
+            GameEventsManager.OnCoinCollected -= OnCoinCollected;
+            GameEventsManager.OnCrystalsCollected -= OnCrystalsCollected;
+        }
+
+        private void OnCoinCollected(int amount)
+        {
+            _runCoins = AddCollectedAmount(_runCoins, amount);
+            _gameScreenController?.SetRunResources(_runCoins, _runCrystals);
+        }
+
+        private void OnCrystalsCollected(int amount)
+        {
+            _runCrystals = AddCollectedAmount(_runCrystals, amount);
+            _gameScreenController?.SetRunResources(_runCoins, _runCrystals);
+        }
+
+        /// <summary>Суммирует положительную добычу без переполнения счётчика.</summary>
+        private static int AddCollectedAmount(int current, int amount)
+        {
+            return current + Mathf.Clamp(amount, 0, int.MaxValue - current);
         }
 
         private void OnLifesChanged(int lives)
