@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Vues.GameCore.ReturnActivities
 {
     /// <summary>Переносимое состояние прогресса, заработанных наград и исходящих событий.</summary>
     [Serializable]
-    public sealed class ReturnActivityState
+    public sealed class ReturnActivityState : ISerializationCallbackReceiver
     {
         public int SchemaVersion = 1;
         public string Epoch;
@@ -25,6 +26,20 @@ namespace Vues.GameCore.ReturnActivities
 
         public int Cycle => TotalDays == 0 ? 1 : (TotalDays - 1) / 7 + 1;
         public int Step => TotalDays == 0 ? 0 : (TotalDays - 1) % 7 + 1;
+
+        void ISerializationCallbackReceiver.OnBeforeSerialize() { }
+
+        /// <summary>Восстанавливает отсутствие победы из пустого объекта, записанного JsonUtility вместо null.</summary>
+        void ISerializationCallbackReceiver.OnAfterDeserialize()
+        {
+            if (TotalDays == 0 && string.IsNullOrEmpty(LastAttemptId) && LastWin != null &&
+                string.IsNullOrEmpty(LastWin.AttemptId) && string.IsNullOrEmpty(LastWin.Level) &&
+                LastWin.Stars == 0 && string.IsNullOrEmpty(LastWin.CommittedUtc) &&
+                string.IsNullOrEmpty(LastWin.Day) && string.IsNullOrEmpty(LastWin.Week))
+            {
+                LastWin = null;
+            }
+        }
 
         /// <summary>Восстанавливает отсутствующие коллекции старых профилей без ретронаград.</summary>
         public void Normalize()
