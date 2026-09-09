@@ -1,5 +1,7 @@
 # Game Economy
 
+Статус: исторические заметки и предложения. Текущие факты, цены и источники: [Экономика LostCyberHamster](products/economics/README.md).
+
 
 # Игровая валюта LostCyberHamster
 
