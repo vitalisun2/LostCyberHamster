@@ -46,6 +46,7 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
+    scale: 0.8;
 }
 
 .game-screen__safe-area--compact .game-screen__run-counters {
