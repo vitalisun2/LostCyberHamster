@@ -22,7 +22,6 @@ namespace Assets.Scripts.Tutorial
         private float _nextRefresh;
 
         public bool IsPresenting { get; private set; }
-        public bool IsGoalPresenting { get; private set; }
 
         public static bool IsShieldAvailableToLearn => GameDataManager.PlayerData != null &&
             !GameDataManager.PlayerData.HasUsedTutorialShield &&
@@ -75,15 +74,6 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
 
-            // Цель остаётся read-only; обычная навигация и Claim выполняются текущими экранами.
-            if (_ui.CurrentScreen != ScreenEnum.HomeScreen && _ui.CurrentScreen != ScreenEnum.SelectLevelScreen) return;
-            FirstSessionGoalPresenter.Goal? goal = FirstSessionGoalPresenter.GetCurrent();
-            if (!goal.HasValue) return;
-            var current = goal.Value;
-            bool onHome = _ui.CurrentScreen == ScreenEnum.HomeScreen;
-            IsGoalPresenting = _view.Show(current.Text, current.Detail, current.ActionText,
-                () => OpenGoal(current), goal: onHome);
-            if (IsGoalPresenting) TrackPresentation("goal:" + current.Text, "goal_stage_shown", current.Destination.ToString());
         }
 
         private void ShowLesson()
@@ -144,38 +134,6 @@ namespace Assets.Scripts.Tutorial
             TrackPresentation("lesson:" + titleKey, "shield_step_shown", titleKey);
         }
 
-        private void OpenGoal(FirstSessionGoalPresenter.Goal goal)
-        {
-            if (_disposed || _ui.HasModalOrTransition ||
-                !string.Equals(_profileId, GameDataManager.ProfileId, StringComparison.Ordinal)) return;
-            var current = FirstSessionGoalPresenter.GetCurrent();
-            if (!current.HasValue) return;
-            goal = current.Value;
-
-            // Begin вызывается один раз: повторное открытие сохраняет исходный next/return маршрут.
-            try
-            {
-                if (goal.BeginsShieldLesson)
-                {
-                    if (!FirstSessionNavigation.HasReturnRoute)
-                        FirstSessionNavigation.Begin(_ui, screen: _ui.CurrentScreen);
-                    else
-                        UIManager.OnScreenShow?.Invoke(ScreenEnum.CharacterDevelopmentScreen);
-                    _deferred = false;
-                    FirstSessionTelemetry.Record("shield_offer_accepted");
-                    if (goal.Destination == ScreenEnum.CharacterScreen)
-                        UIManager.OnScreenShow?.Invoke(ScreenEnum.CharacterScreen);
-                    return;
-                }
-                UIManager.OnScreenShow?.Invoke(goal.Destination);
-            }
-            catch (Exception exception)
-            {
-                // Неудачная запись оставляет прежнюю цель и кнопку для повторного действия.
-                Debug.LogException(exception);
-            }
-        }
-
         private void OpenSkills() => UIManager.OnScreenShow?.Invoke(ScreenEnum.CharacterDevelopmentScreen);
 
         private void Later()
@@ -216,7 +174,7 @@ namespace Assets.Scripts.Tutorial
 
         private void Hide()
         {
-            IsPresenting = IsGoalPresenting = false;
+            IsPresenting = false;
             _view.Hide();
             _focus.Hide();
         }
@@ -225,7 +183,7 @@ namespace Assets.Scripts.Tutorial
         {
             if (_disposed) return;
             _disposed = true;
-            IsPresenting = IsGoalPresenting = false;
+            IsPresenting = false;
             _focus.Dispose();
             _view.Dispose();
         }

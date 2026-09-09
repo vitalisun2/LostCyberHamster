@@ -1,6 +1,7 @@
 @import url("/Assets/Content/ui/styles/theme/tokens.uss");
 @import url("/Assets/Content/ui/styles/screens/Bootstrap.uss");
 @import url("/Assets/Content/ui/styles/components/progress.uss");
+@import url("/Assets/Content/ui/styles/components/next-goal-card.uss");
 @import url("/Assets/Content/ui/styles/components/buttons.uss");
 @import url("/Assets/Content/ui/styles/components/shared-hud-controls.uss");
 @import url("/Assets/Content/ui/styles/utilities/backgrounds.uss");

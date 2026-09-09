@@ -140,7 +140,7 @@
         },
         {
             "key": "progression_quest_xp",
-            "value": "+{0} XP за получение"
+            "value": "+{0} XP"
         },
         {
             "key": "progression_win_xp",
@@ -167,16 +167,68 @@
             "value": "Уведомления в забеге"
         },
         {
+            "key": "first_session_morning_continue",
+            "value": "Утро: {0} из {1}"
+        },
+        {
+            "key": "next_goal_buy_skin",
+            "value": "Доступен скин {0}"
+        },
+        {
+            "key": "next_goal_daily_reward",
+            "value": "Забери награду за дневные задания"
+        },
+        {
+            "key": "next_goal_equip_ability",
+            "value": "Надень: {0}"
+        },
+        {
+            "key": "next_goal_heading",
+            "value": "Ближайшая цель"
+        },
+        {
+            "key": "next_goal_open_activities",
+            "value": "Открыть активности"
+        },
+        {
+            "key": "next_goal_quest_progress",
+            "value": "{0} из {1}"
+        },
+        {
+            "key": "next_goal_reward_ready",
+            "value": "Награда готова"
+        },
+        {
+            "key": "next_goal_shield_cost",
+            "value": "1 очко развития"
+        },
+        {
+            "key": "next_goal_stage_available",
+            "value": "Открыт новый этап"
+        },
+        {
+            "key": "next_goal_unlock_ability",
+            "value": "Открой: {0}"
+        },
+        {
+            "key": "next_goal_unlock_skin",
+            "value": "Открой скин {0}"
+        },
+        {
+            "key": "next_goal_upgrade_ability",
+            "value": "Улучши: {0}"
+        },
+        {
             "key": "first_session_goal",
             "value": "Ближайшая цель"
         },
         {
             "key": "first_session_morning",
-            "value": "Заверши утро в Нью-Йорке · {0}/3"
+            "value": "Заверши утро в Нью-Йорке · {0}/{1}"
         },
         {
             "key": "first_session_morning_reward",
-            "value": "Три разных уровня. Затем забери награду в заданиях."
+            "value": "{0} уровней → награда в заданиях"
         },
         {
             "key": "first_session_claim",

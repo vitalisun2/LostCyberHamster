@@ -15,6 +15,22 @@ MonoBehaviour:
   m_GroupName: levels_by_daypart
   m_GUID: 84de73c8c0de40f38c6c0703ba6332ec
   m_SerializeEntries:
+  - m_GUID: 01e7e66e9f10b5b46a3fafc95fb82223
+    m_Address: 01_New_York/Morning/level_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 04ad9c75fed000249875a07f410efca9
+    m_Address: 01_New_York/Morning/level_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 06f3f472f4858774f916e569dbae1709
     m_Address: 01_New_York/Morning/test_super_jump_on_roof
     m_ReadOnly: 0
@@ -120,6 +136,14 @@ MonoBehaviour:
     - levels_daypart
     - levels_daypart_Morning
     - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 34fa816d8ceaa6940a8d357eb1561998
+    m_Address: 03_Barcelona/Morning/level_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_03_Barcelona
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 388f65722d46cc445b224cc04fb64491
     m_Address: 01_New_York/Morning/test_super_jump_from_roof
@@ -421,6 +445,14 @@ MonoBehaviour:
     - levels_daypart_Night
     - levels_location_01_New_York
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 98f5a1d398f6bd945b04d2c09a67874a
+    m_Address: 02_Paris/Morning/level_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9c2cfd3913b169341a4b73329d8092c0
     m_Address: 01_New_York/Morning/test_roof_jump_over
     m_ReadOnly: 0
@@ -492,6 +524,14 @@ MonoBehaviour:
     - levels_daypart_Afternoon
     - levels_location_02_Paris
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b3d57a98eed082f40a37ca23f1b0d041
+    m_Address: 02_Paris/Morning/level_04
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_02_Paris
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b92a7ba2de2d4961b3bdd41d44c0cb0a
     m_Address: 01_New_York/Night/level_01
     m_ReadOnly: 0
@@ -543,6 +583,14 @@ MonoBehaviour:
     - levels_daypart
     - levels_daypart_Morning
     - levels_location_01_New_York
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: db6687796d729304db623e35d0b35468
+    m_Address: 03_Barcelona/Morning/level_05
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - levels_daypart
+    - levels_daypart_Morning
+    - levels_location_03_Barcelona
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: dd88678602e34d4883afc4d45928bd54
     m_Address: 01_New_York/Evening/level_01

@@ -1,5 +1,4 @@
 using Assets.Scripts.System;
-using Assets.Scripts.Tutorial;
 using GameManagement;
 using LostCyberHamster.UI;
 using UnityEngine.SceneManagement;
@@ -61,11 +60,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
             }, returnScreen: ScreenEnum.LeaderboardScreen, location: locationId, part: partId);
         }
 
-        private void OnGoal()
+        private void OnGoal(NextGoalCandidate goal)
         {
-            var goal = FirstSessionGoalPresenter.GetCurrent();
-            if (!goal.HasValue) return;
-            if (goal.Value.BeginsShieldLesson)
+            if (goal?.IsCurrentProfile != true) return;
+
+            // Урок щита сохраняет следующий уровень для возвращения из обучения.
+            if (goal.StartsShieldLesson)
             {
                 LevelManager.TryGetNextLevelKey(GameDataManager.PlayerData.CurrentLevel, out string nextLevel);
                 _navigation.Continue(ScreenEnum.WinModal,
@@ -73,13 +73,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return;
             }
 
-            // Цель использует ту же очередь повышения, что обычные переходы результата.
-            ScreenEnum destination = goal.Value.Destination;
-            _navigation.Continue(ScreenEnum.WinModal, () =>
-            {
-                MenuNavigationRequest.OpenScreen(destination);
-                SceneManager.LoadScene(SceneName);
-            }, returnScreen: destination);
+            // PrepareResume после Level Up может заменить callback; target готовим заранее.
+            NextGoalNavigation.Prepare(goal);
+            _navigation.Continue(ScreenEnum.WinModal,
+                () => NextGoalNavigation.Open(_uiManager, goal), returnScreen: goal.Destination);
         }
     }
 }

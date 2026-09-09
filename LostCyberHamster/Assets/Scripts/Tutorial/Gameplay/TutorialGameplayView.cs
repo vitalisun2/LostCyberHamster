@@ -23,6 +23,8 @@ namespace Assets.Scripts.Tutorial
         private readonly VisualElement _root;
         private readonly VisualElement _tapTarget;
         private readonly VisualElement _jumpTarget;
+        private readonly VisualElement _hudTopRow;
+        private readonly VisualElement _runCounters;
         private readonly VisualElement _idleInputBlocker;
         private readonly VisualElement _headerRoot;
         private readonly VisualElement _promptRoot;
@@ -57,6 +59,8 @@ namespace Assets.Scripts.Tutorial
         private Rect _safeRect;
         private Rect _completionSafeRect;
         private float _artScale = 1f;
+        private float _hudBottom;
+        private float _headerTop;
         private bool _hasLayoutSnapshot;
         private bool _hasCurrentFocusRect;
         private bool _isPromptVisible;
@@ -74,6 +78,8 @@ namespace Assets.Scripts.Tutorial
             // Находит фактические зоны ввода и заменяет прежнее представление.
             _tapTarget = contentRoot.Q<VisualElement>("tap");
             _jumpTarget = contentRoot.Q<VisualElement>("btn_jump");
+            _hudTopRow = contentRoot.Q<VisualElement>(className: "game-screen__top-row");
+            _runCounters = contentRoot.Q<VisualElement>("run-counters");
             RemoveExistingTutorialLayers(contentRoot);
             _root = CreateDecoration(_rootName, "tutorial-fill");
             _headerRoot = CreateHeader(out _titleLabel, out _lessonLabel, out _lessonNumberLabel);
@@ -131,7 +137,7 @@ namespace Assets.Scripts.Tutorial
         public void ShowHeader(string titleKey, int number)
         {
             // Текст остаётся нативным и отделён от художественных плашек.
-            _titleLabel.text = Localize("tutorial_title");
+            _titleLabel.text = Localize("tutorial_title").ToUpperInvariant();
             _lessonLabel.text = Localize(titleKey);
             _lessonNumberLabel.text = number.ToString();
             _skipButton.text = Localize("btn_skip");
@@ -330,9 +336,12 @@ namespace Assets.Scripts.Tutorial
             Rect tapBounds = _tapTarget?.worldBound ?? default;
             Rect jumpBounds = _jumpTarget?.worldBound ?? default;
             Rect safe = UiSafeArea.GetLocalRect(_root);
+            float hudBottom = Mathf.Max(GetHudBottom(_hudTopRow, safe.yMin),
+                GetHudBottom(_runCounters, safe.yMin));
             if (safe.width <= 0f || safe.height <= 0f
                 || (_hasLayoutSnapshot && rootBounds == _lastRootBounds
-                    && tapBounds == _lastTapBounds && jumpBounds == _lastJumpBounds && safe == _safeRect))
+                    && tapBounds == _lastTapBounds && jumpBounds == _lastJumpBounds && safe == _safeRect
+                    && Mathf.Approximately(hudBottom, _hudBottom)))
             {
                 return;
             }
@@ -343,13 +352,27 @@ namespace Assets.Scripts.Tutorial
             _lastTapBounds = tapBounds;
             _lastJumpBounds = jumpBounds;
             _safeRect = safe;
+            _hudBottom = hudBottom;
             _artScale = Mathf.Min(safe.width / 900f, safe.height / 450f);
-            SetArtPosition(_headerRoot, safe.center.x - 100f * _artScale, safe.yMin + 12f * _artScale);
-            SetArtPosition(_skipButton, safe.center.x - 68f * _artScale, safe.yMax - 74f * _artScale);
+            // Урок располагается ниже обеих строк HUD, включая компактную раскладку счётчиков.
+            _headerTop = Mathf.Max(safe.yMin, hudBottom) + 14f * _artScale;
+            SetArtPosition(_headerRoot, safe.center.x - 100f * _artScale, _headerTop);
+            SetArtPosition(_skipButton, safe.center.x - 136f * _artScale, safe.yMax - 82f * _artScale);
             if (_isPromptVisible)
             {
                 QueueFocusRefresh();
             }
+        }
+
+        /// <summary>Возвращает нижнюю границу видимого HUD в координатах слоя обучения.</summary>
+        private float GetHudBottom(VisualElement element, float fallback)
+        {
+            if (element == null || element.panel != _root.panel || !element.visible
+                || element.resolvedStyle.display == DisplayStyle.None || element.worldBound.height <= 0f)
+                return fallback;
+
+            float bottom = _root.WorldToLocal(element.worldBound.max).y;
+            return float.IsNaN(bottom) || float.IsInfinity(bottom) ? fallback : bottom;
         }
 
         /// <summary>Объединяет изменения layout в один отменяемый проход фокуса.</summary>
@@ -434,8 +457,28 @@ namespace Assets.Scripts.Tutorial
                 : focusRect.center.x - width * 0.5f;
             float left = Mathf.Clamp(desiredX, _safeRect.xMin + 8f * _artScale,
                 _safeRect.xMax - width - 8f * _artScale);
+            float maxTop = _safeRect.yMax - (82f + _instructionHeight + 16f) * _artScale;
             float top = Mathf.Clamp(focusRect.yMin - height - 16f * _artScale,
-                _safeRect.yMin + 140f * _artScale, _safeRect.yMax - 172f * _artScale);
+                _safeRect.yMin + 140f * _artScale, maxTop);
+
+            // На низком экране подсказка обходит заголовок сбоку, сохраняя место для Skip.
+            var headerRect = new Rect(_safeRect.center.x - 100f * _artScale, _headerTop,
+                200f * _artScale, 90f * _artScale);
+            if (new Rect(left, top, width, height).Overlaps(headerRect))
+            {
+                float belowHeader = headerRect.yMax + 16f * _artScale;
+                if (belowHeader <= maxTop)
+                    top = belowHeader;
+                else
+                {
+                    float leftOfHeader = headerRect.xMin - width - 16f * _artScale;
+                    float rightOfHeader = headerRect.xMax + 16f * _artScale;
+                    left = Mathf.Abs(left - leftOfHeader) < Mathf.Abs(left - rightOfHeader)
+                        ? leftOfHeader : rightOfHeader;
+                    left = Mathf.Clamp(left, _safeRect.xMin + 8f * _artScale,
+                        _safeRect.xMax - width - 8f * _artScale);
+                }
+            }
             SetArtPosition(_instructionBubble, left, top);
 
             // Рука является декорацией и не меняет принимаемую область ввода.

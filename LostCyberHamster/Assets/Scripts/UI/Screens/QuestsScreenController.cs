@@ -62,8 +62,34 @@ namespace LostCyberHamster.UI
             _showDailyTasks = morningIndex < 0;
             int pageSize = System.Math.Max(1, ConfigurationManager.Config.DisplayQuestsCount);
             _currentQuestIndex = morningIndex < 0 ? 0 : morningIndex / pageSize * pageSize;
+            ApplyNextGoalTarget(pageSize);
             RenderActivePage();
             ScheduleDailyCommonRewardModal();
+        }
+
+        /// <summary>Открывает вкладку и страницу конкретного экземпляра из карточки цели.</summary>
+        private void ApplyNextGoalTarget(int pageSize)
+        {
+            if (!NextGoalNavigation.TryConsume(ScreenEnum.QuestsScreen, out var goal)) return;
+
+            // Общая Daily-награда находится на своей вкладке; онбординг сохраняет выбор первой Story.
+            if (goal.Action == NextGoalAction.DailyReward)
+            {
+                _showDailyTasks = true;
+                _currentQuestIndex = 0;
+                return;
+            }
+            if (goal.Action != NextGoalAction.Quest) return;
+
+            // Ищем именно предъявленный экземпляр, чтобы одинаковые задания разных дней не подменялись.
+            int storyIndex = QuestManager.StoryQuests.ToList().FindIndex(quest =>
+                string.Equals(quest.InstanceId, goal.Target, StringComparison.Ordinal));
+            int dailyIndex = QuestManager.DailyQuests.ToList().FindIndex(quest =>
+                string.Equals(quest.InstanceId, goal.Target, StringComparison.Ordinal));
+            if (storyIndex < 0 && dailyIndex < 0) return;
+            _showDailyTasks = storyIndex < 0;
+            int index = _showDailyTasks ? dailyIndex : storyIndex;
+            _currentQuestIndex = index / pageSize * pageSize;
         }
 
         private void RenderActivePage()

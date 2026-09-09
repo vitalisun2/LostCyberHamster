@@ -22,6 +22,9 @@ namespace LostCyberHamster.UI
         private bool _wasVisible;
         private bool _disposed;
 
+        /// <summary>Позволяет необязательным карточкам уступить место читаемому уведомлению.</summary>
+        public bool IsPresenting => !_disposed && _wasVisible;
+
         private sealed class PendingMessage
         {
             public NotificationMessage Message;

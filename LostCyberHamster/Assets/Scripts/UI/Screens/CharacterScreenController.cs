@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,6 +47,8 @@ namespace LostCyberHamster.UI
         private long _displayedAbilityGeneration;
         private readonly Action _resume;
         private DevelopmentReturnButton _returnButton;
+        private NextGoalCandidate _nextGoalForScroll;
+        private IVisualElementScheduledItem _nextGoalScrollSchedule;
         private Button AbilityUpgradeButton => _contentRoot.Q<Button>("hero-ability-upgrade");
 
         internal bool IsAbilityTabShown => _activeTab == HeroTab.Abilities;
@@ -125,11 +128,62 @@ namespace LostCyberHamster.UI
             if (ShieldTutorialProgress.IsPending && ShieldTutorialProgress.IsShieldUnlocked)
                 _selectedAbilityId = ShieldTutorialProgress.ShieldId;
 
+            ApplyNextGoalTarget();
             ApplyActiveTab();
             BuildSkinSlots();
             ShowSelectedSkin();
             BuildAbilitySlots();
             ShowSelectedAbility();
+        }
+
+        /// <summary>Выбирает предмет из карточки, сохраняя ручные шаги начатого урока щита.</summary>
+        private void ApplyNextGoalTarget()
+        {
+            _nextGoalForScroll = null;
+            if (!NextGoalNavigation.TryConsume(ScreenEnum.CharacterScreen, out var goal) ||
+                ShieldTutorialProgress.IsPending ||
+                !int.TryParse(goal.Target, NumberStyles.None, CultureInfo.InvariantCulture, out int itemId)) return;
+
+            // Покупка открывает скины; улучшение и экипировка — уже открытую способность.
+            if (goal.Action == NextGoalAction.BuySkin &&
+                SkinManager.AvailableSkins.Any(skin => skin.Id == itemId) &&
+                CharacterDevelopmentService.IsSkinUnlocked(itemId))
+            {
+                _activeTab = HeroTab.Skins;
+                _selectedSkinId = itemId;
+            }
+            else if ((goal.Action == NextGoalAction.UpgradeAbility || goal.Action == NextGoalAction.EquipAbility) &&
+                     SuperAttackService.TryGet(itemId, out _) && SuperAttackService.IsUnlocked(itemId))
+            {
+                _activeTab = HeroTab.Abilities;
+                _selectedAbilityId = itemId;
+            }
+            else return;
+            _nextGoalForScroll = goal;
+        }
+
+        /// <summary>Прокручивает к выбранному предмету после расчёта размеров текущего дерева.</summary>
+        private void ScrollToNextGoal()
+        {
+            var goal = _nextGoalForScroll;
+            if (goal == null) return;
+            bool skin = goal.Action == NextGoalAction.BuySkin;
+            if (!_screenLoaded || !goal.IsCurrentProfile ||
+                _activeTab != (skin ? HeroTab.Skins : HeroTab.Abilities))
+            {
+                _nextGoalForScroll = null;
+                return;
+            }
+
+            // Геометрия слотов может появиться позже BindView или обновиться после загрузки иконок.
+            var scroll = skin ? SkinScroll : AbilityScroll;
+            var target = scroll?.Q<VisualElement>(skin
+                ? $"hero-skin-slot-{_selectedSkinId}" : $"hero-ability-slot-{_selectedAbilityId}");
+            if (scroll?.panel == null || target == null || !(target.layout.width > 0) ||
+                !(target.layout.height > 0) || !(scroll.contentViewport.layout.height > 0)) return;
+            _nextGoalForScroll = null;
+            scroll.ScrollTo(target);
+            UpdateScrollNavigation();
         }
 
         protected override Task LoadDataAsync()
@@ -158,11 +212,15 @@ namespace LostCyberHamster.UI
                 AbilityScroll,
                 OnAbilityScrollValueChanged);
             Viewport?.schedule.Execute(UpdateScrollNavigation);
+            _nextGoalScrollSchedule = Viewport?.schedule.Execute(ScrollToNextGoal);
         }
 
         protected override void OnUnsubscribeFromEvents()
         {
             _returnButton?.Dispose();
+            _nextGoalScrollSchedule?.Pause();
+            _nextGoalScrollSchedule = null;
+            _nextGoalForScroll = null;
             AbilityUpgradeButton?.UnregisterCallback<ClickEvent>(OnAbilityUpgradeClicked);
             _screenLoaded = false;
             _visualVersion++;
@@ -692,6 +750,7 @@ namespace LostCyberHamster.UI
 
             scrollView.RegisterCallback<GeometryChangedEvent>(
                 OnScrollGeometryChanged);
+            scrollView.contentContainer.RegisterCallback<GeometryChangedEvent>(OnScrollGeometryChanged);
             scrollView.verticalScroller.valueChanged += valueChanged;
         }
 
@@ -706,12 +765,14 @@ namespace LostCyberHamster.UI
 
             scrollView.UnregisterCallback<GeometryChangedEvent>(
                 OnScrollGeometryChanged);
+            scrollView.contentContainer.UnregisterCallback<GeometryChangedEvent>(OnScrollGeometryChanged);
             scrollView.verticalScroller.valueChanged -= valueChanged;
         }
 
         private void OnScrollGeometryChanged(
             GeometryChangedEvent _)
         {
+            ScrollToNextGoal();
             UpdateScrollNavigation();
         }
 

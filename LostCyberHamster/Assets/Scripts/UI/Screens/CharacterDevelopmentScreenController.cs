@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,6 +39,8 @@ namespace LostCyberHamster.UI
         private CancellationTokenSource _abilityIconCancellation;
         private readonly Action _resume;
         private DevelopmentReturnButton _returnButton;
+        private NextGoalCandidate _nextGoalForScroll;
+        private IVisualElementScheduledItem _nextGoalScrollSchedule;
         private readonly List<(string Address, VisualElement Icon, bool Grayscale)>
             _pendingAbilityIcons = new();
 
@@ -93,7 +96,44 @@ namespace LostCyberHamster.UI
             _returnButton = new DevelopmentReturnButton(_contentRoot.Q<Button>("development-return"), _resume);
             UpdatePlayerProgress();
             BuildCards();
+            ApplyNextGoalTarget();
         }
+
+        /// <summary>Запоминает карточку открытия, пока начатый урок щита не требует своего фокуса.</summary>
+        private void ApplyNextGoalTarget()
+        {
+            _nextGoalForScroll = null;
+            if (!NextGoalNavigation.TryConsume(ScreenEnum.CharacterDevelopmentScreen, out var goal) ||
+                ShieldTutorialProgress.IsPending ||
+                !int.TryParse(goal.Target, NumberStyles.None, CultureInfo.InvariantCulture, out int itemId)) return;
+            if (goal.Action == NextGoalAction.UnlockSkin && CharacterDevelopmentService.CanUnlockSkin(itemId) ||
+                goal.Action == NextGoalAction.UnlockAbility && CharacterDevelopmentService.CanUnlockSuperAttack(itemId))
+                _nextGoalForScroll = goal;
+        }
+
+        /// <summary>Показывает конкретную карточку после расчёта размеров её горизонтального ряда.</summary>
+        private void ScrollToNextGoal()
+        {
+            var goal = _nextGoalForScroll;
+            if (goal == null) return;
+            if (!goal.IsCurrentProfile || ShieldTutorialProgress.IsPending)
+            {
+                _nextGoalForScroll = null;
+                return;
+            }
+
+            // Используем реальные элементы текущего дерева после его прикрепления к panel.
+            bool skin = goal.Action == NextGoalAction.UnlockSkin;
+            var scroll = skin ? SkinScroll : AbilityScroll;
+            var target = scroll?.Q<VisualElement>(skin
+                ? $"development-skin-card-{goal.Target}" : $"development-ability-card-{goal.Target}");
+            if (scroll?.panel == null || target == null || !(target.layout.width > 0) ||
+                !(target.layout.height > 0) || !(scroll.contentViewport.layout.width > 0)) return;
+            _nextGoalForScroll = null;
+            scroll.ScrollTo(target);
+        }
+
+        private void OnNextGoalGeometryChanged(GeometryChangedEvent _) => ScrollToNextGoal();
 
         protected override Task LoadDataAsync()
         {
@@ -114,11 +154,19 @@ namespace LostCyberHamster.UI
                 OnAbilityPreviousClicked);
             AbilityNextButton?.RegisterCallback<ClickEvent>(
                 OnAbilityNextClicked);
+            SkinScroll?.contentContainer.RegisterCallback<GeometryChangedEvent>(OnNextGoalGeometryChanged);
+            AbilityScroll?.contentContainer.RegisterCallback<GeometryChangedEvent>(OnNextGoalGeometryChanged);
+            _nextGoalScrollSchedule = _contentRoot.schedule.Execute(ScrollToNextGoal);
         }
 
         protected override void OnUnsubscribeFromEvents()
         {
             _returnButton?.Dispose();
+            _nextGoalScrollSchedule?.Pause();
+            _nextGoalScrollSchedule = null;
+            _nextGoalForScroll = null;
+            SkinScroll?.contentContainer.UnregisterCallback<GeometryChangedEvent>(OnNextGoalGeometryChanged);
+            AbilityScroll?.contentContainer.UnregisterCallback<GeometryChangedEvent>(OnNextGoalGeometryChanged);
             // Отключаем screen-local callbacks.
             EquipmentButton?.UnregisterCallback<ClickEvent>(
                 OnEquipmentClicked);

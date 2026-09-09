@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "configVersion": 1,
+  "enabled": true,
+  "questNearCompletionRatio": 0.8,
+  "repeatAfterSeconds": 300,
+  "rules": [
+    { "kind": "Reward", "enabled": true, "priority": 400, "screens": ["Home", "Win", "SelectLevel"] },
+    { "kind": "Development", "enabled": true, "priority": 300, "screens": ["Home", "Win", "SelectLevel"] },
+    { "kind": "Quest", "enabled": true, "priority": 200, "screens": ["Home", "Win", "SelectLevel"] },
+    { "kind": "Stage", "enabled": true, "priority": 100, "screens": ["Home", "Win", "SelectLevel"] }
+  ]
+}

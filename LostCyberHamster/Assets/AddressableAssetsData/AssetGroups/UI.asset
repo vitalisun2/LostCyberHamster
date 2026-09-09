@@ -119,6 +119,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 65400eafb23e4b3409922b4624ae03d9
+    m_Address: next_goal_cards
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 672a2f3d376ab4f4da8e20f292c9eef5
     m_Address: SelectLevelScreenBackgroundSprite
     m_ReadOnly: 0
@@ -158,6 +163,16 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8de5c635ed308d0408df7c9940dfc14c
     m_Address: QuestsBackgroundSprite
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 91322d80de9ae6045bca368ae4f123d7
+    m_Address: goal_quest
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9534cc8909f7d094997cf3ecf53c8a40
+    m_Address: goal_stage
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -247,6 +262,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cacbcd96638851a4abf0cd4e20bdff49
+    m_Address: goal_development
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d3a3cb43cb211764f8e82506bfd46ed0
     m_Address: hero-ability/energy-shield
     m_ReadOnly: 0
@@ -260,6 +280,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: df9a4ecd64704169af5792a98783a9df
     m_Address: barcelona_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e1ff4cd6863b6e24a85f4bde053d129f
+    m_Address: goal_reward
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

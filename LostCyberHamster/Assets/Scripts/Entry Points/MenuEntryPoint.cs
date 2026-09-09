@@ -31,6 +31,9 @@ namespace Assets.Scripts.Entry_Points
         private ConflictService _conflictService;
         private FirstSessionNotificationHost _notifications;
         private ShieldOnboardingController _shieldOnboarding;
+        private NextGoalCardPresenter _nextGoal;
+        private VisualElement _nextGoalRoot;
+        private ScreenEnum _nextGoalScreen;
         private PlayerLevelPresentation _levelPresentation;
         private bool _levelCheckInProgress;
         private float _quietTime;
@@ -63,6 +66,7 @@ namespace Assets.Scripts.Entry_Points
                 requestedScreen == ScreenEnum.LeaderboardScreen &&
                 !string.IsNullOrWhiteSpace(leaderboardLocationId) &&
                 !string.IsNullOrWhiteSpace(leaderboardPartId);
+            NextGoalNavigation.DiscardOtherDestination(hasNavigationRequest ? requestedScreen : ScreenEnum.HomeScreen);
             var leaderboardScreenController = new LeaderboardScreenController(_uiDocument, _cloudSyncService);
             if (openLeaderboard)
             {
@@ -145,6 +149,7 @@ namespace Assets.Scripts.Entry_Points
         {
             _notifications?.Dispose();
             _shieldOnboarding?.Dispose();
+            DisposeNextGoal();
             _levelPresentation?.Dispose();
             _notifications = null;
             _shieldOnboarding = null;
@@ -193,6 +198,7 @@ namespace Assets.Scripts.Entry_Points
             {
                 _quietTime = 0;
                 _shieldOnboarding.Tick(blocked: true);
+                _nextGoal?.Tick(blocked: true);
                 _notifications.Tick(gameplay: false, blocked: true);
                 return;
             }
@@ -207,7 +213,37 @@ namespace Assets.Scripts.Entry_Points
             _shieldOnboarding.Tick();
             _notifications.Tick(gameplay: false, blocked || _uiManager.HasPriorityPresentation || _shieldOnboarding.IsPresenting);
             _uiManager.HasPriorityPresentation |= _shieldOnboarding.IsPresenting;
+            TickNextGoal(blocked || _uiManager.HasPriorityPresentation || _notifications.IsPresenting || _quietTime < .75f);
             _accountPromptCoordinator?.Tick();
+        }
+
+        private void TickNextGoal(bool blocked)
+        {
+            // Привязка принадлежит фактическому дереву экрана и освобождается при его замене.
+            var screen = _uiManager.CurrentScreen;
+            bool home = screen == ScreenEnum.HomeScreen;
+            var host = home ? _uiDocument.rootVisualElement.Q("homescreen") :
+                screen == ScreenEnum.SelectLevelScreen ? _uiDocument.rootVisualElement.Q("select-level-screen") : null;
+            if (host != _nextGoalRoot || screen != _nextGoalScreen)
+            {
+                DisposeNextGoal();
+                _nextGoalRoot = host;
+                _nextGoalScreen = screen;
+                if (host != null)
+                    _nextGoal = new NextGoalCardPresenter(host,
+                        home ? NextGoalCardPlacement.Home : NextGoalCardPlacement.SelectLevel,
+                        goal => NextGoalNavigation.Open(_uiManager, goal));
+            }
+            _nextGoal?.Tick(blocked);
+            if (home && host != null) host.EnableInClassList("home-screen--goal-space", _nextGoal?.HasGoal == true);
+        }
+
+        private void DisposeNextGoal()
+        {
+            _nextGoal?.Dispose();
+            _nextGoal = null;
+            _nextGoalRoot?.RemoveFromClassList("home-screen--goal-space");
+            _nextGoalRoot = null;
         }
 
         private async void PresentPendingLevel()
@@ -256,6 +292,7 @@ namespace Assets.Scripts.Entry_Points
         {
             _quietTime = 0;
             _shieldOnboarding?.Tick(blocked: true);
+            _nextGoal?.Tick(blocked: true);
             _notifications?.Tick(gameplay: false, blocked: true);
         }
     }

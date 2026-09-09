@@ -13,6 +13,8 @@ namespace LostCyberHamster.UI
     {
         private const float DesignWidth = 1672f;
         private const float DesignHeight = 941f;
+        private const float LocationSwipeDistance = 72f;
+        private const float LocationSwipeAxisRatio = 1.25f;
         private const int LevelSlotCount = 9;
         private const string BackgroundAssetName =
             "SelectLevelScreenBackgroundSprite";
@@ -58,6 +60,11 @@ namespace LostCyberHamster.UI
         private LocationView _selectedLocationView;
         private PartView _selectedPartView;
         private SelectionState _state = SelectionState.DayPart;
+        private VisualElement _locationSwipeSurface;
+        private int _swipePointerId = -1;
+        private int _suppressedClickPointerId = -1;
+        private Vector2 _swipeStart;
+        private bool _isLocationSwiping;
 
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.SelectLevelScreen;
@@ -82,7 +89,44 @@ namespace LostCyberHamster.UI
         {
             // Восстанавливаем состояние выбора из текущего прогресса.
             InitializeSelectionModel();
+            ApplyNextGoalTarget();
             RenderCurrentState();
+        }
+
+        /// <summary>Применяет цель и при переходе внутри уже открытого Select Level.</summary>
+        internal void ShowNextGoalTarget()
+        {
+            InitializeSelectionModel();
+            ApplyNextGoalTarget();
+            RenderCurrentState();
+        }
+
+        /// <summary>Открывает существующую сетку нужной части суток по адресу цели.</summary>
+        private void ApplyNextGoalTarget()
+        {
+            if (!NextGoalNavigation.TryConsume(ScreenEnum.SelectLevelScreen, out var goal)) return;
+            string address = NextGoalNavigation.GetStageAddress(goal);
+            if (string.IsNullOrEmpty(address)) return;
+
+            // Доступность повторно берём из модели уже подготовленного экрана.
+            for (int locationIndex = 0; locationIndex < _selectionModel.Locations.Count; locationIndex++)
+            {
+                var location = _selectionModel.Locations[locationIndex];
+                if (!location.IsUnlocked) continue;
+                foreach (var part in location.Parts)
+                {
+                    if (!part.IsUnlocked) continue;
+                    foreach (var level in part.Levels)
+                    {
+                        if (!level.IsUnlocked || !string.Equals(level.Address, address, StringComparison.Ordinal)) continue;
+                        _currentLocationIndex = locationIndex;
+                        _selectedLocationView = location;
+                        _selectedPartView = part;
+                        _state = SelectionState.Levels;
+                        return;
+                    }
+                }
+            }
         }
 
         protected override void OnSubscribeToEvents()
@@ -92,6 +136,16 @@ namespace LostCyberHamster.UI
                 OnNextLocationClicked);
             PreviousLocationButton?.RegisterCallback<ClickEvent>(
                 OnPreviousLocationClicked);
+            _locationSwipeSurface = DayPartState;
+            _contentRoot.RegisterCallback<PointerDownEvent>(
+                OnLocationPointerDown, TrickleDown.TrickleDown);
+            SubscribeToSwipePointerEvents(_contentRoot);
+            SubscribeToSwipePointerEvents(PreviousLocationButton);
+            SubscribeToSwipePointerEvents(NextLocationButton);
+            _contentRoot.RegisterCallback<PointerCaptureOutEvent>(
+                OnLocationPointerCaptureOut, TrickleDown.TrickleDown);
+            _contentRoot.RegisterCallback<ClickEvent>(
+                OnLocationClick, TrickleDown.TrickleDown);
         }
 
         protected override void OnUnsubscribeFromEvents()
@@ -101,6 +155,18 @@ namespace LostCyberHamster.UI
                 OnNextLocationClicked);
             PreviousLocationButton?.UnregisterCallback<ClickEvent>(
                 OnPreviousLocationClicked);
+            _contentRoot.UnregisterCallback<PointerDownEvent>(
+                OnLocationPointerDown, TrickleDown.TrickleDown);
+            UnsubscribeFromSwipePointerEvents(_contentRoot);
+            UnsubscribeFromSwipePointerEvents(PreviousLocationButton);
+            UnsubscribeFromSwipePointerEvents(NextLocationButton);
+            _contentRoot.UnregisterCallback<PointerCaptureOutEvent>(
+                OnLocationPointerCaptureOut, TrickleDown.TrickleDown);
+            _contentRoot.UnregisterCallback<ClickEvent>(
+                OnLocationClick, TrickleDown.TrickleDown);
+            ResetLocationSwipe();
+            _suppressedClickPointerId = -1;
+            _locationSwipeSurface = null;
         }
 
         private void InitializeSelectionModel()
@@ -180,30 +246,24 @@ namespace LostCyberHamster.UI
             IReadOnlyList<LevelProgress> levels =
                 _selectedPartView.Levels ?? Array.Empty<LevelProgress>();
 
-            // Раскладываем catalog order вдоль готового маршрута-змейки.
+            // Размещаем существующие уровни на прежних позициях маршрута 3×3.
+            int visibleLevelCount = Mathf.Min(levels.Count, LevelSlotCount);
             for (int catalogIndex = 0;
-                 catalogIndex < LevelSlotCount;
+                 catalogIndex < visibleLevelCount;
                  catalogIndex++)
             {
                 var levelItem = new LevelItem();
                 levelItem.AddToClassList(
                     $"select-level-card-slot--{catalogIndex + 1}");
 
-                if (catalogIndex < levels.Count)
+                LevelProgress level = levels[catalogIndex];
+                levelItem.ConfigureForLevel(level, catalogIndex + 1);
+                if (!levelItem.IsLocked &&
+                    !string.IsNullOrWhiteSpace(levelItem.LevelName))
                 {
-                    LevelProgress level = levels[catalogIndex];
-                    levelItem.ConfigureForLevel(level, catalogIndex + 1);
-                    if (!levelItem.IsLocked &&
-                        !string.IsNullOrWhiteSpace(levelItem.LevelName))
-                    {
-                        string levelNameCapture = levelItem.LevelName;
-                        levelItem.RegisterCallback<ClickEvent>(evt =>
-                            OnLevelClicked(evt, levelNameCapture));
-                    }
-                }
-                else
-                {
-                    levelItem.ConfigureLockedPlaceholder();
+                    string levelNameCapture = levelItem.LevelName;
+                    levelItem.RegisterCallback<ClickEvent>(evt =>
+                        OnLevelClicked(evt, levelNameCapture));
                 }
 
                 LevelCardsContainer.Add(levelItem);
@@ -360,6 +420,123 @@ namespace LostCyberHamster.UI
         {
             evt.StopPropagation();
             ChangeLocation(1);
+        }
+
+        private void OnLocationPointerDown(PointerDownEvent evt)
+        {
+            if (!evt.isPrimary || evt.button != 0)
+                return;
+
+            // Новое нажатие завершает прежний жест и возвращает обычные клики.
+            ResetLocationSwipe();
+            _suppressedClickPointerId = -1;
+            if (_state != SelectionState.DayPart ||
+                _locationSwipeSurface == null ||
+                evt.target is not VisualElement target ||
+                (target != _locationSwipeSurface &&
+                 !_locationSwipeSurface.Contains(target)))
+                return;
+
+            // Координаты макета учитывают масштаб экрана и PanelSettings.
+            _swipePointerId = evt.pointerId;
+            _swipeStart = _locationSwipeSurface.WorldToLocal(evt.position);
+        }
+
+        private void SubscribeToSwipePointerEvents(VisualElement element)
+        {
+            // В Unity 6.2 захват кнопкой направляет события только самой кнопке.
+            element?.RegisterCallback<PointerMoveEvent>(
+                OnLocationPointerMove, TrickleDown.TrickleDown);
+            element?.RegisterCallback<PointerUpEvent>(
+                OnLocationPointerUp, TrickleDown.TrickleDown);
+            element?.RegisterCallback<PointerCancelEvent>(
+                OnLocationPointerCancel, TrickleDown.TrickleDown);
+        }
+
+        private void UnsubscribeFromSwipePointerEvents(VisualElement element)
+        {
+            element?.UnregisterCallback<PointerMoveEvent>(
+                OnLocationPointerMove, TrickleDown.TrickleDown);
+            element?.UnregisterCallback<PointerUpEvent>(
+                OnLocationPointerUp, TrickleDown.TrickleDown);
+            element?.UnregisterCallback<PointerCancelEvent>(
+                OnLocationPointerCancel, TrickleDown.TrickleDown);
+        }
+
+        private void OnLocationPointerMove(PointerMoveEvent evt)
+        {
+            if (evt.pointerId != _swipePointerId)
+                return;
+
+            Vector2 delta = (Vector2)_locationSwipeSurface.WorldToLocal(
+                evt.position) - _swipeStart;
+            if (!_isLocationSwiping && IsLocationSwipe(delta))
+            {
+                _isLocationSwiping = true;
+                _suppressedClickPointerId = evt.pointerId;
+                _contentRoot.CapturePointer(evt.pointerId);
+            }
+
+            if (_isLocationSwiping)
+                evt.StopImmediatePropagation();
+        }
+
+        private void OnLocationPointerUp(PointerUpEvent evt)
+        {
+            if (evt.pointerId != _swipePointerId)
+                return;
+
+            Vector2 delta = (Vector2)_locationSwipeSurface.WorldToLocal(
+                evt.position) - _swipeStart;
+            bool completedSwipe = IsLocationSwipe(delta);
+            bool consumed = _isLocationSwiping || completedSwipe;
+            if (consumed && !_isLocationSwiping)
+                _contentRoot.CapturePointer(evt.pointerId);
+            ResetLocationSwipe();
+            if (!consumed)
+                return;
+
+            // ClickEvent может прийти следом за PointerUp даже после захвата.
+            _suppressedClickPointerId = evt.pointerId;
+            evt.StopImmediatePropagation();
+            if (completedSwipe && _state == SelectionState.DayPart)
+                ChangeLocation(delta.x < 0f ? 1 : -1);
+        }
+
+        private static bool IsLocationSwipe(Vector2 delta)
+        {
+            return Mathf.Abs(delta.x) >= LocationSwipeDistance &&
+                   Mathf.Abs(delta.x) >=
+                   Mathf.Abs(delta.y) * LocationSwipeAxisRatio;
+        }
+
+        private void OnLocationPointerCancel(PointerCancelEvent evt)
+        {
+            if (evt.pointerId == _swipePointerId)
+                ResetLocationSwipe();
+        }
+
+        private void OnLocationPointerCaptureOut(PointerCaptureOutEvent evt)
+        {
+            if (evt.pointerId == _swipePointerId &&
+                evt.target == _contentRoot)
+                ResetLocationSwipe();
+        }
+
+        private void OnLocationClick(ClickEvent evt)
+        {
+            if (evt.pointerId == _suppressedClickPointerId)
+                evt.StopImmediatePropagation();
+        }
+
+        private void ResetLocationSwipe()
+        {
+            int pointerId = _swipePointerId;
+            _swipePointerId = -1;
+            _isLocationSwiping = false;
+            if (pointerId >= 0 &&
+                _contentRoot.HasPointerCapture(pointerId))
+                _contentRoot.ReleasePointer(pointerId);
         }
 
         private void ChangeLocation(int delta)

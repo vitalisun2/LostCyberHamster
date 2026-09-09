@@ -37,6 +37,8 @@ namespace LostCyberHamster.UI
         private bool _recordsDirty = true;
         private bool _disposed;
 
+        public bool IsPresenting => !_disposed && _notifications.IsPresenting;
+
         public FirstSessionNotificationHost(UIManager ui, VisualElement root, Hamster hamster = null)
         {
             _ui = ui ?? throw new ArgumentNullException(nameof(ui));

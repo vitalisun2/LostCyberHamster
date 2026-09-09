@@ -72,6 +72,8 @@
 
 ## Совместимость Unity CLI и Pipeline
 
+После timeout команды, меняющей ассеты, сначала прочитать фактический результат: GUID, Addressables-записи, настройки импортера и загруженный Sprite. Main-thread операция может завершиться уже после ответа timeout. Повторять только недостающий шаг после проверки состояния; сам timeout не подтверждает отмену операции.
+
 Если CLI находит Editor, но выполнение возвращает `too old to parse command lines`, проверить версию Pipeline через `unity pipeline list` и точный projectPath через MCP `editor_status`. В установленной паре CLI 1.0.0.20008 / Pipeline 0.5.0-exp.1 существующая операция `RegenerateProjectFiles` успешно вызывается через MCP `eval` и reflection к проектному command-классу. Это тот же `regenerate_project_files`; затем выполняется обычный `dotnet build --no-restore`. Обновление пакетов оформляется отдельной задачей.
 
 Для асинхронного read-only probe через Pipeline 0.5.0-exp.1 создать async-лямбду, сохранить её Task в AppDomain и прочитать результат следующим eval после IsCompleted. Верхнеуровневый await этот eval не поддерживает. Перед выводом о текущей игре проверить Application.isPlaying: после остановки Editor некоторые статические SDK-статусы сохраняются.

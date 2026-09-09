@@ -170,6 +170,38 @@ namespace Assets.Scripts.System
             return true;
         }
 
+        /// <summary>Выбирает продолжение для Play в меню по сохранённому прогрессу.</summary>
+        public static bool TryGetContinueLevelKey(out string levelKey)
+        {
+            levelKey = string.Empty;
+            if (!TryGetCurrentProgressKey(out var progressKey))
+                return false;
+
+            // Непройденный уровень остаётся текущей попыткой, включая возврат после поражения.
+            var overview = SavedProgressOverview;
+            if (!overview.TryGetLevel(progressKey, out var current) || !current.IsUnlocked)
+                return false;
+            levelKey = current.Address?.Trim() ?? string.Empty;
+            if (!current.IsCompleted)
+                return !string.IsNullOrEmpty(levelKey);
+
+            // После победы продолжаем каталог до первой непройденной открытой цели.
+            foreach (var candidate in overview.Levels)
+            {
+                if (candidate.LevelNumber <= current.LevelNumber)
+                    continue;
+                if (!candidate.IsUnlocked)
+                    break;
+                if (candidate.IsCompleted)
+                    continue;
+                levelKey = candidate.Address?.Trim() ?? string.Empty;
+                break;
+            }
+
+            // В конце доступного пути сохраняем выбранный уровень для повторного прохождения.
+            return !string.IsNullOrEmpty(levelKey);
+        }
+
         /// <summary>
         /// Проверяет, является ли уровень последним gameplay-уровнем текущего каталога.
         /// </summary>

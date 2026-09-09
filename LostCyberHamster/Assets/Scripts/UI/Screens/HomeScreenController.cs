@@ -1,4 +1,5 @@
 using System;
+using Assets.Scripts.System;
 using GameManagement;
 using GameManagement.Progress;
 using UnityEngine;
@@ -41,7 +42,9 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnStart(ClickEvent evt)
         {
-            // AudioManager.PlayDefaultButtonSound();
+            // Play продолжает сохранённый путь; Replay и явный выбор уровня имеют свои маршруты.
+            if (LevelManager.TryGetContinueLevelKey(out string levelKey))
+                LevelController.Instance.SetCurrentLevel(levelKey);
             SceneManager.LoadScene("Game");
         }
 

@@ -55,10 +55,17 @@ namespace LostCyberHamster.UI
             _progressFill.style.width =
                 Length.Percent(progress * 95f);
             _rewardAmount.text = quest.RewardAmount.ToString();
-            var xp = new Label(string.Format(LocalizationManager.GetLocalizedString("progression_quest_xp"),
-                QuestExperienceRewardPolicy.GetReward(quest))) { pickingMode = PickingMode.Ignore };
-            xp.AddToClassList("first-session-story-reward");
-            this.Q<VisualElement>(className: "quest-item__spacer")?.Add(xp);
+            int experienceReward = QuestExperienceRewardPolicy.GetReward(quest);
+            if (experienceReward > 0)
+            {
+                var xp = new Label(string.Format(
+                    LocalizationManager.GetLocalizedString("progression_quest_xp"), experienceReward))
+                {
+                    pickingMode = PickingMode.Ignore
+                };
+                xp.AddToClassList("first-session-story-reward");
+                this.Q<VisualElement>(className: "quest-item__spacer")?.Add(xp);
+            }
 
             bool usesPreparedCoin =
                 quest.RewardType == ResourceType.Coins;

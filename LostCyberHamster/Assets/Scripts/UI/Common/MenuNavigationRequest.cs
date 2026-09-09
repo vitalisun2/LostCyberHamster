@@ -17,6 +17,7 @@ namespace LostCyberHamster.UI
             if (screen != ScreenEnum.HomeScreen && screen != ScreenEnum.CharacterScreen &&
                 screen != ScreenEnum.QuestsScreen && screen != ScreenEnum.SelectLevelScreen &&
                 screen != ScreenEnum.SettingsScreen && screen != ScreenEnum.ShopScreen &&
+                screen != ScreenEnum.ReturnActivitiesScreen &&
                 screen != ScreenEnum.CharacterDevelopmentScreen)
                 throw new ArgumentOutOfRangeException(nameof(screen), screen, "A menu screen is required.");
             _targetScreen = screen;

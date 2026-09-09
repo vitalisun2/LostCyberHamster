@@ -186,6 +186,10 @@
     padding-left: 3%;
 }
 
+.home-screen--goal-space .home-main__actions {
+    padding-bottom: 140px;
+}
+
 .home-logo {
     width: 100%;
     height: 58%;

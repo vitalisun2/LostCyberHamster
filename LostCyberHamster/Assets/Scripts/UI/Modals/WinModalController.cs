@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.System;
-using Assets.Scripts.Tutorial;
 using GameManagement.Leaderboard;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -46,11 +45,10 @@ namespace LostCyberHamster.UI
         private Action _actionExit;
 
         private Action<string, string> _actionLeaderboard;
-        private Action _actionGoal;
-        private VisualElement _goalStrip => _modalContent.Q<VisualElement>("first-session-win-goal");
-        private Label _goalLabel => _modalContent.Q<Label>("first-session-win-goal-text");
-        private Button _goalButton => _modalContent.Q<Button>("btn_first-session-goal");
-        private bool _primaryShowsStoryClaim;
+        private Action<NextGoalCandidate> _actionGoal;
+        private NextGoalCardPresenter _goalPresenter;
+        private IVisualElementScheduledItem _goalSchedule;
+        private VisualElement _goalHost;
 
         private GameResultModalPresentation _presentation;
 
@@ -89,20 +87,25 @@ namespace LostCyberHamster.UI
             }
 
             RenderRunResult();
-            RenderGoal();
             return Task.CompletedTask;
         }
 
         protected override void OnSubscribeToEvents()
         {
+            // Подключаем прежние действия результата, включая постоянную кнопку Next Level.
             _presentation ??= GameResultModalPresentation.Apply(_root);
             _resumeButton?.RegisterCallback<ClickEvent>(OnClickResume);
             _restartButton?.RegisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.RegisterCallback<ClickEvent>(OnClickExit);
             _leaderboardButton?.RegisterCallback<ClickEvent>(OnClickLeaderboard);
-            _goalButton?.UnregisterCallback<ClickEvent>(OnClickGoal);
-            _goalButton?.RegisterCallback<ClickEvent>(OnClickGoal);
-
+            // Карточка живёт в свободном боковом слоте текущего дерева результата.
+            StopGoalPresentation();
+            _goalHost = _modalContent.Q("win-modal");
+            if (_goalHost != null)
+            {
+                _goalPresenter = new NextGoalCardPresenter(_goalHost, NextGoalCardPlacement.Win, OnClickGoal);
+                _goalSchedule = _goalHost.schedule.Execute(TickGoalPresentation).Every(100);
+            }
         }
 
         private void OnClickLeaderboard(ClickEvent evt)
@@ -133,25 +136,27 @@ namespace LostCyberHamster.UI
         private void OnClickResume(ClickEvent evt)
         {
             AcknowledgeVisibleRecord();
-            if (_primaryShowsStoryClaim) _actionGoal?.Invoke();
-            else _actionResume?.Invoke();
+            _actionResume?.Invoke();
         }
 
-        private void OnClickGoal(ClickEvent evt)
+        private void OnClickGoal(NextGoalCandidate goal)
         {
+            if (goal?.IsCurrentProfile != true || _actionGoal == null) return;
             AcknowledgeVisibleRecord();
-            if (_primaryShowsStoryClaim) _actionResume?.Invoke();
-            else _actionGoal?.Invoke();
+            _actionGoal(goal);
         }
 
 
         protected override void OnUnsubscribeFromEvents()
         {
+            // Снимаем действия текущего дерева результата.
             _resumeButton?.UnregisterCallback<ClickEvent>(OnClickResume);
             _restartButton?.UnregisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.UnregisterCallback<ClickEvent>(OnClickExit);
             _leaderboardButton?.UnregisterCallback<ClickEvent>(OnClickLeaderboard);
-            _goalButton?.UnregisterCallback<ClickEvent>(OnClickGoal);
+
+            // Останавливаем карточку до восстановления общей геометрии модалки.
+            StopGoalPresentation();
             _presentation?.Restore();
             _presentation = null;
         }
@@ -171,8 +176,8 @@ namespace LostCyberHamster.UI
             _actionExit = value;
         }
 
-        /// <summary>Задаёт переход к текущей цели первой сессии через общий маршрут результата.</summary>
-        public void SetGoalAction(Action value) => _actionGoal = value;
+        /// <summary>Задаёт переход к проверенной цели карточки через общий маршрут результата.</summary>
+        public void SetGoalAction(Action<NextGoalCandidate> value) => _actionGoal = value;
 
         /// <summary>
         /// Задаёт переход из результата забега в выбранный рейтинг.
@@ -202,46 +207,25 @@ namespace LostCyberHamster.UI
             {
                 _levelContextLabel.text = FormatLevelContext();
                 RenderRunResult();
-                RenderGoal();
             }
         }
 
-        private void RenderGoal()
+        private void TickGoalPresentation()
         {
-            if (_goalStrip == null) return;
-            var goal = FirstSessionGoalPresenter.GetCurrent();
-            _primaryShowsStoryClaim = QuestManager.StoryQuests.Any(quest =>
-                quest.Id == FirstSessionGoalPresenter.MorningQuestId && quest.CanClaimReward);
-            RenderPrimaryAction();
-            _goalStrip.style.display = goal.HasValue ? DisplayStyle.Flex : DisplayStyle.None;
-            if (!goal.HasValue) return;
-            _goalLabel.text = goal.Value.Text;
-            _goalLabel.tooltip = goal.Value.Detail;
-            _goalButton.text = _primaryShowsStoryClaim
-                ? LocalizationManager.GetLocalizedString("first_session_next_level") : goal.Value.ActionText;
+            if (_goalPresenter == null) return;
+            bool blocked = _goalHost?.panel == null || _actionGoal == null;
+            for (var element = _goalHost; !blocked && element != null; element = element.parent)
+                blocked = element.resolvedStyle.display == DisplayStyle.None || !element.visible;
+            _goalPresenter.Tick(blocked);
         }
 
-        private void RenderPrimaryAction()
+        private void StopGoalPresentation()
         {
-            if (_resumeButton is not Button primary) return;
-            // Размер и позиция прежние; надпись Next в арте скрывается только для настоящего Claim-маршрута.
-            bool claim = _primaryShowsStoryClaim;
-            primary.text = claim ? LocalizationManager.GetLocalizedString("first_session_claim_action") : string.Empty;
-            primary.tooltip = LocalizationManager.GetLocalizedString(claim
-                ? "first_session_claim_action" : "first_session_next_level");
-            primary.style.backgroundImage = claim ? new StyleBackground(StyleKeyword.None) : new StyleBackground(StyleKeyword.Null);
-            primary.style.backgroundColor = claim ? new StyleColor(new Color(0.88f, 0.93f, 0.965f)) : new StyleColor(StyleKeyword.Null);
-            primary.style.color = claim ? new StyleColor(new Color(0.06f, 0.16f, 0.31f)) : new StyleColor(StyleKeyword.Null);
-            primary.style.fontSize = claim ? new StyleLength(26) : new StyleLength(StyleKeyword.Null);
-            primary.style.unityFontStyleAndWeight = claim ? new StyleEnum<FontStyle>(FontStyle.Bold) : new StyleEnum<FontStyle>(StyleKeyword.Null);
-            primary.style.unityTextAlign = TextAnchor.MiddleCenter;
-            primary.style.whiteSpace = WhiteSpace.Normal;
-            StyleColor border = claim ? new StyleColor(new Color(0.145f, 0.38f, 0.55f)) : new StyleColor(StyleKeyword.Null);
-            primary.style.borderTopColor = primary.style.borderRightColor = primary.style.borderBottomColor = primary.style.borderLeftColor = border;
-            StyleFloat borderWidth = claim ? new StyleFloat(2) : new StyleFloat(StyleKeyword.Null);
-            primary.style.borderTopWidth = primary.style.borderRightWidth = primary.style.borderBottomWidth = primary.style.borderLeftWidth = borderWidth;
-            StyleLength radius = claim ? new StyleLength(18) : new StyleLength(StyleKeyword.Null);
-            primary.style.borderTopLeftRadius = primary.style.borderTopRightRadius = primary.style.borderBottomLeftRadius = primary.style.borderBottomRightRadius = radius;
+            _goalSchedule?.Pause();
+            _goalSchedule = null;
+            _goalPresenter?.Dispose();
+            _goalPresenter = null;
+            _goalHost = null;
         }
 
         private void AcknowledgeVisibleRecord()
