@@ -92,19 +92,6 @@
 .game-run-counter__icon--experience {
     width: 88px;
     background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_icon_experience.png");
-    align-items: center;
-    justify-content: center;
-}
-
-#gamescreen .game-run-counter__experience-text {
-    margin: 0;
-    padding: 0;
-    font-size: 24px;
-    color: rgb(255, 255, 255);
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-    -unity-text-outline-color: rgb(10, 36, 60);
-    -unity-text-outline-width: 1px;
 }
 
 .game-control {

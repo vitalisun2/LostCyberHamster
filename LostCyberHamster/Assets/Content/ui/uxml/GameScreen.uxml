@@ -28,9 +28,7 @@
                     <engine:VisualElement class="shared-currency-button__plate game-run-counter__plate" picking-mode="Ignore">
                         <engine:Label text="0" name="run-score" class="shared-currency-button__label" picking-mode="Ignore" />
                     </engine:VisualElement>
-                    <engine:VisualElement class="shared-currency-button__icon game-run-counter__icon game-run-counter__icon--experience" picking-mode="Ignore">
-                        <engine:Label text="EXP" class="game-run-counter__experience-text" picking-mode="Ignore" />
-                    </engine:VisualElement>
+                    <engine:VisualElement class="shared-currency-button__icon game-run-counter__icon game-run-counter__icon--experience" picking-mode="Ignore" />
                 </engine:VisualElement>
             </engine:VisualElement>
             <engine:Button name="btn_buy_energy" class="game-control game-control--purchase game-control--buy-energy">
