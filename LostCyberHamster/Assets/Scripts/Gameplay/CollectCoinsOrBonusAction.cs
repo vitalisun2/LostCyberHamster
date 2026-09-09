@@ -39,7 +39,7 @@ namespace Assets.Scripts.Gameplay
 
         private void CollectCoin()
         {
-            GameEventsManager.CrystallCollected(1);
+            GameEventsManager.CoinCollected(1);
             Object.Instantiate(
                 LevelController.Instance.LevelData.CoinOneBonusPrefab, _hamster.EffectsSlot.transform.position, Quaternion.identity);
         }

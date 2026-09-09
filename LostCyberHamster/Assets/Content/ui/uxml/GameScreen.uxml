@@ -5,12 +5,32 @@
             <engine:VisualElement name="tap" class="game-screen__tap-area" />
             <engine:VisualElement class="game-screen__top-row">
                 <LostCyberHamster.UI.Energybar />
-                <engine:VisualElement style="flex-grow: 0; flex-shrink: 1; flex-direction: row; justify-content: flex-end; align-items: center; min-width: 0;">
-                    <engine:Label text="0" name="run-score" class="lcs-text ui-text" style="flex-grow: 0; flex-shrink: 1; min-width: 120px; max-width: 240px; font-size: 52px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -unity-text-align: middle-right;" />
-                    <engine:VisualElement style="flex-grow: 0; flex-shrink: 0; width: 20px;" />
+                <engine:VisualElement style="flex-grow: 0; flex-shrink: 0; flex-direction: row; justify-content: flex-end; align-items: center;">
                     <LostCyberHamster.UI.Healthbar style="flex-grow: 0; flex-shrink: 0; flex-direction: row; width: 210px; min-width: 210px; height: 70px;" />
                     <engine:VisualElement style="flex-grow: 0; flex-shrink: 0; width: 20px;" />
                     <engine:Button name="btn_pause" tooltip="Пауза" class="shared-hud-control shared-pause-button" />
+                </engine:VisualElement>
+            </engine:VisualElement>
+            <engine:VisualElement name="run-counters" class="game-screen__run-counters" picking-mode="Ignore">
+                <engine:VisualElement name="run-coins-counter" class="game-run-counter" picking-mode="Ignore">
+                    <engine:VisualElement class="shared-currency-button__plate game-run-counter__plate" picking-mode="Ignore">
+                        <engine:Label text="0" name="run-coins" class="shared-currency-button__label" picking-mode="Ignore" />
+                    </engine:VisualElement>
+                    <engine:VisualElement class="shared-currency-button__icon game-run-counter__icon game-run-counter__icon--coins" picking-mode="Ignore" />
+                </engine:VisualElement>
+                <engine:VisualElement name="run-crystals-counter" class="game-run-counter" picking-mode="Ignore">
+                    <engine:VisualElement class="shared-currency-button__plate game-run-counter__plate" picking-mode="Ignore">
+                        <engine:Label text="0" name="run-crystals" class="shared-currency-button__label" picking-mode="Ignore" />
+                    </engine:VisualElement>
+                    <engine:VisualElement class="shared-currency-button__icon game-run-counter__icon game-run-counter__icon--crystals" picking-mode="Ignore" />
+                </engine:VisualElement>
+                <engine:VisualElement name="run-experience-counter" class="game-run-counter" picking-mode="Ignore">
+                    <engine:VisualElement class="shared-currency-button__plate game-run-counter__plate" picking-mode="Ignore">
+                        <engine:Label text="0" name="run-score" class="shared-currency-button__label" picking-mode="Ignore" />
+                    </engine:VisualElement>
+                    <engine:VisualElement class="shared-currency-button__icon game-run-counter__icon game-run-counter__icon--experience" picking-mode="Ignore">
+                        <engine:Label text="EXP" class="game-run-counter__experience-text" picking-mode="Ignore" />
+                    </engine:VisualElement>
                 </engine:VisualElement>
             </engine:VisualElement>
             <engine:Button name="btn_buy_energy" class="game-control game-control--purchase game-control--buy-energy">

@@ -13,6 +13,12 @@ namespace LostCyberHamster.UI
         private Energybar _energyBar;
         private Healthbar _healthBar;
         private Label _runScore;
+        private Label _runCoins;
+        private Label _runCrystals;
+        private VisualElement _hudSafeArea;
+        private int _runScoreValue;
+        private int _runCoinsValue;
+        private int _runCrystalsValue;
         private Label _hamsterState;
         private Button _jumpButton;
         private Button _buyEnergyButton;
@@ -57,6 +63,7 @@ namespace LostCyberHamster.UI
             _buyEnergyButton?.RegisterCallback<PointerDownEvent>(OnClickBuyEnergy, TrickleDown.TrickleDown);
             _buyUltraButton?.RegisterCallback<PointerDownEvent>(OnClickBuyUltra, TrickleDown.TrickleDown);
             _tapArea?.RegisterCallback<PointerDownEvent>(OnClickTap, TrickleDown.TrickleDown);
+            _hudSafeArea?.RegisterCallback<GeometryChangedEvent>(OnHudGeometryChanged);
         }
 
         private void OnClickTap(PointerDownEvent evt)
@@ -121,14 +128,19 @@ namespace LostCyberHamster.UI
             _buyEnergyButton?.UnregisterCallback<PointerDownEvent>(OnClickBuyEnergy, TrickleDown.TrickleDown);
             _buyUltraButton?.UnregisterCallback<PointerDownEvent>(OnClickBuyUltra, TrickleDown.TrickleDown);
             _tapArea?.UnregisterCallback<PointerDownEvent>(OnClickTap, TrickleDown.TrickleDown);
+            _hudSafeArea?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometryChanged);
         }
 
         protected override void BindView()
         {
+            // Связываем элементы нового дерева экрана.
             _buttonPause = _contentRoot.Q<Button>("btn_pause");
             _energyBar = _contentRoot.Q<Energybar>();
             _healthBar = _contentRoot.Q<Healthbar>();
             _runScore = _contentRoot.Q<Label>("run-score");
+            _runCoins = _contentRoot.Q<Label>("run-coins");
+            _runCrystals = _contentRoot.Q<Label>("run-crystals");
+            _hudSafeArea = _contentRoot.Q<VisualElement>("hud-safe-area");
             _hamsterState = _contentRoot.Q<Label>("hamster-state-debug-label");
             _hamsterState ??= _contentRoot.Q<Label>("debug-game");
             _jumpButton = _contentRoot.Q<Button>("btn_jump");
@@ -138,9 +150,15 @@ namespace LostCyberHamster.UI
             _ultraChargeValue = _contentRoot.Q<Label>("ulta-charge-value");
             _tapArea = _contentRoot.Q<VisualElement>("tap");
 
+            // Готовим существующие элементы управления.
             ClearBackground();
             HideDebugStateInPlayerBuild();
             _doubleJumpDetector.Reset();
+
+            // Восстанавливаем счётчики при создании нового дерева текущего HUD.
+            SetRunScore(_runScoreValue);
+            SetRunResources(_runCoinsValue, _runCrystalsValue);
+            UpdateCounterLayout(_hudSafeArea?.resolvedStyle.width ?? 0);
         }
 
         private void ClearBackground()
@@ -159,24 +177,56 @@ namespace LostCyberHamster.UI
         }
 
         /// <summary>
-        /// Показывает неотрицательные очки забега и уменьшает шрифт для длинных значений.
+        /// Сохраняет и показывает очки текущего забега.
         /// </summary>
         public void SetRunScore(int score)
         {
-            if (_runScore == null)
+            _runScoreValue = Math.Max(0, score);
+            SetRunCounter(_runScore, _runScoreValue);
+        }
+
+        /// <summary>Сохраняет и показывает валюты, собранные за текущий уровень.</summary>
+        public void SetRunResources(int coins, int crystals)
+        {
+            // Держим данные до появления дерева и между его пересозданиями.
+            _runCoinsValue = Math.Max(0, coins);
+            _runCrystalsValue = Math.Max(0, crystals);
+
+            // Обновляем обе плашки одним правилом форматирования.
+            SetRunCounter(_runCoins, _runCoinsValue);
+            SetRunCounter(_runCrystals, _runCrystalsValue);
+        }
+
+        /// <summary>Выводит полное значение внутри общей плашки счётчика.</summary>
+        private static void SetRunCounter(Label label, int value)
+        {
+            if (label == null)
             {
                 return;
             }
 
-            // Обновляем значение и сохраняем его в доступной ширине верхней полосы.
-            var scoreText = Math.Max(0, score).ToString();
-            _runScore.text = scoreText;
-            _runScore.style.fontSize = scoreText.Length switch
+            // Уменьшаем длинные числа, сохраняя все цифры.
+            string text = value.ToString();
+            label.text = text;
+            label.style.fontSize = text.Length switch
             {
-                <= 4 => 52,
-                <= 7 => 44,
-                _ => 36
+                <= 4 => 38,
+                <= 5 => 30,
+                <= 7 => 22,
+                _ => 16
             };
+        }
+
+        private void OnHudGeometryChanged(GeometryChangedEvent evt)
+        {
+            UpdateCounterLayout(evt.newRect.width);
+        }
+
+        /// <summary>На узком landscape размещает счётчики вторым рядом.</summary>
+        private void UpdateCounterLayout(float width)
+        {
+            if (width > 0)
+                _hudSafeArea?.EnableInClassList("game-screen__safe-area--compact", width < 1460);
         }
 
         public void SetHamsterState(string state)
