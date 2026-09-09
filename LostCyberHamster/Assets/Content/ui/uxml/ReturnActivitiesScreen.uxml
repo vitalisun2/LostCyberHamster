@@ -1,0 +1,41 @@
+<engine:UXML xmlns:engine="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../styles/screens/ReturnActivitiesScreen.uss" />
+    <engine:VisualElement name="return-screen" class="return-screen">
+        <engine:VisualElement class="return-header">
+            <engine:Button name="return-back" class="return-button" />
+            <engine:Label name="return-title" class="return-title" />
+            <engine:Button name="return-play" class="return-button return-button--primary" />
+        </engine:VisualElement>
+        <engine:VisualElement class="return-balances">
+            <LostCyberHamster.UI.SharedCoinsButton />
+            <LostCyberHamster.UI.SharedGemsButton />
+        </engine:VisualElement>
+        <engine:ScrollView class="return-scroll">
+            <engine:VisualElement class="return-columns">
+                <engine:VisualElement name="return-cycle-panel" class="return-panel">
+                    <engine:Label name="return-cycle-title" class="return-heading" />
+                    <engine:Label name="return-cycle-rule" class="return-text" />
+                    <engine:Label name="return-cycle-progress" class="return-text" />
+                    <engine:VisualElement name="return-days-first" class="return-days" />
+                    <engine:VisualElement name="return-days-second" class="return-days" />
+                    <engine:Label name="return-cycle-pending" class="return-text return-pending" />
+                    <engine:Button name="return-cycle-claim" class="return-button return-button--primary" />
+                </engine:VisualElement>
+                <engine:VisualElement name="return-week-panel" class="return-panel">
+                    <engine:Label name="return-week-title" class="return-heading" />
+                    <engine:Label name="return-week-rule" class="return-text" />
+                    <engine:Label name="return-week-progress" class="return-heading return-week-progress" />
+                    <engine:Label name="return-week-reward" class="return-heading" />
+                    <engine:Label name="return-week-deadline" class="return-text" />
+                    <engine:Label name="return-week-unreachable" class="return-text" />
+                    <engine:Label name="return-next-week" class="return-text" />
+                    <engine:Label name="return-week-pending" class="return-text return-pending" />
+                    <engine:Button name="return-week-claim" class="return-button return-button--primary" />
+                </engine:VisualElement>
+            </engine:VisualElement>
+            <engine:Label name="return-calendar" class="return-footer" />
+            <engine:Label name="return-status" class="return-footer" />
+            <engine:Button name="return-recover" class="return-button return-recover" />
+        </engine:ScrollView>
+    </engine:VisualElement>
+</engine:UXML>

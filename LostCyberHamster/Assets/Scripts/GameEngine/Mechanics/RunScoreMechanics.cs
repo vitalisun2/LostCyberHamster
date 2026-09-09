@@ -1,3 +1,4 @@
+using System;
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
@@ -22,6 +23,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly GameManager _gameManager;
 
         public int CurrentScore { get; private set; }
+        public event Action<int, int> ScoreChanged;
 
         public RunScoreMechanics(
             AtomicEvent<ObstacleTypeEnum> collectableCollectedEvent,
@@ -40,10 +42,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnEnable()
         {
-            // Сбрасываем score нового забега.
-            Reset();
-
-            // Учитываем collectables и разрушения обоих источников.
+            // Экземпляр механики принадлежит попытке; повторное включение при revive сохраняет score.
             _collectableCollectedEvent.Subscribe(OnCollectableCollected);
             _destroyObstacleEvent.Subscribe(OnObstacleDestroyed);
             _destroyObstacleBySuperAttackEvent.Subscribe(OnObstacleDestroyed);
@@ -56,12 +55,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _destroyObstacleEvent.Unsubscribe(OnObstacleDestroyed);
             _destroyObstacleBySuperAttackEvent.Unsubscribe(OnObstacleDestroyed);
             _gameManager.OnFinish -= OnFinish;
-        }
-
-        private void Reset()
-        {
-            CurrentScore = 0;
-            Debug.Log("[RunScore] reset score=0");
         }
 
         private void OnCollectableCollected(ObstacleTypeEnum collectableType)
@@ -99,7 +92,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void AddScore(int amount, string source)
         {
+            var previous = CurrentScore;
             CurrentScore += amount;
+            ScoreChanged?.Invoke(previous, CurrentScore);
             Debug.Log($"[RunScore] add amount={amount} source={source} total={CurrentScore}");
         }
     }

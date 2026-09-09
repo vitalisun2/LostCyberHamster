@@ -575,3 +575,19 @@
     -unity-text-outline-width: 2px;
     -unity-text-outline-color: rgb(20, 23, 24);
 }
+
+.progression-return {
+    position: absolute; left: 1180px; top: 180px; width: 280px; height: 64px;
+    background-color: rgb(74, 126, 156); border-radius: 16px;
+    color: white; font-size: 26px; -unity-font-style: bold;
+}
+.development-card__parameters {
+    position: absolute; left: 4px; top: 151px; width: 221px; height: 40px;
+    font-size: 18px; white-space: normal; color: rgb(28, 40, 50); -unity-text-align: middle-center;
+}
+.development-card__upgrade {
+    position: absolute; left: 5px; top: 192px; width: 219px; height: 50px;
+    background-color: rgb(74, 126, 156); border-radius: 9px;
+    color: white; font-size: 18px; white-space: normal; -unity-text-align: middle-center;
+}
+.development-card__upgrade:disabled { opacity: 0.75; }

@@ -26,7 +26,9 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
             _view = new ExperienceProgressTestingView(parent, uiFactory);
             _view.PrepareNewRecordRequested += _runner.PrepareNewRecord;
             _view.CompleteNextLevelRequested += _runner.CompleteNextLevel;
-            _runner.Changed += RefreshPresentation;
+            _view.GrantTutorialBonusRequested += _runner.GrantTutorialBonus;
+            _view.InspectFirstSessionRequested += _runner.InspectFirstSessionState;
+            // Активное представление обновляет DEV-shell; static runner не удерживает уничтоженный экран.
 
             // Экран использует общий responsive viewport DEV-shell.
             RootObject = _view.RootObject;

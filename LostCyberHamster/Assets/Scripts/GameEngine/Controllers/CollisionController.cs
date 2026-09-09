@@ -444,12 +444,14 @@ public class CollisionController : MonoBehaviour
         }
 
         // Один spawned obstacle может списать жизнь только один раз.
+        if (_hamster.IsProtected.Value)
+            _hamster.ProtectedContactEvent.Invoke(obstacle);
         if (!_hamster.IsProtected.Value && obstacle.TryMarkContactDamageDealt())
         {
             _hamster.DamageEvent.Invoke();
         }
 
-        // Удаляем препятствие через поток суперудара без drops и нового заряда.
+        // Способность решает дроп по подтверждённому удалению; обычный заряд не вызывается.
         if (_hamster.IsSuperAttackDestructiveOnCollision.Value)
         {
             _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);

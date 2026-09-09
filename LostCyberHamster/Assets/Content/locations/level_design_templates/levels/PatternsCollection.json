@@ -14978,6 +14978,1315 @@
                     "y": 0.01999995857477188
                 }
             ]
+        },
+        {
+            "name": "ny_morning_intro_charge_01",
+            "description": "NY first session: three isolated smallAlive targets; bottom lane clear. Food after target three. Shared authored opening for Morning and first Afternoon.",
+            "nextObstacleId": 5,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 9,
+                    "x": 7,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 13.3,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 0,
+                    "x": 26.6,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 5,
+                    "x": 34,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_intro_charge_02",
+            "description": "NY first session: targets four and five, then 4 seconds to an optional shield contact; bottom lane stays clear. Charge needs actual jump-on destruction.",
+            "nextObstacleId": 5,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 0,
+                    "x": 13.3,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 2,
+                    "x": 28.5,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 9,
+                    "x": 37,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 5,
+                    "x": 49,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l1_lane_change",
+            "description": "NY Morning L1: alternate single-lane threats; food on the clear top lane after the final bottom obstacle.",
+            "nextObstacleId": 6,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 0,
+                    "x": 15.2,
+                    "y": -2.8
+                },
+                {
+                    "id": 2,
+                    "type": 9,
+                    "x": 22,
+                    "y": -2.8
+                },
+                {
+                    "id": 3,
+                    "type": 0,
+                    "x": 30.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 2,
+                    "x": 43,
+                    "y": -2.8
+                },
+                {
+                    "id": 5,
+                    "type": 5,
+                    "x": 49,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l1_jump_repeat",
+            "description": "NY Morning L1: repeat ordinary jump and jump-on; each threat has an open opposite lane.",
+            "nextObstacleId": 6,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 15.2,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 5,
+                    "x": 23,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 3,
+                    "x": 30.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 4,
+                    "type": 0,
+                    "x": 45.6,
+                    "y": -1.8
+                },
+                {
+                    "id": 5,
+                    "type": 9,
+                    "x": 49,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l1_roof_choice",
+            "description": "NY Morning L1: optional roof with its original -0.8 roof-hazard offset; bottom bypass clear beside the roof.",
+            "nextObstacleId": 6,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 4,
+                    "x": 21,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 3,
+                    "x": 20.2,
+                    "y": 0
+                },
+                {
+                    "id": 3,
+                    "type": 9,
+                    "x": 29,
+                    "y": -2.8
+                },
+                {
+                    "id": 4,
+                    "type": 5,
+                    "x": 40,
+                    "y": -1.8
+                },
+                {
+                    "id": 5,
+                    "type": 2,
+                    "x": 49,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l1_finish",
+            "description": "NY Morning L1: four separated decisions and a clear top exit. Final static bottom obstacle keeps the authored finish distance.",
+            "nextObstacleId": 7,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 15.2,
+                    "y": -2.8
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 30.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 5,
+                    "x": 38,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 2,
+                    "x": 43,
+                    "y": -2.8
+                },
+                {
+                    "id": 5,
+                    "type": 9,
+                    "x": 49,
+                    "y": -1.8
+                },
+                {
+                    "id": 6,
+                    "type": 2,
+                    "x": 55,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l2_single_lanes",
+            "description": "NY Morning L2: alternating road threats, optional top roof; 12.7-unit decision spacing.",
+            "nextObstacleId": 11,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 12.7,
+                    "y": -2.8
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 25.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 2,
+                    "x": 50.8,
+                    "y": -2.8
+                },
+                {
+                    "id": 4,
+                    "type": 0,
+                    "x": 63.5,
+                    "y": -1.8
+                },
+                {
+                    "id": 5,
+                    "type": 2,
+                    "x": 76,
+                    "y": -2.8
+                },
+                {
+                    "id": 6,
+                    "type": 4,
+                    "x": 38.1,
+                    "y": -1.8
+                },
+                {
+                    "id": 7,
+                    "type": 3,
+                    "x": 37.3,
+                    "y": 0.0
+                },
+                {
+                    "id": 8,
+                    "type": 5,
+                    "x": 45,
+                    "y": -1.8
+                },
+                {
+                    "id": 9,
+                    "type": 9,
+                    "x": 18,
+                    "y": -2.8
+                },
+                {
+                    "id": 10,
+                    "type": 6,
+                    "x": 38.5,
+                    "y": 0.0
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l2_lower_roof",
+            "description": "NY Morning L2: isolated lower roof with open top bypass.",
+            "nextObstacleId": 12,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -2.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 12.7,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 25.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 3,
+                    "type": 2,
+                    "x": 50.8,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 0,
+                    "x": 63.5,
+                    "y": -2.8
+                },
+                {
+                    "id": 5,
+                    "type": 2,
+                    "x": 76,
+                    "y": -1.8
+                },
+                {
+                    "id": 6,
+                    "type": 4,
+                    "x": 38.1,
+                    "y": -2.8
+                },
+                {
+                    "id": 7,
+                    "type": 3,
+                    "x": 37.3,
+                    "y": -1.0
+                },
+                {
+                    "id": 8,
+                    "type": 5,
+                    "x": 7,
+                    "y": -1.8
+                },
+                {
+                    "id": 9,
+                    "type": 5,
+                    "x": 57,
+                    "y": -1.8
+                },
+                {
+                    "id": 10,
+                    "type": 9,
+                    "x": 57,
+                    "y": -2.8
+                },
+                {
+                    "id": 11,
+                    "type": 6,
+                    "x": 38.5,
+                    "y": -1.0
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l2_first_pair",
+            "description": "NY Morning L2: one two-lane wave; ordinary jump-on on the bottom target remains available, then open bottom bypass.",
+            "nextObstacleId": 11,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 12.7,
+                    "y": -2.8
+                },
+                {
+                    "id": 2,
+                    "type": 2,
+                    "x": 25.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 0,
+                    "x": 25.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 4,
+                    "type": 2,
+                    "x": 50.8,
+                    "y": -2.8
+                },
+                {
+                    "id": 5,
+                    "type": 0,
+                    "x": 63.5,
+                    "y": -1.8
+                },
+                {
+                    "id": 6,
+                    "type": 2,
+                    "x": 76,
+                    "y": -2.8
+                },
+                {
+                    "id": 7,
+                    "type": 4,
+                    "x": 38.1,
+                    "y": -1.8
+                },
+                {
+                    "id": 8,
+                    "type": 3,
+                    "x": 37.3,
+                    "y": 0.0
+                },
+                {
+                    "id": 9,
+                    "type": 5,
+                    "x": 19,
+                    "y": -1.8
+                },
+                {
+                    "id": 10,
+                    "type": 6,
+                    "x": 38.5,
+                    "y": 0.0
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l2_pair_repeat",
+            "description": "NY Morning L2: repeat two-lane wave on the opposite lane, then isolated lower roof.",
+            "nextObstacleId": 13,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -2.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 12.7,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 2,
+                    "x": 25.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 3,
+                    "type": 0,
+                    "x": 25.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 2,
+                    "x": 50.8,
+                    "y": -1.8
+                },
+                {
+                    "id": 5,
+                    "type": 0,
+                    "x": 63.5,
+                    "y": -2.8
+                },
+                {
+                    "id": 6,
+                    "type": 2,
+                    "x": 76,
+                    "y": -1.8
+                },
+                {
+                    "id": 7,
+                    "type": 4,
+                    "x": 38.1,
+                    "y": -2.8
+                },
+                {
+                    "id": 8,
+                    "type": 3,
+                    "x": 37.3,
+                    "y": -1.0
+                },
+                {
+                    "id": 9,
+                    "type": 5,
+                    "x": 7,
+                    "y": -1.8
+                },
+                {
+                    "id": 10,
+                    "type": 5,
+                    "x": 54,
+                    "y": -2.8
+                },
+                {
+                    "id": 11,
+                    "type": 9,
+                    "x": 57,
+                    "y": -1.8
+                },
+                {
+                    "id": 12,
+                    "type": 6,
+                    "x": 38.5,
+                    "y": -1.0
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l2_roof_repeat",
+            "description": "NY Morning L2: single decisions and optional lower roof; recovery before the finish block.",
+            "nextObstacleId": 12,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 0,
+                    "x": 12.7,
+                    "y": -2.8
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 25.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 0,
+                    "x": 50.8,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 2,
+                    "x": 63.5,
+                    "y": -2.8
+                },
+                {
+                    "id": 5,
+                    "type": 2,
+                    "x": 76,
+                    "y": -1.8
+                },
+                {
+                    "id": 6,
+                    "type": 4,
+                    "x": 38.1,
+                    "y": -2.8
+                },
+                {
+                    "id": 7,
+                    "type": 3,
+                    "x": 37.3,
+                    "y": -1.0
+                },
+                {
+                    "id": 8,
+                    "type": 5,
+                    "x": 20,
+                    "y": -1.8
+                },
+                {
+                    "id": 9,
+                    "type": 5,
+                    "x": 70,
+                    "y": -2.8
+                },
+                {
+                    "id": 10,
+                    "type": 6,
+                    "x": 38.5,
+                    "y": -1.0
+                },
+                {
+                    "id": 11,
+                    "type": 6,
+                    "x": 32,
+                    "y": -1.8
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l2_finish",
+            "description": "NY Morning L2: consolidate single-lane decisions and optional top roof.",
+            "nextObstacleId": 11,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 2,
+                    "x": 0,
+                    "y": -2.8
+                },
+                {
+                    "id": 1,
+                    "type": 0,
+                    "x": 12.7,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 25.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 3,
+                    "type": 0,
+                    "x": 50.8,
+                    "y": -2.8
+                },
+                {
+                    "id": 4,
+                    "type": 2,
+                    "x": 63.5,
+                    "y": -1.8
+                },
+                {
+                    "id": 5,
+                    "type": 2,
+                    "x": 76,
+                    "y": -2.8
+                },
+                {
+                    "id": 6,
+                    "type": 4,
+                    "x": 38.1,
+                    "y": -1.8
+                },
+                {
+                    "id": 7,
+                    "type": 3,
+                    "x": 37.3,
+                    "y": 0.0
+                },
+                {
+                    "id": 8,
+                    "type": 5,
+                    "x": 45,
+                    "y": -1.8
+                },
+                {
+                    "id": 9,
+                    "type": 9,
+                    "x": 19,
+                    "y": -1.8
+                },
+                {
+                    "id": 10,
+                    "type": 6,
+                    "x": 38.5,
+                    "y": 0.0
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l3_single_lanes",
+            "description": "NY Morning L3: single-lane decisions at 11.4 units, isolated top roof; bottom bypass beside bigAlive.",
+            "nextObstacleId": 12,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 11.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 22.8,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 1,
+                    "x": 45.6,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 0,
+                    "x": 57,
+                    "y": -2.8
+                },
+                {
+                    "id": 5,
+                    "type": 2,
+                    "x": 68.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 6,
+                    "type": 2,
+                    "x": 80,
+                    "y": -2.8
+                },
+                {
+                    "id": 7,
+                    "type": 4,
+                    "x": 34.2,
+                    "y": -1.8
+                },
+                {
+                    "id": 8,
+                    "type": 3,
+                    "x": 33.4,
+                    "y": 0.0
+                },
+                {
+                    "id": 9,
+                    "type": 5,
+                    "x": 39,
+                    "y": -2.8
+                },
+                {
+                    "id": 10,
+                    "type": 9,
+                    "x": 17,
+                    "y": -2.8
+                },
+                {
+                    "id": 11,
+                    "type": 6,
+                    "x": 34.6,
+                    "y": 0.0
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l3_lower_roof",
+            "description": "NY Morning L3: same spacing, isolated lower roof and open top bypass beside bigAlive.",
+            "nextObstacleId": 13,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -2.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 11.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 22.8,
+                    "y": -2.8
+                },
+                {
+                    "id": 3,
+                    "type": 1,
+                    "x": 45.6,
+                    "y": -2.8
+                },
+                {
+                    "id": 4,
+                    "type": 0,
+                    "x": 57,
+                    "y": -1.8
+                },
+                {
+                    "id": 5,
+                    "type": 2,
+                    "x": 68.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 6,
+                    "type": 2,
+                    "x": 80,
+                    "y": -1.8
+                },
+                {
+                    "id": 7,
+                    "type": 4,
+                    "x": 34.2,
+                    "y": -2.8
+                },
+                {
+                    "id": 8,
+                    "type": 3,
+                    "x": 33.4,
+                    "y": -1.0
+                },
+                {
+                    "id": 9,
+                    "type": 5,
+                    "x": 7,
+                    "y": -2.8
+                },
+                {
+                    "id": 10,
+                    "type": 5,
+                    "x": 54,
+                    "y": -2.8
+                },
+                {
+                    "id": 11,
+                    "type": 9,
+                    "x": 17,
+                    "y": -1.8
+                },
+                {
+                    "id": 12,
+                    "type": 6,
+                    "x": 34.6,
+                    "y": -1.0
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l3_first_pair",
+            "description": "NY Morning L3: one ordinary-jump or jump-on choice before an optional top roof.",
+            "nextObstacleId": 13,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 11.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 2,
+                    "type": 2,
+                    "x": 22.8,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 0,
+                    "x": 22.8,
+                    "y": -2.8
+                },
+                {
+                    "id": 4,
+                    "type": 1,
+                    "x": 45.6,
+                    "y": -1.8
+                },
+                {
+                    "id": 5,
+                    "type": 0,
+                    "x": 57,
+                    "y": -2.8
+                },
+                {
+                    "id": 6,
+                    "type": 2,
+                    "x": 68.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 7,
+                    "type": 2,
+                    "x": 80,
+                    "y": -2.8
+                },
+                {
+                    "id": 8,
+                    "type": 4,
+                    "x": 34.2,
+                    "y": -1.8
+                },
+                {
+                    "id": 9,
+                    "type": 3,
+                    "x": 33.4,
+                    "y": 0.0
+                },
+                {
+                    "id": 10,
+                    "type": 5,
+                    "x": 16,
+                    "y": -1.8
+                },
+                {
+                    "id": 11,
+                    "type": 5,
+                    "x": 63,
+                    "y": -1.8
+                },
+                {
+                    "id": 12,
+                    "type": 9,
+                    "x": 51,
+                    "y": -2.8
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l3_pair_repeat",
+            "description": "NY Morning L3: mirror the paired wave, then an isolated lower roof.",
+            "nextObstacleId": 13,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -2.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 11.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 2,
+                    "x": 22.8,
+                    "y": -2.8
+                },
+                {
+                    "id": 3,
+                    "type": 0,
+                    "x": 22.8,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 1,
+                    "x": 45.6,
+                    "y": -2.8
+                },
+                {
+                    "id": 5,
+                    "type": 0,
+                    "x": 57,
+                    "y": -1.8
+                },
+                {
+                    "id": 6,
+                    "type": 2,
+                    "x": 68.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 7,
+                    "type": 2,
+                    "x": 80,
+                    "y": -1.8
+                },
+                {
+                    "id": 8,
+                    "type": 4,
+                    "x": 34.2,
+                    "y": -2.8
+                },
+                {
+                    "id": 9,
+                    "type": 3,
+                    "x": 33.4,
+                    "y": -1.0
+                },
+                {
+                    "id": 10,
+                    "type": 5,
+                    "x": 31,
+                    "y": -1.8
+                },
+                {
+                    "id": 11,
+                    "type": 9,
+                    "x": 51,
+                    "y": -1.8
+                },
+                {
+                    "id": 12,
+                    "type": 6,
+                    "x": 34.6,
+                    "y": -1.0
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l3_combinations",
+            "description": "NY Morning L3: two widely separated paired waves; smallAlive offers ordinary jump-on in each.",
+            "nextObstacleId": 15,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 11.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 2,
+                    "type": 2,
+                    "x": 22.8,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 0,
+                    "x": 22.8,
+                    "y": -2.8
+                },
+                {
+                    "id": 4,
+                    "type": 1,
+                    "x": 45.6,
+                    "y": -2.8
+                },
+                {
+                    "id": 5,
+                    "type": 0,
+                    "x": 57,
+                    "y": -1.8
+                },
+                {
+                    "id": 6,
+                    "type": 2,
+                    "x": 57,
+                    "y": -2.8
+                },
+                {
+                    "id": 7,
+                    "type": 2,
+                    "x": 68.4,
+                    "y": -2.8
+                },
+                {
+                    "id": 8,
+                    "type": 2,
+                    "x": 80,
+                    "y": -1.8
+                },
+                {
+                    "id": 9,
+                    "type": 4,
+                    "x": 34.2,
+                    "y": -2.8
+                },
+                {
+                    "id": 10,
+                    "type": 3,
+                    "x": 33.4,
+                    "y": -1.0
+                },
+                {
+                    "id": 11,
+                    "type": 5,
+                    "x": 7,
+                    "y": -1.8
+                },
+                {
+                    "id": 12,
+                    "type": 5,
+                    "x": 52,
+                    "y": -1.8
+                },
+                {
+                    "id": 13,
+                    "type": 9,
+                    "x": 17,
+                    "y": -2.8
+                },
+                {
+                    "id": 14,
+                    "type": 7,
+                    "x": 34.6,
+                    "y": -1.0
+                }
+            ]
+        },
+        {
+            "name": "ny_morning_l3_roof_finish",
+            "description": "NY Morning L3: two optional intact roof groups, each with an open opposite-lane route.",
+            "nextObstacleId": 15,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -2.8
+                },
+                {
+                    "id": 1,
+                    "type": 2,
+                    "x": 11.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 22.8,
+                    "y": -2.8
+                },
+                {
+                    "id": 3,
+                    "type": 0,
+                    "x": 45.6,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 2,
+                    "x": 68.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 5,
+                    "type": 2,
+                    "x": 80,
+                    "y": -2.8
+                },
+                {
+                    "id": 6,
+                    "type": 4,
+                    "x": 34.2,
+                    "y": -1.8
+                },
+                {
+                    "id": 7,
+                    "type": 3,
+                    "x": 33.4,
+                    "y": 0.0
+                },
+                {
+                    "id": 8,
+                    "type": 4,
+                    "x": 57,
+                    "y": -2.8
+                },
+                {
+                    "id": 9,
+                    "type": 3,
+                    "x": 56.2,
+                    "y": -1.0
+                },
+                {
+                    "id": 10,
+                    "type": 5,
+                    "x": 16,
+                    "y": -1.8
+                },
+                {
+                    "id": 11,
+                    "type": 5,
+                    "x": 73,
+                    "y": -2.8
+                },
+                {
+                    "id": 12,
+                    "type": 9,
+                    "x": 17,
+                    "y": -1.8
+                },
+                {
+                    "id": 13,
+                    "type": 9,
+                    "x": 74,
+                    "y": -1.8
+                },
+                {
+                    "id": 14,
+                    "type": 6,
+                    "x": 34.6,
+                    "y": 0.0
+                }
+            ]
+        },
+        {
+            "name": "ny_afternoon_intro",
+            "description": "NY Afternoon L1: five isolated jump-on targets 13.3 units apart; food after the third, four seconds from target five to optional shield contact; lower lane stays clear.",
+            "nextObstacleId": 10,
+            "obstacles": [
+                {
+                    "id": 0,
+                    "type": 0,
+                    "x": 0,
+                    "y": -1.8
+                },
+                {
+                    "id": 1,
+                    "type": 0,
+                    "x": 13.3,
+                    "y": -1.8
+                },
+                {
+                    "id": 2,
+                    "type": 0,
+                    "x": 26.6,
+                    "y": -1.8
+                },
+                {
+                    "id": 3,
+                    "type": 5,
+                    "x": 34,
+                    "y": -1.8
+                },
+                {
+                    "id": 4,
+                    "type": 0,
+                    "x": 39.9,
+                    "y": -1.8
+                },
+                {
+                    "id": 5,
+                    "type": 0,
+                    "x": 53.2,
+                    "y": -1.8
+                },
+                {
+                    "id": 6,
+                    "type": 2,
+                    "x": 68.4,
+                    "y": -1.8
+                },
+                {
+                    "id": 7,
+                    "type": 5,
+                    "x": 77,
+                    "y": -1.8
+                },
+                {
+                    "id": 8,
+                    "type": 9,
+                    "x": 85,
+                    "y": -1.8
+                },
+                {
+                    "id": 9,
+                    "type": 9,
+                    "x": 7,
+                    "y": -1.8
+                }
+            ]
         }
     ]
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.Account;
 using Assets.Scripts.Online;
+using Assets.Scripts.Tutorial;
 using GameManagement.CloudSave;
 using GameManagement.Progress;
 using Unity.Services.Leaderboards.Models;
@@ -34,6 +35,7 @@ namespace GameManagement.Leaderboard
 
         public static WeeklyLeaderboardCoordinator Instance { get; private set; }
         public event Action<WeeklyLeaderboardRun> RunChanged;
+        public event Action RecordsChanged;
 
         public WeeklyLeaderboardCoordinator(AccountService account, CloudSyncService cloud,
             GameNetworkFacade network)
@@ -45,8 +47,11 @@ namespace GameManagement.Leaderboard
             GameDataManager.ProfileChanged += OnProfileChanged;
             _registration = OnlineServicesCoordinator.Register(RetryKey, ProcessAsync, CanRun);
             _localRegistration = OnlineServicesCoordinator.Register(LocalRetryKey, FlushLocalQueueAsync,
-                () => !_disposed && GameDataManager.IsLoaded);
+                () => !_disposed && GameDataManager.IsLoaded && !TutorialStorage.IsPlayerDataBackupActive);
         }
+
+        /// <summary>Возобновляет локальные сохранения и выплаты после восстановления основного профиля.</summary>
+        public void RetryPendingRewards() => OnlineServicesCoordinator.RequestRetry(LocalRetryKey);
 
         /// <summary>Снимает неизменяемый контекст до старта; неизвестная серверная неделя остаётся локальной.</summary>
         public WeeklyRunContext CaptureRunContext(LevelProgressKey key)
@@ -54,10 +59,52 @@ namespace GameManagement.Leaderboard
             if (!GameDataManager.IsLoaded) return null;
             var board = LeaderboardService.ResolveLeaderboardId(key.LocationId, key.PartOfDayId);
             var owner = GameDataManager.OwnerPlayerId;
-            var version = string.IsNullOrWhiteSpace(owner) ? null : ReadJournal(owner).Seasons.FirstOrDefault(item =>
-                item.Environment == Environment && item.LeaderboardId == board)?.VersionId;
+            var journal = ReadJournal(owner);
+            var season = string.IsNullOrWhiteSpace(owner) ? null : journal.Seasons.FirstOrDefault(item =>
+                item.Environment == Environment && item.LeaderboardId == board);
+            var baseline = IsCurrentSeason(season) ? journal.PersonalBests.FirstOrDefault(item =>
+                item.OwnerPlayerId == owner && item.ProfileId == GameDataManager.ProfileId &&
+                item.Environment == Environment && item.LeaderboardId == board &&
+                item.VersionId == season.VersionId) : null;
             return new WeeklyRunContext(owner, GameDataManager.ProfileId, GameDataManager.Generation,
-                Environment, board, version);
+                Environment, board, season?.VersionId, baseline);
+        }
+
+        /// <summary>Возвращает непросмотренные подтверждения актуальной недели текущего профиля.</summary>
+        public IReadOnlyList<WeeklyRecordNotification> GetPendingRecordNotifications()
+        {
+            if (_disposed || !GameDataManager.IsLoaded || string.IsNullOrWhiteSpace(GameDataManager.OwnerPlayerId) ||
+                _cloud.HasUnresolvedConflict || AccountTransitionScope.IsActive ||
+                GameDataManager.IsProfileReplacementBlocked || TutorialStorage.IsPlayerDataBackupActive)
+                return Array.Empty<WeeklyRecordNotification>();
+            var owner = GameDataManager.OwnerPlayerId;
+            var journal = ReadJournal(owner);
+
+            // Историческая база инициализируется при следующей записи журнала до нового подтверждения.
+            if (journal.RecordPresentationVersion == 0) return Array.Empty<WeeklyRecordNotification>();
+            return journal.Runs.Where(run => run.OwnerPlayerId == owner &&
+                    run.ProfileId == GameDataManager.ProfileId && run.Environment == Environment &&
+                    run.Status == WeeklyRunStatus.ConfirmedImprovement &&
+                    GameDataManager.PlayerData.AppliedWeeklyRewardRunIds.Contains(run.RunId) &&
+                    !journal.AcknowledgedRecordRunIds.Contains(WeeklyRecordNotification.GetNotificationId(run)) &&
+                    journal.Seasons.Any(season => season.Environment == run.Environment &&
+                        season.LeaderboardId == run.LeaderboardId && season.VersionId == run.VersionId &&
+                        IsCurrentSeason(season)))
+                .Select(run => new WeeklyRecordNotification(run)).ToArray();
+        }
+
+        /// <summary>Сохраняет факт читаемого показа toast или подтверждения в Win; выплату не меняет.</summary>
+        public bool AcknowledgeRecordNotification(WeeklyRecordNotification notification)
+        {
+            if (notification == null || !GetPendingRecordNotifications().Any(item =>
+                    item.NotificationId == notification.NotificationId)) return false;
+            UpdateJournal(notification.OwnerPlayerId, journal =>
+            {
+                if (!journal.AcknowledgedRecordRunIds.Contains(notification.NotificationId))
+                    journal.AcknowledgedRecordRunIds.Add(notification.NotificationId);
+            });
+            PublishRecordsChanged();
+            return true;
         }
 
         /// <summary>Ставит каждый забег в FIFO; при сбое диска повторяет сохранение с тем же runId.</summary>
@@ -227,6 +274,8 @@ namespace GameManagement.Leaderboard
             {
                 journal.CachedResults.RemoveAll(item => item.Environment == Environment && item.LeaderboardId == board);
                 journal.CachedResults.Add(snapshot);
+                RememberPersonalBest(journal, owner, profile, Environment, board, season.VersionId,
+                    snapshot.Player != null, snapshot.Player == null ? 0 : checked((int)snapshot.Player.Score));
             });
             return snapshot;
         }
@@ -360,19 +409,40 @@ namespace GameManagement.Leaderboard
         {
             run.Status = status;
             run.WeeklyBest = weeklyBest;
-            UpdateRun(run);
+            UpdateJournal(run.OwnerPlayerId, journal =>
+            {
+                // Квота фиксируется с первым durable-подтверждением, до любых блокировок выплаты.
+                if (status == WeeklyRunStatus.ConfirmedImprovement)
+                    run.RewardDecision = journal.Runs.FirstOrDefault(item => item.RunId == run.RunId)?.RewardDecision ??
+                        CreateRewardDecision(journal, run, DateTime.UtcNow, legacy: false);
+                ReplaceRun(journal, run);
+                if (status == WeeklyRunStatus.ConfirmedImprovement || status == WeeklyRunStatus.NotImproved ||
+                    status == WeeklyRunStatus.Unconfirmed)
+                    RememberPersonalBest(journal, run.OwnerPlayerId, run.ProfileId, run.Environment, run.LeaderboardId,
+                        run.VersionId, true, weeklyBest);
+            });
             OnlineServicesCoordinator.RequestRetry(LocalRetryKey);
             ApplyConfirmedRewards(run.OwnerPlayerId);
             PublishRun(run);
         }
 
-        /// <summary>Начисляет 50 XP и applied runId одной транзакцией, в том числе после выбора старого cloud.</summary>
+        /// <summary>Применяет сохранённые решения 0/5 и applied runId одной транзакцией после cloud/tutorial.</summary>
         private void ApplyConfirmedRewards(string owner)
         {
             // Durable-подтверждение принадлежит сохранённому владельцу и не требует действующей сессии.
             if (_disposed || !GameDataManager.IsLoaded || string.IsNullOrWhiteSpace(owner) ||
                 GameDataManager.OwnerPlayerId != owner || _cloud.HasUnresolvedConflict ||
-                AccountTransitionScope.IsActive || GameDataManager.IsProfileReplacementBlocked) return;
+                AccountTransitionScope.IsActive || GameDataManager.IsProfileReplacementBlocked ||
+                TutorialStorage.IsPlayerDataBackupActive) return;
+            // Старые оплаченные run сохраняют свою квитанцию; ожидающие впервые получают дату наблюдения.
+            if (ReadJournal(owner).Runs.Any(run => run.Status == WeeklyRunStatus.ConfirmedImprovement && run.RewardDecision == null))
+                UpdateJournal(owner, journal =>
+                {
+                    DateTime observedAt = DateTime.UtcNow;
+                    foreach (var run in journal.Runs.Where(item => item.Status == WeeklyRunStatus.ConfirmedImprovement && item.RewardDecision == null))
+                        run.RewardDecision = CreateRewardDecision(journal, run, observedAt,
+                            GameDataManager.PlayerData.AppliedWeeklyRewardRunIds.Contains(run.RunId));
+                });
             var pendingRewards = ReadJournal(owner).Runs.Where(run =>
                 run.OwnerPlayerId == owner && run.Environment == Environment &&
                 run.Status == WeeklyRunStatus.ConfirmedImprovement &&
@@ -386,24 +456,51 @@ namespace GameManagement.Leaderboard
                 foreach (var run in pendingRewards)
                 {
                     levelChanged |= _experience.GrantExperienceForWeeklyLeaderboardRecord(
-                        GameDataManager.PlayerData, notify: false);
+                        GameDataManager.PlayerData, run.RewardDecision.AwardedExperience, notify: false);
                     GameDataManager.PlayerData.AppliedWeeklyRewardRunIds.Add(run.RunId);
                 }
             }, () =>
             {
                 PlayerExperienceService.PublishCommittedLevelChange(levelChanged);
-                DebugManager.DiagEconomy($"[WeeklyLeaderboard] confirmed rewards={pendingRewards.Length} xp={50 * pendingRewards.Length}");
-                foreach (var run in pendingRewards) PublishRun(run);
+                DebugManager.DiagEconomy($"[WeeklyLeaderboard] confirmed rewards={pendingRewards.Length} xp={pendingRewards.Sum(run => run.RewardDecision.AwardedExperience)}");
+                foreach (var run in pendingRewards)
+                {
+                    FirstSessionTelemetry.Record("record_confirmed", run.RunId, run.Score);
+                    PublishRun(run);
+                }
             });
+        }
+
+        /// <summary>Выбирает одну выплату на owner/environment/UTC-день по всем доскам и неделям.</summary>
+        internal static WeeklyDailyRewardDecision CreateRewardDecision(WeeklyLeaderboardJournal journal,
+            WeeklyLeaderboardRun run, DateTime confirmedAt, bool legacy)
+        {
+            var existing = journal.Runs.FirstOrDefault(item => item.RunId == run.RunId)?.RewardDecision;
+            if (existing != null) return existing;
+            string day = confirmedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            bool dayUsed = journal.Runs.Any(item => item.OwnerPlayerId == run.OwnerPlayerId &&
+                item.Environment == run.Environment && item.RunId != run.RunId &&
+                item.RewardDecision != null && !item.RewardDecision.IsLegacyReward &&
+                item.RewardDecision.UtcDate == day && item.RewardDecision.AwardedExperience > 0);
+            return new WeeklyDailyRewardDecision
+            {
+                RewardId = run.RunId,
+                FirstConfirmedAtUtc = legacy ? null : confirmedAt.ToString("o", CultureInfo.InvariantCulture),
+                UtcDate = legacy ? null : day,
+                AwardedExperience = legacy ? 50 : dayUsed ? 0 : PlayerExperienceService.WeeklyLeaderboardRecordExperienceReward,
+                IsLegacyReward = legacy
+            };
         }
 
         private void PublishRun(WeeklyLeaderboardRun run)
         {
             var isLocalProfile = run.Status == WeeklyRunStatus.LocalOnly &&
                 run.ProfileId == GameDataManager.ProfileId;
-            if (RunChanged == null || !isLocalProfile && GameDataManager.OwnerPlayerId != run.OwnerPlayerId) return;
+            if (!isLocalProfile && GameDataManager.OwnerPlayerId != run.OwnerPlayerId) return;
             if (run.Status == WeeklyRunStatus.ConfirmedImprovement &&
                 !GameDataManager.PlayerData.AppliedWeeklyRewardRunIds.Contains(run.RunId)) return;
+            if (run.Status == WeeklyRunStatus.ConfirmedImprovement) PublishRecordsChanged();
+            if (RunChanged == null) return;
             foreach (Action<WeeklyLeaderboardRun> handler in RunChanged.GetInvocationList())
             {
                 try { handler(run); }
@@ -412,6 +509,43 @@ namespace GameManagement.Leaderboard
                     DebugManager.DiagStability($"[WeeklyLeaderboard] result subscriber failed ({exception.GetType().Name}).");
                 }
             }
+        }
+
+        private void PublishRecordsChanged()
+        {
+            if (RecordsChanged == null) return;
+            foreach (Action handler in RecordsChanged.GetInvocationList())
+            {
+                try { handler(); }
+                catch (Exception exception)
+                {
+                    DebugManager.DiagStability($"[WeeklyLeaderboard] record subscriber failed ({exception.GetType().Name}).");
+                }
+            }
+        }
+
+        private static bool IsCurrentSeason(LeaderboardSeasonContext season) => season != null &&
+            !string.IsNullOrWhiteSpace(season.VersionId) &&
+            DateTime.TryParse(season.NextResetUtc, CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind, out var reset) && reset.ToUniversalTime() > DateTime.UtcNow;
+
+        /// <summary>Обновляет baseline только внутри точного scope; поздний меньший best его не понижает.</summary>
+        private static void RememberPersonalBest(WeeklyLeaderboardJournal journal, string owner, string profile,
+            string environment, string board, string version, bool hadEntry, int score)
+        {
+            var existing = journal.PersonalBests.FirstOrDefault(item => item.OwnerPlayerId == owner &&
+                item.ProfileId == profile && item.Environment == environment && item.LeaderboardId == board &&
+                item.VersionId == version);
+            if (existing != null && existing.HadEntry && (!hadEntry || existing.Score > score)) return;
+
+            // Заменяем baseline недели; уже начатая попытка хранит собственный снимок.
+            journal.PersonalBests.RemoveAll(item => item.OwnerPlayerId == owner && item.ProfileId == profile &&
+                item.Environment == environment && item.LeaderboardId == board && item.VersionId == version);
+            journal.PersonalBests.Add(new WeeklyPersonalBest
+            {
+                OwnerPlayerId = owner, ProfileId = profile, Environment = environment, LeaderboardId = board,
+                VersionId = version, HadEntry = hadEntry, Score = score, FetchedAtUtc = DateTime.UtcNow.ToString("o")
+            });
         }
 
         /// <summary>Отбрасывает более старый запрос версии после нового ответа для той же таблицы.</summary>
@@ -457,6 +591,8 @@ namespace GameManagement.Leaderboard
             journal.Runs ??= new List<WeeklyLeaderboardRun>();
             journal.Seasons ??= new List<LeaderboardSeasonContext>();
             journal.CachedResults ??= new List<LeaderboardResultsSnapshot>();
+            journal.PersonalBests ??= new List<WeeklyPersonalBest>();
+            journal.AcknowledgedRecordRunIds ??= new List<string>();
             return journal;
         }
 
@@ -465,17 +601,29 @@ namespace GameManagement.Leaderboard
             GameDataManager.ExecuteTechnicalTransaction(() =>
             {
                 var journal = ReadJournal(owner);
+                if (journal.RecordPresentationVersion == 0)
+                {
+                    journal.RecordPresentationVersion = 1;
+                    journal.AcknowledgedRecordRunIds.AddRange(journal.Runs
+                        .Where(run => run.Status == WeeklyRunStatus.ConfirmedImprovement)
+                        .Select(WeeklyRecordNotification.GetNotificationId));
+                }
                 mutation(journal);
+                var retainedRecordIds = new HashSet<string>(journal.Runs.Select(WeeklyRecordNotification.GetNotificationId));
+                journal.AcknowledgedRecordRunIds.RemoveAll(id => !retainedRecordIds.Contains(id));
                 GameDataManager.SetJournalJson(JournalKey, JsonUtility.ToJson(journal), owner);
             });
         }
 
-        private static void UpdateRun(WeeklyLeaderboardRun run) => UpdateJournal(run.OwnerPlayerId, journal =>
+        private static void UpdateRun(WeeklyLeaderboardRun run) => UpdateJournal(run.OwnerPlayerId,
+            journal => ReplaceRun(journal, run));
+
+        private static void ReplaceRun(WeeklyLeaderboardJournal journal, WeeklyLeaderboardRun run)
         {
             var index = journal.Runs.FindIndex(item => item.RunId == run.RunId);
             if (index < 0) throw new InvalidOperationException("Queued leaderboard run is missing.");
             journal.Runs[index] = run;
-        });
+        }
 
         private static bool IsCurrentProfile(string owner, string profile, long generation) =>
             GameDataManager.OwnerPlayerId == owner && GameDataManager.ProfileId == profile &&
@@ -505,6 +653,7 @@ namespace GameManagement.Leaderboard
             _registration.Dispose();
             _localRegistration.Dispose();
             RunChanged = null;
+            RecordsChanged = null;
             if (Instance == this) Instance = null;
         }
     }

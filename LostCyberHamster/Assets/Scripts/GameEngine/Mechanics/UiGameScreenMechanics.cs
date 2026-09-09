@@ -62,6 +62,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             }
 
             OnLifesChanged(_character.Lives.Value);
+            _gameScreenController.SetAbilityActivity(_character.SuperAttackSnapshot);
             SyncUltraControls();
             OnEnergyChanged(_character.Energy.Value);
             SyncRunScore();
@@ -92,6 +93,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnUpdate()
         {
+            _gameScreenController.SetAbilityActivity(_character.SuperAttackSnapshot);
             ResetJumpSequenceIfModeChanged();
             SyncRunScore();
 

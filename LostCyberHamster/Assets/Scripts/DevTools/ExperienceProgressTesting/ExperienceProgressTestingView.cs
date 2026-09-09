@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
+using System.Collections.Generic;
 using Assets.Scripts.DevTools.Core;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +10,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
     /// <summary>Создаёт runtime DEV-представление ручного теста XP и level progress.</summary>
     internal sealed class ExperienceProgressTestingView
     {
+        private readonly Assets.Scripts.DevTools.ReturnActivityTesting.ReturnActivityTestingView _returnActivities;
         private const int OutputFontSize = 18;
 
         private readonly GameObject _mainMenuHint;
@@ -17,6 +19,11 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
         private readonly Button _completeNextLevelButton;
         private readonly Text _targetLevelText;
         private readonly Text _statusText;
+        private readonly Button _grantTutorialBonusButton;
+        private readonly Button _inspectFirstSessionButton;
+        private readonly Text _firstSessionStateText;
+        private readonly List<Button> _progressionButtons = new();
+        private readonly Text _progressionState;
 
         public ExperienceProgressTestingView(
             Transform parent,
@@ -71,11 +78,28 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                 content,
                 "Status",
                 "Status");
+
+            // Ручная выдача и инспекция первой сессии совпадают с Tools/Testing.
+            _grantTutorialBonusButton = uiFactory.CreateButton(
+                "GrantTutorialBonusButton", content, "Выдать tutorial-бонус (один раз)",
+                DevToolsTheme.Button, () => GrantTutorialBonusRequested?.Invoke());
+            _inspectFirstSessionButton = uiFactory.CreateButton(
+                "InspectFirstSessionButton", content, "Обновить состояние первой сессии",
+                DevToolsTheme.Button, () => InspectFirstSessionRequested?.Invoke());
+            _firstSessionStateText = CreateOutput(uiFactory, content, "FirstSessionState", "First Session · Snapshot");
+            uiFactory.CreateSectionHeading("ProgressionTesting", content, "PROGRESSION · ИЗОЛИРОВАННЫЙ ПРОФИЛЬ");
+            foreach (var command in AbilityProgressTestingRunner.Shared.Commands)
+                _progressionButtons.Add(uiFactory.CreateButton("ProgressionCommand" + _progressionButtons.Count,
+                    content, command.Label, DevToolsTheme.Button, () => command.Execute()));
+            _progressionState = CreateOutput(uiFactory, content, "ProgressionSnapshot", "Progression · Snapshot");
+            _returnActivities = new Assets.Scripts.DevTools.ReturnActivityTesting.ReturnActivityTestingView(content, uiFactory);
         }
 
         public event Action PrepareNewRecordRequested;
 
         public event Action CompleteNextLevelRequested;
+        public event Action GrantTutorialBonusRequested;
+        public event Action InspectFirstSessionRequested;
 
         public GameObject RootObject { get; }
 
@@ -88,6 +112,14 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                 runner.CanCompleteNextLevel;
             _targetLevelText.text = runner.TargetLevel;
             _statusText.text = runner.Status;
+            _grantTutorialBonusButton.interactable = runner.CanGrantTutorialBonus;
+            _inspectFirstSessionButton.interactable = runner.CanInspectFirstSession;
+            _firstSessionStateText.text = runner.FirstSessionState;
+            var progression = AbilityProgressTestingRunner.Shared;
+            for (int i = 0; i < _progressionButtons.Count; i++)
+                _progressionButtons[i].interactable = progression.Commands[i].Enabled();
+            _progressionState.text = progression.Snapshot();
+            _returnActivities.Render();
         }
 
         private static Text CreateOutput(

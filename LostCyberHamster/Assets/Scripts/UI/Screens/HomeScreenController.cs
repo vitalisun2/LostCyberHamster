@@ -9,6 +9,8 @@ namespace LostCyberHamster.UI
 {
     public class HomeScreenController: ScreenController
     {
+        private readonly Action<string> _openActivities;
+        private HomeActivityPresenter _activities;
         private Button _buttonStart => _contentRoot.Q<Button>("btn_play");
         private Button _buttonSelectLevel => _contentRoot.Q<Button>("btn_select-level");
         private Button _buttonLeaderboard => _contentRoot.Q<Button>("btn_leaderboard");
@@ -28,8 +30,13 @@ namespace LostCyberHamster.UI
 
         protected override ScreenEnum _screenAssetName => ScreenEnum.HomeScreen;
 
-        public HomeScreenController(UIDocument uiDocument): base(uiDocument)
+        public HomeScreenController(UIDocument uiDocument, Action<string> openActivities = null): base(uiDocument)
         {
+            _openActivities = openActivities ?? (kind =>
+            {
+                ReturnActivitiesScreenController.InitialKind = kind;
+                UIManager.OnScreenShow?.Invoke(ScreenEnum.ReturnActivitiesScreen);
+            });
         }
 
         private void OnClickBtnStart(ClickEvent evt)
@@ -50,6 +57,8 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
+            _activities?.Dispose();
+            _activities = new HomeActivityPresenter(_contentRoot.Q("home-activities"), _openActivities);
             // Подключаем действия всех кнопок Home.
             _buttonStart?.RegisterCallback<ClickEvent>(OnClickBtnStart);
             _buttonSelectLevel?.RegisterCallback<ClickEvent>(OnClickBtnSelectLevel);
@@ -82,6 +91,8 @@ namespace LostCyberHamster.UI
 
         protected override void OnUnsubscribeFromEvents()
         {
+            _activities?.Dispose();
+            _activities = null;
             // Отключаем действия всех кнопок Home.
             _buttonStart?.UnregisterCallback<ClickEvent>(OnClickBtnStart);
             _buttonSelectLevel?.UnregisterCallback<ClickEvent>(OnClickBtnSelectLevel);

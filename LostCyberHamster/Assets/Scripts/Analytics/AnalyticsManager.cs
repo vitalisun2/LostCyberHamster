@@ -1,10 +1,13 @@
 using System;
 using System.Threading.Tasks;
+using Assets.Scripts.Online;
 using Assets.Scripts.System;
+using GameManagement;
 using Unity.Services.Analytics;
 using UnityEngine;
 using UnityEngine.UnityConsent;
 using Vues.GameCore;
+using Vues.GameCore.ReturnActivities;
 
 public static class AnalyticsManager
 {
@@ -12,6 +15,34 @@ public static class AnalyticsManager
     private static int _trackingSuppressionCount;
     private static bool _subscribed;
     public static bool IsInitialized => _initialized;
+
+    internal static bool CanRecordReturnActivity => CanTrack() && !Application.isEditor && !Debug.isDebugBuild &&
+        !GameDataManager.IsProgressionTestingProfile && !AutomationRuntimePrefs.IsTestLevelAutomationRun() &&
+        EndUserConsent.GetConsentState().AnalyticsIntent == ConsentStatus.Granted;
+
+    /// <summary>Передаёт событие активностей в SDK только при действующем consent и production-контексте.</summary>
+    internal static void RecordReturnActivity(ReturnActivityEvent item)
+    {
+        if (CanRecordReturnActivity) AnalyticsService.Instance.RecordEvent(new ReturnActivityAnalyticsEvent(item));
+    }
+
+    /// <summary>Записывает только явные события первой сессии сквозь tutorial suppression, сохраняя consent.</summary>
+    internal static void RecordFirstSession(string phase, string detail, int value, string sessionId,
+        int sequence, double elapsedSeconds)
+    {
+        if (!_initialized || Application.isEditor || Debug.isDebugBuild ||
+            AutomationRuntimePrefs.IsTestLevelAutomationRun() ||
+            EndUserConsent.GetConsentState().AnalyticsIntent != ConsentStatus.Granted) return;
+
+        // Обычные level/skin события tutorial по-прежнему используют CanTrack и остаются подавленными.
+        var player = GameDataManager.PlayerData;
+        string outcome = player?.IsTutorialCompleted != true ? "pending" : player.IsTutorialSkipped ? "skip" : "complete";
+        string networkMode = GameNetworkFacade.Instance.IsForcedOffline ? "forced_offline" :
+            Application.internetReachability == NetworkReachability.NotReachable ? "unreachable" : "available";
+        AnalyticsService.Instance.RecordEvent(new FirstSessionEvent(phase, detail, value, sessionId, sequence,
+            elapsedSeconds, GameDataManager.ProfileId ?? string.Empty, player?.CurrentLevel ?? string.Empty,
+            player?.PlayerLevel ?? 1, outcome, Application.version, networkMode));
+    }
 
     public static IDisposable SuppressTracking()
     {

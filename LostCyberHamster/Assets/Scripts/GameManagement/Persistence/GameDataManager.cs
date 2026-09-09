@@ -25,6 +25,8 @@ namespace GameManagement
         private const string _playerDataKey = "PlayerData";
         private const string _playerDataBackupKey = "PlayerData.Backup";
         private const string _settingsKey = "Settings";
+        private const string _progressionTestingBackupKey = "ProgressionTesting.EnvelopeBackup";
+        private const string _progressionTestingProfileKey = "ProgressionTesting.ProfileId";
         private static readonly ICryptoService _cryptoService = new AesCryptoService();
         private static LocalSaveEnvelope _envelope;
         private static string _durableEnvelopeJson;
@@ -35,6 +37,9 @@ namespace GameManagement
 
         public static bool IsGameJustStarted = true;
         public static bool IsLoaded { get; private set; }
+        public static bool HasProgressionTestingBackup => PlayerPrefs.HasKey(_progressionTestingBackupKey);
+        public static bool IsProgressionTestingProfile => HasProgressionTestingBackup &&
+            ProfileId == PlayerPrefs.GetString(_progressionTestingProfileKey, string.Empty);
         public static bool IsRestoringAfterFailure { get; private set; }
         public static string ProfileId => _envelope?.ProfileId;
         public static string OwnerPlayerId => _envelope?.OwnerPlayerId;
@@ -49,7 +54,7 @@ namespace GameManagement
         public static string ActiveConflictOwner => _envelope?.ActiveConflictOwner;
         public static bool HasUncommittedProgress => IsLoaded &&
             !string.Equals(_savedPlayerDataJson, PlayerData.ToJson(), StringComparison.Ordinal);
-        public static bool CanApplyCloudProgress => IsLoaded && !IsProfileReplacementBlocked &&
+        public static bool CanApplyCloudProgress => IsLoaded && !IsProfileReplacementBlocked && !HasProgressionTestingBackup &&
             !HasUncommittedProgress && SceneManager.GetActiveScene().name == "Menu";
 
         /// <summary>Возвращает последний durable игровой payload, не затрагивая текущий забег.</summary>
@@ -60,6 +65,8 @@ namespace GameManagement
         /// <summary>Восстанавливает envelope либо безопасно переносит старый PlayerData.</summary>
         public static Task LoadDataAsync()
         {
+            // Незавершённая DEV-сессия восстанавливается и в обычной сборке до чтения профиля.
+            if (HasProgressionTestingBackup) RestoreProgressionTestingEnvelope();
             var fromPrimary = TryReadEnvelope(_playerDataKey, out var loaded, out _);
             if (!fromPrimary && !TryReadEnvelope(_playerDataBackupKey, out loaded, out _))
                 loaded = CreateEnvelope(CreateDefaultPlayerData(), legacy: false);
@@ -314,6 +321,7 @@ namespace GameManagement
         /// <summary>Привязывает новый локальный профиль после подтверждённой авторизации.</summary>
         public static bool TryBindAuthenticatedOwner(string playerId)
         {
+            if (HasProgressionTestingBackup) return false;
             if (!IsLoaded || string.IsNullOrWhiteSpace(playerId)) return false;
             if (OwnerPlayerId == playerId) return true;
             if (OwnerPlayerId != null || IsLegacyOwnerUnassigned || IsProfileReplacementBlocked) return false;
@@ -333,6 +341,7 @@ namespace GameManagement
         /// <summary>Принимает владельца локальной ветки; legacy допускается только при явном выборе.</summary>
         public static void BindOwner(string playerId, bool allowLegacyAdoption = false)
         {
+            if (HasProgressionTestingBackup) throw new InvalidOperationException("Testing profile cannot bind an account.");
             if (string.IsNullOrWhiteSpace(playerId)) throw new ArgumentException("Player ID is required.", nameof(playerId));
             if (OwnerPlayerId == playerId) return;
             if (IsProfileReplacementBlocked) throw new InvalidOperationException("Profile has an unsettled operation.");
@@ -568,6 +577,38 @@ namespace GameManagement
             else PlayerPrefs.DeleteKey(key);
         }
 
+        private static void RestoreProgressionTestingEnvelope()
+        {
+            if (!TryReadEnvelope(_progressionTestingBackupKey, out var original, out _))
+                throw new InvalidOperationException("Testing backup is unreadable; recovery marker retained.");
+            var previous = _envelope;
+            var previousPlayer = PlayerData;
+            var backup = PlayerPrefs.GetString(_progressionTestingBackupKey);
+            var testingProfile = PlayerPrefs.GetString(_progressionTestingProfileKey);
+            bool restored = false;
+            try
+            {
+                _envelope = original;
+                PlayerData = original.PlayerData;
+                PersistEnvelope(rotateValidPrimary: false);
+                restored = true;
+                // Оба recovery-слота содержат исходный профиль до удаления отдельного backup.
+                PlayerPrefs.SetString(_playerDataBackupKey, _cryptoService.Encrypt(_durableEnvelopeJson));
+                PlayerPrefs.Save();
+                PlayerPrefs.DeleteKey(_progressionTestingBackupKey);
+                PlayerPrefs.DeleteKey(_progressionTestingProfileKey);
+                PlayerPrefs.Save();
+            }
+            catch
+            {
+                if (!restored) { _envelope = previous; PlayerData = previousPlayer; }
+                PlayerPrefs.SetString(_progressionTestingBackupKey, backup);
+                PlayerPrefs.SetString(_progressionTestingProfileKey, testingProfile);
+                try { PlayerPrefs.Save(); } catch (Exception exception) { Debug.LogException(exception); }
+                throw;
+            }
+        }
+
         private static void Notify(Action handlers)
         {
             if (handlers == null) return;
@@ -621,6 +662,43 @@ namespace GameManagement
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>Сохраняет весь исходный envelope и открывает отдельный локальный DEV-профиль.</summary>
+        public static void BeginProgressionTestingProfile(Action<PlayerData> initialize)
+        {
+            if (!CanApplyCloudProgress || IsAutomationRun() || Assets.Scripts.Tutorial.TutorialStorage.IsPlayerDataBackupActive)
+                throw new InvalidOperationException("Testing profile requires settled progress in Menu.");
+            if (initialize == null) throw new ArgumentNullException(nameof(initialize));
+            var candidate = CreateEnvelope(CreateDefaultPlayerData(), legacy: false);
+            PlayerPrefs.SetString(_progressionTestingBackupKey, _cryptoService.Encrypt(_durableEnvelopeJson));
+            PlayerPrefs.SetString(_progressionTestingProfileKey, candidate.ProfileId);
+            PlayerPrefs.Save();
+            ExecuteMutation(() =>
+            {
+                _envelope = candidate;
+                PlayerData = candidate.PlayerData;
+                initialize(PlayerData);
+            }, gameplay: true);
+            IsGameJustStarted = true;
+            Generation++;
+            Notify(PlayerDataReplaced);
+            Notify(ProfileChanged);
+            Notify(JournalsChanged);
+        }
+
+        /// <summary>Возвращает исходный envelope; endingSession используется только при завершении Play/app.</summary>
+        public static void RestoreProgressionTestingProfile(bool endingSession = false)
+        {
+            if (!HasProgressionTestingBackup) return;
+            if (_inTransaction || !endingSession && (IsProfileReplacementBlocked || SceneManager.GetActiveScene().name != "Menu"))
+                throw new InvalidOperationException("Restore requires settled progress in Menu.");
+            RestoreProgressionTestingEnvelope();
+            IsGameJustStarted = true;
+            Generation++;
+            Notify(PlayerDataReplaced);
+            Notify(ProfileChanged);
+            Notify(JournalsChanged);
+        }
+
         /// <summary>Атомарно создаёт чистый локальный профиль и его начальные технические журналы.</summary>
         public static void CreateFreshProfileForTesting(Action initializeJournals)
         {

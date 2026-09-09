@@ -47,6 +47,7 @@ namespace Vues.GameCore
         /// Заряд за одно уничтоженное препятствие.
         /// </summary>
         public int UltaCharge;
+        public SuperAttackLevelData[] Levels = Array.Empty<SuperAttackLevelData>();
 
     }
 }

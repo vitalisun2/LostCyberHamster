@@ -19,6 +19,9 @@ namespace LostCyberHamster.UI
         private ScreenEnum _currentScreen;
         private ScreenEnum? _currentModal;
         internal ScreenEnum? CurrentModal => _currentModal;
+        internal ScreenEnum CurrentScreen => _currentScreen;
+        internal bool HasModalOrTransition => _currentModal.HasValue || _transitionGate.CurrentCount == 0;
+        internal bool HasPriorityPresentation { get; set; }
         private bool _hasCurrentScreen;
         private bool _eventsSubscribed;
         private bool _lifecycleStarted;

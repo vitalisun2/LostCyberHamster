@@ -1,7 +1,11 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.GameEngine.Mechanics;
+using Assets.Scripts.System;
+using Assets.Scripts.Tutorial;
 using GameManagement.Leaderboard;
+using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
 
@@ -42,6 +46,11 @@ namespace LostCyberHamster.UI
         private Action _actionExit;
 
         private Action<string, string> _actionLeaderboard;
+        private Action _actionGoal;
+        private VisualElement _goalStrip => _modalContent.Q<VisualElement>("first-session-win-goal");
+        private Label _goalLabel => _modalContent.Q<Label>("first-session-win-goal-text");
+        private Button _goalButton => _modalContent.Q<Button>("btn_first-session-goal");
+        private bool _primaryShowsStoryClaim;
 
         private GameResultModalPresentation _presentation;
 
@@ -80,6 +89,7 @@ namespace LostCyberHamster.UI
             }
 
             RenderRunResult();
+            RenderGoal();
             return Task.CompletedTask;
         }
 
@@ -90,6 +100,8 @@ namespace LostCyberHamster.UI
             _restartButton?.RegisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.RegisterCallback<ClickEvent>(OnClickExit);
             _leaderboardButton?.RegisterCallback<ClickEvent>(OnClickLeaderboard);
+            _goalButton?.UnregisterCallback<ClickEvent>(OnClickGoal);
+            _goalButton?.RegisterCallback<ClickEvent>(OnClickGoal);
 
         }
 
@@ -98,6 +110,7 @@ namespace LostCyberHamster.UI
             if (_runResult?.IsLastLevelOfPart != true)
                 return;
 
+            AcknowledgeVisibleRecord();
             _actionLeaderboard?.Invoke(
                 _runResult.LevelKey.LocationId,
                 _runResult.LevelKey.PartOfDayId);
@@ -105,19 +118,30 @@ namespace LostCyberHamster.UI
 
         private void OnClickExit(ClickEvent evt)
         {
+            AcknowledgeVisibleRecord();
             _actionExit?.Invoke();
         }
 
 
         private void OnClickRestart(ClickEvent evt)
         {
+            AcknowledgeVisibleRecord();
             _actionRestart?.Invoke();
         }
 
 
         private void OnClickResume(ClickEvent evt)
         {
-            _actionResume?.Invoke();
+            AcknowledgeVisibleRecord();
+            if (_primaryShowsStoryClaim) _actionGoal?.Invoke();
+            else _actionResume?.Invoke();
+        }
+
+        private void OnClickGoal(ClickEvent evt)
+        {
+            AcknowledgeVisibleRecord();
+            if (_primaryShowsStoryClaim) _actionResume?.Invoke();
+            else _actionGoal?.Invoke();
         }
 
 
@@ -127,6 +151,7 @@ namespace LostCyberHamster.UI
             _restartButton?.UnregisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.UnregisterCallback<ClickEvent>(OnClickExit);
             _leaderboardButton?.UnregisterCallback<ClickEvent>(OnClickLeaderboard);
+            _goalButton?.UnregisterCallback<ClickEvent>(OnClickGoal);
             _presentation?.Restore();
             _presentation = null;
         }
@@ -145,6 +170,9 @@ namespace LostCyberHamster.UI
         {
             _actionExit = value;
         }
+
+        /// <summary>Задаёт переход к текущей цели первой сессии через общий маршрут результата.</summary>
+        public void SetGoalAction(Action value) => _actionGoal = value;
 
         /// <summary>
         /// Задаёт переход из результата забега в выбранный рейтинг.
@@ -174,6 +202,70 @@ namespace LostCyberHamster.UI
             {
                 _levelContextLabel.text = FormatLevelContext();
                 RenderRunResult();
+                RenderGoal();
+            }
+        }
+
+        private void RenderGoal()
+        {
+            if (_goalStrip == null) return;
+            var goal = FirstSessionGoalPresenter.GetCurrent();
+            _primaryShowsStoryClaim = QuestManager.StoryQuests.Any(quest =>
+                quest.Id == FirstSessionGoalPresenter.MorningQuestId && quest.CanClaimReward);
+            RenderPrimaryAction();
+            _goalStrip.style.display = goal.HasValue ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!goal.HasValue) return;
+            _goalLabel.text = goal.Value.Text;
+            _goalLabel.tooltip = goal.Value.Detail;
+            _goalButton.text = _primaryShowsStoryClaim
+                ? LocalizationManager.GetLocalizedString("first_session_next_level") : goal.Value.ActionText;
+        }
+
+        private void RenderPrimaryAction()
+        {
+            if (_resumeButton is not Button primary) return;
+            // Размер и позиция прежние; надпись Next в арте скрывается только для настоящего Claim-маршрута.
+            bool claim = _primaryShowsStoryClaim;
+            primary.text = claim ? LocalizationManager.GetLocalizedString("first_session_claim_action") : string.Empty;
+            primary.tooltip = LocalizationManager.GetLocalizedString(claim
+                ? "first_session_claim_action" : "first_session_next_level");
+            primary.style.backgroundImage = claim ? new StyleBackground(StyleKeyword.None) : new StyleBackground(StyleKeyword.Null);
+            primary.style.backgroundColor = claim ? new StyleColor(new Color(0.88f, 0.93f, 0.965f)) : new StyleColor(StyleKeyword.Null);
+            primary.style.color = claim ? new StyleColor(new Color(0.06f, 0.16f, 0.31f)) : new StyleColor(StyleKeyword.Null);
+            primary.style.fontSize = claim ? new StyleLength(26) : new StyleLength(StyleKeyword.Null);
+            primary.style.unityFontStyleAndWeight = claim ? new StyleEnum<FontStyle>(FontStyle.Bold) : new StyleEnum<FontStyle>(StyleKeyword.Null);
+            primary.style.unityTextAlign = TextAnchor.MiddleCenter;
+            primary.style.whiteSpace = WhiteSpace.Normal;
+            StyleColor border = claim ? new StyleColor(new Color(0.145f, 0.38f, 0.55f)) : new StyleColor(StyleKeyword.Null);
+            primary.style.borderTopColor = primary.style.borderRightColor = primary.style.borderBottomColor = primary.style.borderLeftColor = border;
+            StyleFloat borderWidth = claim ? new StyleFloat(2) : new StyleFloat(StyleKeyword.Null);
+            primary.style.borderTopWidth = primary.style.borderRightWidth = primary.style.borderBottomWidth = primary.style.borderLeftWidth = borderWidth;
+            StyleLength radius = claim ? new StyleLength(18) : new StyleLength(StyleKeyword.Null);
+            primary.style.borderTopLeftRadius = primary.style.borderTopRightRadius = primary.style.borderBottomLeftRadius = primary.style.borderBottomRightRadius = radius;
+        }
+
+        private void AcknowledgeVisibleRecord()
+        {
+            // Только видимая надпись нового рекорда, а не кнопка рейтинга или скрытая модель данных.
+            if (_runResult?.IsNewRecord != true ||
+                _runResult.SubmissionState != RunResultSubmissionState.Submitted) return;
+            var label = _recordLabel;
+            if (label == null || label.panel == null || label.worldBound.width <= 0 || label.worldBound.height <= 0) return;
+            for (var element = (VisualElement)label; element != null; element = element.parent)
+                if (element.resolvedStyle.display == DisplayStyle.None || !element.visible) return;
+
+            // Явный выход подтверждает receipt именно этого забега; ошибка ACK не отменяет навигацию.
+            try
+            {
+                string runId = LevelController.Instance?.LevelData?.Hamster?.LatestLeaderboardRunId;
+                var coordinator = WeeklyLeaderboardCoordinator.Instance;
+                var notification = coordinator?.GetPendingRecordNotifications().FirstOrDefault(item =>
+                    item.RunId == runId && item.Score == _runResult.RunScore);
+                if (notification != null) coordinator.AcknowledgeRecordNotification(notification);
+            }
+            catch (Exception exception)
+            {
+                DebugManager.DiagStability($"[WeeklyLeaderboard] Win presentation ACK failed ({exception.GetType().Name}).");
             }
         }
 
@@ -190,7 +282,8 @@ namespace LostCyberHamster.UI
             _resultContainer.style.display = DisplayStyle.Flex;
             _runScoreLabel.text = FormatLocalized(
                 "win_run_score",
-                _runResult.RunScore.ToString("0"));
+                _runResult.RunScore.ToString("0")) + " · " + FormatLocalized("progression_win_xp",
+                    LevelManager.LastCompletionExperience.Amount.ToString());
 
             // Вторая строка показывает один статус без наложения соседних текстов.
             var isResolved =

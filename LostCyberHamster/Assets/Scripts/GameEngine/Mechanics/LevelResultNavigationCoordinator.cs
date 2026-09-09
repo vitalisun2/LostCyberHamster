@@ -1,84 +1,93 @@
 using System;
+using System.Threading.Tasks;
 using GameManagement;
 using LostCyberHamster.UI;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
-    /// <summary>
-    /// Продолжает выбранный маршрут результата после возможного Level Up.
-    /// </summary>
-    internal sealed class LevelResultNavigationCoordinator
+    /// <summary>Доставляет накопленный Level Up перед выбранным переходом результата.</summary>
+    internal sealed class LevelResultNavigationCoordinator : IDisposable
     {
         private readonly UIManager _uiManager;
-        private int _previousPlayerLevel;
+        private readonly PlayerLevelPresentation _presentation;
+        private bool _continuing;
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            _disposed = true;
+            _presentation.Dispose();
+        }
 
         public LevelResultNavigationCoordinator(UIManager uiManager)
         {
-            _uiManager = uiManager ??
-                throw new ArgumentNullException(nameof(uiManager));
-            _previousPlayerLevel =
-                GameDataManager.PlayerData?.PlayerLevel ?? 0;
+            _uiManager = uiManager ?? throw new ArgumentNullException(nameof(uiManager));
+            _presentation = new PlayerLevelPresentation(uiManager);
         }
 
-        /// <summary>
-        /// Закрывает result-модалку и выполняет действие после Level Up.
-        /// </summary>
-        public async void Continue(
-            ScreenEnum sourceModal,
-            Action action)
+        public async void Continue(ScreenEnum sourceModal, Action action, string returnLevel = null,
+            ScreenEnum returnScreen = ScreenEnum.HomeScreen, string location = null, string part = null,
+            bool startShieldLesson = false)
         {
-            if (action == null)
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            if (_continuing || _disposed) return;
+            _continuing = true;
+            int scene = SceneManager.GetActiveScene().handle;
+            var profile = GameDataManager.ProfileId;
+            long generation = GameDataManager.Generation;
+            bool actionInvoked = false;
+            bool IsCurrent() => !_disposed && SceneManager.GetActiveScene().handle == scene &&
+                profile == GameDataManager.ProfileId && generation == GameDataManager.Generation;
+
+            void InvokeOnce(Action continuation)
             {
-                throw new ArgumentNullException(nameof(action));
+                if (_disposed || actionInvoked || SceneManager.GetActiveScene().handle != scene ||
+                    profile != GameDataManager.ProfileId || generation != GameDataManager.Generation) return;
+                actionInvoked = true;
+                continuation();
             }
 
-            bool actionInvoked = false;
-
-            void InvokeActionOnce()
+            async Task RestoreResult()
             {
-                if (actionInvoked)
+                if (!IsCurrent()) return;
+                _continuing = false;
+                try
                 {
-                    return;
+                    await _uiManager.ShowModalAsync(sourceModal);
+                    if (IsCurrent() && _uiManager.CurrentModal != sourceModal && !_uiManager.HasModalOrTransition)
+                        SceneManager.LoadScene("Menu");
                 }
-
-                actionInvoked = true;
-                action.Invoke();
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                    // Сохранённое направление и pending Level Up восстановятся в меню.
+                    if (IsCurrent()) SceneManager.LoadScene("Menu");
+                }
             }
 
             try
             {
-                int previousPlayerLevel = _previousPlayerLevel;
-                int currentPlayerLevel =
-                    GameDataManager.PlayerData?.PlayerLevel ??
-                    previousPlayerLevel;
-                int levelsGained =
-                    currentPlayerLevel - previousPlayerLevel;
-
-                // Фиксируем результат и освобождаем исходную модалку.
-                _previousPlayerLevel = currentPlayerLevel;
+                if (PlayerLevelPresentation.HasPendingLevel)
+                    GameDataManager.ExecuteTransaction(CheckpointReason.FirstSessionTutorialProgressed,
+                        () => FirstSessionNavigation.SetReturnRoute(returnLevel, returnScreen, location, part,
+                            awaitingLevelUp: true, startShieldLesson));
                 _uiManager.CloseModal(sourceModal);
-
-                if (levelsGained <= 0)
+                bool shown = await _presentation.ShowAsync(() => InvokeOnce(action),
+                    startShieldLesson ? null : () => { }, shield => shield || startShieldLesson
+                        ? FirstSessionNavigation.PrepareShield(_uiManager)
+                        : FirstSessionNavigation.PrepareResume(_uiManager));
+                if (!shown)
                 {
-                    InvokeActionOnce();
-                    return;
+                    if (PlayerLevelPresentation.HasPendingLevel) await RestoreResult();
+                    else InvokeOnce(action);
                 }
-
-                // Показываем Level Up перед выбранным переходом.
-                var levelUpModalController =
-                    _uiManager.GetController<LevelUpModalController>();
-                levelUpModalController.SetLevelUpData(
-                    previousPlayerLevel,
-                    currentPlayerLevel,
-                    levelsGained);
-                levelUpModalController.SetOkAction(InvokeActionOnce);
-                await _uiManager.ShowModalAsync(ScreenEnum.LevelUpModal);
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
-                InvokeActionOnce();
+                await RestoreResult();
             }
         }
     }

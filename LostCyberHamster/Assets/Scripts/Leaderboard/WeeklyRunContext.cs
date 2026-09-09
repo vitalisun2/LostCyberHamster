@@ -9,9 +9,10 @@ namespace GameManagement.Leaderboard
         public string Environment { get; }
         public string LeaderboardId { get; }
         public string VersionId { get; }
+        public WeeklyRecordBaseline PersonalBest { get; }
 
         public WeeklyRunContext(string ownerPlayerId, string profileId, long generation,
-            string environment, string leaderboardId, string versionId)
+            string environment, string leaderboardId, string versionId, WeeklyPersonalBest personalBest = null)
         {
             OwnerPlayerId = ownerPlayerId;
             ProfileId = profileId;
@@ -19,6 +20,7 @@ namespace GameManagement.Leaderboard
             Environment = environment;
             LeaderboardId = leaderboardId;
             VersionId = versionId;
+            PersonalBest = personalBest == null ? null : new WeeklyRecordBaseline(personalBest);
         }
     }
 }

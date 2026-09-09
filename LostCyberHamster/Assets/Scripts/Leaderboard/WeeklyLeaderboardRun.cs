@@ -19,5 +19,6 @@ namespace GameManagement.Leaderboard
         public int WeeklyBest;
         public WeeklyRunStatus Status;
         public WeeklyLocalOnlyReason LocalOnlyReason;
+        public WeeklyDailyRewardDecision RewardDecision;
     }
 }

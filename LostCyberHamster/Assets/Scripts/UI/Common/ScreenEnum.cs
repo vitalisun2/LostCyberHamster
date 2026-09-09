@@ -20,6 +20,8 @@ namespace LostCyberHamster.UI
         CharacterDevelopmentScreen,
         LevelUpModal,
         DailyQuestRewardModal,
+        ReturnActivitiesScreen,
+        ActivityRewardModal,
 
     }
 

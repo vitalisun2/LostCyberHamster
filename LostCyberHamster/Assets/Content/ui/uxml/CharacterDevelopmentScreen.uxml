@@ -6,6 +6,7 @@
         <engine:VisualElement name="development__viewport" class="development-viewport main-screen-body main-screen-body--below-hud">
             <engine:VisualElement name="development__scale-frame" class="development-scale-frame">
                 <engine:VisualElement name="development__design" class="development-design">
+                    <engine:Button name="development-return" class="progression-return" />
                     <engine:VisualElement name="development__central" class="development-central" picking-mode="Ignore">
                     <engine:VisualElement name="development__cards-background" class="development-cards-background" picking-mode="Ignore">
                         <engine:VisualElement class="development-panel development-level-panel" />

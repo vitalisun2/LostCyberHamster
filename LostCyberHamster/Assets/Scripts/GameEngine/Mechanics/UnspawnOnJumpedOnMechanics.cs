@@ -49,21 +49,24 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnObstacleDestroyedByNormalJump(Obstacle destroyedObstacle)
         {
-            OnObstacleDestroyed(destroyedObstacle);
+            OnObstacleDestroyed(destroyedObstacle, bySuperAttack: false);
         }
 
         private void OnObstacleDestroyedBySuperAttack(Obstacle destroyedObstacle)
         {
-            OnObstacleDestroyed(destroyedObstacle);
+            OnObstacleDestroyed(destroyedObstacle, bySuperAttack: true);
         }
 
-        private void OnObstacleDestroyed(Obstacle destroyedObstacle)
+        private void OnObstacleDestroyed(Obstacle destroyedObstacle, bool bySuperAttack)
         {
-            if(destroyedObstacle != _obstacleScript)
+            if(destroyedObstacle != _obstacleScript || !_obstacleScript.TryBeginDestruction())
                 return;
 
+            // Позиция и источник читаются до того, как pool сбросит объект.
+            Vector3 position = _obstacleScript.transform.position;
+            if (bySuperAttack) _hamster.NotifySuperAttackObstacleDestroyed(_obstacleScript);
             _onObstacleUnspawn.Invoke(_obstacleScript.gameObject);
-            _boomEffectAction.Invoke(_obstacleScript.transform.position, _gameManager);
+            _boomEffectAction.Invoke(position, _gameManager);
         }
     }
 }

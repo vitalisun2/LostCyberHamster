@@ -4,9 +4,30 @@
     "location": "01_New_York",
     "patternSequence": [
         {
-            "ref": "easy_run_2",
+            "ref": "ny_afternoon_intro",
             "spriteSeed": 0,
-            "overrides": []
+            "overrides": [
+                {
+                    "obstacleId": 0,
+                    "spriteName": "obstacle_new_york_homeless"
+                },
+                {
+                    "obstacleId": 1,
+                    "spriteName": "obstacle_new_york_homeless"
+                },
+                {
+                    "obstacleId": 2,
+                    "spriteName": "obstacle_new_york_homeless"
+                },
+                {
+                    "obstacleId": 4,
+                    "spriteName": "obstacle_new_york_homeless"
+                },
+                {
+                    "obstacleId": 5,
+                    "spriteName": "obstacle_new_york_homeless"
+                }
+            ]
         },
         {
             "ref": "bonus_strip",

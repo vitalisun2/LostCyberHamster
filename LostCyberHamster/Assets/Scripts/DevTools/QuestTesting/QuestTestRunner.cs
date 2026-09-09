@@ -762,13 +762,13 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
         private void CompletePlayerLevelTarget(QuestDefinition definition)
         {
-            // Начисляем штатный Story XP до заданного Player Level.
+            // Готовим целевой уровень через production-математику XP, независимо от награды квеста.
             while (GameDataManager.PlayerData.PlayerLevel <
                    definition.RequiredValue)
             {
                 _playerExperienceService
-                    .GrantExperienceForClaimedStorylineQuest(
-                        GameDataManager.PlayerData);
+                    .GrantExperienceForTesting(GameDataManager.PlayerData,
+                        PlayerExperienceService.PlayerLevelThreshold);
             }
 
             // Сохраняем весь dev-прогон одним checkpoint.

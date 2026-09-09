@@ -1,7 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts.Common;
+using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
@@ -18,8 +18,16 @@ namespace Vues.GameCore
         public const string EffectAddress = "ElectricStrikePrefab";
         public const int DefaultChargePerObstacle = 35;
 
-        private const float _delayBetweenDestroyedObstacles = 0.1f;
-        private const int _twoDropsMinimumDestroyedCount = 4;
+        private readonly SuperAttackData _data;
+        private readonly Hamster _hamster;
+        private readonly GameManager _gameManager;
+        private readonly ObstacleSpawner _spawner;
+        private readonly List<GameObject> _effects = new();
+        private SuperAttackLevelData _level;
+        private SuperAttackDropBudget _drops;
+        private long _activationId;
+        private bool _applying;
+        private bool _disposed;
 
         private readonly AddressableLease<GameObject> _effectPrefabLease;
         private readonly GameObject _effectPrefab;
@@ -27,7 +35,9 @@ namespace Vues.GameCore
         /// <summary>
         /// Возвращает заряд за одно уничтоженное препятствие.
         /// </summary>
-        public int ChargePerObstacle { get; }
+        public int ChargePerObstacle => _data.UltaCharge;
+        public SuperAttackRuntimeSnapshot Snapshot => new(_data.Id, _level?.Level ?? 1, _activationId,
+            false, 0, 0, destroyedCount: _drops?.DestroyedCount ?? 0, dropsCreated: _drops?.DropsCreated ?? 0);
 
         /// <summary>
         /// Возвращает признак длительной активности, которой у удара нет.
@@ -39,7 +49,7 @@ namespace Vues.GameCore
         /// </summary>
         public ElectricStrikeAttack(
             AddressableLease<GameObject> effectPrefabLease,
-            int chargePerObstacle = DefaultChargePerObstacle)
+            SuperAttackData data, Hamster hamster, GameManager gameManager, ObstacleSpawner spawner)
         {
             _effectPrefabLease = effectPrefabLease ??
                 throw new ArgumentNullException(nameof(effectPrefabLease));
@@ -56,7 +66,10 @@ namespace Vues.GameCore
                     nameof(effectPrefabLease));
             }
 
-            ChargePerObstacle = chargePerObstacle;
+            _data = data ?? throw new ArgumentNullException(nameof(data));
+            _hamster = hamster ?? throw new ArgumentNullException(nameof(hamster));
+            _gameManager = gameManager ?? throw new ArgumentNullException(nameof(gameManager));
+            _spawner = spawner ?? throw new ArgumentNullException(nameof(spawner));
         }
 
         /// <summary>
@@ -64,63 +77,45 @@ namespace Vues.GameCore
         /// </summary>
         public bool TryActivate()
         {
-            var hamster = LevelController.Instance.LevelData.Hamster;
-            GameObject effectObject = HelpMethods.CreateUltaEffect(_effectPrefab, hamster);
-            ElectricStrikeUlta effect = effectObject.GetComponent<ElectricStrikeUlta>();
+            if (_disposed || _applying || _gameManager.State != GameState.PLAYING) return false;
+            _level = SuperAttackLevelResolver.GetEffective(_data);
+            _drops = new SuperAttackDropBudget(_level);
+            _activationId++;
+            _effects.RemoveAll(item => item == null);
+            var effectObject = HelpMethods.CreateUltaEffect(_effectPrefab, _hamster);
+            _effects.Add(effectObject);
+            var effect = effectObject.GetComponent<ElectricStrikeUlta>();
+            effect.SetRangeMultiplier(_hamster.RightX, _level.RangeMultiplier);
 
-            ObstacleSpawner obstacleSpawner = ObstacleSpawner.Instance;
-            List<InstantiatedObstacle> obstacles = FindObstaclesWithinEffect(
-                hamster,
-                obstacleSpawner,
-                effect.WorldRightEdge);
-            if (obstacles.Count > 0)
+            // Физическое действие мгновенно; последовательный световой эффект живёт отдельно.
+            var targets = FindObstaclesWithinEffect(_hamster, _spawner, effect.WorldRightEdge);
+            _applying = true;
+            try
             {
-                hamster.StartCoroutine(DestroyObstaclesWithDelay(
-                    hamster,
-                    obstacleSpawner,
-                    obstacles,
-                    _delayBetweenDestroyedObstacles));
+                foreach (var target in targets)
+                    if (IsCurrentLiveTarget(_hamster, _spawner, target))
+                        _hamster.DestroyObstacleBySuperAttackEvent.Invoke(target.ObstacleScript);
             }
-
+            finally { _applying = false; }
             return true;
         }
 
-        /// <summary>
-        /// Не выполняет обновление для мгновенного суперудара.
-        /// </summary>
-        public void Update()
+        public void OnObstacleDestroyed(Obstacle obstacle)
         {
+            if (_applying && _drops.TryCreateDrop(obstacle))
+                _hamster.ObstacleBonusDropEvent.Invoke(obstacle);
         }
 
-        /// <summary>
-        /// Освобождает lease prefab эффекта.
-        /// </summary>
+        public void Update() { }
+
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
+            foreach (var effect in _effects)
+                if (effect != null) UnityEngine.Object.Destroy(effect);
+            _effects.Clear();
             _effectPrefabLease.Dispose();
-        }
-
-        private static IEnumerator DestroyObstaclesWithDelay(
-            Hamster hamster,
-            ObstacleSpawner obstacleSpawner,
-            List<InstantiatedObstacle> obstacles,
-            float delay)
-        {
-            var destructionDelay = new WaitForSeconds(delay);
-            var destroyedObstacles = new List<Obstacle>(obstacles.Count);
-            for (int index = 0; index < obstacles.Count; index++)
-            {
-                InstantiatedObstacle target = obstacles[index];
-                if (!IsCurrentLiveTarget(hamster, obstacleSpawner, target))
-                    continue;
-
-                Obstacle obstacle = target.ObstacleScript;
-                hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);
-                destroyedObstacles.Add(obstacle);
-                yield return destructionDelay;
-            }
-
-            ApplyRandomDrops(hamster, destroyedObstacles);
         }
 
         private static List<InstantiatedObstacle> FindObstaclesWithinEffect(
@@ -194,25 +189,6 @@ namespace Vues.GameCore
             float rightEdge = right.ObstacleScript
                 .GetComponentInChildren<BoxCollider2D>().bounds.min.x;
             return leftEdge.CompareTo(rightEdge);
-        }
-
-        private static void ApplyRandomDrops(
-            Hamster hamster,
-            List<Obstacle> destroyedObstacles)
-        {
-            int dropCount = destroyedObstacles.Count >= _twoDropsMinimumDestroyedCount
-                ? 2
-                : destroyedObstacles.Count > 0
-                    ? 1
-                    : 0;
-
-            for (int index = 0; index < dropCount; index++)
-            {
-                int randomIndex = UnityEngine.Random.Range(index, destroyedObstacles.Count);
-                (destroyedObstacles[index], destroyedObstacles[randomIndex]) =
-                    (destroyedObstacles[randomIndex], destroyedObstacles[index]);
-                hamster.ObstacleBonusDropEvent?.Invoke(destroyedObstacles[index]);
-            }
         }
 
         private static bool IsCurrentLiveTarget(

@@ -206,10 +206,10 @@
 
 #tutorial-complete-root #tutorial-complete-message {
     left: 476px;
-    top: 440px;
+    top: 428px;
     width: 720px;
-    height: 104px;
-    font-size: 30px;
+    height: 116px;
+    font-size: 28px;
 }
 
 #tutorial-complete-root #tutorial-complete-divider {

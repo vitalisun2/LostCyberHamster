@@ -5,6 +5,7 @@ using GameManagement.Progress;
 using UnityEngine;
 using Vues.GameCore;
 using Vues.GameCore.Quests;
+using Vues.GameCore.ReturnActivities;
 
 namespace GameManagement
 {
@@ -22,6 +23,7 @@ namespace GameManagement
         public int DevelopmentPoints;
         public List<int> UnlockedSkinIds = new() { 0 };
         public List<int> UnlockedSuperAttackIds = new();
+        public List<SuperAttackLevelProgress> SuperAttackLevels = new();
         public int AppliedSkinId = 0;
         public int ActiveSuperAttackId = 0;
         public List<int> PurchasedSkinIds = new() { 0 };
@@ -29,6 +31,7 @@ namespace GameManagement
         public List<Quest> QuestStates = new();
         public DailyQuestSetState DailyQuestSet = new();
         public StoryQuestSetState StoryQuestSet = new();
+        public ReturnActivityState ReturnActivities = new();
 
         [SerializeField]
         private List<SerializableLevelProgressEntry> _serializedProgress = new();
@@ -39,6 +42,18 @@ namespace GameManagement
         public string LastSaveDate = DateTime.MinValue.ToString("o");
         public bool IsFirstLaunch = true;
         public bool IsTutorialCompleted;
+        public bool IsTutorialSkipped;
+        public bool HasReceivedTutorialExperience;
+        public int LastAcknowledgedPlayerLevel = 1;
+        public bool IsShieldTutorialStarted;
+        public bool HasUsedTutorialShield;
+        public bool EnableGameplayNotifications = true;
+        public string FirstSessionReturnLevel;
+        public string FirstSessionReturnScreen;
+        public string FirstSessionReturnLocation;
+        public string FirstSessionReturnPart;
+        public bool FirstSessionReturnFromLevelUp;
+        public bool FirstSessionReturnToShield;
         public bool IsAccountPromptPending;
         public bool IsAccountPromptShown;
 

@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Assets.Scripts.Diagnostics;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.System;
+using Assets.Scripts.Tutorial;
 using Assets.Scripts.GameEngine.Mechanics;
 using LostCyberHamster.UI;
 using UnityEngine;
@@ -13,6 +14,9 @@ namespace Assets.Scripts.Gameplay
     public class GameUi : MonoBehaviour
     {
         private bool _isInitialized;
+        private bool _destroyed;
+        private bool _applicationPaused;
+        private bool _runtimeSubscribed;
 
         private Hamster _character;
         private GameManager _gameManager;
@@ -32,6 +36,8 @@ namespace Assets.Scripts.Gameplay
         private LevelResultNavigationCoordinator
             _levelResultNavigationCoordinator;
         private KeyboardMechanics _keyboardMechanics;
+        private FirstSessionNotificationHost _notifications;
+        private ShieldPracticeController _shieldPractice;
 
         [Inject]
         public async Task Construct()
@@ -68,9 +74,10 @@ namespace Assets.Scripts.Gameplay
                 _character.SuperRoofJumpRequest,
                 _character.ActorSwitcher);
             _uiGameOverMechanics = new UiGameOverMechanics(_uiManager, _gameManager, _character);
-            _uiLoseModalMechanics = new UiLoseModalMechanics(_uiManager, _gameManager, _character);
             _levelResultNavigationCoordinator =
                 new LevelResultNavigationCoordinator(_uiManager);
+            _uiLoseModalMechanics = new UiLoseModalMechanics(_uiManager, _gameManager, _character,
+                _levelResultNavigationCoordinator);
             _uiWinModalMechanics = new UiWinModalMechanics(
                 _uiManager,
                 _levelResultNavigationCoordinator);
@@ -80,15 +87,10 @@ namespace Assets.Scripts.Gameplay
                     _levelResultNavigationCoordinator);
             _keyboardMechanics = new KeyboardMechanics(_character, _uiManager);
 
-            _uiManager.SubscribeToEvents();
-            _energyMechanics.Subscribe();
-            _uiGameScreenMechanics.Subscribe();
-            _uiGameOverMechanics.Subscribe();
-
             await _uiManager.LoadScreenAsync(ScreenEnum.GameScreen);
-            _uiGameScreenMechanics.SyncState();
-
+            if (_destroyed) return;
             _isInitialized = true;
+            if (isActiveAndEnabled) ActivateRuntime();
         }
 
         private void CloseLevelUpModal()
@@ -111,6 +113,10 @@ namespace Assets.Scripts.Gameplay
             _uiGameScreenMechanics.OnUpdate();
             _keyboardMechanics.OnUpdate();
             _energyMechanics.OnUpdate(Time.deltaTime);
+            bool blocked = _gameManager.State != GameState.PLAYING || _uiManager.HasModalOrTransition ||
+                TutorialStorage.IsPlayerDataBackupActive || !Application.isFocused || _applicationPaused;
+            _shieldPractice.Tick(blocked);
+            _notifications.Tick(gameplay: true, blocked || _shieldPractice.IsPresenting);
             RuntimePerformanceDiagnostics.EndAllocationSample(
                 RuntimePerformanceScope.GameUiUpdate,
                 allocationSample);
@@ -118,10 +124,57 @@ namespace Assets.Scripts.Gameplay
 
         private void OnDisable()
         {
-            _uiManager.UnsubscribeFromEvents();
-            _energyMechanics.Unsubscribe();
-            _uiGameScreenMechanics.Unsubscribe();
-            _uiGameOverMechanics.Unsubscribe();
+            _notifications?.Dispose();
+            _shieldPractice?.Dispose();
+            _notifications = null;
+            _shieldPractice = null;
+            _runtimeSubscribed = false;
+            _uiManager?.UnsubscribeFromEvents();
+            _energyMechanics?.Unsubscribe();
+            _uiGameScreenMechanics?.Unsubscribe();
+            _uiGameOverMechanics?.Unsubscribe();
+        }
+
+        private void OnEnable()
+        {
+            if (!_isInitialized) return;
+            ActivateRuntime();
+        }
+
+        private void ActivateRuntime()
+        {
+            if (_runtimeSubscribed) return;
+            _runtimeSubscribed = true;
+            _uiManager.SubscribeToEvents();
+            _energyMechanics.Subscribe();
+            _uiGameScreenMechanics.Subscribe();
+            _uiGameOverMechanics.Subscribe();
+            _uiGameScreenMechanics.SyncState();
+            _notifications ??= new FirstSessionNotificationHost(_uiManager, _uiDocument.rootVisualElement, _character);
+            _shieldPractice ??= new ShieldPracticeController(_character, _uiDocument.rootVisualElement);
+        }
+
+        private void OnDestroy()
+        {
+            _destroyed = true;
+            _levelResultNavigationCoordinator?.Dispose();
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            _applicationPaused = paused;
+            if (paused) HideFirstSessionOverlays();
+        }
+
+        private void OnApplicationFocus(bool focused)
+        {
+            if (!focused) HideFirstSessionOverlays();
+        }
+
+        private void HideFirstSessionOverlays()
+        {
+            _shieldPractice?.Tick(blocked: true);
+            _notifications?.Tick(gameplay: true, blocked: true);
         }
     }
 }

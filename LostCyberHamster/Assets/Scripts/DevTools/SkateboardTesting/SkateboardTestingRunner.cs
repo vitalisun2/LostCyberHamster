@@ -487,7 +487,7 @@ namespace Assets.Scripts.DevTools.SkateboardTesting
 
             float gameplaySeconds = Time.time - _timeoutStartedAt;
             bool waitedFullTimeout =
-                gameplaySeconds >= SkateboardAttack.DefaultFirstJumpTimeout -
+                gameplaySeconds >= _attack.Snapshot.Duration -
                 _timeoutTolerance;
             bool normalActorRestored =
                 !_hamster.ActorSwitcher.IsSkateboardActive &&

@@ -355,3 +355,18 @@
 .hero-scroll-button:disabled {
     opacity: 0.45;
 }
+
+.progression-return {
+    position: absolute; left: 1180px; top: 190px; width: 280px; height: 64px;
+    background-color: rgb(74, 126, 156); border-radius: 16px;
+    color: white; font-size: 26px; -unity-font-style: bold;
+}
+.hero-ability-preview-image { top: 48px; height: 177px; }
+.hero-ability-description { top: 229px; height: 88px; font-size: 22px; }
+.hero-ability-upgrade {
+    position: absolute; left: 8%; bottom: 82px; width: 84%; height: 74px;
+    background-color: rgb(74, 126, 156); border-radius: 12px;
+    color: white; font-size: 18px; white-space: normal; -unity-text-align: middle-center;
+}
+.hero-ability-upgrade:disabled { opacity: 0.75; }
+#hero-ability-select { bottom: 16px; height: 60px; }

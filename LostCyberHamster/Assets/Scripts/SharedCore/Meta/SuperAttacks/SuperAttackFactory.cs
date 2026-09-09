@@ -72,12 +72,9 @@ namespace Vues.GameCore
                 return data.Id switch
                 {
                     EnergyShieldId => new EnergyShieldAttack(
-                        effectPrefabLease,
-                        data.UltaDuration,
-                        data.UltaCharge),
+                        effectPrefabLease, data, hamster, gameManager),
                     ElectricStrikeId => new ElectricStrikeAttack(
-                        effectPrefabLease,
-                        data.UltaCharge),
+                        effectPrefabLease, data, hamster, gameManager, obstacleSpawner),
                     _ => throw new InvalidOperationException(
                         $"Не поддерживается ID суперудара: {data.Id}.")
                 };

@@ -1,5 +1,8 @@
 using System.Collections.Generic;
+using System;
 using System.Linq;
+using Assets.Scripts.Tutorial;
+using GameManagement.Progress;
 using UnityEngine.UIElements;
 using Vues.GameCore;
 using Vues.GameCore.Quests;
@@ -22,6 +25,10 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<Button>("btn__quests-tab-story");
         private bool _showDailyTasks = true;
         private int _currentQuestIndex;
+        private bool _dailyAutoPresented;
+        private Func<bool> _canPresentDailyReward;
+        private Button DailyBonusButton => _contentRoot.Q<Button>("quests-daily-bonus");
+        public void SetDailyRewardGate(Func<bool> canPresent) => _canPresentDailyReward = canPresent;
         private IVisualElementScheduledItem
             _dailyCommonRewardModalSchedule;
 
@@ -48,8 +55,13 @@ namespace LostCyberHamster.UI
 
         protected override void BindView()
         {
-            _showDailyTasks = true;
-            _currentQuestIndex = 0;
+            _dailyAutoPresented = false;
+            // Незабранная первая Story открывается сразу, сохраняя свободное переключение вкладок.
+            int morningIndex = QuestManager.StoryQuests.ToList().FindIndex(quest =>
+                quest.Id == FirstSessionGoalPresenter.MorningQuestId && !quest.IsRewardClaimed);
+            _showDailyTasks = morningIndex < 0;
+            int pageSize = System.Math.Max(1, ConfigurationManager.Config.DisplayQuestsCount);
+            _currentQuestIndex = morningIndex < 0 ? 0 : morningIndex / pageSize * pageSize;
             RenderActivePage();
             ScheduleDailyCommonRewardModal();
         }
@@ -58,6 +70,16 @@ namespace LostCyberHamster.UI
         {
             IReadOnlyList<Quest> quests = ActiveQuests;
             int pageSize = ConfigurationManager.Config.DisplayQuestsCount;
+            _contentRoot.Q<VisualElement>("quests-content").EnableInClassList("quests-content--daily", _showDailyTasks);
+            _contentRoot.Q<Label>("quests-daily-rule").style.display =
+                _showDailyTasks ? DisplayStyle.Flex : DisplayStyle.None;
+            DailyBonusButton.style.display = _showDailyTasks ? DisplayStyle.Flex : DisplayStyle.None;
+            int claimed = QuestManager.DailyQuests.Count(quest => quest.IsRewardClaimed);
+            var bonus = QuestManager.GetDailyCommonReward();
+            DailyBonusButton.text = bonus == null
+                ? string.Format(LocalizationManager.GetLocalizedString("progression_daily_progress"), claimed, QuestManager.DailyCommonRewardAmount)
+                : string.Format(LocalizationManager.GetLocalizedString("progression_daily_available"), bonus.Amount, bonus.RemainingRewards + 1);
+            DailyBonusButton.SetEnabled(bonus != null);
 
             // Нормализуем страницу после смены набора или количества квестов.
             if (quests.Count == 0 ||
@@ -72,7 +94,13 @@ namespace LostCyberHamster.UI
                          .Skip(_currentQuestIndex)
                          .Take(pageSize))
             {
-                _questsContainer.Add(new QuestItem(quest));
+                var item = new QuestItem(quest);
+                if (quest.Id == FirstSessionGoalPresenter.MorningQuestId && !quest.IsRewardClaimed)
+                {
+                    item.AddToClassList("quest-card--first-session");
+                    item.EnableInClassList("quest-card--first-session-claim", quest.CanClaimReward);
+                }
+                _questsContainer.Add(item);
             }
 
             DisplayStyle navigationDisplay =
@@ -96,6 +124,7 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
+            DailyBonusButton?.RegisterCallback<ClickEvent>(OnDailyBonusClicked);
             GameEventsManager.OnQuestStateChanged +=
                 HandleQuestStateChanged;
             GameEventsManager.OnQuestRewardReceived +=
@@ -130,6 +159,7 @@ namespace LostCyberHamster.UI
             }
 
             _showDailyTasks = showDailyTasks;
+            if (_showDailyTasks) _dailyAutoPresented = false;
             _currentQuestIndex = 0;
             RenderActivePage();
             if (_showDailyTasks)
@@ -209,7 +239,7 @@ namespace LostCyberHamster.UI
         private void ScheduleDailyCommonRewardModal()
         {
             CancelDailyCommonRewardModal();
-            if (!_showDailyTasks ||
+            if (_dailyAutoPresented || !_showDailyTasks ||
                 !QuestManager.CanClaimDailyCommonReward)
             {
                 return;
@@ -229,8 +259,20 @@ namespace LostCyberHamster.UI
                 return;
             }
 
+            if (_canPresentDailyReward?.Invoke() != true)
+            {
+                ScheduleDailyCommonRewardModal();
+                return;
+            }
+            _dailyAutoPresented = true;
+
             UIManager.OnModalShow?.Invoke(
                 ScreenEnum.DailyQuestRewardModal);
+        }
+
+        private void OnDailyBonusClicked(ClickEvent evt)
+        {
+            if (_canPresentDailyReward?.Invoke() == true) ShowDailyCommonRewardModal();
         }
 
         private void CancelDailyCommonRewardModal()
@@ -241,6 +283,7 @@ namespace LostCyberHamster.UI
 
         protected override void OnUnsubscribeFromEvents()
         {
+            DailyBonusButton?.UnregisterCallback<ClickEvent>(OnDailyBonusClicked);
             CancelDailyCommonRewardModal();
             GameEventsManager.OnQuestStateChanged -=
                 HandleQuestStateChanged;

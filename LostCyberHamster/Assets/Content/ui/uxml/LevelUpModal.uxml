@@ -11,7 +11,10 @@
                     <engine:VisualElement class="level-up-modal__emblem" picking-mode="Ignore" />
                     <engine:Label name="level-up-transition" class="reward-modal__text level-up-modal__transition" picking-mode="Ignore" />
                     <engine:Label name="level-up-development-reward" class="reward-modal__text level-up-modal__development-reward" picking-mode="Ignore" />
+                    <engine:Label name="level-up-free-points" class="reward-modal__text level-up-modal__free" picking-mode="Ignore" />
+                    <engine:VisualElement name="level-up-options" class="level-up-modal__options" picking-mode="Ignore" />
                     <engine:Button name="btn_level_up_ok" class="reward-modal__text reward-modal__primary" />
+                    <engine:Button name="btn_level_up_shield" class="reward-modal__text reward-modal__primary level-up-modal__shield" />
                 </engine:VisualElement>
             </engine:VisualElement>
         </engine:VisualElement>

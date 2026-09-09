@@ -1,9 +1,11 @@
+using System;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
 using Atomic.Elements;
 using GameManagement;
 using LostCyberHamster.UI;
+using Vues.GameCore.ReturnActivities;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -12,12 +14,20 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly UIManager _uiManager;
         private readonly GameManager _gameManager;
         private readonly Hamster _hamster;
+        private readonly ActivityAttemptContext _activityAttempt;
+        private bool _finishCommitted;
 
         public UiGameOverMechanics(UIManager uiManager, GameManager gameManager, Hamster hamster)
         {
             _uiManager = uiManager;
             _gameManager = gameManager;
             _hamster = hamster;
+            _activityAttempt = new ActivityAttemptContext(GameDataManager.PlayerData?.CurrentLevel);
+            try { _activityAttempt.Prepare(); }
+            catch (Exception exception)
+            {
+                DebugManager.DiagStability($"[Activities] Attempt save deferred: {exception.GetType().Name}.");
+            }
         }
 
         public void Subscribe()
@@ -34,6 +44,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnFinish()
         {
+            if (_finishCommitted) return;
             if(_hamster.Lives.Value == 0)
             {
                 _uiManager.ShowModalAsync(ScreenEnum.LoseModal);
@@ -50,7 +61,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     playerData.IsAccountPromptPending = true;
                 }
 
-                GameEventsManager.LevelCompleted(completedLevelNumber, _hamster.Lives.Value);
+                _activityAttempt.Complete(() => GameEventsManager.LevelCompleted(completedLevelNumber, _hamster.Lives.Value));
+                _finishCommitted = true;
 
                 if (LevelManager.IsLastAvailableLevel(
                         playerData?.CurrentLevel))

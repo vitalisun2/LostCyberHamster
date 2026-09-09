@@ -7,6 +7,7 @@ using GameManagement;
 using GameManagement.Progress;
 using Vues.GameCore.Quests;
 using Assets.Scripts.Online;
+using Assets.Scripts.Tutorial;
 
 namespace Vues.GameCore
 {
@@ -38,6 +39,37 @@ namespace Vues.GameCore
         /// Буфер событий текущей попытки прохождения уровня.
         /// </summary>
         private static readonly QuestAttemptBuffer _attemptBuffer = new();
+        private static readonly HashSet<string> _previewReachedInstances = new();
+        private static string _previewAttemptId = string.Empty;
+        private static bool _eventsEnabled;
+        private static QuestAttemptPreviewSnapshot _attemptPreview = new(
+            null, 0, string.Empty, Array.Empty<QuestAttemptPreview>());
+
+        /// <summary>Текущий неизменяемый снимок; UI проверяет актуальность перед отложенным показом.</summary>
+        public static QuestAttemptPreviewSnapshot CurrentAttemptPreview => _attemptPreview;
+
+        /// <summary>Сообщает об изменении или снятии предварительной проекции.</summary>
+        public static event Action<QuestAttemptPreviewSnapshot> AttemptPreviewChanged;
+
+        /// <summary>Сообщает о предварительном достижении цели один раз за экземпляр и попытку.</summary>
+        public static event Action<QuestAttemptPreview> AttemptQuestConditionReached;
+
+        /// <summary>Проверяет принадлежность отложенной проекции живой попытке и активному квесту.</summary>
+        public static bool IsCurrentAttemptPreview(QuestAttemptPreview preview)
+        {
+            if (preview == null || !_attemptBuffer.IsActive ||
+                preview.AttemptId != _attemptBuffer.AttemptId ||
+                preview.ProfileId != GameDataManager.ProfileId ||
+                preview.Generation != GameDataManager.Generation)
+                return false;
+            return _attemptPreview.Quests.Any(item =>
+                       item.InstanceId == preview.InstanceId && item.QuestId == preview.QuestId &&
+                       item.TargetAmount == preview.TargetAmount &&
+                       item.IsConditionReached == preview.IsConditionReached) &&
+                   _activeQuests.Any(quest => quest.InstanceId == preview.InstanceId &&
+                       quest.Id == preview.QuestId && quest.TargetAmount == preview.TargetAmount &&
+                       !quest.IsCompleted && !quest.IsRewardClaimed && ShouldHandleProgress(quest));
+        }
 
         /// <summary>
         /// Управляет созданием, сменой и общей наградой Daily-набора.
@@ -95,6 +127,86 @@ namespace Vues.GameCore
         private static IReadOnlyList<QuestDefinition>
             _storyQuestDefinitions = Array.Empty<QuestDefinition>();
 
+        /// <summary>Снимает проекцию при изменении владельца или привязки, сохраняя дедупликацию живой попытки.</summary>
+        private static void InvalidateAttemptPreview()
+        {
+            SynchronizePreviewAttempt();
+            PublishAttemptPreview(new QuestAttemptPreviewSnapshot(GameDataManager.ProfileId,
+                GameDataManager.Generation, _attemptBuffer.AttemptId, Array.Empty<QuestAttemptPreview>()));
+        }
+
+        /// <summary>Пересчитывает подходящие условия без изменения прогресса или потребления буфера.</summary>
+        private static void RefreshAttemptPreview(bool notifyReached = true)
+        {
+            // Новая попытка получает собственную дедупликацию; revive не проходит через этот сброс.
+            SynchronizePreviewAttempt();
+            var previews = new List<QuestAttemptPreview>();
+            if (_attemptBuffer.IsActive)
+            {
+                var actions = _attemptBuffer.ReadSnapshot();
+                foreach (var quest in _activeQuests)
+                {
+                    if (!ShouldHandleProgress(quest)) continue;
+                    var preview = QuestAttemptPreviewEvaluator.Evaluate(GameDataManager.ProfileId,
+                        GameDataManager.Generation, _attemptBuffer.AttemptId, quest, actions,
+                        _strategies[QuestType.ActionCounter]);
+                    if (preview != null) previews.Add(preview);
+                }
+            }
+
+            // Отмечаем пересечения до callbacks, чтобы повторный вход подписчика не дублировал событие.
+            var reached = new List<QuestAttemptPreview>();
+            if (notifyReached)
+                foreach (var preview in previews)
+                    if (preview.IsConditionReached && _previewReachedInstances.Add(preview.InstanceId))
+                        reached.Add(preview);
+            var snapshot = new QuestAttemptPreviewSnapshot(GameDataManager.ProfileId,
+                GameDataManager.Generation, _attemptBuffer.AttemptId, previews);
+            PublishAttemptPreview(snapshot);
+            foreach (var preview in reached)
+                if (IsCurrentAttemptPreview(preview))
+                    PublishPreviewEvent(AttemptQuestConditionReached, preview);
+        }
+
+        /// <summary>Начинает новую область дедупликации только при смене самой попытки.</summary>
+        private static void SynchronizePreviewAttempt()
+        {
+            if (_previewAttemptId == _attemptBuffer.AttemptId) return;
+            _previewAttemptId = _attemptBuffer.AttemptId;
+            _previewReachedInstances.Clear();
+        }
+
+        /// <summary>Публикует только изменившийся снимок, включая пустой после завершения попытки.</summary>
+        private static void PublishAttemptPreview(QuestAttemptPreviewSnapshot snapshot)
+        {
+            if (_attemptPreview.ProfileId == snapshot.ProfileId &&
+                _attemptPreview.Generation == snapshot.Generation &&
+                _attemptPreview.AttemptId == snapshot.AttemptId &&
+                _attemptPreview.Quests.Count == snapshot.Quests.Count &&
+                _attemptPreview.Quests.Zip(snapshot.Quests, (previous, current) =>
+                    previous.InstanceId == current.InstanceId && previous.QuestId == current.QuestId &&
+                    previous.CommittedProgress == current.CommittedProgress &&
+                    previous.AttemptProgress == current.AttemptProgress &&
+                    previous.TargetAmount == current.TargetAmount).All(equal => equal))
+                return;
+            _attemptPreview = snapshot;
+            PublishPreviewEvent(AttemptPreviewChanged, snapshot);
+        }
+
+        /// <summary>Ошибка presentation-подписчика не прерывает экономику или обработку попытки.</summary>
+        private static void PublishPreviewEvent<T>(Action<T> handlers, T value)
+        {
+            if (handlers == null) return;
+            foreach (Action<T> handler in handlers.GetInvocationList())
+            {
+                try { handler(value); }
+                catch (Exception exception)
+                {
+                    DebugManager.DiagStability($"[QUEST] Preview subscriber failed: {exception.GetType().Name}.");
+                }
+            }
+        }
+
         #region Daily-набор
 
         /// <summary>
@@ -135,6 +247,7 @@ namespace Vues.GameCore
                     CompleteQuestDayChange(previousIds, publish: false);
                 }, () =>
                 {
+                    RefreshAttemptPreview();
                     GameEventsManager.DailyQuestSetChanged();
                     GameEventsManager.StoryQuestSetChanged();
                 });
@@ -181,6 +294,7 @@ namespace Vues.GameCore
             if (!publish) return;
             PlayerProgressCommitter.Commit(
                 CheckpointReason.DailyQuestSetRotated);
+            RefreshAttemptPreview();
 
             // Уведомляем открытые экраны об изменении набора.
             GameEventsManager.DailyQuestSetChanged();
@@ -522,6 +636,7 @@ namespace Vues.GameCore
                             ? CheckpointReason.StoryQuestSetChanged
                             : CheckpointReason.QuestProgressed);
             }
+            RefreshAttemptPreview();
         }
 
         /// <summary>
@@ -549,6 +664,9 @@ namespace Vues.GameCore
             {
                 _attemptBuffer.DiscardAttempt();
             }
+
+            // Перепривязка снимает старые проекции; новые условия публикуются после commit.
+            InvalidateAttemptPreview();
 
             return dailyStatesChanged || storyStatesChanged;
         }
@@ -717,6 +835,8 @@ namespace Vues.GameCore
         /// </summary>
         public static void OnEnable()
         {
+            if (_eventsEnabled) return;
+            _eventsEnabled = true;
             GameEventsManager.OnLevelStarted += HandleLevelStarted;
             GameEventsManager.OnActionCounterQuestEvent +=
                 HandleActionCounterQuestEvent;
@@ -724,6 +844,7 @@ namespace Vues.GameCore
             GameEventsManager.OnPlayerStateChanged +=
                 HandlePlayerStateChanged;
             GameDataManager.PlayerDataReplaced += HandlePlayerDataReplaced;
+            RefreshAttemptPreview();
         }
 
         /// <summary>
@@ -731,6 +852,7 @@ namespace Vues.GameCore
         /// </summary>
         public static void OnDisable()
         {
+            _eventsEnabled = false;
             GameEventsManager.OnLevelStarted -= HandleLevelStarted;
             GameEventsManager.OnActionCounterQuestEvent -=
                 HandleActionCounterQuestEvent;
@@ -739,6 +861,7 @@ namespace Vues.GameCore
                 HandlePlayerStateChanged;
             GameDataManager.PlayerDataReplaced -= HandlePlayerDataReplaced;
             _attemptBuffer.DiscardAttempt();
+            InvalidateAttemptPreview();
         }
 
         /// <summary>
@@ -746,6 +869,9 @@ namespace Vues.GameCore
         /// </summary>
         private static void HandlePlayerDataReplaced()
         {
+            if (!GameDataManager.IsRestoringAfterFailure)
+                _attemptBuffer.DiscardAttempt();
+            InvalidateAttemptPreview();
             if (_activeQuests.Count == 0)
             {
                 return;
@@ -761,6 +887,7 @@ namespace Vues.GameCore
                     GameDataManager.PlayerData.QuestStates, savedDate, QuestCatalog.DailyCommonRewardDefinition);
                 InitStoryQuestSet();
                 BindActiveQuests(discardAttempt: false);
+                RefreshAttemptPreview(notifyReached: false);
                 GameEventsManager.DailyQuestSetChanged();
                 GameEventsManager.StoryQuestSetChanged();
                 return;
@@ -783,6 +910,7 @@ namespace Vues.GameCore
             }
 
             // Полная замена профиля всегда требует перестроить оба UI-набора.
+            RefreshAttemptPreview();
             GameEventsManager.DailyQuestSetChanged();
             GameEventsManager.StoryQuestSetChanged();
 
@@ -799,6 +927,7 @@ namespace Vues.GameCore
             ActionCounterQuestEvent questEvent)
         {
             _attemptBuffer.Add(questEvent);
+            RefreshAttemptPreview();
         }
 
         /// <summary>
@@ -850,6 +979,9 @@ namespace Vues.GameCore
         private static void HandleLevelStarted(int _)
         {
             _attemptBuffer.StartAttempt();
+            RefreshAttemptPreview();
+            if (!TutorialConstants.IsTutorialLevel(GameDataManager.PlayerData?.CurrentLevel))
+                FirstSessionTelemetry.Record("attempt_start", _attemptBuffer.AttemptId);
         }
 
         /// <summary>
@@ -857,9 +989,11 @@ namespace Vues.GameCore
         /// </summary>
         private static void HandleLevelCompleted(int levelId, int stars)
         {
+            FirstSessionTelemetry.Record("attempt_win", _attemptBuffer.AttemptId, stars);
             // Собираем итог завершённой попытки.
             IReadOnlyList<ActionCounterQuestEvent> bufferedEvents =
                 _attemptBuffer.CompleteAttempt();
+            InvalidateAttemptPreview();
             bool hasProgressKey =
                 LevelManager.TryGetCurrentProgressKey(
                     out LevelProgressKey progressKey);
@@ -914,6 +1048,7 @@ namespace Vues.GameCore
             // Уведомляем о завершении и любом изменённом состоянии.
             foreach (Quest quest in completedQuests)
             {
+                FirstSessionTelemetry.Record("quest_committed", quest.Id);
                 GameEventsManager.QuestCompleted(quest.Id);
             }
 
@@ -1040,6 +1175,7 @@ namespace Vues.GameCore
             {
                 _questIdUnderTest = null;
                 _attemptBuffer.DiscardAttempt();
+                InvalidateAttemptPreview();
             }
         }
 
@@ -1057,6 +1193,7 @@ namespace Vues.GameCore
 
             quest.Reset();
             _attemptBuffer.DiscardAttempt();
+            InvalidateAttemptPreview();
             GameDataManager.SaveData();
             GameEventsManager.QuestStateChanged(quest.Id);
             return true;
@@ -1089,17 +1226,43 @@ namespace Vues.GameCore
             _dailyQuestService.CanClaimCommonReward(_dailyQuests);
 
         /// <summary>
-        /// Выдаёт одноразовую общую награду завершённого Daily-набора.
+        /// Возвращает голову сохранённой FIFO-очереди либо доступный текущий набор.
         /// </summary>
-        public static bool ClaimDailyCommonReward()
+        public static DailyCommonRewardSnapshot GetDailyCommonReward()
         {
-            if (!CanClaimDailyCommonReward) return false;
-            var resourceType = DailyCommonRewardType;
-            int amount = DailyCommonRewardAmount;
+            if (!CanClaimDailyCommonReward) return null;
+            var state = _dailyQuestService.State;
+            var pending = state.PendingCommonRewards.FirstOrDefault();
+            int count = state.PendingCommonRewards.Count + (_dailyQuestService.CanClaimCommonReward(_dailyQuests) ? 1 : 0);
+            return new DailyCommonRewardSnapshot(GameDataManager.ProfileId, GameDataManager.Generation,
+                pending?.SetId ?? state.SetId, pending?.OriginDate ?? (pending == null ? state.GenerationDate : string.Empty),
+                DailyCommonRewardType, DailyCommonRewardAmount, Math.Max(0, count - 1));
+        }
+
+        /// <summary>Проверяет, что сохранённый Claim относится к предъявленному набору и профилю.</summary>
+        public static bool CanClaimDailyCommonRewardSnapshot(DailyCommonRewardSnapshot expected)
+        {
+            var current = GetDailyCommonReward();
+            return expected != null && current != null && expected.ProfileId == current.ProfileId &&
+                expected.Generation == current.Generation && expected.SetId == current.SetId &&
+                expected.RewardType == current.RewardType && expected.Amount == current.Amount;
+        }
+
+        /// <summary>Забирает текущую награду синхронным production-действием диагностических инструментов.</summary>
+        public static bool ClaimDailyCommonReward() => ClaimDailyCommonReward(GetDailyCommonReward());
+
+        /// <summary>Выдаёт только предъявленную награду; смена очереди или профиля отклоняет старый Claim.</summary>
+        public static bool ClaimDailyCommonReward(DailyCommonRewardSnapshot expected)
+        {
+            if (!CanClaimDailyCommonRewardSnapshot(expected)) return false;
+            var resourceType = expected.RewardType;
+            int amount = expected.Amount;
             try
             {
                 GameDataManager.ExecuteTransaction(CheckpointReason.DailyQuestCommonRewardClaimed, () =>
                 {
+                    if (!CanClaimDailyCommonRewardSnapshot(expected))
+                        throw new InvalidOperationException("Daily reward context changed.");
                     if (!ResourceManager.AddResource(resourceType, amount, notify: false))
                         throw new InvalidOperationException("Daily reward cannot be applied.");
                     _dailyQuestService.MarkCommonRewardClaimed();
@@ -1140,19 +1303,17 @@ namespace Vues.GameCore
                     if (!ResourceManager.AddResource(quest.RewardType, quest.RewardAmount, notify: false))
                         throw new InvalidOperationException("Quest reward cannot be applied.");
                     quest.MarkRewardClaimed();
-                    if (quest.Category == QuestCategory.Daily)
-                        levelChanged = _playerExperienceService.GrantExperienceForClaimedDailyQuest(
-                            GameDataManager.PlayerData, notify: false);
-                    else if (quest.Category == QuestCategory.Story)
-                        levelChanged = _playerExperienceService.GrantExperienceForClaimedStorylineQuest(
-                            GameDataManager.PlayerData, notify: false);
+                    levelChanged = _playerExperienceService.GrantExperienceForClaimedQuest(
+                        GameDataManager.PlayerData, quest, notify: false);
                 }, () =>
                 {
                     ResourceManager.NotifyBalancesChangedAfterCommit();
-                    PlayerExperienceService.PublishCommittedLevelChange(levelChanged);
+                    PlayerExperienceService.PublishCommittedLevelChange(levelChanged, "quest:" + questId);
+                    FirstSessionTelemetry.Record("quest_claim", questId, quest.RewardAmount);
                     NotifyEarnedResource(quest.RewardType, quest.RewardAmount);
                     GameEventsManager.QuestRewardReceived(questId);
                     GameEventsManager.QuestStateChanged(questId);
+                    RefreshAttemptPreview();
                 });
                 return true;
             }

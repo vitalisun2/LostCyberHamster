@@ -1,5 +1,307 @@
 {
     "localizationStrings": [
+        { "key": "return_activities", "value": "Activities" },
+        { "key": "return_cycle", "value": "7 winning days" },
+        { "key": "return_week", "value": "Weekly goal" },
+        { "key": "return_coins", "value": "{0} coins" },
+        { "key": "return_gems", "value": "{0} gems" },
+        { "key": "return_coins_gems", "value": "{0} coins + {1} gem" },
+        { "key": "return_cycle_complete", "value": "7 winning days complete!" },
+        { "key": "return_week_complete", "value": "Weekly goal complete!" },
+        { "key": "return_day_title", "value": "Day {0} reward" },
+        { "key": "return_loading", "value": "Loading progress…" },
+        { "key": "return_recovery_required", "value": "Activity histories differ. You can restore this device's history. Your selected save's balance will stay unchanged." },
+        { "key": "return_recovery_short", "value": "Open activities to recover progress" },
+        { "key": "return_profile_pending", "value": "Finish choosing your save first" },
+        { "key": "return_clock_check", "value": "Check your device date. Earned rewards are saved." },
+        { "key": "return_paused", "value": "New activities are temporarily unavailable" },
+        { "key": "return_offline", "value": "Offline · saved on this device" },
+        { "key": "return_local_saved", "value": "Progress saved on this device" },
+        { "key": "return_home_ready", "value": "{0} · Claim {1}" },
+        { "key": "return_home_day_done", "value": "7 days · {0}/7 ✓ · next step after {1}" },
+        { "key": "return_home_waiting", "value": "7 days · {0}/7 · progress saved" },
+        { "key": "return_home_cycle_action", "value": "7 days · step {0}/7 · one win for {1}" },
+        { "key": "return_home_week_done", "value": "Week complete ✓ · next after {0}" },
+        { "key": "return_home_week_progress", "value": "Week · wins {0}/{1} · days {2}/{3}" },
+        { "key": "return_more_days", "value": "{0} more new days" },
+        { "key": "return_ready_count", "value": "Rewards ready: {0}" },
+        { "key": "return_cycle_rule", "value": "Your first win of the day with 1+ star adds a step. Missed days keep your progress. Claim rewards whenever you like." },
+        { "key": "return_back", "value": "Back" },
+        { "key": "return_play", "value": "Play" },
+        { "key": "return_recover_action", "value": "Restore this device's activity history" },
+        { "key": "return_save_failed", "value": "Could not save. Please try again." },
+        { "key": "return_calendar", "value": "Activities reset at 00:00 UTC; next day: {0}. Daily quests reset at device midnight." },
+        { "key": "return_slot", "value": "Day {0}\n{1}" },
+        { "key": "return_cycle_progress", "value": "Cycle {0} · earned days {1}/7" },
+        { "key": "return_week_rule", "value": "Win {0} runs on at least {1} different days this week. Replayed levels count." },
+        { "key": "return_week_deadline", "value": "Week from {0} UTC · until {1} device time" },
+        { "key": "return_next_week", "value": "Next goal: {0} wins on {1} days · {2} coins" },
+        { "key": "return_week_too_late", "value": "Too few days remain for this goal. The next week starts soon." },
+        { "key": "return_view_receipt", "value": "View claimed reward" },
+        { "key": "return_claim", "value": "Claim" },
+        { "key": "return_none_ready", "value": "Earn a reward by playing" },
+        { "key": "return_pending", "value": "Rewards: {0} · {1} · {2}" },
+        { "key": "return_unavailable", "value": "Reward unavailable. Reopen this screen." },
+        { "key": "return_done", "value": "Done" },
+        { "key": "return_close", "value": "Close" },
+        { "key": "return_later", "value": "Later" },
+        { "key": "return_received", "value": "Reward claimed. Balance updated." },
+        { "key": "return_claim_hint", "value": "Your reward is saved. Claim it now or later." },
+        { "key": "progression_shield_compact", "value": "{0} s · bonus {1}% ≤{2}" },
+        { "key": "progression_lightning_compact", "value": "{0}% · bonus {1}% ≤{2}" },
+        { "key": "progression_skate_compact", "value": "{0} s · {1} jumps" },
+        {
+            "key": "progression_level_title",
+            "value": "Level {0}"
+        },
+        {
+            "key": "progression_free_points",
+            "value": "Available now: {0}"
+        },
+        {
+            "key": "progression_unlock_option",
+            "value": "{0} · unlock for 1 point"
+        },
+        {
+            "key": "progression_upgrade_option",
+            "value": "{0}: level {1} · 1 point"
+        },
+        {
+            "key": "progression_skin_option",
+            "value": "{0} · unlock: 1 point; buy: {1} gems"
+        },
+        {
+            "key": "progression_open_development",
+            "value": "Development"
+        },
+        {
+            "key": "progression_daily_progress",
+            "value": "Claimed {0}/3 · bonus {1} coins"
+        },
+        {
+            "key": "progression_daily_available",
+            "value": "Claim {0} coins · sets: {1}"
+        },
+        {
+            "key": "progression_saved_set",
+            "value": "Saved set"
+        },
+        {
+            "key": "progression_reward_received",
+            "value": "Reward claimed"
+        },
+        {
+            "key": "progression_next_reward",
+            "value": "Next reward"
+        },
+        {
+            "key": "progression_until_landing",
+            "value": "Until landing"
+        },
+        {
+            "key": "progression_seconds",
+            "value": "{0} s"
+        },
+        {
+            "key": "progression_combinations",
+            "value": "Jumps: {0}"
+        },
+        {
+            "key": "progression_shield_protect",
+            "value": "Protection: {0} s"
+        },
+        {
+            "key": "progression_shield_destroy",
+            "value": "Protection and destruction: {0} s. Bonus {1}%, max {2}."
+        },
+        {
+            "key": "progression_lightning",
+            "value": "Range {0}%. Bonus {1}%, max {2}."
+        },
+        {
+            "key": "progression_skate",
+            "value": "{0} s · jumps: {1}. No energy cost."
+        },
+        {
+            "key": "progression_maximum",
+            "value": "Maximum level"
+        },
+        {
+            "key": "progression_upgrade_level",
+            "value": "Upgrades at player level {0}"
+        },
+        {
+            "key": "progression_upgrade_action",
+            "value": "Upgrade · 1 point"
+        },
+        {
+            "key": "progression_upgrade_points",
+            "value": "Requires 1 development point"
+        },
+        {
+            "key": "progression_quest_xp",
+            "value": "Claim reward: +{0} XP"
+        },
+        {
+            "key": "progression_win_xp",
+            "value": " +{0} XP"
+        },
+        {
+            "key": "first_session_daily_rule",
+            "value": "Actions count after a win. Press Claim to collect your reward."
+        },
+        {
+            "key": "first_session_next_level",
+            "value": "Next level"
+        },
+        {
+            "key": "first_session_story_reward",
+            "value": "Reward: {0} coins +{1} XP"
+        },
+        {
+            "key": "first_session_open_shield",
+            "value": "Unlock shield"
+        },
+        {
+            "key": "settings_gameplay_notifications",
+            "value": "In-run notifications"
+        },
+        {
+            "key": "first_session_goal",
+            "value": "Next goal"
+        },
+        {
+            "key": "first_session_morning",
+            "value": "Complete New York Morning · {0}/3"
+        },
+        {
+            "key": "first_session_morning_reward",
+            "value": "Three different levels. Then claim your quest reward."
+        },
+        {
+            "key": "first_session_claim",
+            "value": "Morning complete. Claim {0} coins and {1} XP"
+        },
+        {
+            "key": "first_session_claim_action",
+            "value": "Claim in quests"
+        },
+        {
+            "key": "first_session_open_quests",
+            "value": "Open quests"
+        },
+        {
+            "key": "first_session_shield_offer",
+            "value": "Unlock the energy shield"
+        },
+        {
+            "key": "first_session_shield_unlock",
+            "value": "Select the shield in Skills and unlock it for 1 point."
+        },
+        {
+            "key": "first_session_shield_equipment",
+            "value": "Shield unlocked. Select Open Equipment."
+        },
+        {
+            "key": "first_session_shield_tab",
+            "value": "Open the ABILITIES tab."
+        },
+        {
+            "key": "first_session_shield_equip",
+            "value": "Select the shield and press EQUIP."
+        },
+        {
+            "key": "first_session_shield_ready",
+            "value": "Shield equipped. Try it on your next run."
+        },
+        {
+            "key": "first_session_shield_wait",
+            "value": "Unlock the shield with your next development point"
+        },
+        {
+            "key": "first_session_skills",
+            "value": "Open skills"
+        },
+        {
+            "key": "first_session_hero",
+            "value": "Open character"
+        },
+        {
+            "key": "first_session_continue",
+            "value": "Continue"
+        },
+        {
+            "key": "first_session_later",
+            "value": "Later"
+        },
+        {
+            "key": "first_session_afternoon",
+            "value": "Complete the first New York Afternoon level"
+        },
+        {
+            "key": "first_session_select_level",
+            "value": "Select level"
+        },
+        {
+            "key": "first_session_shield_charge",
+            "value": "Land on obstacles to charge the shield"
+        },
+        {
+            "key": "first_session_shield_charge_progress",
+            "value": "Shield charge · {0}/100"
+        },
+        {
+            "key": "first_session_shield_use",
+            "value": "Shield ready. Press the ability button"
+        },
+        {
+            "key": "first_session_shield_used",
+            "value": "Shield activated"
+        },
+        {
+            "key": "first_session_shield_protection",
+            "value": "Protection lasts {0} seconds"
+        },
+        {
+            "key": "notification_quest_preview_one",
+            "value": "{0}"
+        },
+        {
+            "key": "notification_quest_preview_many",
+            "value": "Conditions met for {0} quests"
+        },
+        {
+            "key": "notification_quest_preview_detail",
+            "value": "Win to count this progress"
+        },
+        {
+            "key": "notification_record_preview",
+            "value": "Above your known weekly best"
+        },
+        {
+            "key": "notification_record_preview_detail",
+            "value": "Win to submit this score"
+        },
+        {
+            "key": "notification_record_local_detail",
+            "value": "This run will be saved locally"
+        },
+        {
+            "key": "notification_record_confirmed",
+            "value": "Weekly best: {0}"
+        },
+        {
+            "key": "notification_record_first",
+            "value": "First leaderboard score: {0}"
+        },
+        {
+            "key": "notification_records_confirmed",
+            "value": "Weekly records confirmed: {0}"
+        },
+        {
+            "key": "notification_record_reward",
+            "value": "+{0} XP"
+        },
         {
             "key": "btn_play",
             "value": "PLAY"
@@ -927,6 +1229,18 @@
         {
             "key": "cloud_save_conflict_player_level",
             "value": "Player level"
+        },
+        {
+            "key": "tutorial_skipped_title",
+            "value": "READY TO PLAY!"
+        },
+        {
+            "key": "tutorial_skipped_message",
+            "value": "You can replay the tutorial in Settings."
+        },
+        {
+            "key": "tutorial_start_reward",
+            "value": "Starting bonus: +{0} XP"
         },
         {
             "key": "tutorial_complete_title",

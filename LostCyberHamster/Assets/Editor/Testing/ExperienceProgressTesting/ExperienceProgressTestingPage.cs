@@ -24,10 +24,11 @@ namespace LostCyberHamster.Editor.Testing.ExperienceProgress
             _runner.Changed += _repaint;
         }
 
-        /// <summary>Рисует подготовку рекорда, completion, текущую цель и результат.</summary>
+        /// <summary>Рисует команды прогресса, tutorial-бонус и снимок состояния первой сессии.</summary>
         public void Draw(Action navigateBack)
         {
             DrawHeader(navigateBack);
+            ReturnActivityTestingPage.Draw();
 
             if (!EditorApplication.isPlaying)
             {
@@ -80,13 +81,40 @@ namespace LostCyberHamster.Editor.Testing.ExperienceProgress
                 "Status",
                 _runner.Status,
                 OutputTextStyle);
+
+            // Общий runner использует одинаковую выдачу и чтение состояния в обеих поверхностях.
+            using (new EditorGUI.DisabledScope(!_runner.CanGrantTutorialBonus))
+            {
+                if (GUILayout.Button("Выдать tutorial-бонус (один раз)",
+                        GUILayout.Width(CommandButtonWidth), GUILayout.Height(34f)))
+                    _runner.GrantTutorialBonus();
+            }
+            using (new EditorGUI.DisabledScope(!_runner.CanInspectFirstSession))
+            {
+                if (GUILayout.Button("Обновить состояние первой сессии",
+                        GUILayout.Width(CommandButtonWidth), GUILayout.Height(34f)))
+                    _runner.InspectFirstSessionState();
+            }
+            DrawOutputSection("First Session · Snapshot", _runner.FirstSessionState, OutputTextStyle);
+            EditorGUILayout.Space(12f);
+            EditorGUILayout.LabelField("Progression · изолированный профиль", EditorStyles.boldLabel);
+            var progression = AbilityProgressTestingRunner.Shared;
+            foreach (var command in progression.Commands)
+            {
+                using (new EditorGUI.DisabledScope(!command.Enabled()))
+                    if (GUILayout.Button(command.Label, GUILayout.Height(30f))) command.Execute();
+            }
+            DrawOutputSection("Progression · Snapshot", progression.Snapshot(), OutputTextStyle);
         }
 
         /// <summary>Обновляет статус страницы после входа или выхода из Play Mode.</summary>
         public void HandlePlayModeStateChanged(PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.ExitingPlayMode)
+            {
+                AbilityProgressTestingRunner.Shared.EndSession();
                 _runner.HandlePlayModeStopped();
+            }
             else if (state == PlayModeStateChange.EnteredPlayMode)
                 _runner.HandlePlayModeStarted();
         }

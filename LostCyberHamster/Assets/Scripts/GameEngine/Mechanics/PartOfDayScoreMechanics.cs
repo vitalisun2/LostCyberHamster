@@ -2,10 +2,13 @@ using System;
 using System.Linq;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.System;
+using Assets.Scripts.Tutorial;
 using Atomic.Elements;
+using GameManagement;
 using GameManagement.Leaderboard;
 using GameManagement.Progress;
 using UnityEngine;
+using Vues.GameCore;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -24,10 +27,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private bool _contextCaptured;
         private bool _hasRunLevelKey;
         private bool _isScoreSubmissionStarted;
+        private bool _recordCrossed;
 
         public RunResultData LatestResult { get; private set; }
+        public WeeklyRecordPreview LatestRecordPreview { get; private set; }
+        public string LatestRunId => _runId;
 
         public event Action<RunResultData> ResultChanged;
+        public event Action<WeeklyRecordPreview> RecordPreviewed;
 
         public PartOfDayScoreMechanics(
             RunScoreMechanics runScoreMechanics,
@@ -51,13 +58,39 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     _runContext = _coordinator?.CaptureRunContext(_runLevelKey);
             }
             if (_coordinator != null) _coordinator.RunChanged += OnRunChanged;
+            _runScoreMechanics.ScoreChanged += OnScoreChanged;
             _gameManager.OnFinish += OnFinish;
         }
 
         public void OnDisable()
         {
             _gameManager.OnFinish -= OnFinish;
+            _runScoreMechanics.ScoreChanged -= OnScoreChanged;
             if (_coordinator != null) _coordinator.RunChanged -= OnRunChanged;
+        }
+
+        private void OnScoreChanged(int previous, int current)
+        {
+            var baseline = _runContext?.PersonalBest;
+            if (_recordCrossed || _isScoreSubmissionStarted || baseline == null || !baseline.HadEntry ||
+                _lives.Value <= 0 || previous > baseline.Score || current <= baseline.Score ||
+                TutorialStorage.IsPlayerDataBackupActive || !GameDataManager.IsLoaded ||
+                GameDataManager.ProfileId != _runContext.ProfileId ||
+                GameDataManager.OwnerPlayerId != _runContext.OwnerPlayerId ||
+                GameDataManager.Generation != _runContext.Generation) return;
+
+            // Пересечение относится к попытке, повторное включение после revive его не повторяет.
+            _recordCrossed = true;
+            LatestRecordPreview = new WeeklyRecordPreview(_runContext, current);
+            if (RecordPreviewed == null) return;
+            foreach (Action<WeeklyRecordPreview> handler in RecordPreviewed.GetInvocationList())
+            {
+                try { handler(LatestRecordPreview); }
+                catch (Exception exception)
+                {
+                    DebugManager.DiagStability($"[WeeklyLeaderboard] preview subscriber failed ({exception.GetType().Name}).");
+                }
+            }
         }
 
         private void OnFinish()

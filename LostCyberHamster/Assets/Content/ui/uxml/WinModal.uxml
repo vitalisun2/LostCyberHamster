@@ -23,6 +23,10 @@
                         <engine:Button name="btn__home" tooltip="Home" class="game-result-modal__image-button game-result-modal__home-button game-result-modal__home-button--win" />
                         <engine:Button name="btn__repeat" tooltip="Retry" class="game-result-modal__image-button game-result-modal__retry-button game-result-modal__retry-button--win" />
                         <engine:Button name="btn__play" tooltip="Next Level" class="game-result-modal__image-button game-result-modal__primary-button game-result-modal__primary-button--win" />
+                        <engine:VisualElement name="first-session-win-goal" style="position: absolute; left: 70px; top: 492px; width: 642px; height: 48px; flex-direction: row; align-items: center; display: none;">
+                            <engine:Label name="first-session-win-goal-text" picking-mode="Ignore" style="width: 474px; height: 48px; margin: 0; padding: 0; font-size: 17px; white-space: normal; -unity-font-style: bold; -unity-text-align: middle-left; color: rgb(15, 42, 80);" />
+                            <engine:Button name="btn_first-session-goal" style="width: 156px; height: 44px; margin: 0; margin-left: 12px; padding: 4px; white-space: normal; font-size: 17px; -unity-font-style: bold; -unity-text-align: middle-center; color: rgb(15, 42, 80); background-color: rgb(224, 238, 246); border-color: rgb(37, 97, 141); border-width: 1px; border-radius: 8px;" />
+                        </engine:VisualElement>
                     </engine:VisualElement>
                 </engine:VisualElement>
             </engine:VisualElement>

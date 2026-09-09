@@ -1,0 +1,20 @@
+<engine:UXML xmlns:engine="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../styles/components/reward-modals.uss" />
+    <Style src="../styles/ActivityRewardModal.uss" />
+    <engine:VisualElement class="reward-modal">
+        <engine:VisualElement name="reward-modal-viewport" class="reward-modal__viewport" picking-mode="Ignore">
+            <engine:VisualElement name="reward-modal-frame" class="reward-modal__frame" picking-mode="Ignore">
+                <engine:VisualElement name="reward-modal-design" class="reward-modal__design" picking-mode="Ignore">
+                    <engine:VisualElement class="reward-modal__panel" picking-mode="Ignore" />
+                    <engine:Label name="return-reward-title" class="reward-modal__text return-reward-title" />
+                    <engine:Label name="return-reward-marks" class="reward-modal__text return-reward-marks" />
+                    <engine:Label name="return-reward-origin" class="reward-modal__text return-reward-origin" />
+                    <engine:Label name="return-reward-amount" class="reward-modal__text return-reward-amount" />
+                    <engine:Label name="return-reward-status" class="reward-modal__text return-reward-status" />
+                    <engine:Button name="return-reward-claim" class="return-reward-button return-reward-claim" />
+                    <engine:Button name="return-reward-later" class="return-reward-button return-reward-later" />
+                </engine:VisualElement>
+            </engine:VisualElement>
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

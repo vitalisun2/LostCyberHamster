@@ -1,27 +1,72 @@
+.level-up-modal #reward-modal-design .reward-modal__panel {
+    left: 345px;
+    top: 130px;
+    width: 982px;
+    height: 690px;
+}
+.level-up-modal #reward-modal-design .reward-modal__title {
+    left: 415px;
+    top: 168px;
+    width: 842px;
+    font-size: 58px;
+}
 #reward-modal-design .level-up-modal__emblem {
     position: absolute;
-    left: 748px;
-    top: 304px;
-    width: 176px;
-    height: 176px;
+    left: 454px;
+    top: 318px;
+    width: 192px;
+    height: 192px;
     background-image: url("/Assets/Content/ui/sprites/modals/level_up/emblem_level_up.png");
     -unity-background-scale-mode: scale-to-fit;
 }
-
 #reward-modal-design .level-up-modal__transition {
     position: absolute;
-    left: 500px;
-    top: 459px;
-    width: 672px;
-    height: 55px;
-    font-size: 38px;
+    left: 405px;
+    top: 517px;
+    width: 290px;
+    height: 80px;
+    font-size: 28px;
 }
-
 #reward-modal-design .level-up-modal__development-reward {
     position: absolute;
-    left: 500px;
-    top: 516px;
-    width: 672px;
-    height: 48px;
-    font-size: 34px;
+    left: 700px;
+    top: 302px;
+    width: 530px;
+    height: 80px;
+    font-size: 38px;
 }
+#reward-modal-design .level-up-modal__free {
+    position: absolute;
+    left: 700px;
+    top: 385px;
+    width: 530px;
+    height: 42px;
+    font-size: 28px;
+}
+.level-up-modal__options {
+    position: absolute;
+    left: 705px;
+    top: 439px;
+    width: 520px;
+    height: 190px;
+}
+.level-up-modal__option {
+    font-size: 24px;
+    color: rgb(16, 48, 83);
+    -unity-font-style: bold;
+    white-space: normal;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    padding: 5px 8px;
+    background-color: rgba(255, 255, 255, 0.32);
+    border-radius: 8px;
+}
+#reward-modal-design #btn_level_up_ok,
+#reward-modal-design #btn_level_up_shield {
+    top: 665px;
+    width: 350px;
+    height: 110px;
+    font-size: 30px;
+}
+#reward-modal-design #btn_level_up_shield { left: 470px; }
+#reward-modal-design #btn_level_up_ok { left: 850px; }

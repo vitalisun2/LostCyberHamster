@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.System;
+using Assets.Scripts.Tutorial;
 using GameManagement;
 using GameManagement.Leaderboard;
 using GameManagement.Progress;
@@ -50,6 +51,9 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
         private string _targetLevelAddress = string.Empty;
         private string _status =
             "Запустите игру через Bootstrap и оставайтесь в Main Menu.";
+        private string _firstSessionState = "Нажмите «Обновить состояние первой сессии».";
+        private string _inspectedProfile;
+        private long _inspectedGeneration;
 
         private ExperienceProgressTestRunner()
         {
@@ -89,6 +93,96 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                     : "Каталог и player data ещё не готовы";
 
         public string Status => _status;
+
+        public bool CanInspectFirstSession => Application.isPlaying && GameDataManager.IsLoaded &&
+                                              GameDataManager.PlayerData != null;
+
+        public bool CanGrantTutorialBonus => !_isBusy && CanInspectFirstSession && IsMainMenuReady &&
+                                             !TutorialStorage.IsPlayerDataBackupActive &&
+                                             !GameDataManager.IsProfileReplacementBlocked;
+
+        public string FirstSessionState => !CanInspectFirstSession ? "Запустите игру через Bootstrap." :
+            _inspectedProfile != null && (_inspectedProfile != GameDataManager.ProfileId ||
+                                         _inspectedGeneration != GameDataManager.Generation)
+                ? "Профиль изменён. Обновите состояние первой сессии." : _firstSessionState;
+
+        /// <summary>Выдаёт стартовый бонус явной DEV-командой; повтор использует production-дедупликацию.</summary>
+        public void GrantTutorialBonus()
+        {
+            if (!CanGrantTutorialBonus) return;
+            _isBusy = true;
+            try
+            {
+                var before = CapturePlayerExperience();
+                bool levelChanged = false;
+                // Игровой сервис выдаёт награду и marker внутри одной сохраняемой транзакции.
+                GameDataManager.ExecuteTransaction(CheckpointReason.DeveloperResourceGranted,
+                    () => levelChanged = new PlayerExperienceService()
+                        .GrantExperienceForTutorialCompletion(GameDataManager.PlayerData),
+                    () => PlayerExperienceService.PublishCommittedLevelChange(levelChanged));
+                int awarded = CalculateGrantedExperience(before, CapturePlayerExperience());
+                if (awarded > 0) FirstSessionTelemetry.Record("tutorial_bonus_committed", "developer_action", awarded);
+                UIManager.OnRepaintScreen?.Invoke();
+                SetStatus($"Tutorial bonus: +{awarded} XP. " +
+                    (awarded == 0 ? "Бонус уже получен; повторная выдача заблокирована." : "Выдача сохранена."));
+                InspectFirstSessionState();
+            }
+            catch (Exception exception)
+            {
+                SetStatus($"Ошибка tutorial reward: {exception.Message}", LogType.Error);
+            }
+            finally
+            {
+                _isBusy = false;
+                Changed?.Invoke();
+            }
+        }
+
+        /// <summary>Читает сохранённое состояние первой сессии и scoped weekly-кеш без изменения профиля.</summary>
+        public void InspectFirstSessionState()
+        {
+            if (!CanInspectFirstSession) return;
+            try
+            {
+                // Снимок показывает игровые флаги отдельно от presentation cursor.
+                var data = GameDataManager.PlayerData;
+                _inspectedProfile = GameDataManager.ProfileId;
+                _inspectedGeneration = GameDataManager.Generation;
+                _firstSessionState =
+                    $"Снимок {DateTime.Now:HH:mm:ss}\n" +
+                    $"Tutorial: completed={data.IsTutorialCompleted}, skipped={data.IsTutorialSkipped}, " +
+                    $"bonus={data.HasReceivedTutorialExperience}, backup={TutorialStorage.IsPlayerDataBackupActive}\n" +
+                    $"Level={data.PlayerLevel}, XP={data.ExperiencePoints}/{PlayerExperienceService.PlayerLevelThreshold}, " +
+                    $"DP={data.DevelopmentPoints}\n" +
+                    $"Level Up: acknowledged={data.LastAcknowledgedPlayerLevel}, " +
+                    $"pending={Math.Max(0, data.PlayerLevel - Math.Max(1, data.LastAcknowledgedPlayerLevel))}\n" +
+                    $"Shield lesson: started={data.IsShieldTutorialStarted}, used={data.HasUsedTutorialShield}\n" +
+                    $"Return: screen={data.FirstSessionReturnScreen}, level={data.FirstSessionReturnLevel}, " +
+                    $"location={data.FirstSessionReturnLocation}, part={data.FirstSessionReturnPart}";
+
+                // Чтение coordinator не запускает сеть, отправку результата или acknowledgment.
+                var coordinator = WeeklyLeaderboardCoordinator.Instance;
+                if (coordinator == null)
+                    _firstSessionState += "\nWeekly: coordinator ещё не готов.";
+                else
+                {
+                    _firstSessionState += $"\nWeekly: pending presentations={coordinator.GetPendingRecordNotifications().Count}";
+                    if (LevelManager.TryGetCurrentProgressKey(out var key))
+                    {
+                        var context = coordinator.CaptureRunContext(key);
+                        var baseline = context?.PersonalBest;
+                        string best = baseline == null ? "unknown" : !baseline.HadEntry ? "no entry" : baseline.Score.ToString();
+                        _firstSessionState += $"\nBaseline: board={context?.LeaderboardId}, week={context?.VersionId}, " +
+                            $"best={best}, fetched={baseline?.FetchedAtUtc}";
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                _firstSessionState = $"Не удалось прочитать состояние: {exception.Message}";
+            }
+            Changed?.Invoke();
+        }
 
         /// <summary>Готовит score на 10 больше реального weekly best текущего target.</summary>
         public async void PrepareNewRecord()
@@ -276,6 +370,8 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
         private void ClearSubscriptions()
         {
             ++_operationVersion;
+            _inspectedProfile = null;
+            _firstSessionState = "Нажмите «Обновить состояние первой сессии».";
             if (_coordinator != null) _coordinator.RunChanged -= HandleRunChanged;
             _coordinator = null;
             GameDataManager.ProfileChanged -= HandleProfileChanged;
@@ -392,7 +488,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
             // Показываем завершённый level и фактическую XP-награду за stars.
             var result =
                 $"Level Completed: {FormatLevel(level, includeAddress: false)}\n\n" +
-                $"1. 3 Stars Earned — +{starsExperienceReward} XP";
+                $"1. First Win + improved stars — +{starsExperienceReward} XP";
 
             // Состояние доставки отделено от уже применённого игрового вознаграждения.
             var weeklyStatus = run.Status switch

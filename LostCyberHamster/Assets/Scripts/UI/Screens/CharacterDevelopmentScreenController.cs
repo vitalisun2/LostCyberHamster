@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Assets.Scripts.System.Resources;
+using Assets.Scripts.Tutorial;
 using GameManagement;
 using GameManagement.Progress;
 using UnityEngine;
@@ -35,6 +36,8 @@ namespace LostCyberHamster.UI
         private readonly List<Sprite> _generatedPreviewSprites = new();
         private readonly List<Texture2D> _generatedPreviewTextures = new();
         private CancellationTokenSource _abilityIconCancellation;
+        private readonly Action _resume;
+        private DevelopmentReturnButton _returnButton;
         private readonly List<(string Address, VisualElement Icon, bool Grayscale)>
             _pendingAbilityIcons = new();
 
@@ -67,9 +70,10 @@ namespace LostCyberHamster.UI
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.CharacterDevelopmentScreen;
 
-        public CharacterDevelopmentScreenController(UIDocument uiDocument)
+        public CharacterDevelopmentScreenController(UIDocument uiDocument, Action resume = null)
             : base(uiDocument)
         {
+            _resume = resume;
         }
 
         protected override string ScreenBackgroundAddress => BackgroundAddress;
@@ -85,6 +89,8 @@ namespace LostCyberHamster.UI
 
         protected override void BindView()
         {
+            _returnButton?.Dispose();
+            _returnButton = new DevelopmentReturnButton(_contentRoot.Q<Button>("development-return"), _resume);
             UpdatePlayerProgress();
             BuildCards();
         }
@@ -112,6 +118,7 @@ namespace LostCyberHamster.UI
 
         protected override void OnUnsubscribeFromEvents()
         {
+            _returnButton?.Dispose();
             // Отключаем screen-local callbacks.
             EquipmentButton?.UnregisterCallback<ClickEvent>(
                 OnEquipmentClicked);
@@ -274,14 +281,44 @@ namespace LostCyberHamster.UI
             SuperAttackData ability,
             DevelopmentCardState state)
         {
-            return CreateCard(
+            int level = SuperAttackLevelResolver.GetLevel(GameDataManager.PlayerData, ability.Id);
+            var card = CreateCard(
                 $"development-ability-card-{ability.Id}",
-                Localize(ability.NameLocalizationKey),
+                Localize(ability.NameLocalizationKey) + (state == DevelopmentCardState.Unlocked
+                    ? " " + SuperAttackDescriptionFormatter.Roman(level) : string.Empty),
                 state,
                 false,
                 null,
                 CharacterDevelopmentService.CanUnlockSuperAttack(ability.Id),
                 () => OnUnlockAbilityClicked(ability.Id));
+            if (state != DevelopmentCardState.Unlocked) return card;
+            var description = new Label(SuperAttackDescriptionFormatter.Compact(ability, level) +
+                (level < SuperAttackLevelResolver.MaximumLevel ? "\n→ " + SuperAttackDescriptionFormatter.Compact(ability, level + 1) : string.Empty));
+            description.AddToClassList("development-card__parameters");
+            card.Add(description);
+            var upgrade = new Button { text = SuperAttackDescriptionFormatter.UpgradeAction(level),
+                tooltip = SuperAttackDescriptionFormatter.Upgrade(ability, level) };
+            var profile = GameDataManager.ProfileId;
+            var generation = GameDataManager.Generation;
+            upgrade.AddToClassList("development-card__upgrade");
+            upgrade.SetEnabled(CharacterDevelopmentService.CanUpgradeSuperAttack(ability.Id, level));
+            upgrade.clicked += () =>
+            {
+                if (profile != GameDataManager.ProfileId || generation != GameDataManager.Generation) return;
+                upgrade.SetEnabled(false);
+                try
+                {
+                    if (CharacterDevelopmentService.TryUpgradeSuperAttack(ability.Id, level)) RefreshAfterUnlock();
+                    else upgrade.SetEnabled(CharacterDevelopmentService.CanUpgradeSuperAttack(ability.Id, level));
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                    upgrade.SetEnabled(CharacterDevelopmentService.CanUpgradeSuperAttack(ability.Id, level));
+                }
+            };
+            card.Add(upgrade);
+            return card;
         }
 
         private static VisualElement CreateCard(
@@ -577,6 +614,12 @@ namespace LostCyberHamster.UI
         {
             if (CharacterDevelopmentService.TryUnlockSuperAttack(abilityId))
             {
+                if (abilityId == ShieldTutorialProgress.ShieldId)
+                {
+                    try { ShieldTutorialProgress.MarkStarted(); }
+                    catch (Exception exception) { Debug.LogException(exception); }
+                    FirstSessionTelemetry.Record("shield_unlocked");
+                }
                 RefreshAfterUnlock();
             }
         }

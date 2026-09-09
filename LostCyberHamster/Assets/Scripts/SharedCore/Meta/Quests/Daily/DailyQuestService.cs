@@ -169,6 +169,7 @@ namespace Vues.GameCore.Quests
                 State.PendingCommonRewards.Add(new PendingDailyCommonReward
                 {
                     SetId = State.SetId,
+                    OriginDate = State.GenerationDate,
                     RewardType = _commonReward.RewardType,
                     RewardAmount = _commonReward.RewardAmount
                 });

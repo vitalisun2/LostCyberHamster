@@ -41,7 +41,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 {
                     MenuNavigationRequest.OpenCharacterDevelopment();
                     LoadMenu();
-                });
+                }, returnScreen: ScreenEnum.CharacterDevelopmentScreen);
         }
 
         private void OnRankings()
@@ -60,7 +60,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
                         progressKey.LocationId,
                         progressKey.PartOfDayId);
                     LoadMenu();
-                });
+                }, returnScreen: ScreenEnum.LeaderboardScreen,
+                location: progressKey.LocationId, part: progressKey.PartOfDayId);
         }
 
         private static void LoadMenu()

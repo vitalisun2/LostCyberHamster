@@ -1,0 +1,16 @@
+{
+  "Version": 1,
+  "Enabled": true,
+  "Days": [
+    { "Coins": 10, "Gems": 0 },
+    { "Coins": 10, "Gems": 0 },
+    { "Coins": 15, "Gems": 0 },
+    { "Coins": 15, "Gems": 0 },
+    { "Coins": 20, "Gems": 0 },
+    { "Coins": 20, "Gems": 0 },
+    { "Coins": 50, "Gems": 1 }
+  ],
+  "WeeklyWins": 5,
+  "WeeklyDays": 3,
+  "WeeklyCoins": 50
+}

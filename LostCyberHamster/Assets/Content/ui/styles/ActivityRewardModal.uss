@@ -1,0 +1,10 @@
+#reward-modal-design .reward-modal__panel { left: 120px; top: 110px; width: 1432px; height: 730px; -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 60px; -unity-slice-right: 60px; -unity-slice-top: 60px; -unity-slice-bottom: 60px; }
+.return-reward-title { position: absolute; left: 150px; right: 150px; top: 150px; height: 90px; font-size: 58px; white-space: normal; }
+.return-reward-marks { position: absolute; left: 170px; right: 170px; top: 245px; height: 80px; font-size: 52px; color: rgb(206, 146, 23); }
+.return-reward-origin { position: absolute; left: 160px; right: 160px; top: 340px; height: 65px; font-size: 32px; }
+.return-reward-amount { position: absolute; left: 160px; right: 160px; top: 420px; height: 110px; font-size: 64px; white-space: normal; }
+.return-reward-status { position: absolute; left: 180px; right: 180px; top: 540px; height: 80px; font-size: 30px; white-space: normal; }
+.return-reward-button { position: absolute; top: 660px; width: 480px; height: 110px; font-size: 40px; color: rgb(25, 35, 42); border-radius: 22px; border-width: 4px; border-color: rgb(25, 35, 42); -unity-font-style: bold; }
+.return-reward-claim { left: 310px; background-color: rgb(255, 200, 54); }
+.return-reward-later { right: 310px; background-color: rgb(241, 234, 211); }
+.return-reward-button:disabled { opacity: 0.5; }

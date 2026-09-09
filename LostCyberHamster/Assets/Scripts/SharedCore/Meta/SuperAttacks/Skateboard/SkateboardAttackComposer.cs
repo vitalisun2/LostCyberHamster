@@ -66,7 +66,7 @@ namespace Vues.GameCore
                     gameManager,
                     landingImpact,
                     data.UltaDuration,
-                    data.UltaCharge);
+                    data.UltaCharge, data: data);
             }
             catch
             {

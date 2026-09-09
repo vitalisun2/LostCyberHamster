@@ -19,6 +19,7 @@ namespace Assets.Scripts.Tutorial
         private string _activeGameplayLevel;
         private bool _disposed;
         private bool _exitRequested;
+        private bool _completionWasSkipped;
 
         public TutorialFlowController(TutorialSession session)
         {
@@ -50,6 +51,7 @@ namespace Assets.Scripts.Tutorial
             // Сначала завершаем persistent rollback, сохраняя урок при ошибке записи.
             _exitRequested = true;
             _session.Rollback();
+            FirstSessionTelemetry.Record("tutorial_left", "menu");
             SceneManager.LoadScene("Menu");
 
             // SceneLoaded уже отсоединяет старый мир; host освободит свои guards.
@@ -142,10 +144,10 @@ namespace Assets.Scripts.Tutorial
             }
 
             _phase = TutorialPhase.Completion;
-            CompleteTutorial(continueToGame: false);
+            CompleteTutorial(skipped: false);
         }
 
-        /// <summary>Сохраняет завершение и продолжает прямой маршрут Skip в первый уровень.</summary>
+        /// <summary>Сохраняет пропуск и показывает стартовый бонус перед первым уровнем.</summary>
         private void HandleSkipRequested()
         {
             if (_gameplay == null || _phase != TutorialPhase.CoreControls)
@@ -154,11 +156,11 @@ namespace Assets.Scripts.Tutorial
             }
 
             _phase = TutorialPhase.Completion;
-            CompleteTutorial(continueToGame: true);
+            CompleteTutorial(skipped: true);
         }
 
         /// <summary>Повторяет обязательную запись при ошибке и продолжает исходное действие после успеха.</summary>
-        private void CompleteTutorial(bool continueToGame)
+        private void CompleteTutorial(bool skipped)
         {
             if (_disposed || _gameplay == null || _phase != TutorialPhase.Completion)
             {
@@ -168,7 +170,8 @@ namespace Assets.Scripts.Tutorial
             // Success UI доступен только после восстановленного и сохранённого snapshot.
             try
             {
-                _session.Complete(TutorialConstants.FirstGameplayLevelAddress);
+                _completionWasSkipped = skipped;
+                _session.Complete(TutorialConstants.FirstGameplayLevelAddress, skipped);
             }
             catch (Exception exception)
             {
@@ -177,28 +180,26 @@ namespace Assets.Scripts.Tutorial
                     Localize("tutorial_title"),
                     Localize("tutorial_complete_save_error"),
                     Localize("btn_retry"),
-                    () => CompleteTutorial(continueToGame),
+                    () => CompleteTutorial(skipped),
                     isError: true);
                 return;
             }
 
-            // Retry сохраняет исходный маршрут: успешное окно или прямой Skip.
-            if (continueToGame)
-            {
-                StartFirstGameplayLevel();
-            }
-            else
-            {
-                ShowSuccessfulCompletion();
-            }
+            // Оба исхода используют существующее окно, с разными честными текстами.
+            ShowSuccessfulCompletion();
         }
 
         /// <summary>Показывает единственную Play для уже сохранённого завершения.</summary>
         private void ShowSuccessfulCompletion()
         {
+            string message = Localize(_completionWasSkipped
+                ? "tutorial_skipped_message" : "tutorial_complete_message");
+            if (_session.CompletionExperienceAwarded > 0)
+                message += "\n" + string.Format(Localize("tutorial_start_reward"),
+                    _session.CompletionExperienceAwarded);
             _gameplay?.ShowCompletion(
-                Localize("tutorial_complete_title"),
-                Localize("tutorial_complete_message"),
+                Localize(_completionWasSkipped ? "tutorial_skipped_title" : "tutorial_complete_title"),
+                message,
                 Localize("btn_play"),
                 StartFirstGameplayLevel);
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using GameManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
@@ -17,6 +18,9 @@ namespace LostCyberHamster.UI
         private int _currentLevel;
         private int _pointsAwarded;
         private Action _okAction;
+        private Action _shieldAction;
+        private Action _developmentAction;
+        private Func<LevelUpAction, bool> _acceptanceAction;
         private GameResultModalPresentation _presentation;
         private bool _hasAccepted;
 
@@ -28,6 +32,7 @@ namespace LostCyberHamster.UI
             _modalContent.Q<Label>("level-up-development-reward");
         private Button OkButton =>
             _modalContent.Q<Button>("btn_level_up_ok");
+        private Button ShieldButton => _modalContent.Q<Button>("btn_level_up_shield");
 
         protected override ScreenEnum _modalAssetName =>
             ScreenEnum.LevelUpModal;
@@ -59,6 +64,10 @@ namespace LostCyberHamster.UI
             _okAction = action;
         }
 
+        public void SetAcceptanceAction(Func<LevelUpAction, bool> action) => _acceptanceAction = action;
+        public void SetShieldAction(Action action) => _shieldAction = action;
+        public void SetDevelopmentAction(Action action) => _developmentAction = action;
+
         protected override Task OnShowAsync()
         {
             // Новый показ принимает одно подтверждение.
@@ -67,7 +76,7 @@ namespace LostCyberHamster.UI
             OkButton.SetEnabled(true);
 
             // Подставляем текущие данные в локализованный текст.
-            Title.text = Localize("level_up_title");
+            Title.text = FormatLocalized("progression_level_title", _currentLevel.ToString());
             Transition.text = FormatLocalized(
                 "level_up_transition",
                 _previousLevel.ToString(),
@@ -75,7 +84,20 @@ namespace LostCyberHamster.UI
             Reward.text = FormatLocalized(
                 "level_up_development_reward",
                 _pointsAwarded.ToString());
-            OkButton.text = Localize("level_up_ok");
+            _modalContent.Q<Label>("level-up-free-points").text = FormatLocalized("progression_free_points",
+                (GameDataManager.PlayerData?.DevelopmentPoints ?? 0).ToString());
+            var options = _modalContent.Q<VisualElement>("level-up-options");
+            options.Clear();
+            foreach (string option in PlayerLevelRewardViewModel.GetOptions())
+            {
+                var label = new Label(option) { pickingMode = PickingMode.Ignore };
+                label.AddToClassList("level-up-modal__option");
+                options.Add(label);
+            }
+            OkButton.text = Localize("first_session_continue");
+            ShieldButton.style.display = DisplayStyle.Flex;
+            ShieldButton.text = Localize(_shieldAction != null ? "first_session_open_shield" : "progression_open_development");
+            ShieldButton.SetEnabled(true);
             return Task.CompletedTask;
         }
 
@@ -95,12 +117,15 @@ namespace LostCyberHamster.UI
             OkButton?.SetEnabled(!_hasAccepted);
             OkButton?.UnregisterCallback<ClickEvent>(OnOkClicked);
             OkButton?.RegisterCallback<ClickEvent>(OnOkClicked);
+            ShieldButton?.UnregisterCallback<ClickEvent>(OnShieldClicked);
+            ShieldButton?.RegisterCallback<ClickEvent>(OnShieldClicked);
         }
 
         protected override void OnUnsubscribeFromEvents()
         {
             // Освобождаем действие текущего дерева.
             OkButton?.UnregisterCallback<ClickEvent>(OnOkClicked);
+            ShieldButton?.UnregisterCallback<ClickEvent>(OnShieldClicked);
 
             // Возвращаем общий host следующему окну.
             _presentation?.Restore();
@@ -109,15 +134,38 @@ namespace LostCyberHamster.UI
 
         private void OnOkClicked(ClickEvent clickEvent)
         {
+            Accept(_okAction, LevelUpAction.Continue);
+        }
+
+        private void OnShieldClicked(ClickEvent clickEvent) => Accept(_shieldAction ?? _developmentAction,
+            _shieldAction != null ? LevelUpAction.Shield : LevelUpAction.Development);
+
+        private void Accept(Action action, LevelUpAction choice)
+        {
             // Закрытие и отложенный маршрут выполняются один раз за показ.
             if (_hasAccepted)
                 return;
+            try
+            {
+                if (_acceptanceAction != null && !_acceptanceAction(choice))
+                    return;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[LevelUp] Acknowledgment failed ({exception.GetType().Name}).");
+                OkButton.text = Localize("btn_retry");
+                return;
+            }
             _hasAccepted = true;
             OkButton?.SetEnabled(false);
+            ShieldButton?.SetEnabled(false);
 
             // Освобождаем окно до запуска следующего маршрута.
-            Action queuedAction = _okAction;
+            Action queuedAction = action;
             _okAction = null;
+            _shieldAction = null;
+            _developmentAction = null;
+            _acceptanceAction = null;
             _closeAction.Invoke();
             queuedAction?.Invoke();
         }

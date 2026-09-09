@@ -4,242 +4,86 @@
     "location": "01_New_York",
     "patternSequence": [
         {
-            "ref": "easy_run",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 2,
-                    "spriteName": "obstacle_new_york_big_alive_3_idle"
-                },
-                {
-                    "obstacleId": 4,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
-                }
-            ]
-        },
-        {
-            "ref": "easy_run",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 2,
-                    "spriteName": "obstacle_new_york_big_alive_3_idle"
-                },
-                {
-                    "obstacleId": 4,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
-                }
-            ]
-        },
-        {
-            "ref": "small_jumps",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 1,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                },
-                {
-                    "obstacleId": 3,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
-                },
-                {
-                    "obstacleId": 4,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                },
-                {
-                    "obstacleId": 5,
-                    "spriteName": "obstacle_new_york_big_alive_4_idle"
-                },
-                {
-                    "obstacleId": 8,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 14,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                },
-                {
-                    "obstacleId": 19,
-                    "spriteName": "obstacle_new_york_big_alive_4_idle"
-                },
-                {
-                    "obstacleId": 20,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
-                },
-                {
-                    "obstacleId": 22,
-                    "spriteName": "obstacle_new_york_big_alive_1_idle"
-                },
-                {
-                    "obstacleId": 23,
-                    "spriteName": "obstacle_new_york_big_alive_2_idle"
-                },
-                {
-                    "obstacleId": 25,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                }
-            ]
-        },
-        {
-            "ref": "small_jumps",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 1,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                },
-                {
-                    "obstacleId": 3,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
-                },
-                {
-                    "obstacleId": 4,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                },
-                {
-                    "obstacleId": 5,
-                    "spriteName": "obstacle_new_york_big_alive_4_idle"
-                },
-                {
-                    "obstacleId": 8,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 14,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                },
-                {
-                    "obstacleId": 19,
-                    "spriteName": "obstacle_new_york_big_alive_4_idle"
-                },
-                {
-                    "obstacleId": 20,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
-                },
-                {
-                    "obstacleId": 22,
-                    "spriteName": "obstacle_new_york_big_alive_1_idle"
-                },
-                {
-                    "obstacleId": 23,
-                    "spriteName": "obstacle_new_york_big_alive_2_idle"
-                },
-                {
-                    "obstacleId": 25,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                }
-            ]
-        },
-        {
-            "ref": "easy_run",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 2,
-                    "spriteName": "obstacle_new_york_big_alive_3_idle"
-                },
-                {
-                    "obstacleId": 4,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
-                }
-            ]
-        },
-        {
-            "ref": "medium_difficulty",
+            "ref": "ny_morning_intro_charge_01",
             "spriteSeed": 0,
             "overrides": [
                 {
                     "obstacleId": 0,
-                    "spriteName": "obstacle_new_york_big_alive_3_idle"
-                },
-                {
-                    "obstacleId": 5,
-                    "spriteName": "obstacle_new_york_big_alive_1_idle"
-                },
-                {
-                    "obstacleId": 7,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                },
-                {
-                    "obstacleId": 8,
-                    "spriteName": "obstacle_new_york_big_alive_1_idle"
-                },
-                {
-                    "obstacleId": 11,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
-                },
-                {
-                    "obstacleId": 12,
                     "spriteName": "obstacle_new_york_homeless"
                 },
                 {
-                    "obstacleId": 13,
-                    "spriteName": "obstacle_new_york_big_alive_1_idle"
+                    "obstacleId": 2,
+                    "spriteName": "obstacle_new_york_homeless"
                 },
                 {
-                    "obstacleId": 14,
-                    "spriteName": "obstacle_new_york_big_alive_3_idle"
-                },
-                {
-                    "obstacleId": 22,
-                    "spriteName": "obstacle_new_york_big_alive_2_idle"
+                    "obstacleId": 3,
+                    "spriteName": "obstacle_new_york_homeless"
                 }
             ]
         },
         {
-            "ref": "medium_difficulty_energy",
+            "ref": "ny_morning_intro_charge_02",
             "spriteSeed": 0,
             "overrides": [
                 {
                     "obstacleId": 0,
-                    "spriteName": "obstacle_new_york_big_alive_3_idle"
-                },
-                {
-                    "obstacleId": 5,
-                    "spriteName": "obstacle_new_york_big_alive_1_idle"
-                },
-                {
-                    "obstacleId": 7,
-                    "spriteName": "obstacle_new_york_big_alive_7_idle"
-                },
-                {
-                    "obstacleId": 8,
-                    "spriteName": "obstacle_new_york_big_alive_1_idle"
-                },
-                {
-                    "obstacleId": 11,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
-                },
-                {
-                    "obstacleId": 12,
                     "spriteName": "obstacle_new_york_homeless"
                 },
                 {
-                    "obstacleId": 13,
-                    "spriteName": "obstacle_new_york_big_alive_1_idle"
-                },
-                {
-                    "obstacleId": 14,
-                    "spriteName": "obstacle_new_york_big_alive_3_idle"
-                },
-                {
-                    "obstacleId": 22,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                    "obstacleId": 1,
+                    "spriteName": "obstacle_new_york_homeless"
                 }
             ]
         },
         {
-            "ref": "easy_run",
+            "ref": "ny_morning_l1_lane_change",
             "spriteSeed": 0,
             "overrides": [
                 {
-                    "obstacleId": 2,
-                    "spriteName": "obstacle_new_york_big_alive_3_idle"
+                    "obstacleId": 1,
+                    "spriteName": "obstacle_new_york_homeless"
+                },
+                {
+                    "obstacleId": 3,
+                    "spriteName": "obstacle_new_york_homeless"
+                }
+            ]
+        },
+        {
+            "ref": "ny_morning_l1_jump_repeat",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 0,
+                    "spriteName": "obstacle_new_york_homeless"
                 },
                 {
                     "obstacleId": 4,
-                    "spriteName": "obstacle_new_york_big_alive_5_idle"
+                    "spriteName": "obstacle_new_york_homeless"
+                }
+            ]
+        },
+        {
+            "ref": "ny_morning_l1_roof_choice",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 0,
+                    "spriteName": "obstacle_new_york_homeless"
+                }
+            ]
+        },
+        {
+            "ref": "ny_morning_l1_finish",
+            "spriteSeed": 0,
+            "overrides": [
+                {
+                    "obstacleId": 0,
+                    "spriteName": "obstacle_new_york_homeless"
+                },
+                {
+                    "obstacleId": 2,
+                    "spriteName": "obstacle_new_york_homeless"
                 }
             ]
         }

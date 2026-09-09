@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GameManagement;
+using GameManagement.Progress;
 
 namespace Vues.GameCore
 {
@@ -10,7 +11,7 @@ namespace Vues.GameCore
     /// </summary>
     public static class CharacterDevelopmentService
     {
-        public const int CurrentProgressVersion = 2;
+        public const int CurrentProgressVersion = 3;
         public const int DefaultSkinId = SkinIdentity.DefaultId;
 
         public static int DevelopmentPoints =>
@@ -93,9 +94,40 @@ namespace Vues.GameCore
                 return false;
             }
 
-            return TryUnlock(
-                superAttackId,
-                playerData.UnlockedSuperAttackIds);
+            return TryUnlock(superAttackId, playerData.UnlockedSuperAttackIds, () =>
+                playerData.SuperAttackLevels.Add(new SuperAttackLevelProgress { SuperAttackId = superAttackId }));
+        }
+
+        /// <summary>Проверяет последовательное улучшение открытой способности с уровня игрока 7.</summary>
+        public static bool CanUpgradeSuperAttack(int abilityId, int expectedLevel)
+        {
+            var player = GameDataManager.PlayerData;
+            return player != null && player.PlayerLevel >= SuperAttackLevelResolver.UpgradePlayerLevel &&
+                player.DevelopmentPoints > 0 && IsSuperAttackUnlocked(abilityId) &&
+                SuperAttackService.TryGet(abilityId, out _) && expectedLevel >= 1 &&
+                expectedLevel < SuperAttackLevelResolver.MaximumLevel &&
+                SuperAttackLevelResolver.GetLevel(player, abilityId) == expectedLevel;
+        }
+
+        /// <summary>Списывает одно очко и сохраняет следующий уровень; повтор старой кнопки отклоняется.</summary>
+        public static bool TryUpgradeSuperAttack(int abilityId, int expectedLevel)
+        {
+            if (!CanUpgradeSuperAttack(abilityId, expectedLevel)) return false;
+            GameDataManager.ExecuteTransaction(CheckpointReason.CharacterDevelopmentUpgraded, () =>
+            {
+                if (!CanUpgradeSuperAttack(abilityId, expectedLevel))
+                    throw new InvalidOperationException("Ability upgrade context changed.");
+                var player = GameDataManager.PlayerData;
+                var progress = player.SuperAttackLevels.FirstOrDefault(item => item.SuperAttackId == abilityId);
+                if (progress == null)
+                {
+                    progress = new SuperAttackLevelProgress { SuperAttackId = abilityId };
+                    player.SuperAttackLevels.Add(progress);
+                }
+                player.DevelopmentPoints--;
+                progress.Level = expectedLevel + 1;
+            });
+            return true;
         }
 
         /// <summary>
@@ -154,13 +186,14 @@ namespace Vues.GameCore
 
             GameDataManager.PlayerData.UnlockedSuperAttackIds.Add(
                 superAttackId);
+            GameDataManager.PlayerData.SuperAttackLevels.Add(new SuperAttackLevelProgress { SuperAttackId = superAttackId });
             return true;
         }
 #endif
 
         private static bool TryUnlock(
             int id,
-            ICollection<int> unlockedIds)
+            ICollection<int> unlockedIds, Action onUnlocked = null)
         {
             var playerData = GameDataManager.PlayerData;
             if (playerData == null ||
@@ -176,6 +209,7 @@ namespace Vues.GameCore
             {
                 playerData.DevelopmentPoints--;
                 unlockedIds.Add(id);
+                onUnlocked?.Invoke();
             });
             return true;
         }

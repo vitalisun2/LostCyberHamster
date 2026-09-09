@@ -24,6 +24,15 @@ namespace GameManagement
         RewardedAdIntentRecorded,
         RewardedAdRewardGranted,
         ShopItemPurchased,
-        WeeklyLeaderboardRunQueued
+        WeeklyLeaderboardRunQueued,
+        PlayerLevelPresentationAcknowledged,
+        FirstSessionTutorialProgressed,
+        CharacterDevelopmentUpgraded,
+        ReturnActivityPeriodChanged,
+        ReturnActivityProgressed,
+        ReturnActivityRewardClaimed,
+        ReturnActivityRewardPresented,
+        ReturnActivityRecovered,
+        ReturnActivityTelemetrySent
     }
 }

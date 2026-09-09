@@ -5,6 +5,7 @@ using Assets.Scripts.System;
 using GameManagement.Progress;
 using Vues.GameCore;
 using Vues.GameCore.Quests;
+using Vues.GameCore.ReturnActivities;
 
 namespace GameManagement
 {
@@ -26,6 +27,12 @@ namespace GameManagement
             {
                 return PlayerDataValidationResult.Rejected("negative_resource_balance");
             }
+
+            // Старый профиль получает пустую активность; сохранённую историю проверяем целиком.
+            bool activityNeedsRepair = data.ReturnActivities == null || string.IsNullOrEmpty(data.ReturnActivities.Epoch);
+            if (activityNeedsRepair && data.ReturnActivities?.TotalDays > 0 ||
+                !activityNeedsRepair && !ReturnActivityValidator.IsValid(data.ReturnActivities))
+                return PlayerDataValidationResult.Rejected("invalid_return_activity_state");
 
             var questStatesResult = ValidateQuestStates(
                 data.QuestStates,
@@ -116,7 +123,7 @@ namespace GameManagement
                 return PlayerDataValidationResult.Rejected("invalid_level_progress");
             }
 
-            bool needsRepair = data.ExperiencePoints < 0 ||
+            bool needsRepair = activityNeedsRepair || data.ExperiencePoints < 0 ||
                                data.PlayerLevel < 1 ||
                                developmentResult?.Status ==
                                PlayerDataValidationStatus.Repairable ||
@@ -168,6 +175,8 @@ namespace GameManagement
                 return;
             }
 
+            data.ReturnActivities ??= new ReturnActivityState();
+            data.ReturnActivities.Normalize();
             data.ExperiencePoints = Math.Max(0, data.ExperiencePoints);
             data.PlayerLevel = Math.Max(1, data.PlayerLevel);
             if (IsRemovedSuperHitTutorialLevel(data.CurrentLevel))
@@ -368,8 +377,16 @@ namespace GameManagement
                     "unknown_development_unlock");
             }
 
+            // Отвергаем противоречивые покупки; отсутствующие начальные уровни восстанавливаются без DP.
+            if (data.SuperAttackLevels?.Any(item => item == null || item.Level < 1 || item.Level > 3 ||
+                    data.UnlockedSuperAttackIds?.Contains(item.SuperAttackId) != true) == true ||
+                data.SuperAttackLevels?.GroupBy(item => item.SuperAttackId).Any(group => group.Count() > 1) == true)
+                return PlayerDataValidationResult.Rejected("invalid_super_attack_level");
+
             bool needsRepair = data.UnlockedSkinIds == null ||
                                data.UnlockedSuperAttackIds == null ||
+                               data.SuperAttackLevels == null ||
+                               data.UnlockedSuperAttackIds.Any(id => !data.SuperAttackLevels.Any(item => item.SuperAttackId == id)) ||
                                !data.UnlockedSkinIds.Contains(
                                    CharacterDevelopmentService.DefaultSkinId) ||
                                HasExactDuplicates(data.UnlockedSkinIds) ||
@@ -434,6 +451,10 @@ namespace GameManagement
             data.UnlockedSuperAttackIds = data.UnlockedSuperAttackIds
                 .Distinct()
                 .ToList();
+            data.SuperAttackLevels ??= new List<SuperAttackLevelProgress>();
+            foreach (int abilityId in data.UnlockedSuperAttackIds)
+                if (!data.SuperAttackLevels.Any(item => item.SuperAttackId == abilityId))
+                    data.SuperAttackLevels.Add(new SuperAttackLevelProgress { SuperAttackId = abilityId, Level = 1 });
             data.DevelopmentProgressVersion =
                 CharacterDevelopmentService.CurrentProgressVersion;
         }

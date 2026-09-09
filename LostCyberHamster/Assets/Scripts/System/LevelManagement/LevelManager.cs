@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Assets.Scripts.Common.Models;
 using GameManagement;
 using GameManagement.Progress;
+using Vues.GameCore.ReturnActivities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using LocationInfoModel = Assets.Scripts.Common.Models.LocationInfo;
@@ -25,6 +26,14 @@ namespace Assets.Scripts.System
         public static LocationInfoList LocationInfoList { get; private set; } = new();
 
         public static int StarsToOpenNewLocation => CalculateStarsToOpenNextLocation();
+
+        /// <summary>Последняя сохранённая квитанция победы текущего профиля.</summary>
+        private static ExperienceGrantResult _lastCompletionExperience;
+        private static string _completionProfile;
+        private static long _completionGeneration;
+        public static ExperienceGrantResult LastCompletionExperience =>
+            _completionProfile == GameDataManager.ProfileId && _completionGeneration == GameDataManager.Generation
+                ? _lastCompletionExperience : default;
 
         /// <summary>
         /// Возвращает модель прогресса для UI с учётом development override.
@@ -354,6 +363,7 @@ namespace Assets.Scripts.System
         /// </summary>
         public static bool CompleteLevel(string levelKey, int stars)
         {
+            _lastCompletionExperience = default;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_developmentProgressSaveSuppression?.Invoke() == true)
             {
@@ -379,13 +389,24 @@ namespace Assets.Scripts.System
                 stars);
 
             // Сохраняем stars и XP до публикации level-up и обновления заданий.
-            bool levelChanged = false;
+            ExperienceGrantResult experience = default;
+            var activityAttempt = ActivityAttemptContext.PendingCompletion;
+            bool activityRecorded = false;
             GameDataManager.ExecuteTransaction(CheckpointReason.LevelCompleted, () =>
             {
-                levelChanged = _playerExperienceService.GrantExperienceForImprovedStars(
+                experience = _playerExperienceService.GrantExperienceForLevelCompletion(
                     playerData, progressKey, updatedSnapshot, notify: false);
                 playerData.Progress = updatedSnapshot;
-            }, () => PlayerExperienceService.PublishCommittedLevelChange(levelChanged));
+                activityRecorded = ReturnActivityService.ApplyCommittedWin(activityAttempt, levelKey, stars);
+            }, () =>
+            {
+                _lastCompletionExperience = experience;
+                _completionProfile = GameDataManager.ProfileId;
+                _completionGeneration = GameDataManager.Generation;
+                if (activityAttempt != null) activityAttempt.Committed = true;
+                PlayerExperienceService.PublishCommittedLevelChange(experience.LevelChanged, "level_win");
+                if (activityRecorded) ReturnActivityService.PublishChanged();
+            });
             return true;
         }
 

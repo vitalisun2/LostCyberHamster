@@ -7,6 +7,7 @@ namespace Vues.GameCore.Quests
     public sealed class PendingDailyCommonReward
     {
         public string SetId;
+        public string OriginDate;
         public ResourceType RewardType;
         public int RewardAmount;
     }

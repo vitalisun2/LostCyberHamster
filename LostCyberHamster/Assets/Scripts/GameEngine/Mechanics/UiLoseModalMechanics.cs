@@ -3,6 +3,8 @@ using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
 using GameAds;
+using GameManagement;
+using Assets.Scripts.Tutorial;
 using LostCyberHamster.UI;
 using UnityEngine.SceneManagement;
 
@@ -19,10 +21,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly int _sceneHandle;
         private RewardedAdRequest _request;
         private bool _runEnded;
+        private readonly LevelResultNavigationCoordinator _navigation;
 
-        public UiLoseModalMechanics(UIManager uiManager, GameManager gameManager, Hamster character)
+        internal UiLoseModalMechanics(UIManager uiManager, GameManager gameManager, Hamster character,
+            LevelResultNavigationCoordinator navigation)
         {
             _uiManager = uiManager;
+            _navigation = navigation;
             _gameManager = gameManager;
             _character = character;
             _sceneHandle = character.gameObject.scene.handle;
@@ -35,18 +40,20 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private void OnExit()
         {
             EndAttempt();
-            SceneManager.LoadScene("Menu");
+            _navigation.Continue(ScreenEnum.LoseModal, () => SceneManager.LoadScene("Menu"));
         }
 
         private void OnRestart()
         {
             EndAttempt();
-            _uiManager.CloseModal(ScreenEnum.LoseModal);
-            LevelController.Instance.Replay();
+            _navigation.Continue(ScreenEnum.LoseModal, () => LevelController.Instance.Replay(),
+                GameDataManager.PlayerData.CurrentLevel);
         }
 
         private void EndAttempt()
         {
+            if (_runEnded) return;
+            FirstSessionTelemetry.Record("attempt_failed", Vues.GameCore.QuestManager.CurrentAttemptPreview.AttemptId);
             _runEnded = true;
             RewardedAdService.Instance.CancelContext(_request);
             _request = null;
@@ -65,6 +72,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void Revive()
         {
+            FirstSessionTelemetry.Record("attempt_revived", Vues.GameCore.QuestManager.CurrentAttemptPreview.AttemptId);
             _character.Lives.Value = 1;
             _uiManager.CloseModal(ScreenEnum.LoseModal);
             _gameManager.Resume();

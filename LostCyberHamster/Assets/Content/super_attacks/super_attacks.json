@@ -7,8 +7,13 @@
       "IconAddress": "ability-icon/energy-shield",
       "EquipmentPreviewAddress": "hero-ability/energy-shield",
       "UltaPrefab": "EnergyShieldPrefab",
-      "UltaDuration": 5,
-      "UltaCharge": 20
+      "UltaDuration": 3,
+      "UltaCharge": 20,
+      "Levels": [
+        { "Level": 1, "Duration": 3, "RangeMultiplier": 1, "DestroysOnCollision": false, "DropChance": 0, "MaximumDrops": 0, "JumpCombinations": 0 },
+        { "Level": 2, "Duration": 5, "RangeMultiplier": 1, "DestroysOnCollision": true, "DropChance": 0.25, "MaximumDrops": 2, "JumpCombinations": 0 },
+        { "Level": 3, "Duration": 7, "RangeMultiplier": 1, "DestroysOnCollision": true, "DropChance": 0.5, "MaximumDrops": 3, "JumpCombinations": 0 }
+      ]
     },
     {
       "Id": 2,
@@ -18,7 +23,12 @@
       "EquipmentPreviewAddress": "hero-ability/electric-strike",
       "UltaPrefab": "ElectricStrikePrefab",
       "UltaDuration": 0,
-      "UltaCharge": 35
+      "UltaCharge": 35,
+      "Levels": [
+        { "Level": 1, "Duration": 0, "RangeMultiplier": 0.75, "DestroysOnCollision": false, "DropChance": 0, "MaximumDrops": 0, "JumpCombinations": 0 },
+        { "Level": 2, "Duration": 0, "RangeMultiplier": 1, "DestroysOnCollision": false, "DropChance": 0.2, "MaximumDrops": 2, "JumpCombinations": 0 },
+        { "Level": 3, "Duration": 0, "RangeMultiplier": 1, "DestroysOnCollision": false, "DropChance": 0.5, "MaximumDrops": 3, "JumpCombinations": 0 }
+      ]
     },
     {
       "Id": 3,
@@ -27,8 +37,13 @@
       "IconAddress": "ability-icon/skateboard",
       "EquipmentPreviewAddress": "ability-icon/skateboard",
       "UltaPrefab": "",
-      "UltaDuration": 10,
-      "UltaCharge": 20
+      "UltaDuration": 5,
+      "UltaCharge": 20,
+      "Levels": [
+        { "Level": 1, "Duration": 5, "RangeMultiplier": 1, "DestroysOnCollision": false, "DropChance": 0, "MaximumDrops": 0, "JumpCombinations": 1 },
+        { "Level": 2, "Duration": 7, "RangeMultiplier": 1, "DestroysOnCollision": false, "DropChance": 0, "MaximumDrops": 0, "JumpCombinations": 2 },
+        { "Level": 3, "Duration": 10, "RangeMultiplier": 1, "DestroysOnCollision": false, "DropChance": 0, "MaximumDrops": 0, "JumpCombinations": 3 }
+      ]
     }
   ]
 }

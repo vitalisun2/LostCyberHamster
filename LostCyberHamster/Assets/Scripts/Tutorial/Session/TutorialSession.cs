@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using GameManagement;
+using GameManagement.Progress;
+using GameManagement.Leaderboard;
 using UnityEngine;
 using Vues.GameCore;
+using Vues.GameCore.Quests;
 
 namespace Assets.Scripts.Tutorial
 {
@@ -14,8 +17,10 @@ namespace Assets.Scripts.Tutorial
         private const int DefaultSkinId = 0;
 
         private PlayerData _snapshot;
+        private bool _pendingLevelChange;
 
         public bool IsActive => _snapshot != null;
+        public int CompletionExperienceAwarded { get; private set; }
 
         /// <summary>
         /// Сохраняет исходные данные игрока в памяти и persistent backup.
@@ -51,6 +56,7 @@ namespace Assets.Scripts.Tutorial
             PlayerData snapshot = CloneValidatedPlayerData(GameDataManager.PlayerData);
             TutorialStorage.CreatePlayerDataBackup(snapshot.ToJson());
             _snapshot = snapshot;
+            FirstSessionTelemetry.Record(snapshot.IsTutorialCompleted ? "tutorial_replay" : "onboarding_start", "core");
         }
 
         /// <summary>
@@ -65,14 +71,14 @@ namespace Assets.Scripts.Tutorial
         /// <summary>
         /// Восстанавливает исходные данные и фиксирует завершение tutorial.
         /// </summary>
-        public void Complete(string nextLevelAddress)
+        public void Complete(string nextLevelAddress, bool skipped = false)
         {
             if (string.IsNullOrWhiteSpace(nextLevelAddress))
             {
                 throw new ArgumentException("Tutorial completion level cannot be empty.", nameof(nextLevelAddress));
             }
 
-            RestoreSnapshot(markTutorialCompleted: true, nextLevelAddress);
+            RestoreSnapshot(markTutorialCompleted: true, nextLevelAddress, skipped);
         }
 
         /// <summary>
@@ -119,6 +125,10 @@ namespace Assets.Scripts.Tutorial
             GameDataManager.PlayerData = recoveredPlayerData;
             PlayerProgressCommitter.Commit(CheckpointReason.CurrentLevelChanged);
             TutorialStorage.ClearPlayerDataBackup();
+            // Повторная публикация текущего состояния безопасна для state-квестов.
+            if (recoveredPlayerData.PlayerLevel > 1)
+                GameEventsManager.PlayerStateChanged(PlayerStateIds.PlayerLevel, PlayerStateEntityIds.Player);
+            WeeklyLeaderboardCoordinator.Instance?.RetryPendingRewards();
             return true;
         }
 
@@ -186,7 +196,7 @@ namespace Assets.Scripts.Tutorial
             }
         }
 
-        private void RestoreSnapshot(bool markTutorialCompleted, string nextLevelAddress)
+        private void RestoreSnapshot(bool markTutorialCompleted, string nextLevelAddress, bool skipped = false)
         {
             PlayerData snapshot = GetSnapshotForRestore();
             if (snapshot == null)
@@ -194,7 +204,17 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
 
-            // Persistent backup удаляется только после успешного сохранения восстановленных данных.
+            // Подготавливаем отдельный итоговый профиль; учебные ресурсы остаются в изоляции.
+            snapshot = CloneValidatedPlayerData(snapshot);
+            if (markTutorialCompleted)
+            {
+                bool hadReward = snapshot.HasReceivedTutorialExperience;
+                _pendingLevelChange |= new PlayerExperienceService().GrantExperienceForTutorialCompletion(snapshot);
+                if (!hadReward)
+                    CompletionExperienceAwarded = PlayerExperienceService.TutorialExperienceReward;
+                if (!snapshot.IsTutorialCompleted)
+                    snapshot.IsTutorialSkipped = skipped;
+            }
             snapshot.IsTutorialCompleted |= markTutorialCompleted;
             if (!string.IsNullOrWhiteSpace(nextLevelAddress))
             {
@@ -203,6 +223,8 @@ namespace Assets.Scripts.Tutorial
 
             snapshot = CloneValidatedPlayerData(snapshot);
             TutorialStorage.UpdatePlayerDataBackup(snapshot.ToJson());
+            // Retry использует тот же записанный intent, включая однократную выдачу.
+            _snapshot = snapshot;
             GameDataManager.PlayerData = snapshot;
             if (markTutorialCompleted)
             {
@@ -215,6 +237,16 @@ namespace Assets.Scripts.Tutorial
 
             TutorialStorage.ClearPlayerDataBackup();
             _snapshot = null;
+            bool publishLevelChange = _pendingLevelChange;
+            _pendingLevelChange = false;
+            PlayerExperienceService.PublishCommittedLevelChange(publishLevelChange, "tutorial");
+            if (markTutorialCompleted)
+            {
+                FirstSessionTelemetry.Record(skipped ? "tutorial_skip" : "tutorial_completed", "core");
+                if (CompletionExperienceAwarded > 0)
+                    FirstSessionTelemetry.Record("bonus_committed", "tutorial_start_150", CompletionExperienceAwarded);
+            }
+            WeeklyLeaderboardCoordinator.Instance?.RetryPendingRewards();
         }
 
         private PlayerData GetSnapshotForRestore()

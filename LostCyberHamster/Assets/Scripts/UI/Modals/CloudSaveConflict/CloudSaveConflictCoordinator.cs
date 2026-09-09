@@ -22,6 +22,7 @@ namespace LostCyberHamster.UI
         private bool _isResolutionInProgress;
         private int _lifecycleVersion;
         private int _resolutionVersion;
+        private double _retryAt;
 
         public CloudSaveConflictCoordinator(
             UIManager uiManager,
@@ -70,6 +71,15 @@ namespace LostCyberHamster.UI
             _uiManager.CloseModal(ScreenEnum.CloudSaveConflictModal);
         }
 
+        /// <summary>Возвращает pending конфликт после освобождения меню, включая закрытие чужого modal.</summary>
+        public void Tick()
+        {
+            if (!_isEnabled || _isShowInProgress || _isResolutionInProgress) return;
+            if (_isVisible && _uiManager.CurrentModal != ScreenEnum.CloudSaveConflictModal)
+                _isVisible = false;
+            if (!_isVisible) PresentCurrentConflict();
+        }
+
         private void OnConflictDetected(CloudSaveConflict _)
         {
             if (!_isResolutionInProgress)
@@ -113,6 +123,13 @@ namespace LostCyberHamster.UI
             if (!_isEnabled || conflict == null || _cloudSyncService.IsConflictDeferred)
                 return;
 
+            // Собственный видимый modal допускает обновление данных; guard относится только к новому показу.
+            if (_isVisible && _uiManager.CurrentModal != ScreenEnum.CloudSaveConflictModal)
+                _isVisible = false;
+            if (!_isVisible && (_isShowInProgress || _isResolutionInProgress ||
+                Time.realtimeSinceStartupAsDouble < _retryAt || _uiManager.HasModalOrTransition ||
+                _uiManager.HasPriorityPresentation)) return;
+
             var data = CreateModalData(conflict);
             _modalController.SetData(data);
 
@@ -127,6 +144,7 @@ namespace LostCyberHamster.UI
             try
             {
                 await _uiManager.ShowModalAsync(ScreenEnum.CloudSaveConflictModal);
+                if (_uiManager.CurrentModal != ScreenEnum.CloudSaveConflictModal) return;
                 if (!IsLifecycleCurrent(lifecycleVersion) ||
                     _conflictService.CurrentConflict == null || _cloudSyncService.IsConflictDeferred)
                 {
@@ -139,6 +157,7 @@ namespace LostCyberHamster.UI
             }
             catch (Exception exception)
             {
+                _retryAt = Time.realtimeSinceStartupAsDouble + 5;
                 if (IsLifecycleCurrent(lifecycleVersion))
                 {
                     Debug.LogError(
@@ -148,7 +167,7 @@ namespace LostCyberHamster.UI
             finally
             {
                 _isShowInProgress = false;
-                // Следующий явный запрос/событие повторит показ после ошибки загрузки.
+                // Tick повторит pending показ в свободном меню после задержки при ошибке.
             }
         }
 

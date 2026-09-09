@@ -11,6 +11,19 @@ namespace LostCyberHamster.UI
         private static string _leaderboardLocationId;
         private static string _leaderboardPartId;
 
+        /// <summary>Сохраняет обычный экран Menu; рейтинг с контекстом задаётся через OpenLeaderboard.</summary>
+        public static void OpenScreen(ScreenEnum screen)
+        {
+            if (screen != ScreenEnum.HomeScreen && screen != ScreenEnum.CharacterScreen &&
+                screen != ScreenEnum.QuestsScreen && screen != ScreenEnum.SelectLevelScreen &&
+                screen != ScreenEnum.SettingsScreen && screen != ScreenEnum.ShopScreen &&
+                screen != ScreenEnum.CharacterDevelopmentScreen)
+                throw new ArgumentOutOfRangeException(nameof(screen), screen, "A menu screen is required.");
+            _targetScreen = screen;
+            _leaderboardLocationId = null;
+            _leaderboardPartId = null;
+        }
+
         /// <summary>
         /// Сохраняет цель рейтинга до загрузки сцены меню.
         /// </summary>

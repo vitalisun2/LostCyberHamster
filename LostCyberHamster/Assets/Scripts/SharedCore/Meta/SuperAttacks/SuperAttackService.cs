@@ -150,6 +150,18 @@ namespace Vues.GameCore
                 throw new InvalidOperationException(
                     $"Суперудар {data.Id} содержит неверные runtime-параметры.");
             }
+
+            // Каждый уровень задаётся явно: отсутствующий JSON не превращается в нулевой баланс.
+            if (data.Levels == null || data.Levels.Length != SuperAttackLevelResolver.MaximumLevel)
+                throw new InvalidOperationException($"Суперудар {data.Id}: требуется три уровня.");
+            for (int index = 0; index < data.Levels.Length; index++)
+            {
+                var level = data.Levels[index];
+                if (level == null || level.Level != index + 1 || level.Duration < 0 ||
+                    level.RangeMultiplier <= 0 || level.RangeMultiplier > 1 || level.DropChance < 0 ||
+                    level.DropChance > 1 || level.MaximumDrops < 0 || level.JumpCombinations < 0)
+                    throw new InvalidOperationException($"Суперудар {data.Id}: неверный уровень {index + 1}.");
+            }
         }
     }
 }

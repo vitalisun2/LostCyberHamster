@@ -9,6 +9,8 @@
                     <engine:VisualElement class="reward-modal__panel" picking-mode="Ignore" />
                     <engine:Label name="daily-quest-reward-title" class="reward-modal__text reward-modal__title daily-quest-reward-modal__title" picking-mode="Ignore" />
                     <engine:VisualElement class="daily-quest-reward-modal__emblem" picking-mode="Ignore" />
+                    <engine:Label name="daily-quest-reward-progress" class="reward-modal__text daily-quest-reward-modal__progress" picking-mode="Ignore" />
+                    <engine:Label name="daily-quest-reward-origin" class="reward-modal__text daily-quest-reward-modal__origin" picking-mode="Ignore" />
                     <engine:VisualElement class="daily-quest-reward-modal__reward-row" picking-mode="Ignore">
                         <engine:Label name="daily-quest-reward-caption" class="reward-modal__text daily-quest-reward-modal__caption" picking-mode="Ignore" />
                         <engine:Label name="daily-quest-reward-amount" class="reward-modal__text daily-quest-reward-modal__amount" picking-mode="Ignore" />
@@ -17,6 +19,7 @@
                     <engine:Button name="btn_daily_quest_reward_claim" class="reward-modal__primary">
                         <engine:Label name="daily-quest-reward-claim-label" class="reward-modal__text daily-quest-reward-modal__claim-label" picking-mode="Ignore" />
                     </engine:Button>
+                    <engine:Button name="btn_daily_quest_reward_later" class="reward-modal__text daily-quest-reward-modal__later" />
                 </engine:VisualElement>
             </engine:VisualElement>
         </engine:VisualElement>

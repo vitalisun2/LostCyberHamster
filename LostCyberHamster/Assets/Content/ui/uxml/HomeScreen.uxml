@@ -25,8 +25,14 @@
         </engine:VisualElement>
 
         <engine:VisualElement class="home-main">
-            <engine:VisualElement class="home-main__logo-column" picking-mode="Ignore">
+            <engine:VisualElement class="home-main__logo-column">
                 <engine:VisualElement name="home__logo" class="home-logo" picking-mode="Ignore" />
+                <engine:VisualElement name="home-activities" class="return-home">
+                    <engine:Label name="home-activity-heading" class="return-home__heading" picking-mode="Ignore" />
+                    <engine:Button name="home-activity-cycle" class="return-home__row" />
+                    <engine:Button name="home-activity-week" class="return-home__row" />
+                    <engine:Label name="home-activity-status" class="return-home__status" picking-mode="Ignore" />
+                </engine:VisualElement>
             </engine:VisualElement>
             <engine:VisualElement class="home-main__actions">
                 <engine:Button name="btn_play" tooltip="Play" class="home-image-button home-play-button" />

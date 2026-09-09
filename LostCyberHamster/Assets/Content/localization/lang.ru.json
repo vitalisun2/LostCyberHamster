@@ -1,5 +1,307 @@
 {
     "localizationStrings": [
+        { "key": "return_activities", "value": "Активности" },
+        { "key": "return_cycle", "value": "7 победных дней" },
+        { "key": "return_week", "value": "Цель недели" },
+        { "key": "return_coins", "value": "{0} монет" },
+        { "key": "return_gems", "value": "{0} кристаллов" },
+        { "key": "return_coins_gems", "value": "{0} монет + {1} кристалл" },
+        { "key": "return_cycle_complete", "value": "7 победных дней пройдены!" },
+        { "key": "return_week_complete", "value": "Цель недели выполнена!" },
+        { "key": "return_day_title", "value": "Награда дня {0}" },
+        { "key": "return_loading", "value": "Загружаем прогресс…" },
+        { "key": "return_recovery_required", "value": "Истории активностей различаются. Можно восстановить историю этого устройства. Баланс выбранного сохранения останется прежним." },
+        { "key": "return_recovery_short", "value": "Открой активности для восстановления" },
+        { "key": "return_profile_pending", "value": "Сначала заверши выбор сохранения" },
+        { "key": "return_clock_check", "value": "Проверь дату устройства. Заработанные награды сохранены." },
+        { "key": "return_paused", "value": "Новые активности временно недоступны" },
+        { "key": "return_offline", "value": "Без сети · сохранено на устройстве" },
+        { "key": "return_local_saved", "value": "Прогресс сохранён на устройстве" },
+        { "key": "return_home_ready", "value": "{0} · Забрать {1}" },
+        { "key": "return_home_day_done", "value": "7 дней · {0}/7 ✓ · следующий шаг после {1}" },
+        { "key": "return_home_waiting", "value": "7 дней · {0}/7 · прогресс сохранён" },
+        { "key": "return_home_cycle_action", "value": "7 дней · шаг {0}/7 · одна победа за {1}" },
+        { "key": "return_home_week_done", "value": "Неделя завершена ✓ · новая после {0}" },
+        { "key": "return_home_week_progress", "value": "Неделя · победы {0}/{1} · дни {2}/{3}" },
+        { "key": "return_more_days", "value": "Ещё {0} новых дней" },
+        { "key": "return_ready_count", "value": "Доступно наград: {0}" },
+        { "key": "return_cycle_rule", "value": "Первая победа дня с 1+ звездой даёт шаг. Пропуски сохраняют прогресс. Награды можно забрать позже." },
+        { "key": "return_back", "value": "Назад" },
+        { "key": "return_play", "value": "Играть" },
+        { "key": "return_recover_action", "value": "Восстановить историю активностей этого устройства" },
+        { "key": "return_save_failed", "value": "Не удалось сохранить. Повтори действие." },
+        { "key": "return_calendar", "value": "Активности: 00:00 UTC, следующий день — {0}. Daily-задания: полночь устройства." },
+        { "key": "return_slot", "value": "День {0}\n{1}" },
+        { "key": "return_cycle_progress", "value": "Цикл {0} · заработано дней {1}/7" },
+        { "key": "return_week_rule", "value": "Выиграй {0} забегов минимум в {1} разных днях недели. Повторы уровней подходят." },
+        { "key": "return_week_deadline", "value": "Неделя с {0} UTC · до {1} по времени устройства" },
+        { "key": "return_next_week", "value": "Следующая цель: {0} побед в {1} днях · {2} монет" },
+        { "key": "return_week_too_late", "value": "Для этой цели осталось мало дней. Следующая неделя уже скоро." },
+        { "key": "return_view_receipt", "value": "Посмотреть полученную награду" },
+        { "key": "return_claim", "value": "Получить" },
+        { "key": "return_none_ready", "value": "Заработай награду в игре" },
+        { "key": "return_pending", "value": "Наград: {0} · {1} · {2}" },
+        { "key": "return_unavailable", "value": "Награда недоступна. Обнови экран." },
+        { "key": "return_done", "value": "Готово" },
+        { "key": "return_close", "value": "Закрыть" },
+        { "key": "return_later", "value": "Позже" },
+        { "key": "return_received", "value": "Награда получена. Баланс обновлён." },
+        { "key": "return_claim_hint", "value": "Награда сохранена. Получить можно сейчас или позже." },
+        { "key": "progression_shield_compact", "value": "{0} с · бонус {1}% ≤{2}" },
+        { "key": "progression_lightning_compact", "value": "{0}% · бонус {1}% ≤{2}" },
+        { "key": "progression_skate_compact", "value": "{0} с · {1} прыжк." },
+        {
+            "key": "progression_level_title",
+            "value": "Уровень {0}"
+        },
+        {
+            "key": "progression_free_points",
+            "value": "Свободно сейчас: {0}"
+        },
+        {
+            "key": "progression_unlock_option",
+            "value": "{0} · открыть за 1 очко"
+        },
+        {
+            "key": "progression_upgrade_option",
+            "value": "{0}: уровень {1} · 1 очко"
+        },
+        {
+            "key": "progression_skin_option",
+            "value": "{0} · открыть: 1 очко; купить: {1} крист."
+        },
+        {
+            "key": "progression_open_development",
+            "value": "Развитие"
+        },
+        {
+            "key": "progression_daily_progress",
+            "value": "Получено {0}/3 · бонус {1} монет"
+        },
+        {
+            "key": "progression_daily_available",
+            "value": "Забрать {0} монет · наборов: {1}"
+        },
+        {
+            "key": "progression_saved_set",
+            "value": "Сохранённый набор"
+        },
+        {
+            "key": "progression_reward_received",
+            "value": "Награда получена"
+        },
+        {
+            "key": "progression_next_reward",
+            "value": "Следующая награда"
+        },
+        {
+            "key": "progression_until_landing",
+            "value": "До посадки"
+        },
+        {
+            "key": "progression_seconds",
+            "value": "{0} с"
+        },
+        {
+            "key": "progression_combinations",
+            "value": "Прыжки: {0}"
+        },
+        {
+            "key": "progression_shield_protect",
+            "value": "Защита {0} с"
+        },
+        {
+            "key": "progression_shield_destroy",
+            "value": "Защита и разрушение: {0} с. Бонус {1}%, до {2}."
+        },
+        {
+            "key": "progression_lightning",
+            "value": "Дальность {0}%. Бонус {1}%, до {2}."
+        },
+        {
+            "key": "progression_skate",
+            "value": "{0} с · прыжков: {1}. Без затрат энергии."
+        },
+        {
+            "key": "progression_maximum",
+            "value": "Максимальный уровень"
+        },
+        {
+            "key": "progression_upgrade_level",
+            "value": "Улучшения с уровня игрока {0}"
+        },
+        {
+            "key": "progression_upgrade_action",
+            "value": "Улучшить · 1 очко"
+        },
+        {
+            "key": "progression_upgrade_points",
+            "value": "Нужно 1 очко развития"
+        },
+        {
+            "key": "progression_quest_xp",
+            "value": "+{0} XP за получение"
+        },
+        {
+            "key": "progression_win_xp",
+            "value": "+{0} XP"
+        },
+        {
+            "key": "first_session_daily_rule",
+            "value": "Действия засчитываются после победы. Награду забери кнопкой."
+        },
+        {
+            "key": "first_session_next_level",
+            "value": "Следующий уровень"
+        },
+        {
+            "key": "first_session_story_reward",
+            "value": "Награда: {0} монет +{1} XP"
+        },
+        {
+            "key": "first_session_open_shield",
+            "value": "Открыть щит"
+        },
+        {
+            "key": "settings_gameplay_notifications",
+            "value": "Уведомления в забеге"
+        },
+        {
+            "key": "first_session_goal",
+            "value": "Ближайшая цель"
+        },
+        {
+            "key": "first_session_morning",
+            "value": "Заверши утро в Нью-Йорке · {0}/3"
+        },
+        {
+            "key": "first_session_morning_reward",
+            "value": "Три разных уровня. Затем забери награду в заданиях."
+        },
+        {
+            "key": "first_session_claim",
+            "value": "Утро пройдено. Забери {0} монет и {1} XP"
+        },
+        {
+            "key": "first_session_claim_action",
+            "value": "Забрать в заданиях"
+        },
+        {
+            "key": "first_session_open_quests",
+            "value": "Открыть задания"
+        },
+        {
+            "key": "first_session_shield_offer",
+            "value": "Открой энергетический щит"
+        },
+        {
+            "key": "first_session_shield_unlock",
+            "value": "В навыках выбери щит и открой его за 1 очко."
+        },
+        {
+            "key": "first_session_shield_equipment",
+            "value": "Щит открыт. Нажми «Открыть экипировку»."
+        },
+        {
+            "key": "first_session_shield_tab",
+            "value": "Открой вкладку «СПОСОБНОСТИ»."
+        },
+        {
+            "key": "first_session_shield_equip",
+            "value": "Выбери щит и нажми «НАДЕТЬ»."
+        },
+        {
+            "key": "first_session_shield_ready",
+            "value": "Щит надет. Попробуй его в следующем забеге."
+        },
+        {
+            "key": "first_session_shield_wait",
+            "value": "Щит — за следующее очко развития"
+        },
+        {
+            "key": "first_session_skills",
+            "value": "Открыть навыки"
+        },
+        {
+            "key": "first_session_hero",
+            "value": "Открыть персонажа"
+        },
+        {
+            "key": "first_session_continue",
+            "value": "Продолжить"
+        },
+        {
+            "key": "first_session_later",
+            "value": "Позже"
+        },
+        {
+            "key": "first_session_afternoon",
+            "value": "Пройди первый дневной уровень Нью-Йорка"
+        },
+        {
+            "key": "first_session_select_level",
+            "value": "Выбрать уровень"
+        },
+        {
+            "key": "first_session_shield_charge",
+            "value": "Напрыгивай на препятствия, чтобы зарядить щит"
+        },
+        {
+            "key": "first_session_shield_charge_progress",
+            "value": "Заряд щита · {0}/100"
+        },
+        {
+            "key": "first_session_shield_use",
+            "value": "Щит готов. Нажми кнопку способности"
+        },
+        {
+            "key": "first_session_shield_used",
+            "value": "Щит включён"
+        },
+        {
+            "key": "first_session_shield_protection",
+            "value": "Защита действует {0} сек."
+        },
+        {
+            "key": "notification_quest_preview_one",
+            "value": "{0}"
+        },
+        {
+            "key": "notification_quest_preview_many",
+            "value": "Условия {0} заданий выполнены"
+        },
+        {
+            "key": "notification_quest_preview_detail",
+            "value": "Победи, чтобы засчитать"
+        },
+        {
+            "key": "notification_record_preview",
+            "value": "Выше известного рекорда недели"
+        },
+        {
+            "key": "notification_record_preview_detail",
+            "value": "Победи, чтобы отправить"
+        },
+        {
+            "key": "notification_record_local_detail",
+            "value": "Этот забег сохранится локально"
+        },
+        {
+            "key": "notification_record_confirmed",
+            "value": "Рекорд недели: {0}"
+        },
+        {
+            "key": "notification_record_first",
+            "value": "Первый результат в таблице: {0}"
+        },
+        {
+            "key": "notification_records_confirmed",
+            "value": "Рекорды недели подтверждены: {0}"
+        },
+        {
+            "key": "notification_record_reward",
+            "value": "+{0} XP"
+        },
         {
             "key": "btn_play",
             "value": "ИГРАТЬ"
@@ -927,6 +1229,18 @@
         {
             "key": "cloud_save_conflict_player_level",
             "value": "Уровень героя"
+        },
+        {
+            "key": "tutorial_skipped_title",
+            "value": "ВСЁ ГОТОВО К ИГРЕ!"
+        },
+        {
+            "key": "tutorial_skipped_message",
+            "value": "Обучение можно повторить в настройках."
+        },
+        {
+            "key": "tutorial_start_reward",
+            "value": "Стартовый бонус: +{0} XP"
         },
         {
             "key": "tutorial_complete_title",

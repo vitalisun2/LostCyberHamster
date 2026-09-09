@@ -10,5 +10,8 @@ namespace GameManagement.Leaderboard
         public List<WeeklyLeaderboardRun> Runs = new();
         public List<LeaderboardSeasonContext> Seasons = new();
         public List<LeaderboardResultsSnapshot> CachedResults = new();
+        public List<WeeklyPersonalBest> PersonalBests = new();
+        public int RecordPresentationVersion;
+        public List<string> AcknowledgedRecordRunIds = new();
     }
 }

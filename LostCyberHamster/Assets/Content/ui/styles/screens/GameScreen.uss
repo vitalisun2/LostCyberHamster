@@ -156,6 +156,24 @@
     height: 237px;
 }
 
+.ability-activity { position: absolute; left: 27px; top: 12px; width: 213px; height: 213px; }
+.ability-activity__seconds {
+    position: absolute; left: 20px; top: 57px; width: 173px; height: 80px;
+    margin: 0; padding: 0; color: white; font-size: 42px;
+    -unity-font-style: bold; -unity-text-align: middle-center;
+    -unity-text-outline-width: 3px; -unity-text-outline-color: rgb(9, 28, 45);
+}
+.ability-activity__seconds--finishing { font-size: 23px; white-space: normal; }
+.ability-activity__combinations {
+    position: absolute; left: 20px; top: 138px; width: 173px; height: 35px;
+    margin: 0; padding: 0; color: white; font-size: 22px;
+    background-color: rgba(9, 28, 45, 0.9); border-radius: 9px;
+    -unity-font-style: bold; -unity-text-align: middle-center;
+}
+.game-control--ability-active .game-control__ultimate-value,
+.game-control--ability-active .game-control__ultimate-icon { display: none; }
+.game-control--ability-active > .game-control__visual--ultimate { opacity: 1; }
+
 .game-control__visual--ultimate {
     width: 189px;
     height: 189px;

@@ -35,6 +35,16 @@ namespace Assets.Scripts.Gameplay
         public AtomicEvent<GameObject> OnObstacleUnspawned = new();
 
         private bool _hasDealtContactDamage;
+        private bool _destructionStarted;
+        public int SpawnGeneration { get; private set; }
+
+        /// <summary>Фиксирует единственное фактическое разрушение текущего рождения pooled-объекта.</summary>
+        public bool TryBeginDestruction()
+        {
+            if (_destructionStarted || !isActiveAndEnabled) return false;
+            _destructionStarted = true;
+            return true;
+        }
 
         private AtomicVariable<BoomEffect> _boomEffect;
 
@@ -65,6 +75,8 @@ namespace Assets.Scripts.Gameplay
         public void InitializeMechanics()
         {
             _hasDealtContactDamage = false;
+            _destructionStarted = false;
+            SpawnGeneration++;
 
             _scrollLeftMechanics = new ScrollLeftMechanics(transform, Consts.RoadScrollSpeed);
             _unspawnOutOfBoundsMechanics = new UnspawnOutOfBoundsMechanics(this, OnObstacleUnspawned);

@@ -11,12 +11,16 @@ namespace Vues.GameCore.Quests
         private readonly Dictionary<string, int> _actionCounts = new();
         private bool _isActive;
 
+        public bool IsActive => _isActive;
+        public string AttemptId { get; private set; } = string.Empty;
+
         /// <summary>
         /// Начинает новую попытку и очищает действия прошлой попытки.
         /// </summary>
         public void StartAttempt()
         {
             _actionCounts.Clear();
+            AttemptId = Guid.NewGuid().ToString("N");
             _isActive = true;
         }
 
@@ -47,6 +51,14 @@ namespace Vues.GameCore.Quests
         /// </summary>
         public IReadOnlyList<ActionCounterQuestEvent> CompleteAttempt()
         {
+            var events = ReadSnapshot();
+            DiscardAttempt();
+            return events;
+        }
+
+        /// <summary>Возвращает неизменяемую копию действий, сохраняя текущую попытку.</summary>
+        public IReadOnlyList<ActionCounterQuestEvent> ReadSnapshot()
+        {
             if (!_isActive)
             {
                 return Array.Empty<ActionCounterQuestEvent>();
@@ -63,8 +75,7 @@ namespace Vues.GameCore.Quests
                         action.Value));
             }
 
-            DiscardAttempt();
-            return bufferedEvents;
+            return bufferedEvents.AsReadOnly();
         }
 
         /// <summary>
@@ -74,6 +85,7 @@ namespace Vues.GameCore.Quests
         {
             _actionCounts.Clear();
             _isActive = false;
+            AttemptId = string.Empty;
         }
     }
 }

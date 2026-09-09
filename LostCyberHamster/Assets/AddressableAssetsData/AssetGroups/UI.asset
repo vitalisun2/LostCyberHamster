@@ -36,6 +36,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1b7b61f55f1196448830b7a808db16a3
+    m_Address: ActivityRewardModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2259c195880f5dc4db5850d0d6d3d750
     m_Address: DailyQuestRewardModal
     m_ReadOnly: 0
@@ -90,6 +95,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 53ef3fc4478f849abaaa97cb8052a325
     m_Address: evening_preview
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 55e389afb33d57b40a3d6da1605e1706
+    m_Address: ReturnActivitiesScreen
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

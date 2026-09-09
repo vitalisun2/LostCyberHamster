@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Assets.Scripts.System.Resources;
+using Assets.Scripts.Tutorial;
+using GameManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
@@ -39,6 +41,15 @@ namespace LostCyberHamster.UI
         private int _selectedAbilityId;
         private int _visualVersion;
         private bool _screenLoaded;
+        private int _displayedAbilityLevel;
+        private string _displayedAbilityProfile;
+        private long _displayedAbilityGeneration;
+        private readonly Action _resume;
+        private DevelopmentReturnButton _returnButton;
+        private Button AbilityUpgradeButton => _contentRoot.Q<Button>("hero-ability-upgrade");
+
+        internal bool IsAbilityTabShown => _activeTab == HeroTab.Abilities;
+        internal bool IsShieldSelectedForTutorial => _selectedAbilityId == ShieldTutorialProgress.ShieldId;
 
         private VisualElement Viewport =>
             _contentRoot.Q<VisualElement>("hero-viewport");
@@ -82,9 +93,10 @@ namespace LostCyberHamster.UI
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.CharacterScreen;
 
-        public CharacterScreenController(UIDocument uiDocument)
+        public CharacterScreenController(UIDocument uiDocument, Action resume = null)
             : base(uiDocument)
         {
+            _resume = resume;
         }
 
         protected override string ScreenBackgroundAddress => BackgroundAddress;
@@ -100,12 +112,18 @@ namespace LostCyberHamster.UI
 
         protected override void BindView()
         {
+            _returnButton?.Dispose();
+            _returnButton = new DevelopmentReturnButton(_contentRoot.Q<Button>("development-return"), _resume);
             _screenLoaded = true;
             _activeTab = HeroTab.Skins;
             _selectedSkinId = SkinManager.CurrentSkin?.Id ??
                               CharacterDevelopmentService.DefaultSkinId;
             _selectedAbilityId = SuperAttackService.ActiveSuperAttackId ??
                                  GetFirstUnlockedAbilityId();
+
+            // Урок предлагает щит в списке; вкладку и кнопку экипировки нажимает сам игрок.
+            if (ShieldTutorialProgress.IsPending && ShieldTutorialProgress.IsShieldUnlocked)
+                _selectedAbilityId = ShieldTutorialProgress.ShieldId;
 
             ApplyActiveTab();
             BuildSkinSlots();
@@ -121,6 +139,7 @@ namespace LostCyberHamster.UI
 
         protected override void OnSubscribeToEvents()
         {
+            AbilityUpgradeButton?.RegisterCallback<ClickEvent>(OnAbilityUpgradeClicked);
             SkinTabButton?.RegisterCallback<ClickEvent>(OnSkinTabClicked);
             AbilityTabButton?.RegisterCallback<ClickEvent>(
                 OnAbilityTabClicked);
@@ -143,6 +162,8 @@ namespace LostCyberHamster.UI
 
         protected override void OnUnsubscribeFromEvents()
         {
+            _returnButton?.Dispose();
+            AbilityUpgradeButton?.UnregisterCallback<ClickEvent>(OnAbilityUpgradeClicked);
             _screenLoaded = false;
             _visualVersion++;
             SkinTabButton?.UnregisterCallback<ClickEvent>(OnSkinTabClicked);
@@ -555,6 +576,7 @@ namespace LostCyberHamster.UI
                     SuperAttackService.IsUnlocked(candidate.Id));
             if (ability == null)
             {
+                AbilityUpgradeButton.style.display = DisplayStyle.None;
                 AbilityPreviewImage.style.backgroundImage = null;
                 AbilityPreviewDescription.text = Localize(
                     "equipment_no_abilities");
@@ -563,8 +585,14 @@ namespace LostCyberHamster.UI
             }
 
             _selectedAbilityId = ability.Id;
-            AbilityPreviewDescription.text = Localize(
-                ability.DescriptionLocalizationKey);
+            _displayedAbilityLevel = SuperAttackLevelResolver.GetLevel(GameDataManager.PlayerData, ability.Id);
+            _displayedAbilityProfile = GameDataManager.ProfileId;
+            _displayedAbilityGeneration = GameDataManager.Generation;
+            AbilityPreviewDescription.text = SuperAttackDescriptionFormatter.Roman(_displayedAbilityLevel) + ": " +
+                SuperAttackDescriptionFormatter.Describe(ability, _displayedAbilityLevel);
+            AbilityUpgradeButton.style.display = DisplayStyle.Flex;
+            AbilityUpgradeButton.text = SuperAttackDescriptionFormatter.Upgrade(ability, _displayedAbilityLevel);
+            AbilityUpgradeButton.SetEnabled(CharacterDevelopmentService.CanUpgradeSuperAttack(ability.Id, _displayedAbilityLevel));
             if (_abilityPreviews.TryGetValue(ability.Id, out Sprite preview))
             {
                 AbilityPreviewImage.style.backgroundImage =
@@ -583,6 +611,16 @@ namespace LostCyberHamster.UI
                 : DisplayStyle.Flex;
         }
 
+        private void OnAbilityUpgradeClicked(ClickEvent clickEvent)
+        {
+            if (_activeTab != HeroTab.Abilities || _displayedAbilityProfile != GameDataManager.ProfileId ||
+                _displayedAbilityGeneration != GameDataManager.Generation) return;
+            AbilityUpgradeButton.SetEnabled(false);
+            try { CharacterDevelopmentService.TryUpgradeSuperAttack(_selectedAbilityId, _displayedAbilityLevel); }
+            catch (Exception exception) { Debug.LogException(exception); }
+            ShowSelectedAbility();
+        }
+
         private void OnAbilitySelectClicked(ClickEvent clickEvent)
         {
             if (_activeTab != HeroTab.Abilities || _selectedAbilityId <= 0)
@@ -590,8 +628,17 @@ namespace LostCyberHamster.UI
                 return;
             }
 
+            // Повторный callback уже выбранной способности не создаёт новую запись или событие экипировки.
+            if (SuperAttackService.ActiveSuperAttackId == _selectedAbilityId) return;
+
             if (SuperAttackService.TrySelect(_selectedAbilityId))
             {
+                if (_selectedAbilityId == ShieldTutorialProgress.ShieldId)
+                {
+                    try { ShieldTutorialProgress.MarkStarted(); }
+                    catch (Exception exception) { Debug.LogException(exception); }
+                    FirstSessionTelemetry.Record("shield_equipped");
+                }
                 BuildAbilitySlots();
                 ShowSelectedAbility();
             }

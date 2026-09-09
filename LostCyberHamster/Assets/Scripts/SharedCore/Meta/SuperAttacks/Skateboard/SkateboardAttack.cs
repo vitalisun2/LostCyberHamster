@@ -19,11 +19,11 @@ namespace Vues.GameCore
         ISuperAttackRuntime,
         ISkateboardCollisionHandler
     {
-        public const float DefaultFirstJumpTimeout = 10f;
+        public const float DefaultFirstJumpTimeout = 5f;
         public const float SkateboardPlaybackSpeed = SkateboardVisualSequence.PlaybackSpeed;
         public const float DefaultJumpDuration = 1.25f / SkateboardPlaybackSpeed;
         public const float DefaultLandingContactTime = (10f / 12f) / SkateboardPlaybackSpeed;
-        public const int DefaultJumpBudget = 3;
+        public const int DefaultJumpBudget = 1;
         public const int DefaultChargePerObstacle = 20;
 
         private readonly Hamster _hamster;
@@ -32,11 +32,15 @@ namespace Vues.GameCore
         private readonly GameManager _gameManager;
         private readonly SkateboardLandingImpactRuntime _landingImpact;
         private readonly SkateboardVisualSequence _visualSequence;
-        private readonly float _firstJumpTimeout;
+        private readonly SuperAttackData _data;
+        private float _duration;
+        private int _level = 1;
+        private long _activationId;
+        private int _destroyedCount;
         private readonly float _jumpDuration;
         private readonly float _landingContactTime;
-        private readonly int _jumpBudget;
-        private float _firstJumpTimeLeft;
+        private int _jumpBudget;
+        private float _remaining;
         private float _stateTimeLeft;
         private int _jumpsRemaining;
         private bool _isJumpQueued;
@@ -50,6 +54,12 @@ namespace Vues.GameCore
 
         public int ChargePerObstacle { get; }
         public bool IsActive => _isActive;
+        public SuperAttackRuntimeSnapshot Snapshot => new(3, _level, _activationId, _isActive,
+            _remaining, _duration, _remaining > 0 ? _jumpsRemaining : 0,
+            _isActive && (_remaining <= 0 || _jumpsRemaining <= 0), _destroyedCount);
+
+        /// <summary>Учитывает фактические разрушения скейта; дополнительный лут ему не назначен.</summary>
+        public void OnObstacleDestroyed(Obstacle obstacle) { if (_isActive) _destroyedCount++; }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
@@ -80,7 +90,8 @@ namespace Vues.GameCore
             int chargePerObstacle = DefaultChargePerObstacle,
             float jumpDuration = DefaultJumpDuration,
             float landingContactTime = DefaultLandingContactTime,
-            int jumpBudget = DefaultJumpBudget)
+            int jumpBudget = DefaultJumpBudget,
+            SuperAttackData data = null)
         {
             _hamster = hamster ?? throw new ArgumentNullException(nameof(hamster));
             _actorSwitcher = actorSwitcher ?? throw new ArgumentNullException(nameof(actorSwitcher));
@@ -132,7 +143,8 @@ namespace Vues.GameCore
                     "Jump budget must be positive.");
             }
 
-            _firstJumpTimeout = firstJumpTimeout;
+            _data = data;
+            _duration = firstJumpTimeout;
             _jumpDuration = jumpDuration;
             _landingContactTime = landingContactTime;
             _jumpBudget = jumpBudget;
@@ -164,7 +176,16 @@ namespace Vues.GameCore
             // Source surface фиксируется до actor switch и первого physics callback.
             bool startsOnRoof = _hamster.HamsterState.Value == HamsterStateEnum.RoofRun;
             Obstacle initialRoof = startsOnRoof ? _hamster.LastObstacle.Value : null;
-            _firstJumpTimeLeft = _firstJumpTimeout;
+            if (_data != null)
+            {
+                var level = SuperAttackLevelResolver.GetEffective(_data);
+                _level = level.Level;
+                _duration = level.Duration;
+                _jumpBudget = level.JumpCombinations;
+            }
+            _activationId++;
+            _destroyedCount = 0;
+            _remaining = _duration;
             _isWaitingForFirstJump = true;
             _jumpsRemaining = _jumpBudget;
             _isJumpQueued = false;
@@ -196,7 +217,7 @@ namespace Vues.GameCore
             if (!_isActive ||
                 _gameManager.State != GameState.PLAYING ||
                 _hamster.IsDamaged.Value ||
-                _jumpsRemaining <= 0)
+                _jumpsRemaining <= 0 || _remaining <= 0)
             {
                 return false;
             }
@@ -230,7 +251,7 @@ namespace Vues.GameCore
             }
 
             // Первый double-tap после actor switch не теряется из-за stale external detector.
-            if (_state == SkateboardState.Ride && _jumpsRemaining > 0)
+            if (_state == SkateboardState.Ride && _jumpsRemaining > 0 && _remaining > 0)
             {
                 StartJump(isSuper: true);
                 return true;
@@ -313,10 +334,13 @@ namespace Vues.GameCore
             if (!isPlaying)
                 return;
 
-            if (_isWaitingForFirstJump)
+            // Время расходуется во всех фазах; начатый цикл завершает безопасную посадку.
+            _remaining = Mathf.Max(0, _remaining - Time.deltaTime);
+            if (_remaining <= 0)
             {
-                _firstJumpTimeLeft -= Time.deltaTime;
-                if (_firstJumpTimeLeft <= 0f)
+                _isJumpQueued = false;
+                _isQueuedJumpSuper = false;
+                if (_state == SkateboardState.Ride)
                 {
                     Deactivate();
                     return;
@@ -444,7 +468,6 @@ namespace Vues.GameCore
             _isQueuedJumpSuper = false;
             _isCurrentJumpSuper = isSuper;
             _isWaitingForFirstJump = false;
-            _firstJumpTimeLeft = 0f;
 
             // Origin берётся один раз до transient surface changes и остаётся immutable.
             long actionId = _visualSequence.BeginJump();
@@ -519,7 +542,7 @@ namespace Vues.GameCore
             if (_stateTimeLeft > 0f)
                 return;
 
-            if (_jumpsRemaining <= 0)
+            if (_jumpsRemaining <= 0 || _remaining <= 0)
             {
                 // Natural exit не обрывает дальнюю wave, живущую отдельным listener.
                 Deactivate(cancelLandingImpact: false);
@@ -601,7 +624,7 @@ namespace Vues.GameCore
 
             _isActive = false;
             _isWaitingForFirstJump = false;
-            _firstJumpTimeLeft = 0f;
+            _remaining = 0f;
             _stateTimeLeft = 0f;
             _jumpsRemaining = 0;
             _isJumpQueued = false;

@@ -9,6 +9,7 @@ using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using Atomic.Elements;
 using Atomic.Objects;
+using GameManagement.Leaderboard;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -34,6 +35,23 @@ namespace Assets.Scripts.Gameplay
         public int RunScore => _runScoreMechanics?.CurrentScore ?? 0;
         public RunResultData LatestRunResult =>
             _partOfDayScoreMechanics?.LatestResult;
+        public WeeklyRecordPreview LatestRecordPreview => _partOfDayScoreMechanics?.LatestRecordPreview;
+        public string LatestLeaderboardRunId => _partOfDayScoreMechanics?.LatestRunId;
+
+        /// <summary>Передаёт предварительное пересечение известного рекорда текущей попытки.</summary>
+        public event Action<WeeklyRecordPreview> RecordPreviewed
+        {
+            add
+            {
+                if (_partOfDayScoreMechanics != null)
+                    _partOfDayScoreMechanics.RecordPreviewed += value;
+            }
+            remove
+            {
+                if (_partOfDayScoreMechanics != null)
+                    _partOfDayScoreMechanics.RecordPreviewed -= value;
+            }
+        }
 
         public event Action<RunResultData> RunResultChanged
         {
@@ -61,6 +79,7 @@ namespace Assets.Scripts.Gameplay
         public AtomicEvent<ObstacleTypeEnum> CollectableCollectedEvent = new();
         public AtomicEvent<Obstacle> DestroyObstacleEvent = new();
         public AtomicEvent<Obstacle> DestroyObstacleBySuperAttackEvent = new();
+        public AtomicEvent<Obstacle> ProtectedContactEvent = new();
 
         /// <summary>
         /// Запрашивает случайный бонус от указанного разрушаемого препятствия.
@@ -147,6 +166,10 @@ namespace Assets.Scripts.Gameplay
         private UltaChargeMechanics _ultaChargeMechanics;
 
         public bool HasSuperAttack => _superAttackRuntime != null;
+        public SuperAttackRuntimeSnapshot SuperAttackSnapshot => _superAttackRuntime?.Snapshot ?? default;
+
+        /// <summary>Передаёт владельцу способности фактическое разрушение перед pooling цели.</summary>
+        public void NotifySuperAttackObstacleDestroyed(Obstacle obstacle) => _superAttackRuntime?.OnObstacleDestroyed(obstacle);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>

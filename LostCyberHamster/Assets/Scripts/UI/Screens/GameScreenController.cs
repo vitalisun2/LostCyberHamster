@@ -19,6 +19,9 @@ namespace LostCyberHamster.UI
         private Button _buyUltraButton;
         private Button _ultraButton;
         private Label _ultraChargeValue;
+        private AbilityActivityIndicator _activity;
+        private bool _abilityActive;
+        private int _lastUltraCharge;
 
         private Action _jumpAction;
         private Action _superJumpAction;
@@ -136,6 +139,10 @@ namespace LostCyberHamster.UI
             _buyUltraButton = _contentRoot.Q<Button>("btn_buy_ulta");
             _ultraButton = _contentRoot.Q<Button>("btn_ultra");
             _ultraChargeValue = _contentRoot.Q<Label>("ulta-charge-value");
+            _activity?.RemoveFromHierarchy();
+            _activity = new AbilityActivityIndicator();
+            _ultraButton.Add(_activity);
+            _abilityActive = false;
             _tapArea = _contentRoot.Q<VisualElement>("tap");
 
             ClearBackground();
@@ -219,7 +226,8 @@ namespace LostCyberHamster.UI
 
             // Определяем состояние ульты по реальному заряду.
             int clampedValue = Mathf.Clamp(value, 0, 100);
-            bool isReady = clampedValue >= 100;
+            _lastUltraCharge = clampedValue;
+            bool isReady = clampedValue >= 100 && !_abilityActive;
 
             // Переключаем утверждённый вид и сохраняем блокировку до полного заряда.
             _ultraButton.EnableInClassList("game-control--ready", isReady);
@@ -228,6 +236,18 @@ namespace LostCyberHamster.UI
             {
                 _ultraChargeValue.text = clampedValue.ToString();
             }
+        }
+
+        /// <summary>
+        /// Подключает snapshot реальной способности к HUD и исключает повторную активацию.
+        /// </summary>
+        public void SetAbilityActivity(SuperAttackRuntimeSnapshot snapshot)
+        {
+            _activity?.Render(snapshot);
+            if (_abilityActive == snapshot.IsActive) return;
+            _abilityActive = snapshot.IsActive;
+            _ultraButton?.EnableInClassList("game-control--ability-active", _abilityActive);
+            SetUltraValue(_lastUltraCharge);
         }
 
         /// <summary>

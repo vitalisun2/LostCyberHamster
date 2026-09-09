@@ -1,4 +1,5 @@
 using System;
+using Assets.Scripts.Tutorial;
 using Vues.GameCore;
 using Vues.GameCore.Quests;
 
@@ -13,16 +14,29 @@ namespace GameManagement.Progress
         /// Количество XP, необходимое для повышения Player Level.
         /// </summary>
         public const int PlayerLevelThreshold = 240;
+        public const int TutorialExperienceReward = 150;
 
-        private const int ExperiencePerImprovedStar = 10;
-        private const int WeeklyLeaderboardRecordExperienceReward = 50;
-        private const int DailyQuestExperienceReward = 20;
-        private const int StorylineQuestExperienceReward = 60;
+        public const int ExperiencePerFirstWin = 25;
+        public const int ExperiencePerImprovedStar = 2;
+        public const int WeeklyLeaderboardRecordExperienceReward = 5;
+
+        /// <summary>Начисляет стартовые XP один раз; вызывающий сохраняет результат до публикации.</summary>
+        public bool GrantExperienceForTutorialCompletion(PlayerData playerData)
+        {
+            if (playerData == null)
+                throw new ArgumentNullException(nameof(playerData));
+            if (playerData.HasReceivedTutorialExperience)
+                return false;
+
+            bool levelChanged = GrantExperience(playerData, TutorialExperienceReward, notify: false);
+            playerData.HasReceivedTutorialExperience = true;
+            return levelChanged;
+        }
 
         /// <summary>
-        /// Начисляет XP только за положительный прирост лучшего результата по звёздам.
+        /// Начисляет XP за первую победу и новые best-звёзды до замены сохранённого progress.
         /// </summary>
-        public bool GrantExperienceForImprovedStars(
+        public ExperienceGrantResult GrantExperienceForLevelCompletion(
             PlayerData playerData,
             LevelProgressKey progressKey,
             LevelProgressSnapshot updatedSnapshot,
@@ -39,7 +53,7 @@ namespace GameManagement.Progress
                 throw new ArgumentNullException(nameof(updatedSnapshot));
             }
 
-            // Извлекаем оба best stars и начисляем XP только за улучшение.
+            // Best=0 означает отсутствие победы; стабильный ключ различает уровни кампании.
             var previousBestStars =
                 playerData.Progress.GetStars(progressKey);
             var updatedBestStars =
@@ -47,25 +61,22 @@ namespace GameManagement.Progress
             var improvedStars = Math.Max(
                 0,
                 updatedBestStars - previousBestStars);
-            if (improvedStars == 0)
-            {
-                return false;
-            }
-
-            return GrantExperience(
-                playerData,
-                checked(improvedStars * ExperiencePerImprovedStar), notify);
+            int amount = checked(improvedStars * ExperiencePerImprovedStar +
+                (previousBestStars == 0 && updatedBestStars > 0 ? ExperiencePerFirstWin : 0));
+            int fromLevel = playerData.PlayerLevel;
+            if (amount > 0) GrantExperience(playerData, amount, notify);
+            return new ExperienceGrantResult(progressKey.ToString(), amount, fromLevel, playerData.PlayerLevel);
         }
 
         /// <summary>
-        /// Начисляет XP за подтверждённый сервером новый weekly leaderboard record.
+        /// Применяет сохранённое решение weekly: 0/5 XP либо восстановление прежней квитанции 50 XP.
         /// </summary>
         public bool GrantExperienceForWeeklyLeaderboardRecord(
-            PlayerData playerData, bool notify = true)
+            PlayerData playerData, int awardedExperience = WeeklyLeaderboardRecordExperienceReward, bool notify = true)
         {
-            return GrantExperience(
-                playerData,
-                WeeklyLeaderboardRecordExperienceReward, notify);
+            if (awardedExperience != 0 && awardedExperience != WeeklyLeaderboardRecordExperienceReward && awardedExperience != 50)
+                throw new ArgumentOutOfRangeException(nameof(awardedExperience));
+            return awardedExperience > 0 && GrantExperience(playerData, awardedExperience, notify);
         }
 
         /// <summary>
@@ -75,18 +86,17 @@ namespace GameManagement.Progress
         {
             return GrantExperience(
                 playerData,
-                DailyQuestExperienceReward, notify);
+                QuestExperienceRewardPolicy.DailyReward, notify);
         }
 
         /// <summary>
-        /// Начисляет XP за одноразово полученную награду сюжетного квеста.
+        /// Начисляет XP конкретного полученного квеста; нулевая награда сохраняет Claim.
         /// </summary>
-        public bool GrantExperienceForClaimedStorylineQuest(
-            PlayerData playerData, bool notify = true)
+        public bool GrantExperienceForClaimedQuest(
+            PlayerData playerData, Quest quest, bool notify = true)
         {
-            return GrantExperience(
-                playerData,
-                StorylineQuestExperienceReward, notify);
+            int amount = QuestExperienceRewardPolicy.GetReward(quest);
+            return amount > 0 && GrantExperience(playerData, amount, notify);
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -102,11 +112,15 @@ namespace GameManagement.Progress
 #endif
 
         /// <summary>Публикует повышение уровня после успешного сохранения транзакции.</summary>
-        public static void PublishCommittedLevelChange(bool playerLevelChanged)
+        public static void PublishCommittedLevelChange(bool playerLevelChanged, string source = "reward")
         {
             if (playerLevelChanged)
+            {
+                FirstSessionTelemetry.Record("development_point_committed", source,
+                    GameDataManager.PlayerData?.PlayerLevel ?? 1);
                 GameEventsManager.PlayerStateChanged(
                     PlayerStateIds.PlayerLevel, PlayerStateEntityIds.Player);
+            }
         }
 
         /// <summary>

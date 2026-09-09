@@ -38,6 +38,19 @@
                                     </engine:VisualElement>
                                 </engine:VisualElement>
 
+                                <engine:VisualElement class="settings-row">
+                                    <Vues.GameCore.LocalizedLabel key="settings_gameplay_notifications" class="settings-row__label settings-row__label--compact" />
+                                    <engine:VisualElement name="settings__notifications-checkbox" class="settings-checkbox">
+                                        <engine:Toggle name="settings__cbx-notifications" class="settings-checkbox__native" />
+                                        <engine:VisualElement class="settings-checkbox__base" picking-mode="Ignore" />
+                                        <engine:VisualElement class="settings-checkbox__fill" picking-mode="Ignore" />
+                                        <engine:VisualElement class="settings-checkbox__check" picking-mode="Ignore">
+                                            <engine:VisualElement class="settings-checkbox__check-stroke settings-checkbox__check-stroke--short" picking-mode="Ignore" />
+                                            <engine:VisualElement class="settings-checkbox__check-stroke settings-checkbox__check-stroke--long" picking-mode="Ignore" />
+                                        </engine:VisualElement>
+                                    </engine:VisualElement>
+                                </engine:VisualElement>
+
                                 <engine:VisualElement class="settings-row settings-row--account">
                                     <Vues.GameCore.LocalizedLabel key="lbl_account" class="settings-row__label settings-row__label--top" />
                                     <engine:VisualElement class="settings-account">

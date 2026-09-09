@@ -41,6 +41,17 @@ public class ElectricStrikeUlta : MonoBehaviour
         StartCoroutine(PlayElectricStrikeSequence());
     }
 
+    /// <summary>Масштабирует видимую дальность относительно точки начала физического удара.</summary>
+    public void SetRangeMultiplier(float originX, float multiplier)
+    {
+        Vector3 position = transform.position;
+        position.x = originX + (position.x - originX) * multiplier;
+        Vector3 scale = transform.localScale;
+        scale.x *= multiplier;
+        transform.localScale = scale;
+        transform.position = position;
+    }
+
     private System.Collections.IEnumerator PlayElectricStrikeSequence()
     {
         float adjustedDelay = delayBetweenEffects * (1 / effectSpeedMultiplier);

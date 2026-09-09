@@ -27,6 +27,8 @@ namespace LostCyberHamster.UI
         private DropdownField _dropdownLanguages => _contentRoot.Q<DropdownField>("settings__dd-languages");
         private Toggle _toggleMusic => _contentRoot.Q<Toggle>("settings__cbx-music");
         private Toggle _toggleSound => _contentRoot.Q<Toggle>("settings__cbx-sound");
+        private Toggle _toggleNotifications => _contentRoot.Q<Toggle>("settings__cbx-notifications");
+        private VisualElement _notificationsCheckbox => _contentRoot.Q("settings__notifications-checkbox");
         private Toggle _toggleVibration => _contentRoot.Q<Toggle>("settings__cbx-vibrate");
         private Label _labelVersion => _contentRoot.Q<Label>("settings__lbl-version");
         private Label _labelId => _contentRoot.Q<Label>("settings__lbl-id");
@@ -143,6 +145,8 @@ namespace LostCyberHamster.UI
             _toggleVibration.value = VibrationManager.EnableVibration;
             RenderCheckbox(_musicCheckbox, _toggleMusic.value);
             RenderCheckbox(_soundCheckbox, _toggleSound.value);
+            _toggleNotifications.SetValueWithoutNotify(GameDataManager.PlayerData.EnableGameplayNotifications);
+            RenderCheckbox(_notificationsCheckbox, _toggleNotifications.value);
 
             _labelVersion.text = $"{Application.version}";
             _labelId.text = $"{SystemInfo.deviceUniqueIdentifier}";
@@ -187,7 +191,10 @@ namespace LostCyberHamster.UI
 
         private void OnProfileChanged()
         {
-            if (_isActive) UpdateAccountState(_accountService.State);
+            if (!_isActive) return;
+            UpdateAccountState(_accountService.State);
+            _toggleNotifications.SetValueWithoutNotify(GameDataManager.PlayerData.EnableGameplayNotifications);
+            RenderCheckbox(_notificationsCheckbox, _toggleNotifications.value);
         }
 
         private void SubscribeToCloudSyncStatus()
@@ -594,6 +601,7 @@ namespace LostCyberHamster.UI
             _dropdownLanguages?.RegisterValueChangedCallback(OnChangeLanguageAsync);
             _toggleMusic?.RegisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.RegisterValueChangedCallback(OnChangeSoundAsync);
+            _toggleNotifications?.RegisterValueChangedCallback(OnChangeNotifications);
             _toggleVibration?.RegisterValueChangedCallback(OnChangeVibrationAsync);
         }
 
@@ -603,6 +611,22 @@ namespace LostCyberHamster.UI
             AudioManager.SetSfxVolume(_settingsData.SfxVolume);
             RenderCheckbox(_soundCheckbox, evt.newValue);
             SaveSettings();
+        }
+
+        private void OnChangeNotifications(ChangeEvent<bool> evt)
+        {
+            try
+            {
+                GameDataManager.ExecuteTransaction(CheckpointReason.FirstSessionTutorialProgressed,
+                    () => GameDataManager.PlayerData.EnableGameplayNotifications = evt.newValue);
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[Settings] Notification preference save failed ({exception.GetType().Name}).");
+            }
+            bool enabled = GameDataManager.PlayerData.EnableGameplayNotifications;
+            _toggleNotifications.SetValueWithoutNotify(enabled);
+            RenderCheckbox(_notificationsCheckbox, enabled);
         }
 
 
@@ -716,6 +740,7 @@ namespace LostCyberHamster.UI
             _dropdownLanguages?.UnregisterValueChangedCallback(OnChangeLanguageAsync);
             _toggleMusic?.UnregisterValueChangedCallback(OnChangeMusicAsync);
             _toggleSound?.UnregisterValueChangedCallback(OnChangeSoundAsync);
+            _toggleNotifications?.UnregisterValueChangedCallback(OnChangeNotifications);
             _toggleVibration?.UnregisterValueChangedCallback(OnChangeVibrationAsync);
             EndSession();
         }

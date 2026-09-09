@@ -7,6 +7,7 @@
         <ui:VisualElement name="hero-viewport" class="hero-viewport main-screen-body">
             <ui:VisualElement name="hero-scale-frame" class="hero-scale-frame">
                 <ui:VisualElement name="hero-design" class="hero-design">
+                    <ui:Button name="development-return" class="progression-return" />
                     <ui:VisualElement name="hero-tabs" class="hero-tabs dual-tabs dual-tabs--left-active">
                         <ui:Button name="hero-tab-skins" class="hero-tab dual-tab dual-tab--left">
                             <ui:VisualElement class="hero-tab__icon hero-tab__icon--skins" picking-mode="Ignore" />
@@ -32,6 +33,7 @@
                                 <ui:VisualElement name="hero-ability-preview-image" class="hero-ability-preview-image" picking-mode="Ignore" />
                                 <ui:Label name="hero-ability-preview-description" class="hero-ability-description" picking-mode="Ignore" />
                                 <ui:Button name="hero-ability-select" class="hero-select-button" />
+                                <ui:Button name="hero-ability-upgrade" class="hero-ability-upgrade" />
                             </ui:VisualElement>
                             <ui:ScrollView name="hero-ability-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="hero-slots-scroll">
                                 <ui:VisualElement name="hero-ability-slots" class="hero-slots" />

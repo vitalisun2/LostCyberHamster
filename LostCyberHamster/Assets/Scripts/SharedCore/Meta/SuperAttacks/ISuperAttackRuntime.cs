@@ -1,4 +1,5 @@
 using System;
+using Assets.Scripts.Gameplay;
 
 namespace Vues.GameCore
 {
@@ -11,6 +12,10 @@ namespace Vues.GameCore
         /// Возвращает заряд за одно уничтоженное препятствие.
         /// </summary>
         int ChargePerObstacle { get; }
+        SuperAttackRuntimeSnapshot Snapshot { get; }
+
+        /// <summary>Принимает подтверждённое разрушение до возврата цели в пул.</summary>
+        void OnObstacleDestroyed(Obstacle obstacle);
 
         /// <summary>
         /// Пытается применить суперудар.

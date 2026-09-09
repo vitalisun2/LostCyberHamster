@@ -278,6 +278,7 @@ namespace Assets.Scripts.Tutorial
             _trackedObstacle = obstacle;
             ResetActionInputProgress();
             _state = TutorialGameplayState.WaitingForInput;
+            FirstSessionTelemetry.Record("tutorial_step_shown", CurrentStep.TitleKey, CurrentStep.Number);
             PauseGameForTutorial();
             _view?.ShowPrompt(CurrentStep.InstructionKey, CurrentExpectedAction);
         }
@@ -377,6 +378,7 @@ namespace Assets.Scripts.Tutorial
 
         private void CompleteCurrentStep()
         {
+            FirstSessionTelemetry.Record("tutorial_action_succeeded", CurrentStep.TitleKey, CurrentStep.Number);
             _trackedObstacle = null;
             ResetActionInputProgress();
             if (_currentStepIndex + 1 >= _steps.Count)
